@@ -1,11 +1,14 @@
 import React from 'react';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
 const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+// Enter and Space press it as a click does, unless they come from a control inside it.
+const keys=(fn)=>(e)=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();fn(e);}};
 
 /** Continue-listening / jump-back-in row tile: small square art plus two lines. Replaces the old QuickTile. */
 export function QuickPick({ title, sub, platform = 'desktop', icon, image, onClick, progress = null, unplayed = false }) {
   const mobile = platform === 'mobile';
-  const CoverArt = NS().CoverArt;
+  const { CoverArt, StateLayer } = NS();
+  const off = !onClick;
   const size = 52;
   const hasProgress = typeof progress === 'number';
   // `icon` swaps the artwork square for a Material Symbols glyph on a flat accent tint — for
@@ -26,12 +29,15 @@ export function QuickPick({ title, sub, platform = 'desktop', icon, image, onCli
         )}
       </div>;
   return (
-    <div onClick={onClick} style={sx('display:flex;align-items:center;gap:var(--spacing-md);border-radius:var(--radius-xs);cursor:pointer;min-width:0;background:var(--surface-card)')}>
+    <div className="sn-int" role="button" tabIndex={off ? -1 : 0} aria-disabled={off}
+      onClick={off ? undefined : onClick} onKeyDown={off ? undefined : keys(onClick)}
+      style={sx('display:flex;align-items:center;gap:var(--spacing-md);border-radius:var(--radius-xs);cursor:pointer;min-width:0;background:var(--surface-card)')}>
       {leading}
       <div style={sx('min-width:0;display:flex;flex-direction:column;gap:2px;margin-right:var(--spacing-md)')}>
         <div style={sx('font-size:var(--text-' + (mobile ? 'sm' : 'md') + ');font-weight:var(--weight-strong);line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--surface-fg)')}>{title}</div>
         <div style={sx('font-size:var(--text-sm);line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--surface-fg-muted)')}>{sub}</div>
       </div>
+      {StateLayer && <StateLayer disabled={off} />}
     </div>
   );
 }

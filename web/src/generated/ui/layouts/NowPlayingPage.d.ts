@@ -22,6 +22,7 @@ export interface NowPlayingPageProps {
   progress?: number;
   /** Seconds, for the seek readouts. */
   duration?: number;
+  /** Every control with no handler is drawn disabled. */
   onTogglePlay?: () => void;
   /** `music` only. */
   onPrev?: () => void;

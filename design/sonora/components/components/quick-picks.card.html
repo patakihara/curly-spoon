@@ -15,19 +15,19 @@ function Demo(){
     <div>
       <SectionHeader title="Jump back in" platform="desktop" />
       <div style={{display:'grid',gridTemplateColumns:'repeat(2, 1fr)',gap:12,maxWidth:620}}>
-        <QuickPick title="The Quiet Lodger" sub="Book · 6 h 12 m left" />
-        <QuickPick title="Deep Inertia Radio" sub="Podcast · 24 min left" />
-        <QuickPick title="Between Two Worlds" sub="Album · 3 tracks left" />
-        <QuickPick title="The Long Meridian" sub="Book · 21 h 40 m left" />
-        <QuickPick icon="shuffle" title="Shuffle all" sub="Everything in your library" />
-        <QuickPick icon="download" title="Downloads" sub="184 items · 12.4 GB" />
+        <QuickPick title="The Quiet Lodger" sub="Book · 6 h 12 m left" onClick={() => {}} />
+        <QuickPick title="Deep Inertia Radio" sub="Podcast · 24 min left" onClick={() => {}} />
+        <QuickPick title="Between Two Worlds" sub="Album · 3 tracks left" onClick={() => {}} />
+        <QuickPick title="The Long Meridian" sub="Book · 21 h 40 m left" onClick={() => {}} />
+        <QuickPick icon="shuffle" title="Shuffle all" sub="Everything in your library" onClick={() => {}} />
+        <QuickPick icon="download" title="Downloads" sub="184 items · 12.4 GB" onClick={() => {}} />
       </div>
     </div>
     <div style={{maxWidth:340}}>
-      <SectionHeader title="Recently added" action="arrow_forward" />
-      <QuickPick platform="mobile" title="Golden Scars" sub="Album · 2 tracks left" />
+      <SectionHeader title="Recently added" action="arrow_forward" onAction={() => {}} />
+      <QuickPick platform="mobile" title="Golden Scars" sub="Album · 2 tracks left" onClick={() => {}} />
       <div style={{height:12}} />
-      <QuickPick platform="mobile" icon="favorite" title="Liked" sub="92 tracks" />
+      <QuickPick platform="mobile" icon="favorite" title="Liked" sub="92 tracks" onClick={() => {}} />
     </div>
   </div>;
 }

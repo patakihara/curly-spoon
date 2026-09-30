@@ -7,11 +7,8 @@ import { unlayeredControls } from './states.js';
 
 const sonora = join(REPO_ROOT, SONORA_DIR);
 
-/**
- * The levels whose controls draw Material's states so far. The components and layouts levels
- * join in the second half of the item.
- */
-const LEVELS = ['basic'];
+/** Every level of Sonora: each control at each level draws Material's states. */
+const LEVELS = ['basic', 'components', 'layouts'];
 
 const NS = "const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};\n";
 

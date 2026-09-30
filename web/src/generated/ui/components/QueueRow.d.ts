@@ -9,13 +9,16 @@ export interface QueueRowProps {
   /** Highlights the row as the one now playing. */
   current?: boolean;
   platform?: 'desktop' | 'mobile';
+  /** Without it the row is drawn disabled. */
   onClick?: () => void;
+  /** Without it the remove button is left out. */
   onRemove?: (e?: any) => void;
   /** Show the drag handle. Off for a read-only queue that reorders only in edit mode. */
   handle?: boolean;
   /** Edit mode: adds the leading select control and drops the duration. */
   editing?: boolean;
   selected?: boolean;
+  /** Without it the select control is drawn disabled. */
   onSelectToggle?: (e?: any) => void;
   draggable?: boolean;
   onDragStart?: (e?: any) => void;

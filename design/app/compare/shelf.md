@@ -1,6 +1,6 @@
 ---
 page: shelf
-pageHash: 477891827329ce4049565d79a469b7f774333c9f1baa06eba06d0b43be65e84b
+pageHash: d2976982b1b746c7045ac2bbe35884698ee3614cb1bd68d2c7570e98a8fbd5a8
 sonora: [kit:mobile/collection, kit:desktop/collection]
 spotify: [S12]
 ---
@@ -41,9 +41,10 @@ link, the page says the shelf has gone, with the way back to Browse.
 
 ## Differences
 
-- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
-  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
-  states item binds each such control or leaves it deliberately disabled.
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Matches: the 3-across phone grid, captions naming the type, resume bars, the toggle at the top
   right of the collection.
 - Changed on purpose: the shelf is headed by its subject, as S12 and Browse's shelves have it:

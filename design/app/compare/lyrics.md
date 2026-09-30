@@ -1,6 +1,6 @@
 ---
 page: lyrics
-pageHash: f10914432df6ec119f156da123a7f1d2c16b071cb8dbf37760edeeae3e3782c4
+pageHash: c0de1dd6f3646e6ad097cda4a5e0e0d2717c5fe9ade25f65bd3631f243a9b2a6
 sonora: [kit:mobile/lyrics, kit:desktop/lyrics, card:now-playing-page]
 spotify: [S40, S43]
 ---
@@ -34,9 +34,10 @@ marks nothing. A spoken item has no Lyrics tab. No lyrics found: the tab says so
 
 ## Differences
 
-- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
-  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
-  states item binds each such control or leaves it deliberately disabled.
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Changed on purpose: the lyrics are a tab of the player, with no close control or bottom app bar
   of their own, where the kit opens a page with both.
 - Changed on purpose: the sync control is a toggle, sync on or off, where the kit cycled three

@@ -41,14 +41,17 @@ export interface MediaHeaderProps {
   lastLabel?: string | null;
   /** Circular art, for artist/author pages. */
   round?: boolean;
+  /** Without it its button is drawn disabled. */
   onPlay?: () => void;
+  /** Without it its button is drawn disabled. */
   onPlayNext?: () => void;
+  /** Without it its button is drawn disabled. */
   onPlayLast?: () => void;
-  /** Makes the subtitle an accent-ink link. */
+  /** Makes the subtitle an accent-ink link. Without it the subtitle is plain text. */
   onSubtitle?: () => void;
   /** What the item is one part of, under the subtitle: a book's series and its number. */
   partOf?: string;
-  /** Makes `partOf` an accent-ink link to the whole it names. */
+  /** Makes `partOf` an accent-ink link to the whole it names. Without it the series is plain text. */
   onPartOf?: () => void;
   /** Under the meta line: a `Rating`, the item's community rating, as a book or a show carries one. */
   rating?: ReactNode;
@@ -67,14 +70,14 @@ export interface MediaHeaderProps {
    * desktop keeps nothing offline and never draws it. Omit or pass null for none.
    */
   download?: 'idle' | 'downloading' | 'done' | null;
-  /** Starts, cancels or removes the download, depending on `download`. */
+  /** Starts, cancels or removes the download, depending on `download`. Without it the download control is drawn disabled. */
   onDownload?: () => void;
   /**
    * The accessible name of a round add-to-a-list button after the queue buttons, such as "Add to a
    * list". Null (the default) leaves it out.
    */
   addLabel?: string | null;
-  /** Opens the choice of list to add the item to. */
+  /** Opens the choice of list to add the item to. Without it the add button is drawn disabled. */
   onAdd?: () => void;
 }
 export declare function MediaHeader(props: MediaHeaderProps): JSX.Element;

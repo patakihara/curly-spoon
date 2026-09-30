@@ -68,7 +68,7 @@ describe("Sonora's spoken transport", () => {
       variant: 'spoken',
       sleep: '23 min',
     });
-    const button = /<button aria-label="Sleep timer, 23 min"[^>]*>/.exec(html)?.[0];
+    const button = /<button[^>]*aria-label="Sleep timer, 23 min"[^>]*>/.exec(html)?.[0];
     expect(button).toContain('color:var(--accent-ink)');
     expect(button).not.toContain('--play');
   });

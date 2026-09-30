@@ -1,6 +1,6 @@
 ---
 page: favourites
-pageHash: e38b213cd264cde0cf1188bd9ea69a03b6f93c01b05d7848c78b8c4319122bf4
+pageHash: cb4e37edb11464f0538684f3b764f6c3eeb30c81e3d03c919ad2dac1d5dc5c58
 sonora: [kit:mobile/collection, kit:desktop/collection]
 ---
 
@@ -26,9 +26,10 @@ a song you don't own.
 
 ## Differences
 
-- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
-  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
-  states item binds each such control or leaves it deliberately disabled.
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Changed on purpose: a song list, not the kit collection's grid.
 - Changed on purpose: no header, play button or local search; nav.json gives the page only its
   songs.

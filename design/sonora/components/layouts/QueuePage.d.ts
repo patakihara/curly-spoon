@@ -41,11 +41,12 @@ export interface QueuePageProps {
   played?: QueueItem[];
   /** What autoplay plays once the queue runs out, and what it continues from. */
   autoplay?: { title?: string; items: QueueItem[] };
-  /** Up next's Clear action, which empties it; an undo brings it back. */
+  /** Up next's Clear action, which empties it; an undo brings it back. Without it Clear is drawn disabled. */
   onClear?: () => void;
   /** Controlled edit mode. Omit to let the page keep its own. */
   editing?: boolean;
   onEditingChange?: (editing: boolean) => void;
+  /** Without it every row outside edit mode is drawn disabled. */
   onPlay?: (item: QueueItem, index: number) => void;
   onRemove?: (item: QueueItem, index: number) => void;
   /** Drag reorder, by index into `items`. */

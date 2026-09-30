@@ -1,4 +1,5 @@
 import React from 'react';
+const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
 const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
@@ -27,10 +28,20 @@ const playBtn = { ...iconBtn('var(--play-icon)', 44), background: 'var(--play)',
 export function MiniPlayer({
   title, artist, image, playing, onTogglePlay, onOpen,
   platform = 'mobile', progress = 0, onSeek, duration = 258,
-  onPrev, onNext, queueOpen, onToggleQueue, lyricsOpen, onToggleLyrics,
+  onPrev, onNext, onShuffle, onRepeat, onVolume, queueOpen, onToggleQueue, lyricsOpen, onToggleLyrics,
   variant = 'music', onSkipBack, onSkipForward, skipSeconds = 15, speed = 1, onSpeed, sleep = 'Off', onSleep,
 }) {
   const spoken = variant === 'spoken';
+  const { StateLayer, Slider } = NS();
+  // Every control on the bar: one with no handler is drawn disabled, and a press on one never
+  // reaches the bar beneath it.
+  const btn = (label, fn, style, glyph) => (
+    <button className={'sn-int' + (style === playBtn ? ' sn-filled' : '')} aria-label={label} disabled={!fn}
+      onClick={fn ? (e) => { e.stopPropagation(); fn(); } : undefined} style={style}>
+      {glyph}
+      {StateLayer && <StateLayer disabled={!fn} />}
+    </button>
+  );
   // The interval is drawn as a number over a plain circular arrow, as TransportBar's spoken skip is:
   // Material Symbols ships only fixed 5/10/30 glyphs. The arrow alone is mirrored for forward.
   const skip = (dir) => (
@@ -48,7 +59,9 @@ export function MiniPlayer({
         background: 'var(--surface-now-playing)',
         display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'center', padding: '0 var(--spacing-xl)', gap: 'var(--spacing-lg)',
       }}>
-        <div onClick={onOpen} style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', minWidth: 0, cursor: onOpen ? 'pointer' : 'default' }}>
+        <div className="sn-int" role="button" aria-label={'Open player, ' + title} tabIndex={onOpen ? 0 : -1} aria-disabled={!onOpen}
+          onClick={onOpen} onKeyDown={onOpen && ((e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } })}
+          style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', minWidth: 0, justifySelf: 'start', maxWidth: '100%', cursor: 'pointer', borderRadius: 'var(--radius-xs)' }}>
           <div style={{
             width: 52, height: 52, flexShrink: 0, borderRadius: 'var(--radius-xs)', overflow: 'hidden',
             background: image ? undefined : 'var(--accent)',
@@ -59,57 +72,56 @@ export function MiniPlayer({
             <div style={{ color: fg, fontFamily: 'var(--font-body)', fontWeight: 'var(--weight-strong)', fontSize: 'var(--text-md)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
             <div style={{ color: muted, fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{artist}</div>
           </div>
+          {StateLayer && <StateLayer disabled={!onOpen} />}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--spacing-sm)', width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-lg)' }}>
             {spoken ? (
               <>
-                <button aria-label={'Playback speed, ' + speed + ' times'} onClick={onSpeed}
-                  style={{ ...iconBtn(speed === 1 ? muted : 'var(--play-ink)'), fontFamily: 'var(--font-body)', fontWeight: 'var(--weight-strong)', fontSize: 'var(--text-sm)' }}>{speed}×</button>
-                <button aria-label={'Skip back ' + skipSeconds + ' seconds'} onClick={onSkipBack} style={iconBtn(fg)}>{skip('back')}</button>
+                {btn('Playback speed, ' + speed + ' times', onSpeed,
+                  { ...iconBtn(speed === 1 ? muted : 'var(--play-ink)'), fontFamily: 'var(--font-body)', fontWeight: 'var(--weight-strong)', fontSize: 'var(--text-sm)' }, speed + '×')}
+                {btn('Skip back ' + skipSeconds + ' seconds', onSkipBack, iconBtn(fg), skip('back'))}
               </>
             ) : (
               <>
-                <button aria-label="Shuffle" style={iconBtn(fg, 36, 'var(--icon-sm)', true)}>shuffle</button>
-                <button aria-label="Previous" onClick={onPrev} style={iconBtn(fg)}>skip_previous</button>
+                {btn('Shuffle', onShuffle, iconBtn(fg, 36, 'var(--icon-sm)', true), 'shuffle')}
+                {btn('Previous', onPrev, iconBtn(fg), 'skip_previous')}
               </>
             )}
-            <button aria-label={playing ? 'Pause' : 'Play'} onClick={onTogglePlay}
-              style={playBtn}>{playing ? 'pause' : 'play_arrow'}</button>
+            {btn(playing ? 'Pause' : 'Play', onTogglePlay, playBtn, playing ? 'pause' : 'play_arrow')}
             {spoken ? (
               <>
-                <button aria-label={'Skip forward ' + skipSeconds + ' seconds'} onClick={onSkipForward} style={iconBtn(fg)}>{skip('forward')}</button>
-                <button aria-label={'Sleep timer, ' + sleep} onClick={onSleep} style={iconBtn(sleep === 'Off' ? fg : 'var(--accent-ink)', 36, 'var(--icon-sm)', sleep === 'Off')}>bedtime</button>
+                {btn('Skip forward ' + skipSeconds + ' seconds', onSkipForward, iconBtn(fg), skip('forward'))}
+                {btn('Sleep timer, ' + sleep, onSleep, iconBtn(sleep === 'Off' ? fg : 'var(--accent-ink)', 36, 'var(--icon-sm)', sleep === 'Off'), 'bedtime')}
               </>
             ) : (
               <>
-                <button aria-label="Next" onClick={onNext} style={iconBtn(fg)}>skip_next</button>
-                <button aria-label="Repeat" style={iconBtn(fg, 36, 'var(--icon-sm)', true)}>repeat</button>
+                {btn('Next', onNext, iconBtn(fg), 'skip_next')}
+                {btn('Repeat', onRepeat, iconBtn(fg, 36, 'var(--icon-sm)', true), 'repeat')}
               </>
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', width: '100%', maxWidth: 480 }}>
             <span style={{ color: muted, fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', width: 36 }}>{mmss(progress * duration)}</span>
-            <div style={{ flex: 1, height: 4, borderRadius: 'var(--radius-pill)', background: 'color-mix(in srgb, var(--surface-now-playing-fg) 28%, transparent)', cursor: 'pointer' }}
-              onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); onSeek && onSeek((e.clientX - r.left) / r.width); }}>
-              <div style={{ width: `${progress * 100}%`, height: '100%', borderRadius: 'var(--radius-pill)', background: 'var(--play)' }} />
-            </div>
+            <div style={{ flex: 1, display: 'flex' }}>{Slider && <Slider value={progress} onChange={onSeek} tone="play" />}</div>
             <span style={{ color: muted, fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', width: 36 }}>{mmss(duration)}</span>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 'var(--spacing-lg)' }}>
-          {!spoken && <button aria-label="Lyrics" onClick={onToggleLyrics} style={{ ...iconBtn(fg), color: lyricsOpen ? 'var(--play-ink)' : fg }}>lyrics</button>}
-          <button aria-label="Queue" onClick={onToggleQueue} style={{ ...iconBtn(fg), color: queueOpen ? 'var(--play-ink)' : fg }}>queue_music</button>
-          <button aria-label="Volume" style={iconBtn(fg)}>volume_up</button>
+          {!spoken && btn('Lyrics', onToggleLyrics, { ...iconBtn(fg), color: lyricsOpen ? 'var(--play-ink)' : fg }, 'lyrics')}
+          {btn('Queue', onToggleQueue, { ...iconBtn(fg), color: queueOpen ? 'var(--play-ink)' : fg }, 'queue_music')}
+          {btn('Volume', onVolume, iconBtn(fg), 'volume_up')}
         </div>
       </div>
     );
   }
 
   return (
-    <div onClick={onOpen} style={{
+    <div className="sn-int" role="button" aria-label={'Open player, ' + title} tabIndex={onOpen ? 0 : -1} aria-disabled={!onOpen}
+      onClick={onOpen} onKeyDown={onOpen && ((e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onOpen(); } })}
+      style={{
       display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)',
-      padding: 'var(--spacing-md)', cursor: 'pointer',
+      padding: 'var(--spacing-md)', cursor: 'pointer', color: 'var(--surface-now-playing-fg)',
       background: 'var(--surface-now-playing)',
       overflow: 'visible', height: 48, boxSizing: 'content-box',
       borderTop: '1px solid var(--surface-border)', borderBottom: '1px solid var(--surface-border)',
@@ -124,8 +136,8 @@ export function MiniPlayer({
         <div style={{ color: 'var(--surface-now-playing-fg)', fontFamily: 'var(--font-body)', fontWeight: 'var(--weight-strong)', fontSize: 'var(--text-lg)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
         <div style={{ color: 'var(--surface-now-playing-fg-muted)', fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{artist}</div>
       </div>
-      <button aria-label={playing ? 'Pause' : 'Play'} onClick={(e) => { e.stopPropagation(); onTogglePlay && onTogglePlay(); }}
-        style={playBtn}>{playing ? 'pause' : 'play_arrow'}</button>
+      {btn(playing ? 'Pause' : 'Play', onTogglePlay, playBtn, playing ? 'pause' : 'play_arrow')}
+      {StateLayer && <StateLayer disabled={!onOpen} />}
     </div>
   );
 }

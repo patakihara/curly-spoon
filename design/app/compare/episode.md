@@ -1,6 +1,6 @@
 ---
 page: episode
-pageHash: 03d24cb813012f7a23eba9a6ea8349825912551e4f2a2c012bbdba9ca64afee9
+pageHash: 2f922a05c8f60b54ff3e6f9671a0d767ff9bded88f983c6e13f5e469672c6a0e
 sonora: [card:episode-rows]
 spotify: [S35]
 ---
@@ -36,9 +36,10 @@ no greyed state, so the header itself stays in colour.
 
 ## Differences
 
-- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
-  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
-  states item binds each such control or leaves it deliberately disabled.
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Matches S35: the title heads the page, the show is a link, the meta ends in time left with the bar
   that shows it, the notes clamp with "see more".
 - Changed on purpose: Resume and Play next are labelled buttons, as on Book, not one icon; Play next

@@ -365,8 +365,8 @@
         "message": "<MediaHeader> download must be one of 'idle' | 'downloading' | 'done'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='MiniPlayer'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|artist|image|playing|onTogglePlay|onOpen|platform|progress|onSeek|duration|onPrev|onNext|queueOpen|onToggleQueue|lyricsOpen|onToggleLyrics|variant|onSkipBack|onSkipForward|skipSeconds|speed|onSpeed|sleep|onSleep|key|ref|className|style|children)$/]",
-        "message": "<MiniPlayer> doesn't accept that prop. Declared props: title, artist, image, playing, onTogglePlay, onOpen, platform, progress, onSeek, duration, onPrev, onNext, queueOpen, onToggleQueue, lyricsOpen, onToggleLyrics, variant, onSkipBack, onSkipForward, skipSeconds, speed, onSpeed, sleep, onSleep."
+        "selector": "JSXOpeningElement[name.name='MiniPlayer'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|artist|image|playing|onTogglePlay|onOpen|platform|progress|onSeek|duration|onPrev|onNext|onShuffle|onRepeat|onVolume|queueOpen|onToggleQueue|lyricsOpen|onToggleLyrics|variant|onSkipBack|onSkipForward|skipSeconds|speed|onSpeed|sleep|onSleep|key|ref|className|style|children)$/]",
+        "message": "<MiniPlayer> doesn't accept that prop. Declared props: title, artist, image, playing, onTogglePlay, onOpen, platform, progress, onSeek, duration, onPrev, onNext, onShuffle, onRepeat, onVolume, queueOpen, onToggleQueue, lyricsOpen, onToggleLyrics, variant, onSkipBack, onSkipForward, skipSeconds, speed, onSpeed, sleep, onSleep."
       },
       {
         "selector": "JSXOpeningElement[name.name='MiniPlayer'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:mobile|desktop)$/]",
@@ -577,8 +577,8 @@
         "message": "<PlayerPanel> doesn't accept that prop. Declared props: open, tab, onTabChange, onClose, tabs, title, width, children."
       },
       {
-        "selector": "JSXOpeningElement[name.name='PlayerSheet'] > JSXAttribute > JSXIdentifier[name!=/^(?:open|from|onClose|zIndex|radius|background|children|key|ref|className|style|children)$/]",
-        "message": "<PlayerSheet> doesn't accept that prop. Declared props: open, from, onClose, zIndex, radius, background, children."
+        "selector": "JSXOpeningElement[name.name='PlayerSheet'] > JSXAttribute > JSXIdentifier[name!=/^(?:open|from|zIndex|radius|background|children|key|ref|className|style|children)$/]",
+        "message": "<PlayerSheet> doesn't accept that prop. Declared props: open, from, zIndex, radius, background, children."
       },
       {
         "selector": "JSXOpeningElement[name.name='PlayerSubPage'] > JSXAttribute > JSXIdentifier[name!=/^(?:platform|heading|meta|controls|footer|scroll|onClose|closeGlyph|children|key|ref|className|style|children)$/]",

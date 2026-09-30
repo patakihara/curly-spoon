@@ -1,6 +1,6 @@
 ---
 page: album
-pageHash: 3bb89f22c4af5a28e459f466c91bc9a35507114715b410f5bd690aa358b1d379
+pageHash: 18a92dee707f575f3431cd740a9e26aa7c517ac62ac35b92692f3dbefb4d7275
 sonora: [kit:mobile/album, kit:desktop/album]
 spotify: [S02, S35]
 ---
@@ -46,9 +46,10 @@ one line where the tracks would be.
 
 ## Differences
 
-- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
-  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
-  states item binds each such control or leaves it deliberately disabled.
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Matches: cover, kind line, the artist as an accent link to their page, meta and the rose Play; the playing row's equalizer bars; the
   kit's search glyph, here the backdrop's local search.
 - Changed on purpose: the album's name is the page heading and the header has no title (Sonora's

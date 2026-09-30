@@ -18,12 +18,13 @@ data class NowPlayingProps(
     val open: Boolean? = null,
     /** Mobile only: the mini player's viewport rect, so the sheet grows out of it. */
     val from: NowPlayingFrom? = null,
-    /** Collapses the sheet back to the bar, or closes the panel. */
+    /** Collapses the sheet back to the bar, or closes the panel. Without it the mobile collapse button is drawn disabled and the desktop close button is left out. */
     val onClose: (() -> Unit)? = null,
     /** Mobile only: the app bar's menu. */
     val onMore: (() -> Unit)? = null,
     /** The active tab: 'now', 'queue' or 'lyrics'. Omit to let the player own it. */
     val tab: String? = null,
+    /** With `tab` set and no handler, the tabs are drawn disabled. */
     val onTabChange: ((String) -> Unit)? = null,
     /** `spoken` drops the Lyrics tab and gives Now playing the spoken transport. */
     val variant: Variant? = null,
@@ -59,6 +60,7 @@ data class NowPlayingPlayer(
     val progress: Float? = null,
     /** Seconds, for the seek readouts. */
     val duration: Float? = null,
+    /** Every control with no handler is drawn disabled. */
     val onTogglePlay: (() -> Unit)? = null,
     /** `music` only. */
     val onPrev: (() -> Unit)? = null,
@@ -109,11 +111,12 @@ data class NowPlayingQueue(
     val played: List<QueueItem>? = null,
     /** What autoplay plays once the queue runs out, and what it continues from. */
     val autoplay: QueuePageAutoplay? = null,
-    /** Up next's Clear action, which empties it; an undo brings it back. */
+    /** Up next's Clear action, which empties it; an undo brings it back. Without it Clear is drawn disabled. */
     val onClear: (() -> Unit)? = null,
     /** Controlled edit mode. Omit to let the page keep its own. */
     val editing: Boolean? = null,
     val onEditingChange: ((Boolean) -> Unit)? = null,
+    /** Without it every row outside edit mode is drawn disabled. */
     val onPlay: ((QueueItem, Float) -> Unit)? = null,
     val onRemove: ((QueueItem, Float) -> Unit)? = null,
     /** Drag reorder, by index into `items`. */

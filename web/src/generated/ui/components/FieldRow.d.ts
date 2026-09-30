@@ -8,6 +8,7 @@ export interface FieldRowProps {
   placeholder?: string;
   value?: string;
   platform?: 'desktop' | 'mobile';
+  /** Without it the field is drawn disabled. */
   onChange?: (next: string) => void;
 }
 export declare function FieldRow(props: FieldRowProps): JSX.Element;

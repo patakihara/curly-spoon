@@ -23,12 +23,15 @@ data class FeatureCardProps(
     val explicit: Boolean? = null,
     /** The save control shows this state. */
     val saved: Boolean? = null,
+    /** Without it its button is left out. */
     val onSave: (() -> Unit)? = null,
     /**
      * Omit for an audiobook: a sample is the only playback a preview offers there, so when this is
      * absent no play control is rendered at all.
+     * Without it its button is left out.
      */
     val onPlay: (() -> Unit)? = null,
+    /** Without it its button is left out. */
     val onMore: (() -> Unit)? = null,
     /** A PreviewButton, rendered at the start of the bottom actions row. */
     val preview: (@Composable () -> Unit)? = null,

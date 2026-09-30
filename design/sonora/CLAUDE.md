@@ -32,7 +32,7 @@ Never hand-edit `export/web/*`, `export/android/*` or `export/component-api.md` 
 
 - Components read tokens; nothing hardcodes a colour, duration, easing curve or icon size.
 - Motion names a role (`--duration-fast` etc.), never a number, and uses `--ease-standard`.
-- Scrims over artwork are `--scrim*`/`--on-scrim`; surface washes are `--surface-hover`.
+- Scrims over artwork are `--scrim*`/`--on-scrim`; hover, focus and press washes are `StateLayer`'s.
 - Every component has a sibling `.d.ts` — it is the source for `export/component-api.md`, so document
   props there, not only in the JSX.
 

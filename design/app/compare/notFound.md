@@ -1,6 +1,6 @@
 ---
 page: notFound
-pageHash: 25e2cd56bdb9a7e94a191a81b043414d89530ccd0b9ce28fc2098651c22b28f5
+pageHash: f0ef4e6823157c232fda493f1777fb30289f1299cedb1d77ae76e3b8c415e683
 sonora: [none]
 ---
 
@@ -26,9 +26,10 @@ library.", and "Go to Browse". It binds no data; its placeholder is empty.
 
 ## Differences
 
-- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
-  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
-  states item binds each such control or leaves it deliberately disabled.
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Matches the Empty State card: glyph, heading, line and button, centred in the front layer.
 - Changed on purpose: the close control and "Go to Browse" both lead away; the close returns to
   the opener, as every closing page does, and the button is the way back nav.json names.

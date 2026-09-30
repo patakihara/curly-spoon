@@ -12,7 +12,7 @@ function Demo(){
   return <div style={{position:'relative',width:360,height:740,overflow:'hidden',borderRadius:32,background:'var(--surface-bg)'}}>
     <NowPlaying platform="mobile" open variant="music" tab="now"
       track={{title:'Tidal Lines',artist:'The Nebula Collective',context:'Playing from Driftwave'}}
-      player={{playing:true,progress:0.42,duration:214,sleep:'Off'}}/>
+      player={{playing:true,progress:0.42,duration:214,sleep:'Off'}} onClose={() => {}} onMore={() => {}} onTabChange={() => {}}/>
   </div>;
 }
 function Themed(){

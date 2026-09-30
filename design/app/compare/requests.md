@@ -1,6 +1,6 @@
 ---
 page: requests
-pageHash: 410ff3ae59fbd0b4b0b57b1d378a123bca20a3fb7f153d27959c8a3d800f1c2e
+pageHash: c00afa4df12188e01f2e945de3c5e391f1425c2ec29dd09ad89d357c425c111a
 sonora: [none]
 ---
 
@@ -40,9 +40,10 @@ is where things are requested, as Sonora's `EmptyState`.
 
 ## Differences
 
-- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
-  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
-  states item binds each such control or leaves it deliberately disabled.
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Changed on purpose: a row ends in its action (Cancel or Retry) as an `IconButton`, where the
   card's rows act only through the art's hover overlay, which a phone does not have.
 - Changed on purpose: the statuses follow the plan's vocabulary: "Downloading · 38%" rather than

@@ -10,8 +10,8 @@
 const { SettingRow } = window.SonoraDesignSystem_6c1435;
 function Demo(){
   return <div style={{display:'flex',flexDirection:'column',gap:8,maxWidth:520}}>
-    <SettingRow title="Auto-download requests" sub="Fetch approved requests as soon as a source appears." checked platform="desktop"/>
-    <SettingRow title="Wi-Fi only" sub="Pause transfers on metered connections." checked={false} platform="mobile"/>
+    <SettingRow title="Auto-download requests" sub="Fetch approved requests as soon as a source appears." checked platform="desktop" onChange={() => {}}/>
+    <SettingRow title="Wi-Fi only" sub="Pause transfers on metered connections." checked={false} platform="mobile" onChange={() => {}}/>
   </div>;
 }
 function Themed(){

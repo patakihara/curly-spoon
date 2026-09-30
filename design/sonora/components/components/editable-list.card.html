@@ -16,7 +16,7 @@ const QUEUE = [
 ];
 function Demo(){
   return <div style={{maxWidth:480}}>
-    <EditableList items={QUEUE} editing actionLabel="Remove" hint="Select songs to remove" renderRow={({ item, key, selected, editing, toggle, drag }) => <QueueRow key={key} title={item.title} sub={item.sub} time={item.time} editing={editing} selected={selected} onSelectToggle={toggle} {...drag}/>}/>
+    <EditableList items={QUEUE} editing actionLabel="Remove" hint="Select songs to remove" renderRow={({ item, key, selected, editing, toggle, drag }) => <QueueRow key={key} title={item.title} sub={item.sub} time={item.time} editing={editing} selected={selected} onSelectToggle={toggle} {...drag} onClick={() => {}}/>} onRemoveSelected={() => {}}/>
   </div>;
 }
 function Themed(){

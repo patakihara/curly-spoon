@@ -10,5 +10,6 @@ data class FieldRowProps(
     val placeholder: String? = null,
     val value: String? = null,
     val platform: Platform? = null,
+    /** Without it the field is drawn disabled. */
     val onChange: ((String) -> Unit)? = null,
 )

@@ -1,10 +1,12 @@
 import React from 'react';
 import { ScrollArea } from './ScrollArea.jsx';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
 /** Side sheet: a full-height panel beside the bar+content column, animating open from zero width. Its header matches the app bar strip's height, so the title lines up with the bar's. */
 export function SideSheet({ open = false, title, onClose, children, width = 'var(--side-sheet-width)', side = 'right', closeGlyph = 'close' }) {
   const right = side !== 'left';
+  const StateLayer = NS().StateLayer;
   const ease = 'var(--duration-medium) var(--ease-standard)';
   return (
     <div style={sx(
@@ -22,7 +24,7 @@ export function SideSheet({ open = false, title, onClose, children, width = 'var
               <div style={sx('flex:1;min-width:0;padding-right:44px;font-family:var(--font-heading);font-weight:var(--weight-super-strong);font-size:var(--h3-size);color:var(--surface-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{title}</div>
             </div>
             {onClose && (
-              <button onClick={onClose} aria-label={'Close ' + (title || 'panel')} style={sx("position:absolute;top:var(--spacing-md);right:var(--spacing-md);width:40px;height:40px;border:none;border-radius:50%;background:transparent;color:var(--surface-fg-muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-family:'Material Symbols Rounded';font-size:var(--icon-sm)")}>{closeGlyph}</button>
+              <button className="sn-int" onClick={onClose} aria-label={'Close ' + (title || 'panel')} style={sx("position:absolute;top:var(--spacing-md);right:var(--spacing-md);width:40px;height:40px;border:none;border-radius:50%;background:transparent;color:var(--surface-fg-muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-family:'Material Symbols Rounded';font-size:var(--icon-sm)")}>{closeGlyph}{StateLayer && <StateLayer />}</button>
             )}
           </div>
         )}

@@ -12,5 +12,6 @@ data class BottomNavItem(
 data class BottomNavProps(
     val items: List<BottomNavItem>,
     val active: String,
+    /** Without it every destination is drawn disabled. */
     val onChange: ((String) -> Unit)? = null,
 )

@@ -57,8 +57,8 @@ function Feed(){
     {FEED.map((s, i) => (
       <Section key={s.title} title={s.title} platform="desktop" last={i === FEED.length - 1}>
         {s.cards
-          ? <Shelf>{s.cards.map((c) => <MediaCard key={c.title} size="sm" {...c} />)}</Shelf>
-          : <div>{s.rows.map((r) => <ResultRow key={r.title} {...r} />)}</div>}
+          ? <Shelf>{s.cards.map((c) => <MediaCard key={c.title} size="sm" {...c} onClick={() => {}} />)}</Shelf>
+          : <div>{s.rows.map((r) => <ResultRow key={r.title} {...r} onClick={() => {}} />)}</div>}
       </Section>
     ))}
   </div>;
@@ -71,7 +71,7 @@ function Live(){
   const [seen, setSeen] = React.useState('');
   return <div style={{height:450}}>
     <BackdropShell platform="desktop" scrollKey="browse"
-      rail={<NavRail items={NAV} active="browse" expanded={false} />}
+      rail={<NavRail items={NAV} active="browse" expanded={false} onChange={() => {}} />}
       back={<BackLayer title="Browse" trailing={<Tag>{'onSpyChange → ' + (seen ? '“' + seen + '”' : 'no title')}</Tag>} />}
       subheader={<FrontLayerHeader spy sections={TITLES} onSpyChange={setSeen} />}>
       <Feed />
@@ -120,7 +120,7 @@ function Demo(){
         <FrontLayer scroll={false} subheader={
           <FrontLayerHeader spy spyTitle="Recently added" progress={1}>
             <div style={{display:'flex',justifyContent:'flex-end'}}>
-              <ButtonGroup tone="play" items={['All','Music','Books']} value="All" />
+              <ButtonGroup tone="play" items={['All','Music','Books']} value="All" onChange={() => {}} />
             </div>
           </FrontLayerHeader>}>
           <div style={{height:'var(--spacing-2xl)'}} />

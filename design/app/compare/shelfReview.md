@@ -1,6 +1,6 @@
 ---
 page: shelfReview
-pageHash: 33aee28d44a412ed9b391b88e285217597121a4b2211b394474d845c38094425
+pageHash: 7f7ec062ccca1b99b53bd9ddd5f9d51e427c94c0f1e0d6ff5cb4b6e373a5deec
 sonora: [none]
 ---
 
@@ -26,9 +26,10 @@ you finished The Salt Cartographer, Popular with listeners of The Long Read.
 
 ## Differences
 
-- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
-  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
-  states item binds each such control or leaves it deliberately disabled.
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Changed on purpose: a list, not Browse's card carousels, so every reason is readable at once;
   `ResultRow` gained `detail`, a line under the meta that wraps to two lines, for the reason.
 - Matches: each shelf's header is the Contextual Headers card's extended `SectionHeader`, eyebrow

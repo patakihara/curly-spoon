@@ -11,7 +11,7 @@ const { LyricsPage } = window.SonoraDesignSystem_6c1435;
 const LINES = ['Tidal lines on the shore','Static coast forevermore','Horizon caught the static hush','Radio waves in gentle rush','Counting seconds in the wire','Every signal that we hire'];
 function Demo(){
   return <div style={{position:'relative',width:360,height:560,display:'flex',flexDirection:'column',overflow:'hidden',borderRadius:'var(--radius-lg)',background:'var(--surface-bg)'}}>
-    <LyricsPage platform="mobile" heading={null} title="Tidal Lines" artist="The Nebula Collective" lines={LINES} activeIndex={2} syncMode="sync"/>
+    <LyricsPage platform="mobile" heading={null} title="Tidal Lines" artist="The Nebula Collective" lines={LINES} activeIndex={2} syncMode="sync" onSyncModeChange={() => {}}/>
   </div>;
 }
 function Themed(){

@@ -22,7 +22,7 @@ const Tag = ({children}) => <span style={{flexShrink:0,padding:'3px 10px',border
 const Caption = ({children}) => <div style={{fontFamily:'var(--font-body)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg-muted)',minHeight:18}}>{children}</div>;
 
 const Queue = () => <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-xs)'}}>
-  {QUEUED.map((t) => <ResultRow key={t.title} title={t.title} meta={t.meta} />)}
+  {QUEUED.map((t) => <ResultRow key={t.title} title={t.title} meta={t.meta} onClick={() => {}} />)}
 </div>;
 
 /* `behind` is handed plain panel content rather than a SideSheet: a panel at the lower elevation
@@ -48,7 +48,7 @@ function Frame({mode}){
       sheet={behind ? <PanelBody/> : <SideSheet open title="Queue"><Queue/></SideSheet>}>
       <div style={{padding:'var(--spacing-sm) var(--grid-margin)',display:'flex',flexDirection:'column',gap:'var(--spacing-xs)'}}>
         <SectionHeader title="Recently played" platform="desktop" />
-        {PLAYED.map((t) => <ResultRow key={t.title} title={t.title} meta={t.meta} />)}
+        {PLAYED.map((t) => <ResultRow key={t.title} title={t.title} meta={t.meta} onClick={() => {}} />)}
       </div>
     </BackdropShell>
   </div>;

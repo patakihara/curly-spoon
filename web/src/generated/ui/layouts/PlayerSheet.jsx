@@ -6,7 +6,7 @@ import React from 'react';
  * came from. Give it the bar's viewport rect as `from` and the sheet grows out of exactly that
  * rectangle; without one it slides up from the bottom edge. Closing plays the same move in reverse.
  */
-export function PlayerSheet({ open = false, from, onClose, children, zIndex = 30, radius = 'var(--radius-lg)', background = 'var(--surface-bg)' }) {
+export function PlayerSheet({ open = false, from, children, zIndex = 30, radius = 'var(--radius-lg)', background = 'var(--surface-bg)' }) {
   const ref = React.useRef(null);
   const [box, setBox] = React.useState(null);
   const [shown, setShown] = React.useState(open);

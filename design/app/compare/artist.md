@@ -1,6 +1,6 @@
 ---
 page: artist
-pageHash: ba5cf540c130d814609f964e434c91aef63ad731e38a66ce45b05b428d96b801
+pageHash: 8c115aff998684fa860976868710dd6e124076e26d9acaef05b30110173f8e82
 sonora: [none]
 spotify: [S41]
 ---
@@ -39,9 +39,10 @@ shows the whole catalogue greyed and requestable.
 
 ## Differences
 
-- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
-  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
-  states item binds each such control or leaves it deliberately disabled.
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Matches S41: the round image and the name leading the page, round cards for other artists.
 - Changed on purpose: on desktop the header is the image with a caption centred beside it, not
   S41's wide photo over the name; the name is already the heading, and nav.json's header is only

@@ -19,8 +19,8 @@ import { decode, distance } from './pixels';
  * action, or with `disabled` set, is disabled and ignores presses.
  */
 
-/** The levels whose controls draw Material's states so far; the others join later in the item. */
-const LEVELS = ['basic'];
+/** Every level of Sonora: each control at each level draws Material's states. */
+const LEVELS = ['basic', 'components', 'layouts'];
 
 const sonora = fileURLToPath(new URL('../../design/sonora/components', import.meta.url));
 
@@ -31,10 +31,10 @@ interface Drawing {
   layer: Locator;
 }
 
-async function open(page: Page) {
-  // Tall enough that nothing scrolls: every box measured stays where the screenshot looks.
-  await page.setViewportSize({ width: 1100, height: 3000 });
-  await page.goto('/states.html', { waitUntil: 'networkidle' });
+/** The fixture with one entry drawn, so every box measured stays where the screenshot looks. */
+async function open(page: Page, entry: StateEntry) {
+  await page.setViewportSize({ width: 1100, height: 900 });
+  await page.goto(`/states.html?only=${entry.name}`, { waitUntil: 'networkidle' });
   await page.evaluate(() => document.fonts.ready);
 }
 
@@ -72,14 +72,20 @@ const level = (layer: Locator) =>
 
 const ripples = (layer: Locator) => layer.locator('[data-sn-ripple]').count();
 
-/** Focus from the keyboard: Tab from the off-screen stop just before the drawing. */
-async function tabInto(page: Page, cell: Locator) {
+/**
+ * Focus from the keyboard: Tab from the off-screen stop just before the drawing, on through the
+ * drawing's own stops until one lies in `host`. Whether Tab reached it before leaving the drawing.
+ */
+async function tabInto(page: Page, cell: Locator, host: Locator) {
   await page.mouse.move(0, 0);
   await cell.locator('xpath=preceding-sibling::button[@data-sentinel][1]').focus();
-  await page.keyboard.press('Tab');
+  for (let stop = 0; stop < 16; stop++) {
+    await page.keyboard.press('Tab');
+    if (await host.evaluate((el) => el.contains(document.activeElement))) return true;
+    if (!(await cell.evaluate((el) => el.contains(document.activeElement)))) return false;
+  }
+  return false;
 }
-
-const within = (host: Locator) => host.evaluate((el) => el.contains(document.activeElement));
 
 type Box = { x: number; y: number; width: number; height: number };
 
@@ -109,9 +115,9 @@ const box = async (l: Locator) => {
 test('[M0.states/a] every interactive Sonora component shows enabled, disabled, hovered, focused and pressed, all different', async ({
   page,
 }) => {
-  test.setTimeout(300_000);
+  test.setTimeout(STATE_ENTRIES.length * 15_000);
   for (const entry of STATE_ENTRIES) {
-    await open(page);
+    await open(page, entry);
     const { cell, host, layer } = await drawing(page, entry, 'action');
     const at = await box(host);
 
@@ -123,8 +129,7 @@ test('[M0.states/a] every interactive Sonora component shows enabled, disabled, 
     await expect.poll(() => level(layer), `${entry.name} hovered`).toBeCloseTo(0.08, 3);
     const hovered = hash((await shot(page, at)).png);
 
-    await tabInto(page, cell);
-    expect(await within(host), `${entry.name} takes focus from Tab`).toBe(true);
+    expect(await tabInto(page, cell, host), `${entry.name} takes focus from Tab`).toBe(true);
     await expect.poll(() => level(layer), `${entry.name} focused`).toBeCloseTo(0.1, 3);
     const focused = hash((await shot(page, at)).png);
     await cell.locator('xpath=preceding-sibling::button[@data-sentinel][1]').focus();
@@ -136,14 +141,15 @@ test('[M0.states/a] every interactive Sonora component shows enabled, disabled, 
     const pressed = hash((await shot(page, at)).png);
     await page.mouse.up();
 
-    const off = await drawing(page, entry, entry.disabled ? 'disabled' : 'none');
-    await page.mouse.move(0, 0);
-    const disabled = hash((await shot(page, await box(off.host))).png);
-
+    // A component that leaves its control out without an action has no disabled look to compare.
+    const states: Record<string, string> = { enabled, hovered, focused };
+    if (!entry.omits || entry.disabled) {
+      const off = await drawing(page, entry, entry.disabled ? 'disabled' : 'none');
+      await page.mouse.move(0, 0);
+      states.disabled = hash((await shot(page, await box(off.host))).png);
+    }
     // Text fields and sliders have no pressed state of their own: a press there is a focus.
-    const states = entry.ripple
-      ? { enabled, disabled, hovered, focused, pressed }
-      : { enabled, disabled, hovered, focused };
+    if (entry.ripple) states.pressed = pressed;
     const same = Object.entries(states).filter(([, h], i, all) =>
       all.some(([, other], j) => j !== i && other === h),
     );
@@ -155,15 +161,15 @@ test('[M0.states/a] every interactive Sonora component shows enabled, disabled, 
 });
 
 test('[M0.states/a] focus draws an outer ring', async ({ page }) => {
-  test.setTimeout(180_000);
+  test.setTimeout(STATE_ENTRIES.length * 8_000);
   for (const entry of STATE_ENTRIES) {
-    await open(page);
-    const { cell, layer } = await drawing(page, entry, 'action');
+    await open(page, entry);
+    const { cell, host, layer } = await drawing(page, entry, 'action');
     await page.mouse.move(0, 0);
     const at = await box(layer);
     const rest = await shot(page, at);
 
-    await tabInto(page, cell);
+    expect(await tabInto(page, cell, host), `${entry.name} takes focus from Tab`).toBe(true);
     const outline = await layer.evaluate((el) => {
       const s = getComputedStyle(el);
       return { style: s.outlineStyle, width: s.outlineWidth, offset: s.outlineOffset };
@@ -200,9 +206,9 @@ test('[M0.states/a] focus draws an outer ring', async ({ page }) => {
 });
 
 test('[M0.states/a] a press ripples from the pointer without changing shape', async ({ page }) => {
-  test.setTimeout(180_000);
+  test.setTimeout(STATE_ENTRIES.length * 8_000);
   for (const entry of STATE_ENTRIES.filter((e) => e.ripple)) {
-    await open(page);
+    await open(page, entry);
     const { host, layer } = await drawing(page, entry, 'action');
     const at = await box(host);
     const px = at.x + at.width * 0.25;
@@ -292,17 +298,27 @@ test('[M0.states/a] a press ripples from the pointer without changing shape', as
 test('[M0.states/c] a control with no action, or with disabled set, is disabled and ignores presses', async ({
   page,
 }) => {
-  test.setTimeout(300_000);
+  test.setTimeout(STATE_ENTRIES.length * 15_000);
   for (const entry of STATE_ENTRIES) {
-    const variants: Variant[] = entry.disabled ? ['none', 'disabled'] : ['none'];
+    if (entry.omits) {
+      await open(page, entry);
+      const none = page.locator(`[data-states="${entry.name}"][data-variant="none"]`);
+      await expect(
+        none.locator(entry.target ?? '.sn-int'),
+        `${entry.name} with no action leaves its control out`,
+      ).toHaveCount(0);
+    }
+    const variants: Variant[] = [
+      ...(entry.omits ? [] : (['none'] as const)),
+      ...(entry.disabled ? (['disabled'] as const) : []),
+    ];
     for (const variant of variants) {
       const what = `${entry.name} (${variant})`;
-      await open(page);
+      await open(page, entry);
       const { cell, host, control, layer } = await drawing(page, entry, variant);
       await expect(control, `${what} is disabled`).toBeDisabled();
 
-      await tabInto(page, cell);
-      expect(await within(host), `${what} is skipped by Tab`).toBe(false);
+      expect(await tabInto(page, cell, host), `${what} is skipped by Tab`).toBe(false);
 
       await control.click({ force: true });
       await page.keyboard.type('a');
@@ -326,7 +342,7 @@ test('[M0.states/c] a control with no action, or with disabled set, is disabled 
       expect(alpha, `${what}'s content is at 38%`).toBeCloseTo(0.38, 2);
     }
 
-    await open(page);
+    await open(page, entry);
     const { control } = await drawing(page, entry, 'action');
     await control.click();
     await page.keyboard.type('a');

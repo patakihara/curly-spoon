@@ -24,6 +24,7 @@ export interface NavRailProps {
   footerItems?: NavRailItem[];
   /** Key of the active item, in `items` or `footerItems`. */
   active?: string;
+  /** Without it every destination is drawn disabled. */
   onChange?: (key: string) => void;
   expanded?: boolean;
   /** Shows the menu toggle above the items when provided, leaving `expanded` to the caller. */

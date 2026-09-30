@@ -5,6 +5,7 @@ export interface SettingRowProps {
   sub?: string;
   checked?: boolean;
   platform?: 'desktop' | 'mobile';
+  /** Without it the switch is drawn disabled. */
   onChange?: (next: boolean) => void;
 }
 export declare function SettingRow(props: SettingRowProps): JSX.Element;

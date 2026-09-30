@@ -11,13 +11,16 @@ data class QueueRowProps(
     /** Highlights the row as the one now playing. */
     val current: Boolean? = null,
     val platform: Platform? = null,
+    /** Without it the row is drawn disabled. */
     val onClick: (() -> Unit)? = null,
+    /** Without it the remove button is left out. */
     val onRemove: (() -> Unit)? = null,
     /** Show the drag handle. Off for a read-only queue that reorders only in edit mode. */
     val handle: Boolean? = null,
     /** Edit mode: adds the leading select control and drops the duration. */
     val editing: Boolean? = null,
     val selected: Boolean? = null,
+    /** Without it the select control is drawn disabled. */
     val onSelectToggle: (() -> Unit)? = null,
     val draggable: Boolean? = null,
     val onDragStart: (() -> Unit)? = null,

@@ -34,6 +34,7 @@ export interface MediaCardProps {
    * ones as a 2×2 mosaic, fewer as the first alone, none as the plain tile (CoverArt's `covers`).
    */
   covers?: string[];
+  /** Without it the card is drawn disabled. */
   onClick?: () => void;
   /**
    * Requests the item. Given with `absent` and no `status`, a tap requests it instead of calling
@@ -41,7 +42,7 @@ export interface MediaCardProps {
    * Opening the item stays a verb, Open, in a corner menu over the art.
    */
   onRequest?: () => void;
-  /** Renders a corner menu button (top-right) — hover/focus-revealed on desktop, always visible on mobile. */
+  /** Renders a corner menu button (top-right) — hover/focus-revealed on desktop, always visible on mobile. Without it the corner menu is left out. */
   onMore?: (e?: any) => void;
   /** Muted line ABOVE the title at text-xs — the type or genre ("Playlist", "Album", "Society & Culture"). Leaves `sub` untouched. */
   eyebrow?: string;

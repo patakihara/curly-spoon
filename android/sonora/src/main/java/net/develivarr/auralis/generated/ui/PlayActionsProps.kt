@@ -14,10 +14,11 @@ package net.develivarr.auralis.generated.ui
  * `always` or use a long-press menu instead — there is no hover to reveal them.
  */
 data class PlayActionsProps(
-    /** Insert directly after the current track. */
+    /** Insert directly after the current track. Without it its button is drawn disabled. */
     val onNext: (() -> Unit)? = null,
+    /** Without it its button is drawn disabled. */
     val onPlay: (() -> Unit)? = null,
-    /** Append to the end of the queue. */
+    /** Append to the end of the queue. Without it its button is drawn disabled. */
     val onLast: (() -> Unit)? = null,
     /** Swaps the centre glyph to pause. */
     val playing: Boolean? = null,

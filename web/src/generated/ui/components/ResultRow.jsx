@@ -3,12 +3,15 @@ import React from 'react';
 import { Badge } from '../basic/Badge.jsx';
 import { CoverArt } from '../basic/CoverArt.jsx';
 import { ProgressRing } from '../basic/ProgressRing.jsx';
+import { StateLayer } from '../basic/StateLayer.jsx';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+// Enter and Space press it as a click does, unless they come from a control inside it.
+const keys=(fn)=>(e)=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();fn(e);}};
 
 if (typeof document !== 'undefined' && !document.getElementById('sonora-resultrow-css')) {
   const el = document.createElement('style');
   el.id = 'sonora-resultrow-css';
-  el.textContent = '.rr-act{opacity:0;transition:opacity var(--duration-quick) ease-in-out}.rr-art:hover .rr-act,.rr-art[data-always="true"] .rr-act{opacity:1}@keyframes rr-bar{0%,100%{transform:scaleY(.25)}50%{transform:scaleY(1)}}.rr-bars{display:flex;align-items:center;gap:2px;height:16px;flex-shrink:0}.rr-bars i{display:block;width:3px;height:16px;border-radius:2px;background:var(--play-ink);transform-origin:center;animation:rr-bar .9s ease-in-out infinite}.rr-bars i:nth-child(2){animation-duration:.62s}.rr-bars i:nth-child(3){animation-duration:1.15s}@media (prefers-reduced-motion:reduce){.rr-bars i{animation:none;transform:scaleY(.6)}}';
+  el.textContent = '.rr-act{opacity:0;transition:opacity var(--duration-quick) ease-in-out}.rr-art:hover .rr-act,.rr-act:focus-visible,.rr-art[data-always="true"] .rr-act{opacity:1}@keyframes rr-bar{0%,100%{transform:scaleY(.25)}50%{transform:scaleY(1)}}.rr-bars{display:flex;align-items:center;gap:2px;height:16px;flex-shrink:0}.rr-bars i{display:block;width:3px;height:16px;border-radius:2px;background:var(--play-ink);transform-origin:center;animation:rr-bar .9s ease-in-out infinite}.rr-bars i:nth-child(2){animation-duration:.62s}.rr-bars i:nth-child(3){animation-duration:1.15s}@media (prefers-reduced-motion:reduce){.rr-bars i{animation:none;transform:scaleY(.6)}}';
   document.head.appendChild(el);
 }
 
@@ -23,10 +26,12 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
   const queued = pct === null && st.indexOf('queued') > -1;
   const spinning = pct === null && st.indexOf('searching') > -1;
   const failed = pct === null && (st.indexOf('failed') > -1 || st.indexOf('error') > -1);
+  const off = !onClick;
+  const act = onAction || onClick;
   // No scrim without something to put on it — a bare dark square reads as a broken cover, not as work in flight.
   const ring = (pct !== null || spinning) && !!ProgressRing;
   const dimmed = ring || queued || failed;
-  const showAction = !!(onAction || onClick) && !(mobile && dimmed);
+  const showAction = !!act && !(mobile && dimmed);
   const badgeTone = { library: 'accent', request: 'warning', progress: 'warning', error: 'error' }[tone || 'library'] || 'accent';
   const nowPlaying = st === 'playing';
   // On a phone the title shares its line with the pill and any trailing control, so a status
@@ -39,7 +44,9 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
   const numbered = typeof number === 'number';
   const lead = numbered ? (mobile ? 28 : 32) : 52;
   return (
-    <div onClick={onClick} style={sx('position:relative;display:flex;align-items:center;gap:' + (mobile ? '12px' : '16px') + ';padding:' + (mobile ? '8px 4px' : '10px 12px') + ';border-radius:var(--radius-xs);cursor:pointer')}>
+    <div className="sn-int" role="button" tabIndex={off ? -1 : 0} aria-disabled={off}
+      onClick={off ? undefined : onClick} onKeyDown={off ? undefined : keys(onClick)}
+      style={sx('position:relative;display:flex;align-items:center;gap:' + (mobile ? '12px' : '16px') + ';padding:' + (mobile ? '8px 4px' : '10px 12px') + ';border-radius:var(--radius-xs);cursor:pointer')}>
       {numbered ? (
         <div style={sx('width:' + lead + 'px;flex-shrink:0;text-align:center;font-size:var(--text-md);font-variant-numeric:tabular-nums;color:' + (nowPlaying ? 'var(--play-ink)' : muted))}>{number}</div>
       ) : (
@@ -48,12 +55,15 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
           {CoverArt && <CoverArt src={image} />}
         </div>
         {showAction && (
-          <div className="rr-act" onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); (onAction || onClick || function () {})(e); }}
+          <div className="rr-act sn-int" role="button" tabIndex={0} onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); act(e); }}
+            onKeyDown={keys((e) => { e.stopPropagation(); act(e); })}
+            aria-label={failed ? 'Retry' : (spinning || queued ? 'Cancel request' : 'Play')}
             title={failed ? 'Retry' : (spinning || queued ? 'Cancel request' : 'Play')}
             style={sx('position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;border-radius:' + (mobile ? '8px' : '6px') + ';background:var(--scrim-strong)')}>
             <span style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 1,'wght' 400;font-size:" + (mobile ? '26px' : '24px') + ';color:var(--on-scrim)')}>
               {failed ? 'refresh' : (spinning || queued ? 'close' : (actionGlyph === 'downloading' ? 'pause' : (actionGlyph || 'play_arrow')))}
             </span>
+            {StateLayer && <StateLayer />}
           </div>
         )}
         {dimmed && (
@@ -78,6 +88,7 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
       {!mobile && trailing}
       {/* Inset to the text column, so the artwork column reads as one continuous edge. */}
       {divider && <div aria-hidden="true" style={sx('position:absolute;bottom:0;right:' + (mobile ? '4px' : '12px') + ';left:' + ((mobile ? 16 : 28) + lead) + 'px' + ';height:1px;background:var(--surface-border)')} />}
+      {StateLayer && <StateLayer disabled={off} />}
     </div>
   );
 }

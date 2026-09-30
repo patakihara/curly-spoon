@@ -44,11 +44,12 @@ data class QueuePageProps(
     val played: List<QueueItem>? = null,
     /** What autoplay plays once the queue runs out, and what it continues from. */
     val autoplay: QueuePageAutoplay? = null,
-    /** Up next's Clear action, which empties it; an undo brings it back. */
+    /** Up next's Clear action, which empties it; an undo brings it back. Without it Clear is drawn disabled. */
     val onClear: (() -> Unit)? = null,
     /** Controlled edit mode. Omit to let the page keep its own. */
     val editing: Boolean? = null,
     val onEditingChange: ((Boolean) -> Unit)? = null,
+    /** Without it every row outside edit mode is drawn disabled. */
     val onPlay: ((QueueItem, Float) -> Unit)? = null,
     val onRemove: ((QueueItem, Float) -> Unit)? = null,
     /** Drag reorder, by index into `items`. */

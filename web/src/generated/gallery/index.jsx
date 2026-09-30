@@ -22,7 +22,7 @@ export const gallery = [
   {
     name: 'ArtistCard',
     card: 'components/artist-card.card.html',
-    render: () => (<div style={{display:'flex',gap:16,alignItems:'center',flexWrap:'wrap'}}><ArtistCard title="Natasha Beller" sub="Artist" width="160px"/></div>),
+    render: () => (<div style={{display:'flex',gap:16,alignItems:'center',flexWrap:'wrap'}}><ArtistCard title="Natasha Beller" sub="Artist" width="160px" onClick={() => {}}/></div>),
   },
   {
     name: 'BackLayer',
@@ -33,15 +33,15 @@ export const gallery = [
     name: 'BackdropShell',
     card: 'layouts/backdrop-shell.card.html',
     render: () => (<div style={{height:520}}><BackdropShell platform="desktop"
-      rail={<NavRail items={[{key:'browse',label:'Browse',icon:'explore'},{key:'music',label:'Music',icon:'speaker'},{key:'shows',label:'Podcasts',icon:'podcasts'}]} active="music" expanded={false}/>}
+      rail={<NavRail items={[{key:'browse',label:'Browse',icon:'explore'},{key:'music',label:'Music',icon:'speaker'},{key:'shows',label:'Podcasts',icon:'podcasts'}]} active="music" expanded={false} onChange={() => {}}/>}
       back={<BackLayer title="Music"/>}>
       <PageBody platform="desktop">
         <Section title="Recently added" platform="desktop" last>
           <LayoutGrid platform="desktop">
-            <MediaCard title="Driftwave" sub="The Nebula Collective"/>
-            <MediaCard title="Static Coast" sub="Echo Fields"/>
-            <MediaCard title="Hollow Fields" sub="Halcyon Bloom"/>
-            <MediaCard title="Signal Fires" sub="The Nebula Collective"/>
+            <MediaCard title="Driftwave" sub="The Nebula Collective" onClick={() => {}}/>
+            <MediaCard title="Static Coast" sub="Echo Fields" onClick={() => {}}/>
+            <MediaCard title="Hollow Fields" sub="Halcyon Bloom" onClick={() => {}}/>
+            <MediaCard title="Signal Fires" sub="The Nebula Collective" onClick={() => {}}/>
           </LayoutGrid>
         </Section>
       </PageBody>
@@ -55,7 +55,7 @@ export const gallery = [
   {
     name: 'BottomNav',
     card: 'layouts/backdrop-app-bar.card.html',
-    render: () => (<BottomNav platform="mobile" items={([{key:'browse',label:'Browse',icon:'explore'},{key:'music',label:'Music',icon:'album'},{key:'books',label:'Books',icon:'book_2'},{key:'podcasts',label:'Podcasts',icon:'podcasts'},{key:'search',label:'Search',icon:'search'}])} active="browse" />),
+    render: () => (<BottomNav platform="mobile" items={([{key:'browse',label:'Browse',icon:'explore'},{key:'music',label:'Music',icon:'album'},{key:'books',label:'Books',icon:'book_2'},{key:'podcasts',label:'Podcasts',icon:'podcasts'},{key:'search',label:'Search',icon:'search'}])} active="browse" onChange={() => {}} />),
   },
   {
     name: 'Button',
@@ -85,7 +85,7 @@ export const gallery = [
   {id:2,title:'Static Coast',sub:'The Nebula Collective',time:'3:18'},
   {id:3,title:'Empty Rooms',sub:'Echo Fields',time:'5:01'},
   {id:4,title:'Signal Fires',sub:'The Nebula Collective',time:'3:51'},
-])} editing actionLabel="Remove" hint="Select songs to remove" renderRow={({ item, key, selected, editing, toggle, drag }) => <QueueRow key={key} title={item.title} sub={item.sub} time={item.time} editing={editing} selected={selected} onSelectToggle={() => {}} {...drag}/>}/></div>),
+])} editing actionLabel="Remove" hint="Select songs to remove" renderRow={({ item, key, selected, editing, toggle, drag }) => <QueueRow key={key} title={item.title} sub={item.sub} time={item.time} editing={editing} selected={selected} onSelectToggle={() => {}} {...drag} onClick={() => {}}/>} onRemoveSelected={() => {}}/></div>),
   },
   {
     name: 'EmptyState',
@@ -101,7 +101,7 @@ export const gallery = [
           meta={["12K plays", "3 Aug 2026", "48min"]}
           finished={true}
           onPlay={() => {}}
-          divider={true}
+          divider={true} onClick={() => {}}
         /></div>),
   },
   {
@@ -132,7 +132,7 @@ export const gallery = [
   {
     name: 'FieldRow',
     card: 'basic/inputs-switches-sliders.card.html',
-    render: () => (<div style={{display:'flex',flexDirection:'column',gap:18,width:340}}><FieldRow label="Library folder" platform="mobile" value="/storage/Sonora" /></div>),
+    render: () => (<div style={{display:'flex',flexDirection:'column',gap:18,width:340}}><FieldRow label="Library folder" platform="mobile" value="/storage/Sonora" onChange={() => {}} /></div>),
   },
   {
     name: 'FollowButton',
@@ -145,7 +145,7 @@ export const gallery = [
     render: () => (<div style={{display:'flex',background:'var(--surface-bg-alt)',paddingTop:'var(--spacing-md)'}}><FrontLayer scroll={false} subheader={
           <FrontLayerHeader spy spyTitle="Recently added" progress={1}>
             <div style={{display:'flex',justifyContent:'flex-end'}}>
-              <ButtonGroup tone="play" items={['All','Music','Books']} value="All" />
+              <ButtonGroup tone="play" items={['All','Music','Books']} value="All" onChange={() => {}} />
             </div>
           </FrontLayerHeader>}>
           <div style={{height:'var(--spacing-2xl)'}} />
@@ -172,10 +172,10 @@ export const gallery = [
     name: 'LayoutGrid',
     card: 'layouts/backdrop-shell.card.html',
     render: () => (<LayoutGrid platform="desktop">
-            <MediaCard title="Driftwave" sub="The Nebula Collective"/>
-            <MediaCard title="Static Coast" sub="Echo Fields"/>
-            <MediaCard title="Hollow Fields" sub="Halcyon Bloom"/>
-            <MediaCard title="Signal Fires" sub="The Nebula Collective"/>
+            <MediaCard title="Driftwave" sub="The Nebula Collective" onClick={() => {}}/>
+            <MediaCard title="Static Coast" sub="Echo Fields" onClick={() => {}}/>
+            <MediaCard title="Hollow Fields" sub="Halcyon Bloom" onClick={() => {}}/>
+            <MediaCard title="Signal Fires" sub="The Nebula Collective" onClick={() => {}}/>
           </LayoutGrid>),
   },
   {
@@ -186,7 +186,7 @@ export const gallery = [
   {
     name: 'LyricsPage',
     card: 'layouts/lyrics-page.card.html',
-    render: () => (<div style={{position:'relative',width:360,height:560,display:'flex',flexDirection:'column',overflow:'hidden',borderRadius:'var(--radius-lg)',background:'var(--surface-bg)'}}><LyricsPage platform="mobile" heading={null} title="Tidal Lines" artist="The Nebula Collective" lines={(['Tidal lines on the shore','Static coast forevermore','Horizon caught the static hush','Radio waves in gentle rush','Counting seconds in the wire','Every signal that we hire'])} activeIndex={2} syncMode="sync"/></div>),
+    render: () => (<div style={{position:'relative',width:360,height:560,display:'flex',flexDirection:'column',overflow:'hidden',borderRadius:'var(--radius-lg)',background:'var(--surface-bg)'}}><LyricsPage platform="mobile" heading={null} title="Tidal Lines" artist="The Nebula Collective" lines={(['Tidal lines on the shore','Static coast forevermore','Horizon caught the static hush','Radio waves in gentle rush','Counting seconds in the wire','Every signal that we hire'])} activeIndex={2} syncMode="sync" onSyncModeChange={() => {}}/></div>),
   },
   {
     name: 'LyricsSyncButton',
@@ -207,24 +207,24 @@ export const gallery = [
   {
     name: 'MiniPlayer',
     card: 'components/spoken-transport.card.html',
-    render: () => (<div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-md)'}}><MiniPlayer platform="desktop" title="Tidal Lines" artist="The Nebula Collective" playing progress={0.42} duration={214} /></div>),
+    render: () => (<div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-md)'}}><MiniPlayer platform="desktop" title="Tidal Lines" artist="The Nebula Collective" playing progress={0.42} duration={214} onTogglePlay={() => {}} onOpen={() => {}} onSeek={() => {}} onPrev={() => {}} onNext={() => {}} onShuffle={() => {}} onRepeat={() => {}} onVolume={() => {}} onToggleQueue={() => {}} onToggleLyrics={() => {}} onSkipBack={() => {}} onSkipForward={() => {}} onSpeed={() => {}} onSleep={() => {}} /></div>),
   },
   {
     name: 'NavRail',
     card: 'layouts/backdrop-app-bar.card.html',
-    render: () => (<NavRail items={([{key:'browse',label:'Browse',icon:'explore'},{key:'music',label:'Music',icon:'album'},{key:'books',label:'Books',icon:'book_2'},{key:'podcasts',label:'Podcasts',icon:'podcasts'},{key:'search',label:'Search',icon:'search'}])} active="browse" expanded={false} />),
+    render: () => (<NavRail items={([{key:'browse',label:'Browse',icon:'explore'},{key:'music',label:'Music',icon:'album'},{key:'books',label:'Books',icon:'book_2'},{key:'podcasts',label:'Podcasts',icon:'podcasts'},{key:'search',label:'Search',icon:'search'}])} active="browse" expanded={false} onChange={() => {}} />),
   },
   {
     name: 'NowPlaying',
     card: 'layouts/now-playing.card.html',
     render: () => (<div style={{position:'relative',width:360,height:740,overflow:'hidden',borderRadius:32,background:'var(--surface-bg)'}}><NowPlaying platform="mobile" open variant="music" tab="now"
       track={{title:'Tidal Lines',artist:'The Nebula Collective',context:'Playing from Driftwave'}}
-      player={{playing:true,progress:0.42,duration:214,sleep:'Off'}}/></div>),
+      player={{playing:true,progress:0.42,duration:214,sleep:'Off'}} onClose={() => {}} onMore={() => {}} onTabChange={() => {}}/></div>),
   },
   {
     name: 'NowPlayingPage',
     card: 'layouts/now-playing-tab.card.html',
-    render: () => (<div style={{position:'relative',width:360,height:740,display:'flex',flexDirection:'column',overflow:'hidden',borderRadius:32,background:'var(--surface-bg)'}}><NowPlayingPage platform="mobile" variant="music" title="Tidal Lines" artist="The Nebula Collective" playing progress={0.42} duration={214} sleep="Off"/></div>),
+    render: () => (<div style={{position:'relative',width:360,height:740,display:'flex',flexDirection:'column',overflow:'hidden',borderRadius:32,background:'var(--surface-bg)'}}><NowPlayingPage platform="mobile" variant="music" title="Tidal Lines" artist="The Nebula Collective" playing progress={0.42} duration={214} sleep="Off" onTogglePlay={() => {}} onPrev={() => {}} onNext={() => {}} onShuffle={() => {}} onRepeat={() => {}} onSeek={() => {}} onSkipBack={() => {}} onSkipForward={() => {}} onSpeed={() => {}} onSleep={() => {}}/></div>),
   },
   {
     name: 'OverflowMenu',
@@ -241,10 +241,10 @@ export const gallery = [
     render: () => (<PageBody platform="desktop">
         <Section title="Recently added" platform="desktop" last>
           <LayoutGrid platform="desktop">
-            <MediaCard title="Driftwave" sub="The Nebula Collective"/>
-            <MediaCard title="Static Coast" sub="Echo Fields"/>
-            <MediaCard title="Hollow Fields" sub="Halcyon Bloom"/>
-            <MediaCard title="Signal Fires" sub="The Nebula Collective"/>
+            <MediaCard title="Driftwave" sub="The Nebula Collective" onClick={() => {}}/>
+            <MediaCard title="Static Coast" sub="Echo Fields" onClick={() => {}}/>
+            <MediaCard title="Hollow Fields" sub="Halcyon Bloom" onClick={() => {}}/>
+            <MediaCard title="Signal Fires" sub="The Nebula Collective" onClick={() => {}}/>
           </LayoutGrid>
         </Section>
       </PageBody>),
@@ -257,23 +257,23 @@ export const gallery = [
   {
     name: 'PlayerPanel',
     card: 'layouts/player-panel.card.html',
-    render: () => (<div style={{height:560,display:'flex',justifyContent:'flex-end',overflow:'hidden'}}><PlayerPanel open tab="now" tabs={[{key:'now',label:'Now playing'},{key:'queue',label:'Queue'},{key:'lyrics',label:'Lyrics'}]}>
-      <NowPlayingPage platform="desktop" title="Tidal Lines" artist="The Nebula Collective" context="Playing from Driftwave" playing progress={0.42} duration={214} sleep="Off" scroll={false}/>
+    render: () => (<div style={{height:560,display:'flex',justifyContent:'flex-end',overflow:'hidden'}}><PlayerPanel open tab="now" tabs={[{key:'now',label:'Now playing'},{key:'queue',label:'Queue'},{key:'lyrics',label:'Lyrics'}]} onTabChange={() => {}}>
+      <NowPlayingPage platform="desktop" title="Tidal Lines" artist="The Nebula Collective" context="Playing from Driftwave" playing progress={0.42} duration={214} sleep="Off" scroll={false} onTogglePlay={() => {}} onPrev={() => {}} onNext={() => {}} onShuffle={() => {}} onRepeat={() => {}} onSeek={() => {}} onSkipBack={() => {}} onSkipForward={() => {}} onSpeed={() => {}} onSleep={() => {}}/>
     </PlayerPanel></div>),
   },
   {
     name: 'PlayerSheet',
     card: 'layouts/player-sheet.card.html',
     render: () => (<div style={{position:'relative',width:360,height:640,overflow:'hidden',borderRadius:32,outline:'1px solid var(--surface-border)'}}><PlayerSheet open background="var(--surface-bg)">
-      <NowPlayingPage platform="mobile" title="Tidal Lines" artist="The Nebula Collective" playing progress={0.42} duration={214} sleep="Off"/>
+      <NowPlayingPage platform="mobile" title="Tidal Lines" artist="The Nebula Collective" playing progress={0.42} duration={214} sleep="Off" onTogglePlay={() => {}} onPrev={() => {}} onNext={() => {}} onShuffle={() => {}} onRepeat={() => {}} onSeek={() => {}} onSkipBack={() => {}} onSkipForward={() => {}} onSpeed={() => {}} onSleep={() => {}}/>
     </PlayerSheet></div>),
   },
   {
     name: 'PlayerSubPage',
     card: 'layouts/player-sub-page.card.html',
     render: () => (<div style={{position:'relative',width:360,height:440,display:'flex',flexDirection:'column',overflow:'hidden',borderRadius:'var(--radius-lg)',background:'var(--surface-bg)'}}><PlayerSubPage platform="mobile" heading="Queue" meta="Playing from Driftwave" onClose={() => {}}>
-      <QueueRow title="Tidal Lines" sub="The Nebula Collective" time="3:34" current platform="mobile"/>
-      <QueueRow title="Static Coast" sub="The Nebula Collective" time="3:18" platform="mobile"/>
+      <QueueRow title="Tidal Lines" sub="The Nebula Collective" time="3:34" current platform="mobile" onClick={() => {}}/>
+      <QueueRow title="Static Coast" sub="The Nebula Collective" time="3:18" platform="mobile" onClick={() => {}}/>
     </PlayerSubPage></div>),
   },
   {
@@ -294,12 +294,12 @@ export const gallery = [
   {id:2,title:'Static Coast',sub:'The Nebula Collective',time:'3:18'},
   {id:3,title:'Empty Rooms',sub:'Echo Fields',time:'5:01'},
   {id:4,title:'Signal Fires',sub:'The Nebula Collective',time:'3:51'},
-])} queues={[{key:'music',label:'Music'},{key:'spoken',label:'Spoken'}]} queue="music"/></div>),
+])} queues={[{key:'music',label:'Music'},{key:'spoken',label:'Spoken'}]} queue="music" onPlay={() => {}} onClear={() => {}} onQueueChange={() => {}}/></div>),
   },
   {
     name: 'QueueRow',
     card: 'components/queue-row.card.html',
-    render: () => (<div style={{display:'flex',flexDirection:'column',gap:4,maxWidth:480}}><QueueRow title="Tidal Lines" sub="The Nebula Collective" time="3:34" current/></div>),
+    render: () => (<div style={{display:'flex',flexDirection:'column',gap:4,maxWidth:480}}><QueueRow title="Tidal Lines" sub="The Nebula Collective" time="3:34" current onClick={() => {}}/></div>),
   },
   {
     name: 'QuickPick',
@@ -323,18 +323,18 @@ export const gallery = [
   { key: 'add', label: 'Add to library', icon: 'library_add', sub: 'Keeps a copy of your own' },
   { key: 'artist', label: 'Go to artist', icon: 'person' },
   { key: 'share', label: 'Share', icon: 'share' },
-])} onSelect={() => {}} />} /></div>),
+])} onSelect={() => {}} />} onClick={() => {}} /></div>),
   },
   {
     name: 'ScrollArea',
     card: 'layouts/scroll-area.card.html',
     render: () => (<div style={{height:240,maxWidth:420}}><ScrollArea edgeFade style={{height:240}}>
-      <QueueRow title="Tidal Lines" sub="The Nebula Collective" time="3:34"/>
-      <QueueRow title="Static Coast" sub="The Nebula Collective" time="3:18"/>
-      <QueueRow title="Empty Rooms" sub="Echo Fields" time="5:01"/>
-      <QueueRow title="Signal Fires" sub="The Nebula Collective" time="3:51"/>
-      <QueueRow title="Hollow Fields" sub="Halcyon Bloom" time="4:12"/>
-      <QueueRow title="Aftershocks" sub="Static & Signal" time="52:10"/>
+      <QueueRow title="Tidal Lines" sub="The Nebula Collective" time="3:34" onClick={() => {}}/>
+      <QueueRow title="Static Coast" sub="The Nebula Collective" time="3:18" onClick={() => {}}/>
+      <QueueRow title="Empty Rooms" sub="Echo Fields" time="5:01" onClick={() => {}}/>
+      <QueueRow title="Signal Fires" sub="The Nebula Collective" time="3:51" onClick={() => {}}/>
+      <QueueRow title="Hollow Fields" sub="Halcyon Bloom" time="4:12" onClick={() => {}}/>
+      <QueueRow title="Aftershocks" sub="Static & Signal" time="52:10" onClick={() => {}}/>
     </ScrollArea></div>),
   },
   {
@@ -352,10 +352,10 @@ export const gallery = [
     card: 'layouts/backdrop-shell.card.html',
     render: () => (<Section title="Recently added" platform="desktop" last>
           <LayoutGrid platform="desktop">
-            <MediaCard title="Driftwave" sub="The Nebula Collective"/>
-            <MediaCard title="Static Coast" sub="Echo Fields"/>
-            <MediaCard title="Hollow Fields" sub="Halcyon Bloom"/>
-            <MediaCard title="Signal Fires" sub="The Nebula Collective"/>
+            <MediaCard title="Driftwave" sub="The Nebula Collective" onClick={() => {}}/>
+            <MediaCard title="Static Coast" sub="Echo Fields" onClick={() => {}}/>
+            <MediaCard title="Hollow Fields" sub="Halcyon Bloom" onClick={() => {}}/>
+            <MediaCard title="Signal Fires" sub="The Nebula Collective" onClick={() => {}}/>
           </LayoutGrid>
         </Section>),
   },
@@ -372,18 +372,18 @@ export const gallery = [
   {
     name: 'SettingRow',
     card: 'components/setting-row.card.html',
-    render: () => (<div style={{display:'flex',flexDirection:'column',gap:8,maxWidth:520}}><SettingRow title="Auto-download requests" sub="Fetch approved requests as soon as a source appears." checked platform="desktop"/></div>),
+    render: () => (<div style={{display:'flex',flexDirection:'column',gap:8,maxWidth:520}}><SettingRow title="Auto-download requests" sub="Fetch approved requests as soon as a source appears." checked platform="desktop" onChange={() => {}}/></div>),
   },
   {
     name: 'Shelf',
     card: 'layouts/shelf.card.html',
     render: () => (<Shelf platform="desktop" margin="20px">
-    <MediaCard title="Driftwave" sub="The Nebula Collective" width="160px"/>
-    <MediaCard title="Static Coast" sub="Echo Fields" width="160px"/>
-    <MediaCard title="Hollow Fields" sub="Halcyon Bloom" width="160px"/>
-    <MediaCard title="Signal Fires" sub="The Nebula Collective" width="160px"/>
-    <MediaCard title="Empty Rooms" sub="Echo Fields" width="160px"/>
-    <MediaCard title="Aftershocks" sub="Static & Signal" width="160px"/>
+    <MediaCard title="Driftwave" sub="The Nebula Collective" width="160px" onClick={() => {}}/>
+    <MediaCard title="Static Coast" sub="Echo Fields" width="160px" onClick={() => {}}/>
+    <MediaCard title="Hollow Fields" sub="Halcyon Bloom" width="160px" onClick={() => {}}/>
+    <MediaCard title="Signal Fires" sub="The Nebula Collective" width="160px" onClick={() => {}}/>
+    <MediaCard title="Empty Rooms" sub="Echo Fields" width="160px" onClick={() => {}}/>
+    <MediaCard title="Aftershocks" sub="Static & Signal" width="160px" onClick={() => {}}/>
   </Shelf>),
   },
   {
@@ -426,7 +426,7 @@ export const gallery = [
   {
     name: 'TabBar',
     card: 'layouts/backdrop-local-search.card.html',
-    render: () => (<TabBar items={([{key:'books',label:'Books',icon:'menu_book'},{key:'authors',label:'Authors',icon:'person'},{key:'series',label:'Series',icon:'auto_stories'}])} value="books" />),
+    render: () => (<TabBar items={([{key:'books',label:'Books',icon:'menu_book'},{key:'authors',label:'Authors',icon:'person'},{key:'series',label:'Series',icon:'auto_stories'}])} value="books" onChange={() => {}} />),
   },
   {
     name: 'TonalIconButton',
@@ -436,12 +436,12 @@ export const gallery = [
   {
     name: 'TransportBar',
     card: 'components/spoken-transport.card.html',
-    render: () => (<div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-lg)',alignItems:'flex-start'}}><TransportBar variant="music" playing onTogglePlay={() => {}} onPrev={() => {}} onNext={() => {}} onShuffle={() => {}} onRepeat={() => {}} /></div>),
+    render: () => (<div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-lg)',alignItems:'flex-start'}}><TransportBar variant="music" playing onTogglePlay={() => {}} onPrev={() => {}} onNext={() => {}} onShuffle={() => {}} onRepeat={() => {}} onSkipBack={() => {}} onSkipForward={() => {}} /></div>),
   },
   {
     name: 'ValueRow',
     card: 'basic/button-group-badges.card.html',
-    render: () => (<div style={{display:'flex',flexDirection:'column',gap:8,maxWidth:300}}><ValueRow label="Speed" value="1.0x" /></div>),
+    render: () => (<div style={{display:'flex',flexDirection:'column',gap:8,maxWidth:300}}><ValueRow label="Speed" value="1.0x" onClick={() => {}} /></div>),
   },
   {
     name: 'ViewToggle',

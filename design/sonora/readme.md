@@ -52,7 +52,7 @@ One curve, five named durations, in `tokens/motion.css` — components name the 
 - `--duration-medium` 280ms — app-bar rows, SideSheet, search morph.
 - `--duration-slow` 420ms — NavRail expand/collapse and the nav pill.
 
-Scrims over artwork are tokens too, since a photo needs darkening rather than a surface colour: `--scrim-soft` (hover actions), `--scrim` (progress/queued/failed state), `--scrim-strong` (label pills, not-in-library), with `--on-scrim` for ink on any of them. `--surface-hover` is the wash under transparent controls and inverts with the theme.
+Scrims over artwork are tokens too, since a photo needs darkening rather than a surface colour: `--scrim-soft` (hover actions), `--scrim` (progress/queued/failed state), `--scrim-strong` (label pills, not-in-library), with `--on-scrim` for ink on any of them. Hover, focus and press washes are the `StateLayer`'s, drawn in each control's own ink.
 
 ## Content fundamentals
 

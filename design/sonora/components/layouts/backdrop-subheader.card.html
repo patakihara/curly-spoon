@@ -40,7 +40,7 @@ function Cell({caption, head, offset}) {
       <FrontLayer scroll={false} subheader={head}>
         <div style={{padding:'var(--spacing-lg) var(--grid-margin) 0',marginTop:offset,display:'flex',flexDirection:'column',gap:'var(--spacing-sm)'}}>
           <SectionHeader title="Recently played" platform="desktop" />
-          {TRACKS.map((t) => <ResultRow key={t.title} title={t.title} meta={t.meta} />)}
+          {TRACKS.map((t) => <ResultRow key={t.title} title={t.title} meta={t.meta} onClick={() => {}} />)}
         </div>
       </FrontLayer>
     </div>
@@ -49,7 +49,7 @@ function Cell({caption, head, offset}) {
 
 function Demo(){
   const tabs = <Tabs items={['Recent','Artists','Albums']} value="Recent" />;
-  const group = <ButtonGroup tone="play" items={['All','Music','Audiobooks','Podcasts']} value="All" />;
+  const group = <ButtonGroup tone="play" items={['All','Music','Audiobooks','Podcasts']} value="All" onChange={() => {}} />;
   return <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'var(--spacing-2xl)'}}>
     <Cell caption="Tabs — at rest" offset={0}
       head={<FrontLayerHeader tabs progress={0}>{tabs}</FrontLayerHeader>} />

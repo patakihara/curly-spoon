@@ -11,7 +11,7 @@ export interface SideSheetProps {
   open?: boolean;
   /** Heading in the sheet's own header row. */
   title?: string;
-  /** Shows a close button in the header when provided. */
+  /** Shows a close button in the header when provided. Without it the close button is left out. */
   onClose?: () => void;
   children?: ReactNode;
   /** Open width. Defaults to `--side-sheet-width` (320px). */

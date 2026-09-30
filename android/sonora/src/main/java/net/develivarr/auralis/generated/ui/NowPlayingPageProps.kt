@@ -24,6 +24,7 @@ data class NowPlayingPageProps(
     val progress: Float? = null,
     /** Seconds, for the seek readouts. */
     val duration: Float? = null,
+    /** Every control with no handler is drawn disabled. */
     val onTogglePlay: (() -> Unit)? = null,
     /** `music` only. */
     val onPrev: (() -> Unit)? = null,

@@ -1,6 +1,6 @@
 ---
 page: list
-pageHash: f89f8f72f8c97a72ec345add8f6a3864a4204fc96a340b86fd576f84bb501c3a
+pageHash: 4e54d5823a24aa541b04dc812fd649fd2ea02c68394befd493fec06a961f1185
 sonora: [kit:mobile/collection, kit:desktop/collection]
 spotify: []
 ---
@@ -37,9 +37,10 @@ recommendations to add, filterable by type. No list ever replaces your queue.
 
 ## Differences
 
-- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
-  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
-  states item binds each such control or leaves it deliberately disabled.
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Changed on purpose: rows, not the kit's grid of covers; a list is read in order, and each episode
   needs its synopsis and show.
 - Changed on purpose: a `MediaHeader` heads it with Play and Play next; the kit's collection has no

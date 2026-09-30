@@ -45,7 +45,7 @@ export function EditableList({
           </span>
           {Button && (
             <Button variant="ghost" platform={platform} disabled={!selected.length}
-              onClick={() => { if (onRemoveSelected) onRemoveSelected(selected); setSelected([]); }}>{actionLabel}</Button>
+              onClick={onRemoveSelected ? () => { onRemoveSelected(selected); setSelected([]); } : undefined}>{actionLabel}</Button>
           )}
         </div>
       )}

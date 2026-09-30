@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 data class TransportBarProps(
     val playing: Boolean? = null,
     val platform: Platform? = null,
+    /** Every control with no handler is drawn disabled. */
     val onTogglePlay: (() -> Unit)? = null,
     /** Ignored in `spoken`. */
     val onPrev: (() -> Unit)? = null,

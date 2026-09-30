@@ -16,33 +16,33 @@ function Demo(){
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Play actions — hover the first card; shown here unconditionally</div>
     <div style={{display:'flex',gap:20,alignItems:'center'}}>{PlayActions && <PlayActions always onNext={()=>{}} onPlay={()=>{}} onLast={()=>{}} />}</div>
     <div style={{display:'flex',gap:20,flexWrap:'wrap'}}>
-      <MediaCard title="Fairytale" sub="Album · Natasha Beller" image={cover("Fairytale")} onPlay={()=>{}} onPlayNext={()=>{}} onPlayLast={()=>{}} onMore={()=>{}} />
-      <MediaCard title="Foggy Trails" sub="Book · Adam Rivers" progress={0.42} image={cover("Foggy Trails")} onMore={()=>{}} />
-      <MediaCard title="Sonic Tales" sub="Podcast · 148 episodes" image={cover("Sonic Tales")} />
+      <MediaCard title="Fairytale" sub="Album · Natasha Beller" image={cover("Fairytale")} onPlay={()=>{}} onPlayNext={()=>{}} onPlayLast={()=>{}} onMore={()=>{}} onClick={() => {}} />
+      <MediaCard title="Foggy Trails" sub="Book · Adam Rivers" progress={0.42} image={cover("Foggy Trails")} onMore={()=>{}} onClick={() => {}} />
+      <MediaCard title="Sonic Tales" sub="Podcast · 148 episodes" image={cover("Sonic Tales")} onClick={() => {}} />
       <MediaCard title="The Ink Orchard" sub="Book · Linnea Frost" image={cover("The Ink Orchard")} absent onRequest={()=>{}} onClick={()=>{}} />
-      <MediaCard platform="mobile" title="Golden Scars" sub="Album · Fleeting Verses" image={cover("Golden Scars")} onMore={()=>{}} />
+      <MediaCard platform="mobile" title="Golden Scars" sub="Album · Fleeting Verses" image={cover("Golden Scars")} onMore={()=>{}} onClick={() => {}} />
     </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Requests — greyed, a tap on one not in your library asks for it; status in the request's tone; narrow cards keep the percentage or the word</div>
     <div style={{display:'flex',gap:20,flexWrap:'wrap',alignItems:'flex-start'}}>
-      <MediaCard title="Tidal Lines" sub="Book · Rosa Elin" image={cover("Tidal Lines")} status="Downloading · 42%" tone="progress" />
-      <MediaCard title="Harbour Glass" sub="Book · Rosa Elin" image={cover("Harbour Glass")} status="Requested" tone="progress" />
-      <MediaCard title="Low Orbit" sub="Album · Echo Fields" image={cover("Low Orbit")} status="Needs choice" tone="request" />
-      <MediaCard title="Every Harbour Twice" sub="Book · Rosa Elin" image={cover("Every Harbour Twice")} status="Failed" tone="error" />
-      <MediaCard platform="mobile" width="112px" title="Tidal Lines" sub="Rosa Elin" image={cover("Tidal Lines")} status="Downloading · 42%" tone="progress" />
-      <MediaCard platform="mobile" width="112px" title="Low Orbit" sub="Echo Fields" image={cover("Low Orbit")} status="Needs choice" tone="request" />
-      <MediaCard platform="mobile" width="112px" title="Every Harbour Twice" sub="Rosa Elin" image={cover("Every Harbour Twice")} status="Failed" tone="error" />
+      <MediaCard title="Tidal Lines" sub="Book · Rosa Elin" image={cover("Tidal Lines")} status="Downloading · 42%" tone="progress" onClick={() => {}} />
+      <MediaCard title="Harbour Glass" sub="Book · Rosa Elin" image={cover("Harbour Glass")} status="Requested" tone="progress" onClick={() => {}} />
+      <MediaCard title="Low Orbit" sub="Album · Echo Fields" image={cover("Low Orbit")} status="Needs choice" tone="request" onClick={() => {}} />
+      <MediaCard title="Every Harbour Twice" sub="Book · Rosa Elin" image={cover("Every Harbour Twice")} status="Failed" tone="error" onClick={() => {}} />
+      <MediaCard platform="mobile" width="112px" title="Tidal Lines" sub="Rosa Elin" image={cover("Tidal Lines")} status="Downloading · 42%" tone="progress" onClick={() => {}} />
+      <MediaCard platform="mobile" width="112px" title="Low Orbit" sub="Echo Fields" image={cover("Low Orbit")} status="Needs choice" tone="request" onClick={() => {}} />
+      <MediaCard platform="mobile" width="112px" title="Every Harbour Twice" sub="Rosa Elin" image={cover("Every Harbour Twice")} status="Failed" tone="error" onClick={() => {}} />
     </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>A list with no art of its own — covers: four of its items' covers as a mosaic, one alone, none the plain tile</div>
     <div style={{display:'flex',gap:20,flexWrap:'wrap',alignItems:'flex-start'}}>
-      <MediaCard title="The Digest" sub="Digest · 8 episodes" covers={[cover("Sonic Tales"), cover("Tidal Lines"), cover("Low Orbit"), cover("Harbour Glass")]} />
-      <MediaCard title="Commute" sub="List · 1 episode" covers={[cover("Foggy Trails")]} />
-      <MediaCard title="Saved for later" sub="List · empty" covers={[]} />
-      <MediaCard platform="mobile" title="The Digest" sub="Digest · 8 episodes" covers={[cover("Sonic Tales"), cover("Tidal Lines"), cover("Low Orbit"), cover("Harbour Glass")]} />
+      <MediaCard title="The Digest" sub="Digest · 8 episodes" covers={[cover("Sonic Tales"), cover("Tidal Lines"), cover("Low Orbit"), cover("Harbour Glass")]} onClick={() => {}} />
+      <MediaCard title="Commute" sub="List · 1 episode" covers={[cover("Foggy Trails")]} onClick={() => {}} />
+      <MediaCard title="Saved for later" sub="List · empty" covers={[]} onClick={() => {}} />
+      <MediaCard platform="mobile" title="The Digest" sub="Digest · 8 episodes" covers={[cover("Sonic Tales"), cover("Tidal Lines"), cover("Low Orbit"), cover("Harbour Glass")]} onClick={() => {}} />
     </div>
     <div style={{display:'flex',gap:20,flexWrap:'wrap'}}>
-      <ArtistCard title="Natasha Beller" sub="Artist" image={cover("Natasha Beller", 320)} />
-      <ArtistCard title="Evelyn Harper" sub="Author" image={cover("Evelyn Harper", 320)} />
-      <ArtistCard platform="mobile" title="Deep Inertia" sub="Artist" image={cover("Deep Inertia", 320)} />
+      <ArtistCard title="Natasha Beller" sub="Artist" image={cover("Natasha Beller", 320)} onClick={() => {}} />
+      <ArtistCard title="Evelyn Harper" sub="Author" image={cover("Evelyn Harper", 320)} onClick={() => {}} />
+      <ArtistCard platform="mobile" title="Deep Inertia" sub="Artist" image={cover("Deep Inertia", 320)} onClick={() => {}} />
     </div>
   </div>;
 }

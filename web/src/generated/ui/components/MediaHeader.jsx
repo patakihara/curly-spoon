@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '../basic/Button.jsx';
 import { CoverArt } from '../basic/CoverArt.jsx';
 import { DownloadButton } from '../basic/DownloadButton.jsx';
+import { StateLayer } from '../basic/StateLayer.jsx';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
 
 /**
@@ -39,14 +40,23 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
   // Beside the art, the text sits on the art's baseline under a title; with no title and no
   // action row (a person, named by the page's heading) it is a caption, centred on the art.
   const caption = title == null && !acts;
+  // A subtitle or series name is a link only when it has somewhere to go; without one it is plain text.
+  const link = (text, go, css) => (go ? (
+    <div className="sn-int" role="link" tabIndex={0} onClick={go}
+      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); go(); } }}
+      style={sx(css + ';align-self:' + (mobile ? 'center' : 'flex-start') + ';color:var(--accent-ink);cursor:pointer;border-radius:var(--radius-xs)')}>
+      {text}
+      {StateLayer && <StateLayer />}
+    </div>
+  ) : <div style={sx(css + ';color:' + fg)}>{text}</div>);
   return (
     <div ref={ref} style={sx(mobile ? 'display:flex;flex-direction:column;align-items:center;gap:var(--spacing-md);text-align:center;padding-top:4px;padding-bottom:12px' : 'display:flex;gap:var(--spacing-2xl);align-items:' + (caption ? 'center' : 'flex-end'))}>
       <div style={sx('position:relative;width:' + art + 'px;height:' + art + 'px;flex-shrink:0;overflow:hidden;border-radius:' + (round ? '50%' : 'var(--radius-lg)'))}>{CoverArt && <CoverArt src={image} covers={covers} />}</div>
       <div style={sx(mobile ? 'width:100%;display:flex;flex-direction:column;align-items:center;gap:var(--spacing-sm)' : 'flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--spacing-sm)')}>
         <div style={sx('font-size:var(--text-xs);font-weight:var(--weight-strong);letter-spacing:.09em;text-transform:uppercase;color:' + muted + (mobile ? ';margin-top:6px' : ''))}>{kindLabel}</div>
         {title != null && <div style={sx('font-family:var(--font-display),Inter;font-weight:var(--weight-super-strong);font-stretch:var(--display-stretch);line-height:1.15;color:' + fg + ';font-size:var(--' + (mobile ? 'h4' : 'h2') + '-size)')}>{title}</div>}
-        {subtitle != null && <div onClick={onSubtitle} style={sx('font-size:var(--text-' + (mobile ? 'md' : 'lg') + ');font-weight:var(--weight-medium);color:' + (onSubtitle ? 'var(--accent-ink);cursor:pointer' : fg))}>{subtitle}</div>}
-        {partOf != null && <div onClick={onPartOf} style={sx('font-size:var(--text-sm);font-weight:var(--weight-medium);color:' + (onPartOf ? 'var(--accent-ink);cursor:pointer' : fg))}>{partOf}</div>}
+        {subtitle != null && link(subtitle, onSubtitle, 'font-size:var(--text-' + (mobile ? 'md' : 'lg') + ');font-weight:var(--weight-medium)')}
+        {partOf != null && link(partOf, onPartOf, 'font-size:var(--text-sm);font-weight:var(--weight-medium)')}
         <div style={sx(caption && !mobile ? 'font-size:var(--text-lg);color:' + fg : 'font-size:var(--text-sm);color:' + muted)}>{meta}</div>
         {/* The item's community rating, a Rating, on its own line under the facts it sums up. */}
         {rating != null && <div style={sx('display:flex;justify-content:' + (mobile ? 'center' : 'flex-start'))}>{rating}</div>}
@@ -74,9 +84,10 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
           {/* Saving the item into a list, drawn here rather than borrowed, as round and as quiet as the
               download control beside it: a verb, not a queue button, so it takes no label of its own. */}
           {add && (
-            <button onClick={onAdd} aria-label={addLabel} title={addLabel}
+            <button className="sn-int" onClick={onAdd} disabled={!onAdd} aria-label={addLabel} title={addLabel}
               style={sx('display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex-shrink:0;border-radius:50%;border:1px solid var(--surface-border);background:transparent;padding:0;cursor:pointer;color:var(--surface-fg-muted)')}>
               <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 0,'wght' 500;font-size:var(--icon-sm);line-height:1")}>playlist_add</span>
+              {StateLayer && <StateLayer disabled={!onAdd} />}
             </button>
           )}
           {offline && <DownloadButton state={download} onClick={onDownload} />}

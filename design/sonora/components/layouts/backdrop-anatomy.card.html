@@ -66,12 +66,12 @@ function Demo({start}){
           <Tag>Corners stay --radius-lg at every scroll position</Tag>
         </div>
         <div>
-          <SectionHeader title="Recently added" platform="desktop" action="arrow_forward" />
-          <Shelf>{CARDS.map((c) => <MediaCard key={c.title} {...c} />)}</Shelf>
+          <SectionHeader title="Recently added" platform="desktop" action="arrow_forward" onAction={() => {}} />
+          <Shelf>{CARDS.map((c) => <MediaCard key={c.title} {...c} onClick={() => {}} />)}</Shelf>
         </div>
         <div>
           <SectionHeader title="Picked for you" platform="desktop" />
-          <Shelf>{CARDS.slice().reverse().map((c) => <MediaCard key={c.title} {...c} />)}</Shelf>
+          <Shelf>{CARDS.slice().reverse().map((c) => <MediaCard key={c.title} {...c} onClick={() => {}} />)}</Shelf>
         </div>
       </div>
     </BackdropShell>

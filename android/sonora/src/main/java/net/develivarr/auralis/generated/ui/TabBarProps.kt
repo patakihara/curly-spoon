@@ -17,6 +17,7 @@ data class TabBarItem(
 data class TabBarProps(
     val items: List<TabBarItem>,
     val value: String? = null,
+    /** Without it every tab is drawn disabled. */
     val onChange: ((String) -> Unit)? = null,
     val platform: Platform? = null,
     /** Share the row's width equally among the tabs, never scrolling: for a row of a few, like the player's. */

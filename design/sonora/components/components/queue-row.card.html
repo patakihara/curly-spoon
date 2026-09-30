@@ -10,9 +10,9 @@
 const { QueueRow } = window.SonoraDesignSystem_6c1435;
 function Demo(){
   return <div style={{display:'flex',flexDirection:'column',gap:4,maxWidth:480}}>
-    <QueueRow title="Tidal Lines" sub="The Nebula Collective" time="3:34" current/>
-    <QueueRow title="Static Coast" sub="The Nebula Collective" time="3:18" handle/>
-    <QueueRow title="Empty Rooms" sub="Echo Fields" time="5:01" editing selected/>
+    <QueueRow title="Tidal Lines" sub="The Nebula Collective" time="3:34" current onClick={() => {}}/>
+    <QueueRow title="Static Coast" sub="The Nebula Collective" time="3:18" handle onClick={() => {}}/>
+    <QueueRow title="Empty Rooms" sub="Echo Fields" time="5:01" editing selected onClick={() => {}} onSelectToggle={() => {}}/>
   </div>;
 }
 function Themed(){

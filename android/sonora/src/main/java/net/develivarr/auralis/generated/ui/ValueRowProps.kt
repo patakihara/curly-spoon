@@ -6,5 +6,6 @@ data class ValueRowProps(
     val label: String,
     val value: String,
     val platform: Platform? = null,
+    /** Without it the row is drawn disabled. */
     val onClick: (() -> Unit)? = null,
 )

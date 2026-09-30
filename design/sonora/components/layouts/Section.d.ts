@@ -8,6 +8,7 @@ export interface SectionProps {
   /** Material Symbols glyph for the header's trailing action, e.g. 'arrow_forward'. */
   action?: string;
   actionLabel?: string;
+  /** Without it the action is drawn disabled. */
   onAction?: () => void;
   platform?: 'desktop' | 'mobile';
   /** Drops the trailing margin — set on the final section of a scroll view. */

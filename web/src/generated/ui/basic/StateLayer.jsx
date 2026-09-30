@@ -3,6 +3,7 @@ import React from 'react';
 
 const DISABLED = ':is(:disabled,[aria-disabled="true"],[data-disabled])';
 const FORCED_OFF = '[data-sn-force="disabled"] .sn-int';
+const LIVE = '.sn-int:not(' + DISABLED + ')';
 const mix = (share) => 'color-mix(in srgb,var(--surface-fg) calc(var(' + share + ') * 100%),transparent)';
 
 if (typeof document !== 'undefined' && !document.getElementById('sonora-statelayer-css')) {
@@ -30,7 +31,8 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-statelay
     // Disabled: content at 38% of the surface ink; a filled control's container at 12%. Central, and
     // over the component's own inline colours.
     + '.sn-int' + DISABLED + ',' + FORCED_OFF + '{cursor:default!important;color:' + mix('--disabled-content') + '!important}'
-    + '.sn-int' + DISABLED + ' *,' + FORCED_OFF + ' *{color:inherit!important}'
+    // A disabled card's ink stops at an enabled control inside it, which keeps its own.
+    + '.sn-int' + DISABLED + ' :not(' + LIVE + ',' + LIVE + ' *),' + FORCED_OFF + ' *{color:inherit!important}'
     + '.sn-int.sn-filled' + DISABLED + ',' + FORCED_OFF + '.sn-filled{background:' + mix('--disabled-container') + '!important;border-color:transparent!important;box-shadow:none!important}'
     + FORCED_OFF + '{pointer-events:none}'
     + '.sn-int' + DISABLED + ' [data-sn-state-layer],' + FORCED_OFF + ' [data-sn-state-layer]{outline:none!important}'

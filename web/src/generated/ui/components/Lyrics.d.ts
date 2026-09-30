@@ -22,6 +22,7 @@ export interface LyricsProps {
   textSize?: string;
   /** Follow the song by scrolling the nearest scrolling ancestor. Only applies in `sync`. */
   autoScroll?: boolean;
+  /** Without it the lines are text, not controls. */
   onLineClick?: (index: number) => void;
 }
 export declare function Lyrics(props: LyricsProps): JSX.Element;

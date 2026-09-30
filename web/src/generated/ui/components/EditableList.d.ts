@@ -34,7 +34,7 @@ export interface EditableListProps<T = any> {
   renderRow: (row: EditableListRow<T>) => ReactNode;
   /** Drag reorder, by index into `items`. */
   onReorder?: (from: number, to: number) => void;
-  /** The action bar's button, with the selected rows' keys. */
+  /** The action bar's button, with the selected rows' keys. Without it the remove button is drawn disabled. */
   onRemoveSelected?: (keys: Array<string | number>) => void;
   actionLabel?: string;
   /** Shown in the action bar while nothing is selected. */

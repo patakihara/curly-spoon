@@ -11,7 +11,7 @@ data class ExpanderRowProps(
     /** The disclosure verb. */
     val actionLabel: String? = null,
     val expanded: Boolean? = null,
-    /** Called with the next expanded state on click. */
+    /** Called with the next expanded state on click. Without it the row is drawn disabled. */
     val onToggle: ((Boolean) -> Unit)? = null,
     /** Optional stacked-art hint, leading the row. */
     val image: String? = null,

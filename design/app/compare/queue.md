@@ -1,6 +1,6 @@
 ---
 page: queue
-pageHash: 9579c18268958087f97f3f408c39cd15ca64f582c100ff76363ed2360d213917
+pageHash: 0aa92e920064510b8f0d04a072c380ca3f16af79d6722a052a6a3ee3160b8ac7
 sonora: [kit:mobile/queue, kit:desktop/queue]
 spotify: [S36, S37]
 ---
@@ -39,9 +39,10 @@ their cover art.
 
 ## Differences
 
-- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
-  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
-  states item binds each such control or leaves it deliberately disabled.
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Changed on purpose: the queue is a tab of the player, with no close control of its own, where
   the kit opens it as a page with one.
 - Changed on purpose: the two queues, Played, the hand-off mark, the waiting mark, Clear and

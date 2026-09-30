@@ -20,12 +20,15 @@ export interface FeatureCardProps {
   explicit?: boolean;
   /** The save control shows this state. */
   saved?: boolean;
+  /** Without it its button is left out. */
   onSave?: () => void;
   /**
    * Omit for an audiobook: a sample is the only playback a preview offers there, so when this is
    * absent no play control is rendered at all.
+   * Without it its button is left out.
    */
   onPlay?: () => void;
+  /** Without it its button is left out. */
   onMore?: () => void;
   /** A PreviewButton, rendered at the start of the bottom actions row. */
   preview?: ReactNode;

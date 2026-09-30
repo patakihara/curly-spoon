@@ -1,6 +1,6 @@
 ---
 page: signIn
-pageHash: ef2043497054c3b4a32d308b8e929ff2fb64b74ba613be83da88ee5fc3f1effb
+pageHash: b9b0c31a15fb750262b4322fbed39f1da3b226790b963a4528792a4126d79c79
 sonora: [none]
 ---
 
@@ -30,9 +30,10 @@ content does. In `PageBody` at the form width, in the structure's order:
 
 ## Differences
 
-- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
-  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
-  states item binds each such control or leaves it deliberately disabled.
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Changed on purpose: `EmptyState` carries the sign-in, since its shape (glyph, heading, one line,
   one way on) is the whole page; no other Sonora component centres a single call to act.
 - Changed on purpose: the banner sits inside the form column, where the card's banners run the

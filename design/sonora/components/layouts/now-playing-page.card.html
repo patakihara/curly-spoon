@@ -47,7 +47,7 @@ function Phone({ tab: first = 'now', variant = 'music' }) {
   const track = variant === 'spoken' ? SPOKEN : MUSIC;
   return <div style={{ position: 'relative', width: 360, height: 740, overflow: 'hidden', borderRadius: 32, background: 'var(--surface-bg)', boxShadow: 'var(--shadow-xl)', flexShrink: 0 }}>
     <NowPlaying platform="mobile" open variant={variant} tab={tab} onTabChange={setTab} onClose={() => {}} track={track} {...d}
-      player={Object.assign({}, d.player, variant === 'spoken' ? { sleep: '23 min' } : {})} />
+      player={Object.assign({}, d.player, variant === 'spoken' ? { sleep: '23 min' } : {})} onMore={() => {}} />
   </div>;
 }
 
@@ -59,9 +59,9 @@ function Desk({ variant = 'music' }) {
   return <div style={{ width: 900, height: 740, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 14, background: 'var(--surface-bg-alt)', color: 'var(--surface-fg)', boxShadow: 'var(--shadow-xl)', flexShrink: 0 }}>
     <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
       <div style={{ flex: 1, minWidth: 0, padding: 28, color: 'var(--surface-fg-muted)', fontSize: 'var(--text-sm)' }}>Content column</div>
-      <NowPlaying platform="desktop" open variant={variant} tab={tab} onTabChange={setTab} onClose={() => {}} track={track} {...d} />
+      <NowPlaying platform="desktop" open variant={variant} tab={tab} onTabChange={setTab} onClose={() => {}} track={track} {...d} onMore={() => {}} />
     </div>
-    <MiniPlayer platform="desktop" variant={variant} title={track.title} artist={track.artist} playing progress={0.42} duration={214} speed={1.5} sleep="Off" />
+    <MiniPlayer platform="desktop" variant={variant} title={track.title} artist={track.artist} playing progress={0.42} duration={214} speed={1.5} sleep="Off" onTogglePlay={() => {}} onOpen={() => {}} onSeek={() => {}} onPrev={() => {}} onNext={() => {}} onShuffle={() => {}} onRepeat={() => {}} onVolume={() => {}} onToggleQueue={() => {}} onToggleLyrics={() => {}} onSkipBack={() => {}} onSkipForward={() => {}} onSpeed={() => {}} onSleep={() => {}} />
   </div>;
 }
 

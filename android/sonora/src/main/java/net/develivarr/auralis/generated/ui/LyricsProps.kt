@@ -24,5 +24,6 @@ data class LyricsProps(
     val textSize: String? = null,
     /** Follow the song by scrolling the nearest scrolling ancestor. Only applies in `sync`. */
     val autoScroll: Boolean? = null,
+    /** Without it the lines are text, not controls. */
     val onLineClick: ((Float) -> Unit)? = null,
 )

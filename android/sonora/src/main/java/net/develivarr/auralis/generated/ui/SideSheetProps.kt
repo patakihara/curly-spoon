@@ -13,7 +13,7 @@ data class SideSheetProps(
     val open: Boolean? = null,
     /** Heading in the sheet's own header row. */
     val title: String? = null,
-    /** Shows a close button in the header when provided. */
+    /** Shows a close button in the header when provided. Without it the close button is left out. */
     val onClose: (() -> Unit)? = null,
     val children: (@Composable () -> Unit)? = null,
     /** Open width. Defaults to `--side-sheet-width` (320px). */

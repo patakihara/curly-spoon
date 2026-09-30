@@ -30,7 +30,6 @@ color-scheme:dark;
 --on-scrim:#fff;                 /* ink on any scrim */
 
 /* Hover wash for transparent controls — inverts with the theme */
---surface-hover:rgb(255 255 255 / 10%);
 
 /* The keyboard focus ring: the surface ink, so it reads on the page and over artwork alike */
 --focus-ring:var(--surface-fg);
@@ -108,7 +107,6 @@ color-scheme:light;
 --surface-fg-muted:rgb(80,80,80);
 --surface-border:rgb(0 0 0 / 8%);
 --divider:rgb(0 0 0 / 18%);
---surface-hover:rgb(0 0 0 / 6%);
 --focus-ring:var(--surface-fg);
 --scroll-edge:rgb(0 0 0 / 18%);
 --art-gradient-start:#4D5C92;
@@ -138,7 +136,6 @@ color-scheme:dark;
 --surface-fg-muted:var(--neutral-300);
 --surface-border:rgb(255 255 255 / 8%);
 --divider:rgb(255 255 255 / 20%);
---surface-hover:rgb(255 255 255 / 10%);
 --focus-ring:var(--surface-fg);
 --scroll-edge:rgb(255 255 255 / 22%);
 --art-gradient-start:#B6C4FF;

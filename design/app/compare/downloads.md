@@ -1,6 +1,6 @@
 ---
 page: downloads
-pageHash: d0401355dfdc14e31a873cbadff9d4e3b940e6212bf01bda1b730a5874cb004b
+pageHash: 3fb9ba5a63806d497b5476461385db0f46c678931aa4d50e511c59fc2aef38b5
 sonora: [none]
 ---
 
@@ -39,9 +39,10 @@ that a book, episode or album downloads from its page.
 
 ## Differences
 
-- Changed on purpose: every Sonora basic control the page binds no action to is drawn disabled,
-  its ink at 38% and a filled one's container at 12% (Material's disabled state). Part C of the
-  states item binds each such control or leaves it deliberately disabled.
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Changed on purpose: a download is removed with an explicit bin at the row's end, not by pressing
   a done `DownloadButton`, whose tick says "downloaded" rather than "remove".
 - Changed on purpose: a running download is a row with its status and ✕, as Requests draws a

@@ -26,13 +26,13 @@ const TRACKS = ['Tidal Lines','Salt Water','Low Tide','Harbour Lights','Undertow
 
 const Tag = ({children}) => <span style={{flexShrink:0,padding:'3px 10px',borderRadius:'var(--radius-pill)',border:'1px solid var(--surface-border)',fontFamily:'var(--font-body)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg-muted)',whiteSpace:'nowrap'}}>{children}</span>;
 const Caption = ({children}) => <div style={{fontFamily:'var(--font-body)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg-muted)',minHeight:30,lineHeight:1.35}}>{children}</div>;
-const close = () => <IconButton icon="close" label="Close" />;
+const close = () => <IconButton icon="close" label="Close" onClick={() => {}} />;
 
 function Grid({platform}){
   return <div style={{padding:'var(--spacing-lg) var(--grid-margin' + (platform === 'mobile' ? '-mobile' : '') + ')'}}>
     <Section platform={platform} last>
       <LayoutGrid platform={platform}>
-        {ALBUMS.map((a) => <MediaCard key={a.title} platform={platform} width="100%" title={a.title} sub={'Album · ' + a.sub} image={art(a.hue)} />)}
+        {ALBUMS.map((a) => <MediaCard key={a.title} platform={platform} width="100%" title={a.title} sub={'Album · ' + a.sub} image={art(a.hue)} onClick={() => {}} />)}
       </LayoutGrid>
     </Section>
   </div>;
@@ -40,12 +40,12 @@ function Grid({platform}){
 
 function Tracks(){
   return <div style={{padding:'var(--spacing-md) var(--grid-margin-mobile)'}}>
-    {TRACKS.map((t, i) => <ResultRow key={t} platform="mobile" title={t} meta="Halcyon Bloom · 3:41" divider />)}
+    {TRACKS.map((t, i) => <ResultRow key={t} platform="mobile" title={t} meta="Halcyon Bloom · 3:41" divider onClick={() => {}} />)}
   </div>;
 }
 
 const Alone = ({platform}) => <EmptyState platform={platform} icon="group" title="Sign in with your household account"
-  body="One account for every server you run." action={<Button variant="primary" platform={platform}>Sign in</Button>} />;
+  body="One account for every server you run." action={<Button variant="primary" platform={platform} onClick={() => {}}>Sign in</Button>} />;
 
 /* A phone's detail page: the heading is a top app bar on --surface-bg, the front layer flat under
    it, nothing of the backdrop behind. The bottom bar stays. */
@@ -54,7 +54,7 @@ function Phone({caption, back, children}){
     <Caption>{caption}</Caption>
     <div style={{height:420,display:'flex',flexDirection:'column',borderRadius:'var(--radius-md)',overflow:'hidden',border:'1px solid var(--surface-border)'}}>
       <BackdropShell platform="mobile" appBar back={back}
-        player={<BottomNav platform="mobile" items={NAV} active="browse" />}>
+        player={<BottomNav platform="mobile" items={NAV} active="browse" onChange={() => {}} />}>
         {children}
       </BackdropShell>
     </div>
@@ -78,7 +78,7 @@ function Demo(){
       <Caption>Desktop · the same shelf stays in the backdrop of the destination that opened it, that rail item lit; its heading takes the same context form in the display face</Caption>
       <div style={{height:300}}>
         <BackdropShell platform="desktop"
-          rail={<NavRail items={NAV} active="browse" expanded={false} />}
+          rail={<NavRail items={NAV} active="browse" expanded={false} onChange={() => {}} />}
           back={<BackLayer leading={close()} eyebrow="More like" title="Halcyon Bloom" image={art(265)} round search="Search this shelf"
             trailing={<ViewToggle value="grid" onChange={() => {}} />} />}>
           <Grid platform="desktop" />

@@ -2,6 +2,7 @@
 import React from 'react';
 import { Badge } from '../basic/Badge.jsx';
 import { CoverArt } from '../basic/CoverArt.jsx';
+import { StateLayer } from '../basic/StateLayer.jsx';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
 
 /**
@@ -19,9 +20,10 @@ export function FeatureCard({ image, kind, title, meta, description, tint, expli
   return (
     <div style={sx('position:relative;display:flex;flex-direction:column;gap:var(--spacing-sm);padding:var(--spacing-md);border-radius:var(--radius-md);background:' + (tint || 'var(--surface-card)'))}>
       {onMore && (
-        <button onClick={onMore} aria-label="More options" title="More options"
+        <button className="sn-int" onClick={onMore} aria-label="More options" title="More options"
           style={sx('position:absolute;top:var(--spacing-sm);right:var(--spacing-sm);width:30px;height:30px;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:transparent;color:' + muted)}>
           <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 0,'wght' 500;font-size:var(--icon-sm);line-height:1")}>more_vert</span>
+          {StateLayer && <StateLayer />}
         </button>
       )}
       <div style={sx('display:flex;gap:var(--spacing-md);padding-right:' + (onMore ? '30px' : '0'))}>
@@ -54,16 +56,18 @@ export function FeatureCard({ image, kind, title, meta, description, tint, expli
         {preview}
         <div style={sx('display:flex;align-items:center;gap:var(--spacing-sm);margin-left:auto')}>
           {onSave && (
-            <button onClick={onSave} aria-label={saveLabel} title={saveLabel} aria-pressed={saved}
+            <button className="sn-int" onClick={onSave} aria-label={saveLabel} title={saveLabel} aria-pressed={saved}
               style={sx('display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex-shrink:0;border-radius:50%;border:none;background:transparent;cursor:pointer;color:' + (saved ? 'var(--tone-library)' : muted) + ';transition:color var(--duration-fast) var(--ease-standard)')}>
               <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' " + (saved ? 1 : 0) + ",'wght' 500;font-size:var(--icon-sm);line-height:1")}>bookmark</span>
+              {StateLayer && <StateLayer />}
             </button>
           )}
           {/* Omitted for an audiobook: a sample is the only playback a preview offers there. */}
           {onPlay && (
-            <button onClick={onPlay} aria-label={playLabel} title={playLabel}
+            <button className="sn-int sn-filled" onClick={onPlay} aria-label={playLabel} title={playLabel}
               style={sx('display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex-shrink:0;border-radius:50%;border:none;background:var(--play);color:var(--play-icon);cursor:pointer')}>
               <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 1,'wght' 500;font-size:var(--icon-sm);line-height:1")}>play_arrow</span>
+              {StateLayer && <StateLayer />}
             </button>
           )}
         </div>

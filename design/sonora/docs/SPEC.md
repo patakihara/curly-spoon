@@ -55,7 +55,7 @@ const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{}
 ## Tokens you will need
 
 Surfaces `--surface-bg` `--surface-bg-alt` `--surface-card` `--surface-fg` `--surface-fg-muted`
-`--surface-border` `--surface-hover`. Scrims over artwork `--scrim-soft` `--scrim` `--scrim-strong`
+`--surface-border`. Scrims over artwork `--scrim-soft` `--scrim` `--scrim-strong`
 `--on-scrim`. Accent `--accent` `--accent-contrast` `--accent-ink`: the one app accent, violet.
 Play `--play` `--play-contrast` `--play-icon` `--play-ink`: rose, with black for a label on it and white
 for a play or pause glyph alone on it, only for Now Playing, the mini player, the

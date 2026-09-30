@@ -36,6 +36,7 @@ data class MediaCardProps(
      * ones as a 2×2 mosaic, fewer as the first alone, none as the plain tile (CoverArt's `covers`).
      */
     val covers: List<String>? = null,
+    /** Without it the card is drawn disabled. */
     val onClick: (() -> Unit)? = null,
     /**
      * Requests the item. Given with `absent` and no `status`, a tap requests it instead of calling
@@ -43,7 +44,7 @@ data class MediaCardProps(
      * Opening the item stays a verb, Open, in a corner menu over the art.
      */
     val onRequest: (() -> Unit)? = null,
-    /** Renders a corner menu button (top-right) — hover/focus-revealed on desktop, always visible on mobile. */
+    /** Renders a corner menu button (top-right) — hover/focus-revealed on desktop, always visible on mobile. Without it the corner menu is left out. */
     val onMore: (() -> Unit)? = null,
     /** Muted line ABOVE the title at text-xs — the type or genre ("Playlist", "Album", "Society & Culture"). Leaves `sub` untouched. */
     val eyebrow: String? = null,

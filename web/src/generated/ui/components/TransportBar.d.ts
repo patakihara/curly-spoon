@@ -10,6 +10,7 @@ import { ReactNode } from 'react';
 export interface TransportBarProps {
   playing?: boolean;
   platform?: 'desktop' | 'mobile';
+  /** Every control with no handler is drawn disabled. */
   onTogglePlay?: () => void;
   /** Ignored in `spoken`. */
   onPrev?: () => void;

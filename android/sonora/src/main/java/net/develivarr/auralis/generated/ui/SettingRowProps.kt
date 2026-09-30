@@ -7,5 +7,6 @@ data class SettingRowProps(
     val sub: String? = null,
     val checked: Boolean? = null,
     val platform: Platform? = null,
+    /** Without it the switch is drawn disabled. */
     val onChange: ((Boolean) -> Unit)? = null,
 )

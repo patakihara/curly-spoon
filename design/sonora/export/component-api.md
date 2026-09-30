@@ -365,7 +365,7 @@ Circular artist/author/narrator card for a people shelf.
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
 | `width` | `string` |  |
-| `onClick` | `() => void` |  |
+| `onClick` | `() => void` | Without it the card is drawn disabled. |
 
 ### BottomNav
 
@@ -375,7 +375,7 @@ Mobile bottom tab bar. Each destination is a collapsed RailItem — same pill in
 | --- | --- | --- |
 | `items` *(required)* | `BottomNavItem[]` |  |
 | `active` *(required)* | `string` |  |
-| `onChange` | `(key: string) => void` |  |
+| `onChange` | `(key: string) => void` | Without it every destination is drawn disabled. |
 
 ### EditableList
 
@@ -411,8 +411,8 @@ List row for serial spoken-word content — an episode, not a track. Carries a s
 | `absent` | `boolean` |  An episode of a show you don't follow: the art greyed to no colour and the title in muted ink, as MediaCard greys an item you don't own. It still plays.  |
 | `explicit` | `boolean` | Renders the "E" marker before the title. |
 | `actions` | `ReactNode` | The episode's own controls, rendered below the synopsis. |
-| `onPlay` | `() => void` | Given, reveals a play control over the artwork (hover on desktop, always on mobile). |
-| `onClick` | `() => void` |  |
+| `onPlay` | `() => void` | Given, reveals a play control over the artwork (hover on desktop, always on mobile). Without it the play overlay is left out. |
+| `onClick` | `() => void` | Without it the row is drawn disabled. |
 | `divider` | `boolean` | Hairline separator along the bottom, inset to the text column. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
@@ -425,7 +425,7 @@ Collapses a homogeneous group inside an otherwise heterogeneous list — seven v
 | `label` *(required)* | `string` | What is being folded, e.g. "More releases". |
 | `actionLabel` | `string` | The disclosure verb. |
 | `expanded` | `boolean` |  |
-| `onToggle` | `(next: boolean) => void` | Called with the next expanded state on click. |
+| `onToggle` | `(next: boolean) => void` | Called with the next expanded state on click. Without it the row is drawn disabled. |
 | `image` | `string` | Optional stacked-art hint, leading the row. |
 
 ### FeatureCard
@@ -442,9 +442,9 @@ Argues for one item, at length, inside a feed — the description is the point, 
 | `tint` | `string` | Card surface colour. Defaults to --surface-card. |
 | `explicit` | `boolean` | Renders the "E" marker before the title. |
 | `saved` | `boolean` | The save control shows this state. |
-| `onSave` | `() => void` |  |
-| `onPlay` | `() => void` |  Omit for an audiobook: a sample is the only playback a preview offers there, so when this is absent no play control is rendered at all.  |
-| `onMore` | `() => void` |  |
+| `onSave` | `() => void` | Without it its button is left out. |
+| `onPlay` | `() => void` |  Omit for an audiobook: a sample is the only playback a preview offers there, so when this is absent no play control is rendered at all. Without it its button is left out.  |
+| `onMore` | `() => void` | Without it its button is left out. |
 | `preview` | `ReactNode` | A PreviewButton, rendered at the start of the bottom actions row. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
@@ -458,7 +458,7 @@ Labelled form field wrapping the system Input. On mobile it supplies the filled 
 | `placeholder` | `string` |  |
 | `value` | `string` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
-| `onChange` | `(next: string) => void` |  |
+| `onChange` | `(next: string) => void` | Without it the field is drawn disabled. |
 
 ### Lyrics
 
@@ -473,7 +473,7 @@ The lyric list in the three states the sync control cycles through. Only `sync` 
 | `card` | `boolean` | Draw the card surface behind the lines. Off for a full lyrics page, which owns its surface. |
 | `textSize` | `string` | Line size — any CSS length or type token. Defaults to `--text-lg`. |
 | `autoScroll` | `boolean` | Follow the song by scrolling the nearest scrolling ancestor. Only applies in `sync`. |
-| `onLineClick` | `(index: number) => void` |  |
+| `onLineClick` | `(index: number) => void` | Without it the lines are text, not controls. |
 
 ### MediaCard
 
@@ -494,9 +494,9 @@ Shelf/grid card for any library item — album, book, podcast, episode. Cover ar
 | `playing` | `boolean` |  |
 | `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
 | `covers` | `string[]` |  A collection with no `image` of its own, a list or a digest: its items' covers, four different ones as a 2×2 mosaic, fewer as the first alone, none as the plain tile (CoverArt's `covers`).  |
-| `onClick` | `() => void` |  |
+| `onClick` | `() => void` | Without it the card is drawn disabled. |
 | `onRequest` | `() => void` |  Requests the item. Given with `absent` and no `status`, a tap requests it instead of calling `onClick`, and the card shows "Requested" until `status` carries the request's live status. Opening the item stays a verb, Open, in a corner menu over the art.  |
-| `onMore` | `(e?: any) => void` | Renders a corner menu button (top-right) — hover/focus-revealed on desktop, always visible on mobile. |
+| `onMore` | `(e?: any) => void` | Renders a corner menu button (top-right) — hover/focus-revealed on desktop, always visible on mobile. Without it the corner menu is left out. |
 | `eyebrow` | `string` | Muted line ABOVE the title at text-xs — the type or genre ("Playlist", "Album", "Society & Culture"). Leaves `sub` untouched. |
 | `unplayed` | `boolean` | Marks unlistened/new content with a small accent dot on the artwork's top-right. |
 | `savedBadge` | `boolean` | Bookmark tab on the artwork's bottom-left, for an item the user has explicitly saved. |
@@ -522,20 +522,20 @@ Detail-page header for an album, book, podcast or artist: large art, kind label,
 | `nextLabel` | `string \| null` |  Label on the play-next button. Default "Next"; null leaves the button out, for an item whose one queue button goes to the end of the queue and plays next on a long press.  |
 | `lastLabel` | `string \| null` | Label on the play-last button. Default "Last"; null leaves the button out. |
 | `round` | `boolean` | Circular art, for artist/author pages. |
-| `onPlay` | `() => void` |  |
-| `onPlayNext` | `() => void` |  |
-| `onPlayLast` | `() => void` |  |
-| `onSubtitle` | `() => void` | Makes the subtitle an accent-ink link. |
+| `onPlay` | `() => void` | Without it its button is drawn disabled. |
+| `onPlayNext` | `() => void` | Without it its button is drawn disabled. |
+| `onPlayLast` | `() => void` | Without it its button is drawn disabled. |
+| `onSubtitle` | `() => void` | Makes the subtitle an accent-ink link. Without it the subtitle is plain text. |
 | `partOf` | `string` | What the item is one part of, under the subtitle: a book's series and its number. |
-| `onPartOf` | `() => void` | Makes `partOf` an accent-ink link to the whole it names. |
+| `onPartOf` | `() => void` | Makes `partOf` an accent-ink link to the whole it names. Without it the series is plain text. |
 | `rating` | `ReactNode` | Under the meta line: a `Rating`, the item's community rating, as a book or a show carries one. |
 | `actions` | `ReactNode` |  Replaces the default Play / Next / Last cluster entirely — a page whose verbs aren't a queue (a show's Follow/notify/settings/overflow, an episode's saved/downloaded/share/ overflow). The default cluster renders exactly as it does today when this is absent.  |
 | `menu` | `ReactNode` | After the actions: an `OverflowMenu` with the verbs that get no button, such as Add to library. |
 | `progress` | `number \| null` | 0–1 resume position; draws a thin rule under the meta line. Omit or pass null for none. |
 | `download` | `'idle' \| 'downloading' \| 'done' \| null` |  On a phone, a DownloadButton after the buttons in this state, keeping the item offline. A desktop keeps nothing offline and never draws it. Omit or pass null for none.  |
-| `onDownload` | `() => void` | Starts, cancels or removes the download, depending on `download`. |
+| `onDownload` | `() => void` | Starts, cancels or removes the download, depending on `download`. Without it the download control is drawn disabled. |
 | `addLabel` | `string \| null` |  The accessible name of a round add-to-a-list button after the queue buttons, such as "Add to a list". Null (the default) leaves it out.  |
-| `onAdd` | `() => void` | Opens the choice of list to add the item to. |
+| `onAdd` | `() => void` | Opens the choice of list to add the item to. Without it the add button is drawn disabled. |
 
 ### MiniPlayer
 
@@ -547,7 +547,7 @@ The persistent now-playing surface, in both platform variants: the tinted pill d
 | `artist` *(required)* | `string` |  |
 | `image` | `string` |  |
 | `playing` | `boolean` |  |
-| `onTogglePlay` | `() => void` |  |
+| `onTogglePlay` | `() => void` | Every control with no handler is drawn disabled, the bar itself with no onOpen. |
 | `onOpen` | `() => void` | Tapping the card body (mobile) or the track block (desktop) expands the full player. |
 | `platform` | `'mobile' \| 'desktop'` | mobile = docked tinted pill; desktop = full-width transport bar with seek and queue controls. |
 | `progress` | `number` | 0–1. Desktop only — drives the seek bar and the mm:ss elapsed readout. |
@@ -555,6 +555,9 @@ The persistent now-playing surface, in both platform variants: the tinted pill d
 | `duration` | `number` | Track length in seconds, for the mm:ss readouts. Desktop only. |
 | `onPrev` | `() => void` |  |
 | `onNext` | `() => void` |  |
+| `onShuffle` | `() => void` | Desktop music bar only. |
+| `onRepeat` | `() => void` | Desktop music bar only. |
+| `onVolume` | `() => void` | Desktop only. |
 | `queueOpen` | `boolean` | Desktop only — tints the queue button accent while the queue panel is open. |
 | `onToggleQueue` | `() => void` |  |
 | `lyricsOpen` | `boolean` | Desktop only — same for the lyrics button, which opens the player panel's Lyrics tab. |
@@ -577,7 +580,7 @@ Material Symbols Rounded glyph name.
 | `items` | `NavRailItem[]` |  |
 | `footerItems` | `NavRailItem[]` |  Destinations pinned to the rail's foot, below the items and above `footer` — Settings. Drawn as the same rows, so they light, collapse and click exactly as `items` do.  |
 | `active` | `string` | Key of the active item, in `items` or `footerItems`. |
-| `onChange` | `(key: string) => void` |  |
+| `onChange` | `(key: string) => void` | Without it every destination is drawn disabled. |
 | `expanded` | `boolean` |  |
 | `onToggleExpanded` | `() => void` | Shows the menu toggle above the items when provided, leaving `expanded` to the caller. |
 | `toggle` | `boolean` |  Shows the menu toggle with no handler: the rail holds its own expanded state, starting from `expanded` and following it when it changes, and the hamburger (`menu`, or `menu_open` while expanded) collapses the labelled rail to the icon rail and back.  |
@@ -590,9 +593,9 @@ The three queue actions a music item offers: **play next** (arrow_top_right), **
 
 | prop | type | notes |
 | --- | --- | --- |
-| `onNext` | `() => void` | Insert directly after the current track. |
-| `onPlay` | `() => void` |  |
-| `onLast` | `() => void` | Append to the end of the queue. |
+| `onNext` | `() => void` | Insert directly after the current track. Without it its button is drawn disabled. |
+| `onPlay` | `() => void` | Without it its button is drawn disabled. |
+| `onLast` | `() => void` | Append to the end of the queue. Without it its button is drawn disabled. |
 | `playing` | `boolean` | Swaps the centre glyph to pause. |
 | `size` | `number` | Diameter of the centre button in px; the outer two are 6px smaller. Default 40. |
 | `always` | `boolean` | Skip the hover gate and stay visible — for touch, or a permanently exposed row. |
@@ -610,12 +613,12 @@ One row of the play queue — drag handle, art, title/sub, duration, remove. The
 | `image` | `string` | Cover art; the accent tile without one. |
 | `current` | `boolean` | Highlights the row as the one now playing. |
 | `platform` | `'desktop' \| 'mobile'` |  |
-| `onClick` | `() => void` |  |
-| `onRemove` | `(e?: any) => void` |  |
+| `onClick` | `() => void` | Without it the row is drawn disabled. |
+| `onRemove` | `(e?: any) => void` | Without it the remove button is left out. |
 | `handle` | `boolean` | Show the drag handle. Off for a read-only queue that reorders only in edit mode. |
 | `editing` | `boolean` | Edit mode: adds the leading select control and drops the duration. |
 | `selected` | `boolean` |  |
-| `onSelectToggle` | `(e?: any) => void` |  |
+| `onSelectToggle` | `(e?: any) => void` | Without it the select control is drawn disabled. |
 | `draggable` | `boolean` |  |
 | `onDragStart` | `(e?: any) => void` |  |
 | `onDragOver` | `(e?: any) => void` |  |
@@ -633,7 +636,7 @@ Continue-listening / jump-back-in tile: small square art plus title and a meta l
 | `icon` | `string` |  Material Symbols Rounded glyph name. Given one, the tile renders the glyph on a flat accent tint instead of the gradient artwork square — the variant for destinations with no cover art of their own (Shuffle all, Downloads, Liked, a genre).  |
 | `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
 | `platform` | `'desktop' \| 'mobile'` |  |
-| `onClick` | `() => void` |  |
+| `onClick` | `() => void` | Without it the tile is drawn disabled. |
 | `progress` | `number \| null` | 0–1 resume position; draws a thin rule across the base of the artwork square. Ignored on the `icon` variant. |
 | `unplayed` | `boolean` | Marks unlistened/new content with a small accent dot on the artwork's top-right. Ignored on the `icon` variant. |
 
@@ -652,7 +655,7 @@ One row of a track, search-result or request list: art with a hover play/cancel 
 | `actionGlyph` | `string` | Glyph for the art overlay action; "downloading" renders a pause control. |
 | `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
 | `platform` | `'desktop' \| 'mobile'` |  |
-| `onClick` | `() => void` |  |
+| `onClick` | `() => void` | Without it the row is drawn disabled. |
 | `onAction` | `() => void` |  |
 | `divider` | `boolean` | Hairline separator along the bottom, inset to the text column. Set on all but the last row of a list. |
 | `number` | `number \| null` | A track number, leading the row in place of the art: an album's tracks, which share one cover. Null or omitted for art. |
@@ -667,12 +670,12 @@ Heading row above a carousel, grid or list, with an optional trailing icon actio
 | `title` *(required)* | `string` |  |
 | `action` | `string` | Material Symbols Rounded glyph name for the trailing action, e.g. "arrow_forward". Omit for no action. |
 | `actionLabel` | `string` |  |
-| `onAction` | `() => void` |  |
+| `onAction` | `() => void` | Without it the action is drawn disabled. |
 | `platform` | `'mobile' \| 'desktop'` | mobile = body font at text-xl; desktop = display font at h3, 900 weight. |
 | `eyebrow` | `string` | Relationship line above the title — "More like", "Popular with listeners of" — that explains why this shelf exists. |
 | `image` | `string` | Subject artwork, leading the header. Falls back to the sibling CoverArt's own placeholder. |
 | `round` | `boolean` | Circular thumbnail for an artist or a person; square (the default) for a show or a genre. |
-| `onSubject` | `() => void` | Makes the eyebrow+title block a link to the subject the shelf is about. |
+| `onSubject` | `() => void` | Makes the eyebrow+title block a link to the subject the shelf is about. Without it the subject is the heading, not a link. |
 | `actionText` | `string` | A text action ("Show all") in place of the glyph `action`. Mutually exclusive with `action` — wins if both are set. |
 | `trailing` | `ReactNode` |  A control of the section's own at the trailing edge, such as the `ViewToggle` over the collection the section holds. Wins over `actionText` and `action` if more than one is set.  |
 
@@ -686,7 +689,7 @@ Settings list row: title, explanatory line, and a Switch on a filled card.
 | `sub` | `string` |  |
 | `checked` | `boolean` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
-| `onChange` | `(next: boolean) => void` |  |
+| `onChange` | `(next: boolean) => void` | Without it the switch is drawn disabled. |
 
 ### StatusBanner
 
@@ -698,8 +701,8 @@ Persistent, non-blocking statement of system state — Spotify's "You're offline
 | `tone` | `'info' \| 'warning' \| 'error' \| 'success'` | Selects the background/ink pair from the state tokens. |
 | `icon` | `string` | Leading glyph. |
 | `actionLabel` | `string` | Label for the inline text action, e.g. "Retry". |
-| `onAction` | `() => void` |  |
-| `onDismiss` | `() => void` | Renders a close control when set; the banner has no other way to dismiss. |
+| `onAction` | `() => void` | Without it the action is drawn disabled. |
+| `onDismiss` | `() => void` | Renders a close control when set; the banner has no other way to dismiss. Without it the dismiss button is left out. |
 
 ### TabBar
 
@@ -709,7 +712,7 @@ Icon + label tabs for a page's subheader — the sub-sections of a library page 
 | --- | --- | --- |
 | `items` *(required)* | `(TabBarItem \| string)[]` |  |
 | `value` | `string` |  |
-| `onChange` | `(key: string) => void` |  |
+| `onChange` | `(key: string) => void` | Without it every tab is drawn disabled. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `fill` | `boolean` | Share the row's width equally among the tabs, never scrolling: for a row of a few, like the player's. |
 
@@ -721,7 +724,7 @@ Now Playing control cluster: shuffle, previous, play/pause (the large accent con
 | --- | --- | --- |
 | `playing` | `boolean` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
-| `onTogglePlay` | `() => void` |  |
+| `onTogglePlay` | `() => void` | Every control with no handler is drawn disabled. |
 | `onPrev` | `() => void` | Ignored in `spoken`. |
 | `onNext` | `() => void` | Ignored in `spoken`. |
 | `onShuffle` | `() => void` | Ignored in `spoken`. |
@@ -742,7 +745,7 @@ Label + value on a filled card (Speed · 1.0x, Sleep timer · Off). Read-only un
 | `label` *(required)* | `string` |  |
 | `value` *(required)* | `string` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
-| `onClick` | `() => void` |  |
+| `onClick` | `() => void` | Without it the row is drawn disabled. |
 
 ## layouts
 
@@ -864,10 +867,10 @@ The player, whole, with Now playing, Queue and Lyrics as its tabs (spoken conten
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `open` | `boolean` |  |
 | `from` | `{ top: number; left: number; width: number; height: number } \| null` | Mobile only: the mini player's viewport rect, so the sheet grows out of it. |
-| `onClose` | `() => void` | Collapses the sheet back to the bar, or closes the panel. |
+| `onClose` | `() => void` | Collapses the sheet back to the bar, or closes the panel. Without it the mobile collapse button is drawn disabled and the desktop close button is left out. |
 | `onMore` | `() => void` | Mobile only: the app bar's menu. |
 | `tab` | `'now' \| 'queue' \| 'lyrics' \| string` | The active tab: 'now', 'queue' or 'lyrics'. Omit to let the player own it. |
-| `onTabChange` | `(tab: string) => void` |  |
+| `onTabChange` | `(tab: string) => void` | With `tab` set and no handler, the tabs are drawn disabled. |
 | `variant` | `'music' \| 'spoken'` | `spoken` drops the Lyrics tab and gives Now playing the spoken transport. |
 | `track` | `{ image?: string; title?: string; artist?: string; context?: string }` |  |
 | `player` | `Omit<NowPlayingPageProps, 'platform' \| 'variant' \| 'image' \| 'title' \| 'artist' \| 'context' \| 'scroll' \| 'children'>` | Playback state and handlers for the built Now playing tab. |
@@ -891,7 +894,7 @@ The player's first tab: cover, titles, then the controls matched to what plays. 
 | `playing` | `boolean` |  |
 | `progress` | `number` | 0–1. |
 | `duration` | `number` | Seconds, for the seek readouts. |
-| `onTogglePlay` | `() => void` |  |
+| `onTogglePlay` | `() => void` | Every control with no handler is drawn disabled. |
 | `onPrev` | `() => void` | `music` only. |
 | `onNext` | `() => void` | `music` only. |
 | `onShuffle` | `() => void` | `music` only. |
@@ -942,7 +945,6 @@ The mobile player surface — covers the whole app frame and opens as an expansi
 | --- | --- | --- |
 | `open` | `boolean` |  |
 | `from` | `{ top: number; left: number; width: number; height: number } \| null` | The mini player's viewport rect — a DOMRect, or `{ top, left, width, height }`. |
-| `onClose` | `() => void` |  |
 | `zIndex` | `number` | Stacking order over the app frame. |
 | `radius` | `string` | Corner radius of the collapsed rectangle, matched to the bar it grows from. |
 | `background` | `string` | Sheet surface, so the expansion never flashes a different colour than the page inside it. |
@@ -979,10 +981,10 @@ Stable key. Falls back to `title`.
 | `onQueueChange` | `(key: string) => void` |  |
 | `played` | `QueueItem[]` | What already played, oldest first: Back walks it. |
 | `autoplay` | `{ title?: string; items: QueueItem[] }` | What autoplay plays once the queue runs out, and what it continues from. |
-| `onClear` | `() => void` | Up next's Clear action, which empties it; an undo brings it back. |
+| `onClear` | `() => void` | Up next's Clear action, which empties it; an undo brings it back. Without it Clear is drawn disabled. |
 | `editing` | `boolean` | Controlled edit mode. Omit to let the page keep its own. |
 | `onEditingChange` | `(editing: boolean) => void` |  |
-| `onPlay` | `(item: QueueItem, index: number) => void` |  |
+| `onPlay` | `(item: QueueItem, index: number) => void` | Without it every row outside edit mode is drawn disabled. |
 | `onRemove` | `(item: QueueItem, index: number) => void` |  |
 | `onReorder` | `(from: number, to: number) => void` | Drag reorder, by index into `items`. |
 | `onRemoveSelected` | `(keys: Array<string \| number>) => void` | The edit bar's Remove, with the selected rows' keys. |
@@ -1016,7 +1018,7 @@ One block of a feed — a SectionHeader plus its content — carrying the standa
 | `title` | `string` | Heading text. Omit for an untitled block that still takes part in the rhythm. |
 | `action` | `string` | Material Symbols glyph for the header's trailing action, e.g. 'arrow_forward'. |
 | `actionLabel` | `string` |  |
-| `onAction` | `() => void` |  |
+| `onAction` | `() => void` | Without it the action is drawn disabled. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `last` | `boolean` | Drops the trailing margin — set on the final section of a scroll view. |
 | `children` | `React.ReactNode` |  |
@@ -1049,7 +1051,7 @@ Side sheet — a full-height panel beside the bar+content column, so it and its 
 | --- | --- | --- |
 | `open` | `boolean` |  |
 | `title` | `string` | Heading in the sheet's own header row. |
-| `onClose` | `() => void` | Shows a close button in the header when provided. |
+| `onClose` | `() => void` | Shows a close button in the header when provided. Without it the close button is left out. |
 | `children` | `ReactNode` |  |
 | `width` | `string` | Open width. Defaults to `--side-sheet-width` (320px). |
 | `side` | `'left' \| 'right'` |  |

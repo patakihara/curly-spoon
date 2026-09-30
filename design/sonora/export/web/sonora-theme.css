@@ -25,7 +25,6 @@
   --surface-fg-muted: var(--neutral-300);
   --surface-border: rgb(255 255 255 / 8%);
   --divider: rgb(255 255 255 / 20%);
-  --surface-hover: rgb(255 255 255 / 10%);
   --focus-ring: var(--surface-fg);
   --scroll-edge: rgb(255 255 255 / 22%);
   --art-gradient-start: #B6C4FF;
@@ -53,7 +52,6 @@
   --surface-fg-muted: rgb(80,80,80);
   --surface-border: rgb(0 0 0 / 8%);
   --divider: rgb(0 0 0 / 18%);
-  --surface-hover: rgb(0 0 0 / 6%);
   --focus-ring: var(--surface-fg);
   --scroll-edge: rgb(0 0 0 / 18%);
   --art-gradient-start: #4D5C92;

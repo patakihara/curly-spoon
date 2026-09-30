@@ -9,6 +9,7 @@ export interface BottomNavItem {
 export interface BottomNavProps {
   items: BottomNavItem[];
   active: string;
+  /** Without it every destination is drawn disabled. */
   onChange?: (key: string) => void;
 }
 
