@@ -9,4 +9,17 @@ in "Your decisions" (the YouTube shows card) and in Discovery. The digest is spe
 that aren't queues". The shared memory note `project_auralis_never_video.md` states the old rule
 too.
 
+A follow-up in the same thread:
+
+> What does it mean that it "never takes over [my] queue"?
+
+> I think this maybe have been spec'd incorrectly, or maybe I just don't remember what I meant by it. [...] I think possibly what I've wanted to mean is that my progress on a given podcast (as in, the whole series, which I may be listening to from oldest to newest or the other way around) shouldn't be cleared by me listening to the digest. But I'm not sure, since that might be too obvious for me too have thought to say it.
+
+Her voice-memo transcript never says "takes over" about digests. It comes from her Spotify
+complaint: "the idea of like playing a podcast now... I can clear your queue, and then it was all,
+yeah, and it was very uh, frustrating." The orchestrator proposed, in the thread, rewriting the
+digest sentence as two rules: playing a digest never clears, replaces or locks the queue; and an
+episode played from a digest is marked played but never moves her place in a show she is working
+through, oldest-first or newest-first.
+
 (Sofia, comment on the plan artifact, thread 785d7862, 2026-09-30)

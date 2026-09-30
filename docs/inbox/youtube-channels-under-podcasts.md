@@ -2,7 +2,7 @@
 
 > why is "youtube shows" it's own section rather than listed with the rest of the content in the section above?
 >
-> Also, why "youtube shows" and not "youtube *channels*"?
+> Also, why "youtube shows" and not "youtube _channels_"?
 
 On the plan's "YouTube shows" section heading.
 
