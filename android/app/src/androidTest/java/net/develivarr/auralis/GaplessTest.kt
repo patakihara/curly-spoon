@@ -16,7 +16,6 @@ import net.develivarr.auralis.play.Playback
 import okhttp3.OkHttpClient
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -76,22 +75,26 @@ class GaplessTest {
 
         val started = seen.indexOfFirst { it.what == "playing" && it.value }
         val boundary = seen.indexOfFirst { it.what == "transition" && it.value }
-        assertTrue(said("the first file never played"), started >= 0)
-        assertTrue(said("the player never moved on to the second file by itself"), boundary > started)
+        expect(started >= 0) { "the first file never played" }
+        expect(boundary > started) { "the player never moved on to the second file by itself" }
         // ExoPlayer's own gapless transition: once playing, it never stops or buffers, across the
         // boundary included.
         val between = seen.subList(started + 1, seen.size)
-        assertTrue(
-            said("the player paused or buffered once playing: $between"),
-            between.none { (it.what == "playing" && !it.value) || it.what == "buffering" },
-        )
+        expect(between.none { (it.what == "playing" && !it.value) || it.what == "buffering" }) {
+            "the player paused or buffered once playing: $between"
+        }
 
-        assertTrue(said("too few positions: ${positions.size}"), positions.size > 10)
-        assertEquals(said("the position went back: $positions"), positions.sorted(), positions)
-        assertTrue(said("no position in the first file"), positions.any { it > 0 && it < offset })
-        assertTrue(said("no position in the second file"), positions.any { it >= offset })
-        assertTrue(said("the last position ${positions.last()} is short of ${offset + 1}"), positions.last() >= offset + 1)
-        said("the second file started with no pause or buffering ${seen[boundary].at - seen[started].at} ms after playing began; positions ran ${positions.first()} to ${positions.last()} across $offset")
+        expect(positions.size > 10) { "too few positions: ${positions.size}" }
+        expect(positions.sorted() == positions) { "the position went back: $positions" }
+        expect(positions.any { it > 0 && it < offset }) { "no position in the first file" }
+        expect(positions.any { it >= offset }) { "no position in the second file" }
+        expect(positions.last() >= offset + 1) { "the last position ${positions.last()} is short of ${offset + 1}" }
+        said("the second file started with no pause or buffering ${seen[boundary].at - seen[started].at} ms after playing began; the position ran on from ${positions.last { it < offset }} to ${positions.first { it >= offset }} across the second file's offset $offset")
+    }
+
+    /** Fails with [failure], logged as [said] does, unless [ok]. */
+    private fun expect(ok: Boolean, failure: () -> String) {
+        if (!ok) throw AssertionError(said(failure()))
     }
 
     /** Logs [outcome] where the emulator job keeps it with the test results (reports/emulator-tests.txt). */
