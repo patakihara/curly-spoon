@@ -1,29 +1,56 @@
 {
   "canvas": {
     "url": "https://claude.ai/artifact/S3ob9VNh7LjZHBmEmE9ULq",
-    "sources": ["design/app", "web/public/art"],
-    "commit": "00c43f250154446d5d464314876c2c5827be806e",
-    "tree": "bd336577f2c9547a0ec33ca73f45bcfee071434d",
-    "version": "1790782308-9b37",
+    "sources": [
+      "design/app",
+      "web/public/art",
+      "design-codegen/src/app.ts",
+      "design-codegen/src/canvas.ts",
+      "design-codegen/src/kotlin.ts",
+      "design-codegen/src/nav-kotlin.ts",
+      "design-codegen/src/nav.ts",
+      "design-codegen/src/outputs.ts",
+      "design-codegen/src/page-kotlin.ts",
+      "design-codegen/src/page-web.ts",
+      "design-codegen/src/page.ts",
+      "design-codegen/src/props.ts",
+      "design-codegen/src/shell-handlers.ts",
+      "design-codegen/src/shell.ts",
+      "design-codegen/src/sonora.ts",
+      "design-codegen/src/structure.ts",
+      "scripts/canvas/build.mjs",
+      "scripts/canvas/install.mjs"
+    ],
+    "commit": "b7819be4a7a34778ad567a9a7c00915511e09816",
+    "tree": "a7e765ddc23e7a31334c9c043a63d0e159c2e1bf",
+    "version": "1790783483-7297",
     "installs": {
-      "sonora": "1790780607-ff4a"
+      "sonora": "1790783438-d3a2"
     },
-    "publishedAt": "2026-09-30T15:32:06.343Z"
+    "publishedAt": "2026-09-30T15:51:38.701Z"
   },
   "plan": {
     "url": "https://claude.ai/artifact/81FfkqDpQSEe2VwYcT1sjq",
-    "sources": ["docs/plan", "docs/outbox"],
-    "commit": "40d46205f724844dd19ad6ce1f16e309910fd9b2",
-    "tree": "a651df590136cdbfd738d67c66c01ad9d5e22163",
-    "version": "1790774717-4e28",
-    "publishedAt": "2026-09-30T13:26:44.568Z"
+    "sources": [
+      "docs/plan",
+      "docs/outbox",
+      "scripts/plan/lint.mjs",
+      "scripts/plan/parse.mjs",
+      "scripts/plan/progress.mjs",
+      "scripts/plan/render.mjs",
+      "scripts/plan/results.mjs"
+    ],
+    "commit": "b7819be4a7a34778ad567a9a7c00915511e09816",
+    "tree": "b980194a5bd4ee6986486bc2782f5c9c3f2e5c42",
+    "version": "1790783491-cfd4",
+    "publishedAt": "2026-09-30T15:51:38.747Z"
   },
   "sonora": {
     "url": "https://claude.ai/artifact/CUW4CN7KpxgvjeWnbhTQBB",
-    "sources": ["design/sonora"],
-    "commit": "fcd1009ca69bbe75a3fe3865f791d0e067b3183d",
-    "tree": "b99eb7be2c61a324e1927cbc86b8fa3d41bc9037",
-    "version": "1790780607-ff4a",
-    "publishedAt": "2026-09-30T15:03:33.336Z"
+    "sources": ["design/sonora", "scripts/sonora/build.mjs"],
+    "commit": "b7819be4a7a34778ad567a9a7c00915511e09816",
+    "tree": "b8c702380e88a39ed5ffac9dfffc2a1dc22e3054",
+    "version": "1790783438-d3a2",
+    "publishedAt": "2026-09-30T15:50:43.405Z"
   }
 }
