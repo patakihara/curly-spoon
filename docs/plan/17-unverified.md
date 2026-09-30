@@ -17,6 +17,7 @@ part: Delivery
 - Minting per-user tokens is read from ABS 2.36.1 and Jellyfin 10.11.11 source; the M0.sso recordings prove it live.
 - Watched-state and position sync on your account: reading watch history and marking videos watched with sign-in cookies is known to work in the extractor, but hasn't been tried here. Setting YouTube's resume position by sending a real position instead of "the end" should work but isn't done by any tool known to this plan, and how long exported cookies last in practice is unknown.
 - Cutting SponsorBlock segments without re-encoding is only as precise as the audio's frame size (tens of milliseconds for YouTube's audio), which should be inaudible. Audiobookshelf picking up a re-cut file of an unstarted episode cleanly (new length, no stale progress) is to be tested with the first channel.
-- Whether the Android signing keys are backed up outside GitHub's secrets; losing them would force a reinstall. That is checked before the first release.
-- Recommendation quality: measured by the held-out replay score on your own history once phase 1 runs, not predicted here.
+- Whether the Android signing keys are backed up outside GitHub's secrets (losing them forces a reinstall); checked before the first release.
+- Recommendation quality: measured by the held-out replay score on your history once phase 1 runs.
+- Your Spotify and YouTube Music exports: requested, not yet seen.
 :::
