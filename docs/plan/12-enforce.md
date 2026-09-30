@@ -6,7 +6,7 @@ part: How it's built
 ## Staying on track, enforced
 
 ::: lede
-The old project drifted: code built outside the design, pages nobody refreshed, a roadmap and handover that grew until they stopped describing reality. Each rule here is a check that fails, not a habit to remember.
+The old project drifted from its design and its docs. Each rule here is a check that fails, not a habit to remember.
 :::
 
 ### Build through the design
@@ -24,7 +24,7 @@ The old project drifted: code built outside the design, pages nobody refreshed, 
 
 ### Keep the plan clean and the progress true
 
-The plan and the progress are two different things, kept apart on purpose. The plan is written by hand and says what is being built and why. The progress is never written by hand; it's worked out from the repo.
+The plan and the progress are kept apart on purpose.
 
 ::: grid g2
 ::: card

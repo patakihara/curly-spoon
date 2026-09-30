@@ -29,7 +29,7 @@ The old recommendation code works out your taste from your library and play hist
 
 **Your taste comes from what you've actually listened to, not what's in your library:** plays, progress and completions (Jellyfin, Audiobookshelf, Auralis), plus your Spotify and YouTube Music history. Owning something only affects how it's shown (owned items play; others can be requested or streamed). A book you own but never started says nothing about your taste.
 
-Researched across Spotify's and YouTube's published work and open-source recommenders. The famous systems (Discover Weekly, Spotify radio, YouTube Music's retrieval) are barely documented; the well-documented techniques work at small scale. Nothing here needs a GPU or a model trained from scratch.
+Researched across Spotify's and YouTube's published work and open-source recommenders: the famous systems are barely documented, but the well-documented techniques work at small scale, with no GPU or model trained from scratch.
 
 | Phase | What it does | Why it fits |
 |---|---|---|
@@ -44,7 +44,7 @@ Researched across Spotify's and YouTube's published work and open-source recomme
 - **Per user**: every table is keyed by user, so household members never mix.
 - **Measured, not guessed**: hold out your most recent months of history, and check whether each version would have put what you actually played next in its top 10. That score has to not drop between versions.
 
-**Checked live today.** The book and podcast seeds come from your library. The music seeds were picked for the test (Alkaline Trio appears in your Spotify screenshots).
+**Checked live today.** Book and podcast seeds come from your library; the music seeds were picked for the test.
 
 - **YouTube Music radio**: _Private Eye_ → blink-182, Green Day, Jimmy Eat World, Sum 41; _Motion Sickness_ → Big Thief, Mitski, Manchester Orchestra. Each track also exposes "You might also like" and "Similar artists".
 - **ListenBrainz**: Alkaline Trio → Bad Religion, Yellowcard, Rise Against, Jimmy Eat World, My Chemical Romance. **Deezer**: → The Ataris, New Found Glory, MxPx.

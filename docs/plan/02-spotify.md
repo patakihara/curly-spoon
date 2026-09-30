@@ -18,5 +18,5 @@ Spotify does six jobs. Each column shows where Auralis does that job for one med
 | Anywhere | Web and PWA on desktop and phone; Android with background playback, downloads and Android Auto for all three media; progress shared between devices, each device keeping its own queue |  |  |
 
 ::: callout
-This closes the biggest gap to Spotify, **instant play of music you don't own**, the way you asked. The research found the costs, and the plan budgets for them rather than avoiding them. YouTube keeps changing its internals, so a daily job updates the extractor automatically and a canary checks it (AbleMusicPlayer bumps its pin daily). A broken day shows up as a clear "streaming unavailable" state, while your owned and kept music keeps working.
+This closes the biggest gap to Spotify, **instant play of music you don't own**, the way you asked, with its costs budgeted for. YouTube keeps changing its internals, so a daily job updates the extractor automatically and a canary checks it (AbleMusicPlayer bumps its pin daily). A broken day shows up as a clear "streaming unavailable" state, while your owned and kept music keeps working.
 :::

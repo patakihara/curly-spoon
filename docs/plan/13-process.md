@@ -5,7 +5,7 @@ part: How it's built
 ---
 ## How the work runs
 
-Most of what went wrong before was process, not code. These rules each answer a failure recorded in the old ROADMAP and HANDOVER.
+Each rule answers a failure recorded in the old ROADMAP and HANDOVER.
 
 | Failure before | Rule now |
 |---|---|
@@ -14,7 +14,7 @@ Most of what went wrong before was process, not code. These rules each answer a 
 | Green CI that ran no tests (Gradle cache); unstyled screens passing | Android CI runs uncached tests plus an emulator smoke test; screenshot review replaces "testid exists" as the UI check. |
 | Android written blind, a post-login crash nobody could see | Emulator in CI from M0; at each milestone, a build that arrives as an ordinary update through Droid-ify, with a one-tap crash report (logcat to the server). |
 | `main` auto-deployed half-finished work to your daily container | Until you use Auralis, the container on mediaserver simply follows `main` as the test instance. Before "It plays" ships, `main` moves to `:edge` and only releases reach `:latest`, so from then on your daily container moves only when you've tried a milestone. |
-| Parallel sessions colliding; 9,000 lines of handover | **No parallelism.** One Opus 5.5 orchestrator session holds the big picture and never stops between items; Opus 5.5 subagents do all the work, strictly one at a time, each task sized so its context is enough yet small, splitting a plan item where needed. Each part runs plan, build, test (fresh context, real recordings), then fix if the test failed; the written plan and test output are the hand-offs. No handover or status file: progress is computed from the repo each session (see "Staying on track"), and history lives in git. |
+| Parallel sessions colliding; 9,000 lines of handover | **No parallelism.** One Opus 5.5 orchestrator session holds the big picture and never stops between items; Opus 5.5 subagents do all the work, strictly one at a time, each sized to keep its context small, splitting a plan item where needed. Each part runs plan, build, test (fresh context, real recordings), then fix if the test failed; the written plan and test output are the hand-offs. No handover or status file: progress is computed from the repo, history lives in git. |
 | Over-escalation, and "verified" claims that were wrong | Ordinary calls get made. Every status line says how it was checked (live, recording, code), like the "Where it stands" table on this page. |
 
 ### Standing rules for subagents

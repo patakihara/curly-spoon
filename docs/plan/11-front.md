@@ -47,6 +47,7 @@ Sonora has 66 components, filed by level (basic, components, layouts).
 - **One hierarchy:** tokens → basic pieces (buttons, chips, inputs, cover art) → components (cards, rows, transport, headers) → page layouts (backdrop shell, sections, shelves, the player's pages). The artifact is organised the same way. Pages live only on the canvas.
 - **Pruned against the screens.** Each component lists the canvas pages that draw it, and a test fails on one no page draws. A component a later milestone needs, such as the output device button for "Play on…", arrives with its page.
 - **Input hands its handler the text.** `Input`'s `onChange` gets the new string, as every other form component does, so `FieldRow`'s `(next: string)` handler no longer receives a DOM event.
+- **Controls show Material's states.** Every interactive component has enabled, disabled, hovered, focused (an outer ring) and pressed, a ripple spreading from the press point with no change of shape. One with no action attached is disabled, as is one set `disabled`.
 
 ### From design to both apps
 

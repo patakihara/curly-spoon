@@ -5,7 +5,7 @@ part: The product
 ---
 ## Playback & queues
 
-This is the part most visibly broken today, and the first thing to get right. The rule: **the server works out how to play something; the clients just play the plan.**
+The rule: **the server works out how to play something; the clients just play the plan.**
 
 ::: diagram play
 
