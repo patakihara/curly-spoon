@@ -9,6 +9,7 @@ Nothing here blocks starting. These are calls you left open in your notes, and e
 
 | Call | Options | Needed by |
 |---|---|---|
+| Getting back to a paused queue | How to return to the queue the other one paused; you're thinking it over | It plays |
 | In-library marking | Mark in-library items (your lean), or mark the ones not in the library | My library |
 | User-created queues | Two queues for now; any number later | Not scheduled |
 | Mixed-content playlists | Parked, as you said | Not scheduled |

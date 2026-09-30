@@ -11,7 +11,7 @@ Everything in the app starts as a Sonora component, and every page starts on the
 
 ### How you work on the design
 
-- **Two things to look at, one place it lives.** You work with two artifacts: the [Sonora Design System](https://claude.ai/artifact/CUW4CN7KpxgvjeWnbhTQBB) (the building blocks) and the [Auralis canvas](https://claude.ai/artifact/S3ob9VNh7LjZHBmEmE9ULq) (the app's pages and navigation). Both are published from the one Auralis repo: `design/sonora` and `design/app`, next to `server`, `web` and `android`. Sonora's repo on the laptop moves in with its history.
+- **Two artifacts, one repo.** The [Sonora Design System](https://claude.ai/artifact/CUW4CN7KpxgvjeWnbhTQBB) (the building blocks) and the [Auralis canvas](https://claude.ai/artifact/S3ob9VNh7LjZHBmEmE9ULq) (the app's pages and navigation), both published from the one Auralis repo: `design/sonora` and `design/app`, next to `server`, `web` and `android`. Sonora's repo on the laptop moves in with its history.
 - **Asking for a change:** comment on either artifact, or ask in chat. Claude changes the repo, regenerates, and republishes the artifact. If you edit an artifact directly, those edits are pulled into the repo before anything else changes there.
 - **How a design change reaches the apps.** Design and apps are in the same repo, so one commit carries both:
   - colours, spacing and fonts change on both platforms automatically;

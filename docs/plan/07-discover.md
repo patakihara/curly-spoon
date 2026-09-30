@@ -22,15 +22,15 @@ The old recommendation code works out your taste from your library and play hist
 - **Previews before commitment** (Sonora's `PreviewButton`). Music previews play a YouTube Music clip, and episodes play the first minutes of the public feed enclosure. Audiobooks play the publisher's retail sample, looked up by ASIN (source to be confirmed in M4). A preview never touches your queue or library.
 - **Precomputed, then composed.** Provider calls run as background jobs within their rate limits (MusicBrainz 1 req/s, Audnexus about 100/min). The Browse endpoint only reads the pool and your live progress, so it answers in one fast call and the loading state is short and honest.
 - **Seeds are what you listened to.** Every provider is seeded from listening history (with weight for how much of it you played), never from library contents.
-- **YouTube is never recommended.** Browse, autoplay and "Are you feeling lucky?" never suggest YouTube videos or channels. A channel only enters Auralis when you add it yourself.
+- **YouTube is recommended only from your own channels.** Browse, autoplay and "Are you feeling lucky?" never suggest a channel you haven't added, or its videos; a channel only enters Auralis when you add it. New videos from your channels show up like any other episode, in digests and Up next.
 - **How recommendations are ranked** (details in the next part of this section).
-- **Quality gets judged on your real library**, the first time any session has been able to: 231 books, your podcast subscriptions and your Jellyfin history. A small review page lists each shelf with its reasons, so bad picks are easy to spot.
+- **Quality gets judged on your real library**: 231 books, your podcast subscriptions and your Jellyfin history. A small review page lists each shelf with its reasons, so bad picks are easy to spot.
 
 ### The recommendation algorithm
 
 **Your taste comes from what you've actually listened to, not what's in your library:** plays, progress and completions (Jellyfin, Audiobookshelf, Auralis), plus your Spotify and YouTube Music history. Owning something only affects how it's shown (owned items play; others can be requested or streamed). A book you own but never started says nothing about your taste.
 
-Researched across Spotify's and YouTube's published work, open-source recommenders, and what fits a household on this server. The honest headline: the famous systems are barely documented (Discover Weekly, Spotify radio, YouTube Music's retrieval), and the well-documented techniques are the ones that work at small scale. Nothing here needs a GPU or a model trained from scratch.
+Researched across Spotify's and YouTube's published work, open-source recommenders, and what fits a household on this server. The famous systems (Discover Weekly, Spotify radio, YouTube Music's retrieval) are barely documented; the well-documented techniques are the ones that work at small scale. Nothing here needs a GPU or a model trained from scratch.
 
 | Phase | What it does | Why it fits |
 |---|---|---|
