@@ -9,7 +9,7 @@ part: Why and what
 Fixed inputs, not re-opened.
 :::
 
-These come from `USER_DECISIONS.md`, the spec addendum and the research notes. The plan builds on them as written. Where a decision rested on a factual premise that turned out false, the plan keeps the decision and fixes the premise (one case, marked).
+These come from `USER_DECISIONS.md`, the spec addendum and the research notes. The plan builds on them as written. Where a decision rested on a false premise, the plan keeps the decision and fixes the premise (one case, marked).
 
 ::: grid g2
 ::: card
@@ -60,7 +60,7 @@ These come from `USER_DECISIONS.md`, the spec addendum and the research notes. T
 - Recommendations come from **external** sources and are mixed into Browse. _"not useful to me if recommendations only show things already in my library."_
 - Mixed-content carousels, at most one episode per podcast in a carousel, each card with a reason line, and a loading state that holds until everything has arrived.
 - One provider per medium: _"Why would the recommendation services for the THREE different kinds of content we have be the same?"_ Provider choice is delegated. Audible and YouTube terms of service don't matter for your own install.
-- Research picks: ListenBrainz for music; for books, Audible's "listeners also enjoyed", with Audnexus for metadata; for podcasts, Apple Podcasts' "You Might Also Like", with PodcastIndex and iTunes as the catalogue; for music, YouTube Music radio alongside ListenBrainz. All checked live.
+- Research picks: for books, Audible's "listeners also enjoyed", with Audnexus for metadata; for podcasts, Apple Podcasts' "You Might Also Like", with PodcastIndex and iTunes as the catalogue; for music, YouTube Music radio alongside ListenBrainz. All checked live.
 - Search doubles as the request view: one global ranking across all sources, each result marked owned, streamable or requestable (never owned and requestable). Suggestions while typing, results on submit; type buttons only filter.
 - Lyrics search uses an external provider (LRCLIB).
 :::

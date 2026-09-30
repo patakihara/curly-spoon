@@ -31,7 +31,7 @@ Every screen gets one call that returns what the screen draws, with fields named
 ::: card
 #### 3 · A local index, refreshed in the background
 
-A job mirrors the Audiobookshelf and Jellyfin libraries into SQLite as shared library metadata (ids, titles, creators, genres, external ids), while each person's progress is read with their own token (M1.progress). Browse, search, ownership checks and recommendations read that index, not live fan-out. So the screen APIs stay fast on this RAM-starved box, and Browse's loading state stays brief.
+A job mirrors the Audiobookshelf and Jellyfin libraries into SQLite as shared library metadata (ids, titles, creators, genres, external ids), while each person's progress is read with their own token (M1.progress). Browse, search, ownership checks and recommendations read that index, not live fan-out. So screen APIs stay fast on this RAM-starved box.
 :::
 
 ::: card
