@@ -247,6 +247,12 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * @description The mime type of a transcode's one track: an HLS playlist.
+         * @constant
+         * @enum {string}
+         */
+        HlsMime: "application/vnd.apple.mpegurl";
         HealthResponse: {
             /** @enum {string} */
             status: "ok";

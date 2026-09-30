@@ -116,6 +116,15 @@ function rig(plan: PlaybackPlan, options: { native?: string; hlsArrives?: Promis
 }
 
 describe('the web player', () => {
+  it('reports a file that runs past its planned length as at its end, so the position never goes back', async () => {
+    const { player, playing, positions } = rig(book);
+    await player.play();
+    playing()!.loaded(21.0001);
+    playing()!.at(21.0001);
+    expect(player.position).toBe(21);
+    expect(positions.at(-1)).toBe(21);
+  });
+
   it('[M1.play/c] starts the file that holds the plan’s start, at that point in the file', async () => {
     const { player, playing } = rig({ ...book, startAt: 30 });
     await player.play();

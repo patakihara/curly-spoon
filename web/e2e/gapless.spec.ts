@@ -8,13 +8,19 @@ import { type PlaybackPlan, type createPlayer } from '../src/playback';
 /**
  * The web player engine in Chromium, playing the recorded four-file book from the server on
  * recorded upstreams (`pnpm --filter @auralis/server e2e:serve`, as the emulator's tests run it):
- * a real sign-in, a real plan and the server's own range proxy, each file a 5 s stand-in tone.
+ * a real sign-in, a real plan and the server's own range proxy, each file a 5 s stand-in tone the plan is timed by.
  * The engine has no page yet, so it is bundled as it is and run on the server's origin, where the
  * session cookie reaches its requests.
  */
 
 /** A file ending and the next one playing, further apart than this, is a pause you hear. */
 const MAX_GAP_MS = 50;
+/** How far either side of the boundary the position is compared with the wall clock. */
+const WINDOW_MS = 500;
+/** Across the boundary, how far the position gained may part from the wall time passed. */
+const MAX_TRACK_SLACK_MS = 150;
+/** How much more than the time between two reports the position may gain. */
+const MAX_JUMP_SLACK_MS = 100;
 
 test.use({ launchOptions: { args: ['--autoplay-policy=no-user-gesture-required'] } });
 
@@ -101,7 +107,7 @@ test('[M1.play/c] plays a two-file boundary with no pause, the position running 
     if (!planned.ok) throw new Error(`POST /api/play answered ${planned.status}`);
     const plan = (await planned.json()) as PlaybackPlan;
     const events: { type: string; src: string; at: number }[] = [];
-    const positions: number[] = [];
+    const positions: { position: number; at: number }[] = [];
     const audios: HTMLAudioElement[] = [];
     const { createPlayer: create } = (
       window as unknown as { AuralisPlayback: { createPlayer: typeof createPlayer } }
@@ -116,7 +122,7 @@ test('[M1.play/c] plays a two-file boundary with no pause, the position running 
           );
         return audio;
       },
-      onPosition: (position) => positions.push(position),
+      onPosition: (position) => positions.push({ position, at: performance.now() }),
     });
     const second = plan.tracks[1]!.url;
     await player.play();
@@ -149,9 +155,36 @@ test('[M1.play/c] plays a two-file boundary with no pause, the position running 
   expect(gap).toBeLessThan(MAX_GAP_MS);
   test.info().annotations.push({ type: 'gap', description: `${gap.toFixed(1)} ms` });
 
-  expect(run.positions.length).toBeGreaterThan(10);
-  expect([...run.positions].sort((a, b) => a - b)).toEqual(run.positions);
-  expect(run.positions.some((p) => p > 0 && p < run.offset)).toBe(true);
-  expect(run.positions.some((p) => p >= run.offset)).toBe(true);
+  const positions = run.positions.map((p) => p.position);
+  expect(positions.length).toBeGreaterThan(10);
+  expect(positions.some((p) => p > 0 && p < run.offset)).toBe(true);
+  expect(positions.some((p) => p >= run.offset)).toBe(true);
   expect(run.last).toBeGreaterThanOrEqual(run.offset + 1);
+
+  // Continuity: between two reports the position never goes back, and gains no more than the
+  // time between them plus a little.
+  for (let i = 1; i < run.positions.length; i++) {
+    const [a, b] = [run.positions[i - 1]!, run.positions[i]!];
+    const gained = b.position - a.position;
+    expect(gained, `from ${a.position} to ${b.position}`).toBeGreaterThanOrEqual(0);
+    expect(gained * 1000, `from ${a.position} to ${b.position}`).toBeLessThanOrEqual(
+      b.at - a.at + MAX_JUMP_SLACK_MS,
+    );
+  }
+  // Across the boundary the position gained tracks the wall time passed: a pause or silence is
+  // wall time without position, a skip is position without wall time.
+  const crossed = run.positions.find((p) => p.position >= run.offset)!;
+  const before = run.positions.findLast((p) => p.at <= crossed.at - WINDOW_MS);
+  const after = run.positions.find((p) => p.at >= crossed.at + WINDOW_MS);
+  expect(before, 'a report well before the boundary').toBeDefined();
+  expect(after, 'a report well after the boundary').toBeDefined();
+  const gained = (after!.position - before!.position) * 1000;
+  const passed = after!.at - before!.at;
+  expect(Math.abs(gained - passed), `gained ${gained} ms in ${passed} ms`).toBeLessThanOrEqual(
+    MAX_TRACK_SLACK_MS,
+  );
+  test.info().annotations.push({
+    type: 'boundary',
+    description: `gained ${gained.toFixed(0)} ms in ${passed.toFixed(0)} ms`,
+  });
 });

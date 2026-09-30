@@ -59,6 +59,8 @@ enum class HealthResponseStatus {
     OK,
 }
 
+const val HLS_MIME = "application/vnd.apple.mpegurl"
+
 @Serializable
 enum class LinkState {
     @SerialName("linked")

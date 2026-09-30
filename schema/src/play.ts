@@ -40,6 +40,11 @@ export function parseMediaRefKey(key: string): MediaRef | null {
 /** The mime type of a transcode's one track: an HLS playlist, played with hls.js or Media3's HLS. */
 export const HLS_MIME = 'application/vnd.apple.mpegurl';
 
+/** [HLS_MIME] as a constant both generated clients carry, so neither copies the string. */
+export const HlsMime = z.literal(HLS_MIME).openapi('HlsMime', {
+  description: "The mime type of a transcode's one track: an HLS playlist.",
+});
+
 /** One audio file to play, streamed through this server. Times are in seconds. */
 export const PlaybackTrack = z
   .object({

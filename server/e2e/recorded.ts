@@ -61,7 +61,7 @@ export interface RecordedServer {
   user: { username: string; groups: string[] };
   /** The recorded item that plays: one file. */
   playable: MediaRef;
-  /** The recorded book of four files, played directly. */
+  /** The recorded book of four files, played directly, timed by its 5 s stand-in tones. */
   multiFile: MediaRef;
   listen(): Promise<void>;
   close(): Promise<void>;
@@ -85,6 +85,50 @@ function jsonOf<T>(recording: Recording): T {
   const { body } = recording.response;
   if (body === null || !('json' in body)) throw new Error(`${recording.call} has no JSON body`);
   return body.json as T;
+}
+
+/** An MPEG-1 Layer III file's length in seconds, from its frames: 1152 samples each. */
+export function mp3Seconds(bytes: Uint8Array): number {
+  const BITRATES = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320];
+  const RATES = [44_100, 48_000, 32_000];
+  let at = 0;
+  let frames = 0;
+  let rate = 0;
+  while (at + 4 <= bytes.length) {
+    const [a, b, c] = [bytes[at]!, bytes[at + 1]!, bytes[at + 2]!];
+    if (a !== 0xff || (b & 0xfe) !== 0xfa)
+      throw new Error(`not an MPEG-1 Layer III frame at ${at}`);
+    const bitrate = BITRATES[c >> 4];
+    rate = RATES[(c >> 2) & 3] ?? 0;
+    if (!bitrate || !rate) throw new Error(`a free or bad bitrate or sample rate at ${at}`);
+    at += Math.floor((144_000 * bitrate) / rate) + ((c >> 1) & 1);
+    frames++;
+  }
+  return (frames * 1152) / rate;
+}
+
+/**
+ * [recorded], a play session of a book whose files are all the stand-in [tone], timed by that
+ * tone: each track as long as it, starting where the last ends, and each file one chapter under its
+ * recorded title. The recordings keep the real timings, which the adapter tests read.
+ */
+function timedByStandIns(recorded: Recording, tone: string): Recording {
+  const seconds = mp3Seconds(readFileSync(join(ADAPTERS, 'audiobookshelf', 'recordings', tone)));
+  const timed = structuredClone(recorded);
+  const session = jsonOf<{
+    duration: number;
+    audioTracks: { duration: number; startOffset: number }[];
+    chapters: { start: number; end: number }[];
+  }>(timed);
+  session.audioTracks.forEach((track, i) => {
+    track.startOffset = i * seconds;
+    track.duration = seconds;
+  });
+  session.chapters = session.chapters
+    .slice(0, session.audioTracks.length)
+    .map((chapter, i) => ({ ...chapter, start: i * seconds, end: (i + 1) * seconds }));
+  session.duration = session.audioTracks.length * seconds;
+  return timed;
 }
 
 /** Sends each request to the replay for its upstream's origin. */
@@ -226,9 +270,10 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
   // The four-file book is recorded twice under one play call, directly and transcoded, and its
   // first segment twice, before and after it was cut. The server replays direct play and the cut
   // segment; the transcode's plan is exercised in server/src/play.test.ts.
-  const abs = recordingsOf('audiobookshelf').filter(
-    (r) => r.call !== 'hls-play' && r.call !== 'hls-segment-pending',
-  );
+  // Its files are all one 5 s stand-in tone, so the book is served timed by that tone.
+  const abs = recordingsOf('audiobookshelf')
+    .filter((r) => r.call !== 'hls-play' && r.call !== 'hls-segment-pending')
+    .map((r) => (r.call === 'multi-play' ? timedByStandIns(r, 'multi-file.mp3') : r));
   const server = await assembleServer(config, {
     fetch: byOrigin({
       [SIGN_ON_ISSUER]: signOn.fetch,

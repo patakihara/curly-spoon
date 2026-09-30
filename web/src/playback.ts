@@ -2,9 +2,10 @@
  * The web player engine: it plays a whole PlaybackPlan from code, with no UI of its own. Two audio
  * elements take turns: the one playing a file, and the one holding the next file, preloaded a
  * little before the end, so the next file starts the moment the last one ends. The position it
- * reports is on the whole item's timeline (the file's offset plus its own time), so chapters and
- * progress work across files. A transcode's one HLS track plays through hls.js, loaded only then,
- * or through the browser's own HLS where it has one, and its session is closed when the player is.
+ * reports is on the whole item's timeline (the file's offset plus its own time, no further than
+ * its planned end), so chapters and progress work across files. A transcode's one HLS track plays
+ * through hls.js, loaded only then, or through the browser's own HLS where it has one, and its
+ * session is closed when the player is.
  */
 import { type ApiClient, createApiClient } from './api/client';
 import { type components } from './generated/api/schema';
@@ -12,8 +13,8 @@ import { type components } from './generated/api/schema';
 export type PlaybackPlan = components['schemas']['PlaybackPlan'];
 type Track = PlaybackPlan['tracks'][number];
 
-/** A transcode's one track: an HLS playlist. The same value as the schema's `HLS_MIME`. */
-export const HLS_MIME = 'application/vnd.apple.mpegurl';
+/** A transcode's one track: an HLS playlist. Typed by the generated `HlsMime`, so it cannot drift. */
+export const HLS_MIME: components['schemas']['HlsMime'] = 'application/vnd.apple.mpegurl';
 
 /** How long before a file ends the next one loads: 20 s, or half a file shorter than 40 s. */
 const PRELOAD_LEAD_S = 20;
@@ -135,7 +136,9 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
   const position = () => {
     const slot = now();
     if (slot.track === null) return startAt;
-    return tracks[slot.track]!.offset + slot.audio.currentTime;
+    // A file that runs a hair past its planned length is at its end, where the next one starts.
+    const track = tracks[slot.track]!;
+    return track.offset + Math.min(slot.audio.currentTime, track.duration);
   };
 
   const preloadNext = () => {

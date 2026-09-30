@@ -162,6 +162,25 @@ describe('the Kotlin generator', () => {
     expect(kotlin).toContain('    @SerialName("audioBook")\n    AUDIO_BOOK,\n');
   });
 
+  it('makes a string constant a top-level const val, named after its component', () => {
+    const kotlin = generateKotlin(
+      {
+        components: {
+          schemas: {
+            HlsMime: {
+              type: 'string',
+              enum: ['application/vnd.apple.mpegurl'],
+              const: 'application/vnd.apple.mpegurl',
+            },
+          },
+        },
+      },
+      PACKAGE,
+    );
+    expect(kotlin).toContain('const val HLS_MIME = "application/vnd.apple.mpegurl"\n');
+    expect(kotlin).not.toContain('enum class HlsMime');
+  });
+
   it('refuses a shape it cannot map', () => {
     const shapes: Record<string, object>[] = [
       { choice: { oneOf: [{ type: 'string' }, { type: 'integer' }] } },

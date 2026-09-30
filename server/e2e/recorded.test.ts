@@ -141,6 +141,28 @@ describe('the recorded-upstreams server', () => {
     }
   });
 
+  it('times the four-file book by its 5 s stand-in tones, so its tracks and chapters meet end to end', async () => {
+    const server = await boot();
+    const headers = { authorization: `Bearer ${await bearerFor(server)}` };
+    const planned = await server.app.inject({
+      method: 'POST',
+      url: '/api/play',
+      headers,
+      payload: { ref: server.multiFile },
+    });
+    const { tracks, chapters } = planned.json<PlaybackPlan>();
+    let offset = 0;
+    tracks.forEach((track, i) => {
+      expect(track.duration).toBeCloseTo(5, 1);
+      expect(track.offset).toBeCloseTo(offset, 6);
+      expect(chapters[i]!.start).toBeCloseTo(track.offset, 6);
+      expect(chapters[i]!.end).toBeCloseTo(track.offset + track.duration, 6);
+      offset += track.duration;
+    });
+    // The titles are the recording's own.
+    expect(chapters[1]!.title).toBe('Ars Lunga');
+  });
+
   it('refuses a callback whose state is not the sign-in it started', async () => {
     const server = await boot();
     const login = await server.app.inject({

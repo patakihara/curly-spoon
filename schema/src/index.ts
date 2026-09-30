@@ -29,6 +29,7 @@ export {
   AudioBytes,
   HLS_MIME,
   HLS_SEGMENT,
+  HlsMime,
   MediaHlsParams,
   MediaRef,
   MediaRefKey,
@@ -64,3 +65,6 @@ export {
   type Access,
   type Route,
 } from './routes.js';
+
+/** The values both generated clients name as constants (`pnpm gen`), by component name. */
+export { constants } from './constants.js';

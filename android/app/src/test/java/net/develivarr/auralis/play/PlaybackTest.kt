@@ -14,6 +14,8 @@ import androidx.media3.test.utils.robolectric.RobolectricUtil
 import androidx.media3.test.utils.robolectric.ShadowMediaCodecConfig
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import net.develivarr.auralis.api.ApiClient
@@ -22,6 +24,7 @@ import net.develivarr.auralis.api.FakeServer
 import net.develivarr.auralis.api.ServerConfig
 import net.develivarr.auralis.auth.MemoryTokenStore
 import net.develivarr.auralis.auth.Session
+import net.develivarr.auralis.generated.api.HLS_MIME
 import net.develivarr.auralis.generated.api.MediaRef
 import net.develivarr.auralis.generated.api.MediaSource
 import net.develivarr.auralis.generated.api.PlayBody
@@ -113,8 +116,21 @@ class PlaybackTest {
     }
 
     @Test
+    fun `a file that runs past its planned length is at its end, so the position never goes back`() {
+        playback.start(
+            PlaybackPlan(
+                tracks = listOf(track(0, duration = 600.0, offset = 0.0), track(1, duration = 400.0, offset = 600.0)),
+                chapters = emptyList(),
+                startAt = 0.0,
+            ),
+        )
+        playback.player.seekTo(0, 600_040)
+        assertEquals(600.0, playback.position, 0.0)
+    }
+
+    @Test
     fun `a transcode's HLS track plays through Media3's HLS source, a file through the progressive one`() {
-        val hls = track(0, duration = 60.0, offset = 0.0).copy(url = "/api/media/abs:item-1/hls/p-1/output.m3u8", mime = Playback.HLS_MIME)
+        val hls = track(0, duration = 60.0, offset = 0.0).copy(url = "/api/media/abs:item-1/hls/p-1/output.m3u8", mime = HLS_MIME)
         assertTrue(playback.sourceOf(hls) is HlsMediaSource)
         assertTrue(playback.sourceOf(track(0, duration = 60.0, offset = 0.0)) is ProgressiveMediaSource)
     }
@@ -123,7 +139,7 @@ class PlaybackTest {
     fun `an HLS plan is queued on the audio-only player like any other`() {
         playback.start(
             PlaybackPlan(
-                tracks = listOf(track(0, duration = 60.0, offset = 0.0).copy(url = "/api/media/abs:item-1/hls/p-1/output.m3u8", mime = Playback.HLS_MIME)),
+                tracks = listOf(track(0, duration = 60.0, offset = 0.0).copy(url = "/api/media/abs:item-1/hls/p-1/output.m3u8", mime = HLS_MIME)),
                 chapters = emptyList(),
                 startAt = 0.0,
             ),
@@ -172,6 +188,34 @@ class PlaybackTest {
         playback.start(first)
         playback.start(first.copy(progressTarget = ProgressTarget("p-2")))
         assertEquals(listOf("/api/play/p-1/close"), playCalls().map { it.request.url.encodedPath })
+    }
+
+    @Test
+    fun `a plan that arrives after release plays nothing, and its session is closed`() {
+        server.answer = {
+            when (it.url.encodedPath) {
+                "/api/play" -> 200 to PLAN_JSON.replace(""""startAt":0}""", """"startAt":0,"progressTarget":{"playId":"p-late"}}""")
+                else -> 200 to """{"ok":true}"""
+            }
+        }
+        val queued = ArrayDeque<Runnable>()
+        val later = Playback(
+            ApplicationProvider.getApplicationContext(),
+            api,
+            CoroutineScope(object : CoroutineDispatcher() {
+                override fun dispatch(context: CoroutineContext, block: Runnable) {
+                    queued += block
+                }
+            }),
+            Dispatchers.Unconfined,
+        )
+        later.play(REF)
+        later.release()
+        while (queued.isNotEmpty()) queued.removeFirst().run()
+        assertEquals(listOf("/api/play", "/api/play/p-late/close"), playCalls().map { it.request.url.encodedPath })
+        assertEquals(0, later.player.mediaItemCount)
+        assertTrue(said("released before its plan came: abs:item-1"))
+        later.player.release()
     }
 
     @Test

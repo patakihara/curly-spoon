@@ -7,7 +7,8 @@ const SESSION_SCHEME = 'session';
 const BEARER_SCHEME = 'bearer';
 
 /**
- * The OpenAPI 3.1 document for these routes; every `.openapi('Name')` schema becomes a component.
+ * The OpenAPI 3.1 document for these routes; every `.openapi('Name')` schema becomes a component,
+ * and so does each of [constants], one literal value both clients name, marked `const`.
  * A route that is not public asks for the session cookie or an app's bearer token, and may answer
  * 401 or 403 with `error`. A route that parses its input may answer 400; a rate-limited one, 429;
  * a streamed one answers audio, 206 to a range and 416 to a range past the end, and HEAD with the
@@ -16,8 +17,10 @@ const BEARER_SCHEME = 'bearer';
 export function buildOpenApiDocument(
   routes: readonly Route[],
   error: z.ZodTypeAny,
+  constants: Readonly<Record<string, z.ZodTypeAny>> = {},
 ): ReturnType<OpenApiGeneratorV31['generateDocument']> {
   const registry = new OpenAPIRegistry();
+  for (const [name, schema] of Object.entries(constants)) registry.register(name, schema);
   registry.registerComponent('securitySchemes', SESSION_SCHEME, {
     type: 'apiKey',
     in: 'cookie',
@@ -100,8 +103,16 @@ export function buildOpenApiDocument(
       });
     }
   }
-  return new OpenApiGeneratorV31(registry.definitions).generateDocument({
+  const doc = new OpenApiGeneratorV31(registry.definitions).generateDocument({
     openapi: '3.1.0',
     info: { title: 'Auralis API', version: '0.0.0' },
   });
+  for (const name of Object.keys(constants)) {
+    const schema = doc.components?.schemas?.[name];
+    if (!schema || !('enum' in schema) || schema.enum?.length !== 1) {
+      throw new Error(`${name}: a constant is one literal value`);
+    }
+    schema.const = schema.enum[0];
+  }
+  return doc;
 }

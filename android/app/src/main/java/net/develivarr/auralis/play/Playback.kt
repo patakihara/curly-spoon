@@ -30,6 +30,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.develivarr.auralis.api.ApiClient
+import net.develivarr.auralis.generated.api.HLS_MIME
 import net.develivarr.auralis.generated.api.MediaRef
 import net.develivarr.auralis.generated.api.MediaSource as Source
 import net.develivarr.auralis.generated.api.Ok
@@ -70,17 +71,22 @@ class Playback(
     }
     val player: ExoPlayer by built
 
+    /** Set by [release], on the main thread: nothing plays after it. */
     private var released = false
 
     /** The plan playing, whose tracks' offsets place [position]; null before the first. */
-    private var plan: PlaybackPlan? = null
+    var plan: PlaybackPlan? = null
+        private set
 
-    /** Seconds from the item's start: the current track's offset plus the time within it. */
+    /**
+     * Seconds from the item's start: the current track's offset plus the time within it, no further
+     * than its planned end, where the next track starts, so the position never goes back.
+     */
     val position: Double
         get() {
             val plan = plan ?: return 0.0
             val track = plan.tracks.getOrNull(player.currentMediaItemIndex) ?: return plan.startAt
-            return track.offset + player.currentPosition / 1000.0
+            return track.offset + minOf(player.currentPosition / 1000.0, track.duration)
         }
 
     /**
@@ -93,7 +99,10 @@ class Playback(
         return ref?.let { play(it) }
     }
 
-    /** Fetches [ref]'s plan and plays it; a plan the server refuses plays nothing, and says so. */
+    /**
+     * Fetches [ref]'s plan and plays it; a plan the server refuses plays nothing, and says so. A plan
+     * that comes after [release] plays nothing either, and its session is closed.
+     */
     fun play(ref: MediaRef): Job = background.launch {
         val plan = try {
             api.post("api/play", PlayBody(ref), PlayBody.serializer(), PlaybackPlan.serializer())
@@ -105,7 +114,11 @@ class Playback(
             Log.w(TAG, "nothing to play for ${keyOf(ref)}")
             return@launch
         }
-        withContext(main) { start(plan) }
+        withContext(main) {
+            if (!released) return@withContext start(plan)
+            Log.w(TAG, "released before its plan came: ${keyOf(ref)}")
+            close(plan)
+        }
     }
 
     /**
@@ -115,6 +128,7 @@ class Playback(
      */
     fun start(plan: PlaybackPlan) {
         require(plan.tracks.isNotEmpty()) { "a plan with no tracks" }
+        check(!released) { "a released player plays nothing" }
         this.plan?.let(::close)
         this.plan = plan
         val index = plan.tracks.indexOfLast { it.offset <= plan.startAt }.coerceAtLeast(0)
@@ -135,13 +149,15 @@ class Playback(
 
     /**
      * Stops, lets go of the player, and closes the plan's open playback session on the server if it
-     * has one, ending its transcode. Releasing twice does nothing more.
+     * has one, ending its transcode. Nothing plays after it, not even a plan already on its way.
+     * Releasing twice does nothing more.
      */
     fun release() {
         plan?.let(::close)
         plan = null
-        if (built.isInitialized() && !released) {
-            released = true
+        if (released) return
+        released = true
+        if (built.isInitialized()) {
             player.clearMediaItems()
             player.release()
         }
@@ -160,8 +176,6 @@ class Playback(
     }
 
     companion object {
-        /** A transcode's one track: an HLS playlist. The same value as the schema's `HLS_MIME`. */
-        const val HLS_MIME = "application/vnd.apple.mpegurl"
         private const val TAG = "Auralis"
         private val KEY = Regex("""^abs:([\w-]{1,64})$""")
 

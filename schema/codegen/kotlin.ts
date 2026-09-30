@@ -11,6 +11,7 @@ interface SchemaObject {
   allOf?: SchemaObject[];
   anyOf?: SchemaObject[];
   oneOf?: SchemaObject[];
+  const?: unknown;
 }
 
 export interface OpenApiDocument {
@@ -159,6 +160,12 @@ export function generateKotlin(doc: OpenApiDocument, packageName: string): strin
   for (const name of Object.keys(schemas).sort()) {
     const schema = schemas[name]!;
     if (!TYPE_NAME.test(name)) throw new Error(`${name}: not a Kotlin type name`);
+    if (schema.const !== undefined) {
+      if (typeof schema.const !== 'string')
+        throw new Error(`${name}: only string constants are supported`);
+      blocks.push(`const val ${enumConstant(name, name)} = ${JSON.stringify(schema.const)}\n`);
+      continue;
+    }
     if (schema.enum !== undefined) {
       if (schema.type !== 'string') throw new Error(`${name}: only string enums are supported`);
       blocks.push(enumClass(name, schema.enum, name));

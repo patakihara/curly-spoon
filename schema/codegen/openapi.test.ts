@@ -116,4 +116,13 @@ describe('the OpenAPI document', () => {
     );
     expect(path?.head?.responses?.['206']).toEqual({ description: expect.any(String) as unknown });
   });
+
+  it('describes each named constant as a component of its one value', () => {
+    const Tone = z.literal('audio/x-tone').openapi('ToneMime');
+    const doc = buildOpenApiDocument([open], ErrorResponse, { ToneMime: Tone });
+    expect(doc.components?.schemas?.ToneMime).toMatchObject({
+      type: 'string',
+      const: 'audio/x-tone',
+    });
+  });
 });
