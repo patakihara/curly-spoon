@@ -13,13 +13,12 @@ The old project drifted from its design and its docs. Each rule here is a check 
 
 - **Generated code can't be edited by hand.** The web UI package, Android's component props, the routes and the page layouts are all generated from `design/`. CI regenerates them and fails on any difference, and a Claude Code hook in the repo refuses edits to those folders, so the only way to change UI is through the design.
 - **No component without a design.** CI fails if app code uses a component that doesn't exist in Sonora with its `.d.ts`, card and previews. Lint rejects styled elements, raw colours and one-off components outside the UI package.
-- **No screen without a page.** The app's routes must equal the canvas's `nav.json`, and every page must match its generated layout. Adding a screen in code alone fails the build.
-- **Looks match.** Each page's screenshot, on both platforms, is compared against the canvas's render of the same page.
+- **No screen without a page, and looks match.** Routes, layouts and both platforms' screenshots are checked against the canvas, as "From design to both apps" lists.
 
 ### Keep the artifacts current
 
 - **Every artifact says what it was built from.** Its footer shows the repo commit, and `design/published.json` records the commit and artifact version of each publish.
-- **Unpublished design changes block the merge.** CI fails if `design/` changed after the recorded publish. Publishing needs a Claude session, so a hook in the repo also stops a Claude session from finishing while a design change is unpublished.
+- **Unpublished design changes block the merge.** CI fails if `design/` changed after the recorded publish. Since publishing needs a Claude session, a repo hook stops one finishing while a design change is unpublished.
 - **Your side is read first.** Before touching `design/`, the session compares the live artifact with the recorded version. If you've edited it or left comments since, those are pulled in or answered first. Open comments are listed at the start of every session.
 
 ### Keep the plan clean and the progress true
@@ -31,7 +30,7 @@ The plan and the progress are kept apart on purpose.
 #### The plan: edited in place
 
 - Lives in the repo (`docs/plan/`) and is published to this artifact, with the same commit stamp and merge check as the design.
-- Only ever describes the current decision. No dated update notes, no "a previous version said". Why something changed is in git history, not in the text.
+- Only ever describes the current decision: no dated notes, no "a previous version said". Why something changed is in git history.
 - An adjustment rewrites that sentence where it stands. It's the only place decisions live.
 - Every item has an id and a concrete **done when**, and a size limit keeps the whole thing readable.
 :::
