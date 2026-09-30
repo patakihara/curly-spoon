@@ -1,6 +1,6 @@
 # Sonora's buttons and interactive components get Material's states
 
-> Do buttons in the Sonora components have states? They should, and base them on the material guidelines  --- see image above (the agent implementing this must look a this image). The pressed state includes a ripple overlay, which animates from the click position when the button is clicked/pressed. Note: this example shows the pressed state also changing shape: this is not something I'm looking for.
+> Do buttons in the Sonora components have states? They should, and base them on the material guidelines --- see image above (the agent implementing this must look a this image). The pressed state includes a ripple overlay, which animates from the click position when the button is clicked/pressed. Note: this example shows the pressed state also changing shape: this is not something I'm looking for.
 >
 > The button components should be set up in such a way that they're in the "disabled" state if they don't have a corresponding action tied to them (or, ofc, if they're "disabled" property is true).
 >
