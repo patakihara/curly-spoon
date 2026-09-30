@@ -89,6 +89,9 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
   let current = 0;
   let started = false;
   let startAt = plan.startAt;
+  /** Set by `destroy`, whose one run it holds: nothing loads or plays after it. */
+  let destroyed: Promise<void> | null = null;
+  const unlisten: (() => void)[] = [];
   const now = () => slots[current]!;
   const spare = () => slots[1 - current]!;
 
@@ -109,6 +112,7 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
 
   /** Puts track `index` into `slot`, loading it, `time` seconds in. */
   const put = async (slot: Slot, index: number, time: number) => {
+    if (destroyed) return;
     const track: Track = tracks[index]!;
     slot.hls?.destroy();
     slot.hls = null;
@@ -116,6 +120,7 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
     slot.audio.preload = 'auto';
     if (track.mime === HLS_MIME && slot.audio.canPlayType(HLS_MIME) === '') {
       const Hls = await loadHls();
+      if (destroyed) return;
       const hls = new Hls();
       slot.hls = hls;
       hls.loadSource(track.url);
@@ -145,12 +150,16 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
 
   const listen = (slot: Slot) => {
     const mine = () => slot === now();
-    slot.audio.addEventListener('timeupdate', () => {
+    const on = (type: string, listener: () => void) => {
+      slot.audio.addEventListener(type, listener);
+      unlisten.push(() => slot.audio.removeEventListener(type, listener));
+    };
+    on('timeupdate', () => {
       if (!mine()) return;
       options.onPosition?.(position());
       preloadNext();
     });
-    slot.audio.addEventListener('ended', () => {
+    on('ended', () => {
       if (!mine() || slot.track === null) return;
       const next = slot.track + 1;
       if (next >= tracks.length) {
@@ -162,7 +171,7 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
       current = 1 - current;
       // Straight from the event: a preloaded file starts in the same task the last one ended in.
       if (ready) void now().audio.play();
-      else void put(now(), next, 0).then(() => now().audio.play());
+      else void put(now(), next, 0).then(() => (destroyed ? undefined : now().audio.play()));
       options.onPosition?.(tracks[next]!.offset);
     });
   };
@@ -170,9 +179,11 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
 
   return {
     async play() {
+      if (destroyed) return;
       if (!started) {
         started = true;
         await put(now(), trackAt(startAt), startAt - tracks[trackAt(startAt)]!.offset);
+        if (destroyed) return;
       }
       await now().audio.play();
     },
@@ -180,6 +191,7 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
       now().audio.pause();
     },
     async seek(to) {
+      if (destroyed) return;
       const index = trackAt(to);
       const time = to - tracks[index]!.offset;
       if (!started) {
@@ -195,6 +207,7 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
         current = slots.indexOf(target);
         if (target.track === index) target.audio.currentTime = time;
         else await put(target, index, time);
+        if (destroyed) return;
         if (wasPlaying) await target.audio.play();
       }
       options.onPosition?.(position());
@@ -202,12 +215,16 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
     get position() {
       return position();
     },
-    async destroy() {
-      slots.forEach(release);
-      const playId = plan.progressTarget?.playId;
-      if (playId === undefined) return;
-      const api = options.api ?? createApiClient();
-      await api.POST('/api/play/{playId}/close', { params: { path: { playId } } });
+    destroy() {
+      destroyed ??= (async () => {
+        unlisten.splice(0).forEach((stop) => stop());
+        slots.forEach(release);
+        const playId = plan.progressTarget?.playId;
+        if (playId === undefined) return;
+        const api = options.api ?? createApiClient();
+        await api.POST('/api/play/{playId}/close', { params: { path: { playId } } });
+      })();
+      return destroyed;
     },
   };
 }

@@ -14,7 +14,7 @@ import { type PlaybackPlan, type createPlayer } from '../src/playback';
  */
 
 /** A file ending and the next one playing, further apart than this, is a pause you hear. */
-const MAX_GAP_MS = 150;
+const MAX_GAP_MS = 50;
 
 test.use({ launchOptions: { args: ['--autoplay-policy=no-user-gesture-required'] } });
 
@@ -102,12 +102,14 @@ test('[M1.play/c] plays a two-file boundary with no pause, the position running 
     const plan = (await planned.json()) as PlaybackPlan;
     const events: { type: string; src: string; at: number }[] = [];
     const positions: number[] = [];
+    const audios: HTMLAudioElement[] = [];
     const { createPlayer: create } = (
       window as unknown as { AuralisPlayback: { createPlayer: typeof createPlayer } }
     ).AuralisPlayback;
     const player = create(plan, {
       createAudio: () => {
         const audio = new Audio();
+        audios.push(audio);
         for (const type of ['playing', 'ended'])
           audio.addEventListener(type, () =>
             events.push({ type, src: new URL(audio.src).pathname, at: performance.now() }),
@@ -118,11 +120,14 @@ test('[M1.play/c] plays a two-file boundary with no pause, the position running 
     });
     const second = plan.tracks[1]!.url;
     await player.play();
-    // On past the boundary, until the second file has played a second of its own.
+    // On past the boundary, until the second file has played a second of its own, by its own
+    // element's clock: the position the engine reports is only what is checked.
+    const secondPlayedASecond = () =>
+      audios.some((a) => a.src !== '' && new URL(a.src).pathname === second && a.currentTime >= 1);
     await new Promise<void>((resolve, reject) => {
       const deadline = setTimeout(() => reject(new Error('the second file never played')), 30_000);
       const poll = setInterval(() => {
-        if (player.position >= plan.tracks[1]!.offset + 1) {
+        if (secondPlayedASecond()) {
           clearTimeout(deadline);
           clearInterval(poll);
           resolve();

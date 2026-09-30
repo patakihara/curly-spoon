@@ -17,6 +17,10 @@ class FakeAudio implements MediaLike {
     if (!this.listeners.has(type)) this.listeners.set(type, new Set());
     this.listeners.get(type)!.add(listener);
   }
+  /** How many listeners the engine still holds on this element. */
+  listening() {
+    return [...this.listeners.values()].reduce((n, set) => n + set.size, 0);
+  }
   removeEventListener(type: string, listener: () => void) {
     this.listeners.get(type)?.delete(listener);
   }
@@ -66,7 +70,7 @@ const book: PlaybackPlan = {
   startAt: 0,
 };
 
-function rig(plan: PlaybackPlan, options: { native?: string } = {}) {
+function rig(plan: PlaybackPlan, options: { native?: string; hlsArrives?: Promise<void> } = {}) {
   const audios: FakeAudio[] = [];
   const positions: number[] = [];
   const hls: { source?: string; media?: MediaLike; destroyed: boolean }[] = [];
@@ -86,8 +90,9 @@ function rig(plan: PlaybackPlan, options: { native?: string } = {}) {
       audios.push(audio);
       return audio;
     },
-    loadHls: async () =>
-      class {
+    loadHls: async () => {
+      await options.hlsArrives;
+      return class {
         state: (typeof hls)[number] = { destroyed: false };
         constructor() {
           hls.push(this.state);
@@ -101,7 +106,8 @@ function rig(plan: PlaybackPlan, options: { native?: string } = {}) {
         destroy() {
           this.state.destroyed = true;
         }
-      },
+      };
+    },
     onPosition: (position) => positions.push(position),
     onEnded: () => ended++,
   });
@@ -278,5 +284,58 @@ describe('the web player', () => {
     await player.destroy();
     expect(audios.every((a) => a.paused && a.src === '')).toBe(true);
     expect(requests).toEqual([]);
+  });
+
+  it('[M1.play/c] does nothing with hls.js that arrives after the player is destroyed', async () => {
+    let arrive!: () => void;
+    const hlsArrives = new Promise<void>((resolve) => (arrive = resolve));
+    const { player, audios, hls } = rig(transcode, { hlsArrives });
+    const playing = player.play();
+    await player.destroy();
+    arrive();
+    await playing;
+    expect(hls).toHaveLength(0);
+    expect(audios.every((a) => a.paused && a.src === '')).toBe(true);
+  });
+
+  it('[M1.play/c] never starts a next file that was still loading when the player was destroyed', async () => {
+    const { player, audios, playing } = rig(book);
+    await player.play();
+    playing()!.finish();
+    await player.destroy();
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(audios.every((a) => a.paused)).toBe(true);
+  });
+
+  it('[M1.play/c] stops listening to both elements once destroyed', async () => {
+    const { player, audios, positions } = rig(book);
+    await player.play();
+    await player.destroy();
+    expect(audios.map((a) => a.listening())).toEqual([0, 0]);
+    audios[0]!.at(3);
+    expect(positions).toEqual([]);
+  });
+
+  it('[M1.play/c] closes the transcode’s session once, however often it is destroyed', async () => {
+    const { player, requests } = rig(transcode);
+    await player.play();
+    await Promise.all([player.destroy(), player.destroy()]);
+    await player.destroy();
+    expect(requests).toEqual(['POST /api/play/p1/close']);
+  });
+
+  it('[M1.play/c] plays nothing when asked to after being destroyed', async () => {
+    const { player, audios } = rig(book);
+    await player.destroy();
+    await player.play();
+    expect(audios.every((a) => a.paused && a.src === '')).toBe(true);
+  });
+
+  it('[M1.play/c] moves nowhere when asked to seek after being destroyed', async () => {
+    const { player, audios } = rig(book);
+    await player.play();
+    await player.destroy();
+    await player.seek(100);
+    expect(audios.every((a) => a.paused && a.src === '')).toBe(true);
   });
 });
