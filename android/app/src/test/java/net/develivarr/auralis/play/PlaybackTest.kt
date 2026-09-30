@@ -6,6 +6,8 @@ import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSpec
+import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.test.utils.FakeMediaSource
 import androidx.media3.test.utils.FakeTimeline
 import androidx.media3.test.utils.robolectric.RobolectricUtil
@@ -25,6 +27,7 @@ import net.develivarr.auralis.generated.api.MediaSource
 import net.develivarr.auralis.generated.api.PlayBody
 import net.develivarr.auralis.generated.api.PlaybackPlan
 import net.develivarr.auralis.generated.api.PlaybackTrack
+import net.develivarr.auralis.generated.api.ProgressTarget
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -61,7 +64,7 @@ class PlaybackTest {
     )
 
     @After
-    fun release() = playback.player.release()
+    fun release() = playback.release()
 
     @Test
     fun `playing a ref asks the server for its plan, with the bearer`() {
@@ -92,6 +95,83 @@ class PlaybackTest {
         assertEquals(1, player.currentMediaItemIndex)
         assertEquals(100_000L, player.currentPosition)
         assertTrue(player.playWhenReady)
+    }
+
+    @Test
+    fun `the position is on the whole item's timeline, the track's offset plus the time within it`() {
+        assertEquals(0.0, playback.position, 0.0)
+        playback.start(
+            PlaybackPlan(
+                tracks = listOf(track(0, duration = 600.0, offset = 0.0), track(1, duration = 400.0, offset = 600.0)),
+                chapters = emptyList(),
+                startAt = 700.0,
+            ),
+        )
+        assertEquals(700.0, playback.position, 0.001)
+        playback.player.seekTo(0, 250_000)
+        assertEquals(250.0, playback.position, 0.001)
+    }
+
+    @Test
+    fun `a transcode's HLS track plays through Media3's HLS source, a file through the progressive one`() {
+        val hls = track(0, duration = 60.0, offset = 0.0).copy(url = "/api/media/abs:item-1/hls/p-1/output.m3u8", mime = Playback.HLS_MIME)
+        assertTrue(playback.sourceOf(hls) is HlsMediaSource)
+        assertTrue(playback.sourceOf(track(0, duration = 60.0, offset = 0.0)) is ProgressiveMediaSource)
+    }
+
+    @Test
+    fun `an HLS plan is queued on the audio-only player like any other`() {
+        playback.start(
+            PlaybackPlan(
+                tracks = listOf(track(0, duration = 60.0, offset = 0.0).copy(url = "/api/media/abs:item-1/hls/p-1/output.m3u8", mime = Playback.HLS_MIME)),
+                chapters = emptyList(),
+                startAt = 0.0,
+            ),
+        )
+        assertEquals(1, playback.player.mediaItemCount)
+        assertEquals(setOf(C.TRACK_TYPE_AUDIO), (0 until playback.player.rendererCount).map(playback.player::getRendererType).toSet())
+    }
+
+    @Test
+    fun `releasing lets go of the player and closes the plan's open session on the server`() {
+        server.answer = { 200 to """{"ok":true}""" }
+        playback.start(
+            PlaybackPlan(
+                tracks = listOf(track(0, duration = 60.0, offset = 0.0)),
+                chapters = emptyList(),
+                startAt = 0.0,
+                progressTarget = ProgressTarget("p-1"),
+            ),
+        )
+        playback.release()
+        val closed = server.seen.single().request
+        assertEquals("POST", closed.method)
+        assertEquals("/api/play/p-1/close", closed.url.encodedPath)
+        assertEquals("Bearer bearer-1", closed.header("Authorization"))
+        assertEquals(0, playback.player.mediaItemCount)
+    }
+
+    @Test
+    fun `releasing a plan with no open session asks the server nothing`() {
+        playback.start(
+            PlaybackPlan(tracks = listOf(track(0, duration = 60.0, offset = 0.0)), chapters = emptyList(), startAt = 0.0),
+        )
+        playback.release()
+        assertEquals(emptyList<FakeServer.Seen>(), server.seen)
+    }
+
+    @Test
+    fun `a new plan closes the last one's open session`() {
+        server.answer = { 200 to """{"ok":true}""" }
+        val first = PlaybackPlan(
+            tracks = listOf(track(0, duration = 60.0, offset = 0.0)),
+            chapters = emptyList(),
+            startAt = 0.0,
+            progressTarget = ProgressTarget("p-1"),
+        )
+        playback.start(first)
+        playback.start(first.copy(progressTarget = ProgressTarget("p-2")))
+        assertEquals(listOf("/api/play/p-1/close"), server.seen.map { it.request.url.encodedPath })
     }
 
     @Test

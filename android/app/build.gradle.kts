@@ -128,9 +128,11 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     // The server's API, the bearer added per call (api/ApiClient.kt).
     implementation(libs.okhttp)
-    // The player (play/Playback.kt): ExoPlayer and its OkHttp data source, and no Media3 module
-    // that brings video (ui, effect, the decoder extensions), per 10-arch.md.
+    // The player (play/Playback.kt): ExoPlayer, its HLS source for a transcode, and its OkHttp
+    // data source, and no Media3 module that brings video (ui, effect, the decoder extensions),
+    // per 10-arch.md.
     implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.exoplayer.hls)
     implementation(libs.androidx.media3.datasource.okhttp)
 
     testImplementation(libs.junit)

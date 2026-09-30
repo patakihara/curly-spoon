@@ -51,6 +51,10 @@ class ApiClient(
     fun <B, R> post(path: String, body: B, bodySerializer: KSerializer<B>, response: KSerializer<R>): R =
         send(post(path, bodySerializer, body), response, bearer = true)
 
+    /** A POST with nothing to send, such as closing a plan's playback session. */
+    fun <R> post(path: String, response: KSerializer<R>): R =
+        send(Request.Builder().url(url(path)).post(ByteArray(0).toRequestBody(null)), response, bearer = true)
+
     private fun url(path: String) = server.baseUrl.newBuilder().addPathSegments(path).build()
 
     private fun <B> post(path: String, serializer: KSerializer<B>, body: B): Request.Builder =

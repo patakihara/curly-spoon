@@ -153,6 +153,7 @@ jobs:
           grep -qx ready reports/recorded-server.out
           curl -fsS http://127.0.0.1:8787/api/health
           echo "AURALIS_PLAYABLE=$(sed -n 's/^ *playable: *//p' reports/recorded-server.out)" >> "$GITHUB_ENV"
+          echo "AURALIS_MULTI_FILE=$(sed -n 's/^ *four files: *//p' reports/recorded-server.out)" >> "$GITHUB_ENV"
 
       - name: Instrumented tests
         uses: reactivecircus/android-emulator-runner@v2
@@ -164,10 +165,11 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           working-directory: android
-          # SmokeTest signs in to that server and plays the item it printed. Pass or fail, the
-          # position it reached is kept from the device's log (one line: each line of a script
-          # runs in its own shell, and the first to fail ends it).
-          script: ./gradlew --no-build-cache --rerun-tasks connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.auralisServer=http://10.0.2.2:8787 -Pandroid.testInstrumentationRunnerArguments.auralisPlayable=${{ env.AURALIS_PLAYABLE }}; tests=$?; adb logcat -d -s SmokeTest:I > ../reports/smoke-test.txt; cat ../reports/smoke-test.txt; exit $tests
+          # SmokeTest signs in to that server and plays the item it printed; GaplessTest plays its
+          # four-file book across a boundary. Pass or fail, what each reached is kept from the
+          # device's log (one line: each line of a script runs in its own shell, and the first to
+          # fail ends it).
+          script: ./gradlew --no-build-cache --rerun-tasks connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.auralisServer=http://10.0.2.2:8787 -Pandroid.testInstrumentationRunnerArguments.auralisPlayable=${{ env.AURALIS_PLAYABLE }} -Pandroid.testInstrumentationRunnerArguments.auralisMultiFile=${{ env.AURALIS_MULTI_FILE }}; tests=$?; adb logcat -d -s SmokeTest:I GaplessTest:I > ../reports/emulator-tests.txt; cat ../reports/emulator-tests.txt; exit $tests
 
       - if: ${{ !cancelled() }}
         # The runner names each XML after the device ("TEST-emulator-5554 - 14-_app-.xml"), spaces
@@ -188,13 +190,13 @@ jobs:
         with:
           { name: recorded-server-log, path: 'reports/recorded-server.*', if-no-files-found: warn }
 
-      # The instrumented tests' own output: the JUnit XML, the per-test logcat, and the position
-      # SmokeTest reached.
+      # The instrumented tests' own output: the JUnit XML, the per-test logcat, and what SmokeTest
+      # and GaplessTest reached.
       - if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: android-emulator-test-output
           path: |
-            reports/smoke-test.txt
+            reports/emulator-tests.txt
             android/app/build/outputs/androidTest-results/connected
           if-no-files-found: warn
