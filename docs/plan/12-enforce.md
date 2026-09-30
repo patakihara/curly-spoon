@@ -32,7 +32,7 @@ The plan and the progress are two different things, kept apart on purpose. The p
 
 - Lives in the repo (`docs/plan/`) and is published to this artifact, with the same commit stamp and merge check as the design.
 - Only ever describes the current decision. No dated update notes, no "a previous version said". Why something changed is in git history, not in the text.
-- Asking for an adjustment means that sentence gets rewritten where it stands. It's the only place decisions live, so nothing else needs chasing.
+- An adjustment rewrites that sentence where it stands. It's the only place decisions live.
 - Every item has an id and a concrete **done when**, and a size limit keeps the whole thing readable.
 :::
 

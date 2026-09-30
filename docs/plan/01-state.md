@@ -20,5 +20,5 @@ The old project shipped a lot, but almost none of it ever ran against your real 
 | Process | <span class="pill t-req">docs</span> ROADMAP (6.7k lines) and HANDOVER (2.5k lines) | Features were built with nothing calling them (seven cases), CI badges went green without running tests, parallel sessions collided on `main`, and a blind Android build was never run. |
 
 ::: small muted
-The deployed container on mediaserver is up; the breakage is in what it does, not whether it runs.
+The deployed container on mediaserver runs; what it does is broken.
 :::
