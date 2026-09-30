@@ -3,7 +3,7 @@ import { matchPath, useLocation, useNavigate, useNavigationType } from 'react-ro
 import { NAV_MAP } from './generated/nav/stacks';
 
 /**
- * The shell's navigation on the web, as 12-front.md's "Shell and navigation" says and the Android
+ * The shell's navigation on the web, as 11-front.md's "Shell and navigation" says and the Android
  * graph's `closePage`, `openDestination` and `openTab` do: ✕ returns to whatever opened a page, or
  * with nothing under it to its destination's home; each destination keeps its own stack; a sheet
  * closes to the page under it; the browser's back goes to the previous view, wherever that was.

@@ -1,5 +1,5 @@
 /**
- * What the shell's own controls do, as 12-front.md's "Shell and navigation" says, in one place
+ * What the shell's own controls do, as 11-front.md's "Shell and navigation" says, in one place
  * both apps' page generators read, so the web and Android cannot wire them differently. Each
  * generator only spells an action in its own language.
  *

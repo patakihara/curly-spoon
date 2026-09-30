@@ -53,7 +53,7 @@ test('[M0.uikit/b] the hook refuses Write, MultiEdit and NotebookEdit under gene
 
 test('edits outside generated folders are allowed', () => {
   withRoot((root) => {
-    for (const file of ['web/src/app.tsx', 'docs/plan/15-milestones.md', 'web/src/generated.ts']) {
+    for (const file of ['web/src/app.tsx', 'docs/plan/14-milestones.md', 'web/src/generated.ts']) {
       const run = edit(root, 'Edit', { file_path: join(root, file) });
       assert.equal(run.status, 0);
       assert.equal(run.stdout, '', file);

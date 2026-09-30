@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 /**
- * 12-front.md's "Shell and navigation", walked by tapping the shell's own controls, never by
+ * 11-front.md's "Shell and navigation", walked by tapping the shell's own controls, never by
  * going to a URL in between: ✕ returns to whatever opened a page, each destination keeps its own
  * stack, the mini-player opens Now Playing, the player's tabs switch sheets, a sheet closes to the
  * page under it, and the browser's back goes to the previous view. A reload carries on where it

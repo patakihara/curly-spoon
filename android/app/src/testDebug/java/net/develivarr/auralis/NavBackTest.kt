@@ -20,7 +20,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * The back rules of 12-front.md's "Shell and navigation", on the generated graph: ✕ returns to
+ * The back rules of 11-front.md's "Shell and navigation", on the generated graph: ✕ returns to
  * whatever opened a page, each destination keeps its own stack, Android's back does what ✕ does,
  * and a sheet closes to the page under it. ✕ is `closePage`, which every generated page's close
  * control and back handler call with its destination's home.

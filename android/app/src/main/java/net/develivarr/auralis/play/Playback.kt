@@ -42,7 +42,7 @@ import net.develivarr.auralis.generated.api.PlaybackTrack
  * The player: asks the server for an item's [PlaybackPlan] and plays the whole plan on one Media3
  * [ExoPlayer], every track one item of its playlist, so the next file starts the moment the last
  * one ends. A transcode's HLS track plays through Media3's HLS source. The player has audio
- * renderers only (10-arch.md: Android builds Media3 with no video renderer), and fetches tracks
+ * renderers only (09-arch.md: Android builds Media3 with no video renderer), and fetches tracks
  * over OkHttp with the app's bearer, through [ApiClient.authorized]. [position] is on the whole
  * item's timeline, so chapters and progress work across files, as on the web.
  *

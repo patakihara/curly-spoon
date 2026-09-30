@@ -47,11 +47,11 @@ These come from `USER_DECISIONS.md`, the spec addendum and the research notes. T
 :::
 
 ::: card
-#### YouTube shows
+#### YouTube channels
 
 - **YouTube channels can be added as podcasts**, as audio-only shows that behave like any other subscription.
-- **SponsorBlock on YouTube shows**, in Auralis and in the Audiobookshelf app alike.
-- **Watched state and position sync with your YouTube account only for channels you've added as shows**, both ways, as an opt-in setting per person. The rest of your YouTube history never comes into Auralis, and YouTube videos and channels are never recommended.
+- **SponsorBlock on YouTube channels**, in Auralis and in the Audiobookshelf app alike.
+- **Watched state and position sync with your YouTube account only for channels you've added**, both ways, as an opt-in setting per person. The rest of your YouTube history never comes into Auralis, and YouTube videos and channels are never recommended.
 :::
 
 ::: card

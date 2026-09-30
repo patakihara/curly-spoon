@@ -25,7 +25,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * 12-front.md's "Shell and navigation" on a device, walked only by tapping the shell's own
+ * 11-front.md's "Shell and navigation" on a device, walked only by tapping the shell's own
  * controls and pressing Android's back, never by navigating in code: ✕ returns to whatever opened
  * a page, each destination keeps its own stack, Android's back does what ✕ does, the mini-player
  * opens Now Playing, the player's tabs switch sheets, and a sheet closes to the page under it.

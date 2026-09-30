@@ -15,6 +15,7 @@ This is the part most visibly broken today, and the first thing to get right. Th
 - **Dirty-streamed tracks** (YouTube Music) are resolved by the server when the plan is built, then passed through the same range proxy as everything else, with no transcoding, so seeking and the lock screen behave identically. The next track is fetched in ranged chunks ahead of time (as AbleMusicPlayer does, which dodges throttling) into a small capped cache. The next track in the queue is resolved ahead of time, so there's no gap. Playing a stream reports to the taste profile just like a Jellyfin play.
 - **Transcode, made to work.** When the server has to transcode, the backend proxies Audiobookshelf's `/hls/` playlist and segments. Web plays them with `hls.js`, Android with Media3's HLS module. Offline downloads always use the original files.
 - **Controls on both platforms:** speed (pitch preserved), sleep timer (including "end of chapter"), bookmarks synced to Audiobookshelf, next/previous, shuffle and repeat for music; spoken: skip back/forward, next/previous only at episode/chapter start/end. Lock screen and notification controls use the same actions (`setPositionState` on web).
+- **SponsorBlock, live.** On a YouTube channel's episode, the players also skip segments submitted after its file was cut.
 
 ### Queues and autoplay
 

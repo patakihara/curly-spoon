@@ -141,7 +141,7 @@ dependencies {
     implementation(libs.okhttp)
     // The player (play/Playback.kt): ExoPlayer, its HLS source for a transcode, and its OkHttp
     // data source, and no Media3 module that brings video (ui, effect, the decoder extensions),
-    // per 10-arch.md.
+    // per 09-arch.md.
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.exoplayer.hls)
     implementation(libs.androidx.media3.datasource.okhttp)

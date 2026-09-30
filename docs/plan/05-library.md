@@ -21,6 +21,16 @@ part: The product
 - **Mixing is explicit**: "Continue here" moves another device's session to this one, and "Play on…" sends this one elsewhere, like Spotify Connect but opt-in. Both are later additions; the default stays separate.
 - **Recommendations are per user.** A household member's listening never leaks into someone else's Browse.
 
+### Your YouTube account
+
+**Watched state and position for your YouTube channels** sync with your YouTube account, opt-in per person and off until you connect it. It covers only the channels you've added; the rest of your YouTube history is never read into Auralis. Google's official API no longer gives access to watch history, so this uses your own sign-in cookies, exported from your browser and stored encrypted on the server under your user only. Google doesn't support this use, so it can break when YouTube changes, the same trade-off as the extractor.
+
+- **From YouTube:** an hourly job checks your watch history for videos from your channels. A finished video marks the episode played; a half-watched one sets your position in it. YouTube only exposes that position as a percentage of the length, so Auralis resumes a few seconds before it (1% of an hour is 36&nbsp;s). Anything else in the history is skipped, not stored.
+- **To YouTube:** on pause and on stop, Auralis sends YouTube your position, using the same "watched up to here" report YouTube's own player sends; finishing an episode marks the video watched. Whichever side played most recently wins.
+- **Accounts never mix.** Each person connects their own YouTube account, and their cookies are only ever used for their own sync, writing to their own Audiobookshelf progress. The show feeds themselves are fetched without any account, so they're identical for everyone and carry nothing personal. A person who hasn't connected YouTube just has no sync.
+- **When it breaks:** the cookies expire every so often. When they stop working, sync pauses and Settings shows a clear "YouTube sign-in expired" warning with how to re-export them. Nothing else is affected: YouTube channels keep updating and playing, since they don't need your account.
+- **Cut episodes, full videos.** Auralis keeps each episode's cut list, so position sync converts between the cut episode and the full YouTube video: 10 minutes into the episode becomes the matching point in the video, and back.
+
 ### Shared files, personal view
 
 - **Files are stored once, for the whole household**, as today: one Music, one Books and one Podcasts library in Jellyfin and Audiobookshelf.

@@ -22,6 +22,7 @@ The old recommendation code works out your taste from your library and play hist
 - **Previews before commitment** (Sonora's `PreviewButton`). Music previews play a YouTube Music clip, and episodes play the first minutes of the public feed enclosure. Audiobooks play the publisher's retail sample, looked up by ASIN (source to be confirmed in M4). A preview never touches your queue or library.
 - **Precomputed, then composed.** Provider calls run as background jobs within their rate limits (MusicBrainz 1 req/s, Audnexus about 100/min). The Browse endpoint only reads the pool and your live progress, so it answers in one fast call and the loading state is short and honest.
 - **Seeds are what you listened to.** Every provider is seeded from listening history (with weight for how much of it you played), never from library contents.
+- **YouTube is never recommended.** Browse, autoplay and "Are you feeling lucky?" never suggest YouTube videos or channels. A channel only enters Auralis when you add it yourself.
 - **How recommendations are ranked** (details in the next part of this section).
 - **Quality gets judged on your real library**, the first time any session has been able to: 231 books, your podcast subscriptions and your Jellyfin history. A small review page lists each shelf with its reasons, so bad picks are easy to spot.
 

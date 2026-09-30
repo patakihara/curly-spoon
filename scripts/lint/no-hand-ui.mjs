@@ -2,7 +2,7 @@
  * ESLint rule `auralis/no-hand-ui`: the web app draws no UI by hand. A file in web/src outside
  * generated/ may compose generated pages and Sonora components only, so it may not render an
  * intrinsic element (`<div>`, `<span>`, `createElement('section')`) or set `style` or `className`.
- * A screen that needs something new is added to the design first (docs/plan/12-front.md).
+ * A screen that needs something new is added to the design first (docs/plan/11-front.md).
  *
  * HAND_UI_ALLOWED is the whole allowlist, one glob per entry with the reason it draws nothing
  * that ships. eslint.config.js applies the rule to web/src minus these and generated/.

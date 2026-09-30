@@ -8,7 +8,7 @@
  * card's does. A usage that reads state or calls a function in any other prop is skipped for the
  * next one. An intrinsic element holding the usage, with literal props, frames it in the gallery as
  * in the card, so a layout that fills its parent gets the box the card gives it. A component with none is missing, and the
- * gallery test names it: its card needs a usage with literal props (docs/plan/12-front.md).
+ * gallery test names it: its card needs a usage with literal props (docs/plan/11-front.md).
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
