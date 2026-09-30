@@ -1,7 +1,9 @@
 /**
- * The canvas's structure row, generated from nav.json: `structure.dc.html`, every page's purpose,
- * sections, empty state and links as plain text, and `flows.dc.html`, the navigation flowchart.
- * Both use Sonora's tokens only, no components: they describe pages, they don't draw them.
+ * The canvas's structure boards, generated from nav.json. On the start page, `flows.dc.html`, the
+ * navigation flowchart, and `screens.dc.html`, the list of screens; on each screen's own canvas
+ * page, `<id>.structure.dc.html`, its purpose, sections, empty state and links. Each names the
+ * others by link. They use Sonora's tokens only, no components: they describe pages, they don't
+ * draw them.
  */
 import type { Nav, NavPage } from './nav.js';
 
@@ -160,11 +162,22 @@ function artboard(
   ].join('\n');
 }
 
+/** The screen list's columns, and a page's structure board: one column of the same width. */
 export const STRUCTURE_BOARD = { column: 340, gap: 40, pad: 56 };
 
 const MUTED = 'color: var(--surface-fg-muted)';
 const LABEL = `margin: 0; font-size: var(--text-xs); line-height: var(--leading-xs); font-weight: var(--weight-strong); letter-spacing: 0.06em; text-transform: uppercase; ${MUTED}`;
 const BODY = 'margin: 0; font-size: var(--text-md); line-height: var(--leading-lg)';
+const LINK = 'color: var(--accent); text-decoration: underline; text-underline-offset: 3px';
+const STRONG = 'font-weight: var(--weight-strong)';
+
+/** A page's structure board, by file name: what every link to a screen's canvas page names. */
+export const structureBoard = (id: string) => `${id}.structure.dc.html`;
+/** The screen list, on the start page: what every link back to the map names. */
+export const SCREENS = 'screens.dc.html';
+
+const link = (href: string, text: string, style = '') =>
+  `<a href="${href}" style="${LINK}${style === '' ? '' : `; ${style}`}">${escapeText(text)}</a>`;
 
 /** Roughly how tall a block of text sets in a column, so the artboard's height fits its text. */
 function lines(text: string, chars: number): number {
@@ -173,10 +186,15 @@ function lines(text: string, chars: number): number {
   return n;
 }
 
+const CHARS = 44;
+
 function block(nav: Nav, page: NavPage, drawn: Set<string>): { html: string[]; height: number } {
   const { structure } = page;
-  const chars = 44;
-  const links = structure.links.map((l) => titleOf(nav, l)).join(', ') || 'nothing';
+  const titles = structure.links.map((l) => titleOf(nav, l));
+  const leads =
+    structure.links.length === 0
+      ? `<span style="${MUTED}">nothing</span>`
+      : structure.links.map((l) => link(structureBoard(l), titleOf(nav, l))).join(', ');
   const html = [
     `<section style="display: flex; flex-direction: column; gap: 10px; padding: 20px; border-radius: var(--radius-md); background: var(--surface-card); border: 1px solid var(--surface-border)">`,
     `<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">`,
@@ -188,29 +206,61 @@ function block(nav: Nav, page: NavPage, drawn: Set<string>): { html: string[]; h
     `<ol style="margin: 0; padding: 0 0 0 20px; display: flex; flex-direction: column; gap: 6px; ${BODY}">`,
     ...structure.sections.map(
       (s) =>
-        `<li><strong style="font-weight: var(--weight-strong)">${escapeText(s.name)}</strong>` +
+        `<li><strong style="${STRONG}">${escapeText(s.name)}</strong>` +
         (s.provisional
           ? ` <span style="font-size: var(--text-xs); font-weight: var(--weight-strong); color: var(--tone-request)">PROVISIONAL</span>`
           : '') +
         `<br><span style="${MUTED}">${escapeText(s.holds)}</span></li>`,
     ),
     '</ol>',
-    `<p style="${BODY}"><strong style="font-weight: var(--weight-strong)">Empty: </strong><span style="${MUTED}">${escapeText(structure.empty)}</span></p>`,
-    `<p style="${BODY}"><strong style="font-weight: var(--weight-strong)">Links to: </strong><span style="${MUTED}">${escapeText(links)}</span></p>`,
+    `<p style="${BODY}"><strong style="${STRONG}">Empty: </strong><span style="${MUTED}">${escapeText(structure.empty)}</span></p>`,
+    `<p style="${BODY}"><strong style="${STRONG}">Leads to: </strong>${leads}</p>`,
     '</section>',
   ];
   const textLines =
     2 +
-    lines(structure.purpose, chars) +
-    structure.sections.reduce((n, s) => n + 1 + lines(s.holds, chars), 0) +
-    lines(`Empty: ${structure.empty}`, chars) +
-    lines(`Links to: ${links}`, chars);
+    lines(structure.purpose, CHARS) +
+    structure.sections.reduce((n, s) => n + 1 + lines(s.holds, CHARS), 0) +
+    lines(`Empty: ${structure.empty}`, CHARS) +
+    lines(`Leads to: ${titles.join(', ') || 'nothing'}`, CHARS);
   const height = 80 + textLines * 20 + (structure.sections.length + 3) * 6;
   return { html, height };
 }
 
-/** `structure.dc.html`: one column per group, one block per page, as plain text. */
-export function generateStructure(
+/**
+ * `<id>.structure.dc.html`, the first board on a screen's canvas page: a link back to the screen
+ * list, then its purpose, sections, empty state, and links to the canvas pages it leads to.
+ */
+export function generatePageStructure(
+  nav: Nav,
+  page: NavPage,
+  drawn: Set<string>,
+  head: string[],
+): { html: string; width: number; height: number } {
+  const { column, pad } = STRUCTURE_BOARD;
+  const { html: body, height: tall } = block(nav, page, drawn);
+  const back = 28;
+  const width = pad * 2 + column;
+  const height = pad * 2 + back + 16 + tall;
+  const html = artboard(
+    head,
+    `${page.title} · structure`,
+    width,
+    height,
+    `padding: ${pad}px; display: flex; flex-direction: column; gap: 16px`,
+    [
+      `<p style="margin: 0; font-size: var(--text-md); line-height: ${back}px">${link(SCREENS, '← Screen map')}</p>`,
+      ...body,
+    ],
+  );
+  return { html, width, height };
+}
+
+/**
+ * `screens.dc.html`, beside the flowchart on the start page: one column per group, one row per
+ * page with its route, marks and purpose, its title linking to the page's canvas page.
+ */
+export function generateScreens(
   nav: Nav,
   drawn: Set<string>,
   head: string[],
@@ -220,28 +270,40 @@ export function generateStructure(
   const width = pad * 2 + groups.length * column + (groups.length - 1) * gap;
   let tallest = 0;
   const columns = groups.map((g) => {
-    const blocks = g.pages.map((p) => block(nav, p, drawn));
+    const rows = g.pages.map((page) => ({
+      html: [
+        `<div style="display: flex; flex-direction: column; gap: 6px; padding: 16px 20px; border-radius: var(--radius-md); background: var(--surface-card); border: 1px solid var(--surface-border)">`,
+        `<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px">`,
+        `<h3 style="margin: 0; font-family: var(--font-display); font-size: var(--h4-size); line-height: var(--h4-leading); font-weight: var(--heading-weight)">${link(structureBoard(page.id), page.title, 'color: var(--surface-fg)')}</h3>`,
+        `<p style="margin: 0; font-size: var(--text-xs); ${MUTED}">${escapeText(page.route)}</p>`,
+        '</div>',
+        `<p style="${LABEL}">${escapeText(marks(page, drawn).join(' · '))}</p>`,
+        `<p style="${BODY}; ${MUTED}">${escapeText(page.structure.purpose)}</p>`,
+        '</div>',
+      ],
+      height: 60 + (1 + lines(page.structure.purpose, CHARS)) * 20 + 24,
+    }));
     tallest = Math.max(
       tallest,
-      blocks.reduce((n, b) => n + b.height + 16, 0),
+      rows.reduce((n, r) => n + r.height + 16, 0),
     );
     return [
       `<div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">`,
       `<h2 style="margin: 0 0 8px; font-family: var(--font-display); font-size: var(--h3-size); line-height: var(--h3-leading); font-weight: var(--heading-weight); color: var(--accent)">${escapeText(g.label)}</h2>`,
-      ...blocks.flatMap((b) => b.html),
+      ...rows.flatMap((r) => r.html),
       '</div>',
     ];
   });
   const header = [
-    `<h1 style="margin: 0; font-family: var(--font-display); font-size: var(--h1-size); line-height: var(--h1-leading); font-weight: var(--heading-weight)">What each screen holds</h1>`,
-    `<p style="margin: 0; max-width: 900px; font-size: var(--text-lg); line-height: var(--leading-xl); ${MUTED}">Every page of nav.json, grouped by the destination it lights up. Sections run top to bottom; a provisional one is not settled yet. Every screen also reaches the five destinations and Settings, and Now Playing through the mini-player.</p>`,
-    `<p style="margin: 0; max-width: 900px; font-size: var(--text-lg); line-height: var(--leading-xl)"><strong style="font-weight: var(--weight-strong)">Back: </strong>${escapeText(backModel(nav).join(' '))}</p>`,
-    `<p style="margin: 0; max-width: 900px; font-size: var(--text-lg); line-height: var(--leading-xl)"><strong style="font-weight: var(--weight-strong)">Navigation: </strong>${escapeText(navOrder(nav))}</p>`,
+    `<h1 style="margin: 0; font-family: var(--font-display); font-size: var(--h1-size); line-height: var(--h1-leading); font-weight: var(--heading-weight)">The screens</h1>`,
+    `<p style="margin: 0; max-width: 900px; font-size: var(--text-lg); line-height: var(--leading-xl); ${MUTED}">Every page of nav.json, grouped by the destination it lights up. Each title opens that screen’s canvas page: its sections, empty state and links beside its mockups. Every screen also reaches the five destinations and Settings, and Now Playing through the mini-player.</p>`,
+    `<p style="margin: 0; max-width: 900px; font-size: var(--text-lg); line-height: var(--leading-xl)"><strong style="${STRONG}">Back: </strong>${escapeText(backModel(nav).join(' '))}</p>`,
+    `<p style="margin: 0; max-width: 900px; font-size: var(--text-lg); line-height: var(--leading-xl)"><strong style="${STRONG}">Navigation: </strong>${escapeText(navOrder(nav))}</p>`,
   ];
   const height = pad * 2 + 220 + 56 + tallest;
   const html = artboard(
     head,
-    'Structure',
+    'Screens',
     width,
     height,
     `padding: ${pad}px; display: flex; flex-direction: column; gap: 40px`,
@@ -433,6 +495,7 @@ export function generateFlows(
     const dashed = drawn.has(box.page.id) ? '' : ' stroke-dasharray: 6 4;';
     const stroke = box.root ? 'var(--accent)' : 'var(--surface-fg-muted)';
     svg.push(
+      `<a href="${structureBoard(box.page.id)}">`,
       `<g><title>${escapeText(box.page.structure.purpose)}</title>`,
       `<rect x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" rx="10" style="fill: var(--surface-card); stroke: ${stroke}; stroke-width: ${box.root ? 2.5 : 1.25};${dashed}"></rect>`,
       `<text x="${box.x + 14}" y="${box.y + 24}" style="font-size: 16px; font-weight: 700; fill: var(--surface-fg)">${escapeText(box.page.title)}</text>`,
@@ -442,6 +505,7 @@ export function generateFlows(
           `<text x="${box.x + (i === 0 ? 14 : 28)}" y="${box.y + 64 + i * linkLine}" style="font-size: 12px; fill: var(--surface-fg)">${escapeText(text)}</text>`,
       ),
       '</g>',
+      '</a>',
     );
   }
   const legendY = height - 110;

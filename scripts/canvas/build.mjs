@@ -1,10 +1,11 @@
 /**
  * `pnpm canvas:build`: the Auralis canvas artifact (claude.ai Design type) built from design/app
- * into build/canvas. `project/**` is what the orchestrator publishes: one phone and one desktop
- * artboard per drawn page, a phone with its local search out or its first menu open for a page
- * with one, `canvas.json`, the art they show under `art/`, and Sonora installed under `project/ds/<folder>/` from
- * build/sonora, which must be Sonora's recorded publish. `stamp.json` carries that publish's
- * version for record-publish.mjs. Refuses uncommitted changes to design/app unless --draft.
+ * into build/canvas. `project/**` is what the orchestrator publishes: a start page holding the
+ * flowchart and the screen list, then one canvas page per page of nav.json holding its structure
+ * board and, once drawn, one phone and one desktop artboard, a phone with its local search out or
+ * its first menu open for a page with one; `canvas.json`, the art they show under `art/`, and
+ * Sonora installed under `project/ds/<folder>/` from build/sonora, which must be Sonora's recorded
+ * publish. `stamp.json` carries that publish's version for record-publish.mjs. Refuses uncommitted changes to design/app unless --draft.
  *
  *   tsx scripts/canvas/build.mjs [--out build/canvas] [--sonora build/sonora] [--draft] [--root <dir>]
  */

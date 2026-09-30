@@ -15,7 +15,7 @@ import {
 import { parseNav } from './nav.js';
 import { parsePage } from './page.js';
 
-const page = (id: string, route: string, title: string) => ({
+const page = (id: string, route: string, title: string, links: string[] = []) => ({
   id,
   route,
   lights: null,
@@ -27,7 +27,7 @@ const page = (id: string, route: string, title: string) => ({
     purpose: `What ${title} is for.`,
     sections: [{ name: 'Body', holds: `${title}'s content.` }],
     empty: 'Says so.',
-    links: [],
+    links,
   },
 });
 
@@ -39,8 +39,8 @@ const nav = parseNav({
   ],
   back: { close: 'opener', stacks: 'perDestination', android: 'close', web: 'previousView' },
   pages: [
-    page('book', '/book', 'Book'),
-    page('settings', '/settings', 'Settings'),
+    page('book', '/book', 'Book', ['settings']),
+    page('settings', '/settings', 'Settings', ['search']),
     page('search', '/search', 'Search'),
   ],
 });
@@ -110,63 +110,109 @@ const index = JSON.parse(files.get('canvas.json') ?? '{}');
 const board = (name: string) => files.get(name) ?? '';
 
 describe('the canvas generated from design/app', () => {
-  it('draws every drawn page as a phone and a desktop artboard, one row per page below the structure row', () => {
-    expect([...files.keys()].sort()).toEqual([
-      'book.desktop.dc.html',
-      'book.phone.dc.html',
-      'canvas.json',
-      'flows.dc.html',
-      'settings.desktop.dc.html',
-      'settings.phone.dc.html',
-      'structure.dc.html',
+  it('[M0.canvas/f] puts the flowchart and the screen list alone on the start page', () => {
+    expect(index.pages[0]).toEqual({ id: 'start', name: 'Screen map' });
+    expect(index.launch).toEqual({ view: 'canvas', page: 'start' });
+    const onStart = Object.keys(index.boards).filter((n) => index.boards[n].page === 'start');
+    expect(onStart).toEqual(['flows.dc.html', 'screens.dc.html']);
+    expect(index.order.slice(0, 2)).toEqual(['flows.dc.html', 'screens.dc.html']);
+    const flows = index.boards['flows.dc.html'];
+    expect(flows).toMatchObject({ x: 0, y: 0, title: 'Flows' });
+    expect(index.boards['screens.dc.html']).toMatchObject({
+      x: flows.w + 80,
+      y: 0,
+      title: 'Screens',
+    });
+    for (const p of nav.pages)
+      expect(board('screens.dc.html')).toContain(`href="${p.id}.structure.dc.html"`);
+    expect(files.has('structure.dc.html')).toBe(false);
+  });
+
+  it('[M0.canvas/f] gives every page of nav.json a canvas page of its own, holding its structure and artboards', () => {
+    expect(index.pages.map((p: { id: string }) => p.id)).toEqual([
+      'start',
+      ...nav.pages.map((p) => p.id),
     ]);
-    const { phone, desktop } = CANVAS_BOARDS;
+    expect(index.pages.map((p: { name: string }) => p.name)).toEqual([
+      'Screen map',
+      'Book',
+      'Settings',
+      'Search',
+    ]);
+    for (const [name, b] of Object.entries(index.boards) as [string, { page?: string }][]) {
+      expect(b.page, name).toBeDefined();
+      const id = name.split('.')[0]!;
+      if (nav.pages.some((p) => p.id === id)) expect(b.page, name).toBe(id);
+    }
+    const on = (id: string) => Object.keys(index.boards).filter((n) => index.boards[n].page === id);
+    expect(on('book')).toEqual([
+      'book.structure.dc.html',
+      'book.phone.dc.html',
+      'book.desktop.dc.html',
+    ]);
+    expect(on('settings')).toEqual([
+      'settings.structure.dc.html',
+      'settings.phone.dc.html',
+      'settings.desktop.dc.html',
+    ]);
+    expect(on('search')).toEqual(['search.structure.dc.html']);
     expect(index.order).toEqual([
-      'structure.dc.html',
       'flows.dc.html',
-      'book.phone.dc.html',
-      'book.desktop.dc.html',
-      'settings.phone.dc.html',
-      'settings.desktop.dc.html',
+      'screens.dc.html',
+      ...on('book'),
+      ...on('settings'),
+      ...on('search'),
     ]);
-    const structureRow = Math.max(
-      index.boards['structure.dc.html'].h,
-      index.boards['flows.dc.html'].h,
-    );
+    expect(index.notes).toEqual({
+      'start-title': expect.objectContaining({ page: 'start', text: 'Screen map', kind: 'title1' }),
+      'book-title': expect.objectContaining({ page: 'book', text: 'Book', kind: 'title1' }),
+      'settings-title': expect.objectContaining({ page: 'settings', text: 'Settings' }),
+      'search-title': expect.objectContaining({ page: 'search', text: 'Search' }),
+    });
+  });
+
+  it('[M0.canvas/f] links each page’s structure to the start page and to the pages it leads to', () => {
+    const structure = board('book.structure.dc.html');
+    expect(structure).toContain('href="screens.dc.html"');
+    expect(structure).toContain('href="settings.structure.dc.html"');
+    expect(board('settings.structure.dc.html')).toContain('href="search.structure.dc.html"');
+    for (const [name, html] of files) {
+      for (const [, target] of html.matchAll(/href="([^"]+\.dc\.html)"/g))
+        expect(Object.keys(index.boards), `${name} links to ${target}`).toContain(target);
+    }
+  });
+
+  it('lays each canvas page out in a row from 0,0, its structure first, under its title note', () => {
+    const { phone, desktop } = CANVAS_BOARDS;
+    const structure = index.boards['book.structure.dc.html'];
+    expect(structure).toMatchObject({ x: 0, y: 0, title: 'Book · structure' });
     expect(index.boards['book.phone.dc.html']).toEqual({
-      x: 0,
-      y: structureRow + 120,
+      x: structure.w + 80,
+      y: 0,
       w: phone.width,
       h: phone.height,
       title: 'Book · phone',
+      page: 'book',
     });
     expect(index.boards['book.desktop.dc.html']).toMatchObject({
-      x: phone.width + 80,
-      y: structureRow + 120,
+      x: structure.w + 80 + phone.width + 80,
+      y: 0,
       w: desktop.width,
       h: desktop.height,
     });
     expect(index.boards['settings.phone.dc.html']).toMatchObject({
+      x: index.boards['settings.structure.dc.html'].w + 80,
+      y: 0,
+    });
+    expect(index.notes['book-title']).toEqual({
       x: 0,
-      y: structureRow + 120 + Math.max(phone.height, desktop.height) + 120,
+      y: -300,
+      text: 'Book',
+      kind: 'title1',
+      maxW: structure.w + 80 + phone.width + 80 + desktop.width,
+      page: 'book',
     });
-  });
-
-  it('[M0.canvas/f] puts the structure and the flowchart first, in one row named by a title note', () => {
-    const structure = index.boards['structure.dc.html'];
-    const flows = index.boards['flows.dc.html'];
-    expect(structure).toMatchObject({ x: 0, y: 0, title: 'Structure' });
-    expect(flows).toMatchObject({ x: structure.w + 80, y: 0, title: 'Flows' });
-    expect(index.notes).toEqual({
-      structure: {
-        x: 0,
-        y: -300,
-        text: 'Structure',
-        kind: 'title1',
-        maxW: structure.w + 80 + flows.w,
-      },
-    });
-    for (const name of ['structure.dc.html', 'flows.dc.html']) {
+    for (const name of ['flows.dc.html', 'screens.dc.html', 'book.structure.dc.html']) {
       const { w, h } = index.boards[name];
       expect(board(name)).toContain(`<div data-theme="dark" style="width: ${w}px; height: ${h}px;`);
       expect(board(name)).toContain(`{"$preview":{"width":${w},"height":${h}}}`);
@@ -175,12 +221,20 @@ describe('the canvas generated from design/app', () => {
     }
   });
 
+  it('refuses more canvas pages than the Design type holds', () => {
+    const many = parseNav({
+      ...nav,
+      pages: Array.from({ length: 40 }, (_, i) => page(`p${i}`, `/p${i}`, `P${i}`)),
+    });
+    expect(() => generateCanvas({ ...app, nav: many, pages: [] }, install, now)).toThrow(/40/);
+  });
+
   it("keeps the artifact's creation date and records the Sonora publish it installs", () => {
     expect(index).toMatchObject({
       v: 3,
       title: 'Auralis',
       createdOnFiles: { v: 1, at: CANVAS_CREATED_AT },
-      launch: { view: 'canvas' },
+      launch: { view: 'canvas', page: 'start' },
       designSystems: [
         {
           title: 'Sonora',
@@ -482,18 +536,16 @@ describe('a page with a local search, on the canvas', () => {
 
   it('[M0.canvas] shows it out on a third artboard, a phone, after the page’s desktop one', () => {
     const { phone, desktop } = CANVAS_BOARDS;
-    expect(order.order).toEqual([
-      'structure.dc.html',
-      'flows.dc.html',
+    expect(order.order.filter((n: string) => order.boards[n].page === 'book')).toEqual([
+      'book.structure.dc.html',
       'book.phone.dc.html',
       'book.desktop.dc.html',
       'book.phone-search.dc.html',
-      'settings.phone.dc.html',
-      'settings.desktop.dc.html',
     ]);
     expect(order.boards['book.phone-search.dc.html']).toMatchObject({
-      x: phone.width + 80 + desktop.width + 80,
-      y: order.boards['book.phone.dc.html'].y,
+      x: order.boards['book.structure.dc.html'].w + 80 + phone.width + 80 + desktop.width + 80,
+      y: 0,
+      page: 'book',
       w: phone.width,
       h: phone.height,
       title: 'Book · phone, searching',
@@ -541,18 +593,16 @@ describe('a page with a menu, on the canvas', () => {
 
   it('[M0.canvas] shows its first menu open on a third artboard, a phone, after the page’s desktop one', () => {
     const { phone, desktop } = CANVAS_BOARDS;
-    expect(order.order).toEqual([
-      'structure.dc.html',
-      'flows.dc.html',
+    expect(order.order.filter((n: string) => order.boards[n].page === 'book')).toEqual([
+      'book.structure.dc.html',
       'book.phone.dc.html',
       'book.desktop.dc.html',
       'book.phone-menu.dc.html',
-      'settings.phone.dc.html',
-      'settings.desktop.dc.html',
     ]);
     expect(order.boards['book.phone-menu.dc.html']).toMatchObject({
-      x: phone.width + 80 + desktop.width + 80,
-      y: order.boards['book.phone.dc.html'].y,
+      x: order.boards['book.structure.dc.html'].w + 80 + phone.width + 80 + desktop.width + 80,
+      y: 0,
+      page: 'book',
       w: phone.width,
       h: phone.height,
       title: 'Book · phone, menu open',

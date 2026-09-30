@@ -1,9 +1,12 @@
 /**
- * The Auralis canvas artifact (claude.ai Design type), drawn from design/app: first the structure
- * row (`structure.dc.html` and `flows.dc.html`, from nav.json), then every drawn page as a
- * phone and a desktop `.dc.html` artboard mounting Sonora's real components from the installed
- * copy under `project/ds/<folder>/`, a page with a local search adding a phone with it out, and `canvas.json`, the index that records which Sonora publish
- * is installed. Build output only (`pnpm canvas:build`), never committed.
+ * The Auralis canvas artifact (claude.ai Design type), drawn from design/app, one canvas page per
+ * screen. The start page holds the flowchart and the screen list (`flows.dc.html` and
+ * `screens.dc.html`, from nav.json). Each page of nav.json gets a canvas page of its own: its
+ * structure (`<id>.structure.dc.html`), then, once drawn, a phone and a desktop `.dc.html`
+ * artboard mounting Sonora's real components from the installed copy under `project/ds/<folder>/`,
+ * a page with a local search adding a phone with it out and one with a menu a phone with it open.
+ * `canvas.json` is the index, recording the pages and which Sonora publish is installed. Build
+ * output only (`pnpm canvas:build`), never committed.
  *
  * Each artboard is the page in the app shell at the layout its width gets. The page's content is
  * markup, mounted element by element. A prop that takes an element (the shell's rail, back layer,
@@ -23,7 +26,14 @@ import {
   playerTree,
   shellData,
 } from './shell.js';
-import { generateFlows, generateStructure } from './structure.js';
+import {
+  generateFlows,
+  generatePageStructure,
+  generateScreens,
+  groupPages,
+  SCREENS,
+  structureBoard,
+} from './structure.js';
 
 /** Sonora's bundle global; its components mount as `<Ns>.<Name>`. */
 export const SONORA_NAMESPACE = 'SonoraDesignSystem_6c1435';
@@ -45,9 +55,13 @@ export const CANVAS_BOARDS = {
   desktop: { width: 1440, height: 900, label: 'desktop' },
 } as const;
 const GAP_X = 80;
-const GAP_Y = 120;
-/** Where the structure row's `title1` note sits, above the row's top edge. */
+/** Where each canvas page's `title1` note sits, above its row's top edge. */
 const NOTE_Y = -300;
+/** The Design type's limits on `pages`. */
+const MAX_PAGES = 40;
+const PAGE_ID = /^[A-Za-z0-9_-]{1,40}$/;
+/** The start page's id and name. */
+export const START_PAGE = { id: 'start', name: 'Screen map' };
 
 /** The Sonora publish the canvas installs; `version` null only in a draft build. */
 export interface SonoraInstall {
@@ -426,65 +440,104 @@ function artboard(
 export function generateCanvas(app: App, sonora: SonoraInstall, now: Date): Map<string, string> {
   const files = new Map<string, string>();
   const boards: Record<string, Record<string, unknown>> = {};
+  const notes: Record<string, Record<string, unknown>> = {};
   const drawn = new Set(app.pages.map((p) => p.id));
   const head = [
     `<link rel="stylesheet" href="ds/${DS_FOLDER}/tokens.css">`,
     `<link rel="stylesheet" href="ds/${DS_FOLDER}/components/bundle.css">`,
   ];
-  let across = 0;
-  let top = 0;
-  for (const [name, title, board] of [
-    ['structure.dc.html', 'Structure', generateStructure(app.nav, drawn, head)],
-    ['flows.dc.html', 'Flows', generateFlows(app.nav, drawn, head)],
-  ] as const) {
-    files.set(name, board.html);
-    boards[name] = { x: across, y: 0, w: board.width, h: board.height, title };
-    across += board.width + GAP_X;
-    top = Math.max(top, board.height + GAP_Y);
-  }
-  const notes = {
-    structure: { x: 0, y: NOTE_Y, text: 'Structure', kind: 'title1', maxW: across - GAP_X },
-  };
-  const { phone, desktop } = CANVAS_BOARDS;
-  const rowHeight = Math.max(phone.height, desktop.height) + GAP_Y;
-  app.pages.forEach((page, row) => {
-    const title = app.nav.pages.find((p) => p.id === page.id)?.title ?? page.id;
+  const navPages = groupPages(app.nav).flatMap((g) => g.pages);
+  const stray = app.pages.find((p) => !navPages.some((n) => n.id === p.id));
+  if (stray !== undefined) throw new Error(`${stray.id} is not a page in nav.json`);
+  const pages = [START_PAGE, ...navPages.map((p) => ({ id: p.id, name: p.title }))];
+  if (pages.length > MAX_PAGES)
+    throw new Error(`the canvas needs ${pages.length} pages; the Design type holds ${MAX_PAGES}`);
+  const bad = pages.find((p) => !PAGE_ID.test(p.id));
+  if (bad !== undefined) throw new Error(`${bad.id} is not a canvas page id`);
+
+  /** Lays one canvas page out in a row from 0,0, under a title note as wide as the row. */
+  const row = (
+    page: { id: string; name: string },
+    items: { name: string; html: string; w: number; h: number; title: string }[],
+  ) => {
     let x = 0;
-    // A page with a local search also gets a phone with it out, since only scrolling shows it,
-    // and a page with a menu a phone with its first menu open, since only a tap shows it.
-    const searchable = framePage(page.tree).search !== undefined;
-    const sheet = app.nav.pages.find((p) => p.id === page.id)?.presentation === 'sheet';
-    const menu = sheet ? undefined : firstMenu(page.tree, app.menus);
-    const drawn = [
-      { board: phone, searching: false, name: phone.label, label: phone.label },
-      { board: desktop, searching: false, name: desktop.label, label: desktop.label },
-      ...(searchable
-        ? [{ board: phone, searching: true, name: 'phone-search', label: 'phone, searching' }]
-        : []),
-      ...(menu !== undefined
-        ? [{ board: phone, searching: false, menu, name: 'phone-menu', label: 'phone, menu open' }]
-        : []),
-    ];
-    for (const { board, searching, menu: open, name: kind, label } of drawn) {
-      const name = `${page.id}.${kind}.dc.html`;
-      files.set(name, artboard(app, page, board, searching, open));
-      boards[name] = {
-        x,
-        y: top + row * rowHeight,
-        w: board.width,
-        h: board.height,
-        title: `${title} · ${label}`,
-      };
-      x += board.width + GAP_X;
+    for (const { name, html, w, h, title } of items) {
+      files.set(name, html);
+      boards[name] = { x, y: 0, w, h, title, page: page.id };
+      x += w + GAP_X;
     }
-  });
+    notes[`${page.id}-title`] = {
+      x: 0,
+      y: NOTE_Y,
+      text: page.name,
+      kind: 'title1',
+      maxW: x - GAP_X,
+      page: page.id,
+    };
+  };
+
+  const flows = generateFlows(app.nav, drawn, head);
+  const screens = generateScreens(app.nav, drawn, head);
+  row(START_PAGE, [
+    { name: 'flows.dc.html', html: flows.html, w: flows.width, h: flows.height, title: 'Flows' },
+    { name: SCREENS, html: screens.html, w: screens.width, h: screens.height, title: 'Screens' },
+  ]);
+
+  const { phone, desktop } = CANVAS_BOARDS;
+  for (const entry of navPages) {
+    const structure = generatePageStructure(app.nav, entry, drawn, head);
+    const items = [
+      {
+        name: structureBoard(entry.id),
+        html: structure.html,
+        w: structure.width,
+        h: structure.height,
+        title: `${entry.title} · structure`,
+      },
+    ];
+    const page = app.pages.find((p) => p.id === entry.id);
+    if (page !== undefined) {
+      // A page with a local search also gets a phone with it out, since only scrolling shows it,
+      // and a page with a menu a phone with its first menu open, since only a tap shows it.
+      const searchable = framePage(page.tree).search !== undefined;
+      const menu = entry.presentation === 'sheet' ? undefined : firstMenu(page.tree, app.menus);
+      const variants = [
+        { board: phone, searching: false, kind: phone.label, label: phone.label },
+        { board: desktop, searching: false, kind: desktop.label, label: desktop.label },
+        ...(searchable
+          ? [{ board: phone, searching: true, kind: 'phone-search', label: 'phone, searching' }]
+          : []),
+        ...(menu !== undefined
+          ? [
+              {
+                board: phone,
+                searching: false,
+                menu,
+                kind: 'phone-menu',
+                label: 'phone, menu open',
+              },
+            ]
+          : []),
+      ];
+      for (const { board, searching, menu: open, kind, label } of variants) {
+        items.push({
+          name: `${entry.id}.${kind}.dc.html`,
+          html: artboard(app, page, board, searching, open),
+          w: board.width,
+          h: board.height,
+          title: `${entry.title} · ${label}`,
+        });
+      }
+    }
+    row({ id: entry.id, name: entry.title }, items);
+  }
   const at = now.toISOString();
   const index = {
     v: 3,
     createdOnFiles: { v: 1, at: CANVAS_CREATED_AT },
     title: 'Auralis',
-    launch: { view: 'canvas' },
-    pages: [],
+    launch: { view: 'canvas', page: START_PAGE.id },
+    pages,
     boards,
     order: Object.keys(boards),
     notes,

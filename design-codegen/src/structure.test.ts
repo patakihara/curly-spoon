@@ -7,7 +7,8 @@ import {
   backModel,
   FLOWS_BOARD,
   generateFlows,
-  generateStructure,
+  generatePageStructure,
+  generateScreens,
   groupPages,
   layoutFlows,
 } from './structure.js';
@@ -26,19 +27,15 @@ function changed(id: string, change: (s: Nav['pages'][number]['structure']) => v
   return parseNav(copy);
 }
 
-describe('the structure artboard', () => {
-  const { html } = generateStructure(nav, drawn, head);
+describe('the screen list, on the start page', () => {
+  const { html } = generateScreens(nav, drawn, head);
 
-  it('[M0.canvas/f] holds every page of nav.json: its purpose, sections, empty state and links', () => {
+  it('[M0.canvas/f] lists every page of nav.json, its title linking to its canvas page', () => {
     for (const page of nav.pages) {
-      expect(html).toContain(`>${page.title}</h3>`);
+      expect(html).toContain(`<a href="${page.id}.structure.dc.html"`);
+      expect(html).toContain(`>${page.title}</a>`);
       expect(html).toContain(page.structure.purpose.replaceAll('&', '&amp;'));
-      for (const s of page.structure.sections)
-        expect(html).toContain(`>${s.name.replaceAll('&', '&amp;')}</strong>`);
     }
-    expect(html).toContain('PROVISIONAL');
-    expect(html).toContain('>Links to: </strong>');
-    expect(html).toContain('>Empty: </strong>');
   });
 
   it('[M0.canvas/f] groups pages by destination, the player and the rest, each home first', () => {
@@ -57,36 +54,67 @@ describe('the structure artboard', () => {
     for (const label of groups.map((g) => g.label)) expect(html).toContain(`>${label}</h2>`);
   });
 
-  it('[M0.canvas/f] changes when a page’s structure changes', () => {
-    const edited = changed('album', (s) => {
-      s.sections.push({ name: 'Credits', holds: 'Who played on it.', provisional: true });
-    });
-    const after = generateStructure(edited, drawn, head).html;
-    expect(after).not.toEqual(html);
-    expect(after).toContain('>Credits</strong>');
-  });
-
   it('says in the header where each kind of navigation puts Search', () => {
     expect(html).toContain('On the phone’s bottom bar: Browse, Music, Books, Podcasts, Search.');
     expect(html).toContain('On the rail: Search, Browse, Music, Books, Podcasts.');
   });
 
-  it('says what back does once, in the header, not per page', () => {
+  it('says what back does once, in the header, and nowhere on the page boards', () => {
     for (const line of backModel(nav)) expect(html.split(line).length - 1, line).toBe(1);
-    expect(html).not.toContain('>Back: </strong><span');
+    for (const page of nav.pages) {
+      const board = generatePageStructure(nav, page, drawn, head).html;
+      for (const line of backModel(nav)) expect(board, page.id).not.toContain(line);
+    }
   });
 
   it('says which pages are drawn and which are structure only', () => {
     expect(html).toContain('drawn');
     const partial = new Set([...drawn].filter((id) => id !== 'setup'));
-    expect(generateStructure(nav, partial, head).html).toContain('structure only');
+    expect(generateScreens(nav, partial, head).html).toContain('structure only');
+  });
+
+  it('leaves the sections and empty states to the page boards', () => {
+    expect(html).not.toContain('>Empty: </strong>');
+  });
+});
+
+describe("each page's structure board", () => {
+  const boards = new Map(
+    nav.pages.map((p) => [p.id, generatePageStructure(nav, p, drawn, head).html]),
+  );
+
+  it('[M0.canvas/f] holds every page of nav.json: its purpose, sections, empty state and links', () => {
+    for (const page of nav.pages) {
+      const html = boards.get(page.id)!;
+      expect(html).toContain(`>${page.title}</h3>`);
+      expect(html).toContain(page.structure.purpose.replaceAll('&', '&amp;'));
+      for (const s of page.structure.sections)
+        expect(html).toContain(`>${s.name.replaceAll('&', '&amp;')}</strong>`);
+      expect(html).toContain('>Empty: </strong>');
+      expect(html).toContain('<a href="screens.dc.html"');
+      for (const link of page.structure.links)
+        expect(html, `${page.id} to ${link}`).toContain(`<a href="${link}.structure.dc.html"`);
+    }
+    expect([...boards.values()].join('')).toContain('PROVISIONAL');
+  });
+
+  it('[M0.canvas/f] changes when a page’s structure changes', () => {
+    const edited = changed('album', (s) => {
+      s.sections.push({ name: 'Credits', holds: 'Who played on it.', provisional: true });
+    });
+    const album = edited.pages.find((p) => p.id === 'album')!;
+    const after = generatePageStructure(edited, album, drawn, head).html;
+    expect(after).not.toEqual(boards.get('album'));
+    expect(after).toContain('>Credits</strong>');
   });
 
   it('keeps text braces from reading as bindings', () => {
     const edited = changed('album', (s) => {
       s.purpose = 'One album {{not.a.binding}}';
     });
-    expect(generateStructure(edited, drawn, head).html).not.toContain('{{not');
+    const album = edited.pages.find((p) => p.id === 'album')!;
+    expect(generatePageStructure(edited, album, drawn, head).html).not.toContain('{{not');
+    expect(generateScreens(edited, drawn, head).html).not.toContain('{{not');
   });
 });
 
@@ -109,6 +137,10 @@ describe('the flowchart artboard', () => {
     for (const b of boxes.values())
       for (const text of b.linkLines) expect(html).toContain(`>${text}</text>`);
     expect(box('album').linkLines.join(' ')).toContain('Artist');
+  });
+
+  it('[M0.canvas/f] links every node to its page’s canvas page', () => {
+    for (const page of nav.pages) expect(html).toContain(`<a href="${page.id}.structure.dc.html">`);
   });
 
   it('[M0.canvas/f] changes when a page’s links change', () => {

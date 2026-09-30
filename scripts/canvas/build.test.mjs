@@ -28,7 +28,7 @@ function sonoraBuild(stamp) {
 const build = (...args) =>
   spawnSync(TSX, [join(REPO_ROOT, 'scripts/canvas/build.mjs'), ...args], { encoding: 'utf8' });
 
-test('[M0.canvas/f] the canvas build draws the structure and flowchart from nav.json, every drawn page, and installs Sonora beside them', () => {
+test('[M0.canvas/f] the canvas build puts the flowchart and screen list on the start page, each nav.json page on a canvas page of its own, and installs Sonora beside them', () => {
   const sonora = sonoraBuild(null);
   const out = mkdtempSync(join(tmpdir(), 'canvas-build-'));
   try {
@@ -44,15 +44,36 @@ test('[M0.canvas/f] the canvas build draws the structure and flowchart from nav.
       }
     }
     const nav = JSON.parse(readFileSync(join(REPO_ROOT, 'design/app/nav.json'), 'utf8'));
-    const structure = readFileSync(join(out, 'project/structure.dc.html'), 'utf8');
     const flows = readFileSync(join(out, 'project/flows.dc.html'), 'utf8');
+    const screens = readFileSync(join(out, 'project/screens.dc.html'), 'utf8');
+    assert.deepEqual(
+      new Set(index.pages.map((p) => p.id)),
+      new Set(['start', ...nav.pages.map((p) => p.id)]),
+    );
+    assert.equal(index.pages[0].id, 'start');
+    assert.equal(index.pages.length, nav.pages.length + 1);
+    assert.ok(index.pages.length <= 40, 'the Design type holds at most 40 pages');
+    assert.deepEqual(index.launch, { view: 'canvas', page: 'start' });
+    assert.deepEqual(index.order.slice(0, 2), ['flows.dc.html', 'screens.dc.html']);
+    assert.deepEqual(
+      Object.keys(index.boards).filter((n) => index.boards[n].page === 'start'),
+      ['flows.dc.html', 'screens.dc.html'],
+    );
+    assert.ok(!existsSync(join(out, 'project/structure.dc.html')), 'no single structure board');
     for (const page of nav.pages) {
-      assert.ok(structure.includes(`>${page.title}</h3>`), `${page.id} is in the structure`);
       assert.ok(flows.includes(`>${page.title}</text>`), `${page.id} is on the flowchart`);
+      const name = `${page.id}.structure.dc.html`;
+      assert.ok(screens.includes(`href="${name}"`), `${page.id} is in the screen list`);
+      assert.equal(index.boards[name]?.page, page.id, `${name} is on its own page`);
+      const structure = readFileSync(join(out, 'project', name), 'utf8');
+      assert.ok(structure.includes(`>${page.title}</h3>`), `${page.id} has its structure`);
+      assert.ok(structure.includes('href="screens.dc.html"'), `${name} links to the start page`);
+      for (const link of page.structure.links)
+        assert.ok(structure.includes(`href="${link}.structure.dc.html"`), `${name} to ${link}`);
     }
-    assert.equal(index.order[0], 'structure.dc.html');
-    assert.equal(index.order[1], 'flows.dc.html');
-    assert.equal(index.notes.structure.kind, 'title1');
+    for (const id of pages)
+      for (const board of ['phone', 'desktop'])
+        assert.equal(index.boards[`${id}.${board}.dc.html`].page, id, `${id} ${board} on its page`);
     for (const file of [
       'tokens.json',
       'tokens.css',
