@@ -67,7 +67,7 @@ describe('serving the web app', () => {
     return buildApp({ webDistDir: dist, db: openDatabase(':memory:') });
   }
 
-  it('serves index.html at the root, never cached', async () => {
+  it('[M0.staging/b] serves index.html at the root, never cached', async () => {
     const app = await appWithDist();
     const res = await app.inject({ method: 'GET', url: '/' });
     expect(res.statusCode).toBe(200);
@@ -76,7 +76,7 @@ describe('serving the web app', () => {
     await app.close();
   });
 
-  it('serves the Sonora gallery page, never cached, and a hashed asset for good', async () => {
+  it('[M0.staging/b] serves the Sonora gallery page, never cached, and a hashed asset for good', async () => {
     const app = await appWithDist();
     writeFileSync(join(dist!, 'gallery.html'), '<!doctype html><title>Sonora gallery</title>');
     mkdirSync(join(dist!, 'assets'));
@@ -90,7 +90,7 @@ describe('serving the web app', () => {
     await app.close();
   });
 
-  it('hands a browser the app for a client-side route', async () => {
+  it('[M0.staging/b] hands a browser the app for a client-side route, never cached', async () => {
     const app = await appWithDist();
     const res = await app.inject({
       method: 'GET',
@@ -99,6 +99,7 @@ describe('serving the web app', () => {
     });
     expect(res.statusCode).toBe(200);
     expect(res.body).toContain('<title>Auralis</title>');
+    expect(res.headers['cache-control']).toBe('no-cache');
     await app.close();
   });
 

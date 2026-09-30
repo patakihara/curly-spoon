@@ -8,6 +8,7 @@ import { registerAccess } from './auth/access.js';
 import type { SignOn } from './auth/oidc.js';
 import { createProxyTrust, type ProxyTrust } from './auth/proxy.js';
 import type { CookieSecure } from './config.js';
+import { retiredWorkerRoute } from './retiredWorker.js';
 import { serve } from './route.js';
 import { adminRoutes } from './routes/admin.js';
 import { authRoutes } from './routes/auth.js';
@@ -131,6 +132,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     // close listeners to the response, which a deep link (a missed file, then the not-found
     // handler) piles past Node's warning limit.
     const publicRoute = { config: { access: 'public' as const } };
+    retiredWorkerRoute(app);
     app.get('/', publicRoute, (_request, reply) => {
       void reply.sendFile(INDEX_FILE);
     });
