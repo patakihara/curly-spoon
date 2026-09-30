@@ -2,9 +2,9 @@
  * The old Auralis (tag `legacy`) registered a vite-plugin-pwa service worker at `/sw.js`, which
  * kept serving the old app from its precache. A browser checks that address for a new worker on
  * every visit, so the container answers it with one that retires the old: it takes over at once,
- * deletes every cache, unregisters itself and reloads each open window onto the network. The
- * response also asks the browser to clear the site's caches and storage (never its cookies, so
- * a session survives).
+ * deletes every cache, unregisters itself and reloads each open window onto the network. It sends
+ * no `Clear-Site-Data`: Chromium applies that before the new worker activates, which strands an
+ * open tab on the old app with nothing left to reload it (web/e2e/retired-worker.spec.ts).
  */
 import type { FastifyInstance } from 'fastify';
 
@@ -32,7 +32,6 @@ export function retiredWorkerRoute(app: FastifyInstance): void {
     reply
       .type('text/javascript; charset=utf-8')
       .header('Cache-Control', 'no-cache')
-      .header('Clear-Site-Data', '"cache", "storage"')
       .send(RETIRED_WORKER_SCRIPT),
   );
 }

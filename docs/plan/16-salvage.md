@@ -5,20 +5,20 @@ part: Delivery
 ---
 ## Keep or rewrite
 
-Each carried-over part is taken from the git tag `legacy` at the start of the plan item that uses it, not up front.
+Each carried-over part is taken from the tag `legacy` when the plan item using it starts, not up front.
 
 ::: grid g2
 ::: card
 #### <span class="pill t-lib">Carry over</span>
 
 - Session and crypto: `db/crypto.ts`, `sessionsRepo`, `auth/*` (fix the cookie flags)
-- `packages/jellyfin-client`: the most complete module; re-record its fixtures
+- `packages/jellyfin-client`, the most complete module; re-record its fixtures
 - Request building blocks: `requestStatus`, `torrentId`, `downloadPoller`, `prowlarr`, `qbittorrent`/`transmission` (check the cookie name live)
 - Recommendation core: `profile`, `score`, `shelves`, `ownership` (pure functions), `listenbrainz.ts`
-- Self-hosted Inter; Archivo and Sonora's Material Symbols Rounded icon font are self-hosted as Sonora uses them, and the legacy SVG icon set and Roboto Flex stay behind (tokens come fresh from Sonora; the old repo's copies have drifted)
+- Self-hosted Inter, Archivo and Sonora's Material Symbols Rounded icon font, as Sonora uses them; the legacy SVG icons and Roboto Flex stay behind (tokens come fresh from Sonora; the old copies drifted)
 - Android: `ApiClient` cookie jar, DownloadManager wiring, Auto `BrowseTree`, the service skeleton
 - Release and F-Droid publishing (`release.yml`, `fdroid-repo.yml`, `docs/FDROID_REPO.md`), the app id and both signing keys
-- The e2e idea: the real server with recorded upstreams
+- The e2e idea: the real server on recorded upstreams
 :::
 
 ::: card
