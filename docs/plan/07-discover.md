@@ -42,7 +42,7 @@ Researched across Spotify's and YouTube's published work and open-source recomme
 - **"Are you feeling lucky?"** is the exploration share turned up: a strong candidate from outside your usual neighbourhood, one per medium.
 - **Diversity is hard rules first** (one per artist, show and album per shelf, your carousel rules). Finer "not too similar to what's already shown" tuning comes only once there are similarity scores to tune.
 - **Per user**: every table is keyed by user, so household members never mix.
-- **Measured, not guessed**: hold out your most recent months of history, and check whether each version would have put what you actually played next in its top 10. That score has to not drop between versions.
+- **Measured, not guessed**: hold out your most recent months of history, and check whether each version would have put what you actually played next in its top 10. That score must not drop between versions.
 
 **Checked live today.** Book and podcast seeds come from your library; the music seeds were picked for the test.
 

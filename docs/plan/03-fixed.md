@@ -61,8 +61,7 @@ These come from `USER_DECISIONS.md`, the spec addendum and the research notes. T
 - Mixed-content carousels, at most one episode per podcast in a carousel, each card with a reason line, and a loading state that holds until everything has arrived.
 - One provider per medium: _"Why would the recommendation services for the THREE different kinds of content we have be the same?"_ Provider choice is delegated. Audible and YouTube terms of service don't matter for your own install.
 - Research picks: ListenBrainz for music; for books, Audible's "listeners also enjoyed", with Audnexus for metadata; for podcasts, Apple Podcasts' "You Might Also Like", with PodcastIndex and iTunes as the catalogue; for music, YouTube Music radio alongside ListenBrainz. All checked live.
-- Things you already own show up in search but can't be requested. Global search has suggestions.
-- Search doubles as the request view, with library results and requestable results clearly separated.
+- Search doubles as the request view: one global ranking across all sources, each result marked owned, streamable or requestable (never owned and requestable). Suggestions while typing, results on submit; type buttons only filter.
 - Lyrics search uses an external provider (LRCLIB).
 :::
 
@@ -70,7 +69,7 @@ These come from `USER_DECISIONS.md`, the spec addendum and the research notes. T
 #### Design
 
 - Sonora is the design source of truth: flat surfaces, one violet accent that nobody picks plus a rose for Now Playing, playback controls and Browse's media filter, nothing green from Spotify, motion by named role, no emoji. From Spotify it takes **affordances, not visual design** (_"not to copy spotify's visual design, but moreso the affordances of the components"_), and no new search bar.
-- **One Auralis repo holds the design and the apps**; the Sonora and canvas artifacts are published from it. You work on the design by commenting on the artifacts or asking in chat.
+- **One Auralis repo holds the design and the apps**; the Sonora and canvas artifacts are published from it. You work on the design through artifact comments or chat.
 - **Some design inputs stay private.** The Spotify reference screenshots and the original Sonora author identities stay out of the public repo. The screenshots stay on the laptop, gitignored.
 :::
 :::

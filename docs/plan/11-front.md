@@ -110,7 +110,7 @@ Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;
 |---|---|---|---|
 | Browse | `GET /feed` | kind chips, quick picks (progress, unplayed), shelves (eyebrow, subject, subject art, mixed items, availability), feature cards with preview | <span class="pill t-lib">Sonora</span> S05–S30 |
 | Music / Books / Podcasts homes | `GET /library/{music\|books\|podcasts}` | library list with sort and filter, list or grid, pins and downloaded markers | <span class="pill t-lib">Sonora</span> S31 · UI kit library screens |
-| Search | `GET /search/suggest`, `GET /search` | suggestions; library results + outside results, status per row, "more releases" folding | <span class="pill t-lib">Sonora</span> S03–S04, S32 |
+| Search | `GET /search/suggest`, `GET /search` | suggestions; one ranked list across library and outside sources, availability per row, "more releases" folding | <span class="pill t-lib">Sonora</span> S03–S04, S32 |
 | Book · Show · Episode · Album | `GET /items/{ref}` | MediaHeader data (actions, progress, rating), episodes with sort, chapters or tracks, about text, related, a book's other narrations | <span class="pill t-lib">Sonora</span> S01–S02, S35 |
 | Artist · Author · Series | `GET /people/{ref}`, `GET /series/{ref}` | owned works grouped; unowned works greyed out (on by default) | <span class="pill t-req">mock only</span> |
 | Shelf ("See all") | `GET /feed/shelves/{id}` | paged items | <span class="pill t-lib">Sonora</span> UI kit collection screen |
@@ -126,4 +126,4 @@ Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;
 ### How parity stays true
 
 - Both clients consume the same generated models and screen endpoints, so no logic is ported by hand.
-- Each screen has a shared set of recorded API responses (one per state: loading, empty, full, error). Web (Playwright) and Android (Paparazzi) render the same set and produce screenshots. Each page's render sits beside its Sonora UI kit render in a committed comparison under `design/app/compare`, with the differences listed, and a test fails when a page changes without a fresh comparison.
+- Each screen has a shared set of recorded API responses (one per state: loading, empty, full, error). Web (Playwright) and Android (Paparazzi) render the same set as screenshots. Each page's render sits beside its Sonora UI kit render in a committed comparison under `design/app/compare`, with the differences listed, and a test fails when a page changes without a fresh comparison.

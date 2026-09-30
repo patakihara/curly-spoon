@@ -25,7 +25,7 @@ Server routes are declared with zod; an OpenAPI document is emitted from them. T
 ::: card
 #### 2 · Screen-shaped endpoints
 
-Every screen gets one call that returns what the screen draws, with fields named for the UI (`status`, `progress`, `reason`, `kind`). Clients don't stitch five calls together, so web and Android can't drift apart in how they combine data.
+Every screen gets one call that returns what the screen draws, with fields named for the UI (`status`, `progress`, `reason`, `kind`). Clients never stitch calls together, so web and Android can't drift in how they combine data.
 :::
 
 ::: card
@@ -43,7 +43,7 @@ Each adapter has a `record` mode that captures real responses from mediaserver (
 ::: card
 #### 5 · One request pipeline
 
-Books, music and podcasts share one state machine, table and status vocabulary. Only the _search_ and _fulfil_ steps are per medium, and music has two fulfil routes: a single song is kept from YouTube Music, and an album is always torrented in lossless. This replaces the two near-identical request services in the old code.
+Books, music and podcasts share one state machine, table and status vocabulary. Only the _search_ and _fulfil_ steps are per medium, and music has two fulfil routes: a single song is kept from YouTube Music, and an album is always torrented in lossless.
 :::
 
 ::: card
@@ -55,7 +55,7 @@ Setup claims the admin role once, with a one-time code the server writes to its 
 ::: card
 #### 7 · The extractor lives in the server
 
-AbleMusicPlayer runs NewPipeExtractor on the phone, but the research showed nothing in it needs the device; the server-side equivalent is `yt-dlp` as a subprocess. That keeps it inside the one container, so web and Android both get it, as parity requires, and there's one place to update. Per your notes it should **point and forward, not burden the server**: no transcoding, bytes passed straight through, a cache only for preloading the next track and for songs being added to the library. The same path is what would let **people without a media server** use Auralis as a streaming app. Audiobooks always come from Audiobookshelf. The extractor only ever asks YouTube for audio-only formats, for YouTube Music and for YouTube channels alike. A daily job promotes a new extractor only once a canary search-and-resolve passes on it, else keeps the last that passed; failures show up in the admin jobs page. Android can later add NewPipeExtractor as an offline fallback, if useful.
+AbleMusicPlayer runs NewPipeExtractor on the phone, but nothing in it needs the device; the server runs the equivalent, `yt-dlp`, as a subprocess inside the one container, so both clients get it (parity) and there's one place to update. Per your notes it should **point and forward, not burden the server**: no transcoding, bytes passed straight through, a cache only for preloading the next track and for songs being added to the library. The same path is what would let **people without a media server** use Auralis as a streaming app. Audiobooks always come from Audiobookshelf. The extractor only ever asks YouTube for audio-only formats, for YouTube Music and for YouTube channels alike. A daily job promotes a new extractor only once a canary search-and-resolve passes on it, else keeps the last that passed; failures show up in the admin jobs page. Android can later add NewPipeExtractor as an offline fallback, if useful.
 :::
 
 ::: card
@@ -67,7 +67,7 @@ There is no video path to switch on by mistake. The extractor adapter's type onl
 
 ### The shared domain model
 
-Four types carry every screen. Getting them right early is most of the work.
+These types carry every screen; getting them right early is most of the work.
 
 | Type | What it is | Key fields |
 |---|---|---|

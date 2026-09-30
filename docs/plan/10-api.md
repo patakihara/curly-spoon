@@ -30,7 +30,7 @@ Grouped by what they serve, all under `/api` so none clashes with a page's addre
 #### Search
 
 `GET /search/suggest?q`\
-`GET /search?q&kinds`
+`GET /search?q&kinds` (one ranked list, once every source answers or times out)
 :::
 
 ::: card
