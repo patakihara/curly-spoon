@@ -15,7 +15,7 @@ Each rule answers a failure recorded in the old ROADMAP and HANDOVER.
 | Android written blind, a post-login crash nobody could see | Emulator in CI from M0; at each milestone, a build that arrives as an ordinary update through Droid-ify, with a one-tap crash report (logcat to the server). |
 | `main` auto-deployed half-finished work to your daily container | Until you use Auralis, the container on mediaserver simply follows `main` as the test instance. Before "It plays" ships, `main` moves to `:edge` and only releases reach `:latest`, so from then on your daily container moves only when you've tried a milestone. |
 | Parallel sessions colliding; 9,000 lines of handover | **No parallelism.** One Opus 5.5 orchestrator session holds the big picture and never stops between items; Opus 5.5 subagents do all the work, strictly one at a time, each sized to keep its context small, splitting a plan item where needed. Each part runs plan, build, test (fresh context, real recordings), then fix if the test failed; the written plan and test output are the hand-offs. No handover or status file: progress is computed from the repo, history lives in git. |
-| Over-escalation, and "verified" claims that were wrong | Ordinary calls get made. Every status line says how it was checked (live, recording, code), like the "Where it stands" table on this page. |
+| Over-escalation, and "verified" claims that were wrong | Ordinary calls get made. Every status line says how it was checked (live, recording, code), as "Where it stands" does. |
 
 ### Standing rules for subagents
 
@@ -43,5 +43,5 @@ Every subagent brief opens with this list, verbatim (`node scripts/plan/brief.mj
 - **Changing mediaserver is allowed, with guard rails.** The session reads mediaserver's own rules and known hazards first, commits every change in mediaserver's config repo, and applies one change at a time: validate, restart only that service, check it's healthy, and roll back automatically if not. Deleting household media or other services' data, anything that could cut the network or SSH, and household passwords go to the outbox instead, while other work continues. Every change shows in the recent decisions.
 
 ::: small muted
-Where the work happens: development on the laptop, which has the RAM. Recording and staging on mediaserver, which is always on and has the real services. Recordings travel as scrubbed fixture files committed to the repo.
+Development happens on the laptop, which has the RAM; recording and staging on mediaserver, always on with the real services. Recordings travel as scrubbed fixtures committed to the repo.
 :::

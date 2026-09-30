@@ -46,7 +46,7 @@ The plan and the progress are kept apart on purpose.
 :::
 
 - **A new session knows where things stand.** A session-start hook in the repo prints a short summary: current milestone, done items, work in flight with its notes, the next step, failing checks, and your open comments on the artifacts.
-- **You see it too.** When the plan is published, each item gets a done or in-progress badge worked out at that moment, so progress shows on the page without the text changing.
+- **You see it too.** When the plan is published, each item gets a done or in-progress badge computed then, so progress shows without the text changing.
 - **Every commit names its plan item** (a `Plan:` line). CI rejects app changes without one. Work that isn't in the plan gets added to it first, in the same commit, so the code can't run ahead of the plan.
 - **Checked with you at every milestone.** The demo ends with the plan read through together; anything that changed is rewritten in place, and the milestone gets your sign-off tag.
 

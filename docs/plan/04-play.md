@@ -19,7 +19,7 @@ The rule: **the server works out how to play something; the clients just play th
 
 ### Queues and autoplay
 
-Queues belong to a device's listening session (see "Library and accounts"). They're stored on the server so each device resumes its own, and they don't follow you to another device unless you say "Continue here".
+Queues belong to a device's listening session (see "Library and accounts"), stored on the server so each device resumes its own; they follow you to another device only when you say "Continue here".
 
 ::: grid g2
 ::: card

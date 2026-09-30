@@ -6,7 +6,7 @@ part: Delivery
 ## What this plan hasn't verified
 
 ::: small
-- Sonora was read through its docs and component APIs. The 43 reference screenshots were read through their per-screen notes, not opened one by one.
+- Sonora was read through its docs and component APIs, and the 43 reference screenshots through their per-screen notes, not opened one by one.
 - Where audiobook previews come from (a retail sample URL keyed by ASIN) is to be confirmed at the start of M4.
 - Lidarr's matching wasn't tested directly; the case against it rests on its logs and your experience. How well YouTube Music and Deezer fill MusicBrainz's gaps for your artists is checked when music requests are built.
 - The web multi-file stall is read from code, not reproduced. The Android first-file-only and missing progress sync are unambiguous in code but weren't run.

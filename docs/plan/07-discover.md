@@ -9,7 +9,7 @@ part: The product
 Browse, recommending what you don't own.
 :::
 
-The old recommendation code works out your taste from your library and play history, and that part is worth keeping. What's new is where candidates come from (outside), how they're matched against what you own, and how Browse mixes them in.
+The old recommendation code's taste profile, from your library and play history, is worth keeping. What's new is where candidates come from (outside), how they're matched against what you own, and how Browse mixes them in.
 
 ::: diagram discover
 
@@ -29,7 +29,7 @@ The old recommendation code works out your taste from your library and play hist
 
 **Your taste comes from what you've actually listened to, not what's in your library:** plays, progress and completions (Jellyfin, Audiobookshelf, Auralis), plus your Spotify and YouTube Music history. Owning something only affects how it's shown (owned items play; others can be requested or streamed). A book you own but never started says nothing about your taste.
 
-Researched across Spotify's and YouTube's published work and open-source recommenders: the famous systems are barely documented, but the well-documented techniques work at small scale, with no GPU or model trained from scratch.
+Researched across Spotify's and YouTube's published work and open-source recommenders: the famous systems are barely documented, but documented techniques work at small scale, with no GPU or trained-from-scratch model.
 
 | Phase | What it does | Why it fits |
 |---|---|---|
