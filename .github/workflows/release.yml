@@ -152,9 +152,10 @@ jobs:
           [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ] && missing+=("ANDROID_KEYSTORE_PASSWORD")
           [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ] && missing+=("ANDROID_KEY_ALIAS")
           [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ] && missing+=("ANDROID_KEY_PASSWORD")
+          [ -z "${{ secrets.AURALIS_SERVER }}" ] && missing+=("AURALIS_SERVER")
           if [ "${#missing[@]}" -gt 0 ]; then
-            echo "::error::Release APK signing is not configured. Missing secret(s): ${missing[*]}."
-            echo "::error::See docs/FDROID_REPO.md for how to generate the app signing key and add these secrets. Nothing was built."
+            echo "::error::The release APK is not configured. Missing secret(s): ${missing[*]}."
+            echo "::error::See docs/FDROID_REPO.md for the app signing key and the server address. Nothing was built."
             exit 1
           fi
 
@@ -197,6 +198,7 @@ jobs:
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.keystore"
 
+      # The server the app signs in to comes from a secret: the repo is public and names no host.
       - name: Build and test
         working-directory: android
         env:
@@ -204,7 +206,8 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew test assembleRelease
+          AURALIS_SERVER: ${{ secrets.AURALIS_SERVER }}
+        run: ./gradlew test assembleRelease -PauralisServer="$AURALIS_SERVER"
 
       - name: Delete the decoded keystore
         if: always()

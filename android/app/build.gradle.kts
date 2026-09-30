@@ -12,10 +12,21 @@ plugins {
 val releaseVersionCode = (project.findProperty("auralisVersionCode") as String?)?.toIntOrNull() ?: 1
 val releaseVersionName = (project.findProperty("auralisVersionName") as String?) ?: "0.1.0"
 
-// The Auralis server the app signs in to when nothing else names one: `-PauralisServer=<url>`, or
-// the local server a debug build reaches over `adb reverse`. An instrumented test names its own
-// with the `auralisServer` instrumentation argument (ServerConfig.from).
-val defaultServer = (project.findProperty("auralisServer") as String?) ?: "http://127.0.0.1:8787"
+// The Auralis server the app signs in to: `-PauralisServer=<url>`, which the release workflows
+// pass from the `AURALIS_SERVER` secret, since the repo is public and names no host. A release
+// build without it fails; any other build falls back to the local server a debug build reaches
+// over `adb reverse`. An instrumented test names its own with the `auralisServer`
+// instrumentation argument (ServerConfig.from).
+val namedServer = (project.findProperty("auralisServer") as String?)?.takeIf { it.isNotBlank() }
+val defaultServer = namedServer ?: "http://127.0.0.1:8787"
+val releaseTasks = setOf("${project.path}:packageRelease", "${project.path}:bundleRelease")
+gradle.taskGraph.whenReady {
+    if (namedServer == null && allTasks.any { it.path in releaseTasks }) {
+        throw GradleException(
+            "A release build needs the server it signs in to: pass -PauralisServer=<url>."
+        )
+    }
+}
 
 // What CanvasNavTest reads, copied as the instrumented test APK's `canvas/` assets: nav.json, and
 // the headings pnpm gen writes from the canvas for web/e2e/canvas.spec.ts and it alike.

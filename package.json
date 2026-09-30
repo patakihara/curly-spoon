@@ -13,7 +13,7 @@
     "build": "pnpm -r --if-present build",
     "gen": "pnpm -r --if-present gen",
     "dev": "pnpm -r --parallel --if-present dev",
-    "test": "vitest run && node --test scripts/*.test.mjs scripts/plan/*.test.mjs scripts/guards/*.test.mjs scripts/sonora/*.test.mjs scripts/canvas/*.test.mjs scripts/lint/*.test.mjs scripts/mediaserver/*.test.mjs scripts/repo/layout.test.mjs scripts/repo/staging.test.mjs scripts/repo/install.test.mjs scripts/repo/leftovers.test.mjs",
+    "test": "vitest run && node --test scripts/*.test.mjs scripts/plan/*.test.mjs scripts/guards/*.test.mjs scripts/sonora/*.test.mjs scripts/canvas/*.test.mjs scripts/lint/*.test.mjs scripts/mediaserver/*.test.mjs scripts/repo/layout.test.mjs scripts/repo/staging.test.mjs scripts/repo/release-server.test.mjs scripts/repo/install.test.mjs scripts/repo/leftovers.test.mjs",
     "test:watch": "vitest",
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "eslint .",

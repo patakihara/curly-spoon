@@ -130,8 +130,9 @@ jobs:
           [ -z "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" ] && missing+=("ANDROID_KEYSTORE_PASSWORD")
           [ -z "${{ secrets.ANDROID_KEY_ALIAS }}" ] && missing+=("ANDROID_KEY_ALIAS")
           [ -z "${{ secrets.ANDROID_KEY_PASSWORD }}" ] && missing+=("ANDROID_KEY_PASSWORD")
+          [ -z "${{ secrets.AURALIS_SERVER }}" ] && missing+=("AURALIS_SERVER")
           if [ "${#missing[@]}" -gt 0 ]; then
-            echo "::error::The F-Droid repo indexes the release-signed APK, so app signing must be configured too. Missing secret(s): ${missing[*]}."
+            echo "::error::The F-Droid repo indexes the release APK, so app signing and its server must be configured too. Missing secret(s): ${missing[*]}."
             echo "::error::See docs/FDROID_REPO.md for how to generate the app signing key and add these secrets. Nothing was published."
             exit 1
           fi
@@ -164,7 +165,8 @@ jobs:
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.keystore"
 
-      # Same release-signed build `release.yml` produces, but stamped with the release's own
+      # Same release-signed build `release.yml` produces, naming the server from the
+      # `AURALIS_SERVER` secret as it does, but stamped with the release's own
       # versionCode/versionName rather than the hardcoded 1/0.1.0 a plain `assembleRelease`
       # would use — see build.gradle.kts's `releaseVersionCode`/`releaseVersionName`
       # properties. Release-signed, not debug-signed: this repo indexes the same
@@ -178,8 +180,10 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          AURALIS_SERVER: ${{ secrets.AURALIS_SERVER }}
         run: |
           ./gradlew assembleRelease \
+            -PauralisServer="$AURALIS_SERVER" \
             -PauralisVersionCode=${{ needs.validate-version.outputs.version_code }} \
             -PauralisVersionName=${{ needs.validate-version.outputs.version }}
 

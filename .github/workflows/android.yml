@@ -41,6 +41,18 @@ jobs:
         working-directory: android
         run: ./gradlew --no-build-cache --rerun-tasks test assembleDebug
 
+      # A release APK must name its server; a debug one keeps the local default. A dry run
+      # plans the build without compiling it, which is all the refusal needs.
+      - name: A release build without its server fails
+        working-directory: android
+        run: |
+          if ./gradlew --dry-run assembleRelease > "$RUNNER_TEMP/release-dry-run.txt" 2>&1; then
+            echo "::error::assembleRelease ran without -PauralisServer."
+            exit 1
+          fi
+          grep -F 'pass -PauralisServer=<url>' "$RUNNER_TEMP/release-dry-run.txt"
+          ./gradlew --dry-run assembleRelease -PauralisServer=https://auralis.invalid
+
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:

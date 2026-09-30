@@ -61,8 +61,10 @@ key for you: a lost or CI-generated-and-forgotten key cannot be recovered.
    | `ANDROID_KEYSTORE_PASSWORD` | the keystore password                                      |
    | `ANDROID_KEY_ALIAS`         | `auralis` (or whatever `-alias` you used)                  |
    | `ANDROID_KEY_PASSWORD`      | the key password                                           |
+   | `AURALIS_SERVER`            | the Auralis server the app signs in to, as an HTTPS URL    |
 
-   `android/app/build.gradle.kts` falls back to debug signing, with a build-time warning, only
+   The server address is a secret because the repo is public and names no host; a release build
+   without `-PauralisServer` fails. `android/app/build.gradle.kts` falls back to debug signing, with a build-time warning, only
    for local builds and `android.yml`'s branch runs, which never produce a distributable APK.
 
 2. **Install `fdroidserver`** on any machine with Python: `pip install fdroidserver`.
