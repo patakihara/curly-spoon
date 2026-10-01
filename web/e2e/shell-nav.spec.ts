@@ -14,13 +14,41 @@ const SIZES = [
   { name: 'desktop, through the rail', width: 1440, height: 900, phone: false },
 ];
 
-/** A destination on the bottom bar or the rail: the row drawing its icon and its label. */
+/**
+ * A destination on the bottom bar or the rail: the button named by its label, not a toggle (a
+ * page's segmented filter can share the name, and says whether it is pressed).
+ */
 const destination = (page: Page, label: string): Locator =>
-  page
-    .locator(
-      `xpath=//div[span[text()="${label}"] and span/span[contains(@style, "Material Symbols")]]`,
-    )
-    .first();
+  page.getByRole('button', { name: label, exact: true }).and(page.locator(':not([aria-pressed])'));
+
+/**
+ * Waits until nothing that ends is still animating (the rail easing, a pill fading), so the next
+ * tap lands on a control at rest rather than racing it on a slow machine.
+ */
+const settle = (page: Page) =>
+  page.evaluate(async () => {
+    const frame = () => new Promise((r) => requestAnimationFrame(r));
+    for (let quiet = 0; quiet < 2;) {
+      await frame();
+      const running = document
+        .getAnimations()
+        .filter(
+          (a) => a.playState === 'running' && a.effect?.getComputedTiming().endTime !== Infinity,
+        );
+      if (running.length === 0) quiet++;
+      else {
+        quiet = 0;
+        await Promise.all(running.map((a) => a.finished.catch(() => undefined)));
+      }
+    }
+  });
+
+/** Taps a destination and waits for its page, at rest. */
+async function goTo(page: Page, label: string, url: string) {
+  await destination(page, label).click();
+  await expect(page).toHaveURL(url);
+  await settle(page);
+}
 
 /** The mini-player: on the phone the whole bar, on desktop the player bar's track block. */
 const miniPlayer = (page: Page, phone: boolean): Locator => {
@@ -65,9 +93,9 @@ for (const size of SIZES) {
   }) => {
     await page.setViewportSize({ width: size.width, height: size.height });
     await page.goto('/', { waitUntil: 'networkidle' });
+    await settle(page);
 
-    await destination(page, 'Music').click();
-    await expect(page).toHaveURL('/music');
+    await goTo(page, 'Music', '/music');
     await item(page, 'Between Lines of Light').click();
     await expect(page).toHaveURL('/music/albums/between-lines-of-light');
     await useAlbumMenu(page);
@@ -85,10 +113,9 @@ for (const size of SIZES) {
 
     // Music keeps its stack while Books is open: back on the album, whose ✕ goes to the artist.
     await item(page, 'Shadows and Sighs').click();
-    await destination(page, 'Books').click();
-    await expect(page).toHaveURL('/books');
-    await destination(page, 'Music').click();
     await expect(page).toHaveURL('/music/albums/shadows-and-sighs');
+    await goTo(page, 'Books', '/books');
+    await goTo(page, 'Music', '/music/albums/shadows-and-sighs');
 
     // The mini-player opens Now Playing; its tabs switch sheets; closing returns to the album.
     await miniPlayer(page, size.phone).click();
@@ -110,8 +137,8 @@ for (const size of SIZES) {
     await expect(page).toHaveURL('/music/artists/deep-inertia');
 
     // Tapping the destination showing adds no history: the browser's back leaves it.
-    await destination(page, 'Books').click();
-    await destination(page, 'Books').click();
+    await goTo(page, 'Books', '/books');
+    await goTo(page, 'Books', '/books');
     await page.goBack();
     await expect(page).toHaveURL('/music/artists/deep-inertia');
   });
@@ -122,6 +149,7 @@ test("[M0.canvas] the rail's hamburger collapses the labelled rail to the icon r
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/music', { waitUntil: 'networkidle' });
+  await settle(page);
   const collapse = page.getByRole('button', { name: 'Collapse rail', exact: true });
   const expand = page.getByRole('button', { name: 'Expand rail', exact: true });
   const rail = (toggle: Locator) =>
@@ -132,11 +160,9 @@ test("[M0.canvas] the rail's hamburger collapses the labelled rail to the icon r
   await expect(expand).toBeVisible();
   expect(await settledWidth(rail(expand))).toBeLessThan(wide);
 
-  await destination(page, 'Books').click();
-  await expect(page).toHaveURL('/books');
+  await goTo(page, 'Books', '/books');
   await expect(expand).toBeVisible();
-  await destination(page, 'Settings').click();
-  await expect(page).toHaveURL('/settings');
+  await goTo(page, 'Settings', '/settings');
   await expect(expand).toBeVisible();
 
   await expand.click();

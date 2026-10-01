@@ -5,6 +5,10 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
  * one rail for the whole app, never remounted, so switching destinations or toggling the
  * hamburger changes the same rail in place. Its width and its pills ease over `--duration-slow`,
  * the lit pill fades from one row to the next, and no pill regrows from icon width.
+ *
+ * Nothing here watches the wall clock: the page's own observers record what happens (a node
+ * removed, a size drawn, a transition started), and the rail's width transition is paused and
+ * stepped through by hand, so a slow machine can neither fake a failure nor hide one.
  */
 const SIZES = [
   { name: 'the labelled rail', width: 1440, height: 900, expanded: true },
@@ -14,8 +18,8 @@ const SIZES = [
 /** An expanded pill is its icon's 56px, its label and 20px: 76px is a pill with no label yet. */
 const ICON_PILL = 76;
 
-/** How long the sampler watches after a tap: `--duration-slow` and a margin. */
-const WATCH_MS = 600;
+/** Where the rail's width transition is stepped to, as fractions of its duration. */
+const STEPS = [0, 0.25, 0.5, 0.75, 1];
 
 /** A destination on the rail: the row drawing its icon and its label. */
 const destination = (page: Page, label: string): Locator =>
@@ -32,16 +36,20 @@ interface Timing {
   easing: string;
 }
 
-interface Sample {
-  rail: number;
-  pills: number[];
+interface Run extends Timing {
+  property: string;
 }
 
-interface Watched {
-  samples: Sample[];
-  /** Each pill's CSS transitions seen while watching, by pill index: property and duration. */
-  transitions: { property: string; duration: number }[][];
-  settled: Sample;
+/** What the page saw while an action ran, from its own observers. */
+interface Guarded {
+  /** The stashed rail or pills taken out of the page, by name. */
+  removed: string[];
+  /** Every width each stashed pill was drawn at, by pill index. */
+  pillSizes: number[][];
+  /** The CSS transitions each stashed pill started, by pill index. */
+  pillRuns: Run[][];
+  /** The CSS transitions the stashed rail started. */
+  railRuns: Run[];
 }
 
 /** In the page: the rail (found from its hamburger, as shell-nav.spec does) and its pills. */
@@ -64,13 +72,31 @@ type RailWindow = Window & {
   __findPills: (rail: Element) => HTMLElement[];
   __rail?: HTMLElement;
   __pills?: HTMLElement[];
-  __watch?: Promise<Watched>;
+  __unguard?: () => Guarded;
+  __railRun?: { animation: CSSTransition; duration: number; easing: string };
 };
 
-/** Waits until nothing on the page is animating, the first load's pills included. */
+/**
+ * Waits, frame by frame, until nothing on the page is moving to an end: every running animation
+ * that ends has finished, and two frames in a row start none, so a transition a frame late is
+ * waited for too. An endless one (a playing indicator) never settles, so it is left running.
+ */
 async function settle(page: Page) {
   await page.evaluate(async () => {
-    await Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined)));
+    const frame = () => new Promise((r) => requestAnimationFrame(r));
+    for (let quiet = 0; quiet < 2;) {
+      await frame();
+      const running = document
+        .getAnimations()
+        .filter(
+          (a) => a.playState === 'running' && a.effect?.getComputedTiming().endTime !== Infinity,
+        );
+      if (running.length === 0) quiet++;
+      else {
+        quiet = 0;
+        await Promise.all(running.map((a) => a.finished.catch(() => undefined)));
+      }
+    }
   });
 }
 
@@ -99,58 +125,77 @@ async function sameRail(page: Page) {
 }
 
 /**
- * Starts watching the rail, the one showing at each frame, for `WATCH_MS`: its width and every
- * pill's, and each pill's CSS transitions as they start.
+ * Starts the page's observers on the stashed rail and pills: a MutationObserver on the shell for
+ * either being removed, a ResizeObserver for every width a pill is drawn at, and `transitionrun`
+ * for every CSS transition either starts.
  */
-async function watch(page: Page) {
-  await page.evaluate((ms) => {
+async function guard(page: Page) {
+  await page.evaluate(() => {
     const w = window as unknown as RailWindow;
-    w.__watch = new Promise<Watched>((resolve) => {
-      const samples: Sample[] = [];
-      const transitions: { property: string; duration: number }[][] = [];
-      const measure = (): Sample => {
-        const rail = w.__findRail();
-        if (rail === null) return { rail: 0, pills: [] };
-        const pills = w.__findPills(rail);
-        pills.forEach((pill, i) => {
-          const seen = (transitions[i] ??= []);
-          for (const a of pill.getAnimations()) {
-            if (!(a instanceof CSSTransition)) continue;
-            const duration = Number(a.effect?.getTiming().duration ?? 0);
-            if (!seen.some((t) => t.property === a.transitionProperty)) {
-              seen.push({ property: a.transitionProperty, duration });
-            }
-          }
-        });
-        return {
-          rail: rail.getBoundingClientRect().width,
-          pills: pills.map((p) => p.getBoundingClientRect().width),
-        };
-      };
-      const start = performance.now();
-      const frame = () => {
-        samples.push(measure());
-        if (performance.now() - start < ms) requestAnimationFrame(frame);
-        else resolve({ samples, transitions, settled: measure() });
-      };
-      requestAnimationFrame(frame);
+    const rail = w.__rail!;
+    const pills = w.__pills!;
+    const seen: Guarded = {
+      removed: [],
+      pillSizes: pills.map(() => []),
+      pillRuns: pills.map(() => []),
+      railRuns: [],
+    };
+    const removals = (records: MutationRecord[]) => {
+      for (const record of records) {
+        for (const node of record.removedNodes) {
+          if (node === rail || node.contains(rail)) seen.removed.push('the rail');
+          pills.forEach((pill, i) => {
+            if (node === pill || node.contains(pill)) seen.removed.push(`pill ${i}`);
+          });
+        }
+      }
+    };
+    const mutations = new MutationObserver(removals);
+    mutations.observe(document.body, { childList: true, subtree: true });
+    const sizes = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const i = pills.indexOf(entry.target as HTMLElement);
+        seen.pillSizes[i]!.push(entry.borderBoxSize[0]!.inlineSize);
+      }
     });
-  }, WATCH_MS);
-}
-
-async function watched(page: Page): Promise<Watched> {
-  return page.evaluate(() => (window as unknown as RailWindow).__watch!);
-}
-
-/** The rail's own CSS transition on `width`, if one is running now. */
-async function railWidthTransition(page: Page) {
-  return page.evaluate(() => {
-    const rail = (window as unknown as RailWindow).__findRail();
-    const t = rail
-      ?.getAnimations()
-      .find((a) => a instanceof CSSTransition && a.transitionProperty === 'width');
-    return t === undefined ? undefined : Number(t.effect?.getTiming().duration ?? 0);
+    for (const pill of pills) sizes.observe(pill, { box: 'border-box' });
+    const onRun = (event: TransitionEvent) => {
+      const target = event.target as HTMLElement;
+      const animation = target
+        .getAnimations()
+        .find((a) => a instanceof CSSTransition && a.transitionProperty === event.propertyName);
+      const timing = animation?.effect?.getTiming();
+      const run = {
+        property: event.propertyName,
+        duration: Number(timing?.duration ?? NaN),
+        easing: String(timing?.easing ?? ''),
+      };
+      const i = pills.indexOf(target);
+      if (i >= 0) seen.pillRuns[i]!.push(run);
+      else if (target === rail) seen.railRuns.push(run);
+    };
+    document.addEventListener('transitionrun', onRun, true);
+    w.__unguard = () => {
+      removals(mutations.takeRecords());
+      mutations.disconnect();
+      sizes.disconnect();
+      document.removeEventListener('transitionrun', onRun, true);
+      return seen;
+    };
   });
+}
+
+/** Stops the observers once the page has settled, and hands back what they saw. */
+async function unguard(page: Page): Promise<Guarded> {
+  await settle(page);
+  return page.evaluate(() => (window as unknown as RailWindow).__unguard!());
+}
+
+/** Runs `action` under the page's observers, until everything it started has settled. */
+async function guarded(page: Page, action: () => Promise<void>): Promise<Guarded> {
+  await guard(page);
+  await action();
+  return unguard(page);
 }
 
 /** `--duration-slow` in ms and `--ease-standard`, as the browser computes them from the tokens. */
@@ -193,12 +238,25 @@ async function transitions(page: Page, which: 'rail' | 'pills') {
   }, which);
 }
 
-/** Taps `target`, watching the rail from just before the tap. */
-async function tap(page: Page, target: Locator) {
-  await watch(page);
-  await target.click();
-  return watched(page);
+/**
+ * Taps a destination and waits for React to commit it: the URL, then that destination's pill
+ * drawn lit, in whichever rail shows (a remount is the observers' to report). A route can commit
+ * frames after the URL changes on a slow machine, and what the commit starts must happen while
+ * the observers are on.
+ */
+async function tapDestination(page: Page, label: string, url: string) {
+  await destination(page, label).click();
+  await expect(page).toHaveURL(url);
+  await page.waitForFunction((label) => {
+    const w = window as unknown as RailWindow;
+    const rail = w.__findRail();
+    const pill = rail && w.__findPills(rail).find((p) => p.parentElement?.ariaLabel === label);
+    return pill?.style.background.includes('color-mix') === true;
+  }, label);
 }
+
+const railWidth = (page: Page) =>
+  page.evaluate(() => (window as unknown as RailWindow).__rail!.getBoundingClientRect().width);
 
 const expectSameRail = async (page: Page, after: string) =>
   expect(await sameRail(page), `the same rail and pills after ${after}`).toEqual({
@@ -207,34 +265,89 @@ const expectSameRail = async (page: Page, after: string) =>
     pills: true,
   });
 
-/** No sample strays more than 1px from where the rail and its pills settle. */
-function expectSteady(seen: Watched, expanded: boolean, after: string) {
-  for (const sample of seen.samples) {
-    expect(Math.abs(sample.rail - seen.settled.rail), `rail width after ${after}`).toBeLessThan(1);
-    expect(sample.pills.length, `pills after ${after}`).toBe(seen.settled.pills.length);
-    sample.pills.forEach((width, i) => {
-      expect(Math.abs(width - seen.settled.pills[i]!), `pill ${i} after ${after}`).toBeLessThan(1);
-      if (expanded) expect(width, `pill ${i} after ${after}`).toBeGreaterThan(ICON_PILL);
-    });
-  }
-  seen.transitions.forEach((ts, i) => {
+/** Nothing the observers saw removed the rail or a pill, regrew a pill or eased its width. */
+function expectSteady(seen: Guarded, expanded: boolean, after: string) {
+  expect(seen.removed, `nothing removed by ${after}`).toEqual([]);
+  seen.pillSizes.forEach((sizes, i) => {
+    expect(sizes.length, `pill ${i} observed during ${after}`).toBeGreaterThan(0);
+    if (expanded) {
+      for (const width of sizes) {
+        expect(width, `a width pill ${i} was drawn at during ${after}`).toBeGreaterThan(ICON_PILL);
+      }
+    }
+  });
+  seen.pillRuns.forEach((runs, i) => {
     expect(
-      ts.filter((t) => t.property === 'width'),
-      `pill ${i}'s width transitions after ${after}`,
+      runs.filter((r) => r.property === 'width'),
+      `pill ${i}'s width transitions during ${after}`,
     ).toEqual([]);
   });
 }
 
-/** The rail's width runs one way only, from `from` to `to`, never overshooting either. */
-function expectMonotonic(seen: Watched, from: number, to: number, after: string) {
-  const widths = seen.samples.map((s) => s.rail);
-  expect(Math.abs(widths[0]! - from), `the first width after ${after}`).toBeLessThan(1);
-  expect(Math.abs(seen.settled.rail - to), `the settled width after ${after}`).toBeLessThan(1);
+/**
+ * Taps the hamburger with a `transitionrun` listener on the rail, which pauses the rail's width
+ * transition the moment it starts. Then steps it through `STEPS` of its duration by hand, reading
+ * the width at each, and lets it finish before reading where it settles.
+ */
+async function tapHamburger(page: Page) {
+  await page.evaluate(() => {
+    const w = window as unknown as RailWindow;
+    const rail = w.__rail!;
+    w.__railRun = undefined;
+    const onRun = (event: TransitionEvent) => {
+      if (event.target !== rail || event.propertyName !== 'width') return;
+      rail.removeEventListener('transitionrun', onRun);
+      const animation = rail
+        .getAnimations()
+        .find(
+          (a): a is CSSTransition => a instanceof CSSTransition && a.transitionProperty === 'width',
+        );
+      if (animation === undefined) return;
+      animation.pause();
+      const timing = animation.effect!.getTiming();
+      w.__railRun = {
+        animation,
+        duration: Number(timing.duration),
+        easing: String(timing.easing),
+      };
+    };
+    rail.addEventListener('transitionrun', onRun);
+  });
+  const before = await toggle(page).getAttribute('aria-label');
+  const seen = await guarded(page, async () => {
+    await toggle(page).click();
+    // The new label is React's commit; a transition starts at the next style update and its
+    // `transitionrun` is sent at the frame after that. Three frames on, it has been heard.
+    await expect(toggle(page)).not.toHaveAttribute('aria-label', before!);
+    await page.evaluate(async () => {
+      for (let i = 0; i < 3; i++) await new Promise((r) => requestAnimationFrame(r));
+    });
+    const heard = await page.evaluate(
+      () => (window as unknown as RailWindow).__railRun !== undefined,
+    );
+    expect(heard, 'the rail starts a width transition').toBe(true);
+  });
+  const stepped = await page.evaluate(async (steps) => {
+    const w = window as unknown as RailWindow;
+    const { animation, duration, easing } = w.__railRun!;
+    const widths = steps.map((step) => {
+      animation.currentTime = step * duration;
+      return w.__rail!.getBoundingClientRect().width;
+    });
+    animation.finish();
+    await animation.finished;
+    return { duration, easing, widths, settled: w.__rail!.getBoundingClientRect().width };
+  }, STEPS);
+  return { seen, ...stepped };
+}
+
+/** The rail's width runs strictly one way from `from` to `to`, step by step. */
+function expectMonotonic(widths: number[], from: number, to: number, after: string) {
+  expect(Math.abs(widths[0]! - from), `the width at the start of ${after}`).toBeLessThan(1);
+  expect(Math.abs(widths.at(-1)! - to), `the width at the end of ${after}`).toBeLessThan(1);
   const sign = Math.sign(to - from);
   for (let i = 1; i < widths.length; i++) {
-    expect(sign * (widths[i]! - widths[i - 1]!), `width step ${i} after ${after}`).toBeGreaterThan(
-      -0.5,
-    );
+    expect(sign * (widths[i]! - widths[i - 1]!), `width step ${i} of ${after}`).toBeGreaterThan(0);
   }
 }
 
@@ -257,12 +370,20 @@ for (const size of SIZES) {
         ['Settings', '/settings'],
         ['Music', '/music'],
       ] as const) {
-        await destination(page, label).click();
-        await expect(page).toHaveURL(url);
+        const seen = await guarded(page, async () => {
+          await tapDestination(page, label, url);
+        });
+        expect(seen.removed, `nothing removed by ${label}`).toEqual([]);
         await expectSameRail(page, label);
       }
-      await page.getByText('Between Lines of Light', { exact: true }).first().click();
-      await expect(page).toHaveURL('/music/albums/between-lines-of-light');
+      const seen = await guarded(page, async () => {
+        await page.getByText('Between Lines of Light', { exact: true }).first().click();
+        await expect(page).toHaveURL('/music/albums/between-lines-of-light');
+        await expect(
+          page.getByRole('button', { name: 'More options', exact: true }).first(),
+        ).toBeVisible();
+      });
+      expect(seen.removed, 'nothing removed by opening an album').toEqual([]);
       await expectSameRail(page, 'opening an album');
     });
 
@@ -291,16 +412,18 @@ for (const size of SIZES) {
       ] as const) {
         const lit = await page.evaluate(
           (label) =>
-            (window as unknown as RailWindow)
-              .__findPills((window as unknown as RailWindow).__findRail()!)
-              .findIndex((p) => p.parentElement?.textContent?.includes(label)),
+            (window as unknown as RailWindow).__pills!.findIndex((p) =>
+              p.parentElement?.textContent?.includes(label),
+            ),
           label,
         );
-        const seen = await tap(page, destination(page, label));
-        await expect(page).toHaveURL(url);
+        const seen = await guarded(page, async () => {
+          await tapDestination(page, label, url);
+        });
         expectSteady(seen, size.expanded, label);
+        await expectSameRail(page, label);
         expect(
-          seen.transitions[lit]?.find((t) => t.property === 'background-color')?.duration,
+          seen.pillRuns[lit]?.find((r) => r.property === 'background-color')?.duration,
           `${label}'s pill fades in over --duration-slow`,
         ).toBe(duration);
       }
@@ -309,31 +432,40 @@ for (const size of SIZES) {
     test(`[M0.canvas/c] the hamburger eases the same rail between its widths, and it stays so between destinations, on ${size.name}`, async ({
       page,
     }) => {
-      const { duration } = await slow(page);
-      const start = await page.evaluate(
-        () => (window as unknown as RailWindow).__findRail()!.getBoundingClientRect().width,
-      );
+      const timing = await slow(page);
+      const start = await railWidth(page);
 
-      await watch(page);
-      await toggle(page).click();
-      expect(await railWidthTransition(page), 'the rail eases its width').toBe(duration);
-      const toOther = await watched(page);
+      const toOther = await tapHamburger(page);
+      expect(toOther.seen.removed, 'nothing removed by the hamburger').toEqual([]);
       await expectSameRail(page, 'the hamburger');
-      const other = toOther.settled.rail;
+      expect(
+        { duration: toOther.duration, easing: toOther.easing },
+        'the rail eases its width',
+      ).toEqual(timing);
+      const other = toOther.settled;
       expect(Math.abs(other - start)).toBeGreaterThan(1);
-      expectMonotonic(toOther, start, other, 'the hamburger');
+      expectMonotonic(toOther.widths, start, other, 'the hamburger');
 
-      const across = await tap(page, destination(page, 'Books'));
-      await expect(page).toHaveURL('/books');
+      const across = await guarded(page, async () => {
+        await tapDestination(page, 'Books', '/books');
+      });
+      expect(across.removed, 'nothing removed by Books, toggled').toEqual([]);
       await expectSameRail(page, 'Books, toggled');
-      for (const s of across.samples) expect(Math.abs(s.rail - other)).toBeLessThan(1);
+      expect(
+        across.railRuns.filter((r) => r.property === 'width'),
+        'the rail keeps its width on Books',
+      ).toEqual([]);
+      expect(Math.abs((await railWidth(page)) - other)).toBeLessThan(1);
 
-      await watch(page);
-      await toggle(page).click();
-      expect(await railWidthTransition(page), 'the rail eases its width back').toBe(duration);
-      const back = await watched(page);
+      const back = await tapHamburger(page);
+      expect(back.seen.removed, 'nothing removed by the hamburger again').toEqual([]);
       await expectSameRail(page, 'the hamburger again');
-      expectMonotonic(back, other, start, 'the hamburger again');
+      expect(
+        { duration: back.duration, easing: back.easing },
+        'the rail eases its width back',
+      ).toEqual(timing);
+      expectMonotonic(back.widths, other, start, 'the hamburger again');
+      expect(Math.abs(back.settled - start)).toBeLessThan(1);
     });
   });
 }
@@ -364,27 +496,19 @@ test.describe('the labelled rail as its web font arrives', () => {
     await page.evaluate(() => {
       const w = window as unknown as FontWindow;
       const seen = (w.__widthTransitions = [] as string[]);
-      let on = true;
-      w.__stop = () => (on = false);
-      const frame = () => {
+      const onRun = (event: TransitionEvent) => {
+        const target = event.target as HTMLElement;
         const rail = w.__findRail();
-        for (const pill of rail === null ? [] : w.__findPills(rail)) {
-          for (const a of pill.getAnimations()) {
-            if (a instanceof CSSTransition && a.transitionProperty === 'width') {
-              seen.push(pill.parentElement?.textContent ?? '');
-            }
-          }
-        }
-        if (on) requestAnimationFrame(frame);
+        if (event.propertyName !== 'width' || rail === null) return;
+        if (w.__findPills(rail).includes(target))
+          seen.push(target.parentElement?.textContent ?? '');
       };
-      requestAnimationFrame(frame);
+      document.addEventListener('transitionrun', onRun, true);
+      w.__stop = () => document.removeEventListener('transitionrun', onRun, true);
     });
     release();
     await page.waitForFunction(() => document.fonts.check('600 14px Inter'));
     await page.evaluate(() => document.fonts.ready);
-    await page.evaluate(
-      () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
-    );
     await settle(page);
     const swaps = await page.evaluate(() => {
       const w = window as unknown as FontWindow;
