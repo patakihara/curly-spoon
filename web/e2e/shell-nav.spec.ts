@@ -280,7 +280,7 @@ test("[M0.canvas/c] at 1440px the panel's own tabs, the track block and a player
   await expect(page).toHaveURL('/books');
 });
 
-test("[M0.canvas/c] at 1024px the track block's full-screen player leaves the panel's tab alone, and the mini-player lights only the tab the panel shows", async ({
+test("at 1024px the track block's full-screen player leaves the panel's tab alone, and the mini-player lights only the tab the panel shows", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1024, height: 900 });
