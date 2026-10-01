@@ -21,6 +21,7 @@ import net.develivarr.auralis.generated.ui.MediaCardProps
 import net.develivarr.auralis.generated.ui.MediaHeaderProps
 import net.develivarr.auralis.generated.ui.MiniPlayerProps
 import net.develivarr.auralis.generated.ui.NowPlayingPageProps
+import net.develivarr.auralis.generated.ui.NowPlayingPlayer
 import net.develivarr.auralis.generated.ui.NowPlayingProps
 import net.develivarr.auralis.generated.ui.OverflowMenuItem
 import net.develivarr.auralis.generated.ui.OverflowMenuProps
@@ -133,7 +134,15 @@ val sonoraStates: List<StateEntry> = listOf(
         )
     },
     StateEntry("NowPlaying") { v ->
-        NowPlaying(NowPlayingProps(tab = "now", onClose = act(v), onMore = act(v), onTabChange = pick(v), onTogglePlay = act(v)))
+        NowPlaying(
+            NowPlayingProps(
+                tab = "now",
+                onClose = act(v),
+                onMore = act(v),
+                onTabChange = pick(v),
+                player = NowPlayingPlayer(onTogglePlay = act(v)),
+            ),
+        )
     },
     StateEntry("NowPlayingPage") { v ->
         NowPlayingPage(NowPlayingPageProps(title = "Track", onTogglePlay = act(v), onPrev = act(v), onNext = act(v)))

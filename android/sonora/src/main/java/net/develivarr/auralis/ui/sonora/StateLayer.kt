@@ -30,7 +30,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.addOutline
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -157,7 +157,7 @@ internal fun Modifier.stateLayer(
             drawContent()
             if (!enabled) return@drawWithContent
             val outline = shape.createOutline(size, layoutDirection, this)
-            clipPath(Path().apply { addOutline(outline) }) {
+            clipPath(outline.path()) {
                 if (wash > 0f) drawRect(ink.copy(alpha = ink.alpha * wash))
                 waves.forEach { wave ->
                     drawCircle(
@@ -187,6 +187,13 @@ private fun ContentDrawScope.ring(shape: Shape) {
     translate(-reach, -reach) {
         drawOutline(outline, SonoraLightColors.focusRing, style = Stroke(width))
     }
+}
+
+/** The outline as a path, to clip to. */
+private fun Outline.path(): Path = when (this) {
+    is Outline.Generic -> path
+    is Outline.Rounded -> Path().apply { addRoundRect(roundRect) }
+    is Outline.Rectangle -> Path().apply { addRect(rect) }
 }
 
 private fun farthestCorner(o: Offset, s: Size): Float =

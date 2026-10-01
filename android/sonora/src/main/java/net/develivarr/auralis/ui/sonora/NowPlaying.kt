@@ -15,7 +15,7 @@ fun NowPlaying(props: NowPlayingProps) {
         taps = listOf(
             "Collapse player" to props.onClose,
             "More" to props.onMore,
-            (if (props.playing == true) "Pause" else "Play") to props.onTogglePlay,
+            (if (props.player?.playing == true) "Pause" else "Play") to props.player?.onTogglePlay,
         ),
         tabs = PLAYER_TABS.map { (key, label) ->
             label to props.onTabChange?.let { change -> { change(key) } }
