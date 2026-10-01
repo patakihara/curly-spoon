@@ -9,7 +9,9 @@
  * - The bottom bar and the rail open the destination tapped, on its own stack as it was left.
  * - The rail's hamburger collapses the labelled rail to the icon rail and back, and it stays so
  *   from page to page.
- * - The mini-player opens Now Playing.
+ * - The mini-player opens Now Playing. On desktop its Queue and Lyrics show the player panel at
+ *   that tab, or back at Now Playing when it already shows it, leaving the page as it is.
+ * - The avatar leading the phone's top bar opens Settings.
  * - The player's tabs switch to that tab's sheet.
  */
 import type { Nav, NavPage } from './nav.js';
@@ -25,6 +27,8 @@ export type ShellAction =
   | { kind: 'open'; page: string }
   /** The player sheet of the tab the handler is given. */
   | { kind: 'tab' }
+  /** The player panel at `tab`, or at Now Playing when it shows `tab` already; the page stays. */
+  | { kind: 'panel'; tab: 'queue' | 'lyrics' }
   /** The rail collapsed or expanded, from `expanded`, the width's own default, until toggled. */
   | { kind: 'rail'; expanded: boolean };
 
@@ -84,8 +88,14 @@ export function shellHandlers(
         expanded: expanded?.kind === 'literal' ? expanded.value === true : true,
       });
     }
-    if (has('nowPlaying'))
-      on(find(parts.player, 'MiniPlayer'), 'onOpen', { kind: 'open', page: 'nowPlaying' });
+    const mini = find(parts.player, 'MiniPlayer');
+    if (has('nowPlaying')) on(mini, 'onOpen', { kind: 'open', page: 'nowPlaying' });
+    if (parts.platform === 'desktop') {
+      if (has('queue')) on(mini, 'onToggleQueue', { kind: 'panel', tab: 'queue' });
+      if (has('lyrics')) on(mini, 'onToggleLyrics', { kind: 'panel', tab: 'lyrics' });
+    }
+    if (has('settings'))
+      on(find(parts.leading, 'AccountButton'), 'onClick', { kind: 'open', page: 'settings' });
     on(parts.sheet, 'onTabChange', { kind: 'tab' });
   }
   return handlers;

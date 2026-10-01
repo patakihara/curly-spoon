@@ -51,7 +51,14 @@ fun PodcastsPage(navController: NavController, actions: PageActions) {
                 BackLayer(
                     BackLayerProps(
                         title = "Podcasts",
-                        leading = { AccountButton(AccountButtonProps(label = "Account")) },
+                        leading = {
+                            AccountButton(
+                                AccountButtonProps(
+                                    label = "Account",
+                                    onClick = { navController.navigate(Route.Settings) },
+                                ),
+                            )
+                        },
                         search = "Search your shows and their episodes",
                         platform = Platform.MOBILE,
                     ),

@@ -48,7 +48,14 @@ fun MusicPage(navController: NavController, actions: PageActions) {
                 BackLayer(
                     BackLayerProps(
                         title = "Music",
-                        leading = { AccountButton(AccountButtonProps(label = "Account")) },
+                        leading = {
+                            AccountButton(
+                                AccountButtonProps(
+                                    label = "Account",
+                                    onClick = { navController.navigate(Route.Settings) },
+                                ),
+                            )
+                        },
                         search = "Search your music and requests",
                         platform = Platform.MOBILE,
                     ),

@@ -122,8 +122,8 @@ describe('the web router and the Android graph, generated from one nav.json', ()
  * The shell's controls each page wires on the phone, as a set of each handler prop and what it
  * does: `onClick:close:<home>`, `onChange:destination`, `onOpen:open:<page>`, `onTabChange:tab`.
  * The web's are its w0 chrome's (or a sheet's player's), through `go`; Android's are its page's,
- * the back handler left out, and only the mini-player's `onOpen` counted as the shell's own open,
- * since a page's own links navigate the same way.
+ * the back handler left out, and only the mini-player's `onOpen` and the avatar's `onClick`
+ * counted as the shell's own opens, since a page's own links navigate the same way.
  */
 function webWiring(source: string, ids: Map<string, string>): string[] {
   const phone = / {2}w0: \(\w*\) => \(\{\n([\s\S]*?)\n {2}\}\),/.exec(source)?.[1] ?? source;
@@ -155,6 +155,11 @@ function androidWiring(source: string): string[] {
       ...[...body.matchAll(handler('navController\\.navigate\\(Route\\.(\\w+)\\)'))]
         .filter((m) => m[1] === 'onOpen')
         .map((m) => `${m[1]}:open:${lower(m[2]!)}`),
+      ...[
+        ...body.matchAll(
+          /AccountButtonProps\([^)]*?(onClick) = \{\s*navController\.navigate\(Route\.(\w+)\)/g,
+        ),
+      ].map((m) => `${m[1]}:open:${lower(m[2]!)}`),
       ...[...body.matchAll(handler('openTab\\(navController, tab\\)'))].map((m) => `${m[1]}:tab`),
     ]),
   ].sort();
@@ -184,6 +189,7 @@ describe("the shell's controls, on the web and on Android", () => {
     expect([...kinds].sort()).toEqual([
       'onChange:destination',
       'onClick:close',
+      'onClick:open',
       'onClose:close',
       'onOpen:open',
       'onTabChange:tab',

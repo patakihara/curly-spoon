@@ -13,9 +13,6 @@ export const UNBOUND: Readonly<Record<string, string>> = {
   'notFound/Button.onClick': 'M0.states',
   'search/Section.onAction': 'M0.states',
   'shelf/MediaCard.onClick': 'M0.states',
-  'shell/AccountButton.onClick': 'M0.states',
-  'shell/MiniPlayer.onToggleLyrics': 'M0.states',
-  'shell/MiniPlayer.onToggleQueue': 'M0.states',
   'signIn/StatusBanner.onAction': 'M0.states',
   // Playing: transport, play verbs and tracks.
   'album/MediaHeader.onPlay': 'M1.play',

@@ -279,7 +279,7 @@ describe('the web route table', () => {
 });
 
 describe('the one web shell', () => {
-  const out = generateWebShell();
+  const out = generateWebShell({ now: 'NowPlaying', queue: 'Queue' });
 
   it('[M0.canvas/c] draws one BackdropShell from the frame the page showing hands it, its content in the front layer', () => {
     expect(out.match(/<BackdropShell\b/g)).toHaveLength(1);
@@ -303,7 +303,24 @@ describe('the one web shell', () => {
       '  const frame = over === undefined ? handle?.frame : PANEL[layout] ? over.frame : undefined;',
     );
     expect(out).toContain('  if (frame === undefined) return outlet;');
-    expect(out).toContain('      sheet={over === undefined ? chrome.sheet : outlet}');
+    expect(out).toContain(
+      '      sheet={held !== undefined ? held : over === undefined ? chrome.sheet : outlet}',
+    );
+  });
+
+  it('[M0.states] draws the player panel at the tab the desktop mini-player holds, beside the page, which stays', () => {
+    expect(out).toContain("import NowPlaying from '../pages/NowPlaying';");
+    expect(out).toContain("import Queue from '../pages/Queue';");
+    expect(out).toContain(
+      'const PANEL_TABS: Record<string, ComponentType> = { now: NowPlaying, queue: Queue };',
+    );
+    expect(out).toContain(
+      "  const Held = over === undefined && platform === 'desktop' ? panelTab(go.panel(), chrome.sheet) : undefined;",
+    );
+    expect(out).toContain('<InPanel.Provider value={true}>');
+    expect(out).toContain(
+      '      sheetOpen={held !== undefined || (over === undefined ? chrome.sheetOpen : true)}',
+    );
   });
 });
 

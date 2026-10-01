@@ -144,6 +144,65 @@ for (const size of SIZES) {
   });
 }
 
+test("[M0.states] the avatar leading the phone's top bar opens Settings, whose close returns to the page under it", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/books', { waitUntil: 'networkidle' });
+  await settle(page);
+  await page.getByRole('button', { name: 'Account', exact: true }).click();
+  await expect(page).toHaveURL('/settings');
+  await heading(page, 'Settings');
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page).toHaveURL('/books');
+});
+
+/** The player panel's tab showing, or none where no panel is drawn. */
+async function panelTab(page: Page): Promise<string | null> {
+  const tab = page
+    .getByRole('tab', { selected: true })
+    .filter({ hasText: /^(Now playing|Queue|Lyrics)$/ })
+    .locator('visible=true');
+  return (await tab.count()) === 0 ? null : tab.first().innerText();
+}
+
+for (const width of [600, 1024, 1440]) {
+  test(`[M0.states] at ${width}px the mini-player's Queue and Lyrics show the player panel at that tab, the page staying as it is`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/music/albums/between-lines-of-light', { waitUntil: 'networkidle' });
+    await settle(page);
+    const own = width >= 1240 ? 'Now playing' : null;
+    const queue = page.getByRole('button', { name: 'Queue', exact: true });
+    const lyrics = page.getByRole('button', { name: 'Lyrics', exact: true });
+    expect(await panelTab(page)).toBe(own);
+
+    await queue.click();
+    await expect.poll(() => panelTab(page)).toBe('Queue');
+    await lyrics.click();
+    await expect.poll(() => panelTab(page)).toBe('Lyrics');
+    await lyrics.click();
+    await expect.poll(() => panelTab(page)).toBe('Now playing');
+    await expect(page).toHaveURL('/music/albums/between-lines-of-light');
+
+    // The panel's tab is apart from the page: its own tabs leave the page, and a new page leaves it.
+    await queue.click();
+    await page.getByRole('tab', { name: 'Lyrics' }).click();
+    await expect.poll(() => panelTab(page)).toBe('Lyrics');
+    await expect(page).toHaveURL('/music/albums/between-lines-of-light');
+    await goTo(page, 'Books', '/books');
+    await expect.poll(() => panelTab(page)).toBe('Lyrics');
+    await page.reload({ waitUntil: 'networkidle' });
+    await expect.poll(() => panelTab(page)).toBe('Lyrics');
+
+    // Its close leaves the page too, back to the panel the width shows of its own, if any.
+    await page.getByRole('button', { name: 'Close Player', exact: true }).click();
+    await expect.poll(() => panelTab(page)).toBe(own);
+    await expect(page).toHaveURL('/books');
+  });
+}
+
 test("[M0.canvas] the rail's hamburger collapses the labelled rail to the icon rail and back, staying so from page to page", async ({
   page,
 }) => {

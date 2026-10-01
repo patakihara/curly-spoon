@@ -179,7 +179,7 @@ describe('a generated web page', () => {
 
   it('holds the shell’s parts for every layout: the avatar and bottom bar on the phone, the rail wider', () => {
     expect(homeOut).toContain(
-      '  w0: (go) => ({\n    appBar: false,\n    leading: (\n      <AccountButton label={shell.account.label} />',
+      "  w0: (go) => ({\n    appBar: false,\n    leading: (\n      <AccountButton label={shell.account.label} onClick={() => go.open('/settings')} />",
     );
     expect(homeOut).toContain(
       '<BottomNav items={shell.nav.w0} active="books" onChange={(key) => go.destination(key)} />',
@@ -241,6 +241,10 @@ describe("the shell's controls on a web page", () => {
     expect(homeOut).not.toContain('go.close');
   });
 
+  it('[M0.states] opens Settings from the account avatar on the phone', () => {
+    expect(homeOut).toMatch(/<AccountButton [^>]*onClick=\{\(\) => go.open\('\/settings'\)\} \/>/);
+  });
+
   const withPlayer = parseNav({
     ...nav,
     pages: [
@@ -248,6 +252,7 @@ describe("the shell's controls on a web page", () => {
       ...[
         ['nowPlaying', '/playing'],
         ['queue', '/playing/queue'],
+        ['lyrics', '/playing/lyrics'],
       ].map(([id, route]) => ({
         ...nav.pages[1]!,
         id,
@@ -278,6 +283,42 @@ describe("the shell's controls on a web page", () => {
     expect(book).toMatch(/<MiniPlayer [^>]*onOpen=\{\(\) => go.open\('\/playing'\)\} \/>/);
   });
 
+  it("[M0.states] shows the player panel at the desktop mini-player's Queue or Lyrics, tinting the one it shows", () => {
+    const book = generateWebPage(
+      parsePage(source, 'book'),
+      'book',
+      {},
+      components,
+      inPlayer('book'),
+    );
+    const [phone, desktop] = book.split('\n').filter((line) => line.includes('<MiniPlayer '));
+    expect(desktop).toContain(
+      "queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')}",
+    );
+    expect(desktop).toContain(
+      "lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')}",
+    );
+    expect(phone).not.toContain('Toggle');
+  });
+
+  it('[M0.states] draws a player sheet at desktop density where it is the panel the mini-player showed', () => {
+    const queue = generateWebPage(
+      parsePage(
+        'export default function Queue() {\n  return <QueuePage heading={null} />;\n}\n',
+        'queue',
+      ),
+      'queue',
+      {},
+      components,
+      inPlayer('queue'),
+    );
+    expect(queue).toContain("import { InPanel, useShellNav } from '../../shell-nav';");
+    expect(queue).toContain('  const inPanel = useContext(InPanel);');
+    expect(queue).toContain(
+      "  const platform: Platform = inPanel || PANEL[useLayout()] ? 'desktop' : 'mobile';",
+    );
+  });
+
   it("[M0.canvas] closes a player sheet to the page under it, and switches the player's tabs between sheets", () => {
     const queue = generateWebPage(
       parsePage(
@@ -289,7 +330,6 @@ describe("the shell's controls on a web page", () => {
       components,
       inPlayer('queue'),
     );
-    expect(queue).toContain("import { useShellNav } from '../../shell-nav';");
     expect(queue).toContain("import { PANEL, useLayout, type Platform } from '../nav/platform';");
     expect(queue).not.toContain("from './Books'");
     expect(queue).toContain('\n  return (\n    <NowPlaying ');

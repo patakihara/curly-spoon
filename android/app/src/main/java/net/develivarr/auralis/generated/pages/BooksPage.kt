@@ -48,7 +48,14 @@ fun BooksPage(navController: NavController, actions: PageActions) {
                 BackLayer(
                     BackLayerProps(
                         title = "Books",
-                        leading = { AccountButton(AccountButtonProps(label = "Account")) },
+                        leading = {
+                            AccountButton(
+                                AccountButtonProps(
+                                    label = "Account",
+                                    onClick = { navController.navigate(Route.Settings) },
+                                ),
+                            )
+                        },
                         search = "Search your books and requests",
                         platform = Platform.MOBILE,
                     ),

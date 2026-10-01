@@ -65,6 +65,9 @@ const playActions = (props: Props) =>
 const phoneOnly = (props: Props) =>
   !(props['platform']?.kind === 'literal' && props['platform'].value === 'desktop');
 
+/** The desktop's player bar draws it; the phone's mini-player never does. */
+const desktopOnly = (props: Props) => !phoneOnly(props);
+
 /**
  * Where Sonora draws an action's control only on a condition, read from its `.jsx`: given another
  * prop, or given the action itself. Every other action's control is drawn whether given or not,
@@ -102,6 +105,8 @@ const DRAWN_WHEN: Readonly<Record<string, (props: Props) => boolean>> = {
   'QueuePage.onClose': () => false,
   'NowPlaying.onClose': phoneOnly,
   'NowPlaying.onMore': phoneOnly,
+  'MiniPlayer.onToggleQueue': desktopOnly,
+  'MiniPlayer.onToggleLyrics': desktopOnly,
 };
 
 /** Whether `element` draws the control of `prop`: given, or drawn disabled without it. */

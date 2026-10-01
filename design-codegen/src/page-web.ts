@@ -66,7 +66,8 @@ type Ctx = WebComponents & {
 
 /**
  * Each of the shell's actions on the handler prop `prop`, as the web code doing it through
- * `useShellNav`'s `go`, by prop: the rail's toggle also has the shell hold its `expanded`.
+ * `useShellNav`'s `go`, by prop: the rail's toggle also has the shell hold its `expanded`, and the
+ * mini-player's Queue and Lyrics have it say whether the panel shows their tab.
  */
 function spell(prop: string, action: ShellAction, paths: Map<string, string>) {
   switch (action.kind) {
@@ -82,6 +83,11 @@ function spell(prop: string, action: ShellAction, paths: Map<string, string>) {
       return {
         expanded: `go.rail(${action.expanded})`,
         [prop]: `() => go.toggleRail(${action.expanded})`,
+      };
+    case 'panel':
+      return {
+        [`${action.tab}Open`]: `go.panel() === '${action.tab}'`,
+        [prop]: `() => go.togglePanel('${action.tab}')`,
       };
   }
 }
@@ -309,7 +315,11 @@ export function generateWebPage(
   }
   // A page named as a component it draws with, Now Playing's NowPlaying, takes a suffix.
   const name = used.has(componentName(id)) ? `${componentName(id)}Screen` : componentName(id);
-  const react = inPage((n) => n.kind === 'each') ? ["import { Fragment } from 'react';"] : [];
+  const fromReact = [
+    ...(inPage((n) => n.kind === 'each') ? ['Fragment'] : []),
+    ...(sheet ? ['useContext'] : []),
+  ];
+  const react = fromReact.length > 0 ? [`import { ${fromReact.join(', ')} } from 'react';`] : [];
   const typed = [
     ...own,
     ...chromes.flatMap(([, parts]) => [parts.rail, parts.leading, parts.player, parts.sheet]),
@@ -350,7 +360,7 @@ export function generateWebPage(
     ...(goes
       ? [
           sheet
-            ? "import { useShellNav } from '../../shell-nav';"
+            ? "import { InPanel, useShellNav } from '../../shell-nav';"
             : "import type { ShellNav } from '../../shell-nav';",
         ]
       : []),
@@ -412,9 +422,12 @@ export function generateWebPage(
     '}',
     '',
     `export default function ${name}({ data = placeholder, state = 'full' }: ${name}Props) {`,
-    sheet
-      ? "  const platform: Platform = PANEL[useLayout()] ? 'desktop' : 'mobile';"
-      : '  const platform = PLATFORM[useLayout()];',
+    ...(sheet
+      ? [
+          '  const inPanel = useContext(InPanel);',
+          "  const platform: Platform = inPanel || PANEL[useLayout()] ? 'desktop' : 'mobile';",
+        ]
+      : ['  const platform = PLATFORM[useLayout()];']),
     ...(opens ? ['  const navigate = useNavigate();'] : []),
     ...(sheet && goes ? ['  const go = useShellNav();'] : []),
     '  return (',

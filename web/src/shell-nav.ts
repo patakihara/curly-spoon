@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { createContext, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { matchPath, useLocation, useNavigate, useNavigationType } from 'react-router';
 import { NAV_MAP } from './generated/nav/stacks';
 
@@ -7,9 +7,11 @@ import { NAV_MAP } from './generated/nav/stacks';
  * graph's `closePage`, `openDestination` and `openTab` do: ✕ returns to whatever opened a page, or
  * with nothing under it to its destination's home; each destination keeps its own stack; a sheet
  * closes to the page under it; the browser's back goes to the previous view, wherever that was.
- * The rail's hamburger collapses the rail and back, and it stays so from page to page. The stacks
- * and the rail are kept in the tab's session storage, so a reload carries on where it was. The
- * generated pages wire the shell's controls to it, as design-codegen's shell-handlers say.
+ * The rail's hamburger collapses the rail and back, and it stays so from page to page. On desktop
+ * the mini-player's Queue and Lyrics show the player panel at that tab, its tab held apart from the
+ * page, which stays as it is. The stacks, the rail and the panel are kept in the tab's session
+ * storage, so a reload carries on where it was. The generated pages wire the shell's controls to
+ * it, as design-codegen's shell-handlers say.
  */
 
 /** Somewhere to keep a value across a reload: the tab's session storage, in the app. */
@@ -229,8 +231,67 @@ export class Rail {
   }
 }
 
+/**
+ * The player panel's tab, as the desktop mini-player's Queue and Lyrics set it, apart from the
+ * page: none until one is tapped, so each width shows its own panel, if any; then the tab tapped,
+ * or Now Playing when that tab already shows; from then the panel's own tabs and its close.
+ */
+export class Panel {
+  private held: string | undefined;
+  private readonly heard = new Set<() => void>();
+
+  /** A panel of the player's `tabs`, by key, carried on from what `store` holds. */
+  constructor(
+    private readonly tabs: Readonly<Record<string, string>>,
+    private readonly store?: Store,
+  ) {
+    const kept = stored(store);
+    if (typeof kept === 'string' && tabs[kept] !== undefined) this.held = kept;
+  }
+
+  /** The tab held, or none. */
+  tab(): string | undefined {
+    return this.held;
+  }
+
+  /** The mini-player's `tab` tapped: the panel at it, or at Now Playing when it shows it already. */
+  toggle(tab: string): void {
+    this.show(this.held === tab ? 'now' : tab);
+  }
+
+  /** The panel's own tab `tab`. */
+  show(tab: string): void {
+    if (this.tabs[tab] === undefined) throw new Error(`${tab} is not a tab of the player`);
+    this.hold(tab);
+  }
+
+  /** The panel's close: no tab held, so the width's own panel, if any, shows again. */
+  close(): void {
+    this.hold(undefined);
+  }
+
+  private hold(tab: string | undefined): void {
+    this.held = tab;
+    this.store?.write(JSON.stringify(tab ?? null));
+    for (const listener of this.heard) listener();
+  }
+
+  /** Calls `listener` whenever the tab held changes; returns what stops it. */
+  subscribe(listener: () => void): () => void {
+    this.heard.add(listener);
+    return () => void this.heard.delete(listener);
+  }
+}
+
 const stacks = new Stacks(NAV_MAP, session('auralis.shell.stacks'));
 const rail = new Rail(session('auralis.shell.rail'));
+const panel = new Panel(NAV_MAP.tabs, session('auralis.shell.panel'));
+
+/**
+ * Whether what is drawn is the player panel the mini-player's Queue or Lyrics showed: there the
+ * player's close and tabs act on the panel and leave the page as it is.
+ */
+export const InPanel = createContext(false);
 
 /** What the shell's controls do, for a page to wire them to. */
 export interface ShellNav {
@@ -242,6 +303,10 @@ export interface ShellNav {
   open(path: string): void;
   /** The player's tab `tab`. */
   tab(tab: string): void;
+  /** The player panel's tab the mini-player's Queue or Lyrics set, or none. */
+  panel(): string | undefined;
+  /** The desktop mini-player's Queue or Lyrics, `tab`. */
+  togglePanel(tab: string): void;
   /** Whether the rail is expanded, at a width whose own default is `given`. */
   rail(given: boolean): boolean;
   /** The rail's hamburger, at a width whose own default is `given`. */
@@ -258,24 +323,33 @@ export function useShellNav(): ShellNav {
     () => rail.snapshot(),
     () => undefined,
   );
+  const tab = useSyncExternalStore(
+    (listener) => panel.subscribe(listener),
+    () => panel.tab(),
+    () => undefined,
+  );
+  const inPanel = useContext(InPanel);
   useEffect(() => {
     stacks.seen(location.pathname + location.search, arrival, location.key);
   }, [location, arrival]);
   return useMemo(
     () => ({
-      close: (home) => void navigate(stacks.close(home)),
+      close: (home) => (inPanel ? panel.close() : void navigate(stacks.close(home))),
       destination: (key) => {
         const to = stacks.destination(key);
         if (to !== undefined) void navigate(to);
       },
       open: (path) => void navigate(path),
-      tab: (tab) => {
-        const { to, replace } = stacks.tab(tab);
-        void navigate(to, { replace });
+      tab: (to) => {
+        if (inPanel) return panel.show(to);
+        const sheet = stacks.tab(to);
+        void navigate(sheet.to, { replace: sheet.replace });
       },
+      panel: () => tab,
+      togglePanel: (to) => panel.toggle(to),
       rail: (given) => held ?? given,
       toggleRail: (given) => rail.toggle(given),
     }),
-    [navigate, held],
+    [navigate, held, tab, inPanel],
   );
 }

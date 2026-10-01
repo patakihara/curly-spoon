@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Rail, Stacks, type NavMap, type Store } from './shell-nav';
+import { Panel, Rail, Stacks, type NavMap, type Store } from './shell-nav';
 
 const map: NavMap = {
   homes: { browse: '/', music: '/music', books: '/books' },
@@ -264,5 +264,40 @@ describe("the rail's hamburger", () => {
     rail.toggle(false);
     expect(rail.expanded(true)).toBe(true);
     expect(heard).toEqual([false, true]);
+  });
+});
+
+describe("the desktop mini-player's Queue and Lyrics", () => {
+  it('[M0.states] hold no tab of the player panel until one is tapped, so each width shows its own', () => {
+    expect(new Panel(map.tabs, session()).tab()).toBeUndefined();
+  });
+
+  it('[M0.states] show the panel at the tab tapped, and back at Now Playing when it already shows it', () => {
+    const panel = new Panel(map.tabs, session());
+    const heard: (string | undefined)[] = [];
+    panel.subscribe(() => heard.push(panel.tab()));
+    panel.toggle('queue');
+    expect(panel.tab()).toBe('queue');
+    panel.toggle('lyrics');
+    expect(panel.tab()).toBe('lyrics');
+    panel.toggle('lyrics');
+    expect(panel.tab()).toBe('now');
+    expect(heard).toEqual(['queue', 'lyrics', 'now']);
+  });
+
+  it("[M0.states] switch the panel's own tabs within it and close it, and keep it so across pages and a reload", () => {
+    const store = session();
+    const panel = new Panel(map.tabs, store);
+    panel.show('queue');
+    expect(new Panel(map.tabs, store).tab()).toBe('queue');
+    panel.close();
+    expect(panel.tab()).toBeUndefined();
+    expect(new Panel(map.tabs, store).tab()).toBeUndefined();
+  });
+
+  it('[M0.states] start afresh on a reload when the session holds no tab of the player', () => {
+    const store = session();
+    store.write('"settings"');
+    expect(new Panel(map.tabs, store).tab()).toBeUndefined();
   });
 });

@@ -450,6 +450,8 @@ export function generateKotlinPage(
         return lambda([raw('openTab(navController, tab)')], 'tab');
       case 'rail':
         throw new Error(`${id}: Android's phone has no rail to collapse`);
+      case 'panel':
+        throw new Error(`${id}: Android's phone has no player panel to show`);
     }
   };
   /** Android's back does what the page's close control does, on a page that closes. */

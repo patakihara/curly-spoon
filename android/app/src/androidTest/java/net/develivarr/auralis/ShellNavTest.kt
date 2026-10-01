@@ -29,7 +29,8 @@ import org.junit.runner.RunWith
  * 11-front.md's "Shell and navigation" on a device, walked only by tapping the shell's own
  * controls and pressing Android's back, never by navigating in code: ✕ returns to whatever opened
  * a page, each destination keeps its own stack, Android's back does what ✕ does, the mini-player
- * opens Now Playing, the player's tabs switch sheets, and a sheet closes to the page under it.
+ * opens Now Playing, the player's tabs switch sheets, a sheet closes to the page under it, and the
+ * avatar leading the top bar opens Settings.
  * Every control is found as a screen reader finds it, by its role, a button or a tab, and its name.
  * web/e2e/shell-nav.spec.ts walks the same journey in the browser.
  */
@@ -140,6 +141,16 @@ class ShellNavTest {
         assertEquals("Lyrics", showing())
         systemBack()
         assertEquals("Album shadows-and-sighs", showing())
+    }
+
+    @Test
+    fun M0_states_theAvatarOpensSettingsWhoseCloseReturnsToThePageUnderIt() {
+        start()
+        tab("Books")
+        tap("Account")
+        assertEquals("Settings", showing())
+        tap("Close")
+        assertEquals("Books", showing())
     }
 
     private companion object {
