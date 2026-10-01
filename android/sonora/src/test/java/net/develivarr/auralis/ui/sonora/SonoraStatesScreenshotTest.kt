@@ -12,8 +12,8 @@ import app.cash.paparazzi.HtmlReportWriter
 import app.cash.paparazzi.Paparazzi
 import app.cash.paparazzi.Snapshot
 import app.cash.paparazzi.SnapshotHandler
-import java.awt.image.BufferedImage
 import java.io.File
+import java.lang.reflect.Proxy
 import net.develivarr.auralis.generated.theme.SonoraLightColors
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertFalse
@@ -89,21 +89,31 @@ class SonoraStatesScreenshotTest(private val entry: StateEntry) {
     }
 }
 
-/** Hands each snapshot to [report] and keeps its last frame's pixels by snapshot name. */
+/**
+ * Hands each snapshot to [report] and keeps its last frame's pixels by snapshot name. A frame is a
+ * `java.awt.image.BufferedImage`, which the Android unit-test classpath cannot name, so the frame
+ * handler is a proxy and the pixels are read reflectively.
+ */
 private class Shots(private val report: SnapshotHandler) : SnapshotHandler {
     val pixels = mutableMapOf<String, IntArray>()
 
     override fun newFrameHandler(snapshot: Snapshot, frameCount: Int, fps: Int): SnapshotHandler.FrameHandler {
         val inner = report.newFrameHandler(snapshot, frameCount, fps)
-        return object : SnapshotHandler.FrameHandler {
-            override fun handle(image: BufferedImage) {
-                pixels[snapshot.name!!] = image.getRGB(0, 0, image.width, image.height, null, 0, image.width)
-                inner.handle(image)
-            }
-
-            override fun close() = inner.close()
-        }
+        val type = SnapshotHandler.FrameHandler::class.java
+        return Proxy.newProxyInstance(type.classLoader, arrayOf(type)) { _, method, args ->
+            if (method.name == "handle") pixels[snapshot.name!!] = rgb(args[0])
+            method.invoke(inner, *(args ?: emptyArray()))
+        } as SnapshotHandler.FrameHandler
     }
 
     override fun close() = report.close()
+
+    private fun rgb(image: Any): IntArray {
+        val type = image.javaClass
+        val width = type.getMethod("getWidth").invoke(image) as Int
+        val height = type.getMethod("getHeight").invoke(image) as Int
+        val int = Int::class.javaPrimitiveType!!
+        val getRGB = type.getMethod("getRGB", int, int, int, int, IntArray::class.java, int, int)
+        return getRGB.invoke(image, 0, 0, width, height, null, 0, width) as IntArray
+    }
 }
