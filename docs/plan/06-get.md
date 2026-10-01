@@ -15,7 +15,7 @@ One pipeline and one status vocabulary for music, books and podcasts. Only the s
 ### Music
 
 - **Songs: kept from YouTube Music.** A song you stream is **added automatically once about 90% of it has played**; a few seconds and a skip doesn't count. Adding one by hand is a **menu option** (_Add to library_ in the song's three-dot menu), not a button on the card or in Now Playing. The server saves the original Opus stream without re-encoding, reusing whatever is already cached, and writes tags from the matching MusicBrainz release (artist, album, track number, cover art) so Jellyfin files it properly. It lands in `/data/media/Music` and turns into an owned card.
-- **Albums: always by torrent, in lossless.** _Add to library_ on an album never keeps it from YouTube Music; it requests the album by torrent. Until it arrives, the album still streams from YouTube Music. Not through Lidarr, which you find patchy: its logs show its public indexers (Knaben, The Pirate Bay, BT.etree) hitting request limits and getting disabled, it insists on exact edition matches that music torrents rarely fit, and its artist pages mix editions and miss albums. So Auralis does what you do by hand:
+- **Albums: always by torrent, in lossless.** _Add to library_ on an album never keeps it from YouTube Music; it requests the album by torrent. Until it arrives, the album still streams from YouTube Music. Not through Lidarr, which you find patchy: its logs show its public indexers hitting request limits and getting disabled, it insists on exact edition matches that music torrents rarely fit, and its artist pages mix editions and miss albums. So Auralis does what you do by hand:
   - searches Prowlarr with several query forms (artist + album, album alone, discography packs), with results cached and spread across indexers so it stays under their limits;
   - scores each release on format (FLAC over 320 over the rest), how well its track list fits one of the album's editions, a sensible size and seeders;
   - picks automatically only when one release clearly wins. Otherwise the request shows <span class="pill t-req">Needs choice</span> with the candidates listed, so choosing takes one tap;
@@ -36,7 +36,7 @@ One pipeline and one status vocabulary for music, books and podcasts. Only the s
   - `audiobook-series-tag`: set the series and its number from Audible and Audnexus, one narration per series so the series view has no duplicates or gaps;
   - `audiobook-author-image`: add an author photo when the folder has none (Audnexus has author images, so no web scraping).
 
-  Then Audiobookshelf picks up **only the new folder**, through its folder watcher (on for your Books library), never a full library scan. The book work starts by timing each step of a real request, to find what's slow.
+  Then Audiobookshelf picks up **only the new folder**, through its folder watcher (on for your Books library), never a full library scan.
 
 ### Podcasts
 

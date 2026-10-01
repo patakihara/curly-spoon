@@ -23,8 +23,6 @@ The old project drifted from its design and its docs. Each rule here is a check 
 
 ### Keep the plan clean and the progress true
 
-The plan and the progress are kept apart.
-
 ::: grid g2
 ::: card
 #### The plan: edited in place
