@@ -1,16 +1,11 @@
 package net.develivarr.auralis.ui.sonora
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -58,9 +53,51 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
+/** Each interactive Sonora component, drawn with no action. */
+internal val unbound: List<Pair<String, @Composable () -> Unit>> = listOf(
+    "AccountButton" to { AccountButton(AccountButtonProps(label = "Account")) },
+    "ArtistCard" to { ArtistCard(ArtistCardProps(title = "Artist")) },
+    "BottomNav" to { BottomNav(BottomNavProps(items = listOf(BottomNavItem("home", "Home", "home")), active = "home")) },
+    "Button" to { Button(ButtonProps(children = null)) },
+    "ButtonGroup" to { ButtonGroup(ButtonGroupProps(items = listOf(ButtonGroupItem("all", "All")))) },
+    "EpisodeRow" to { EpisodeRow(EpisodeRowProps(title = "Episode")) },
+    "ExpandableText" to { ExpandableText(ExpandableTextProps(text = "Text")) },
+    "ExpanderRow" to { ExpanderRow(ExpanderRowProps(label = "Chapters")) },
+    "FeatureCard" to { FeatureCard(FeatureCardProps(title = "Feature")) },
+    "FieldRow" to { FieldRow(FieldRowProps(label = "Server", value = "auralis")) },
+    "FollowButton" to { FollowButton(FollowButtonProps()) },
+    "IconButton" to { IconButton(IconButtonProps(label = "Close")) },
+    "Input" to { Input(InputProps(value = "Sonora")) },
+    "LyricsPage" to { LyricsPage(LyricsPageProps()) },
+    "MediaCard" to { MediaCard(MediaCardProps(title = "Album")) },
+    "MediaHeader" to { MediaHeader(MediaHeaderProps(title = "Album")) },
+    "MiniPlayer" to { MiniPlayer(MiniPlayerProps(title = "Track", artist = "Artist")) },
+    "NowPlaying" to { NowPlaying(NowPlayingProps(tab = "now")) },
+    "NowPlayingPage" to { NowPlayingPage(NowPlayingPageProps(title = "Track")) },
+    "OverflowMenu" to { OverflowMenu(OverflowMenuProps(items = listOf(OverflowMenuItem("share", "Share")))) },
+    "PreviewButton" to { PreviewButton(PreviewButtonProps(label = "Preview")) },
+    "QueuePage" to { QueuePage(QueuePageProps()) },
+    "QuickPick" to { QuickPick(QuickPickProps(title = "Pick")) },
+    "ResultRow" to { ResultRow(ResultRowProps(title = "Result")) },
+    "SearchField" to { SearchField(SearchFieldProps(value = "Sonora")) },
+    "Section" to { Section(SectionProps(title = "Shelf", actionText = "See all")) },
+    "SettingRow" to { SettingRow(SettingRowProps(title = "Setting")) },
+    "SortFilterBar" to { SortFilterBar(SortFilterBarProps(label = "Sort")) },
+    "StatusBanner" to { StatusBanner(StatusBannerProps(children = null, actionLabel = "Retry")) },
+    "TabBar" to { TabBar(TabBarProps(items = listOf(TabBarItem("albums", "Albums")))) },
+    "ValueRow" to { ValueRow(ValueRowProps(label = "Speed", value = "1x")) },
+    "ViewToggle" to { ViewToggle(ViewToggleProps()) },
+)
+
+/** A control: anything that takes a press or text. */
+internal val control = hasClickAction() or SemanticsMatcher.keyIsDefined(SemanticsProperties.EditableText)
+
+/** Not disabled. */
+internal val enabled = SemanticsMatcher.keyNotDefined(SemanticsProperties.Disabled)
+
 /**
- * Disabled without an action: each interactive Sonora component drawn with no action has every
- * control disabled, and one drawn with its actions bound and `disabled` set ignores presses.
+ * Disabled with `disabled` set: a component drawn with its actions bound and `disabled` set is
+ * disabled and ignores presses, and one bound and not disabled takes them.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
@@ -69,63 +106,6 @@ class SonoraDisabledTest {
 
     @get:Rule
     val composeRule = createComposeRule()
-
-    /** A control: anything that takes a press or text. */
-    private val control = hasClickAction() or SemanticsMatcher.keyIsDefined(SemanticsProperties.EditableText)
-    private val enabled = SemanticsMatcher.keyNotDefined(SemanticsProperties.Disabled)
-
-    private val unbound: List<Pair<String, @Composable () -> Unit>> = listOf(
-        "AccountButton" to { AccountButton(AccountButtonProps(label = "Account")) },
-        "ArtistCard" to { ArtistCard(ArtistCardProps(title = "Artist")) },
-        "BottomNav" to { BottomNav(BottomNavProps(items = listOf(BottomNavItem("home", "Home", "home")), active = "home")) },
-        "Button" to { Button(ButtonProps(children = null)) },
-        "ButtonGroup" to { ButtonGroup(ButtonGroupProps(items = listOf(ButtonGroupItem("all", "All")))) },
-        "EpisodeRow" to { EpisodeRow(EpisodeRowProps(title = "Episode")) },
-        "ExpandableText" to { ExpandableText(ExpandableTextProps(text = "Text")) },
-        "ExpanderRow" to { ExpanderRow(ExpanderRowProps(label = "Chapters")) },
-        "FeatureCard" to { FeatureCard(FeatureCardProps(title = "Feature")) },
-        "FieldRow" to { FieldRow(FieldRowProps(label = "Server", value = "auralis")) },
-        "FollowButton" to { FollowButton(FollowButtonProps()) },
-        "IconButton" to { IconButton(IconButtonProps(label = "Close")) },
-        "Input" to { Input(InputProps(value = "Sonora")) },
-        "LyricsPage" to { LyricsPage(LyricsPageProps()) },
-        "MediaCard" to { MediaCard(MediaCardProps(title = "Album")) },
-        "MediaHeader" to { MediaHeader(MediaHeaderProps(title = "Album")) },
-        "MiniPlayer" to { MiniPlayer(MiniPlayerProps(title = "Track", artist = "Artist")) },
-        "NowPlaying" to { NowPlaying(NowPlayingProps(tab = "now")) },
-        "NowPlayingPage" to { NowPlayingPage(NowPlayingPageProps(title = "Track")) },
-        "OverflowMenu" to { OverflowMenu(OverflowMenuProps(items = listOf(OverflowMenuItem("share", "Share")))) },
-        "PreviewButton" to { PreviewButton(PreviewButtonProps(label = "Preview")) },
-        "QueuePage" to { QueuePage(QueuePageProps()) },
-        "QuickPick" to { QuickPick(QuickPickProps(title = "Pick")) },
-        "ResultRow" to { ResultRow(ResultRowProps(title = "Result")) },
-        "SearchField" to { SearchField(SearchFieldProps(value = "Sonora")) },
-        "Section" to { Section(SectionProps(title = "Shelf", actionText = "See all")) },
-        "SettingRow" to { SettingRow(SettingRowProps(title = "Setting")) },
-        "SortFilterBar" to { SortFilterBar(SortFilterBarProps(label = "Sort")) },
-        "StatusBanner" to { StatusBanner(StatusBannerProps(children = null, actionLabel = "Retry")) },
-        "TabBar" to { TabBar(TabBarProps(items = listOf(TabBarItem("albums", "Albums")))) },
-        "ValueRow" to { ValueRow(ValueRowProps(label = "Speed", value = "1x")) },
-        "ViewToggle" to { ViewToggle(ViewToggleProps()) },
-    )
-
-    @Test
-    fun aComponentWithNoActionHasEveryControlDisabled() {
-        // All at once, each under its name, rather than one swapped for the next. Unscrolled: a
-        // root stub fills the screen and scrolls itself, and those past it are drawn at no height.
-        composeRule.setContent {
-            Column {
-                unbound.forEach { (name, draw) -> Box(Modifier.testTag(name)) { draw() } }
-            }
-        }
-        unbound.forEach { (name, _) ->
-            val within = hasAnyAncestor(hasTestTag(name))
-            val controls = composeRule.onAllNodes(control and within, useUnmergedTree = true).fetchSemanticsNodes()
-            assertTrue("$name draws no control", controls.isNotEmpty())
-            val live = composeRule.onAllNodes(control and enabled and within, useUnmergedTree = true).fetchSemanticsNodes()
-            assertEquals("$name has an enabled control without an action", 0, live.size)
-        }
-    }
 
     @Test
     fun aComponentWithDisabledSetIsDisabledAndIgnoresPresses() {
