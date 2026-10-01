@@ -5,7 +5,7 @@ part: Why and what
 ---
 ## What replacing Spotify means
 
-Spotify does seven jobs. Each column shows where Auralis does that job for one medium, from sources already decided.
+Spotify does seven jobs. Each column shows how Auralis does each for one medium, from sources already decided.
 
 | Job | Audiobooks | Podcasts | Music |
 |---|---|---|---|

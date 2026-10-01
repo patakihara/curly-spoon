@@ -5,7 +5,7 @@ part: Delivery
 ---
 ## Still open
 
-Nothing here blocks starting. These are calls you left open in your notes, and each is needed only by the milestone that builds it.
+Nothing here blocks starting. These are calls you left open in your notes, each needed only by the milestone that builds it.
 
 | Call | Options | Needed by |
 |---|---|---|

@@ -5,7 +5,7 @@ part: Why and what
 ---
 ## Where it stands
 
-The old project shipped a lot, but almost none of it ever ran against your real servers or a real phone. Each row below was checked live or in the code.
+The old project shipped a lot, but almost none of it ran against your real servers or a real phone. Each row was checked live or in code.
 
 | What | Evidence | Effect |
 |---|---|---|

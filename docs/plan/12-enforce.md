@@ -23,14 +23,14 @@ The old project drifted from its design and its docs. Each rule here is a check 
 
 ### Keep the plan clean and the progress true
 
-The plan and the progress are kept apart on purpose.
+The plan and the progress are kept apart.
 
 ::: grid g2
 ::: card
 #### The plan: edited in place
 
 - Lives in the repo (`docs/plan/`) and is published to this artifact, with the same commit stamp and merge check as the design.
-- Only ever describes the current decision: no dated notes, no "a previous version said". Why something changed is in git history.
+- Only describes the current decision: no dated notes, no "a previous version said". Why something changed is in git history.
 - An adjustment rewrites that sentence where it stands; decisions live nowhere else.
 - Every item has an id and a concrete **done when**, and a size limit keeps the whole thing readable.
 :::
@@ -45,7 +45,8 @@ The plan and the progress are kept apart on purpose.
 :::
 :::
 
-- **A new session knows where things stand.** A session-start hook in the repo prints a short summary: current milestone, done items, work in flight with its notes, the next step, failing checks, and your open comments on the artifacts.
+- **"What this plan hasn't verified" stays current.** Each line names the existing item whose work checks it. The session-start summary flags a line whose item is done, and the orchestrator drops it or cuts it to what's still open. A gap a subagent reports but can't check is added, naming the item that will.
+- **A new session knows where things stand.** A session-start hook prints a short summary: current milestone, done items, work in flight with its notes, the next step, failing checks, and your open artifact comments.
 - **You see it too.** When the plan is published, each item gets a done or in-progress badge computed then, so progress shows without the text changing.
 - **Every commit names its plan item** (a `Plan:` line). CI rejects app changes without one. Work that isn't in the plan gets added to it first, in the same commit, so code can't outrun the plan.
 - **Checked with you at every milestone.** The demo ends with the plan read through together; anything that changed is rewritten in place, and the milestone gets your sign-off tag.
@@ -61,7 +62,7 @@ The plan and the progress are kept apart on purpose.
 Anything you say about Auralis, in any session or artifact comment, goes through one fixed path. Each step is safe to interrupt.
 
 1. **Filed.** One file per idea in `docs/inbox/`: your words verbatim, where it came from (chat, a comment thread, a direct message), and the date. The session replies `Noted: <title>` (in the thread, for a comment) and carries on. Filing never touches the plan or the work in progress. The only exceptions: you say "do it now", you're answering one of its outbox items, or you're telling the session itself to stop or pause.
-2. **Sorted, at set moments:** each milestone demo, when you say "let's go through my ideas", or once about ten are waiting. The orchestrator hands sorting to a subagent in a fresh context, one idea at a time: it reads the idea and the whole plan, and decides which of these it is:
+2. **Sorted, at set moments:** each milestone demo, when you say "let's go through my ideas", or once about ten are waiting. The orchestrator hands each idea, one at a time, to a subagent in a fresh context that reads it and the whole plan, and decides which of these it is:
    - **new work**: a new plan item, with an id and a concrete "done when", in the milestone where it belongs (usually a later one; the milestone in progress only takes small fixes to what it builds, or anything you pulled in);
    - **a change** to an existing item: that item is rewritten in place, including its "done when";
    - **a bug** in something done: a check that catches it is added to that item, which reopens it;
