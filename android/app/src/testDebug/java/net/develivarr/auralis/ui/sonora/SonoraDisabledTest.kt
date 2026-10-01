@@ -125,8 +125,8 @@ class SonoraDisabledTest {
     @Test
     fun aComponentWithDisabledSetIsDisabledAndIgnoresPresses() {
         var presses = 0
-        val press = { presses++ }
-        val change = { _: String -> presses++ }
+        val press: () -> Unit = { presses++ }
+        val change: (String) -> Unit = { presses++ }
         composeRule.setContent {
             Column {
                 Button(ButtonProps(children = null, onClick = press, disabled = true))
