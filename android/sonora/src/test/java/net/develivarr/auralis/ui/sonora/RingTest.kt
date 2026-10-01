@@ -5,6 +5,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.boundingRect
 import androidx.compose.ui.graphics.Outline
 import org.junit.Assert.assertEquals
 import org.junit.Test
