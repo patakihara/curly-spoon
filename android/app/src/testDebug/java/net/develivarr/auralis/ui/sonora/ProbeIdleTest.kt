@@ -24,7 +24,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import net.develivarr.auralis.generated.ui.IconButtonProps
 import org.junit.Rule
 import org.junit.Test
@@ -58,7 +59,7 @@ class ProbeIdleTest(private val name: String, private val draw: @Composable () -
     }
 
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
     fun settles() {

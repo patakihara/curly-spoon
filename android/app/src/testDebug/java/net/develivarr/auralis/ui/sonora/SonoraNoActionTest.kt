@@ -1,7 +1,8 @@
 package net.develivarr.auralis.ui.sonora
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -23,7 +24,7 @@ class SonoraNoActionTest(private val name: String, private val draw: @Composable
     }
 
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
     fun withNoActionEveryControlIsDisabled() {

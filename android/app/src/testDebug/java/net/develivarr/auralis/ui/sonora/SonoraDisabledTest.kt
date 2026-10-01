@@ -6,7 +6,8 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import net.develivarr.auralis.generated.ui.AccountButtonProps
@@ -105,7 +106,7 @@ internal val enabled = SemanticsMatcher.keyNotDefined(SemanticsProperties.Disabl
 class SonoraDisabledTest {
 
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
     fun aComponentWithDisabledSetIsDisabledAndIgnoresPresses() {
