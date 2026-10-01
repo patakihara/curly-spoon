@@ -1,10 +1,11 @@
 /**
  * What the states fixture (`/states.html`, src/states.tsx) draws, as data the browser tests read
  * too. Each entry is one interactive Sonora component, drawn three ways: with its action bound
- * (`action`), with no action (`none`) and, when it declares one, with `disabled` set.
+ * (`action`), with no action (`none`) and, when it declares one, with `disabled` set. One that can
+ * keep its own state is drawn a fourth way, keeping it with no action (`own`).
  */
 
-export type Variant = 'action' | 'none' | 'disabled';
+export type Variant = 'action' | 'none' | 'disabled' | 'own';
 
 export interface StateEntry {
   name: string;
@@ -19,6 +20,11 @@ export interface StateEntry {
    * disabled, so the `none` drawing has no control to test.
    */
   omits?: boolean;
+  /**
+   * Left uncontrolled, the component keeps its own state, so its control is enabled with no action
+   * and a press changes what it shows. The `action` and `none` drawings are controlled.
+   */
+  owns?: boolean;
 }
 
 /** Every interactive Sonora component, at each level. */
@@ -31,7 +37,7 @@ export const STATE_ENTRIES: readonly StateEntry[] = [
   { name: 'DownloadButton', disabled: false, ripple: true },
   { name: 'EditableList', disabled: false, ripple: true },
   { name: 'EpisodeRow', disabled: false, ripple: true },
-  { name: 'ExpandableText', disabled: false, ripple: true },
+  { name: 'ExpandableText', disabled: false, ripple: true, owns: true },
   { name: 'ExpanderRow', disabled: false, ripple: true },
   { name: 'FeatureCard', disabled: false, ripple: true, omits: true },
   { name: 'FieldRow', disabled: false, ripple: false },

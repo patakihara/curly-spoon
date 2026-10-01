@@ -92,7 +92,7 @@ Long prose that neither dominates nor hides — a paragraph clamped with -webkit
 | `moreLabel` | `string` |  |
 | `lessLabel` | `string` |  |
 | `expanded` | `boolean` | Controlled expanded state. Omit to let the component keep its own. |
-| `onToggle` | `(next: boolean) => void` | Receives the next expanded state. Without it the toggle is drawn disabled. |
+| `onToggle` | `(next: boolean) => void` | Receives the next expanded state. Without it a controlled toggle is drawn disabled. |
 
 ### FollowButton
 

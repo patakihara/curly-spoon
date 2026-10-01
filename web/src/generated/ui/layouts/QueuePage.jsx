@@ -15,7 +15,8 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
  * queue marking where playback moves over to it and a label where this queue's rest waits, paused;
  * and what autoplay plays once the queue runs out.
  * Up next is an EditableList, so selection, drag reorder and the remove bar behave as in any
- * editable list. Leave `editing` off and the page owns the mode.
+ * editable list. Leave `editing` off and the page owns the mode. With none of onRemove,
+ * onRemoveSelected and onReorder there is nothing to edit, and the edit toggle is drawn disabled.
  */
 export function QueuePage({
   platform = 'mobile', heading = 'Queue', context, items = [],
@@ -24,6 +25,7 @@ export function QueuePage({
   footer, scroll, onClose,
 }) {
   const [ownEditing, setOwnEditing] = React.useState(false);
+  const editable = !!(onRemove || onRemoveSelected || onReorder);
   const edit = editing === undefined ? ownEditing : editing;
   const setEdit = (v) => { if (editing === undefined) setOwnEditing(v); if (onEditingChange) onEditingChange(v); };
 
@@ -50,7 +52,7 @@ export function QueuePage({
     <PlayerSubPage platform={platform} heading={heading} scroll={scroll} meta={context} footer={footer} onClose={onClose}
       controls={TonalIconButton ? (
         <TonalIconButton glyph={edit ? 'edit_off' : 'edit'} active={edit}
-          label={edit ? 'Done editing queue' : 'Edit queue'} onClick={() => setEdit(!edit)} />
+          label={edit ? 'Done editing queue' : 'Edit queue'} onClick={editable ? () => setEdit(!edit) : undefined} />
       ) : null}>
       {queues && queues.length > 1 && ButtonGroup && (
         <div style={sx('order:-1')}>
