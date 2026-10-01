@@ -2,6 +2,7 @@ package net.develivarr.auralis.ui.sonora
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -11,12 +12,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.editableText
+import androidx.compose.ui.semantics.setText
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Color
@@ -126,32 +130,42 @@ private fun Tap(words: String?, onTap: (() -> Unit)?, role: Role) {
     )
 }
 
-/** A text field: Material's states without a ripple, read-only and disabled without [Field.onChange]. */
+/**
+ * A text field's stand-in: its value, or else its placeholder, in a focusable box that takes text
+ * through its accessibility `setText` and hands it to [Field.onChange]. Material's states without a
+ * ripple; disabled, with no `setText`, without [Field.onChange] or with [Field.disabled] set. Typing
+ * arrives with the real layout.
+ */
 @Composable
 private fun TextField(field: Field) {
     val colors = SonoraLightColors
     val source = remember { MutableInteractionSource() }
     val enabled = field.onChange != null && !field.disabled
-    val ink = if (enabled) colors.surfaceFg else DISABLED_INK
-    BasicTextField(
-        value = field.value.orEmpty(),
-        onValueChange = { field.onChange?.invoke(it) },
-        enabled = enabled,
-        singleLine = true,
-        interactionSource = source,
-        textStyle = text(ink, SonoraType.textMd),
+    val value = field.value.orEmpty()
+    val shown = value.ifEmpty { field.placeholder.orEmpty() }
+    val ink = when {
+        !enabled -> DISABLED_INK
+        value.isEmpty() -> colors.surfaceFgMuted
+        else -> colors.surfaceFg
+    }
+    BasicText(
+        shown,
+        style = text(ink, SonoraType.textMd),
         modifier = Modifier
             .fillMaxWidth()
             .stateLayer(source, enabled, colors.surfaceFg, ripple = false)
             .hoverable(source, enabled)
+            .focusable(enabled, source)
+            .semantics {
+                editableText = AnnotatedString(value)
+                if (enabled) {
+                    setText { text -> field.onChange?.invoke(text.text); true }
+                } else {
+                    disabled()
+                }
+            }
             .border(HAIRLINE, colors.surfaceBorder, CONTROL_SHAPE)
             .padding(SonoraDimens.spacingXs),
-        decorationBox = { inner ->
-            if (field.value.isNullOrEmpty() && field.placeholder != null) {
-                BasicText(field.placeholder, style = text(if (enabled) colors.surfaceFgMuted else DISABLED_INK, SonoraType.textMd))
-            }
-            inner()
-        },
     )
 }
 
