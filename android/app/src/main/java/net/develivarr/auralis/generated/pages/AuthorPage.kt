@@ -138,9 +138,6 @@ fun AuthorPage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "the-salt-road"))
                                                             },
-                                                            onRequest = {
-                                                                actions.onRequest("the-salt-road")
-                                                            },
                                                             status = null,
                                                             tone = null,
                                                         ),
@@ -155,9 +152,6 @@ fun AuthorPage(navController: NavController, actions: PageActions) {
                                                             image = "/art/shadows-and-sighs.jpg",
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "shadows-and-sighs"))
-                                                            },
-                                                            onRequest = {
-                                                                actions.onRequest("shadows-and-sighs")
                                                             },
                                                             status = null,
                                                             tone = null,
@@ -174,9 +168,6 @@ fun AuthorPage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "a-grain-of-salt"))
                                                             },
-                                                            onRequest = {
-                                                                actions.onRequest("a-grain-of-salt")
-                                                            },
                                                             status = null,
                                                             tone = null,
                                                         ),
@@ -191,9 +182,6 @@ fun AuthorPage(navController: NavController, actions: PageActions) {
                                                             image = "/art/paper-lanterns.jpg",
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "the-lantern-keeper"))
-                                                            },
-                                                            onRequest = {
-                                                                actions.onRequest("the-lantern-keeper")
                                                             },
                                                             status = "Downloading · 30%",
                                                             tone = MediaCardTone.PROGRESS,
@@ -229,9 +217,6 @@ fun AuthorPage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "low-water"))
                                                             },
-                                                            onRequest = {
-                                                                actions.onRequest("low-water")
-                                                            },
                                                             status = null,
                                                             tone = null,
                                                         ),
@@ -246,9 +231,6 @@ fun AuthorPage(navController: NavController, actions: PageActions) {
                                                             image = "/art/signal-noise.jpg",
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "high-water"))
-                                                            },
-                                                            onRequest = {
-                                                                actions.onRequest("high-water")
                                                             },
                                                             status = null,
                                                             tone = null,
@@ -282,9 +264,6 @@ fun AuthorPage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "a-grain-of-salt"))
                                                             },
-                                                            onRequest = {
-                                                                actions.onRequest("a-grain-of-salt")
-                                                            },
                                                             status = null,
                                                             tone = null,
                                                         ),
@@ -300,9 +279,6 @@ fun AuthorPage(navController: NavController, actions: PageActions) {
                                                             image = "/art/signal-noise.jpg",
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "high-water"))
-                                                            },
-                                                            onRequest = {
-                                                                actions.onRequest("high-water")
                                                             },
                                                             status = null,
                                                             tone = null,
@@ -320,9 +296,6 @@ fun AuthorPage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "low-water"))
                                                             },
-                                                            onRequest = {
-                                                                actions.onRequest("low-water")
-                                                            },
                                                             status = null,
                                                             tone = null,
                                                         ),
@@ -338,9 +311,6 @@ fun AuthorPage(navController: NavController, actions: PageActions) {
                                                             image = "/art/shadows-and-sighs.jpg",
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "shadows-and-sighs"))
-                                                            },
-                                                            onRequest = {
-                                                                actions.onRequest("shadows-and-sighs")
                                                             },
                                                             status = null,
                                                             tone = null,
@@ -358,9 +328,6 @@ fun AuthorPage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "the-lantern-keeper"))
                                                             },
-                                                            onRequest = {
-                                                                actions.onRequest("the-lantern-keeper")
-                                                            },
                                                             status = "Downloading · 30%",
                                                             tone = MediaCardTone.PROGRESS,
                                                         ),
@@ -377,9 +344,6 @@ fun AuthorPage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "the-quiet-hours"))
                                                             },
-                                                            onRequest = {
-                                                                actions.onRequest("the-quiet-hours")
-                                                            },
                                                             status = null,
                                                             tone = null,
                                                         ),
@@ -395,9 +359,6 @@ fun AuthorPage(navController: NavController, actions: PageActions) {
                                                             image = "/art/salt-and-static.jpg",
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "the-salt-road"))
-                                                            },
-                                                            onRequest = {
-                                                                actions.onRequest("the-salt-road")
                                                             },
                                                             status = null,
                                                             tone = null,

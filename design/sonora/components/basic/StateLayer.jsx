@@ -47,6 +47,36 @@ const duration = (el, token, fallback) => {
 };
 
 /**
+ * Scrolls each scroller around `layer` the least it takes to show the whole focus ring. The
+ * browser's own focus scroll leaves a control that is partly in view where it is, or brings it
+ * just to the edge, where its scroller cuts the ring off. Only scrollers move; a box that merely
+ * clips is never scrolled.
+ */
+const reveal = (layer) => {
+  const css = getComputedStyle(layer);
+  const reach = (parseFloat(css.getPropertyValue('--focus-ring-width')) || 3) + (parseFloat(css.getPropertyValue('--focus-ring-offset')) || 2);
+  const r = layer.getBoundingClientRect();
+  let left = r.left - reach, right = r.right + reach, top = r.top - reach, bottom = r.bottom + reach;
+  // The least move that brings [lo, hi] inside [min, max]; its start first when it cannot fit.
+  // Whole pixels, rounded outward, since a scroll offset may land on a whole pixel.
+  const outward = (d) => Math.sign(d) * Math.ceil(Math.abs(d) - 0.01);
+  const nearest = (lo, hi, min, max) => outward(lo < min ? lo - min : hi > max ? Math.min(hi - max, lo - min) : 0);
+  for (let a = layer.parentElement; a && a !== document.body && a !== document.documentElement; a = a.parentElement) {
+    const s = getComputedStyle(a);
+    const sx = /auto|scroll/.test(s.overflowX), sy = /auto|scroll/.test(s.overflowY);
+    if (!sx && !sy) continue;
+    const c = a.getBoundingClientRect();
+    const x0 = c.left + a.clientLeft, y0 = c.top + a.clientTop;
+    const clamp = (v, max) => Math.max(0, Math.min(max, v));
+    const dx = sx ? clamp(a.scrollLeft + nearest(left, right, x0, x0 + a.clientWidth), a.scrollWidth - a.clientWidth) - a.scrollLeft : 0;
+    const dy = sy ? clamp(a.scrollTop + nearest(top, bottom, y0, y0 + a.clientHeight), a.scrollHeight - a.clientHeight) - a.scrollTop : 0;
+    if (dx === 0 && dy === 0) continue;
+    a.scrollBy({ left: dx, top: dy });
+    left -= dx; right -= dx; top -= dy; bottom -= dy;
+  }
+};
+
+/**
  * Material's state layer: the hover, focus and press wash over a control, its focus ring, and the
  * ripple a press sends out from the pointer. The last child of the element that shows the state;
  * it reads the state from the nearest `.sn-int` host, never from a control nested inside it.
@@ -95,7 +125,12 @@ export function StateLayer({ disabled = false, ripple = true }) {
       flag('pressed', true);
       spawn(e.clientX, e.clientY);
     };
-    const focusIn = (e) => { if (!off() && own(e)) flag('focus', e.target.matches(':focus-visible')); };
+    const focusIn = (e) => {
+      if (off() || !own(e)) return;
+      const visible = e.target.matches(':focus-visible');
+      flag('focus', visible);
+      if (visible) reveal(layer);
+    };
     const focusOut = (e) => { if (!(e.relatedTarget instanceof Node && host.contains(e.relatedTarget))) flag('focus', false); };
     const typing = (e) => e.target instanceof Element && e.target.matches('input,textarea');
     const keyDown = (e) => {

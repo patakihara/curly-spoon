@@ -43,7 +43,7 @@ class ShellNavTest {
     private fun start() {
         composeRule.setContent {
             nav = rememberNavController()
-            AuralisNavGraph(nav, Route.Browse, PageActions({ _, _, _ -> }, {}, {}))
+            AuralisNavGraph(nav, Route.Browse, PageActions({ _, _, _ -> }, {}))
         }
         composeRule.waitForIdle()
     }

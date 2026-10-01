@@ -50,13 +50,15 @@ export function ButtonGroup({ items = [], value, onChange, platform = 'desktop',
         return (
           // The track scrolls, so it clips: the 5px it pads (and gives back in margin) keeps a
           // chip's focus ring inside it.
-          <div key={o.key} className="sn-int sn-filled" role="button" aria-pressed={on} tabIndex={off ? -1 : 0} aria-disabled={off}
+          // Disabled, only the selected segment keeps a container (Material's 12% on-surface), so
+          // the group still says which is chosen; the others lose theirs.
+          <div key={o.key} className={'sn-int' + (on || !off ? ' sn-filled' : '')} role="button" aria-pressed={on} tabIndex={off ? -1 : 0} aria-disabled={off}
             onClick={off ? undefined : () => onChange(o.key)}
             onKeyDown={off ? undefined : (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange(o.key); } }} aria-label={o.ariaLabel || o.label || o.key} title={iconOnly ? (o.ariaLabel || o.label || o.key) : undefined}
             style={sx('display:flex;align-items:center;justify-content:center;gap:var(--spacing-sm);flex-shrink:0;white-space:nowrap;cursor:pointer;user-select:none;' +
               'height:' + h + 'px;' + (iconOnly ? 'width:' + (mobile ? 52 : 48) + 'px;padding:0;' : 'padding:0 var(--spacing-lg);') + 'border:none;' +
               'font-family:var(--font-body);font-size:var(--text-sm);font-weight:var(--weight-strong);' +
-              'background:' + (on ? (play ? 'var(--play)' : 'var(--accent)') : 'var(--surface-card)') + ';' +
+              'background:' + (on ? (play ? 'var(--play)' : 'var(--accent)') : off ? 'transparent' : 'var(--surface-card)') + ';' +
               'color:' + (on ? (play ? 'var(--play-contrast)' : 'var(--accent-contrast)') : 'var(--surface-fg)') + ';' +
               'transition:border-radius var(--duration-quick) ease-in-out,background var(--duration-quick) ease-in-out,color var(--duration-quick) ease-in-out;' +
               'border-radius:' + l + 'px ' + right + 'px ' + right + 'px ' + l + 'px')}>

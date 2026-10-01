@@ -384,3 +384,42 @@ test('[M0.states/c] every component with an action, and every disabled prop, is 
       .sort(),
   ).toEqual(disabled);
 });
+
+test('[M0.states/a] a disabled button group still shows which segment is selected', async ({
+  page,
+}) => {
+  const entry = STATE_ENTRIES.find((e) => e.name === 'ButtonGroup')!;
+  await open(page, entry);
+  const group = page.locator('[data-states="ButtonGroup"][data-variant="none"]');
+  const selected = group.locator('[aria-pressed="true"]');
+  const other = group.locator('[aria-pressed="false"]').first();
+  await expect(selected).toHaveAttribute('aria-disabled', 'true');
+  await page.mouse.move(0, 0);
+
+  // Material: a disabled selected segment keeps an on-surface container at 12%; the others have none.
+  const alpha = (l: Locator) =>
+    l.evaluate((el) => {
+      const c = getComputedStyle(el).backgroundColor;
+      const m = /\/\s*([\d.]+)\s*\)$/.exec(c) ?? /rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\)/.exec(c);
+      return m === null ? (c === 'transparent' ? 0 : 1) : Number(m[1]);
+    });
+  expect(await alpha(selected), 'the selected segment keeps a 12% container').toBeCloseTo(0.12, 2);
+  expect(await alpha(other), 'an unselected segment has no container').toBe(0);
+
+  // And it reaches the screen: the two segments' fills, beside their labels, differ.
+  const fill = async (l: Locator) => {
+    const b = await box(l);
+    const rows = await decode(
+      page,
+      await page.screenshot({
+        clip: { x: b.x + 4, y: b.y + b.height / 2 - 1, width: 2, height: 2 },
+        animations: 'disabled',
+      }),
+    );
+    return rows[0]![0]!;
+  };
+  expect(
+    distance(await fill(selected), await fill(other)),
+    'the selected segment stands out from the rest',
+  ).toBeGreaterThan(20);
+});

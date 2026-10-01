@@ -378,8 +378,6 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   }),
 };
 
-const ignore = () => {};
-
 export type AuthorData = typeof placeholder;
 
 /** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
@@ -409,7 +407,7 @@ export default function Author({ data = placeholder, state = 'full' }: AuthorPro
             <Shelf platform={platform}>
               {series.books.map((entry, i) => (
                 <Fragment key={i}>
-                  <MediaCard title={entry.title} sub={entry.sub} image={entry.image} progress={entry.progress} absent={entry.absent} status={entry.status} tone={entry.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: entry.ref }))} onRequest={ignore} platform={platform} />
+                  <MediaCard title={entry.title} sub={entry.sub} image={entry.image} progress={entry.progress} absent={entry.absent} status={entry.status} tone={entry.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: entry.ref }))} platform={platform} />
                 </Fragment>
               ))}
             </Shelf>
@@ -420,7 +418,7 @@ export default function Author({ data = placeholder, state = 'full' }: AuthorPro
         <LayoutGrid platform={platform}>
           {data.books.map((book, i) => (
             <Fragment key={i}>
-              <MediaCard width="100%" title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} onRequest={ignore} platform={platform} />
+              <MediaCard width="100%" title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} platform={platform} />
             </Fragment>
           ))}
         </LayoutGrid>

@@ -319,8 +319,6 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   }),
 };
 
-const ignore = () => {};
-
 export type SearchData = typeof placeholder;
 
 /** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
@@ -333,8 +331,8 @@ export const frame: PageFrame<SearchData> = {
       leading={leading}
       controls={
         <LayoutGrid columns={1} gap="12px" maxWidth="var(--grid-max-width-list)" platform={platform}>
-          <SearchField value={data.query} placeholder={data.placeholder} autoFocus={true} onChange={ignore} platform={platform} />
-          <ButtonGroup items={data.kinds} value="all" onChange={ignore} platform={platform} />
+          <SearchField value={data.query} placeholder={data.placeholder} autoFocus={true} platform={platform} />
+          <ButtonGroup items={data.kinds} value="all" platform={platform} />
         </LayoutGrid>
       }
       platform={platform}

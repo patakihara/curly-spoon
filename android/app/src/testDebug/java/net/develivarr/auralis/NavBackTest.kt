@@ -38,7 +38,7 @@ class NavBackTest {
     private fun start(route: Route) {
         composeRule.setContent {
             nav = rememberNavController()
-            AuralisNavGraph(nav, route, PageActions({ _, _, _ -> }, {}, {}))
+            AuralisNavGraph(nav, route, PageActions({ _, _, _ -> }, {}))
         }
         composeRule.waitForIdle()
     }

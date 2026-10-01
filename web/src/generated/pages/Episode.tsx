@@ -288,8 +288,6 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   }),
 };
 
-const ignore = () => {};
-
 export type EpisodeData = typeof placeholder;
 
 /** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
@@ -319,9 +317,7 @@ export default function Episode({ data = placeholder, state = 'full' }: EpisodeP
           progress={data.progress}
           image={data.image}
           playLabel="Resume"
-          onPlay={ignore}
           nextLabel="Play next"
-          onPlayNext={ignore}
           lastLabel={null}
           addLabel="Add to a list"
           download={data.download as Exclude<ComponentProps<typeof MediaHeader>['download'], undefined>}
@@ -335,7 +331,7 @@ export default function Episode({ data = placeholder, state = 'full' }: EpisodeP
       <Section title="More from the show" last={true} platform={platform}>
         {data.more.map((other, i) => (
           <Fragment key={i}>
-            <EpisodeRow title={other.title} description={other.description} meta={other.meta} image={other.image} progress={other.progress} finished={other.finished} onClick={() => navigate(generatePath('/podcasts/episodes/:ref', { ref: other.ref }))} onPlay={ignore} divider={true} platform={platform} />
+            <EpisodeRow title={other.title} description={other.description} meta={other.meta} image={other.image} progress={other.progress} finished={other.finished} onClick={() => navigate(generatePath('/podcasts/episodes/:ref', { ref: other.ref }))} divider={true} platform={platform} />
           </Fragment>
         ))}
       </Section>

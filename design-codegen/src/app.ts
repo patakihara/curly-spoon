@@ -252,7 +252,6 @@ export function readApp(appDir: string, model: PropsModel): App {
     now: nowPage === undefined ? [] : framePage(nowPage.tree).content,
     components: {
       platformed: taking('platform'),
-      handled: taking('onChange'),
       choices,
     },
     menus: taking('onOpenChange'),

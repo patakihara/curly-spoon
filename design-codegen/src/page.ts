@@ -83,7 +83,7 @@ function memberPath(node: t.Node): string[] {
  * an Each item or a When state never takes one.
  */
 const TAKEN = new Set(['data', 'shell', 'slots', 'lists', 'when', 'chrome', 'platform', 'state']);
-TAKEN.add('placeholder').add('i').add('ignore').add('layout').add('detected').add('given');
+TAKEN.add('placeholder').add('i').add('layout').add('detected').add('given');
 TAKEN.add('navigate');
 
 /** `value`, if it is a plain lower-case name a page may give an Each item or a When state. */

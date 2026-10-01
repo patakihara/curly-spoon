@@ -74,7 +74,6 @@ enum class PlayMode { NOW, NEXT, SOURCE }
 /** What a page's handlers do beyond navigating, which the app supplies. */
 class PageActions(
     val onPlay: (ref: String, queue: PlayQueue, mode: PlayMode) -> Unit,
-    val onRequest: (ref: String) -> Unit,
     val onSignIn: () -> Unit,
 )
 

@@ -230,8 +230,6 @@ const CHROME: Record<LayoutId, () => Chrome> = {
   }),
 };
 
-const ignore = () => {};
-
 export type SetupData = typeof placeholder;
 
 /** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
@@ -264,7 +262,7 @@ export default function Setup({ data = placeholder, state = 'full' }: SetupProps
         <LayoutGrid columns={1} gap="10px" platform={platform}>
           {data.services.map((service, i) => (
             <Fragment key={i}>
-              <FieldRow label={service.label} value={service.address} onChange={ignore} platform={platform} />
+              <FieldRow label={service.label} value={service.address} platform={platform} />
             </Fragment>
           ))}
         </LayoutGrid>
@@ -273,13 +271,13 @@ export default function Setup({ data = placeholder, state = 'full' }: SetupProps
         <LayoutGrid columns={1} gap="10px" platform={platform}>
           {data.providers.map((provider, i) => (
             <Fragment key={i}>
-              <SettingRow title={provider.title} sub={provider.sub} checked={provider.checked} onChange={ignore} platform={platform} />
+              <SettingRow title={provider.title} sub={provider.sub} checked={provider.checked} platform={platform} />
             </Fragment>
           ))}
         </LayoutGrid>
       </Section>
       <Section eyebrow="Step 4 of 4" title="Requests" platform={platform}>
-        <SettingRow title={data.approval.title} sub={data.approval.sub} checked={data.approval.checked} onChange={ignore} platform={platform} />
+        <SettingRow title={data.approval.title} sub={data.approval.sub} checked={data.approval.checked} platform={platform} />
       </Section>
       <Section last={true} platform={platform}>
         <Button variant="primary" onClick={() => navigate('/')} platform={platform}>

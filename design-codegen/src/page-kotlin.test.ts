@@ -165,14 +165,17 @@ describe('an Android page, from a canvas page', () => {
     );
   });
 
-  it('plays and requests through the actions the app injects', () => {
+  it('plays through the actions the app injects', () => {
     expect(book).toMatch(
       /onPlay = \{\s*actions.onPlay\("wt", PlayQueue.SPOKEN, PlayMode.NOW\)\s*\}/,
     );
     expect(book).toMatch(
       /onPlayNext = \{\s*actions.onPlay\("wt", PlayQueue.SPOKEN, PlayMode.NEXT\)\s*\}/,
     );
-    expect(book).toContain('onRequest = { actions.onRequest("rhythm") }');
+  });
+
+  it('[M0.states/c] binds no request, which the app has no way to make yet, so the card draws it disabled', () => {
+    expect(book).not.toContain('onRequest');
   });
 
   it('builds a list of data classes from the placeholder', () => {

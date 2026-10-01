@@ -44,8 +44,12 @@ to a data path. A list of several kinds binds the page instead, `<Open page={ite
 and every page its data names must be one of those; the check refuses anything else. `onPlay={<Play ref={episode.ref} queue="spoken" />}`
 plays the item its ref binds on the queue it names, spoken or music, `next` makes it Play next,
 and `source` plays a list on its own, leaving the queue as it is;
-until the player exists, the web gives it a handler that does nothing. The web page navigates to the route through the
-router; the Android generator reads the same node as a navigation to the nav graph's destination.
+until the web has a page player, the web page leaves it unbound, so the control draws disabled.
+`onRequest={<Request ref={book.ref} />}` asks for an item the library lacks; no request endpoint
+exists yet, so both apps leave it unbound and the card draws its Request disabled. A generated
+page never binds a handler that does nothing: a control that seems to work must work. The web
+page navigates to the route through the router; the Android generator reads the same node as a
+navigation to the nav graph's destination.
 
 `onClick={<SignIn />}` starts signing in through the household sign-on and takes nothing: the web
 goes to the server's login route as the web client, coming back to the sign-in page's own

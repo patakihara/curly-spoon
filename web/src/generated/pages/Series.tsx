@@ -284,8 +284,6 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   }),
 };
 
-const ignore = () => {};
-
 export type SeriesData = typeof placeholder;
 
 /** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
@@ -313,7 +311,7 @@ export default function Series({ data = placeholder, state = 'full' }: SeriesPro
         <LayoutGrid platform={platform}>
           {data.books.map((book, i) => (
             <Fragment key={i}>
-              <MediaCard width="100%" eyebrow={book.eyebrow} title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} onRequest={ignore} platform={platform} />
+              <MediaCard width="100%" eyebrow={book.eyebrow} title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} platform={platform} />
             </Fragment>
           ))}
         </LayoutGrid>

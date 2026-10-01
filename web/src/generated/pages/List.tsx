@@ -364,8 +364,6 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   }),
 };
 
-const ignore = () => {};
-
 export type ListData = typeof placeholder;
 
 /** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
@@ -392,9 +390,7 @@ export default function List({ data = placeholder, state = 'full' }: ListProps) 
           meta={data.meta}
           covers={data.covers}
           playLabel="Play"
-          onPlay={ignore}
           nextLabel="Play next"
-          onPlayNext={ignore}
           lastLabel={null}
           menu={<OverflowMenu items={data.menu} platform={platform} />}
           platform={platform}
@@ -413,7 +409,7 @@ export default function List({ data = placeholder, state = 'full' }: ListProps) 
         <SortFilterBar icon="swap_vert" label={data.order} platform={platform} />
         {data.items.map((item, i) => (
           <Fragment key={i}>
-            <EpisodeRow title={item.title} description={item.description} meta={item.meta} image={item.image} progress={item.progress} onClick={() => navigate(generatePath('/podcasts/episodes/:ref', { ref: item.ref }))} onPlay={ignore} divider={true} platform={platform} />
+            <EpisodeRow title={item.title} description={item.description} meta={item.meta} image={item.image} progress={item.progress} onClick={() => navigate(generatePath('/podcasts/episodes/:ref', { ref: item.ref }))} divider={true} platform={platform} />
           </Fragment>
         ))}
       </Section>

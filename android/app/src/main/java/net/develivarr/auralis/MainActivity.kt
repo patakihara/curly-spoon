@@ -34,7 +34,6 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null) takeCallback(intent)
         val actions = PageActions(
             onPlay = { key, _, _ -> graph.playback.play(key) },
-            onRequest = {},
             onSignIn = ::openLogin,
         )
         val session = graph.session

@@ -283,7 +283,10 @@ class PageWriter extends KotlinValues {
   }
 
   /** A handler node as the lambda a Kotlin handler prop takes. */
-  handler(value: Exclude<PropValue, { kind: 'literal' | 'binding' | 'slot' }>, scope: Scope): Expr {
+  handler(
+    value: Exclude<PropValue, { kind: 'literal' | 'binding' | 'slot' | 'request' }>,
+    scope: Scope,
+  ): Expr {
     const bound = (params: Record<string, string[]>) =>
       Object.fromEntries(
         Object.entries(params).map(([k, path]) => [k, String(this.resolve(path, scope))]),
@@ -299,9 +302,6 @@ class PageWriter extends KotlinValues {
         this.nav.add('Route');
         return raw(`navController.navigate(${routeCall(page, bound(value.params))})`);
       }
-      case 'request':
-        this.nav.add('PageActions');
-        return raw(`actions.onRequest(${kotlinString(bound(value.params).ref!)})`);
       case 'play': {
         this.nav.add('PlayQueue').add('PlayMode');
         const mode = value.next ? 'NEXT' : value.source ? 'SOURCE' : 'NOW';
@@ -315,9 +315,20 @@ class PageWriter extends KotlinValues {
     }
   }
 
-  prop(component: string, name: string, type: KType, value: PropValue, scope: Scope): Expr {
+  /** The prop's value, or nothing when the prop is left out. */
+  prop(
+    component: string,
+    name: string,
+    type: KType,
+    value: PropValue,
+    scope: Scope,
+  ): Expr | undefined {
     const where = `${component}.${name}`;
     switch (value.kind) {
+      // The app has no way to make a request yet. A handler doing nothing would draw a dead control
+      // as enabled, so the prop is left out and Sonora draws the control disabled.
+      case 'request':
+        return undefined;
       case 'literal':
         return this.value(type, value.value, where);
       case 'binding':

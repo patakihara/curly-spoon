@@ -294,8 +294,6 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   }),
 };
 
-const ignore = () => {};
-
 export type MusicData = typeof placeholder;
 
 /** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
@@ -305,7 +303,7 @@ export const frame: PageFrame<MusicData> = {
   back: (data, { platform, leading }) => <BackLayer title="Music" leading={leading} search="Search your music and requests" platform={platform} />,
   subheader: (data, { platform }) => (
     <FrontLayerHeader tabs={true} platform={platform}>
-      <TabBar items={data.tabs} value="albums" onChange={ignore} platform={platform} />
+      <TabBar items={data.tabs} value="albums" platform={platform} />
     </FrontLayerHeader>
   ),
 };
@@ -325,7 +323,7 @@ export default function Music({ data = placeholder, state = 'full' }: MusicProps
         <SortFilterBar
           icon="swap_vert"
           label={data.sort.value}
-          trailing={<ViewToggle value="grid" onChange={ignore} platform={platform} />}
+          trailing={<ViewToggle value="grid" platform={platform} />}
           platform={platform}
         />
       </Section>

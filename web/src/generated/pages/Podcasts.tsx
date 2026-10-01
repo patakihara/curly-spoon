@@ -314,8 +314,6 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   }),
 };
 
-const ignore = () => {};
-
 export type PodcastsData = typeof placeholder;
 
 /** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
@@ -341,7 +339,7 @@ export default function Podcasts({ data = placeholder, state = 'full' }: Podcast
         <SortFilterBar
           icon="swap_vert"
           label={data.sort.value}
-          trailing={<ViewToggle value="grid" onChange={ignore} platform={platform} />}
+          trailing={<ViewToggle value="grid" platform={platform} />}
           platform={platform}
         />
       </Section>
