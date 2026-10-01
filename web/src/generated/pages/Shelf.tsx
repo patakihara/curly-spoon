@@ -275,8 +275,6 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   }),
 };
 
-const ignore = () => {};
-
 export type ShelfData = typeof placeholder;
 
 /** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
@@ -290,7 +288,7 @@ export const frame: PageFrame<ShelfData> = {
       image={data.subjectArt}
       round={data.round}
       leading={leading}
-      trailing={<ViewToggle value="grid" onChange={ignore} platform={platform} />}
+      trailing={<ViewToggle value="grid" platform={platform} />}
       search="Search this shelf"
       platform={platform}
     />

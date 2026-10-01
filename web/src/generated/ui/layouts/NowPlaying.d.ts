@@ -19,12 +19,13 @@ export interface NowPlayingProps {
   open?: boolean;
   /** Mobile only: the mini player's viewport rect, so the sheet grows out of it. */
   from?: { top: number; left: number; width: number; height: number } | null;
-  /** Collapses the sheet back to the bar, or closes the panel. */
+  /** Collapses the sheet back to the bar, or closes the panel. Without it the mobile collapse button is drawn disabled and the desktop close button is left out. */
   onClose?: () => void;
   /** Mobile only: the app bar's menu. */
   onMore?: () => void;
   /** The active tab: 'now', 'queue' or 'lyrics'. Omit to let the player own it. */
   tab?: 'now' | 'queue' | 'lyrics' | string;
+  /** With `tab` set and no handler, the tabs are drawn disabled. */
   onTabChange?: (tab: string) => void;
   /** `spoken` drops the Lyrics tab and gives Now playing the spoken transport. */
   variant?: 'music' | 'spoken';

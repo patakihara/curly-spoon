@@ -1,0 +1,15 @@
+:root{
+/* ---- Interaction states (Material's state layer) ---- */
+/* A control shows hover, focus and press as a wash of its own content colour over its container,
+   at these opacities. Disabled, the container is the surface ink at 12% and the content at 38%. */
+--state-layer-hover:0.08; /* @kind other */
+--state-layer-focus:0.10; /* @kind other */
+--state-layer-pressed:0.10; /* @kind other */
+--disabled-container:0.12; /* @kind other */
+--disabled-content:0.38; /* @kind other */
+
+/* Keyboard focus draws a ring outside the shape, following its corners, clear of it by the offset.
+   Its colour is the themed --focus-ring (tokens/colors.css). */
+--focus-ring-width:3px;
+--focus-ring-offset:2px;
+}

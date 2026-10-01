@@ -1,5 +1,6 @@
 import React from 'react';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
 if (typeof document !== 'undefined' && !document.getElementById('sonora-buttongroup-css')) {
   const el = document.createElement('style');
@@ -12,6 +13,8 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-buttongr
 
 /** M3 connected button group: one filter/mode row, outer ends pill, 8px inner corners, selected segment morphs to fully rounded. */
 export function ButtonGroup({ items = [], value, onChange, platform = 'desktop', scroll = false, tone = 'accent' }) {
+  const StateLayer = NS().StateLayer;
+  const off = !onChange;
   const mobile = platform === 'mobile';
   const play = tone === 'play';
   const opts = items.map((it) => (typeof it === 'string' ? { key: it, label: it } : it));
@@ -39,22 +42,29 @@ export function ButtonGroup({ items = [], value, onChange, platform = 'desktop',
     return () => { if (ro) ro.disconnect(); window.removeEventListener('resize', measure); };
   }, [measure, opts.length]);
   const trackInner = (
-    <div ref={trackRef} onScroll={measure} className="sn-btngroup-track" style={sx('display:flex;gap:2px;flex-wrap:nowrap;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch')}>
+    <div ref={trackRef} onScroll={measure} className="sn-btngroup-track" style={sx('display:flex;gap:2px;flex-wrap:nowrap;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:5px;margin:-5px')}>
       {opts.map((o, i) => {
         const on = value === o.key, first = i === 0, last = i === opts.length - 1;
         const l = on || first ? half : r, right = on || last ? half : r;
         const iconOnly = !!o.icon && !o.label;
         return (
-          <div key={o.key} onClick={() => onChange && onChange(o.key)} role="button" aria-pressed={on} aria-label={o.ariaLabel || o.label || o.key} title={iconOnly ? (o.ariaLabel || o.label || o.key) : undefined}
+          // The track scrolls, so it clips: the 5px it pads (and gives back in margin) keeps a
+          // chip's focus ring inside it.
+          // Disabled, only the selected segment keeps a container (Material's 12% on-surface), so
+          // the group still says which is chosen; the others lose theirs.
+          <div key={o.key} className={'sn-int' + (on || !off ? ' sn-filled' : '')} role="button" aria-pressed={on} tabIndex={off ? -1 : 0} aria-disabled={off}
+            onClick={off ? undefined : () => onChange(o.key)}
+            onKeyDown={off ? undefined : (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange(o.key); } }} aria-label={o.ariaLabel || o.label || o.key} title={iconOnly ? (o.ariaLabel || o.label || o.key) : undefined}
             style={sx('display:flex;align-items:center;justify-content:center;gap:var(--spacing-sm);flex-shrink:0;white-space:nowrap;cursor:pointer;user-select:none;' +
               'height:' + h + 'px;' + (iconOnly ? 'width:' + (mobile ? 52 : 48) + 'px;padding:0;' : 'padding:0 var(--spacing-lg);') + 'border:none;' +
               'font-family:var(--font-body);font-size:var(--text-sm);font-weight:var(--weight-strong);' +
-              'background:' + (on ? (play ? 'var(--play)' : 'var(--accent)') : 'var(--surface-card)') + ';' +
+              'background:' + (on ? (play ? 'var(--play)' : 'var(--accent)') : off ? 'transparent' : 'var(--surface-card)') + ';' +
               'color:' + (on ? (play ? 'var(--play-contrast)' : 'var(--accent-contrast)') : 'var(--surface-fg)') + ';' +
               'transition:border-radius var(--duration-quick) ease-in-out,background var(--duration-quick) ease-in-out,color var(--duration-quick) ease-in-out;' +
               'border-radius:' + l + 'px ' + right + 'px ' + right + 'px ' + l + 'px')}>
             {o.icon && <span style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-xs);line-height:1;font-variation-settings:'FILL' " + (on ? 1 : 0) + ",'wght' " + (on ? 500 : 400))}>{o.icon}</span>}
             {o.label}
+            {StateLayer && <StateLayer disabled={off} />}
           </div>
         );
       })}

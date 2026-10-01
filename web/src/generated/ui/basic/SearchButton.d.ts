@@ -6,6 +6,7 @@
  */
 export interface SearchButtonProps {
   open?: boolean;
+  /** Receives the next open state. Without it the button is drawn disabled. */
   onToggle?: (next: boolean) => void;
   /** Muted icon colour (the default in an app bar). */
   muted?: boolean;

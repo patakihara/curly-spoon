@@ -11,7 +11,9 @@ data class ButtonProps(
     /** Desktop = sharp Feishin-style radius; mobile = fully-rounded Material pill (Booming/Symphony). */
     val platform: Platform? = null,
     val icon: (@Composable () -> Unit)? = null,
+    /** Drawn disabled: content at 38%, a filled variant's container at 12%, no focus or press. */
     val disabled: Boolean? = null,
+    /** The action. Without it the button is drawn disabled. */
     val onClick: (() -> Unit)? = null,
     /**
      * Marks the button as a toggle and sets `aria-pressed`. For a control whose label states the

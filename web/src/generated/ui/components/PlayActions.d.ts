@@ -12,10 +12,11 @@
  * `always` or use a long-press menu instead — there is no hover to reveal them.
  */
 export interface PlayActionsProps {
-  /** Insert directly after the current track. */
+  /** Insert directly after the current track. Without it its button is drawn disabled. */
   onNext?: () => void;
+  /** Without it its button is drawn disabled. */
   onPlay?: () => void;
-  /** Append to the end of the queue. */
+  /** Append to the end of the queue. Without it its button is drawn disabled. */
   onLast?: () => void;
   /** Swaps the centre glyph to pause. */
   playing?: boolean;

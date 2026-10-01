@@ -11,6 +11,7 @@ data class MiniPlayerProps(
     val artist: String,
     val image: String? = null,
     val playing: Boolean? = null,
+    /** Every control with no handler is drawn disabled, the bar itself with no onOpen. */
     val onTogglePlay: (() -> Unit)? = null,
     /** Tapping the card body (mobile) or the track block (desktop) expands the full player. */
     val onOpen: (() -> Unit)? = null,
@@ -23,6 +24,12 @@ data class MiniPlayerProps(
     val duration: Float? = null,
     val onPrev: (() -> Unit)? = null,
     val onNext: (() -> Unit)? = null,
+    /** Desktop music bar only. */
+    val onShuffle: (() -> Unit)? = null,
+    /** Desktop music bar only. */
+    val onRepeat: (() -> Unit)? = null,
+    /** Desktop only. */
+    val onVolume: (() -> Unit)? = null,
     /** Desktop only — tints the queue button accent while the queue panel is open. */
     val queueOpen: Boolean? = null,
     val onToggleQueue: (() -> Unit)? = null,

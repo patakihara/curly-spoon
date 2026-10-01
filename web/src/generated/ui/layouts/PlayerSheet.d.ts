@@ -11,7 +11,6 @@ export interface PlayerSheetProps {
   open?: boolean;
   /** The mini player's viewport rect — a DOMRect, or `{ top, left, width, height }`. */
   from?: { top: number; left: number; width: number; height: number } | null;
-  onClose?: () => void;
   /** Stacking order over the app frame. */
   zIndex?: number;
   /** Corner radius of the collapsed rectangle, matched to the bar it grows from. */

@@ -15,5 +15,8 @@ data class IconButtonProps(
     val tone: Tone? = null,
     val muted: Boolean? = null,
     val label: String,
+    /** The action. Without it the button is drawn disabled. */
     val onClick: (() -> Unit)? = null,
+    /** Drawn disabled: the glyph at 38%, no focus or press. */
+    val disabled: Boolean? = null,
 )

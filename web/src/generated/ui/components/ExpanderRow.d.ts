@@ -9,7 +9,7 @@ export interface ExpanderRowProps {
   /** The disclosure verb. */
   actionLabel?: string;
   expanded?: boolean;
-  /** Called with the next expanded state on click. */
+  /** Called with the next expanded state on click. Without it the row is drawn disabled. */
   onToggle?: (next: boolean) => void;
   /** Optional stacked-art hint, leading the row. */
   image?: string;

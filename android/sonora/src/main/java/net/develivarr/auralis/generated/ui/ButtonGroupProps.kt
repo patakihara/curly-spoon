@@ -20,6 +20,7 @@ data class ButtonGroupProps(
     val items: List<ButtonGroupItem>,
     /** Key of the selected segment. */
     val value: String? = null,
+    /** Receives the chosen segment's key. Without it every segment is drawn disabled. */
     val onChange: ((String) -> Unit)? = null,
     val platform: Platform? = null,
     /** @deprecated No longer needed — the edge-fade affordance is now automatic whenever the row overflows. Kept as a no-op for existing callers. */

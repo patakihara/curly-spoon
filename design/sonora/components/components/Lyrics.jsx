@@ -1,5 +1,6 @@
 import React from 'react';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
 // Nearest scrolling ancestor, so a synced list can follow the song inside whatever pane holds it.
 const scrollerOf = (el) => {
@@ -25,6 +26,7 @@ export function Lyrics({
   card = true, textSize, autoScroll = true, onLineClick,
 }) {
   const mobile = platform === 'mobile';
+  const StateLayer = NS().StateLayer;
   const synced = syncMode === 'sync';
   const dotted = syncMode === 'dot';
   const ref = React.useRef(null);
@@ -61,12 +63,21 @@ export function Lyrics({
           'transform:translateY(' + dotY + 'px);transition:transform var(--duration-medium) var(--ease-standard),opacity var(--duration-quick) linear')} />
       )}
       <div ref={linesRef} data-sn-lyric-lines="" style={sx('display:flex;flex-direction:column;gap:' + (mobile ? '22px' : '16px'))}>
-        {lines.map((text, i) => (
-          <div key={i} onClick={onLineClick ? () => onLineClick(i) : undefined}
-            style={sx('line-height:1.5;text-wrap:pretty;transition:color var(--duration-quick) var(--ease-standard);font-size:' +
-              (synced && i === activeIndex ? 'calc(' + size + ' * 1.12)' : size) + ';font-weight:' +
-              (synced && i === activeIndex ? '700' : '500') + ';color:' + ink(i) + (onLineClick ? ';cursor:pointer' : ''))}>{text}</div>
-        ))}
+        {lines.map((text, i) => {
+          const css = 'line-height:1.5;text-wrap:pretty;transition:color var(--duration-quick) var(--ease-standard);font-size:' +
+            (synced && i === activeIndex ? 'calc(' + size + ' * 1.12)' : size) + ';font-weight:' +
+            (synced && i === activeIndex ? '700' : '500') + ';color:' + ink(i);
+          // A line is a control only when a press on it seeks; a plain sheet's lines are text.
+          if (!onLineClick) return <div key={i} style={sx(css)}>{text}</div>;
+          return (
+            <div key={i} className="sn-int" role="button" tabIndex={0} onClick={() => onLineClick(i)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onLineClick(i); } }}
+              style={sx(css + ';cursor:pointer;border-radius:var(--radius-xs);margin:0 calc(-1 * var(--spacing-sm));padding:0 var(--spacing-sm)')}>
+              {text}
+              {StateLayer && <StateLayer />}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

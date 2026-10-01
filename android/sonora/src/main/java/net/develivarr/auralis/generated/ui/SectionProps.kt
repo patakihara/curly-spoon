@@ -13,6 +13,7 @@ data class SectionProps(
     /** Material Symbols glyph for the header's trailing action, e.g. 'arrow_forward'. */
     val action: String? = null,
     val actionLabel: String? = null,
+    /** Without it the action is drawn disabled. */
     val onAction: (() -> Unit)? = null,
     val platform: Platform? = null,
     /** Drops the trailing margin — set on the final section of a scroll view. */

@@ -314,8 +314,6 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   }),
 };
 
-const ignore = () => {};
-
 export type BooksData = typeof placeholder;
 
 /** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
@@ -325,7 +323,7 @@ export const frame: PageFrame<BooksData> = {
   back: (data, { platform, leading }) => <BackLayer title="Books" leading={leading} search="Search your books and requests" platform={platform} />,
   subheader: (data, { platform }) => (
     <FrontLayerHeader tabs={true} platform={platform}>
-      <TabBar items={data.tabs} value="books" onChange={ignore} platform={platform} />
+      <TabBar items={data.tabs} value="books" platform={platform} />
     </FrontLayerHeader>
   ),
 };
@@ -345,7 +343,7 @@ export default function Books({ data = placeholder, state = 'full' }: BooksProps
         <SortFilterBar
           icon="swap_vert"
           label={data.sort.value}
-          trailing={<ViewToggle value="grid" onChange={ignore} platform={platform} />}
+          trailing={<ViewToggle value="grid" platform={platform} />}
           platform={platform}
         />
       </Section>
@@ -353,7 +351,7 @@ export default function Books({ data = placeholder, state = 'full' }: BooksProps
         <LayoutGrid platform={platform}>
           {data.library.map((book, i) => (
             <Fragment key={i}>
-              <MediaCard width="100%" title={book.title} sub={book.sub} image={book.image} progress={book.progress} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} onRequest={ignore} platform={platform} />
+              <MediaCard width="100%" title={book.title} sub={book.sub} image={book.image} progress={book.progress} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} platform={platform} />
             </Fragment>
           ))}
         </LayoutGrid>

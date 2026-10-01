@@ -3,6 +3,7 @@ package net.develivarr.auralis.generated.ui
 
 data class SwitchProps(
     val checked: Boolean,
+    /** Receives the next checked state. Without it the switch is drawn disabled. */
     val onChange: ((Boolean) -> Unit)? = null,
     val label: String? = null,
 )

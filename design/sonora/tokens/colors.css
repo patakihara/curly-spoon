@@ -30,7 +30,9 @@ color-scheme:dark;
 --on-scrim:#fff;                 /* ink on any scrim */
 
 /* Hover wash for transparent controls — inverts with the theme */
---surface-hover:rgb(255 255 255 / 10%);
+
+/* The keyboard focus ring: the surface ink, so it reads on the page and over artwork alike */
+--focus-ring:var(--surface-fg);
 
 /* Edge fade for a clipped scrollable row (ButtonGroup, TabBar-style overflow) — a shadow reads
    against a light surface; against dark chrome the same darkening vanishes, so this is a soft
@@ -47,10 +49,8 @@ color-scheme:dark;
 /* ---- Play: the second named colour, rose. Now Playing, the mini player, the transport, seek and
    listening-progress fills, the in-library tone, and the Browse media filter. Nothing else. ---- */
 --play:#F44862;
-/* Ink on a play fill: black, 5.95:1 (white is 3.53:1, too low for a label) */
---play-contrast:#000;
-/* A glyph alone on a play fill, a play or pause button: white, 3.53:1, above the 3:1 a graphic needs */
---play-icon:#fff;
+/* Ink on a play fill, label or glyph: white, 3.53:1. Sofia's choice over AA's 4.5:1 for a label */
+--play-contrast:#fff;
 /* Play as readable text/icon ink: at least 5:1 on every dark surface, the now-playing one included */
 --play-ink:#FF7A8D;
 
@@ -59,14 +59,14 @@ color-scheme:dark;
 --tone-request:var(--state-warning);
 --tone-progress:var(--accent);
 --tone-error:var(--state-error);
-/* Ink on a solid tone fill — always plain black or white, picked per tone for contrast */
+/* Ink on a solid tone fill — always plain black or white: the rose's white for library, else per tone for contrast */
 --tone-library-ink:var(--play-contrast);
 --tone-request-ink:#000;
 --tone-progress-ink:var(--accent-contrast);
 --tone-error-ink:#fff;
 
 /* ---- Semantic state colors ---- */
---state-error:#E12F43;
+--state-error:#FB270D;
 --state-success:#42E477;
 --state-success-ink:#000;
 --state-warning:#FFCC8B;
@@ -105,7 +105,7 @@ color-scheme:light;
 --surface-fg-muted:rgb(80,80,80);
 --surface-border:rgb(0 0 0 / 8%);
 --divider:rgb(0 0 0 / 18%);
---surface-hover:rgb(0 0 0 / 6%);
+--focus-ring:var(--surface-fg);
 --scroll-edge:rgb(0 0 0 / 18%);
 --art-gradient-start:#4D5C92;
 --art-gradient-end:#75546F;
@@ -134,7 +134,7 @@ color-scheme:dark;
 --surface-fg-muted:var(--neutral-300);
 --surface-border:rgb(255 255 255 / 8%);
 --divider:rgb(255 255 255 / 20%);
---surface-hover:rgb(255 255 255 / 10%);
+--focus-ring:var(--surface-fg);
 --scroll-edge:rgb(255 255 255 / 22%);
 --art-gradient-start:#B6C4FF;
 --art-gradient-end:#FFB7DB;

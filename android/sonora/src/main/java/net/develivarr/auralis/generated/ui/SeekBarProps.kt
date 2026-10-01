@@ -7,6 +7,7 @@ data class SeekBarProps(
     /** Track length in seconds. */
     val duration: Float? = null,
     val platform: Platform? = null,
+    /** Receives the position sought, 0–1. Without it the slider is drawn disabled. */
     val onChange: ((Float) -> Unit)? = null,
     /** false shows total length on the right instead of a countdown. */
     val remainingAsCountdown: Boolean? = null,

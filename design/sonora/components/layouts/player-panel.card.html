@@ -10,8 +10,8 @@
 const { PlayerPanel, NowPlayingPage } = window.SonoraDesignSystem_6c1435;
 function Demo(){
   return <div style={{height:560,display:'flex',justifyContent:'flex-end',overflow:'hidden'}}>
-    <PlayerPanel open tab="now" tabs={[{key:'now',label:'Now playing'},{key:'queue',label:'Queue'},{key:'lyrics',label:'Lyrics'}]}>
-      <NowPlayingPage platform="desktop" title="Tidal Lines" artist="The Nebula Collective" context="Playing from Driftwave" playing progress={0.42} duration={214} sleep="Off" scroll={false}/>
+    <PlayerPanel open tab="now" tabs={[{key:'now',label:'Now playing'},{key:'queue',label:'Queue'},{key:'lyrics',label:'Lyrics'}]} onTabChange={() => {}}>
+      <NowPlayingPage platform="desktop" title="Tidal Lines" artist="The Nebula Collective" context="Playing from Driftwave" playing progress={0.42} duration={214} sleep="Off" scroll={false} onTogglePlay={() => {}} onPrev={() => {}} onNext={() => {}} onShuffle={() => {}} onRepeat={() => {}} onSeek={() => {}} onSkipBack={() => {}} onSkipForward={() => {}} onSpeed={() => {}} onSleep={() => {}}/>
     </PlayerPanel>
   </div>;
 }

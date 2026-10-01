@@ -9,6 +9,7 @@ export interface SectionHeaderProps {
   /** Material Symbols Rounded glyph name for the trailing action, e.g. "arrow_forward". Omit for no action. */
   action?: string;
   actionLabel?: string;
+  /** Without it the action is drawn disabled. */
   onAction?: () => void;
   /** mobile = body font at text-xl; desktop = display font at h3, 900 weight. */
   platform?: 'mobile' | 'desktop';
@@ -18,7 +19,7 @@ export interface SectionHeaderProps {
   image?: string;
   /** Circular thumbnail for an artist or a person; square (the default) for a show or a genre. */
   round?: boolean;
-  /** Makes the eyebrow+title block a link to the subject the shelf is about. */
+  /** Makes the eyebrow+title block a link to the subject the shelf is about. Without it the subject is the heading, not a link. */
   onSubject?: () => void;
   /** A text action ("Show all") in place of the glyph `action`. Mutually exclusive with `action` — wins if both are set. */
   actionText?: string;

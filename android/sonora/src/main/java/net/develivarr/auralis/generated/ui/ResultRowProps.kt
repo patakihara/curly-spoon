@@ -30,6 +30,7 @@ data class ResultRowProps(
     /** Cover art URL. Falls back to the generated gradient when omitted. */
     val image: String? = null,
     val platform: Platform? = null,
+    /** Without it the row is drawn disabled. */
     val onClick: (() -> Unit)? = null,
     val onAction: (() -> Unit)? = null,
     /** Hairline separator along the bottom, inset to the text column. Set on all but the last row of a list. */

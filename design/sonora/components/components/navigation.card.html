@@ -31,9 +31,9 @@ function Demo(){
     <Rail expanded={false} />
     <div style={{display:'flex',flexDirection:'column',gap:20}}>
       <div style={{display:'flex',gap:16,alignItems:'center'}}>
-        <AccountButton />
-        <AccountButton image="https://picsum.photos/seed/sonora-account/96/96" />
-        <AccountButton size={40} label="Your account" />
+        <AccountButton onClick={() => {}} />
+        <AccountButton image="https://picsum.photos/seed/sonora-account/96/96" onClick={() => {}} />
+        <AccountButton size={40} label="Your account" onClick={() => {}} />
       </div>
       <div style={{borderRadius:16,overflow:'hidden',width:500,padding:'6px 0',background:'var(--surface-bg-alt)'}}>
         <BottomNav active={tab} onChange={setTab} items={[

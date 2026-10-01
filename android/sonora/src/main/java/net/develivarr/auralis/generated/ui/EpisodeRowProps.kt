@@ -29,8 +29,9 @@ data class EpisodeRowProps(
     val explicit: Boolean? = null,
     /** The episode's own controls, rendered below the synopsis. */
     val actions: (@Composable () -> Unit)? = null,
-    /** Given, reveals a play control over the artwork (hover on desktop, always on mobile). */
+    /** Given, reveals a play control over the artwork (hover on desktop, always on mobile). Without it the play overlay is left out. */
     val onPlay: (() -> Unit)? = null,
+    /** Without it the row is drawn disabled. */
     val onClick: (() -> Unit)? = null,
     /** Hairline separator along the bottom, inset to the text column. */
     val divider: Boolean? = null,

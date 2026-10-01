@@ -16,7 +16,7 @@ const QUEUE = [
 ];
 function Demo(){
   return <div style={{position:'relative',width:360,height:640,display:'flex',flexDirection:'column',overflow:'hidden',borderRadius:'var(--radius-lg)',background:'var(--surface-bg)'}}>
-    <QueuePage platform="mobile" heading={null} context="Music queue · 3 songs" items={QUEUE} queues={[{key:'music',label:'Music'},{key:'spoken',label:'Spoken'}]} queue="music"/>
+    <QueuePage platform="mobile" heading={null} context="Music queue · 3 songs" items={QUEUE} queues={[{key:'music',label:'Music'},{key:'spoken',label:'Spoken'}]} queue="music" onPlay={() => {}} onClear={() => {}} onQueueChange={() => {}}/>
   </div>;
 }
 function Themed(){

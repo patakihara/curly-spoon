@@ -47,8 +47,6 @@ function some(tree: PageTree, test: (node: PageTree) => boolean): boolean {
 export interface WebComponents {
   /** The components that take a `platform` prop; each gets the page's own. */
   platformed: Set<string>;
-  /** The components that take an `onChange` handler. */
-  handled: Set<string>;
   /**
    * Each component's props that take one of a fixed set of words (`tone`, `size`). A placeholder's
    * JSON reads as a plain string, so a bound value for one is read as the prop's own type; the
@@ -100,13 +98,6 @@ export interface WebShell {
   now?: PageTree[];
 }
 
-/** A page is a still: a field it shows a value in gets a handler that ignores changes. */
-const ignored = (tree: PageTree, components: WebComponents) =>
-  tree.kind === 'element' &&
-  components.handled.has(tree.component) &&
-  ('value' in tree.props || 'checked' in tree.props) &&
-  !('onChange' in tree.props);
-
 /**
  * Where the web starts signing in: the server's login route, as the web client, coming back to
  * where the visitor was going, the sign-in page's own `return_to`, or else the app's start. The
@@ -141,10 +132,9 @@ function propLines(
     const to = params.length === 0 ? path : `generatePath(${path}, { ${params.join(', ')} })`;
     return [`${name}={() => navigate(${to})}`];
   }
-  // No request endpoint exists yet: the card answers a tap by saying Requested on its own.
-  if (value.kind === 'request') return [`${name}={ignore}`];
-  // No player exists yet either: a play does nothing until the player is built.
-  if (value.kind === 'play') return [`${name}={ignore}`];
+  // No request endpoint and no page player exist yet. A handler doing nothing would draw a dead
+  // control as enabled, so the prop is left out and Sonora draws the control disabled.
+  if (value.kind === 'request' || value.kind === 'play') return [];
   // Sign-in leaves the app for the server's route, which sends the browser on to the sign-on.
   if (value.kind === 'signIn') return [`${name}={${signInHandler()}}`];
   if (value.kind === 'binding' && choice) {
@@ -193,21 +183,22 @@ function render(tree: PageTree, indent: string, components: Ctx): string[] {
       ];
     case 'element': {
       const wired = components.wired.get(tree) ?? {};
-      const props = Object.entries(tree.props).map(([name, value]) =>
-        name in wired
-          ? [`${name}={${wired[name]}}`]
-          : propLines(
-              name,
-              value,
-              inner,
-              components,
-              tree.component,
-              chosen(tree, name, components),
-            ),
-      );
+      const props = Object.entries(tree.props)
+        .map(([name, value]) =>
+          name in wired
+            ? [`${name}={${wired[name]}}`]
+            : propLines(
+                name,
+                value,
+                inner,
+                components,
+                tree.component,
+                chosen(tree, name, components),
+              ),
+        )
+        .filter((lines) => lines.length > 0);
       for (const [name, code] of Object.entries(wired))
         if (!(name in tree.props)) props.push([`${name}={${code}}`]);
-      if (ignored(tree, components)) props.push(['onChange={ignore}']);
       if (components.platformed.has(tree.component) && !('platform' in tree.props)) {
         props.push(['platform={platform}']);
       }
@@ -398,14 +389,6 @@ export function generateWebPage(
           '};',
           '',
         ]),
-    ...(inPage(
-      (n) =>
-        ignored(n, components) ||
-        (n.kind === 'element' &&
-          Object.values(n.props).some((v) => v.kind === 'request' || v.kind === 'play')),
-    )
-      ? ['const ignore = () => {};', '']
-      : []),
     `export type ${name}Data = typeof placeholder;`,
     '',
     ...(sheet

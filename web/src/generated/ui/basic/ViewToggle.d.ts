@@ -5,6 +5,7 @@
  */
 export interface ViewToggleProps {
   value?: 'list' | 'grid';
+  /** Receives the view to switch to. Without it the toggle is drawn disabled. */
   onChange?: (value: 'list' | 'grid') => void;
   platform?: 'desktop' | 'mobile';
 }

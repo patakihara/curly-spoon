@@ -10,7 +10,7 @@ data class DownloadButtonProps(
     val state: Download? = null,
     /** 0–1. Indeterminate ring when null and `state` is 'downloading'. */
     val progress: Float? = null,
-    /** Fires on press in every state: starts, cancels, or removes, depending on `state`. */
+    /** Fires on press in every state: starts, cancels, or removes, depending on `state`. Without it the button is drawn disabled. */
     val onClick: (() -> Unit)? = null,
     /** Control diameter in px. */
     val size: Float? = null,

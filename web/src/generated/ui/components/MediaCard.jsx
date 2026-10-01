@@ -4,7 +4,10 @@ import { Badge } from '../basic/Badge.jsx';
 import { CoverArt } from '../basic/CoverArt.jsx';
 import { OverflowMenu } from '../basic/OverflowMenu.jsx';
 import { PlayActions } from './PlayActions.jsx';
+import { StateLayer } from '../basic/StateLayer.jsx';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+// Enter and Space press it as a click does, unless they come from a control inside it.
+const keys=(fn)=>(e)=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();fn(e);}};
 
 if (typeof document !== 'undefined' && !document.getElementById('sonora-mediacard-css')) {
   const el = document.createElement('style');
@@ -41,6 +44,7 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
   const greyed = absent || !!shownStatus;
   const tap = requestable ? () => { setAsked(true); onRequest(); } : onClick;
   const hasProgress = typeof progress === 'number';
+  const off = !tap;
   // Desktop only: these are revealed by hover, which a touch surface has no equivalent for.
   const showActions = !mobile && !absent && PlayActions && (onPlay || onPlayNext || onPlayLast);
   const showMore = !!onMore && !requestable;
@@ -56,7 +60,9 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
     return () => ro.disconnect();
   }, []);
   return (
-    <div onClick={tap} style={sx('position:relative;display:flex;flex-direction:column;cursor:pointer;min-width:0;width:' + w + (w === '100%' ? '' : ';flex-shrink:0'))}>
+    <div className="sn-int" role="button" aria-label={title} tabIndex={off ? -1 : 0} aria-disabled={off}
+      onClick={off ? undefined : tap} onKeyDown={off ? undefined : keys(tap)}
+      style={sx('position:relative;display:flex;flex-direction:column;cursor:pointer;min-width:0;border-radius:var(--radius-' + (small || mobile ? 'sm' : 'md') + ');width:' + w + (w === '100%' ? '' : ';flex-shrink:0'))}>
       <div ref={artRef} className={hostClasses} style={sx('position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:var(--radius-' + (small || mobile ? 'sm' : 'md') + ')')}>
         {/* Greyed, not just darkened: an item that cannot play yet loses its colour, so it reads
             as out of reach beside the ones you own even where its cover is already dark. */}
@@ -65,9 +71,10 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
           : <CoverArt src={image} covers={covers} fallback={coverArt} />)}
         {showMore && (
           <button onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); onMore(e); }} aria-label="More options" title="More options"
-            className={mobile ? undefined : 'sn-more'}
+            className={mobile ? 'sn-int' : 'sn-int sn-more'}
             style={sx('position:absolute;top:6px;right:6px;width:30px;height:30px;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--scrim-soft);color:var(--on-scrim)' + (mobile ? ';opacity:1' : ''))}>
             <span style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-xs);line-height:1")}>more_vert</span>
+            {StateLayer && <StateLayer />}
           </button>
         )}
         {/* New/unlistened is a property of the item, not of the card chrome, so it sits on the art
@@ -134,6 +141,7 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
       ) : (
         <div style={sx('margin-top:2px;font-size:var(--text-' + (small ? 'xs' : 'sm') + ');line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;color:' + muted)}>{sub}</div>
       )}
+      {StateLayer && <StateLayer disabled={off} />}
     </div>
   );
 }

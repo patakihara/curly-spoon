@@ -26,8 +26,9 @@ export interface EpisodeRowProps {
   explicit?: boolean;
   /** The episode's own controls, rendered below the synopsis. */
   actions?: ReactNode;
-  /** Given, reveals a play control over the artwork (hover on desktop, always on mobile). */
+  /** Given, reveals a play control over the artwork (hover on desktop, always on mobile). Without it the play overlay is left out. */
   onPlay?: () => void;
+  /** Without it the row is drawn disabled. */
   onClick?: () => void;
   /** Hairline separator along the bottom, inset to the text column. */
   divider?: boolean;

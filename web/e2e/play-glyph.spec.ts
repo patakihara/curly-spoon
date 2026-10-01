@@ -48,12 +48,16 @@ function glyphRow(rows: Rgb[][]) {
   return { fill, runs };
 }
 
+/**
+ * Read in the gallery, where each Sonora component is drawn with its actions bound: on a page, a
+ * pause button with no action bound is drawn disabled, on the grey disabled container, not rose.
+ */
 for (const size of SIZES) {
   test(`[M0.canvas] every rose pause button draws its glyph as solid white bars on a ${size.name}`, async ({
     page,
   }) => {
     await page.setViewportSize(size);
-    await page.goto('/books/sample');
+    await page.goto('/gallery.html', { waitUntil: 'networkidle' });
     await page.evaluate(() => document.fonts.ready);
     const buttons = await page.getByRole('button', { name: 'Pause' }).all();
     let checked = 0;

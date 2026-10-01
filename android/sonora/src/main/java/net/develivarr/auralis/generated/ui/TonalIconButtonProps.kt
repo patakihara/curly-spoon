@@ -11,7 +11,10 @@ data class TonalIconButtonProps(
     val glyph: String,
     /** Accessible name and tooltip. */
     val label: String? = null,
+    /** The action. Without it the button is drawn disabled. */
     val onClick: (() -> Unit)? = null,
+    /** Drawn disabled: the fill at 12% and the glyph at 38% of the surface ink, no focus or press. */
+    val disabled: Boolean? = null,
     /** Default 40×32 with a 16px radius — a pill wider than it is tall. */
     val width: Float? = null,
     val height: Float? = null,

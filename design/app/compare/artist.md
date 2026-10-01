@@ -1,6 +1,6 @@
 ---
 page: artist
-pageHash: 1c51474b97390b10f8e47b38839a5d1f733b00ef78a568618712564e7b10af72
+pageHash: 84d23df95278a3b2817e6b6473fb332a7cda6dd0e42c94b51a0c6c982152294e
 sonora: [none]
 spotify: [S41]
 ---
@@ -39,6 +39,10 @@ shows the whole catalogue greyed and requestable.
 
 ## Differences
 
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Matches S41: the round image and the name leading the page, round cards for other artists.
 - Changed on purpose: on desktop the header is the image with a caption centred beside it, not
   S41's wide photo over the name; the name is already the heading, and nav.json's header is only
@@ -53,5 +57,5 @@ shows the whole catalogue greyed and requestable.
 - Provisional, per nav.json: Popular and Similar artists, drawn as a guess; the setting that hides
   unowned titles is Settings' and not drawn here.
 - Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Music's rail item lit.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.
 - Changed on purpose: a greyed card is grey, its cover without colour and its title muted, not only darkened.

@@ -7,6 +7,7 @@ package net.develivarr.auralis.generated.ui
  */
 data class ViewToggleProps(
     val value: ViewToggleValue? = null,
+    /** Receives the view to switch to. Without it the toggle is drawn disabled. */
     val onChange: ((ViewToggleValue) -> Unit)? = null,
     val platform: Platform? = null,
 )

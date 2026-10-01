@@ -38,7 +38,7 @@ data class EditableListProps<T>(
     val renderRow: @Composable (EditableListRow<T>) -> Unit,
     /** Drag reorder, by index into `items`. */
     val onReorder: ((Float, Float) -> Unit)? = null,
-    /** The action bar's button, with the selected rows' keys. */
+    /** The action bar's button, with the selected rows' keys. Without it the remove button is drawn disabled. */
     val onRemoveSelected: ((List<Any>) -> Unit)? = null,
     val actionLabel: String? = null,
     /** Shown in the action bar while nothing is selected. */

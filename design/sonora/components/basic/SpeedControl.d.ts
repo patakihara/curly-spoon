@@ -6,7 +6,7 @@
 export interface SpeedControlProps {
   /** 1, 1.25, 1.5 … */
   value?: number;
-  /** Opens the rate picker. */
+  /** Opens the rate picker. Without it the control is drawn disabled. */
   onClick?: () => void;
   /** Accessible name. Defaults to "Playback speed, <value> times". */
   label?: string;

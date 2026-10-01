@@ -136,9 +136,6 @@ fun SeriesPage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "the-salt-road"))
                                                             },
-                                                            onRequest = {
-                                                                actions.onRequest("the-salt-road")
-                                                            },
                                                             eyebrow = "Book 1",
                                                             status = null,
                                                             tone = null,
@@ -155,9 +152,6 @@ fun SeriesPage(navController: NavController, actions: PageActions) {
                                                             image = "/art/shadows-and-sighs.jpg",
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "shadows-and-sighs"))
-                                                            },
-                                                            onRequest = {
-                                                                actions.onRequest("shadows-and-sighs")
                                                             },
                                                             eyebrow = "Book 2",
                                                             status = null,
@@ -176,9 +170,6 @@ fun SeriesPage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "a-grain-of-salt"))
                                                             },
-                                                            onRequest = {
-                                                                actions.onRequest("a-grain-of-salt")
-                                                            },
                                                             eyebrow = "Book 3",
                                                             status = null,
                                                             tone = null,
@@ -195,9 +186,6 @@ fun SeriesPage(navController: NavController, actions: PageActions) {
                                                             image = "/art/paper-lanterns.jpg",
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "the-lantern-keeper"))
-                                                            },
-                                                            onRequest = {
-                                                                actions.onRequest("the-lantern-keeper")
                                                             },
                                                             eyebrow = "Book 4",
                                                             status = "Downloading · 30%",

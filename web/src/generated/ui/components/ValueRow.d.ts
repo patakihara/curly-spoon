@@ -4,6 +4,7 @@ export interface ValueRowProps {
   label: string;
   value: string;
   platform?: 'desktop' | 'mobile';
+  /** Without it the row is drawn disabled. */
   onClick?: () => void;
 }
 export declare function ValueRow(props: ValueRowProps): JSX.Element;

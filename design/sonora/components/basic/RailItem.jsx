@@ -1,10 +1,12 @@
 import React from 'react';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
 /** Navigation rail row. One highlight morphs from a 56×32 icon pill (collapsed) to a pill that hugs icon + label (expanded). Replaces the old SidebarItem. */
 export function RailItem({ icon, label, active = false, expanded = true, rowHeight = 56, tabs = false, wideActive, centerIcon, onClick }) {
+  const StateLayer = NS().StateLayer;
   const on = !!active, open = expanded !== false;
-  const [hover, setHover] = React.useState(false);
+  const off = !onClick;
   const labelRef = React.useRef(null);
   const pillRef = React.useRef(null);
   const measured = React.useRef(0);
@@ -37,7 +39,6 @@ export function RailItem({ icon, label, active = false, expanded = true, rowHeig
     setSnap(false);
   }, [snap]);
   const pill = 'color-mix(in oklab, var(--surface-bg-alt) 90%, var(--accent))';
-  const hoverBg = 'color-mix(in oklch, transparent 92%, var(--surface-fg))';
   const ease = ' var(--duration-slow) var(--ease-standard)';
   // Tab-bar mode: inactive tabs are icon-only with the pill centred; the active tab keeps its label and gets a wider pill.
   const iconOnly = tabs && !on;
@@ -50,9 +51,14 @@ export function RailItem({ icon, label, active = false, expanded = true, rowHeig
   const w = open ? (56 + labelW + 20) + 'px' : (wide && on ? '72px' : '56px');
   const shift = iconOnly ? Math.round((rowHeight - 32) / 2) : 0;
   return (
-    <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+    // The whole row takes the press; the pill shows its state, as in Material's rail.
+    <div className="sn-int" role="button" aria-label={label} tabIndex={off ? -1 : 0} aria-disabled={off}
+      onClick={off ? undefined : onClick}
+      onKeyDown={off ? undefined : (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
       style={sx('position:relative;width:100%;height:' + rowHeight + 'px;box-sizing:border-box;cursor:pointer;display:flex;justify-content:' + (open ? 'flex-start' : 'center') + ';transition:color' + ease + ';color:' + (on ? 'var(--accent-ink)' : 'var(--surface-fg-muted)'))}>
-      <span ref={pillRef} style={sx('flex-shrink:0;pointer-events:none;line-height:0;border-radius:var(--radius-pill);transition:' + (snap ? '' : 'width' + ease + ',') + 'height' + ease + ',margin-top' + ease + ',background' + ease + ';margin-top:' + shift + 'px;width:' + w + ';height:' + (open ? rowHeight + 'px' : '32px') + ';background:' + (on ? pill : (hover ? hoverBg : 'transparent')))} />
+      <span ref={pillRef} style={sx('position:relative;flex-shrink:0;pointer-events:none;line-height:0;border-radius:var(--radius-pill);transition:' + (snap ? '' : 'width' + ease + ',') + 'height' + ease + ',margin-top' + ease + ',background' + ease + ';margin-top:' + shift + 'px;width:' + w + ';height:' + (open ? rowHeight + 'px' : '32px') + ';background:' + (on ? pill : 'transparent'))}>
+        {StateLayer && <StateLayer disabled={off} />}
+      </span>
       <span style={sx('position:absolute;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:height' + ease + ',top' + ease + ';top:' + shift + 'px;left:' + (center ? 'calc(50% - 28px)' : '0px') + ';width:56px;height:' + (open ? rowHeight + 'px' : '32px'))}>
         <span style={sx("font-family:'Material Symbols Rounded';font-size:24px;line-height:1;transition:font-variation-settings" + ease + ";font-variation-settings:'FILL' " + (on ? 1 : 0) + ",'wght' " + (on ? 500 : 400))}>{icon}</span>
       </span>

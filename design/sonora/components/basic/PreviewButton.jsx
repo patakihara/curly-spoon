@@ -17,15 +17,18 @@ const LABELS = { episode: 'Preview episode', playlist: 'Preview playlist', audio
 
 /** Auditions a sample without committing — plays without adding the item to the library or displacing what's currently playing. */
 export function PreviewButton({ kind = 'track', label, playing = false, muted = false, disabled = false, onClick, platform = 'desktop' }) {
+  const StateLayer = NS().StateLayer;
+  const off = !!disabled || !onClick;
   const mobile = platform === 'mobile';
   // Sound-off outranks playing: a muted preview is still "playing with sound off", not idle.
   const glyph = muted ? 'volume_off' : (playing ? 'volume_up' : 'volume_mute');
   const text = label || LABELS[kind] || LABELS.track;
   return (
-    <button onClick={disabled ? undefined : onClick} disabled={disabled} aria-disabled={disabled}
-      style={sx('display:inline-flex;align-items:center;gap:var(--spacing-sm);border:none;border-radius:var(--radius-pill);cursor:' + (disabled ? 'not-allowed' : 'pointer') + ';opacity:' + (disabled ? '0.5' : '1') + ';background:var(--scrim-soft);color:var(--on-scrim);padding:' + (mobile ? '8px 16px' : '6px 14px') + ';font-family:var(--font-body);font-size:var(--text-sm);font-weight:var(--weight-strong)')}>
+    <button className="sn-int sn-filled" onClick={off ? undefined : onClick} disabled={off}
+      style={sx('display:inline-flex;align-items:center;gap:var(--spacing-sm);border:none;border-radius:var(--radius-pill);cursor:pointer;background:var(--scrim-soft);color:var(--on-scrim);padding:' + (mobile ? '8px 16px' : '6px 14px') + ';font-family:var(--font-body);font-size:var(--text-sm);font-weight:var(--weight-strong)')}>
       <span key={glyph} className="sn-pb-glyph" style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-sm);line-height:1;font-variation-settings:'FILL' 1,'wght' 500")}>{glyph}</span>
       {text}
+      {StateLayer && <StateLayer disabled={off} />}
     </button>
   );
 }

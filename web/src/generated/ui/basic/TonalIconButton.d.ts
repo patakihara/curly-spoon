@@ -9,7 +9,10 @@ export interface TonalIconButtonProps {
   glyph: string;
   /** Accessible name and tooltip. */
   label?: string;
+  /** The action. Without it the button is drawn disabled. */
   onClick?: () => void;
+  /** Drawn disabled: the fill at 12% and the glyph at 38% of the surface ink, no focus or press. */
+  disabled?: boolean;
   /** Default 40×32 with a 16px radius — a pill wider than it is tall. */
   width?: number;
   height?: number;

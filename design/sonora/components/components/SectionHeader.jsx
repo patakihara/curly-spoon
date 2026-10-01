@@ -4,7 +4,8 @@ const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{}
 /** Row heading above a carousel or grid, with an optional trailing action. */
 export function SectionHeader({ title, action, actionLabel = 'More', onAction, platform = 'mobile', eyebrow, image, round = false, onSubject, actionText, trailing }) {
   const isMobile = platform === 'mobile';
-  const CoverArt = NS().CoverArt;
+  const { CoverArt, StateLayer } = NS();
+  const off = !onAction;
   const titleEl = (
     <div style={{
       color: 'var(--surface-fg)',
@@ -15,9 +16,8 @@ export function SectionHeader({ title, action, actionLabel = 'More', onAction, p
   );
   // eyebrow/image/onSubject only exist together as a "subject" block — an unadorned header
   // skips this wrapper entirely so it renders exactly as it always has.
-  const subject = (eyebrow || image || onSubject) ? (
-    <div onClick={onSubject} role={onSubject ? 'button' : undefined} tabIndex={onSubject ? 0 : undefined}
-      style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', minWidth: 0, cursor: onSubject ? 'pointer' : undefined }}>
+  const subjectInner = (eyebrow || image || onSubject) && (
+    <React.Fragment>
       {image && (
         /* position:relative so CoverArt's inset:0 fill resolves against this thumbnail. */
         <div style={{ position: 'relative', width: 40, height: 40, flexShrink: 0, overflow: 'hidden', borderRadius: round ? '50%' : 'var(--radius-xs)' }}>
@@ -30,8 +30,19 @@ export function SectionHeader({ title, action, actionLabel = 'More', onAction, p
         )}
         {titleEl}
       </div>
+    </React.Fragment>
+  );
+  const row = { display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', minWidth: 0 };
+  // The subject is a link to its page only with onSubject; without it, it is the heading, not a
+  // control, so it is drawn plain rather than disabled.
+  const subject = !subjectInner ? titleEl : onSubject ? (
+    <div className="sn-int" role="button" tabIndex={0} onClick={onSubject}
+      onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onSubject(); } }}
+      style={{ ...row, cursor: 'pointer', borderRadius: 'var(--radius-xs)' }}>
+      {subjectInner}
+      {StateLayer && <StateLayer />}
     </div>
-  ) : titleEl;
+  ) : <div style={row}>{subjectInner}</div>;
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-md)', gap: 'var(--spacing-md)' }}>
       {subject}
@@ -39,18 +50,19 @@ export function SectionHeader({ title, action, actionLabel = 'More', onAction, p
         /* A control of the section's own, such as the ViewToggle over a collection. */
         <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>{trailing}</div>
       ) : actionText != null ? (
-        <button onClick={onAction} style={{
+        <button className="sn-int" onClick={off ? undefined : onAction} disabled={off} style={{
           border: 'none', background: 'transparent', flexShrink: 0, cursor: 'pointer',
+          height: 32, padding: '0 var(--spacing-md)', marginRight: 'calc(-1 * var(--spacing-md))', borderRadius: 'var(--radius-pill)',
           fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-strong)',
           color: 'var(--surface-fg-muted)',
-        }}>{actionText}</button>
+        }}>{actionText}{StateLayer && <StateLayer disabled={off} />}</button>
       ) : action && (
-        <button aria-label={actionLabel} onClick={onAction} style={{
+        <button className="sn-int" aria-label={actionLabel} onClick={off ? undefined : onAction} disabled={off} style={{
           width: 36, height: 36, borderRadius: '50%', border: 'none', flexShrink: 0,
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           background: 'transparent', color: 'var(--surface-fg-muted)',
           cursor: 'pointer', fontFamily: 'Material Symbols Rounded', fontSize: 'var(--icon-sm)',
-        }}>{action}</button>
+        }}><span aria-hidden="true">{action}</span>{StateLayer && <StateLayer disabled={off} />}</button>
       )}
     </div>
   );

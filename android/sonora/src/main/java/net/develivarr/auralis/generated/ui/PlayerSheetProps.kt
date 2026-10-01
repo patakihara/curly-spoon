@@ -13,7 +13,6 @@ data class PlayerSheetProps(
     val open: Boolean? = null,
     /** The mini player's viewport rect — a DOMRect, or `{ top, left, width, height }`. */
     val from: PlayerSheetFrom? = null,
-    val onClose: (() -> Unit)? = null,
     /** Stacking order over the app frame. */
     val zIndex: Float? = null,
     /** Corner radius of the collapsed rectangle, matched to the bar it grows from. */

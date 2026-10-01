@@ -8,6 +8,7 @@ package net.develivarr.auralis.generated.ui
  */
 data class SearchButtonProps(
     val open: Boolean? = null,
+    /** Receives the next open state. Without it the button is drawn disabled. */
     val onToggle: ((Boolean) -> Unit)? = null,
     /** Muted icon colour (the default in an app bar). */
     val muted: Boolean? = null,

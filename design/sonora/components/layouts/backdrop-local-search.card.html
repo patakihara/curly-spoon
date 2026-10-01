@@ -30,7 +30,7 @@ function Grid({platform}){
   return <div style={{padding:'var(--spacing-xl) var(--grid-margin' + (platform === 'mobile' ? '-mobile' : '') + ')'}}>
     <Section platform={platform} last>
       <LayoutGrid platform={platform}>
-        {BOOKS.map((b) => <MediaCard key={b.title} platform={platform} width="100%" {...b} />)}
+        {BOOKS.map((b) => <MediaCard key={b.title} platform={platform} width="100%" {...b} onClick={() => {}} />)}
       </LayoutGrid>
     </Section>
   </div>;
@@ -42,9 +42,9 @@ function Grid({platform}){
 function Live(){
   return <div style={{height:460}}>
     <BackdropShell platform="desktop" scrollKey="books"
-      rail={<NavRail items={NAV} active="books" expanded={false} />}
+      rail={<NavRail items={NAV} active="books" expanded={false} onChange={() => {}} />}
       back={<BackLayer title="Books" search="Search your books and requests" />}
-      subheader={<FrontLayerHeader tabs><TabBar items={TABS} value="books" /></FrontLayerHeader>}>
+      subheader={<FrontLayerHeader tabs><TabBar items={TABS} value="books" onChange={() => {}} /></FrontLayerHeader>}>
       <Grid platform="desktop" />
     </BackdropShell>
   </div>;
@@ -58,8 +58,8 @@ function Still({caption, open, platform}){
     <div style={{height:230,display:'flex',flexDirection:'column'}}>
       <BackdropShell platform={platform}
         back={<BackLayer platform={platform} title="Books" search="Search your books and requests" searchOpen={open}
-          leading={mobile ? <AccountButton /> : undefined} />}
-        subheader={<FrontLayerHeader tabs progress={open ? 1 : 0}><TabBar platform={platform} items={TABS} value="books" /></FrontLayerHeader>}>
+          leading={mobile ? <AccountButton onClick={() => {}} /> : undefined} />}
+        subheader={<FrontLayerHeader tabs progress={open ? 1 : 0}><TabBar platform={platform} items={TABS} value="books" onChange={() => {}} /></FrontLayerHeader>}>
         <Grid platform={platform} />
       </BackdropShell>
     </div>

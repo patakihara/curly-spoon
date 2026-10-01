@@ -435,8 +435,6 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   }),
 };
 
-const ignore = () => {};
-
 export type BookData = typeof placeholder;
 
 /** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
@@ -490,7 +488,7 @@ export default function Book({ data = placeholder, state = 'full' }: BookProps) 
         <Shelf platform={platform}>
           {data.narrations.map((narration, i) => (
             <Fragment key={i}>
-              <MediaCard eyebrow="Read by" title={narration.narrator} sub={narration.sub} image={narration.image} absent={narration.absent} status={narration.status} tone={narration.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: narration.ref }))} onRequest={ignore} platform={platform} />
+              <MediaCard eyebrow="Read by" title={narration.narrator} sub={narration.sub} image={narration.image} absent={narration.absent} status={narration.status} tone={narration.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: narration.ref }))} platform={platform} />
             </Fragment>
           ))}
         </Shelf>
@@ -499,7 +497,7 @@ export default function Book({ data = placeholder, state = 'full' }: BookProps) 
         <Shelf platform={platform}>
           {data.more.series.items.map((book, i) => (
             <Fragment key={i}>
-              <MediaCard title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} onRequest={ignore} platform={platform} />
+              <MediaCard title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} platform={platform} />
             </Fragment>
           ))}
         </Shelf>
@@ -508,7 +506,7 @@ export default function Book({ data = placeholder, state = 'full' }: BookProps) 
         <Shelf platform={platform}>
           {data.more.author.items.map((other, i) => (
             <Fragment key={i}>
-              <MediaCard title={other.title} sub={other.sub} image={other.image} progress={other.progress} absent={other.absent} status={other.status} tone={other.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: other.ref }))} onRequest={ignore} platform={platform} />
+              <MediaCard title={other.title} sub={other.sub} image={other.image} progress={other.progress} absent={other.absent} status={other.status} tone={other.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: other.ref }))} platform={platform} />
             </Fragment>
           ))}
         </Shelf>

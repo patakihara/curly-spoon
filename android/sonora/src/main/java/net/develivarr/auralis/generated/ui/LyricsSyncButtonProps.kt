@@ -11,6 +11,6 @@ data class LyricsSyncButtonProps(
     val mode: SyncMode? = null,
     /** Whether sync off marks the current line with a dot. Default true; the player's menu turns it off. */
     val dot: Boolean? = null,
-    /** Receives the mode the toggle turns to. */
+    /** Receives the mode the toggle turns to. Without it the toggle is drawn disabled. */
     val onChange: ((SyncMode) -> Unit)? = null,
 )

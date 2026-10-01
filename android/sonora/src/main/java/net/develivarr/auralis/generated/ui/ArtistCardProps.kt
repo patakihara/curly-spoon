@@ -9,5 +9,6 @@ data class ArtistCardProps(
     /** Cover art URL. Falls back to the generated gradient when omitted. */
     val image: String? = null,
     val width: String? = null,
+    /** Without it the card is drawn disabled. */
     val onClick: (() -> Unit)? = null,
 )

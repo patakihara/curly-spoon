@@ -1,5 +1,6 @@
 import React from 'react';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
 if (typeof document !== 'undefined' && !document.getElementById('sonora-playactions-css')) {
   const el = document.createElement('style');
@@ -8,8 +9,7 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-playacti
   el.textContent = '.sn-acts{opacity:0;transform:translateY(4px);transition:opacity var(--duration-fast) ease,transform var(--duration-fast) ease;pointer-events:none}'
     + '.sn-acts-host:hover .sn-acts,.sn-acts-host:focus-within .sn-acts{opacity:1;transform:none;pointer-events:auto}'
     + '.sn-acts[data-always="true"]:not(.sn-acts-scrim .sn-acts){opacity:1;transform:none;pointer-events:auto}'
-    + '.sn-acts-scrim .sn-acts{opacity:inherit;transform:none;pointer-events:inherit}'
-    + '.sn-act:hover{filter:brightness(1.12)}';
+    + '.sn-acts-scrim .sn-acts{opacity:inherit;transform:none;pointer-events:inherit}';
   document.head.appendChild(el);
 }
 
@@ -18,9 +18,9 @@ const BTN = (primary, size, height) => sx(
   'width:' + size + 'px;height:' + height + 'px;border-radius:var(--radius-pill);border:none;flex-shrink:0;cursor:pointer;' +
   'display:inline-flex;align-items:center;justify-content:center;' +
   "font-family:'Material Symbols Rounded';font-size:" + Math.round(size * 0.5) + 'px;' +
-  'box-shadow:var(--shadow-md);transition:filter var(--duration-fast) ease;' +
+  'box-shadow:var(--shadow-md);' +
   (primary
-    ? "background:var(--play);color:var(--play-icon);font-variation-settings:'FILL' 1,'wght' 500"
+    ? "background:var(--play);color:var(--play-contrast);font-variation-settings:'FILL' 1,'wght' 500"
     : 'background:color-mix(in srgb, var(--accent) 82%, transparent);color:var(--accent-contrast);backdrop-filter:blur(6px)')
 );
 
@@ -30,12 +30,20 @@ const BTN = (primary, size, height) => sx(
  * or keyboard focus of an ancestor carrying the sn-acts-host class.
  */
 export function PlayActions({ onNext, onPlay, onLast, playing = false, size = 40, always = false, gap = 'var(--spacing-sm)' }) {
-  const stop = (fn) => (e) => { if (e && e.stopPropagation) e.stopPropagation(); if (fn) fn(e); };
+  const StateLayer = NS().StateLayer;
+  // Each press stays its own, never reaching the card it sits on; one with no handler is disabled.
+  const stop = (fn) => (fn ? (e) => { if (e && e.stopPropagation) e.stopPropagation(); fn(e); } : undefined);
+  const act = (label, fn, primary, glyph) => (
+    <button className="sn-int sn-filled" aria-label={label} title={label} onClick={stop(fn)} disabled={!fn} style={BTN(primary, primary ? size : size - 6, size)}>
+      {glyph}
+      {StateLayer && <StateLayer disabled={!fn} />}
+    </button>
+  );
   return (
     <div className="sn-acts" data-always={always ? 'true' : 'false'} style={sx('display:flex;align-items:center;gap:' + gap)}>
-      <button className="sn-act" aria-label="Play next" title="Play next" onClick={stop(onNext)} style={BTN(false, size - 6, size)}>arrow_top_right</button>
-      <button className="sn-act" aria-label={playing ? 'Pause' : 'Play'} title={playing ? 'Pause' : 'Play'} onClick={stop(onPlay)} style={BTN(true, size, size)}>{playing ? 'pause' : 'play_arrow'}</button>
-      <button className="sn-act" aria-label="Play last" title="Play last" onClick={stop(onLast)} style={BTN(false, size - 6, size)}>last_page</button>
+      {act('Play next', onNext, false, 'arrow_top_right')}
+      {act(playing ? 'Pause' : 'Play', onPlay, true, playing ? 'pause' : 'play_arrow')}
+      {act('Play last', onLast, false, 'last_page')}
     </div>
   );
 }

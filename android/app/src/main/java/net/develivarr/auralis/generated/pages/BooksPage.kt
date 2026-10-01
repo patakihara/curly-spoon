@@ -171,9 +171,6 @@ fun BooksPage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "between-two-worlds"))
                                                             },
-                                                            onRequest = {
-                                                                actions.onRequest("between-two-worlds")
-                                                            },
                                                             status = "Failed",
                                                             tone = MediaCardTone.ERROR,
                                                         ),
@@ -188,9 +185,6 @@ fun BooksPage(navController: NavController, actions: PageActions) {
                                                             image = "/art/foggy-trails.jpg",
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "foggy-trails"))
-                                                            },
-                                                            onRequest = {
-                                                                actions.onRequest("foggy-trails")
                                                             },
                                                             status = null,
                                                             tone = null,
@@ -207,9 +201,6 @@ fun BooksPage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "the-ink-orchard"))
                                                             },
-                                                            onRequest = {
-                                                                actions.onRequest("the-ink-orchard")
-                                                            },
                                                             status = "Downloading · 64%",
                                                             tone = MediaCardTone.PROGRESS,
                                                         ),
@@ -224,9 +215,6 @@ fun BooksPage(navController: NavController, actions: PageActions) {
                                                             image = "/art/shadows-and-sighs.jpg",
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "shadows-and-sighs"))
-                                                            },
-                                                            onRequest = {
-                                                                actions.onRequest("shadows-and-sighs")
                                                             },
                                                             status = null,
                                                             tone = null,
@@ -243,9 +231,6 @@ fun BooksPage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "the-salt-cartographer"))
                                                             },
-                                                            onRequest = {
-                                                                actions.onRequest("the-salt-cartographer")
-                                                            },
                                                             status = "Downloading · 18%",
                                                             tone = MediaCardTone.PROGRESS,
                                                         ),
@@ -261,9 +246,6 @@ fun BooksPage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "the-quiet-lodger"))
                                                             },
-                                                            onRequest = {
-                                                                actions.onRequest("the-quiet-lodger")
-                                                            },
                                                             status = null,
                                                             tone = null,
                                                         ),
@@ -278,9 +260,6 @@ fun BooksPage(navController: NavController, actions: PageActions) {
                                                             image = "/art/the-long-meridian.jpg",
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "the-long-meridian"))
-                                                            },
-                                                            onRequest = {
-                                                                actions.onRequest("the-long-meridian")
                                                             },
                                                             status = null,
                                                             tone = null,

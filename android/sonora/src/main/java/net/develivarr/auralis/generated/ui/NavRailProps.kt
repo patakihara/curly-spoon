@@ -27,6 +27,7 @@ data class NavRailProps(
     val footerItems: List<NavRailItem>? = null,
     /** Key of the active item, in `items` or `footerItems`. */
     val active: String? = null,
+    /** Without it every destination is drawn disabled. */
     val onChange: ((String) -> Unit)? = null,
     val expanded: Boolean? = null,
     /** Shows the menu toggle above the items when provided, leaving `expanded` to the caller. */

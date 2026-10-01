@@ -113,16 +113,16 @@
         "message": "<FollowButton> size must be one of 'sm' | 'md' | 'lg'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|icon|size|active|tone|muted|label|onClick|key|ref|className|style|children)$/]",
-        "message": "<IconButton> doesn't accept that prop. Declared props: children, icon, size, active, tone, muted, label, onClick."
+        "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|icon|size|active|tone|muted|label|onClick|disabled|key|ref|className|style|children)$/]",
+        "message": "<IconButton> doesn't accept that prop. Declared props: children, icon, size, active, tone, muted, label, onClick, disabled."
       },
       {
         "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:accent|play)$/]",
         "message": "<IconButton> tone must be one of 'accent' | 'play'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='Input'] > JSXAttribute > JSXIdentifier[name!=/^(?:placeholder|icon|platform|value|onChange|key|ref|className|style|children)$/]",
-        "message": "<Input> doesn't accept that prop. Declared props: placeholder, icon, platform, value, onChange."
+        "selector": "JSXOpeningElement[name.name='Input'] > JSXAttribute > JSXIdentifier[name!=/^(?:placeholder|icon|platform|value|onChange|disabled|key|ref|className|style|children)$/]",
+        "message": "<Input> doesn't accept that prop. Declared props: placeholder, icon, platform, value, onChange, disabled."
       },
       {
         "selector": "JSXOpeningElement[name.name='Input'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
@@ -189,8 +189,8 @@
         "message": "<SearchButton> doesn't accept that prop. Declared props: open, onToggle, muted, label."
       },
       {
-        "selector": "JSXOpeningElement[name.name='SearchField'] > JSXAttribute > JSXIdentifier[name!=/^(?:placeholder|value|onChange|onSubmit|platform|width|height|autoFocus|onClose|closeGlyph|key|ref|className|style|children)$/]",
-        "message": "<SearchField> doesn't accept that prop. Declared props: placeholder, value, onChange, onSubmit, platform, width, height, autoFocus, onClose, closeGlyph."
+        "selector": "JSXOpeningElement[name.name='SearchField'] > JSXAttribute > JSXIdentifier[name!=/^(?:placeholder|value|onChange|disabled|onSubmit|platform|width|height|autoFocus|onClose|closeGlyph|key|ref|className|style|children)$/]",
+        "message": "<SearchField> doesn't accept that prop. Declared props: placeholder, value, onChange, disabled, onSubmit, platform, width, height, autoFocus, onClose, closeGlyph."
       },
       {
         "selector": "JSXOpeningElement[name.name='SearchField'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
@@ -229,12 +229,16 @@
         "message": "<SpeedControl> doesn't accept that prop. Declared props: value, onClick, label, size."
       },
       {
+        "selector": "JSXOpeningElement[name.name='StateLayer'] > JSXAttribute > JSXIdentifier[name!=/^(?:disabled|ripple|key|ref|className|style|children)$/]",
+        "message": "<StateLayer> doesn't accept that prop. Declared props: disabled, ripple."
+      },
+      {
         "selector": "JSXOpeningElement[name.name='Switch'] > JSXAttribute > JSXIdentifier[name!=/^(?:checked|onChange|label|key|ref|className|style|children)$/]",
         "message": "<Switch> doesn't accept that prop. Declared props: checked, onChange, label."
       },
       {
-        "selector": "JSXOpeningElement[name.name='TonalIconButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:glyph|label|onClick|width|height|radius|iconSize|active|background|key|ref|className|style|children)$/]",
-        "message": "<TonalIconButton> doesn't accept that prop. Declared props: glyph, label, onClick, width, height, radius, iconSize, active, background."
+        "selector": "JSXOpeningElement[name.name='TonalIconButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:glyph|label|onClick|disabled|width|height|radius|iconSize|active|background|key|ref|className|style|children)$/]",
+        "message": "<TonalIconButton> doesn't accept that prop. Declared props: glyph, label, onClick, disabled, width, height, radius, iconSize, active, background."
       },
       {
         "selector": "JSXOpeningElement[name.name='ViewToggle'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onChange|platform|key|ref|className|style|children)$/]",
@@ -361,8 +365,8 @@
         "message": "<MediaHeader> download must be one of 'idle' | 'downloading' | 'done'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='MiniPlayer'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|artist|image|playing|onTogglePlay|onOpen|platform|progress|onSeek|duration|onPrev|onNext|queueOpen|onToggleQueue|lyricsOpen|onToggleLyrics|variant|onSkipBack|onSkipForward|skipSeconds|speed|onSpeed|sleep|onSleep|key|ref|className|style|children)$/]",
-        "message": "<MiniPlayer> doesn't accept that prop. Declared props: title, artist, image, playing, onTogglePlay, onOpen, platform, progress, onSeek, duration, onPrev, onNext, queueOpen, onToggleQueue, lyricsOpen, onToggleLyrics, variant, onSkipBack, onSkipForward, skipSeconds, speed, onSpeed, sleep, onSleep."
+        "selector": "JSXOpeningElement[name.name='MiniPlayer'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|artist|image|playing|onTogglePlay|onOpen|platform|progress|onSeek|duration|onPrev|onNext|onShuffle|onRepeat|onVolume|queueOpen|onToggleQueue|lyricsOpen|onToggleLyrics|variant|onSkipBack|onSkipForward|skipSeconds|speed|onSpeed|sleep|onSleep|key|ref|className|style|children)$/]",
+        "message": "<MiniPlayer> doesn't accept that prop. Declared props: title, artist, image, playing, onTogglePlay, onOpen, platform, progress, onSeek, duration, onPrev, onNext, onShuffle, onRepeat, onVolume, queueOpen, onToggleQueue, lyricsOpen, onToggleLyrics, variant, onSkipBack, onSkipForward, skipSeconds, speed, onSpeed, sleep, onSleep."
       },
       {
         "selector": "JSXOpeningElement[name.name='MiniPlayer'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:mobile|desktop)$/]",
@@ -573,8 +577,8 @@
         "message": "<PlayerPanel> doesn't accept that prop. Declared props: open, tab, onTabChange, onClose, tabs, title, width, children."
       },
       {
-        "selector": "JSXOpeningElement[name.name='PlayerSheet'] > JSXAttribute > JSXIdentifier[name!=/^(?:open|from|onClose|zIndex|radius|background|children|key|ref|className|style|children)$/]",
-        "message": "<PlayerSheet> doesn't accept that prop. Declared props: open, from, onClose, zIndex, radius, background, children."
+        "selector": "JSXOpeningElement[name.name='PlayerSheet'] > JSXAttribute > JSXIdentifier[name!=/^(?:open|from|zIndex|radius|background|children|key|ref|className|style|children)$/]",
+        "message": "<PlayerSheet> doesn't accept that prop. Declared props: open, from, zIndex, radius, background, children."
       },
       {
         "selector": "JSXOpeningElement[name.name='PlayerSubPage'] > JSXAttribute > JSXIdentifier[name!=/^(?:platform|heading|meta|controls|footer|scroll|onClose|closeGlyph|children|key|ref|className|style|children)$/]",
@@ -832,6 +836,9 @@
         "replaces": []
       },
       "SpeedControl": {
+        "replaces": []
+      },
+      "StateLayer": {
         "replaces": []
       },
       "StatusBanner": {

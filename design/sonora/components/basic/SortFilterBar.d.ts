@@ -9,7 +9,7 @@ export interface SortFilterBarProps {
   icon?: string;
   /** The current state, rendered as the control's own label — e.g. "All episodes • Newest". */
   label: string;
-  /** Opens the sort/filter picker. */
+  /** Opens the sort/filter picker. Without it the control is drawn disabled. */
   onClick?: () => void;
   /** Right-aligned slot, hard right against the bar's full width — the library puts a ViewToggle here. */
   trailing?: ReactNode;

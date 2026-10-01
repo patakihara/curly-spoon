@@ -11,8 +11,8 @@ const { PlayerSubPage, QueueRow } = window.SonoraDesignSystem_6c1435;
 function Demo(){
   return <div style={{position:'relative',width:360,height:440,display:'flex',flexDirection:'column',overflow:'hidden',borderRadius:'var(--radius-lg)',background:'var(--surface-bg)'}}>
     <PlayerSubPage platform="mobile" heading="Queue" meta="Playing from Driftwave" onClose={() => {}}>
-      <QueueRow title="Tidal Lines" sub="The Nebula Collective" time="3:34" current platform="mobile"/>
-      <QueueRow title="Static Coast" sub="The Nebula Collective" time="3:18" platform="mobile"/>
+      <QueueRow title="Tidal Lines" sub="The Nebula Collective" time="3:34" current platform="mobile" onClick={() => {}}/>
+      <QueueRow title="Static Coast" sub="The Nebula Collective" time="3:18" platform="mobile" onClick={() => {}}/>
     </PlayerSubPage>
   </div>;
 }

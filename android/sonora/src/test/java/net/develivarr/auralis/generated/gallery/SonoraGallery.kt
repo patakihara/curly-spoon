@@ -138,7 +138,7 @@ val componentGallery: List<GalleryEntry> = listOf(
         )
     },
     GalleryEntry("AccountButton") {
-        AccountButton(AccountButtonProps())
+        AccountButton(AccountButtonProps(onClick = {}))
     },
     GalleryEntry("ArtistCard") {
         ArtistCard(
@@ -147,6 +147,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                 sub = "Artist",
                 platform = Platform.MOBILE,
                 width = "160px",
+                onClick = {},
             ),
         )
     },
@@ -179,6 +180,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                                                                 title = "Driftwave",
                                                                 sub = "The Nebula Collective",
                                                                 platform = Platform.MOBILE,
+                                                                onClick = {},
                                                             ),
                                                         )
                                                         MediaCard(
@@ -186,6 +188,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                                                                 title = "Static Coast",
                                                                 sub = "Echo Fields",
                                                                 platform = Platform.MOBILE,
+                                                                onClick = {},
                                                             ),
                                                         )
                                                         MediaCard(
@@ -193,6 +196,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                                                                 title = "Hollow Fields",
                                                                 sub = "Halcyon Bloom",
                                                                 platform = Platform.MOBILE,
+                                                                onClick = {},
                                                             ),
                                                         )
                                                         MediaCard(
@@ -200,6 +204,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                                                                 title = "Signal Fires",
                                                                 sub = "The Nebula Collective",
                                                                 platform = Platform.MOBILE,
+                                                                onClick = {},
                                                             ),
                                                         )
                                                     },
@@ -226,6 +231,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                     BottomNavItem(key = "search", label = "Search", icon = "search"),
                 ),
                 active = "browse",
+                onChange = { _ -> },
             ),
         )
     },
@@ -234,6 +240,7 @@ val componentGallery: List<GalleryEntry> = listOf(
             ButtonProps(
                 variant = ButtonVariant.GHOST,
                 platform = Platform.MOBILE,
+                onClick = {},
                 children = { BasicText("Settings") },
             ),
         )
@@ -282,6 +289,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                 meta = listOf("12K plays", "3 Aug 2026", "48min"),
                 finished = true,
                 onPlay = {},
+                onClick = {},
                 divider = true,
                 platform = Platform.MOBILE,
             ),
@@ -292,6 +300,7 @@ val componentGallery: List<GalleryEntry> = listOf(
             ExpandableTextProps(
                 text = "Driftwave was recorded over eleven nights in a converted boathouse, using tape saturation and room mics instead of the click-track setup Halcyon Bloom had used on every prior release. Half the album was written after the sessions started, against material the other players had already laid down — which is the reason the credits list every track as a full-band composition rather than crediting a single writer.",
                 lines = 3f,
+                onToggle = { _ -> },
             ),
         )
     },
@@ -335,6 +344,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                 label = "Library folder",
                 value = "/storage/Sonora",
                 platform = Platform.MOBILE,
+                onChange = { _ -> },
             ),
         )
     },
@@ -359,7 +369,12 @@ val componentGallery: List<GalleryEntry> = listOf(
     },
     GalleryEntry("IconButton") {
         IconButton(
-            IconButtonProps(muted = true, label = "More", children = { BasicText("more_vert") }),
+            IconButtonProps(
+                muted = true,
+                label = "More",
+                onClick = {},
+                children = { BasicText("more_vert") },
+            ),
         )
     },
     GalleryEntry("Input") {
@@ -368,6 +383,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                 placeholder = "Search",
                 icon = { BasicText("search") },
                 platform = Platform.MOBILE,
+                onChange = { _ -> },
             ),
         )
     },
@@ -381,6 +397,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                             title = "Driftwave",
                             sub = "The Nebula Collective",
                             platform = Platform.MOBILE,
+                            onClick = {},
                         ),
                     )
                     MediaCard(
@@ -388,6 +405,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                             title = "Static Coast",
                             sub = "Echo Fields",
                             platform = Platform.MOBILE,
+                            onClick = {},
                         ),
                     )
                     MediaCard(
@@ -395,6 +413,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                             title = "Hollow Fields",
                             sub = "Halcyon Bloom",
                             platform = Platform.MOBILE,
+                            onClick = {},
                         ),
                     )
                     MediaCard(
@@ -402,6 +421,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                             title = "Signal Fires",
                             sub = "The Nebula Collective",
                             platform = Platform.MOBILE,
+                            onClick = {},
                         ),
                     )
                 },
@@ -425,6 +445,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                 ),
                 activeIndex = 2f,
                 syncMode = SyncMode.SYNC,
+                onSyncModeChange = { _ -> },
             ),
         )
     },
@@ -461,9 +482,23 @@ val componentGallery: List<GalleryEntry> = listOf(
                 title = "Tidal Lines",
                 artist = "The Nebula Collective",
                 playing = true,
+                onTogglePlay = {},
+                onOpen = {},
                 platform = Platform.MOBILE,
                 progress = 0.42f,
+                onSeek = { _ -> },
                 duration = 214f,
+                onPrev = {},
+                onNext = {},
+                onShuffle = {},
+                onRepeat = {},
+                onVolume = {},
+                onToggleQueue = {},
+                onToggleLyrics = {},
+                onSkipBack = {},
+                onSkipForward = {},
+                onSpeed = {},
+                onSleep = {},
             ),
         )
     },
@@ -472,7 +507,10 @@ val componentGallery: List<GalleryEntry> = listOf(
             NowPlayingProps(
                 platform = Platform.MOBILE,
                 open = true,
+                onClose = {},
+                onMore = {},
                 tab = "now",
+                onTabChange = { _ -> },
                 variant = Variant.MUSIC,
                 track = NowPlayingTrack(
                     title = "Tidal Lines",
@@ -498,7 +536,17 @@ val componentGallery: List<GalleryEntry> = listOf(
                 playing = true,
                 progress = 0.42f,
                 duration = 214f,
+                onTogglePlay = {},
+                onPrev = {},
+                onNext = {},
+                onShuffle = {},
+                onRepeat = {},
+                onSeek = { _ -> },
+                onSkipBack = {},
+                onSkipForward = {},
+                onSpeed = {},
                 sleep = "Off",
+                onSleep = {},
             ),
         )
     },
@@ -515,6 +563,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                     OverflowMenuItem(key = "artist", label = "Go to artist", icon = "person"),
                     OverflowMenuItem(key = "share", label = "Share", icon = "share"),
                 ),
+                onSelect = { _ -> },
                 platform = Platform.MOBILE,
             ),
         )
@@ -539,6 +588,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                                                     title = "Driftwave",
                                                     sub = "The Nebula Collective",
                                                     platform = Platform.MOBILE,
+                                                    onClick = {},
                                                 ),
                                             )
                                             MediaCard(
@@ -546,6 +596,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                                                     title = "Static Coast",
                                                     sub = "Echo Fields",
                                                     platform = Platform.MOBILE,
+                                                    onClick = {},
                                                 ),
                                             )
                                             MediaCard(
@@ -553,6 +604,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                                                     title = "Hollow Fields",
                                                     sub = "Halcyon Bloom",
                                                     platform = Platform.MOBILE,
+                                                    onClick = {},
                                                 ),
                                             )
                                             MediaCard(
@@ -560,6 +612,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                                                     title = "Signal Fires",
                                                     sub = "The Nebula Collective",
                                                     platform = Platform.MOBILE,
+                                                    onClick = {},
                                                 ),
                                             )
                                         },
@@ -615,6 +668,9 @@ val componentGallery: List<GalleryEntry> = listOf(
                     QueuePageQueue(key = "spoken", label = "Spoken"),
                 ),
                 queue = "music",
+                onQueueChange = { _ -> },
+                onClear = {},
+                onPlay = { _, _ -> },
             ),
         )
     },
@@ -638,6 +694,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                 title = "Tidal Lines",
                 meta = "Harbour Lights · 3:41",
                 platform = Platform.MOBILE,
+                onClick = {},
                 trailing = {
                     OverflowMenu(
                         OverflowMenuProps(
@@ -655,6 +712,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                                 ),
                                 OverflowMenuItem(key = "share", label = "Share", icon = "share"),
                             ),
+                            onSelect = { _ -> },
                             platform = Platform.MOBILE,
                         ),
                     )
@@ -688,6 +746,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                                         title = "Driftwave",
                                         sub = "The Nebula Collective",
                                         platform = Platform.MOBILE,
+                                        onClick = {},
                                     ),
                                 )
                                 MediaCard(
@@ -695,6 +754,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                                         title = "Static Coast",
                                         sub = "Echo Fields",
                                         platform = Platform.MOBILE,
+                                        onClick = {},
                                     ),
                                 )
                                 MediaCard(
@@ -702,6 +762,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                                         title = "Hollow Fields",
                                         sub = "Halcyon Bloom",
                                         platform = Platform.MOBILE,
+                                        onClick = {},
                                     ),
                                 )
                                 MediaCard(
@@ -709,6 +770,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                                         title = "Signal Fires",
                                         sub = "The Nebula Collective",
                                         platform = Platform.MOBILE,
+                                        onClick = {},
                                     ),
                                 )
                             },
@@ -725,6 +787,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                 sub = "Fetch approved requests as soon as a source appears.",
                 checked = true,
                 platform = Platform.MOBILE,
+                onChange = { _ -> },
             ),
         )
     },
@@ -740,6 +803,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                             sub = "The Nebula Collective",
                             platform = Platform.MOBILE,
                             width = "160px",
+                            onClick = {},
                         ),
                     )
                     MediaCard(
@@ -748,6 +812,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                             sub = "Echo Fields",
                             platform = Platform.MOBILE,
                             width = "160px",
+                            onClick = {},
                         ),
                     )
                     MediaCard(
@@ -756,6 +821,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                             sub = "Halcyon Bloom",
                             platform = Platform.MOBILE,
                             width = "160px",
+                            onClick = {},
                         ),
                     )
                     MediaCard(
@@ -764,6 +830,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                             sub = "The Nebula Collective",
                             platform = Platform.MOBILE,
                             width = "160px",
+                            onClick = {},
                         ),
                     )
                     MediaCard(
@@ -772,6 +839,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                             sub = "Echo Fields",
                             platform = Platform.MOBILE,
                             width = "160px",
+                            onClick = {},
                         ),
                     )
                     MediaCard(
@@ -780,6 +848,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                             sub = "Static & Signal",
                             platform = Platform.MOBILE,
                             width = "160px",
+                            onClick = {},
                         ),
                     )
                 },
@@ -814,12 +883,15 @@ val componentGallery: List<GalleryEntry> = listOf(
                     TabBarItem(key = "series", label = "Series", icon = "auto_stories"),
                 ),
                 value = "books",
+                onChange = { _ -> },
                 platform = Platform.MOBILE,
             ),
         )
     },
     GalleryEntry("ValueRow") {
-        ValueRow(ValueRowProps(label = "Speed", value = "1.0x", platform = Platform.MOBILE))
+        ValueRow(
+            ValueRowProps(label = "Speed", value = "1.0x", platform = Platform.MOBILE, onClick = {}),
+        )
     },
     GalleryEntry("ViewToggle") {
         ViewToggle(

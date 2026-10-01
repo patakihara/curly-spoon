@@ -25,6 +25,14 @@ export function BackLayer({ title, eyebrow, image, round = false, leading, trail
   const sOpen = searchable && (searchOpen === undefined ? open : !!searchOpen);
   const toggle = (next) => { setOpen(next); setFocus(next); if (!next) setQuery(''); };
   const ease = ' var(--duration-medium) var(--ease-standard)';
+  /* Whichever of the field and the button is folded away is inert: drawn at no width and no
+     opacity, it must not take focus either. */
+  const fieldRef = React.useRef(null);
+  const buttonRef = React.useRef(null);
+  React.useEffect(() => {
+    if (fieldRef.current) fieldRef.current.inert = !sOpen;
+    if (buttonRef.current) buttonRef.current.inert = sOpen;
+  }, [sOpen]);
   return (
     <div style={sx('display:flex;flex-direction:column;flex-shrink:0;box-sizing:border-box;width:100%;background:var(--surface-' + (appBar ? 'bg' : 'bg-alt') + ')')}>
       {/* The heading strip keeps the app bar's height so a side panel's own title row, which is
@@ -49,7 +57,8 @@ export function BackLayer({ title, eyebrow, image, round = false, leading, trail
             </div>
           </div>
           {searchable && (
-            <div style={sx('position:absolute;top:0;bottom:0;right:0;display:flex;align-items:center;overflow:hidden;width:' + (sOpen ? '100%' : '0') + ';opacity:' + (sOpen ? '1' : '0') + ';transition:width' + ease + ',opacity var(--duration-fast) ease')}>
+            // It clips while it grows; 5px inside it, outside the heading, leave room for a ring.
+            <div ref={fieldRef} style={sx('position:absolute;top:-5px;bottom:-5px;right:-5px;box-sizing:border-box;padding:5px;display:flex;align-items:center;overflow:hidden;width:' + (sOpen ? 'calc(100% + 10px)' : '0') + ';opacity:' + (sOpen ? '1' : '0') + ';transition:width' + ease + ',opacity var(--duration-fast) ease')}>
               <SearchField platform={platform} placeholder={search} value={query} onChange={setQuery} autoFocus={sOpen && focus} onClose={() => toggle(false)} />
             </div>
           )}
@@ -57,8 +66,10 @@ export function BackLayer({ title, eyebrow, image, round = false, leading, trail
         {/* The button hands its slot to the field: while the field is out, its close control lives
             inside it, so the heading's own actions stay put. */}
         {searchable && SearchButton && (
-          <div style={sx('display:flex;align-items:center;overflow:hidden;flex-shrink:0;max-width:' + (sOpen ? '0px' : '44px') + ';opacity:' + (sOpen ? '0' : '1') +
-            ';margin-right:' + (sOpen ? 'calc(-1 * var(--spacing-md))' : '0') + ';transition:max-width' + ease + ',margin-right' + ease + ',opacity var(--duration-fast) ease')}>
+          // It clips while it folds; 5px inside it, taken back by the margin, leave room for the
+          // button's focus ring (3px wide, 2px out).
+          <div ref={buttonRef} style={sx('display:flex;align-items:center;overflow:hidden;flex-shrink:0;box-sizing:border-box;padding:5px;margin-top:-5px;margin-bottom:-5px;margin-left:-5px;max-width:' + (sOpen ? '0px' : '54px') + ';opacity:' + (sOpen ? '0' : '1') +
+            ';margin-right:' + (sOpen ? 'calc(-1 * var(--spacing-md) - 5px)' : '-5px') + ';transition:max-width' + ease + ',margin-right' + ease + ',opacity var(--duration-fast) ease')}>
             <SearchButton onToggle={toggle} />
           </div>
         )}

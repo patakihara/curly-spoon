@@ -28,6 +28,7 @@ export interface ResultRowProps {
   /** Cover art URL. Falls back to the generated gradient when omitted. */
   image?: string;
   platform?: 'desktop' | 'mobile';
+  /** Without it the row is drawn disabled. */
   onClick?: () => void;
   onAction?: () => void;
   /** Hairline separator along the bottom, inset to the text column. Set on all but the last row of a list. */

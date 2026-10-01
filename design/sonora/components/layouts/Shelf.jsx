@@ -1,5 +1,6 @@
 import React from 'react';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
 const arrow = (side, shown, enabled, inset) => sx(
   // 38% rather than 50%: the cards' art is square with a caption beneath, so mid-art sits above mid-card.
@@ -22,6 +23,7 @@ const arrow = (side, shown, enabled, inset) => sx(
  */
 export function Shelf({ children, gap, margin, platform = 'desktop', step = 2, arrows, scrollbar }) {
   const mobile = platform === 'mobile';
+  const StateLayer = NS().StateLayer;
   const g = gap || 'var(--grid-gutter' + (mobile ? '-mobile' : '') + ')';
   const m = margin || 'var(--grid-margin' + (mobile ? '-mobile' : '') + ')';
   const showArrows = arrows === undefined ? !mobile : arrows;
@@ -64,11 +66,13 @@ export function Shelf({ children, gap, margin, platform = 'desktop', step = 2, a
     <div style={sx('position:relative')}
       onMouseEnter={() => setHot(true)} onMouseLeave={() => setHot(false)}
       onFocusCapture={() => setHot(true)} onBlurCapture={() => setHot(false)}>
-      <div ref={ref} onScroll={onScroll} style={sx('display:flex;gap:' + g + ';overflow-x:auto;margin:0 calc(-1 * ' + m + ');padding:0 ' + m + ' var(--spacing-xs);scrollbar-width:none;scroll-behavior:smooth')}>{children}</div>
+      {/* 5px more inside the scroller above and below, taken back by the margin, so a focused
+          card's ring (3px wide, 2px out) is not clipped. */}
+      <div ref={ref} onScroll={onScroll} style={sx('display:flex;gap:' + g + ';overflow-x:auto;margin:-5px calc(-1 * ' + m + ');padding:5px ' + m + ' calc(var(--spacing-xs) + 5px);scrollbar-width:none')}>{children}</div>
       {showArrows && (
         <React.Fragment>
-          <button aria-label="Scroll back" onClick={() => page(-1)} style={arrow('left', hot, !ends.start, 'calc(-1 * ' + m + ' / 2)')}>chevron_left</button>
-          <button aria-label="Scroll forward" onClick={() => page(1)} style={arrow('right', hot, !ends.end, 'calc(-1 * ' + m + ' / 2)')}>chevron_right</button>
+          <button className="sn-int" aria-label="Scroll back" disabled={ends.start} onClick={() => page(-1)} style={arrow('left', hot, !ends.start, 'calc(-1 * ' + m + ' / 2)')}>chevron_left{StateLayer && <StateLayer />}</button>
+          <button className="sn-int" aria-label="Scroll forward" disabled={ends.end} onClick={() => page(1)} style={arrow('right', hot, !ends.end, 'calc(-1 * ' + m + ' / 2)')}>chevron_right{StateLayer && <StateLayer />}</button>
         </React.Fragment>
       )}
       {showBar && (

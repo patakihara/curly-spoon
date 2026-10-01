@@ -18,6 +18,7 @@ data class QuickPickProps(
     /** Cover art URL. Falls back to the generated gradient when omitted. */
     val image: String? = null,
     val platform: Platform? = null,
+    /** Without it the tile is drawn disabled. */
     val onClick: (() -> Unit)? = null,
     /** 0–1 resume position; draws a thin rule across the base of the artwork square. Ignored on the `icon` variant. */
     val progress: Float? = null,

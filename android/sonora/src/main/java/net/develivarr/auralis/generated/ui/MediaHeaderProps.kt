@@ -44,14 +44,17 @@ data class MediaHeaderProps(
     val lastLabel: String? = null,
     /** Circular art, for artist/author pages. */
     val round: Boolean? = null,
+    /** Without it its button is drawn disabled. */
     val onPlay: (() -> Unit)? = null,
+    /** Without it its button is drawn disabled. */
     val onPlayNext: (() -> Unit)? = null,
+    /** Without it its button is drawn disabled. */
     val onPlayLast: (() -> Unit)? = null,
-    /** Makes the subtitle an accent-ink link. */
+    /** Makes the subtitle an accent-ink link. Without it the subtitle is plain text. */
     val onSubtitle: (() -> Unit)? = null,
     /** What the item is one part of, under the subtitle: a book's series and its number. */
     val partOf: String? = null,
-    /** Makes `partOf` an accent-ink link to the whole it names. */
+    /** Makes `partOf` an accent-ink link to the whole it names. Without it the series is plain text. */
     val onPartOf: (() -> Unit)? = null,
     /** Under the meta line: a `Rating`, the item's community rating, as a book or a show carries one. */
     val rating: (@Composable () -> Unit)? = null,
@@ -70,13 +73,13 @@ data class MediaHeaderProps(
      * desktop keeps nothing offline and never draws it. Omit or pass null for none.
      */
     val download: Download? = null,
-    /** Starts, cancels or removes the download, depending on `download`. */
+    /** Starts, cancels or removes the download, depending on `download`. Without it the download control is drawn disabled. */
     val onDownload: (() -> Unit)? = null,
     /**
      * The accessible name of a round add-to-a-list button after the queue buttons, such as "Add to a
      * list". Null (the default) leaves it out.
      */
     val addLabel: String? = null,
-    /** Opens the choice of list to add the item to. */
+    /** Opens the choice of list to add the item to. Without it the add button is drawn disabled. */
     val onAdd: (() -> Unit)? = null,
 )

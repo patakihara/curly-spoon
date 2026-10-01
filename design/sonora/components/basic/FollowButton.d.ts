@@ -5,7 +5,7 @@
  */
 export interface FollowButtonProps {
   following?: boolean;
-  /** Called with the next following state on click. */
+  /** Called with the next following state on click. Without it the button is drawn disabled. */
   onChange?: (next: boolean) => void;
   /** Overrides either label; the unset half falls back to "Follow" / "Following". */
   labels?: { off?: string; on?: string };

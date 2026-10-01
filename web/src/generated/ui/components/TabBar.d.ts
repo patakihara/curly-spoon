@@ -14,6 +14,7 @@ export interface TabBarItem {
 export interface TabBarProps {
   items: (TabBarItem | string)[];
   value?: string;
+  /** Without it every tab is drawn disabled. */
   onChange?: (key: string) => void;
   platform?: 'desktop' | 'mobile';
   /** Share the row's width equally among the tabs, never scrolling: for a row of a few, like the player's. */

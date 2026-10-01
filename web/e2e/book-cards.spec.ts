@@ -2,8 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { chroma, pixels } from './pixels';
 
 /**
- * Book cards in lists, on a series: one you don't own is greyed, and a tap on it requests it
- * (docs/plan/06-get.md), its page kept in the card's menu; one you own opens its page.
+ * Book cards in lists, on a series: one you don't own is greyed; until requests exist
+ * (docs/plan/06-get.md) a tap on it opens its page, as a tap on one you own does.
  */
 
 const SIZES = [
@@ -35,22 +35,17 @@ test('[M0.canvas] a book you do not own is greyed: its art has no colour left, u
 });
 
 for (const size of SIZES) {
-  test(`[M0.canvas] tapping a book you do not own requests it, and its page stays in the card's menu, on a ${size.name}`, async ({
+  // No request endpoint exists yet, so the page binds no request: the card claims none and a tap
+  // opens the book's page, as one you own does.
+  test(`[M0.states/c] until requests exist, tapping a book you do not own claims no request and opens its page, on a ${size.name}`, async ({
     page,
   }) => {
     await page.setViewportSize(size);
     await page.goto('/books/series/sample');
     const card = cardOf(page, 'A Grain of Salt');
     await card.getByText('A Grain of Salt', { exact: true }).click();
-    await expect(page).toHaveURL(/\/books\/series\/sample$/);
-    await expect(card.locator('[title="Requested"]')).toBeVisible();
-
-    await page.goto('/books/series/sample');
-    const again = cardOf(page, 'A Grain of Salt');
-    await again.hover();
-    await again.getByRole('button', { name: 'More options' }).click();
-    await page.getByRole('menuitem', { name: 'Open' }).click();
     await expect(page).toHaveURL(/\/books\/a-grain-of-salt$/);
+    await expect(page.locator('[title="Requested"]')).toHaveCount(0);
   });
 }
 

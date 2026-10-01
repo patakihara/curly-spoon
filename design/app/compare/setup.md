@@ -1,6 +1,6 @@
 ---
 page: setup
-pageHash: 55b9110a4de220e59c7efd3bd74237ace3a4650a173a36afe66eb0d6cfd6ea17
+pageHash: 5959fd2d0b02bc3627ddb21fb2c4c12fd7b7983132b4a9dc315aff54a1f38b20
 sonora: [none]
 ---
 
@@ -35,6 +35,10 @@ layer on desktop, with no close control. Heading and content share one centred c
 
 ## Differences
 
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Changed on purpose: no username or password fields, where the kickoff screen asked for
   Audiobookshelf's. Everyone signs in through the household sign-on; Auralis holds no passwords.
 - Changed on purpose: the first step is the one-time code, which claims the admin role, and the

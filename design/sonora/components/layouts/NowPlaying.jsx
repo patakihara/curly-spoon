@@ -26,7 +26,8 @@ export function NowPlaying({
   const tabs = variant === 'spoken' ? TABS.filter((t) => t.key !== 'lyrics') : TABS;
   const [ownTab, setOwnTab] = React.useState('now');
   const active = tab === undefined ? ownTab : tab;
-  const setTab = (k) => { if (tab === undefined) setOwnTab(k); if (onTabChange) onTabChange(k); };
+  // Tabs the player holds itself always switch; tabs a caller holds switch only through its handler.
+  const setTab = tab === undefined || onTabChange ? (k) => { if (tab === undefined) setOwnTab(k); if (onTabChange) onTabChange(k); } : undefined;
   const page = children !== undefined ? children
     : active === 'queue' ? QueuePage && <QueuePage platform={platform} heading={null} context={track.context} {...queue} />
     : active === 'lyrics' ? LyricsPage && <LyricsPage platform={platform} heading={null} title={track.title} artist={track.artist} {...lyrics} />
@@ -40,7 +41,7 @@ export function NowPlaying({
   if (!PlayerSheet) return null;
   const icon = (name, size) => <span style={{ fontFamily: 'Material Symbols Rounded', fontSize: size || 'var(--icon-sm)', lineHeight: 1 }}>{name}</span>;
   return (
-    <PlayerSheet open={open} from={from} onClose={onClose} zIndex={zIndex} background="var(--surface-bg-alt)">
+    <PlayerSheet open={open} from={from} zIndex={zIndex} background="var(--surface-bg-alt)">
       <div style={sx('display:flex;align-items:center;gap:var(--spacing-sm);flex-shrink:0;box-sizing:border-box;height:var(--appbar-height-mobile);padding:0 var(--spacing-lg)')}>
         {IconButton && <IconButton label="Collapse player" muted onClick={onClose}>{icon('keyboard_arrow_down', 'var(--icon-md)')}</IconButton>}
         <div style={sx('flex:1;min-width:0;text-align:center;font-size:var(--text-xs);letter-spacing:.12em;text-transform:uppercase;font-weight:var(--weight-strong);color:var(--surface-fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{track.context}</div>

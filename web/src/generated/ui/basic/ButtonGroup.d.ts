@@ -18,6 +18,7 @@ export interface ButtonGroupProps {
   items: (string | { key: string; label?: string; icon?: string })[];
   /** Key of the selected segment. */
   value?: string;
+  /** Receives the chosen segment's key. Without it every segment is drawn disabled. */
   onChange?: (next: string) => void;
   platform?: 'desktop' | 'mobile';
   /** @deprecated No longer needed — the edge-fade affordance is now automatic whenever the row overflows. Kept as a no-op for existing callers. */

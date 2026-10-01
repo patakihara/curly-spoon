@@ -1,6 +1,6 @@
 ---
 page: books
-pageHash: dbda55ce72af2c1f3898d8f8ea3aa74c3d5fcc322691d8f9a6cbc2cf9c78c316
+pageHash: cef3bb30d503ca5636938dd7b0b94e0fdc1e1e48441041b71c7d2046b8ca44a8
 sonora: [kit:desktop/books, kit:mobile/books]
 spotify: [S31]
 ---
@@ -49,6 +49,10 @@ Series; the Authors and Series tabs, not drawn, hold those cards.
 
 ## Differences
 
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Matches: tabs, toggle placement, 3-across phone grid, rose resume bars.
 - Changed on purpose: on desktop the grid fills the front layer, where the kit's stops at 190 px
   columns and leaves the row's end empty. Sonora's `LayoutGrid` decides the count: as many columns
@@ -66,5 +70,5 @@ Series; the Authors and Series tabs, not drawn, hold those cards.
 - Open: the in-library marker is still open in the plan and is not drawn.
 - Open: the Downloaded filter is Android's alone and not drawn; the page format has no
   per-platform content yet.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.
 - Changed on purpose: a greyed card is grey, its cover without colour and its title muted, not only darkened.

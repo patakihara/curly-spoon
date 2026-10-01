@@ -449,8 +449,6 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   }),
 };
 
-const ignore = () => {};
-
 export type BrowseData = typeof placeholder;
 
 /** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
@@ -461,7 +459,7 @@ export const frame: PageFrame<BrowseData> = {
     <BackLayer
       title="Browse"
       leading={leading}
-      controls={<ButtonGroup tone="play" items={shell.filters.browse} value="All" onChange={ignore} platform={platform} />}
+      controls={<ButtonGroup tone="play" items={shell.filters.browse} value="All" platform={platform} />}
       platform={platform}
     />
   ),
@@ -496,7 +494,6 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
             meta={data.feature.meta}
             description={data.feature.description}
             image={data.feature.image}
-            onPlay={ignore}
             preview={<PreviewButton kind="episode" muted={true} platform={platform} />}
             platform={platform}
           />

@@ -6,7 +6,11 @@ export type Rgb = [number, number, number];
 
 /** The element's own pixels, as rows of [r, g, b], decoded in the page from its screenshot. */
 export async function pixels(page: Page, element: Locator): Promise<Rgb[][]> {
-  const png = (await element.screenshot({ animations: 'disabled' })).toString('base64');
+  return decode(page, await element.screenshot({ animations: 'disabled' }));
+}
+
+/** A PNG's pixels, as rows of [r, g, b], decoded in the page. */
+export async function decode(page: Page, png: Buffer): Promise<Rgb[][]> {
   return page.evaluate(async (data) => {
     const img = new Image();
     img.src = `data:image/png;base64,${data}`;
@@ -27,7 +31,7 @@ export async function pixels(page: Page, element: Locator): Promise<Rgb[][]> {
       rows.push(row);
     }
     return rows;
-  }, png);
+  }, png.toString('base64'));
 }
 
 export const distance = (a: Rgb, b: Rgb) =>

@@ -55,7 +55,7 @@ const out = generateWebPage(
   parsePage(source, 'book'),
   'book',
   { title: 'Wind and Truth', chapters: [{ title: 'Prologue' }] },
-  { platformed: new Set(['MediaHeader', 'Button', 'BackLayer', 'MiniPlayer']), handled: new Set() },
+  { platformed: new Set(['MediaHeader', 'Button', 'BackLayer', 'MiniPlayer']) },
   shellOf('book'),
 );
 
@@ -73,7 +73,7 @@ const formOut = generateWebPage(
   parsePage(form, 'settings'),
   'settings',
   { server: 'https://media.example.org' },
-  { platformed: new Set(), handled: new Set(['FieldRow', 'Switch', 'Chip']) },
+  { platformed: new Set() },
   shellOf('settings'),
 );
 
@@ -91,7 +91,6 @@ const homeOut = generateWebPage(
   { filters: ['All'] },
   {
     platformed: new Set(['BackLayer', 'PageBody', 'MiniPlayer']),
-    handled: new Set(['ButtonGroup']),
   },
   shellOf('books'),
 );
@@ -110,7 +109,6 @@ const gridOut = generateWebPage(
   { library: [{ title: 'Tidal Lines', tone: 'progress' }] },
   {
     platformed: new Set(),
-    handled: new Set(),
     choices: new Map([
       [
         'MediaCard',
@@ -169,7 +167,7 @@ describe('a generated web page', () => {
         '    <BackLayer',
         '      title="Books"',
         '      leading={leading}',
-        '      controls={<ButtonGroup items={data.filters} value="All" onChange={ignore} />}',
+        '      controls={<ButtonGroup items={data.filters} value="All" />}',
         '      platform={platform}',
         '    />',
         '  ),',
@@ -214,9 +212,9 @@ describe('a generated web page', () => {
     expect(out).toContain('{"Play \\"it\\""}');
   });
 
-  it('gives a field that shows a value a handler that ignores changes, since a page is a still', () => {
-    expect(formOut).toContain('const ignore = () => {};');
-    expect(formOut).toContain('<FieldRow label="Server" value={data.server} onChange={ignore} />');
+  it('[M0.states/c] leaves a field that shows a value unbound, so it draws disabled rather than seeming to work', () => {
+    expect(formOut).toContain('<FieldRow label="Server" value={data.server} />');
+    expect(formOut).not.toContain('ignore');
   });
 
   it('leaves a handler the page gives, and components showing no value, alone', () => {
@@ -267,7 +265,7 @@ describe("the shell's controls on a web page", () => {
     shell: { ...shellOf('book').shell, sheetOver: 'books' },
     page: withPlayer.pages.find((p) => p.id === id)!,
   });
-  const components = { platformed: new Set<string>(), handled: new Set<string>() };
+  const components = { platformed: new Set<string>() };
 
   it('[M0.canvas] opens Now Playing from the mini-player', () => {
     const book = generateWebPage(
@@ -330,13 +328,14 @@ describe('a page requesting an item, on the web', () => {
     ),
     'book',
     { books: [{ title: 'Wind and Truth', ref: 'wind-and-truth' }] },
-    { platformed: new Set(), handled: new Set() },
+    { platformed: new Set() },
     shellOf('book'),
   );
 
-  it('[M0.canvas] gives a request a handler that does nothing yet: the card itself says Requested', () => {
-    expect(requesting).toContain('onRequest={ignore}');
-    expect(requesting).toContain('const ignore = () => {};');
+  it('[M0.states/c] binds no request, since no request endpoint exists: the card draws its Request disabled', () => {
+    expect(requesting).toContain('<MediaCard title={b.title} />');
+    expect(requesting).not.toMatch(/<MediaCard[^>]*onRequest/);
+    expect(requesting).not.toContain('ignore');
     expect(requesting).not.toContain('useNavigate');
   });
 });
@@ -352,13 +351,14 @@ describe('a page playing an item, on the web', () => {
     ),
     'book',
     { books: [{ title: 'Wind and Truth', ref: 'wind-and-truth' }] },
-    { platformed: new Set(), handled: new Set() },
+    { platformed: new Set() },
     shellOf('book'),
   );
 
-  it('[M0.canvas] gives a play a handler that does nothing yet: no player exists', () => {
-    expect(playing).toContain('onClick={ignore}');
-    expect(playing).toContain('const ignore = () => {};');
+  it('[M0.states/c] binds no play, since no page player exists yet: the control draws disabled', () => {
+    expect(playing).toContain('<MediaCard title={b.title} />');
+    expect(playing).not.toMatch(/<MediaCard[^>]*onClick/);
+    expect(playing).not.toContain('ignore');
   });
 });
 
@@ -373,7 +373,7 @@ describe('a page starting sign-in, on the web', () => {
     ),
     'book',
     {},
-    { platformed: new Set(), handled: new Set() },
+    { platformed: new Set() },
     shellOf('book'),
   );
 
@@ -409,7 +409,7 @@ describe('a page opening another, on the web', () => {
     ),
     'book',
     { books: [{ title: 'Wind and Truth' }] },
-    { platformed: new Set(), handled: new Set() },
+    { platformed: new Set() },
     shellOf('book'),
   );
 
@@ -441,7 +441,7 @@ describe('a page whose items name the page they open, on the web', () => {
         { title: 'Another book', page: 'book', ref: 'another' },
       ],
     },
-    { platformed: new Set(), handled: new Set() },
+    { platformed: new Set() },
     linked('book', ['books']),
   );
 

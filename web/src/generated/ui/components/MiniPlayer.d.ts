@@ -9,6 +9,7 @@ export interface MiniPlayerProps {
   artist: string;
   image?: string;
   playing?: boolean;
+  /** Every control with no handler is drawn disabled, the bar itself with no onOpen. */
   onTogglePlay?: () => void;
   /** Tapping the card body (mobile) or the track block (desktop) expands the full player. */
   onOpen?: () => void;
@@ -21,6 +22,12 @@ export interface MiniPlayerProps {
   duration?: number;
   onPrev?: () => void;
   onNext?: () => void;
+  /** Desktop music bar only. */
+  onShuffle?: () => void;
+  /** Desktop music bar only. */
+  onRepeat?: () => void;
+  /** Desktop only. */
+  onVolume?: () => void;
   /** Desktop only — tints the queue button accent while the queue panel is open. */
   queueOpen?: boolean;
   onToggleQueue?: () => void;

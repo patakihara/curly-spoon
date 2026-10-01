@@ -3,7 +3,10 @@
 export interface SearchFieldProps {
   placeholder?: string;
   value?: string;
+  /** The new text, on every keystroke. Without it the field is drawn disabled. */
   onChange?: (next: string) => void;
+  /** Drawn disabled: text at 38%, the fill at 12% of the surface ink, no focus or typing. */
+  disabled?: boolean;
   onSubmit?: (value: string) => void;
   platform?: 'desktop' | 'mobile';
   /** Defaults to 100% — cap it with the parent when centering in a bar. */

@@ -13,7 +13,10 @@ export interface IconButtonProps {
   tone?: 'accent' | 'play';
   muted?: boolean;
   label: string;
+  /** The action. Without it the button is drawn disabled. */
   onClick?: () => void;
+  /** Drawn disabled: the glyph at 38%, no focus or press. */
+  disabled?: boolean;
 }
 
 /** Declared by pnpm gen: Sonora declares only the props. */

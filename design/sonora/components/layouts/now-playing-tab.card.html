@@ -10,7 +10,7 @@
 const { NowPlayingPage } = window.SonoraDesignSystem_6c1435;
 function Demo(){
   return <div style={{position:'relative',width:360,height:740,display:'flex',flexDirection:'column',overflow:'hidden',borderRadius:32,background:'var(--surface-bg)'}}>
-    <NowPlayingPage platform="mobile" variant="music" title="Tidal Lines" artist="The Nebula Collective" playing progress={0.42} duration={214} sleep="Off"/>
+    <NowPlayingPage platform="mobile" variant="music" title="Tidal Lines" artist="The Nebula Collective" playing progress={0.42} duration={214} sleep="Off" onTogglePlay={() => {}} onPrev={() => {}} onNext={() => {}} onShuffle={() => {}} onRepeat={() => {}} onSeek={() => {}} onSkipBack={() => {}} onSkipForward={() => {}} onSpeed={() => {}} onSleep={() => {}}/>
   </div>;
 }
 function Themed(){

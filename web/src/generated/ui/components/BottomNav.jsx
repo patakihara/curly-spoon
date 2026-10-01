@@ -11,7 +11,7 @@ export function BottomNav({ items, active, onChange }) {
     }}>
       {items.map((it) => (
         <div key={it.key} style={{ width: it.key === active ? 96 : 56, flexShrink: 0, height: 48, transition: 'width var(--duration-slow) var(--ease-standard)' }}>
-          {RailItem && <RailItem icon={it.icon} label={it.label} active={it.key === active} expanded={false} rowHeight={48} tabs onClick={() => onChange && onChange(it.key)} />}
+          {RailItem && <RailItem icon={it.icon} label={it.label} active={it.key === active} expanded={false} rowHeight={48} tabs onClick={onChange ? () => onChange(it.key) : undefined} />}
         </div>
       ))}
     </div>

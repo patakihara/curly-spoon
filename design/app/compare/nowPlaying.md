@@ -1,6 +1,6 @@
 ---
 page: nowPlaying
-pageHash: 492831b951531f190be520aba3a2558d3259be6e093215d5471c8bf137beecee
+pageHash: 23c00de189be1baa25dbf3f128dc3fdf3836ad843e3db6544e15b989a045b9c6
 sonora: [kit:mobile/nowplaying, card:now-playing-page]
 spotify: [S33, S34, S38, S39, S40, S41, S42]
 ---
@@ -44,6 +44,10 @@ chapter.
 
 ## Differences
 
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Changed on purpose: Queue and Lyrics are tabs of the player, as nav.json has them, where the kit
   shows previews that open full pages and a bottom app bar reaching them; both are gone.
 - Changed on purpose: music's speed is not on the page; the plan buries it in the menu. The kit's

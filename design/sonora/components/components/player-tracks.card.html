@@ -14,36 +14,36 @@ function Demo(){
   const [playing,setPlaying]=React.useState(true);
   return <div style={{display:'flex',flexDirection:'column',gap:24}}>
     <div style={{maxWidth:412}}>
-      <MiniPlayer title="Heartbeats in Silence" artist="Deep Inertia" playing={playing} onTogglePlay={()=>setPlaying(!playing)} />
+      <MiniPlayer title="Heartbeats in Silence" artist="Deep Inertia" playing={playing} onTogglePlay={()=>setPlaying(!playing)} onOpen={() => {}} onSeek={() => {}} onPrev={() => {}} onNext={() => {}} onShuffle={() => {}} onRepeat={() => {}} onVolume={() => {}} onToggleQueue={() => {}} onToggleLyrics={() => {}} onSkipBack={() => {}} onSkipForward={() => {}} onSpeed={() => {}} onSleep={() => {}} />
     </div>
     <MiniPlayer platform="desktop" title="Glass Weather" artist="Glass Weather · HALCYON BLOOM"
-      playing={playing} onTogglePlay={()=>setPlaying(!playing)} progress={0.42} duration={258} />
+      playing={playing} onTogglePlay={()=>setPlaying(!playing)} progress={0.42} duration={258} onOpen={() => {}} onSeek={() => {}} onPrev={() => {}} onNext={() => {}} onShuffle={() => {}} onRepeat={() => {}} onVolume={() => {}} onToggleQueue={() => {}} onToggleLyrics={() => {}} onSkipBack={() => {}} onSkipForward={() => {}} onSpeed={() => {}} onSleep={() => {}} />
     <div style={{maxWidth:620}}>
-      <ResultRow title="The Long Meridian" meta="Tomas Arden · Audiobook · 62 h" status="In library" tone="library" />
-      <ResultRow title="Escapes and Moons" meta="Soul Vertex · Single · 3:33" status="Requested · 87%" tone="request" actionGlyph="downloading" />
-      <ResultRow title="Shadows and Sighs" meta="Evelyn Harper · Album · 11 tracks" status="Queued" tone="progress" />
-      <ResultRow title="Fleeting Verses Live" meta="Fleeting Verses · Podcast · 2 h 04 m" status="Searching…" tone="progress" />
-      <ResultRow title="Tears of Ice" meta="Deep Inertia · Album · 9 tracks" status="Failed" tone="error" />
+      <ResultRow title="The Long Meridian" meta="Tomas Arden · Audiobook · 62 h" status="In library" tone="library" onClick={() => {}} />
+      <ResultRow title="Escapes and Moons" meta="Soul Vertex · Single · 3:33" status="Requested · 87%" tone="request" actionGlyph="downloading" onClick={() => {}} />
+      <ResultRow title="Shadows and Sighs" meta="Evelyn Harper · Album · 11 tracks" status="Queued" tone="progress" onClick={() => {}} />
+      <ResultRow title="Fleeting Verses Live" meta="Fleeting Verses · Podcast · 2 h 04 m" status="Searching…" tone="progress" onClick={() => {}} />
+      <ResultRow title="Tears of Ice" meta="Deep Inertia · Album · 9 tracks" status="Failed" tone="error" onClick={() => {}} />
     </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>An album's tracks, numbered in place of the art they share, the playing one marked, each with its menu</div>
     <div style={{maxWidth:620}}>
-      <ResultRow number={1} title="Low Tide" meta="Harbour Lights · 3:12" divider trailing={<OverflowMenu items={[{ key: 'add', label: 'Add to library' }]} />} />
-      <ResultRow number={2} title="Tidal Lines" meta="Harbour Lights · 3:41" status="Playing" divider trailing={<OverflowMenu items={[{ key: 'add', label: 'Add to library' }]} />} />
-      <ResultRow number={3} title="Breakwater" meta="Harbour Lights · 4:05" trailing={<OverflowMenu items={[{ key: 'add', label: 'Add to library' }]} />} />
+      <ResultRow number={1} title="Low Tide" meta="Harbour Lights · 3:12" divider trailing={<OverflowMenu items={[{ key: 'add', label: 'Add to library' }]} onSelect={() => {}} />} onClick={() => {}} />
+      <ResultRow number={2} title="Tidal Lines" meta="Harbour Lights · 3:41" status="Playing" divider trailing={<OverflowMenu items={[{ key: 'add', label: 'Add to library' }]} onSelect={() => {}} />} onClick={() => {}} />
+      <ResultRow number={3} title="Breakwater" meta="Harbour Lights · 4:05" trailing={<OverflowMenu items={[{ key: 'add', label: 'Add to library' }]} onSelect={() => {}} />} onClick={() => {}} />
     </div>
     <div style={{maxWidth:380}}>
-      <ResultRow platform="mobile" number={1} title="Low Tide" meta="Harbour Lights · 3:12" divider trailing={<OverflowMenu platform="mobile" items={[{ key: 'add', label: 'Add to library' }]} />} />
-      <ResultRow platform="mobile" number={2} title="Tidal Lines" meta="Harbour Lights · 3:41" status="Playing" trailing={<OverflowMenu platform="mobile" items={[{ key: 'add', label: 'Add to library' }]} />} />
+      <ResultRow platform="mobile" number={1} title="Low Tide" meta="Harbour Lights · 3:12" divider trailing={<OverflowMenu platform="mobile" items={[{ key: 'add', label: 'Add to library' }]} onSelect={() => {}} />} onClick={() => {}} />
+      <ResultRow platform="mobile" number={2} title="Tidal Lines" meta="Harbour Lights · 3:41" status="Playing" trailing={<OverflowMenu platform="mobile" items={[{ key: 'add', label: 'Add to library' }]} onSelect={() => {}} />} onClick={() => {}} />
     </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Result rows on a phone — a status with a percentage keeps only the percentage beside a trailing control</div>
     <div style={{maxWidth:380}}>
-      <ResultRow platform="mobile" title="Salt and Stone" meta="Book · Maya Lind · AudiobookBay" status="Downloading · 42%" tone="progress" trailing={<Button variant="secondary" size="sm" platform="mobile" pressed>Requested</Button>} />
-      <ResultRow platform="mobile" title="A Grain of Salt" meta="Book · Evelyn Harper · Prowlarr" trailing={<Button variant="secondary" size="sm" platform="mobile">Request</Button>} />
+      <ResultRow platform="mobile" title="Salt and Stone" meta="Book · Maya Lind · AudiobookBay" status="Downloading · 42%" tone="progress" trailing={<Button variant="secondary" size="sm" platform="mobile" pressed onClick={() => {}}>Requested</Button>} onClick={() => {}} />
+      <ResultRow platform="mobile" title="A Grain of Salt" meta="Book · Evelyn Harper · Prowlarr" trailing={<Button variant="secondary" size="sm" platform="mobile" onClick={() => {}}>Request</Button>} onClick={() => {}} />
     </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Result rows with a detail line — why each row is there, wrapping to two lines</div>
     <div style={{maxWidth:380}}>
-      <ResultRow platform="mobile" title="Salt and Static" meta="Album · Soul Vertex · ListenBrainz" detail="Listeners of Deep Inertia play Soul Vertex most weeks." divider />
-      <ResultRow platform="mobile" title="The Glass Archivist" meta="Book · Rosa Elin · Audible" detail="Listeners who finished The Salt Cartographer went on to this one, the next in its world." status="In library" tone="library" />
+      <ResultRow platform="mobile" title="Salt and Static" meta="Album · Soul Vertex · ListenBrainz" detail="Listeners of Deep Inertia play Soul Vertex most weeks." divider onClick={() => {}} />
+      <ResultRow platform="mobile" title="The Glass Archivist" meta="Book · Rosa Elin · Audible" detail="Listeners who finished The Salt Cartographer went on to this one, the next in its world." status="In library" tone="library" onClick={() => {}} />
     </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Media header — wide pane (≥600px): art beside the text</div>
     <MediaHeader kindLabel="Audiobook" title="The Ink Orchard" subtitle="Linnea Frost" onSubtitle={()=>{}}
@@ -57,27 +57,27 @@ function Demo(){
     <div style={{paddingBottom:150}}>
       <MediaHeader kindLabel="Album" subtitle="Harbour Lights" onSubtitle={()=>{}} meta="2021 · 10 tracks · 41 min"
         nextLabel={null} lastLabel="Add to queue" onPlay={()=>{}} onPlayLast={()=>{}}
-        menu={<OverflowMenu open items={[{ key: 'add', label: 'Add to library', icon: 'library_add', sub: 'Keeps a copy of your own' }, { key: 'share', label: 'Share', icon: 'share' }]} />} />
+        menu={<OverflowMenu open items={[{ key: 'add', label: 'Add to library', icon: 'library_add', sub: 'Keeps a copy of your own' }, { key: 'share', label: 'Share', icon: 'share' }]} onSelect={() => {}} />} />
     </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>A book in its series: the series and its number a link under the author, and on a phone a download control after the buttons</div>
     <div style={{width:412,padding:'var(--spacing-lg)',boxSizing:'border-box',background:'var(--surface-bg-alt)',borderRadius:'var(--radius-lg)'}}>
       <MediaHeader platform="mobile" kindLabel="Audiobook" subtitle="Evelyn Harper" onSubtitle={()=>{}} partOf="The Harbour Quartet · Book 2" onPartOf={()=>{}}
-        meta="11 h 40 m · 4 h 12 m left" progress={0.64} playLabel="Resume" nextLabel="Play next" lastLabel={null} download="idle" onDownload={()=>{}} />
+        meta="11 h 40 m · 4 h 12 m left" progress={0.64} playLabel="Resume" nextLabel="Play next" lastLabel={null} download="idle" onDownload={()=>{}} onPlay={() => {}} onPlayNext={() => {}} />
     </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>The same book on a desktop, which keeps nothing offline: no download control</div>
     <MediaHeader platform="desktop" kindLabel="Audiobook" subtitle="Evelyn Harper" onSubtitle={()=>{}} partOf="The Harbour Quartet · Book 2" onPartOf={()=>{}}
-      meta="11 h 40 m · 4 h 12 m left" progress={0.64} playLabel="Resume" nextLabel="Play next" lastLabel={null} download="idle" onDownload={()=>{}} />
+      meta="11 h 40 m · 4 h 12 m left" progress={0.64} playLabel="Resume" nextLabel="Play next" lastLabel={null} download="idle" onDownload={()=>{}} onPlay={() => {}} onPlayNext={() => {}} />
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>An episode: resume, play next, a round add-to-a-list button (addLabel), and on a phone the download control</div>
     <div style={{width:412,padding:'var(--spacing-lg)',boxSizing:'border-box',background:'var(--surface-bg-alt)',borderRadius:'var(--radius-lg)'}}>
       <MediaHeader platform="mobile" kindLabel="Episode" subtitle="Harbour Lights Radio" onSubtitle={()=>{}}
         meta="12 Aug 2026 · 52 min · 31 min left" progress={0.4} playLabel="Resume" nextLabel="Play next" lastLabel={null}
-        addLabel="Add to a list" onAdd={()=>{}} download="idle" onDownload={()=>{}} />
+        addLabel="Add to a list" onAdd={()=>{}} download="idle" onDownload={()=>{}} onPlay={() => {}} onPlayNext={() => {}} />
     </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>A digest with no art of its own: its items' covers as a mosaic (covers)</div>
     <div style={{width:412,padding:'var(--spacing-lg)',boxSizing:'border-box',background:'var(--surface-bg-alt)',borderRadius:'var(--radius-lg)'}}>
       <MediaHeader platform="mobile" kindLabel="Digest" meta="3 shows · 6 episodes · oldest first"
         covers={['harbour-lights', 'tidal-lines', 'low-orbit', 'sonic-tales'].map((s) => 'https://picsum.photos/seed/sonora-' + s + '/400')}
-        playLabel="Play" nextLabel="Play next" lastLabel={null} />
+        playLabel="Play" nextLabel="Play next" lastLabel={null} onPlay={() => {}} onPlayNext={() => {}} />
     </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>A person, round, every label null: no action row at all</div>
     <div style={{width:412,padding:'var(--spacing-lg)',boxSizing:'border-box',background:'var(--surface-bg-alt)',borderRadius:'var(--radius-lg)'}}>

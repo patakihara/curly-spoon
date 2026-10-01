@@ -8,7 +8,7 @@ package net.develivarr.auralis.generated.ui
  */
 data class FollowButtonProps(
     val following: Boolean? = null,
-    /** Called with the next following state on click. */
+    /** Called with the next following state on click. Without it the button is drawn disabled. */
     val onChange: ((Boolean) -> Unit)? = null,
     /** Overrides either label; the unset half falls back to "Follow" / "Following". */
     val labels: FollowButtonLabels? = null,

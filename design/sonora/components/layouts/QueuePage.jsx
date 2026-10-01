@@ -28,7 +28,7 @@ export function QueuePage({
   const at = (i) => items.indexOf(next[i]);
   const still = (item, key) => QueueRow && (
     <QueueRow key={key} platform={platform} title={item.title} sub={item.sub} time={item.time} image={item.image}
-      handle={false} draggable={false} onClick={() => onPlay && onPlay(item, -1)} />
+      handle={false} draggable={false} onClick={onPlay ? () => onPlay(item, -1) : undefined} />
   );
   const header = (title, extra) => SectionHeader && <SectionHeader platform={platform} title={title} {...extra} />;
   // A labelled point in up next: where playback moves to the other queue, or where this queue's
@@ -58,7 +58,7 @@ export function QueuePage({
         {current && header('Now playing')}
         {current && QueueRow && (
           <QueueRow platform={platform} title={current.title} sub={current.sub} time={current.time} image={current.image} current
-            handle={false} draggable={false} onClick={() => onPlay && onPlay(current, items.indexOf(current))} />
+            handle={false} draggable={false} onClick={onPlay ? () => onPlay(current, items.indexOf(current)) : undefined} />
         )}
         {next.length > 0 && header('Up next', { action: 'clear_all', actionLabel: 'Clear queue', onAction: onClear })}
         <EditableList platform={platform} items={next} editing={edit}
@@ -71,7 +71,7 @@ export function QueuePage({
               {QueueRow && (
                 <QueueRow platform={platform} title={item.title} sub={item.sub} time={item.time} image={item.image}
                   handle={false} editing={on} selected={selected} onSelectToggle={toggle}
-                  onClick={() => (on ? toggle() : onPlay && onPlay(item, at(index)))}
+                  onClick={on ? toggle : onPlay ? () => onPlay(item, at(index)) : undefined}
                   onRemove={on && onRemove ? () => onRemove(item, at(index)) : undefined}
                   {...drag} />
               )}

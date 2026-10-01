@@ -26,9 +26,8 @@ object SonoraPalette {
     val Accent = Color(0xFF8B5CF6)
     val AccentContrast = Color(0xFFFFFFFF)
     val Play = Color(0xFFF44862)
-    val PlayContrast = Color(0xFF000000)
-    val PlayIcon = Color(0xFFFFFFFF)
-    val StateError = Color(0xFFE12F43)
+    val PlayContrast = Color(0xFFFFFFFF)
+    val StateError = Color(0xFFFB270D)
     val StateSuccess = Color(0xFF42E477)
     val StateSuccessInk = Color(0xFF000000)
     val StateWarning = Color(0xFFFFCC8B)
@@ -57,7 +56,7 @@ data class SonoraColors(
     val surfaceFgMuted: Color,
     val surfaceBorder: Color,
     val divider: Color,
-    val surfaceHover: Color,
+    val focusRing: Color,
     val scrollEdge: Color,
     val artGradientStart: Color,
     val artGradientEnd: Color
@@ -69,8 +68,8 @@ val SonoraDarkColors = SonoraColors(
     toneProgress = Color(0xFF8B5CF6),
     toneLibrary = Color(0xFFF44862),
     toneRequest = Color(0xFFFFCC8B),
-    toneError = Color(0xFFE12F43),
-    toneLibraryInk = Color(0xFF000000),
+    toneError = Color(0xFFFB270D),
+    toneLibraryInk = Color(0xFFFFFFFF),
     toneRequestInk = Color(0xFF000000),
     toneProgressInk = Color(0xFFFFFFFF),
     toneErrorInk = Color(0xFFFFFFFF),
@@ -84,7 +83,7 @@ val SonoraDarkColors = SonoraColors(
     surfaceFgMuted = Color(0xFF969696),
     surfaceBorder = Color(0x14FFFFFF),
     divider = Color(0x33FFFFFF),
-    surfaceHover = Color(0x1AFFFFFF),
+    focusRing = Color(0xFFE1E1E1),
     scrollEdge = Color(0x38FFFFFF),
     artGradientStart = Color(0xFFB6C4FF),
     artGradientEnd = Color(0xFFFFB7DB)
@@ -96,8 +95,8 @@ val SonoraLightColors = SonoraColors(
     toneProgress = Color(0xFF8B5CF6),
     toneLibrary = Color(0xFFF44862),
     toneRequest = Color(0xFFFFCC8B),
-    toneError = Color(0xFFE12F43),
-    toneLibraryInk = Color(0xFF000000),
+    toneError = Color(0xFFFB270D),
+    toneLibraryInk = Color(0xFFFFFFFF),
     toneRequestInk = Color(0xFF000000),
     toneProgressInk = Color(0xFFFFFFFF),
     toneErrorInk = Color(0xFFFFFFFF),
@@ -111,7 +110,7 @@ val SonoraLightColors = SonoraColors(
     surfaceFgMuted = Color(0xFF505050),
     surfaceBorder = Color(0x14000000),
     divider = Color(0x2E000000),
-    surfaceHover = Color(0x0F000000),
+    focusRing = Color(0xFF191919),
     scrollEdge = Color(0x2E000000),
     artGradientStart = Color(0xFF4D5C92),
     artGradientEnd = Color(0xFF75546F)
@@ -205,6 +204,17 @@ object SonoraMotion {
     const val durationQuick = 200
     const val durationMedium = 280
     const val durationSlow = 420
+}
+
+/** Interaction states: state-layer opacities over the content colour, and the focus ring. */
+object SonoraState {
+    val hover = 0.08f
+    val focus = 0.1f
+    val pressed = 0.1f
+    val disabledContainer = 0.12f
+    val disabledContent = 0.38f
+    val focusRingWidth = 3.dp
+    val focusRingOffset = 2.dp
 }
 
 /*

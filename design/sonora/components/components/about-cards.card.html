@@ -52,10 +52,10 @@ function Demo(){
       <Caption>ExpandableText clamped at 3 lines: a body long enough that "see more" actually appears, beside a one-sentence body short enough that it never does — the toggle only shows when the text genuinely overflows.</Caption>
       <div style={{display:'flex',gap:'var(--spacing-lg)',flexWrap:'wrap',alignItems:'flex-start'}}>
         <div style={{width:340,background:'var(--surface-card)',padding:'var(--spacing-md)',borderRadius:'var(--radius-sm)'}}>
-          <ExpandableText lines={3} text="Driftwave was recorded over eleven nights in a converted boathouse, using tape saturation and room mics instead of the click-track setup Halcyon Bloom had used on every prior release. Half the album was written after the sessions started, against material the other players had already laid down — which is the reason the credits list every track as a full-band composition rather than crediting a single writer." />
+          <ExpandableText lines={3} onToggle={() => {}} text="Driftwave was recorded over eleven nights in a converted boathouse, using tape saturation and room mics instead of the click-track setup Halcyon Bloom had used on every prior release. Half the album was written after the sessions started, against material the other players had already laid down — which is the reason the credits list every track as a full-band composition rather than crediting a single writer." />
         </div>
         <div style={{width:340,background:'var(--surface-card)',padding:'var(--spacing-md)',borderRadius:'var(--radius-sm)'}}>
-          <ExpandableText lines={3} text="Recorded live to tape in one afternoon." />
+          <ExpandableText lines={3} onToggle={() => {}} text="Recorded live to tape in one afternoon." />
         </div>
       </div>
     </div>

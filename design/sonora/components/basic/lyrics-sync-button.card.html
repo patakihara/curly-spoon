@@ -10,9 +10,9 @@
 const { LyricsSyncButton } = window.SonoraDesignSystem_6c1435;
 function Demo(){
   return <div style={{display:'flex',gap:16,alignItems:'center',flexWrap:'wrap'}}>
-    <LyricsSyncButton mode="sync"/>
-    <LyricsSyncButton mode="dot"/>
-    <LyricsSyncButton mode="off"/>
+    <LyricsSyncButton mode="sync" onChange={() => {}}/>
+    <LyricsSyncButton mode="dot" onChange={() => {}}/>
+    <LyricsSyncButton mode="off" onChange={() => {}}/>
   </div>;
 }
 function Themed(){

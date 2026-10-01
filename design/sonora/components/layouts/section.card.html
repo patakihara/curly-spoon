@@ -9,11 +9,11 @@
 <script type="text/babel">
 const { Section, LayoutGrid, MediaCard } = window.SonoraDesignSystem_6c1435;
 function Demo(){
-  return <Section title="Jump back in" action="arrow_forward" actionLabel="Show all" platform="desktop" last>
+  return <Section title="Jump back in" action="arrow_forward" actionLabel="Show all" platform="desktop" last onAction={() => {}}>
     <LayoutGrid platform="desktop">
-      <MediaCard title="Driftwave" sub="The Nebula Collective"/>
-      <MediaCard title="Static Coast" sub="Echo Fields"/>
-      <MediaCard title="Hollow Fields" sub="Halcyon Bloom"/>
+      <MediaCard title="Driftwave" sub="The Nebula Collective" onClick={() => {}}/>
+      <MediaCard title="Static Coast" sub="Echo Fields" onClick={() => {}}/>
+      <MediaCard title="Hollow Fields" sub="Halcyon Bloom" onClick={() => {}}/>
     </LayoutGrid>
   </Section>;
 }

@@ -1,6 +1,6 @@
 ---
 page: settings
-pageHash: 50546331a90adb0f592e30a75e69e592fedffa88fc02acf57e8ed475a4efb2a7
+pageHash: ed52da4c214b534c2af51356022ddc55123fcce6795f1e392edcafdc782d1541
 sonora: [kit:mobile/settings, kit:desktop/settings]
 ---
 
@@ -39,6 +39,10 @@ Measured in the browser (`getBoundingClientRect`), kit against page: page margin
 
 ## Differences
 
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Matches, after the one-accent change: the switches stay in the violet accent in both kits
   and on the page; settings are not play-related, so nothing here turned rose.
 - Changed on purpose, from the Backdrop cards: the kits draw the old app shell; the page now sits
@@ -65,4 +69,4 @@ Measured in the browser (`getBoundingClientRect`), kit against page: page margin
 - Changed on purpose: "Library folder" is "Server", since Auralis reads a server, not a
   folder on the device. Its value is a placeholder address, not a real host.
 - Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Settings lit at the rail's foot.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.

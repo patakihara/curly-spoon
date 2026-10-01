@@ -16,8 +16,9 @@ data class StatusBannerProps(
     val icon: String? = null,
     /** Label for the inline text action, e.g. "Retry". */
     val actionLabel: String? = null,
+    /** Without it the action is drawn disabled. */
     val onAction: (() -> Unit)? = null,
-    /** Renders a close control when set; the banner has no other way to dismiss. */
+    /** Renders a close control when set; the banner has no other way to dismiss. Without it the dismiss button is left out. */
     val onDismiss: (() -> Unit)? = null,
 )
 

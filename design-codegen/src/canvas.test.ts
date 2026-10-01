@@ -93,7 +93,6 @@ const app: App = {
   ],
   components: {
     platformed: new Set(['MediaHeader', 'BackLayer', 'BackdropShell', 'MiniPlayer']),
-    handled: new Set(['Switch']),
   },
   menus: new Set(['OverflowMenu']),
   now: [],

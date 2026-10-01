@@ -5,6 +5,7 @@ export interface SeekBarProps {
   /** Track length in seconds. */
   duration?: number;
   platform?: 'desktop' | 'mobile';
+  /** Receives the position sought, 0–1. Without it the slider is drawn disabled. */
   onChange?: (next: number) => void;
   /** false shows total length on the right instead of a countdown. */
   remainingAsCountdown?: boolean;

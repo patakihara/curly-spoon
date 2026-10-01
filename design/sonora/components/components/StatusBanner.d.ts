@@ -13,8 +13,9 @@ export interface StatusBannerProps {
   icon?: string;
   /** Label for the inline text action, e.g. "Retry". */
   actionLabel?: string;
+  /** Without it the action is drawn disabled. */
   onAction?: () => void;
-  /** Renders a close control when set; the banner has no other way to dismiss. */
+  /** Renders a close control when set; the banner has no other way to dismiss. Without it the dismiss button is left out. */
   onDismiss?: () => void;
 }
 export declare function StatusBanner(props: StatusBannerProps): JSX.Element;

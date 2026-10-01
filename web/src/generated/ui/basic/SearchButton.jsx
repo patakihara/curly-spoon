@@ -6,7 +6,7 @@ import { IconButton } from './IconButton.jsx';
 export function SearchButton({ open = false, onToggle, muted = true, label }) {
   if (!IconButton) return null;
   return (
-    <IconButton label={label || (open ? 'Close search' : 'Search')} muted={muted} onClick={() => onToggle && onToggle(!open)}>
+    <IconButton label={label || (open ? 'Close search' : 'Search')} muted={muted} onClick={onToggle ? () => onToggle(!open) : undefined}>
       <span style={{ fontFamily: 'Material Symbols Rounded', fontSize: 'var(--icon-sm)', lineHeight: 1 }}>{open ? 'close' : 'search'}</span>
     </IconButton>
   );

@@ -1,5 +1,6 @@
 import React from 'react';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
 /**
  * Folds a paragraph, not a list group — distinct from ExpanderRow, which collapses a homogeneous
@@ -7,6 +8,8 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
  * aria-expanded rather than an icon alone.
  */
 export function ExpandableText({ children, text, lines = 3, moreLabel = 'see more', lessLabel = 'see less', expanded, onToggle }) {
+  const StateLayer = NS().StateLayer;
+  const off = !onToggle;
   const controlled = expanded !== undefined;
   const [internal, setInternal] = React.useState(false);
   const isExpanded = controlled ? expanded : internal;
@@ -45,9 +48,10 @@ export function ExpandableText({ children, text, lines = 3, moreLabel = 'see mor
         {content}
       </div>
       {showToggle && (
-        <button onClick={toggle} aria-expanded={isExpanded}
+        <button className="sn-int" onClick={off ? undefined : toggle} disabled={off} aria-expanded={isExpanded}
           style={sx('margin-top:2px;border:none;background:transparent;padding:0;cursor:pointer;font-family:var(--font-body);font-size:var(--text-sm);font-weight:var(--weight-strong);color:var(--accent-ink)')}>
           {label}
+          {StateLayer && <StateLayer disabled={off} />}
         </button>
       )}
     </div>

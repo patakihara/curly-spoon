@@ -1,6 +1,6 @@
 ---
 page: requests
-pageHash: 5afabbdb5d256d9c67a6c4d86b2240cf9529f02660cbb955a68d82d8a4eeb42e
+pageHash: fdb35ac242eb89afcd26ed4676a185ded4d2683cbbac5a2797f30ab2cf94aaf5
 sonora: [none]
 ---
 
@@ -40,6 +40,10 @@ is where things are requested, as Sonora's `EmptyState`.
 
 ## Differences
 
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Changed on purpose: a row ends in its action (Cancel or Retry) as an `IconButton`, where the
   card's rows act only through the art's hover overlay, which a phone does not have.
 - Changed on purpose: the statuses follow the plan's vocabulary: "Downloading · 38%" rather than
@@ -48,4 +52,4 @@ is where things are requested, as Sonora's `EmptyState`.
   indented under their request, as Sonora has no nested row.
 - Open: the phone truncates longer metas ("AudiobookBay · 286 …"); ResultRow keeps one line.
 - Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Browse's rail item lit.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.

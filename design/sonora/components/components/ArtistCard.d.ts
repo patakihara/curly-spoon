@@ -6,6 +6,7 @@ export interface ArtistCardProps {
   /** Cover art URL. Falls back to the generated gradient when omitted. */
   image?: string;
   width?: string;
+  /** Without it the card is drawn disabled. */
   onClick?: () => void;
 }
 export declare function ArtistCard(props: ArtistCardProps): JSX.Element;

@@ -4,6 +4,7 @@ package net.develivarr.auralis.generated.ui
 data class SliderProps(
     /** 0–1 */
     val value: Float? = null,
+    /** Receives the new value, from a press on the track or the arrow keys. Without it the slider is drawn disabled. */
     val onChange: ((Float) -> Unit)? = null,
     /** Desktop: thin track + round handle (Feishin). Mobile: thick pill split by a divider notch (Booming Music). */
     val platform: Platform? = null,

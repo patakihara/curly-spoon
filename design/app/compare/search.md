@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: 62178eeb1cffd4a42457d95d15013482f060334223e63019125e82538216fa9e
+pageHash: b9b2078635b0fe0c3c0dfb5965c8506357dda01e1c97d55cbba389cdb9e39ce2
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---
@@ -64,6 +64,10 @@ results, one line says nothing matched, in your library or outside it.
 
 ## Differences
 
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Changed on purpose: filters live in the back layer, revealed in this still, as M2 and the plan
   put them; neither kit has filters, and Spotify's pills sit in the page.
 - Changed on purpose: results fall into Top result, In your library and Not in your library, where
@@ -88,4 +92,4 @@ results, one line says nothing matched, in your library or outside it.
 - Open: a result row has no play control a page can show; ResultRow draws its art action only
   when given a handler, which a canvas page cannot pass.
 - Changed on purpose: no library scope and no Lyrics chip: songs match on their lyrics anyway, a song found by a line showing it in its row, and the sections already split your library from outside it.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.

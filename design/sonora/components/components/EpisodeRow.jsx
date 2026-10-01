@@ -1,13 +1,15 @@
 import React from 'react';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
 const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+// Enter and Space press it as a click does, unless they come from a control inside it.
+const keys=(fn)=>(e)=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();fn(e);}};
 
 if (typeof document !== 'undefined' && !document.getElementById('sonora-episoderow-css')) {
   const el = document.createElement('style');
   el.id = 'sonora-episoderow-css';
   // Same hover/always-on-mobile reveal ResultRow uses for its overlay action, kept local to this
   // component's own class names so the two rows don't share injected state.
-  el.textContent = '.sn-ep-act{opacity:0;transition:opacity var(--duration-quick) ease-in-out}.sn-ep-art:hover .sn-ep-act,.sn-ep-art[data-always="true"] .sn-ep-act{opacity:1}';
+  el.textContent = '.sn-ep-act{opacity:0;transition:opacity var(--duration-quick) ease-in-out}.sn-ep-art:hover .sn-ep-act,.sn-ep-act:focus-visible,.sn-ep-art[data-always="true"] .sn-ep-act{opacity:1}';
   document.head.appendChild(el);
 }
 
@@ -20,13 +22,16 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-episoder
 export function EpisodeRow({ image, title, description, meta, finished = false, progress = null, explicit = false, absent = false, actions, onPlay, onClick, divider = false, platform = 'desktop' }) {
   const mobile = platform === 'mobile';
   const fg = 'var(--surface-fg)', muted = 'var(--surface-fg-muted)';
-  const CoverArt = NS().CoverArt, Badge = NS().Badge;
+  const { CoverArt, Badge, StateLayer } = NS();
+  const off = !onClick;
   const art = mobile ? 56 : 64;
   const hasProgress = typeof progress === 'number';
   const pct = hasProgress ? Math.max(0, Math.min(1, progress)) : 0;
   const metaLine = meta && meta.filter(Boolean).join(' • ');
   return (
-    <div onClick={onClick} style={sx('position:relative;display:flex;gap:' + (mobile ? '12px' : '16px') + ';padding:' + (mobile ? '10px 4px' : '12px') + ';border-radius:var(--radius-xs);cursor:pointer')}>
+    <div className="sn-int" role="button" tabIndex={off ? -1 : 0} aria-disabled={off}
+      onClick={off ? undefined : onClick} onKeyDown={off ? undefined : keys(onClick)}
+      style={sx('position:relative;display:flex;gap:' + (mobile ? '12px' : '16px') + ';padding:' + (mobile ? '10px 4px' : '12px') + ';border-radius:var(--radius-xs);cursor:pointer')}>
       <div className="sn-ep-art" data-always={mobile ? 'true' : 'false'} style={sx('position:relative;width:' + art + 'px;height:' + art + 'px;flex-shrink:0')}>
         <div style={sx('position:relative;overflow:hidden;width:100%;height:100%;border-radius:var(--radius-xs)')}>
           {/* Greyed the way MediaCard greys an item you don't own: no colour, so a dark cover reads greyed too. */}
@@ -35,10 +40,12 @@ export function EpisodeRow({ image, title, description, meta, finished = false, 
             : <CoverArt src={image} />)}
         </div>
         {onPlay && (
-          <div className="sn-ep-act" onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); onPlay(e); }}
+          <div className="sn-ep-act sn-int" onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); onPlay(e); }}
+            onKeyDown={keys((e) => { e.stopPropagation(); onPlay(e); })} tabIndex={0}
             aria-label="Play episode" role="button" title="Play episode"
             style={sx('position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:var(--radius-xs);background:var(--scrim-strong)')}>
             <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 1,'wght' 500;font-size:var(--icon-md);color:var(--on-scrim)")}>play_arrow</span>
+            {StateLayer && <StateLayer />}
           </div>
         )}
       </div>
@@ -76,6 +83,7 @@ export function EpisodeRow({ image, title, description, meta, finished = false, 
         {actions && <div onClick={(e) => e && e.stopPropagation && e.stopPropagation()} style={sx('margin-top:4px')}>{actions}</div>}
       </div>
       {divider && <div aria-hidden="true" style={sx('position:absolute;bottom:0;right:' + (mobile ? '4px' : '12px') + ';left:' + (mobile ? (art + 20) + 'px' : (art + 28) + 'px') + ';height:1px;background:var(--surface-border)')} />}
+      {StateLayer && <StateLayer disabled={off} />}
     </div>
   );
 }

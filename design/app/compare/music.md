@@ -1,6 +1,6 @@
 ---
 page: music
-pageHash: 98cdde59b1a284e30a58f409552a22d139231a3eb179a06c588126b3b7ab3e1d
+pageHash: 4dc74ccde56399f38c4f5c829dc93905827d548e2749a374bdbab7eef20616be
 sonora: [kit:mobile/music, kit:desktop/music]
 spotify: [S31]
 ---
@@ -51,6 +51,10 @@ Each album card opens its Album page; the Artists tab, not drawn, holds the arti
 
 ## Differences
 
+- Changed on purpose: every Sonora control the page binds no action to is drawn disabled, a
+  card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
+  disabled state). Part C of the states item binds each such control or leaves it deliberately
+  disabled.
 - Changed on purpose: the kit opens on Songs as a list; the page opens on Albums as a grid, since
   the plan's library is "a 3-across grid on phones, bigger on desktop", and Albums leads the tabs,
   since a tab row opens on its first tab. The list view is the
@@ -73,5 +77,5 @@ Each album card opens its Album page; the Artists tab, not drawn, holds the arti
 - Open: playlists and favourites are not placed yet, per nav.json.
 - Open: the Downloaded filter that opens Downloads is Android's alone, and the page format has no
   per-platform content yet, so it is not drawn.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.
 - Changed on purpose: a greyed card is grey, its cover without colour and its title muted, not only darkened.

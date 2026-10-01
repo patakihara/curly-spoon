@@ -15,6 +15,7 @@ export interface QuickPickProps {
   /** Cover art URL. Falls back to the generated gradient when omitted. */
   image?: string;
   platform?: 'desktop' | 'mobile';
+  /** Without it the tile is drawn disabled. */
   onClick?: () => void;
   /** 0–1 resume position; draws a thin rule across the base of the artwork square. Ignored on the `icon` variant. */
   progress?: number | null;

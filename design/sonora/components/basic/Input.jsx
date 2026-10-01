@@ -1,21 +1,27 @@
 import React from 'react';
+const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
-export function Input({ placeholder = 'Search', icon, platform = 'desktop', value, onChange }) {
+export function Input({ placeholder = 'Search', icon, platform = 'desktop', value, onChange, disabled }) {
+  const StateLayer = NS().StateLayer;
+  // A field that nothing reads is drawn disabled, as with `disabled` set.
+  const off = !!disabled || !onChange;
   const radius = 'var(--radius-pill)';
+  const filled = platform !== 'mobile';
   return (
-    <div style={{
+    <div className={'sn-int' + (filled ? ' sn-filled' : '')} data-disabled={off ? '' : undefined} style={{
       display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', padding: '0 var(--spacing-md)', height: 40,
-      borderRadius: radius, background: platform === 'mobile' ? 'transparent' : 'var(--surface-card)',
-      border: platform === 'mobile' ? 'none' : '1px solid var(--surface-border)',
+      borderRadius: radius, background: filled ? 'var(--surface-card)' : 'transparent',
+      border: filled ? '1px solid var(--surface-border)' : 'none', color: 'var(--surface-fg)',
     }}>
       <span style={{ color: 'var(--surface-fg-muted)', display: 'flex' }}>{icon}</span>
       <input
-        value={value} onChange={(e) => onChange?.(e.target.value)} placeholder={placeholder}
+        value={value} onChange={off ? undefined : (e) => onChange(e.target.value)} placeholder={placeholder} disabled={off}
         style={{
           flex: 1, border: 'none', outline: 'none', background: 'transparent',
           color: 'var(--surface-fg)', fontFamily: 'var(--font-body)', fontWeight: 'var(--weight-body)', fontSize: 'var(--text-md)',
         }}
       />
+      {StateLayer && <StateLayer disabled={off} ripple={false} />}
     </div>
   );
 }

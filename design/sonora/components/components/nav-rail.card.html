@@ -39,7 +39,7 @@ function Frame({start, theme}){
       back={<BackLayer title="Library" trailing={<Tag>Back layer · 0dp</Tag>} />}>
       <div style={{padding:'var(--spacing-sm) var(--grid-margin)',display:'flex',flexDirection:'column',gap:'var(--spacing-xs)'}}>
         <SectionHeader title="Recently played" platform="desktop" />
-        {ROWS.map((r) => <ResultRow key={r.title} title={r.title} meta={r.meta} />)}
+        {ROWS.map((r) => <ResultRow key={r.title} title={r.title} meta={r.meta} onClick={() => {}} />)}
       </div>
     </BackdropShell>
   </div>;

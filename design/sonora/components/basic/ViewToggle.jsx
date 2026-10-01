@@ -9,6 +9,6 @@ export function ViewToggle({ value = 'grid', onChange, platform = 'desktop' }) {
   return (
     <TonalIconButton glyph={next === 'list' ? 'view_list' : 'grid_view'}
       label={next === 'list' ? 'Switch to list view' : 'Switch to grid view'}
-      onClick={() => onChange && onChange(next)} />
+      onClick={onChange ? () => onChange(next) : undefined} />
   );
 }

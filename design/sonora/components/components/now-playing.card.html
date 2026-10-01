@@ -21,8 +21,8 @@ function Demo(){
   const [v,setV]=React.useState(0.42);
   return <div style={{display:'flex',flexDirection:'column',gap:24,maxWidth:420}}>
     <SeekBar value={v} duration={243} onChange={setV} platform="mobile" />
-    <TransportBar playing={playing} onTogglePlay={()=>setPlaying(!playing)} platform="mobile" />
-    <TransportBar playing={playing} onTogglePlay={()=>setPlaying(!playing)} platform="desktop" />
+    <TransportBar playing={playing} onTogglePlay={()=>setPlaying(!playing)} platform="mobile" onShuffle={() => {}} onPrev={() => {}} onNext={() => {}} onRepeat={() => {}} onSkipBack={() => {}} onSkipForward={() => {}} />
+    <TransportBar playing={playing} onTogglePlay={()=>setPlaying(!playing)} platform="desktop" onShuffle={() => {}} onPrev={() => {}} onNext={() => {}} onRepeat={() => {}} onSkipBack={() => {}} onSkipForward={() => {}} />
     <div style={{display:'flex',flexDirection:'column',gap:6}}>
       {QUEUE.map(q => <QueueRow key={q.title} {...q} onRemove={()=>{}} onClick={()=>{}} />)}
     </div>

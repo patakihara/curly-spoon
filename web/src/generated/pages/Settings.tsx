@@ -240,8 +240,6 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   }),
 };
 
-const ignore = () => {};
-
 export type SettingsData = typeof placeholder;
 
 /** What the page hands the one shell around every page: its parts at each layout, its back layer and its subheader. */
@@ -262,13 +260,13 @@ export default function Settings({ data = placeholder, state = 'full' }: Setting
   return (
     <PageBody width="form" platform={platform}>
       <Section platform={platform}>
-        <FieldRow label="Server" value={data.server} onChange={ignore} platform={platform} />
+        <FieldRow label="Server" value={data.server} platform={platform} />
       </Section>
       <Section last={true} platform={platform}>
         <LayoutGrid columns={1} gap="10px" platform={platform}>
           {data.settings.map((setting, i) => (
             <Fragment key={i}>
-              <SettingRow title={setting.title} sub={setting.sub} checked={setting.checked} onChange={ignore} platform={platform} />
+              <SettingRow title={setting.title} sub={setting.sub} checked={setting.checked} platform={platform} />
             </Fragment>
           ))}
         </LayoutGrid>
