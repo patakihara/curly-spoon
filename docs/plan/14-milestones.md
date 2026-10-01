@@ -127,7 +127,7 @@ _Done when:_ (a) Sofia's sign-off.
   _Done when:_ (a) an emulator test plays offline, changes the queue, reconnects and asserts the server has the new progress and queue; (b) a test asserts conflicting progress resolves to the most recent listen.
 - **[M5.perf]** Performance budget on this box (RAM ceiling for the container, Lighthouse on phone).
   _Done when:_ (a) a test runs the container under a recorded load and asserts its memory stays under the ceiling set in the test; (b) a Lighthouse test on the mobile profile meets the budget for Browse and Now Playing.
-- **[M5.contrast]** Contrast fixes wherever the accent or the play rose fails WCAG.
+- **[M5.contrast]** Contrast fixes wherever accent or play rose fails WCAG, except white on rose.
   _Done when:_ (a) a test computes the accent's and play rose's text and UI contrast pairs on every surface, in web tokens and `SonoraTokens.kt`, and asserts AA for every pair but white on rose, Sofia's recorded exception.
 - **[M5.handoff]** "Continue here" and "Play on…" between a user's devices.
   _Done when:_ (a) a test moves playback from one device to another with Continue here and asserts position and queue carry over; (b) a test asserts Play on reaches the user's own other device and never another user's.
