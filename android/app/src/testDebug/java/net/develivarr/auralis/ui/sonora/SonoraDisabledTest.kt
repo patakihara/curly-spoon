@@ -107,13 +107,22 @@ class SonoraDisabledTest {
         "ViewToggle" to { ViewToggle(ViewToggleProps()) },
     )
 
+    /** Waits for the drawing to settle, naming the component that never does. */
+    private fun settle(name: String) {
+        try {
+            composeRule.waitForIdle()
+        } catch (e: RuntimeException) {
+            throw AssertionError("$name never settles", e)
+        }
+    }
+
     @Test
     fun aComponentWithNoActionHasEveryControlDisabled() {
         var index by mutableIntStateOf(0)
         composeRule.setContent { unbound[index].second() }
         unbound.forEachIndexed { i, (name, _) ->
             index = i
-            composeRule.waitForIdle()
+            settle(name)
             val controls = composeRule.onAllNodes(control, useUnmergedTree = true).fetchSemanticsNodes()
             assertTrue("$name draws no control", controls.isNotEmpty())
             composeRule.onAllNodes(control and enabled, useUnmergedTree = true).fetchSemanticsNodes().let {
