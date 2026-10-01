@@ -57,8 +57,8 @@ const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{}
 Surfaces `--surface-bg` `--surface-bg-alt` `--surface-card` `--surface-fg` `--surface-fg-muted`
 `--surface-border`. Scrims over artwork `--scrim-soft` `--scrim` `--scrim-strong`
 `--on-scrim`. Accent `--accent` `--accent-contrast` `--accent-ink`: the one app accent, violet.
-Play `--play` `--play-contrast` `--play-icon` `--play-ink`: rose, with black for a label on it and white
-for a play or pause glyph alone on it, only for Now Playing, the mini player, the
+Play `--play` `--play-contrast` `--play-ink`: rose, with white for every label and glyph on it,
+only for Now Playing, the mini player, the
 transport, seek and listening-progress fills, the in-library tone and the Browse media filter.
 State `--state-error|success|warning|info`, `--state-success-ink`; success is only for real success. Tones `--tone-library|request|progress|error` and their
 `-ink` pairs. Radius `--radius-xs|sm|md|lg|pill`. Spacing `--spacing-xs|sm|md|lg|xl|2xl`.

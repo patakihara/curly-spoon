@@ -1,6 +1,6 @@
 ---
 page: browse
-pageHash: 04c50210fcb4391b88b9b720f4273b555de74f6d1126cce573c6488e1979676b
+pageHash: 9fbe67913db2c2cac9a930208dce45e6ceca370ff551168898741f28787ab151
 sonora: [kit:mobile/browse, kit:desktop/browse]
 ---
 
@@ -17,7 +17,7 @@ kit's Browse destination). No Spotify screen was needed for intent: the kits cov
 ## What the Sonora UI kit renders show
 
 - **Mobile kit.** The account avatar, then the title "Browse", in the app bar, then a connected
-  `ButtonGroup` of filters (All, Music, Audiobooks, Podcasts), All in the play rose with black
+  `ButtonGroup` of filters (All, Music, Audiobooks, Podcasts), All in the play rose with white
   ink. "Jump back in": a 2-up grid of
   `QuickPick` tiles, art on the left, title and a "Book · 6 h 12 m left" line. "Recently
   added": a `Shelf` of large `MediaCard`s, one with a progress bar, bleeding off the right edge,
@@ -66,7 +66,7 @@ stay put, the document never scrolls, and the front layer is the one scroller.
   On desktop it is capped at the form width, so the blurb reads in two lines.
 
 - Matches, after the one-accent change: the filter's selected segment is the play rose with
-  black ink, and the resume bars on "Recently added" cards are rose, in both kits and on the
+  white ink, and the resume bars on "Recently added" cards are rose, in both kits and on the
   page (`ButtonGroup tone="play"`). The Now Playing panel keeps its "Now playing" tab in the violet
   accent, as the desktop kit does, since tabs are not play-related.
 - Changed on purpose, from the Backdrop cards: the kits draw the old app shell; the page now sits
@@ -109,4 +109,4 @@ stay put, the document never scrolls, and the front layer is the one scroller.
 - Fixed earlier, still true: the page follows the mobile kit section for section, the feed's gaps
   come from untitled and titled `Section`s, the browser's body margin is reset, and `LayoutGrid`
   auto-fills wide items capped at `--grid-max-width-tiles` 10 px apart, as the desktop kit does.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.

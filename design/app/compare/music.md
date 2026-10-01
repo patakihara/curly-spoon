@@ -1,6 +1,6 @@
 ---
 page: music
-pageHash: 0da7ac015bf140de20ab6e8f1935a860540b7a096c472c489c6b935c86688e55
+pageHash: 4dc74ccde56399f38c4f5c829dc93905827d548e2749a374bdbab7eef20616be
 sonora: [kit:mobile/music, kit:desktop/music]
 spotify: [S31]
 ---
@@ -77,5 +77,5 @@ Each album card opens its Album page; the Artists tab, not drawn, holds the arti
 - Open: playlists and favourites are not placed yet, per nav.json.
 - Open: the Downloaded filter that opens Downloads is Android's alone, and the page format has no
   per-platform content yet, so it is not drawn.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.
 - Changed on purpose: a greyed card is grey, its cover without colour and its title muted, not only darkened.

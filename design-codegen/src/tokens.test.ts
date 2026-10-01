@@ -282,6 +282,33 @@ describe('Sonora tokens, generated for web and Android', () => {
     expect(kotlin()).not.toMatch(/\bAccent(?!Contrast\b|Ink\b)[A-Z]\w*|\baccent(?!Ink\b)[A-Z]\w*/);
   });
 
+  it('[M0.states] everything on the play rose is white, label and glyph alike, in both themes and on both platforms', () => {
+    const css = webCss();
+    const kt = readKotlin(kotlin());
+    for (const theme of ['dark', 'light'] as const) {
+      const scope = cascade(css, theme);
+      expect(resolved(scope, scope.get('--play-contrast')!), theme).toBe('#fff');
+      expect(resolved(scope, scope.get('--tone-library-ink')!), theme).toBe('#fff');
+      expect(kt[theme].get('toneLibraryInk'), theme).toBe(0xffffffff);
+    }
+    expect(kt.palette.get('PlayContrast')).toBe(0xffffffff);
+    const names = new Set(rules(css).flatMap((r) => [...r.decls.keys()]));
+    expect(names.has('--play-icon'), 'one ink for the rose, no separate glyph token').toBe(false);
+    expect(kt.palette.has('PlayIcon')).toBe(false);
+  });
+
+  it('[M0.states] the error red is Sonora #FB270D, and the error tone follows it', () => {
+    const css = webCss();
+    const kt = readKotlin(kotlin());
+    for (const theme of ['dark', 'light'] as const) {
+      const scope = cascade(css, theme);
+      expect(resolved(scope, scope.get('--state-error')!), theme).toBe('#FB270D');
+      expect(resolved(scope, scope.get('--tone-error')!), theme).toBe('#FB270D');
+      expect(kt[theme].get('toneError'), theme).toBe(0xfffb270d);
+    }
+    expect(kt.palette.get('StateError')).toBe(0xfffb270d);
+  });
+
   it('[M0.tokens/a] with no data-theme the web CSS gives the dark surfaces, and data-theme="light" the light ones', () => {
     const css = webCss();
     const source = readFileSync(join(sonoraDir, 'tokens', 'colors.css'), 'utf8');

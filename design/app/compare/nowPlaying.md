@@ -1,6 +1,6 @@
 ---
 page: nowPlaying
-pageHash: e5de6d38738d8d5c30473ee353daed545a32dd5d1907e4d47cee5eb5bcf830f2
+pageHash: 23c00de189be1baa25dbf3f128dc3fdf3836ad843e3db6544e15b989a045b9c6
 sonora: [kit:mobile/nowplaying, card:now-playing-page]
 spotify: [S33, S34, S38, S39, S40, S41, S42]
 ---

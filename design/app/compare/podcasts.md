@@ -1,6 +1,6 @@
 ---
 page: podcasts
-pageHash: ecb776084058c64516eb70aef339ce3ef3e229658f53afc0e8c78b6a99729433
+pageHash: 035f21de828630dbe4d5e611eb4eba9d69d7f8add8a94887cee7dbb3d405190c
 sonora: [kit:desktop/podcasts, kit:mobile/podcasts]
 spotify: [S20, S31]
 ---
@@ -61,4 +61,4 @@ or to pasting a YouTube channel link, with the Add a YouTube channel row kept.
   placeholder text; `Input` is due its fix when Sonora is pruned.
 - Open: the Host sort is this page's reading of "Title, Artist or Author, Random" for shows.
 - Open: the Downloaded filter is Android's alone and not drawn.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.

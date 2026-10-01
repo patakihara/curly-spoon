@@ -1,6 +1,6 @@
 ---
 page: author
-pageHash: 36f836c0afdc89f20ba1ae07944a81ea7e6f03dc2cc0b663c6208d5bbf29a8b6
+pageHash: 184509e04a7f18631a8e196c3c652d0486af9b89bff4af107423af495b863041
 sonora: [none]
 spotify: []
 ---
@@ -45,5 +45,5 @@ card opening its book.
 - Changed on purpose: no bio or follow; nav.json's header is the photo and the name. The setting
   that hides unowned books is Settings' and not drawn here.
 - Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Books' rail item lit.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.
 - Changed on purpose: a book you don't own is greyed, its cover without colour and its title muted, and a tap on it requests it: the card says Requested (`MediaCard onRequest`, `<Request ref>` in the page), and its page stays a verb, Open, in the card's corner menu. A book you own opens its page.

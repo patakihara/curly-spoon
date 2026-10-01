@@ -1,6 +1,6 @@
 ---
 page: favourites
-pageHash: ee92a44b4a34a8e169780344a8ea842f6924223fea51c781178b72b2ce28591e
+pageHash: 641db77fe2998df600977873b153a966ce5e1ff8a1ba7a76bdc490a8e8bb8323
 sonora: [kit:mobile/collection, kit:desktop/collection]
 ---
 
@@ -35,4 +35,4 @@ a song you don't own.
   songs.
 - Provisional, per nav.json: the song rows.
 - Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Music's rail item lit.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.

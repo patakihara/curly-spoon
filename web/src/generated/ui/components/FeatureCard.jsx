@@ -65,7 +65,7 @@ export function FeatureCard({ image, kind, title, meta, description, tint, expli
           {/* Omitted for an audiobook: a sample is the only playback a preview offers there. */}
           {onPlay && (
             <button className="sn-int sn-filled" onClick={onPlay} aria-label={playLabel} title={playLabel}
-              style={sx('display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex-shrink:0;border-radius:50%;border:none;background:var(--play);color:var(--play-icon);cursor:pointer')}>
+              style={sx('display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex-shrink:0;border-radius:50%;border:none;background:var(--play);color:var(--play-contrast);cursor:pointer')}>
               <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 1,'wght' 500;font-size:var(--icon-sm);line-height:1")}>play_arrow</span>
               {StateLayer && <StateLayer />}
             </button>

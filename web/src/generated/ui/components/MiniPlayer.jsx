@@ -17,7 +17,7 @@ const iconBtn = (color, size = 36, glyph = 'var(--icon-sm)', dim = false) => ({
 
 // The play or pause glyph is filled, white on the rose: the font's default outline would leave a
 // hairline ring around a rose middle, which reads as a dark glyph at 1x.
-const playBtn = { ...iconBtn('var(--play-icon)', 44), background: 'var(--play)', fontVariationSettings: "'FILL' 1,'wght' 500" };
+const playBtn = { ...iconBtn('var(--play-contrast)', 44), background: 'var(--play)', fontVariationSettings: "'FILL' 1,'wght' 500" };
 
 /**
  * The persistent now-playing surface. One component, two platform variants:

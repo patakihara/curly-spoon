@@ -1,6 +1,6 @@
 ---
 page: artist
-pageHash: 411a1f219a22bfeaa732835aa0674399f604f00a1e5f0602c883624dfecaa367
+pageHash: 84d23df95278a3b2817e6b6473fb332a7cda6dd0e42c94b51a0c6c982152294e
 sonora: [none]
 spotify: [S41]
 ---
@@ -57,5 +57,5 @@ shows the whole catalogue greyed and requestable.
 - Provisional, per nav.json: Popular and Similar artists, drawn as a guess; the setting that hides
   unowned titles is Settings' and not drawn here.
 - Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Music's rail item lit.
-- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-icon`) and filled: solid bars, not the icon font's hairline outline.
+- Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.
 - Changed on purpose: a greyed card is grey, its cover without colour and its title muted, not only darkened.

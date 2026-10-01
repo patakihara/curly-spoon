@@ -128,7 +128,7 @@ _Done when:_ (a) Sofia's sign-off.
 - **[M5.perf]** Performance budget on this box (RAM ceiling for the container, Lighthouse on phone).
   _Done when:_ (a) a test runs the container under a recorded load and asserts its memory stays under the ceiling set in the test; (b) a Lighthouse test on the mobile profile meets the budget for Browse and Now Playing.
 - **[M5.contrast]** Contrast fixes wherever the accent or the play rose fails WCAG.
-  _Done when:_ (a) a test computes the accent's and the play rose's text and UI contrast pairs on every surface, in both web tokens and `SonoraTokens.kt`, and asserts WCAG AA.
+  _Done when:_ (a) a test computes the accent's and play rose's text and UI contrast pairs on every surface, in web tokens and `SonoraTokens.kt`, and asserts AA for every pair but white on rose, Sofia's recorded exception.
 - **[M5.handoff]** "Continue here" and "Play on…" between a user's devices.
   _Done when:_ (a) a test moves playback from one device to another with Continue here and asserts position and queue carry over; (b) a test asserts Play on reaches the user's own other device and never another user's.
 - **[M5.streaming]** A streaming-only account for people without a media server.
