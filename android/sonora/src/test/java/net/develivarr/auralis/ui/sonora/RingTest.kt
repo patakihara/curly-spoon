@@ -13,14 +13,12 @@ import org.junit.Test
 class RingTest {
     @Test
     fun `M0_states_b the focus ring grows a rounded control's corners by its reach, as a CSS outline does`() {
-        val control = Outline.Rounded(
-            RoundRect(0f, 0f, 100f, 40f, CornerRadius(8f), CornerRadius(8f), CornerRadius(0f), CornerRadius(8f)),
-        )
-        val ring = ringOutline(control, 3.5f) as Outline.Rounded
-        assertEquals(Rect(-3.5f, -3.5f, 103.5f, 43.5f), ring.roundRect.boundingRect)
-        assertEquals(CornerRadius(11.5f), ring.roundRect.topLeftCornerRadius)
-        assertEquals(CornerRadius(11.5f), ring.roundRect.bottomLeftCornerRadius)
-        assertEquals("a square corner stays square", CornerRadius(0f), ring.roundRect.bottomRightCornerRadius)
+        val control = RoundRect(0f, 0f, 100f, 40f, CornerRadius(8f), CornerRadius(8f), CornerRadius(0f), CornerRadius(8f))
+        val ring = ringRect(control, 3.5f)
+        assertEquals(Rect(-3.5f, -3.5f, 103.5f, 43.5f), ring.boundingRect)
+        assertEquals(CornerRadius(11.5f), ring.topLeftCornerRadius)
+        assertEquals(CornerRadius(11.5f), ring.bottomLeftCornerRadius)
+        assertEquals("a square corner stays square", CornerRadius(0f), ring.bottomRightCornerRadius)
     }
 
     @Test

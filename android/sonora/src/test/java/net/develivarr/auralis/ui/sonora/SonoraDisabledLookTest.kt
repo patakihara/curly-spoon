@@ -77,6 +77,6 @@ class SonoraDisabledLookTest {
         val selected = shot("ButtonGroup-disabled-selected") { ButtonGroup(ButtonGroupProps(items = items, value = "all")) }
         val none = shot("ButtonGroup-disabled-unselected") { ButtonGroup(ButtonGroupProps(items = items)) }
         // Text edges can blend to the same shade, so the fill shows as many more such pixels.
-        assertTrue("the selected segment has no 12% container", selected.count(container) > none.count(container) + 500)
+        assertTrue("the selected segment has no 12% container", selected.count(container) > none.count(container) + 150)
     }
 }

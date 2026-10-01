@@ -195,26 +195,24 @@ private fun DrawScope.drawRipple(ink: Color, origin: Offset, grow: Float, left: 
 internal fun rippleRadius(origin: Offset, size: Size, grow: Float): Float = farthestCorner(origin, size) * grow
 
 /**
- * The focus ring's centre line: the control's [outline] grown by [reach] on every side, its
- * rounded corners growing by [reach] too, as a CSS outline with an offset does. A square corner
- * stays square. Null for a shape of its own, which has no corners to grow.
+ * The focus ring's centre line: the control's [outline] grown by [reach] on every side, as a CSS
+ * outline with an offset is. Null for a shape of its own, which has no corners to grow.
  */
-internal fun ringOutline(outline: Outline, reach: Float): Outline? {
+internal fun ringOutline(outline: Outline, reach: Float): Outline? = when (outline) {
+    is Outline.Rectangle -> Outline.Rectangle(outline.rect.inflate(reach))
+    is Outline.Rounded -> Outline.Rounded(ringRect(outline.roundRect, reach))
+    // [ring] draws such a shape at the ring's size instead.
+    is Outline.Generic -> null
+}
+
+/** A rounded control's [r] grown by [reach], its rounded corners growing by [reach] too; a square corner stays square. */
+internal fun ringRect(r: RoundRect, reach: Float): RoundRect {
     fun CornerRadius.grown() = if (x > 0f || y > 0f) CornerRadius(x + reach, y + reach) else this
-    return when (outline) {
-        is Outline.Rectangle -> Outline.Rectangle(outline.rect.inflate(reach))
-        is Outline.Rounded -> outline.roundRect.let { r ->
-            Outline.Rounded(
-                RoundRect(
-                    r.left - reach, r.top - reach, r.right + reach, r.bottom + reach,
-                    r.topLeftCornerRadius.grown(), r.topRightCornerRadius.grown(),
-                    r.bottomRightCornerRadius.grown(), r.bottomLeftCornerRadius.grown(),
-                ),
-            )
-        }
-        // A shape of its own has no corners to grow; [ring] draws it at the ring's size instead.
-        is Outline.Generic -> null
-    }
+    return RoundRect(
+        r.left - reach, r.top - reach, r.right + reach, r.bottom + reach,
+        r.topLeftCornerRadius.grown(), r.topRightCornerRadius.grown(),
+        r.bottomRightCornerRadius.grown(), r.bottomLeftCornerRadius.grown(),
+    )
 }
 
 /** The focus ring, [SonoraState.focusRingWidth] wide and [SonoraState.focusRingOffset] clear of the control's [outline]. */
