@@ -9,11 +9,14 @@ plugins {
     alias(libs.plugins.paparazzi) apply false
 }
 
-// Tests run only on CI, so a failure prints its whole message and cause in the log.
+// Tests run only on CI, so a failure prints its whole message and cause in the log. Each test
+// class gets a JVM of its own: a Robolectric Compose test that clicks a Sonora control leaves the
+// shared main looper so that a later class's scrolling container never goes idle.
 subprojects {
     tasks.withType<Test>().configureEach {
+        forkEvery = 1
         testLogging {
-            events("started", "passed", "failed")
+            events("failed")
             exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
         }
     }
