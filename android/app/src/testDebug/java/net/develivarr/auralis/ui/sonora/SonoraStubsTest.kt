@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
@@ -138,7 +139,7 @@ class SonoraStubsTest {
     private fun role(role: Role) = SemanticsMatcher.expectValue(SemanticsProperties.Role, role)
 
     @Test
-    fun eachTapIsAButtonOrATabByItsNameAndNothingWithoutAHandlerIsTappable() {
+    fun eachTapIsAButtonOrATabByItsNameAndOneWithoutAHandlerIsDisabled() {
         val tapped = mutableListOf<String>()
         composeRule.setContent {
             Column {
@@ -156,8 +157,7 @@ class SonoraStubsTest {
         composeRule.onNode(role(Role.Button) and hasContentDescription("Close") and hasClickAction())
             .performClick()
         composeRule.onNode(role(Role.Tab) and hasText("Music") and hasClickAction()).performClick()
-        composeRule.onNode(hasContentDescription("Track") or hasClickAction().and(hasText("Track")))
-            .assertDoesNotExist()
+        composeRule.onNode(role(Role.Button) and hasContentDescription("Track")).assertIsNotEnabled()
         assertEquals(listOf("close", "music"), tapped)
     }
 }
