@@ -9,6 +9,7 @@ fun SearchField(props: SearchFieldProps) {
     SonoraStub(
         "SearchField",
         field = Field(props.value, props.placeholder, props.onChange, disabled = props.disabled == true),
-        taps = listOf("Close search" to props.onClose),
+        // Disabled, the whole field is off, its close button too.
+        taps = listOf("Close search" to props.onClose.takeUnless { props.disabled == true }),
     )
 }
