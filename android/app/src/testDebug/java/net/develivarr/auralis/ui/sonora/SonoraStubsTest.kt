@@ -1,19 +1,20 @@
 package net.develivarr.auralis.ui.sonora
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import net.develivarr.auralis.generated.ui.AboutCardProps
@@ -128,11 +129,16 @@ class SonoraStubsTest {
 
     @Test
     fun eachStubShowsTheNameOfTheComponentItStandsFor() {
-        var index by mutableIntStateOf(0)
-        composeRule.setContent { stubs[index].second() }
-        stubs.forEachIndexed { i, (name, _) ->
-            index = i
-            composeRule.onNodeWithText(name, useUnmergedTree = true).assertExists("$name shows no label")
+        // All at once, each under its name, rather than one swapped for the next. Unscrolled: a
+        // root stub fills the screen and scrolls itself, and those past it are drawn at no height.
+        composeRule.setContent {
+            Column {
+                stubs.forEach { (name, draw) -> Box(Modifier.testTag(name)) { draw() } }
+            }
+        }
+        stubs.forEach { (name, _) ->
+            composeRule.onNode(hasText(name) and hasAnyAncestor(hasTestTag(name)), useUnmergedTree = true)
+                .assertExists("$name shows no label")
         }
     }
 

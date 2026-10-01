@@ -1,14 +1,16 @@
 package net.develivarr.auralis.ui.sonora
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -107,27 +109,21 @@ class SonoraDisabledTest {
         "ViewToggle" to { ViewToggle(ViewToggleProps()) },
     )
 
-    /** Waits for the drawing to settle, naming the component that never does. */
-    private fun settle(name: String) {
-        try {
-            composeRule.waitForIdle()
-        } catch (e: RuntimeException) {
-            throw AssertionError("$name never settles", e)
-        }
-    }
-
     @Test
     fun aComponentWithNoActionHasEveryControlDisabled() {
-        var index by mutableIntStateOf(0)
-        composeRule.setContent { unbound[index].second() }
-        unbound.forEachIndexed { i, (name, _) ->
-            index = i
-            settle(name)
-            val controls = composeRule.onAllNodes(control, useUnmergedTree = true).fetchSemanticsNodes()
-            assertTrue("$name draws no control", controls.isNotEmpty())
-            composeRule.onAllNodes(control and enabled, useUnmergedTree = true).fetchSemanticsNodes().let {
-                assertEquals("$name has an enabled control without an action", 0, it.size)
+        // All at once, each under its name, rather than one swapped for the next. Unscrolled: a
+        // root stub fills the screen and scrolls itself, and those past it are drawn at no height.
+        composeRule.setContent {
+            Column {
+                unbound.forEach { (name, draw) -> Box(Modifier.testTag(name)) { draw() } }
             }
+        }
+        unbound.forEach { (name, _) ->
+            val within = hasAnyAncestor(hasTestTag(name))
+            val controls = composeRule.onAllNodes(control and within, useUnmergedTree = true).fetchSemanticsNodes()
+            assertTrue("$name draws no control", controls.isNotEmpty())
+            val live = composeRule.onAllNodes(control and enabled and within, useUnmergedTree = true).fetchSemanticsNodes()
+            assertEquals("$name has an enabled control without an action", 0, live.size)
         }
     }
 
