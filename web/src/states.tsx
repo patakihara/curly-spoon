@@ -222,7 +222,9 @@ const DRAW: Record<string, (act: Act, disabled: boolean) => ReactNode> = {
     </Frame>
   ),
   PreviewButton: (act, disabled) => <PreviewButton onClick={act} disabled={disabled} />,
-  QueuePage: (act) => <QueuePage platform="desktop" heading={null} items={QUEUE} onClear={act} />,
+  QueuePage: (act) => (
+    <QueuePage platform="desktop" heading={null} items={QUEUE} onClear={act} onRemove={act} />
+  ),
   QueueRow: (act) => (
     <QueueRow title="Low Tide" sub="Halcyon Bloom" time="4:05" handle={false} onClick={act} />
   ),

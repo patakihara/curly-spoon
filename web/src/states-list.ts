@@ -82,25 +82,6 @@ export const STATE_ENTRIES: readonly StateEntry[] = [
   { name: 'ViewToggle', disabled: false, ripple: true },
 ];
 
-/**
- * Handler props that are not actions: a control is never disabled for lacking one. Everything else
- * named `on…` in a Sonora `.d.ts` is an action, and its component has an entry above.
- */
-export const NOT_ACTIONS: readonly { component: string; prop: string }[] = [
-  { component: 'BackdropShell', prop: 'onProgress' },
-  { component: 'FrontLayer', prop: 'onProgress' },
-  { component: 'ScrollArea', prop: 'onScroll' },
-  { component: 'FrontLayerHeader', prop: 'onSpyChange' },
-  { component: 'OverflowMenu', prop: 'onOpenChange' },
-  { component: 'QueuePage', prop: 'onEditingChange' },
-  ...['onDragStart', 'onDragOver', 'onDrop', 'onDragEnd'].flatMap((prop) => [
-    { component: 'EditableList', prop },
-    { component: 'QueueRow', prop },
-  ]),
-  { component: 'EditableList', prop: 'onReorder' },
-  { component: 'QueuePage', prop: 'onReorder' },
-];
-
 declare global {
   interface Window {
     /** Presses of each drawing's bound action, by `pressKey`. */

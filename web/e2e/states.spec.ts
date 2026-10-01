@@ -3,13 +3,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import {
-  NOT_ACTIONS,
-  pressKey,
-  STATE_ENTRIES,
-  type StateEntry,
-  type Variant,
-} from '../src/states-list';
+import { actionProps } from '../../design-codegen/src/actions';
+import { pressKey, STATE_ENTRIES, type StateEntry, type Variant } from '../src/states-list';
 import { decode, distance } from './pixels';
 
 /**
@@ -407,11 +402,7 @@ test('[M0.states/c] every component with an action, and every disabled prop, is 
         })),
     );
   const actions = declared
-    .filter(({ name, source }) =>
-      [...source.matchAll(/^\s*(on[A-Z]\w*)\??:/gm)].some(
-        ([, prop]) => !NOT_ACTIONS.some((n) => n.component === name && n.prop === prop),
-      ),
-    )
+    .filter(({ name, source }) => actionProps(name, source).length > 0)
     .map(({ name }) => name)
     .sort();
   expect(STATE_ENTRIES.map((e) => e.name).sort()).toEqual(actions);
