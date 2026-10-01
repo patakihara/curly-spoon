@@ -46,6 +46,7 @@ import net.develivarr.auralis.generated.ui.TabBarItem
 import net.develivarr.auralis.generated.ui.TabBarProps
 import net.develivarr.auralis.generated.ui.ValueRowProps
 import net.develivarr.auralis.generated.ui.ViewToggleProps
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -109,7 +110,7 @@ class SonoraDisabledTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
-    fun aComponentWithDisabledSetIsDisabledAndIgnoresPresses() {
+    fun `M0_states_c a component with disabled set is disabled and ignores presses`() {
         var presses = 0
         val press: () -> Unit = { presses++ }
         val change: (String) -> Unit = { presses++ }
@@ -138,10 +139,19 @@ class SonoraDisabledTest {
     }
 
     @Test
-    fun aBoundComponentIsEnabledAndTakesItsPress() {
+    fun `M0_states_c a bound component is enabled and takes its press`() {
         var presses = 0
         composeRule.setContent { Button(ButtonProps(children = null, onClick = { presses++ })) }
         composeRule.onNode(hasClickAction() and enabled).performClick()
         assertEquals(1, presses)
+    }
+
+    @Test
+    fun `M0_states_c every interactive Sonora component is drawn with no action`() {
+        // The states screenshots' list (sonora's States.kt) names every component with an action.
+        val states = File("../sonora/src/test/java/net/develivarr/auralis/ui/sonora/States.kt").readText()
+        val interactive = Regex("""StateEntry\("(\w+)"""").findAll(states).map { it.groupValues[1] }.toList()
+        assertTrue("found no interactive component", interactive.isNotEmpty())
+        assertEquals(interactive.sorted(), unbound.map { it.first }.sorted())
     }
 }

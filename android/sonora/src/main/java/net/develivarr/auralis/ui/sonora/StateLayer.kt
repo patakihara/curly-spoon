@@ -25,7 +25,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawOutline
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.translate
@@ -55,6 +57,9 @@ internal val CONTROL_SHAPE: Shape = RoundedCornerShape(SonoraDimens.radiusXs)
 
 /** The ink a disabled control's content takes: the surface ink at 38%. */
 internal val DISABLED_INK: Color = SonoraLightColors.surfaceFg.copy(alpha = SonoraState.disabledContent)
+
+/** The container a disabled filled control keeps: the surface ink at 12%. */
+internal val DISABLED_CONTAINER: Color = SonoraLightColors.surfaceFg.copy(alpha = SonoraState.disabledContainer)
 
 /**
  * A Sonora control, with Material's states: pressing it calls [onClick], and it is disabled, drawn
@@ -161,33 +166,67 @@ internal fun Modifier.stateLayer(
             val outline = shape.createOutline(size, layoutDirection, this)
             clipPath(outline.path()) {
                 if (wash > 0f) drawRect(ink.copy(alpha = ink.alpha * wash))
-                waves.forEach { wave ->
-                    drawCircle(
-                        ink.copy(alpha = ink.alpha * SonoraState.pressed * wave.left.value),
-                        radius = farthestCorner(wave.origin, size) * wave.grow.value,
-                        center = wave.origin,
-                    )
-                }
-                // A preview's press: a ripple part-way through its growth from low on the left.
-                if (previewPress) {
-                    drawCircle(
-                        ink.copy(alpha = ink.alpha * SonoraState.pressed),
-                        radius = size.width * 0.35f,
-                        center = Offset(size.width * 0.3f, size.height * 0.7f),
-                    )
-                }
+                waves.forEach { drawRipple(ink, it.origin, it.grow.value, it.left.value) }
+                // A preview's press: a ripple part-way through its growth from a press low on the left.
+                if (previewPress) drawRipple(ink, PREVIEW_PRESS.of(size), PREVIEW_GROWTH, 1f)
             }
-            if (ringed) ring(shape)
+            if (ringed) ring(outline, shape)
         }
 }
 
-/** The focus ring: [SonoraState.focusRingWidth] wide, [SonoraState.focusRingOffset] clear of [shape]. */
-private fun ContentDrawScope.ring(shape: Shape) {
-    val width = SonoraState.focusRingWidth.toPx()
-    val reach = SonoraState.focusRingOffset.toPx() + width / 2
-    val outline = shape.createOutline(Size(size.width + 2 * reach, size.height + 2 * reach), layoutDirection, this)
-    translate(-reach, -reach) {
-        drawOutline(outline, SonoraLightColors.focusRing, style = Stroke(width))
+/** Where a preview's press lands, as a share of the control's width and height, as web's `left:30%;top:70%`. */
+internal val PREVIEW_PRESS = Offset(0.3f, 0.7f)
+
+/** How far a preview's ripple has grown: half way, as web's `scale(.5)`. */
+internal const val PREVIEW_GROWTH = 0.5f
+
+private fun Offset.of(size: Size) = Offset(x * size.width, y * size.height)
+
+/** A ripple from [origin], [grow]n part way to the farthest corner, with [left] of its ink. */
+private fun DrawScope.drawRipple(ink: Color, origin: Offset, grow: Float, left: Float) {
+    drawCircle(
+        ink.copy(alpha = ink.alpha * SonoraState.pressed * left),
+        radius = rippleRadius(origin, size, grow),
+        center = origin,
+    )
+}
+
+/** A ripple's radius from [origin] in a control of [size], [grow]n part way to the farthest corner. */
+internal fun rippleRadius(origin: Offset, size: Size, grow: Float): Float = farthestCorner(origin, size) * grow
+
+/**
+ * The focus ring's centre line: the control's [outline] grown by [reach] on every side, its
+ * rounded corners growing by [reach] too, as a CSS outline with an offset does. A square corner
+ * stays square. Null for a shape of its own, which has no corners to grow.
+ */
+internal fun ringOutline(outline: Outline, reach: Float): Outline? {
+    fun CornerRadius.grown() = if (x > 0f || y > 0f) CornerRadius(x + reach, y + reach) else this
+    return when (outline) {
+        is Outline.Rectangle -> Outline.Rectangle(outline.rect.inflate(reach))
+        is Outline.Rounded -> outline.roundRect.let { r ->
+            Outline.Rounded(
+                RoundRect(
+                    r.left - reach, r.top - reach, r.right + reach, r.bottom + reach,
+                    r.topLeftCornerRadius.grown(), r.topRightCornerRadius.grown(),
+                    r.bottomRightCornerRadius.grown(), r.bottomLeftCornerRadius.grown(),
+                ),
+            )
+        }
+        // A shape of its own has no corners to grow; [ring] draws it at the ring's size instead.
+        is Outline.Generic -> null
+    }
+}
+
+/** The focus ring, [SonoraState.focusRingWidth] wide and [SonoraState.focusRingOffset] clear of the control's [outline]. */
+private fun DrawScope.ring(outline: Outline, shape: Shape) {
+    val reach = SonoraState.focusRingOffset.toPx() + SonoraState.focusRingWidth.toPx() / 2
+    val stroke = Stroke(SonoraState.focusRingWidth.toPx())
+    val grown = ringOutline(outline, reach)
+    if (grown != null) {
+        drawOutline(grown, SonoraLightColors.focusRing, style = stroke)
+    } else {
+        val own = shape.createOutline(Size(size.width + 2 * reach, size.height + 2 * reach), layoutDirection, this)
+        translate(-reach, -reach) { drawOutline(own, SonoraLightColors.focusRing, style = stroke) }
     }
 }
 

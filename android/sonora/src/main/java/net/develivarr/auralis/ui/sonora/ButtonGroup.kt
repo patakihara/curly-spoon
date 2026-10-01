@@ -9,5 +9,6 @@ fun ButtonGroup(props: ButtonGroupProps) {
     SonoraStub(
         "ButtonGroup",
         tabs = props.items.map { item -> (item.label ?: item.key) to props.onChange?.let { change -> { change(item.key) } } },
+        selected = props.items.firstOrNull { it.key == props.value }?.let { it.label ?: it.key },
     )
 }

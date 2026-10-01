@@ -94,7 +94,7 @@ class SonoraStatesScreenshotTest(private val entry: StateEntry) {
  * `java.awt.image.BufferedImage`, which the Android unit-test classpath cannot name, so the frame
  * handler is a proxy and the pixels are read reflectively.
  */
-private class Shots(private val report: SnapshotHandler) : SnapshotHandler {
+internal class Shots(private val report: SnapshotHandler) : SnapshotHandler {
     val pixels = mutableMapOf<String, IntArray>()
 
     override fun newFrameHandler(snapshot: Snapshot, frameCount: Int, fps: Int): SnapshotHandler.FrameHandler {

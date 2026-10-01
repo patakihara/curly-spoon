@@ -6,6 +6,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +17,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.editableText
@@ -30,6 +36,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import net.develivarr.auralis.generated.theme.SonoraDimens
 import net.develivarr.auralis.generated.theme.SonoraLightColors
+import net.develivarr.auralis.generated.theme.SonoraState
 import net.develivarr.auralis.generated.theme.SonoraType
 
 /** A stub's box as one control: pressing it calls [onClick], and it is disabled without one. */
@@ -58,7 +65,9 @@ internal class Field(
  * action: [press] makes the whole box a button, named [label] or else by its text, each of [taps]
  * a button and each of [tabs] a tab, so the app can be walked by tapping, and read by a screen
  * reader, before the real layouts land. Each of [links] is plain text, a button only when its
- * handler is given. A disabled box draws its own text at 38% of the surface ink.
+ * handler is given. The tab named [selected] sits in a filled container, which stays, at 12% of the
+ * surface ink, when it is disabled. A disabled box draws its own text and its slots at 38% of the
+ * surface ink.
  */
 @Composable
 internal fun SonoraStub(
@@ -73,6 +82,7 @@ internal fun SonoraStub(
     links: List<Pair<String?, (() -> Unit)?>> = emptyList(),
     taps: List<Pair<String?, (() -> Unit)?>> = emptyList(),
     tabs: List<Pair<String?, (() -> Unit)?>> = emptyList(),
+    selected: String? = null,
 ) {
     val colors = SonoraLightColors
     val frame = if (root) {
@@ -113,22 +123,52 @@ internal fun SonoraStub(
             }
         }
         taps.forEach { (tap, onTap) -> Tap(tap, onTap, Role.Button) }
-        tabs.forEach { (tab, onTap) -> Tap(tab, onTap, Role.Tab) }
-        slots.filterNotNull().forEach { slot -> slot() }
+        tabs.forEach { (tab, onTap) -> Tap(tab, onTap, Role.Tab, selected = tab != null && tab == selected) }
+        slots.filterNotNull().forEach { slot -> if (off) Box(Modifier.disabledInk()) { slot() } else slot() }
     }
 }
 
-/** [words] as a control in [role], in the accent ink, or disabled when [onTap] is absent. */
+/**
+ * [words] as a control in [role], in the accent ink, or disabled when [onTap] is absent. A
+ * [selected] one is filled with the accent, or, disabled, with the surface ink at 12%. Each keeps
+ * clear of the next by the width of their focus rings, so pinned rings do not overlap.
+ */
 @Composable
-private fun Tap(words: String?, onTap: (() -> Unit)?, role: Role) {
+private fun Tap(words: String?, onTap: (() -> Unit)?, role: Role, selected: Boolean = false) {
     if (words == null) return
     val colors = SonoraLightColors
+    val ink = when {
+        onTap == null -> DISABLED_INK
+        selected -> colors.surfaceBg
+        else -> colors.accentInk
+    }
+    val container = when {
+        !selected -> Color.Transparent
+        onTap == null -> DISABLED_CONTAINER
+        else -> colors.accentInk
+    }
     BasicText(
         words,
-        modifier = Modifier.control(onTap, role, colors.accentInk).padding(horizontal = SonoraDimens.spacingXs),
-        style = text(if (onTap == null) DISABLED_INK else colors.accentInk, SonoraType.textMd),
+        modifier = Modifier
+            .padding(vertical = RING_CLEARANCE)
+            .control(onTap, role, colors.accentInk)
+            .semantics { if (selected) this.selected = true }
+            .background(container, CONTROL_SHAPE)
+            .padding(horizontal = SonoraDimens.spacingXs),
+        style = text(ink, SonoraType.textMd),
     )
 }
+
+/** Half the room two neighbouring focus rings take, less half the gap the column already leaves. */
+private val RING_CLEARANCE = SonoraState.focusRingOffset + SonoraState.focusRingWidth - SonoraDimens.spacingXs / 2
+
+/** Draws everything inside it in [DISABLED_INK], keeping only its shapes: a disabled control's slots. */
+internal fun Modifier.disabledInk(): Modifier = this
+    .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+    .drawWithContent {
+        drawContent()
+        drawRect(DISABLED_INK, blendMode = BlendMode.SrcIn)
+    }
 
 /**
  * A text field's stand-in: its value, or else its placeholder, in a focusable box that takes text
