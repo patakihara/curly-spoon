@@ -30,7 +30,7 @@ The plan and the progress are kept apart.
 #### The plan: edited in place
 
 - Lives in the repo (`docs/plan/`) and is published to this artifact, with the same commit stamp and merge check as the design.
-- Only describes the current decision: no dated notes, no "a previous version said". Why something changed is in git history.
+- Only describes the current decision: no dated notes or "a previous version said"; why it changed is in git history.
 - An adjustment rewrites that sentence where it stands; decisions live nowhere else.
 - Every item has an id and a concrete **done when**, and a size limit keeps the whole thing readable.
 :::
@@ -61,8 +61,8 @@ The plan and the progress are kept apart.
 
 Anything you say about Auralis, in any session or artifact comment, goes through one fixed path. Each step is safe to interrupt.
 
-1. **Filed.** One file per idea in `docs/inbox/`: your words verbatim, where it came from (chat, a comment thread, a direct message), and the date. The session replies `Noted: <title>` (in the thread, for a comment) and carries on. Filing never touches the plan or the work in progress. The only exceptions: you say "do it now", you're answering one of its outbox items, or you're telling the session itself to stop or pause.
-2. **Sorted, at set moments:** each milestone demo, when you say "let's go through my ideas", or once about ten are waiting. The orchestrator hands each idea, one at a time, to a subagent in a fresh context that reads it and the whole plan, and decides which of these it is:
+1. **Filed.** One file per idea in `docs/inbox/`: your words verbatim, where it came from (chat, a comment thread, a direct message), and the date. The session replies `Noted: <title>` (in the thread, for a comment) and carries on. Filing never touches the plan or the work in progress, unless you say "do it now", answer one of its outbox items, or tell the session itself to stop or pause.
+2. **Sorted, at set moments:** each milestone demo, when you say "let's go through my ideas", or once about ten are waiting. The orchestrator hands each idea, one at a time, to a fresh-context subagent that reads it and the whole plan and decides which it is:
    - **new work**: a new plan item, with an id and a concrete "done when", in the milestone where it belongs (usually a later one; the milestone in progress only takes small fixes to what it builds, or anything you pulled in);
    - **a change** to an existing item: that item is rewritten in place, including its "done when";
    - **a bug** in something done: a check that catches it is added to that item, which reopens it;
@@ -71,9 +71,9 @@ Anything you say about Auralis, in any session or artifact comment, goes through
    - **a drop**: only with your OK, asked through the outbox.
 
    It also edits whatever else in the plan the change affects.
-3. **Applied in one commit**: the plan edit, the inbox file's deletion, and a commit message naming the plan item and the inbox file. Until that commit lands the idea stays in the inbox, so a crash never loses one. The plan checks run on that commit: unique ids, every item has a "done when", the size limit, no dated notes.
+3. **Applied in one commit**: the plan edit, the inbox file's deletion, and a commit message naming the plan item and the inbox file. Until that commit lands the idea stays in the inbox, so a crash never loses one. The plan checks run on that commit.
 4. **Progress follows by itself.** Nothing is written by hand: a new item shows as planned, a changed item whose check no longer passes shows as not done, and a bug's new check reopens its item. It all appears in the next session-start summary.
-5. **Closed the loop with you.** The plan page is republished, a comment thread gets a reply saying where the idea landed and is resolved, and the plan page and the session-start summary list recently sorted ideas and where each went.
+5. **Closed the loop with you.** The plan page is republished, a comment thread gets a reply saying where the idea landed and is resolved, and the page and the session-start summary list recently sorted ideas and where each went.
 
 ### What needs you, without waiting on you
 

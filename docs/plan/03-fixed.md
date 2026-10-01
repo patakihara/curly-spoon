@@ -9,7 +9,7 @@ part: Why and what
 Fixed inputs, not re-opened.
 :::
 
-These come from `USER_DECISIONS.md`, the spec addendum and the research notes. The plan builds on them as written. Where a decision rested on a false premise, the plan keeps the decision and fixes the premise (one case, marked).
+These come from `USER_DECISIONS.md`, the spec addendum and the research notes. Where a decision rested on a false premise, the plan keeps the decision and fixes the premise (one case, marked).
 
 ::: grid g2
 ::: card

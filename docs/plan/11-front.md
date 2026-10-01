@@ -11,7 +11,7 @@ Everything in the app starts as a Sonora component, and every page starts on the
 
 ### How you work on the design
 
-- **Two artifacts, one repo.** The [Sonora Design System](https://claude.ai/artifact/CUW4CN7KpxgvjeWnbhTQBB) (the building blocks) and the [Auralis canvas](https://claude.ai/artifact/S3ob9VNh7LjZHBmEmE9ULq) (the app's pages and navigation), both published from the one Auralis repo: `design/sonora` and `design/app`, next to `server`, `web` and `android`. Sonora's repo on the laptop moves in with its history.
+- **Two artifacts, one repo.** The [Sonora Design System](https://claude.ai/artifact/CUW4CN7KpxgvjeWnbhTQBB) (the building blocks) and the [Auralis canvas](https://claude.ai/artifact/S3ob9VNh7LjZHBmEmE9ULq) (the app's pages and navigation), both published from `design/sonora` and `design/app` in the Auralis repo, beside `server`, `web` and `android`. Sonora's laptop repo moves in with its history.
 - **Asking for a change:** comment on either artifact, or ask in chat. Claude changes the repo, regenerates, and republishes the artifact. Edits made directly in an artifact are pulled into the repo before anything else changes there.
 - **How a design change reaches the apps.** One commit carries design and apps:
   - colours, spacing and fonts change on both platforms automatically;
@@ -38,7 +38,7 @@ Everything in the app starts as a Sonora component, and every page starts on the
 :::
 :::
 
-**Where the screens come from.** Sonora is the most complete design: its UI kit renders, its showcase cards and the 43 Spotify reference screens. The "Auralis redesign kickoff" project, which old Auralis vendored (tag `legacy`, `docs/design/sonora`), adds only its screen list (artist, author, shelf, onboarding); its 9 components are all in Sonora now. The screen map is the union, rebuilt on the canvas from current Sonora components; where they disagree, Sonora's wins. Screens don't belong in the design system, so the UI kits survive only as renders, the canvas comparisons' sources. The Claude Design projects stay as read-only references.
+**Where the screens come from.** Sonora's UI kit renders, showcase cards and 43 Spotify reference screens, plus the screen list (artist, author, shelf, onboarding) of the "Auralis redesign kickoff" project old Auralis vendored (tag `legacy`, `docs/design/sonora`), whose 9 components are all in Sonora now. The canvas rebuilds their union from current Sonora components; where they disagree, Sonora wins. The UI kits survive only as renders, the canvas comparisons' sources, and the Claude Design projects as read-only references.
 
 ### Sonora, pruned and ordered
 
@@ -46,7 +46,7 @@ Sonora has 66 components, filed by level (basic, components, layouts).
 
 - **One hierarchy:** tokens → basic pieces (buttons, chips, inputs, cover art) → components (cards, rows, transport, headers) → page layouts (backdrop shell, sections, shelves, the player's pages). The artifact is organised the same way. Pages live only on the canvas.
 - **Pruned against the screens.** Each component lists the canvas pages that draw it, and a test fails on one no page draws. A component a later milestone needs, such as the output device button for "Play on…", arrives with its page.
-- **Input hands its handler the text.** `Input`'s `onChange` gets the new string, as every other form component does, so `FieldRow`'s `(next: string)` handler no longer receives a DOM event.
+- **Input hands its handler the text.** `Input`'s `onChange` gets the new string, like every other form component, so `FieldRow`'s `(next: string)` handler gets a string.
 - **Controls show Material's states.** Every interactive component has enabled, disabled, hovered, focused (an outer ring) and pressed, a ripple spreading from the press point with no change of shape. One with no action attached is disabled, as is one set `disabled`.
 
 ### From design to both apps
@@ -71,7 +71,7 @@ Sonora has 66 components, filed by level (basic, components, layouts).
 
 Your rule: nothing frontend reaches code before it is in the published design, Sonora artifact, then Auralis canvas artifact, then code, ported to the apps mechanically:
 
-1. **Structure comes before pictures.** Every screen first gets a plain-text structure in `nav.json`: its purpose, its sections in order (unsettled ones marked provisional), its empty state and the screens it links to. The canvas's start page shows the generated navigation flowchart and list of screens, no mockups, so you settle the hierarchy by commenting before detail distracts you. Each screen gets a canvas page: its structure beside its mockups, nothing else loaded. A page is drawn only once it has a structure.
+1. **Structure comes before pictures.** Every screen first gets a plain-text structure in `nav.json`: its purpose, its sections in order (unsettled ones marked provisional), its empty state and the screens it links to. The canvas's start page shows the generated navigation flowchart and list of screens, no mockups, so you settle the hierarchy first. Each screen gets a canvas page: its structure beside its mockups, nothing else loaded. A page is drawn only once it has a structure.
 2. **Navigation is data.** The canvas holds `nav.json`: destinations, routes and parameters, which destination each page lights up, back behaviour, and the layout at each breakpoint (bottom bar, rail, side panel). Code generation turns it into the web router and the Android Navigation-Compose graph, so both apps get **the same flows from the same file**.
 3. **Pages are a restricted format.** Each page is JSX that may only use Sonora components, literal props, and bindings to its screen endpoint's generated types (`{feed.shelves}`). No custom styling, no logic. A parser turns it into a small page tree. From that tree the web page is generated as React and the Android page as Compose, both calling the same component names.
 4. **Generated code is off-limits.** Routes and page layouts are generated files, never edited by hand. Hand-written code only supplies data (the screen's API call, view-model state and actions) behind the page's typed slots.
@@ -87,11 +87,11 @@ Your rule: nothing frontend reaches code before it is in the published design, S
 6. **The frontend build starts with navigation.** The first frontend deliverable is both apps navigating the full generated map with placeholder data, compared against the design and each other, before any screen gets real content.
 
 - **Mantine** is optional: used only inside a component that needs a behaviour primitive (menus, focus traps), never as the visual layer.
-- **The app frame** is Sonora's backdrop shell (`BackdropShell`, `BackLayer`, `FrontLayer`, `FrontLayerHeader`, per `SPEC-backdrop.md`), a real Material 2 backdrop as Sonora Prime, the last mockups before the rebuild, draws it, which also settles the old scroll bug.
+- **The app frame** is Sonora's backdrop shell (`BackdropShell`, `BackLayer`, `FrontLayer`, `FrontLayerHeader`, per `SPEC-backdrop.md`), a real Material 2 backdrop as Sonora Prime, the last mockups before the rebuild, draws it.
 
 ### Shell and navigation
 
-Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;px with Search rightmost, icon rail from 600 and labelled rail from 1024 with Search topmost, a hamburger at its top collapsing it to the icon rail and back. Now Playing, with Queue and Lyrics as its tabs, is a panel next to the content from 1240; narrower, the mini-player opens it as a full-screen sheet over the bottom bar. Settings sits at the foot of the rail, or behind your avatar at the start of the phone's top bar, never inside a filter row. Chrome stays fixed, only content scrolls; that was the scroll bug you reported. The shell stays mounted between pages, so the rail moves as in Sonora Prime. The mini-player stays once something is loaded. On the phone, a page that is not a destination (a shelf, Requests, an album) shows a top app bar with ✕ and its title, not the backdrop; on desktop it sits in the backdrop of the destination that opened it, that rail item lit.
+Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;px with Search rightmost, icon rail from 600 and labelled rail from 1024 with Search topmost, a hamburger at its top collapsing it to the icon rail and back. Now Playing, with Queue and Lyrics as its tabs, is a panel next to the content from 1240; narrower, the mini-player opens it as a full-screen sheet over the bottom bar. Settings sits at the foot of the rail, or behind your avatar at the start of the phone's top bar, never inside a filter row. Chrome stays fixed, only content scrolls (the scroll bug you reported). The shell stays mounted between pages, so the rail moves as in Sonora Prime. The mini-player stays once something is loaded. On the phone, a page that is not a destination (a shelf, Requests, an album) shows a top app bar with ✕ and its title, not the backdrop; on desktop it sits in the backdrop of the destination that opened it, that rail item lit.
 
 - **Back.** ✕ (or up) returns to whatever opened a screen, and each destination keeps its own stack: leave Music on an album, come back, and ✕ goes to the artist you opened it from. Android's back acts as ✕; the browser's back goes to the previous view, wherever that was. A sheet closes to the page under it.
 - **Search, global and local.** The Search destination searches everything, its filters in the backdrop's back layer. Each library home, shelf, album, playlist, show and book has a bar that appears as you scroll and searches only that page, or that library and its requests.
@@ -99,6 +99,7 @@ Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;
 ### Rules from your notes that the components must follow
 
 - **One accent, one play colour:** violet everywhere, rose (`--play`) only for Now Playing, the mini-player, transport, seek and progress fills, and Browse's media filter. Every control on rose has white content, your choice over AA.
+- **Theme follows the device:** light or dark from the system, unless Settings picks one. `data-theme` still themes any container, and each canvas page switches its mockups between both.
 - **Shapes never change meaning:** artists, authors and hosts are circles; all content is rounded squares. Don't copy Spotify's podcast-versus-album split.
 - **Now Playing matches the content:** podcasts and books get speed and skip (Sonora's `TransportBar` _spoken_ variant); music gets shuffle and repeat, with speed tucked away, not removed.
 - **Tabs and menus:** a tab row opens on its first tab. On the phone a context menu is a modal bottom sheet over the bottom bar and mini-player; on desktop it hangs from its button.
