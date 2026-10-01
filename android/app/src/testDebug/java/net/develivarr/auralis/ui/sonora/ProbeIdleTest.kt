@@ -12,6 +12,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.LocalOverscrollConfiguration
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -38,34 +43,13 @@ private fun Scroll(content: @Composable () -> Unit) {
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ProbeIdleTest(private val name: String, private val draw: @Composable () -> Unit) {
     companion object {
+        @OptIn(ExperimentalFoundationApi::class)
         private val probes: List<Pair<String, @Composable () -> Unit>> = listOf(
             "plainText" to { Scroll { BasicText("x") } },
-            "clickableOff" to { Scroll { BasicText("x", Modifier.clickable(enabled = false) {}) } },
-            "clickableOn" to { Scroll { BasicText("x", Modifier.clickable {}) } },
-            "collect" to {
-                Scroll {
-                    val s = remember { MutableInteractionSource() }
-                    val h by s.collectIsHoveredAsState()
-                    val f by s.collectIsFocusedAsState()
-                    val p by s.collectIsPressedAsState()
-                    BasicText("x $h $f $p", Modifier.clickable(s, null) {})
-                }
-            },
-            "animate" to {
-                Scroll {
-                    val a by animateFloatAsState(0f, label = "a")
-                    BasicText("x", Modifier.drawWithContent { drawContent(); drawRect(Color.Red.copy(alpha = a)) })
-                }
-            },
-            "effectList" to {
-                Scroll {
-                    val l = remember { mutableStateListOf<Int>() }
-                    LaunchedEffect(Unit) { l.clear() }
-                    BasicText("x", Modifier.drawWithContent { drawContent(); l.forEach { _ -> } })
-                }
-            },
-            "iconButtonNoScroll" to { IconButton(IconButtonProps(label = "X")) },
-            "iconButtonScroll" to { Scroll { IconButton(IconButtonProps(label = "X")) } },
+            "noOverscroll" to { CompositionLocalProvider(LocalOverscrollConfiguration provides null) { Scroll { BasicText("x") } } },
+            "noFill" to { Column(Modifier.verticalScroll(rememberScrollState())) { BasicText("x") } },
+            "fixedHeight" to { Column(Modifier.height(200.dp).verticalScroll(rememberScrollState())) { BasicText("x") } },
+            "fillNoScroll" to { Column(Modifier.fillMaxSize()) { BasicText("x") } },
         )
 
         @JvmStatic
