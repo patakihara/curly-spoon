@@ -9,6 +9,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasTestTag
@@ -166,5 +168,25 @@ class SonoraStubsTest {
         composeRule.onNode(role(Role.Tab) and hasText("Music") and hasClickAction()).performClick()
         composeRule.onNode(role(Role.Button) and hasContentDescription("Track")).assertIsNotEnabled()
         assertEquals(listOf("close", "music"), tapped)
+    }
+
+    @Test
+    fun `M0_states_c a TabBar and a BottomNav draw their value as the selected tab, enabled or not`() {
+        composeRule.setContent {
+            Column {
+                TabBar(TabBarProps(items = listOf(TabBarItem("albums", "Albums"), TabBarItem("songs", "Songs")), value = "songs"))
+                BottomNav(
+                    BottomNavProps(
+                        items = listOf(BottomNavItem("browse", "Browse", "explore"), BottomNavItem("music", "Music", "album")),
+                        active = "browse",
+                        onChange = {},
+                    ),
+                )
+            }
+        }
+        composeRule.onNode(role(Role.Tab) and hasText("Songs")).assertIsSelected()
+        composeRule.onNode(role(Role.Tab) and hasText("Albums")).assertIsNotSelected()
+        composeRule.onNode(role(Role.Tab) and hasText("Browse")).assertIsSelected()
+        composeRule.onNode(role(Role.Tab) and hasText("Music")).assertIsNotSelected()
     }
 }
