@@ -122,8 +122,10 @@ internal fun Modifier.stateLayer(
     val waves = remember { mutableStateListOf<Wave>() }
     val scope = rememberCoroutineScope()
     LaunchedEffect(source, enabled, ripple) {
-        waves.clear()
-        if (!enabled || !ripple) return@LaunchedEffect
+        if (!enabled || !ripple) {
+            if (waves.isNotEmpty()) waves.clear()
+            return@LaunchedEffect
+        }
         val live = mutableMapOf<PressInteraction.Press, Wave>()
         source.interactions.collect { interaction ->
             when (interaction) {
@@ -152,7 +154,7 @@ internal fun Modifier.stateLayer(
     val previewPress = ripple && pinned == PinnedState.PRESSED
     return this
         // A focused control lifts over its neighbours, so its ring is not drawn under the next.
-        .zIndex(if (ringed) 1f else 0f)
+        .then(if (ringed) Modifier.zIndex(1f) else Modifier)
         .drawWithContent {
             drawContent()
             if (!enabled) return@drawWithContent
