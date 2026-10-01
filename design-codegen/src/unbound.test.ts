@@ -55,6 +55,9 @@ const has = (props: Props, name: string) => {
 };
 const unless = (label: string) => (props: Props) =>
   !(props[label]?.kind === 'literal' && props[label]?.value === null);
+/** MediaHeader draws its Play/Next/Last row only when no `actions` slot replaces it. */
+const queueVerb = (label: string) => (props: Props) =>
+  !has(props, 'actions') && unless(label)(props);
 const playActions = (props: Props) =>
   ['onPlay', 'onPlayNext', 'onPlayLast'].some((p) => has(props, p));
 
@@ -77,9 +80,9 @@ const DRAWN_WHEN: Readonly<Record<string, (props: Props) => boolean>> = {
   'MediaCard.onPlayLast': playActions,
   'MediaCard.onMore': () => false,
   'MediaCard.onRequest': () => false,
-  'MediaHeader.onPlay': unless('playLabel'),
-  'MediaHeader.onPlayNext': unless('nextLabel'),
-  'MediaHeader.onPlayLast': unless('lastLabel'),
+  'MediaHeader.onPlay': queueVerb('playLabel'),
+  'MediaHeader.onPlayNext': queueVerb('nextLabel'),
+  'MediaHeader.onPlayLast': queueVerb('lastLabel'),
   'MediaHeader.onSubtitle': () => false,
   'MediaHeader.onPartOf': () => false,
   'MediaHeader.onAdd': (props) => has(props, 'addLabel'),

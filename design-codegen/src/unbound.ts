@@ -45,7 +45,6 @@ export const UNBOUND: Readonly<Record<string, string>> = {
   'shell/MiniPlayer.onTogglePlay': 'M1.play',
   'shell/MiniPlayer.onVolume': 'M1.play',
   'show/EpisodeRow.onPlay': 'M1.play',
-  'show/MediaHeader.onPlay': 'M1.play',
   // Seek, speed and the sleep timer.
   'nowPlaying/NowPlayingPage.onSeek': 'M1.progress',
   'nowPlaying/NowPlayingPage.onSleep': 'M1.progress',
@@ -67,8 +66,6 @@ export const UNBOUND: Readonly<Record<string, string>> = {
   'queue/QueuePage.onRemoveSelected': 'M1.sessions',
   'shell/MiniPlayer.onRepeat': 'M1.sessions',
   'shell/MiniPlayer.onShuffle': 'M1.sessions',
-  'show/MediaHeader.onPlayLast': 'M1.sessions',
-  'show/MediaHeader.onPlayNext': 'M1.sessions',
   // The lyrics sheet's own controls.
   'lyrics/LyricsPage.onSyncModeChange': 'M1.shell',
   // Detail and home screens: tabs, editions, the episode sort.

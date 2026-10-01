@@ -176,14 +176,3 @@ val sonoraStates: List<StateEntry> = listOf(
     StateEntry("ValueRow") { v -> ValueRow(ValueRowProps(label = "Speed", value = "1x", onClick = act(v))) },
     StateEntry("ViewToggle") { v -> ViewToggle(ViewToggleProps(onChange = pick(v))) },
 )
-
-/** Handler props that are not actions, as web's `NOT_ACTIONS` lists them. */
-val notActions: Set<Pair<String, String>> = setOf(
-    "BackdropShell" to "onProgress",
-    "FrontLayerHeader" to "onSpyChange",
-    "OverflowMenu" to "onOpenChange",
-    "QueuePage" to "onEditingChange",
-    "NowPlaying" to "onEditingChange",
-    "QueuePage" to "onReorder",
-    "NowPlaying" to "onReorder",
-)
