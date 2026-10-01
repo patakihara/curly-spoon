@@ -10,5 +10,10 @@ fun NowPlayingPage(props: NowPlayingPageProps) {
         "NowPlayingPage",
         texts = listOf(props.title, props.artist, props.context),
         slots = listOf(props.children),
+        taps = listOf(
+            "Previous" to props.onPrev,
+            (if (props.playing == true) "Pause" else "Play") to props.onTogglePlay,
+            "Next" to props.onNext,
+        ),
     )
 }

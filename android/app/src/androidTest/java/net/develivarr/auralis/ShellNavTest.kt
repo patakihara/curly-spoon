@@ -6,6 +6,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -55,17 +56,18 @@ class ShellNavTest {
 
     private fun role(role: Role) = SemanticsMatcher.expectValue(SemanticsProperties.Role, role)
 
-    /** The first button named `name`: a card, a row, a link or a control. */
+    /** The first enabled button named `name`: a card, a row, a link or a control. */
     private fun tap(name: String) = tap(
         composeRule.onAllNodes(
             role(Role.Button) and (hasContentDescription(name) or hasText(name)) and
-                hasClickAction(),
+                hasClickAction() and isEnabled(),
         ).onFirst(),
     )
 
     /** A tab named `label`: a destination on the bottom bar, or one of the player's tabs. */
     private fun tab(label: String) = tap(
-        composeRule.onAllNodes(role(Role.Tab) and hasText(label) and hasClickAction()).onFirst(),
+        composeRule.onAllNodes(role(Role.Tab) and hasText(label) and hasClickAction() and isEnabled())
+            .onFirst(),
     )
 
     /** The mini-player, a button named by the track shell.json's `playing` loads. */

@@ -10,6 +10,10 @@ fun FeatureCard(props: FeatureCardProps) {
         "FeatureCard",
         texts = listOf(props.kind, props.title, props.meta, props.description),
         slots = listOf(props.preview),
-        taps = listOf("Play" to props.onPlay),
+        taps = listOf(
+            "Play" to props.onPlay,
+            (if (props.saved == true) "Saved" else "Save") to props.onSave,
+            "More" to props.onMore,
+        ),
     )
 }

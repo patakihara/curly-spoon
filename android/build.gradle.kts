@@ -8,3 +8,16 @@ plugins {
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.paparazzi) apply false
 }
+
+// Tests run only on CI, so a failure prints its whole message and cause in the log. Each test
+// class gets a JVM of its own: once an earlier class has drawn Sonora's controls in Robolectric, a
+// later class's scrolling container never goes idle in a shared JVM (cause not yet pinned down).
+subprojects {
+    tasks.withType<Test>().configureEach {
+        forkEvery = 1
+        testLogging {
+            events("failed")
+            exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        }
+    }
+}

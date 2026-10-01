@@ -9,7 +9,12 @@ fun MiniPlayer(props: MiniPlayerProps) {
     SonoraStub(
         "MiniPlayer",
         texts = listOf(props.title, props.artist),
-        onClick = props.onOpen,
+        press = Press(props.onOpen),
         label = props.title,
+        taps = listOf(
+            "Previous" to props.onPrev,
+            (if (props.playing == true) "Pause" else "Play") to props.onTogglePlay,
+            "Next" to props.onNext,
+        ),
     )
 }

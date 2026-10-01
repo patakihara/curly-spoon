@@ -8,7 +8,7 @@ import net.develivarr.auralis.generated.ui.InputProps
 fun Input(props: InputProps) {
     SonoraStub(
         "Input",
-        texts = listOf(props.value ?: props.placeholder),
         slots = listOf(props.icon),
+        field = Field(props.value, props.placeholder, props.onChange, disabled = props.disabled == true),
     )
 }

@@ -10,9 +10,7 @@ fun Section(props: SectionProps) {
         "Section",
         texts = listOf(props.eyebrow),
         slots = listOf(props.trailing, props.children),
-        taps = listOf(
-            props.title to props.onSubject,
-            (props.actionText ?: props.actionLabel) to props.onAction,
-        ),
+        links = listOf(props.title to props.onSubject),
+        taps = listOf((props.actionText ?: props.actionLabel) to props.onAction),
     )
 }

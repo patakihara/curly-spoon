@@ -9,8 +9,14 @@ fun MediaCard(props: MediaCardProps) {
     SonoraStub(
         "MediaCard",
         texts = listOf(props.eyebrow, props.title, props.sub, props.status),
-        onClick = props.onClick,
+        press = Press(props.onClick),
         label = props.title,
-        taps = listOf("Request" to props.onRequest),
+        taps = listOf(
+            "Play" to props.onPlay,
+            "Play next" to props.onPlayNext,
+            "Play last" to props.onPlayLast,
+            "Request" to props.onRequest,
+            "More" to props.onMore,
+        ),
     )
 }

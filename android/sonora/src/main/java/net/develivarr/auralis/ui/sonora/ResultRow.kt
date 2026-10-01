@@ -10,5 +10,8 @@ fun ResultRow(props: ResultRowProps) {
         "ResultRow",
         texts = listOf(props.title, props.meta, props.detail, props.status),
         slots = listOf(props.trailing),
+        press = Press(props.onClick),
+        label = props.title,
+        taps = listOf((props.actionGlyph ?: "Action") to props.onAction),
     )
 }

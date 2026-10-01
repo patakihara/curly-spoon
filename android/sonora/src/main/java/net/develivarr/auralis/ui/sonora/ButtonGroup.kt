@@ -8,6 +8,7 @@ import net.develivarr.auralis.generated.ui.ButtonGroupProps
 fun ButtonGroup(props: ButtonGroupProps) {
     SonoraStub(
         "ButtonGroup",
-        texts = listOf(props.items.joinToString(" · ") { it.label ?: it.key }),
+        tabs = props.items.map { item -> (item.label ?: item.key) to props.onChange?.let { change -> { change(item.key) } } },
+        selected = props.items.firstOrNull { it.key == props.value }?.let { it.label ?: it.key },
     )
 }

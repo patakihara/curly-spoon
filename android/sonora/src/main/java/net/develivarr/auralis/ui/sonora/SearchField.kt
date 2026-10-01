@@ -6,5 +6,10 @@ import net.develivarr.auralis.generated.ui.SearchFieldProps
 /** Sonora's SearchField, as a stub: M1 and M2 replace its body in place with the real layout. */
 @Composable
 fun SearchField(props: SearchFieldProps) {
-    SonoraStub("SearchField", texts = listOf(props.value ?: props.placeholder))
+    SonoraStub(
+        "SearchField",
+        field = Field(props.value, props.placeholder, props.onChange, disabled = props.disabled == true),
+        // Disabled, the whole field is off, its close button too.
+        taps = listOf("Close search" to props.onClose.takeUnless { props.disabled == true }),
+    )
 }
