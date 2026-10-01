@@ -133,7 +133,7 @@ describe('an Android page, from a canvas page', () => {
     expect(home).toContain('onChange = { key -> openDestination(navController, key) }');
   });
 
-  it('[M0.states] opens Settings from the account avatar', () => {
+  it('opens Settings from the account avatar', () => {
     expect(home).toMatch(
       /AccountButton\(\s*AccountButtonProps\([^)]*onClick = \{ navController\.navigate\(Route\.Settings\) \}/,
     );

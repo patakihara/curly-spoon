@@ -241,7 +241,7 @@ describe("the shell's controls on a web page", () => {
     expect(homeOut).not.toContain('go.close');
   });
 
-  it('[M0.states] opens Settings from the account avatar on the phone', () => {
+  it('opens Settings from the account avatar on the phone', () => {
     expect(homeOut).toMatch(/<AccountButton [^>]*onClick=\{\(\) => go.open\('\/settings'\)\} \/>/);
   });
 
@@ -283,7 +283,7 @@ describe("the shell's controls on a web page", () => {
     expect(book).toMatch(/<MiniPlayer [^>]*onOpen=\{\(\) => go.open\('\/playing'\)\} \/>/);
   });
 
-  it("[M0.states] shows the player panel at the desktop mini-player's Queue or Lyrics, tinting the one it shows", () => {
+  it("shows the player panel at the desktop mini-player's Queue or Lyrics, tinting the one it shows", () => {
     const book = generateWebPage(
       parsePage(source, 'book'),
       'book',
@@ -301,7 +301,7 @@ describe("the shell's controls on a web page", () => {
     expect(phone).not.toContain('Toggle');
   });
 
-  it('[M0.states] draws a player sheet at desktop density where it is the panel the mini-player showed', () => {
+  it('draws a player sheet at desktop density where it is the panel the mini-player showed', () => {
     const queue = generateWebPage(
       parsePage(
         'export default function Queue() {\n  return <QueuePage heading={null} />;\n}\n',

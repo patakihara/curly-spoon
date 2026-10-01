@@ -9,8 +9,9 @@
  * - The bottom bar and the rail open the destination tapped, on its own stack as it was left.
  * - The rail's hamburger collapses the labelled rail to the icon rail and back, and it stays so
  *   from page to page.
- * - The mini-player opens Now Playing. On desktop its Queue and Lyrics show the player panel at
- *   that tab, or back at Now Playing when it already shows it, leaving the page as it is.
+ * - The mini-player opens Now Playing, in the player panel where the layout holds one. On desktop
+ *   its Queue and Lyrics show the panel at that tab, or back at Now Playing when it already shows
+ *   it, leaving the page as it is.
  * - The avatar leading the phone's top bar opens Settings.
  * - The player's tabs switch to that tab's sheet.
  */

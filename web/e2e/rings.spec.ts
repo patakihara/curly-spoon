@@ -124,6 +124,9 @@ for (const width of WIDTHS) {
       await page.goto(path, { waitUntil: 'networkidle' });
       await page.evaluate(() => document.fonts.ready);
       await page.mouse.move(0, 0);
+      // Where the layout holds the player beside the page, a player sheet's route gives way to the
+      // page under it, the sheet showing in the panel: the walk stays on that page.
+      const at = new URL(page.url()).pathname;
 
       const faults: string[] = [];
       const seen = new Set<string>();
@@ -132,7 +135,7 @@ for (const width of WIDTHS) {
         await page.keyboard.press('Tab');
         await settle(page);
         // A Tab that opened another page ends the walk: this one is done.
-        if (new URL(page.url()).pathname !== path) break;
+        if (new URL(page.url()).pathname !== at) break;
         const stop = await inspect(page, REACH);
         if (stop === null) continue;
         const key = `${stop.desc}@${await page.evaluate(() => {

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { matchPath, useLocation, useNavigate, useNavigationType } from 'react-router';
+import { PANEL, useLayout } from './generated/nav/platform';
 import { NAV_MAP } from './generated/nav/stacks';
 
 /**
@@ -8,10 +9,12 @@ import { NAV_MAP } from './generated/nav/stacks';
  * with nothing under it to its destination's home; each destination keeps its own stack; a sheet
  * closes to the page under it; the browser's back goes to the previous view, wherever that was.
  * The rail's hamburger collapses the rail and back, and it stays so from page to page. On desktop
- * the mini-player's Queue and Lyrics show the player panel at that tab, its tab held apart from the
- * page, which stays as it is. The stacks, the rail and the panel are kept in the tab's session
- * storage, so a reload carries on where it was. The generated pages wire the shell's controls to
- * it, as design-codegen's shell-handlers say.
+ * the player panel's tab is held apart from the page, never in its route: the mini-player's Queue
+ * and Lyrics show the panel at that tab, and where the layout holds a panel of its own, the
+ * mini-player's track block and the panel's tabs set it too, and a player sheet's route shows its
+ * tab in the panel beside the page under it. The stacks, the rail and the panel are kept in the
+ * tab's session storage, so a reload carries on where it was. The generated pages wire the
+ * shell's controls to it, as design-codegen's shell-handlers say.
  */
 
 /** Somewhere to keep a value across a reload: the tab's session storage, in the app. */
@@ -182,15 +185,25 @@ export class Stacks {
     return to === this.showing ? undefined : to;
   }
 
-  /** A tab of the player: its sheet in place of the sheet showing, or else over the page. */
-  tab(tab: string): { to: string; replace: boolean } {
+  /**
+   * The player sheet showing taken off its stack, where the layout holds the player in the panel
+   * beside the page: the location under it.
+   */
+  underSheet(): string {
+    const stack = this.stack(this.current);
+    while (stack.length > 1 && this.page(stack.at(-1)!)?.sheet === true) stack.pop();
+    this.save();
+    return stack.at(-1)!;
+  }
+
+  /** A tab of the full-screen player: its sheet, in place of the sheet showing. */
+  tab(tab: string): string {
     const to = this.map.tabs[tab];
     if (to === undefined) throw new Error(`${tab} is not a tab of the player`);
     const stack = this.stack(this.current);
-    if (this.page(stack.at(-1)!)?.sheet !== true) return { to, replace: false };
     stack[stack.length - 1] = to;
     this.save();
-    return { to, replace: true };
+    return to;
   }
 }
 
@@ -232,9 +245,9 @@ export class Rail {
 }
 
 /**
- * The player panel's tab, as the desktop mini-player's Queue and Lyrics set it, apart from the
- * page: none until one is tapped, so each width shows its own panel, if any; then the tab tapped,
- * or Now Playing when that tab already shows; from then the panel's own tabs and its close.
+ * The player panel's tab on desktop, its one source, apart from the page: none until one is set,
+ * so each width shows its own panel, if any; then the mini-player's Queue or Lyrics tapped, or Now
+ * Playing when that tab already shows; from then the panel's own tabs and its close.
  */
 export class Panel {
   private held: string | undefined;
@@ -287,6 +300,13 @@ const stacks = new Stacks(NAV_MAP, session('auralis.shell.stacks'));
 const rail = new Rail(session('auralis.shell.rail'));
 const panel = new Panel(NAV_MAP.tabs, session('auralis.shell.panel'));
 
+/** The tab of the player whose sheet is at `location`, if it is one. */
+const tabAt = (location: string): string | undefined =>
+  Object.keys(NAV_MAP.tabs).find((tab) => NAV_MAP.tabs[tab] === location.split('?')[0]);
+
+/** The history entry whose player sheet was last moved into the panel, so it moves once. */
+let moved: string | undefined;
+
 /**
  * Whether what is drawn is the player panel the mini-player's Queue or Lyrics showed: there the
  * player's close and tabs act on the panel and leave the page as it is.
@@ -299,7 +319,7 @@ export interface ShellNav {
   close(home: string): void;
   /** The bottom bar's or the rail's item `key`. */
   destination(key: string): void;
-  /** A page over this one: the mini-player's Now Playing. */
+  /** A page over this one: the mini-player's Now Playing, in the panel where the layout holds one. */
   open(path: string): void;
   /** The player's tab `tab`. */
   tab(tab: string): void;
@@ -329,9 +349,17 @@ export function useShellNav(): ShellNav {
     () => undefined,
   );
   const inPanel = useContext(InPanel);
+  const panelled = PANEL[useLayout()];
   useEffect(() => {
-    stacks.seen(location.pathname + location.search, arrival, location.key);
-  }, [location, arrival]);
+    const where = location.pathname + location.search;
+    stacks.seen(where, arrival, location.key);
+    // A player sheet's route where the panel is the layout's own: its tab, in the panel.
+    const sheet = tabAt(where);
+    if (!panelled || sheet === undefined || moved === location.key) return;
+    moved = location.key;
+    panel.show(sheet);
+    void navigate(stacks.underSheet(), { replace: true });
+  }, [location, arrival, panelled, navigate]);
   return useMemo(
     () => ({
       close: (home) => (inPanel ? panel.close() : void navigate(stacks.close(home))),
@@ -339,17 +367,20 @@ export function useShellNav(): ShellNav {
         const to = stacks.destination(key);
         if (to !== undefined) void navigate(to);
       },
-      open: (path) => void navigate(path),
+      open: (path) => {
+        const sheet = tabAt(path);
+        if (panelled && sheet !== undefined) panel.show(sheet);
+        else void navigate(path);
+      },
       tab: (to) => {
-        if (inPanel) return panel.show(to);
-        const sheet = stacks.tab(to);
-        void navigate(sheet.to, { replace: sheet.replace });
+        if (inPanel || panelled) panel.show(to);
+        else void navigate(stacks.tab(to), { replace: true });
       },
       panel: () => tab,
       togglePanel: (to) => panel.toggle(to),
       rail: (given) => held ?? given,
       toggleRail: (given) => rail.toggle(given),
     }),
-    [navigate, held, tab, inPanel],
+    [navigate, held, tab, inPanel, panelled],
   );
 }

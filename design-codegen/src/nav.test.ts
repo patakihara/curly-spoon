@@ -308,7 +308,7 @@ describe('the one web shell', () => {
     );
   });
 
-  it('[M0.states] draws the player panel at the tab the desktop mini-player holds, beside the page, which stays', () => {
+  it('draws the player panel at the tab the desktop mini-player holds, beside the page, which stays', () => {
     expect(out).toContain("import NowPlaying from '../pages/NowPlaying';");
     expect(out).toContain("import Queue from '../pages/Queue';");
     expect(out).toContain(

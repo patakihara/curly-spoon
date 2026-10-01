@@ -84,7 +84,7 @@ describe("the shell's controls, wired alike on both apps", () => {
     expect(at('music', 0)['IconButton.onClick']).toBeUndefined();
   });
 
-  it("[M0.states] opens Settings from the avatar leading the phone's top bar, on web and Android", () => {
+  it("opens Settings from the avatar leading the phone's top bar, on web and Android", () => {
     expect(at('music', 0)['AccountButton.onClick']).toEqual({ kind: 'open', page: 'settings' });
     const android = shellHandlers(
       nav,
@@ -95,7 +95,7 @@ describe("the shell's controls, wired alike on both apps", () => {
     expect(wiring(android)['AccountButton.onClick']).toEqual({ kind: 'open', page: 'settings' });
   });
 
-  it("[M0.states] shows the player panel at the mini-player's Queue or Lyrics on desktop, and the phone's mini-player has neither", () => {
+  it("shows the player panel at the mini-player's Queue or Lyrics on desktop, and the phone's mini-player has neither", () => {
     expect(at('album', 1)['MiniPlayer.onToggleQueue']).toEqual({ kind: 'panel', tab: 'queue' });
     expect(at('album', 1)['MiniPlayer.onToggleLyrics']).toEqual({ kind: 'panel', tab: 'lyrics' });
     expect(at('album', 0)['MiniPlayer.onToggleQueue']).toBeUndefined();

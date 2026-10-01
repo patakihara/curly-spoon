@@ -144,7 +144,7 @@ class ShellNavTest {
     }
 
     @Test
-    fun M0_states_theAvatarOpensSettingsWhoseCloseReturnsToThePageUnderIt() {
+    fun theAvatarOpensSettingsWhoseCloseReturnsToThePageUnderIt() {
         start()
         tab("Books")
         tap("Account")
