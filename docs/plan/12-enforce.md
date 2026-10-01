@@ -11,15 +11,15 @@ The old project drifted from its design and its docs. Each rule here is a check 
 
 ### Build through the design
 
-- **Generated code can't be edited by hand.** The web UI package, Android's component props, the routes and the page layouts are all generated from `design/`. CI regenerates them and fails on any difference, and a Claude Code hook in the repo refuses edits to those folders, so the only way to change UI is through the design.
+- **Generated code can't be edited by hand.** The web UI package, Android's component props, the routes and the page layouts are all generated from `design/`. CI fails on any difference from a regeneration, and a repo hook refuses edits to those folders, so UI changes only through the design.
 - **No component without a design.** CI fails if app code uses a component that doesn't exist in Sonora with its `.d.ts`, card and previews. Lint rejects styled elements, raw colours and one-off components outside the UI package.
 - **No screen without a page, and looks match.** Routes, layouts and both platforms' screenshots are checked against the canvas, as "From design to both apps" lists.
 
 ### Keep the artifacts current
 
 - **Every artifact says what it was built from.** Its footer shows the repo commit, and `design/published.json` records the commit and artifact version of each publish.
-- **Unpublished design changes block the merge.** CI fails if `design/` changed after the recorded publish. Since publishing needs a Claude session, a repo hook stops one finishing with a design change unpublished.
-- **Your side is read first.** Before touching `design/`, the session compares the live artifact with the recorded version. If you've edited it or left comments since, those are pulled in or answered first. Open comments are listed at the start of every session.
+- **Unpublished design changes block the merge.** CI fails if `design/` changed after the recorded publish. A repo hook stops a session finishing with a design change unpublished.
+- **Your side is read first.** Before touching `design/`, the session compares the live artifact with the recorded version. Your edits or comments since come first. Open comments are listed at the start of every session.
 
 ### Keep the plan clean and the progress true
 
@@ -46,8 +46,8 @@ The plan and the progress are kept apart.
 :::
 
 - **"What this plan hasn't verified" stays current.** Each line names the existing item whose work checks it. The session-start summary flags a line whose item is done, and the orchestrator drops it or cuts it to what's still open. A gap a subagent reports but can't check is added, naming the item that will.
-- **A new session knows where things stand.** A session-start hook prints a short summary: current milestone, done items, work in flight with its notes, the next step, failing checks, and your open artifact comments.
-- **You see it too.** When the plan is published, each item gets a done or in-progress badge computed then, so progress shows without the text changing.
+- **A new session knows where things stand.** A session-start hook prints a summary: current milestone, done items, work in flight with its notes, the next step, failing checks, and your open artifact comments.
+- **You see it too.** The published plan shows each item's done or in-progress badge, computed at publish, without the text changing.
 - **Every commit names its plan item** (a `Plan:` line). CI rejects app changes without one. Work that isn't in the plan gets added to it first, in the same commit, so code can't outrun the plan.
 - **Checked with you at every milestone.** The demo ends with the plan read through together; anything that changed is rewritten in place, and the milestone gets your sign-off tag.
 
@@ -72,7 +72,7 @@ Anything you say about Auralis, in any session or artifact comment, goes through
 
    It also edits whatever else in the plan the change affects.
 3. **Applied in one commit**: the plan edit, the inbox file's deletion, and a commit message naming the plan item and the inbox file. Until that commit lands the idea stays in the inbox, so a crash never loses one. The plan checks run on that commit.
-4. **Progress follows by itself.** Nothing is written by hand: a new item shows as planned, a changed item whose check no longer passes shows as not done, and a bug's new check reopens its item. It all appears in the next session-start summary.
+4. **Progress follows by itself.** Nothing is written by hand: a new item shows as planned, a changed item whose check no longer passes shows as not done, and a bug's new check reopens its item, all in the next session-start summary.
 5. **Closed the loop with you.** The plan page is republished, a comment thread gets a reply saying where the idea landed and is resolved, and the page and the session-start summary list recently sorted ideas and where each went.
 
 ### What needs you, without waiting on you
