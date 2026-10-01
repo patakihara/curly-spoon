@@ -100,6 +100,7 @@ fun NotFoundPage(navController: NavController, actions: PageActions) {
                                             ButtonProps(
                                                 variant = ButtonVariant.SECONDARY,
                                                 platform = Platform.MOBILE,
+                                                onClick = { navController.navigate(Route.Browse) },
                                                 children = { BasicText("Go to Browse") },
                                             ),
                                         )

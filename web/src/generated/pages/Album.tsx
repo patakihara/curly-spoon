@@ -176,17 +176,20 @@ const placeholder = {
       {
         "title": "Shadows and Sighs",
         "sub": "Album · 2020",
-        "image": "/art/shadows-and-sighs.jpg"
+        "image": "/art/shadows-and-sighs.jpg",
+        "ref": "shadows-and-sighs"
       },
       {
         "title": "Between Two Worlds",
         "sub": "Album · 2018",
-        "image": "/art/between-two-worlds.jpg"
+        "image": "/art/between-two-worlds.jpg",
+        "ref": "between-two-worlds"
       },
       {
         "title": "Heartbeats in Silence",
         "sub": "Single · 2024",
-        "image": "/art/deep-inertia.jpg"
+        "image": "/art/deep-inertia.jpg",
+        "ref": "heartbeats-in-silence"
       }
     ]
   }
@@ -466,7 +469,7 @@ export default function Album({ data = placeholder, state = 'full' }: AlbumProps
         <Shelf platform={platform}>
           {data.more.items.map((album, i) => (
             <Fragment key={i}>
-              <MediaCard title={album.title} sub={album.sub} image={album.image} platform={platform} />
+              <MediaCard title={album.title} sub={album.sub} image={album.image} onClick={() => navigate(generatePath('/music/albums/:ref', { ref: album.ref }))} platform={platform} />
             </Fragment>
           ))}
         </Shelf>

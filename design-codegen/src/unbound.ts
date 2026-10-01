@@ -6,14 +6,6 @@
  * on some element of that page, at some layout. Binding an action deletes its line.
  */
 export const UNBOUND: Readonly<Record<string, string>> = {
-  // Navigation to a real page, sign-in and the shell's own controls, bound in this item.
-  'album/MediaCard.onClick': 'M0.states',
-  'artist/ArtistCard.onClick': 'M0.states',
-  'browse/Section.onAction': 'M0.states',
-  'notFound/Button.onClick': 'M0.states',
-  'search/Section.onAction': 'M0.states',
-  'shelf/MediaCard.onClick': 'M0.states',
-  'signIn/StatusBanner.onAction': 'M0.states',
   // Playing: transport, play verbs and tracks.
   'album/MediaHeader.onPlay': 'M1.play',
   'album/ResultRow.onClick': 'M1.play',

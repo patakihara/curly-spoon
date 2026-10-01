@@ -223,7 +223,12 @@ const placeholder = {
       "meta": "Fleeting Verses · 2:53",
       "image": "/art/golden-scars.jpg"
     }
-  ]
+  ],
+  "shelves": {
+    "recentlyAdded": "recently-added",
+    "people": "artists-and-authors",
+    "pickedForYou": "picked-for-you"
+  }
 };
 
 /** The route of each page this page may open: its structure links, and its own. */
@@ -499,7 +504,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           />
         </LayoutGrid>
       </Section>
-      <Section title="Recently added" action="arrow_forward" actionLabel="See all" platform={platform}>
+      <Section title="Recently added" action="arrow_forward" actionLabel="See all" onAction={() => navigate(generatePath('/shelves/:id', { id: data.shelves.recentlyAdded }))} platform={platform}>
         <Shelf platform={platform}>
           {data.recentlyAdded.map((item, i) => (
             <Fragment key={i}>
@@ -508,7 +513,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           ))}
         </Shelf>
       </Section>
-      <Section title="Artists & authors" action="arrow_forward" actionLabel="See all" platform={platform}>
+      <Section title="Artists & authors" action="arrow_forward" actionLabel="See all" onAction={() => navigate(generatePath('/shelves/:id', { id: data.shelves.people }))} platform={platform}>
         <Shelf platform={platform}>
           {data.people.map((person, i) => (
             <Fragment key={i}>
@@ -517,7 +522,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           ))}
         </Shelf>
       </Section>
-      <Section title="Picked for you" action="arrow_forward" actionLabel="See all" platform={platform}>
+      <Section title="Picked for you" action="arrow_forward" actionLabel="See all" onAction={() => navigate(generatePath('/shelves/:id', { id: data.shelves.pickedForYou }))} platform={platform}>
         <Shelf platform={platform}>
           {data.pickedForYou.map((item, i) => (
             <Fragment key={i}>

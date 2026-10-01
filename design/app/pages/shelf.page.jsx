@@ -22,6 +22,7 @@ export default function Shelf({ data }) {
                 sub={item.sub}
                 image={item.image}
                 progress={item.progress}
+                onClick={<Open page={item.page} ref={item.ref} />}
               />
             </Each>
           </LayoutGrid>

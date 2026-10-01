@@ -185,22 +185,26 @@ const placeholder = {
     {
       "title": "Soul Vertex",
       "sub": "Artist",
-      "image": "/art/salt-and-static.jpg"
+      "image": "/art/salt-and-static.jpg",
+      "ref": "soul-vertex"
     },
     {
       "title": "Fleeting Verses",
       "sub": "Artist",
-      "image": "/art/fleeting-verses.jpg"
+      "image": "/art/fleeting-verses.jpg",
+      "ref": "fleeting-verses"
     },
     {
       "title": "Sonic Tales",
       "sub": "Artist",
-      "image": "/art/sonic-tales.jpg"
+      "image": "/art/sonic-tales.jpg",
+      "ref": "sonic-tales"
     },
     {
       "title": "Adam Rivers",
       "sub": "Artist",
-      "image": "/art/adam-rivers.jpg"
+      "image": "/art/adam-rivers.jpg",
+      "ref": "adam-rivers"
     }
   ]
 };
@@ -487,7 +491,7 @@ export default function Artist({ data = placeholder, state = 'full' }: ArtistPro
         <Shelf platform={platform}>
           {data.similar.map((artist, i) => (
             <Fragment key={i}>
-              <ArtistCard title={artist.title} sub={artist.sub} image={artist.image} platform={platform} />
+              <ArtistCard title={artist.title} sub={artist.sub} image={artist.image} onClick={() => navigate(generatePath('/music/artists/:ref', { ref: artist.ref }))} platform={platform} />
             </Fragment>
           ))}
         </Shelf>

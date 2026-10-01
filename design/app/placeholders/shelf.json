@@ -8,43 +8,57 @@
       "title": "Salt and Static",
       "sub": "Album · Soul Vertex",
       "image": "/art/salt-and-static.jpg",
-      "progress": null
+      "progress": null,
+      "page": "album",
+      "ref": "salt-and-static"
     },
     {
       "title": "Escapes and Moons",
       "sub": "Album · Soul Vertex",
       "image": "/art/escapes-and-moons.jpg",
-      "progress": null
+      "progress": null,
+      "page": "album",
+      "ref": "escapes-and-moons"
     },
     {
       "title": "Golden Scars",
       "sub": "Album · Fleeting Verses",
       "image": "/art/golden-scars.jpg",
-      "progress": null
+      "progress": null,
+      "page": "album",
+      "ref": "golden-scars"
     },
     {
       "title": "Between Lines of Light",
       "sub": "Album · Sonic Tales",
       "image": "/art/between-lines-of-light.jpg",
-      "progress": 0.3
+      "progress": 0.3,
+      "page": "album",
+      "ref": "between-lines-of-light"
     },
     {
       "title": "Fragments of the Wind",
       "sub": "Album · Fleeting Verses",
       "image": "/art/fragments-of-the-wind.jpg",
-      "progress": null
+      "progress": null,
+      "page": "album",
+      "ref": "fragments-of-the-wind"
     },
     {
       "title": "Paper Lanterns",
       "sub": "Album · Sonic Tales",
       "image": "/art/paper-lanterns.jpg",
-      "progress": null
+      "progress": null,
+      "page": "album",
+      "ref": "paper-lanterns"
     },
     {
       "title": "Signal & Noise",
       "sub": "Album · Soul Vertex",
       "image": "/art/signal-noise.jpg",
-      "progress": null
+      "progress": null,
+      "page": "album",
+      "ref": "signal-noise"
     }
   ]
 }

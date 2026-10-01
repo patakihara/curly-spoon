@@ -34,7 +34,12 @@ export default function Browse({ data }) {
             />
           </LayoutGrid>
         </Section>
-        <Section title="Recently added" action="arrow_forward" actionLabel="See all">
+        <Section
+          title="Recently added"
+          action="arrow_forward"
+          actionLabel="See all"
+          onAction={<Open page="shelf" id={data.shelves.recentlyAdded} />}
+        >
           <Shelf>
             <Each of={data.recentlyAdded} as="item">
               <MediaCard
@@ -47,7 +52,12 @@ export default function Browse({ data }) {
             </Each>
           </Shelf>
         </Section>
-        <Section title="Artists & authors" action="arrow_forward" actionLabel="See all">
+        <Section
+          title="Artists & authors"
+          action="arrow_forward"
+          actionLabel="See all"
+          onAction={<Open page="shelf" id={data.shelves.people} />}
+        >
           <Shelf>
             <Each of={data.people} as="person">
               <ArtistCard
@@ -59,7 +69,12 @@ export default function Browse({ data }) {
             </Each>
           </Shelf>
         </Section>
-        <Section title="Picked for you" action="arrow_forward" actionLabel="See all">
+        <Section
+          title="Picked for you"
+          action="arrow_forward"
+          actionLabel="See all"
+          onAction={<Open page="shelf" id={data.shelves.pickedForYou} />}
+        >
           <Shelf>
             <Each of={data.pickedForYou} as="item">
               <MediaCard

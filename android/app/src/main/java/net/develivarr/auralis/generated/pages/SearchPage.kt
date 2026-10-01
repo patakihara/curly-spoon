@@ -230,6 +230,7 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                             Section(
                                 SectionProps(
                                     title = "Not in your library",
+                                    onAction = { navController.navigate(Route.Requests) },
                                     platform = Platform.MOBILE,
                                     last = true,
                                     actionText = "Your requests",

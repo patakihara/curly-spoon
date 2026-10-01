@@ -465,6 +465,9 @@ fun ArtistPage(navController: NavController, actions: PageActions) {
                                                             sub = "Artist",
                                                             platform = Platform.MOBILE,
                                                             image = "/art/salt-and-static.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Artist(ref = "soul-vertex"))
+                                                            },
                                                         ),
                                                     )
                                                     ArtistCard(
@@ -473,6 +476,9 @@ fun ArtistPage(navController: NavController, actions: PageActions) {
                                                             sub = "Artist",
                                                             platform = Platform.MOBILE,
                                                             image = "/art/fleeting-verses.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Artist(ref = "fleeting-verses"))
+                                                            },
                                                         ),
                                                     )
                                                     ArtistCard(
@@ -481,6 +487,9 @@ fun ArtistPage(navController: NavController, actions: PageActions) {
                                                             sub = "Artist",
                                                             platform = Platform.MOBILE,
                                                             image = "/art/sonic-tales.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Artist(ref = "sonic-tales"))
+                                                            },
                                                         ),
                                                     )
                                                     ArtistCard(
@@ -489,6 +498,9 @@ fun ArtistPage(navController: NavController, actions: PageActions) {
                                                             sub = "Artist",
                                                             platform = Platform.MOBILE,
                                                             image = "/art/adam-rivers.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Artist(ref = "adam-rivers"))
+                                                            },
                                                         ),
                                                     )
                                                 },

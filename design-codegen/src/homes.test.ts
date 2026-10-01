@@ -170,6 +170,7 @@ describe('a card on a library home', () => {
     books: () => 'book',
     podcasts: (_, of) => (of.at(-1) === 'lists' ? 'list' : 'show'),
     browse: (item) => KIND[item.sub.split(' · ')[0]!]!,
+    shelf: (item) => KIND[item.sub.split(' · ')[0]!]!,
   };
 
   for (const [id, opens] of Object.entries(OPENS)) {
@@ -202,6 +203,23 @@ describe('a card on a library home', () => {
       }
     });
   }
+
+  it('on browse, opens each shelf in full from its "See all", each its own shelf', () => {
+    const { tree, data } = read('browse');
+    const seeAll = elements(tree).filter(
+      (e) => e.component === 'Section' && e.props.actionLabel?.kind === 'literal',
+    );
+    expect(seeAll).toHaveLength(3);
+    const ids = seeAll.map((section) => {
+      const action = section.props.onAction;
+      expect(action?.kind === 'open' && action.page).toBe('shelf');
+      const path = action?.kind === 'open' ? action.params.id! : [];
+      expect(path[0]).toBe('data');
+      return path.slice(1).reduce<unknown>((at, k) => (at as Record<string, unknown>)[k], data);
+    });
+    for (const id of ids) expect(id).toMatch(/^[a-z0-9-]+$/);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
 
   it('[M0.canvas] on browse, keeps its shelves mixed, the kinds interleaved', () => {
     const { data } = read('browse');

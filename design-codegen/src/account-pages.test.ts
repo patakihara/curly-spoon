@@ -143,6 +143,11 @@ describe('Sign in', () => {
     expect(errors[0]!.message).toMatch(/isn't one of the household's/);
   });
 
+  it('starts signing in again from the error\'s "Try again"', () => {
+    const banner = elements(tree).find((e) => e.component === 'StatusBanner')!;
+    expect(banner.props.onAction).toEqual({ kind: 'signIn' });
+  });
+
   it('[M0.sso/d] draws the error only for a refusal its data holds, so a first visit shows none', () => {
     const each = (node: PageTree): PageTree[] =>
       node.kind === 'each' ? [node] : 'children' in node ? node.children.flatMap(each) : [];

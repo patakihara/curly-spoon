@@ -161,6 +161,37 @@ test("the avatar leading the phone's top bar opens Settings, whose close returns
   await expect(page).toHaveURL('/books');
 });
 
+test('an album\'s "More by" card opens that album, whose close returns to the album that opened it', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/music/albums/between-lines-of-light', { waitUntil: 'networkidle' });
+  await settle(page);
+  await item(page, 'Between Two Worlds').click();
+  await expect(page).toHaveURL('/music/albums/between-two-worlds');
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page).toHaveURL('/music/albums/between-lines-of-light');
+});
+
+test('a Browse shelf\'s "See all" opens the shelf in full, whose cards open their own pages', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/', { waitUntil: 'networkidle' });
+  await settle(page);
+  await page
+    .getByText('Recently added', { exact: true })
+    .locator('xpath=ancestor::*[.//button[@aria-label="See all"]][1]')
+    .getByRole('button', { name: 'See all', exact: true })
+    .click();
+  await expect(page).toHaveURL('/shelves/recently-added');
+  await settle(page);
+  await item(page, 'Salt and Static').click();
+  await expect(page).toHaveURL('/music/albums/salt-and-static');
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page).toHaveURL('/shelves/recently-added');
+});
+
 /** The player panel's tab showing, or none where no panel is drawn. */
 async function panelTab(page: Page): Promise<string | null> {
   const tab = page
@@ -322,6 +353,61 @@ test("at 1024px the track block's full-screen player leaves the panel's tab alon
   await page.getByRole('button', { name: 'Close Player', exact: true }).click();
   await showing(page, null);
   await expect(page).toHaveURL('/books');
+});
+
+for (const width of [600, 1024]) {
+  test.fixme(`[M0.canvas/c] at ${width}px the mini-player's track block opens Now Playing as the side panel beside the page, never full screen`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const album = '/music/albums/between-lines-of-light';
+    await page.goto(album, { waitUntil: 'networkidle' });
+    await settle(page);
+    await showing(page, null);
+    await miniPlayer(page, false).click();
+    await showing(page, 'Now playing');
+    await expect(page).toHaveURL(album);
+    await heading(page, 'Between Lines of Light');
+  });
+}
+
+test.fixme("[M0.canvas/c] at 390px the player sheet's tabs switch within the one sheet, with no opening transition", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/playing', { waitUntil: 'networkidle' });
+  await settle(page);
+  // The sheet: the nearest ancestor of the tabs drawn with the sheet's opening transition, kept.
+  const found = await page.getByRole('tab', { name: 'Now playing' }).evaluate((tab) => {
+    let el: Element | null = tab;
+    while (el !== null && !(el as HTMLElement).style?.transition.includes('clip-path'))
+      el = el.parentElement;
+    (window as unknown as { sheet: unknown }).sheet = el;
+    return el !== null;
+  });
+  expect(found).toBe(true);
+
+  await page.getByRole('tab', { name: 'Queue' }).click();
+  await expect(page).toHaveURL('/playing/queue');
+  // For the next frames the sheet showing is the one kept, and neither it nor its content runs a
+  // transition: no clip, slide or fade.
+  const moved = await page.getByRole('tab', { name: 'Queue' }).evaluate(async (tab) => {
+    const kept = (window as unknown as { sheet: HTMLElement }).sheet;
+    let sheet: Element | null = tab;
+    while (sheet !== null && !(sheet as HTMLElement).style?.transition.includes('clip-path'))
+      sheet = sheet.parentElement;
+    const seen: string[] = [];
+    for (let i = 0; i < 20; i++) {
+      await new Promise((r) => requestAnimationFrame(r));
+      for (const el of [sheet, sheet?.firstElementChild]) {
+        for (const a of el?.getAnimations() ?? [])
+          seen.push((a as CSSTransition).transitionProperty ?? 'animation');
+      }
+    }
+    return { same: sheet === kept, seen: [...new Set(seen)] };
+  });
+  expect(moved).toEqual({ same: true, seen: [] });
+  await expect(page.getByRole('tab', { name: 'Queue' })).toHaveAttribute('aria-selected', 'true');
 });
 
 test("[M0.canvas] the rail's hamburger collapses the labelled rail to the icon rail and back, staying so from page to page", async ({
