@@ -282,7 +282,7 @@ describe('Sonora tokens, generated for web and Android', () => {
     expect(kotlin()).not.toMatch(/\bAccent(?!Contrast\b|Ink\b)[A-Z]\w*|\baccent(?!Ink\b)[A-Z]\w*/);
   });
 
-  it('[M0.states] everything on the play rose is white, label and glyph alike, in both themes and on both platforms', () => {
+  it('everything on the play rose is white, label and glyph alike, in both themes and on both platforms', () => {
     const css = webCss();
     const kt = readKotlin(kotlin());
     for (const theme of ['dark', 'light'] as const) {
@@ -297,7 +297,7 @@ describe('Sonora tokens, generated for web and Android', () => {
     expect(kt.palette.has('PlayIcon')).toBe(false);
   });
 
-  it('[M0.states] the error red is Sonora #FB270D, and the error tone follows it', () => {
+  it('the error red is Sonora #FB270D, and the error tone follows it', () => {
     const css = webCss();
     const kt = readKotlin(kotlin());
     for (const theme of ['dark', 'light'] as const) {
