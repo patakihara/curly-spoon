@@ -6,5 +6,10 @@ import net.develivarr.auralis.generated.ui.PreviewButtonProps
 /** Sonora's PreviewButton, as a stub: M1 and M2 replace its body in place with the real layout. */
 @Composable
 fun PreviewButton(props: PreviewButtonProps) {
-    SonoraStub("PreviewButton", texts = listOf(props.label))
+    SonoraStub(
+        "PreviewButton",
+        texts = listOf(props.label),
+        press = Press(props.onClick, disabled = props.disabled == true),
+        label = props.label,
+    )
 }

@@ -70,12 +70,12 @@ function handlersPassed(): Map<string, Set<string>> {
 }
 
 /**
- * Whether a stub hands `handler` to a tappable element: SonoraStub's `onClick`, one of its
+ * Whether a stub hands `handler` to a tappable element: SonoraStub's `press`, one of its
  * `taps` (`label to props.onX`), or a tap per item for a handler that takes the item's key.
  */
 const tappable = (stub: string, handler: string) =>
   new RegExp(
-    `onClick = props\\.${handler}\\b|to props\\.${handler}\\b|props\\.${handler}\\?\\.let`,
+    `Press\\(props\\.${handler}\\b|to props\\.${handler}\\b|props\\.${handler}\\?\\.let`,
   ).test(stub);
 
 describe('the Android Sonora composables', () => {
@@ -105,25 +105,31 @@ describe('the Android Sonora composables', () => {
   });
 
   it('[M0.canvas] give every tappable element a role, a button or a tab, and a name a screen reader reads', () => {
+    // Every control is StateLayer's `control`, whose `clickable` takes the role it is handed.
+    const layer = readFileSync(join(SONORA_DIR, 'StateLayer.kt'), 'utf8');
+    const clickables = [...layer.matchAll(/\.clickable\(([^)]*)\)/g)].map((m) => m[1]!);
+    expect(clickables).toHaveLength(1);
+    expect(clickables[0]).toMatch(/\brole = role\b/);
+    expect(layer).toMatch(/contentDescription = label/);
     const stub = readFileSync(join(SONORA_DIR, 'SonoraStub.kt'), 'utf8');
-    const clickables = [...stub.matchAll(/\.clickable\(([^)]*)\)/g)].map((m) => m[1]!);
-    expect(clickables.length).toBeGreaterThan(0);
-    for (const c of clickables) expect(c).toMatch(/\brole = (role|Role\.(Button|Tab))\b/);
-    expect(stub).toMatch(/contentDescription = label/);
+    expect(stub).not.toMatch(/\.clickable\(/);
+    const controls = [...stub.matchAll(/\.control\(([^)]*)\)/g)].map((m) => m[1]!);
+    expect(controls.length).toBeGreaterThan(0);
+    for (const c of controls) expect(c).toMatch(/\b(role|press\.role|Role\.(Button|Tab))\b/);
     // A whole box is named by its `label`; Button alone by its children's own text.
     const unnamed = readdirSync(SONORA_DIR)
       .filter((f) => f.endsWith('.kt') && f !== 'SonoraStub.kt')
       .filter((f) => {
         const source = readFileSync(join(SONORA_DIR, f), 'utf8');
-        return /onClick = props\.\w+/.test(source) && !/\blabel = props\.\w+/.test(source);
+        return /Press\(props\.\w+/.test(source) && !/\blabel = props\.\w+/.test(source);
       });
     expect(unnamed).toEqual(['Button.kt']);
   });
 
   it('finds a handler passed inside another call, and a stub that ignores it', () => {
-    expect(tappable('SonoraStub("X", onClick = props.onClick)', 'onClick')).toBe(true);
+    expect(tappable('SonoraStub("X", press = Press(props.onClick))', 'onClick')).toBe(true);
     expect(tappable('taps = listOf(props.subtitle to props.onSubtitle)', 'onSubtitle')).toBe(true);
     expect(tappable('SonoraStub("X", texts = listOf(props.title))', 'onClick')).toBe(false);
-    expect(tappable('onClick = props.onClickTwice', 'onClick')).toBe(false);
+    expect(tappable('press = Press(props.onClickTwice)', 'onClick')).toBe(false);
   });
 });

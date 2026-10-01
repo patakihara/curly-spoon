@@ -10,11 +10,13 @@ fun MediaHeader(props: MediaHeaderProps) {
         "MediaHeader",
         texts = listOf(props.kindLabel, props.title, props.meta),
         slots = listOf(props.rating, props.actions, props.menu),
+        links = listOf(props.subtitle to props.onSubtitle, props.partOf to props.onPartOf),
         taps = listOf(
-            props.subtitle to props.onSubtitle,
-            props.partOf to props.onPartOf,
-            (props.playLabel ?: "Play".takeIf { props.onPlay != null }) to props.onPlay,
-            (props.nextLabel ?: "Next".takeIf { props.onPlayNext != null }) to props.onPlayNext,
+            (props.playLabel ?: "Play") to props.onPlay,
+            (props.nextLabel ?: "Play next") to props.onPlayNext,
+            "Play last" to props.onPlayLast,
+            "Download" to props.onDownload,
+            "Add" to props.onAdd,
         ),
     )
 }

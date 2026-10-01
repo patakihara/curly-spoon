@@ -10,7 +10,7 @@ fun EpisodeRow(props: EpisodeRowProps) {
         "EpisodeRow",
         texts = listOf(props.title, props.description, props.meta?.joinToString(" · ")),
         slots = listOf(props.actions),
-        onClick = props.onClick,
+        press = Press(props.onClick),
         label = props.title,
         taps = listOf("Play" to props.onPlay),
     )

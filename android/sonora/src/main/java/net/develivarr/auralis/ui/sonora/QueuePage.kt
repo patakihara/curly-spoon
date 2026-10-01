@@ -10,5 +10,6 @@ fun QueuePage(props: QueuePageProps) {
         "QueuePage",
         texts = listOf(props.heading, props.context),
         slots = listOf(props.footer),
+        taps = listOf("Clear queue" to props.onClear, "Close queue" to props.onClose),
     )
 }

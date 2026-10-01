@@ -9,7 +9,7 @@ fun ArtistCard(props: ArtistCardProps) {
     SonoraStub(
         "ArtistCard",
         texts = listOf(props.title, props.sub),
-        onClick = props.onClick,
+        press = Press(props.onClick),
         label = props.title,
     )
 }

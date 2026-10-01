@@ -12,7 +12,11 @@ fun NowPlaying(props: NowPlayingProps) {
         texts = listOf(props.track?.title, props.track?.artist, props.track?.context),
         slots = listOf(props.children),
         root = true,
-        taps = listOf("Collapse player" to props.onClose),
+        taps = listOf(
+            "Collapse player" to props.onClose,
+            "More" to props.onMore,
+            (if (props.playing == true) "Pause" else "Play") to props.onTogglePlay,
+        ),
         tabs = PLAYER_TABS.map { (key, label) ->
             label to props.onTabChange?.let { change -> { change(key) } }
         },

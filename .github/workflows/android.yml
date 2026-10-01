@@ -80,6 +80,15 @@ jobs:
           path: android/sonora/build/reports/paparazzi/debug/**
           if-no-files-found: warn
 
+      # Material's states of each interactive component, which SonoraStatesScreenshotTest
+      # compares as it draws them: a report of its own, apart from the gallery's count.
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: paparazzi-states
+          path: android/sonora/build/reports/paparazzi/debug-states/**
+          if-no-files-found: warn
+
       - if: ${{ !cancelled() }}
         run: find android -path '*/build/test-results/*' -name 'TEST-*.xml' -print0 | xargs -0 node scripts/plan/collect-results.mjs --workflow android --job build --out reports/plan-results.json
 

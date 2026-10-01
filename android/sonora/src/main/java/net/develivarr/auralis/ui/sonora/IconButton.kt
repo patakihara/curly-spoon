@@ -10,7 +10,7 @@ fun IconButton(props: IconButtonProps) {
         "IconButton",
         texts = listOf(props.label),
         slots = listOf(props.children),
-        onClick = props.onClick,
+        press = Press(props.onClick, disabled = props.disabled == true),
         label = props.label,
     )
 }

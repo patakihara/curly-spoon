@@ -6,5 +6,9 @@ import net.develivarr.auralis.generated.ui.FieldRowProps
 /** Sonora's FieldRow, as a stub: M1 and M2 replace its body in place with the real layout. */
 @Composable
 fun FieldRow(props: FieldRowProps) {
-    SonoraStub("FieldRow", texts = listOf(props.label, props.value ?: props.placeholder))
+    SonoraStub(
+        "FieldRow",
+        texts = listOf(props.label),
+        field = Field(props.value, props.placeholder, props.onChange),
+    )
 }

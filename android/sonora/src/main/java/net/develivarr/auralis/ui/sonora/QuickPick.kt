@@ -9,7 +9,7 @@ fun QuickPick(props: QuickPickProps) {
     SonoraStub(
         "QuickPick",
         texts = listOf(props.title, props.sub),
-        onClick = props.onClick,
+        press = Press(props.onClick),
         label = props.title,
     )
 }
