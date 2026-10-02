@@ -85,15 +85,13 @@ class ShellNavTest {
         composeRule.waitForIdle()
     }
 
-    /** The page showing, by its route's class name, with its ref when it takes one. */
+    /** The page showing, by its id in nav.json, with its ref when it takes one. */
     private fun showing(): String {
         val entry = nav.currentBackStackEntry ?: return "nothing"
-        val name = entry.destination.route!!.substringAfterLast("Route.")
-            .substringBefore('/').substringBefore('?')
-        return when (name) {
-            "Album" -> "Album ${entry.toRoute<Route.Album>().ref}"
-            "Artist" -> "Artist ${entry.toRoute<Route.Artist>().ref}"
-            else -> name
+        return when (val id = pageId(entry.destination.route!!)) {
+            "album" -> "album ${entry.toRoute<Route.Album>().ref}"
+            "artist" -> "artist ${entry.toRoute<Route.Artist>().ref}"
+            else -> id
         }
     }
 
@@ -101,42 +99,42 @@ class ShellNavTest {
     private fun openAnAlbumFromItsArtist() {
         start()
         tab("Music")
-        assertEquals("Music", showing())
+        assertEquals("music", showing())
         tap("Between Lines of Light")
-        assertEquals("Album between-lines-of-light", showing())
+        assertEquals("album between-lines-of-light", showing())
         tap("Deep Inertia")
-        assertEquals("Artist deep-inertia", showing())
+        assertEquals("artist deep-inertia", showing())
         tap("Shadows and Sighs")
-        assertEquals("Album shadows-and-sighs", showing())
+        assertEquals("album shadows-and-sighs", showing())
     }
 
     @Test
     fun M0_canvas_d_closeReturnsToTheArtistAnAlbumWasOpenedFrom() {
         openAnAlbumFromItsArtist()
         tap("Close")
-        assertEquals("Artist deep-inertia", showing())
+        assertEquals("artist deep-inertia", showing())
     }
 
     @Test
     fun M0_canvas_d_eachDestinationKeepsItsStackAndAndroidBackDoesWhatCloseDoes() {
         openAnAlbumFromItsArtist()
         tab("Books")
-        assertEquals("Books", showing())
+        assertEquals("books", showing())
         tab("Music")
-        assertEquals("Album shadows-and-sighs", showing())
+        assertEquals("album shadows-and-sighs", showing())
         systemBack()
-        assertEquals("Artist deep-inertia", showing())
+        assertEquals("artist deep-inertia", showing())
     }
 
     @Test
     fun M0_canvas_d_theMiniPlayerOpensNowPlayingWhoseTabsSwitchSheetsClosingToThePageUnder() {
         openAnAlbumFromItsArtist()
         miniPlayer()
-        assertEquals("NowPlaying", showing())
+        assertEquals("nowPlaying", showing())
         tab("Queue")
-        assertEquals("Queue", showing())
+        assertEquals("queue", showing())
         tap("Collapse player")
-        assertEquals("Album shadows-and-sighs", showing())
+        assertEquals("album shadows-and-sighs", showing())
     }
 
     @Test
@@ -144,9 +142,9 @@ class ShellNavTest {
         openAnAlbumFromItsArtist()
         miniPlayer()
         tab("Lyrics")
-        assertEquals("Lyrics", showing())
+        assertEquals("lyrics", showing())
         systemBack()
-        assertEquals("Album shadows-and-sighs", showing())
+        assertEquals("album shadows-and-sighs", showing())
     }
 
     @Test
@@ -154,9 +152,9 @@ class ShellNavTest {
         start()
         tab("Books")
         tap("Account")
-        assertEquals("Settings", showing())
+        assertEquals("settings", showing())
         tap("Close")
-        assertEquals("Books", showing())
+        assertEquals("books", showing())
     }
 
     private companion object {
