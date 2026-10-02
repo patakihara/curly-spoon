@@ -5,6 +5,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.hasContentDescription
@@ -71,8 +72,17 @@ class ShellNavTest {
             .onFirst(),
     )
 
-    /** The mini-player, a button named by the track shell.json's `playing` loads. */
-    private fun miniPlayer() = tap(PLAYING)
+    /**
+     * The mini-player: the button named by the track shell.json's `playing` loads that holds a
+     * Pause button, since a page may also show a card of that track's album, which opens the album.
+     */
+    private fun miniPlayer() = tap(
+        composeRule.onAllNodes(
+            role(Role.Button) and (hasContentDescription(PLAYING) or hasText(PLAYING)) and
+                hasClickAction() and isEnabled() and
+                hasAnyDescendant(role(Role.Button) and hasText("Pause")),
+        ).onFirst(),
+    )
 
     private fun systemBack() {
         composeRule.runOnUiThread { composeRule.activity.onBackPressedDispatcher.onBackPressed() }
