@@ -221,6 +221,22 @@ describe("the web's navigation stacks", () => {
     expect(a.showing).toBe('/music/artists/deep-inertia');
   });
 
+  it('[M0.states/d] leaves a page that lights another destination, or none, for the destination tapped', () => {
+    const avatar = app('/');
+    avatar.open('/settings');
+    avatar.destination('browse');
+    expect(avatar.showing).toBe('/');
+
+    const unknown = app('/no-such-page');
+    unknown.destination('browse');
+    expect(unknown.showing).toBe('/');
+
+    const card = app('/');
+    card.open('/music/albums/tears-of-ice');
+    card.destination('browse');
+    expect(card.showing).toBe('/');
+  });
+
   it('[M0.canvas] adds no history for the destination already showing, so back leaves it', () => {
     const a = app('/');
     a.destination('music');

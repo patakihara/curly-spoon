@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: 7975d4fea5be36142594d8244b0654e440a73412c1a5c4a0f2c52e321d881d29
+pageHash: 7219cd749244f9403dda96ac30006bfdc528a17b5512f1ef08967da5a2db99f9
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---

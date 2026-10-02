@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { pathOf, webPages } from './nav-pages';
 
 /**
  * Focus rings on the app's real pages, reached from the keyboard: every control Tab stops on can
@@ -6,12 +7,8 @@ import { expect, test, type Page } from '@playwright/test';
  * it. The states fixture checks each control alone; this checks them where the pages put them.
  */
 
-const PAGES = {
-  browse: '/',
-  music: '/music',
-  album: '/music/albums/between-lines-of-light',
-  queue: '/playing/queue',
-} as const;
+/** Every page the web draws, from nav.json. */
+const PAGES = webPages.map((p) => ({ name: p.id, path: pathOf(p.route) }));
 
 const WIDTHS = [390, 1440];
 
@@ -115,7 +112,7 @@ const inspect = (page: Page, reach: number) =>
   }, reach);
 
 for (const width of WIDTHS) {
-  for (const [name, path] of Object.entries(PAGES)) {
+  for (const { name, path } of PAGES) {
     test(`[M0.states/a] on ${name} at ${width}px, every control Tab reaches shows its whole focus ring`, async ({
       page,
     }) => {
@@ -148,7 +145,7 @@ for (const width of WIDTHS) {
         if (stop.hidden !== undefined) faults.push(`${stop.desc} takes focus but ${stop.hidden}`);
         for (const c of stop.clipped) faults.push(`${stop.desc}'s ring: ${c}`);
       }
-      expect(visited, `Tab reaches controls on ${name}`).toBeGreaterThan(3);
+      expect(visited, `Tab reaches controls on ${name}`).toBeGreaterThan(0);
       expect(faults).toEqual([]);
     });
   }

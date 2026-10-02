@@ -1,6 +1,6 @@
 ---
 page: lyrics
-pageHash: 52a99270afd8c39ecf183da048ed8b3b9a0d42b5fcbd93cd8a463bc52a30b5e9
+pageHash: 5e8d50b6198381cd8fef8e7ee06760584ce80fa2ff7f1c98eb8545a5836ce76f
 sonora: [kit:mobile/lyrics, kit:desktop/lyrics, card:now-playing-page]
 spotify: [S40, S43]
 ---

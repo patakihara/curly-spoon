@@ -173,14 +173,19 @@ export class Stacks {
   /**
    * The destination tapped, as it was left; a page at the rail's foot opens over this one. None
    * when that is the location showing, so tapping it again adds nothing to the browser's history.
+   * The page showing is left behind when it lights another destination or none, so the tap is
+   * never a dead one: Settings over Browse, a page opened from a link, an album from a Browse card.
    */
   destination(key: string): string | undefined {
     let to = this.map.foot[key];
     if (to === undefined) {
       if (this.map.homes[key] === undefined) throw new Error(`${key} is not a destination`);
       this.current = key;
+      const stack = this.stack(key);
+      const top = stack.at(-1)!;
+      if (stack.length > 1 && top === this.showing && this.page(top)?.lights !== key) stack.pop();
       this.save();
-      to = this.stack(key).at(-1)!;
+      to = stack.at(-1)!;
     }
     return to === this.showing ? undefined : to;
   }
