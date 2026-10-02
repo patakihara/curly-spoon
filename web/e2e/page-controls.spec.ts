@@ -49,7 +49,8 @@ interface Control {
 /**
  * Marks every control showing with `attr=<n>`, in document order, and describes each: a Sonora
  * state host or a native or ARIA control, the host standing for the control inside it. With
- * `fresh`, only the controls not marked `data-control` already: those a press revealed.
+ * `fresh`, only the controls marked neither `data-control` nor `data-before`: those a press
+ * revealed.
  */
 const mark = (page: Page, attr: string, fresh: boolean): Promise<Control[]> =>
   page.evaluate(
@@ -78,7 +79,7 @@ const mark = (page: Page, attr: string, fresh: boolean): Promise<Control[]> =>
             r.height > 0 &&
             s.visibility !== 'hidden' &&
             el.closest('[inert]') === null &&
-            !(fresh && el.hasAttribute('data-control'))
+            !(fresh && el.matches('[data-control], [data-before]'))
           );
         })
         .map((el, i) => {
@@ -356,7 +357,11 @@ async function pressOnly(page: Page, sel: string, c: Control) {
     await page.waitForTimeout(120);
     if ((await ripples(page, sel)) > 0) faults.push(`disabled ${c.name} ripples`);
     await page.mouse.up();
-  } else await page.mouse.click(at.x, at.y);
+  } else {
+    // What shows just before the press, so what it reveals is told apart from what aiming did.
+    await mark(page, 'data-before', false);
+    await page.mouse.click(at.x, at.y);
+  }
   if (c.field) await page.keyboard.type('a');
   return { faults, before };
 }
@@ -469,6 +474,7 @@ async function pressEvery(context: BrowserContext, width: number, nav: NavPage) 
     for (const [k, r] of revealed.entries()) {
       await again();
       const parent = await aim(page, sel);
+      await mark(page, 'data-before', false);
       await page.mouse.click(parent.x, parent.y);
       await settle(page);
       const shown = await mark(page, 'data-revealed', true);
