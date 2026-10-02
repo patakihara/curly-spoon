@@ -35,8 +35,10 @@ import org.junit.runners.Parameterized
 /**
  * Criterion (d) of M0.states on a device: every page of the generated graph, as the app reaches
  * it, has every control without a bound action disabled. Each control with a click action is
- * pressed on the page as first opened, and so is each control a press reveals one level down (a
- * menu's items, a sheet's or dialog's controls, a field), after the same press afresh. A disabled one is not enabled, and its press leaves the
+ * pressed on the page as first opened, and so is each control an enabled press reveals one level
+ * down without leaving the page (a menu's items, a sheet's or dialog's controls, a field's), after
+ * the same press afresh. A revealed control is a node the press drew, not one it redrew: Sonora's
+ * stubs draw a menu's items inline, so a press on Android reveals in place, not only in a popup. A disabled one is not enabled, and its press leaves the
  * route and every node's semantics as they were. An enabled one does something of its own: it
  * changes the route, its own semantics (selected, state, expanded, text, a field's typed value),
  * opens a menu, dialog or field, or hands the app an action (sign in, play). A selected tab or the destination showing,
@@ -166,10 +168,10 @@ class PageControlsTest(private val page: String) {
     }
 
     /**
-     * A press's outcome: the fault it showed, if any, what it did, and the controls showing just
-     * before it, so what it reveals is told apart from what scrolling to it drew.
+     * A press's outcome: the fault it showed, if any, what it did, whether the page stayed, and the
+     * controls showing just before it, so what it reveals is told apart from what scrolling drew.
      */
-    private class Pressed(val fault: String?, val did: String?, val moved: Boolean, val shown: Set<Int>)
+    private class Pressed(val fault: String?, val did: String?, val moved: Boolean, val stayed: Boolean, val shown: Set<Int>)
 
     /** Scrolls to the control [locate] finds, [control], presses it and says what the press did. */
     private fun press(control: Control, locate: () -> SemanticsNode): Pressed {
@@ -194,11 +196,13 @@ class PageControlsTest(private val page: String) {
             after = look(id)
             did = did(before, after)
         }
+        val stayed = after.route == before.route
         return when {
             control.enabled -> Pressed(
                 if (did == null && !control.selected) "enabled ${control.name} does nothing visible on a press" else null,
                 did,
                 true,
+                stayed,
                 shown,
             )
             after.route != before.route || after.handed != before.handed || after.tree != before.tree -> Pressed(
@@ -206,9 +210,10 @@ class PageControlsTest(private val page: String) {
                     (did ?: "the tree changes, now ${(after.tree - before.tree.toSet()).take(3)}"),
                 did,
                 true,
+                stayed,
                 shown,
             )
-            else -> Pressed(null, null, false, shown)
+            else -> Pressed(null, null, false, stayed, shown)
         }
     }
 
@@ -219,6 +224,7 @@ class PageControlsTest(private val page: String) {
         assertTrue("$page has no control at all", controls.isNotEmpty())
         val faults = mutableListOf<String>()
         var revealedPressed = 0
+        val revealedNames = mutableListOf<String>()
         var fresh = true
         for (control in controls) {
             if (!fresh) open()
@@ -226,7 +232,7 @@ class PageControlsTest(private val page: String) {
             val result = press(control) { find(control) }
             result.fault?.let(faults::add)
             if (result.moved) fresh = false
-            if (result.did != "opens a menu, dialog or field") continue
+            if (!control.enabled || !result.stayed) continue
             // One level down: what the press revealed, each pressed after the same press afresh.
             val inner = controlsOf(revealed(result.shown))
             for (k in inner.indices) {
@@ -237,9 +243,10 @@ class PageControlsTest(private val page: String) {
                 val r = shown[k]
                 press(r) { find(r, revealed(again.shown)) }.fault?.let { faults += "$it, revealed by ${control.name}" }
                 revealedPressed++
+                revealedNames += r.name
             }
         }
-        Log.i("PageControlsTest", "$page: pressed ${controls.size} controls and $revealedPressed revealed ones")
+        Log.i("PageControlsTest", "$page: pressed ${controls.size} controls and $revealedPressed revealed ones${if (revealedNames.isEmpty()) "" else ": " + revealedNames.joinToString()}")
         assertTrue("controls on $page:\n${faults.joinToString("\n")}", faults.isEmpty())
     }
 
