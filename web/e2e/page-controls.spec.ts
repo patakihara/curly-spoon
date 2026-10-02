@@ -141,14 +141,21 @@ const effect = (
         ) ??
         null;
       const host = el?.closest('.sn-int') ?? el;
-      // The tab the control's surface shows: the nearest tab bar around it, as a panel's close
-      // control taking the panel from Queue back to Now playing. A control gone with its press
-      // is followed to the tab bar holding the same tabs.
+      const ids = new Set(
+        [el, host].flatMap((e) => (e?.getAttribute('aria-controls') ?? '').split(/\s+/)),
+      );
+      ids.delete('');
+      // The tab the control's surface shows: the tab bar holding the control, or the one it names
+      // in aria-controls, as a panel's close taking the panel from Queue back to Now playing; never
+      // some other tab bar on the page. A control gone with its press is followed to the tab bar
+      // holding the same tabs.
       const tabsOf = (bar: Element) =>
         [...bar.querySelectorAll('[role=tab]')].map((t) => t.textContent).join('|');
-      let bar: Element | null = null;
-      for (let a = el?.parentElement ?? null; a !== null && bar === null; a = a.parentElement)
-        bar = a.querySelector('[role=tablist]');
+      let bar: Element | null = el?.closest('[role=tablist]') ?? null;
+      for (const id of ids) {
+        const t = bar === null ? document.getElementById(id) : null;
+        bar = t?.closest('[role=tablist]') ?? t?.querySelector('[role=tablist]') ?? bar;
+      }
       if (el === null && tabs !== null)
         bar =
           [...document.querySelectorAll('[role=tablist]')].find((b) => tabsOf(b) === tabs) ?? null;
@@ -170,17 +177,12 @@ const effect = (
               (el.getAttribute('aria-label') ?? el.textContent ?? '').trim(),
               el.matches('input, textarea') ? (el as HTMLInputElement).value : null,
             ]);
-      const ids = new Set(
-        [el, host].flatMap((e) => (e?.getAttribute('aria-controls') ?? '').split(/\s+/)),
-      );
-      const controlled = [...ids]
-        .filter((id) => id !== '')
-        .map((id) => {
-          const t = document.getElementById(id);
-          return t === null
-            ? `${id} gone`
-            : `${id} ${shows(t)} ${t.scrollLeft},${t.scrollTop} ${state(t)} ${(t.textContent ?? '').length}`;
-        });
+      const controlled = [...ids].map((id) => {
+        const t = document.getElementById(id);
+        return t === null
+          ? `${id} gone`
+          : `${id} ${shows(t)} ${t.scrollLeft},${t.scrollTop} ${state(t)} ${(t.textContent ?? '').length}`;
+      });
       const overlays = [
         ...document.querySelectorAll(
           '[role=menu], [role=dialog], [role=alertdialog], [role=listbox]',
