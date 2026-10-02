@@ -36,8 +36,8 @@ export function MiniPlayer({
   const spoken = variant === 'spoken';
   // Every control on the bar: one with no handler is drawn disabled, and a press on one never
   // reaches the bar beneath it.
-  const btn = (label, fn, style, glyph) => (
-    <button className={'sn-int' + (style === playBtn ? ' sn-filled' : '')} aria-label={label} disabled={!fn}
+  const btn = (label, fn, style, glyph, pressed) => (
+    <button className={'sn-int' + (style === playBtn ? ' sn-filled' : '')} aria-label={label} disabled={!fn} aria-pressed={pressed}
       onClick={fn ? (e) => { e.stopPropagation(); fn(); } : undefined} style={style}>
       {glyph}
       {StateLayer && <StateLayer disabled={!fn} />}
@@ -109,8 +109,8 @@ export function MiniPlayer({
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 'var(--spacing-lg)' }}>
-          {!spoken && btn('Lyrics', onToggleLyrics, { ...iconBtn(fg), color: lyricsOpen ? 'var(--play-ink)' : fg }, 'lyrics')}
-          {btn('Queue', onToggleQueue, { ...iconBtn(fg), color: queueOpen ? 'var(--play-ink)' : fg }, 'queue_music')}
+          {!spoken && btn('Lyrics', onToggleLyrics, { ...iconBtn(fg), color: lyricsOpen ? 'var(--play-ink)' : fg }, 'lyrics', lyricsOpen)}
+          {btn('Queue', onToggleQueue, { ...iconBtn(fg), color: queueOpen ? 'var(--play-ink)' : fg }, 'queue_music', queueOpen)}
           {btn('Volume', onVolume, iconBtn(fg), 'volume_up')}
         </div>
       </div>

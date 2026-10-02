@@ -1,4 +1,5 @@
-import { RouterProvider, type createBrowserRouter } from 'react-router';
+import type { createBrowserRouter } from 'react-router';
+import { RouterProvider } from 'react-router/dom';
 
 type Router = ReturnType<typeof createBrowserRouter>;
 

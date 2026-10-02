@@ -358,12 +358,16 @@ export function useShellNav(): ShellNav {
   useEffect(() => {
     const where = location.pathname + location.search;
     stacks.seen(where, arrival, location.key);
-    // A player sheet's route where the panel is the layout's own: its tab, in the panel.
+    // A player sheet's route where the panel is the layout's own: its tab, in the panel. The page
+    // under it is drawn in the same task the location changes, not in a transition that leaves
+    // the page the sheet's route opens over showing at the new location for a second or more;
+    // from a microtask, since React cannot flush while it is still committing this effect.
     const sheet = tabAt(where);
     if (!panelled || sheet === undefined || moved === location.key) return;
     moved = location.key;
     panel.show(sheet);
-    void navigate(stacks.underSheet(), { replace: true });
+    const under = stacks.underSheet();
+    queueMicrotask(() => void navigate(under, { replace: true, flushSync: true }));
   }, [location, arrival, panelled, navigate]);
   return useMemo(
     () => ({

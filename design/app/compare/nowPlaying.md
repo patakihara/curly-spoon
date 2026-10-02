@@ -1,6 +1,6 @@
 ---
 page: nowPlaying
-pageHash: b0c87004a8337753b5e44db07bc8d4e30fda1d2e4a2d1f9daa35eae92a83bb1c
+pageHash: 28fbac05f0d69903997412b9d8930a74cf4955a968be1ae0d72efd9b65a18512
 sonora: [kit:mobile/nowplaying, card:now-playing-page]
 spotify: [S33, S34, S38, S39, S40, S41, S42]
 ---
@@ -8,12 +8,13 @@ spotify: [S33, S34, S38, S39, S40, S41, S42]
 # Now Playing
 
 Canvas renders: `nowPlaying/canvas-phone.png` (390 px, the full-screen sheet) and
-`nowPlaying/canvas-desktop.png` (1440 px, the side panel on its Now playing tab, drawn over Music).
-Sonora renders: `sonora/kit-mobile-nowplaying.png`, the mobile kit's player, and
-`sonora/card-now-playing-page.png`, the Now Playing card, which draws the new player: phones on each
-tab, music and spoken, and the desktop panel over the player bar. Also looked at: Spotify's S33 (a
-podcast: collapse, "Playing from Podcast", art, title, the spoken transport of speed, skip 15, play,
-skip 15, sleep) and S40 (the lyrics card and About the artist below the transport).
+`nowPlaying/canvas-desktop.png` (1440 px, the side panel on its Now playing tab, beside Browse,
+where a fresh load of its route lands). Sonora renders: `sonora/kit-mobile-nowplaying.png`, the
+mobile kit's player, and `sonora/card-now-playing-page.png`, the Now Playing card, which draws the
+new player: phones on each tab, music and spoken, and the desktop panel over the player bar. Also
+looked at: Spotify's S33 (a podcast: collapse, "Playing from Podcast", art, title, the spoken
+transport of speed, skip 15, play, skip 15, sleep) and S40 (the lyrics card and About the artist
+below the transport).
 
 ## What the sources show
 
@@ -34,7 +35,7 @@ favourite, seek, the music transport and the sleep timer, then "About the artist
 is what is loaded: music here. **Spoken** (a podcast, book or YouTube episode) swaps the transport
 for speed, skip back 15, play, skip forward 15 and the sleep timer, never previous or next, and
 drops the Lyrics tab; the Now Playing card draws it. On desktop, from 1240 px, the same tab is the
-side panel beside the page it opened over, Music here, and the player bar under the window carries
+side panel beside the page it opened over, Browse here, and the player bar under the window carries
 the seek bar and transport; the panel holds art, titles, what it plays from, the favourite, the
 sleep timer and the about card. Under 1240 px it is the full-screen sheet. Every page's side
 panel is this page, so it binds only what shell.json loads, its sleep timer and about card included.

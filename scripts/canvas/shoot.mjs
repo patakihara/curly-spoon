@@ -144,6 +144,9 @@ try {
       await tab.goto(web.origin + (path === '*' || mount ? '/no-such-page' : path), {
         waitUntil: 'networkidle',
       });
+      // At 1440 px a player sheet's route gives way to the page under it, the sheet in the panel.
+      if (page.presentation === 'sheet' && name === 'desktop' && mount === undefined)
+        await tab.waitForURL((u) => u.pathname !== path);
       if (mount !== undefined) {
         await tab.evaluate(async (url) => {
           const { mount } = await import(url);

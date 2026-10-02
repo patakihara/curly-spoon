@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { pathOf, webPages } from './nav-pages';
+import { givesWay, pathOf, webPages } from './nav-pages';
 
 /**
  * Focus rings on the app's real pages, reached from the keyboard: every control Tab stops on can
@@ -8,7 +8,7 @@ import { pathOf, webPages } from './nav-pages';
  */
 
 /** Every page the web draws, from nav.json. */
-const PAGES = webPages.map((p) => ({ name: p.id, path: pathOf(p.route) }));
+const PAGES = webPages.map((p) => ({ name: p.id, path: pathOf(p.route), page: p }));
 
 const WIDTHS = [390, 1440];
 
@@ -20,6 +20,8 @@ const STOPS = 50;
 
 interface Stop {
   desc: string;
+  /** Whether it is one of the page's own controls rather than the shell's. */
+  own: boolean;
   /** Why it cannot be seen, if it cannot. */
   hidden?: string;
   /** Each ancestor that cuts the ring off, and on which sides. */
@@ -55,6 +57,7 @@ const inspect = (page: Page, reach: number) =>
   page.evaluate((reach): Stop | null => {
     const el = document.activeElement as HTMLElement | null;
     if (el === null || el === document.body) return null;
+    const mine = (window as unknown as { ownRegion: () => Element }).ownRegion().contains(el);
     const label =
       el.getAttribute('aria-label') ?? (el.textContent ?? '').trim().replace(/\s+/g, ' ');
     const desc = `${el.tagName.toLowerCase()}${el.getAttribute('role') ? `[${el.getAttribute('role')}]` : ''} "${label.slice(0, 40)}"`;
@@ -82,7 +85,7 @@ const inspect = (page: Page, reach: number) =>
     // A focusable box that is no Sonora control, such as a scroller Chrome lets Tab reach when
     // nothing inside it takes focus, draws the browser's own outline, not a Sonora ring.
     if (host === null && !el.matches('button, input, select, textarea, a[href], [role]'))
-      return { desc, ...(hidden === undefined ? {} : { hidden }), clipped: [] };
+      return { desc, own: false, ...(hidden === undefined ? {} : { hidden }), clipped: [] };
     const need = { l: r.left - reach, t: r.top - reach, r: r.right + reach, b: r.bottom + reach };
     const clipped: string[] = [];
     for (let a = ringed.parentElement; a !== null; a = a.parentElement) {
@@ -108,44 +111,100 @@ const inspect = (page: Page, reach: number) =>
         );
       }
     }
-    return { desc, ...(hidden === undefined ? {} : { hidden }), clipped };
+    return { desc, own: mine, ...(hidden === undefined ? {} : { hidden }), clipped };
   }, reach);
 
+/**
+ * Defines `ownRegion()` in the page: where the page's own controls are drawn. In the shell, the
+ * column between the rail and the player panel, holding the page's heading and content; a page
+ * drawn without the shell is all its own.
+ */
+const defineOwnRegion = (page: Page) =>
+  page.evaluate(() => {
+    (window as unknown as { ownRegion: () => Element }).ownRegion = () => {
+      // The shell is the row of rail, page and panel over the player.
+      const shell = document.getElementById('root')?.firstElementChild;
+      const row = shell?.children.length === 2 ? shell.firstElementChild : null;
+      if (row === null || row === undefined) return document.body;
+      const area = (e: Element) =>
+        e.getBoundingClientRect().width * e.getBoundingClientRect().height;
+      return [...row.children].reduce((a, b) => (area(b) > area(a) ? b : a));
+    };
+  });
+
+/** The page's own enabled controls, each of which Tab must reach with its ring. */
+const ownControls = (page: Page) =>
+  page.evaluate(() => {
+    const region = (window as unknown as { ownRegion: () => Element }).ownRegion();
+    return [
+      ...region.querySelectorAll(
+        'button, input, select, textarea, a[href], [role=button], [role=switch], [role=slider], [role=checkbox], [role=tab][aria-selected=true]',
+      ),
+    ].filter((el) => {
+      const r = el.getBoundingClientRect();
+      return (
+        r.width > 0 &&
+        r.height > 0 &&
+        getComputedStyle(el).visibility !== 'hidden' &&
+        el.closest('[inert]') === null &&
+        !el.matches(':disabled, [aria-disabled="true"]')
+      );
+    }).length;
+  });
+
 for (const width of WIDTHS) {
-  for (const { name, path } of PAGES) {
+  for (const { name, path, page: nav } of PAGES) {
     test(`[M0.states/a] on ${name} at ${width}px, every control Tab reaches shows its whole focus ring`, async ({
       page,
     }) => {
       test.setTimeout(90_000);
       await page.setViewportSize({ width, height: width < 600 ? 844 : 900 });
       await page.goto(path, { waitUntil: 'networkidle' });
+      if (givesWay(nav, width)) await page.waitForURL((u) => u.pathname !== path);
       await page.evaluate(() => document.fonts.ready);
       await page.mouse.move(0, 0);
       // Where the layout holds the player beside the page, a player sheet's route gives way to the
       // page under it, the sheet showing in the panel: the walk stays on that page.
+      await settle(page);
       const at = new URL(page.url()).pathname;
+      await defineOwnRegion(page);
+      const owned = await ownControls(page);
 
       const faults: string[] = [];
       const seen = new Set<string>();
-      let visited = 0;
+      let mine = 0;
+      /** Tab presses that landed on no Sonora control of the page's own. */
+      let elsewhere = 0;
+      let cycled = false;
       for (let i = 0; i < STOPS; i++) {
         await page.keyboard.press('Tab');
         await settle(page);
         // A Tab that opened another page ends the walk: this one is done.
         if (new URL(page.url()).pathname !== at) break;
         const stop = await inspect(page, REACH);
-        if (stop === null) continue;
+        if (stop === null) {
+          elsewhere++;
+          continue;
+        }
         const key = `${stop.desc}@${await page.evaluate(() => {
           const r = document.activeElement!.getBoundingClientRect();
           return `${Math.round(r.x + scrollX)},${Math.round(r.y + scrollY)}`;
         })}`;
-        if (seen.has(key)) break;
+        if (seen.has(key)) {
+          cycled = true;
+          break;
+        }
         seen.add(key);
-        visited++;
+        if (stop.own) mine++;
+        else elsewhere++;
         if (stop.hidden !== undefined) faults.push(`${stop.desc} takes focus but ${stop.hidden}`);
         for (const c of stop.clipped) faults.push(`${stop.desc}'s ring: ${c}`);
       }
-      expect(visited, `Tab reaches controls on ${name}`).toBeGreaterThan(0);
+      // Every one of the page's own controls: all of them once Tab comes round again, or as many
+      // as the stops the shell left.
+      expect(mine, `Tab reaches ${name}'s own controls`).toBeGreaterThanOrEqual(
+        cycled ? owned : Math.min(owned, STOPS - elsewhere),
+      );
       expect(faults).toEqual([]);
     });
   }

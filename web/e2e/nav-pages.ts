@@ -9,13 +9,25 @@ export interface NavPage {
   route: string;
   title: string;
   platforms?: string[];
+  /** `sheet` for a player sheet, drawn in the side panel where a layout has one. */
+  presentation: string;
 }
 
-export const navPages = (
-  JSON.parse(readFileSync(new URL('../../design/app/nav.json', import.meta.url), 'utf8')) as {
-    pages: NavPage[];
-  }
-).pages;
+const nav = JSON.parse(
+  readFileSync(new URL('../../design/app/nav.json', import.meta.url), 'utf8'),
+) as { pages: NavPage[]; layouts: { minWidth: number; sidePanel?: string }[] };
+
+export const navPages = nav.pages;
+
+/** The narrowest width whose layout holds the player in a side panel beside the page. */
+const panelFrom = Math.min(...nav.layouts.filter((l) => l.sidePanel).map((l) => l.minWidth));
+
+/**
+ * Whether `page`, opened at `width`, gives way to the page under it: a player sheet where the
+ * layout holds the player in its side panel, which the app shows at the sheet's tab instead.
+ */
+export const givesWay = (page: NavPage, width: number) =>
+  page.presentation === 'sheet' && width >= panelFrom;
 
 const onWeb = (p: NavPage) => p.platforms === undefined || p.platforms.includes('web');
 
