@@ -100,6 +100,19 @@ describe('Album', () => {
     for (const t of tracks) expect([null, 'Playing']).toContain(t.status);
   });
 
+  it('opens each album of its "More by" shelf on its own page', () => {
+    const more = elements(tree).filter((e) => e.component === 'MediaCard');
+    expect(more).toHaveLength(1);
+    expect(more[0]!.props.onClick).toEqual({
+      kind: 'open',
+      page: 'album',
+      params: { ref: ['album', 'ref'] },
+    });
+    const items = (data.more as { items: Row[] }).items;
+    for (const item of items) expect(item.ref).toMatch(/^[a-z0-9-]+$/);
+    expect(new Set(items.map((i) => i.ref)).size).toBe(items.length);
+  });
+
   it('[M0.canvas] folds its editions under the one album', () => {
     expect(one(tree, 'ExpanderRow').props.label).toEqual(bound('data', 'editions', 'label'));
     expect((data.editions as Row).label).toMatch(/^\d+ editions · /);
@@ -158,6 +171,19 @@ describe('Artist', () => {
     }
     for (const r of [...(data.library as Row[]), ...releases])
       expect(r.ref).toMatch(/^[a-z0-9-]+$/);
+  });
+
+  it('opens each similar artist on their own page', () => {
+    const similar = elements(tree).filter((e) => e.component === 'ArtistCard');
+    expect(similar).toHaveLength(1);
+    expect(similar[0]!.props.onClick).toEqual({
+      kind: 'open',
+      page: 'artist',
+      params: { ref: ['artist', 'ref'] },
+    });
+    const artists = data.similar as Row[];
+    for (const artist of artists) expect(artist.ref).toMatch(/^[a-z0-9-]+$/);
+    expect(new Set(artists.map((a) => a.ref)).size).toBe(artists.length);
   });
 
   it('[M0.canvas] lists each album once in its discography, never an edition beside it', () => {

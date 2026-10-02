@@ -123,18 +123,19 @@ internal fun SonoraStub(
             }
         }
         taps.forEach { (tap, onTap) -> Tap(tap, onTap, Role.Button) }
-        tabs.forEach { (tab, onTap) -> Tap(tab, onTap, Role.Tab, selected = tab != null && tab == selected) }
+        tabs.forEach { (tab, onTap) -> Tap(tab, onTap, Role.Tab, selected = tab != null && tab == selected, tab = true) }
         slots.filterNotNull().forEach { slot -> if (off) Box(Modifier.disabledInk()) { slot() } else slot() }
     }
 }
 
 /**
  * [words] as a control in [role], in the accent ink, or disabled when [onTap] is absent. A
- * [selected] one is filled with the accent, or, disabled, with the surface ink at 12%. Each keeps
+ * [selected] one is filled with the accent, or, disabled, with the surface ink at 12%. A [tab]
+ * says whether it is selected, so a screen reader and a test read which tab is current. Each keeps
  * clear of the next by the width of their focus rings, so pinned rings do not overlap.
  */
 @Composable
-private fun Tap(words: String?, onTap: (() -> Unit)?, role: Role, selected: Boolean = false) {
+private fun Tap(words: String?, onTap: (() -> Unit)?, role: Role, selected: Boolean = false, tab: Boolean = false) {
     if (words == null) return
     val colors = SonoraLightColors
     val ink = when {
@@ -152,7 +153,7 @@ private fun Tap(words: String?, onTap: (() -> Unit)?, role: Role, selected: Bool
         modifier = Modifier
             .padding(vertical = RING_CLEARANCE)
             .control(onTap, role, colors.accentInk)
-            .semantics { if (selected) this.selected = true }
+            .semantics { if (tab) this.selected = selected }
             .background(container, CONTROL_SHAPE)
             .padding(horizontal = SonoraDimens.spacingXs),
         style = text(ink, SonoraType.textMd),

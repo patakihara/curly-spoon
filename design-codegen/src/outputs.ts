@@ -15,6 +15,7 @@ export const OUTPUTS = {
   webGallery: 'web/src/generated/gallery',
   kotlinTheme: 'android/sonora/src/main/java/net/develivarr/auralis/generated/theme',
   kotlinGallery: 'android/sonora/src/test/java/net/develivarr/auralis/generated/gallery',
+  kotlinStates: 'android/sonora/src/test/java/net/develivarr/auralis/generated/states',
   kotlinNav: 'android/app/src/main/java/net/develivarr/auralis/generated/nav',
   kotlinPages: 'android/app/src/main/java/net/develivarr/auralis/generated/pages',
 } as const;

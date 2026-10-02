@@ -5,7 +5,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.performClick
@@ -63,7 +65,8 @@ internal val unbound: List<Pair<String, @Composable () -> Unit>> = listOf(
     "Button" to { Button(ButtonProps(children = null)) },
     "ButtonGroup" to { ButtonGroup(ButtonGroupProps(items = listOf(ButtonGroupItem("all", "All")))) },
     "EpisodeRow" to { EpisodeRow(EpisodeRowProps(title = "Episode")) },
-    "ExpandableText" to { ExpandableText(ExpandableTextProps(text = "Text")) },
+    // Controlled: left uncontrolled it keeps its own state, a whole action of its own.
+    "ExpandableText" to { ExpandableText(ExpandableTextProps(text = "Text", expanded = false)) },
     "ExpanderRow" to { ExpanderRow(ExpanderRowProps(label = "Chapters")) },
     "FeatureCard" to { FeatureCard(FeatureCardProps(title = "Feature")) },
     "FieldRow" to { FieldRow(FieldRowProps(label = "Server", value = "auralis")) },
@@ -144,6 +147,42 @@ class SonoraDisabledTest {
         composeRule.setContent { Button(ButtonProps(children = null, onClick = { presses++ })) }
         composeRule.onNode(hasClickAction() and enabled).performClick()
         assertEquals(1, presses)
+    }
+
+    @Test
+    fun `M0_states_c an ExpandableText keeping its own state is enabled and folds on a press`() {
+        composeRule.setContent { ExpandableText(ExpandableTextProps(text = "Text")) }
+        composeRule.onNode(hasText("More") and hasClickAction() and enabled).performClick()
+        composeRule.onNode(hasText("Less") and hasClickAction() and enabled).performClick()
+        composeRule.onNode(hasText("More") and hasClickAction() and enabled).assertExists()
+    }
+
+    @Test
+    fun `M0_states_c a controlled ExpandableText with no onToggle is disabled`() {
+        composeRule.setContent { ExpandableText(ExpandableTextProps(text = "Text", expanded = true)) }
+        composeRule.onNode(hasText("Less")).assertIsNotEnabled()
+    }
+
+    @Test
+    fun `M0_states_c Edit queue is disabled when the queue can be neither removed from nor reordered`() {
+        composeRule.setContent { QueuePage(QueuePageProps(onClear = {}, onClose = {}, onEditingChange = {})) }
+        composeRule.onNode(hasText("Edit queue")).assertIsNotEnabled()
+    }
+
+    @Test
+    fun `M0_states_c Edit queue is enabled once the queue can be removed from or reordered`() {
+        val edits = mutableListOf<Boolean>()
+        val can = listOf(
+            QueuePageProps(onRemove = { _, _ -> }, onEditingChange = { edits += it }),
+            QueuePageProps(onRemoveSelected = { _ -> }, onEditingChange = { edits += it }),
+            QueuePageProps(onReorder = { _, _ -> }, onEditingChange = { edits += it }),
+        )
+        composeRule.setContent { Column { can.forEach { QueuePage(it) } } }
+        val toggles = composeRule.onAllNodes(hasText("Edit queue") and hasClickAction() and enabled)
+        assertEquals(3, toggles.fetchSemanticsNodes().size)
+        repeat(3) { composeRule.onAllNodes(hasText("Edit queue") and hasClickAction())[0].performClick() }
+        assertEquals(listOf(true, true, true), edits)
+        assertEquals(3, composeRule.onAllNodes(hasText("Done editing queue") and enabled).fetchSemanticsNodes().size)
     }
 
     @Test

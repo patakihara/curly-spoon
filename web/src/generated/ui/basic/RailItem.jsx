@@ -51,8 +51,9 @@ export function RailItem({ icon, label, active = false, expanded = true, rowHeig
   const w = open ? (56 + labelW + 20) + 'px' : (wide && on ? '72px' : '56px');
   const shift = iconOnly ? Math.round((rowHeight - 32) / 2) : 0;
   return (
-    // The whole row takes the press; the pill shows its state, as in Material's rail.
-    <div className="sn-int" role="button" aria-label={label} tabIndex={off ? -1 : 0} aria-disabled={off}
+    // The whole row takes the press; the pill shows its state, as in Material's rail. The active
+    // destination says so: pressing it again shows what already shows.
+    <div className="sn-int" role="button" aria-label={label} aria-current={on ? 'page' : undefined} tabIndex={off ? -1 : 0} aria-disabled={off}
       onClick={off ? undefined : onClick}
       onKeyDown={off ? undefined : (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
       style={sx('position:relative;width:100%;height:' + rowHeight + 'px;box-sizing:border-box;cursor:pointer;display:flex;justify-content:' + (open ? 'flex-start' : 'center') + ';transition:color' + ease + ';color:' + (on ? 'var(--accent-ink)' : 'var(--surface-fg-muted)'))}>

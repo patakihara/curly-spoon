@@ -3,6 +3,8 @@ package net.develivarr.auralis.generated.nav
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -119,13 +121,44 @@ fun closePage(navController: NavController, home: Route) {
     else navController.navigate(home) { popUpTo(navController.graph.id) { inclusive = true } }
 }
 
-/** A destination from the bottom bar: each keeps its own stack, left and resumed as it was. */
+/**
+ * A destination from the bottom bar: each keeps its own stack, left and resumed as it was. The
+ * page showing is left behind when it lights another destination or none, so the tap is never a
+ * dead one: Settings over Browse, an album opened from a Browse card.
+ */
 fun openDestination(navController: NavController, id: String) {
+    val showing = navController.currentBackStackEntry
     navController.navigate(destinationRoute(id)) {
         popUpTo(navController.graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
         restoreState = true
     }
+    val resumed = navController.currentBackStackEntry
+    if (showing != null && resumed?.id == showing.id && lights(resumed.destination) != id) {
+        navController.popBackStack()
+    }
+}
+
+/** The destination the page [destination] draws lights, or null for a page that lights none. */
+fun lights(destination: NavDestination): String? = when {
+    destination.hasRoute<Route.Browse>() -> "browse"
+    destination.hasRoute<Route.Requests>() -> "browse"
+    destination.hasRoute<Route.Shelf>() -> "browse"
+    destination.hasRoute<Route.Music>() -> "music"
+    destination.hasRoute<Route.Album>() -> "music"
+    destination.hasRoute<Route.Artist>() -> "music"
+    destination.hasRoute<Route.Playlist>() -> "music"
+    destination.hasRoute<Route.Favourites>() -> "music"
+    destination.hasRoute<Route.Books>() -> "books"
+    destination.hasRoute<Route.Book>() -> "books"
+    destination.hasRoute<Route.Author>() -> "books"
+    destination.hasRoute<Route.Series>() -> "books"
+    destination.hasRoute<Route.Podcasts>() -> "podcasts"
+    destination.hasRoute<Route.Show>() -> "podcasts"
+    destination.hasRoute<Route.Episode>() -> "podcasts"
+    destination.hasRoute<Route.List>() -> "podcasts"
+    destination.hasRoute<Route.Search>() -> "search"
+    else -> null
 }
 
 /** The home of the destination `id` names. */

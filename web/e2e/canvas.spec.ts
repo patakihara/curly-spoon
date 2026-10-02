@@ -1,21 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
+import { otherPages, pathOf, webPages } from './nav-pages';
 
 /**
  * Every page of the navigation map, visited in the running app with its placeholder data: its
  * title shows, and nothing broke on the way. The list comes from nav.json, as the web routes do,
  * so a page drawn later is covered the day it lands.
  */
-interface NavPage {
-  id: string;
-  route: string;
-  title: string;
-  platforms?: string[];
-}
-const design = new URL('../../design/app/', import.meta.url);
-const nav = JSON.parse(readFileSync(new URL('nav.json', design), 'utf8')) as { pages: NavPage[] };
-const onWeb = (p: NavPage) => p.platforms === undefined || p.platforms.includes('web');
-
 /** A phone and a desktop wide enough for the side panel. */
 const WIDTHS = [
   { name: 'phone', width: 390, height: 844 },
@@ -25,10 +16,6 @@ const WIDTHS = [
 /** What the not-found page says, and what React Router shows when a page throws. */
 const NOT_FOUND = "This page doesn't exist";
 const ERROR_BOUNDARY = 'Unexpected Application Error';
-
-/** The route with each parameter given a sample value and the query dropped; `*` an unknown path. */
-const pathOf = (route: string) =>
-  route === '*' ? '/no-such-page' : route.replace(/\?.*$/, '').replace(/:\w+/g, 'sample');
 
 /**
  * The heading each page shows with its placeholder data, generated from the canvas into the file
@@ -52,10 +39,10 @@ function errors(page: Page) {
 }
 
 test('[M0.canvas/c] nav.json lists web pages to visit', () => {
-  expect(nav.pages.filter(onWeb).length).toBeGreaterThan(0);
+  expect(webPages.length).toBeGreaterThan(0);
 });
 
-for (const p of nav.pages.filter(onWeb)) {
+for (const p of webPages) {
   for (const size of WIDTHS) {
     test(`[M0.canvas/c] ${p.id} renders with its placeholder data on a ${size.name}`, async ({
       page,
@@ -73,7 +60,7 @@ for (const p of nav.pages.filter(onWeb)) {
   }
 }
 
-for (const p of nav.pages.filter((p) => !onWeb(p))) {
+for (const p of otherPages) {
   test(`[M0.canvas/c] ${p.id} is ${p.platforms?.join(' and ')} only: the web answers its route with Not found`, async ({
     page,
   }) => {

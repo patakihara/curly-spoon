@@ -144,6 +144,11 @@ describe('Search', () => {
     );
     expect(outside?.props.actionText).toEqual({ kind: 'literal', value: 'Your requests' });
   });
+
+  it('opens the Requests page from "Your requests"', () => {
+    const outside = elements(tree).find((e) => e.props.actionText !== undefined);
+    expect(outside?.props.onAction).toEqual({ kind: 'open', page: 'requests', params: {} });
+  });
 });
 
 describe('Shelf', () => {
@@ -250,6 +255,15 @@ describe('Not found', () => {
     expect(action?.children).toEqual([{ kind: 'text', value: 'Go to Browse' }]);
     expect(bindings(tree)).toEqual([]);
     expect(data).toEqual({});
+  });
+
+  it('goes to Browse from "Go to Browse"', () => {
+    const empty = elements(tree).find((e) => e.component === 'EmptyState')!;
+    expect(slotted(empty, 'action')?.props.onClick).toEqual({
+      kind: 'open',
+      page: 'browse',
+      params: {},
+    });
   });
 });
 

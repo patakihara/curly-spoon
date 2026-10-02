@@ -73,8 +73,8 @@ _Done when:_ (a) Sofia's sign-off.
   _Done when:_ (a) a test creates a listening list and a podcast playlist through the API and plays each in order; (b) a test asserts The Digest holds the new unplayed episodes of subscribed shows by its rule in "Lists that aren't queues"; (c) a test creates a custom digest from chosen shows and asserts its episodes; (d) a test plays a digest episode and asserts it is marked played while that show's Up next and autoplay stay where they were; (e) a test plays a digest and asserts the previous queue is saved, playing its current or next episode resumes it, and playing the digest or an episode from its page resumes the digest's queue.
 - **[M2.grid]** Library grid/list with Random sort; Up next and second-most-recent on Browse (from owned content).
   _Done when:_ (a) a Playwright test in `web/` and an emulator test in `android/` each switch a fixture library from grid to list and back, assert both layouts show the same items, and assert Random sort with a fixed seed gives that seed's order; (b) a test asserts Browse's Up next and second-most-recent shelves hold only owned items from the user's history.
-- **[M2.settings]** Settings, including theme (System, Light or Dark), queue style and autoplay switches.
-  _Done when:_ (a) a test round-trips every setting through `GET/PUT /settings`; (b) web and Android tests change theme, queue style and autoplay and assert each takes effect.
+- **[M2.settings]** Settings: theme, queue style and autoplay switches, and first-run setup's form.
+  _Done when:_ (a) a test round-trips every setting through `GET/PUT /settings`; (b) web and Android tests set theme, queue style, autoplay and fill first-run setup's form, and assert each takes effect.
 
 **[M2.exit] Done when** you can find and play anything you own faster than in Spotify, Audiobookshelf or Jellyfin's own apps.
 _Done when:_ (a) Sofia's sign-off.

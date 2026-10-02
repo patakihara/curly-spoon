@@ -61,7 +61,14 @@ fun BrowsePage(navController: NavController, actions: PageActions) {
                 BackLayer(
                     BackLayerProps(
                         title = "Browse",
-                        leading = { AccountButton(AccountButtonProps(label = "Account")) },
+                        leading = {
+                            AccountButton(
+                                AccountButtonProps(
+                                    label = "Account",
+                                    onClick = { navController.navigate(Route.Settings) },
+                                ),
+                            )
+                        },
                         controls = {
                             ButtonGroup(
                                 ButtonGroupProps(
@@ -237,6 +244,9 @@ fun BrowsePage(navController: NavController, actions: PageActions) {
                                     title = "Recently added",
                                     action = "arrow_forward",
                                     actionLabel = "See all",
+                                    onAction = {
+                                        navController.navigate(Route.Shelf(id = "recently-added"))
+                                    },
                                     platform = Platform.MOBILE,
                                     children = {
                                         Shelf(
@@ -350,6 +360,9 @@ fun BrowsePage(navController: NavController, actions: PageActions) {
                                     title = "Artists & authors",
                                     action = "arrow_forward",
                                     actionLabel = "See all",
+                                    onAction = {
+                                        navController.navigate(Route.Shelf(id = "artists-and-authors"))
+                                    },
                                     platform = Platform.MOBILE,
                                     children = {
                                         Shelf(
@@ -422,6 +435,9 @@ fun BrowsePage(navController: NavController, actions: PageActions) {
                                     title = "Picked for you",
                                     action = "arrow_forward",
                                     actionLabel = "See all",
+                                    onAction = {
+                                        navController.navigate(Route.Shelf(id = "picked-for-you"))
+                                    },
                                     platform = Platform.MOBILE,
                                     children = {
                                         Shelf(

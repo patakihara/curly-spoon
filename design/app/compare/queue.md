@@ -1,6 +1,6 @@
 ---
 page: queue
-pageHash: 96871e13c3a609817dee14a3a0af749f242f56bbf811845ba00c45521c20b9ab
+pageHash: 15db961ec024e28015b308f1d4b6856bba16f62d69f759686ae8ae9db603f48f
 sonora: [kit:mobile/queue, kit:desktop/queue]
 spotify: [S36, S37]
 ---
@@ -8,10 +8,11 @@ spotify: [S36, S37]
 # Queue
 
 Canvas renders: `queue/canvas-phone.png` (390 px, the sheet on its Queue tab) and
-`queue/canvas-desktop.png` (1440 px, the side panel on its Queue tab, drawn over Music). Sonora
-renders: `sonora/kit-mobile-queue.png` and `sonora/kit-desktop-queue.png`. Also looked at: Spotify's
-S36 (the queue as a sheet over the player: "Queue", "Playing If Books Could Kill", Edit, the playing
-row in accent, drag handles, Timer and Speed at its foot) and S37 (the same at full height).
+`queue/canvas-desktop.png` (1440 px, the side panel on its Queue tab, beside Browse, where a fresh
+load of its route lands). Sonora renders: `sonora/kit-mobile-queue.png` and
+`sonora/kit-desktop-queue.png`. Also looked at: Spotify's S36 (the queue as a sheet over the player:
+"Queue", "Playing If Books Could Kill", Edit, the playing row in accent, drag handles, Timer and
+Speed at its foot) and S37 (the same at full height).
 
 ## What the sources show
 

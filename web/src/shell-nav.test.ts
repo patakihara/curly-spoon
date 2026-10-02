@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Rail, Stacks, type NavMap, type Store } from './shell-nav';
+import { Panel, Rail, Stacks, type NavMap, type Store } from './shell-nav';
 
 const map: NavMap = {
   homes: { browse: '/', music: '/music', books: '/books' },
@@ -64,11 +64,13 @@ function app(first: string) {
       if (to !== undefined) push(to);
     },
     tab: (tab: string) => {
-      const { to, replace } = stacks.tab(tab);
-      if (replace) {
-        entries[at] = to;
-        seen('REPLACE');
-      } else push(to);
+      entries[at] = stacks.tab(tab);
+      seen('REPLACE');
+    },
+    /** A player sheet's route, where the layout holds the panel: replaced by the page under it. */
+    underSheet: () => {
+      entries[at] = stacks.underSheet();
+      seen('REPLACE');
     },
     back: () => {
       at--;
@@ -134,12 +136,19 @@ describe("the web's navigation stacks", () => {
     expect(a.showing).toBe('/music/albums/shadows-and-sighs');
   });
 
-  it("[M0.canvas] opens a tab's sheet over a page from the side panel, closing back to that page", () => {
+  it("[M0.canvas] gives way to the page under a player sheet's route where the panel holds the player, and close still goes to its opener", () => {
     const a = leaveMusicOnAnAlbum();
-    a.tab('queue');
-    expect(a.showing).toBe('/playing/queue');
-    a.close('browse');
+    a.open('/playing/queue');
+    a.underSheet();
     expect(a.showing).toBe('/music/albums/shadows-and-sighs');
+    a.close('music');
+    expect(a.showing).toBe('/music/artists/deep-inertia');
+  });
+
+  it("[M0.canvas] gives way to the destination's page under a player sheet's route reached from outside the app", () => {
+    const a = app('/playing/lyrics');
+    a.underSheet();
+    expect(a.showing).toBe('/');
   });
 
   it("[M0.canvas] opens a page at the rail's foot over the page showing, closing back to it", () => {
@@ -212,6 +221,22 @@ describe("the web's navigation stacks", () => {
     expect(a.showing).toBe('/music/artists/deep-inertia');
   });
 
+  it('[M0.states/d] leaves a page that lights another destination, or none, for the destination tapped', () => {
+    const avatar = app('/');
+    avatar.open('/settings');
+    avatar.destination('browse');
+    expect(avatar.showing).toBe('/');
+
+    const unknown = app('/no-such-page');
+    unknown.destination('browse');
+    expect(unknown.showing).toBe('/');
+
+    const card = app('/');
+    card.open('/music/albums/tears-of-ice');
+    card.destination('browse');
+    expect(card.showing).toBe('/');
+  });
+
   it('[M0.canvas] adds no history for the destination already showing, so back leaves it', () => {
     const a = app('/');
     a.destination('music');
@@ -264,5 +289,40 @@ describe("the rail's hamburger", () => {
     rail.toggle(false);
     expect(rail.expanded(true)).toBe(true);
     expect(heard).toEqual([false, true]);
+  });
+});
+
+describe("the desktop mini-player's Queue and Lyrics", () => {
+  it('hold no tab of the player panel until one is tapped, so each width shows its own', () => {
+    expect(new Panel(map.tabs, session()).tab()).toBeUndefined();
+  });
+
+  it('show the panel at the tab tapped, and back at Now Playing when it already shows it', () => {
+    const panel = new Panel(map.tabs, session());
+    const heard: (string | undefined)[] = [];
+    panel.subscribe(() => heard.push(panel.tab()));
+    panel.toggle('queue');
+    expect(panel.tab()).toBe('queue');
+    panel.toggle('lyrics');
+    expect(panel.tab()).toBe('lyrics');
+    panel.toggle('lyrics');
+    expect(panel.tab()).toBe('now');
+    expect(heard).toEqual(['queue', 'lyrics', 'now']);
+  });
+
+  it("switch the panel's own tabs within it and close it, and keep it so across pages and a reload", () => {
+    const store = session();
+    const panel = new Panel(map.tabs, store);
+    panel.show('queue');
+    expect(new Panel(map.tabs, store).tab()).toBe('queue');
+    panel.close();
+    expect(panel.tab()).toBeUndefined();
+    expect(new Panel(map.tabs, store).tab()).toBeUndefined();
+  });
+
+  it('start afresh on a reload when the session holds no tab of the player', () => {
+    const store = session();
+    store.write('"settings"');
+    expect(new Panel(map.tabs, store).tab()).toBeUndefined();
   });
 });

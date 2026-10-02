@@ -5,12 +5,13 @@ const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{}
 /**
  * Folds a paragraph, not a list group — distinct from ExpanderRow, which collapses a homogeneous
  * row group. The toggle is real, keyboard-reachable, and states which way it goes via
- * aria-expanded rather than an icon alone.
+ * aria-expanded rather than an icon alone. Left uncontrolled it folds and unfolds itself, a whole
+ * action of its own; controlled without `onToggle`, nothing would move it, so it is drawn disabled.
  */
 export function ExpandableText({ children, text, lines = 3, moreLabel = 'see more', lessLabel = 'see less', expanded, onToggle }) {
   const StateLayer = NS().StateLayer;
-  const off = !onToggle;
   const controlled = expanded !== undefined;
+  const off = controlled && !onToggle;
   const [internal, setInternal] = React.useState(false);
   const isExpanded = controlled ? expanded : internal;
   const content = children != null ? children : text;

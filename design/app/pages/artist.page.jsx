@@ -57,7 +57,12 @@ export default function Artist({ data }) {
         <Section title="Similar artists" last>
           <Shelf>
             <Each of={data.similar} as="artist">
-              <ArtistCard title={artist.title} sub={artist.sub} image={artist.image} />
+              <ArtistCard
+                title={artist.title}
+                sub={artist.sub}
+                image={artist.image}
+                onClick={<Open page="artist" ref={artist.ref} />}
+              />
             </Each>
           </Shelf>
         </Section>

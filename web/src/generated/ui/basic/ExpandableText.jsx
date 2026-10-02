@@ -6,11 +6,12 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
 /**
  * Folds a paragraph, not a list group — distinct from ExpanderRow, which collapses a homogeneous
  * row group. The toggle is real, keyboard-reachable, and states which way it goes via
- * aria-expanded rather than an icon alone.
+ * aria-expanded rather than an icon alone. Left uncontrolled it folds and unfolds itself, a whole
+ * action of its own; controlled without `onToggle`, nothing would move it, so it is drawn disabled.
  */
 export function ExpandableText({ children, text, lines = 3, moreLabel = 'see more', lessLabel = 'see less', expanded, onToggle }) {
-  const off = !onToggle;
   const controlled = expanded !== undefined;
+  const off = controlled && !onToggle;
   const [internal, setInternal] = React.useState(false);
   const isExpanded = controlled ? expanded : internal;
   const content = children != null ? children : text;

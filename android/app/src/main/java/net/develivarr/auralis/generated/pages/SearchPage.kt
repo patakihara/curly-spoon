@@ -55,7 +55,14 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                 BackLayer(
                     BackLayerProps(
                         title = "Search",
-                        leading = { AccountButton(AccountButtonProps(label = "Account")) },
+                        leading = {
+                            AccountButton(
+                                AccountButtonProps(
+                                    label = "Account",
+                                    onClick = { navController.navigate(Route.Settings) },
+                                ),
+                            )
+                        },
                         controls = {
                             LayoutGrid(
                                 LayoutGridProps(
@@ -223,6 +230,7 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                             Section(
                                 SectionProps(
                                     title = "Not in your library",
+                                    onAction = { navController.navigate(Route.Requests) },
                                     platform = Platform.MOBILE,
                                     last = true,
                                     actionText = "Your requests",

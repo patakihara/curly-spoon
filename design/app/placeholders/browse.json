@@ -215,5 +215,10 @@
       "meta": "Fleeting Verses · 2:53",
       "image": "/art/golden-scars.jpg"
     }
-  ]
+  ],
+  "shelves": {
+    "recentlyAdded": "recently-added",
+    "people": "artists-and-authors",
+    "pickedForYou": "picked-for-you"
+  }
 }

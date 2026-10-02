@@ -1,0 +1,122 @@
+/**
+ * Every action the apps leave unbound, and the plan item that binds it. A Sonora control with no
+ * action draws disabled, so this is the list of what staging shows disabled, and why. A key is
+ * `<page>/<Component>.<prop>` for a control a page of nav.json draws, or `shell/<Component>.<prop>`
+ * for one the shell draws around a page; a line stands while either app leaves that action unbound
+ * on some element of that page, at some layout. Binding an action deletes its line.
+ */
+export const UNBOUND: Readonly<Record<string, string>> = {
+  // Playing: transport, play verbs and tracks.
+  'album/MediaHeader.onPlay': 'M1.play',
+  'album/ResultRow.onClick': 'M1.play',
+  'artist/ResultRow.onClick': 'M1.play',
+  'book/MediaHeader.onPlay': 'M1.play',
+  'book/ResultRow.onClick': 'M1.play',
+  'browse/FeatureCard.onPlay': 'M1.play',
+  'browse/ResultRow.onClick': 'M1.play',
+  'episode/EpisodeRow.onPlay': 'M1.play',
+  'episode/MediaHeader.onPlay': 'M1.play',
+  'favourites/ResultRow.onClick': 'M1.play',
+  'list/EpisodeRow.onPlay': 'M1.play',
+  'list/MediaHeader.onPlay': 'M1.play',
+  'nowPlaying/NowPlayingPage.onNext': 'M1.play',
+  'nowPlaying/NowPlayingPage.onPrev': 'M1.play',
+  'nowPlaying/NowPlayingPage.onSkipBack': 'M1.play',
+  'nowPlaying/NowPlayingPage.onSkipForward': 'M1.play',
+  'nowPlaying/NowPlayingPage.onTogglePlay': 'M1.play',
+  'playlist/MediaHeader.onPlay': 'M1.play',
+  'playlist/ResultRow.onClick': 'M1.play',
+  'queue/QueuePage.onPlay': 'M1.play',
+  'shell/MiniPlayer.onNext': 'M1.play',
+  'shell/MiniPlayer.onPrev': 'M1.play',
+  'shell/MiniPlayer.onSkipBack': 'M1.play',
+  'shell/MiniPlayer.onSkipForward': 'M1.play',
+  'shell/MiniPlayer.onTogglePlay': 'M1.play',
+  'shell/MiniPlayer.onVolume': 'M1.play',
+  'show/EpisodeRow.onPlay': 'M1.play',
+  // Seek, speed and the sleep timer.
+  'nowPlaying/NowPlayingPage.onSeek': 'M1.progress',
+  'nowPlaying/NowPlayingPage.onSleep': 'M1.progress',
+  'nowPlaying/NowPlayingPage.onSpeed': 'M1.progress',
+  'shell/MiniPlayer.onSeek': 'M1.progress',
+  'shell/MiniPlayer.onSleep': 'M1.progress',
+  'shell/MiniPlayer.onSpeed': 'M1.progress',
+  // The queue: play next or last, shuffle, repeat, switching, clearing and editing it.
+  'album/MediaHeader.onPlayLast': 'M1.sessions',
+  'book/MediaHeader.onPlayNext': 'M1.sessions',
+  'episode/MediaHeader.onPlayNext': 'M1.sessions',
+  'list/MediaHeader.onPlayNext': 'M1.sessions',
+  'nowPlaying/NowPlayingPage.onRepeat': 'M1.sessions',
+  'nowPlaying/NowPlayingPage.onShuffle': 'M1.sessions',
+  'playlist/MediaHeader.onPlayLast': 'M1.sessions',
+  'queue/QueuePage.onClear': 'M1.sessions',
+  'queue/QueuePage.onQueueChange': 'M1.sessions',
+  'queue/QueuePage.onRemove': 'M1.sessions',
+  'queue/QueuePage.onRemoveSelected': 'M1.sessions',
+  'shell/MiniPlayer.onRepeat': 'M1.sessions',
+  'shell/MiniPlayer.onShuffle': 'M1.sessions',
+  // The lyrics sheet's own controls.
+  'lyrics/LyricsPage.onSyncModeChange': 'M1.shell',
+  // Detail and home screens: tabs, editions, the episode sort.
+  'album/ExpanderRow.onToggle': 'M2.screens',
+  'books/TabBar.onChange': 'M2.screens',
+  'music/TabBar.onChange': 'M2.screens',
+  'show/SortFilterBar.onClick': 'M2.screens',
+  // Search, and the context menus.
+  'album/OverflowMenu.onSelect': 'M2.search',
+  'artist/OverflowMenu.onSelect': 'M2.search',
+  'book/OverflowMenu.onSelect': 'M2.search',
+  'episode/OverflowMenu.onSelect': 'M2.search',
+  'favourites/OverflowMenu.onSelect': 'M2.search',
+  'list/OverflowMenu.onSelect': 'M2.search',
+  'search/ButtonGroup.onChange': 'M2.search',
+  'search/ResultRow.onClick': 'M2.search',
+  'search/SearchField.onChange': 'M2.search',
+  'search/SortFilterBar.onClick': 'M2.search',
+  'shell/NowPlaying.onMore': 'M2.search',
+  'show/OverflowMenu.onSelect': 'M2.search',
+  // Downloads.
+  'book/MediaHeader.onDownload': 'M2.downloads',
+  'downloads/IconButton.onClick': 'M2.downloads',
+  'downloads/ResultRow.onClick': 'M2.downloads',
+  'downloads/ValueRow.onClick': 'M2.downloads',
+  'episode/MediaHeader.onDownload': 'M2.downloads',
+  // Listening lists.
+  'episode/MediaHeader.onAdd': 'M2.lists',
+  'list/SortFilterBar.onClick': 'M2.lists',
+  'playlist/IconButton.onClick': 'M2.lists',
+  // The library grid: view and sort.
+  'books/SortFilterBar.onClick': 'M2.grid',
+  'books/ViewToggle.onChange': 'M2.grid',
+  'music/SortFilterBar.onClick': 'M2.grid',
+  'music/ViewToggle.onChange': 'M2.grid',
+  'podcasts/SortFilterBar.onClick': 'M2.grid',
+  'podcasts/ViewToggle.onChange': 'M2.grid',
+  'shelf/ViewToggle.onChange': 'M2.grid',
+  // Settings and first-run setup.
+  'settings/FieldRow.onChange': 'M2.settings',
+  'settings/SettingRow.onChange': 'M2.settings',
+  'setup/FieldRow.onChange': 'M2.settings',
+  'setup/SettingRow.onChange': 'M2.settings',
+  // Requests.
+  'author/MediaCard.onRequest': 'M3.requests',
+  'book/MediaCard.onRequest': 'M3.requests',
+  'books/MediaCard.onRequest': 'M3.requests',
+  'requests/Button.onClick': 'M3.requests',
+  'requests/IconButton.onClick': 'M3.requests',
+  'requests/ResultRow.onClick': 'M3.requests',
+  'series/MediaCard.onRequest': 'M3.requests',
+  'shelfReview/ResultRow.onClick': 'M3.requests',
+  // Search's outside results.
+  'search/Button.onClick': 'M3.catalog',
+  'search/ExpanderRow.onToggle': 'M3.catalog',
+  // Following and adding podcasts.
+  'podcasts/Button.onClick': 'M3.podcasts',
+  'podcasts/Input.onChange': 'M3.podcasts',
+  'show/FollowButton.onChange': 'M3.podcasts',
+  // Saving a song.
+  'nowPlaying/NowPlayingPage.onFavourite': 'M3.keep',
+  // Browse's filter, feature cards and previews.
+  'browse/ButtonGroup.onChange': 'M4.browse',
+  'browse/PreviewButton.onClick': 'M4.browse',
+};

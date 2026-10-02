@@ -76,6 +76,7 @@ fun SignInPage(navController: NavController, actions: PageActions) {
                                                 tone = StatusBannerTone.ERROR,
                                                 icon = "block",
                                                 actionLabel = "Try again",
+                                                onAction = { actions.onSignIn() },
                                                 children = {
                                                     BasicText(
                                                         "That account isn't one of the household's, so Auralis can't let it in. Whoever runs the server can add it.",

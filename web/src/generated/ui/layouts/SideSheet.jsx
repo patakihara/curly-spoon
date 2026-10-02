@@ -4,10 +4,11 @@ import { StateLayer } from '../basic/StateLayer.jsx';
 import { ScrollArea } from './ScrollArea.jsx';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
 
-/** Side sheet: a full-height panel beside the bar+content column, animating open from zero width. Its header matches the app bar strip's height, so the title lines up with the bar's. */
+/** Side sheet: a full-height panel beside the bar+content column, animating open from zero width. Its header matches the app bar strip's height, so the title lines up with the bar's. Its close names the content it acts on in aria-controls. */
 export function SideSheet({ open = false, title, onClose, children, width = 'var(--side-sheet-width)', side = 'right', closeGlyph = 'close' }) {
   const right = side !== 'left';
   const ease = 'var(--duration-medium) var(--ease-standard)';
+  const contentId = React.useId();
   return (
     <div style={sx(
       'flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;background:var(--surface-bg-alt);' +
@@ -24,13 +25,13 @@ export function SideSheet({ open = false, title, onClose, children, width = 'var
               <div style={sx('flex:1;min-width:0;padding-right:44px;font-family:var(--font-heading);font-weight:var(--weight-super-strong);font-size:var(--h3-size);color:var(--surface-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{title}</div>
             </div>
             {onClose && (
-              <button className="sn-int" onClick={onClose} aria-label={'Close ' + (title || 'panel')} style={sx("position:absolute;top:var(--spacing-md);right:var(--spacing-md);width:40px;height:40px;border:none;border-radius:50%;background:transparent;color:var(--surface-fg-muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-family:'Material Symbols Rounded';font-size:var(--icon-sm)")}>{closeGlyph}{StateLayer && <StateLayer />}</button>
+              <button className="sn-int" onClick={onClose} aria-controls={contentId} aria-label={'Close ' + (title || 'panel')} style={sx("position:absolute;top:var(--spacing-md);right:var(--spacing-md);width:40px;height:40px;border:none;border-radius:50%;background:transparent;color:var(--surface-fg-muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-family:'Material Symbols Rounded';font-size:var(--icon-sm)")}>{closeGlyph}{StateLayer && <StateLayer />}</button>
             )}
           </div>
         )}
         {/* A plain hairline divides header from content — the sheet shares the bar's surface, so
             there is no layer change to express with a shadow. */}
-        <div style={sx('flex:1;min-height:0;display:flex;flex-direction:column;border-top:1px solid var(--surface-border)')}>
+        <div id={contentId} style={sx('flex:1;min-height:0;display:flex;flex-direction:column;border-top:1px solid var(--surface-border)')}>
           <ScrollArea style={sx('padding:var(--spacing-xl) var(--spacing-xl) var(--spacing-2xl)')}>{children}</ScrollArea>
         </div>
       </div>

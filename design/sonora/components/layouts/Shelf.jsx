@@ -54,6 +54,8 @@ export function Shelf({ children, gap, margin, platform = 'desktop', step = 2, a
     timer.current = setTimeout(() => setThumb((t) => ({ ...t, visible: false })), 900);
   };
   // Pages by whole items: measures the first child plus the gap rather than guessing a pixel amount.
+  // The arrows name the track they scroll.
+  const trackId = React.useId();
   const page = (dir) => {
     const el = ref.current;
     if (!el) return;
@@ -68,11 +70,11 @@ export function Shelf({ children, gap, margin, platform = 'desktop', step = 2, a
       onFocusCapture={() => setHot(true)} onBlurCapture={() => setHot(false)}>
       {/* 5px more inside the scroller above and below, taken back by the margin, so a focused
           card's ring (3px wide, 2px out) is not clipped. */}
-      <div ref={ref} onScroll={onScroll} style={sx('display:flex;gap:' + g + ';overflow-x:auto;margin:-5px calc(-1 * ' + m + ');padding:5px ' + m + ' calc(var(--spacing-xs) + 5px);scrollbar-width:none')}>{children}</div>
+      <div ref={ref} id={trackId} onScroll={onScroll} style={sx('display:flex;gap:' + g + ';overflow-x:auto;margin:-5px calc(-1 * ' + m + ');padding:5px ' + m + ' calc(var(--spacing-xs) + 5px);scrollbar-width:none')}>{children}</div>
       {showArrows && (
         <React.Fragment>
-          <button className="sn-int" aria-label="Scroll back" disabled={ends.start} onClick={() => page(-1)} style={arrow('left', hot, !ends.start, 'calc(-1 * ' + m + ' / 2)')}>chevron_left{StateLayer && <StateLayer />}</button>
-          <button className="sn-int" aria-label="Scroll forward" disabled={ends.end} onClick={() => page(1)} style={arrow('right', hot, !ends.end, 'calc(-1 * ' + m + ' / 2)')}>chevron_right{StateLayer && <StateLayer />}</button>
+          <button className="sn-int" aria-label="Scroll back" aria-controls={trackId} disabled={ends.start} onClick={() => page(-1)} style={arrow('left', hot, !ends.start, 'calc(-1 * ' + m + ' / 2)')}>chevron_left{StateLayer && <StateLayer />}</button>
+          <button className="sn-int" aria-label="Scroll forward" aria-controls={trackId} disabled={ends.end} onClick={() => page(1)} style={arrow('right', hot, !ends.end, 'calc(-1 * ' + m + ' / 2)')}>chevron_right{StateLayer && <StateLayer />}</button>
         </React.Fragment>
       )}
       {showBar && (

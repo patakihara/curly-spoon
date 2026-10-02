@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
+import { navPages, pathOf } from './nav-pages';
 
 /**
  * The container serves every font and icon itself. `document.fonts.check` alone passes when no
@@ -7,19 +7,9 @@ import { expect, test, type Page } from '@playwright/test';
  * woff2 response.
  */
 
-/**
- * Every route in the navigation map, so a page drawn later is covered the day it lands. A
- * parameter becomes a sample value, a query is dropped and the catch-all becomes an unknown path.
- */
-const nav = JSON.parse(
-  readFileSync(new URL('../../design/app/nav.json', import.meta.url), 'utf8'),
-) as { pages: { route: string }[] };
+/** Every route in the navigation map, so a page drawn later is covered the day it lands. */
 const PAGES = [
-  ...new Set(
-    nav.pages.map(({ route }) =>
-      route === '*' ? '/no-such-page' : route.replace(/\?.*$/, '').replace(/:\w+/g, 'sample'),
-    ),
-  ),
+  ...new Set(navPages.map(({ route }) => pathOf(route))),
   // The Sonora gallery (web/e2e/gallery.spec.ts): every component, so every glyph and face.
   '/gallery.html',
 ];

@@ -197,6 +197,24 @@ describe("Sonora's queue tab", () => {
   });
 });
 
+describe("Sonora's queue edit toggle", () => {
+  const queue = { platform: 'mobile' as const, heading: null, items: [{ title: 'Low Tide' }] };
+  /** The Edit queue button's own tag. */
+  const editButton = (html: string) => /<button[^>]*aria-label="Edit queue"[^>]*>/.exec(html)![0];
+
+  it('[M0.states/c] is disabled when the queue can be neither removed from nor reordered', () => {
+    expect(editButton(draw(QueuePage, queue))).toMatch(/\sdisabled=""/);
+  });
+
+  it('[M0.states/c] is enabled once the queue can be removed from or reordered', () => {
+    const remove = { onRemove: () => {} };
+    const removeSelected = { onRemoveSelected: () => {} };
+    const reorder = { onReorder: () => {} };
+    for (const can of [remove, removeSelected, reorder])
+      expect(editButton(draw(QueuePage, { ...queue, ...can }))).not.toMatch(/\sdisabled=""/);
+  });
+});
+
 describe("Sonora's lyric sync toggle", () => {
   const turnsTo = (props: Parameters<typeof LyricsSyncButton>[0]) => {
     let to: string | undefined;

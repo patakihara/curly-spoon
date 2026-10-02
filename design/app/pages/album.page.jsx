@@ -32,7 +32,12 @@ export default function Album({ data }) {
         <Section title={data.more.title} last>
           <Shelf>
             <Each of={data.more.items} as="album">
-              <MediaCard title={album.title} sub={album.sub} image={album.image} />
+              <MediaCard
+                title={album.title}
+                sub={album.sub}
+                image={album.image}
+                onClick={<Open page="album" ref={album.ref} />}
+              />
             </Each>
           </Shelf>
         </Section>

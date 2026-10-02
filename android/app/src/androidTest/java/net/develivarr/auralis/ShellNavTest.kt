@@ -2,9 +2,8 @@ package net.develivarr.auralis
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.hasContentDescription
@@ -29,7 +28,8 @@ import org.junit.runner.RunWith
  * 11-front.md's "Shell and navigation" on a device, walked only by tapping the shell's own
  * controls and pressing Android's back, never by navigating in code: ✕ returns to whatever opened
  * a page, each destination keeps its own stack, Android's back does what ✕ does, the mini-player
- * opens Now Playing, the player's tabs switch sheets, and a sheet closes to the page under it.
+ * opens Now Playing, the player's tabs switch sheets, a sheet closes to the page under it, and the
+ * avatar leading the top bar opens Settings.
  * Every control is found as a screen reader finds it, by its role, a button or a tab, and its name.
  * web/e2e/shell-nav.spec.ts walks the same journey in the browser.
  */
@@ -54,39 +54,44 @@ class ShellNavTest {
         composeRule.waitForIdle()
     }
 
-    private fun role(role: Role) = SemanticsMatcher.expectValue(SemanticsProperties.Role, role)
-
     /** The first enabled button named `name`: a card, a row, a link or a control. */
     private fun tap(name: String) = tap(
         composeRule.onAllNodes(
-            role(Role.Button) and (hasContentDescription(name) or hasText(name)) and
+            hasRole(Role.Button) and (hasContentDescription(name) or hasText(name)) and
                 hasClickAction() and isEnabled(),
         ).onFirst(),
     )
 
     /** A tab named `label`: a destination on the bottom bar, or one of the player's tabs. */
     private fun tab(label: String) = tap(
-        composeRule.onAllNodes(role(Role.Tab) and hasText(label) and hasClickAction() and isEnabled())
+        composeRule.onAllNodes(hasRole(Role.Tab) and hasText(label) and hasClickAction() and isEnabled())
             .onFirst(),
     )
 
-    /** The mini-player, a button named by the track shell.json's `playing` loads. */
-    private fun miniPlayer() = tap(PLAYING)
+    /**
+     * The mini-player: the button named by the track shell.json's `playing` loads that holds a
+     * Pause button, since a page may also show a card of that track's album, which opens the album.
+     */
+    private fun miniPlayer() = tap(
+        composeRule.onAllNodes(
+            hasRole(Role.Button) and (hasContentDescription(PLAYING) or hasText(PLAYING)) and
+                hasClickAction() and isEnabled() and
+                hasAnyDescendant(hasRole(Role.Button) and hasText("Pause")),
+        ).onFirst(),
+    )
 
     private fun systemBack() {
         composeRule.runOnUiThread { composeRule.activity.onBackPressedDispatcher.onBackPressed() }
         composeRule.waitForIdle()
     }
 
-    /** The page showing, by its route's class name, with its ref when it takes one. */
+    /** The page showing, by its id in nav.json, with its ref when it takes one. */
     private fun showing(): String {
         val entry = nav.currentBackStackEntry ?: return "nothing"
-        val name = entry.destination.route!!.substringAfterLast("Route.")
-            .substringBefore('/').substringBefore('?')
-        return when (name) {
-            "Album" -> "Album ${entry.toRoute<Route.Album>().ref}"
-            "Artist" -> "Artist ${entry.toRoute<Route.Artist>().ref}"
-            else -> name
+        return when (val id = pageId(entry.destination.route!!)) {
+            "album" -> "album ${entry.toRoute<Route.Album>().ref}"
+            "artist" -> "artist ${entry.toRoute<Route.Artist>().ref}"
+            else -> id
         }
     }
 
@@ -94,42 +99,42 @@ class ShellNavTest {
     private fun openAnAlbumFromItsArtist() {
         start()
         tab("Music")
-        assertEquals("Music", showing())
+        assertEquals("music", showing())
         tap("Between Lines of Light")
-        assertEquals("Album between-lines-of-light", showing())
+        assertEquals("album between-lines-of-light", showing())
         tap("Deep Inertia")
-        assertEquals("Artist deep-inertia", showing())
+        assertEquals("artist deep-inertia", showing())
         tap("Shadows and Sighs")
-        assertEquals("Album shadows-and-sighs", showing())
+        assertEquals("album shadows-and-sighs", showing())
     }
 
     @Test
     fun M0_canvas_d_closeReturnsToTheArtistAnAlbumWasOpenedFrom() {
         openAnAlbumFromItsArtist()
         tap("Close")
-        assertEquals("Artist deep-inertia", showing())
+        assertEquals("artist deep-inertia", showing())
     }
 
     @Test
     fun M0_canvas_d_eachDestinationKeepsItsStackAndAndroidBackDoesWhatCloseDoes() {
         openAnAlbumFromItsArtist()
         tab("Books")
-        assertEquals("Books", showing())
+        assertEquals("books", showing())
         tab("Music")
-        assertEquals("Album shadows-and-sighs", showing())
+        assertEquals("album shadows-and-sighs", showing())
         systemBack()
-        assertEquals("Artist deep-inertia", showing())
+        assertEquals("artist deep-inertia", showing())
     }
 
     @Test
     fun M0_canvas_d_theMiniPlayerOpensNowPlayingWhoseTabsSwitchSheetsClosingToThePageUnder() {
         openAnAlbumFromItsArtist()
         miniPlayer()
-        assertEquals("NowPlaying", showing())
+        assertEquals("nowPlaying", showing())
         tab("Queue")
-        assertEquals("Queue", showing())
+        assertEquals("queue", showing())
         tap("Collapse player")
-        assertEquals("Album shadows-and-sighs", showing())
+        assertEquals("album shadows-and-sighs", showing())
     }
 
     @Test
@@ -137,9 +142,19 @@ class ShellNavTest {
         openAnAlbumFromItsArtist()
         miniPlayer()
         tab("Lyrics")
-        assertEquals("Lyrics", showing())
+        assertEquals("lyrics", showing())
         systemBack()
-        assertEquals("Album shadows-and-sighs", showing())
+        assertEquals("album shadows-and-sighs", showing())
+    }
+
+    @Test
+    fun theAvatarOpensSettingsWhoseCloseReturnsToThePageUnderIt() {
+        start()
+        tab("Books")
+        tap("Account")
+        assertEquals("settings", showing())
+        tap("Close")
+        assertEquals("books", showing())
     }
 
     private companion object {

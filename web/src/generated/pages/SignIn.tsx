@@ -226,7 +226,7 @@ export default function SignIn({ data = placeholder, state = 'full' }: SignInPro
       {data.errors.map((error, i) => (
         <Fragment key={i}>
           <Section last={true} platform={platform}>
-            <StatusBanner tone="error" icon="block" actionLabel="Try again">
+            <StatusBanner tone="error" icon="block" actionLabel="Try again" onAction={() => window.location.assign("/api/auth/login?" + new URLSearchParams({ client: "web", return_to: new URLSearchParams(window.location.search).get("return_to") ?? "/" }))}>
               {error.message}
             </StatusBanner>
           </Section>

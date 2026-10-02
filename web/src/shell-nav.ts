@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { createContext, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { matchPath, useLocation, useNavigate, useNavigationType } from 'react-router';
+import { PANEL, useLayout } from './generated/nav/platform';
 import { NAV_MAP } from './generated/nav/stacks';
 
 /**
@@ -7,9 +8,13 @@ import { NAV_MAP } from './generated/nav/stacks';
  * graph's `closePage`, `openDestination` and `openTab` do: ✕ returns to whatever opened a page, or
  * with nothing under it to its destination's home; each destination keeps its own stack; a sheet
  * closes to the page under it; the browser's back goes to the previous view, wherever that was.
- * The rail's hamburger collapses the rail and back, and it stays so from page to page. The stacks
- * and the rail are kept in the tab's session storage, so a reload carries on where it was. The
- * generated pages wire the shell's controls to it, as design-codegen's shell-handlers say.
+ * The rail's hamburger collapses the rail and back, and it stays so from page to page. On desktop
+ * the player panel's tab is held apart from the page, never in its route: the mini-player's Queue
+ * and Lyrics show the panel at that tab, and where the layout holds a panel of its own, the
+ * mini-player's track block and the panel's tabs set it too, and a player sheet's route shows its
+ * tab in the panel beside the page under it. The stacks, the rail and the panel are kept in the
+ * tab's session storage, so a reload carries on where it was. The generated pages wire the
+ * shell's controls to it, as design-codegen's shell-handlers say.
  */
 
 /** Somewhere to keep a value across a reload: the tab's session storage, in the app. */
@@ -168,27 +173,42 @@ export class Stacks {
   /**
    * The destination tapped, as it was left; a page at the rail's foot opens over this one. None
    * when that is the location showing, so tapping it again adds nothing to the browser's history.
+   * The page showing is left behind when it lights another destination or none, so the tap is
+   * never a dead one: Settings over Browse, a page opened from a link, an album from a Browse card.
    */
   destination(key: string): string | undefined {
     let to = this.map.foot[key];
     if (to === undefined) {
       if (this.map.homes[key] === undefined) throw new Error(`${key} is not a destination`);
       this.current = key;
+      const stack = this.stack(key);
+      const top = stack.at(-1)!;
+      if (stack.length > 1 && top === this.showing && this.page(top)?.lights !== key) stack.pop();
       this.save();
-      to = this.stack(key).at(-1)!;
+      to = stack.at(-1)!;
     }
     return to === this.showing ? undefined : to;
   }
 
-  /** A tab of the player: its sheet in place of the sheet showing, or else over the page. */
-  tab(tab: string): { to: string; replace: boolean } {
+  /**
+   * The player sheet showing taken off its stack, where the layout holds the player in the panel
+   * beside the page: the location under it.
+   */
+  underSheet(): string {
+    const stack = this.stack(this.current);
+    while (stack.length > 1 && this.page(stack.at(-1)!)?.sheet === true) stack.pop();
+    this.save();
+    return stack.at(-1)!;
+  }
+
+  /** A tab of the full-screen player: its sheet, in place of the sheet showing. */
+  tab(tab: string): string {
     const to = this.map.tabs[tab];
     if (to === undefined) throw new Error(`${tab} is not a tab of the player`);
     const stack = this.stack(this.current);
-    if (this.page(stack.at(-1)!)?.sheet !== true) return { to, replace: false };
     stack[stack.length - 1] = to;
     this.save();
-    return { to, replace: true };
+    return to;
   }
 }
 
@@ -229,8 +249,74 @@ export class Rail {
   }
 }
 
+/**
+ * The player panel's tab on desktop, its one source, apart from the page: none until one is set,
+ * so each width shows its own panel, if any; then the mini-player's Queue or Lyrics tapped, or Now
+ * Playing when that tab already shows; from then the panel's own tabs and its close.
+ */
+export class Panel {
+  private held: string | undefined;
+  private readonly heard = new Set<() => void>();
+
+  /** A panel of the player's `tabs`, by key, carried on from what `store` holds. */
+  constructor(
+    private readonly tabs: Readonly<Record<string, string>>,
+    private readonly store?: Store,
+  ) {
+    const kept = stored(store);
+    if (typeof kept === 'string' && tabs[kept] !== undefined) this.held = kept;
+  }
+
+  /** The tab held, or none. */
+  tab(): string | undefined {
+    return this.held;
+  }
+
+  /** The mini-player's `tab` tapped: the panel at it, or at Now Playing when it shows it already. */
+  toggle(tab: string): void {
+    this.show(this.held === tab ? 'now' : tab);
+  }
+
+  /** The panel's own tab `tab`. */
+  show(tab: string): void {
+    if (this.tabs[tab] === undefined) throw new Error(`${tab} is not a tab of the player`);
+    this.hold(tab);
+  }
+
+  /** The panel's close: no tab held, so the width's own panel, if any, shows again. */
+  close(): void {
+    this.hold(undefined);
+  }
+
+  private hold(tab: string | undefined): void {
+    this.held = tab;
+    this.store?.write(JSON.stringify(tab ?? null));
+    for (const listener of this.heard) listener();
+  }
+
+  /** Calls `listener` whenever the tab held changes; returns what stops it. */
+  subscribe(listener: () => void): () => void {
+    this.heard.add(listener);
+    return () => void this.heard.delete(listener);
+  }
+}
+
 const stacks = new Stacks(NAV_MAP, session('auralis.shell.stacks'));
 const rail = new Rail(session('auralis.shell.rail'));
+const panel = new Panel(NAV_MAP.tabs, session('auralis.shell.panel'));
+
+/** The tab of the player whose sheet is at `location`, if it is one. */
+const tabAt = (location: string): string | undefined =>
+  Object.keys(NAV_MAP.tabs).find((tab) => NAV_MAP.tabs[tab] === location.split('?')[0]);
+
+/** The history entry whose player sheet was last moved into the panel, so it moves once. */
+let moved: string | undefined;
+
+/**
+ * Whether what is drawn is the player panel the mini-player's Queue or Lyrics showed: there the
+ * player's close and tabs act on the panel and leave the page as it is.
+ */
+export const InPanel = createContext(false);
 
 /** What the shell's controls do, for a page to wire them to. */
 export interface ShellNav {
@@ -238,10 +324,14 @@ export interface ShellNav {
   close(home: string): void;
   /** The bottom bar's or the rail's item `key`. */
   destination(key: string): void;
-  /** A page over this one: the mini-player's Now Playing. */
+  /** A page over this one: the mini-player's Now Playing, in the panel where the layout holds one. */
   open(path: string): void;
   /** The player's tab `tab`. */
   tab(tab: string): void;
+  /** The player panel's tab the mini-player's Queue or Lyrics set, or none. */
+  panel(): string | undefined;
+  /** The desktop mini-player's Queue or Lyrics, `tab`. */
+  togglePanel(tab: string): void;
   /** Whether the rail is expanded, at a width whose own default is `given`. */
   rail(given: boolean): boolean;
   /** The rail's hamburger, at a width whose own default is `given`. */
@@ -258,24 +348,48 @@ export function useShellNav(): ShellNav {
     () => rail.snapshot(),
     () => undefined,
   );
+  const tab = useSyncExternalStore(
+    (listener) => panel.subscribe(listener),
+    () => panel.tab(),
+    () => undefined,
+  );
+  const inPanel = useContext(InPanel);
+  const panelled = PANEL[useLayout()];
   useEffect(() => {
-    stacks.seen(location.pathname + location.search, arrival, location.key);
-  }, [location, arrival]);
+    const where = location.pathname + location.search;
+    stacks.seen(where, arrival, location.key);
+    // A player sheet's route where the panel is the layout's own: its tab, in the panel. The page
+    // under it is drawn in the same task the location changes, not in a transition that leaves
+    // the page the sheet's route opens over showing at the new location for a second or more;
+    // from a microtask, since React cannot flush while it is still committing this effect.
+    const sheet = tabAt(where);
+    if (!panelled || sheet === undefined || moved === location.key) return;
+    moved = location.key;
+    panel.show(sheet);
+    const under = stacks.underSheet();
+    queueMicrotask(() => void navigate(under, { replace: true, flushSync: true }));
+  }, [location, arrival, panelled, navigate]);
   return useMemo(
     () => ({
-      close: (home) => void navigate(stacks.close(home)),
+      close: (home) => (inPanel ? panel.close() : void navigate(stacks.close(home))),
       destination: (key) => {
         const to = stacks.destination(key);
         if (to !== undefined) void navigate(to);
       },
-      open: (path) => void navigate(path),
-      tab: (tab) => {
-        const { to, replace } = stacks.tab(tab);
-        void navigate(to, { replace });
+      open: (path) => {
+        const sheet = tabAt(path);
+        if (panelled && sheet !== undefined) panel.show(sheet);
+        else void navigate(path);
       },
+      tab: (to) => {
+        if (inPanel || panelled) panel.show(to);
+        else void navigate(stacks.tab(to), { replace: true });
+      },
+      panel: () => tab,
+      togglePanel: (to) => panel.toggle(to),
       rail: (given) => held ?? given,
       toggleRail: (given) => rail.toggle(given),
     }),
-    [navigate, held],
+    [navigate, held, tab, inPanel, panelled],
   );
 }

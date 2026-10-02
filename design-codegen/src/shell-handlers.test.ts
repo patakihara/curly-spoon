@@ -39,6 +39,7 @@ const nav: Nav = parseNav({
     entry('signIn', '/sign-in', { lights: null, close: 'none', presentation: 'bare' }),
     entry('nowPlaying', '/playing', { lights: null, close: 'sheet', presentation: 'sheet' }),
     entry('queue', '/playing/queue', { lights: null, close: 'sheet', presentation: 'sheet' }),
+    entry('lyrics', '/playing/lyrics', { lights: null, close: 'sheet', presentation: 'sheet' }),
   ],
 });
 const shell: ShellFile = {
@@ -81,7 +82,24 @@ describe("the shell's controls, wired alike on both apps", () => {
 
   it("[M0.canvas] gives a destination's home no close control to wire", () => {
     expect(at('music', 0)['IconButton.onClick']).toBeUndefined();
-    expect(at('music', 0)['AccountButton.onClick']).toBeUndefined();
+  });
+
+  it("opens Settings from the avatar leading the phone's top bar, on web and Android", () => {
+    expect(at('music', 0)['AccountButton.onClick']).toEqual({ kind: 'open', page: 'settings' });
+    const android = shellHandlers(
+      nav,
+      page('music'),
+      { chrome: chrome(nav, shell, page('music'), nav.layouts[0]!, new Set()) },
+      'android',
+    );
+    expect(wiring(android)['AccountButton.onClick']).toEqual({ kind: 'open', page: 'settings' });
+  });
+
+  it("shows the player panel at the mini-player's Queue or Lyrics on desktop, and the phone's mini-player has neither", () => {
+    expect(at('album', 1)['MiniPlayer.onToggleQueue']).toEqual({ kind: 'panel', tab: 'queue' });
+    expect(at('album', 1)['MiniPlayer.onToggleLyrics']).toEqual({ kind: 'panel', tab: 'lyrics' });
+    expect(at('album', 0)['MiniPlayer.onToggleQueue']).toBeUndefined();
+    expect(at('album', 0)['MiniPlayer.onToggleLyrics']).toBeUndefined();
   });
 
   it("[M0.canvas] switches destinations from the bottom bar and the rail, each to that destination's stack", () => {

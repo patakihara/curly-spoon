@@ -223,7 +223,12 @@ const placeholder = {
       "meta": "Fleeting Verses · 2:53",
       "image": "/art/golden-scars.jpg"
     }
-  ]
+  ],
+  "shelves": {
+    "recentlyAdded": "recently-added",
+    "people": "artists-and-authors",
+    "pickedForYou": "picked-for-you"
+  }
 };
 
 /** The route of each page this page may open: its structure links, and its own. */
@@ -400,7 +405,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   w0: (go) => ({
     appBar: false,
     leading: (
-      <AccountButton label={shell.account.label} />
+      <AccountButton label={shell.account.label} onClick={() => go.open('/settings')} />
     ),
     player: (
       <>
@@ -416,7 +421,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
       <NavRail items={shell.nav.w600} footerItems={shell.footer} active="browse" expanded={go.rail(false)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(false)} />
     ),
     player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} />
+      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} />
     ),
     sheetOpen: false,
   }),
@@ -426,7 +431,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
       <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="browse" expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />
     ),
     player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} />
+      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} />
     ),
     sheetOpen: false,
   }),
@@ -436,7 +441,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
       <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="browse" expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />
     ),
     player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} />
+      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} />
     ),
     sheet: (
       <NowPlaying open={true} tab="now" variant={shell.playing.variant as Exclude<ComponentProps<typeof NowPlaying>['variant'], undefined>} track={shell.playing} platform="desktop" onTabChange={(tab) => go.tab(tab)}>
@@ -499,7 +504,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           />
         </LayoutGrid>
       </Section>
-      <Section title="Recently added" action="arrow_forward" actionLabel="See all" platform={platform}>
+      <Section title="Recently added" action="arrow_forward" actionLabel="See all" onAction={() => navigate(generatePath('/shelves/:id', { id: data.shelves.recentlyAdded }))} platform={platform}>
         <Shelf platform={platform}>
           {data.recentlyAdded.map((item, i) => (
             <Fragment key={i}>
@@ -508,7 +513,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           ))}
         </Shelf>
       </Section>
-      <Section title="Artists & authors" action="arrow_forward" actionLabel="See all" platform={platform}>
+      <Section title="Artists & authors" action="arrow_forward" actionLabel="See all" onAction={() => navigate(generatePath('/shelves/:id', { id: data.shelves.people }))} platform={platform}>
         <Shelf platform={platform}>
           {data.people.map((person, i) => (
             <Fragment key={i}>
@@ -517,7 +522,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           ))}
         </Shelf>
       </Section>
-      <Section title="Picked for you" action="arrow_forward" actionLabel="See all" platform={platform}>
+      <Section title="Picked for you" action="arrow_forward" actionLabel="See all" onAction={() => navigate(generatePath('/shelves/:id', { id: data.shelves.pickedForYou }))} platform={platform}>
         <Shelf platform={platform}>
           {data.pickedForYou.map((item, i) => (
             <Fragment key={i}>

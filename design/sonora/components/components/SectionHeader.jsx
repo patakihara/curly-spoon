@@ -50,9 +50,11 @@ export function SectionHeader({ title, action, actionLabel = 'More', onAction, p
         /* A control of the section's own, such as the ViewToggle over a collection. */
         <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>{trailing}</div>
       ) : actionText != null ? (
+        /* Its padding overhangs the edge by 8px, not all 12: its focus ring, 5px out, still fits
+           inside the narrowest page margin, the phone's 16px, where a scroller would cut it. */
         <button className="sn-int" onClick={off ? undefined : onAction} disabled={off} style={{
           border: 'none', background: 'transparent', flexShrink: 0, cursor: 'pointer',
-          height: 32, padding: '0 var(--spacing-md)', marginRight: 'calc(-1 * var(--spacing-md))', borderRadius: 'var(--radius-pill)',
+          height: 32, padding: '0 var(--spacing-md)', marginRight: 'calc(-1 * var(--spacing-sm))', borderRadius: 'var(--radius-pill)',
           fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-strong)',
           color: 'var(--surface-fg-muted)',
         }}>{actionText}{StateLayer && <StateLayer disabled={off} />}</button>

@@ -22,7 +22,8 @@ import org.robolectric.annotation.GraphicsMode
 /**
  * The back rules of 11-front.md's "Shell and navigation", on the generated graph: ✕ returns to
  * whatever opened a page, each destination keeps its own stack, Android's back does what ✕ does,
- * and a sheet closes to the page under it. ✕ is `closePage`, which every generated page's close
+ * a sheet closes to the page under it, and a destination tapped over a page that lights another
+ * destination, or none, leaves that page. ✕ is `closePage`, which every generated page's close
  * control and back handler call with its destination's home.
  */
 @RunWith(AndroidJUnit4::class)
@@ -124,6 +125,29 @@ class NavBackTest {
         act { nav.navigate(Route.NowPlaying) }
         act { openTab(nav, "queue") }
         systemBack()
+        assertEquals("Album tears-of-ice", showing())
+    }
+
+    @Test
+    fun aDestinationTappedOverAPageThatLightsNoneLeavesIt() {
+        start(Route.Browse)
+        act { nav.navigate(Route.Settings) }
+        act { openDestination(nav, "browse") }
+        assertEquals("Browse", showing())
+    }
+
+    @Test
+    fun aDestinationTappedOverAPageThatLightsAnotherLeavesIt() {
+        start(Route.Browse)
+        act { nav.navigate(Route.Album(ref = "tears-of-ice")) }
+        act { openDestination(nav, "browse") }
+        assertEquals("Browse", showing())
+    }
+
+    @Test
+    fun theDestinationAPageLightsTappedAgainLeavesItShowing() {
+        leaveMusicOnAnAlbumAndComeBack()
+        act { openDestination(nav, "music") }
         assertEquals("Album tears-of-ice", showing())
     }
 }

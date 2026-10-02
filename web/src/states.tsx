@@ -1,8 +1,8 @@
 /**
  * The states fixture, `/states.html`: each interactive Sonora component drawn with its action
- * bound, with none, and with `disabled` set (src/states-list.ts), for the browser test of
- * Material's states (web/e2e/states.spec.ts). Its own entry beside the app and the gallery,
- * linked from nowhere. A bound action counts its presses in `window.__presses`.
+ * bound, with none, with `disabled` set, and keeping its own state (src/states-list.ts), for the
+ * browser test of Material's states (web/e2e/states.spec.ts). Its own entry beside the app and
+ * the gallery, linked from nowhere. A bound action counts its presses in `window.__presses`.
  * `?theme=light` draws it in the light theme, and `?only=<Name>` draws one entry.
  */
 import { StrictMode, useEffect, useRef, type ReactNode } from 'react';
@@ -137,7 +137,7 @@ const DRAW: Record<string, (act: Act, disabled: boolean) => ReactNode> = {
   ),
   // Neither drawing passes onPlay: its overlay over the art is a control of its own.
   EpisodeRow: (act) => <EpisodeRow title="Episode 12" meta={['Sep 30', '48 min']} onClick={act} />,
-  ExpandableText: (act) => <ExpandableText text={LONG} lines={1} onToggle={act} />,
+  ExpandableText: (act) => <ExpandableText text={LONG} lines={1} expanded={false} onToggle={act} />,
   ExpanderRow: (act) => <ExpanderRow label="More releases" onToggle={act} />,
   FeatureCard: (act) => (
     <FeatureCard kind="Album" title="Driftwave" meta="Halcyon Bloom" onMore={act} onSave={act} />
@@ -222,7 +222,9 @@ const DRAW: Record<string, (act: Act, disabled: boolean) => ReactNode> = {
     </Frame>
   ),
   PreviewButton: (act, disabled) => <PreviewButton onClick={act} disabled={disabled} />,
-  QueuePage: (act) => <QueuePage platform="desktop" heading={null} items={QUEUE} onClear={act} />,
+  QueuePage: (act) => (
+    <QueuePage platform="desktop" heading={null} items={QUEUE} onClear={act} onRemove={act} />
+  ),
   QueueRow: (act) => (
     <QueueRow title="Low Tide" sub="Halcyon Bloom" time="4:05" handle={false} onClick={act} />
   ),
@@ -281,9 +283,20 @@ const DRAW: Record<string, (act: Act, disabled: boolean) => ReactNode> = {
   ViewToggle: (act) => <ViewToggle onChange={act} />,
 };
 
+/** Each `owns` entry's drawing left uncontrolled, with no action. */
+const OWN: Record<string, () => ReactNode> = {
+  ExpandableText: () => <ExpandableText text={LONG} lines={1} />,
+};
+
 const press = (key: string) => () => {
   window.__presses[key] = (window.__presses[key] ?? 0) + 1;
 };
+
+function own(name: string) {
+  const draw = OWN[name];
+  if (draw === undefined) throw new Error(`the states fixture draws no ${name} of its own`);
+  return draw();
+}
 
 function Cell({ name, variant }: { name: string; variant: Variant }) {
   const draw = DRAW[name];
@@ -301,7 +314,7 @@ function Cell({ name, variant }: { name: string; variant: Variant }) {
         data-variant={variant}
         style={{ padding: 24, width: 256, boxSizing: 'border-box' }}
       >
-        {draw(act, variant === 'disabled')}
+        {variant === 'own' ? own(name) : draw(act, variant === 'disabled')}
       </div>
     </div>
   );
@@ -321,6 +334,7 @@ function States() {
           <Cell name={entry.name} variant="action" />
           <Cell name={entry.name} variant="none" />
           {entry.disabled && <Cell name={entry.name} variant="disabled" />}
+          {entry.owns === true && <Cell name={entry.name} variant="own" />}
         </section>
       ))}
     </div>

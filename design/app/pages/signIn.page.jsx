@@ -16,7 +16,7 @@ export default function SignIn({ data }) {
         </Section>
         <Each of={data.errors} as="error">
           <Section last>
-            <StatusBanner tone="error" icon="block" actionLabel="Try again">
+            <StatusBanner tone="error" icon="block" actionLabel="Try again" onAction={<SignIn />}>
               {error.message}
             </StatusBanner>
           </Section>

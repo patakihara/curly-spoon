@@ -117,22 +117,26 @@ for (const size of SIZES) {
     await goTo(page, 'Books', '/books');
     await goTo(page, 'Music', '/music/albums/shadows-and-sighs');
 
-    // The mini-player opens Now Playing; its tabs switch sheets; closing returns to the album.
+    // The mini-player opens Now Playing; its tabs switch sheets; closing returns to the album. On
+    // the desktop it is the panel beside the album, its tab never the page's.
+    const album = '/music/albums/shadows-and-sighs';
     await miniPlayer(page, size.phone).click();
-    await expect(page).toHaveURL('/playing');
+    await expect(page).toHaveURL(size.phone ? '/playing' : album);
     await heading(page, 'Now Playing');
     await page.getByRole('tab', { name: 'Queue' }).click();
-    await expect(page).toHaveURL('/playing/queue');
+    await expect(page).toHaveURL(size.phone ? '/playing/queue' : album);
     await page
       .getByRole('button', { name: size.phone ? 'Collapse player' : 'Close Player', exact: true })
       .click();
-    await expect(page).toHaveURL('/music/albums/shadows-and-sighs');
+    await expect(page).toHaveURL(album);
 
     // The browser's back goes to the previous view, wherever that was: the sheet just closed.
-    await page.goBack();
-    await expect(page).toHaveURL('/playing/queue');
-    await page.goBack();
-    await expect(page).toHaveURL('/music/albums/shadows-and-sighs');
+    if (size.phone) {
+      await page.goBack();
+      await expect(page).toHaveURL('/playing/queue');
+      await page.goBack();
+      await expect(page).toHaveURL(album);
+    }
     await page.getByRole('button', { name: 'Close', exact: true }).click();
     await expect(page).toHaveURL('/music/artists/deep-inertia');
 
@@ -143,6 +147,268 @@ for (const size of SIZES) {
     await expect(page).toHaveURL('/music/artists/deep-inertia');
   });
 }
+
+test("the avatar leading the phone's top bar opens Settings, whose close returns to the page under it", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/books', { waitUntil: 'networkidle' });
+  await settle(page);
+  await page.getByRole('button', { name: 'Account', exact: true }).click();
+  await expect(page).toHaveURL('/settings');
+  await heading(page, 'Settings');
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page).toHaveURL('/books');
+});
+
+test('an album\'s "More by" card opens that album, whose close returns to the album that opened it', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/music/albums/between-lines-of-light', { waitUntil: 'networkidle' });
+  await settle(page);
+  await item(page, 'Between Two Worlds').click();
+  await expect(page).toHaveURL('/music/albums/between-two-worlds');
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page).toHaveURL('/music/albums/between-lines-of-light');
+});
+
+test('a Browse shelf\'s "See all" opens the shelf in full, whose cards open their own pages', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/', { waitUntil: 'networkidle' });
+  await settle(page);
+  await page
+    .getByText('Recently added', { exact: true })
+    .locator('xpath=ancestor::*[.//button[@aria-label="See all"]][1]')
+    .getByRole('button', { name: 'See all', exact: true })
+    .click();
+  await expect(page).toHaveURL('/shelves/recently-added');
+  await settle(page);
+  await item(page, 'Salt and Static').click();
+  await expect(page).toHaveURL('/music/albums/salt-and-static');
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page).toHaveURL('/shelves/recently-added');
+});
+
+/** The player panel's tab showing, or none where no panel is drawn. */
+async function panelTab(page: Page): Promise<string | null> {
+  const tab = page
+    .getByRole('tab', { selected: true })
+    .filter({ hasText: /^(Now playing|Queue|Lyrics)$/ })
+    .locator('visible=true');
+  return (await tab.count()) === 0 ? null : tab.first().innerText();
+}
+
+/**
+ * Which of the mini-player's Queue and Lyrics is lit, its glyph tinted the play ink; none where no
+ * mini-player is drawn.
+ */
+async function lit(page: Page): Promise<string | null> {
+  const tinted: string[] = [];
+  for (const name of ['Queue', 'Lyrics']) {
+    const button = page.getByRole('button', { name, exact: true }).locator('visible=true');
+    if ((await button.count()) === 0) continue;
+    if ((await button.evaluate((b) => b.style.color)).includes('--play-ink')) tinted.push(name);
+  }
+  return tinted.join(' and ') || null;
+}
+
+/** The panel shows `tab`, or none, and the mini-player lights that tab when it is Queue or Lyrics. */
+async function showing(page: Page, tab: string | null) {
+  await expect.poll(() => panelTab(page)).toBe(tab);
+  expect(await lit(page)).toBe(tab === 'Queue' || tab === 'Lyrics' ? tab : null);
+}
+
+for (const width of [600, 1024, 1440]) {
+  test(`[M0.canvas/c] at ${width}px the mini-player's Queue and Lyrics show the player panel at that tab, the page staying as it is`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/music/albums/between-lines-of-light', { waitUntil: 'networkidle' });
+    await settle(page);
+    const own = width >= 1240 ? 'Now playing' : null;
+    const queue = page.getByRole('button', { name: 'Queue', exact: true });
+    const lyrics = page.getByRole('button', { name: 'Lyrics', exact: true });
+    await showing(page, own);
+
+    await queue.click();
+    await showing(page, 'Queue');
+    await lyrics.click();
+    await showing(page, 'Lyrics');
+    await lyrics.click();
+    await showing(page, 'Now playing');
+    await expect(page).toHaveURL('/music/albums/between-lines-of-light');
+
+    // The panel's tab is apart from the page: its own tabs leave the page, and a new page leaves it.
+    await queue.click();
+    await page.getByRole('tab', { name: 'Lyrics' }).click();
+    await showing(page, 'Lyrics');
+    await expect(page).toHaveURL('/music/albums/between-lines-of-light');
+    await goTo(page, 'Books', '/books');
+    await showing(page, 'Lyrics');
+    await page.reload({ waitUntil: 'networkidle' });
+    await showing(page, 'Lyrics');
+
+    // Its close leaves the page too, back to the panel the width shows of its own, if any.
+    await page.getByRole('button', { name: 'Close Player', exact: true }).click();
+    await showing(page, own);
+    await expect(page).toHaveURL('/books');
+  });
+}
+
+test("[M0.canvas/c] at 1440px the panel's own tabs, the track block and a player sheet's route all set the one tab the mini-player lights", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/music/albums/between-lines-of-light', { waitUntil: 'networkidle' });
+  await settle(page);
+  const album = '/music/albums/between-lines-of-light';
+  const queue = page.getByRole('button', { name: 'Queue', exact: true });
+  const lyrics = page.getByRole('button', { name: 'Lyrics', exact: true });
+
+  // The panel of its own, at Now Playing: its Queue tab is the mini-player's Queue, lit.
+  await page.getByRole('tab', { name: 'Queue' }).click();
+  await showing(page, 'Queue');
+  await expect(page).toHaveURL(album);
+  await queue.click();
+  await showing(page, 'Now playing');
+
+  // The track block shows Now Playing in the panel, from any tab, never leaving the page.
+  await lyrics.click();
+  await showing(page, 'Lyrics');
+  await miniPlayer(page, false).click();
+  await showing(page, 'Now playing');
+  await expect(page).toHaveURL(album);
+
+  // A player sheet's route shows its tab in the panel, beside the page under it.
+  await page.goto('/playing/queue', { waitUntil: 'networkidle' });
+  await showing(page, 'Queue');
+  await expect(page).not.toHaveURL(/\/playing/);
+  const under = page.url();
+
+  // Queue pressed twice: Now Playing, nothing lit; a reload keeps it so.
+  await queue.click();
+  await showing(page, 'Now playing');
+  await queue.click();
+  await showing(page, 'Queue');
+  await queue.click();
+  await showing(page, 'Now playing');
+  await page.reload({ waitUntil: 'networkidle' });
+  await showing(page, 'Now playing');
+  await expect(page).toHaveURL(under);
+
+  // Lyrics, then a destination switch and a reload, then the close: always the one tab.
+  await lyrics.click();
+  await showing(page, 'Lyrics');
+  await goTo(page, 'Books', '/books');
+  await showing(page, 'Lyrics');
+  await page.reload({ waitUntil: 'networkidle' });
+  await showing(page, 'Lyrics');
+  await page.getByRole('button', { name: 'Close Player', exact: true }).click();
+  await showing(page, 'Now playing');
+  await expect(page).toHaveURL('/books');
+});
+
+test("at 1024px the track block's full-screen player leaves the panel's tab alone, and the mini-player lights only the tab the panel shows", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await page.goto('/music/albums/between-lines-of-light', { waitUntil: 'networkidle' });
+  await settle(page);
+  const album = '/music/albums/between-lines-of-light';
+  const queue = page.getByRole('button', { name: 'Queue', exact: true });
+  const lyrics = page.getByRole('button', { name: 'Lyrics', exact: true });
+
+  // The track block opens Now Playing full screen, whose tabs and close are its own.
+  await miniPlayer(page, false).click();
+  await expect(page).toHaveURL('/playing');
+  await page.getByRole('tab', { name: 'Queue' }).click();
+  await expect(page).toHaveURL('/playing/queue');
+  await page.getByRole('button', { name: 'Collapse player', exact: true }).click();
+  await expect(page).toHaveURL(album);
+  await showing(page, null);
+
+  // Queue pressed twice: Now Playing, nothing lit; the close leaves no panel.
+  await queue.click();
+  await showing(page, 'Queue');
+  await queue.click();
+  await showing(page, 'Now playing');
+  await page.getByRole('button', { name: 'Close Player', exact: true }).click();
+  await showing(page, null);
+
+  // Lyrics, then the full-screen player and back, a destination switch and a reload: one tab.
+  await lyrics.click();
+  await showing(page, 'Lyrics');
+  await miniPlayer(page, false).click();
+  await expect(page).toHaveURL('/playing');
+  await page.getByRole('button', { name: 'Collapse player', exact: true }).click();
+  await expect(page).toHaveURL(album);
+  await showing(page, 'Lyrics');
+  await goTo(page, 'Books', '/books');
+  await showing(page, 'Lyrics');
+  await page.reload({ waitUntil: 'networkidle' });
+  await showing(page, 'Lyrics');
+  await page.getByRole('button', { name: 'Close Player', exact: true }).click();
+  await showing(page, null);
+  await expect(page).toHaveURL('/books');
+});
+
+for (const width of [600, 1024]) {
+  test.fixme(`[M0.canvas/c] at ${width}px the mini-player's track block opens Now Playing as the side panel beside the page, never full screen`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const album = '/music/albums/between-lines-of-light';
+    await page.goto(album, { waitUntil: 'networkidle' });
+    await settle(page);
+    await showing(page, null);
+    await miniPlayer(page, false).click();
+    await showing(page, 'Now playing');
+    await expect(page).toHaveURL(album);
+    await heading(page, 'Between Lines of Light');
+  });
+}
+
+test.fixme("[M0.canvas/c] at 390px the player sheet's tabs switch within the one sheet, with no opening transition", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/playing', { waitUntil: 'networkidle' });
+  await settle(page);
+  // The sheet: the nearest ancestor of the tabs drawn with the sheet's opening transition, kept.
+  const found = await page.getByRole('tab', { name: 'Now playing' }).evaluate((tab) => {
+    let el: Element | null = tab;
+    while (el !== null && !(el as HTMLElement).style?.transition.includes('clip-path'))
+      el = el.parentElement;
+    (window as unknown as { sheet: unknown }).sheet = el;
+    return el !== null;
+  });
+  expect(found).toBe(true);
+
+  await page.getByRole('tab', { name: 'Queue' }).click();
+  await expect(page).toHaveURL('/playing/queue');
+  // For the next frames the sheet showing is the one kept, and neither it nor its content runs a
+  // transition: no clip, slide or fade.
+  const moved = await page.getByRole('tab', { name: 'Queue' }).evaluate(async (tab) => {
+    const kept = (window as unknown as { sheet: HTMLElement }).sheet;
+    let sheet: Element | null = tab;
+    while (sheet !== null && !(sheet as HTMLElement).style?.transition.includes('clip-path'))
+      sheet = sheet.parentElement;
+    const seen: string[] = [];
+    for (let i = 0; i < 20; i++) {
+      await new Promise((r) => requestAnimationFrame(r));
+      for (const el of [sheet, sheet?.firstElementChild]) {
+        for (const a of el?.getAnimations() ?? [])
+          seen.push((a as CSSTransition).transitionProperty ?? 'animation');
+      }
+    }
+    return { same: sheet === kept, seen: [...new Set(seen)] };
+  });
+  expect(moved).toEqual({ same: true, seen: [] });
+  await expect(page.getByRole('tab', { name: 'Queue' })).toHaveAttribute('aria-selected', 'true');
+});
 
 test("[M0.canvas] the rail's hamburger collapses the labelled rail to the icon rail and back, staying so from page to page", async ({
   page,

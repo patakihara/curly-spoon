@@ -406,6 +406,9 @@ fun AlbumPage(navController: NavController, actions: PageActions) {
                                                             sub = "Album · 2020",
                                                             platform = Platform.MOBILE,
                                                             image = "/art/shadows-and-sighs.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Album(ref = "shadows-and-sighs"))
+                                                            },
                                                         ),
                                                     )
                                                     MediaCard(
@@ -414,6 +417,9 @@ fun AlbumPage(navController: NavController, actions: PageActions) {
                                                             sub = "Album · 2018",
                                                             platform = Platform.MOBILE,
                                                             image = "/art/between-two-worlds.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Album(ref = "between-two-worlds"))
+                                                            },
                                                         ),
                                                     )
                                                     MediaCard(
@@ -422,6 +428,9 @@ fun AlbumPage(navController: NavController, actions: PageActions) {
                                                             sub = "Single · 2024",
                                                             platform = Platform.MOBILE,
                                                             image = "/art/deep-inertia.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Album(ref = "heartbeats-in-silence"))
+                                                            },
                                                         ),
                                                     )
                                                 },

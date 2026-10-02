@@ -90,7 +90,10 @@ val sonoraStates: List<StateEntry> = listOf(
         )
     },
     StateEntry("EpisodeRow") { v -> EpisodeRow(EpisodeRowProps(title = "Episode", onClick = act(v), onPlay = act(v))) },
-    StateEntry("ExpandableText") { v -> ExpandableText(ExpandableTextProps(text = "A long description.", onToggle = pick(v))) },
+    // Controlled, as web's fixture draws it: left uncontrolled it is enabled with no action.
+    StateEntry("ExpandableText") { v ->
+        ExpandableText(ExpandableTextProps(text = "A long description.", expanded = false, onToggle = pick(v)))
+    },
     StateEntry("ExpanderRow") { v -> ExpanderRow(ExpanderRowProps(label = "Chapters", onToggle = pick(v))) },
     StateEntry("FeatureCard") { v ->
         FeatureCard(FeatureCardProps(title = "Feature", onPlay = act(v), onSave = act(v), onMore = act(v)))
@@ -153,7 +156,9 @@ val sonoraStates: List<StateEntry> = listOf(
     StateEntry("PreviewButton", declaresDisabled = true) { v ->
         PreviewButton(PreviewButtonProps(label = "Preview", onClick = act(v), disabled = off(v)))
     },
-    StateEntry("QueuePage") { v -> QueuePage(QueuePageProps(heading = "Queue", onClear = act(v), onClose = act(v))) },
+    StateEntry("QueuePage") { v ->
+        QueuePage(QueuePageProps(heading = "Queue", onClear = act(v), onClose = act(v), onRemove = pick2(v)))
+    },
     StateEntry("QuickPick") { v -> QuickPick(QuickPickProps(title = "Pick", onClick = act(v))) },
     StateEntry("ResultRow") { v -> ResultRow(ResultRowProps(title = "Result", onClick = act(v), onAction = act(v))) },
     StateEntry("SearchField", declaresDisabled = true) { v ->
@@ -170,15 +175,4 @@ val sonoraStates: List<StateEntry> = listOf(
     },
     StateEntry("ValueRow") { v -> ValueRow(ValueRowProps(label = "Speed", value = "1x", onClick = act(v))) },
     StateEntry("ViewToggle") { v -> ViewToggle(ViewToggleProps(onChange = pick(v))) },
-)
-
-/** Handler props that are not actions, as web's `NOT_ACTIONS` lists them. */
-val notActions: Set<Pair<String, String>> = setOf(
-    "BackdropShell" to "onProgress",
-    "FrontLayerHeader" to "onSpyChange",
-    "OverflowMenu" to "onOpenChange",
-    "QueuePage" to "onEditingChange",
-    "NowPlaying" to "onEditingChange",
-    "QueuePage" to "onReorder",
-    "NowPlaying" to "onReorder",
 )

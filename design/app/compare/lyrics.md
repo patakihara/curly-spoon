@@ -1,6 +1,6 @@
 ---
 page: lyrics
-pageHash: 62196404e460359e003e8373d2755ebfa4d22f58163a9e792c590df5830604f1
+pageHash: d7df1b18b8be3b53b60310468f6f522615a1946b37d3d3bbd601134677275f78
 sonora: [kit:mobile/lyrics, kit:desktop/lyrics, card:now-playing-page]
 spotify: [S40, S43]
 ---
@@ -8,11 +8,11 @@ spotify: [S40, S43]
 # Lyrics
 
 Canvas renders: `lyrics/canvas-phone.png` (390 px, the sheet on its Lyrics tab) and
-`lyrics/canvas-desktop.png` (1440 px, the side panel on its Lyrics tab, drawn over Music). Sonora
-renders: `sonora/kit-mobile-lyrics.png`, `sonora/kit-desktop-lyrics.png` and
-`sonora/card-now-playing-page.png`. Also looked at: Spotify's S43 (lyrics full page: collapse,
-song and artist, the lines at one size, share and menu, seek and play docked below) and S40 (the
-lyrics card inside the player, expand in its top corner).
+`lyrics/canvas-desktop.png` (1440 px, the side panel on its Lyrics tab, beside Browse, where a fresh
+load of its route lands). Sonora renders: `sonora/kit-mobile-lyrics.png`,
+`sonora/kit-desktop-lyrics.png` and `sonora/card-now-playing-page.png`. Also looked at: Spotify's
+S43 (lyrics full page: collapse, song and artist, the lines at one size, share and menu, seek and
+play docked below) and S40 (the lyrics card inside the player, expand in its top corner).
 
 ## What the sources show
 

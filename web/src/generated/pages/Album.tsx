@@ -176,17 +176,20 @@ const placeholder = {
       {
         "title": "Shadows and Sighs",
         "sub": "Album · 2020",
-        "image": "/art/shadows-and-sighs.jpg"
+        "image": "/art/shadows-and-sighs.jpg",
+        "ref": "shadows-and-sighs"
       },
       {
         "title": "Between Two Worlds",
         "sub": "Album · 2018",
-        "image": "/art/between-two-worlds.jpg"
+        "image": "/art/between-two-worlds.jpg",
+        "ref": "between-two-worlds"
       },
       {
         "title": "Heartbeats in Silence",
         "sub": "Single · 2024",
-        "image": "/art/deep-inertia.jpg"
+        "image": "/art/deep-inertia.jpg",
+        "ref": "heartbeats-in-silence"
       }
     ]
   }
@@ -372,7 +375,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
       <IconButton icon="close" label="Close" onClick={() => go.close('music')} />
     ),
     player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} />
+      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} />
     ),
     sheetOpen: false,
   }),
@@ -385,7 +388,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
       <IconButton icon="close" label="Close" onClick={() => go.close('music')} />
     ),
     player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} />
+      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} />
     ),
     sheetOpen: false,
   }),
@@ -398,7 +401,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
       <IconButton icon="close" label="Close" onClick={() => go.close('music')} />
     ),
     player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} />
+      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} />
     ),
     sheet: (
       <NowPlaying open={true} tab="now" variant={shell.playing.variant as Exclude<ComponentProps<typeof NowPlaying>['variant'], undefined>} track={shell.playing} platform="desktop" onTabChange={(tab) => go.tab(tab)}>
@@ -466,7 +469,7 @@ export default function Album({ data = placeholder, state = 'full' }: AlbumProps
         <Shelf platform={platform}>
           {data.more.items.map((album, i) => (
             <Fragment key={i}>
-              <MediaCard title={album.title} sub={album.sub} image={album.image} platform={platform} />
+              <MediaCard title={album.title} sub={album.sub} image={album.image} onClick={() => navigate(generatePath('/music/albums/:ref', { ref: album.ref }))} platform={platform} />
             </Fragment>
           ))}
         </Shelf>

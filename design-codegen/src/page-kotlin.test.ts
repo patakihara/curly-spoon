@@ -40,6 +40,7 @@ const nav = parseNav({
     entry('signIn', '/sign-in', { lights: null, close: 'none', presentation: 'bare' }),
     entry('nowPlaying', '/playing', { lights: null, close: 'sheet', presentation: 'sheet' }),
     entry('queue', '/playing/queue', { lights: null, close: 'sheet', presentation: 'sheet' }),
+    entry('settings', '/settings', { lights: null }),
   ],
 });
 const shellOf = (id: string, playing = true): KotlinShell => ({
@@ -125,11 +126,17 @@ describe('an Android page, from a canvas page', () => {
 
   it("frames the page in the phone's shell: the heading, the account avatar, the mini-player and the bottom bar", () => {
     expect(home).toContain('title = "Books"');
-    expect(home).toMatch(/AccountButton\(\s*AccountButtonProps\(label = "Account"/);
+    expect(home).toMatch(/AccountButton\(\s*AccountButtonProps\(\s*label = "Account"/);
     expect(home).toMatch(/MiniPlayer\(\s*MiniPlayerProps\([\s\S]*title = "Tidal Lines"/);
     expect(home).toContain('BottomNavItem(key = "books", label = "Books", icon = "book_2")');
     expect(home).toContain('onOpen = { navController.navigate(Route.NowPlaying) }');
     expect(home).toContain('onChange = { key -> openDestination(navController, key) }');
+  });
+
+  it('opens Settings from the account avatar', () => {
+    expect(home).toMatch(
+      /AccountButton\(\s*AccountButtonProps\([^)]*onClick = \{ navController\.navigate\(Route\.Settings\) \}/,
+    );
   });
 
   it("leaves a destination's home to Android's own back, with no close control", () => {

@@ -22,7 +22,8 @@ export interface QueueItem {
  * The player's Queue tab: the switch between the music and spoken queues, what the queue is on the
  * meta row beside the edit toggle, then what already played, now playing, up next (with Clear) and
  * what autoplay plays once the queue runs out. Edit mode turns on selection, drag handles and the
- * remove bar. Leave `editing` unset and the page owns the mode itself.
+ * remove bar. Leave `editing` unset and the page owns the mode itself. With none of `onRemove`,
+ * `onRemoveSelected` and `onReorder` there is nothing to edit, and the edit toggle is drawn disabled.
  */
 export interface QueuePageProps {
   platform?: 'desktop' | 'mobile';

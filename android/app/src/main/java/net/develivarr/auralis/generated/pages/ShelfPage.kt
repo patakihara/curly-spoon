@@ -122,6 +122,9 @@ fun ShelfPage(navController: NavController, actions: PageActions) {
                                                             progress = null,
                                                             width = "100%",
                                                             image = "/art/salt-and-static.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Album(ref = "salt-and-static"))
+                                                            },
                                                         ),
                                                     )
                                                     MediaCard(
@@ -132,6 +135,9 @@ fun ShelfPage(navController: NavController, actions: PageActions) {
                                                             progress = null,
                                                             width = "100%",
                                                             image = "/art/escapes-and-moons.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Album(ref = "escapes-and-moons"))
+                                                            },
                                                         ),
                                                     )
                                                     MediaCard(
@@ -142,6 +148,9 @@ fun ShelfPage(navController: NavController, actions: PageActions) {
                                                             progress = null,
                                                             width = "100%",
                                                             image = "/art/golden-scars.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Album(ref = "golden-scars"))
+                                                            },
                                                         ),
                                                     )
                                                     MediaCard(
@@ -152,6 +161,9 @@ fun ShelfPage(navController: NavController, actions: PageActions) {
                                                             progress = 0.3f,
                                                             width = "100%",
                                                             image = "/art/between-lines-of-light.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Album(ref = "between-lines-of-light"))
+                                                            },
                                                         ),
                                                     )
                                                     MediaCard(
@@ -162,6 +174,9 @@ fun ShelfPage(navController: NavController, actions: PageActions) {
                                                             progress = null,
                                                             width = "100%",
                                                             image = "/art/fragments-of-the-wind.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Album(ref = "fragments-of-the-wind"))
+                                                            },
                                                         ),
                                                     )
                                                     MediaCard(
@@ -172,6 +187,9 @@ fun ShelfPage(navController: NavController, actions: PageActions) {
                                                             progress = null,
                                                             width = "100%",
                                                             image = "/art/paper-lanterns.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Album(ref = "paper-lanterns"))
+                                                            },
                                                         ),
                                                     )
                                                     MediaCard(
@@ -182,6 +200,9 @@ fun ShelfPage(navController: NavController, actions: PageActions) {
                                                             progress = null,
                                                             width = "100%",
                                                             image = "/art/signal-noise.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Album(ref = "signal-noise"))
+                                                            },
                                                         ),
                                                     )
                                                 },

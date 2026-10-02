@@ -310,7 +310,17 @@ export function generateAppWeb(app: App): { nav: Map<string, string>; pages: Map
   return {
     nav: new Map([
       ['routes.tsx', generateRoutes(app.nav, drawn, app.shell.sheetOver)],
-      ['Shell.tsx', generateWebShell()],
+      [
+        'Shell.tsx',
+        generateWebShell(
+          Object.fromEntries(
+            app.nav.pages
+              .filter((p) => p.platforms.includes('web') && drawn.has(p.id))
+              .filter((p) => p.presentation === 'sheet' && PLAYER_TABS[p.id] !== undefined)
+              .map((p) => [PLAYER_TABS[p.id]!, componentName(p.id)]),
+          ),
+        ),
+      ],
       ['platform.ts', generatePlatform(app.nav)],
       [
         'stacks.ts',

@@ -3,13 +3,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import {
-  NOT_ACTIONS,
-  pressKey,
-  STATE_ENTRIES,
-  type StateEntry,
-  type Variant,
-} from '../src/states-list';
+import { actionProps } from '../../design-codegen/src/actions';
+import { pressKey, STATE_ENTRIES, type StateEntry, type Variant } from '../src/states-list';
 import { decode, distance } from './pixels';
 
 /**
@@ -353,6 +348,48 @@ test('[M0.states/c] a control with no action, or with disabled set, is disabled 
   }
 });
 
+test('[M0.states/c] a control that keeps its own state needs no action: it is enabled and a press changes it', async ({
+  page,
+}) => {
+  const owners = STATE_ENTRIES.filter((e) => e.owns);
+  expect(owners.length, 'some component keeps its own state').toBeGreaterThan(0);
+  for (const entry of owners) {
+    const what = `${entry.name} keeping its own state`;
+    await open(page, entry);
+    const { cell, host, control } = await drawing(page, entry, 'own');
+    await expect(control, `${what} is enabled`).toBeEnabled();
+    expect(await tabInto(page, cell, host), `${what} takes focus from Tab`).toBe(true);
+
+    const aria = () =>
+      control.evaluate((el) =>
+        ['aria-expanded', 'aria-pressed', 'aria-selected', 'aria-checked']
+          .map((a) => `${a}=${el.getAttribute(a)}`)
+          .join(' '),
+      );
+    const text = () => cell.innerText();
+    const before = { aria: await aria(), text: await text() };
+    await control.click();
+    expect({ aria: await aria(), text: await text() }, `a press changes ${what}`).not.toEqual(
+      before,
+    );
+  }
+});
+
+test('[M0.states/c] the queue offers no edit mode when it can be neither removed from nor reordered', async ({
+  page,
+}) => {
+  await open(
+    page,
+    STATE_ENTRIES.find((e) => e.name === 'QueuePage')!,
+  );
+  const edit = page
+    .locator('[data-states="QueuePage"][data-variant="none"]')
+    .getByRole('button', { name: 'Edit queue' });
+  await expect(edit).toBeDisabled();
+  await edit.click({ force: true });
+  await expect(edit, 'a press leaves it as it was').toHaveAccessibleName('Edit queue');
+});
+
 test('[M0.states/c] every component with an action, and every disabled prop, is in the states fixture', () => {
   const declared = readdirSync(sonora, { withFileTypes: true })
     .filter((e) => e.isDirectory() && LEVELS.includes(e.name))
@@ -365,11 +402,7 @@ test('[M0.states/c] every component with an action, and every disabled prop, is 
         })),
     );
   const actions = declared
-    .filter(({ name, source }) =>
-      [...source.matchAll(/^\s*(on[A-Z]\w*)\??:/gm)].some(
-        ([, prop]) => !NOT_ACTIONS.some((n) => n.component === name && n.prop === prop),
-      ),
-    )
+    .filter(({ name, source }) => actionProps(name, source).length > 0)
     .map(({ name }) => name)
     .sort();
   expect(STATE_ENTRIES.map((e) => e.name).sort()).toEqual(actions);

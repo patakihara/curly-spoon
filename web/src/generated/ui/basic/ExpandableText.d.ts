@@ -16,7 +16,7 @@ export interface ExpandableTextProps {
   lessLabel?: string;
   /** Controlled expanded state. Omit to let the component keep its own. */
   expanded?: boolean;
-  /** Receives the next expanded state. Without it the toggle is drawn disabled. */
+  /** Receives the next expanded state. Without it a controlled toggle is drawn disabled. */
   onToggle?: (next: boolean) => void;
 }
 export declare function ExpandableText(props: ExpandableTextProps): JSX.Element;
