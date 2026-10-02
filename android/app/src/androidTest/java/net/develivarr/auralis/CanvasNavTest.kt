@@ -8,11 +8,9 @@ import androidx.compose.ui.test.onFirst
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import net.develivarr.auralis.generated.nav.AuralisNavGraph
 import net.develivarr.auralis.generated.nav.PageActions
 import net.develivarr.auralis.generated.nav.Route
-import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -42,14 +40,14 @@ class CanvasNavTest {
         composeRule.waitForIdle()
 
         val routes = nav.graph.mapNotNull { it.route }.associateBy(::pageId)
-        val pages = androidPages()
+        val pages = androidPages().toSet()
         val headings = headings()
         assertEquals("the graph's destinations are nav.json's Android pages", pages, routes.keys)
 
         val failures = pages.mapNotNull { id ->
             val title = headings.getString(id)
             try {
-                composeRule.runOnUiThread { nav.navigate(sample(routes.getValue(id))) }
+                composeRule.runOnUiThread { nav.navigate(sampleRoute(routes.getValue(id))) }
                 composeRule.waitForIdle()
                 composeRule.onAllNodes(hasText(title, ignoreCase = true) and isHeading())
                     .onFirst()
@@ -62,31 +60,5 @@ class CanvasNavTest {
             }
         }
         assertTrue(failures.joinToString("\n"), failures.isEmpty())
-    }
-
-    private fun asset(path: String): String =
-        InstrumentationRegistry.getInstrumentation().context.assets.open("canvas/$path")
-            .bufferedReader().use { it.readText() }
-
-    /** nav.json's Android pages, by id. */
-    private fun androidPages(): Set<String> {
-        val pages = JSONObject(asset("nav.json")).getJSONArray("pages")
-        return (0 until pages.length()).map { pages.getJSONObject(it) }
-            .filter { p -> p.optJSONArray("platforms")?.let { a -> (0 until a.length()).any { a.getString(it) == "android" } } ?: true }
-            .map { it.getString("id") }.toSet()
-    }
-
-    /** The heading each page shows with its placeholder data, as pnpm gen writes it from the canvas. */
-    private fun headings(): JSONObject = JSONObject(asset("headings.json"))
-
-    private companion object {
-        /** `net…Route.NowPlaying` to `nowPlaying`, the page's id in nav.json. */
-        fun pageId(route: String): String =
-            route.substringAfterLast("Route.").substringBefore('/').substringBefore('?')
-                .replaceFirstChar { it.lowercase() }
-
-        /** The route with each path parameter given a sample value and its query dropped. */
-        fun sample(route: String): String =
-            route.substringBefore('?').replace(Regex("""\{\w+\}"""), "sample")
     }
 }

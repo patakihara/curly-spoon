@@ -2,8 +2,6 @@ package net.develivarr.auralis
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasClickAction
@@ -56,19 +54,17 @@ class ShellNavTest {
         composeRule.waitForIdle()
     }
 
-    private fun role(role: Role) = SemanticsMatcher.expectValue(SemanticsProperties.Role, role)
-
     /** The first enabled button named `name`: a card, a row, a link or a control. */
     private fun tap(name: String) = tap(
         composeRule.onAllNodes(
-            role(Role.Button) and (hasContentDescription(name) or hasText(name)) and
+            hasRole(Role.Button) and (hasContentDescription(name) or hasText(name)) and
                 hasClickAction() and isEnabled(),
         ).onFirst(),
     )
 
     /** A tab named `label`: a destination on the bottom bar, or one of the player's tabs. */
     private fun tab(label: String) = tap(
-        composeRule.onAllNodes(role(Role.Tab) and hasText(label) and hasClickAction() and isEnabled())
+        composeRule.onAllNodes(hasRole(Role.Tab) and hasText(label) and hasClickAction() and isEnabled())
             .onFirst(),
     )
 
@@ -78,9 +74,9 @@ class ShellNavTest {
      */
     private fun miniPlayer() = tap(
         composeRule.onAllNodes(
-            role(Role.Button) and (hasContentDescription(PLAYING) or hasText(PLAYING)) and
+            hasRole(Role.Button) and (hasContentDescription(PLAYING) or hasText(PLAYING)) and
                 hasClickAction() and isEnabled() and
-                hasAnyDescendant(role(Role.Button) and hasText("Pause")),
+                hasAnyDescendant(hasRole(Role.Button) and hasText("Pause")),
         ).onFirst(),
     )
 
