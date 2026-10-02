@@ -68,6 +68,16 @@ describe('the Android nav graph, from nav.json', () => {
     expect(graph).toContain('"search" -> Route.Search()');
   });
 
+  it('leaves the page showing when a destination is tapped over it and it lights another or none', () => {
+    expect(graph).toMatch(
+      /fun openDestination[\s\S]*resumed\?\.id == showing\.id && lights\(resumed\.destination\) != id\) \{\n\s+navController\.popBackStack\(\)/,
+    );
+    expect(graph).toContain('destination.hasRoute<Route.Album>() -> "music"');
+    expect(graph).toContain('destination.hasRoute<Route.Search>() -> "search"');
+    expect(graph).not.toContain('hasRoute<Route.Downloads>()');
+    expect(graph).not.toContain('hasRoute<Route.NotFound>()');
+  });
+
   it('closes a page to its opener, or with nothing under it, to the home it is given', () => {
     expect(graph).toMatch(
       /fun closePage\(navController: NavController, home: Route\) \{\n\s+if \(navController.previousBackStackEntry != null\) navController.popBackStack\(\)/,
