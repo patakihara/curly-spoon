@@ -131,14 +131,14 @@ describe("the shell's controls, wired alike on both apps", () => {
     expect(at('notFound', 1)['NavRail.active']).toEqual({ kind: 'lit', fallback: 'browse' });
   });
 
-  it("[M0.canvas] leaves Android's lit item as nav.json says until its own generator follows the back stack", () => {
+  it('[M0.canvas] lights on Android too the destination whose stack holds the page, from its own back stack', () => {
     const android = shellHandlers(
       nav,
       page('album'),
       { chrome: chrome(nav, shell, page('album'), nav.layouts[0]!, new Set()) },
       'android',
     );
-    expect(wiring(android)['BottomNav.active']).toBeUndefined();
+    expect(wiring(android)['BottomNav.active']).toEqual({ kind: 'lit', fallback: 'music' });
   });
 
   it('[M0.canvas] opens Now Playing from the mini-player, on the phone and on desktop', () => {

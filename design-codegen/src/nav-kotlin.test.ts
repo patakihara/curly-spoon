@@ -68,14 +68,55 @@ describe('the Android nav graph, from nav.json', () => {
     expect(graph).toContain('"search" -> Route.Search()');
   });
 
-  it('leaves the page showing when a destination is tapped over it and it lights another or none', () => {
+  it('[M0.canvas] decides once, as each page arrives, the destination it lights: a home itself, any other page the one under it', () => {
+    expect(graph).toContain(
+      [
+        'private fun arrive(navController: NavController) {',
+        '    val entry = navController.currentBackStackEntry ?: return',
+        '    if (!entry.lifecycle.currentState.isAtLeast(Lifecycle.State.CREATED)) return',
+        '    if (entry.savedStateHandle.contains(LIT)) return',
+        '    val lit = homeOf(entry.destination)',
+        '        ?: navController.previousBackStackEntry?.let(::litOf)',
+        '        ?: lights(entry.destination)',
+        '        ?: return',
+        '    entry.savedStateHandle[LIT] = lit',
+        '}',
+      ].join('\n'),
+    );
     expect(graph).toMatch(
-      /fun openDestination[\s\S]*resumed\?\.id == showing\.id && lights\(resumed\.destination\) != id\) \{\n\s+navController\.popBackStack\(\)/,
+      /DisposableEffect\(navController\) \{\n\s+val listener = NavController\.OnDestinationChangedListener \{ controller, _, _ -> arrive\(controller\) \}\n\s+navController\.addOnDestinationChangedListener\(listener\)/,
+    );
+    expect(graph).toContain(
+      [
+        'fun homeOf(destination: NavDestination): String? = when {',
+        '    destination.hasRoute<Route.Music>() -> "music"',
+        '    destination.hasRoute<Route.Search>() -> "search"',
+        '    else -> null',
+        '}',
+      ].join('\n'),
+    );
+  });
+
+  it("[M0.canvas] lights on the bottom bar the destination the page arrived on, with nothing under it the page's own", () => {
+    expect(graph).toContain(
+      'fun litDestination(navController: NavController, fallback: String): String =\n    navController.currentBackStackEntry?.let(::litOf) ?: fallback',
     );
     expect(graph).toContain('destination.hasRoute<Route.Album>() -> "music"');
     expect(graph).toContain('destination.hasRoute<Route.Search>() -> "search"');
     expect(graph).not.toContain('hasRoute<Route.Downloads>()');
     expect(graph).not.toContain('hasRoute<Route.NotFound>()');
+  });
+
+  it('[M0.canvas] sends the lit destination tapped again to its home, from any of its pages', () => {
+    expect(graph).toMatch(
+      /fun openDestination\(navController: NavController, id: String\) \{\n\s+if \(navController\.currentBackStackEntry\?\.let\(::litOf\) == id\) return goHome\(navController, id\)/,
+    );
+    expect(graph).toContain(
+      '"music" -> navController.popBackStack<Route.Music>(inclusive = false)',
+    );
+    expect(graph).toMatch(
+      /fun goHome[\s\S]*if \(homeOf\(navController\.currentBackStackEntry\?\.destination \?: return\) == id\) return/,
+    );
   });
 
   it('closes a page to its opener, or with nothing under it, to the home it is given', () => {
@@ -86,6 +127,21 @@ describe('the Android nav graph, from nav.json', () => {
 
   it("switches the player's tabs between its sheets on Android", () => {
     expect(graph).toContain('"queue" -> Route.Queue');
+  });
+
+  it("[M0.canvas] switches the player's tabs in place, with no transition between one tab and another", () => {
+    expect(graph).toContain(
+      [
+        '        composable<Route.Queue>(',
+        '            enterTransition = { if (isPlayerTab(initialState.destination)) EnterTransition.None else null },',
+        '            exitTransition = { if (isPlayerTab(targetState.destination)) ExitTransition.None else null },',
+        '        ) { QueuePage(navController, actions) }',
+      ].join('\n'),
+    );
+    expect(graph).toContain(
+      'private fun isPlayerTab(destination: NavDestination): Boolean =\n    destination.hasRoute<Route.Queue>()\n',
+    );
+    expect(graph).toContain('composable<Route.Album> { AlbumPage(navController, actions) }');
   });
 
   it('refuses a destination whose home takes a route parameter, which the bottom bar cannot give', () => {

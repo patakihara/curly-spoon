@@ -6,9 +6,11 @@ import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.isEnabled
+import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -20,6 +22,7 @@ import net.develivarr.auralis.generated.nav.AuralisNavGraph
 import net.develivarr.auralis.generated.nav.PageActions
 import net.develivarr.auralis.generated.nav.Route
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,8 +31,9 @@ import org.junit.runner.RunWith
  * 11-front.md's "Shell and navigation" on a device, walked only by tapping the shell's own
  * controls and pressing Android's back, never by navigating in code: ✕ returns to whatever opened
  * a page, each destination keeps its own stack, Android's back does what ✕ does, the mini-player
- * opens Now Playing, the player's tabs switch sheets, a sheet closes to the page under it, and the
- * avatar leading the top bar opens Settings.
+ * opens Now Playing, the player's tabs switch sheets in place, a sheet closes to the page under it,
+ * the bottom bar lights the destination that opened a page, and the avatar leading the top bar
+ * opens Settings.
  * Every control is found as a screen reader finds it, by its role, a button or a tab, and its name.
  * web/e2e/shell-nav.spec.ts walks the same journey in the browser.
  */
@@ -147,6 +151,39 @@ class ShellNavTest {
         assertEquals("album shadows-and-sighs", showing())
     }
 
+    /** Whether a page drawing the Sonora stub `name` is on screen, entering, leaving or settled. */
+    private fun shows(name: String) = composeRule.onAllNodesWithText(name).fetchSemanticsNodes().isNotEmpty()
+
+    @Test
+    fun M0_canvas_c_thePlayersTabsSwitchInPlaceWithNoCrossfadeOfTheOldTab() {
+        start()
+        miniPlayer()
+        tab("Queue")
+        assertTrue(shows("QueuePage"))
+        composeRule.mainClock.autoAdvance = false
+        composeRule.onAllNodes(hasRole(Role.Tab) and hasText("Lyrics") and hasClickAction()).onFirst().performClick()
+        var frames = 0
+        while (frames < MAX_FRAMES && !(shows("LyricsPage") && !shows("QueuePage"))) {
+            composeRule.mainClock.advanceTimeByFrame()
+            frames++
+        }
+        composeRule.mainClock.autoAdvance = true
+        assertTrue(
+            "Lyrics replaced Queue after $frames frames; a tab switch has no transition",
+            frames <= TAB_SWITCH_FRAMES,
+        )
+        assertEquals("lyrics", showing())
+    }
+
+    @Test
+    fun M0_canvas_d_anAlbumOpenedFromABrowseCardLightsBrowseOnTheBottomBar() {
+        start()
+        tap("Between Lines of Light")
+        assertEquals("album between-lines-of-light", showing())
+        composeRule.onNode(hasRole(Role.Tab) and hasText("Browse") and isSelected()).assertExists()
+        composeRule.onNode(hasRole(Role.Tab) and hasText("Music") and isSelected()).assertDoesNotExist()
+    }
+
     @Test
     fun theAvatarOpensSettingsWhoseCloseReturnsToThePageUnderIt() {
         start()
@@ -160,5 +197,11 @@ class ShellNavTest {
     private companion object {
         /** The track the shell's mini-player shows, shell.json's `playing`. */
         const val PLAYING = "Heartbeats in Silence"
+
+        /** Frames a tab switch may take to settle: the frame that composes it, then the next. */
+        const val TAB_SWITCH_FRAMES = 2
+
+        /** Frames to watch for it, well past the NavHost's 700 ms crossfade. */
+        const val MAX_FRAMES = 90
     }
 }

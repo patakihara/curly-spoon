@@ -212,6 +212,28 @@ describe('an Android page, from a canvas page', () => {
     );
   });
 
+  it('[M0.canvas] lights on the bottom bar the destination the page arrived on, the one it lights only with nothing under it', () => {
+    expect(home).toContain('active = litDestination(navController, "books")');
+    expect(home).toContain('import net.develivarr.auralis.generated.nav.litDestination\n');
+  });
+
+  it('[M0.canvas] keeps a page lighting none unlit on the bottom bar', () => {
+    const settings = gen(
+      `export default function Settings() {
+  return (
+    <BackdropShell>
+      <PageBody />
+    </BackdropShell>
+  );
+}
+`,
+      'settings',
+      {},
+    );
+    expect(settings).toContain('active = ""');
+    expect(settings).not.toContain('litDestination');
+  });
+
   it('starts sign-in through the injected onSignIn, and draws a bare page with no navigation', () => {
     const signIn = gen(
       `export default function SignIn({ data }) {
