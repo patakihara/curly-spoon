@@ -9,7 +9,7 @@ part: Why and what
 Fixed inputs, not re-opened.
 :::
 
-These come from `USER_DECISIONS.md`, the spec addendum and the research notes. Where a decision rested on a false premise, the plan keeps the decision and fixes the premise (one case, marked).
+From `USER_DECISIONS.md`, the spec addendum and the research notes. Where a decision rested on a false premise, the plan keeps it and fixes the premise (one case, marked).
 
 ::: grid g2
 ::: card
@@ -19,10 +19,10 @@ These come from `USER_DECISIONS.md`, the spec addendum and the research notes. W
 - Spotify is the reference, looked at rather than guessed at.
 - **Browse** (icon `explore`) is the one discovery screen. Home, For You and Discover are the same thing and are distinct from **Search**. The name lives only in UI strings.
 - Five destinations: Browse, Music, Books, Podcasts, Search, one button each (as Sonora draws it), not a single Library button with a sub-menu.
-- Web includes desktop, runs in Docker, one container with one port, a PWA rather than Electron, native Compose + Media3 on Android.
+- Web includes desktop, in one Docker container on one port, a PWA rather than Electron; native Compose + Media3 on Android.
 - Web and Android are developed together, with parity.
 - **Android installs through your own F-Droid repository**, added in Droid-ify (`https://patakihara.github.io/curly-spoon/repo`, live, serving 0.2.0), or through Obtainium from GitHub Releases. The rebuild keeps this path: same app id (`net.develivarr.auralis`), same signing key, same repository address, so the installed app updates in place.
-- Downloads are Android-only; web leaves the button out rather than faking it. Android Auto is a design constraint, not a toggle.
+- Downloads are Android-only; web leaves the button out. Android Auto is a design constraint, not a toggle.
 - Android gets a Settings screen. Ebooks with read-along sync are wanted but lower priority. The launcher icon stays as it is for now.
 :::
 
@@ -31,7 +31,7 @@ These come from `USER_DECISIONS.md`, the spec addendum and the research notes. W
 
 - **Queues**: a **music queue** and a **spoken queue that podcasts and audiobooks share** by default, with books split into chapters. The music queue works YouTube Music-style by default, Spotify-style as an option. **Back always walks play history.** Every queue can be cleared.
 - Transcoding is acceptable. <span class="pill t-req">premise fixed</span> It was said to work; it doesn't (see "Where it stands"). The plan makes it work _and_ adds direct play, since offline downloads need the original files anyway.
-- **Never video.** Auralis has no way to show video, anywhere: not for YouTube, not for music, not for podcast feeds that publish video episodes. Everything plays as audio, and YouTube thumbnails are only used as cover art.
+- **Never video.** Auralis has no way to show video, anywhere: not for YouTube, music, or podcast feeds publishing video episodes. Everything plays as audio; YouTube thumbnails serve only as cover art.
 :::
 
 ::: card
@@ -57,7 +57,7 @@ These come from `USER_DECISIONS.md`, the spec addendum and the research notes. W
 ::: card
 #### Discovery and search
 
-- Recommendations come from **external** sources and are mixed into Browse. _"not useful to me if recommendations only show things already in my library."_
+- Recommendations come from **external** sources, mixed into Browse. _"not useful to me if recommendations only show things already in my library."_
 - Mixed-content carousels, at most one episode per podcast in a carousel, each card with a reason line, and a loading state that holds until everything has arrived.
 - One provider per medium: _"Why would the recommendation services for the THREE different kinds of content we have be the same?"_ Provider choice is delegated. Audible and YouTube terms of service don't matter for your own install.
 - Research picks: for books, Audible's "listeners also enjoyed", with Audnexus for metadata; for podcasts, Apple Podcasts' "You Might Also Like", with PodcastIndex and iTunes as the catalogue; for music, YouTube Music radio alongside ListenBrainz. All checked live.

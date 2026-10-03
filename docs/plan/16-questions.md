@@ -5,7 +5,7 @@ part: Delivery
 ---
 ## Still open
 
-Calls you left open in your notes; none blocks starting, each needed only by the milestone that builds it.
+Calls you left open in your notes; each is needed only by the milestone that builds it.
 
 | Call | Options | Needed by |
 |---|---|---|

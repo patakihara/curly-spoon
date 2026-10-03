@@ -5,7 +5,7 @@ part: Delivery
 ---
 ## What this plan hasn't verified
 
-Each line names the item that checks it, and goes once that's done.
+Each line names the item that checks it, and goes once it's done.
 
 ::: small
 - The 43 Spotify reference screenshots were read through their per-screen notes, not opened one by one (M0.canvas).
