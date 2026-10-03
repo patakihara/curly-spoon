@@ -453,7 +453,8 @@ export function generateKotlinPage(
       case 'panel':
         throw new Error(`${id}: Android's phone has no player panel to show`);
       case 'lit':
-        throw new Error(`${id}: Android lights its bottom bar from its own back stack`);
+        fromNav.add('litDestination');
+        return raw(`litDestination(navController, ${kotlinString(action.fallback)})`);
     }
   };
   /** Android's back does what the page's close control does, on a page that closes. */

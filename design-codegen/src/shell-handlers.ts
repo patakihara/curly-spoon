@@ -7,9 +7,9 @@
  *   destination it lights (Browse for a page that lights none). A player sheet closes the same
  *   way, to the page under it.
  * - The bottom bar and the rail open the destination tapped, on its own stack as it was left.
- * - On the web they light the destination whose stack holds the page, the one it was opened from,
- *   and the destination the page lights only when nothing is under it; a page at the rail's foot
- *   lights itself. Android follows its back stack in its own generator.
+ * - They light the destination whose stack holds the page, the one it was opened from, and the
+ *   destination the page lights only when nothing is under it; a page at the rail's foot lights
+ *   itself.
  * - The rail's hamburger collapses the labelled rail to the icon rail and back, and it stays so
  *   from page to page.
  * - The mini-player opens Now Playing, in the player panel where the layout holds one. On desktop
@@ -87,17 +87,15 @@ export function shellHandlers(
     const bar = find(parts.player, 'BottomNav');
     on(bar, 'onChange', { kind: 'destination' });
     on(parts.rail, 'onChange', { kind: 'destination' });
-    if (platform === 'web') {
-      // A page no stack keeps (a link to nothing) lights the destination in use, even where its
-      // own literal lights none, as on the phone's bottom bar.
-      const unkept = page.route === '*';
-      for (const item of [bar, parts.rail]) {
-        const active = item?.kind === 'element' ? item.props['active'] : undefined;
-        const fallback = active?.kind === 'literal' ? active.value : undefined;
-        if (typeof fallback !== 'string') continue;
-        if (nav.destinations.some((d) => d.id === fallback) || (unkept && fallback === ''))
-          on(item, 'active', { kind: 'lit', fallback });
-      }
+    // A page no stack keeps (a link to nothing) lights the destination in use, even where its own
+    // literal lights none, as on the phone's bottom bar.
+    const unkept = page.route === '*';
+    for (const item of [bar, parts.rail]) {
+      const active = item?.kind === 'element' ? item.props['active'] : undefined;
+      const fallback = active?.kind === 'literal' ? active.value : undefined;
+      if (typeof fallback !== 'string') continue;
+      if (nav.destinations.some((d) => d.id === fallback) || (unkept && fallback === ''))
+        on(item, 'active', { kind: 'lit', fallback });
     }
     const rail = parts.rail?.kind === 'element' ? parts.rail.props : {};
     if (rail['toggle']?.kind === 'literal' && rail['toggle'].value === true) {

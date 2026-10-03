@@ -7,6 +7,7 @@ import net.develivarr.auralis.generated.nav.PageActions
 import net.develivarr.auralis.generated.nav.PlayMode
 import net.develivarr.auralis.generated.nav.PlayQueue
 import net.develivarr.auralis.generated.nav.Route
+import net.develivarr.auralis.generated.nav.litDestination
 import net.develivarr.auralis.generated.nav.openDestination
 import net.develivarr.auralis.generated.ui.AccountButtonProps
 import net.develivarr.auralis.generated.ui.ArtistCardProps
@@ -128,7 +129,7 @@ fun BrowsePage(navController: NavController, actions: PageActions) {
                             BottomNavItem(key = "podcasts", label = "Podcasts", icon = "podcasts"),
                             BottomNavItem(key = "search", label = "Search", icon = "search"),
                         ),
-                        active = "browse",
+                        active = litDestination(navController, "browse"),
                         onChange = { key -> openDestination(navController, key) },
                     ),
                 )

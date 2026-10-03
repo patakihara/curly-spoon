@@ -3,7 +3,8 @@
  * typed route per Android page, the NavHost drawing each page's generated `<Id>Page`, and the
  * back behaviour nav.json states. The close control and Android's back return to the page's
  * opener, or, with nothing under it, to the home of the destination it lights. The bottom bar
- * keeps a stack per destination, and the player's tabs switch between its sheets.
+ * keeps a stack per destination and lights the one that opened the page, the lit one tapped again
+ * goes to its home, and the player's tabs switch between its sheets in place, with no transition.
  */
 import { componentName, splitRoute, type Nav, type NavPage } from './nav.js';
 import { APP_NOTE, KOTLIN_NAV_PACKAGE, KOTLIN_PAGES_PACKAGE } from './outputs.js';
@@ -70,11 +71,32 @@ export function generateKotlinNav(nav: Nav, drawn: Set<string>): string {
     return page === undefined ? [] : [[tab, page] as const];
   });
   const painted = pages.filter((p) => drawn.has(p.id));
+  const tabIds = new Set(tabs.map(([, p]) => p.id));
+  /** A page's NavHost entry: a player tab switches to and from another with no transition. */
+  const destination = (p: NavPage) => {
+    const route = `Route.${componentName(p.id)}`;
+    const content = drawn.has(p.id)
+      ? ` { ${componentName(p.id)}Page(navController, actions) }`
+      : ' {}';
+    if (!tabIds.has(p.id)) return `        composable<${route}>${content}`;
+    return [
+      `        composable<${route}>(`,
+      '            enterTransition = { if (isPlayerTab(initialState.destination)) EnterTransition.None else null },',
+      '            exitTransition = { if (isPlayerTab(targetState.destination)) ExitTransition.None else null },',
+      `        )${content}`,
+    ].join('\n');
+  };
+  const isTab = tabs.map(([, p]) => `destination.hasRoute<Route.${componentName(p.id)}>()`);
   return [
     `// ${APP_NOTE}`,
     `package ${KOTLIN_NAV_PACKAGE}`,
     '',
+    'import androidx.compose.animation.EnterTransition',
+    'import androidx.compose.animation.ExitTransition',
     'import androidx.compose.runtime.Composable',
+    'import androidx.compose.runtime.DisposableEffect',
+    'import androidx.lifecycle.Lifecycle',
+    'import androidx.navigation.NavBackStackEntry',
     'import androidx.navigation.NavController',
     'import androidx.navigation.NavDestination',
     'import androidx.navigation.NavDestination.Companion.hasRoute',
@@ -102,17 +124,49 @@ export function generateKotlinNav(nav: Nav, drawn: Set<string>): string {
     '    val onSignIn: () -> Unit,',
     ')',
     '',
-    '/** Every Android page of nav.json, each drawn by its generated page. */',
+    '/**',
+    ' * Every Android page of nav.json, each drawn by its generated page, each deciding as it arrives',
+    ' * the destination it lights.',
+    ' */',
     '@Composable',
     'fun AuralisNavGraph(navController: NavHostController, start: Route, actions: PageActions) {',
+    '    DisposableEffect(navController) {',
+    '        val listener = NavController.OnDestinationChangedListener { controller, _, _ -> arrive(controller) }',
+    '        navController.addOnDestinationChangedListener(listener)',
+    '        onDispose { navController.removeOnDestinationChangedListener(listener) }',
+    '    }',
     '    NavHost(navController = navController, startDestination = start) {',
-    ...pages.map((p) =>
-      drawn.has(p.id)
-        ? `        composable<Route.${componentName(p.id)}> { ${componentName(p.id)}Page(navController, actions) }`
-        : `        composable<Route.${componentName(p.id)}> {}`,
-    ),
+    ...pages.map(destination),
     '    }',
     '}',
+    '',
+    '/** Where a back stack entry keeps the destination it lights, kept with its saved stack. */',
+    'private const val LIT = "lit"',
+    '',
+    '/**',
+    " * The page showing decides, once as it arrives, the destination it lights: a destination's home",
+    " * itself, any other page the one lit under it, its opener's, and with nothing under it the one",
+    ' * it lights itself. A page no stack keeps, lighting none, so lights the destination in use.',
+    ' */',
+    'private fun arrive(navController: NavController) {',
+    '    val entry = navController.currentBackStackEntry ?: return',
+    '    if (!entry.lifecycle.currentState.isAtLeast(Lifecycle.State.CREATED)) return',
+    '    if (entry.savedStateHandle.contains(LIT)) return',
+    '    val lit = homeOf(entry.destination)',
+    '        ?: navController.previousBackStackEntry?.let(::litOf)',
+    '        ?: lights(entry.destination)',
+    '        ?: return',
+    '    entry.savedStateHandle[LIT] = lit',
+    '}',
+    '',
+    'private fun litOf(entry: NavBackStackEntry): String? = entry.savedStateHandle.get<String>(LIT)',
+    '',
+    '/**',
+    ' * The destination the bottom bar lights on the page showing, the one that opened it, or, with',
+    ' * nothing deciding it, [fallback], the one the page lights.',
+    ' */',
+    'fun litDestination(navController: NavController, fallback: String): String =',
+    '    navController.currentBackStackEntry?.let(::litOf) ?: fallback',
     '',
     '/**',
     " * A page's close control, and Android's back on a page that closes: back to whatever opened it,",
@@ -124,20 +178,30 @@ export function generateKotlinNav(nav: Nav, drawn: Set<string>): string {
     '}',
     '',
     '/**',
-    ' * A destination from the bottom bar: each keeps its own stack, left and resumed as it was. The',
-    ' * page showing is left behind when it lights another destination or none, so the tap is never a',
-    ' * dead one: Settings over Browse, an album opened from a Browse card.',
+    ' * A destination from the bottom bar: the lit one goes to its home from any of its pages, and',
+    ' * another opens on its own stack, left and resumed as it was.',
     ' */',
     'fun openDestination(navController: NavController, id: String) {',
-    '    val showing = navController.currentBackStackEntry',
+    '    if (navController.currentBackStackEntry?.let(::litOf) == id) return goHome(navController, id)',
     '    navController.navigate(destinationRoute(id)) {',
     '        popUpTo(navController.graph.findStartDestination().id) { saveState = true }',
     '        launchSingleTop = true',
     '        restoreState = true',
     '    }',
-    '    val resumed = navController.currentBackStackEntry',
-    '    if (showing != null && resumed?.id == showing.id && lights(resumed.destination) != id) {',
-    '        navController.popBackStack()',
+    '}',
+    '',
+    '/** The home of destination `id`, back down its stack, or, with it not on the stack, alone. */',
+    'private fun goHome(navController: NavController, id: String) {',
+    '    if (homeOf(navController.currentBackStackEntry?.destination ?: return) == id) return',
+    '    val popped = when (id) {',
+    ...homes.map(
+      (p) =>
+        `        ${kotlinString(p!.id)} -> navController.popBackStack<Route.${componentName(p!.id)}>(inclusive = false)`,
+    ),
+    '        else -> throw IllegalArgumentException("$id is not a destination")',
+    '    }',
+    '    if (!popped) {',
+    '        navController.navigate(destinationRoute(id)) { popUpTo(navController.graph.id) { inclusive = true } }',
     '    }',
     '}',
     '',
@@ -152,11 +216,23 @@ export function generateKotlinNav(nav: Nav, drawn: Set<string>): string {
     '    else -> null',
     '}',
     '',
+    '/** The destination whose home [destination] is, or null for a page that is no home. */',
+    'fun homeOf(destination: NavDestination): String? = when {',
+    ...homes.map(
+      (p) => `    destination.hasRoute<Route.${componentName(p!.id)}>() -> ${kotlinString(p!.id)}`,
+    ),
+    '    else -> null',
+    '}',
+    '',
     '/** The home of the destination `id` names. */',
     'fun destinationRoute(id: String): Route = when (id) {',
     ...homes.map((p) => `    ${kotlinString(p!.id)} -> ${routeCall(p!)}`),
     '    else -> throw IllegalArgumentException("$id is not a destination")',
     '}',
+    '',
+    "/** Whether [destination] is one of the player's tabs, which switch in place. */",
+    'private fun isPlayerTab(destination: NavDestination): Boolean =',
+    `    ${isTab.length === 0 ? 'false' : isTab.join(' ||\n        ')}`,
     '',
     "/** One of the player's tabs, the sheet showing it in place of the one showing now. */",
     'fun openTab(navController: NavController, tab: String) {',

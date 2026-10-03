@@ -3,6 +3,7 @@ package net.develivarr.auralis
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -74,7 +75,7 @@ class NavBackTest {
     private fun litOnBar(): List<String> =
         composeRule.onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab) and isSelected())
             .fetchSemanticsNodes()
-            .mapNotNull { node -> node.config.getOrNull(SemanticsProperties.Text)?.joinToString("") }
+            .mapNotNull { node -> node.config.getOrNull(SemanticsProperties.Text)?.joinToString("") { it.text } }
             .filter { it in DESTINATIONS }
 
     /** Music, then an artist, then one of its albums; then Books, then back to Music. */

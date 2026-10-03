@@ -7,6 +7,7 @@ import androidx.navigation.NavController
 import net.develivarr.auralis.generated.nav.PageActions
 import net.develivarr.auralis.generated.nav.Route
 import net.develivarr.auralis.generated.nav.closePage
+import net.develivarr.auralis.generated.nav.litDestination
 import net.develivarr.auralis.generated.nav.openDestination
 import net.develivarr.auralis.generated.ui.BackLayerProps
 import net.develivarr.auralis.generated.ui.BackdropShellProps
@@ -83,7 +84,7 @@ fun AuthorPage(navController: NavController, actions: PageActions) {
                             BottomNavItem(key = "podcasts", label = "Podcasts", icon = "podcasts"),
                             BottomNavItem(key = "search", label = "Search", icon = "search"),
                         ),
-                        active = "books",
+                        active = litDestination(navController, "books"),
                         onChange = { key -> openDestination(navController, key) },
                     ),
                 )
