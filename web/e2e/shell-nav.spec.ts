@@ -695,6 +695,53 @@ for (const { width, height, bar } of [
   });
 }
 
+/** The page's own ✕, the one showing. */
+const closeButton = (page: Page) =>
+  page.getByRole('button', { name: 'Close', exact: true }).locator('visible=true').first();
+
+for (const { width, height, bar } of [
+  { width: 1440, height: 900, bar: 'rail' },
+  { width: 390, height: 844, bar: 'bottom bar' },
+]) {
+  test(`[M0.canvas] at ${width}px the browser's back after tapping the lit destination lights it again on the ${bar}, and close goes to its home`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/', { waitUntil: 'networkidle' });
+    await settle(page);
+    await item(page, 'Between Lines of Light').click();
+    await expect(page).toHaveURL(ALBUM);
+    await settle(page);
+    await goTo(page, 'Browse', '/');
+
+    await page.goBack();
+    await expect(page).toHaveURL(ALBUM);
+    await settle(page);
+    await expect(litItem(page)).toHaveAttribute('aria-label', 'Browse');
+    await page.reload({ waitUntil: 'networkidle' });
+    await expect(litItem(page)).toHaveAttribute('aria-label', 'Browse');
+    await closeButton(page).click();
+    await expect(page).toHaveURL('/');
+  });
+
+  test(`[M0.canvas] at ${width}px a page that does not exist, typed after a Music album, lights Music on the ${bar} and closes to the album`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/', { waitUntil: 'networkidle' });
+    await settle(page);
+    await goTo(page, 'Music', '/music');
+    await item(page, 'Between Lines of Light').click();
+    await expect(page).toHaveURL(ALBUM);
+    await page.goto('/no-such-page', { waitUntil: 'networkidle' });
+    await settle(page);
+    await expect(litItem(page)).toHaveAttribute('aria-label', 'Music');
+    await closeButton(page).click();
+    await expect(page).toHaveURL(ALBUM);
+    await expect(litItem(page)).toHaveAttribute('aria-label', 'Music');
+  });
+}
+
 test("[M0.canvas] at 1440px the rail's lit item stays as the page arrived when the hamburger is tapped", async ({
   page,
 }) => {

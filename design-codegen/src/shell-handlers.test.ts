@@ -47,6 +47,7 @@ const nav: Nav = parseNav({
     entry('nowPlaying', '/playing', { lights: null, close: 'sheet', presentation: 'sheet' }),
     entry('queue', '/playing/queue', { lights: null, close: 'sheet', presentation: 'sheet' }),
     entry('lyrics', '/playing/lyrics', { lights: null, close: 'sheet', presentation: 'sheet' }),
+    entry('notFound', '*', { lights: null }),
   ],
 });
 const shell: ShellFile = {
@@ -123,6 +124,11 @@ describe("the shell's controls, wired alike on both apps", () => {
   it("[M0.canvas] keeps a page at the rail's foot lit as itself, and a page lighting nothing unlit on the bottom bar", () => {
     expect(at('settings', 1)['NavRail.active']).toBeUndefined();
     expect(at('settings', 0)['BottomNav.active']).toBeUndefined();
+  });
+
+  it('[M0.canvas] lights on the web the destination in use on a page no stack keeps, the bottom bar with no fallback of its own', () => {
+    expect(at('notFound', 0)['BottomNav.active']).toEqual({ kind: 'lit', fallback: '' });
+    expect(at('notFound', 1)['NavRail.active']).toEqual({ kind: 'lit', fallback: 'browse' });
   });
 
   it("[M0.canvas] leaves Android's lit item as nav.json says until its own generator follows the back stack", () => {

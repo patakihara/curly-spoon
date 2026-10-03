@@ -12,6 +12,7 @@ const map: NavMap = {
     { path: '/music/albums/:ref', lights: 'music', sheet: false, kept: true },
     { path: '/music/artists/:ref', lights: 'music', sheet: false, kept: true },
     { path: '/books', lights: 'books', sheet: false, kept: true },
+    { path: '/books/:ref', lights: 'books', sheet: false, kept: true },
     { path: '/settings', lights: null, sheet: false, kept: true },
     { path: '/setup', lights: null, sheet: false, kept: false },
     { path: '/sign-in', lights: null, sheet: false, kept: false },
@@ -468,6 +469,145 @@ describe('a page never meant to be returned to', () => {
     a.open('/sign-in');
     a.destination('books');
     expect(a.showing).toBe('/books');
+  });
+});
+
+describe('a history entry the browser goes back or forward to', () => {
+  it('[M0.canvas] lights the destination decided for it after the lit destination was tapped, and close goes to that home', () => {
+    const a = app('/');
+    a.open('/music/albums/tears-of-ice');
+    a.destination('browse');
+    expect(a.showing).toBe('/');
+    a.back();
+    expect(a.showing).toBe('/music/albums/tears-of-ice');
+    expect(a.lit).toBe('browse');
+    a.close('music');
+    expect(a.showing).toBe('/');
+  });
+
+  it("[M0.canvas] puts the page back on its destination's stack, the page under it too, so close returns to the artist", () => {
+    const a = app('/');
+    a.destination('music');
+    a.open('/music/artists/deep-inertia');
+    a.open('/music/albums/shadows-and-sighs');
+    a.destination('music');
+    expect(a.showing).toBe('/music');
+    a.back();
+    expect(a.lit).toBe('music');
+    a.close('music');
+    expect(a.showing).toBe('/music/artists/deep-inertia');
+  });
+
+  it('[M0.canvas] keeps the destination decided for it across a reload, and going forward onto it', () => {
+    const reloaded = app('/');
+    reloaded.open('/music/albums/tears-of-ice');
+    reloaded.destination('browse');
+    reloaded.back();
+    reloaded.reload();
+    expect(reloaded.lit).toBe('browse');
+    reloaded.close('music');
+    expect(reloaded.showing).toBe('/');
+
+    const forward = app('/');
+    forward.open('/music/albums/tears-of-ice');
+    forward.destination('browse');
+    forward.back();
+    forward.back();
+    forward.reload();
+    forward.forward();
+    expect(forward.showing).toBe('/music/albums/tears-of-ice');
+    expect(forward.lit).toBe('browse');
+  });
+
+  it('[M0.canvas] still goes home when the lit destination is tapped on it', () => {
+    const a = app('/');
+    a.open('/music/albums/tears-of-ice');
+    a.destination('browse');
+    a.back();
+    a.destination('browse');
+    expect(a.showing).toBe('/');
+  });
+});
+
+describe('a page kept in no stack', () => {
+  it('[M0.canvas] lights the destination in use when typed into the address bar, and close returns to the page that opened it', () => {
+    const a = app('/');
+    a.destination('music');
+    a.open('/music/albums/tears-of-ice');
+    a.load('/no-such-page');
+    expect(a.lit).toBe('music');
+    a.close('browse');
+    expect(a.showing).toBe('/music/albums/tears-of-ice');
+  });
+
+  it('[M0.canvas] supplies no destination of its own on any width: the bottom bar that lights none still lights the one in use', () => {
+    const a = app('/');
+    a.destination('music');
+    a.load('/no-such-page');
+    expect(a.stacks.lit('/no-such-page', 'POP', 'elsewhere', '')).toBe('music');
+    expect(a.stacks.lit('/sign-in', 'POP', 'signing-in', 'browse')).toBe('music');
+  });
+
+  it('[M0.canvas] lights the destination in use when typed, though the router keys every page it loads afresh alike', () => {
+    const store = session();
+    const before = new Stacks(map, store);
+    before.seen('/', 'POP', 'default');
+    before.seen('/music', 'PUSH', 'a');
+    before.seen('/music/albums/x', 'PUSH', 'b');
+    const typed = new Stacks(map, store);
+    expect(typed.lit('/no-such-page', 'POP', 'default', 'browse')).toBe('music');
+    typed.seen('/no-such-page', 'POP', 'default');
+    expect(typed.close('browse')).toBe('/music/albums/x');
+  });
+
+  it('[M0.canvas] lights its fallback only with nothing in use, in a fresh tab', () => {
+    expect(app('/no-such-page').lit).toBe('browse');
+    expect(new Stacks(map).lit('/no-such-page', 'POP', 'k0', '')).toBe('');
+  });
+});
+
+describe('stacks kept by an older build', () => {
+  /** The stacks a session holding `kept` starts with, as they are written back once cleaned. */
+  function cleaned(kept: string): unknown {
+    const store = session();
+    store.write(kept);
+    new Stacks(map, store);
+    return (JSON.parse(store.read()!) as { stacks?: unknown }).stacks;
+  }
+
+  it('[M0.canvas] drops a page that does not exist from a stack', () => {
+    expect(cleaned('{"current":"browse","stacks":{"browse":["/","/no-such-page"]}}')).toEqual({
+      browse: ['/'],
+    });
+  });
+
+  it("[M0.canvas] drops sign-in and setup from Music's stack", () => {
+    expect(
+      cleaned(
+        '{"current":"music","stacks":{"music":["/music","/sign-in","/music/albums/x","/setup"]}}',
+      ),
+    ).toEqual({ music: ['/music', '/music/albums/x'] });
+  });
+
+  it("[M0.canvas] drops entries that are not paths, and starts each stack at its destination's home", () => {
+    expect(
+      cleaned(
+        '{"current":"music","stacks":{"music":["/music/albums/x",7,"","albums/y",null],"books":["/books/z"],"browse":["/music","/"]}}',
+      ),
+    ).toEqual({
+      music: ['/music', '/music/albums/x'],
+      books: ['/books', '/books/z'],
+      browse: ['/'],
+    });
+  });
+
+  it('[M0.canvas] starts afresh when the session holds broken JSON', () => {
+    const store = session();
+    store.write('{"current":"music","stacks":{"music":["/music","/music/albums/x"');
+    const stacks = new Stacks(map, store);
+    stacks.seen('/books/z', 'POP', 'a');
+    expect(stacks.close('books')).toBe('/books');
+    expect(stacks.destination('music')).toBe('/music');
   });
 });
 

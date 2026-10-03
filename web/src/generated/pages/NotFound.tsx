@@ -173,7 +173,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
     player: (
       <>
         <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="mobile" onOpen={() => go.open('/playing')} />
-        <BottomNav items={shell.nav.w0} active="" onChange={(key) => go.destination(key)} />
+        <BottomNav items={shell.nav.w0} active={go.lit('')} onChange={(key) => go.destination(key)} />
       </>
     ),
     sheetOpen: false,

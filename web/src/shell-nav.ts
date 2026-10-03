@@ -54,8 +54,14 @@ function stored(store: Store | undefined): unknown {
   }
 }
 
-const isPaths = (value: unknown): value is string[] =>
-  Array.isArray(value) && value.length > 0 && value.every((v) => typeof v === 'string');
+/** How many history entries keep the destination decided for them, the latest first. */
+const REMEMBERED = 100;
+
+/**
+ * The key the router gives every page it loads afresh, typed or reloaded, before anything is
+ * pushed: the same for each, so what it was decided for is never carried into another load.
+ */
+const LOADED = 'default';
 
 /** What the stacks need of nav.json, generated into `generated/nav/stacks.ts`. */
 export interface NavMap {
@@ -75,19 +81,34 @@ export interface NavMap {
 /** How the router reached a location, as `useNavigationType` says. */
 type Arrival = 'PUSH' | 'POP' | 'REPLACE';
 
+/**
+ * What a history entry remembers: the destination decided for it, none (`''`) where its page lit
+ * none, and the stack it was filed into as it was then, its location on top.
+ */
+interface Entry {
+  destination: string;
+  stack?: string[];
+}
+
 /** One stack of locations per destination, its home at the bottom, and the one in use. */
 export class Stacks {
   private readonly stacks = new Map<string, string[]>();
   private current: string;
+  /** Whether any destination is in use yet: not in a fresh tab before its first page. */
+  private inUse = false;
   private last: string | undefined;
   /** The location showing, as last seen. */
   private showing: string | undefined;
-  /** The destination decided for the latest arrival, by its history entry's key. */
-  private decided: { key: string; destination: string } | undefined;
+  /** Each recent history entry's own, by its key, the oldest first. */
+  private readonly entries = new Map<string, Entry>();
   /** The key of the arrival whose page lit the rail by the stacks, as `lit` was asked for it. */
   private asked: string | undefined;
 
-  /** Stacks for `map`, carried on from what `store` holds of an earlier load of this tab. */
+  /**
+   * Stacks for `map`, carried on from what `store` holds of an earlier load of this tab, cleaned
+   * of what an older build may have kept there: pages no stack keeps, entries that are no path,
+   * and stacks not starting at their destination's home.
+   */
   constructor(
     private readonly map: NavMap,
     private readonly store?: Store,
@@ -95,21 +116,62 @@ export class Stacks {
     const first = Object.keys(map.homes)[0];
     if (first === undefined) throw new Error('nav.json has no destinations');
     this.current = first;
-    const kept = stored(store) as { current?: unknown; stacks?: unknown } | undefined;
-    const stacks = kept?.stacks;
+    const kept = stored(store) as
+      { current?: unknown; stacks?: unknown; entries?: unknown } | undefined;
     if (typeof kept?.current !== 'string' || map.homes[kept.current] === undefined) return;
-    if (typeof stacks !== 'object' || stacks === null) return;
-    const entries = Object.entries(stacks).filter(
-      ([d, stack]) => map.homes[d] !== undefined && isPaths(stack),
-    );
+    if (typeof kept.stacks !== 'object' || kept.stacks === null) return;
     this.current = kept.current;
-    for (const [d, stack] of entries) this.stacks.set(d, [...(stack as string[])]);
+    this.inUse = true;
+    for (const [d, stack] of Object.entries(kept.stacks)) {
+      const clean = this.clean(d, stack);
+      if (clean !== undefined) this.stacks.set(d, clean);
+    }
+    if (Array.isArray(kept.entries))
+      for (const pair of kept.entries.slice(-REMEMBERED)) {
+        if (!Array.isArray(pair) || typeof pair[0] !== 'string') continue;
+        const entry = pair[1] as { destination?: unknown; stack?: unknown } | null;
+        const destination = entry?.destination;
+        if (typeof destination !== 'string') continue;
+        if (destination !== '' && map.homes[destination] === undefined) continue;
+        const stack = destination === '' ? undefined : this.clean(destination, entry?.stack);
+        this.entries.set(pair[0], stack === undefined ? { destination } : { destination, stack });
+      }
+    this.save();
+  }
+
+  /**
+   * `stack`, as kept for destination `d`, with only the locations a stack may keep, starting at
+   * `d`'s home; none where `d` is no destination or `stack` is no list.
+   */
+  private clean(d: string, stack: unknown): string[] | undefined {
+    const home = this.map.homes[d];
+    if (home === undefined || !Array.isArray(stack)) return undefined;
+    const homes = new Set(Object.values(this.map.homes));
+    const paths = stack.filter(
+      (l): l is string =>
+        typeof l === 'string' && l.startsWith('/') && !homes.has(l) && this.page(l)?.kept === true,
+    );
+    return [home, ...paths];
   }
 
   private save(): void {
     this.store?.write(
-      JSON.stringify({ current: this.current, stacks: Object.fromEntries(this.stacks) }),
+      JSON.stringify({
+        current: this.current,
+        stacks: Object.fromEntries(this.stacks),
+        entries: [...this.entries].filter(([key]) => key !== LOADED),
+      }),
     );
+  }
+
+  /** Remembers `entry` for history entry `key`, as the latest. */
+  private remember(key: string, entry: Entry): void {
+    this.entries.delete(key);
+    this.entries.set(key, entry);
+    for (const old of this.entries.keys()) {
+      if (this.entries.size <= REMEMBERED) break;
+      this.entries.delete(old);
+    }
   }
 
   private stack(destination: string): string[] {
@@ -138,17 +200,20 @@ export class Stacks {
     const destination = this.decide(location, arrival, key, this.page(location)?.lights);
     const under = this.showing;
     this.showing = location;
-    this.record(location, arrival, destination, under);
+    this.record(location, arrival, destination || this.current, under, key);
+    this.inUse = true;
     this.save();
   }
 
   /**
    * The destination an arrival at `location` belongs to, decided once for its history entry `key`
-   * and the same however often it is asked: a destination's home is that destination's, from
-   * wherever it is reached; a page pushed or replaced joins the destination in use, the one it was
-   * opened from; the browser's back or forward, or a reload, goes to the stack that holds it; and
-   * a page with nothing under it, as from a link from outside the app, to `fallback`, or else to
-   * the destination in use.
+   * and remembered with it, the same however often it is asked and when the browser's back or
+   * forward, or a reload, comes to that entry again: a destination's home is that destination's,
+   * from wherever it is reached; a page no stack keeps lights the destination in use; a page
+   * pushed or replaced joins the destination in use, the one it was opened from; the browser's
+   * back or forward goes to the stack that holds it; and a page with nothing under it, as from a
+   * link from outside the app or in a fresh tab, to `fallback`, or else to the destination in
+   * use, or none (`''`) for a page no stack keeps.
    */
   private decide(
     location: string,
@@ -156,31 +221,51 @@ export class Stacks {
     key: string,
     fallback: string | null | undefined,
   ): string {
-    if (this.decided?.key === key) return this.decided.destination;
+    const remembered = this.entries.get(key);
+    if (remembered !== undefined) return remembered.destination;
+    const given = fallback != null && this.map.homes[fallback] !== undefined ? fallback : undefined;
     const destination =
       Object.keys(this.map.homes).find((d) => this.map.homes[d] === location) ??
-      (arrival === 'POP'
-        ? [this.current, ...this.stacks.keys()].find((d) => this.stacks.get(d)?.includes(location))
-        : this.current) ??
-      (fallback != null && this.map.homes[fallback] !== undefined ? fallback : this.current);
-    this.decided = { key, destination };
+      (this.page(location)?.kept === false
+        ? this.inUse
+          ? this.current
+          : (given ?? '')
+        : ((arrival === 'POP'
+            ? [this.current, ...this.stacks.keys()].find((d) =>
+                this.stacks.get(d)?.includes(location),
+              )
+            : this.current) ??
+          given ??
+          this.current));
+    this.remember(key, { destination });
     return destination;
   }
 
-  /** Files `location` into the stack of `destination`, now the one in use; `under` showed before. */
-  private record(location: string, arrival: Arrival, destination: string, under?: string): void {
+  /**
+   * Files `location`, history entry `key`, into the stack of `destination`, now the one in use;
+   * `under` showed before. The browser's back or forward to an entry whose stack has since moved
+   * on puts the stack back as that entry left it.
+   */
+  private record(
+    location: string,
+    arrival: Arrival,
+    destination: string,
+    under: string | undefined,
+    key: string,
+  ): void {
     this.current = destination;
     if (this.page(location)?.kept === false) return;
     const stack = this.stack(destination);
-    if (location === this.map.homes[destination]) {
-      stack.length = 1;
-      return;
-    }
-    if (stack.at(-1) === location) return;
     const at = stack.lastIndexOf(location);
-    if (arrival === 'REPLACE' && stack.at(-1) === under) stack[stack.length - 1] = location;
+    const before = this.entries.get(key)?.stack;
+    if (location === this.map.homes[destination]) stack.length = 1;
+    else if (stack.at(-1) === location) {
+      // Already on top: a page reporting the location it showed.
+    } else if (arrival === 'REPLACE' && stack.at(-1) === under) stack[stack.length - 1] = location;
     else if (arrival === 'POP' && at >= 0) stack.length = at + 1;
+    else if (arrival === 'POP' && before?.at(-1) === location) stack.splice(0, Infinity, ...before);
     else stack.push(location);
+    this.remember(key, { destination, stack: [...stack] });
   }
 
   /**
@@ -220,7 +305,8 @@ export class Stacks {
     let to = this.map.foot[key];
     if (to === undefined) {
       if (this.map.homes[key] === undefined) throw new Error(`${key} is not a destination`);
-      const lit = this.asked === this.last ? this.decided?.destination : undefined;
+      const lit =
+        this.asked === this.last ? this.entries.get(this.last ?? '')?.destination : undefined;
       this.current = key;
       const stack = this.stack(key);
       if (key === lit) stack.length = 1;

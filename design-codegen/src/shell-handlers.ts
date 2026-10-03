@@ -88,10 +88,14 @@ export function shellHandlers(
     on(bar, 'onChange', { kind: 'destination' });
     on(parts.rail, 'onChange', { kind: 'destination' });
     if (platform === 'web') {
+      // A page no stack keeps (a link to nothing) lights the destination in use, even where its
+      // own literal lights none, as on the phone's bottom bar.
+      const unkept = page.route === '*';
       for (const item of [bar, parts.rail]) {
         const active = item?.kind === 'element' ? item.props['active'] : undefined;
         const fallback = active?.kind === 'literal' ? active.value : undefined;
-        if (typeof fallback === 'string' && nav.destinations.some((d) => d.id === fallback))
+        if (typeof fallback !== 'string') continue;
+        if (nav.destinations.some((d) => d.id === fallback) || (unkept && fallback === ''))
           on(item, 'active', { kind: 'lit', fallback });
       }
     }
