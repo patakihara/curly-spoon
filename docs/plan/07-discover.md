@@ -27,7 +27,7 @@ The old recommendation code's taste profile, from your library and play history,
 
 ### The recommendation algorithm
 
-**Your taste comes from what you've actually listened to, not what's in your library:** plays, progress and completions (Jellyfin, Audiobookshelf, Auralis), plus your Spotify and YouTube Music history. Owning something only affects how it's shown (owned items play; others can be requested or streamed). A book you own but never started says nothing about your taste.
+**Your taste comes from what you've actually listened to, not what's in your library:** plays, progress and completions (Jellyfin, Audiobookshelf, Auralis), plus your Spotify and YouTube Music history. Owning something only affects how it's shown: a book you own but never started says nothing about your taste.
 
 Researched across Spotify's and YouTube's published work and open-source recommenders: documented techniques work at small scale, with no GPU or model trained from scratch.
 

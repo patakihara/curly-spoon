@@ -15,7 +15,7 @@ part: The product
 ### Accounts, and one listening session per device
 
 - **Users**: each household member has their own account, taste profile, queues, lists, digests and recommendations. Everyone signs in through the household's single sign-on (Authelia over LLDAP, used by ABS and Shelfarr; Jellyfin checks the same directory through its LDAP plugin), with Auralis as one more OpenID Connect client. At first sign-in Auralis finds each person's ABS and Jellyfin user by login name, ignoring case and accents, and pins those upstream ids; a household member with no ABS account gets a listen-only one created by Auralis, while Jellyfin accounts are never created. Members of the `lldap_admin` group are Auralis admins, and the admin role owns providers, paths and approvals.
-- **Sessions are per device, and by default they don't mix**: the phone's queue and the laptop's queue are separate. Each device resumes its own session where it left off, even after a restart, because sessions are stored on the server per (user, device).
+- **Sessions are per device, and by default they don't mix**: the phone's queue and the laptop's queue are separate. Each device resumes its own session, even after a restart: the server stores sessions per (user, device).
 - **What is shared across a user's devices** is the library state, not the session. Your position in a book or episode is the same everywhere (it lives in Audiobookshelf), as are favourites, lists and history. So the laptop resumes a book where the phone left it, without taking over the phone's queue.
 - **Mixing is explicit**: "Continue here" moves another device's session to this one, and "Play on…" sends this one elsewhere, like Spotify Connect but opt-in. Both are later additions; the default stays separate.
 - **Recommendations are per user.** A household member's listening never leaks into someone else's Browse.
@@ -26,7 +26,7 @@ part: The product
 
 - **From YouTube:** an hourly job checks your watch history for videos from your channels. A finished video marks the episode played; a half-watched one sets your position in it. YouTube only exposes that position as a percentage of the length, so Auralis resumes a few seconds before it (1% of an hour is 36&nbsp;s). Anything else in the history is skipped, not stored.
 - **To YouTube:** on pause and on stop, Auralis sends YouTube your position, using the same "watched up to here" report YouTube's own player sends; finishing an episode marks the video watched. Whichever side played most recently wins.
-- **Accounts never mix.** Each person connects their own YouTube account, and their cookies are only ever used for their own sync, writing to their own Audiobookshelf progress. The show feeds themselves are fetched without any account, so they're identical for everyone and carry nothing personal. A person who hasn't connected YouTube just has no sync.
+- **Accounts never mix.** Each person connects their own YouTube account, and their cookies are only ever used for their own sync, writing to their own Audiobookshelf progress. The show feeds themselves are fetched without any account, so they're identical for everyone and carry nothing personal.
 - **When it breaks:** when the cookies expire, sync pauses and Settings shows a clear "YouTube sign-in expired" warning with how to re-export them. YouTube channels keep updating and playing, since they don't need your account.
 
 ### Shared files, personal view
