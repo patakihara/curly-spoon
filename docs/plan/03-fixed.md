@@ -16,7 +16,7 @@ These come from `USER_DECISIONS.md`, the spec addendum and the research notes. W
 #### Product and platforms
 
 - Bundle music, podcasts and audiobooks and replace Spotify. _"spotify killer, don't forget ;)"_
-- Spotify is the reference, and should be looked at rather than guessed at.
+- Spotify is the reference, looked at rather than guessed at.
 - **Browse** (icon `explore`) is the one discovery screen. Home, For You and Discover are the same thing and are distinct from **Search**. The name lives only in UI strings.
 - Five destinations: Browse, Music, Books, Podcasts, Search, one button each (as Sonora draws it), not a single Library button with a sub-menu.
 - Web includes desktop, runs in Docker, one container with one port, a PWA rather than Electron, native Compose + Media3 on Android.
@@ -49,7 +49,7 @@ These come from `USER_DECISIONS.md`, the spec addendum and the research notes. W
 ::: card
 #### YouTube channels
 
-- **YouTube channels can be added as podcasts**, as audio-only shows that behave like any other subscription.
+- **YouTube channels are added from global Search**, nowhere else, and come in as audio-only shows that behave like any other subscription.
 - **SponsorBlock on YouTube channels**, in Auralis and in the Audiobookshelf app alike.
 - **Watched state and position sync with your YouTube account only for channels you've added**, both ways, as an opt-in setting per person. The rest of your YouTube history never comes into Auralis, and nothing from a channel you haven't added is ever recommended.
 :::
