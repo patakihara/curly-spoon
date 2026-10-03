@@ -24,14 +24,14 @@ part: The product
 
 **Watched state and position for your YouTube channels** sync with your YouTube account, opt-in per person, off until you connect it, and only for the channels you've added; the rest of your YouTube history is never read into Auralis. Google's API no longer exposes watch history, so this uses your own browser sign-in cookies, stored encrypted on the server under your user only. Unsupported, it can break when YouTube changes.
 
-- **From YouTube:** an hourly job checks your watch history for videos from your channels. A finished video marks the episode played; a half-watched one sets your position in it. YouTube only exposes that position as a percentage of the length, so Auralis resumes a few seconds before it (1% of an hour is 36&nbsp;s). Anything else in the history is skipped, not stored.
-- **To YouTube:** on pause and on stop, Auralis sends YouTube your position, using the same "watched up to here" report YouTube's own player sends; finishing an episode marks the video watched. Whichever side played most recently wins.
-- **Accounts never mix.** Each person connects their own YouTube account, and their cookies serve only their own sync, writing to their own Audiobookshelf progress. The show feeds themselves are fetched without any account, so they're identical for everyone and carry nothing personal.
-- **When it breaks:** when the cookies expire, sync pauses and Settings shows a clear "YouTube sign-in expired" warning with how to re-export them. Channels keep updating and playing without your account.
+- **From YouTube:** an hourly job checks your watch history for videos from your channels. A finished video marks the episode played; a half-watched one sets your position in it. YouTube exposes it only as a percentage of the length, so Auralis resumes a few seconds early (1% of an hour is 36&nbsp;s). Anything else in the history is skipped, not stored.
+- **To YouTube:** on pause and stop, Auralis sends your position as the "watched up to here" report YouTube's own player sends; finishing an episode marks the video watched. Whichever side played most recently wins.
+- **Accounts never mix.** Each person connects their own YouTube account, and their cookies serve only their own sync, writing to their own Audiobookshelf progress. The show feeds are fetched without any account, so they're identical for everyone and carry nothing personal.
+- **When it breaks:** when the cookies expire, sync pauses and Settings shows a "YouTube sign-in expired" warning with how to re-export them. Channels keep updating and playing without your account.
 
 ### Shared files, personal view
 
-- **Files are stored once, for the whole household**, as today: one Music, Books and Podcasts library each in Jellyfin and Audiobookshelf.
+- **Files are stored once, for the whole household**, as today: one Music library in Jellyfin, one Books and one Podcasts library in Audiobookshelf.
 - **Auralis shows each person their own library**: what they added, requested, subscribed to or played. Auralis records who added what; things already on the server count as yours once played.
 - **Everyone else's things stay findable.** Search covers the whole household library, and those results play at once, not as requests.
 - **"Show everyone's library" is a setting**, off by default, only in Settings, never a toggle on library screens.

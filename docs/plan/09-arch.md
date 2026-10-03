@@ -19,25 +19,25 @@ Features sit on a shared index and store. Only adapters talk to the outside worl
 ::: card
 #### 1 · One schema, generated clients
 
-Server routes are declared with zod; an OpenAPI document is emitted from them. The web client (TypeScript) and Android models (Kotlin, kotlinx.serialization) are **generated** by `pnpm gen` and committed under `generated/` folders; CI regenerates them and fails on any difference, and a change that breaks either fails the build. Nothing is hand-copied. The server parses every response through its zod schema, so clients don't re-check.
+Server routes are declared with zod; an OpenAPI document is emitted from them. The web client (TypeScript) and Android models (Kotlin, kotlinx.serialization) are **generated** by `pnpm gen` and committed under `generated/` folders; CI regenerates them and fails on any difference or on a change that breaks either. Nothing is hand-copied. The server parses every response through its zod schema, so clients don't re-check.
 :::
 
 ::: card
 #### 2 · Screen-shaped endpoints
 
-Every screen gets one call returning what it draws, with fields named for the UI (`status`, `progress`, `reason`, `kind`). Clients never stitch calls together, so web and Android can't drift in combining data.
+Every screen gets one call returning what it draws, fields named for the UI (`status`, `progress`, `reason`, `kind`). Clients never stitch calls together, so web and Android can't combine data differently.
 :::
 
 ::: card
 #### 3 · A local index, refreshed in the background
 
-A job mirrors the Audiobookshelf and Jellyfin libraries into SQLite as shared metadata (ids, titles, creators, genres, external ids); each person's progress is read with their own token (M1.progress). Browse, search, ownership checks and recommendations read that index, not live fan-out, so screen APIs stay fast on this RAM-starved box.
+A job mirrors the Audiobookshelf and Jellyfin libraries into SQLite as shared metadata (ids, titles, creators, genres, external ids); each person's progress is read with their own token (M1.progress). Browse, search, ownership checks and recommendations read that index, not live fan-out, keeping screen APIs fast on this RAM-starved box.
 :::
 
 ::: card
 #### 4 · Recorded reality, not guesses
 
-Each adapter's `record` mode captures real responses from mediaserver, secrets scrubbed, as fixtures. Tests run on those, and a nightly re-record and diff turns upstream drift into a failing diff, not a silent break. Recordings are made from the laptop over Tailscale with Auralis's own API keys, named Auralis in each service, kept in a 0600 file on mediaserver; no other service's key is reused. The Audiobookshelf key belongs to `auralis`, a listen-only non-admin user. A second ABS key, an admin's, kept only on mediaserver, creates a member's missing ABS account and mints each person's key at first sign-in; Jellyfin's key (always admin) mints each person's session through Quick Connect. Upstream calls carry the person's own token, encrypted at rest.
+Each adapter's `record` mode captures real responses from mediaserver, secrets scrubbed, as fixtures. Tests run on those; a nightly re-record turns upstream drift into a failing diff, not a silent break. Recordings are made from the laptop over Tailscale with Auralis's own API keys, named Auralis in each service, kept in a 0600 file on mediaserver; no other service's key is reused. The Audiobookshelf key belongs to `auralis`, a listen-only non-admin user. A second ABS key, an admin's, kept only on mediaserver, creates a member's missing ABS account and mints each person's key at first sign-in; Jellyfin's key (always admin) mints each person's session through Quick Connect. Upstream calls carry the person's own token, encrypted at rest.
 :::
 
 ::: card
@@ -55,13 +55,13 @@ Setup claims the admin role once, with a one-time code the server writes to its 
 ::: card
 #### 7 · The extractor lives in the server
 
-The server runs `yt-dlp`, the equivalent of AbleMusicPlayer's on-phone NewPipeExtractor, in the one container: both clients get it, and there's one place to update. Per your notes it should **point and forward, not burden the server**: no transcoding, bytes passed straight through, a small capped cache only for streamed tracks (the next one preloaded, a recent one replayed, a song being kept) and cut channel episodes. The same path would let **people without a media server** use Auralis for streaming. Audiobooks always come from Audiobookshelf. The extractor only asks YouTube for audio-only formats, for music and channels alike. A daily job promotes a new extractor only once a canary search-and-resolve passes, else keeps the last that passed; failures show on the admin jobs page. Android may later add NewPipeExtractor as an offline fallback.
+The server runs `yt-dlp`, the counterpart of AbleMusicPlayer's on-phone NewPipeExtractor, in the one container: both clients get it, with one place to update. Per your notes it should **point and forward, not burden the server**: no transcoding, bytes passed straight through, a small capped cache only for streamed tracks (the next one preloaded, a recent one replayed, a song being kept) and cut channel episodes. The same path would let **people without a media server** use Auralis for streaming. Audiobooks always come from Audiobookshelf. It asks YouTube only for audio-only formats, music and channels alike. A daily job promotes a new extractor only once a canary search-and-resolve passes, else keeps the last that passed; failures show on the admin jobs page. Android may later add NewPipeExtractor as an offline fallback.
 :::
 
 ::: card
 #### 8 · Audio only, enforced
 
-No video path exists to switch on by mistake. The extractor adapter's type has only audio-only formats, and a test fails if a recorded response would hand a client a video stream. Web plays everything through audio elements, and lint rejects `<video>` anywhere in the app. Android builds Media3 with no video renderer, so a podcast episode published as video plays its soundtrack. Sonora has no video component, and none gets added.
+No video path exists to switch on by mistake. The extractor adapter's type has only audio-only formats, and a test fails if a recorded response would hand a client a video stream. Web plays everything through audio elements, and lint rejects `<video>` anywhere in the app. Android builds Media3 with no video renderer, so a podcast episode published as video plays its soundtrack. Sonora has no video component, nor gets one.
 :::
 :::
 

@@ -9,7 +9,7 @@ part: Why and what
 Fixed inputs, not re-opened.
 :::
 
-From `USER_DECISIONS.md`, the spec addendum and the research notes. Where a decision rested on a false premise, the plan keeps it and fixes the premise (one case, marked).
+From `USER_DECISIONS.md`, the spec addendum and the research notes. Where a decision rested on a false premise, the plan keeps it, fixing the premise (one case, marked).
 
 ::: grid g2
 ::: card
@@ -22,7 +22,7 @@ From `USER_DECISIONS.md`, the spec addendum and the research notes. Where a deci
 - Web includes desktop, in one Docker container on one port, a PWA rather than Electron; native Compose + Media3 on Android.
 - Web and Android are developed together, with parity.
 - **Android installs through your own F-Droid repository**, added in Droid-ify (`https://patakihara.github.io/curly-spoon/repo`, live, serving 0.2.0), or through Obtainium from GitHub Releases. The rebuild keeps this path: same app id (`net.develivarr.auralis`), same signing key, same repository address, so the installed app updates in place.
-- Downloads are Android-only; web leaves the button out. Android Auto is a design constraint, not a toggle.
+- Downloads are Android-only; web leaves the button out rather than faking it. Android Auto is a design constraint, not a toggle.
 - Android gets a Settings screen. Ebooks with read-along sync are wanted but lower priority. The launcher icon stays as it is for now.
 :::
 
@@ -39,26 +39,26 @@ From `USER_DECISIONS.md`, the spec addendum and the research notes. Where a deci
 
 - Library pages show only what you own plus what you've requested.
 - **Each person sees their own library** (what they added, requested, subscribed to or played). Files stay shared; "show everyone's library" is a setting, off by default, and search always covers the household.
-- Artist and author pages show the whole catalogue, with unowned titles greyed out and requestable. **On by default**, with a setting to turn it off.
+- Artist and author pages show the whole catalogue, unowned titles greyed out and requestable, **on by default**, with a setting to turn it off.
 - Books come through Prowlarr first, with the AudiobookBay scraper as fallback, via qBittorrent or Transmission. Approval is automatic by default.
 - **Music follows AbleMusicPlayer's approach** (researched from its source, at your request): YouTube Music is the catalogue and the audio source, reached through a NewPipe-style extractor, with Spotify used only to import playlists.
 - **Torrents stay for music too**, above all for higher quality. YouTube Music gives instant play and single-song keeps; **adding an album to the library always goes the torrent route**, for lossless.
-- **A kept song is saved as the original stream** (YouTube Music's Opus, about 160 kbps) as-is, with no re-encoding.
+- **A kept song is saved as the original stream** (YouTube Music's Opus, about 160 kbps), not re-encoded.
 :::
 
 ::: card
 #### YouTube channels
 
-- **YouTube channels are added from global Search**, nowhere else, and come in as audio-only shows that behave like any other subscription.
+- **YouTube channels are added from global Search**, nowhere else, as audio-only shows behaving like any other subscription.
 - **SponsorBlock on YouTube channels**, in Auralis and in the Audiobookshelf app alike.
-- **Watched state and position sync with your YouTube account only for channels you've added**, both ways, as an opt-in setting per person. The rest of your YouTube history never comes into Auralis, and nothing from a channel you haven't added is ever recommended.
+- **Watched state and position sync with your YouTube account only for channels you've added**, both ways, as an opt-in setting per person. The rest of your YouTube history never enters Auralis, and nothing from a channel you haven't added is recommended.
 :::
 
 ::: card
 #### Discovery and search
 
 - Recommendations come from **external** sources, mixed into Browse. _"not useful to me if recommendations only show things already in my library."_
-- Mixed-content carousels, at most one episode per podcast in a carousel, each card with a reason line, and a loading state that holds until everything has arrived.
+- Mixed-content carousels, at most one episode per podcast in a carousel, each card with a reason line, and a loading state held until everything arrives.
 - One provider per medium: _"Why would the recommendation services for the THREE different kinds of content we have be the same?"_ Provider choice is delegated. Audible and YouTube terms of service don't matter for your own install.
 - Research picks: for books, Audible's "listeners also enjoyed", with Audnexus for metadata; for podcasts, Apple Podcasts' "You Might Also Like", with PodcastIndex and iTunes as the catalogue; for music, YouTube Music radio alongside ListenBrainz. All checked live.
 - Search doubles as the request view: one global ranking across all sources, each result marked owned, streamable or requestable (never owned and requestable). Suggestions while typing, results on submit; type buttons only filter.
@@ -69,11 +69,11 @@ From `USER_DECISIONS.md`, the spec addendum and the research notes. Where a deci
 #### Design
 
 - Sonora is the design source of truth: flat surfaces, one violet accent that nobody picks plus a rose for Now Playing, playback controls and Browse's media filter, nothing green from Spotify, motion by named role, no emoji. From Spotify it takes **affordances, not visual design** (_"not to copy spotify's visual design, but moreso the affordances of the components"_), and no new search bar.
-- **One Auralis repo holds the design and the apps**; the Sonora and canvas artifacts are published from it. You work on the design through artifact comments or chat.
+- **One Auralis repo holds the design and the apps**, and publishes the Sonora and canvas artifacts. You work on the design through artifact comments or chat.
 - **Some design inputs stay private.** The Spotify reference screenshots (on the laptop, gitignored) and the original Sonora author identities stay out of the public repo.
 :::
 :::
 
 ::: small muted
-Also carried over: the escalation test _"would she have an opinion, and does the answer change what she gets?"_ Ordinary calls are made, not escalated. The research finding that the extractor is a poor _recommender_ still stands. ListenBrainz picks what to suggest, and YouTube Music makes it playable.
+Also carried over: the escalation test _"would she have an opinion, and does the answer change what she gets?"_ Ordinary calls are made, not escalated. The extractor is still a poor _recommender_, as research found. ListenBrainz picks what to suggest, and YouTube Music makes it playable.
 :::

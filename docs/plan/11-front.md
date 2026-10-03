@@ -12,11 +12,11 @@ Everything in the app starts as a Sonora component, and every page starts on the
 ### How you work on the design
 
 - **Two artifacts, one repo.** The [Sonora Design System](https://claude.ai/artifact/CUW4CN7KpxgvjeWnbhTQBB) (the building blocks) and the [Auralis canvas](https://claude.ai/artifact/S3ob9VNh7LjZHBmEmE9ULq) (the app's pages and navigation), published from `design/sonora` and `design/app`, beside `server`, `web` and `android`.
-- **Asking for a change:** comment on either artifact, or ask in chat; Claude changes the repo, regenerates and republishes. Edits made directly in an artifact are pulled into the repo before anything else changes there.
+- **Asking for a change:** comment on either artifact, or ask in chat; Claude changes the repo, regenerates and republishes. Edits made in an artifact are pulled into the repo before anything else changes there.
 - **How a design change reaches the apps.** One commit carries design and apps:
   - colours, spacing and fonts change on both platforms automatically;
   - a component's look changes on web automatically, since web uses Sonora's components directly;
-  - a new or changed component option fails the Android build until it's implemented there, so the platforms can't drift;
+  - a new or changed component option fails the Android build until implemented there, so the platforms can't drift;
   - a new or changed page, or navigation, regenerates both apps' routes and page layouts;
   - screenshots of both apps are compared against the design, and you see differences before they ship.
 
@@ -43,8 +43,8 @@ Everything in the app starts as a Sonora component, and every page starts on the
 ### Sonora, pruned and ordered
 
 - **One hierarchy:** tokens → basic pieces (buttons, chips, inputs, cover art) → components (cards, rows, transport, headers) → page layouts (backdrop shell, sections, shelves, the player's pages). The artifact is organised the same way. Pages live only on the canvas.
+- **Pruned against the screens.** Each component lists the canvas pages that draw it, directly or inside a component they draw, and a test fails on one no page draws. A component a later milestone needs, such as the output device button for "Play on…", arrives with its page.
 - **No hard-coding, no copies.** Every size, colour, timing and layer is a token, and a component reuses another by composing it; a check refuses raw literals (M0.sonoraclean).
-- **Pruned against the screens.** Each component lists the canvas pages that draw it, and a test fails on one no page draws. A component a later milestone needs, such as the output device button for "Play on…", arrives with its page.
 - **Input hands its handler the text.** `Input`'s `onChange` gets the new string, like every other form component, so `FieldRow`'s handler does too.
 - **Controls show Material's states.** Every interactive component has enabled, disabled, hovered, focused (an outer ring) and pressed, a ripple spreading from the press point with no change of shape. One with no action attached is disabled, as is one set `disabled`.
 
@@ -71,7 +71,7 @@ Everything in the app starts as a Sonora component, and every page starts on the
 Your rule: Sonora artifact, then canvas artifact, then code, ported mechanically; nothing frontend reaches code unpublished:
 
 1. **Structure comes before pictures.** Every screen first gets a plain-text structure in `nav.json`: its purpose, its sections in order (unsettled ones marked provisional), its empty state and the screens it links to. The canvas's start page shows the generated navigation flowchart and screen list, no mockups, so you settle the hierarchy by commenting before detail distracts you. Each screen gets a canvas page: its structure beside its mockups, nothing else loaded. A page is drawn only once it has a structure.
-2. **Navigation is data.** The canvas holds `nav.json`: destinations, routes and parameters, which destination each page lights up, back behaviour, and the layout at each breakpoint (bottom bar, rail, side panel). Code generation turns it into the web router and the Android Navigation-Compose graph, so both apps get **the same flows from the same file**.
+2. **Navigation is data.** The canvas holds `nav.json`: destinations, routes and parameters, which destination each page lights up, back behaviour, and the layout at each breakpoint (bottom bar, rail, side panel). Code generation turns it into the web router and the Android Navigation-Compose graph: **the same flows from the same file**.
 3. **Pages are a restricted format.** Each page is JSX that may only use Sonora components, literal props, and bindings to its screen endpoint's generated types (`{feed.shelves}`). No custom styling, no logic. A parser turns it into a page tree, generated as React for web and Compose for Android, both calling the same component names.
 4. **Generated code is off-limits.** Routes and page layouts are generated files, never edited by hand. Hand-written code only supplies data (the screen's API call, view-model state and actions) behind the page's typed slots.
 5. **CI enforces it**:
@@ -83,7 +83,7 @@ Your rule: Sonora artifact, then canvas artifact, then code, ported mechanically
    - the `auralis/no-hand-ui` lint refuses HTML elements, `style` and `className` in `web/src` outside `generated/`, and a test refuses `@Composable` functions outside Android's `generated` and `ui/sonora` packages, each with a documented allowlist.
 
    Adding a screen in code alone fails the build.
-6. **The frontend build starts with navigation.** The first frontend deliverable is both apps navigating the full generated map with placeholder data, compared against the design and each other, before any screen gets real content.
+6. **The frontend build starts with navigation.** First, both apps navigate the full generated map with placeholder data, compared against the design and each other, before any screen gets real content.
 
 - **Mantine** is optional, only inside a component needing a behaviour primitive (menus, focus traps), never as the visual layer.
 - **The app frame** is Sonora's backdrop shell (per `SPEC-backdrop.md`), a real Material 2 backdrop as Sonora Prime, the last mockups before the rebuild, draws it.
@@ -126,4 +126,4 @@ Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;
 ### How parity stays true
 
 - Both clients consume the same generated models and screen endpoints; no logic is ported by hand.
-- Each screen has a shared set of recorded API responses (one per state: loading, empty, full, error). Web (Playwright) and Android (Paparazzi) render the same set as screenshots. Each page's render sits beside its Sonora UI kit render in a committed comparison under `design/app/compare`, with the differences listed, and a test fails when a page changes without a fresh comparison.
+- Each screen has a shared set of recorded API responses (one per state: loading, empty, full, error). Web (Playwright) and Android (Paparazzi) render the same set as screenshots. Each page's render sits beside its Sonora UI kit render in a committed comparison under `design/app/compare`, differences listed; a test fails when a page changes without a fresh comparison.
