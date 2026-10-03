@@ -198,8 +198,12 @@ class ShellNavTest {
         /** The track the shell's mini-player shows, shell.json's `playing`. */
         const val PLAYING = "Heartbeats in Silence"
 
-        /** Frames a tab switch may take to settle: the frame that composes it, then the next. */
-        const val TAB_SWITCH_FRAMES = 2
+        /**
+         * Frames a tab switch may take to settle with no transition: NavHost composes the new back
+         * stack, starts its transition, ends it and drops the old tab, a frame each. The crossfade
+         * it replaces took 47.
+         */
+        const val TAB_SWITCH_FRAMES = 4
 
         /** Frames to watch for it, well past the NavHost's 700 ms crossfade. */
         const val MAX_FRAMES = 90
