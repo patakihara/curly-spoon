@@ -90,7 +90,7 @@ fun ArtistPage(navController: NavController, actions: PageActions) {
                             BottomNavItem(key = "podcasts", label = "Podcasts", icon = "podcasts"),
                             BottomNavItem(key = "search", label = "Search", icon = "search"),
                         ),
-                        active = litDestination(navController, "music"),
+                        active = litDestination("music"),
                         onChange = { key -> openDestination(navController, key) },
                     ),
                 )

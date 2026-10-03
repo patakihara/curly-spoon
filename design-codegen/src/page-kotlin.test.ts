@@ -213,7 +213,7 @@ describe('an Android page, from a canvas page', () => {
   });
 
   it('[M0.canvas] lights on the bottom bar the destination the page arrived on, the one it lights only with nothing under it', () => {
-    expect(home).toContain('active = litDestination(navController, "books")');
+    expect(home).toContain('active = litDestination("books")');
     expect(home).toContain('import net.develivarr.auralis.generated.nav.litDestination\n');
   });
 

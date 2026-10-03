@@ -84,7 +84,7 @@ describe('the Android nav graph, from nav.json', () => {
       ].join('\n'),
     );
     expect(graph).toMatch(
-      /DisposableEffect\(navController\) \{\n\s+val listener = NavController\.OnDestinationChangedListener \{ controller, _, _ -> arrive\(controller\) \}\n\s+navController\.addOnDestinationChangedListener\(listener\)/,
+      /DisposableEffect\(navController\) \{\n\s+val listener = NavController\.OnDestinationChangedListener \{ controller, _, _ ->\n\s+arrive\(controller\)\n\s+showing\.value = controller\.currentBackStackEntry\n\s+\}\n\s+navController\.addOnDestinationChangedListener\(listener\)/,
     );
     expect(graph).toContain(
       [
@@ -99,8 +99,9 @@ describe('the Android nav graph, from nav.json', () => {
 
   it("[M0.canvas] lights on the bottom bar the destination the page arrived on, with nothing under it the page's own", () => {
     expect(graph).toContain(
-      'fun litDestination(navController: NavController, fallback: String): String =\n    navController.currentBackStackEntry?.let(::litOf) ?: fallback',
+      '@Composable\nfun litDestination(fallback: String): String =\n    (LocalViewModelStoreOwner.current as? NavBackStackEntry)?.let(::litOf) ?: fallback',
     );
+    expect(graph).not.toMatch(/fun litDestination\(navController/);
     expect(graph).toContain('destination.hasRoute<Route.Album>() -> "music"');
     expect(graph).toContain('destination.hasRoute<Route.Search>() -> "search"');
     expect(graph).not.toContain('hasRoute<Route.Downloads>()');
@@ -121,8 +122,27 @@ describe('the Android nav graph, from nav.json', () => {
 
   it('closes a page to its opener, or with nothing under it, to the home it is given', () => {
     expect(graph).toMatch(
-      /fun closePage\(navController: NavController, home: Route\) \{\n\s+if \(navController.previousBackStackEntry != null\) navController.popBackStack\(\)/,
+      /fun closePage\(navController: NavController, home: Route\) \{\n\s+if \(navController.previousBackStackEntry != null\) navController.popBackStack\(\)\n\s+else startAt\(navController, home\)/,
     );
+  });
+
+  it('[M0.canvas] makes a home left alone on the stack its bottom, the one every destination opens over, so homes never stack twice', () => {
+    expect(graph).toContain(
+      [
+        'private fun startAt(navController: NavController, home: Route) {',
+        '    navController.navigate(home) { popUpTo(rootId(navController)) { inclusive = true } }',
+        '    graphEntry(navController).savedStateHandle[ROOT] = navController.currentDestination?.id ?: return',
+        '}',
+      ].join('\n'),
+    );
+    expect(graph).toContain(
+      'graphEntry(navController).savedStateHandle.get<Int>(ROOT) ?: navController.graph.findStartDestination().id',
+    );
+    expect(graph).toMatch(
+      /fun openDestination[\s\S]*popUpTo\(rootId\(navController\)\) \{ saveState = true \}/,
+    );
+    expect(graph).toContain('    if (!popped) startAt(navController, destinationRoute(id))');
+    expect(graph).not.toContain('popUpTo(navController.graph.id)');
   });
 
   it("switches the player's tabs between its sheets on Android", () => {
@@ -135,13 +155,22 @@ describe('the Android nav graph, from nav.json', () => {
         '        composable<Route.Queue>(',
         '            enterTransition = { if (isPlayerTab(initialState.destination)) EnterTransition.None else null },',
         '            exitTransition = { if (isPlayerTab(targetState.destination)) ExitTransition.None else null },',
-        '        ) { QueuePage(navController, actions) }',
+        '        ) { entry -> PlayerTab(showing, entry) { QueuePage(navController, actions) } }',
       ].join('\n'),
     );
     expect(graph).toContain(
       'private fun isPlayerTab(destination: NavDestination): Boolean =\n    destination.hasRoute<Route.Queue>()\n',
     );
     expect(graph).toContain('composable<Route.Album> { AlbumPage(navController, actions) }');
+  });
+
+  it('[M0.canvas] draws a player tab only while it shows, or while the sheet closes, so two tabs never share a frame', () => {
+    expect(graph).toContain(
+      '    if (now == null || now.id == entry.id || !isPlayerTab(now.destination)) page()',
+    );
+    expect(graph).toContain(
+      'val showing = remember(navController) { mutableStateOf(navController.currentBackStackEntry) }',
+    );
   });
 
   it('refuses a destination whose home takes a route parameter, which the bottom bar cannot give', () => {

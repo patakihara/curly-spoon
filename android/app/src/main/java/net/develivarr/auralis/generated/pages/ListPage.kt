@@ -92,7 +92,7 @@ fun ListPage(navController: NavController, actions: PageActions) {
                             BottomNavItem(key = "podcasts", label = "Podcasts", icon = "podcasts"),
                             BottomNavItem(key = "search", label = "Search", icon = "search"),
                         ),
-                        active = litDestination(navController, "podcasts"),
+                        active = litDestination("podcasts"),
                         onChange = { key -> openDestination(navController, key) },
                     ),
                 )

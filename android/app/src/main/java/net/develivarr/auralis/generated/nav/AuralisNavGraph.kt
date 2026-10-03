@@ -5,7 +5,11 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
@@ -90,8 +94,12 @@ class PageActions(
  */
 @Composable
 fun AuralisNavGraph(navController: NavHostController, start: Route, actions: PageActions) {
+    val showing = remember(navController) { mutableStateOf(navController.currentBackStackEntry) }
     DisposableEffect(navController) {
-        val listener = NavController.OnDestinationChangedListener { controller, _, _ -> arrive(controller) }
+        val listener = NavController.OnDestinationChangedListener { controller, _, _ ->
+            arrive(controller)
+            showing.value = controller.currentBackStackEntry
+        }
         navController.addOnDestinationChangedListener(listener)
         onDispose { navController.removeOnDestinationChangedListener(listener) }
     }
@@ -116,15 +124,15 @@ fun AuralisNavGraph(navController: NavHostController, start: Route, actions: Pag
         composable<Route.NowPlaying>(
             enterTransition = { if (isPlayerTab(initialState.destination)) EnterTransition.None else null },
             exitTransition = { if (isPlayerTab(targetState.destination)) ExitTransition.None else null },
-        ) { NowPlayingPage(navController, actions) }
+        ) { entry -> PlayerTab(showing, entry) { NowPlayingPage(navController, actions) } }
         composable<Route.Queue>(
             enterTransition = { if (isPlayerTab(initialState.destination)) EnterTransition.None else null },
             exitTransition = { if (isPlayerTab(targetState.destination)) ExitTransition.None else null },
-        ) { QueuePage(navController, actions) }
+        ) { entry -> PlayerTab(showing, entry) { QueuePage(navController, actions) } }
         composable<Route.Lyrics>(
             enterTransition = { if (isPlayerTab(initialState.destination)) EnterTransition.None else null },
             exitTransition = { if (isPlayerTab(targetState.destination)) ExitTransition.None else null },
-        ) { LyricsPage(navController, actions) }
+        ) { entry -> PlayerTab(showing, entry) { LyricsPage(navController, actions) } }
         composable<Route.Downloads> { DownloadsPage(navController, actions) }
         composable<Route.Settings> { SettingsPage(navController, actions) }
         composable<Route.Setup> { SetupPage(navController, actions) }
@@ -156,11 +164,30 @@ private fun arrive(navController: NavController) {
 private fun litOf(entry: NavBackStackEntry): String? = entry.savedStateHandle.get<String>(LIT)
 
 /**
- * The destination the bottom bar lights on the page showing, the one that opened it, or, with
- * nothing deciding it, [fallback], the one the page lights.
+ * The destination the bottom bar lights on the page drawing it, the one its own entry arrived
+ * on, or, with nothing deciding it, [fallback], the one the page lights. A page leaving as
+ * another arrives keeps its own, never the arriving page's.
  */
-fun litDestination(navController: NavController, fallback: String): String =
-    navController.currentBackStackEntry?.let(::litOf) ?: fallback
+@Composable
+fun litDestination(fallback: String): String =
+    (LocalViewModelStoreOwner.current as? NavBackStackEntry)?.let(::litOf) ?: fallback
+
+/** Where the graph keeps the destination at the bottom of its stack, once a page leaves for a home. */
+private const val ROOT = "root"
+
+/** The graph, kept on the back stack under every page. */
+private fun graphEntry(navController: NavController): NavBackStackEntry =
+    navController.getBackStackEntry(navController.graph.id)
+
+/** The destination at the bottom of the stack: the start one, or the home that replaced it. */
+private fun rootId(navController: NavController): Int =
+    graphEntry(navController).savedStateHandle.get<Int>(ROOT) ?: navController.graph.findStartDestination().id
+
+/** [home] alone on the stack, at its bottom from now on, in place of everything under it. */
+private fun startAt(navController: NavController, home: Route) {
+    navController.navigate(home) { popUpTo(rootId(navController)) { inclusive = true } }
+    graphEntry(navController).savedStateHandle[ROOT] = navController.currentDestination?.id ?: return
+}
 
 /**
  * A page's close control, and Android's back on a page that closes: back to whatever opened it,
@@ -168,7 +195,7 @@ fun litDestination(navController: NavController, fallback: String): String =
  */
 fun closePage(navController: NavController, home: Route) {
     if (navController.previousBackStackEntry != null) navController.popBackStack()
-    else navController.navigate(home) { popUpTo(navController.graph.id) { inclusive = true } }
+    else startAt(navController, home)
 }
 
 /**
@@ -178,7 +205,7 @@ fun closePage(navController: NavController, home: Route) {
 fun openDestination(navController: NavController, id: String) {
     if (navController.currentBackStackEntry?.let(::litOf) == id) return goHome(navController, id)
     navController.navigate(destinationRoute(id)) {
-        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+        popUpTo(rootId(navController)) { saveState = true }
         launchSingleTop = true
         restoreState = true
     }
@@ -195,9 +222,7 @@ private fun goHome(navController: NavController, id: String) {
         "search" -> navController.popBackStack<Route.Search>(inclusive = false)
         else -> throw IllegalArgumentException("$id is not a destination")
     }
-    if (!popped) {
-        navController.navigate(destinationRoute(id)) { popUpTo(navController.graph.id) { inclusive = true } }
-    }
+    if (!popped) startAt(navController, destinationRoute(id))
 }
 
 /** The destination the page [destination] draws lights, or null for a page that lights none. */
@@ -240,6 +265,17 @@ fun destinationRoute(id: String): Route = when (id) {
     "podcasts" -> Route.Podcasts
     "search" -> Route.Search()
     else -> throw IllegalArgumentException("$id is not a destination")
+}
+
+/**
+ * A player tab's page, drawn while it is the page showing, or while the page showing is no tab,
+ * as the sheet closes: [showing] changes as navigation does, before NavHost draws the next tab,
+ * so one tab leaves in the very frame the next arrives, never both on screen.
+ */
+@Composable
+private fun PlayerTab(showing: State<NavBackStackEntry?>, entry: NavBackStackEntry, page: @Composable () -> Unit) {
+    val now = showing.value
+    if (now == null || now.id == entry.id || !isPlayerTab(now.destination)) page()
 }
 
 /** Whether [destination] is one of the player's tabs, which switch in place. */

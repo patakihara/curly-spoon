@@ -454,7 +454,7 @@ export function generateKotlinPage(
         throw new Error(`${id}: Android's phone has no player panel to show`);
       case 'lit':
         fromNav.add('litDestination');
-        return raw(`litDestination(navController, ${kotlinString(action.fallback)})`);
+        return raw(`litDestination(${kotlinString(action.fallback)})`);
     }
   };
   /** Android's back does what the page's close control does, on a page that closes. */
