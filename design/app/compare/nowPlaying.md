@@ -1,6 +1,6 @@
 ---
 page: nowPlaying
-pageHash: 6b8564eb7ed71932b66af77e539acd247fe92f8e82b31922bd9adb809ec552f7
+pageHash: fdde6e494b3658b214e31644c29403e770b7ead9fff350476bb5769acf929264
 sonora: [kit:mobile/nowplaying, card:now-playing-page]
 spotify: [S33, S34, S38, S39, S40, S41, S42]
 ---
@@ -34,10 +34,11 @@ plays from and the menu, then the tabs Now playing, Queue and Lyrics, then art, 
 favourite, seek, the music transport and the sleep timer, then "About the artist". Its `variant`
 is what is loaded: music here. **Spoken** (a podcast, book or YouTube episode) swaps the transport
 for speed, skip back 15, play, skip forward 15 and the sleep timer, never previous or next, and
-drops the Lyrics tab; the Now Playing card draws it. On desktop, from 1240 px, the same tab is the
+drops the Lyrics tab; the Now Playing card draws it. On desktop, from 600 px, the same tab is the
 side panel beside the page it opened over, Browse here, and the player bar under the window carries
 the seek bar and transport; the panel holds art, titles, what it plays from, the favourite, the
-sleep timer and the about card. Under 1240 px it is the full-screen sheet. Every page's side
+sleep timer and the about card. From 1240 px the panel is open beside every page; at 600 and
+1024 px the mini-player opens it, and it is never the full-screen sheet there. Every page's side
 panel is this page, so it binds only what shell.json loads, its sleep timer and about card included.
 Speed and the sleep timer open their presets as a menu: on the phone a bottom sheet over the
 player, on desktop hanging from the button, as every menu does; the sleep timer's presets include End of

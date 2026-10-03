@@ -35,7 +35,13 @@ const nav = parseNav({
   destinations: [{ id: 'books', label: 'Books', icon: 'book_2' }],
   layouts: [
     { minWidth: 0, nav: 'bottomBar', order: ['books'] },
-    { minWidth: 1240, nav: 'labelledRail', order: ['books'], sidePanel: 'nowPlaying' },
+    {
+      minWidth: 1240,
+      nav: 'labelledRail',
+      order: ['books'],
+      sidePanel: 'nowPlaying',
+      sidePanelOpens: 'always',
+    },
   ],
   back: { close: 'opener', stacks: 'perDestination', android: 'close', web: 'previousView' },
   pages: [
@@ -458,6 +464,63 @@ describe('an element given to a prop inside Each', () => {
     expect(candidates).toEqual([['FLAC', 'MP3'], []]);
     const choose = slot((requests[0]!.$l1 as Item[])[0]!);
     expect([choose.c, choose.p.size, choose.k]).toEqual(['Button', 'sm', ['Choose']]);
+  });
+});
+
+describe('a player sheet at a width whose panel opens from the mini-player', () => {
+  const panelled: App = {
+    ...app,
+    nav: parseNav({
+      ...nav,
+      layouts: [
+        { minWidth: 0, nav: 'bottomBar', order: ['books'] },
+        {
+          minWidth: 1024,
+          nav: 'labelledRail',
+          order: ['books'],
+          sidePanel: 'nowPlaying',
+          sidePanelOpens: 'fromMiniPlayer',
+        },
+      ],
+      pages: [
+        ...nav.pages,
+        {
+          ...page('nowPlaying', '/playing', 'Now Playing'),
+          close: 'sheet',
+          presentation: 'sheet',
+        },
+      ],
+    }),
+    shell: { ...app.shell, sheetOver: 'book' },
+    pages: [
+      ...app.pages,
+      {
+        id: 'nowPlaying',
+        tree: parsePage(
+          'export default function NowPlaying() {\n  return <NowPlayingPage title={shell.playing.title} />;\n}\n',
+          'nowPlaying',
+        ),
+        placeholder: {},
+      },
+    ],
+  };
+  const drawn = generateCanvas(panelled, install, now);
+  const at = (name: string) => drawn.get(name) ?? '';
+
+  it('[M0.canvas/c] draws it as the side panel, open on its tab, over the page it is drawn over', () => {
+    const desktop = at('nowPlaying.desktop.dc.html');
+    expect(desktop).toContain('SonoraDesignSystem_6c1435.BackdropShell');
+    expect(desktop).toContain('sheet-open="{{ true }}" app-bar="{{ false }}" platform="desktop">');
+    expect(desktop).toMatch(
+      /"component":"NowPlaying"[^\]]*"tab":\{"kind":"literal","value":"now"\}/,
+    );
+    expect(desktop).toContain('const scope = { data, shell, sheet };');
+  });
+
+  it('[M0.canvas/c] leaves the panel closed on every other page there, the mini-player opening it', () => {
+    const desktop = at('book.desktop.dc.html');
+    expect(desktop).toContain('sheet-open="{{ false }}" app-bar="{{ false }}" platform="desktop">');
+    expect(desktop).not.toContain('"component":"NowPlaying"');
   });
 });
 

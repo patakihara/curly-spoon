@@ -28,7 +28,13 @@ const nav: Nav = parseNav({
   ],
   layouts: [
     { minWidth: 0, nav: 'bottomBar', order: ['browse', 'music'] },
-    { minWidth: 1240, nav: 'labelledRail', order: ['browse', 'music'], sidePanel: 'nowPlaying' },
+    {
+      minWidth: 1240,
+      nav: 'labelledRail',
+      order: ['browse', 'music'],
+      sidePanel: 'nowPlaying',
+      sidePanelOpens: 'always',
+    },
   ],
   back: { close: 'opener', stacks: 'perDestination', android: 'close', web: 'previousView' },
   pages: [

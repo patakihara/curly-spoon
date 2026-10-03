@@ -1,6 +1,6 @@
 ---
 page: queue
-pageHash: 15db961ec024e28015b308f1d4b6856bba16f62d69f759686ae8ae9db603f48f
+pageHash: aa09fc9b0075fa41263cc49f565c36f62e6743a90550b1fc3c0dd5de0b9e44b4
 sonora: [kit:mobile/queue, kit:desktop/queue]
 spotify: [S36, S37]
 ---
@@ -24,7 +24,7 @@ Speed at its foot) and S37 (the same at full height).
 ## What the canvas page draws
 
 The page is the player's Queue tab, `QueuePage`, which the shell puts in the player, a full-screen
-sheet on the phone and the side panel from 1240 px. First the switch between the two queues,
+sheet on the phone and the side panel from 600 px. First the switch between the two queues,
 Music and Spoken, the music queue shown and playing; starting the other pauses this one. Then
 "Music queue · 6 songs, 28 min" beside the edit toggle. Then Played, what Back walks; Now playing;
 Up next with Clear, its first row an episode queued with Play next, marked "Then the spoken queue",

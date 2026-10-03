@@ -1,6 +1,6 @@
 ---
 page: settings
-pageHash: 87455a34fe833ce5688405eb973aba7e8eaa9ed91bf8d8a2b6be67147dd0a2cd
+pageHash: c3a8bd83900fbfcf95fe3d991fb550b69b155bb9f491e8b43678e716443d56e4
 sonora: [kit:mobile/settings, kit:desktop/settings]
 ---
 

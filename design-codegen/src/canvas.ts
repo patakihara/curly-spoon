@@ -345,7 +345,7 @@ function artboard(
         leading: slot(parts.leading),
         player: slot(parts.player),
         sheet: slot(sheet ?? parts.sheet),
-        sheetOpen: { kind: 'literal', value: parts.sheetOpen },
+        sheetOpen: { kind: 'literal', value: sheet !== undefined || parts.sheetOpen },
         appBar: { kind: 'literal', value: parts.appBar },
         ...(parts.column === undefined ? {} : { column: { kind: 'literal', value: parts.column } }),
         ...(searching ? { searchOpen: { kind: 'literal', value: true } } : {}),
@@ -354,8 +354,9 @@ function artboard(
       app.components.platformed,
     );
   };
-  // A player sheet is the player alone, full screen; where the side panel holds it, it is drawn
-  // over shell.json's `sheetOver` page, its own data read as `sheet.…` beside that page's.
+  // A player sheet is the player alone, full screen; where the side panel holds it, it is the
+  // panel, open, over shell.json's `sheetOver` page, its own data read as `sheet.…` beside that
+  // page's, whether the layout draws the panel open always or from the mini-player.
   let tree: PageTree;
   let data = page.placeholder;
   let sheetData: unknown;

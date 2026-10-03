@@ -31,6 +31,14 @@ export const PLATFORM: Record<LayoutId, Platform> = {
 /** Whether each layout holds the player in the side panel, beside the page it is drawn over, or as a full-screen sheet. */
 export const PANEL: Record<LayoutId, boolean> = {
   w0: false,
+  w600: true,
+  w1024: true,
+  w1240: true,
+};
+
+/** Whether each layout's side panel is drawn open beside every page, rather than opened from the mini-player. */
+export const PANEL_OPEN: Record<LayoutId, boolean> = {
+  w0: false,
   w600: false,
   w1024: false,
   w1240: true,

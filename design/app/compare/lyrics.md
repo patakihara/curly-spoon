@@ -1,6 +1,6 @@
 ---
 page: lyrics
-pageHash: d7df1b18b8be3b53b60310468f6f522615a1946b37d3d3bbd601134677275f78
+pageHash: e969a2cad0f4c3ec885a3c67727fec57b191de4942b208cc36dba5b653018531
 sonora: [kit:mobile/lyrics, kit:desktop/lyrics, card:now-playing-page]
 spotify: [S40, S43]
 ---
@@ -25,7 +25,7 @@ play docked below) and S40 (the lyrics card inside the player, expand in its top
 ## What the canvas page draws
 
 The page is the player's Lyrics tab, `LyricsPage`, which the shell puts in the player, a
-full-screen sheet on the phone and the side panel from 1240 px. The song, "Heartbeats in Silence ·
+full-screen sheet on the phone and the side panel from 600 px. The song, "Heartbeats in Silence ·
 Deep Inertia", heads it with the sync toggle always in its top corner. Drawn with sync off: every
 line at full opacity, a dot on the current line. Synced, the current line leads in rose and the
 list follows the song; with sync off the lines never scroll by themselves, so the text stays

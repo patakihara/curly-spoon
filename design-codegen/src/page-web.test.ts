@@ -315,7 +315,7 @@ describe("the shell's controls on a web page", () => {
     expect(queue).toContain("import { InPanel, useShellNav } from '../../shell-nav';");
     expect(queue).toContain('  const inPanel = useContext(InPanel);');
     expect(queue).toContain(
-      "  const platform: Platform = inPanel || PANEL[useLayout()] ? 'desktop' : 'mobile';",
+      "  const platform: Platform = inPanel || PANEL_OPEN[useLayout()] ? 'desktop' : 'mobile';",
     );
   });
 
@@ -330,7 +330,9 @@ describe("the shell's controls on a web page", () => {
       components,
       inPlayer('queue'),
     );
-    expect(queue).toContain("import { PANEL, useLayout, type Platform } from '../nav/platform';");
+    expect(queue).toContain(
+      "import { PANEL_OPEN, useLayout, type Platform } from '../nav/platform';",
+    );
     expect(queue).not.toContain("from './Books'");
     expect(queue).toContain('\n  return (\n    <NowPlaying ');
     expect(queue).toContain('  const go = useShellNav();');

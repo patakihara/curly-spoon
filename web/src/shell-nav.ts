@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { matchPath, useLocation, useNavigate, useNavigationType } from 'react-router';
-import { PANEL, useLayout } from './generated/nav/platform';
+import { PANEL_OPEN, useLayout } from './generated/nav/platform';
 import { NAV_MAP } from './generated/nav/stacks';
 
 /**
@@ -354,7 +354,7 @@ export function useShellNav(): ShellNav {
     () => undefined,
   );
   const inPanel = useContext(InPanel);
-  const panelled = PANEL[useLayout()];
+  const panelled = PANEL_OPEN[useLayout()];
   useEffect(() => {
     const where = location.pathname + location.search;
     stacks.seen(where, arrival, location.key);

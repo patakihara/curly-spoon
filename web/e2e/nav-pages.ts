@@ -15,12 +15,14 @@ export interface NavPage {
 
 const nav = JSON.parse(
   readFileSync(new URL('../../design/app/nav.json', import.meta.url), 'utf8'),
-) as { pages: NavPage[]; layouts: { minWidth: number; sidePanel?: string }[] };
+) as { pages: NavPage[]; layouts: { minWidth: number; sidePanelOpens?: string }[] };
 
 export const navPages = nav.pages;
 
-/** The narrowest width whose layout holds the player in a side panel beside the page. */
-const panelFrom = Math.min(...nav.layouts.filter((l) => l.sidePanel).map((l) => l.minWidth));
+/** The narrowest width whose layout draws the player's side panel open beside the page. */
+const panelFrom = Math.min(
+  ...nav.layouts.filter((l) => l.sidePanelOpens === 'always').map((l) => l.minWidth),
+);
 
 /**
  * Whether `page`, opened at `width`, gives way to the page under it: a player sheet where the

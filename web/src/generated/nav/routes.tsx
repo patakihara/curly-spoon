@@ -76,7 +76,9 @@ export const layouts = [
       "music",
       "books",
       "podcasts"
-    ]
+    ],
+    "sidePanel": "nowPlaying",
+    "sidePanelOpens": "fromMiniPlayer"
   },
   {
     "minWidth": 1024,
@@ -87,7 +89,9 @@ export const layouts = [
       "music",
       "books",
       "podcasts"
-    ]
+    ],
+    "sidePanel": "nowPlaying",
+    "sidePanelOpens": "fromMiniPlayer"
   },
   {
     "minWidth": 1240,
@@ -99,7 +103,8 @@ export const layouts = [
       "books",
       "podcasts"
     ],
-    "sidePanel": "nowPlaying"
+    "sidePanel": "nowPlaying",
+    "sidePanelOpens": "always"
   }
 ] as const;
 

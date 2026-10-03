@@ -2,7 +2,8 @@
  * The app shell every page sits in, Sonora's Material backdrop: `BackdropShell` and its
  * `BackLayer`, with the destinations as a bottom bar, an icon rail or a labelled rail by
  * nav.json's layouts, the mini-player once something is loaded, and the Now Playing panel from
- * the layout that names it. `design/app/shell.json` holds what the shell shows that no page owns.
+ * the layout that holds it, drawn open where that layout always opens it.
+ * `design/app/shell.json` holds what the shell shows that no page owns.
  *
  * A page gives only what is its own, as the root of its file:
  *
@@ -187,8 +188,12 @@ export const PLAYER_TABS: Readonly<Record<string, string>> = {
   lyrics: 'lyrics',
 };
 
-/** Whether a layout holds the player in the side panel, rather than as a full-screen sheet. */
+/** Whether a layout holds the player in the side panel, never as a full-screen sheet. */
 export const holdsPanel = (layout: Layout) => layout.sidePanel === 'nowPlaying';
+
+/** Whether a layout draws its side panel open beside every page, rather than from the mini-player. */
+export const panelAlwaysOpen = (layout: Layout) =>
+  holdsPanel(layout) && layout.sidePanelOpens === 'always';
 
 /**
  * The player open on `tab`, what is loaded in shell.json: `content` is the tab's page, a player
@@ -305,7 +310,7 @@ export function chrome(
       toggle: lit(true),
     });
     parts.player = mini;
-    if (holdsPanel(layout) && shell.playing !== null) {
+    if (panelAlwaysOpen(layout) && shell.playing !== null) {
       parts.sheet = playerTree('now', now);
       parts.sheetOpen = true;
     }

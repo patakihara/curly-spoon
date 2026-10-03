@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { APP_NOTE } from './outputs.js';
-import { holdsPanel, layoutId, platformOf, PLAYER_TABS } from './shell.js';
+import { holdsPanel, layoutId, panelAlwaysOpen, platformOf, PLAYER_TABS } from './shell.js';
 
 const Id = z.string().regex(/^[a-z][A-Za-z0-9]*$/, 'a camelCase id');
 
@@ -14,15 +14,23 @@ const Destination = z
   .object({ id: Id, label: z.string().min(1), icon: z.string().min(1) })
   .strict();
 
-/** One width band: its navigation, the destinations in the order it shows them, a side panel. */
+/**
+ * One width band: its navigation, the destinations in the order it shows them, and a side panel
+ * holding the player, with when it opens: always, beside every page, or from the mini-player.
+ */
 const Layout = z
   .object({
     minWidth: z.number().int().nonnegative(),
     nav: z.enum(['bottomBar', 'iconRail', 'labelledRail']),
     order: z.array(Id),
     sidePanel: z.literal('nowPlaying').optional(),
+    sidePanelOpens: z.enum(['always', 'fromMiniPlayer']).optional(),
   })
-  .strict();
+  .strict()
+  .refine((l) => (l.sidePanel === undefined) === (l.sidePanelOpens === undefined), {
+    message: 'a side panel says when it opens (sidePanelOpens), and only a side panel does',
+    path: ['sidePanelOpens'],
+  });
 
 /**
  * What back does, the same on every page. The close control (✕ or up) returns to whatever opened
@@ -303,7 +311,7 @@ export function generateWebShell(tabs: Readonly<Record<string, string>>): string
     "import { useLocation, useMatches, useOutlet } from 'react-router';",
     "import { InPanel, useShellNav } from '../../shell-nav';",
     "import { BackdropShell } from '../ui/index.js';",
-    "import { PANEL, PLATFORM, useLayout, type PageFrame } from './platform';",
+    "import { PANEL_OPEN, PLATFORM, useLayout, type PageFrame } from './platform';",
     ...sheets.map(([, name]) => `import ${name} from '../pages/${name}';`),
     '',
     "/** What a page's route hands the shell: its frame, or, for a player sheet, the page it is drawn over. */",
@@ -333,7 +341,7 @@ export function generateWebShell(tabs: Readonly<Record<string, string>>): string
     '  const outlet = useOutlet();',
     '  const handle = useMatches().at(-1)?.handle as ShellHandle | undefined;',
     '  const over = handle?.over;',
-    '  const frame = over === undefined ? handle?.frame : PANEL[layout] ? over.frame : undefined;',
+    '  const frame = over === undefined ? handle?.frame : PANEL_OPEN[layout] ? over.frame : undefined;',
     '  if (frame === undefined) return outlet;',
     '  const chrome = frame.chrome[layout](go);',
     '  const platform = PLATFORM[layout];',
@@ -449,6 +457,11 @@ export function generatePlatform(nav: Nav): string {
     '/** Whether each layout holds the player in the side panel, beside the page it is drawn over, or as a full-screen sheet. */',
     'export const PANEL: Record<LayoutId, boolean> = {',
     ...nav.layouts.map((l) => `  ${layoutId(l)}: ${holdsPanel(l)},`),
+    '};',
+    '',
+    "/** Whether each layout's side panel is drawn open beside every page, rather than opened from the mini-player. */",
+    'export const PANEL_OPEN: Record<LayoutId, boolean> = {',
+    ...nav.layouts.map((l) => `  ${layoutId(l)}: ${panelAlwaysOpen(l)},`),
     '};',
     '',
     "/** What a page's back layer and subheader are drawn with, from the shell. */",

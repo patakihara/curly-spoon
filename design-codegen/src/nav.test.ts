@@ -157,6 +157,30 @@ describe('nav.json', () => {
     expect(nav.layouts.some((l) => l.nav !== 'bottomBar')).toBe(true);
   });
 
+  it('[M0.canvas/c] holds the player in the side panel from 600 px, drawn open by default from 1240 and from the mini-player below it', () => {
+    expect(nav.layouts.map((l) => [l.minWidth, l.sidePanel, l.sidePanelOpens])).toEqual([
+      [0, undefined, undefined],
+      [600, 'nowPlaying', 'fromMiniPlayer'],
+      [1024, 'nowPlaying', 'fromMiniPlayer'],
+      [1240, 'nowPlaying', 'always'],
+    ]);
+  });
+
+  it('refuses a side panel that does not say when it opens, or saying when with no side panel', () => {
+    const band = (over: Record<string, unknown>) => ({
+      layouts: [{ minWidth: 0, nav: 'bottomBar', order: ['music'], ...over }],
+    });
+    expect(() => parseNav(small([page()], band({ sidePanel: 'nowPlaying' })))).toThrow(
+      /sidePanelOpens/,
+    );
+    expect(() => parseNav(small([page()], band({ sidePanelOpens: 'always' })))).toThrow(
+      /sidePanelOpens/,
+    );
+    expect(() =>
+      parseNav(small([page()], band({ sidePanel: 'nowPlaying', sidePanelOpens: 'sometimes' }))),
+    ).toThrow();
+  });
+
   it('refuses a layout that leaves out a destination or shows one twice', () => {
     const layouts = (order: string[]) => [{ minWidth: 0, nav: 'bottomBar', order }];
     expect(() => parseNav(small([page()], { layouts: layouts([]) }))).toThrow(/bottomBar from 0/);
@@ -300,7 +324,7 @@ describe('the one web shell', () => {
 
   it('[M0.canvas/c] draws a player sheet beside the page under it where the panel holds it, and alone elsewhere', () => {
     expect(out).toContain(
-      '  const frame = over === undefined ? handle?.frame : PANEL[layout] ? over.frame : undefined;',
+      '  const frame = over === undefined ? handle?.frame : PANEL_OPEN[layout] ? over.frame : undefined;',
     );
     expect(out).toContain('  if (frame === undefined) return outlet;');
     expect(out).toContain(
@@ -363,7 +387,20 @@ describe('the web layout hook', () => {
     layouts: [
       { minWidth: 0, nav: 'bottomBar', order: [] },
       { minWidth: 600, nav: 'iconRail', order: [] },
-      { minWidth: 1240, nav: 'labelledRail', order: [], sidePanel: 'nowPlaying' },
+      {
+        minWidth: 1024,
+        nav: 'labelledRail',
+        order: [],
+        sidePanel: 'nowPlaying',
+        sidePanelOpens: 'fromMiniPlayer',
+      },
+      {
+        minWidth: 1240,
+        nav: 'labelledRail',
+        order: [],
+        sidePanel: 'nowPlaying',
+        sidePanelOpens: 'always',
+      },
     ],
     back,
     pages: [],
@@ -371,20 +408,25 @@ describe('the web layout hook', () => {
   const out = generatePlatform(tiny);
 
   it('names each layout by its minimum width', () => {
-    expect(out).toContain("export type LayoutId = 'w0' | 'w600' | 'w1240';");
+    expect(out).toContain("export type LayoutId = 'w0' | 'w600' | 'w1024' | 'w1240';");
   });
 
   it('reaches each wider layout by its minimum width, starting from the first', () => {
-    expect(out).toContain("  ['w600', '(min-width: 600px)'],\n  ['w1240', '(min-width: 1240px)'],");
+    expect(out).toContain(
+      "  ['w600', '(min-width: 600px)'],\n  ['w1024', '(min-width: 1024px)'],\n  ['w1240', '(min-width: 1240px)'],",
+    );
     expect(out).toContain("  let layout: LayoutId = 'w0';");
   });
 
-  it("[M0.canvas/c] gives each layout's platform, and whether its side panel holds the player", () => {
+  it("[M0.canvas/c] gives each layout's platform, whether its side panel holds the player, and whether it is open by default", () => {
     expect(out).toContain(
-      "export const PLATFORM: Record<LayoutId, Platform> = {\n  w0: 'mobile',\n  w600: 'desktop',\n  w1240: 'desktop',\n};",
+      "export const PLATFORM: Record<LayoutId, Platform> = {\n  w0: 'mobile',\n  w600: 'desktop',\n  w1024: 'desktop',\n  w1240: 'desktop',\n};",
     );
     expect(out).toContain(
-      'export const PANEL: Record<LayoutId, boolean> = {\n  w0: false,\n  w600: false,\n  w1240: true,\n};',
+      'export const PANEL: Record<LayoutId, boolean> = {\n  w0: false,\n  w600: false,\n  w1024: true,\n  w1240: true,\n};',
+    );
+    expect(out).toContain(
+      'export const PANEL_OPEN: Record<LayoutId, boolean> = {\n  w0: false,\n  w600: false,\n  w1024: false,\n  w1240: true,\n};',
     );
   });
 

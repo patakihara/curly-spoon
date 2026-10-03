@@ -355,7 +355,7 @@ export function generateWebPage(
     `// ${APP_NOTE}`,
     ...react,
     sheet
-      ? "import { PANEL, useLayout, type Platform } from '../nav/platform';"
+      ? "import { PANEL_OPEN, useLayout, type Platform } from '../nav/platform';"
       : "import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';",
     ...(goes
       ? [
@@ -425,7 +425,7 @@ export function generateWebPage(
     ...(sheet
       ? [
           '  const inPanel = useContext(InPanel);',
-          "  const platform: Platform = inPanel || PANEL[useLayout()] ? 'desktop' : 'mobile';",
+          "  const platform: Platform = inPanel || PANEL_OPEN[useLayout()] ? 'desktop' : 'mobile';",
         ]
       : ['  const platform = PLATFORM[useLayout()];']),
     ...(opens ? ['  const navigate = useNavigate();'] : []),

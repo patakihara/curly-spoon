@@ -6,8 +6,10 @@ import {
   chrome,
   framePage,
   framed,
+  holdsPanel,
   layoutAt,
   layoutId,
+  panelAlwaysOpen,
   readShell,
   shellData,
   type ShellFile,
@@ -118,7 +120,7 @@ describe('the app shell', () => {
     for (const layout of nav.layouts.slice(1)) expect(layout.order[0]).toBe('search');
   });
 
-  it('[M0.canvas] draws a bottom bar under 600 px, an icon rail from 600, a labelled rail from 1024 and the Now Playing panel from 1240', () => {
+  it('[M0.canvas] draws a bottom bar under 600 px, an icon rail from 600, a labelled rail from 1024 and the Now Playing panel open from 1240', () => {
     const at = (width: number) =>
       chrome(nav, shell, pageOf('browse'), layoutAt(nav, width), platformed);
     expect(at(390).rail).toBeUndefined();
@@ -129,6 +131,20 @@ describe('the app shell', () => {
     expect(el(at(1440).sheet, 'NowPlaying').props.open).toEqual({ kind: 'literal', value: true });
     expect(el(at(1440).sheet, 'NowPlaying').props.tab).toEqual({ kind: 'literal', value: 'now' });
     expect(at(1440).sheetOpen).toBe(true);
+  });
+
+  it('[M0.canvas/c] holds the player in the side panel from 600 px, never full screen, but draws the panel open by default only from 1240', () => {
+    expect(holdsPanel(layoutAt(nav, 390))).toBe(false);
+    for (const width of [800, 1100]) {
+      const layout = layoutAt(nav, width);
+      expect(holdsPanel(layout)).toBe(true);
+      expect(panelAlwaysOpen(layout)).toBe(false);
+      const parts = chrome(nav, shell, pageOf('browse'), layout, platformed);
+      expect(parts.sheet).toBeUndefined();
+      expect(parts.sheetOpen).toBe(false);
+    }
+    expect(holdsPanel(layoutAt(nav, 1440))).toBe(true);
+    expect(panelAlwaysOpen(layoutAt(nav, 1440))).toBe(true);
   });
 
   it('[M0.canvas] gives every rail the hamburger that collapses the labelled rail to the icon rail and back', () => {
