@@ -26,7 +26,7 @@ export default function Podcasts({ data }) {
             </Each>
           </LayoutGrid>
         </Section>
-        <Section title="Lists">
+        <Section title="Lists" last>
           <LayoutGrid>
             <Each of={data.lists} as="list">
               <MediaCard
@@ -37,12 +37,6 @@ export default function Podcasts({ data }) {
                 onClick={<Open page="list" ref={list.ref} />}
               />
             </Each>
-          </LayoutGrid>
-        </Section>
-        <Section title="Add a YouTube channel" last>
-          <LayoutGrid columns={1} gap="10px" maxWidth="var(--grid-max-width-form)">
-            <Input placeholder="Paste a channel link" />
-            <Button variant="secondary">Add as a show</Button>
           </LayoutGrid>
         </Section>
       </PageBody>

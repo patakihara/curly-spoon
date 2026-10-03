@@ -576,14 +576,9 @@
             "name": "Lists",
             "holds": "Listening lists, podcast playlists and digests, The Digest first.",
             "provisional": true
-          },
-          {
-            "name": "Add a YouTube channel",
-            "holds": "Paste a channel link to add it as a show.",
-            "provisional": true
           }
         ],
-        "empty": "No subscriptions: says so, and points to Search's podcast results or pasting a YouTube channel link.",
+        "empty": "No subscriptions: says so, and points to Search's podcast results.",
         "links": ["show", "list", "downloads"]
       }
     },
@@ -744,7 +739,7 @@
           },
           {
             "name": "Outside your library",
-            "holds": "Music plays from YouTube Music; books get Request and podcasts Subscribe, with live status; more releases fold away."
+            "holds": "Music plays from YouTube Music; books get Request and podcasts Subscribe, with live status; more releases fold away. A YouTube channel comes up among the podcasts, found by name or from its pasted link, and Subscribe adds it as a show."
           }
         ],
         "empty": "No query: recent searches. No results: says nothing matched, in your library or outside it.",

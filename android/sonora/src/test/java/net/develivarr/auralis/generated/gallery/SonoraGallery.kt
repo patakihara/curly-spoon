@@ -22,7 +22,6 @@ import net.develivarr.auralis.generated.ui.FieldRowProps
 import net.develivarr.auralis.generated.ui.FollowButtonProps
 import net.develivarr.auralis.generated.ui.FrontLayerHeaderProps
 import net.develivarr.auralis.generated.ui.IconButtonProps
-import net.develivarr.auralis.generated.ui.InputProps
 import net.develivarr.auralis.generated.ui.LayoutGridProps
 import net.develivarr.auralis.generated.ui.LyricsPageProps
 import net.develivarr.auralis.generated.ui.MediaCardProps
@@ -78,7 +77,6 @@ import net.develivarr.auralis.ui.sonora.FollowButton
 import net.develivarr.auralis.ui.sonora.FrontLayerHeader
 import net.develivarr.auralis.ui.sonora.GalleryEntry
 import net.develivarr.auralis.ui.sonora.IconButton
-import net.develivarr.auralis.ui.sonora.Input
 import net.develivarr.auralis.ui.sonora.LayoutGrid
 import net.develivarr.auralis.ui.sonora.LyricsPage
 import net.develivarr.auralis.ui.sonora.MediaCard
@@ -374,16 +372,6 @@ val componentGallery: List<GalleryEntry> = listOf(
                 label = "More",
                 onClick = {},
                 children = { BasicText("more_vert") },
-            ),
-        )
-    },
-    GalleryEntry("Input") {
-        Input(
-            InputProps(
-                placeholder = "Search",
-                icon = { BasicText("search") },
-                platform = Platform.MOBILE,
-                onChange = { _ -> },
             ),
         )
     },

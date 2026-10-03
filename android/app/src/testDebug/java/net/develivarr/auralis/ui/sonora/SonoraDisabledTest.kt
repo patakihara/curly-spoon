@@ -26,7 +26,6 @@ import net.develivarr.auralis.generated.ui.FeatureCardProps
 import net.develivarr.auralis.generated.ui.FieldRowProps
 import net.develivarr.auralis.generated.ui.FollowButtonProps
 import net.develivarr.auralis.generated.ui.IconButtonProps
-import net.develivarr.auralis.generated.ui.InputProps
 import net.develivarr.auralis.generated.ui.LyricsPageProps
 import net.develivarr.auralis.generated.ui.MediaCardProps
 import net.develivarr.auralis.generated.ui.MediaHeaderProps
@@ -72,7 +71,6 @@ internal val unbound: List<Pair<String, @Composable () -> Unit>> = listOf(
     "FieldRow" to { FieldRow(FieldRowProps(label = "Server", value = "auralis")) },
     "FollowButton" to { FollowButton(FollowButtonProps()) },
     "IconButton" to { IconButton(IconButtonProps(label = "Close")) },
-    "Input" to { Input(InputProps(value = "Sonora")) },
     "LyricsPage" to { LyricsPage(LyricsPageProps()) },
     "MediaCard" to { MediaCard(MediaCardProps(title = "Album")) },
     "MediaHeader" to { MediaHeader(MediaHeaderProps(title = "Album")) },
@@ -122,13 +120,12 @@ class SonoraDisabledTest {
                 Button(ButtonProps(children = null, onClick = press, disabled = true))
                 IconButton(IconButtonProps(label = "Close", onClick = press, disabled = true))
                 PreviewButton(PreviewButtonProps(label = "Preview", onClick = press, disabled = true))
-                Input(InputProps(value = "Sonora", onChange = change, disabled = true))
                 SearchField(SearchFieldProps(value = "Sonora", onChange = change, disabled = true))
             }
         }
         val controls = composeRule.onAllNodes(control, useUnmergedTree = true)
         val count = controls.fetchSemanticsNodes().size
-        assertTrue("drew only $count controls", count >= 5)
+        assertTrue("drew only $count controls", count >= 4)
         assertEquals(0, composeRule.onAllNodes(control and enabled, useUnmergedTree = true).fetchSemanticsNodes().size)
         repeat(count) { controls[it].performClick() }
         composeRule.waitForIdle()

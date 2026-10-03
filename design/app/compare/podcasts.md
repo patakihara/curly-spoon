@@ -1,6 +1,6 @@
 ---
 page: podcasts
-pageHash: 93ea4b92e5debddc90652ad2e0b7e6f2ea009452b8b364d789019e8ed203ce86
+pageHash: e19339c39ce6530e228bbbb01db20d73885daa090c30ff7f06c8a0fbb8dffc47
 sonora: [kit:desktop/podcasts, kit:mobile/podcasts]
 spotify: [S20, S31]
 ---
@@ -10,8 +10,7 @@ spotify: [S20, S31]
 Canvas renders: `podcasts/canvas-phone.png` (390 px) and `podcasts/canvas-desktop.png` (1440 px),
 both in the app shell. Sonora UI kit renders, the design this page is compared against:
 `sonora/kit-desktop-podcasts.png` and `sonora/kit-mobile-podcasts.png`. Also looked at: the page
-scrolled on the phone (the local search out, the spy band on "Shows", the Lists and the YouTube
-row), Spotify's S20 (subscribed shows with an unplayed dot) and S31 (the sort row).
+scrolled on the phone (the local search out, the spy band on "Shows", the Lists), Spotify's S20 (subscribed shows with an unplayed dot) and S31 (the sort row).
 
 ## What the Sonora UI kit renders show
 
@@ -29,12 +28,11 @@ rest, then the section title that last passed ("Shows" in the scrolled look). Th
 "Shows", every subscribed show in title order as a `MediaCard` with its unplayed count as the
 caption and, when there are unplayed episodes, Sonora's accent dot on the art, as S20 marks them.
 "Fleeting Verses" is a YouTube channel, captioned "YouTube · 2 unplayed". Each show opens its Show
-page. Then "Lists" (The Digest first, Commute, Saved for later), each opening its List page, and "Add a YouTube channel": an `Input` for the link and a
-secondary `Button` "Add as a show".
+page. Then "Lists" (The Digest first, Commute, Saved for later), each opening its List page,
+ending the page. A YouTube channel is added from Search, never here.
 
 **Empty state**, per nav.json (not drawn as an artboard): the heading and sort row stay; the Shows
-grid gives way to one line saying there are no subscriptions, pointing to Search's podcast results
-or to pasting a YouTube channel link, with the Add a YouTube channel row kept.
+grid gives way to one line saying there are no subscriptions, pointing to Search's podcast results.
 
 ## Differences
 
@@ -52,13 +50,10 @@ or to pasting a YouTube channel link, with the Add a YouTube channel row kept.
 - Changed on purpose: the kit's empty band is a scroll-spy subheader, hidden at rest.
 - Changed on purpose: the kit's app-bar search is the back layer's local search, out on scroll.
 - Changed on purpose: a sort row leads the grid, as in S31.
-- Changed on purpose: Lists and Add a YouTube channel follow the shows (both provisional in
-  nav.json); the kit has neither. Lists have no art of their own, so each shows its items' covers
+- Changed on purpose: Lists follow the shows (provisional in nav.json); the kit has none. Lists have no art of their own, so each shows its items' covers
   (`covers`): The Digest and Commute a 2×2 mosaic, Saved for later, all from one show, that cover
   alone, as Sonora's Media Cards card draws them.
 - Changed on purpose: no "Not in library" show; a home shows only your subscriptions.
-- Open: the `Input` draws no visible field on the dark front layer, so the link box reads as bare
-  placeholder text; `Input` is due its fix when Sonora is pruned.
 - Open: the Host sort is this page's reading of "Title, Artist or Author, Random" for shows.
 - Open: the Downloaded filter is Android's alone and not drawn.
 - Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.

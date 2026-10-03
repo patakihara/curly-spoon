@@ -110,9 +110,7 @@ export const UNBOUND: Readonly<Record<string, string>> = {
   // Search's outside results.
   'search/Button.onClick': 'M3.catalog',
   'search/ExpanderRow.onToggle': 'M3.catalog',
-  // Following and adding podcasts.
-  'podcasts/Button.onClick': 'M3.podcasts',
-  'podcasts/Input.onChange': 'M3.podcasts',
+  // Following podcasts.
   'show/FollowButton.onChange': 'M3.podcasts',
   // Saving a song.
   'nowPlaying/NowPlayingPage.onFavourite': 'M3.keep',

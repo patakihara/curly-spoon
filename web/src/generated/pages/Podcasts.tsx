@@ -4,14 +4,13 @@ import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
 import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
 import type { ShellNav } from '../../shell-nav';
-import { AboutCard, AccountButton, BackLayer, BottomNav, Button, FrontLayerHeader, Input, LayoutGrid, MediaCard, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, PageBody, Section, SortFilterBar, ViewToggle } from '../ui/index.js';
+import { AboutCard, AccountButton, BackLayer, BottomNav, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, PageBody, Section, SortFilterBar, ViewToggle } from '../ui/index.js';
 
 const placeholder = {
   "sections": [
     "",
     "Shows",
-    "Lists",
-    "Add a YouTube channel"
+    "Lists"
   ],
   "sort": {
     "value": "Title",
@@ -352,21 +351,13 @@ export default function Podcasts({ data = placeholder, state = 'full' }: Podcast
           ))}
         </LayoutGrid>
       </Section>
-      <Section title="Lists" platform={platform}>
+      <Section title="Lists" last={true} platform={platform}>
         <LayoutGrid platform={platform}>
           {data.lists.map((list, i) => (
             <Fragment key={i}>
               <MediaCard width="100%" title={list.title} sub={list.sub} covers={list.covers} onClick={() => navigate(generatePath('/lists/:ref', { ref: list.ref }))} platform={platform} />
             </Fragment>
           ))}
-        </LayoutGrid>
-      </Section>
-      <Section title="Add a YouTube channel" last={true} platform={platform}>
-        <LayoutGrid columns={1} gap="10px" maxWidth="var(--grid-max-width-form)" platform={platform}>
-          <Input placeholder="Paste a channel link" platform={platform} />
-          <Button variant="secondary" platform={platform}>
-            {"Add as a show"}
-          </Button>
         </LayoutGrid>
       </Section>
     </PageBody>

@@ -15,7 +15,6 @@ import net.develivarr.auralis.generated.ui.FeatureCardProps
 import net.develivarr.auralis.generated.ui.FieldRowProps
 import net.develivarr.auralis.generated.ui.FollowButtonProps
 import net.develivarr.auralis.generated.ui.IconButtonProps
-import net.develivarr.auralis.generated.ui.InputProps
 import net.develivarr.auralis.generated.ui.LyricsPageProps
 import net.develivarr.auralis.generated.ui.MediaCardProps
 import net.develivarr.auralis.generated.ui.MediaHeaderProps
@@ -102,9 +101,6 @@ val sonoraStates: List<StateEntry> = listOf(
     StateEntry("FollowButton") { v -> FollowButton(FollowButtonProps(onChange = pick(v))) },
     StateEntry("IconButton", declaresDisabled = true) { v ->
         IconButton(IconButtonProps(label = "Close", icon = "close", onClick = act(v), disabled = off(v)))
-    },
-    StateEntry("Input", declaresDisabled = true) { v ->
-        Input(InputProps(placeholder = "Name", value = "Sonora", onChange = pick(v), disabled = off(v)))
     },
     StateEntry("LyricsPage") { v ->
         LyricsPage(LyricsPageProps(title = "Track", lines = listOf("A line"), onClose = act(v), onSyncModeChange = pick(v)))

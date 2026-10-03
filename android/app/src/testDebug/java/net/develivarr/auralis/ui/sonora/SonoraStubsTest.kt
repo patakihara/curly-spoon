@@ -39,7 +39,6 @@ import net.develivarr.auralis.generated.ui.FieldRowProps
 import net.develivarr.auralis.generated.ui.FollowButtonProps
 import net.develivarr.auralis.generated.ui.FrontLayerHeaderProps
 import net.develivarr.auralis.generated.ui.IconButtonProps
-import net.develivarr.auralis.generated.ui.InputProps
 import net.develivarr.auralis.generated.ui.LayoutGridProps
 import net.develivarr.auralis.generated.ui.LyricsPageProps
 import net.develivarr.auralis.generated.ui.MediaCardProps
@@ -104,7 +103,6 @@ class SonoraStubsTest {
         stub("FollowButton") { FollowButton(FollowButtonProps()) },
         stub("FrontLayerHeader") { FrontLayerHeader(FrontLayerHeaderProps()) },
         stub("IconButton") { IconButton(IconButtonProps(label = "Icon")) },
-        stub("Input") { Input(InputProps()) },
         stub("LayoutGrid") { LayoutGrid(LayoutGridProps()) },
         stub("LyricsPage") { LyricsPage(LyricsPageProps()) },
         stub("MediaCard") { MediaCard(MediaCardProps(title = "Media")) },

@@ -1,5 +1,5 @@
 {
-  "sections": ["", "Shows", "Lists", "Add a YouTube channel"],
+  "sections": ["", "Shows", "Lists"],
   "sort": {
     "value": "Title",
     "options": ["Title", "Host", "Random"]
