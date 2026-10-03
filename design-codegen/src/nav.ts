@@ -226,8 +226,10 @@ const literal = (value: unknown) => JSON.stringify(value).replaceAll('"', "'");
  * pathless route holding the shell, generated as `Shell.tsx`, with every page a child of it, so
  * the shell and its rail stay mounted from page to page. Each drawn page's route renders its
  * content and hands the shell its frame; a player sheet's hands it the page it is drawn over,
- * `over` (shell.json's `sheetOver`), for the layouts whose side panel holds the player. A page
- * not yet drawn (no `pages/<id>.page.jsx`) gets a route with no element.
+ * `over` (shell.json's `sheetOver`), for the layouts whose side panel holds the player. The
+ * player's sheets are children of one pathless route drawing the shell's `Player`, so switching
+ * its tabs changes only the tab's page inside the one player. A page not yet drawn (no
+ * `pages/<id>.page.jsx`) gets a route with no element.
  */
 export function generateRoutes(nav: Nav, drawn: Set<string>, over?: string): string {
   const pages = nav.pages.filter((p) => p.platforms.includes('web'));
@@ -251,7 +253,7 @@ export function generateRoutes(nav: Nav, drawn: Set<string>, over?: string): str
       `presentation: ${literal(p.presentation)} },`
     );
   });
-  const routes = pages.map((p) => {
+  const route = (p: NavPage, indent: string) => {
     const { path } = splitRoute(p.route);
     const name = componentName(p.id);
     const under = over === undefined ? undefined : componentName(over);
@@ -261,12 +263,25 @@ export function generateRoutes(nav: Nav, drawn: Set<string>, over?: string): str
         : `, handle: { over: { frame: ${under}Frame, Page: ${under} } }`
       : `, handle: { frame: ${name}Frame }`;
     const element = drawn.has(p.id) ? `, element: <${name} />${handle}` : '';
-    return `      { id: ${literal(p.id)}, path: ${literal(path)}${element} },`;
-  });
+    return `${indent}{ id: ${literal(p.id)}, path: ${literal(path)}${element} },`;
+  };
+  const first = pages.findIndex(sheet);
+  const player = [
+    '      {',
+    "        id: 'player',",
+    '        element: <Player />,',
+    '        children: [',
+    ...pages.filter(sheet).map((p) => route(p, '          ')),
+    '        ],',
+    '      },',
+  ];
+  const routes = pages.flatMap((p, at) =>
+    sheet(p) ? (at === first ? player : []) : [route(p, '      ')],
+  );
   return [
     `// ${APP_NOTE}`,
     "import type { RouteObject } from 'react-router';",
-    "import { Shell } from './Shell';",
+    `import { ${first >= 0 ? 'Player, ' : ''}Shell } from './Shell';`,
     ...imports,
     '',
     `export const destinations = ${JSON.stringify(nav.destinations, null, 2)} as const;`,
@@ -309,22 +324,30 @@ export function generateRoutes(nav: Nav, drawn: Set<string>, over?: string): str
  * the shell's parts at the window's layout, the page's back layer and subheader, and the page's
  * content in the front layer. A player sheet is the side panel beside the page it is drawn over
  * where the layout holds one, or over that page as a modal side sheet, its scrim closing it, where
- * the layout says the panel sits over the page; and on its own, full screen, where it holds none. On desktop the
- * panel shows the tab the mini-player's Queue or Lyrics holds, `tabs` naming each tab's sheet
- * page, beside the page showing, which stays; Now Playing, where the layout's own panel already
- * shows it, is that panel. The front layer keeps each location's own scroll, and each location's
- * back layer starts afresh.
+ * the layout says the panel sits over the page; and on its own, full screen, where it holds none.
+ * On desktop the panel shows the tab the mini-player's Queue or Lyrics holds beside the page
+ * showing, which stays, or else Now Playing where the layout opens its panel of its own. The
+ * front layer keeps each location's own scroll, and each location's back layer starts afresh.
+ *
+ * The player is `Player`, Sonora's NowPlaying drawn once with what is loaded, `player.playing`:
+ * full screen it is the route over the player's sheets (`sheets`, each page's tab), the matched
+ * sheet its tab and its page the content; in the panel it is at the tab the shell gives it, that
+ * tab's page the content. Its tabs switch only the content, so the sheet or panel stays. Its close
+ * goes to the page under it, or with nothing under it to `player.home`'s home.
  */
-export function generateWebShell(tabs: Readonly<Record<string, string>>): string {
-  const sheets = Object.entries(tabs);
+export function generateWebShell(
+  sheets: Readonly<Record<string, string>>,
+  player: { playing: unknown; home: string },
+): string {
+  const tabs = Object.entries(sheets);
   return [
     `// ${APP_NOTE}`,
-    "import { cloneElement, isValidElement, type ComponentType, type ReactNode } from 'react';",
+    "import { cloneElement, isValidElement, useContext, type ComponentProps, type ComponentType } from 'react';",
     "import { useLocation, useMatches, useOutlet } from 'react-router';",
     "import { InPanel, useShellNav } from '../../shell-nav';",
-    "import { BackdropShell } from '../ui/index.js';",
-    "import { PANEL, PANEL_OVER, PLATFORM, useLayout, type PageFrame } from './platform';",
-    ...sheets.map(([, name]) => `import ${name} from '../pages/${name}';`),
+    "import { BackdropShell, NowPlaying } from '../ui/index.js';",
+    "import { PANEL, PANEL_OVER, PLATFORM, useLayout, type PageFrame, type Platform } from './platform';",
+    ...tabs.map(([id]) => `import ${componentName(id)}Tab from '../pages/${componentName(id)}';`),
     '',
     "/** What a page's route hands the shell: its frame, or, for a player sheet, the page it is drawn over. */",
     'export interface ShellHandle {',
@@ -332,18 +355,37 @@ export function generateWebShell(tabs: Readonly<Record<string, string>>): string
     '  over?: { frame: PageFrame<unknown>; Page: ComponentType };',
     '}',
     '',
-    "/** Each of the player's tabs, by key, as the sheet page the panel draws at it. */",
-    `const PANEL_TABS: Record<string, ComponentType> = { ${sheets
-      .map(([tab, name]) => `${tab}: ${name}`)
+    '/** What is loaded, as the player shows it. */',
+    `const playing = ${JSON.stringify(player.playing ?? {}, null, 2)};`,
+    '',
+    "/** Each of the player's sheets, by its route's id, as the tab it is. */",
+    `const TABS: Record<string, string> = { ${tabs.map(([id, tab]) => `${id}: ${literal(tab)}`).join(', ')} };`,
+    '',
+    "/** Each of the player's tabs, by key, as its sheet's page, which the panel draws at it. */",
+    `const PANEL_TABS: Record<string, ComponentType> = { ${tabs
+      .map(([id, tab]) => `${tab}: ${componentName(id)}Tab`)
       .join(', ')} };`,
     '',
-    '/**',
-    ' * The sheet page the panel draws at the tab held, `tab`: none with no tab held, or for Now Playing',
-    " * where the layout's own panel, `own`, shows it already.",
-    ' */',
-    'function panelTab(tab: string | undefined, own: ReactNode): ComponentType | undefined {',
-    "  if (tab === undefined || (tab === 'now' && own !== undefined)) return undefined;",
-    '  return PANEL_TABS[tab];',
+    'export interface PlayerProps {',
+    "  /** The tab, in the panel; left out, the matched sheet's, full screen, its route's page the content. */",
+    '  tab?: string;',
+    '  /** Whether it has a close: not the panel the layout opens of its own. */',
+    '  closes?: boolean;',
+    '}',
+    '',
+    "/** The one player: Sonora's NowPlaying, whose tabs change only the page inside it. */",
+    'export function Player({ tab, closes = true }: PlayerProps) {',
+    '  const go = useShellNav();',
+    '  const inPanel = useContext(InPanel);',
+    "  const platform: Platform = inPanel || PANEL[useLayout()] ? 'desktop' : 'mobile';",
+    '  const outlet = useOutlet();',
+    "  const shown = tab ?? TABS[useMatches().at(-1)?.id ?? ''];",
+    '  const Content = tab === undefined ? undefined : PANEL_TABS[tab];',
+    '  return (',
+    `    <NowPlaying open={true} tab={shown} variant={playing.variant as ComponentProps<typeof NowPlaying>['variant']} track={playing} onClose={closes ? () => go.close(${literal(player.home)}) : undefined} onTabChange={(to) => go.tab(to)} platform={platform}>`,
+    '      {Content === undefined ? outlet : <Content />}',
+    '    </NowPlaying>',
+    '  );',
     '}',
     '',
     'export function Shell() {',
@@ -351,7 +393,8 @@ export function generateWebShell(tabs: Readonly<Record<string, string>>): string
     '  const go = useShellNav();',
     '  const location = useLocation();',
     '  const outlet = useOutlet();',
-    '  const handle = useMatches().at(-1)?.handle as ShellHandle | undefined;',
+    '  const match = useMatches().at(-1);',
+    '  const handle = match?.handle as ShellHandle | undefined;',
     '  const over = handle?.over;',
     '  const frame = over === undefined ? handle?.frame : PANEL[layout] ? over.frame : undefined;',
     '  if (frame === undefined) return outlet;',
@@ -361,21 +404,22 @@ export function generateWebShell(tabs: Readonly<Record<string, string>>): string
     '  const where = location.pathname + location.search;',
     '  const back = frame.back(frame.placeholder, context);',
     '  const Over = over?.Page;',
-    "  const Held = over === undefined && platform === 'desktop' ? panelTab(go.panel(), chrome.sheet) : undefined;",
-    '  const held =',
-    '    Held === undefined ? undefined : (',
-    '      <InPanel.Provider value={true}>',
-    '        <Held />',
-    '      </InPanel.Provider>',
-    '    );',
+    "  // The panel: a sheet's own tab, the one the mini-player holds, or the layout's own Now Playing.",
+    "  const tab = platform !== 'desktop' ? undefined : over !== undefined ? TABS[match?.id ?? ''] : (go.panel() ?? (chrome.sheetOpen ? 'now' : undefined));",
     '  return (',
     '    <BackdropShell',
     '      rail={chrome.rail}',
     '      back={isValidElement(back) ? cloneElement(back, { key: where }) : back}',
     '      subheader={frame.subheader?.(frame.placeholder, context)}',
     '      player={chrome.player}',
-    '      sheet={held !== undefined ? held : over === undefined ? chrome.sheet : outlet}',
-    '      sheetOpen={held !== undefined || (over === undefined ? chrome.sheetOpen : true)}',
+    '      sheet={',
+    '        tab === undefined ? undefined : (',
+    '          <InPanel.Provider value={true}>',
+    '            <Player tab={tab} closes={over !== undefined || go.panel() !== undefined} />',
+    '          </InPanel.Provider>',
+    '        )',
+    '      }',
+    '      sheetOpen={tab !== undefined}',
     "      sheetLayer={PANEL_OVER[layout] ? 'over' : 'front'}",
     '      onSheetDismiss={go.closePanel}',
     '      appBar={chrome.appBar}',
@@ -450,14 +494,14 @@ export function generatePlatform(nav: Nav): string {
     '/** A layout of nav.json, named by its minimum width. */',
     `export type LayoutId = ${nav.layouts.map(id).join(' | ')};`,
     '',
-    "/** The shell's parts at one layout: its rail, what leads the heading, the player and the side panel. */",
+    "/** The shell's parts at one layout: its rail, what leads the heading, the player bar, and whether the side panel opens. */",
     'export interface Chrome {',
     '  /** A top app bar in place of the backdrop: a page that is not a destination, on the phone. */',
     '  appBar: boolean;',
     '  rail?: ReactNode;',
     '  leading?: ReactNode;',
     '  player?: ReactNode;',
-    '  sheet?: ReactNode;',
+    "  /** Whether the layout opens the side panel's player, at Now Playing, of its own. */",
     '  sheetOpen: boolean;',
     "  /** A bare page's one centred column, its reading width. */",
     "  column?: 'form';",

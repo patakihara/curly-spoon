@@ -2,8 +2,8 @@
 import { useContext } from 'react';
 import type { ComponentProps } from 'react';
 import { PANEL, useLayout, type Platform } from '../nav/platform';
-import { InPanel, useShellNav } from '../../shell-nav';
-import { LyricsPage, NowPlaying } from '../ui/index.js';
+import { InPanel } from '../../shell-nav';
+import { LyricsPage } from '../ui/index.js';
 
 const placeholder = {
   "lines": [
@@ -187,10 +187,7 @@ export interface LyricsProps {
 export default function Lyrics({ data = placeholder, state = 'full' }: LyricsProps) {
   const inPanel = useContext(InPanel);
   const platform: Platform = inPanel || PANEL[useLayout()] ? 'desktop' : 'mobile';
-  const go = useShellNav();
   return (
-    <NowPlaying open={true} tab="lyrics" variant={shell.playing.variant as Exclude<ComponentProps<typeof NowPlaying>['variant'], undefined>} track={shell.playing} onClose={() => go.close('browse')} onTabChange={(tab) => go.tab(tab)} platform={platform}>
-      <LyricsPage heading={null} title={shell.playing.title} artist={shell.playing.artist} lines={data.lines} activeIndex={data.activeIndex} syncMode={data.syncMode as Exclude<ComponentProps<typeof LyricsPage>['syncMode'], undefined>} platform={platform} />
-    </NowPlaying>
+    <LyricsPage heading={null} title={shell.playing.title} artist={shell.playing.artist} lines={data.lines} activeIndex={data.activeIndex} syncMode={data.syncMode as Exclude<ComponentProps<typeof LyricsPage>['syncMode'], undefined>} platform={platform} />
   );
 }

@@ -7,14 +7,14 @@ export type Platform = 'mobile' | 'desktop';
 /** A layout of nav.json, named by its minimum width. */
 export type LayoutId = 'w0' | 'w600' | 'w1024' | 'w1240';
 
-/** The shell's parts at one layout: its rail, what leads the heading, the player and the side panel. */
+/** The shell's parts at one layout: its rail, what leads the heading, the player bar, and whether the side panel opens. */
 export interface Chrome {
   /** A top app bar in place of the backdrop: a page that is not a destination, on the phone. */
   appBar: boolean;
   rail?: ReactNode;
   leading?: ReactNode;
   player?: ReactNode;
-  sheet?: ReactNode;
+  /** Whether the layout opens the side panel's player, at Now Playing, of its own. */
   sheetOpen: boolean;
   /** A bare page's one centred column, its reading width. */
   column?: 'form';

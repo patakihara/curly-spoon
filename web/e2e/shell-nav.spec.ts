@@ -477,7 +477,7 @@ for (const width of [600, 1024]) {
   }
 }
 
-test.fixme("[M0.canvas/c] at 390px the player sheet's tabs switch within the one sheet, with no opening transition", async ({
+test("[M0.canvas/c] at 390px the player sheet's tabs switch within the one sheet, with no opening transition", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -514,6 +514,28 @@ test.fixme("[M0.canvas/c] at 390px the player sheet's tabs switch within the one
   });
   expect(moved).toEqual({ same: true, seen: [] });
   await expect(page.getByRole('tab', { name: 'Queue' })).toHaveAttribute('aria-selected', 'true');
+});
+
+test("[M0.canvas/c] at 390px the browser's back from the player sheet's Queue closes the sheet to the page under it", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/', { waitUntil: 'networkidle' });
+  await settle(page);
+  await goTo(page, 'Books', '/books');
+  await miniPlayer(page, true).click();
+  await expect(page).toHaveURL('/playing');
+  await page.getByRole('tab', { name: 'Queue' }).click();
+  await expect(page).toHaveURL('/playing/queue');
+  await page.getByRole('tab', { name: 'Lyrics' }).click();
+  await expect(page).toHaveURL('/playing/lyrics');
+  await page.getByRole('tab', { name: 'Queue' }).click();
+  await expect(page).toHaveURL('/playing/queue');
+  // The tabs replace one another: one step back leaves the sheet for the page it was opened over.
+  await page.goBack();
+  await expect(page).toHaveURL('/books');
+  await heading(page, 'Books');
+  await expect(page.getByRole('tab', { name: 'Queue' })).toHaveCount(0);
 });
 
 test("[M0.canvas] the rail's hamburger collapses the labelled rail to the icon rail and back, staying so from page to page", async ({

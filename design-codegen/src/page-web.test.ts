@@ -301,8 +301,8 @@ describe("the shell's controls on a web page", () => {
     expect(phone).not.toContain('Toggle');
   });
 
-  it('draws a player sheet at desktop density where it is the panel the mini-player showed', () => {
-    const queue = generateWebPage(
+  const queuePage = () =>
+    generateWebPage(
       parsePage(
         'export default function Queue() {\n  return <QueuePage heading={null} />;\n}\n',
         'queue',
@@ -312,30 +312,50 @@ describe("the shell's controls on a web page", () => {
       components,
       inPlayer('queue'),
     );
-    expect(queue).toContain("import { InPanel, useShellNav } from '../../shell-nav';");
+
+  it('draws a player sheet at desktop density where it is the panel the mini-player showed', () => {
+    const queue = queuePage();
+    expect(queue).toContain("import { InPanel } from '../../shell-nav';");
     expect(queue).toContain('  const inPanel = useContext(InPanel);');
     expect(queue).toContain(
       "  const platform: Platform = inPanel || PANEL[useLayout()] ? 'desktop' : 'mobile';",
     );
   });
 
-  it("[M0.canvas] closes a player sheet to the page under it, and switches the player's tabs between sheets", () => {
-    const queue = generateWebPage(
-      parsePage(
-        'export default function Queue() {\n  return <QueuePage heading={null} />;\n}\n',
-        'queue',
-      ),
-      'queue',
-      {},
-      components,
-      inPlayer('queue'),
-    );
+  it("[M0.canvas/c] draws a player sheet as its tab's content alone, inside the shell's one player, so a tab switch keeps the sheet", () => {
+    const queue = queuePage();
     expect(queue).toContain("import { PANEL, useLayout, type Platform } from '../nav/platform';");
     expect(queue).not.toContain("from './Books'");
-    expect(queue).toContain('\n  return (\n    <NowPlaying ');
-    expect(queue).toContain('  const go = useShellNav();');
-    expect(queue).toContain("onClose={() => go.close('books')}");
-    expect(queue).toContain('onTabChange={(tab) => go.tab(tab)}');
+    expect(queue).toContain('\n  return (\n    <QueuePage ');
+    expect(queue).not.toContain('<NowPlaying');
+    expect(queue).not.toContain('useShellNav');
+    expect(queue).not.toContain('onClose');
+  });
+
+  it("[M0.canvas/c] leaves the side panel to the shell's one player: a page's parts only say whether its layout opens it", () => {
+    const wide = parseNav({
+      ...withPlayer,
+      layouts: [
+        { minWidth: 0, nav: 'bottomBar', order: ['books'] },
+        {
+          minWidth: 1240,
+          nav: 'labelledRail',
+          order: ['books'],
+          sidePanel: 'nowPlaying',
+          sidePanelOpens: 'always',
+          sidePanelSits: 'beside',
+        },
+      ],
+    });
+    const book = generateWebPage(parsePage(source, 'book'), 'book', {}, components, {
+      ...inPlayer('book'),
+      nav: wide,
+      page: wide.pages.find((p) => p.id === 'book')!,
+    });
+    const w1240 = book.slice(book.indexOf('  w1240: '));
+    expect(w1240).toContain('    sheetOpen: true,');
+    expect(book).not.toContain('    sheet: (');
+    expect(book).not.toContain('<NowPlaying');
   });
 
   it('[M0.canvas] opens each destination as it was left from the bottom bar and the rail', () => {

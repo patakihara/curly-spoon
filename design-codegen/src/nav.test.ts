@@ -309,7 +309,7 @@ describe('the web route table', () => {
   const out = generateRoutes(tiny, new Set(['music', 'album', 'queue']), 'music');
 
   it('[M0.canvas/c] holds every page route as a child of the one shell, so the shell stays mounted between pages', () => {
-    expect(out).toContain("import { Shell } from './Shell';");
+    expect(out).toContain("import { Player, Shell } from './Shell';");
     expect(out).toContain("  {\n    id: 'shell',\n    element: <Shell />,\n    children: [\n");
     const children = out.slice(out.indexOf('children: ['));
     for (const id of ['music', 'album', 'search', 'queue']) {
@@ -329,8 +329,17 @@ describe('the web route table', () => {
   it('[M0.canvas/c] hands the shell a player sheet with the page it is drawn over, where the side panel holds it', () => {
     expect(out).toContain("import Queue from '../pages/Queue';");
     expect(out).toContain(
-      "      { id: 'queue', path: '/playing/queue', element: <Queue />, handle: { over: { frame: MusicFrame, Page: Music } } },",
+      "          { id: 'queue', path: '/playing/queue', element: <Queue />, handle: { over: { frame: MusicFrame, Page: Music } } },",
     );
+  });
+
+  it("[M0.canvas/c] nests the player's sheets under one pathless route drawing the one player, so its tabs switch within it", () => {
+    const player = out.slice(out.indexOf("      {\n        id: 'player',"));
+    expect(player).toMatch(
+      /^ {6}\{\n {8}id: 'player',\n {8}element: <Player \/>,\n {8}children: \[\n {10}\{ id: 'queue', /,
+    );
+    expect(out.match(/<Player \/>/g)).toHaveLength(1);
+    expect(out).not.toMatch(/^ {6}\{ id: 'queue'/m);
   });
 
   it('leaves out Android-only pages', () => {
@@ -339,7 +348,10 @@ describe('the web route table', () => {
 });
 
 describe('the one web shell', () => {
-  const out = generateWebShell({ now: 'NowPlaying', queue: 'Queue' });
+  const out = generateWebShell(
+    { nowPlaying: 'now', queue: 'queue' },
+    { playing: { title: 'Tidal Lines', variant: 'music' }, home: 'browse' },
+  );
 
   it('[M0.canvas/c] draws one BackdropShell from the frame the page showing hands it, its content in the front layer', () => {
     expect(out.match(/<BackdropShell\b/g)).toHaveLength(1);
@@ -363,29 +375,40 @@ describe('the one web shell', () => {
       '  const frame = over === undefined ? handle?.frame : PANEL[layout] ? over.frame : undefined;',
     );
     expect(out).toContain('  if (frame === undefined) return outlet;');
-    expect(out).toContain(
-      '      sheet={held !== undefined ? held : over === undefined ? chrome.sheet : outlet}',
-    );
   });
 
-  it('draws the player panel at the tab the desktop mini-player holds, beside the page, which stays', () => {
-    expect(out).toContain("import NowPlaying from '../pages/NowPlaying';");
-    expect(out).toContain("import Queue from '../pages/Queue';");
+  it("[M0.canvas/c] draws Sonora's NowPlaying once, in one Player, its tab's page the only thing a tab switch changes", () => {
+    expect(out.match(/<NowPlaying /g)).toHaveLength(1);
+    expect(out).toContain('export function Player({ tab, closes = true }: PlayerProps) {');
     expect(out).toContain(
-      'const PANEL_TABS: Record<string, ComponentType> = { now: NowPlaying, queue: Queue };',
+      "const TABS: Record<string, string> = { nowPlaying: 'now', queue: 'queue' };",
+    );
+    expect(out).toContain("  const shown = tab ?? TABS[useMatches().at(-1)?.id ?? ''];");
+    expect(out).toContain('      {Content === undefined ? outlet : <Content />}');
+    expect(out).toContain("onClose={closes ? () => go.close('browse') : undefined}");
+    expect(out).toContain('onTabChange={(to) => go.tab(to)}');
+    expect(out).toContain('const playing = {\n  "title": "Tidal Lines",');
+  });
+
+  it("[M0.canvas/c] draws the player panel through the same Player, at the tab held or the layout's own Now Playing, beside the page, which stays", () => {
+    expect(out).toContain("import NowPlayingTab from '../pages/NowPlaying';");
+    expect(out).toContain("import QueueTab from '../pages/Queue';");
+    expect(out).toContain(
+      'const PANEL_TABS: Record<string, ComponentType> = { now: NowPlayingTab, queue: QueueTab };',
     );
     expect(out).toContain(
-      "  const Held = over === undefined && platform === 'desktop' ? panelTab(go.panel(), chrome.sheet) : undefined;",
+      "  const tab = platform !== 'desktop' ? undefined : over !== undefined ? TABS[match?.id ?? ''] : (go.panel() ?? (chrome.sheetOpen ? 'now' : undefined));",
     );
     expect(out).toContain('<InPanel.Provider value={true}>');
     expect(out).toContain(
-      '      sheetOpen={held !== undefined || (over === undefined ? chrome.sheetOpen : true)}',
+      '<Player tab={tab} closes={over !== undefined || go.panel() !== undefined} />',
     );
+    expect(out).toContain('      sheetOpen={tab !== undefined}');
   });
 
   it('[M0.canvas/c] opens the panel over the page, as a modal side sheet whose scrim closes it, where the layout says it sits over the page', () => {
     expect(out).toContain(
-      "import { PANEL, PANEL_OVER, PLATFORM, useLayout, type PageFrame } from './platform';",
+      "import { PANEL, PANEL_OVER, PLATFORM, useLayout, type PageFrame, type Platform } from './platform';",
     );
     expect(out).toContain("      sheetLayer={PANEL_OVER[layout] ? 'over' : 'front'}");
     expect(out).toContain('      onSheetDismiss={go.closePanel}');
@@ -474,7 +497,6 @@ describe('the web layout hook', () => {
     expect(out).toContain(
       'export const PANEL_OVER: Record<LayoutId, boolean> = {\n  w0: false,\n  w600: false,\n  w1024: true,\n  w1240: false,\n};',
     );
-    expect(out).not.toContain('PANEL_OPEN');
   });
 
   it('[M0.canvas/c] describes what a page hands the shell: its parts at each layout, its back layer and subheader', () => {
@@ -489,6 +511,13 @@ describe('the web layout hook', () => {
       'export interface FrameContext {\n  platform: Platform;\n  leading?: ReactNode;\n}',
     );
     expect(out).not.toContain('NavigateFunction');
+  });
+
+  it("[M0.canvas/c] leaves the side panel's player to the shell: a page's parts say only whether it is open", () => {
+    const chrome = out.slice(out.indexOf('export interface Chrome {'));
+    const parts = chrome.slice(0, chrome.indexOf('\n}'));
+    expect(parts).toContain('  sheetOpen: boolean;');
+    expect(parts).not.toContain('sheet?:');
   });
 
   it("[M0.canvas/c] leaves a layout's density to PLATFORM, not to each page's parts", () => {

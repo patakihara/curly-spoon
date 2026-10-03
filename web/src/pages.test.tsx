@@ -133,19 +133,12 @@ describe('the shell around each drawn page', () => {
   }
 
   it("[M0.canvas] shows one Now Playing in every page's side panel from 1240 px, the about card included", async () => {
-    /** The CHROME entry's panel at 1240 px, as the page's source writes it. */
-    const panel = (file: string) =>
-      / {2}w1240: \(\w*\) => \(\{[\s\S]*?\n {4}sheet: \(\n([\s\S]*?)\n {4}\),/.exec(
-        readFileSync(new URL(file, dir), 'utf8'),
-      )?.[1];
     const screens = pages.filter((f) => !sheets.has(idOf(f)) && !bare.has(idOf(f)));
-    const first = panel(screens[0]!);
-    expect(first).toContain('<AboutCard');
-    for (const file of screens) {
-      expect(panel(file), file).toBe(first);
-      expect((await render(file, 'w1240')).match(/About the artist/g), file).toHaveLength(1);
+    for (const file of [...screens, 'NowPlaying.tsx']) {
+      const html = await render(file, 'w1240');
+      expect(html.match(/About the artist/g), file).toHaveLength(1);
+      expect(html, file).toMatch(/aria-selected="true"[^>]*>(?:<[^>]*>)*Now playing</);
     }
-    expect((await render('NowPlaying.tsx', 'w1240')).match(/About the artist/g)).toHaveLength(1);
   });
 
   it('[M0.canvas] never repeats the transport on desktop: the player bar alone carries it, panel open or not', async () => {

@@ -2,8 +2,8 @@
 import { useContext } from 'react';
 import type { ComponentProps } from 'react';
 import { PANEL, useLayout, type Platform } from '../nav/platform';
-import { InPanel, useShellNav } from '../../shell-nav';
-import { AboutCard, NowPlaying, NowPlayingPage } from '../ui/index.js';
+import { InPanel } from '../../shell-nav';
+import { AboutCard, NowPlayingPage } from '../ui/index.js';
 
 const placeholder = {};
 
@@ -163,23 +163,20 @@ const shell = {
   }
 };
 
-export type NowPlayingScreenData = typeof placeholder;
+export type NowPlayingData = typeof placeholder;
 
-export interface NowPlayingScreenProps {
-  data?: NowPlayingScreenData;
+export interface NowPlayingProps {
+  data?: NowPlayingData;
   /** Which of the placeholder states to show: M0 draws only `full`. */
   state?: string;
 }
 
-export default function NowPlayingScreen({ data = placeholder, state = 'full' }: NowPlayingScreenProps) {
+export default function NowPlaying({ data = placeholder, state = 'full' }: NowPlayingProps) {
   const inPanel = useContext(InPanel);
   const platform: Platform = inPanel || PANEL[useLayout()] ? 'desktop' : 'mobile';
-  const go = useShellNav();
   return (
-    <NowPlaying open={true} tab="now" variant={shell.playing.variant as Exclude<ComponentProps<typeof NowPlaying>['variant'], undefined>} track={shell.playing} onClose={() => go.close('browse')} onTabChange={(tab) => go.tab(tab)} platform={platform}>
-      <NowPlayingPage variant={shell.playing.variant as Exclude<ComponentProps<typeof NowPlayingPage>['variant'], undefined>} image={shell.playing.image} title={shell.playing.title} artist={shell.playing.artist} context={shell.playing.context} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} favourite={shell.playing.favourite} sleep={shell.playing.sleep} platform={platform}>
-        <AboutCard title={shell.playing.about.title} heading={shell.playing.about.heading} meta={shell.playing.about.meta} image={shell.playing.about.image} round={true} body={shell.playing.about.body} platform={platform} />
-      </NowPlayingPage>
-    </NowPlaying>
+    <NowPlayingPage variant={shell.playing.variant as Exclude<ComponentProps<typeof NowPlayingPage>['variant'], undefined>} image={shell.playing.image} title={shell.playing.title} artist={shell.playing.artist} context={shell.playing.context} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} favourite={shell.playing.favourite} sleep={shell.playing.sleep} platform={platform}>
+      <AboutCard title={shell.playing.about.title} heading={shell.playing.about.heading} meta={shell.playing.about.meta} image={shell.playing.about.image} round={true} body={shell.playing.about.body} platform={platform} />
+    </NowPlayingPage>
   );
 }

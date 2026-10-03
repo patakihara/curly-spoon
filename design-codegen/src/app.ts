@@ -14,6 +14,7 @@ import {
   generateWebShell,
   readNav,
   type Nav,
+  type NavPage,
 } from './nav.js';
 import {
   checkPage,
@@ -25,6 +26,7 @@ import {
 } from './page.js';
 import { generateKotlinPage } from './page-kotlin.js';
 import { generateWebPage, type WebComponents } from './page-web.js';
+import { closeAction } from './shell-handlers.js';
 import { androidPages, generateKotlinNav } from './nav-kotlin.js';
 import type { KType, PropsModel } from './props.js';
 import {
@@ -305,21 +307,43 @@ function generateHeadings(app: App): string {
   return `${JSON.stringify(headings, null, 2)}\n`;
 }
 
+/**
+ * Where the one player's close goes with nothing under it: the home its sheets close to, which
+ * must be the same for every tab, since a tab switch keeps the one player.
+ */
+function playerHome(nav: Nav, sheets: readonly NavPage[]): string {
+  const homes = new Set(
+    sheets.map((p) => {
+      const close = closeAction(nav, p);
+      return close?.kind === 'close' ? close.home : nav.destinations[0]!.id;
+    }),
+  );
+  if (homes.size > 1) {
+    throw new Error(
+      `nav.json: the player's sheets close to different homes (${[...homes].join(', ')})`,
+    );
+  }
+  return [...homes][0] ?? nav.destinations[0]?.id ?? '';
+}
+
 export function generateAppWeb(app: App): { nav: Map<string, string>; pages: Map<string, string> } {
   const drawn = new Set(app.pages.map((p) => p.id));
+  const sheets = app.nav.pages.filter(
+    (p) =>
+      p.platforms.includes('web') &&
+      drawn.has(p.id) &&
+      p.presentation === 'sheet' &&
+      PLAYER_TABS[p.id] !== undefined,
+  );
   return {
     nav: new Map([
       ['routes.tsx', generateRoutes(app.nav, drawn, app.shell.sheetOver)],
       [
         'Shell.tsx',
-        generateWebShell(
-          Object.fromEntries(
-            app.nav.pages
-              .filter((p) => p.platforms.includes('web') && drawn.has(p.id))
-              .filter((p) => p.presentation === 'sheet' && PLAYER_TABS[p.id] !== undefined)
-              .map((p) => [PLAYER_TABS[p.id]!, componentName(p.id)]),
-          ),
-        ),
+        generateWebShell(Object.fromEntries(sheets.map((p) => [p.id, PLAYER_TABS[p.id]!])), {
+          playing: app.shell.playing,
+          home: playerHome(app.nav, sheets),
+        }),
       ],
       ['platform.ts', generatePlatform(app.nav)],
       [
@@ -340,7 +364,6 @@ export function generateAppWeb(app: App): { nav: Map<string, string>; pages: Map
             nav: app.nav,
             shell: app.shell,
             page: app.nav.pages.find((p) => p.id === id)!,
-            now: app.now,
           }),
         ]),
     ),

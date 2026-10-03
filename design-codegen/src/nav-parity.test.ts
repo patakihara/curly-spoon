@@ -121,7 +121,7 @@ describe('the web router and the Android graph, generated from one nav.json', ()
 /**
  * The shell's controls each page wires on the phone, as a set of each handler prop and what it
  * does: `onClick:close:<home>`, `onChange:destination`, `onOpen:open:<page>`, `onTabChange:tab`.
- * The web's are its w0 chrome's (or a sheet's player's), through `go`; Android's are its page's,
+ * The web's are its w0 chrome's (or, for a player sheet, the shell's one `Player`'s), through `go`; Android's are its page's,
  * the back handler left out, and only the mini-player's `onOpen` and the avatar's `onClick`
  * counted as the shell's own opens, since a page's own links navigate the same way.
  */
@@ -129,7 +129,7 @@ function webWiring(source: string, ids: Map<string, string>): string[] {
   const phone = / {2}w0: \(\w*\) => \(\{\n([\s\S]*?)\n {2}\}\),/.exec(source)?.[1] ?? source;
   return [
     ...new Set(
-      [...phone.matchAll(/(\w+)=\{\(?\w*\)? => go\.(\w+)\(([^)]*)\)\}/g)].map(
+      [...phone.matchAll(/(\w+)=\{(?:\w+ \? )?\(?\w*\)? => go\.(\w+)\(([^)]*)\)/g)].map(
         ([, prop, verb, arg]) => {
           const value = arg!.replace(/'/g, '');
           if (verb === 'close') return `${prop}:close:${value}`;
@@ -171,6 +171,14 @@ describe("the shell's controls, on the web and on Android", () => {
     const ids = new Map(
       [...routes.matchAll(/\{ id: '(\w+)', path: '([^']*)', query/g)].map((m) => [m[2]!, m[1]!]),
     );
+    const sheets = new Set(
+      [...routes.matchAll(/\{ id: '(\w+)', [^\n]*presentation: 'sheet' \}/g)].map((m) => m[1]!),
+    );
+    const shell = read(OUTPUTS.webNav, 'Shell.tsx');
+    const player = shell.slice(
+      shell.indexOf('export function Player('),
+      shell.indexOf('export function Shell('),
+    );
     const android = kotlinPages();
     const differ: string[] = [];
     const kinds = new Set<string>();
@@ -178,7 +186,8 @@ describe("the shell's controls, on the web and on Android", () => {
     for (const file of readdirSync(join(REPO_ROOT, OUTPUTS.webPages))) {
       const kotlin = android.get(file.replace('.tsx', 'Page.kt'));
       if (kotlin === undefined) continue;
-      const web = webWiring(read(OUTPUTS.webPages, file), ids);
+      const id = file.replace('.tsx', '').replace(/^./, (c) => c.toLowerCase());
+      const web = webWiring(sheets.has(id) ? player : read(OUTPUTS.webPages, file), ids);
       const mobile = androidWiring(kotlin);
       if (web.length > 0) wired++;
       for (const w of web) kinds.add(w.split(':').slice(0, 2).join(':'));

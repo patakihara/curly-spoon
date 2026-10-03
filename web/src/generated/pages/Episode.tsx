@@ -4,7 +4,7 @@ import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
 import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
 import type { ShellNav } from '../../shell-nav';
-import { AboutCard, BackLayer, BottomNav, EpisodeRow, ExpandableText, IconButton, MediaHeader, MiniPlayer, NavRail, NowPlaying, NowPlayingPage, OverflowMenu, PageBody, Section } from '../ui/index.js';
+import { BackLayer, BottomNav, EpisodeRow, ExpandableText, IconButton, MediaHeader, MiniPlayer, NavRail, OverflowMenu, PageBody, Section } from '../ui/index.js';
 
 const placeholder = {
   "title": "The Night Ferry",
@@ -276,13 +276,6 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
     ),
     player: (
       <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} />
-    ),
-    sheet: (
-      <NowPlaying open={true} tab="now" variant={shell.playing.variant as Exclude<ComponentProps<typeof NowPlaying>['variant'], undefined>} track={shell.playing} platform="desktop" onTabChange={(tab) => go.tab(tab)}>
-        <NowPlayingPage variant={shell.playing.variant as Exclude<ComponentProps<typeof NowPlayingPage>['variant'], undefined>} image={shell.playing.image} title={shell.playing.title} artist={shell.playing.artist} context={shell.playing.context} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} favourite={shell.playing.favourite} sleep={shell.playing.sleep} platform="desktop">
-          <AboutCard title={shell.playing.about.title} heading={shell.playing.about.heading} meta={shell.playing.about.meta} image={shell.playing.about.image} round={true} body={shell.playing.about.body} platform="desktop" />
-        </NowPlayingPage>
-      </NowPlaying>
     ),
     sheetOpen: true,
   }),
