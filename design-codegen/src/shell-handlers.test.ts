@@ -34,6 +34,7 @@ const nav: Nav = parseNav({
       order: ['browse', 'music'],
       sidePanel: 'nowPlaying',
       sidePanelOpens: 'always',
+      sidePanelSits: 'beside',
     },
   ],
   back: { close: 'opener', stacks: 'perDestination', android: 'close', web: 'previousView' },

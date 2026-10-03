@@ -36,12 +36,12 @@ export const PANEL: Record<LayoutId, boolean> = {
   w1240: true,
 };
 
-/** Whether each layout's side panel is drawn open beside every page, rather than opened from the mini-player. */
-export const PANEL_OPEN: Record<LayoutId, boolean> = {
+/** Whether each layout's side panel opens over the page, a modal side sheet, rather than beside it. */
+export const PANEL_OVER: Record<LayoutId, boolean> = {
   w0: false,
-  w600: false,
+  w600: true,
   w1024: false,
-  w1240: true,
+  w1240: false,
 };
 
 /** What a page's back layer and subheader are drawn with, from the shell. */

@@ -41,6 +41,7 @@ const nav = parseNav({
       order: ['books'],
       sidePanel: 'nowPlaying',
       sidePanelOpens: 'always',
+      sidePanelSits: 'beside',
     },
   ],
   back: { close: 'opener', stacks: 'perDestination', android: 'close', web: 'previousView' },
@@ -480,6 +481,7 @@ describe('a player sheet at a width whose panel opens from the mini-player', () 
           order: ['books'],
           sidePanel: 'nowPlaying',
           sidePanelOpens: 'fromMiniPlayer',
+          sidePanelSits: 'beside',
         },
       ],
       pages: [
@@ -533,6 +535,7 @@ describe('a player sheet, on the canvas, where the mini-player opens its panel b
       order: ['books'],
       sidePanel: 'nowPlaying',
       sidePanelOpens: 'fromMiniPlayer',
+      sidePanelSits: 'beside',
     },
     {
       minWidth: 1240,
@@ -540,6 +543,7 @@ describe('a player sheet, on the canvas, where the mini-player opens its panel b
       order: ['books'],
       sidePanel: 'nowPlaying',
       sidePanelOpens: 'always',
+      sidePanelSits: 'beside',
     },
   ];
   const drawn: App = {

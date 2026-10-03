@@ -157,12 +157,14 @@ describe('nav.json', () => {
     expect(nav.layouts.some((l) => l.nav !== 'bottomBar')).toBe(true);
   });
 
-  it('[M0.canvas/c] holds the player in the side panel from 600 px, drawn open by default from 1240 and from the mini-player below it', () => {
-    expect(nav.layouts.map((l) => [l.minWidth, l.sidePanel, l.sidePanelOpens])).toEqual([
-      [0, undefined, undefined],
-      [600, 'nowPlaying', 'fromMiniPlayer'],
-      [1024, 'nowPlaying', 'fromMiniPlayer'],
-      [1240, 'nowPlaying', 'always'],
+  it('[M0.canvas/c] holds the player in the side panel from 600 px, drawn open by default from 1240 and from the mini-player below it, over the page below 1024 and beside it from there', () => {
+    expect(
+      nav.layouts.map((l) => [l.minWidth, l.sidePanel, l.sidePanelOpens, l.sidePanelSits]),
+    ).toEqual([
+      [0, undefined, undefined, undefined],
+      [600, 'nowPlaying', 'fromMiniPlayer', 'over'],
+      [1024, 'nowPlaying', 'fromMiniPlayer', 'beside'],
+      [1240, 'nowPlaying', 'always', 'beside'],
     ]);
   });
 
@@ -170,15 +172,49 @@ describe('nav.json', () => {
     const band = (over: Record<string, unknown>) => ({
       layouts: [{ minWidth: 0, nav: 'bottomBar', order: ['music'], ...over }],
     });
-    expect(() => parseNav(small([page()], band({ sidePanel: 'nowPlaying' })))).toThrow(
-      /sidePanelOpens/,
-    );
+    const panel = { sidePanel: 'nowPlaying', sidePanelOpens: 'always', sidePanelSits: 'beside' };
+    expect(() => parseNav(small([page()], band(panel)))).not.toThrow();
+    expect(() =>
+      parseNav(small([page()], band({ sidePanel: 'nowPlaying', sidePanelSits: 'beside' }))),
+    ).toThrow(/sidePanelOpens/);
     expect(() => parseNav(small([page()], band({ sidePanelOpens: 'always' })))).toThrow(
       /sidePanelOpens/,
     );
     expect(() =>
-      parseNav(small([page()], band({ sidePanel: 'nowPlaying', sidePanelOpens: 'sometimes' }))),
+      parseNav(small([page()], band({ ...panel, sidePanelOpens: 'sometimes' }))),
     ).toThrow();
+  });
+
+  it('refuses a side panel that does not say whether it sits over the page or beside it, or saying so with no side panel', () => {
+    const band = (over: Record<string, unknown>) => ({
+      layouts: [{ minWidth: 0, nav: 'bottomBar', order: ['music'], ...over }],
+    });
+    expect(() =>
+      parseNav(small([page()], band({ sidePanel: 'nowPlaying', sidePanelOpens: 'always' }))),
+    ).toThrow(/sidePanelSits/);
+    expect(() => parseNav(small([page()], band({ sidePanelSits: 'over' })))).toThrow(
+      /sidePanelSits/,
+    );
+    expect(() =>
+      parseNav(
+        small(
+          [page()],
+          band({
+            sidePanel: 'nowPlaying',
+            sidePanelOpens: 'fromMiniPlayer',
+            sidePanelSits: 'under',
+          }),
+        ),
+      ),
+    ).toThrow();
+  });
+
+  it('refuses a side panel open by default over the page, which would hide every page under its scrim', () => {
+    const band = { minWidth: 0, nav: 'bottomBar', order: ['music'] };
+    const layouts = [
+      { ...band, sidePanel: 'nowPlaying', sidePanelOpens: 'always', sidePanelSits: 'over' },
+    ];
+    expect(() => parseNav(small([page()], { layouts }))).toThrow(/sidePanelSits/);
   });
 
   it('refuses a layout that leaves out a destination or shows one twice', () => {
@@ -346,6 +382,14 @@ describe('the one web shell', () => {
       '      sheetOpen={held !== undefined || (over === undefined ? chrome.sheetOpen : true)}',
     );
   });
+
+  it('[M0.canvas/c] opens the panel over the page, as a modal side sheet whose scrim closes it, where the layout says it sits over the page', () => {
+    expect(out).toContain(
+      "import { PANEL, PANEL_OVER, PLATFORM, useLayout, type PageFrame } from './platform';",
+    );
+    expect(out).toContain("      sheetLayer={PANEL_OVER[layout] ? 'over' : 'front'}");
+    expect(out).toContain('      onSheetDismiss={go.closePanel}');
+  });
 });
 
 describe("the web's navigation map, for its stacks", () => {
@@ -393,6 +437,7 @@ describe('the web layout hook', () => {
         order: [],
         sidePanel: 'nowPlaying',
         sidePanelOpens: 'fromMiniPlayer',
+        sidePanelSits: 'over',
       },
       {
         minWidth: 1240,
@@ -400,6 +445,7 @@ describe('the web layout hook', () => {
         order: [],
         sidePanel: 'nowPlaying',
         sidePanelOpens: 'always',
+        sidePanelSits: 'beside',
       },
     ],
     back,
@@ -418,7 +464,7 @@ describe('the web layout hook', () => {
     expect(out).toContain("  let layout: LayoutId = 'w0';");
   });
 
-  it("[M0.canvas/c] gives each layout's platform, whether its side panel holds the player, and whether it is open by default", () => {
+  it("[M0.canvas/c] gives each layout's platform, whether its side panel holds the player, and whether that panel sits over the page", () => {
     expect(out).toContain(
       "export const PLATFORM: Record<LayoutId, Platform> = {\n  w0: 'mobile',\n  w600: 'desktop',\n  w1024: 'desktop',\n  w1240: 'desktop',\n};",
     );
@@ -426,8 +472,9 @@ describe('the web layout hook', () => {
       'export const PANEL: Record<LayoutId, boolean> = {\n  w0: false,\n  w600: false,\n  w1024: true,\n  w1240: true,\n};',
     );
     expect(out).toContain(
-      'export const PANEL_OPEN: Record<LayoutId, boolean> = {\n  w0: false,\n  w600: false,\n  w1024: false,\n  w1240: true,\n};',
+      'export const PANEL_OVER: Record<LayoutId, boolean> = {\n  w0: false,\n  w600: false,\n  w1024: true,\n  w1240: false,\n};',
     );
+    expect(out).not.toContain('PANEL_OPEN');
   });
 
   it('[M0.canvas/c] describes what a page hands the shell: its parts at each layout, its back layer and subheader', () => {

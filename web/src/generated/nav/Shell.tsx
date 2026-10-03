@@ -3,7 +3,7 @@ import { cloneElement, isValidElement, type ComponentType, type ReactNode } from
 import { useLocation, useMatches, useOutlet } from 'react-router';
 import { InPanel, useShellNav } from '../../shell-nav';
 import { BackdropShell } from '../ui/index.js';
-import { PANEL, PLATFORM, useLayout, type PageFrame } from './platform';
+import { PANEL, PANEL_OVER, PLATFORM, useLayout, type PageFrame } from './platform';
 import NowPlaying from '../pages/NowPlaying';
 import Queue from '../pages/Queue';
 import Lyrics from '../pages/Lyrics';
@@ -56,6 +56,8 @@ export function Shell() {
       player={chrome.player}
       sheet={held !== undefined ? held : over === undefined ? chrome.sheet : outlet}
       sheetOpen={held !== undefined || (over === undefined ? chrome.sheetOpen : true)}
+      sheetLayer={PANEL_OVER[layout] ? 'over' : 'front'}
+      onSheetDismiss={go.closePanel}
       appBar={chrome.appBar}
       column={chrome.column}
       scrollKey={where}

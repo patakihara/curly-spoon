@@ -78,7 +78,8 @@ export const layouts = [
       "podcasts"
     ],
     "sidePanel": "nowPlaying",
-    "sidePanelOpens": "fromMiniPlayer"
+    "sidePanelOpens": "fromMiniPlayer",
+    "sidePanelSits": "over"
   },
   {
     "minWidth": 1024,
@@ -91,7 +92,8 @@ export const layouts = [
       "podcasts"
     ],
     "sidePanel": "nowPlaying",
-    "sidePanelOpens": "fromMiniPlayer"
+    "sidePanelOpens": "fromMiniPlayer",
+    "sidePanelSits": "beside"
   },
   {
     "minWidth": 1240,
@@ -104,7 +106,8 @@ export const layouts = [
       "podcasts"
     ],
     "sidePanel": "nowPlaying",
-    "sidePanelOpens": "always"
+    "sidePanelOpens": "always",
+    "sidePanelSits": "beside"
   }
 ] as const;
 

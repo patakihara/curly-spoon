@@ -481,12 +481,12 @@
         "message": "<BackLayer> platform must be one of 'desktop' | 'mobile'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='BackdropShell'] > JSXAttribute > JSXIdentifier[name!=/^(?:back|rail|children|subheader|sheet|sheetOpen|sheetLayer|player|contentMinWidth|scroll|scrollKey|onProgress|theme|appBar|column|platform|key|ref|className|style|children)$/]",
-        "message": "<BackdropShell> doesn't accept that prop. Declared props: back, rail, children, subheader, sheet, sheetOpen, sheetLayer, player, contentMinWidth, scroll, scrollKey, onProgress, theme, appBar, column, platform."
+        "selector": "JSXOpeningElement[name.name='BackdropShell'] > JSXAttribute > JSXIdentifier[name!=/^(?:back|rail|children|subheader|sheet|sheetOpen|sheetLayer|onSheetDismiss|player|contentMinWidth|scroll|scrollKey|onProgress|theme|appBar|column|platform|key|ref|className|style|children)$/]",
+        "message": "<BackdropShell> doesn't accept that prop. Declared props: back, rail, children, subheader, sheet, sheetOpen, sheetLayer, onSheetDismiss, player, contentMinWidth, scroll, scrollKey, onProgress, theme, appBar, column, platform."
       },
       {
-        "selector": "JSXOpeningElement[name.name='BackdropShell'] > JSXAttribute[name.name='sheetLayer'] > Literal[value!=/^(?:front|behind)$/]",
-        "message": "<BackdropShell> sheetLayer must be one of 'front' | 'behind'."
+        "selector": "JSXOpeningElement[name.name='BackdropShell'] > JSXAttribute[name.name='sheetLayer'] > Literal[value!=/^(?:front|behind|over)$/]",
+        "message": "<BackdropShell> sheetLayer must be one of 'front' | 'behind' | 'over'."
       },
       {
         "selector": "JSXOpeningElement[name.name='BackdropShell'] > JSXAttribute[name.name='column'] > Literal[value!=/^(?:tiles|list|form)$/]",

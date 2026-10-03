@@ -1,4 +1,4 @@
-<!-- @dsCard group="Layouts" viewport="1400x900" name="Backdrop — Side Panel Placement" subtitle="The desktop side panel in front of the front layer versus behind it, and which surface owns each edge" -->
+<!-- @dsCard group="Layouts" viewport="1400x1300" name="Backdrop — Side Panel Placement" subtitle="The desktop side panel in front of the front layer, behind it, or over the whole frame as a modal side sheet, and which surface owns each edge" -->
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -36,16 +36,18 @@ function PanelBody(){
   </div>;
 }
 
-/* Both cases are the same screen with the same panel open — only `sheetLayer` differs — so any
+/* All three cases are the same screen with the same panel open — only `sheetLayer` differs — so any
    edge that changes between them is the treatment talking and nothing else. The rail is left off
-   here to keep the front layer wide enough to read; Backdrop Anatomy is where it is shown.
+   here to keep the front layer wide enough to read; Backdrop Anatomy is where it is shown. `over`
+   is the same panel again as a modal side sheet, the page full width beneath its scrim.
    `scroll={false}` for the same reason: a scrollbar would ride the exact edge this card is about. */
 function Frame({mode}){
   const behind = mode === 'behind';
   return <div style={{height:312}}>
     <BackdropShell platform="desktop" scroll={false} sheetOpen sheetLayer={mode}
       back={<BackLayer title="Browse" trailing={<Tag>Back layer · 0dp</Tag>} />}
-      sheet={behind ? <PanelBody/> : <SideSheet open title="Queue"><Queue/></SideSheet>}>
+      onSheetDismiss={mode === 'over' ? () => {} : undefined}
+      sheet={behind ? <PanelBody/> : <SideSheet open title="Queue" onClose={mode === 'over' ? () => {} : undefined}><Queue/></SideSheet>}>
       <div style={{padding:'var(--spacing-sm) var(--grid-margin)',display:'flex',flexDirection:'column',gap:'var(--spacing-xs)'}}>
         <SectionHeader title="Recently played" platform="desktop" />
         {PLAYED.map((t) => <ResultRow key={t.title} title={t.title} meta={t.meta} onClick={() => {}} />)}
@@ -77,6 +79,12 @@ function Demo(){
       'Front layer casts --shadow-sm onto the panel',
       'Vertical rule · heading band only · inset --spacing-lg',
       'Horizontal rule · inset --grid-margin · no longer spans the gutter',
+    ]} />
+    <Case mode="over" caption={'sheetLayer="over" — a modal side sheet, where the page beside the panel would be too narrow'} notes={[
+      'Panel · over the whole frame, rail and player too · --shadow-lg',
+      'Scrim · --scrim · a tap or Escape calls onSheetDismiss',
+      'Front layer · keeps its full width · both top corners --radius-lg',
+      'Everything behind the sheet inert · focus held in it',
     ]} />
   </div>;
 }

@@ -34,8 +34,10 @@ does, so its `PageBody` is `width="form"`. The checks refuse any other use of it
 The player's sheets, Now Playing, Queue and Lyrics, are the tabs of Sonora's `NowPlaying`: each
 page is its tab's content alone, never a backdrop, and the shell puts it in the player, open on its
 tab and showing what shell.json's `playing` loads. Under the side panel's width that is a
-full-screen sheet over everything, the bottom bar included; from it, the side panel beside
+full-screen sheet over everything, the bottom bar included; from it, the side panel over
 shell.json's `sheetOver` page, the full-width player bar under the window carrying the transport.
+A layout's `sidePanelSits` says where: `beside` the page, or `over` it as a modal side sheet, its
+scrim behind it, where the page beside it would be too narrow (600 to 1023 px).
 Every page's side panel shows the Now Playing page, the same on each, so that page binds only
 `shell.…`: what is loaded, its sleep timer and its about card are shell.json's `playing`.
 

@@ -40,9 +40,15 @@ data class BackdropShellProps(
      * full height, with a divider down its whole edge and the front layer squared where they meet.
      * `'behind'` puts it below: both front-layer corners stay rounded, the front layer's shadow
      * falls onto the panel, and the panel's rules shrink to a short one in the heading band and an
-     * inset one under it.
+     * inset one under it. `'over'` is Material's modal side sheet, for a window too narrow to keep
+     * the page beside the panel: pass a `SideSheet`, drawn over the whole frame, rail and player
+     * included, on a `--scrim`, the page keeping its full width beneath. While it is open everything
+     * behind it is inert and focus moves into it; Escape or a tap on the scrim calls
+     * `onSheetDismiss`, and focus returns to what held it.
      */
     val sheetLayer: BackdropShellSheetLayer? = null,
+    /** `sheetLayer="over"` only: the scrim tapped or Escape pressed, to close the panel. */
+    val onSheetDismiss: (() -> Unit)? = null,
     /** MiniPlayer, BottomNav, or a fragment of both. Docked across the full width beneath everything. */
     val player: (@Composable () -> Unit)? = null,
     /** Floor for the front-layer column, e.g. `var(--content-min-width)`. */
@@ -73,6 +79,7 @@ data class BackdropShellProps(
 enum class BackdropShellSheetLayer(val value: String) {
     FRONT("front"),
     BEHIND("behind"),
+    OVER("over"),
 }
 
 enum class BackdropShellColumn(val value: String) {

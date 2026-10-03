@@ -3,9 +3,43 @@ const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=
 const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 const COLUMNS = { tiles: 'var(--grid-max-width-tiles)', list: 'var(--grid-max-width-list)', form: 'var(--grid-max-width-form)' };
 
-/** A Material backdrop frame: a 0dp back layer filling the whole background — rail and heading together — with the 1dp front layer and its subheader sitting on top of it, an optional side panel in front of or behind that layer, and the player docked across the bottom. */
-export function BackdropShell({ back, rail, children, subheader, sheet, sheetOpen = false, sheetLayer = 'front', player, contentMinWidth, scroll = true, scrollKey, onProgress, theme, appBar = false, column, platform = 'desktop' }) {
+/** A Material backdrop frame: a 0dp back layer filling the whole background — rail and heading together — with the 1dp front layer and its subheader sitting on top of it, an optional side panel in front of or behind that layer, or over the whole frame as a modal side sheet, and the player docked across the bottom. */
+export function BackdropShell({ back, rail, children, subheader, sheet, sheetOpen = false, sheetLayer = 'front', onSheetDismiss, player, contentMinWidth, scroll = true, scrollKey, onProgress, theme, appBar = false, column, platform = 'desktop' }) {
   const { FrontLayer } = NS();
+  /* `over` is Material's modal side sheet: the page keeps its full width under a scrim, and while
+     the sheet is open everything behind it is inert, so focus stays in the sheet. Escape and a tap
+     on the scrim dismiss it; focus goes back to what held it before. */
+  const over = sheetLayer === 'over';
+  const modal = over && sheetOpen && !!sheet;
+  const dismiss = React.useRef(onSheetDismiss); dismiss.current = onSheetDismiss;
+  const dialog = React.useRef(null);
+  const underneath = React.useRef(null);
+  const docked = React.useRef(null);
+  React.useEffect(() => {
+    if (!modal) return undefined;
+    const behind = [underneath.current, docked.current].filter(Boolean);
+    const before = document.activeElement;
+    behind.forEach((node) => { node.inert = true; });
+    if (dialog.current) dialog.current.focus();
+    /* Tab past either end of the sheet wraps round to its other end, never out of it. */
+    const key = (event) => {
+      if (event.key === 'Escape' && dismiss.current) dismiss.current();
+      if (event.key !== 'Tab' || !dialog.current) return;
+      const stops = [...dialog.current.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')]
+        .filter((node) => !node.disabled && node.getClientRects().length > 0);
+      if (stops.length === 0) { event.preventDefault(); return; }
+      const first = stops[0], last = stops[stops.length - 1];
+      const inside = dialog.current.contains(document.activeElement);
+      if (event.shiftKey && (!inside || document.activeElement === first || document.activeElement === dialog.current)) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && (!inside || document.activeElement === last)) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', key);
+    return () => {
+      document.removeEventListener('keydown', key);
+      behind.forEach((node) => { node.inert = false; });
+      if (before && before.isConnected && typeof before.focus === 'function') before.focus();
+    };
+  }, [modal]);
   /* The back layer's local search comes out as the front layer scrolls, so the shell hands the
      front layer's progress up to it, as FrontLayer hands it down to the subheader. An explicit
      `progress` on the back layer (a still) is left alone. */
@@ -53,11 +87,21 @@ export function BackdropShell({ back, rail, children, subheader, sheet, sheetOpe
       )}
     </div>
   );
+  const panelOver = (
+    <React.Fragment>
+      {modal && (
+        <div aria-hidden="true" data-scrim="true" onClick={() => { if (dismiss.current) dismiss.current(); }}
+          style={sx('position:absolute;inset:0;z-index:3;background:var(--scrim)')} />
+      )}
+      <div ref={dialog} role="dialog" aria-modal={modal ? 'true' : undefined} tabIndex={-1}
+        style={sx('position:absolute;top:0;right:0;bottom:0;z-index:4;display:flex;min-height:0;outline:none' + (modal ? ';box-shadow:var(--shadow-lg)' : ''))}>{sheet}</div>
+    </React.Fragment>
+  );
   return (
-    <div data-theme={theme} style={sx('display:flex;flex-direction:column;height:100%;background:var(--surface-' + (appBar ? 'bg' : 'bg-alt') + ')')}>
+    <div data-theme={theme} style={sx('position:relative;display:flex;flex-direction:column;height:100%;background:var(--surface-' + (appBar ? 'bg' : 'bg-alt') + ')')}>
       {/* The back layer is the frame itself, so the rail is a region of it rather than a column
           beside it — nothing between the two changes colour or elevation. */}
-      <div style={sx('display:flex;flex:1;min-height:0')}>
+      <div ref={underneath} style={sx('display:flex;flex:1;min-height:0')}>
         {rail}
         {/* Raised above the panel so a `behind` panel receives the front layer's shadow instead of
             painting over it. A `front` panel outranks this again with its own z-index. */}
@@ -65,12 +109,13 @@ export function BackdropShell({ back, rail, children, subheader, sheet, sheetOpe
           {back && <div style={sx('flex-shrink:0')}>{centred(backLayer)}</div>}
           {FrontLayer && (
             <FrontLayer subheader={subheader} scroll={scroll} scrollKey={scrollKey} onProgress={track} platform={platform}
-              squareRight={!behind && sheetOpen && !!sheet} flat={appBar}>{centred(children)}</FrontLayer>
+              squareRight={!behind && !over && sheetOpen && !!sheet} flat={appBar}>{centred(children)}</FrontLayer>
           )}
         </div>
-        {sheet && (behind ? panelBehind : panelFront)}
+        {sheet && !over && (behind ? panelBehind : panelFront)}
       </div>
-      <div style={sx('flex-shrink:0;width:100%')}>{player}</div>
+      <div ref={docked} style={sx('flex-shrink:0;width:100%')}>{player}</div>
+      {sheet && over && panelOver}
     </div>
   );
 }

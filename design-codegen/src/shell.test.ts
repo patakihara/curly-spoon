@@ -10,6 +10,7 @@ import {
   layoutAt,
   layoutId,
   panelAlwaysOpen,
+  panelOver,
   readShell,
   shellData,
   type ShellFile,
@@ -145,6 +146,14 @@ describe('the app shell', () => {
     }
     expect(holdsPanel(layoutAt(nav, 1440))).toBe(true);
     expect(panelAlwaysOpen(layoutAt(nav, 1440))).toBe(true);
+  });
+
+  it('[M0.canvas/c] opens the side panel over the page, as a modal side sheet, below 1024 px, and beside it from there', () => {
+    expect(panelOver(layoutAt(nav, 390))).toBe(false);
+    expect(panelOver(layoutAt(nav, 600))).toBe(true);
+    expect(panelOver(layoutAt(nav, 1023))).toBe(true);
+    expect(panelOver(layoutAt(nav, 1024))).toBe(false);
+    expect(panelOver(layoutAt(nav, 1440))).toBe(false);
   });
 
   it('[M0.canvas] gives every rail the hamburger that collapses the labelled rail to the icon rail and back', () => {

@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { APP_NOTE } from './outputs.js';
-import { holdsPanel, layoutId, panelAlwaysOpen, platformOf, PLAYER_TABS } from './shell.js';
+import { holdsPanel, layoutId, panelOver, platformOf, PLAYER_TABS } from './shell.js';
 
 const Id = z.string().regex(/^[a-z][A-Za-z0-9]*$/, 'a camelCase id');
 
@@ -16,7 +16,9 @@ const Destination = z
 
 /**
  * One width band: its navigation, the destinations in the order it shows them, and a side panel
- * holding the player, with when it opens: always, beside every page, or from the mini-player.
+ * holding the player, with when it opens, always or from the mini-player, and where it sits:
+ * beside the page, or over it as a modal side sheet, its scrim behind it, where the page would be
+ * too narrow beside it. A panel open always sits beside the page, never over every page.
  */
 const Layout = z
   .object({
@@ -25,11 +27,20 @@ const Layout = z
     order: z.array(Id),
     sidePanel: z.literal('nowPlaying').optional(),
     sidePanelOpens: z.enum(['always', 'fromMiniPlayer']).optional(),
+    sidePanelSits: z.enum(['beside', 'over']).optional(),
   })
   .strict()
   .refine((l) => (l.sidePanel === undefined) === (l.sidePanelOpens === undefined), {
     message: 'a side panel says when it opens (sidePanelOpens), and only a side panel does',
     path: ['sidePanelOpens'],
+  })
+  .refine((l) => (l.sidePanel === undefined) === (l.sidePanelSits === undefined), {
+    message: 'a side panel says where it sits (sidePanelSits), and only a side panel does',
+    path: ['sidePanelSits'],
+  })
+  .refine((l) => !(l.sidePanelOpens === 'always' && l.sidePanelSits === 'over'), {
+    message: 'a side panel open always sits beside the page (sidePanelSits), not over it',
+    path: ['sidePanelSits'],
   });
 
 /**
@@ -297,7 +308,8 @@ export function generateRoutes(nav: Nav, drawn: Set<string>, over?: string): str
  * rail whose lit item changes in place. It draws the page showing's frame, handed up by its route:
  * the shell's parts at the window's layout, the page's back layer and subheader, and the page's
  * content in the front layer. A player sheet is the side panel beside the page it is drawn over
- * where the layout holds one, and on its own, full screen, where it does not. On desktop the
+ * where the layout holds one, or over that page as a modal side sheet, its scrim closing it, where
+ * the layout says the panel sits over the page; and on its own, full screen, where it holds none. On desktop the
  * panel shows the tab the mini-player's Queue or Lyrics holds, `tabs` naming each tab's sheet
  * page, beside the page showing, which stays; Now Playing, where the layout's own panel already
  * shows it, is that panel. The front layer keeps each location's own scroll, and each location's
@@ -311,7 +323,7 @@ export function generateWebShell(tabs: Readonly<Record<string, string>>): string
     "import { useLocation, useMatches, useOutlet } from 'react-router';",
     "import { InPanel, useShellNav } from '../../shell-nav';",
     "import { BackdropShell } from '../ui/index.js';",
-    "import { PANEL, PLATFORM, useLayout, type PageFrame } from './platform';",
+    "import { PANEL, PANEL_OVER, PLATFORM, useLayout, type PageFrame } from './platform';",
     ...sheets.map(([, name]) => `import ${name} from '../pages/${name}';`),
     '',
     "/** What a page's route hands the shell: its frame, or, for a player sheet, the page it is drawn over. */",
@@ -364,6 +376,8 @@ export function generateWebShell(tabs: Readonly<Record<string, string>>): string
     '      player={chrome.player}',
     '      sheet={held !== undefined ? held : over === undefined ? chrome.sheet : outlet}',
     '      sheetOpen={held !== undefined || (over === undefined ? chrome.sheetOpen : true)}',
+    "      sheetLayer={PANEL_OVER[layout] ? 'over' : 'front'}",
+    '      onSheetDismiss={go.closePanel}',
     '      appBar={chrome.appBar}',
     '      column={chrome.column}',
     '      scrollKey={where}',
@@ -459,9 +473,9 @@ export function generatePlatform(nav: Nav): string {
     ...nav.layouts.map((l) => `  ${layoutId(l)}: ${holdsPanel(l)},`),
     '};',
     '',
-    "/** Whether each layout's side panel is drawn open beside every page, rather than opened from the mini-player. */",
-    'export const PANEL_OPEN: Record<LayoutId, boolean> = {',
-    ...nav.layouts.map((l) => `  ${layoutId(l)}: ${panelAlwaysOpen(l)},`),
+    "/** Whether each layout's side panel opens over the page, a modal side sheet, rather than beside it. */",
+    'export const PANEL_OVER: Record<LayoutId, boolean> = {',
+    ...nav.layouts.map((l) => `  ${layoutId(l)}: ${panelOver(l)},`),
     '};',
     '',
     "/** What a page's back layer and subheader are drawn with, from the shell. */",

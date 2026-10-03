@@ -221,7 +221,7 @@ async function showing(page: Page, tab: string | null) {
   expect(await lit(page)).toBe(tab === 'Queue' || tab === 'Lyrics' ? tab : null);
 }
 
-for (const width of [600, 1024, 1440]) {
+for (const width of [1024, 1440]) {
   test(`[M0.canvas/c] at ${width}px the mini-player's Queue and Lyrics show the player panel at that tab, the page staying as it is`, async ({
     page,
   }) => {
@@ -311,35 +311,120 @@ test("[M0.canvas/c] at 1440px the panel's own tabs, the track block and a player
   await expect(page).toHaveURL('/books');
 });
 
+/**
+ * The width of the page's front layer: the scroller holding `text`, a line of the page's own
+ * content, so a page squeezed beside the panel shows as narrow however its heading wraps.
+ */
+const pageWidth = (page: Page, text: string) =>
+  page
+    .getByText(text, { exact: true })
+    .first()
+    .evaluate((node) => {
+      let scroller = node.parentElement;
+      while (scroller !== null && !/auto|scroll/.test(getComputedStyle(scroller).overflowY))
+        scroller = scroller.parentElement;
+      if (scroller === null) throw new Error(`${node.textContent} is not in the front layer`);
+      return scroller.getBoundingClientRect().width;
+    });
+
+/** The narrowest a page beside the panel may be: a phone's width. */
+const USABLE = 360;
+
+/** The player panel drawn over the page as a modal side sheet. */
+const modalSheet = (page: Page) => page.locator('[role="dialog"][aria-modal="true"]');
+
+/** Whether keyboard focus is inside the modal side sheet. */
+const focusInSheet = (page: Page) =>
+  page.evaluate(
+    () => document.activeElement?.closest('[role="dialog"][aria-modal="true"]') != null,
+  );
+
+test("[M0.canvas/c] at 1024px the mini-player's track block opens Now Playing as the side panel beside the page, the page still usable", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1024, height: 900 });
+  const album = '/music/albums/between-lines-of-light';
+  await page.goto(album, { waitUntil: 'networkidle' });
+  await settle(page);
+  await showing(page, null);
+  await miniPlayer(page, false).click();
+  await showing(page, 'Now playing');
+  await settle(page);
+  await expect(page).toHaveURL(album);
+  await expect(modalSheet(page)).toHaveCount(0);
+  expect(await pageWidth(page, 'Glass Coast')).toBeGreaterThanOrEqual(USABLE);
+
+  // Its own tabs switch within the panel, and the track block brings it back to Now Playing.
+  await page.getByRole('tab', { name: 'Queue' }).click();
+  await showing(page, 'Queue');
+  await expect(page).toHaveURL(album);
+  await miniPlayer(page, false).click();
+  await showing(page, 'Now playing');
+
+  // Its close leaves the page as it was, with no panel.
+  await page.getByRole('button', { name: 'Close Player', exact: true }).click();
+  await showing(page, null);
+  await expect(page).toHaveURL(album);
+  expect(await pageWidth(page, 'Glass Coast')).toBeGreaterThanOrEqual(USABLE);
+});
+
+test('[M0.canvas/c] at 600px the mini-player opens the player panel over the page as a modal side sheet, the page keeping its full width', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 600, height: 900 });
+  const album = '/music/albums/between-lines-of-light';
+  await page.goto(album, { waitUntil: 'networkidle' });
+  await settle(page);
+  await showing(page, null);
+  const full = await pageWidth(page, 'Glass Coast');
+  expect(full).toBeGreaterThanOrEqual(USABLE);
+
+  // The track block: Now Playing over the page, behind a scrim, focus held in the sheet.
+  await miniPlayer(page, false).click();
+  await showing(page, 'Now playing');
+  await settle(page);
+  await expect(modalSheet(page)).toBeVisible();
+  await expect(page.locator('[data-scrim]')).toBeVisible();
+  await expect(page).toHaveURL(album);
+  expect(await pageWidth(page, 'Glass Coast')).toBe(full);
+  expect(await focusInSheet(page)).toBe(true);
+  for (let i = 0; i < 12; i++) {
+    await page.keyboard.press('Tab');
+    expect(await focusInSheet(page)).toBe(true);
+  }
+  await page.keyboard.press('Shift+Tab');
+  expect(await focusInSheet(page)).toBe(true);
+
+  // Its own tabs switch within the sheet; Escape closes it, the page as it was.
+  await page.getByRole('tab', { name: 'Queue' }).click();
+  await showing(page, 'Queue');
+  await page.keyboard.press('Escape');
+  await showing(page, null);
+  await expect(modalSheet(page)).toHaveCount(0);
+  await expect(page).toHaveURL(album);
+  expect(await pageWidth(page, 'Glass Coast')).toBe(full);
+
+  // The mini-player's Lyrics opens it at that tab, which the Panel store keeps over a reload.
+  await page.getByRole('button', { name: 'Lyrics', exact: true }).click();
+  await showing(page, 'Lyrics');
+  await page.reload({ waitUntil: 'networkidle' });
+  await showing(page, 'Lyrics');
+  await expect(modalSheet(page)).toBeVisible();
+
+  // A tap on the scrim closes it, as its own close does.
+  await settle(page);
+  await page.locator('[data-scrim]').click({ position: { x: 40, y: 300 } });
+  await showing(page, null);
+  await miniPlayer(page, false).click();
+  await showing(page, 'Now playing');
+  await page.getByRole('button', { name: 'Close Player', exact: true }).click();
+  await showing(page, null);
+  await expect(page).toHaveURL(album);
+  expect(await pageWidth(page, 'Glass Coast')).toBe(full);
+});
+
 for (const width of [600, 1024]) {
-  test(`[M0.canvas/c] at ${width}px the mini-player's track block opens Now Playing as the side panel beside the page, never full screen`, async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width, height: 900 });
-    const album = '/music/albums/between-lines-of-light';
-    await page.goto(album, { waitUntil: 'networkidle' });
-    await settle(page);
-    await showing(page, null);
-    await miniPlayer(page, false).click();
-    await showing(page, 'Now playing');
-    await expect(page).toHaveURL(album);
-    await heading(page, 'Tears of Ice');
-
-    // Its own tabs switch within the panel, and the track block brings it back to Now Playing.
-    await page.getByRole('tab', { name: 'Queue' }).click();
-    await showing(page, 'Queue');
-    await expect(page).toHaveURL(album);
-    await miniPlayer(page, false).click();
-    await showing(page, 'Now playing');
-
-    // Its close leaves the page as it was, with no panel.
-    await page.getByRole('button', { name: 'Close Player', exact: true }).click();
-    await showing(page, null);
-    await expect(page).toHaveURL(album);
-    await heading(page, 'Tears of Ice');
-  });
-
-  test(`[M0.canvas/c] at ${width}px a player sheet's route shows its tab in the panel, beside the page under it`, async ({
+  test(`[M0.canvas/c] at ${width}px a player sheet's route shows its tab in the panel, over or beside the page under it`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
@@ -349,6 +434,7 @@ for (const width of [600, 1024]) {
     await page.goto('/playing/lyrics', { waitUntil: 'networkidle' });
     await showing(page, 'Lyrics');
     await expect(page).not.toHaveURL(/\/playing/);
+    await expect(modalSheet(page)).toHaveCount(width < 1024 ? 1 : 0);
     const under = page.url();
     await page.reload({ waitUntil: 'networkidle' });
     await showing(page, 'Lyrics');
@@ -357,6 +443,38 @@ for (const width of [600, 1024]) {
     await showing(page, null);
     await expect(page).toHaveURL(under);
   });
+
+  for (const [route, tab] of [
+    ['/playing', 'Now playing'],
+    ['/playing/queue', 'Queue'],
+  ] as const) {
+    test(`[M0.canvas/c] at ${width}px ${route} opened in a fresh tab shows the panel at ${tab} over or beside a usable page`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(route, { waitUntil: 'networkidle' });
+      await showing(page, tab);
+      await expect(page).not.toHaveURL(/\/playing/);
+      await settle(page);
+      const under = page.url();
+      // Browse's home under it: its first shelf heading is a line of the page's own content.
+      const line = 'Jump back in';
+      if (width < 1024) {
+        await expect(modalSheet(page)).toBeVisible();
+        const over = await pageWidth(page, line);
+        await page.keyboard.press('Escape');
+        await showing(page, null);
+        expect(await pageWidth(page, line)).toBe(over);
+      } else {
+        await expect(modalSheet(page)).toHaveCount(0);
+        expect(await pageWidth(page, line)).toBeGreaterThanOrEqual(USABLE);
+        await page.getByRole('button', { name: 'Close Player', exact: true }).click();
+        await showing(page, null);
+      }
+      expect(await pageWidth(page, line)).toBeGreaterThanOrEqual(USABLE);
+      await expect(page).toHaveURL(under);
+    });
+  }
 }
 
 test.fixme("[M0.canvas/c] at 390px the player sheet's tabs switch within the one sheet, with no opening transition", async ({

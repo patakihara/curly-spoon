@@ -332,6 +332,8 @@ export interface ShellNav {
   panel(): string | undefined;
   /** The desktop mini-player's Queue or Lyrics, `tab`. */
   togglePanel(tab: string): void;
+  /** The scrim behind the panel, where it sits over the page, tapped: no panel, the page as it was. */
+  closePanel(): void;
   /** Whether the rail is expanded, at a width whose own default is `given`. */
   rail(given: boolean): boolean;
   /** The rail's hamburger, at a width whose own default is `given`. */
@@ -387,6 +389,7 @@ export function useShellNav(): ShellNav {
       },
       panel: () => tab,
       togglePanel: (to) => panel.toggle(to),
+      closePanel: () => panel.close(),
       rail: (given) => held ?? given,
       toggleRail: (given) => rail.toggle(given),
     }),

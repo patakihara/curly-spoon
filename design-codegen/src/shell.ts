@@ -195,6 +195,9 @@ export const holdsPanel = (layout: Layout) => layout.sidePanel === 'nowPlaying';
 export const panelAlwaysOpen = (layout: Layout) =>
   holdsPanel(layout) && layout.sidePanelOpens === 'always';
 
+/** Whether a layout opens its side panel over the page, a modal side sheet, rather than beside it. */
+export const panelOver = (layout: Layout) => holdsPanel(layout) && layout.sidePanelSits === 'over';
+
 /**
  * The player open on `tab`, what is loaded in shell.json: `content` is the tab's page, a player
  * sheet's own, or Now Playing's in every page's panel; with none, as when Now Playing is not yet

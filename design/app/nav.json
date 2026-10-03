@@ -37,21 +37,24 @@
       "nav": "iconRail",
       "order": ["search", "browse", "music", "books", "podcasts"],
       "sidePanel": "nowPlaying",
-      "sidePanelOpens": "fromMiniPlayer"
+      "sidePanelOpens": "fromMiniPlayer",
+      "sidePanelSits": "over"
     },
     {
       "minWidth": 1024,
       "nav": "labelledRail",
       "order": ["search", "browse", "music", "books", "podcasts"],
       "sidePanel": "nowPlaying",
-      "sidePanelOpens": "fromMiniPlayer"
+      "sidePanelOpens": "fromMiniPlayer",
+      "sidePanelSits": "beside"
     },
     {
       "minWidth": 1240,
       "nav": "labelledRail",
       "order": ["search", "browse", "music", "books", "podcasts"],
       "sidePanel": "nowPlaying",
-      "sidePanelOpens": "always"
+      "sidePanelOpens": "always",
+      "sidePanelSits": "beside"
     }
   ],
   "back": {
