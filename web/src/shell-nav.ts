@@ -8,6 +8,8 @@ import { NAV_MAP } from './generated/nav/stacks';
  * graph's `closePage`, `openDestination` and `openTab` do: ✕ returns to whatever opened a page, or
  * with nothing under it to its destination's home; each destination keeps its own stack; a sheet
  * closes to the page under it; the browser's back goes to the previous view, wherever that was.
+ * The rail and the bottom bar light the destination whose stack holds the page, the one it was
+ * opened from, and the destination the page lights only when nothing is under it.
  * The rail's hamburger collapses the rail and back, and it stays so from page to page. On desktop
  * the player panel's tab is held apart from the page, never in its route: the mini-player's Queue
  * and Lyrics show the panel at that tab, and where the layout holds the player in the panel, the
@@ -155,6 +157,23 @@ export class Stacks {
     const into = this.stack(this.current);
     if (location === this.map.homes[this.current]) into.length = 1;
     else into.push(location);
+  }
+
+  /**
+   * The destination the rail and the bottom bar light at `where`, reached by `arrival`, worked out
+   * as the page renders, before the location is recorded, and changing nothing: a page pushed
+   * joins the destination in use, the one it was opened from; the browser's back or forward, or a
+   * reload, goes to the stack that holds it; and a page with nothing under it, as from a link from
+   * outside the app, lights `fallback`, the destination nav.json says it lights.
+   */
+  lit(where: string, arrival: Arrival, fallback: string): string {
+    if (arrival !== 'POP') return this.current;
+    const others = [...this.stacks.keys()].filter((d) => d !== this.current);
+    for (const destination of [this.current, ...others]) {
+      const stack = this.stacks.get(destination) ?? [this.map.homes[destination]!];
+      if (stack.includes(where)) return destination;
+    }
+    return fallback;
   }
 
   /** Closes the page showing: where to go, its opener, or else `home`'s home with nothing under it. */
@@ -324,6 +343,11 @@ export interface ShellNav {
   close(home: string): void;
   /** The bottom bar's or the rail's item `key`. */
   destination(key: string): void;
+  /**
+   * The destination the rail and the bottom bar light: the one whose stack holds the page, the
+   * opener's, or `fallback`, the one the page lights, when nothing is under it.
+   */
+  lit(fallback: string): string;
   /** A page over this one: the mini-player's Now Playing, in the panel where the layout holds one. */
   open(path: string): void;
   /** The player's tab `tab`. */
@@ -378,6 +402,7 @@ export function useShellNav(): ShellNav {
         const to = stacks.destination(key);
         if (to !== undefined) void navigate(to);
       },
+      lit: (fallback) => stacks.lit(location.pathname + location.search, arrival, fallback),
       open: (path) => {
         const sheet = tabAt(path);
         if (panelled && sheet !== undefined) panel.show(sheet);
@@ -393,6 +418,6 @@ export function useShellNav(): ShellNav {
       rail: (given) => held ?? given,
       toggleRail: (given) => rail.toggle(given),
     }),
-    [navigate, held, tab, inPanel, panelled],
+    [navigate, location, arrival, held, tab, inPanel, panelled],
   );
 }

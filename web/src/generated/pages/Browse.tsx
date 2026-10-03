@@ -410,7 +410,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
     player: (
       <>
         <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="mobile" onOpen={() => go.open('/playing')} />
-        <BottomNav items={shell.nav.w0} active="browse" onChange={(key) => go.destination(key)} />
+        <BottomNav items={shell.nav.w0} active={go.lit('browse')} onChange={(key) => go.destination(key)} />
       </>
     ),
     sheetOpen: false,
@@ -418,7 +418,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   w600: (go) => ({
     appBar: false,
     rail: (
-      <NavRail items={shell.nav.w600} footerItems={shell.footer} active="browse" expanded={go.rail(false)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(false)} />
+      <NavRail items={shell.nav.w600} footerItems={shell.footer} active={go.lit('browse')} expanded={go.rail(false)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(false)} />
     ),
     player: (
       <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} />
@@ -428,7 +428,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   w1024: (go) => ({
     appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="browse" expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />
+      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active={go.lit('browse')} expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />
     ),
     player: (
       <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} />
@@ -438,7 +438,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   w1240: (go) => ({
     appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="browse" expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />
+      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active={go.lit('browse')} expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />
     ),
     player: (
       <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} />

@@ -452,6 +452,8 @@ export function generateKotlinPage(
         throw new Error(`${id}: Android's phone has no rail to collapse`);
       case 'panel':
         throw new Error(`${id}: Android's phone has no player panel to show`);
+      case 'lit':
+        throw new Error(`${id}: Android lights its bottom bar from its own back stack`);
     }
   };
   /** Android's back does what the page's close control does, on a page that closes. */

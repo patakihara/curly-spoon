@@ -78,6 +78,8 @@ function spell(prop: string, action: ShellAction, paths: Map<string, string>) {
       return { [prop]: `() => go.open('${paths.get(action.page)!}')` };
     case 'tab':
       return { [prop]: '(tab) => go.tab(tab)' };
+    case 'lit':
+      return { [prop]: `go.lit('${action.fallback}')` };
     case 'rail':
       return {
         expanded: `go.rail(${action.expanded})`,

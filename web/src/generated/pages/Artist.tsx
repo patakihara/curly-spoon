@@ -375,7 +375,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
     player: (
       <>
         <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="mobile" onOpen={() => go.open('/playing')} />
-        <BottomNav items={shell.nav.w0} active="music" onChange={(key) => go.destination(key)} />
+        <BottomNav items={shell.nav.w0} active={go.lit('music')} onChange={(key) => go.destination(key)} />
       </>
     ),
     sheetOpen: false,
@@ -383,7 +383,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   w600: (go) => ({
     appBar: false,
     rail: (
-      <NavRail items={shell.nav.w600} footerItems={shell.footer} active="music" expanded={go.rail(false)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(false)} />
+      <NavRail items={shell.nav.w600} footerItems={shell.footer} active={go.lit('music')} expanded={go.rail(false)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(false)} />
     ),
     leading: (
       <IconButton icon="close" label="Close" onClick={() => go.close('music')} />
@@ -396,7 +396,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   w1024: (go) => ({
     appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active="music" expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />
+      <NavRail items={shell.nav.w1024} footerItems={shell.footer} active={go.lit('music')} expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />
     ),
     leading: (
       <IconButton icon="close" label="Close" onClick={() => go.close('music')} />
@@ -409,7 +409,7 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
   w1240: (go) => ({
     appBar: false,
     rail: (
-      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active="music" expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />
+      <NavRail items={shell.nav.w1240} footerItems={shell.footer} active={go.lit('music')} expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />
     ),
     leading: (
       <IconButton icon="close" label="Close" onClick={() => go.close('music')} />

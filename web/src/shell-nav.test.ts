@@ -1,3 +1,4 @@
+import { matchPath } from 'react-router';
 import { describe, expect, it } from 'vitest';
 import { Panel, Rail, Stacks, type NavMap, type Store } from './shell-nav';
 
@@ -36,9 +37,14 @@ function app(first: string) {
   const entries = [first];
   const keys: string[] = [];
   let at = 0;
+  /** What the rail lit as the page rendered, before the location was recorded. */
+  let lit = '';
   const seen = (kind: 'PUSH' | 'POP' | 'REPLACE') => {
     if (kind !== 'POP' || keys[at] === undefined) keys[at] = `k${n++}`;
-    stacks.seen(entries[at]!, kind, keys[at]!);
+    const where = entries[at]!;
+    const page = map.pages.find((p) => matchPath(p.path, where.split('?')[0]!) !== null);
+    lit = stacks.lit(where, kind, page?.lights ?? 'browse');
+    stacks.seen(where, kind, keys[at]!);
   };
   seen('POP');
   const push = (path: string) => {
@@ -56,6 +62,9 @@ function app(first: string) {
     },
     get length() {
       return entries.length;
+    },
+    get lit() {
+      return lit;
     },
     open: push,
     close: (home: string) => push(stacks.close(home)),
@@ -268,6 +277,61 @@ describe("the web's navigation stacks", () => {
     ]);
     a.close('music');
     expect(a.showing).toBe('/music');
+  });
+});
+
+describe('the destination the rail and the bottom bar light', () => {
+  it('[M0.canvas] is the one a page was opened from: an album from a Browse card lights Browse', () => {
+    const a = app('/');
+    expect(a.lit).toBe('browse');
+    a.open('/music/albums/tears-of-ice');
+    expect(a.lit).toBe('browse');
+  });
+
+  it("[M0.canvas] is Music for an album opened from Music's list", () => {
+    const a = app('/');
+    a.destination('music');
+    expect(a.lit).toBe('music');
+    a.open('/music/albums/tears-of-ice');
+    expect(a.lit).toBe('music');
+  });
+
+  it("[M0.canvas] follows the browser's back into whichever stack holds the page", () => {
+    const a = app('/');
+    a.open('/music/albums/tears-of-ice');
+    a.destination('music');
+    a.open('/music/albums/shadows-and-sighs');
+    a.destination('browse');
+    expect(a.showing).toBe('/music/albums/tears-of-ice');
+    expect(a.lit).toBe('browse');
+    a.back();
+    expect(a.showing).toBe('/music/albums/shadows-and-sighs');
+    expect(a.lit).toBe('music');
+    a.back();
+    a.back();
+    expect(a.showing).toBe('/music/albums/tears-of-ice');
+    expect(a.lit).toBe('browse');
+  });
+
+  it('[M0.canvas] is the destination the page lights when nothing is under it, as from a link from outside the app', () => {
+    expect(app('/music/albums/tears-of-ice').lit).toBe('music');
+    expect(app('/books').lit).toBe('books');
+  });
+
+  it('[M0.canvas] stays the opener across a reload, as the stacks kept in the session say', () => {
+    const a = app('/');
+    a.open('/music/albums/tears-of-ice');
+    a.reload();
+    expect(a.lit).toBe('browse');
+  });
+
+  it('[M0.canvas] is worked out without changing the stacks, so close still goes to the opener', () => {
+    const a = app('/');
+    a.open('/music/albums/tears-of-ice');
+    for (const arrival of ['PUSH', 'POP', 'REPLACE'] as const)
+      a.stacks.lit('/music/artists/deep-inertia', arrival, 'music');
+    a.close('music');
+    expect(a.showing).toBe('/');
   });
 });
 

@@ -7,6 +7,9 @@
  *   destination it lights (Browse for a page that lights none). A player sheet closes the same
  *   way, to the page under it.
  * - The bottom bar and the rail open the destination tapped, on its own stack as it was left.
+ * - On the web they light the destination whose stack holds the page, the one it was opened from,
+ *   and the destination the page lights only when nothing is under it; a page at the rail's foot
+ *   lights itself. Android follows its back stack in its own generator.
  * - The rail's hamburger collapses the labelled rail to the icon rail and back, and it stays so
  *   from page to page.
  * - The mini-player opens Now Playing, in the player panel where the layout holds one. On desktop
@@ -24,6 +27,8 @@ export type ShellAction =
   | { kind: 'close'; home: string }
   /** The destination the handler is given, by its key, on its own stack. */
   | { kind: 'destination' }
+  /** The destination whose stack holds the page, its opener's; `fallback` with nothing under it. */
+  | { kind: 'lit'; fallback: string }
   /** The page `page`, pushed over this one. */
   | { kind: 'open'; page: string }
   /** The player sheet of the tab the handler is given. */
@@ -79,8 +84,17 @@ export function shellHandlers(
   const parts = shell.chrome;
   if (parts !== undefined) {
     if (close !== undefined) on(parts.leading, 'onClick', close);
-    on(find(parts.player, 'BottomNav'), 'onChange', { kind: 'destination' });
+    const bar = find(parts.player, 'BottomNav');
+    on(bar, 'onChange', { kind: 'destination' });
     on(parts.rail, 'onChange', { kind: 'destination' });
+    if (platform === 'web') {
+      for (const item of [bar, parts.rail]) {
+        const active = item?.kind === 'element' ? item.props['active'] : undefined;
+        const fallback = active?.kind === 'literal' ? active.value : undefined;
+        if (typeof fallback === 'string' && nav.destinations.some((d) => d.id === fallback))
+          on(item, 'active', { kind: 'lit', fallback });
+      }
+    }
     const rail = parts.rail?.kind === 'element' ? parts.rail.props : {};
     if (rail['toggle']?.kind === 'literal' && rail['toggle'].value === true) {
       const expanded = rail['expanded'];

@@ -182,10 +182,10 @@ describe('a generated web page', () => {
       "  w0: (go) => ({\n    appBar: false,\n    leading: (\n      <AccountButton label={shell.account.label} onClick={() => go.open('/settings')} />",
     );
     expect(homeOut).toContain(
-      '<BottomNav items={shell.nav.w0} active="books" onChange={(key) => go.destination(key)} />',
+      "<BottomNav items={shell.nav.w0} active={go.lit('books')} onChange={(key) => go.destination(key)} />",
     );
     expect(homeOut).toContain(
-      '<NavRail items={shell.nav.w600} footerItems={shell.footer} active="books" expanded={go.rail(false)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(false)} />',
+      "<NavRail items={shell.nav.w600} footerItems={shell.footer} active={go.lit('books')} expanded={go.rail(false)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(false)} />",
     );
     expect(homeOut).toContain(
       '<MiniPlayer title={shell.playing.title} artist={shell.playing.artist} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant} sleep={shell.playing.sleep} platform="desktop" />',
@@ -360,7 +360,7 @@ describe("the shell's controls on a web page", () => {
 
   it('[M0.canvas] opens each destination as it was left from the bottom bar and the rail', () => {
     expect(out).toContain(
-      '<BottomNav items={shell.nav.w0} active="books" onChange={(key) => go.destination(key)} />',
+      "<BottomNav items={shell.nav.w0} active={go.lit('books')} onChange={(key) => go.destination(key)} />",
     );
     expect(out).toMatch(/<NavRail [^>]*onChange=\{\(key\) => go.destination\(key\)\}/);
   });

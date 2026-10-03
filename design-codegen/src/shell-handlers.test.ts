@@ -114,6 +114,27 @@ describe("the shell's controls, wired alike on both apps", () => {
     expect(at('album', 1)['NavRail.onChange']).toEqual({ kind: 'destination' });
   });
 
+  it('[M0.canvas] lights on the web the destination whose stack holds the page, the one it lights only as the fallback', () => {
+    expect(at('album', 0)['BottomNav.active']).toEqual({ kind: 'lit', fallback: 'music' });
+    expect(at('album', 1)['NavRail.active']).toEqual({ kind: 'lit', fallback: 'music' });
+    expect(at('browse', 1)['NavRail.active']).toEqual({ kind: 'lit', fallback: 'browse' });
+  });
+
+  it("[M0.canvas] keeps a page at the rail's foot lit as itself, and a page lighting nothing unlit on the bottom bar", () => {
+    expect(at('settings', 1)['NavRail.active']).toBeUndefined();
+    expect(at('settings', 0)['BottomNav.active']).toBeUndefined();
+  });
+
+  it("[M0.canvas] leaves Android's lit item as nav.json says until its own generator follows the back stack", () => {
+    const android = shellHandlers(
+      nav,
+      page('album'),
+      { chrome: chrome(nav, shell, page('album'), nav.layouts[0]!, new Set()) },
+      'android',
+    );
+    expect(wiring(android)['BottomNav.active']).toBeUndefined();
+  });
+
   it('[M0.canvas] opens Now Playing from the mini-player, on the phone and on desktop', () => {
     expect(at('album', 0)['MiniPlayer.onOpen']).toEqual({ kind: 'open', page: 'nowPlaying' });
     expect(at('album', 1)['MiniPlayer.onOpen']).toEqual({ kind: 'open', page: 'nowPlaying' });

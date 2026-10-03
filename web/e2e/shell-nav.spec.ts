@@ -600,3 +600,56 @@ async function settledWidth(element: Locator): Promise<number> {
     return el.getBoundingClientRect().width;
   });
 }
+
+/** The destination the bottom bar or the rail lights: the one item saying it is the page's. */
+const litItem = (page: Page) => page.locator('[role="button"][aria-current="page"]:visible');
+
+const ALBUM = '/music/albums/between-lines-of-light';
+
+for (const { width, height, bar } of [
+  { width: 1440, height: 900, bar: 'rail' },
+  { width: 600, height: 900, bar: 'rail' },
+  { width: 390, height: 844, bar: 'bottom bar' },
+]) {
+  test(`[M0.canvas] at ${width}px the ${bar} lights the destination an album was opened from, and Music with nothing under it`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/', { waitUntil: 'networkidle' });
+    await settle(page);
+    await expect(litItem(page)).toHaveAttribute('aria-label', 'Browse');
+
+    // From a Browse card: Browse stays lit, across a reload too, and tapping it goes home.
+    await item(page, 'Between Lines of Light').click();
+    await expect(page).toHaveURL(ALBUM);
+    await settle(page);
+    await expect(litItem(page)).toHaveAttribute('aria-label', 'Browse');
+    await page.reload({ waitUntil: 'networkidle' });
+    await expect(litItem(page)).toHaveAttribute('aria-label', 'Browse');
+    await goTo(page, 'Browse', '/');
+
+    // From Music's list: Music.
+    await goTo(page, 'Music', '/music');
+    await item(page, 'Between Lines of Light').click();
+    await expect(page).toHaveURL(ALBUM);
+    await settle(page);
+    await expect(litItem(page)).toHaveAttribute('aria-label', 'Music');
+
+    // The browser's back to Browse, then forward into Music's stack: each lights its own.
+    await page.goBack();
+    await page.goBack();
+    await expect(page).toHaveURL('/');
+    await expect(litItem(page)).toHaveAttribute('aria-label', 'Browse');
+    await page.goForward();
+    await page.goForward();
+    await expect(page).toHaveURL(ALBUM);
+    await expect(litItem(page)).toHaveAttribute('aria-label', 'Music');
+
+    // A link from outside the app, in a fresh tab with nothing under the album: Music.
+    const fresh = await page.context().newPage();
+    await fresh.setViewportSize({ width, height });
+    await fresh.goto(ALBUM, { waitUntil: 'networkidle' });
+    await expect(litItem(fresh)).toHaveAttribute('aria-label', 'Music');
+    await fresh.close();
+  });
+}
