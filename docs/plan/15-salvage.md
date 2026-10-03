@@ -5,7 +5,7 @@ part: Delivery
 ---
 ## Keep or rewrite
 
-Each carried-over part is taken from the tag `legacy` when the plan item using it starts, not up front.
+Each carried-over part is taken from the tag `legacy` when its plan item starts.
 
 ::: grid g2
 ::: card

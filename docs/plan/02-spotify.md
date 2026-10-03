@@ -5,7 +5,7 @@ part: Why and what
 ---
 ## What replacing Spotify means
 
-Spotify does seven jobs; each column shows how Auralis does them for one medium, from decided sources.
+Spotify does seven jobs; each column shows how Auralis does them for one medium.
 
 | Job | Audiobooks | Podcasts | Music |
 |---|---|---|---|
@@ -18,5 +18,5 @@ Spotify does seven jobs; each column shows how Auralis does them for one medium,
 | Anywhere | Web and PWA on desktop and phone; Android with background playback, downloads and Android Auto for all three media; progress shared between devices, each device keeping its own queue |  |  |
 
 ::: callout
-This closes the biggest gap to Spotify, **instant play of music you don't own**, as you asked, its costs budgeted for. YouTube keeps changing its internals, so a daily job updates the extractor, gated by a canary (AbleMusicPlayer bumps its pin daily). A broken day shows a clear "streaming unavailable" state; owned and kept music keeps working.
+This closes the biggest gap to Spotify, **instant play of music you don't own**, as you asked, costs budgeted. YouTube keeps changing its internals, so a daily job updates the extractor, gated by a canary (AbleMusicPlayer bumps its pin daily). A broken day shows a clear "streaming unavailable" state; owned and kept music keeps working.
 :::

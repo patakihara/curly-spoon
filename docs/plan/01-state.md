@@ -17,7 +17,7 @@ The old project shipped a lot, but almost none of it ran against your real serve
 | API contract | <span class="pill t-err">code</span> server zod, web `types.ts` (800 lines), Android `ApiModels.kt` (1,141 lines) | Three hand-kept copies of one set of shapes, never checked against each other. |
 | Recommendations | <span class="pill t-req">code</span> ListenBrainz and Open Library are wired in uncached, fanned out on every request (500 albums + 5,000 tracks + 300 books each time); no podcast provider | Slow; nothing external reaches podcasts. |
 | Security | <span class="pill t-err">code</span> `POST /setup` is unauthenticated and can be called again; no admin role; a client-supplied `downloadUrl` is fetched by the server | Anyone reaching the port can point Auralis at their own server and collect passwords. |
-| Process | <span class="pill t-req">docs</span> ROADMAP (6.7k lines) and HANDOVER (2.5k lines) | Features were built with nothing calling them (seven cases), CI badges went green without running tests, parallel sessions collided on `main`, and a blind Android build was never run. |
+| Process | <span class="pill t-req">docs</span> ROADMAP (6.7k lines) and HANDOVER (2.5k lines) | Features were built with nothing calling them (seven cases), CI badges went green without running tests, parallel sessions collided on `main`, and a blind Android build never ran. |
 
 ::: small muted
 The deployed container on mediaserver runs; what it does is broken.

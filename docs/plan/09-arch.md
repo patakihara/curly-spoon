@@ -5,7 +5,7 @@ part: How it's built
 ---
 ## Architecture
 
-The shape you chose stays: **one container, one port**, a TypeScript backend that holds every secret and talks to every service, and two clients on one API. What changes is inside that box.
+The shape you chose stays: **one container, one port**, a TypeScript backend holding every secret and talking to every service, and two clients on one API. What changes is inside.
 
 ::: diagram arch
 
@@ -19,55 +19,55 @@ Features sit on a shared index and store. Only adapters talk to the outside worl
 ::: card
 #### 1 · One schema, generated clients
 
-Server routes are declared with zod; an OpenAPI document is emitted from them. The web client (TypeScript) and Android models (Kotlin, kotlinx.serialization) are **generated** by `pnpm gen` and committed under `generated/` folders; CI regenerates them and fails on any difference, and a change that breaks either fails the build. Nothing is hand-copied. The server parses every response through its zod schema, so clients don't re-check.
+Server routes are declared with zod; an OpenAPI document is emitted from them. The web client (TypeScript) and Android models (Kotlin, kotlinx.serialization) are **generated** by `pnpm gen` and committed under `generated/` folders; CI regenerates them and fails on any difference or on a change that breaks either. Nothing is hand-copied. The server parses every response through its zod schema, so clients don't re-check.
 :::
 
 ::: card
 #### 2 · Screen-shaped endpoints
 
-Every screen gets one call that returns what the screen draws, with fields named for the UI (`status`, `progress`, `reason`, `kind`). Clients never stitch calls together, so web and Android can't drift in how they combine data.
+Every screen gets one call returning what it draws, fields named for the UI (`status`, `progress`, `reason`, `kind`). Clients never stitch calls together, so web and Android can't combine data differently.
 :::
 
 ::: card
 #### 3 · A local index, refreshed in the background
 
-A job mirrors the Audiobookshelf and Jellyfin libraries into SQLite as shared library metadata (ids, titles, creators, genres, external ids), while each person's progress is read with their own token (M1.progress). Browse, search, ownership checks and recommendations read that index, not live fan-out. So screen APIs stay fast on this RAM-starved box.
+A job mirrors the Audiobookshelf and Jellyfin libraries into SQLite as shared metadata (ids, titles, creators, genres, external ids); each person's progress is read with their own token (M1.progress). Browse, search, ownership checks and recommendations read that index, not live fan-out, keeping screen APIs fast on this RAM-starved box.
 :::
 
 ::: card
 #### 4 · Recorded reality, not guesses
 
-Each adapter has a `record` mode that captures real responses from mediaserver (secrets scrubbed) into fixtures. Tests run against those, and a nightly job re-records and diffs them, so upstream drift shows up as a failing diff, not a silent break. Recordings are made from the laptop over Tailscale with Auralis's own API keys, named Auralis in each service and kept in a 0600 file on mediaserver; no other service's key is reused. The Audiobookshelf key belongs to a dedicated user, `auralis`, that is not an admin and can only listen. A second ABS key, from an admin account and kept only on mediaserver, creates a household member's missing ABS account and mints each person's own key at first sign-in; Jellyfin's key (Jellyfin keys are always admin) mints each person's session through Quick Connect. Upstream calls always carry the person's own token, encrypted at rest.
+Each adapter's `record` mode captures real responses from mediaserver, secrets scrubbed, as fixtures. Tests run on those; a nightly re-record turns upstream drift into a failing diff, not a silent break. Recordings are made from the laptop over Tailscale with Auralis's own API keys, named Auralis in each service, kept in a 0600 file on mediaserver; no other service's key is reused. The Audiobookshelf key belongs to `auralis`, a listen-only non-admin user. A second ABS key, an admin's, kept only on mediaserver, creates a member's missing ABS account and mints each person's key at first sign-in; Jellyfin's key (always admin) mints each person's session through Quick Connect. Upstream calls carry the person's own token, encrypted at rest.
 :::
 
 ::: card
 #### 5 · One request pipeline
 
-Books, music and podcasts share one state machine, table and status vocabulary. Only the _search_ and _fulfil_ steps are per medium, and music has two fulfil routes: a single song is kept from YouTube Music, and an album is always torrented in lossless.
+Books, music and podcasts share one state machine, table and status vocabulary. Only _search_ and _fulfil_ are per medium, and music has two fulfil routes: a single song is kept from YouTube Music, and an album is always torrented in lossless.
 :::
 
 ::: card
 #### 6 · Secure by default
 
-Setup claims the admin role once, with a one-time code the server writes to its data folder on first start; after that only an admin can run it. There's an admin role for providers, paths and approvals. Download URLs are only ever taken from the server's own search results, never from the client. Forwarded headers are trusted only from the proxy named in config, and the cookie is `Secure` whenever the request came in over HTTPS, so login works on plain LAN HTTP and behind Caddy. A signed-in write is refused unless its Origin, or failing that its Referer, is `PUBLIC_ORIGIN`, or, when that is unset (as in development), the request's own origin.
+Setup claims the admin role once, with a one-time code the server writes to its data folder on first start; after that only an admin, who owns providers, paths and approvals, can run it. Download URLs come only from the server's own search results, never the client. Forwarded headers are trusted only from the proxy named in config, and the cookie is `Secure` whenever the request came in over HTTPS, so login works on plain LAN HTTP and behind Caddy. A signed-in write is refused unless its Origin, or failing that its Referer, is `PUBLIC_ORIGIN`, or, when that is unset (as in development), the request's own origin.
 :::
 
 ::: card
 #### 7 · The extractor lives in the server
 
-The server runs `yt-dlp`, the equivalent of AbleMusicPlayer's on-phone NewPipeExtractor, inside the one container, so both clients get it and there's one place to update. Per your notes it should **point and forward, not burden the server**: no transcoding, bytes passed straight through, a small capped cache only for streamed tracks (the next one preloaded, a recent one replayed, a song being kept) and cut channel episodes. The same path would let **people without a media server** use Auralis for streaming. Audiobooks always come from Audiobookshelf. The extractor only asks YouTube for audio-only formats, for music and channels alike. A daily job promotes a new extractor only once a canary search-and-resolve passes, else keeps the last that passed; failures show on the admin jobs page. Android may later add NewPipeExtractor as an offline fallback.
+The server runs `yt-dlp`, the counterpart of AbleMusicPlayer's on-phone NewPipeExtractor, in the one container: both clients get it, with one place to update. Per your notes it should **point and forward, not burden the server**: no transcoding, bytes passed straight through, a small capped cache only for streamed tracks (the next one preloaded, a recent one replayed, a song being kept) and cut channel episodes. The same path would let **people without a media server** use Auralis for streaming. Audiobooks always come from Audiobookshelf. It asks YouTube only for audio-only formats, music and channels alike. A daily job promotes a new extractor only once a canary search-and-resolve passes, else keeps the last that passed; failures show on the admin jobs page. Android may later add NewPipeExtractor as an offline fallback.
 :::
 
 ::: card
 #### 8 · Audio only, enforced
 
-There is no video path to switch on by mistake. The extractor adapter's type only has audio-only formats, and a test fails if a recorded response would hand a client anything with a video stream. Web plays everything through audio elements, and lint rejects `<video>` anywhere in the app. Android builds Media3 with no video renderer, so a podcast episode published as video plays its soundtrack. Sonora has no video component, and none gets added.
+No video path exists to switch on by mistake. The extractor adapter's type has only audio-only formats, and a test fails if a recorded response would hand a client a video stream. Web plays everything through audio elements, and lint rejects `<video>` anywhere in the app. Android builds Media3 with no video renderer, so a podcast episode published as video plays its soundtrack. Sonora has no video component, nor gets one.
 :::
 :::
 
 ### The shared domain model
 
-These types carry every screen; getting them right early is most of the work.
+These types carry every screen.
 
 | Type | What it is | Key fields |
 |---|---|---|
