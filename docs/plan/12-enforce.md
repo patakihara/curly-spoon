@@ -39,7 +39,7 @@ The old project drifted from its design and its docs. Each rule here is a check 
 - **Done**: each item's check (a test, a recording, a route that exists) is tagged with its id; done means it passes. Items that are done only when you say so ("you used it for a week") get your sign-off as a git tag.
 - **In progress**: unfinished work lives on a branch whose description is its "where I stopped, what's next" note. It disappears when the branch merges, so nothing piles up.
 - **Next**: the first unfinished item of the current milestone.
-- No progress file exists, so none can grow or go stale.
+- No progress file exists to grow or go stale.
 :::
 :::
 
