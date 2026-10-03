@@ -4,6 +4,7 @@ package net.develivarr.auralis.generated.states
 /** Handler props that are not actions: a control is never disabled for lacking one. */
 val notActions: Set<Pair<String, String>> = setOf(
     "BackdropShell" to "onProgress",
+    "BackdropShell" to "onSheetDismiss",
     "FrontLayer" to "onProgress",
     "ScrollArea" to "onScroll",
     "FrontLayerHeader" to "onSpyChange",

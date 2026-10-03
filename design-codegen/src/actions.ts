@@ -9,6 +9,8 @@ import { GENERATED_NOTE } from './outputs.js';
 /** Handler props that are not actions: a control is never disabled for lacking one. */
 export const NOT_ACTIONS: readonly { component: string; prop: string }[] = [
   { component: 'BackdropShell', prop: 'onProgress' },
+  // The modal side sheet's scrim and Escape close it when given; nothing is drawn disabled without it.
+  { component: 'BackdropShell', prop: 'onSheetDismiss' },
   { component: 'FrontLayer', prop: 'onProgress' },
   { component: 'ScrollArea', prop: 'onScroll' },
   { component: 'FrontLayerHeader', prop: 'onSpyChange' },

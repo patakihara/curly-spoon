@@ -107,9 +107,6 @@ const DRAWN_WHEN: Readonly<Record<string, (props: Props) => boolean>> = {
   'NowPlaying.onMore': phoneOnly,
   'MiniPlayer.onToggleQueue': desktopOnly,
   'MiniPlayer.onToggleLyrics': desktopOnly,
-  // The scrim that dismisses the side panel is drawn only for a panel over the page.
-  'BackdropShell.onSheetDismiss': (props) =>
-    props['sheetLayer']?.kind === 'literal' && props['sheetLayer'].value === 'over',
 };
 
 /** Whether `element` draws the control of `prop`: given, or drawn disabled without it. */
