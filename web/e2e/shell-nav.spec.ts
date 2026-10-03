@@ -118,16 +118,17 @@ for (const size of SIZES) {
     await goTo(page, 'Music', '/music/albums/shadows-and-sighs');
 
     // The mini-player opens Now Playing; its tabs switch sheets; closing returns to the album. On
-    // the desktop it is the panel beside the album, its tab never the page's.
+    // the desktop it is the panel the layout always opens beside the album, with no close, its tab
+    // never the page's.
     const album = '/music/albums/shadows-and-sighs';
     await miniPlayer(page, size.phone).click();
     await expect(page).toHaveURL(size.phone ? '/playing' : album);
     await heading(page, 'Now Playing');
     await page.getByRole('tab', { name: 'Queue' }).click();
     await expect(page).toHaveURL(size.phone ? '/playing/queue' : album);
-    await page
-      .getByRole('button', { name: size.phone ? 'Collapse player' : 'Close Player', exact: true })
-      .click();
+    if (size.phone)
+      await page.getByRole('button', { name: 'Collapse player', exact: true }).click();
+    else await page.getByRole('tab', { name: 'Now playing' }).click();
     await expect(page).toHaveURL(album);
 
     // The browser's back goes to the previous view, wherever that was: the sheet just closed.
@@ -251,9 +252,12 @@ for (const width of [1024, 1440]) {
     await page.reload({ waitUntil: 'networkidle' });
     await showing(page, 'Lyrics');
 
-    // Its close leaves the page too, back to the panel the width shows of its own, if any.
-    await page.getByRole('button', { name: 'Close Player', exact: true }).click();
-    await showing(page, own);
+    // Its close leaves the page too; the panel the width always opens has none.
+    const close = page.getByRole('button', { name: 'Close Player', exact: true });
+    if (own === null) {
+      await close.click();
+      await showing(page, null);
+    } else await expect(close).toHaveCount(0);
     await expect(page).toHaveURL('/books');
   });
 }
@@ -299,16 +303,39 @@ test("[M0.canvas/c] at 1440px the panel's own tabs, the track block and a player
   await showing(page, 'Now playing');
   await expect(page).toHaveURL(under);
 
-  // Lyrics, then a destination switch and a reload, then the close: always the one tab.
+  // Lyrics, then a destination switch and a reload, then Lyrics again: always the one tab.
   await lyrics.click();
   await showing(page, 'Lyrics');
   await goTo(page, 'Books', '/books');
   await showing(page, 'Lyrics');
   await page.reload({ waitUntil: 'networkidle' });
   await showing(page, 'Lyrics');
-  await page.getByRole('button', { name: 'Close Player', exact: true }).click();
+  await lyrics.click();
   await showing(page, 'Now playing');
   await expect(page).toHaveURL('/books');
+});
+
+test('[M0.canvas/c] at 1440px the panel the layout always opens has no close, whatever tab it shows', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/music/albums/between-lines-of-light', { waitUntil: 'networkidle' });
+  await settle(page);
+  const close = page.getByRole('button', { name: 'Close Player', exact: true });
+  await showing(page, 'Now playing');
+  await expect(close).toHaveCount(0);
+  await page.getByRole('tab', { name: 'Queue' }).click();
+  await showing(page, 'Queue');
+  await expect(close).toHaveCount(0);
+  await page.getByRole('tab', { name: 'Now playing' }).click();
+  await showing(page, 'Now playing');
+  await expect(close).toHaveCount(0);
+  await page.getByRole('button', { name: 'Lyrics', exact: true }).click();
+  await showing(page, 'Lyrics');
+  await expect(close).toHaveCount(0);
+  await page.goto('/playing/queue', { waitUntil: 'networkidle' });
+  await showing(page, 'Queue');
+  await expect(close).toHaveCount(0);
 });
 
 /**

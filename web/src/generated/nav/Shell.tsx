@@ -43,7 +43,7 @@ const PANEL_TABS: Record<string, ComponentType> = { now: NowPlayingTab, queue: Q
 export interface PlayerProps {
   /** The tab, in the panel; left out, the matched sheet's, full screen, its route's page the content. */
   tab?: string;
-  /** Whether it has a close: not the panel the layout opens of its own. */
+  /** Whether it has a close: never the panel the layout always opens, whatever its tab. */
   closes?: boolean;
 }
 
@@ -89,7 +89,7 @@ export function Shell() {
       sheet={
         tab === undefined ? undefined : (
           <InPanel.Provider value={true}>
-            <Player tab={tab} closes={over !== undefined || go.panel() !== undefined} />
+            <Player tab={tab} closes={!chrome.sheetOpen} />
           </InPanel.Provider>
         )
       }

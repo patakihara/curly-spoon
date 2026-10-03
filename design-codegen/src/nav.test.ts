@@ -400,9 +400,8 @@ describe('the one web shell', () => {
       "  const tab = platform !== 'desktop' ? undefined : over !== undefined ? TABS[match?.id ?? ''] : (go.panel() ?? (chrome.sheetOpen ? 'now' : undefined));",
     );
     expect(out).toContain('<InPanel.Provider value={true}>');
-    expect(out).toContain(
-      '<Player tab={tab} closes={over !== undefined || go.panel() !== undefined} />',
-    );
+    // The panel the layout always opens has no close, whatever its tab.
+    expect(out).toContain('<Player tab={tab} closes={!chrome.sheetOpen} />');
     expect(out).toContain('      sheetOpen={tab !== undefined}');
   });
 
