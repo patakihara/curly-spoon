@@ -1,5 +1,6 @@
 package net.develivarr.auralis
 
+import android.annotation.SuppressLint
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -7,6 +8,8 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavGraph
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
@@ -61,8 +64,14 @@ class NavBackTest {
     private fun systemBack() = act { composeRule.activity.onBackPressedDispatcher.onBackPressed() }
 
     /** The page showing, by its route's class name, with its ref when it takes one. */
-    private fun showing(): String {
-        val entry = nav.currentBackStackEntry ?: return "nothing"
+    private fun showing(): String = nav.currentBackStackEntry?.let(::named) ?: "nothing"
+
+    /** The pages on the back stack, bottom first, each named as [showing] names it. */
+    @SuppressLint("RestrictedApi")
+    private fun stack(): List<String> =
+        nav.currentBackStack.value.filter { it.destination !is NavGraph }.map(::named)
+
+    private fun named(entry: NavBackStackEntry): String {
         val name = entry.destination.route!!.substringAfterLast("Route.").substringBefore('/').substringBefore('?')
         return when (name) {
             "Album" -> "Album ${entry.toRoute<Route.Album>().ref}"
@@ -165,6 +174,31 @@ class NavBackTest {
         assertEquals("Music", showing())
         systemBack()
         assertEquals("Browse", showing())
+    }
+
+    @Test
+    fun aDeepLinkedPageLeftForItsHomeMakesThatHomeTheBottomEachDestinationOpensOver() {
+        start(Route.Album(ref = "tears-of-ice"))
+        act { openDestination(nav, "music") }
+        assertEquals(listOf("Music"), stack())
+        act { openDestination(nav, "browse") }
+        assertEquals(listOf("Music", "Browse"), stack())
+        act { openDestination(nav, "music") }
+        assertEquals(listOf("Music"), stack())
+        act { openDestination(nav, "browse") }
+        systemBack()
+        assertEquals(listOf("Music"), stack())
+    }
+
+    @Test
+    fun aDeepLinkedPageClosedToItsHomeMakesThatHomeTheBottomEachDestinationOpensOver() {
+        start(Route.Album(ref = "tears-of-ice"))
+        close(Route.Music)
+        act { openDestination(nav, "books") }
+        act { openDestination(nav, "browse") }
+        assertEquals(listOf("Music", "Browse"), stack())
+        act { openDestination(nav, "music") }
+        assertEquals(listOf("Music"), stack())
     }
 
     @Test

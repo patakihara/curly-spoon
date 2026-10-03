@@ -22,6 +22,7 @@ import net.develivarr.auralis.generated.nav.AuralisNavGraph
 import net.develivarr.auralis.generated.nav.PageActions
 import net.develivarr.auralis.generated.nav.Route
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -162,15 +163,20 @@ class ShellNavTest {
         assertTrue(shows("QueuePage"))
         composeRule.mainClock.autoAdvance = false
         composeRule.onAllNodes(hasRole(Role.Tab) and hasText("Lyrics") and hasClickAction()).onFirst().performClick()
-        var frames = 0
-        while (frames < MAX_FRAMES && !(shows("LyricsPage") && !shows("QueuePage"))) {
+        var lyricsFrom: Int? = null
+        for (frame in 0..MAX_FRAMES) {
+            val lyrics = shows("LyricsPage")
+            assertFalse(
+                "Queue and Lyrics both on screen in frame $frame; the tab switches in place, never crossfading",
+                lyrics && shows("QueuePage"),
+            )
+            if (lyrics && lyricsFrom == null) lyricsFrom = frame
             composeRule.mainClock.advanceTimeByFrame()
-            frames++
         }
         composeRule.mainClock.autoAdvance = true
         assertTrue(
-            "Lyrics replaced Queue after $frames frames; a tab switch has no transition",
-            frames <= TAB_SWITCH_FRAMES,
+            "Lyrics showed from frame $lyricsFrom; a tab switch shows the new tab within $TAB_SWITCH_FRAMES",
+            lyricsFrom != null && lyricsFrom <= TAB_SWITCH_FRAMES,
         )
         assertEquals("lyrics", showing())
     }
@@ -198,11 +204,7 @@ class ShellNavTest {
         /** The track the shell's mini-player shows, shell.json's `playing`. */
         const val PLAYING = "Heartbeats in Silence"
 
-        /**
-         * Frames a tab switch may take to settle with no transition: NavHost composes the new back
-         * stack, starts its transition, ends it and drops the old tab, a frame each. The crossfade
-         * it replaces took 47.
-         */
+        /** Frames the new tab may take to show: NavHost composes the new back stack a frame or so on. */
         const val TAB_SWITCH_FRAMES = 4
 
         /** Frames to watch for it, well past the NavHost's 700 ms crossfade. */
