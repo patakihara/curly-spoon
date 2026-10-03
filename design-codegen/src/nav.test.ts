@@ -430,6 +430,16 @@ describe("the web's navigation map, for its stacks", () => {
         title: 'Queue',
       }),
       page({ id: 'downloads', route: '/downloads', params: {}, platforms: ['android'] }),
+      page({
+        id: 'signIn',
+        route: '/sign-in',
+        params: {},
+        lights: null,
+        close: 'none',
+        presentation: 'bare',
+        title: 'Sign in',
+      }),
+      page({ id: 'notFound', route: '*', params: {}, lights: null, title: 'Not found' }),
     ]),
   );
   const out = generateNavMap(tiny, ['settings']);
@@ -440,10 +450,17 @@ describe("the web's navigation map, for its stacks", () => {
     expect(out).toContain('  tabs: {\n    "queue": "/playing/queue"\n  },');
   });
 
-  it('[M0.canvas] gives each web page its path, what it lights and whether it is a sheet', () => {
-    expect(out).toContain("    { path: '/music/albums/:ref', lights: 'music', sheet: false },");
-    expect(out).toContain("    { path: '/playing/queue', lights: null, sheet: true },");
+  it('[M0.canvas] gives each web page its path, what it lights, whether it is a sheet and whether a stack keeps it', () => {
+    expect(out).toContain(
+      "    { path: '/music/albums/:ref', lights: 'music', sheet: false, kept: true },",
+    );
+    expect(out).toContain("    { path: '/playing/queue', lights: null, sheet: true, kept: true },");
     expect(out).not.toContain('downloads');
+  });
+
+  it('[M0.canvas] keeps in no stack a page never meant to be returned to: not found, and the bare pages before the app', () => {
+    expect(out).toContain("    { path: '/sign-in', lights: null, sheet: false, kept: false },");
+    expect(out).toContain("    { path: '*', lights: null, sheet: false, kept: false },");
   });
 });
 

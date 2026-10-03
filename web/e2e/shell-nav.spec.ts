@@ -653,3 +653,64 @@ for (const { width, height, bar } of [
     await fresh.close();
   });
 }
+
+for (const { width, height, bar } of [
+  { width: 1440, height: 900, bar: 'rail' },
+  { width: 390, height: 844, bar: 'bottom bar' },
+]) {
+  test(`[M0.canvas] at ${width}px "Go to Browse" from a page that does not exist lights Browse on the ${bar}, and the destinations act as ever after`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/', { waitUntil: 'networkidle' });
+    await settle(page);
+    await goTo(page, 'Music', '/music');
+    await page.goto('/no-such-page', { waitUntil: 'networkidle' });
+    await settle(page);
+
+    await page.getByRole('button', { name: 'Go to Browse', exact: true }).click();
+    await expect(page).toHaveURL('/');
+    await settle(page);
+    await expect(litItem(page)).toHaveAttribute('aria-label', 'Browse');
+
+    // Music is as it was left, never the page that did not exist, and Browse takes it back home.
+    await goTo(page, 'Music', '/music');
+    await expect(litItem(page)).toHaveAttribute('aria-label', 'Music');
+    await goTo(page, 'Browse', '/');
+    await expect(litItem(page)).toHaveAttribute('aria-label', 'Browse');
+  });
+
+  test(`[M0.canvas] at ${width}px tapping the lit Music on the ${bar} from an album opened from Music goes to Music's home`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/music', { waitUntil: 'networkidle' });
+    await settle(page);
+    await item(page, 'Between Lines of Light').click();
+    await expect(page).toHaveURL(ALBUM);
+    await settle(page);
+    await expect(litItem(page)).toHaveAttribute('aria-label', 'Music');
+    await goTo(page, 'Music', '/music');
+    await expect(litItem(page)).toHaveAttribute('aria-label', 'Music');
+  });
+}
+
+test("[M0.canvas] at 1440px the rail's lit item stays as the page arrived when the hamburger is tapped", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/', { waitUntil: 'networkidle' });
+  await settle(page);
+  await goTo(page, 'Music', '/music');
+  await page.goto('/no-such-page', { waitUntil: 'networkidle' });
+  await settle(page);
+  const before = await litItem(page).getAttribute('aria-label');
+  expect(before).not.toBeNull();
+
+  await page.getByRole('button', { name: 'Collapse rail', exact: true }).click();
+  await settle(page);
+  await expect(litItem(page)).toHaveAttribute('aria-label', before!);
+  await page.getByRole('button', { name: 'Expand rail', exact: true }).click();
+  await settle(page);
+  await expect(litItem(page)).toHaveAttribute('aria-label', before!);
+});

@@ -437,7 +437,9 @@ export function generateWebShell(
 /**
  * `stacks.ts`: what the web's navigation stacks (`web/src/shell-nav.ts`) need of nav.json: each
  * destination's home, the pages at the rail's foot (`foot`, from shell.json), each player tab's
- * sheet, and each web page's path, the destination it lights and whether it is a sheet.
+ * sheet, and each web page's path, the destination it lights, whether it is a sheet and whether a
+ * stack keeps it: not the page for a link to nothing, nor a bare page before the app (sign-in,
+ * setup), none of them ever returned to.
  */
 export function generateNavMap(nav: Nav, foot: string[]): string {
   const pages = nav.pages.filter((p) => p.platforms.includes('web'));
@@ -465,7 +467,7 @@ export function generateNavMap(nav: Nav, foot: string[]): string {
     ...pages.map(
       (p) =>
         `    { path: ${literal(splitRoute(p.route).path)}, lights: ${literal(p.lights)}, ` +
-        `sheet: ${p.presentation === 'sheet'} },`,
+        `sheet: ${p.presentation === 'sheet'}, kept: ${p.route !== '*' && p.presentation !== 'bare'} },`,
     ),
     '  ],',
     '};',

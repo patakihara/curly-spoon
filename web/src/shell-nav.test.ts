@@ -7,16 +7,18 @@ const map: NavMap = {
   foot: { settings: '/settings' },
   tabs: { now: '/playing', queue: '/playing/queue', lyrics: '/playing/lyrics' },
   pages: [
-    { path: '/', lights: 'browse', sheet: false },
-    { path: '/music', lights: 'music', sheet: false },
-    { path: '/music/albums/:ref', lights: 'music', sheet: false },
-    { path: '/music/artists/:ref', lights: 'music', sheet: false },
-    { path: '/books', lights: 'books', sheet: false },
-    { path: '/settings', lights: null, sheet: false },
-    { path: '/playing', lights: null, sheet: true },
-    { path: '/playing/queue', lights: null, sheet: true },
-    { path: '/playing/lyrics', lights: null, sheet: true },
-    { path: '*', lights: null, sheet: false },
+    { path: '/', lights: 'browse', sheet: false, kept: true },
+    { path: '/music', lights: 'music', sheet: false, kept: true },
+    { path: '/music/albums/:ref', lights: 'music', sheet: false, kept: true },
+    { path: '/music/artists/:ref', lights: 'music', sheet: false, kept: true },
+    { path: '/books', lights: 'books', sheet: false, kept: true },
+    { path: '/settings', lights: null, sheet: false, kept: true },
+    { path: '/setup', lights: null, sheet: false, kept: false },
+    { path: '/sign-in', lights: null, sheet: false, kept: false },
+    { path: '/playing', lights: null, sheet: true, kept: true },
+    { path: '/playing/queue', lights: null, sheet: true, kept: true },
+    { path: '/playing/lyrics', lights: null, sheet: true, kept: true },
+    { path: '*', lights: null, sheet: false, kept: false },
   ],
 };
 
@@ -37,14 +39,23 @@ function app(first: string) {
   const entries = [first];
   const keys: string[] = [];
   let at = 0;
-  /** What the rail lit as the page rendered, before the location was recorded. */
-  let lit = '';
+  /**
+   * What the rail lit as the page rendered, before the location was recorded, and as it rendered
+   * again after. A page asks only where its rail follows the stacks, as the generated pages do:
+   * not at the rail's foot nor on a player sheet; a page nothing opens lights Browse.
+   */
+  let lit: string | undefined;
+  let litAfter: string | undefined;
   const seen = (kind: 'PUSH' | 'POP' | 'REPLACE') => {
     if (kind !== 'POP' || keys[at] === undefined) keys[at] = `k${n++}`;
     const where = entries[at]!;
-    const page = map.pages.find((p) => matchPath(p.path, where.split('?')[0]!) !== null);
-    lit = stacks.lit(where, kind, page?.lights ?? 'browse');
-    stacks.seen(where, kind, keys[at]!);
+    const key = keys[at]!;
+    const page = map.pages.find((p) => matchPath(p.path, where.split('?')[0]!) !== null)!;
+    const asks = page.lights !== null || page.path === '*';
+    const fallback = page.lights ?? 'browse';
+    lit = asks ? stacks.lit(where, kind, key, fallback) : undefined;
+    stacks.seen(where, kind, key);
+    litAfter = asks ? stacks.lit(where, kind, key, fallback) : undefined;
   };
   seen('POP');
   const push = (path: string) => {
@@ -65,6 +76,10 @@ function app(first: string) {
     },
     get lit() {
       return lit;
+    },
+    /** What the rail lights when the page renders again on the same location, as on a hamburger tap. */
+    get litAfter() {
+      return litAfter;
     },
     open: push,
     close: (home: string) => push(stacks.close(home)),
@@ -90,6 +105,14 @@ function app(first: string) {
       seen('POP');
     },
     reload: () => {
+      stacks = new Stacks(map, store);
+      seen('POP');
+    },
+    /** `path` typed into the address bar: a new history entry on a fresh load, the session kept. */
+    load: (path: string) => {
+      entries.splice(at + 1, Infinity, path);
+      keys.splice(at + 1, Infinity);
+      at++;
       stacks = new Stacks(map, store);
       seen('POP');
     },
@@ -329,9 +352,122 @@ describe('the destination the rail and the bottom bar light', () => {
     const a = app('/');
     a.open('/music/albums/tears-of-ice');
     for (const arrival of ['PUSH', 'POP', 'REPLACE'] as const)
-      a.stacks.lit('/music/artists/deep-inertia', arrival, 'music');
+      a.stacks.lit('/music/artists/deep-inertia', arrival, `elsewhere-${arrival}`, 'music');
     a.close('music');
     expect(a.showing).toBe('/');
+  });
+
+  it('[M0.canvas] is the destination whose home a link goes to, from wherever it is followed, so tapping it adds nothing and the others act as ever', () => {
+    const a = app('/');
+    a.destination('music');
+    a.open('/no-such-page');
+    expect(a.lit).toBe('music');
+    a.open('/');
+    expect(a.lit).toBe('browse');
+    a.destination('browse');
+    expect(a.showing).toBe('/');
+    a.destination('music');
+    expect(a.showing).toBe('/music');
+    expect(a.lit).toBe('music');
+    a.destination('browse');
+    expect(a.showing).toBe('/');
+    expect(a.lit).toBe('browse');
+  });
+
+  it('[M0.canvas] is Browse once setup is finished, whichever destination was in use before it', () => {
+    const a = app('/');
+    a.destination('music');
+    a.open('/setup');
+    a.open('/');
+    expect(a.lit).toBe('browse');
+    a.destination('music');
+    expect(a.showing).toBe('/music');
+  });
+
+  it('[M0.canvas] is decided once as a page arrives, the same however often the page renders again', () => {
+    const typed = app('/');
+    typed.destination('music');
+    typed.load('/no-such-page');
+    expect(typed.litAfter).toBe(typed.lit);
+
+    const pushed = app('/');
+    pushed.destination('music');
+    pushed.open('/no-such-page');
+    expect(pushed.litAfter).toBe(pushed.lit);
+
+    const steps = leaveMusicOnAnAlbum();
+    for (const step of [
+      () => steps.destination('books'),
+      () => steps.back(),
+      () => steps.forward(),
+      () => steps.reload(),
+      () => steps.open('/'),
+      () => steps.back(),
+    ]) {
+      step();
+      expect(steps.litAfter).toBe(steps.lit);
+    }
+  });
+
+  it('[M0.canvas] goes to its home when tapped from any page of its own that is not its home, Music as Browse', () => {
+    const music = app('/');
+    music.destination('music');
+    music.open('/music/albums/tears-of-ice');
+    expect(music.lit).toBe('music');
+    music.destination('music');
+    expect(music.showing).toBe('/music');
+
+    const deep = leaveMusicOnAnAlbum();
+    deep.destination('music');
+    expect(deep.showing).toBe('/music');
+    deep.close('music');
+    expect(deep.showing).toBe('/music');
+
+    const browse = app('/');
+    browse.open('/music/albums/tears-of-ice');
+    browse.open('/music/artists/deep-inertia');
+    expect(browse.lit).toBe('browse');
+    browse.destination('browse');
+    expect(browse.showing).toBe('/');
+  });
+});
+
+describe("a player sheet's route reached from outside the app", () => {
+  it('[M0.canvas] gives way to the home in use, whatever the page drawn under it lights', () => {
+    const stacks = new Stacks(map);
+    expect(stacks.lit('/playing', 'POP', 'k0', 'music')).toBe('browse');
+    stacks.seen('/playing', 'POP', 'k0');
+    expect(stacks.underSheet()).toBe('/');
+  });
+});
+
+describe('a page never meant to be returned to', () => {
+  it('[M0.canvas] is kept in no stack: a destination tapped later never reopens a page that does not exist', () => {
+    const a = app('/');
+    a.destination('music');
+    a.open('/no-such-page');
+    a.destination('browse');
+    a.destination('music');
+    expect(a.showing).toBe('/music');
+  });
+
+  it('[M0.canvas] still closes to the page that opened it', () => {
+    const a = app('/');
+    a.destination('music');
+    a.open('/music/albums/tears-of-ice');
+    a.open('/no-such-page');
+    a.close('browse');
+    expect(a.showing).toBe('/music/albums/tears-of-ice');
+    a.close('music');
+    expect(a.showing).toBe('/music');
+  });
+
+  it('[M0.canvas] is kept in no stack when signing in, so a destination tapped after goes to its own page', () => {
+    const a = app('/');
+    a.destination('books');
+    a.open('/sign-in');
+    a.destination('books');
+    expect(a.showing).toBe('/books');
   });
 });
 

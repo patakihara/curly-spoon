@@ -65,8 +65,11 @@ export interface NavMap {
   foot: Readonly<Record<string, string>>;
   /** Each of the player's tabs, by key, to its sheet. */
   tabs: Readonly<Record<string, string>>;
-  /** Each web page: its route path, the destination it lights, and whether it is a player sheet. */
-  pages: readonly { path: string; lights: string | null; sheet: boolean }[];
+  /**
+   * Each web page: its route path, the destination it lights, whether it is a player sheet, and
+   * whether a stack keeps it, as it keeps no page never returned to (not found, sign-in, setup).
+   */
+  pages: readonly { path: string; lights: string | null; sheet: boolean; kept: boolean }[];
 }
 
 /** How the router reached a location, as `useNavigationType` says. */
@@ -79,6 +82,10 @@ export class Stacks {
   private last: string | undefined;
   /** The location showing, as last seen. */
   private showing: string | undefined;
+  /** The destination decided for the latest arrival, by its history entry's key. */
+  private decided: { key: string; destination: string } | undefined;
+  /** The key of the arrival whose page lit the rail by the stacks, as `lit` was asked for it. */
+  private asked: string | undefined;
 
   /** Stacks for `map`, carried on from what `store` holds of an earlier load of this tab. */
   constructor(
@@ -114,10 +121,13 @@ export class Stacks {
     return stack;
   }
 
+  /** The page at `location`: the one its path matches, or else the page for a link to nothing. */
   private page(location: string) {
     const pathname = location.split('?')[0]!;
-    return this.map.pages.find(
-      (p) => p.path !== '*' && matchPath({ path: p.path, end: true }, pathname) !== null,
+    return (
+      this.map.pages.find(
+        (p) => p.path !== '*' && matchPath({ path: p.path, end: true }, pathname) !== null,
+      ) ?? this.map.pages.find((p) => p.path === '*')
     );
   }
 
@@ -125,61 +135,72 @@ export class Stacks {
   seen(location: string, arrival: Arrival, key: string): void {
     if (key === this.last) return;
     this.last = key;
+    const destination = this.decide(location, arrival, key, this.page(location)?.lights);
+    const under = this.showing;
     this.showing = location;
-    this.record(location, arrival);
+    this.record(location, arrival, destination, under);
     this.save();
   }
 
-  private record(location: string, arrival: Arrival): void {
-    const stack = this.stack(this.current);
+  /**
+   * The destination an arrival at `location` belongs to, decided once for its history entry `key`
+   * and the same however often it is asked: a destination's home is that destination's, from
+   * wherever it is reached; a page pushed or replaced joins the destination in use, the one it was
+   * opened from; the browser's back or forward, or a reload, goes to the stack that holds it; and
+   * a page with nothing under it, as from a link from outside the app, to `fallback`, or else to
+   * the destination in use.
+   */
+  private decide(
+    location: string,
+    arrival: Arrival,
+    key: string,
+    fallback: string | null | undefined,
+  ): string {
+    if (this.decided?.key === key) return this.decided.destination;
+    const destination =
+      Object.keys(this.map.homes).find((d) => this.map.homes[d] === location) ??
+      (arrival === 'POP'
+        ? [this.current, ...this.stacks.keys()].find((d) => this.stacks.get(d)?.includes(location))
+        : this.current) ??
+      (fallback != null && this.map.homes[fallback] !== undefined ? fallback : this.current);
+    this.decided = { key, destination };
+    return destination;
+  }
+
+  /** Files `location` into the stack of `destination`, now the one in use; `under` showed before. */
+  private record(location: string, arrival: Arrival, destination: string, under?: string): void {
+    this.current = destination;
+    if (this.page(location)?.kept === false) return;
+    const stack = this.stack(destination);
+    if (location === this.map.homes[destination]) {
+      stack.length = 1;
+      return;
+    }
     if (stack.at(-1) === location) return;
-    if (arrival === 'PUSH') {
-      stack.push(location);
-      return;
-    }
-    if (arrival === 'REPLACE') {
-      stack[stack.length - 1] = location;
-      return;
-    }
-    // The browser's back or forward, or the first load: back into a stack where it was left.
-    const others = [...this.stacks.keys()].filter((d) => d !== this.current);
-    for (const destination of [this.current, ...others]) {
-      const other = this.stack(destination);
-      const at = other.lastIndexOf(location);
-      if (at >= 0) {
-        this.current = destination;
-        other.length = at + 1;
-        return;
-      }
-    }
-    const lights = this.page(location)?.lights;
-    if (lights != null && this.map.homes[lights] !== undefined) this.current = lights;
-    const into = this.stack(this.current);
-    if (location === this.map.homes[this.current]) into.length = 1;
-    else into.push(location);
+    const at = stack.lastIndexOf(location);
+    if (arrival === 'REPLACE' && stack.at(-1) === under) stack[stack.length - 1] = location;
+    else if (arrival === 'POP' && at >= 0) stack.length = at + 1;
+    else stack.push(location);
   }
 
   /**
-   * The destination the rail and the bottom bar light at `where`, reached by `arrival`, worked out
-   * as the page renders, before the location is recorded, and changing nothing: a page pushed
-   * joins the destination in use, the one it was opened from; the browser's back or forward, or a
-   * reload, goes to the stack that holds it; and a page with nothing under it, as from a link from
-   * outside the app, lights `fallback`, the destination nav.json says it lights.
+   * The destination the rail and the bottom bar light at `where`, reached by `arrival` as history
+   * entry `key`: the one that arrival is filed under, decided as the page first renders, before
+   * the location is recorded, and never changing for that arrival. `fallback` is the destination
+   * the page lights when nothing is under it, as from a link from outside the app; a player
+   * sheet's location is not the asking page's own, so there it goes to the destination in use.
    */
-  lit(where: string, arrival: Arrival, fallback: string): string {
-    if (arrival !== 'POP') return this.current;
-    const others = [...this.stacks.keys()].filter((d) => d !== this.current);
-    for (const destination of [this.current, ...others]) {
-      const stack = this.stacks.get(destination) ?? [this.map.homes[destination]!];
-      if (stack.includes(where)) return destination;
-    }
-    return fallback;
+  lit(where: string, arrival: Arrival, key: string, fallback: string): string {
+    this.asked = key;
+    return this.decide(where, arrival, key, this.page(where)?.sheet === true ? null : fallback);
   }
 
   /** Closes the page showing: where to go, its opener, or else `home`'s home with nothing under it. */
   close(home: string): string {
     const stack = this.stack(this.current);
-    if (stack.length > 1) {
+    if (this.showing !== undefined && this.page(this.showing)?.kept === false) {
+      // A page no stack keeps closes to the page it was opened over, the top of the stack.
+    } else if (stack.length > 1) {
       stack.pop();
     } else {
       this.current = home;
@@ -190,19 +211,20 @@ export class Stacks {
   }
 
   /**
-   * The destination tapped, as it was left; a page at the rail's foot opens over this one. None
-   * when that is the location showing, so tapping it again adds nothing to the browser's history.
-   * The page showing is left behind when it lights another destination or none, so the tap is
-   * never a dead one: Settings over Browse, a page opened from a link, an album from a Browse card.
+   * The destination tapped: its home when it is the one lit, from any page of its own; any other
+   * as it was left; a page at the rail's foot opens over this one. None when that is the location
+   * showing, so tapping it again adds nothing to the browser's history. A page the rail lights
+   * itself for, as Settings over Browse, is left behind, so the tap is never a dead one.
    */
   destination(key: string): string | undefined {
     let to = this.map.foot[key];
     if (to === undefined) {
       if (this.map.homes[key] === undefined) throw new Error(`${key} is not a destination`);
+      const lit = this.asked === this.last ? this.decided?.destination : undefined;
       this.current = key;
       const stack = this.stack(key);
-      const top = stack.at(-1)!;
-      if (stack.length > 1 && top === this.showing && this.page(top)?.lights !== key) stack.pop();
+      if (key === lit) stack.length = 1;
+      else if (stack.length > 1 && stack.at(-1) === this.showing) stack.pop();
       this.save();
       to = stack.at(-1)!;
     }
@@ -402,7 +424,8 @@ export function useShellNav(): ShellNav {
         const to = stacks.destination(key);
         if (to !== undefined) void navigate(to);
       },
-      lit: (fallback) => stacks.lit(location.pathname + location.search, arrival, fallback),
+      lit: (fallback) =>
+        stacks.lit(location.pathname + location.search, arrival, location.key, fallback),
       open: (path) => {
         const sheet = tabAt(path);
         if (panelled && sheet !== undefined) panel.show(sheet);
