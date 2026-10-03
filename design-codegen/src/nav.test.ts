@@ -324,7 +324,7 @@ describe('the one web shell', () => {
 
   it('[M0.canvas/c] draws a player sheet beside the page under it where the panel holds it, and alone elsewhere', () => {
     expect(out).toContain(
-      '  const frame = over === undefined ? handle?.frame : PANEL_OPEN[layout] ? over.frame : undefined;',
+      '  const frame = over === undefined ? handle?.frame : PANEL[layout] ? over.frame : undefined;',
     );
     expect(out).toContain('  if (frame === undefined) return outlet;');
     expect(out).toContain(

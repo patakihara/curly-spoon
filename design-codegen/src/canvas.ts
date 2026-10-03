@@ -4,7 +4,8 @@
  * `screens.dc.html`, from nav.json). Each page of nav.json gets a canvas page of its own: its
  * structure (`<id>.structure.dc.html`), then, once drawn, a phone and a desktop `.dc.html`
  * artboard mounting Sonora's real components from the installed copy under `project/ds/<folder>/`,
- * a page with a local search adding a phone with it out and one with a menu a phone with it open.
+ * a page with a local search adding a phone with it out, one with a menu a phone with it open, and
+ * a player sheet a 1024 px board, the side panel the mini-player opens there.
  * `canvas.json` is the index, recording the pages and which Sonora publish is installed. Build
  * output only (`pnpm canvas:build`), never committed.
  *
@@ -53,6 +54,8 @@ export const CANVAS_CREATED_AT = '2026-09-27T14:27:33Z';
 export const CANVAS_BOARDS = {
   phone: { width: 390, height: 844, label: 'phone' },
   desktop: { width: 1440, height: 900, label: 'desktop' },
+  /** A player sheet's third board: the side panel the mini-player opens below 1240 px. */
+  tablet: { width: 1024, height: 768, label: '1024 px' },
 } as const;
 const GAP_X = 80;
 /** Where each canvas page's `title1` note sits, above its row's top edge. */
@@ -510,7 +513,7 @@ export function generateCanvas(app: App, sonora: SonoraInstall, now: Date): Map<
     },
   ]);
 
-  const { phone, desktop } = CANVAS_BOARDS;
+  const { phone, desktop, tablet } = CANVAS_BOARDS;
   for (const entry of navPages) {
     const structure = generatePageStructure(app.nav, entry, drawn, head);
     const items: Parameters<typeof row>[1] = [
@@ -532,6 +535,10 @@ export function generateCanvas(app: App, sonora: SonoraInstall, now: Date): Map<
       const variants = [
         { board: phone, searching: false, kind: phone.label, label: phone.label },
         { board: desktop, searching: false, kind: desktop.label, label: desktop.label },
+        // A player sheet also gets 1024 px, where the mini-player opens it as the side panel.
+        ...(entry.presentation === 'sheet'
+          ? [{ board: tablet, searching: false, kind: 'tablet', label: '1024 px, panel open' }]
+          : []),
         ...(searchable
           ? [{ board: phone, searching: true, kind: 'phone-search', label: 'phone, searching' }]
           : []),

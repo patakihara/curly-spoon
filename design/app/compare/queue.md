@@ -7,12 +7,13 @@ spotify: [S36, S37]
 
 # Queue
 
-Canvas renders: `queue/canvas-phone.png` (390 px, the sheet on its Queue tab) and
+Canvas renders: `queue/canvas-phone.png` (390 px, the sheet on its Queue tab),
 `queue/canvas-desktop.png` (1440 px, the side panel on its Queue tab, beside Browse, where a fresh
-load of its route lands). Sonora renders: `sonora/kit-mobile-queue.png` and
-`sonora/kit-desktop-queue.png`. Also looked at: Spotify's S36 (the queue as a sheet over the player:
-"Queue", "Playing If Books Could Kill", Edit, the playing row in accent, drag handles, Timer and
-Speed at its foot) and S37 (the same at full height).
+load of its route lands) and `queue/canvas-tablet.png` (1024 px, the side panel the mini-player's
+track block opens there, on its Queue tab, beside Browse; never full screen). Sonora renders:
+`sonora/kit-mobile-queue.png` and `sonora/kit-desktop-queue.png`. Also looked at: Spotify's S36 (the
+queue as a sheet over the player: "Queue", "Playing If Books Could Kill", Edit, the playing row in
+accent, drag handles, Timer and Speed at its foot) and S37 (the same at full height).
 
 ## What the sources show
 

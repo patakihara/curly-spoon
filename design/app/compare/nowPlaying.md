@@ -7,14 +7,15 @@ spotify: [S33, S34, S38, S39, S40, S41, S42]
 
 # Now Playing
 
-Canvas renders: `nowPlaying/canvas-phone.png` (390 px, the full-screen sheet) and
+Canvas renders: `nowPlaying/canvas-phone.png` (390 px, the full-screen sheet),
 `nowPlaying/canvas-desktop.png` (1440 px, the side panel on its Now playing tab, beside Browse,
-where a fresh load of its route lands). Sonora renders: `sonora/kit-mobile-nowplaying.png`, the
-mobile kit's player, and `sonora/card-now-playing-page.png`, the Now Playing card, which draws the
-new player: phones on each tab, music and spoken, and the desktop panel over the player bar. Also
-looked at: Spotify's S33 (a podcast: collapse, "Playing from Podcast", art, title, the spoken
-transport of speed, skip 15, play, skip 15, sleep) and S40 (the lyrics card and About the artist
-below the transport).
+where a fresh load of its route lands) and `nowPlaying/canvas-tablet.png` (1024 px, the side panel
+the mini-player's track block opens there, on its Now playing tab, beside Browse; never full
+screen). Sonora renders: `sonora/kit-mobile-nowplaying.png`, the mobile kit's player, and
+`sonora/card-now-playing-page.png`, the Now Playing card, which draws the new player: phones on each
+tab, music and spoken, and the desktop panel over the player bar. Also looked at: Spotify's S33 (a
+podcast: collapse, "Playing from Podcast", art, title, the spoken transport of speed, skip 15, play,
+skip 15, sleep) and S40 (the lyrics card and About the artist below the transport).
 
 ## What the sources show
 

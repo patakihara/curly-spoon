@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { matchPath, useLocation, useNavigate, useNavigationType } from 'react-router';
-import { PANEL_OPEN, useLayout } from './generated/nav/platform';
+import { PANEL, useLayout } from './generated/nav/platform';
 import { NAV_MAP } from './generated/nav/stacks';
 
 /**
@@ -10,7 +10,7 @@ import { NAV_MAP } from './generated/nav/stacks';
  * closes to the page under it; the browser's back goes to the previous view, wherever that was.
  * The rail's hamburger collapses the rail and back, and it stays so from page to page. On desktop
  * the player panel's tab is held apart from the page, never in its route: the mini-player's Queue
- * and Lyrics show the panel at that tab, and where the layout holds a panel of its own, the
+ * and Lyrics show the panel at that tab, and where the layout holds the player in the panel, the
  * mini-player's track block and the panel's tabs set it too, and a player sheet's route shows its
  * tab in the panel beside the page under it. The stacks, the rail and the panel are kept in the
  * tab's session storage, so a reload carries on where it was. The generated pages wire the
@@ -354,7 +354,7 @@ export function useShellNav(): ShellNav {
     () => undefined,
   );
   const inPanel = useContext(InPanel);
-  const panelled = PANEL_OPEN[useLayout()];
+  const panelled = PANEL[useLayout()];
   useEffect(() => {
     const where = location.pathname + location.search;
     stacks.seen(where, arrival, location.key);

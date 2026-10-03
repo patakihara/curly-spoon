@@ -3,7 +3,7 @@ import { cloneElement, isValidElement, type ComponentType, type ReactNode } from
 import { useLocation, useMatches, useOutlet } from 'react-router';
 import { InPanel, useShellNav } from '../../shell-nav';
 import { BackdropShell } from '../ui/index.js';
-import { PANEL_OPEN, PLATFORM, useLayout, type PageFrame } from './platform';
+import { PANEL, PLATFORM, useLayout, type PageFrame } from './platform';
 import NowPlaying from '../pages/NowPlaying';
 import Queue from '../pages/Queue';
 import Lyrics from '../pages/Lyrics';
@@ -33,7 +33,7 @@ export function Shell() {
   const outlet = useOutlet();
   const handle = useMatches().at(-1)?.handle as ShellHandle | undefined;
   const over = handle?.over;
-  const frame = over === undefined ? handle?.frame : PANEL_OPEN[layout] ? over.frame : undefined;
+  const frame = over === undefined ? handle?.frame : PANEL[layout] ? over.frame : undefined;
   if (frame === undefined) return outlet;
   const chrome = frame.chrome[layout](go);
   const platform = PLATFORM[layout];

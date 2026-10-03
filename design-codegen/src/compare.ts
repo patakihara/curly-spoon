@@ -1,8 +1,8 @@
 /**
  * The visual comparison of each canvas page, `design/app/compare/<id>.md` beside
- * `compare/<id>/canvas-{phone,desktop}.png`: the page's renders set against the Sonora renders it
- * names, committed images under `compare/sonora/` (the UI kit screens and showcase cards), with
- * the differences listed and the hash of the page it was made from. A Spotify screen is only ever
+ * `compare/<id>/canvas-{phone,desktop}.png` (a player sheet's also `canvas-tablet.png`, at 1024 px):
+ * the page's renders set against the Sonora renders it names, committed images under
+ * `compare/sonora/` (the UI kit screens and showcase cards), with the differences listed and the hash of the page it was made from. A Spotify screen is only ever
  * consulted for intent where Sonora lacks something, and is never compared against.
  */
 import { createHash } from 'node:crypto';
@@ -191,6 +191,8 @@ export function checkComparison(appDir: string, sonoraDir: string, page: NavPage
   const images = [
     `${page.id}/canvas-phone.png`,
     `${page.id}/canvas-desktop.png`,
+    // A player sheet is also shot at 1024 px, the side panel the mini-player opens there.
+    ...(page.presentation === 'sheet' ? [`${page.id}/canvas-tablet.png`] : []),
     ...page.sources.sonora.flatMap((s) => sonoraShot(s) ?? []),
   ];
   for (const rel of images) {

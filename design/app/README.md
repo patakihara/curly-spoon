@@ -16,7 +16,9 @@ Now Playing panel. A local search comes out as the front layer scrolls, so on th
 with one gets a third artboard, a phone with it out (`phone-search`). A page's menus start closed
 in the apps, opening from their button and closing on the scrim or an item; a page never draws
 one `open`, and the check refuses it. On the canvas a page with a menu gets another phone
-artboard with its first menu open (`phone-menu`).
+artboard with its first menu open (`phone-menu`). A player sheet gets a 1024 px artboard
+(`tablet`), the side panel the mini-player's track block opens there, beside the page under it, and
+its comparison a 1024 px render, `canvas-tablet.png`.
 
 On desktop the rail lights, for a page that is not a destination, the destination its `lights`
 names; with none, Settings for the page at the rail's foot, or else what lights the page that opens

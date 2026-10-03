@@ -7,12 +7,14 @@ spotify: [S40, S43]
 
 # Lyrics
 
-Canvas renders: `lyrics/canvas-phone.png` (390 px, the sheet on its Lyrics tab) and
+Canvas renders: `lyrics/canvas-phone.png` (390 px, the sheet on its Lyrics tab),
 `lyrics/canvas-desktop.png` (1440 px, the side panel on its Lyrics tab, beside Browse, where a fresh
-load of its route lands). Sonora renders: `sonora/kit-mobile-lyrics.png`,
-`sonora/kit-desktop-lyrics.png` and `sonora/card-now-playing-page.png`. Also looked at: Spotify's
-S43 (lyrics full page: collapse, song and artist, the lines at one size, share and menu, seek and
-play docked below) and S40 (the lyrics card inside the player, expand in its top corner).
+load of its route lands) and `lyrics/canvas-tablet.png` (1024 px, the side panel the mini-player's
+track block opens there, on its Lyrics tab, beside Browse; never full screen). Sonora renders:
+`sonora/kit-mobile-lyrics.png`, `sonora/kit-desktop-lyrics.png` and
+`sonora/card-now-playing-page.png`. Also looked at: Spotify's S43 (lyrics full page: collapse, song
+and artist, the lines at one size, share and menu, seek and play docked below) and S40 (the lyrics
+card inside the player, expand in its top corner).
 
 ## What the sources show
 

@@ -111,22 +111,24 @@ describe('the shell around each drawn page', () => {
     const id = idOf(file);
     const tab = { nowPlaying: 'Now playing', queue: 'Queue', lyrics: 'Lyrics' }[id];
 
-    it(`[M0.canvas] ${id} under 1240 px is a full-screen sheet that covers the bottom bar and the rail`, async () => {
-      for (const layout of ['w0', 'w600', 'w1024'] as const) {
-        const html = await render(file, layout);
-        expect(html, layout).toMatch(/^<div aria-hidden="false" style="position:absolute;inset:0;/);
-        // The bar's two ends, Browse and Search; the queue's own switch says Music and Spoken.
-        for (const label of ['Browse', 'Search']) expect(html, layout).not.toContain(`>${label}<`);
-        expect(html, layout).not.toContain('Collapse rail');
-        expect(html, layout).toContain('aria-label="Collapse player"');
-      }
+    it(`[M0.canvas] ${id} on the phone is a full-screen sheet that covers the bottom bar`, async () => {
+      const html = await render(file, 'w0');
+      expect(html).toMatch(/^<div aria-hidden="false" style="position:absolute;inset:0;/);
+      // The bar's two ends, Browse and Search; the queue's own switch says Music and Spoken.
+      for (const label of ['Browse', 'Search']) expect(html).not.toContain(`>${label}<`);
+      expect(html).toContain('aria-label="Collapse player"');
     });
 
-    it(`[M0.canvas] ${id} from 1240 px is the side panel, open on its own tab beside the page it is drawn over`, async () => {
-      const html = await render(file, 'w1240');
-      expect(frame(html)).toBe('--surface-bg-alt');
-      expect(html).toContain('aria-label="Collapse rail"');
-      expect(html).toMatch(new RegExp(`aria-selected="true"[^>]*>(?:<[^>]*>)*${tab}<`));
+    it(`[M0.canvas/c] ${id} from 600 px is the side panel, open on its own tab beside the page it is drawn over, never full screen`, async () => {
+      for (const layout of ['w600', 'w1024', 'w1240'] as const) {
+        const html = await render(file, layout);
+        expect(frame(html), layout).toBe('--surface-bg-alt');
+        expect(html, layout).toMatch(
+          layout === 'w600' ? /aria-label="Expand rail"/ : /aria-label="Collapse rail"/,
+        );
+        expect(html, layout).not.toContain('aria-label="Collapse player"');
+        expect(html, layout).toMatch(new RegExp(`aria-selected="true"[^>]*>(?:<[^>]*>)*${tab}<`));
+      }
     });
   }
 

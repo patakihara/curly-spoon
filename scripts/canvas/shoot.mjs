@@ -1,6 +1,7 @@
 /**
  * Renders canvas pages for their comparisons: each page's web render at 390 and 1440 px into
- * design/app/compare/<id>/canvas-{phone,desktop}.png, every `card:` source it names into
+ * design/app/compare/<id>/canvas-{phone,desktop}.png, a player sheet's also at 1024 px into
+ * canvas-tablet.png (the side panel the mini-player opens there), every `card:` source it names into
  * design/app/compare/sonora/ if not yet there, then prints the page hash for its comparison.
  *
  *   pnpm canvas:shoot <page id> ...
@@ -25,6 +26,8 @@ const APP = join(REPO, 'design/app');
 const SONORA = join(REPO, 'design/sonora');
 const OFF_ROUTE = join(REPO, 'web/src/generated/shoot');
 const SIZES = { phone: { width: 390, height: 844 }, desktop: { width: 1440, height: 900 } };
+/** A player sheet's third render, beside its phone and desktop ones. */
+const SHEET_SIZES = { ...SIZES, tablet: { width: 1024, height: 768 } };
 
 const ids = process.argv.slice(2);
 if (ids.length === 0) throw new Error('usage: pnpm canvas:shoot <page id> ...');
@@ -133,7 +136,8 @@ try {
     const dir = join(APP, 'compare', page.id);
     mkdirSync(dir, { recursive: true });
     const path = splitRoute(page.route).path.replace(/:([A-Za-z0-9]+)/g, 'placeholder-$1');
-    for (const [name, viewport] of Object.entries(SIZES)) {
+    const sizes = page.presentation === 'sheet' ? SHEET_SIZES : SIZES;
+    for (const [name, viewport] of Object.entries(sizes)) {
       const tab = await browser.newPage({ viewport });
       tab.on('pageerror', (e) => console.error(`${page.id} ${name}: ${e.message}`));
       tab.on(
@@ -144,8 +148,8 @@ try {
       await tab.goto(web.origin + (path === '*' || mount ? '/no-such-page' : path), {
         waitUntil: 'networkidle',
       });
-      // At 1440 px a player sheet's route gives way to the page under it, the sheet in the panel.
-      if (page.presentation === 'sheet' && name === 'desktop' && mount === undefined)
+      // From 600 px a player sheet's route gives way to the page under it, the sheet in the panel.
+      if (page.presentation === 'sheet' && name !== 'phone' && mount === undefined)
         await tab.waitForURL((u) => u.pathname !== path);
       if (mount !== undefined) {
         await tab.evaluate(async (url) => {

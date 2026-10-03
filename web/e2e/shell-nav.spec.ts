@@ -311,52 +311,8 @@ test("[M0.canvas/c] at 1440px the panel's own tabs, the track block and a player
   await expect(page).toHaveURL('/books');
 });
 
-test("at 1024px the track block's full-screen player leaves the panel's tab alone, and the mini-player lights only the tab the panel shows", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 1024, height: 900 });
-  await page.goto('/music/albums/between-lines-of-light', { waitUntil: 'networkidle' });
-  await settle(page);
-  const album = '/music/albums/between-lines-of-light';
-  const queue = page.getByRole('button', { name: 'Queue', exact: true });
-  const lyrics = page.getByRole('button', { name: 'Lyrics', exact: true });
-
-  // The track block opens Now Playing full screen, whose tabs and close are its own.
-  await miniPlayer(page, false).click();
-  await expect(page).toHaveURL('/playing');
-  await page.getByRole('tab', { name: 'Queue' }).click();
-  await expect(page).toHaveURL('/playing/queue');
-  await page.getByRole('button', { name: 'Collapse player', exact: true }).click();
-  await expect(page).toHaveURL(album);
-  await showing(page, null);
-
-  // Queue pressed twice: Now Playing, nothing lit; the close leaves no panel.
-  await queue.click();
-  await showing(page, 'Queue');
-  await queue.click();
-  await showing(page, 'Now playing');
-  await page.getByRole('button', { name: 'Close Player', exact: true }).click();
-  await showing(page, null);
-
-  // Lyrics, then the full-screen player and back, a destination switch and a reload: one tab.
-  await lyrics.click();
-  await showing(page, 'Lyrics');
-  await miniPlayer(page, false).click();
-  await expect(page).toHaveURL('/playing');
-  await page.getByRole('button', { name: 'Collapse player', exact: true }).click();
-  await expect(page).toHaveURL(album);
-  await showing(page, 'Lyrics');
-  await goTo(page, 'Books', '/books');
-  await showing(page, 'Lyrics');
-  await page.reload({ waitUntil: 'networkidle' });
-  await showing(page, 'Lyrics');
-  await page.getByRole('button', { name: 'Close Player', exact: true }).click();
-  await showing(page, null);
-  await expect(page).toHaveURL('/books');
-});
-
 for (const width of [600, 1024]) {
-  test.fixme(`[M0.canvas/c] at ${width}px the mini-player's track block opens Now Playing as the side panel beside the page, never full screen`, async ({
+  test(`[M0.canvas/c] at ${width}px the mini-player's track block opens Now Playing as the side panel beside the page, never full screen`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
@@ -367,7 +323,39 @@ for (const width of [600, 1024]) {
     await miniPlayer(page, false).click();
     await showing(page, 'Now playing');
     await expect(page).toHaveURL(album);
-    await heading(page, 'Between Lines of Light');
+    await heading(page, 'Tears of Ice');
+
+    // Its own tabs switch within the panel, and the track block brings it back to Now Playing.
+    await page.getByRole('tab', { name: 'Queue' }).click();
+    await showing(page, 'Queue');
+    await expect(page).toHaveURL(album);
+    await miniPlayer(page, false).click();
+    await showing(page, 'Now playing');
+
+    // Its close leaves the page as it was, with no panel.
+    await page.getByRole('button', { name: 'Close Player', exact: true }).click();
+    await showing(page, null);
+    await expect(page).toHaveURL(album);
+    await heading(page, 'Tears of Ice');
+  });
+
+  test(`[M0.canvas/c] at ${width}px a player sheet's route shows its tab in the panel, beside the page under it`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const album = '/music/albums/between-lines-of-light';
+    await page.goto(album, { waitUntil: 'networkidle' });
+    await settle(page);
+    await page.goto('/playing/lyrics', { waitUntil: 'networkidle' });
+    await showing(page, 'Lyrics');
+    await expect(page).not.toHaveURL(/\/playing/);
+    const under = page.url();
+    await page.reload({ waitUntil: 'networkidle' });
+    await showing(page, 'Lyrics');
+    await expect(page).toHaveURL(under);
+    await page.getByRole('button', { name: 'Close Player', exact: true }).click();
+    await showing(page, null);
+    await expect(page).toHaveURL(under);
   });
 }
 

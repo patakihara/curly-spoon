@@ -49,6 +49,7 @@ describe('checking a comparison', () => {
       'pages/settings.page.jsx',
       'pages/nowPlaying.page.jsx',
       'placeholders/settings.json',
+      'placeholders/nowPlaying.json',
       'compare',
     ]) {
       cpSync(join(appDir, rel), join(tmp, 'app', rel), { recursive: true });
@@ -129,6 +130,17 @@ describe('checking a comparison', () => {
       'settings: compare/settings/canvas-phone.png is missing',
       'settings: compare/settings/canvas-desktop.png is not a PNG',
     ]);
+  });
+
+  it("[M0.canvas/c] fails when a player sheet's 1024 px render, the panel the mini-player opens there, is missing", () => {
+    const app = copy();
+    const nowPlaying = nav.pages.find((p) => p.id === 'nowPlaying')!;
+    expect(checkComparison(app, sonora(), nowPlaying)).toEqual([]);
+    rmSync(join(app, 'compare/nowPlaying/canvas-tablet.png'), { force: true });
+    expect(checkComparison(app, sonora(), nowPlaying)).toEqual([
+      'nowPlaying: compare/nowPlaying/canvas-tablet.png is missing',
+    ]);
+    expect(checkComparison(app, sonora(), settings)).toEqual([]);
   });
 
   it('[M0.canvas/e] fails when the differences list is empty', () => {

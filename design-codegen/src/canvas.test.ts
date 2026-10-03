@@ -524,6 +524,93 @@ describe('a player sheet at a width whose panel opens from the mini-player', () 
   });
 });
 
+describe('a player sheet, on the canvas, where the mini-player opens its panel below 1240 px', () => {
+  const layouts = [
+    { minWidth: 0, nav: 'bottomBar', order: ['books'] },
+    {
+      minWidth: 1024,
+      nav: 'iconRail',
+      order: ['books'],
+      sidePanel: 'nowPlaying',
+      sidePanelOpens: 'fromMiniPlayer',
+    },
+    {
+      minWidth: 1240,
+      nav: 'labelledRail',
+      order: ['books'],
+      sidePanel: 'nowPlaying',
+      sidePanelOpens: 'always',
+    },
+  ];
+  const drawn: App = {
+    ...app,
+    nav: parseNav({
+      ...nav,
+      layouts,
+      pages: [
+        ...nav.pages,
+        {
+          ...page('nowPlaying', '/playing', 'Now Playing'),
+          close: 'sheet',
+          presentation: 'sheet',
+        },
+      ],
+    }),
+    shell: { ...app.shell, sheetOver: 'book' },
+    pages: [
+      ...app.pages,
+      {
+        id: 'nowPlaying',
+        tree: parsePage(
+          'export default function NowPlaying() {\n  return <NowPlayingPage title={shell.playing.title} />;\n}\n',
+          'nowPlaying',
+        ),
+        placeholder: {},
+      },
+    ],
+  };
+  const out = generateCanvas(drawn, install, now);
+  const index = JSON.parse(out.get('canvas.json') ?? '{}');
+  const on = (id: string) => index.order.filter((n: string) => index.boards[n].page === id);
+
+  it('[M0.canvas/c] adds a 1024 px artboard after its desktop one, the panel open on its tab beside the page under it', () => {
+    const { phone, desktop, tablet } = CANVAS_BOARDS;
+    expect(tablet.width).toBe(1024);
+    expect(on('nowPlaying')).toEqual([
+      'nowPlaying.structure.dc.html',
+      'nowPlaying.phone.dc.html',
+      'nowPlaying.desktop.dc.html',
+      'nowPlaying.tablet.dc.html',
+    ]);
+    expect(index.boards['nowPlaying.tablet.dc.html']).toMatchObject({
+      x:
+        index.boards['nowPlaying.structure.dc.html'].w + 80 + phone.width + 80 + desktop.width + 80,
+      y: 0,
+      w: tablet.width,
+      h: tablet.height,
+      title: 'Now Playing · 1024 px, panel open',
+      page: 'nowPlaying',
+    });
+    const html = out.get('nowPlaying.tablet.dc.html') ?? '';
+    expect(html).toContain('<title>Now Playing · 1024 px</title>');
+    expect(html).toContain(
+      `<div data-theme="dark" style="width: 1024px; height: ${tablet.height}px;`,
+    );
+    expect(html).toContain('SonoraDesignSystem_6c1435.BackdropShell');
+    expect(html).toContain('sheet-open="{{ true }}" app-bar="{{ false }}" platform="desktop">');
+    expect(html).toMatch(/"component":"NowPlaying"[^\]]*"tab":\{"kind":"literal","value":"now"\}/);
+    expect(html).toContain('const scope = { data, shell, sheet };');
+  });
+
+  it('[M0.canvas/c] draws no 1024 px artboard for a page that is not a player sheet', () => {
+    expect(on('book')).toEqual([
+      'book.structure.dc.html',
+      'book.phone.dc.html',
+      'book.desktop.dc.html',
+    ]);
+  });
+});
+
 describe('a page opening another, on the canvas', () => {
   const opening = `export default function Search({ data }) {
   return (
