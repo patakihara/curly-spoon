@@ -1,6 +1,5 @@
 import React from 'react';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { NS, sx } from '../shared.js';
 
 /** States the active sort/filter and opens its picker in one control — the label is data ("All episodes • Newest"), not a fixed name. */
 export function SortFilterBar({ icon = 'tune', label, onClick, trailing, platform = 'desktop' }) {

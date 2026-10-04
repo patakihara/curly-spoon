@@ -1,17 +1,11 @@
 import React from 'react';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { NS, injectCss, sx } from '../shared.js';
 
-if (typeof document !== 'undefined' && !document.getElementById('sonora-playactions-css')) {
-  const el = document.createElement('style');
-  el.id = 'sonora-playactions-css';
-  // Hover/focus reveal has to be CSS: an inline style cannot express :hover on an ancestor.
-  el.textContent = '.sn-acts{opacity:0;transform:translateY(4px);transition:opacity var(--duration-fast) ease,transform var(--duration-fast) ease;pointer-events:none}'
+// Hover/focus reveal has to be CSS: an inline style cannot express :hover on an ancestor.
+injectCss('sonora-playactions-css', '.sn-acts{opacity:0;transform:translateY(4px);transition:opacity var(--duration-fast) ease,transform var(--duration-fast) ease;pointer-events:none}'
     + '.sn-acts-host:hover .sn-acts,.sn-acts-host:focus-within .sn-acts{opacity:1;transform:none;pointer-events:auto}'
     + '.sn-acts[data-always="true"]:not(.sn-acts-scrim .sn-acts){opacity:1;transform:none;pointer-events:auto}'
-    + '.sn-acts-scrim .sn-acts{opacity:inherit;transform:none;pointer-events:inherit}';
-  document.head.appendChild(el);
-}
+    + '.sn-acts-scrim .sn-acts{opacity:inherit;transform:none;pointer-events:inherit}');
 
 const BTN = (primary, size, height) => sx(
   // Uniform height with narrower side buttons: a pill row rather than three circles.

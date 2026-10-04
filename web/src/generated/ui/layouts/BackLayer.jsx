@@ -3,7 +3,7 @@ import React from 'react';
 import { CoverArt } from '../basic/CoverArt.jsx';
 import { SearchButton } from '../basic/SearchButton.jsx';
 import { SearchField } from '../basic/SearchField.jsx';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+import { sx } from '../shared.js';
 
 
 /** The backdrop's back layer: the 0dp --surface-bg-alt surface carrying the page heading and any contextual controls that reconfigure what the front layer is showing. No rounding, no elevation. Given `search`, its heading carries a local search that comes out as the front layer scrolls. Given `eyebrow` or `image`, the heading names a page by its subject, as SectionHeader's context form does. */

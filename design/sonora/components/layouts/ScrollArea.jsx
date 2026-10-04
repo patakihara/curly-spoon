@@ -1,6 +1,5 @@
 import React from 'react';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { sx, tokenMs } from '../shared.js';
 
 /**
  * Scroll container with an Android-style overlay scrollbar: the thumb appears while scrolling and fades out shortly after it stops.
@@ -8,7 +7,6 @@ const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{}
  * up and down), and the thumb is drawn inside its clipped frame, so the thumb never widens what holds it.
  */
 export function ScrollArea({ children, id, onScroll, style, scrollRef, axis = 'y', thumb: showThumb = true, edgeFade = false }) {
-  const { StateLayer } = NS();
   const x = axis === 'x';
   const ref = React.useRef(null);
   const attach = (el) => { ref.current = el; if (typeof scrollRef === 'function') scrollRef(el); else if (scrollRef) scrollRef.current = el; };
@@ -34,7 +32,7 @@ export function ScrollArea({ children, id, onScroll, style, scrollRef, axis = 'y
     if (showThumb) {
       setThumb((t) => (t.visible || t.size === 0 ? t : { ...t, visible: true }));
       if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(() => setThumb((t) => ({ ...t, visible: false })), StateLayer.ms(e.currentTarget, '--duration-linger', 0));
+      timer.current = setTimeout(() => setThumb((t) => ({ ...t, visible: false })), tokenMs(e.currentTarget, '--duration-linger'));
     }
     if (onScroll) onScroll(e);
   };

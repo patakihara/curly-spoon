@@ -1,5 +1,5 @@
 import React from 'react';
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { NS } from '../shared.js';
 
 /**
  * Turns the lyric sheet's sync on and off, on the same tonal pill the list/grid toggle uses. Off,

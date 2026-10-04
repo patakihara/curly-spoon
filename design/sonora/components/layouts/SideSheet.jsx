@@ -1,7 +1,6 @@
 import React from 'react';
+import { NS, sx } from '../shared.js';
 import { ScrollArea } from './ScrollArea.jsx';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
 /** Side sheet: a full-height panel beside the bar+content column, animating open from zero width. Its header matches the app bar strip's height, so the title lines up with the bar's. Its close names the content it acts on in aria-controls. */
 export function SideSheet({ open = false, title, onClose, children, width = 'var(--side-sheet-width)', side = 'right', closeGlyph = 'close' }) {

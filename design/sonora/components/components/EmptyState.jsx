@@ -1,5 +1,5 @@
 import React from 'react';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+import { sx } from '../shared.js';
 
 /** What a page shows when it has nothing to show: a glyph, the fact in a heading and a line, and the one way on. Centred in its column, no filler copy. */
 export function EmptyState({ icon, title, body, action, platform = 'desktop' }) {

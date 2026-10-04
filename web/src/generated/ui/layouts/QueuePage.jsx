@@ -6,7 +6,7 @@ import { PlayerSubPage } from './PlayerSubPage.jsx';
 import { QueueRow } from '../components/QueueRow.jsx';
 import { SectionHeader } from '../components/SectionHeader.jsx';
 import { TonalIconButton } from '../basic/TonalIconButton.jsx';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+import { sx } from '../shared.js';
 
 /**
  * The player's Queue tab. `queues` switches between the music and spoken queues, starting one

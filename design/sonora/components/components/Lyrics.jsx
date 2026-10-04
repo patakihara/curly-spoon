@@ -1,15 +1,5 @@
 import React from 'react';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
-
-// Nearest scrolling ancestor, so a synced list can follow the song inside whatever pane holds it.
-const scrollerOf = (el) => {
-  for (let p = el && el.parentElement; p; p = p.parentElement) {
-    const oy = getComputedStyle(p).overflowY;
-    if (oy === 'auto' || oy === 'scroll') return p;
-  }
-  return null;
-};
+import { NS, activate, nearestScroller, sx } from '../shared.js';
 
 /**
  * The lyric list, in the three states the sync control cycles through:
@@ -33,7 +23,7 @@ export function Lyrics({
   const linesRef = React.useRef(null);
   React.useEffect(() => {
     if (!synced || !autoScroll) return;
-    const el = linesRef.current, row = el && el.children[activeIndex], sc = scrollerOf(ref.current);
+    const el = linesRef.current, row = el && el.children[activeIndex], sc = nearestScroller(ref.current);
     if (!row || !sc) return;
     const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     const delta = (row.getBoundingClientRect().top - sc.getBoundingClientRect().top) - sc.clientHeight * 0.32;
@@ -71,7 +61,7 @@ export function Lyrics({
           if (!onLineClick) return <div key={i} style={sx(css)}>{text}</div>;
           return (
             <div key={i} className="sn-int" role="button" tabIndex={0} onClick={() => onLineClick(i)}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onLineClick(i); } }}
+              onKeyDown={activate(() => onLineClick(i))}
               style={sx(css + ';cursor:pointer;border-radius:var(--radius-xs);margin:0 calc(-1 * var(--spacing-sm));padding:0 var(--spacing-sm)')}>
               {text}
               {StateLayer && <StateLayer />}

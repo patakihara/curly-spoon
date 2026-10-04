@@ -1,5 +1,5 @@
 import React from 'react';
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { NS } from '../shared.js';
 
 /**
  * A titled block of a feed: SectionHeader plus its content, with the standard gap to the next

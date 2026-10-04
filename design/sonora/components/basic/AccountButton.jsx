@@ -1,6 +1,5 @@
 import React from 'react';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { NS, sx } from '../shared.js';
 
 /** The account avatar that leads the phone's top bar, the way into Settings. A round button holding the account's picture, or a person glyph on the card tone without one. Never in a filter row. */
 export function AccountButton({ image, label = 'Account', size = 32, onClick }) {

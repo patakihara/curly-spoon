@@ -1,5 +1,5 @@
 import React from 'react';
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { NS } from '../shared.js';
 
 /** Single tonal icon button that flips a collection between list and grid. It shows the view you'd switch TO, turning the icon over as it changes. */
 export function ViewToggle({ value = 'grid', onChange, platform = 'desktop' }) {

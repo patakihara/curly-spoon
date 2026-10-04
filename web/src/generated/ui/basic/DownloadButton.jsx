@@ -2,7 +2,7 @@
 import React from 'react';
 import { ProgressRing } from './ProgressRing.jsx';
 import { StateLayer } from './StateLayer.jsx';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+import { clamp01, sx } from '../shared.js';
 
 /**
  * Standalone offline-availability toggle: idle -> downloading (composes ProgressRing, cancellable)
@@ -13,7 +13,7 @@ export function DownloadButton({ state = 'idle', progress = null, onClick, size 
   const off = !onClick;
   const downloading = state === 'downloading';
   const done = state === 'done';
-  const pct = typeof progress === 'number' ? Math.max(0, Math.min(1, progress)) : null;
+  const pct = typeof progress === 'number' ? clamp01(progress) : null;
   // The label states what pressing the control does next, not the icon it currently shows.
   const label = done ? 'Remove download' : downloading ? 'Cancel download' : 'Download';
   const ink = done ? 'var(--tone-library)' : 'var(--surface-fg-muted)';

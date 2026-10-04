@@ -2,16 +2,11 @@
 import React from 'react';
 import { CoverArt } from '../basic/CoverArt.jsx';
 import { StateLayer } from '../basic/StateLayer.jsx';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+import { activate, injectCss, sx } from '../shared.js';
 
-if (typeof document !== 'undefined' && !document.getElementById('sonora-expanderrow-css')) {
-  const el = document.createElement('style');
-  el.id = 'sonora-expanderrow-css';
-  el.textContent = '.sn-expander-chevron{transition:transform var(--duration-quick) var(--ease-standard)}'
+injectCss('sonora-expanderrow-css', '.sn-expander-chevron{transition:transform var(--duration-quick) var(--ease-standard)}'
     + '.sn-expander-chevron.sn-open{transform:rotate(180deg)}'
-    + '@media (prefers-reduced-motion:reduce){.sn-expander-chevron{transition:none}}';
-  document.head.appendChild(el);
-}
+    + '@media (prefers-reduced-motion:reduce){.sn-expander-chevron{transition:none}}');
 
 /** Collapses a homogeneous group inside an otherwise heterogeneous list — seven versions of one song folded behind "More releases · Show all" so the other result types stay reachable. */
 export function ExpanderRow({ label, actionLabel = 'Show all', expanded = false, onToggle, image }) {
@@ -20,7 +15,7 @@ export function ExpanderRow({ label, actionLabel = 'Show all', expanded = false,
   return (
     <div className="sn-int" role="button" tabIndex={off ? -1 : 0} aria-disabled={off} aria-expanded={expanded}
       onClick={off ? undefined : toggle}
-      onKeyDown={off ? undefined : (e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); toggle(); } }}
+      onKeyDown={off ? undefined : activate(() => toggle())}
       style={sx('display:flex;align-items:center;gap:var(--spacing-md);padding:var(--spacing-md);border-radius:var(--radius-xs);background:var(--surface-card);cursor:pointer')}>
       {image && CoverArt && (
         /* position:relative so CoverArt's inset:0 fill resolves against this box, not the row. */

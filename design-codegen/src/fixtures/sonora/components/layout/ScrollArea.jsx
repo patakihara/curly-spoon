@@ -1,5 +1,5 @@
 import React from 'react';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+import { sx } from '../shared.js';
 
 /** Scroll container with an Android-style overlay scrollbar: the thumb appears while scrolling and fades out shortly after it stops. Native scrollbars are suppressed. */
 export function ScrollArea({ children, onScroll, style, scrollRef, axis = 'y', thumbWidth = 4, hideAfter = 900, fade = 500, minThumb = 32, edgeFade = false }) {

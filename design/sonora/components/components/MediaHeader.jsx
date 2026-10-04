@@ -1,6 +1,5 @@
 import React from 'react';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { NS, percentOf, sx, useMeasure } from '../shared.js';
 
 /**
  * Detail-page header for an album, book, podcast or artist. Switches between the stacked/centred
@@ -19,14 +18,7 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
   const ref = React.useRef(null);
   // Measures itself, so a header inside a 412px phone frame or a narrow desktop pane both go compact.
   const [narrow, setNarrow] = React.useState(false);
-  React.useEffect(() => {
-    if (platform || typeof ResizeObserver === 'undefined') return;
-    const el = ref.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([entry]) => setNarrow(entry.contentRect.width < compactAt));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [platform, compactAt]);
+  useMeasure(ref, (el, entry) => { if (!platform) setNarrow(entry.contentRect.width < compactAt); }, [platform, compactAt]);
   const mobile = platform ? platform === 'mobile' : narrow;
   const fg = 'var(--surface-fg)', muted = 'var(--surface-fg-muted)';
   const art = mobile ? 208 : 232;
@@ -62,7 +54,7 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
             nothing, not a zero-width rule. */}
         {typeof progress === 'number' && (
           <div style={sx('width:100%;max-width:260px;height:3px;border-radius:var(--radius-pill);overflow:hidden;background:var(--surface-border)' + (mobile ? ';margin-left:auto;margin-right:auto' : ''))}>
-            <div style={sx('height:100%;background:var(--play);width:' + Math.round(Math.max(0, Math.min(1, progress)) * 100) + '%')} />
+            <div style={sx('height:100%;background:var(--play);width:' + percentOf(progress))} />
           </div>
         )}
         {acts && <div style={sx('display:flex;flex-wrap:wrap;align-items:center;justify-content:' + (mobile ? 'center' : 'flex-start') + ';gap:' + (mobile ? '10px' : '12px') + ';margin-top:' + (mobile ? '8px' : '10px'))}>

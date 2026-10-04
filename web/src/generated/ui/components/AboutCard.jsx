@@ -2,7 +2,7 @@
 import React from 'react';
 import { CoverArt } from '../basic/CoverArt.jsx';
 import { ExpandableText } from '../basic/ExpandableText.jsx';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+import { sx } from '../shared.js';
 
 /**
  * Learn about what you're listening to without leaving the player — about the episode, the show,

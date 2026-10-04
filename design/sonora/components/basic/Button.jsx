@@ -1,5 +1,5 @@
 import React from 'react';
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { NS } from '../shared.js';
 
 const sizes = {
   sm: { padding: '0 var(--spacing-md)', height: 30, fontSize: 'var(--text-sm)' },

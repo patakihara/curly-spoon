@@ -1,5 +1,5 @@
 import React from 'react';
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { NS } from '../shared.js';
 
 export function IconButton({ children, icon, size = 36, active, muted, tone = 'accent', onClick, label, disabled }) {
   const StateLayer = NS().StateLayer;

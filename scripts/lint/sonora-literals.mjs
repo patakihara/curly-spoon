@@ -7,7 +7,8 @@
  *   node scripts/lint/sonora-literals.mjs            # check: exits 1 on a finding or a stale entry
  *   node scripts/lint/sonora-literals.mjs --report   # counts per file and per kind, exits 0
  *
- * JSX (design/sonora/components/**\/*.jsx) is read with the TypeScript AST. Every string literal
+ * JSX (design/sonora/components/**\/*.jsx, and the shared helpers in components/shared.js) is read
+ * with the TypeScript AST. Every string literal
  * and template chunk is read as CSS, joined across `+` and `${}` so a value split over pieces is
  * still seen; that covers sx() strings, style values and injected <style> text. A named colour
  * counts only in a colour position (a colour property, a JSX colour attribute, or inside
@@ -787,7 +788,8 @@ function walk(root, dir, ext) {
 
 /** Every raw literal in the repo at `root`, allowlisted or not. */
 export function scanRepo(root) {
-  const jsx = walk(root, JSX_DIR, '.jsx').flatMap((f) =>
+  // The components and their shared helpers module, components/shared.js.
+  const jsx = [...walk(root, JSX_DIR, '.jsx'), ...walk(root, JSX_DIR, '.js')].flatMap((f) =>
     scanJsx(readFileSync(join(root, f), 'utf8'), f),
   );
   const kt = walk(root, KOTLIN_DIR, '.kt').flatMap((f) =>

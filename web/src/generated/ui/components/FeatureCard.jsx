@@ -3,7 +3,7 @@ import React from 'react';
 import { Badge } from '../basic/Badge.jsx';
 import { CoverArt } from '../basic/CoverArt.jsx';
 import { StateLayer } from '../basic/StateLayer.jsx';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+import { sx } from '../shared.js';
 
 /**
  * Argues for one item, at length, inside a feed — the most-repeated shape in the Spotify

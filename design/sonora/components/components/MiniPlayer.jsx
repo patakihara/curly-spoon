@@ -1,7 +1,6 @@
 import React from 'react';
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { NS, activate, formatTime } from '../shared.js';
 
-const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
 const iconBtn = (color, size = 36, glyph = 'var(--icon-sm)', dim = false) => ({
   width: size, height: size, borderRadius: '50%', border: 'none', flexShrink: 0,
@@ -60,7 +59,7 @@ export function MiniPlayer({
         display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'center', padding: '0 var(--spacing-xl)', gap: 'var(--spacing-lg)',
       }}>
         <div className="sn-int" role="button" aria-label={'Open player, ' + title} tabIndex={onOpen ? 0 : -1} aria-disabled={!onOpen}
-          onClick={onOpen} onKeyDown={onOpen && ((e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } })}
+          onClick={onOpen} onKeyDown={onOpen && activate(() => onOpen())}
           style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', minWidth: 0, justifySelf: 'start', maxWidth: '100%', cursor: 'pointer', borderRadius: 'var(--radius-xs)' }}>
           <div style={{
             width: 52, height: 52, flexShrink: 0, borderRadius: 'var(--radius-xs)', overflow: 'hidden',
@@ -102,9 +101,9 @@ export function MiniPlayer({
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', width: '100%', maxWidth: 480 }}>
-            <span style={{ color: muted, fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', width: 36 }}>{mmss(progress * duration)}</span>
+            <span style={{ color: muted, fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', width: 36 }}>{formatTime(progress * duration)}</span>
             <div style={{ flex: 1, display: 'flex' }}>{Slider && <Slider value={progress} onChange={onSeek} tone="play" />}</div>
-            <span style={{ color: muted, fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', width: 36 }}>{mmss(duration)}</span>
+            <span style={{ color: muted, fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', width: 36 }}>{formatTime(duration)}</span>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 'var(--spacing-lg)' }}>
@@ -118,7 +117,7 @@ export function MiniPlayer({
 
   return (
     <div className="sn-int" role="button" aria-label={'Open player, ' + title} tabIndex={onOpen ? 0 : -1} aria-disabled={!onOpen}
-      onClick={onOpen} onKeyDown={onOpen && ((e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onOpen(); } })}
+      onClick={onOpen} onKeyDown={onOpen && activate(() => onOpen())}
       style={{
       display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)',
       padding: 'var(--spacing-md)', cursor: 'pointer', color: 'var(--surface-now-playing-fg)',

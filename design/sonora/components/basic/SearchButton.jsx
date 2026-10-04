@@ -1,5 +1,5 @@
 import React from 'react';
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { NS } from '../shared.js';
 
 /** App-bar search affordance: a search icon that becomes a close icon while the field is out. */
 export function SearchButton({ open = false, onToggle, muted = true, label }) {

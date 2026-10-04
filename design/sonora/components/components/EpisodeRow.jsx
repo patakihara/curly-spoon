@@ -1,17 +1,10 @@
 import React from 'react';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { NS, activate, clamp01, injectCss, percentOf, sx } from '../shared.js';
 // Enter and Space press it as a click does, unless they come from a control inside it.
-const keys=(fn)=>(e)=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();fn(e);}};
 
-if (typeof document !== 'undefined' && !document.getElementById('sonora-episoderow-css')) {
-  const el = document.createElement('style');
-  el.id = 'sonora-episoderow-css';
-  // Same hover/always-on-mobile reveal ResultRow uses for its overlay action, kept local to this
-  // component's own class names so the two rows don't share injected state.
-  el.textContent = '.sn-ep-act{opacity:0;transition:opacity var(--duration-quick) ease-in-out}.sn-ep-art:hover .sn-ep-act,.sn-ep-act:focus-visible,.sn-ep-art[data-always="true"] .sn-ep-act{opacity:1}';
-  document.head.appendChild(el);
-}
+// Same hover/always-on-mobile reveal ResultRow uses for its overlay action, kept local to this
+// component's own class names so the two rows don't share injected state.
+injectCss('sonora-episoderow-css', '.sn-ep-act{opacity:0;transition:opacity var(--duration-quick) ease-in-out}.sn-ep-art:hover .sn-ep-act,.sn-ep-act:focus-visible,.sn-ep-art[data-always="true"] .sn-ep-act{opacity:1}');
 
 /**
  * List row for serial spoken-word content — an episode is not a track: it carries a synopsis you
@@ -26,11 +19,11 @@ export function EpisodeRow({ image, title, description, meta, finished = false, 
   const off = !onClick;
   const art = mobile ? 56 : 64;
   const hasProgress = typeof progress === 'number';
-  const pct = hasProgress ? Math.max(0, Math.min(1, progress)) : 0;
+  const pct = hasProgress ? clamp01(progress) : 0;
   const metaLine = meta && meta.filter(Boolean).join(' • ');
   return (
     <div className="sn-int" role="button" tabIndex={off ? -1 : 0} aria-disabled={off}
-      onClick={off ? undefined : onClick} onKeyDown={off ? undefined : keys(onClick)}
+      onClick={off ? undefined : onClick} onKeyDown={off ? undefined : activate(onClick)}
       style={sx('position:relative;display:flex;gap:' + (mobile ? '12px' : '16px') + ';padding:' + (mobile ? '10px 4px' : '12px') + ';border-radius:var(--radius-xs);cursor:pointer')}>
       <div className="sn-ep-art" data-always={mobile ? 'true' : 'false'} style={sx('position:relative;width:' + art + 'px;height:' + art + 'px;flex-shrink:0')}>
         <div style={sx('position:relative;overflow:hidden;width:100%;height:100%;border-radius:var(--radius-xs)')}>
@@ -41,7 +34,7 @@ export function EpisodeRow({ image, title, description, meta, finished = false, 
         </div>
         {onPlay && (
           <div className="sn-ep-act sn-int" onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); onPlay(e); }}
-            onKeyDown={keys((e) => { e.stopPropagation(); onPlay(e); })} tabIndex={0}
+            onKeyDown={activate((e) => { e.stopPropagation(); onPlay(e); })} tabIndex={0}
             aria-label="Play episode" role="button" title="Play episode"
             style={sx('position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:var(--radius-xs);background:var(--scrim-strong)')}>
             <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 1,'wght' 500;font-size:var(--icon-md);color:var(--on-scrim)")}>play_arrow</span>
@@ -74,7 +67,7 @@ export function EpisodeRow({ image, title, description, meta, finished = false, 
         )}
         {hasProgress && (
           <div style={sx('width:100%;max-width:280px;height:2px;background:var(--surface-border);overflow:hidden')}>
-            <div style={sx('height:100%;background:var(--play);width:' + Math.round(pct * 100) + '%')} />
+            <div style={sx('height:100%;background:var(--play);width:' + percentOf(pct))} />
           </div>
         )}
         {description && (

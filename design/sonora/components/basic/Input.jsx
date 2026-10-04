@@ -1,5 +1,5 @@
 import React from 'react';
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { NS } from '../shared.js';
 
 export function Input({ placeholder = 'Search', icon, platform = 'desktop', value, onChange, disabled }) {
   const StateLayer = NS().StateLayer;

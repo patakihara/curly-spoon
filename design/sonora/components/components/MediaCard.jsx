@@ -1,18 +1,11 @@
 import React from 'react';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { NS, activate, injectCss, percentOf, sx, useMeasure } from '../shared.js';
 // Enter and Space press it as a click does, unless they come from a control inside it.
-const keys=(fn)=>(e)=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();fn(e);}};
 
-if (typeof document !== 'undefined' && !document.getElementById('sonora-mediacard-css')) {
-  const el = document.createElement('style');
-  el.id = 'sonora-mediacard-css';
-  // Desktop reveals the corner menu on hover/focus, the same way PlayActions reveals over the art;
-  // mobile has no hover, so it renders at full opacity there instead.
-  el.textContent = '.sn-more{opacity:0;transition:opacity var(--duration-fast) ease}'
-    + '.sn-more-host:hover .sn-more,.sn-more-host:focus-within .sn-more{opacity:1}';
-  document.head.appendChild(el);
-}
+// Desktop reveals the corner menu on hover/focus, the same way PlayActions reveals over the art;
+// mobile has no hover, so it renders at full opacity there instead.
+injectCss('sonora-mediacard-css', '.sn-more{opacity:0;transition:opacity var(--duration-fast) ease}'
+    + '.sn-more-host:hover .sn-more,.sn-more-host:focus-within .sn-more{opacity:1}');
 
 /** Shelf/grid card for any library item — album, book, podcast, episode. Replaces the old Card. */
 export function MediaCard({ title, sub, platform = 'desktop', progress = null, absent = false, image, covers, width, size = 'md', onClick, onPlay, onPlayNext, onPlayLast, playing = false, onMore, onRequest, eyebrow, unplayed = false, savedBadge = false, markers, status, tone = 'progress' }) {
@@ -50,16 +43,10 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
   // Below ~132px the pill's label crowds the art, so the badge drops to its glyph alone.
   const artRef = React.useRef(null);
   const [tight, setTight] = React.useState(false);
-  React.useEffect(() => {
-    const el = artRef.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(([e]) => setTight(e.contentRect.width < 132));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+  useMeasure(artRef, (el, entry) => setTight(entry.contentRect.width < 132), []);
   return (
     <div className="sn-int" role="button" aria-label={title} tabIndex={off ? -1 : 0} aria-disabled={off}
-      onClick={off ? undefined : tap} onKeyDown={off ? undefined : keys(tap)}
+      onClick={off ? undefined : tap} onKeyDown={off ? undefined : activate(tap)}
       style={sx('position:relative;display:flex;flex-direction:column;cursor:pointer;min-width:0;border-radius:var(--radius-' + (small || mobile ? 'sm' : 'md') + ');width:' + w + (w === '100%' ? '' : ';flex-shrink:0'))}>
       <div ref={artRef} className={hostClasses} style={sx('position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:var(--radius-' + (small || mobile ? 'sm' : 'md') + ')')}>
         {/* Greyed, not just darkened: an item that cannot play yet loses its colour, so it reads
@@ -113,7 +100,7 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
             {/* Gradient behind the bar so a light cover can't wash out the track. */}
             <div style={sx('position:absolute;left:0;right:0;bottom:0;height:38%;pointer-events:none;background:linear-gradient(to top, var(--scrim-strong), transparent)')} />
             <div style={sx('position:absolute;left:0;right:0;bottom:0;height:5px;margin:var(--spacing-sm) var(--spacing-md);border-radius:var(--radius-pill);overflow:hidden;background:var(--scrim)')}>
-              <div style={sx('position:absolute;height:100%;background:var(--play);width:' + Math.round((progress || 0) * 100) + '%')} />
+              <div style={sx('position:absolute;height:100%;background:var(--play);width:' + percentOf(progress || 0))} />
             </div>
           </React.Fragment>
         )}

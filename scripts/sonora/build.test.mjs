@@ -36,6 +36,19 @@ test('the Sonora build writes the artifact, the canvas tokens and a stamp of des
       readFileSync(join(out, 'project/components/bundle.js'), 'utf8'),
       /^\/\* @ds-bundle: \{"format":4,"namespace":"SonoraDesignSystem_6c1435"/,
     );
+    const bundle = readFileSync(join(out, 'project/components/bundle.js'), 'utf8');
+    const shared = readFileSync(join(REPO_ROOT, 'design/sonora/components/shared.js'), 'utf8');
+    const helpers = [...shared.matchAll(/^export const (\w+)/gm)].map((m) => m[1]);
+    assert.ok(helpers.includes('sx') && helpers.includes('NS'), 'shared.js exports the helpers');
+    for (const name of helpers) {
+      const defined = bundle.match(new RegExp(`\\b(?:const|let|var|function)\\s+${name}\\b`, 'g'));
+      assert.equal(defined?.length, 1, `[M0.sonoraclean/e] the bundle defines ${name} once`);
+    }
+    assert.doesNotMatch(
+      bundle,
+      /from\s*['"]\.\.\/shared\.js/,
+      'no component keeps its import of shared.js',
+    );
     const stamp = JSON.parse(readFileSync(join(out, 'stamp.json'), 'utf8'));
     assert.equal(stamp.commit, git(REPO_ROOT, 'rev-parse', 'HEAD'));
     assert.equal(stamp.tree, sourcesTree(REPO_ROOT, SOURCES.sonora));

@@ -96,8 +96,9 @@ function nowPlayingPanel(appDir: string): string {
 /**
  * sha256 of the page file, its placeholder, the shell it sits in (shell.json, nav.json's
  * destinations and layouts, and what the shell draws from the page's own entry: its title, close,
- * lights and filter) and the source of every Sonora component it and the shell draw with,
- * directly or through their lookups, so a change to any of them asks for a fresh look.
+ * lights and filter), the source of every Sonora component it and the shell draw with, directly
+ * or through their lookups, and Sonora's shared helpers module, so a change to any of them asks
+ * for a fresh look.
  */
 export function pageHash(appDir: string, sonoraDir: string, id: string): string {
   const page = readFileSync(join(appDir, 'pages', `${id}.page.jsx`), 'utf8');
@@ -122,6 +123,8 @@ export function pageHash(appDir: string, sonoraDir: string, id: string): string 
   for (const name of pageComponents(appDir, sonoraDir, id)) {
     hash.update(`\0${name}\0`).update(readFileSync(componentFile(sonoraDir, name)!));
   }
+  // Every component takes its helpers from Sonora's shared module.
+  hash.update('\0shared.js\0').update(readFileSync(join(sonoraDir, 'components', 'shared.js')));
   return hash.digest('hex');
 }
 

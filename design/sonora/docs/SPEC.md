@@ -37,16 +37,20 @@ The conventions, none of which are optional:
 
 ```js
 import React from 'react';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { NS, sx } from '../shared.js';
 ```
+
+- **Shared helpers come from `components/shared.js`, never copied.** `sx`, `NS`, `activate` (Enter
+  and Space press an element that is not a button), `formatTime`, `clamp01`, `percentOf`,
+  `tokenMs`/`tokenPx`, `injectCss`, `useMeasure` and the scroller finders live there once; import
+  only what the component uses. A helper two components need goes there, not into either.
 
 - **Sibling components are reached through `NS()`, never imported.** `const CoverArt = NS().CoverArt;`
   then guard every use: `{CoverArt && <CoverArt src={image} />}`. The bundle wires the namespace.
 - **Named export**, function declaration, matching the filename.
 - **Props are destructured with defaults in the signature**, `platform = 'desktop'` style.
 - **Component-scoped CSS** (only when a pseudo-class or keyframe is genuinely needed) is injected
-  once, guarded by an id — see the `sonora-mediacard-css` block. Prefix classes `sn-`.
+  once with `injectCss(id, css)` — see the `sonora-mediacard-css` call. Prefix classes `sn-`.
 - **Icons are Material Symbols Rounded glyph names as element text**, styled with
   `font-family:'Material Symbols Rounded'` and `font-variation-settings:'FILL' 1,'wght' 500`.
 - Comments explain **why**, not what. Look at how `MediaCard` explains its scrim and its

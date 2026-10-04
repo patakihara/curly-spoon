@@ -1,6 +1,5 @@
 import React from 'react';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { NS, sx } from '../shared.js';
 const COLUMNS = { tiles: 'var(--grid-max-width-tiles)', list: 'var(--grid-max-width-list)', form: 'var(--grid-max-width-form)' };
 
 /** A Material backdrop frame: a 0dp back layer filling the whole background — rail and heading together — with the 1dp front layer and its subheader sitting on top of it, an optional side panel in front of or behind that layer, or over the whole frame as a modal side sheet, and the player docked across the bottom. */

@@ -1,6 +1,5 @@
 import React from 'react';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { NS, sx, useMeasure } from '../shared.js';
 
 /**
  * Folds a paragraph, not a list group — distinct from ExpanderRow, which collapses a homogeneous
@@ -27,16 +26,7 @@ export function ExpandableText({ children, text, lines = 3, moreLabel = 'see mor
   // the last collapsed answer is kept and `isExpanded` holds the control open for the way back.
   const bodyRef = React.useRef(null);
   const [overflows, setOverflows] = React.useState(false);
-  React.useEffect(() => {
-    const el = bodyRef.current;
-    if (!el || isExpanded) return;
-    const measure = () => setOverflows(el.scrollHeight - el.clientHeight > 1);
-    measure();
-    if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [isExpanded, content, lines]);
+  useMeasure(bodyRef, (el) => { if (!isExpanded) setOverflows(el.scrollHeight - el.clientHeight > 1); }, [isExpanded, content, lines]);
   const showToggle = overflows || isExpanded;
   return (
     <div>

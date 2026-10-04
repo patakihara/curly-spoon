@@ -2,7 +2,7 @@
 import React from 'react';
 import { IconButton } from './IconButton.jsx';
 import { StateLayer } from './StateLayer.jsx';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+import { activate, sx } from '../shared.js';
 
 /**
  * The three-dot button and the menu it opens: the verbs an item offers that are not worth a button
@@ -21,7 +21,7 @@ export function OverflowMenu({ items = [], label = 'More options', open, onOpenC
   const rows = items.map((item) => (
     <div key={item.key} role="menuitem" tabIndex={0} className="sn-int"
       onClick={() => { if (onSelect) onSelect(item.key); set(false); }}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (onSelect) onSelect(item.key); set(false); } }}
+      onKeyDown={activate(() => { if (onSelect) onSelect(item.key); set(false); })}
       style={sx('display:flex;align-items:center;gap:var(--spacing-' + (mobile ? 'lg' : 'md') + ');padding:var(--spacing-sm) var(--spacing-' + (mobile ? 'xl' : 'lg') + ');min-height:' + (mobile ? '56px' : '44px') + ';box-sizing:border-box;cursor:pointer;color:var(--surface-fg);font-family:var(--font-body)')}>
       {item.icon && <span style={sx('display:flex;color:var(--surface-fg-muted)')}>{glyph(item.icon)}</span>}
       <div style={sx('display:flex;flex-direction:column;gap:2px;min-width:0')}>

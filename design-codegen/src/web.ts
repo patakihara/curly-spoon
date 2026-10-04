@@ -1,16 +1,20 @@
 /**
  * The web UI package: Sonora's `.jsx` sources with their global-namespace lookups
  * (`NS().CoverArt`) turned into ordinary imports, each beside its `.d.ts` (unchanged, but for the
- * function a props-only `.d.ts` lacks), plus an index of both. A source copy, not a compile: Vite
- * compiles it with the rest of web/.
+ * function a props-only `.d.ts` lacks), Sonora's shared helpers module without its `NS`, plus an
+ * index of both. A source copy, not a compile: Vite compiles it with the rest of web/.
  */
-import { readFileSync } from 'node:fs';
-import { posix } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join, posix } from 'node:path';
 import ts from 'typescript';
 import { GENERATED_NOTE } from './outputs.js';
 import type { Component } from './sonora.js';
 
 export const HEADER = `// ${GENERATED_NOTE}\n`;
+
+/** Where a component imports Sonora's shared helpers from, and that module's file name. */
+export const SHARED_IMPORT = '../shared.js';
+export const SHARED_FILE = 'shared.js';
 
 interface Edit {
   start: number;
@@ -72,10 +76,11 @@ function lineSpan(source: string, node: ts.Node, sf: ts.SourceFile): Edit {
 }
 
 /**
- * Rewrites one Sonora `.jsx`: deletes the `const NS=…` helper and every `X = NS().X` or
- * `{ A, B } = NS()` declaration (a renamed `Y = NS().X` imports `X as Y`), and imports each name after `import React`. `importPath` gives
- * the relative path to a component's `.jsx`, or undefined for a name no component exports.
- * Every other byte is Sonora's. Any other use of NS or the global namespace is refused.
+ * Rewrites one Sonora `.jsx`: drops `NS` from its import of the shared helpers and deletes every
+ * `X = NS().X` or `{ A, B } = NS()` declaration (a renamed `Y = NS().X` imports `X as Y`), and
+ * imports each name after `import React`. `importPath` gives the relative path to a component's
+ * `.jsx`, or undefined for a name no component exports. Every other byte is Sonora's. Any other
+ * use of NS or the global namespace is refused.
  */
 export function rewriteJsx(
   source: string,
@@ -89,17 +94,30 @@ export function rewriteJsx(
 
   for (const statement of sf.statements) {
     if (
-      ts.isVariableStatement(statement) &&
-      statement.declarationList.declarations.some(
-        (d) => ts.isIdentifier(d.name) && d.name.text === 'NS',
-      )
+      !ts.isImportDeclaration(statement) ||
+      !ts.isStringLiteral(statement.moduleSpecifier) ||
+      statement.moduleSpecifier.text !== SHARED_IMPORT
     ) {
-      if (statement.declarationList.declarations.length !== 1) {
-        throw new Error(`${file}: unsupported NS() use`);
-      }
-      edits.push(lineSpan(source, statement, sf));
-      removed.add(statement);
+      continue;
     }
+    const bindings = statement.importClause?.namedBindings;
+    if (bindings === undefined || !ts.isNamedImports(bindings)) {
+      throw new Error(`${file}: unsupported import from ${SHARED_IMPORT}`);
+    }
+    const ns = bindings.elements.find((e) => e.name.text === 'NS');
+    if (ns === undefined) continue;
+    if (ns.propertyName !== undefined) throw new Error(`${file}: unsupported NS() use`);
+    removed.add(ns);
+    const kept = bindings.elements.filter((e) => e !== ns);
+    edits.push(
+      kept.length === 0
+        ? lineSpan(source, statement, sf)
+        : {
+            start: bindings.getStart(sf),
+            end: bindings.end,
+            text: `{ ${kept.map((e) => e.getText(sf)).join(', ')} }`,
+          },
+    );
   }
 
   const visit = (node: ts.Node): void => {
@@ -188,6 +206,43 @@ export function rewriteJsx(
   return out;
 }
 
+/**
+ * Sonora's shared helpers module for the web: every helper but `NS`, which the web package does
+ * not need, since its components import each other. `NS` goes with its doc comment; any other use
+ * of the global namespace is refused.
+ */
+export function rewriteShared(source: string, file = SHARED_FILE): string {
+  const sf = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.JSX);
+  const ns = sf.statements.find(
+    (s) =>
+      ts.isVariableStatement(s) &&
+      s.declarationList.declarations.some((d) => ts.isIdentifier(d.name) && d.name.text === 'NS'),
+  );
+  if (ns === undefined) throw new Error(`${file}: defines no NS`);
+  if ((ns as ts.VariableStatement).declarationList.declarations.length !== 1) {
+    throw new Error(`${file}: unsupported NS declaration`);
+  }
+  const span = lineSpan(source, ns, sf);
+  const comments = ts.getLeadingCommentRanges(source, ns.getFullStart()) ?? [];
+  let start = comments.length > 0 ? comments[0]!.pos : span.start;
+  while (start > 0 && source[start - 1] !== '\n') start--;
+  // The blank line that set it apart goes with it.
+  if (start > 1 && source[start - 1] === '\n' && source[start - 2] === '\n') start--;
+  const out = source.slice(0, start) + source.slice(span.end);
+  const rest = ts.createSourceFile(file, out, ts.ScriptTarget.Latest, true, ts.ScriptKind.JSX);
+  const check = (node: ts.Node): void => {
+    if (
+      ts.isIdentifier(node) &&
+      (node.text === 'NS' || node.text.startsWith('SonoraDesignSystem_'))
+    ) {
+      throw new Error(`${file}: unsupported use of ${node.text} at ${node.parent.getText(rest)}`);
+    }
+    ts.forEachChild(node, check);
+  };
+  check(rest);
+  return out;
+}
+
 /** The exported interface and type names of a `.d.ts`, and whether it declares its function. */
 function declarationsOf(component: Component, source: string) {
   const sf = ts.createSourceFile(component.dts, source, ts.ScriptTarget.Latest, true);
@@ -207,9 +262,16 @@ function declarationsOf(component: Component, source: string) {
   return { types: types.sort(), hasFunction };
 }
 
-/** Every file of the web UI package, keyed by its path under the package root. */
+/**
+ * Every file of the web UI package, keyed by its path under the package root. Sonora's shared
+ * helpers module, `components/shared.js`, comes along when the components have one.
+ */
 export function generateWeb(components: Component[]): Map<string, string> {
   const files = new Map<string, string>();
+  const shared = components[0] && join(dirname(dirname(components[0].jsx)), SHARED_FILE);
+  if (shared !== undefined && existsSync(shared)) {
+    files.set(SHARED_FILE, HEADER + rewriteShared(readFileSync(shared, 'utf8')));
+  }
   const byName = new Map(components.map((c) => [c.name, c]));
   const js: string[] = [];
   const dts: string[] = [];

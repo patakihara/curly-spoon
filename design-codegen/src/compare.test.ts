@@ -113,6 +113,14 @@ describe('checking a comparison', () => {
     });
   }
 
+  it("[M0.canvas/e] a page's hash moves once Sonora's shared helpers change, since every component reads them", () => {
+    const app = copy();
+    const before = pageHash(app, sonora(), 'settings');
+    const file = join(sonora(), 'components', 'shared.js');
+    writeFileSync(file, readFileSync(file, 'utf8') + '\n');
+    expect(pageHash(app, sonora(), 'settings')).not.toBe(before);
+  });
+
   it("[M0.canvas/e] fails once Now Playing's page has changed, since every page's side panel shows it", () => {
     const app = copy();
     const file = join(app, 'pages/nowPlaying.page.jsx');

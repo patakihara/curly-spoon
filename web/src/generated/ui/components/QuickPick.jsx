@@ -2,9 +2,8 @@
 import React from 'react';
 import { CoverArt } from '../basic/CoverArt.jsx';
 import { StateLayer } from '../basic/StateLayer.jsx';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+import { activate, percentOf, sx } from '../shared.js';
 // Enter and Space press it as a click does, unless they come from a control inside it.
-const keys=(fn)=>(e)=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();fn(e);}};
 
 /** Continue-listening / jump-back-in row tile: small square art plus two lines. Replaces the old QuickTile. */
 export function QuickPick({ title, sub, platform = 'desktop', icon, image, onClick, progress = null, unplayed = false }) {
@@ -25,13 +24,13 @@ export function QuickPick({ title, sub, platform = 'desktop', icon, image, onCli
         {unplayed && <div aria-hidden="true" style={sx('position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--accent)')} />}
         {hasProgress && (
           <div style={sx('position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--scrim)')}>
-            <div style={sx('position:absolute;height:100%;background:var(--play);width:' + Math.round(Math.max(0, Math.min(1, progress)) * 100) + '%')} />
+            <div style={sx('position:absolute;height:100%;background:var(--play);width:' + percentOf(progress))} />
           </div>
         )}
       </div>;
   return (
     <div className="sn-int" role="button" tabIndex={off ? -1 : 0} aria-disabled={off}
-      onClick={off ? undefined : onClick} onKeyDown={off ? undefined : keys(onClick)}
+      onClick={off ? undefined : onClick} onKeyDown={off ? undefined : activate(onClick)}
       style={sx('display:flex;align-items:center;gap:var(--spacing-md);border-radius:var(--radius-xs);cursor:pointer;min-width:0;background:var(--surface-card)')}>
       {leading}
       <div style={sx('min-width:0;display:flex;flex-direction:column;gap:2px;margin-right:var(--spacing-md)')}>

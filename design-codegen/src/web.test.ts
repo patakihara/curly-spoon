@@ -6,12 +6,12 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { afterEach, describe, expect, it } from 'vitest';
 import { discoverComponents } from './sonora.js';
-import { generateWeb, HEADER, rewriteJsx } from './web.js';
+import { REPO_ROOT, SONORA_DIR } from './outputs.js';
+import { generateWeb, HEADER, rewriteJsx, rewriteShared } from './web.js';
 
 const fixtures = fileURLToPath(new URL('./fixtures/sonora', import.meta.url));
 const fixture = (rel: string) => readFileSync(join(fixtures, 'components', rel), 'utf8');
-const NS_LINE =
-  "const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};\n";
+const NS_LINE = "import { NS } from '../shared.js';\n";
 const known = (names: Record<string, string>) => (name: string) => names[name];
 
 describe('the web UI package', () => {
@@ -38,7 +38,7 @@ describe('the web UI package', () => {
     const source = fixture('layout/EditableList.jsx');
     const out = rewriteJsx(source, 'EditableList.jsx', known({ Button: '../core/Button.jsx' }));
     const expected = source
-      .replace(NS_LINE, '')
+      .replace("import { NS, sx } from '../shared.js';\n", "import { sx } from '../shared.js';\n")
       .replace('  const { Button } = NS();\n', '')
       .replace(
         "import React from 'react';\n",
@@ -180,7 +180,9 @@ describe('the web UI package', () => {
       'layout/EditableList.jsx',
       'layout/ScrollArea.d.ts',
       'layout/ScrollArea.jsx',
+      'shared.js',
     ]);
+    expect(files.get('shared.js')).toBe(HEADER + rewriteShared(fixture('shared.js')));
     expect(files.get('core/FollowButton.d.ts')).toBe(HEADER + fixture('core/FollowButton.d.ts'));
     expect(files.get('layout/EditableList.jsx')).toContain(
       "import { Button } from '../core/Button.jsx';\n",
@@ -255,5 +257,89 @@ describe('a .d.ts that declares only the props', () => {
       .getPreEmitDiagnostics(program, program.getSourceFile(consumer))
       .map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n'));
     expect(errors).toEqual([]);
+  });
+});
+
+describe("Sonora's shared helpers in the web package", () => {
+  const SHARED = [
+    "import React from 'react';",
+    '',
+    '/** Seconds as `m:ss`. */',
+    'export const formatTime = (t) => String(t);',
+    '',
+    "/** Sonora's namespace. */",
+    "export const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};",
+    '',
+    '/** A fraction held to 0..1. */',
+    'export const clamp01 = (v) => Math.min(1, Math.max(0, v));',
+    '',
+  ].join('\n');
+
+  it('[M0.sonoraclean/e] copies the module without NS and its comment, every other byte kept', () => {
+    expect(rewriteShared(SHARED)).toBe(
+      [
+        "import React from 'react';",
+        '',
+        '/** Seconds as `m:ss`. */',
+        'export const formatTime = (t) => String(t);',
+        '',
+        '/** A fraction held to 0..1. */',
+        'export const clamp01 = (v) => Math.min(1, Math.max(0, v));',
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it('[M0.sonoraclean/e] refuses a module that reaches the global namespace other than through NS', () => {
+    const sneaky = SHARED + 'export const all = () => window.SonoraDesignSystem_6c1435;\n';
+    expect(() => rewriteShared(sneaky)).toThrow(/unsupported use of SonoraDesignSystem_/);
+  });
+
+  it("[M0.sonoraclean/e] drops NS from a component's shared import and keeps the other helpers", () => {
+    const source = [
+      "import React from 'react';",
+      "import { NS, activate, sx } from '../shared.js';",
+      'export function Row() {',
+      '  const Badge = NS().Badge;',
+      '  return Badge && sx(activate);',
+      '}',
+      '',
+    ].join('\n');
+    expect(rewriteJsx(source, 'Row.jsx', known({ Badge: './Badge.jsx' }))).toBe(
+      [
+        "import React from 'react';",
+        "import { Badge } from './Badge.jsx';",
+        "import { activate, sx } from '../shared.js';",
+        'export function Row() {',
+        '  return Badge && sx(activate);',
+        '}',
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it("[M0.sonoraclean/e] ships Sonora's shared module once, and every component's helper imports resolve to it", () => {
+    const files = generateWeb(discoverComponents(join(REPO_ROOT, SONORA_DIR)));
+    const shared = files.get('shared.js')!;
+    const sf = ts.createSourceFile('shared.js', shared, ts.ScriptTarget.Latest, true);
+    const exported = sf.statements.flatMap((s) =>
+      ts.isVariableStatement(s) &&
+      ts.getModifiers(s)?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)
+        ? s.declarationList.declarations.map((d) => d.name.getText(sf))
+        : [],
+    );
+    expect(exported).not.toContain('NS');
+    expect(shared).not.toContain('SonoraDesignSystem_');
+    const unresolved: string[] = [];
+    for (const [rel, text] of files) {
+      if (!rel.endsWith('.jsx')) continue;
+      for (const m of text.matchAll(/^import \{([^}]*)\} from '\.\.\/shared\.js';$/gm)) {
+        for (const name of m[1]!.split(',').map((n) => n.trim())) {
+          if (!exported.includes(name)) unresolved.push(`${rel}: ${name}`);
+        }
+      }
+      expect(text, rel).not.toMatch(/\bNS\b/);
+    }
+    expect(unresolved).toEqual([]);
   });
 });

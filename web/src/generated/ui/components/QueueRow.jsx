@@ -3,7 +3,7 @@ import React from 'react';
 import { CoverArt } from '../basic/CoverArt.jsx';
 import { IconButton } from '../basic/IconButton.jsx';
 import { StateLayer } from '../basic/StateLayer.jsx';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+import { activate, sx } from '../shared.js';
 
 /**
  * One row of the play queue: drag handle, art, title/sub, duration and a remove control. In the
@@ -26,7 +26,7 @@ export function QueueRow({
   return (
     <div className="sn-int" role="button" tabIndex={off ? -1 : 0} aria-disabled={off}
       onClick={off ? undefined : onClick}
-      onKeyDown={off ? undefined : (e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onClick(); } }}
+      onKeyDown={off ? undefined : activate(() => onClick())}
       draggable={draggable && (editing || handle)} onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop} onDragEnd={onDragEnd}
       style={sx('display:flex;align-items:center;gap:var(--spacing-md);padding:var(--spacing-sm);cursor:pointer;transition:background var(--duration-quick) var(--ease-standard);border-radius:var(--radius-' + (mobile ? 'sm' : 'xs') + ');background:' + (selected ? 'color-mix(in oklab, var(--surface-card) 80%, var(--accent))' : current ? 'var(--surface-card)' : 'transparent'))}>
       {editing && IconButton && (

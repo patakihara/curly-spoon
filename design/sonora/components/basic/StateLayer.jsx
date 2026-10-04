@@ -1,16 +1,14 @@
 import React from 'react';
+import { injectCss, isActivationKey, isScrollerX, isScrollerY, tokenMs, tokenPx } from '../shared.js';
 
 const DISABLED = ':is(:disabled,[aria-disabled="true"],[data-disabled])';
 const FORCED_OFF = '[data-sn-force="disabled"] .sn-int';
 const LIVE = '.sn-int:not(' + DISABLED + ')';
 const mix = (share) => 'color-mix(in srgb,var(--surface-fg) calc(var(' + share + ') * 100%),transparent)';
 
-if (typeof document !== 'undefined' && !document.getElementById('sonora-statelayer-css')) {
-  const el = document.createElement('style');
-  el.id = 'sonora-statelayer-css';
-  // The host keeps its own box; the layer lies over it, takes its corners, and clips its ripple.
-  // The ring is the layer's outline, so it follows the corners and moves nothing.
-  el.textContent = '.sn-int{position:relative;-webkit-tap-highlight-color:transparent}'
+// The host keeps its own box; the layer lies over it, takes its corners, and clips its ripple.
+// The ring is the layer's outline, so it follows the corners and moves nothing.
+injectCss('sonora-statelayer-css', '.sn-int{position:relative;-webkit-tap-highlight-color:transparent}'
     + '.sn-int:focus,.sn-int:focus-visible{outline:none}'
     // A focused control lifts over its neighbours, so a segment's ring is not drawn under the next.
     + '.sn-int:focus-within{z-index:1}'
@@ -36,19 +34,7 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-statelay
     + FORCED_OFF + '{pointer-events:none}'
     + '.sn-int' + DISABLED + ' [data-sn-state-layer],' + FORCED_OFF + ' [data-sn-state-layer]{outline:none!important}'
     + '.sn-int' + DISABLED + ' [data-sn-state-layer]::before,' + FORCED_OFF + ' [data-sn-state-layer]::before{opacity:0!important}'
-    + '@media (prefers-reduced-motion:reduce){[data-sn-ripple]{animation:none;transform:none}[data-sn-state-layer]::before{transition:none}}';
-  document.head.appendChild(el);
-}
-
-/**
- * A motion token's length in milliseconds, read where it applies: `900ms` and `.9s` (a minifier's
- * spelling of the same token) both give 900. The fallback stands in for a token that is not set.
- * Every Sonora timer reads its duration through this, as `StateLayer.ms`.
- */
-const ms = (el, token, fallback) => {
-  const m = /^\s*(-?(?:\d*\.)?\d+)(ms|s)\s*$/.exec(getComputedStyle(el).getPropertyValue(token));
-  return m ? parseFloat(m[1]) * (m[2] === 's' ? 1000 : 1) : fallback;
-};
+    + '@media (prefers-reduced-motion:reduce){[data-sn-ripple]{animation:none;transform:none}[data-sn-state-layer]::before{transition:none}}');
 
 /**
  * Scrolls each scroller around `layer` the least it takes to show the whole focus ring. The
@@ -57,8 +43,7 @@ const ms = (el, token, fallback) => {
  * clips is never scrolled.
  */
 const reveal = (layer) => {
-  const css = getComputedStyle(layer);
-  const reach = (parseFloat(css.getPropertyValue('--focus-ring-width')) || 3) + (parseFloat(css.getPropertyValue('--focus-ring-offset')) || 2);
+  const reach = tokenPx(layer, '--focus-ring-width') + tokenPx(layer, '--focus-ring-offset');
   const r = layer.getBoundingClientRect();
   let left = r.left - reach, right = r.right + reach, top = r.top - reach, bottom = r.bottom + reach;
   // The least move that brings [lo, hi] inside [min, max]; its start first when it cannot fit.
@@ -66,14 +51,13 @@ const reveal = (layer) => {
   const outward = (d) => Math.sign(d) * Math.ceil(Math.abs(d) - 0.01);
   const nearest = (lo, hi, min, max) => outward(lo < min ? lo - min : hi > max ? Math.min(hi - max, lo - min) : 0);
   for (let a = layer.parentElement; a && a !== document.body && a !== document.documentElement; a = a.parentElement) {
-    const s = getComputedStyle(a);
-    const sx = /auto|scroll/.test(s.overflowX), sy = /auto|scroll/.test(s.overflowY);
-    if (!sx && !sy) continue;
+    const onX = isScrollerX(a), onY = isScrollerY(a);
+    if (!onX && !onY) continue;
     const c = a.getBoundingClientRect();
     const x0 = c.left + a.clientLeft, y0 = c.top + a.clientTop;
-    const clamp = (v, max) => Math.max(0, Math.min(max, v));
-    const dx = sx ? clamp(a.scrollLeft + nearest(left, right, x0, x0 + a.clientWidth), a.scrollWidth - a.clientWidth) - a.scrollLeft : 0;
-    const dy = sy ? clamp(a.scrollTop + nearest(top, bottom, y0, y0 + a.clientHeight), a.scrollHeight - a.clientHeight) - a.scrollTop : 0;
+    const within = (v, max) => Math.max(0, Math.min(max, v));
+    const dx = onX ? within(a.scrollLeft + nearest(left, right, x0, x0 + a.clientWidth), a.scrollWidth - a.clientWidth) - a.scrollLeft : 0;
+    const dy = onY ? within(a.scrollTop + nearest(top, bottom, y0, y0 + a.clientHeight), a.scrollHeight - a.clientHeight) - a.scrollTop : 0;
     if (dx === 0 && dy === 0) continue;
     a.scrollBy({ left: dx, top: dy });
     left -= dx; right -= dx; top -= dy; bottom -= dy;
@@ -96,7 +80,7 @@ export function StateLayer({ disabled = false, ripple = true }) {
     // An event from a control nested in this host belongs to that control's own layer.
     const own = (e) => e.target instanceof Element && e.target.closest('.sn-int') === host;
     const timers = new Set();
-    const later = (fn, ms) => { const t = setTimeout(() => { timers.delete(t); fn(); }, ms); timers.add(t); };
+    const later = (fn, delay) => { const t = setTimeout(() => { timers.delete(t); fn(); }, delay); timers.add(t); };
 
     const spawn = (clientX, clientY) => {
       if (!ripple) return;
@@ -113,7 +97,7 @@ export function StateLayer({ disabled = false, ripple = true }) {
     };
     const release = () => {
       flag('pressed', false);
-      const grow = ms(host, '--duration-medium', 280), fade = ms(host, '--duration-fast', 150);
+      const grow = tokenMs(host, '--duration-medium'), fade = tokenMs(host, '--duration-fast');
       layer.querySelectorAll('[data-sn-ripple]:not([data-leaving])').forEach((wave) => {
         // A ripple finishes growing before it fades, so a quick tap still reads as one.
         const left = Math.max(0, grow - (performance.now() - Number(wave.dataset.born)));
@@ -138,12 +122,12 @@ export function StateLayer({ disabled = false, ripple = true }) {
     const focusOut = (e) => { if (!(e.relatedTarget instanceof Node && host.contains(e.relatedTarget))) flag('focus', false); };
     const typing = (e) => e.target instanceof Element && e.target.matches('input,textarea');
     const keyDown = (e) => {
-      if (e.repeat || (e.key !== 'Enter' && e.key !== ' ') || off() || !own(e) || typing(e)) return;
+      if (e.repeat || !isActivationKey(e) || off() || !own(e) || typing(e)) return;
       flag('pressed', true);
       const r = layer.getBoundingClientRect();
       spawn(r.left + r.width / 2, r.top + r.height / 2);
     };
-    const keyUp = (e) => { if (e.key === 'Enter' || e.key === ' ') release(); };
+    const keyUp = (e) => { if (isActivationKey(e)) release(); };
 
     const on = [['pointerenter', enter], ['pointerleave', leave], ['pointerdown', down], ['pointerup', release],
       ['pointercancel', release], ['focusin', focusIn], ['focusout', focusOut], ['keydown', keyDown], ['keyup', keyUp]];
@@ -158,4 +142,3 @@ export function StateLayer({ disabled = false, ripple = true }) {
   }, [disabled, ripple]);
   return <span ref={ref} data-sn-state-layer="" data-ripple={ripple ? undefined : 'off'} aria-hidden="true" />;
 }
-StateLayer.ms = ms;

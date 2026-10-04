@@ -2,7 +2,7 @@
 import React from 'react';
 import { RailItem } from '../basic/RailItem.jsx';
 import { StateLayer } from '../basic/StateLayer.jsx';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+import { sx } from '../shared.js';
 
 /** The desktop navigation rail: a bg-alt column of RailItems that widens between collapsed and expanded, with a menu toggle above, destinations pinned to its foot, and an optional footer below. */
 export function NavRail({ items = [], footerItems = [], active, onChange, expanded: given = true, onToggleExpanded, toggle = false, footer, header }) {

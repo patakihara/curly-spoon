@@ -1,5 +1,5 @@
 import React from 'react';
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { NS } from '../shared.js';
 
 /** Subscription toggle whose label states the current state, not the action — pressing "Following" stops it. Wraps the existing Button rather than reimplementing it. */
 export function FollowButton({ following = false, onChange, labels = {}, platform = 'desktop', size = 'md' }) {

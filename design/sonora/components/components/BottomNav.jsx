@@ -1,5 +1,5 @@
 import React from 'react';
-const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
+import { NS } from '../shared.js';
 
 /**
  * Mobile tab bar. Each destination is a collapsed RailItem, so the bar and the desktop rail are the same control. The bar

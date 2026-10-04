@@ -7,7 +7,7 @@ import { PlayerPanel } from './PlayerPanel.jsx';
 import { PlayerSheet } from './PlayerSheet.jsx';
 import { QueuePage } from './QueuePage.jsx';
 import { TabBar } from '../components/TabBar.jsx';
-const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
+import { sx } from '../shared.js';
 
 const TABS = [
   { key: 'now', label: 'Now playing' },
