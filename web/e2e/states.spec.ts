@@ -456,3 +456,25 @@ test('[M0.states/a] a disabled button group still shows which segment is selecte
     'the selected segment stands out from the rest',
   ).toBeGreaterThan(20);
 });
+
+test('[M0.sonoraclean] a desktop MediaCard hovered with its play actions shown still takes a click on More', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1100, height: 900 });
+  await page.goto('/states.html?card=more', { waitUntil: 'networkidle' });
+  const more = page.getByRole('button', { name: 'More options' });
+  const b = await box(more);
+  const x = b.x + b.width / 2;
+  const y = b.y + b.height / 2;
+  await page.mouse.move(x, y);
+  await expect(more, 'hovering the art reveals More').toHaveCSS('opacity', '1');
+  const hit = await page.evaluate(
+    ([px, py]) =>
+      document.elementFromPoint(px!, py!)?.closest('button')?.getAttribute('aria-label') ?? null,
+    [x, y],
+  );
+  expect(hit, 'More is what the pointer is over, not the play actions scrim').toBe('More options');
+  await page.mouse.click(x, y);
+  expect(await presses(page, 'MediaCard.more'), 'the click reaches onMore').toBe(1);
+  expect(await presses(page, 'MediaCard.card'), 'and not the card under it').toBe(0);
+});

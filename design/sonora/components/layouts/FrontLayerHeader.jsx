@@ -1,5 +1,5 @@
 import React from 'react';
-import { clamp01, findPageScroller, injectCss, sx } from '../shared.js';
+import { clamp01, findPageScroller, injectCss, scrollMax, sx } from '../shared.js';
 
 /* The spy title is two layers: the current one in flow, so the slot takes its width and can
    ellipsize, and the outgoing one absolute over it, so the swap cross-fades instead of the row
@@ -96,7 +96,7 @@ export function FrontLayerHeader({ children, tabs = false, progress = 0, platfor
     // a Shelf would blank the title.
     const onScroll = (e) => {
       const el = e.target;
-      if (!el || !el.scrollHeight || el.scrollHeight <= el.clientHeight + 1) return;
+      if (!el || scrollMax(el, 'y') <= 1) return;
       const t = read(el);
       if (t !== null) apply(t);
     };

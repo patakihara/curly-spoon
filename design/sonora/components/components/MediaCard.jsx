@@ -51,10 +51,12 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
         {CoverArt && (greyed
           ? <div style={sx('position:absolute;inset:0;filter:grayscale(1)')}><CoverArt src={image} covers={covers} fallback={coverArt} /></div>
           : <CoverArt src={image} covers={covers} fallback={coverArt} />)}
+        {/* Over the play actions' scrim, which covers the whole art once hovered: More stays the
+            control a click in its corner reaches. */}
         {showMore && (
           <button onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); onMore(e); }} aria-label="More options" title="More options"
             className={mobile ? 'sn-int' : 'sn-int ' + REVEAL.item}
-            style={sx('position:absolute;top:6px;right:6px;width:30px;height:30px;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--scrim-soft);color:var(--on-scrim)' + (mobile ? ';opacity:1' : ''))}>
+            style={sx('position:absolute;top:6px;right:6px;z-index:var(--z-overlay);width:30px;height:30px;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--scrim-soft);color:var(--on-scrim)' + (mobile ? ';opacity:1' : ''))}>
             <span style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-xs);line-height:1")}>more_vert</span>
             {StateLayer && <StateLayer />}
           </button>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { NS, findPageScroller, injectCss, sx } from '../shared.js';
+import { NS, findPageScroller, injectCss, scrollMax, sx } from '../shared.js';
 
 // Light is the base rule and dark the override, so an unthemed context gets the edge that cannot
 // invert: `--surface-border` reads on either surface, the `--surface-fg` mix only where the
@@ -38,7 +38,7 @@ export function FrontLayer({ children, subheader, scroll = true, scrollKey, onPr
     // In `scroll={false}` mode this fires via capture from any descendant scroller, including
     // horizontal shelves — ignore those, or a sideways swipe would reset the corner state.
     const el = e.target;
-    if (!el || el.scrollHeight <= el.clientHeight + 1) return;
+    if (!el || scrollMax(el, 'y') <= 1) return;
     saved.current[lastKey.current] = el.scrollTop;
     const next = Math.min(1, (el.scrollTop || 0) / threshold);
     setP(next);

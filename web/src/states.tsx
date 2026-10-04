@@ -323,7 +323,27 @@ function Cell({ name, variant }: { name: string; variant: Variant }) {
 /** `?only=<Name>` draws that one entry, as the browser tests open it. */
 const only = new URLSearchParams(window.location.search).get('only');
 
+/**
+ * `?card=more` draws instead one desktop MediaCard with its play actions and its corner menu both
+ * bound, for the test that hovering the art leaves More the control a click reaches.
+ */
+const card = new URLSearchParams(window.location.search).get('card');
+
 function States() {
+  if (card === 'more') {
+    return (
+      <div style={{ padding: 24 }}>
+        <MediaCard
+          title="Driftwave"
+          sub="Halcyon Bloom"
+          width="176px"
+          onClick={press('MediaCard.card')}
+          onPlay={press('MediaCard.play')}
+          onMore={press('MediaCard.more')}
+        />
+      </div>
+    );
+  }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 24 }}>
       {STATE_ENTRIES.filter((e) => only === null || e.name === only).map((entry) => (

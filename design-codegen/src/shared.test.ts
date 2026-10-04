@@ -50,7 +50,7 @@ const BODIES: [string, RegExp][] = [
   ['NS', /SonoraDesignSystem_/],
   [
     'isActivationKey',
-    /key ?[!=]==? ?' '|' ' ?[!=]==? ?\w+\.key|\[ ?'Enter' ?, ?' ' ?\]|\[ ?' ' ?, ?'Enter' ?\]/,
+    /key ?[!=]==? ?' '|' ' ?[!=]==? ?\w+\.key|\[ ?'Enter' ?, ?' ' ?\]|\[ ?' ' ?, ?'Enter' ?\]|code ?[!=]==? ?'Space(bar)?'|'Space(bar)?' ?[!=]==? ?\w+\.code|case '(Enter| )' ?:/,
   ],
   ['formatTime', /padStart\( ?2|[/%] ?60\b/],
   [
@@ -60,21 +60,40 @@ const BODIES: [string, RegExp][] = [
   ['percentOf', /\* ?100 ?\+ ?'%'|\* ?100 ?\}%/],
   ['tokenMs', /getPropertyValue\(/],
   ['injectCss', /createElement\( ?'style' ?\)/],
-  ['useMeasure', /new ResizeObserver|addEventListener\( ?'resize'/],
+  ['useMeasure', /\bResizeObserver\b|\bonresize\b|addEventListener\( ?'resize'/],
   ['isScrollerY', /\.overflow[XY]?\b(?![-\w])/],
-  ['prefersReducedMotion', /matchMedia\( ?'\( ?prefers-reduced-motion/],
-  ['scrollMax', /scroll(Width|Height) ?- ?[\w.]*client(Width|Height)/],
+  ['prefersReducedMotion', /matchMedia\(/],
+  [
+    'scrollMax',
+    /scroll(Width|Height) ?(-|[<>]=?|[!=]==?) ?[\w.]*(client|offset)(Width|Height)|(client|offset)(Width|Height)( ?[-+] ?[\w.]+)? ?(-|[<>]=?|[!=]==?) ?[\w.]*scroll(Width|Height)/,
+  ],
   ['REVEAL', /:hover \.[\w-]/],
   ['badgeTone', /\b(progress|request|library) ?: ?'(accent|warning|success)'/],
   ['StateLayer.ms', /\.ms ?[(=]/],
+];
+
+/**
+ * What a copy looks like on one source line, read before whitespace is joined across lines: a style
+ * element made or appended, whatever the variable holding it is called.
+ */
+const LINE_BODIES: [string, RegExp][] = [
+  [
+    'injectCss',
+    /createElement\(.*'style'|'style'.*createElement\(|createElement\( ?(style|tag)\w* ?\)|appendChild\(.*style/i,
+  ],
 ];
 
 /** The source with every quote made single and every run of whitespace one space. */
 const normalise = (src: string) => src.replace(/["`]/g, "'").replace(/\s+/g, ' ');
 
 /** The helpers whose body the source carries a copy of. */
-const bodiesIn = (src: string) =>
-  BODIES.filter(([, re]) => re.test(normalise(src))).map(([h]) => h);
+const bodiesIn = (src: string) => {
+  const lines = src.replace(/["`]/g, "'").split('\n');
+  return [
+    ...BODIES.filter(([, re]) => re.test(normalise(src))),
+    ...LINE_BODIES.filter(([, re]) => lines.some((l) => re.test(l))),
+  ].map(([h]) => h);
+};
 
 const parse = (file: string, src: string) =>
   ts.createSourceFile(file, src, ts.ScriptTarget.Latest, true, ts.ScriptKind.JSX);
@@ -210,6 +229,28 @@ describe("Sonora's shared helpers", () => {
     [
       'a scroll-max comparison with a pixel of slack',
       'const scrolls = (el) => el.scrollHeight > el.clientHeight + 1;',
+    ],
+    [
+      'a scroll-max comparison against offsetHeight',
+      'const fits = (el) => el.offsetHeight >= el.scrollHeight;',
+    ],
+    ['Space read by its code', "const k = (e) => e.code === 'Space';"],
+    ['Space read by its old code', "const k = (e) => e.code === 'Spacebar';"],
+    ['Enter as a switch case', "const k = (e) => { switch (e.key) { case 'Enter': return 1; } };"],
+    ['Space as a switch case', "const k = (e) => { switch (e.key) { case ' ': return 1; } };"],
+    ['a ResizeObserver from window', 'const ro = new window.ResizeObserver(() => {});'],
+    [
+      'a ResizeObserver held in a variable',
+      'const RO = ResizeObserver; const ro = new RO(() => {});',
+    ],
+    ['a window onresize handler', 'window.onresize = () => {};'],
+    ['a resize listener', "window.addEventListener('resize', () => {});"],
+    ['any media query', "const wide = matchMedia('(min-width: 600px)').matches;"],
+    ['a style element appended', 'document.head.appendChild(styleEl);'],
+    ['a style element made through a variable', 'const s = document.createElement(tag);'],
+    [
+      "a style element made with 'style' later on the line",
+      "const s = document.createElement(kind || 'style');",
     ],
     ['a second hover-reveal rule', "const css = '.x-host:hover .x-act{opacity:1}';"],
     ['a second badge-tone map', "const t = { progress: 'accent', request: 'warning' };"],
