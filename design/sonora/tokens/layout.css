@@ -60,7 +60,7 @@
 /* Readable caps on a seek row and a listening-progress bar */
 --seek-max-width:480px;
 --progress-max-width:280px;
-/* A time readout's fixed width, so the bar does not shift as digits change */
+/* A time readout's least width, so the bar does not shift as m:ss digits change; an h:mm:ss readout grows past it */
 --time-readout-width:36px;
 /* Card widths in a shelf, small to large */
 --card-width-xs:116px;

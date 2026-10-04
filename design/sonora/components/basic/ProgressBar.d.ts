@@ -6,7 +6,10 @@ import { CSSProperties } from 'react';
  * resume position all draw it. It fills its container's width.
  */
 export interface ProgressBarProps {
-  /** 0–1, held to that range. */
+  /**
+   * 0–1, held to that range. A numeric string such as `'0.5'` reads as its number; `NaN`, or
+   * anything else that is no number, reads 0; `Infinity` reads full and `-Infinity` empty.
+   */
   value?: number;
   /** A step of the progress ramp: `sm` (default, `--progress-sm`) or `md` (`--progress-md`). */
   size?: 'sm' | 'md';

@@ -7,12 +7,16 @@ data class SeekBarProps(
     /** Track length in seconds. */
     val duration: Float? = null,
     val platform: Platform? = null,
-    /** Receives the position sought, 0–1. Without it the slider is drawn disabled. */
+    /**
+     * Receives the position sought, 0–1, live while the slider, named "Seek", is dragged and again on
+     * its release. Without it the slider is drawn disabled.
+     */
     val onChange: ((Float) -> Unit)? = null,
     /**
      * The readouts: `remaining` (default) puts elapsed and a countdown beneath the slider, `total`
      * elapsed and the length beneath it, `inline` elapsed and the length either side of it on one
-     * row, in the small text size, as the desktop player bar shows them.
+     * row, in the small text size, as the desktop player bar shows them; each holds at least the m:ss
+     * width and grows for an hour or more.
      */
     val readout: SeekBarReadout? = null,
 )

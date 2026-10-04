@@ -9,7 +9,10 @@ package net.develivarr.auralis.generated.ui
  * Web only: style.
  */
 data class ProgressBarProps(
-    /** 0–1, held to that range. */
+    /**
+     * 0–1, held to that range. A numeric string such as `'0.5'` reads as its number; `NaN`, or
+     * anything else that is no number, reads 0; `Infinity` reads full and `-Infinity` empty.
+     */
     val value: Float? = null,
     /** A step of the progress ramp: `sm` (default, `--progress-sm`) or `md` (`--progress-md`). */
     val size: SizeSmMd? = null,

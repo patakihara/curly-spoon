@@ -396,8 +396,34 @@ describe("Sonora's mini player, read from its sources", () => {
   });
 });
 
-/** A bar's fill drawn by hand: a width set from a fraction, or the progressbar role. */
-const PROGRESS = [/\bwidth\b['"]?\s*[:+]\s*['"]?\s*\+?\s*percentOf\(/, /progressbar/];
+/**
+ * A bar's fill drawn by hand: a width set from a fraction through `percentOf`, a width worked out
+ * as a percentage (`v * 100`, a template ending in `%`, a string joined to `'%'`), or the
+ * progressbar role.
+ */
+const PROGRESS = [
+  /\bwidth\b['"]?\s*[:+]\s*['"]?\s*\+?\s*percentOf\(/,
+  /\bwidth\b['"]?\s*[:+][^;,}\n]*?(\*\s*100\b|\$\{[^}]*\}\s*%|\+\s*['"]%)/,
+  /progressbar/,
+];
+
+/** One style: an object literal with no object inside it, or the CSS text handed to `sx`. */
+const STYLES = /\{[^{}]*\}|\bsx\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)/g;
+/** A fill colour: the play or accent colour as a background. */
+const FILL_COLOUR = /background['"]?\s*:\s*['"]?\s*var\(--(play|accent)\)/;
+/** A width from a value worked out at run time: a style key given a name, or CSS text joined to one. */
+const DYNAMIC_WIDTH =
+  /\bwidth\b\s*:\s*(?![-'"`\d]|var\b|undefined\b|null\b)[A-Za-z_$(]|\bwidth:\s*['"`]\s*\+\s*(?!['"`])/;
+/** Art, which keeps its shape as it scales: an aspect ratio, or a height worked out as its width is. */
+const ART =
+  /aspect-ratio|aspectRatio|\bheight\b\s*:\s*(?![-'"`\d]|var\b)[A-Za-z_$(]|\bheight:\s*['"`]\s*\+\s*(?!['"`])/;
+
+/** Whether a source draws a progress fill of its own. */
+const drawsFill = (src: string): boolean =>
+  PROGRESS.some((re) => re.test(src)) ||
+  (src.match(STYLES) ?? []).some(
+    (style) => FILL_COLOUR.test(style) && DYNAMIC_WIDTH.test(style) && !ART.test(style),
+  );
 
 /** The components that draw a progress fill of their own: the one bar, the ring and the slider. */
 const OWN_PROGRESS = ['ProgressBar', 'ProgressRing', 'Slider'];
@@ -406,19 +432,56 @@ describe("Sonora's progress bar, read from its sources", () => {
   it('[M0.sonoraclean/d] outside ProgressBar, ProgressRing and Slider, no source draws a progress fill or a progressbar', () => {
     const offenders = sonoraSources()
       .filter(([name]) => !OWN_PROGRESS.includes(name))
-      .flatMap(([name, src]) =>
-        PROGRESS.filter((re) => re.test(src)).map((re) => `${name}: ${re.source}`),
-      );
+      .filter(([, src]) => drawsFill(src))
+      .map(([name]) => name);
     expect(offenders).toEqual([]);
     expect(source('ProgressBar')).toMatch(/role="progressbar"/);
+    expect(drawsFill(source('ProgressBar'))).toBe(true);
   });
 
-  it('[M0.sonoraclean/d] names a hand-drawn fill, in CSS text or a style key', () => {
-    const fill = (src: string) => PROGRESS.some((re) => re.test(src));
-    expect(fill(`sx('height:100%;width:' + percentOf(p))`)).toBe(true);
-    expect(fill(`{ height: '100%', width: percentOf(value) }`)).toBe(true);
-    expect(fill(`<div role="progressbar" />`)).toBe(true);
-    expect(fill(`sx('left:' + percentOf(p))`)).toBe(false);
+  it.each([
+    ['CSS text through percentOf', `sx('height:100%;width:' + percentOf(p))`],
+    ['a style key through percentOf', `{ height: '100%', width: percentOf(value) }`],
+    ['the progressbar role', `<div role="progressbar" />`],
+    ['a template percentage', 'const fill = { height: 2, width: `${v * 100}%` };'],
+    [
+      'a template percentage of a rounded share',
+      '<div style={{ width: `${Math.round(v * 100)}%` }} />',
+    ],
+    ['a product joined to a percent sign', `sx('height:100%;width:' + v * 100 + '%')`],
+    ['a share joined to a percent sign', `sx('width:' + pct + '%;background:var(--play)')`],
+    [
+      'a fill-coloured div sized by a name, inside a track',
+      `<div style={{ background: 'var(--surface-border)', height: 3 }}>
+        <div style={{ position: 'absolute', height: '100%', background: 'var(--play)', width: share }} />
+      </div>`,
+    ],
+    [
+      'fill-coloured CSS text sized by a joined name',
+      `<div style={sx('height:var(--progress-sm);background:var(--accent);width:' + share)} />`,
+    ],
+  ])('[M0.sonoraclean/d] names a hand-drawn fill: %s', (_, src) => {
+    expect(drawsFill(src)).toBe(true);
+  });
+
+  it.each([
+    ['a left offset through percentOf', `sx('left:' + percentOf(p))`],
+    [
+      'a play-coloured button of a token width',
+      `{ width: 'var(--control-lg)', background: 'var(--play)' }`,
+    ],
+    ['a full-width fill colour', `sx('width:100%;background:var(--accent)')`],
+    ['a sized box with no fill colour', `{ width: size, background: 'var(--surface-card)' }`],
+    [
+      'square art on the accent',
+      `sx('width:' + art + 'px;height:' + art + 'px;background:var(--accent)')`,
+    ],
+    [
+      'art of a set ratio on the accent',
+      `sx('aspect-ratio:1;width:' + w + ';background:var(--accent)')`,
+    ],
+  ])('[M0.sonoraclean/d] leaves alone what is no fill: %s', (_, src) => {
+    expect(drawsFill(src)).toBe(false);
   });
 
   it.each(['QuickPick', 'MediaCard', 'EpisodeRow', 'MediaHeader'])(

@@ -46,3 +46,15 @@ describe("Sonora's seek bar readouts", () => {
     );
   });
 });
+
+describe("Sonora's seek slider", () => {
+  it.each(['remaining', 'total', 'inline'] as const)(
+    '[M0.sonoraclean/d] is named Seek with %s readouts',
+    (readout) => {
+      const html = renderToString(
+        createElement(SeekBar, { value: 0.5, duration: 200, readout, onChange: () => undefined }),
+      );
+      expect(html).toMatch(/role="slider" aria-label="Seek"/);
+    },
+  );
+});

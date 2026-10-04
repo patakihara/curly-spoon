@@ -249,8 +249,8 @@
         "message": "<SeekBar> readout must be one of 'remaining' | 'total' | 'inline'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='Slider'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onChange|platform|tone|key|ref|className|style|children)$/]",
-        "message": "<Slider> doesn't accept that prop. Declared props: value, onChange, platform, tone."
+        "selector": "JSXOpeningElement[name.name='Slider'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onChange|platform|tone|label|key|ref|className|style|children)$/]",
+        "message": "<Slider> doesn't accept that prop. Declared props: value, onChange, platform, tone, label."
       },
       {
         "selector": "JSXOpeningElement[name.name='Slider'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",

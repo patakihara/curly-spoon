@@ -7,8 +7,8 @@ import { StateLayer } from '../basic/StateLayer.jsx';
 import { activate, skipGlyph } from '../shared.js';
 
 // Over the bar's tint the controls take the now-playing inks: IconButton's surface inks, rebound
-// for the bar, so its plain and muted glyphs, the seek bar's readouts and the slider's halo match
-// the tint.
+// for the bar, so its plain and muted glyphs, the seek bar's readouts, the slider's halo and the
+// open-player area's hover and press wash match the tint.
 const INKS = { '--surface-fg': 'var(--surface-now-playing-fg)', '--surface-fg-muted': 'var(--surface-now-playing-fg-muted)' };
 
 // Inactive toggles dim by alpha so they blend with whatever surface they sit on, rather than
@@ -48,7 +48,7 @@ export function MiniPlayer({
       }}>
         <div className="sn-int" role="button" aria-label={'Open player, ' + title} tabIndex={onOpen ? 0 : -1} aria-disabled={!onOpen}
           onClick={onOpen} onKeyDown={onOpen && activate(() => onOpen())}
-          style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', minWidth: 0, justifySelf: 'start', maxWidth: '100%', cursor: 'pointer', borderRadius: 'var(--radius-xs)' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', minWidth: 0, justifySelf: 'start', maxWidth: '100%', cursor: 'pointer', borderRadius: 'var(--radius-xs)', color: 'var(--surface-fg)' }}>
           <div style={{
             width: 52, height: 52, flexShrink: 0, borderRadius: 'var(--radius-xs)', overflow: 'hidden',
             background: image ? undefined : 'var(--accent)',

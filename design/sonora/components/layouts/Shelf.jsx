@@ -28,32 +28,39 @@ export function Shelf({ children, gap, margin, platform = 'desktop', step = 2, a
   const showBar = scrollbar === undefined ? mobile : scrollbar;
   const ref = React.useRef(null);
   const [hot, setHot] = React.useState(false);
+  const holders = { start: React.useRef(null), end: React.useRef(null) };
   // Whether the row sits at each end, so the arrow that would scroll past it goes.
   const [ends, setEnds] = React.useState({ start: true, end: false });
+  // An arrow pressed until it goes at its end hands focus to the other arrow rather than dropping
+  // it to the page, but only when that arrow holds focus as its end is reached: a row scrolled to
+  // its end any other way leaves focus wherever it is.
+  const handoff = React.useRef(null);
   const measure = React.useCallback(() => {
     const el = ref.current;
     if (!el) return;
     const hidden = scrollEdges(el, 'x');
-    setEnds({ start: !hidden.start, end: !hidden.end });
-  }, []);
-  React.useEffect(() => { measure(); }, [measure, children]);
-  // An arrow pressed until it goes at its end hands focus to the other arrow rather than dropping
-  // it to the page: the arrow that had focus is remembered until focus moves somewhere real.
-  const holders = { start: React.useRef(null), end: React.useRef(null) };
-  const focused = React.useRef(null);
-  const remember = (side) => ({
-    onFocus: () => { focused.current = side; },
-    onBlur: (e) => { if (e.relatedTarget) focused.current = null; },
-  });
-  React.useLayoutEffect(() => {
-    const side = focused.current;
-    const other = side === 'end' ? 'start' : side === 'start' ? 'end' : null;
-    if (!other || !ends[side] || ends[other]) return;
+    const next = { start: !hidden.start, end: !hidden.end };
     const active = document.activeElement;
-    if (active && active !== document.body && !holders[side].current.contains(active)) return;
+    for (const [side, other] of [['start', 'end'], ['end', 'start']]) {
+      const holder = holders[side].current;
+      if (next[side] && !next[other] && holder && active && holder.contains(active)) handoff.current = other;
+    }
+    setEnds(next);
+  }, []); // eslint-disable-line
+  React.useEffect(() => { measure(); }, [measure, children]);
+  // An arrow at its end goes inert. Set as the attribute itself, since React 18 drops an `inert`
+  // prop and React 19 drops an empty-string one; then any handoff, once the other arrow is live.
+  React.useLayoutEffect(() => {
+    for (const side of ['start', 'end']) {
+      const holder = holders[side].current;
+      if (holder) holder.toggleAttribute('inert', ends[side]);
+    }
+    const other = handoff.current;
+    handoff.current = null;
+    if (!other || ends[other]) return;
     const button = holders[other].current && holders[other].current.querySelector('button');
     if (button) button.focus();
-  }, [ends]); // eslint-disable-line
+  }, [ends, showArrows]); // eslint-disable-line
   // Pages by whole items: measures the first child plus the gap rather than guessing a pixel amount.
   // The arrows name the track they scroll.
   const trackId = React.useId();
@@ -77,10 +84,10 @@ export function Shelf({ children, gap, margin, platform = 'desktop', step = 2, a
       </div>
       {showArrows && IconButton && (
         <React.Fragment>
-          <span ref={holders.start} {...remember('start')} inert={ends.start} style={arrow('left', hot, !ends.start, 'calc(-1 * ' + m + ' / 2)')}>
+          <span ref={holders.start} style={arrow('left', hot, !ends.start, 'calc(-1 * ' + m + ' / 2)')}>
             <IconButton variant="raised" size="md" icon="chevron_left" label="Scroll back" controls={trackId} onClick={() => page(-1)} />
           </span>
-          <span ref={holders.end} {...remember('end')} inert={ends.end} style={arrow('right', hot, !ends.end, 'calc(-1 * ' + m + ' / 2)')}>
+          <span ref={holders.end} style={arrow('right', hot, !ends.end, 'calc(-1 * ' + m + ' / 2)')}>
             <IconButton variant="raised" size="md" icon="chevron_right" label="Scroll forward" controls={trackId} onClick={() => page(1)} />
           </span>
         </React.Fragment>

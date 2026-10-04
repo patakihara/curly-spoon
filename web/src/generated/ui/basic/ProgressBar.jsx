@@ -8,7 +8,9 @@ import { clamp01, percentOf, sx } from '../shared.js';
  * its container's width; `style` places it.
  */
 export function ProgressBar({ value = 0, size = 'sm', tone = 'surface', label = 'Progress', style }) {
-  const pct = clamp01(Number.isFinite(value) ? value : 0);
+  // A numeric string reads as its number; what is no number reads empty, +Infinity full.
+  const n = Number(value);
+  const pct = n === Infinity ? 1 : clamp01(Number.isFinite(n) ? n : 0);
   return (
     <div role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct * 100)}
       style={{

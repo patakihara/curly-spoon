@@ -4,10 +4,16 @@ package net.develivarr.auralis.generated.ui
 data class SliderProps(
     /** 0–1 */
     val value: Float? = null,
-    /** Receives the new value, from a press on the track or the arrow keys. Without it the slider is drawn disabled. */
+    /**
+     * Receives the new value: on a press on the track, on every move while the pointer is held, on
+     * its release where it lets go elsewhere, and on the arrow keys; a click is one change. Without
+     * it the slider is drawn disabled.
+     */
     val onChange: ((Float) -> Unit)? = null,
     /** Desktop: thin track + round handle (Feishin). Mobile: thick pill split by a divider notch (Booming Music). */
     val platform: Platform? = null,
     /** The fill: `accent` (default), or `play` for playback position (SeekBar passes it). */
     val tone: ToneAccentPlay? = null,
+    /** Its accessible name, such as "Seek" or "Volume". */
+    val label: String? = null,
 )

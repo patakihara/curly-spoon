@@ -5,12 +5,16 @@ export interface SeekBarProps {
   /** Track length in seconds. */
   duration?: number;
   platform?: 'desktop' | 'mobile';
-  /** Receives the position sought, 0–1. Without it the slider is drawn disabled. */
+  /**
+   * Receives the position sought, 0–1, live while the slider, named "Seek", is dragged and again on
+   * its release. Without it the slider is drawn disabled.
+   */
   onChange?: (next: number) => void;
   /**
    * The readouts: `remaining` (default) puts elapsed and a countdown beneath the slider, `total`
    * elapsed and the length beneath it, `inline` elapsed and the length either side of it on one
-   * row, in the small text size, as the desktop player bar shows them.
+   * row, in the small text size, as the desktop player bar shows them; each holds at least the m:ss
+   * width and grows for an hour or more.
    */
   readout?: 'remaining' | 'total' | 'inline';
 }

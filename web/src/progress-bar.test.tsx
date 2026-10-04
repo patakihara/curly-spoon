@@ -29,6 +29,19 @@ describe("Sonora's progress bar", () => {
   });
 
   it.each([
+    ['0.5', 50],
+    ['0', 0],
+    ['abc', 0],
+    [Number.NaN, 0],
+    [Number.POSITIVE_INFINITY, 100],
+    [Number.NEGATIVE_INFINITY, 0],
+  ])('[M0.sonoraclean/d] reads %s as %s percent', (value, percent) => {
+    const html = bar({ value });
+    expect(html).toContain(`aria-valuenow="${percent}"`);
+    expect(html).toContain(`width:${percent}%`);
+  });
+
+  it.each([
     ['sm', '--progress-sm'],
     ['md', '--progress-md'],
   ])('[M0.sonoraclean/d] size %s is %s tall', (size, token) => {

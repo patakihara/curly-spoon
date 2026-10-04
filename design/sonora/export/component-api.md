@@ -202,7 +202,7 @@ How far into an item the listener is: a thin pill track filled in the play colou
 
 | prop | type | notes |
 | --- | --- | --- |
-| `value` | `number` | 0–1, held to that range. |
+| `value` | `number` |  0–1, held to that range. A numeric string such as `'0.5'` reads as its number; `NaN`, or anything else that is no number, reads 0; `Infinity` reads full and `-Infinity` empty.  |
 | `size` | `'sm' \| 'md'` | A step of the progress ramp: `sm` (default, `--progress-sm`) or `md` (`--progress-md`). |
 | `tone` | `'surface' \| 'scrim'` | What it sits on: `surface` (default, a hairline track on the page) or `scrim` (over artwork). |
 | `label` | `string` | Its accessible name. Default "Progress". |
@@ -286,8 +286,8 @@ Seek slider plus its time readouts. Pass duration in seconds; value is 0–1.
 | `value` | `number` |  |
 | `duration` | `number` | Track length in seconds. |
 | `platform` | `'desktop' \| 'mobile'` |  |
-| `onChange` | `(next: number) => void` | Receives the position sought, 0–1. Without it the slider is drawn disabled. |
-| `readout` | `'remaining' \| 'total' \| 'inline'` |  The readouts: `remaining` (default) puts elapsed and a countdown beneath the slider, `total` elapsed and the length beneath it, `inline` elapsed and the length either side of it on one row, in the small text size, as the desktop player bar shows them.  |
+| `onChange` | `(next: number) => void` |  Receives the position sought, 0–1, live while the slider, named "Seek", is dragged and again on its release. Without it the slider is drawn disabled.  |
+| `readout` | `'remaining' \| 'total' \| 'inline'` |  The readouts: `remaining` (default) puts elapsed and a countdown beneath the slider, `total` elapsed and the length beneath it, `inline` elapsed and the length either side of it on one row, in the small text size, as the desktop player bar shows them; each holds at least the m:ss width and grows for an hour or more.  |
 
 ### Slider
 
@@ -296,9 +296,10 @@ Seek slider plus its time readouts. Pass duration in seconds; value is 0–1.
 | prop | type | notes |
 | --- | --- | --- |
 | `value` | `number` | 0–1 |
-| `onChange` | `(next: number) => void` | Receives the new value, from a press on the track or the arrow keys. Without it the slider is drawn disabled. |
+| `onChange` | `(next: number) => void` |  Receives the new value: on a press on the track, on every move while the pointer is held, on its release where it lets go elsewhere, and on the arrow keys; a click is one change. Without it the slider is drawn disabled.  |
 | `platform` | `'desktop' \| 'mobile'` | Desktop: thin track + round handle (Feishin). Mobile: thick pill split by a divider notch (Booming Music). |
 | `tone` | `'accent' \| 'play'` | The fill: `accent` (default), or `play` for playback position (SeekBar passes it). |
+| `label` | `string` | Its accessible name, such as "Seek" or "Volume". |
 
 ### SortFilterBar
 
