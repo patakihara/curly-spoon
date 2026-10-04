@@ -34,6 +34,7 @@ import net.develivarr.auralis.generated.ui.NowPlayingTrack
 import net.develivarr.auralis.generated.ui.OverflowMenuItem
 import net.develivarr.auralis.generated.ui.OverflowMenuProps
 import net.develivarr.auralis.generated.ui.PageBodyProps
+import net.develivarr.auralis.generated.ui.PageBodyWidth
 import net.develivarr.auralis.generated.ui.Platform
 import net.develivarr.auralis.generated.ui.PreviewButtonKind
 import net.develivarr.auralis.generated.ui.PreviewButtonProps
@@ -43,11 +44,11 @@ import net.develivarr.auralis.generated.ui.QueuePageQueue
 import net.develivarr.auralis.generated.ui.QuickPickProps
 import net.develivarr.auralis.generated.ui.RatingProps
 import net.develivarr.auralis.generated.ui.ResultRowProps
+import net.develivarr.auralis.generated.ui.ResultRowTone
 import net.develivarr.auralis.generated.ui.SearchFieldProps
 import net.develivarr.auralis.generated.ui.SectionProps
 import net.develivarr.auralis.generated.ui.SettingRowProps
 import net.develivarr.auralis.generated.ui.ShelfProps
-import net.develivarr.auralis.generated.ui.SizeSmMdLg
 import net.develivarr.auralis.generated.ui.SortFilterBarProps
 import net.develivarr.auralis.generated.ui.StatusBannerProps
 import net.develivarr.auralis.generated.ui.StatusBannerTone
@@ -108,18 +109,17 @@ val galleryIcons: List<String> = listOf(
     "book_2",
     "bookmark",
     "check_circle",
-    "download_done",
     "explore",
     "library_add",
     "link_off",
     "menu_book",
-    "more_vert",
     "person",
     "play_arrow",
     "podcasts",
     "schedule",
     "search",
     "share",
+    "skip_previous",
     "speaker",
     "swap_vert",
 )
@@ -153,13 +153,12 @@ val componentGallery: List<GalleryEntry> = listOf(
         )
     },
     GalleryEntry("BackLayer") {
-        BackLayer(BackLayerProps(title = "Sign in", platform = Platform.MOBILE))
+        BackLayer(BackLayerProps(title = "Library", platform = Platform.MOBILE))
     },
     GalleryEntry("BackdropShell") {
         BackdropShell(
             BackdropShellProps(
                 back = { BackLayer(BackLayerProps(title = "Music", platform = Platform.MOBILE)) },
-                rail = {},
                 platform = Platform.MOBILE,
                 children = {
                     PageBody(
@@ -241,7 +240,6 @@ val componentGallery: List<GalleryEntry> = listOf(
             ButtonProps(
                 variant = ButtonVariant.PRIMARY,
                 platform = Platform.MOBILE,
-                icon = {},
                 onClick = {},
                 children = { BasicText("Play") },
             ),
@@ -352,12 +350,7 @@ val componentGallery: List<GalleryEntry> = listOf(
     },
     GalleryEntry("FollowButton") {
         FollowButton(
-            FollowButtonProps(
-                following = false,
-                onChange = { _ -> },
-                platform = Platform.MOBILE,
-                size = SizeSmMdLg.SM,
-            ),
+            FollowButtonProps(following = false, onChange = { _ -> }, platform = Platform.MOBILE),
         )
     },
     GalleryEntry("FrontLayerHeader") {
@@ -370,7 +363,7 @@ val componentGallery: List<GalleryEntry> = listOf(
         )
     },
     GalleryEntry("IconButton") {
-        IconButton(IconButtonProps(icon = "more_vert", muted = true, label = "More", onClick = {}))
+        IconButton(IconButtonProps(icon = "skip_previous", label = "Previous", onClick = {}))
     },
     GalleryEntry("LayoutGrid") {
         LayoutGrid(
@@ -450,39 +443,14 @@ val componentGallery: List<GalleryEntry> = listOf(
         MediaHeader(
             MediaHeaderProps(
                 platform = Platform.MOBILE,
-                kindLabel = "Episode",
-                title = "Aftershocks: the second call",
-                subtitle = "Static & Signal",
-                meta = "8 Aug 2024 · 22min left",
+                kindLabel = "Audiobook",
+                title = "The Ink Orchard",
+                subtitle = "Linnea Frost",
+                meta = "2023 · 18 chapters · 14 h 42 m",
+                onPlay = {},
+                onPlayNext = {},
+                onPlayLast = {},
                 onSubtitle = {},
-                actions = {
-                    IconButton(
-                        IconButtonProps(
-                            icon = "bookmark",
-                            active = true,
-                            label = "Saved",
-                            onClick = {},
-                        ),
-                    )
-                    IconButton(
-                        IconButtonProps(
-                            icon = "download_done",
-                            active = true,
-                            label = "Downloaded",
-                            onClick = {},
-                        ),
-                    )
-                    IconButton(IconButtonProps(icon = "share", label = "Share", onClick = {}))
-                    IconButton(
-                        IconButtonProps(
-                            icon = "more_vert",
-                            muted = true,
-                            label = "More",
-                            onClick = {},
-                        ),
-                    )
-                },
-                progress = 0.65f,
             ),
         )
     },
@@ -582,50 +550,21 @@ val componentGallery: List<GalleryEntry> = listOf(
         PageBody(
             PageBodyProps(
                 platform = Platform.MOBILE,
+                width = PageBodyWidth.LIST,
                 children = {
                     Section(
                         SectionProps(
-                            title = "Recently added",
+                            title = "Downloads",
                             platform = Platform.MOBILE,
                             last = true,
                             children = {
-                                LayoutGrid(
-                                    LayoutGridProps(
+                                SettingRow(
+                                    SettingRowProps(
+                                        title = "Auto-download requests",
+                                        sub = "Fetch approved requests as soon as a source appears.",
+                                        checked = true,
                                         platform = Platform.MOBILE,
-                                        children = {
-                                            MediaCard(
-                                                MediaCardProps(
-                                                    title = "Driftwave",
-                                                    sub = "The Nebula Collective",
-                                                    platform = Platform.MOBILE,
-                                                    onClick = {},
-                                                ),
-                                            )
-                                            MediaCard(
-                                                MediaCardProps(
-                                                    title = "Static Coast",
-                                                    sub = "Echo Fields",
-                                                    platform = Platform.MOBILE,
-                                                    onClick = {},
-                                                ),
-                                            )
-                                            MediaCard(
-                                                MediaCardProps(
-                                                    title = "Hollow Fields",
-                                                    sub = "Halcyon Bloom",
-                                                    platform = Platform.MOBILE,
-                                                    onClick = {},
-                                                ),
-                                            )
-                                            MediaCard(
-                                                MediaCardProps(
-                                                    title = "Signal Fires",
-                                                    sub = "The Nebula Collective",
-                                                    platform = Platform.MOBILE,
-                                                    onClick = {},
-                                                ),
-                                            )
-                                        },
+                                        onChange = { _ -> },
                                     ),
                                 )
                             },
@@ -687,11 +626,10 @@ val componentGallery: List<GalleryEntry> = listOf(
     GalleryEntry("QuickPick") {
         QuickPick(
             QuickPickProps(
-                title = "Aftershocks: the second call",
-                sub = "Podcast · 22min left",
+                title = "The Quiet Lodger",
+                sub = "Book · 6 h 12 m left",
                 platform = Platform.MOBILE,
                 onClick = {},
-                progress = 0.72f,
             ),
         )
     },
@@ -701,32 +639,12 @@ val componentGallery: List<GalleryEntry> = listOf(
     GalleryEntry("ResultRow") {
         ResultRow(
             ResultRowProps(
-                title = "Tidal Lines",
-                meta = "Harbour Lights · 3:41",
+                title = "The Long Meridian",
+                meta = "Tomas Arden · Audiobook · 62 h",
+                status = "In library",
+                tone = ResultRowTone.LIBRARY,
                 platform = Platform.MOBILE,
                 onClick = {},
-                trailing = {
-                    OverflowMenu(
-                        OverflowMenuProps(
-                            items = listOf(
-                                OverflowMenuItem(
-                                    key = "add",
-                                    label = "Add to library",
-                                    icon = "library_add",
-                                    sub = "Keeps a copy of your own",
-                                ),
-                                OverflowMenuItem(
-                                    key = "artist",
-                                    label = "Go to artist",
-                                    icon = "person",
-                                ),
-                                OverflowMenuItem(key = "share", label = "Share", icon = "share"),
-                            ),
-                            onSelect = { _ -> },
-                            platform = Platform.MOBILE,
-                        ),
-                    )
-                },
             ),
         )
     },
@@ -743,7 +661,10 @@ val componentGallery: List<GalleryEntry> = listOf(
     GalleryEntry("Section") {
         Section(
             SectionProps(
-                title = "Recently added",
+                title = "Jump back in",
+                action = "arrow_forward",
+                actionLabel = "Show all",
+                onAction = {},
                 platform = Platform.MOBILE,
                 last = true,
                 children = {
@@ -771,14 +692,6 @@ val componentGallery: List<GalleryEntry> = listOf(
                                     MediaCardProps(
                                         title = "Hollow Fields",
                                         sub = "Halcyon Bloom",
-                                        platform = Platform.MOBILE,
-                                        onClick = {},
-                                    ),
-                                )
-                                MediaCard(
-                                    MediaCardProps(
-                                        title = "Signal Fires",
-                                        sub = "The Nebula Collective",
                                         platform = Platform.MOBILE,
                                         onClick = {},
                                     ),

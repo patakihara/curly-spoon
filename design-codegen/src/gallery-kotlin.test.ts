@@ -70,6 +70,15 @@ describe('the Android gallery draws what the web gallery draws', () => {
     expect(kotlin).not.toContain('Badge');
   });
 
+  it('leaves out an optional slot whose element draws nothing on Android, such as an Icon', () => {
+    const kotlin = kotlinOf(
+      [usage('Button', `<Button icon={<Icon name="play_arrow" weight="text" />}>Play</Button>`)],
+      ['Button'],
+    );
+    expect(kotlin).toMatch(/children = \{ BasicText\("Play"\) \}/);
+    expect(kotlin).not.toMatch(/icon = /);
+  });
+
   it('[M0.tokens/c] lists the icon names the web gallery draws, for the icon specimen', () => {
     const icons = galleryIcons([
       usage('BottomNav', `<BottomNav items={[{key:'a',label:'A',icon:'explore'}]} />`),

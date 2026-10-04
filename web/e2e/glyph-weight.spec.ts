@@ -35,6 +35,8 @@ const GALLERY: [string, string, number][] = [
   ['ScrollArea', 'drag_handle', 500],
   ['PlayerSubPage', 'drag_handle', 500],
   ['SearchField', 'search', 500],
+  ['Button', 'play_arrow', 600],
+  ['MediaHeader', 'play_arrow', 600],
 ];
 
 test('[M0.sonoraclean/d] a glyph set in text keeps the weight of the text around it', async ({

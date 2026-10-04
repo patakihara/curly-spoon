@@ -11,7 +11,10 @@ drift. The documentation half is plain HTML; below it each card renders live exa
 the components that screen created or extended, inlined from docs/examples/*.snippet.jsx,
 so the claim "this screen produced these components" can be looked at rather than read.
 
-    python3 docs/gen_reference_cards.py
+    python3 docs/gen_reference_cards.py [--out DIR]
+
+`--out` writes the cards somewhere else, so scripts/sonora/reference.test.mjs can check that the
+committed reference/ equals a fresh run.
 """
 import html
 import json
@@ -293,15 +296,16 @@ def index():
             + '<div class="cols">' + "".join(rows) + "</div></div></div>\n")
 
 
-def main():
-    os.makedirs(OUT, exist_ok=True)
+def main(argv):
+    out = argv[argv.index("--out") + 1] if "--out" in argv else OUT
+    os.makedirs(out, exist_ok=True)
     for s in SCREENS:
-        with open(os.path.join(OUT, "%s.card.html" % s["id"]), "w") as fh:
+        with open(os.path.join(out, "%s.card.html" % s["id"]), "w") as fh:
             fh.write(card(s))
-    with open(os.path.join(OUT, "index.card.html"), "w") as fh:
+    with open(os.path.join(out, "index.card.html"), "w") as fh:
         fh.write(index())
-    print("wrote %d reference cards + index to reference/" % len(SCREENS))
+    print("wrote %d reference cards + index to %s" % (len(SCREENS), out))
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

@@ -123,6 +123,21 @@ const GLYPH_COMPONENTS = [
 /** The components whose only glyphs are IconButton's, named through its `icon`. */
 const ICON_BUTTON_GLYPHS = ['NowPlayingPage', 'PlayerSubPage', 'SearchButton'];
 
+const SHOWCASE_ROOT = `${REPO_ROOT}/${SONORA_DIR}`;
+
+/** Sonora's component cards, generated reference cards and example snippets, relative to it. */
+const showcaseFiles = (): string[] => [
+  ...readdirSync(`${SHOWCASE_ROOT}/components`, { recursive: true, encoding: 'utf8' })
+    .filter((f) => f.endsWith('.card.html'))
+    .map((f) => `components/${f}`),
+  ...readdirSync(`${SHOWCASE_ROOT}/reference`)
+    .filter((f) => f.endsWith('.card.html'))
+    .map((f) => `reference/${f}`),
+  ...readdirSync(`${SHOWCASE_ROOT}/docs/examples`)
+    .filter((f) => f.endsWith('.snippet.jsx'))
+    .map((f) => `docs/examples/${f}`),
+];
+
 describe("Sonora's glyphs, read from its sources", () => {
   it('[M0.sonoraclean/d] only Icon names the icon font or sets its fill or weight', () => {
     const offenders = sonoraSources()
@@ -150,44 +165,19 @@ describe("Sonora's glyphs, read from its sources", () => {
     },
   );
 
-  it('[M0.sonoraclean/d] no showcase card or snippet hand-draws a glyph in the icon font', () => {
-    const root = `${REPO_ROOT}/${SONORA_DIR}`;
-    const files = [
-      ...readdirSync(`${root}/components`, { recursive: true, encoding: 'utf8' })
-        .filter((f) => f.endsWith('.card.html'))
-        .map((f) => `components/${f}`),
-      ...readdirSync(`${root}/docs/examples`)
-        .filter((f) => f.endsWith('.snippet.jsx'))
-        .map((f) => `docs/examples/${f}`),
-    ];
-    const offenders = files.filter((f) =>
-      ICON_FONT.some((re) => re.test(readFileSync(`${root}/${f}`, 'utf8'))),
+  it('[M0.sonoraclean/d] no showcase card, reference card or snippet hand-draws a glyph in the icon font', () => {
+    const offenders = showcaseFiles().filter((f) =>
+      ICON_FONT.some((re) => re.test(readFileSync(`${SHOWCASE_ROOT}/${f}`, 'utf8'))),
     );
     expect(offenders).toEqual([]);
+    expect(showcaseFiles().filter((f) => f.startsWith('reference/')).length).toBeGreaterThan(0);
   });
 
-  it('[M0.sonoraclean/d] no reference card hand-draws a glyph in the icon font', () => {
-    const root = `${REPO_ROOT}/${SONORA_DIR}/reference`;
-    const offenders = readdirSync(root)
-      .filter((f) => f.endsWith('.card.html'))
-      .filter((f) => ICON_FONT.some((re) => re.test(readFileSync(`${root}/${f}`, 'utf8'))));
-    expect(offenders).toEqual([]);
-  });
-
-  it("[M0.sonoraclean/d] a card or snippet glyph beside a Button's or Input's text follows the text's weight", () => {
-    const root = `${REPO_ROOT}/${SONORA_DIR}`;
-    const files = [
-      ...readdirSync(`${root}/components`, { recursive: true, encoding: 'utf8' })
-        .filter((f) => f.endsWith('.card.html'))
-        .map((f) => `components/${f}`),
-      ...readdirSync(`${root}/docs/examples`)
-        .filter((f) => f.endsWith('.snippet.jsx'))
-        .map((f) => `docs/examples/${f}`),
-    ];
+  it("[M0.sonoraclean/d] a card, reference card or snippet glyph beside a Button's or Input's text follows the text's weight", () => {
     const iconProp =
       /<(Button|Input)\b(?:(?!<\/?(?:Button|Input)\b)[\s\S])*?icon=\{<Icon\b([^>]*)\/>/g;
-    const offenders = files.flatMap((f) =>
-      [...readFileSync(`${root}/${f}`, 'utf8').matchAll(iconProp)]
+    const offenders = showcaseFiles().flatMap((f) =>
+      [...readFileSync(`${SHOWCASE_ROOT}/${f}`, 'utf8').matchAll(iconProp)]
         .filter((m) => !/weight="text"/.test(m[2]!))
         .map((m) => `${f}: ${m[1]} ${m[2]!.trim()}`),
     );

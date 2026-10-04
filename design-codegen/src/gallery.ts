@@ -1,6 +1,9 @@
 /**
- * The web gallery: every Sonora component drawn once, in dark and light, from its first usage in
- * Sonora's showcase cards (`components/<folder>/*.card.html`) whose props are all literals. A
+ * The web gallery: every Sonora component drawn once, in dark and light, from a usage in Sonora's
+ * showcase cards (`components/<folder>/*.card.html`) whose props are all literals: the first in the
+ * component's own card, the one whose `@dsCard` name names it ("Icon", "Mini Player, Result Rows &
+ * Media Header"), else the first not nested inside another Sonora component, else the first nested
+ * one (a part only a layout draws, such as BottomNav), cards in path order. A
  * literal is a string, number, boolean or null, an object or array of literals, an element whose
  * own props and children are literals (a glyph span, another Sonora component), or a top-level
  * `const` of the card's script holding one, which is written inline, or a function that reads only
@@ -22,6 +25,8 @@ export interface Card {
   path: string;
   /** The card's Babel script. */
   script: string;
+  /** The card's `@dsCard` name, such as `Buttons & Icon Buttons`. */
+  name: string;
 }
 
 export interface GalleryEntry {
@@ -47,8 +52,9 @@ export function readCards(sonoraDir: string): Card[] {
       if (!file.endsWith('.card.html')) continue;
       const html = readFileSync(join(root, folder, file), 'utf8');
       const script = /<script type="text\/babel">([\s\S]*?)<\/script>/.exec(html)?.[1];
+      const name = /<!--\s*@dsCard\b[^>]*?\bname="([^"]*)"/.exec(html)?.[1] ?? '';
       if (script !== undefined) {
-        cards.push({ path: relative(root, join(root, folder, file)), script });
+        cards.push({ path: relative(root, join(root, folder, file)), script, name });
       }
     }
   }
@@ -219,21 +225,33 @@ class Script {
   }
 }
 
-/**
- * Every JSX element under `node`, in source order, each with the intrinsic element (`<div>`) that
- * holds it as a direct child, if one does.
- */
+interface Found {
+  element: t.JSXElement;
+  /** The intrinsic element (`<div>`) that holds it as a direct child, if one does. */
+  holder?: t.JSXElement;
+  /** Whether a Sonora component holds it, as a child or in a prop, at any depth. */
+  nested: boolean;
+}
+
+/** Every JSX element under `node`, in source order. */
 function elements(
   node: t.Node,
-  out: { element: t.JSXElement; holder?: t.JSXElement }[] = [],
+  components: ReadonlySet<string>,
+  out: Found[] = [],
   holder?: t.JSXElement,
-): { element: t.JSXElement; holder?: t.JSXElement }[] {
+  nested = false,
+): Found[] {
   if (node.type === 'JSXElement') {
-    out.push({ element: node, holder });
+    out.push({ element: node, holder, nested });
     const name = node.openingElement.name;
     const intrinsic = name.type === 'JSXIdentifier' && /^[a-z]/.test(name.name);
-    for (const attr of node.openingElement.attributes) elements(attr, out);
-    for (const child of node.children) elements(child, out, intrinsic ? node : undefined);
+    const inner = nested || (name.type === 'JSXIdentifier' && components.has(name.name));
+    for (const attr of node.openingElement.attributes) {
+      elements(attr, components, out, undefined, inner);
+    }
+    for (const child of node.children) {
+      elements(child, components, out, intrinsic ? node : undefined, inner);
+    }
     return out;
   }
   for (const value of Object.values(node)) {
@@ -244,7 +262,7 @@ function elements(
         typeof child === 'object' &&
         typeof (child as t.Node).type === 'string'
       ) {
-        elements(child as t.Node, out);
+        elements(child as t.Node, components, out, undefined, nested);
       }
     }
   }
@@ -268,24 +286,46 @@ function frame(script: Script, holder: t.JSXElement | undefined): [string, strin
   return [script.write(open, edits), `</${name}>`];
 }
 
-/** Each component's first usage whose props are all literals, and the components with none. */
+/**
+ * The components a card's name names: each item of a list such as "Mini Player, Result Rows &
+ * Media Header" with its spaces dropped, singular or plural.
+ */
+function named(card: Card): Set<string> {
+  const out = new Set<string>();
+  for (const item of card.name.split(/\s*[,&]\s*/)) {
+    const word = item.replace(/\s+/g, '');
+    out.add(word);
+    if (word.endsWith('s')) out.add(word.slice(0, -1));
+  }
+  return out;
+}
+
+/**
+ * Each component's usage whose props are all literals, and the components with none: the first in
+ * its own card, else the first not nested inside another component, else the first nested one.
+ */
 export function galleryEntries(
   components: Component[],
   cards: Card[],
 ): { entries: GalleryEntry[]; missing: string[] } {
   const names = new Set(components.map((c) => c.name));
-  const found = new Map<string, GalleryEntry>();
+  const own = new Map<string, GalleryEntry>();
+  const alone = new Map<string, GalleryEntry>();
+  const inside = new Map<string, GalleryEntry>();
   for (const card of cards) {
     const program = parse(card.script, { sourceType: 'script', plugins: ['jsx'] }).program;
     const script = new Script(card.script, program, names);
-    for (const { element, holder } of elements(program)) {
+    const mine = named(card);
+    for (const { element, holder, nested } of elements(program, names)) {
       const name = element.openingElement.name;
-      if (name.type !== 'JSXIdentifier' || !names.has(name.name) || found.has(name.name)) continue;
+      if (name.type !== 'JSXIdentifier' || !names.has(name.name)) continue;
+      const into = mine.has(name.name) ? own : nested ? inside : alone;
+      if (into.has(name.name)) continue;
       const uses = new Set<string>();
       const edits = script.literal(element, uses);
       if (edits === undefined) continue;
       const [open, close] = frame(script, holder);
-      found.set(name.name, {
+      into.set(name.name, {
         name: name.name,
         card: card.path,
         jsx: open + script.write(element, edits) + close,
@@ -293,6 +333,7 @@ export function galleryEntries(
       });
     }
   }
+  const found = new Map([...inside, ...alone, ...own]);
   const entries = components.flatMap((c) => found.get(c.name) ?? []);
   const missing = components.filter((c) => !found.has(c.name)).map((c) => c.name);
   return { entries, missing };

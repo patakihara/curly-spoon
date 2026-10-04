@@ -63,7 +63,7 @@ code{font-family:ui-monospace,monospace;font-size:.92em;background:var(--surface
 <div id="root"></div>
 <script type="text/babel">
 const NS = window.SonoraDesignSystem_6c1435 || {};
-const { Badge, Button, DownloadButton, EpisodeRow, FollowButton, Rating, SortFilterBar, ViewToggle } = window.SonoraDesignSystem_6c1435 || {};
+const { Badge, Button, DownloadButton, EpisodeRow, FollowButton, Icon, Rating, SortFilterBar, ViewToggle } = window.SonoraDesignSystem_6c1435 || {};
 const DOC = document.getElementById('__doc').innerHTML;
 const EXAMPLES = [
   { name: 'FollowButton', role: 'new', uses: ['FollowButton'], node: () => (
@@ -102,11 +102,11 @@ const EXAMPLES = [
   <Badge size="md" tone="neutral" square>E</Badge>
 </div>
   ) },
-  { name: 'Button', role: 'ext', uses: ['Button'], node: () => (
+  { name: 'Button', role: 'ext', uses: ['Button', 'Icon'], node: () => (
 <Button
   variant="secondary"
   pressed
-  icon={<span style={{fontFamily:'Material Symbols Rounded',fontSize:'var(--icon-xs)',lineHeight:1}}>notifications_active</span>}
+  icon={<Icon name="notifications_active" size="xs" weight="text" />}
   onClick={() => {}}
 >New episodes on</Button>
   ) },

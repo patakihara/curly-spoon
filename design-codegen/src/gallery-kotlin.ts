@@ -4,7 +4,8 @@
  * prop Android's props class takes is written as Kotlin, typed by the props model, and a prop it
  * does not take is left out. A handler is a no-op lambda. An element given to a slot, or as
  * children, is drawn inside it: a Sonora component Android has by its composable, a component it
- * lacks or an intrinsic element by what it holds, and text as `BasicText`. The web frame around the
+ * lacks or an intrinsic element by what it holds, and text as `BasicText`; an optional slot that
+ * would draw nothing, such as an `Icon` Android has no composable for, is left out. The web frame around the
  * usage is the browser's, so it is dropped; `platform` is always `mobile`, since Android is the
  * phone. The Paparazzi test in `:sonora` snapshots every entry.
  */
@@ -163,7 +164,9 @@ class GalleryWriter extends KotlinValues {
         else this.fail(`${where} is required and not given`);
         continue;
       }
-      args.push([p.name, this.prop(p.type, value, where)]);
+      const drawn = this.prop(p.type, value, where);
+      if (p.optional && isSlot(p.type) && drawn === EMPTY) continue;
+      args.push([p.name, drawn]);
     }
     const last = args.findIndex(([n]) => n === 'children');
     if (last >= 0) args.push(...args.splice(last, 1));
@@ -177,11 +180,15 @@ class GalleryWriter extends KotlinValues {
       return lambda([], Array.from({ length: arity }, () => '_').join(', '));
     }
     if (isSlot(type) && (isElement(value) || Array.isArray(value))) {
-      return lambda(this.draw(value));
+      const body = this.draw(value);
+      return body.length === 0 ? EMPTY : lambda(body);
     }
     return this.value(type, value, where);
   }
 }
+
+/** A slot's lambda that draws nothing, which an optional slot leaves out. */
+const EMPTY: Expr = lambda([]);
 
 /** The usage's own element: the first one naming the entry's component, inside any frame. */
 function usage(node: t.Node, name: string): t.JSXElement | undefined {

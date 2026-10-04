@@ -29,8 +29,8 @@ const component = (name: string) => ({
   [`basic/${name}.d.ts`]: `export interface ${name}Props {}\n`,
 });
 /** A card in Sonora's form: a Babel script that destructures the components it draws. */
-const card = (body: string) =>
-  `<!-- @dsCard group="Basic" name="Fixture" -->\n<div id="root"></div>\n<script type="text/babel">\n${body}\n</script>\n`;
+const card = (body: string, name = 'Fixture') =>
+  `<!-- @dsCard group="Basic" name="${name}" -->\n<div id="root"></div>\n<script type="text/babel">\n${body}\n</script>\n`;
 
 const entriesOf = (dir: string) => galleryEntries(discoverComponents(dir), readCards(dir));
 
@@ -160,6 +160,55 @@ const y = <List renderRow={() => <Chip label={outside}/>}/>;`),
       'basic/a.card.html': card(`const label = 'One';\nconst x = <Chip {...{ label }}/>;`),
     });
     expect(entriesOf(dir).entries[0]?.jsx).toBe(`<Chip {...{ label: ('One') }}/>`);
+  });
+
+  it("takes a component's usage from its own card first, the card its name names", () => {
+    const dir = sonoraOf({
+      ...component('Chip'),
+      ...component('MediaRow'),
+      'basic/a.card.html': card(
+        `const x = <Chip label="Elsewhere"/>;\nconst y = <MediaRow title="Elsewhere"/>;`,
+      ),
+      'basic/b.card.html': card(`const x = <Chip label="Own"/>;`, 'Chips'),
+      'basic/c.card.html': card(
+        `const y = <MediaRow title="Own"/>;`,
+        'Covers, Media Rows & Headers',
+      ),
+    });
+    const [chip, row] = entriesOf(dir).entries;
+    expect(chip).toMatchObject({ card: 'basic/b.card.html', jsx: '<Chip label="Own"/>' });
+    expect(row).toMatchObject({ card: 'basic/c.card.html', jsx: '<MediaRow title="Own"/>' });
+  });
+
+  it('elsewhere, takes the first usage not nested inside another component', () => {
+    const dir = sonoraOf({
+      ...component('Chip'),
+      ...component('Row'),
+      'basic/a.card.html': card(
+        `const x = <Row trailing={<Chip label="In a prop"/>}><Chip label="A child"/></Row>;\nconst y = <div><Chip label="Alone"/></div>;`,
+      ),
+    });
+    const chip = entriesOf(dir).entries.find((e) => e.name === 'Chip');
+    expect(chip?.jsx).toBe('<div><Chip label="Alone"/></div>');
+  });
+
+  it('takes a nested usage for a component no card draws alone', () => {
+    const dir = sonoraOf({
+      ...component('Chip'),
+      ...component('Row'),
+      'basic/a.card.html': card(`const x = <Row trailing={<Chip label="In a prop"/>}/>;`),
+    });
+    const chip = entriesOf(dir).entries.find((e) => e.name === 'Chip');
+    expect(chip?.jsx).toBe('<Chip label="In a prop"/>');
+  });
+
+  it("[M0.sonoraclean/d] draws Icon's specimen and MediaHeader's own actions from their own cards", () => {
+    const { entries } = entriesOf(sonoraDir);
+    const icon = entries.find((e) => e.name === 'Icon');
+    const header = entries.find((e) => e.name === 'MediaHeader');
+    expect(icon?.card).toBe('basic/icon.card.html');
+    expect(header?.card).toBe('components/player-tracks.card.html');
+    expect(header?.jsx).toMatch(/onPlay=[\s\S]*onPlayNext=[\s\S]*onPlayLast=/);
   });
 
   it('takes the cards in path order, so the first usable usage wins', () => {

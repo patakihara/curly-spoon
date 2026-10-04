@@ -26,8 +26,8 @@ export const gallery = [
   },
   {
     name: 'BackLayer',
-    card: 'layouts/backdrop-app-bar.card.html',
-    render: () => (<BackLayer platform="mobile" title="Sign in" />),
+    card: 'layouts/backdrop-lift.card.html',
+    render: () => (<BackLayer platform="mobile" title="Library" />),
   },
   {
     name: 'BackdropShell',
@@ -136,8 +136,8 @@ export const gallery = [
   },
   {
     name: 'FollowButton',
-    card: 'components/about-cards.card.html',
-    render: () => (<FollowButton following={false} onChange={() => {}} size="sm" />),
+    card: 'components/context-headers.card.html',
+    render: () => (<div style={{display:'flex',gap:'var(--spacing-2xl)',alignItems:'center',flexWrap:'wrap'}}><FollowButton following={false} onChange={() => {}} /></div>),
   },
   {
     name: 'FrontLayer',
@@ -160,13 +160,13 @@ export const gallery = [
   },
   {
     name: 'Icon',
-    card: 'basic/buttons.card.html',
-    render: () => (<Icon name="play_arrow" weight="text" />),
+    card: 'basic/icon.card.html',
+    render: () => (<div style={{display:'flex',gap:16,alignItems:'center',color:'var(--surface-fg-muted)'}}><Icon name="bookmark" /></div>),
   },
   {
     name: 'IconButton',
-    card: 'basic/button-group-badges.card.html',
-    render: () => (<div style={{display:'flex',gap:10,alignItems:'center'}}><IconButton label="More" muted icon="more_vert" onClick={() => {}} /></div>),
+    card: 'basic/buttons.card.html',
+    render: () => (<div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap'}}><IconButton label="Previous" icon="skip_previous" onClick={() => {}} /></div>),
   },
   {
     name: 'Input',
@@ -175,13 +175,13 @@ export const gallery = [
   },
   {
     name: 'LayoutGrid',
-    card: 'layouts/backdrop-shell.card.html',
+    card: 'layouts/layout-grid.card.html',
     render: () => (<LayoutGrid platform="desktop">
-            <MediaCard title="Driftwave" sub="The Nebula Collective" onClick={() => {}}/>
-            <MediaCard title="Static Coast" sub="Echo Fields" onClick={() => {}}/>
-            <MediaCard title="Hollow Fields" sub="Halcyon Bloom" onClick={() => {}}/>
-            <MediaCard title="Signal Fires" sub="The Nebula Collective" onClick={() => {}}/>
-          </LayoutGrid>),
+    <MediaCard title="Driftwave" sub="The Nebula Collective" onClick={() => {}}/>
+    <MediaCard title="Static Coast" sub="Echo Fields" onClick={() => {}}/>
+    <MediaCard title="Hollow Fields" sub="Halcyon Bloom" onClick={() => {}}/>
+    <MediaCard title="Signal Fires" sub="The Nebula Collective" onClick={() => {}}/>
+  </LayoutGrid>),
   },
   {
     name: 'Lyrics',
@@ -205,23 +205,9 @@ export const gallery = [
   },
   {
     name: 'MediaHeader',
-    card: 'components/about-cards.card.html',
-    render: () => (<div><MediaHeader
-        kindLabel="Episode"
-        title="Aftershocks: the second call"
-        subtitle="Static & Signal"
-        onSubtitle={() => {}}
-        meta="8 Aug 2024 · 22min left"
-        progress={0.65}
-        actions={
-          <div style={{display:'flex',gap:'var(--spacing-sm)',alignItems:'center'}}>
-            <IconButton label="Saved" active icon="bookmark" onClick={() => {}} />
-            <IconButton label="Downloaded" active icon="download_done" onClick={() => {}} />
-            <IconButton label="Share" icon="share" onClick={() => {}} />
-            <IconButton label="More" muted icon="more_vert" onClick={() => {}} />
-          </div>
-        }
-      /></div>),
+    card: 'components/player-tracks.card.html',
+    render: () => (<div style={{display:'flex',flexDirection:'column',gap:24}}><MediaHeader kindLabel="Audiobook" title="The Ink Orchard" subtitle="Linnea Frost" onSubtitle={() => {}}
+      meta="2023 · 18 chapters · 14 h 42 m" onPlay={() => {}} onPlayNext={() => {}} onPlayLast={() => {}} /></div>),
   },
   {
     name: 'MiniPlayer',
@@ -256,17 +242,12 @@ export const gallery = [
   },
   {
     name: 'PageBody',
-    card: 'layouts/backdrop-shell.card.html',
-    render: () => (<PageBody platform="desktop">
-        <Section title="Recently added" platform="desktop" last>
-          <LayoutGrid platform="desktop">
-            <MediaCard title="Driftwave" sub="The Nebula Collective" onClick={() => {}}/>
-            <MediaCard title="Static Coast" sub="Echo Fields" onClick={() => {}}/>
-            <MediaCard title="Hollow Fields" sub="Halcyon Bloom" onClick={() => {}}/>
-            <MediaCard title="Signal Fires" sub="The Nebula Collective" onClick={() => {}}/>
-          </LayoutGrid>
-        </Section>
-      </PageBody>),
+    card: 'layouts/page-body.card.html',
+    render: () => (<PageBody platform="desktop" width="list">
+    <Section title="Downloads" platform="desktop" last>
+      <SettingRow title="Auto-download requests" sub="Fetch approved requests as soon as a source appears." checked platform="desktop" onChange={() => {}}/>
+    </Section>
+  </PageBody>),
   },
   {
     name: 'PlayActions',
@@ -322,8 +303,8 @@ export const gallery = [
   },
   {
     name: 'QuickPick',
-    card: 'components/card-states.card.html',
-    render: () => (<div style={{width:260}}><QuickPick title="Aftershocks: the second call" sub="Podcast · 22min left" progress={0.72} onClick={() => {}} /></div>),
+    card: 'components/quick-picks.card.html',
+    render: () => (<div style={{display:'grid',gridTemplateColumns:'repeat(2, 1fr)',gap:12,maxWidth:620}}><QuickPick title="The Quiet Lodger" sub="Book · 6 h 12 m left" onClick={() => {}} /></div>),
   },
   {
     name: 'RailItem',
@@ -337,12 +318,8 @@ export const gallery = [
   },
   {
     name: 'ResultRow',
-    card: 'basic/overflow-menu.card.html',
-    render: () => (<div><ResultRow platform="desktop" title="Tidal Lines" meta="Harbour Lights · 3:41" trailing={<OverflowMenu platform="desktop" items={([
-  { key: 'add', label: 'Add to library', icon: 'library_add', sub: 'Keeps a copy of your own' },
-  { key: 'artist', label: 'Go to artist', icon: 'person' },
-  { key: 'share', label: 'Share', icon: 'share' },
-])} onSelect={() => {}} />} onClick={() => {}} /></div>),
+    card: 'components/player-tracks.card.html',
+    render: () => (<div style={{maxWidth:620}}><ResultRow title="The Long Meridian" meta="Tomas Arden · Audiobook · 62 h" status="In library" tone="library" onClick={() => {}} /></div>),
   },
   {
     name: 'ScrollArea',
@@ -368,20 +345,19 @@ export const gallery = [
   },
   {
     name: 'Section',
-    card: 'layouts/backdrop-shell.card.html',
-    render: () => (<Section title="Recently added" platform="desktop" last>
-          <LayoutGrid platform="desktop">
-            <MediaCard title="Driftwave" sub="The Nebula Collective" onClick={() => {}}/>
-            <MediaCard title="Static Coast" sub="Echo Fields" onClick={() => {}}/>
-            <MediaCard title="Hollow Fields" sub="Halcyon Bloom" onClick={() => {}}/>
-            <MediaCard title="Signal Fires" sub="The Nebula Collective" onClick={() => {}}/>
-          </LayoutGrid>
-        </Section>),
+    card: 'layouts/section.card.html',
+    render: () => (<Section title="Jump back in" action="arrow_forward" actionLabel="Show all" platform="desktop" last onAction={() => {}}>
+    <LayoutGrid platform="desktop">
+      <MediaCard title="Driftwave" sub="The Nebula Collective" onClick={() => {}}/>
+      <MediaCard title="Static Coast" sub="Echo Fields" onClick={() => {}}/>
+      <MediaCard title="Hollow Fields" sub="Halcyon Bloom" onClick={() => {}}/>
+    </LayoutGrid>
+  </Section>),
   },
   {
     name: 'SectionHeader',
-    card: 'components/context-headers.card.html',
-    render: () => (<div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-md)'}}><SectionHeader title="Recently added" action="arrow_forward" onAction={() => {}} /></div>),
+    card: 'components/quick-picks.card.html',
+    render: () => (<div><SectionHeader title="Jump back in" platform="desktop" /></div>),
   },
   {
     name: 'SeekBar',
@@ -425,7 +401,7 @@ export const gallery = [
   {
     name: 'SpeedControl',
     card: 'components/spoken-transport.card.html',
-    render: () => (<SpeedControl value={1.5} onClick={() => {}} />),
+    render: () => (<div style={{display:'flex',gap:'var(--spacing-lg)',alignItems:'center'}}><SpeedControl value={1} onClick={() => {}} /></div>),
   },
   {
     name: 'StateLayer',
@@ -439,8 +415,8 @@ export const gallery = [
   },
   {
     name: 'Switch',
-    card: 'basic/states.card.html',
-    render: () => (<Switch checked onChange={() => {}} />),
+    card: 'basic/switch.card.html',
+    render: () => (<div style={{display:'flex',flexDirection:'column',gap:12,maxWidth:320}}><Switch checked label="Gapless playback" onChange={() => {}}/></div>),
   },
   {
     name: 'TabBar',
@@ -449,8 +425,8 @@ export const gallery = [
   },
   {
     name: 'TonalIconButton',
-    card: 'basic/states.card.html',
-    render: () => (<TonalIconButton glyph="grid_view" label="Grid" onClick={() => {}} />),
+    card: 'basic/tonal-icon-button.card.html',
+    render: () => (<div style={{display:'flex',gap:16,alignItems:'center',flexWrap:'wrap'}}><TonalIconButton glyph="grid_view" label="Grid" onClick={() => {}}/></div>),
   },
   {
     name: 'TransportBar',
