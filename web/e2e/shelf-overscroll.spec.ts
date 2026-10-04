@@ -296,3 +296,35 @@ test("[M0.sonoraclean/d] pressing a Browse shelf's forward arrow until it goes a
   }
   await expect(forward, 'focus lands on the forward arrow').toBeFocused();
 });
+
+test('[M0.sonoraclean/d] a Browse shelf scrolled to its end by wheel, after focus has left its arrows for the page, leaves focus where it is', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.locator('img').first().waitFor();
+  const forward = page.getByRole('button', { name: 'Scroll forward' }).first();
+  const id = (await forward.getAttribute('aria-controls')) ?? '';
+  const track = page.locator(`[id="${id}"]`);
+  const back = page.locator(`button[aria-label="Scroll back"][aria-controls="${id}"]`);
+
+  // Page the shelf once by its arrow, then click a blank part of the page: focus goes to the body.
+  await forward.focus();
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(600);
+  await page.mouse.click(1430, 450);
+  expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
+
+  // Scroll the shelf to its end with the wheel, as a trackpad would.
+  const box = (await track.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  for (let n = 0; n < 40; n++) {
+    const end = await track.evaluate((el) => el.scrollLeft >= el.scrollWidth - el.clientWidth - 1);
+    if (end) break;
+    await page.mouse.wheel(400, 0);
+    await page.waitForTimeout(100);
+  }
+  await page.waitForTimeout(400);
+  await expect(back, 'no arrow takes focus the listener did not give it').not.toBeFocused();
+  expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
+});
