@@ -156,7 +156,7 @@ class ShellNavTest {
     private fun shows(name: String) = composeRule.onAllNodesWithText(name).fetchSemanticsNodes().isNotEmpty()
 
     @Test
-    fun M0_canvas_c_thePlayersTabsSwitchInPlaceWithNoCrossfadeOfTheOldTab() {
+    fun M0_canvas_c_thePlayersTabsSwitchInPlaceShowingExactlyOneTabInEveryFrame() {
         start()
         miniPlayer()
         tab("Queue")
@@ -166,9 +166,14 @@ class ShellNavTest {
         var lyricsFrom: Int? = null
         for (frame in 0..MAX_FRAMES) {
             val lyrics = shows("LyricsPage")
+            val queue = shows("QueuePage")
             assertFalse(
                 "Queue and Lyrics both on screen in frame $frame; the tab switches in place, never crossfading",
-                lyrics && shows("QueuePage"),
+                lyrics && queue,
+            )
+            assertTrue(
+                "Neither Queue nor Lyrics on screen in frame $frame; the sheet never shows empty between tabs",
+                lyrics || queue,
             )
             if (lyrics && lyricsFrom == null) lyricsFrom = frame
             composeRule.mainClock.advanceTimeByFrame()
