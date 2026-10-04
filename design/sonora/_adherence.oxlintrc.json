@@ -129,16 +129,16 @@
         "message": "<Icon> weight must be one of 'body' | 'strong' | 'text'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|icon|iconSize|variant|size|active|tone|muted|label|onClick|disabled|title|pressed|expanded|controls|className|style|key|ref|className|style|children)$/]",
-        "message": "<IconButton> doesn't accept that prop. Declared props: children, icon, iconSize, variant, size, active, tone, muted, label, onClick, disabled, title, pressed, expanded, controls, className, style."
+        "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|icon|iconSize|variant|size|wide|active|tone|muted|label|onClick|disabled|title|pressed|expanded|controls|className|style|key|ref|className|style|children)$/]",
+        "message": "<IconButton> doesn't accept that prop. Declared props: children, icon, iconSize, variant, size, wide, active, tone, muted, label, onClick, disabled, title, pressed, expanded, controls, className, style."
       },
       {
         "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute[name.name='iconSize'] > Literal[value!=/^(?:2xs|xs|sm|md|lg|xl)$/]",
         "message": "<IconButton> iconSize must be one of '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:plain|outline|tonal|raised|scrim)$/]",
-        "message": "<IconButton> variant must be one of 'plain' | 'outline' | 'tonal' | 'raised' | 'scrim'."
+        "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:plain|outline|tonal|raised|scrim|play)$/]",
+        "message": "<IconButton> variant must be one of 'plain' | 'outline' | 'tonal' | 'raised' | 'scrim' | 'play'."
       },
       {
         "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute[name.name='size'] > Literal[value!=/^(?:xs|sm|md|lg|xl|2xl|3xl)$/]",

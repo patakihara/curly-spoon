@@ -139,7 +139,14 @@ const DRAW: Record<string, (act: Act, disabled: boolean) => ReactNode> = {
   ExpandableText: (act) => <ExpandableText text={LONG} lines={1} expanded={false} onToggle={act} />,
   ExpanderRow: (act) => <ExpanderRow label="More releases" onToggle={act} />,
   FeatureCard: (act) => (
-    <FeatureCard kind="Album" title="Driftwave" meta="Halcyon Bloom" onMore={act} onSave={act} />
+    <FeatureCard
+      kind="Album"
+      title="Driftwave"
+      meta="Halcyon Bloom"
+      onMore={act}
+      onSave={act}
+      onPlay={act}
+    />
   ),
   FieldRow: (act) => <FieldRow label="Name" placeholder="Your name" onChange={act} />,
   FollowButton: (act) => <FollowButton onChange={act} />,
@@ -151,6 +158,15 @@ const DRAW: Record<string, (act: Act, disabled: boolean) => ReactNode> = {
       variant="outline"
       icon="playlist_add"
       label="Add to a list"
+      onClick={act}
+      disabled={disabled}
+    />
+  ),
+  'IconButton.play': (act, disabled) => (
+    <IconButton
+      variant="play"
+      icon="play_arrow"
+      label="Play album"
       onClick={act}
       disabled={disabled}
     />

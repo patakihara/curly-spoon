@@ -99,7 +99,6 @@ const GLYPH_COMPONENTS = [
   'MediaCard',
   'MediaHeader',
   'MiniPlayer',
-  'NavRail',
   'NowPlaying',
   'OverflowMenu',
   'PlayActions',
@@ -120,6 +119,7 @@ const GLYPH_COMPONENTS = [
 /** The components whose only glyphs are IconButton's, named through its `icon`. */
 const ICON_BUTTON_GLYPHS = [
   'LyricsSyncButton',
+  'NavRail',
   'NowPlayingPage',
   'PlayerSubPage',
   'SearchButton',
@@ -260,7 +260,6 @@ function roundButtons(src: string): string[] {
 /** The round buttons that stay hand-built, each with why. */
 const OWN_ROUND_BUTTONS: Record<string, string> = {
   AccountButton: 'an avatar: the round button is the picture, not a glyph',
-  FeatureCard: 'its play button on the play fill, which no IconButton variant draws',
   IconButton: 'the one round glyph button',
   MiniPlayer: "its transport, which moves onto IconButton with the mini player's own fold",
   PlayActions: 'the play cluster over artwork, on the play fill and the accent scrim',
@@ -270,6 +269,7 @@ const OWN_ROUND_BUTTONS: Record<string, string> = {
 const FORMER_ROUND_BUTTONS: [string, string][] = [
   ['DownloadButton', 'outline'],
   ['FeatureCard', 'plain'],
+  ['FeatureCard', 'play'],
   ['MediaCard', 'scrim'],
   ['MediaHeader', 'outline'],
   ['OverflowMenu', 'scrim'],
@@ -337,6 +337,15 @@ describe("Sonora's icon buttons, read from its sources", () => {
     expect(
       roundButtons(`export const D = () => <IconButton variant="scrim" label="More" />;`),
     ).toEqual([]);
+  });
+
+  it("[M0.sonoraclean/d] NavRail's collapse toggle is a wide, muted IconButton naming its glyph, and NavRail draws no button of its own", () => {
+    const src = source('NavRail');
+    const buttons = rendered(src).filter((e) => e.tag === 'IconButton');
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0]!.attrs).toMatchObject({ wide: true, muted: true, size: 'md' });
+    expect(buttons[0]!.attrs).toHaveProperty('icon');
+    expect(rendered(src).map((e) => e.tag)).not.toContain('button');
   });
 
   it('[M0.sonoraclean/d] SearchButton names its glyph through IconButton', () => {

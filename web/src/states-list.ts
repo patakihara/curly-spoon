@@ -45,6 +45,7 @@ export const STATE_ENTRIES: readonly StateEntry[] = [
   { name: 'FollowButton', disabled: false, ripple: true },
   { name: 'IconButton', disabled: true, ripple: true },
   { name: 'IconButton.outline', disabled: true, ripple: true },
+  { name: 'IconButton.play', disabled: true, ripple: true },
   { name: 'IconButton.raised', disabled: true, ripple: true },
   { name: 'IconButton.scrim', disabled: true, ripple: true },
   { name: 'IconButton.tonal', disabled: true, ripple: true },

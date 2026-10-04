@@ -4,11 +4,13 @@ import { IconButton } from '../basic/IconButton.jsx';
 import { ScrollArea } from './ScrollArea.jsx';
 import { scrollEdges, sx } from '../shared.js';
 
-// Placement only: the arrow itself is a raised IconButton.
+// Placement only, on a holder round the arrow, which is a raised IconButton. An arrow at its end
+// fades out raised, as it is, and its holder goes inert, so the arrow is neither focused nor
+// announced; drawn disabled instead, it would flatten grey as it faded.
 const arrow = (side, shown, enabled, inset) => sx(
   // --shelf-arrow-top (38%) rather than 50%: the cards' art is square with a caption beneath, so mid-art sits above mid-card.
   // Sits half a page margin outside the content edge, so it straddles the gutter.
-  'position:absolute;top:var(--shelf-arrow-top);' + side + ':' + inset + ';transform:translateY(-50%);z-index:var(--z-overlay);' +
+  'position:absolute;display:flex;top:var(--shelf-arrow-top);' + side + ':' + inset + ';transform:translateY(-50%);z-index:var(--z-overlay);' +
   'opacity:' + (shown && enabled ? 'var(--opacity-rest)' : '0') + ';' +
   'pointer-events:' + (shown && enabled ? 'auto' : 'none') + ';' +
   'transition:opacity var(--duration-fast) var(--ease-standard)'
@@ -18,7 +20,7 @@ const arrow = (side, shown, enabled, inset) => sx(
  * Horizontally scrolling row that bleeds past the page margin, so cards run off the edge instead
  * of clipping at the gutter. It scrolls in a ScrollArea on the x axis, whose clipped frame spans
  * exactly the bleed, so the row never widens the page it sits in. Desktop gets arrows that fade in
- * on hover/focus and page by two items; mobile gets ScrollArea's fading overlay thumb.
+ * on hover/focus, page by two items and fade out at either end; mobile gets ScrollArea's fading overlay thumb.
  */
 export function Shelf({ children, gap, margin, platform = 'desktop', step = 2, arrows, scrollbar }) {
   const mobile = platform === 'mobile';
@@ -28,7 +30,7 @@ export function Shelf({ children, gap, margin, platform = 'desktop', step = 2, a
   const showBar = scrollbar === undefined ? mobile : scrollbar;
   const ref = React.useRef(null);
   const [hot, setHot] = React.useState(false);
-  // Whether the row sits at each end, so the arrow that would scroll past it is disabled.
+  // Whether the row sits at each end, so the arrow that would scroll past it goes.
   const [ends, setEnds] = React.useState({ start: true, end: false });
   const measure = React.useCallback(() => {
     const el = ref.current;
@@ -60,8 +62,12 @@ export function Shelf({ children, gap, margin, platform = 'desktop', step = 2, a
       </div>
       {showArrows && IconButton && (
         <React.Fragment>
-          <IconButton variant="raised" size="md" icon="chevron_left" label="Scroll back" controls={trackId} disabled={ends.start} onClick={() => page(-1)} style={arrow('left', hot, !ends.start, 'calc(-1 * ' + m + ' / 2)')} />
-          <IconButton variant="raised" size="md" icon="chevron_right" label="Scroll forward" controls={trackId} disabled={ends.end} onClick={() => page(1)} style={arrow('right', hot, !ends.end, 'calc(-1 * ' + m + ' / 2)')} />
+          <span inert={ends.start} style={arrow('left', hot, !ends.start, 'calc(-1 * ' + m + ' / 2)')}>
+            <IconButton variant="raised" size="md" icon="chevron_left" label="Scroll back" controls={trackId} onClick={() => page(-1)} />
+          </span>
+          <span inert={ends.end} style={arrow('right', hot, !ends.end, 'calc(-1 * ' + m + ' / 2)')}>
+            <IconButton variant="raised" size="md" icon="chevron_right" label="Scroll forward" controls={trackId} onClick={() => page(1)} />
+          </span>
         </React.Fragment>
       )}
     </div>

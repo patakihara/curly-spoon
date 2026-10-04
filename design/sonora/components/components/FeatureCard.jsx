@@ -10,7 +10,7 @@ import { NS, sx } from '../shared.js';
 export function FeatureCard({ image, kind, title, meta, description, tint, explicit = false, saved = false, onSave, onPlay, onMore, preview, platform = 'desktop' }) {
   const mobile = platform === 'mobile';
   const fg = 'var(--surface-fg)', muted = 'var(--surface-fg-muted)';
-  const { CoverArt, Badge, IconButton, StateLayer, Icon } = NS();
+  const { CoverArt, Badge, IconButton, Icon } = NS();
   const kindLabel = kind ? kind.toLowerCase() : 'item';
   const saveLabel = saved ? 'Remove from saved' : 'Save ' + kindLabel;
   const playLabel = 'Play ' + kindLabel;
@@ -57,12 +57,8 @@ export function FeatureCard({ image, kind, title, meta, description, tint, expli
             </IconButton>
           )}
           {/* Omitted for an audiobook: a sample is the only playback a preview offers there. */}
-          {onPlay && (
-            <button className="sn-int sn-filled" onClick={onPlay} aria-label={playLabel} title={playLabel}
-              style={sx('display:flex;align-items:center;justify-content:center;width:var(--control-sm);height:var(--control-sm);flex-shrink:0;border-radius:var(--radius-round);border:none;background:var(--play);color:var(--play-contrast);cursor:pointer')}>
-              <Icon name="play_arrow" filled weight="strong" />
-              {StateLayer && <StateLayer />}
-            </button>
+          {onPlay && IconButton && (
+            <IconButton variant="play" icon="play_arrow" label={playLabel} title={playLabel} onClick={onPlay} />
           )}
         </div>
       </div>

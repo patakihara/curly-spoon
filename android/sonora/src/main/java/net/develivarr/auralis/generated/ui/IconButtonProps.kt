@@ -9,8 +9,9 @@ import androidx.compose.runtime.Composable
  * ring, for a quiet verb beside a row of buttons), `tonal` (a squat pill on the card fill, for a
  * control sitting on the page, such as the list/grid switch; changing `icon` turns the glyph over
  * rather than cutting to it, instantly under reduced motion), `raised` (the card fill and a shadow,
- * floating over content, as a shelf's arrows do) or `scrim` (the soft scrim in on-scrim ink, over
- * artwork). `label` is always its accessible name.
+ * floating over content, as a shelf's arrows do), `scrim` (the soft scrim in on-scrim ink, over
+ * artwork) or `play` (the play fill, its glyph filled and strong in the play contrast ink, white,
+ * for a play button on a card). `label` is always its accessible name.
  *
  * Web only: className, style.
  */
@@ -28,6 +29,11 @@ data class IconButtonProps(
      * its width but on tonal, which is a spacing step wider. Default 'sm' (36px); 'xs' on tonal.
      */
     val size: SizeXsSmMdLgXl2xl3xl? = null,
+    /**
+     * The rail's pill in place of a circle: `--rail-pill-width` across and the `size` step tall, so
+     * the rail's own toggle sits over its items' pills.
+     */
+    val wide: Boolean? = null,
     /** On: the glyph in the `tone` colour; on tonal, accent ink and the glyph filled. */
     val active: Boolean? = null,
     /**
@@ -60,6 +66,7 @@ enum class IconButtonVariant(val value: String) {
     TONAL("tonal"),
     RAISED("raised"),
     SCRIM("scrim"),
+    PLAY("play"),
 }
 
 enum class IconButtonTone(val value: String) {

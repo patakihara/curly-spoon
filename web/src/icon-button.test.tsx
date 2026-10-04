@@ -69,6 +69,28 @@ describe("Sonora's IconButton", () => {
     expect(button({})).not.toContain('sn-glyph-in');
   });
 
+  it('[M0.sonoraclean/d] play is a circle on the play fill with its glyph filled in the play contrast ink', () => {
+    const html = button({ variant: 'play', icon: 'play_arrow' });
+    const s = style(html);
+    expect(s).toContain('background:var(--play)');
+    expect(s).toContain('color:var(--play-contrast)');
+    expect(s).toContain('border-radius:var(--radius-round)');
+    expect(html).toMatch(/^<button[^>]*class="sn-int sn-filled/);
+    expect(html).toContain('&#x27;FILL&#x27; 1');
+  });
+
+  it("[M0.sonoraclean/d] wide draws the rail's pill: the rail pill width across, the size step tall", () => {
+    const s = style(button({ wide: true, size: 'md' }));
+    expect(s).toContain('width:var(--rail-pill-width)');
+    expect(s).toContain('height:var(--control-md)');
+    expect(s).toContain('border-radius:var(--radius-pill)');
+  });
+
+  it('[M0.sonoraclean/d] its own fades give way to a reveal class, so a revealed button fades with what it reveals beside', () => {
+    expect(style(button({}))).not.toContain('transition');
+    expect(button({})).toMatch(/^<button[^>]*class="sn-int sn-iconbutton"/);
+  });
+
   it.each([
     ['plain', 'accent', 'var(--accent)'],
     ['plain', 'play', 'var(--play)'],
@@ -82,7 +104,7 @@ describe("Sonora's IconButton", () => {
     expect(style(button({ muted: true }))).toContain('color:var(--surface-fg-muted)');
   });
 
-  it.each(['plain', 'outline', 'tonal', 'raised', 'scrim'])(
+  it.each(['plain', 'outline', 'tonal', 'raised', 'scrim', 'play'])(
     '[M0.states/a] %s keeps its accessible name and draws its state layer',
     (variant) => {
       const html = button({ variant, onClick: () => {} });
@@ -101,7 +123,7 @@ describe("Sonora's IconButton", () => {
 
   it('[M0.sonoraclean/d] takes a class and its placement from the caller, over its own look', () => {
     const html = button({ className: 'sn-reveal', style: { position: 'absolute', top: 0 } });
-    expect(html).toMatch(/^<button[^>]*class="sn-int sn-reveal"/);
+    expect(html).toMatch(/^<button[^>]*class="sn-int sn-iconbutton sn-reveal"/);
     expect(style(html)).toContain('position:absolute');
   });
 });

@@ -6,8 +6,9 @@ import { CSSProperties, ReactNode } from 'react';
  * ring, for a quiet verb beside a row of buttons), `tonal` (a squat pill on the card fill, for a
  * control sitting on the page, such as the list/grid switch; changing `icon` turns the glyph over
  * rather than cutting to it, instantly under reduced motion), `raised` (the card fill and a shadow,
- * floating over content, as a shelf's arrows do) or `scrim` (the soft scrim in on-scrim ink, over
- * artwork). `label` is always its accessible name.
+ * floating over content, as a shelf's arrows do), `scrim` (the soft scrim in on-scrim ink, over
+ * artwork) or `play` (the play fill, its glyph filled and strong in the play contrast ink, white,
+ * for a play button on a card). `label` is always its accessible name.
  */
 export interface IconButtonProps {
   /** A glyph, an `Icon`, or any content. Ignored when `icon` is given. */
@@ -17,12 +18,17 @@ export interface IconButtonProps {
   /** The `icon` glyph's step of Icon's ramp. Default 'sm' (24px); 'xs' (20px) on tonal. */
   iconSize?: '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   /** The container. Default 'plain'. */
-  variant?: 'plain' | 'outline' | 'tonal' | 'raised' | 'scrim';
+  variant?: 'plain' | 'outline' | 'tonal' | 'raised' | 'scrim' | 'play';
   /**
    * A step of the control ramp, `--control-xs` (32px) to `--control-3xl` (72px): its height, and
    * its width but on tonal, which is a spacing step wider. Default 'sm' (36px); 'xs' on tonal.
    */
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+  /**
+   * The rail's pill in place of a circle: `--rail-pill-width` across and the `size` step tall, so
+   * the rail's own toggle sits over its items' pills.
+   */
+  wide?: boolean;
   /** On: the glyph in the `tone` colour; on tonal, accent ink and the glyph filled. */
   active?: boolean;
   /**
@@ -47,7 +53,10 @@ export interface IconButtonProps {
   expanded?: boolean;
   /** The id of the element it opens, closes or scrolls. */
   controls?: string;
-  /** A class for a reveal or animation hook, such as a corner button shown on hover. */
+  /**
+   * A class for a reveal or animation hook, such as a corner button shown on hover. Its transition
+   * replaces the button's own fades, so the button fades with what it is revealed beside.
+   */
   className?: string;
   /** Placement only: position, offsets, margin, opacity. Never its size, fill or ink. */
   style?: CSSProperties;

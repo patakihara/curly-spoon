@@ -8,7 +8,10 @@ import { injectCss, sx, tokenMs } from '../shared.js';
 // the incoming one rotates in.
 injectCss('sonora-iconbutton-css', '@keyframes sn-glyph-in{from{opacity:0;transform:rotate(-45deg) scale(.7)}to{opacity:1;transform:none}}'
     + '@keyframes sn-glyph-out{from{opacity:1;transform:none}to{opacity:0;transform:rotate(45deg) scale(.7)}}'
-    + '@media (prefers-reduced-motion:reduce){.sn-glyph{animation:none!important}}');
+    + '@media (prefers-reduced-motion:reduce){.sn-glyph{animation:none!important}}'
+    // Its own fades weigh nothing, so a reveal or placement class's transition replaces them and
+    // a revealed button fades with what it is revealed beside.
+    + ':where(.sn-iconbutton){transition:background var(--duration-fast) var(--ease-standard),color var(--duration-fast) var(--ease-standard)}');
 
 const ACTIVE = { accent: 'var(--accent)', play: 'var(--play)', library: 'var(--tone-library)', inherit: 'inherit' };
 
@@ -19,23 +22,27 @@ const LOOK = {
   tonal: { fill: 'var(--surface-card)', filled: true },
   raised: { fill: 'var(--surface-card)', filled: true, css: 'box-shadow:var(--shadow-md)' },
   scrim: { fill: 'var(--scrim-soft)', filled: true },
+  play: { fill: 'var(--play)', filled: true },
 };
 
 /**
  * Sonora's one icon-only button. `variant` picks its container: plain (none), outline (a hairline
  * ring), tonal (a squat pill on the card fill whose glyph turns over as it changes), raised (the
- * card fill with a shadow, over content) or scrim (over artwork). `size` is a step of the control
- * ramp. `label` is always its accessible name.
+ * card fill with a shadow, over content), scrim (over artwork) or play (the play fill, its glyph
+ * filled in white). `size` is a step of the control ramp; `wide` draws the rail's pill instead of
+ * a circle. `label` is always its accessible name.
  */
 export function IconButton({
-  children, icon, iconSize, variant = 'plain', size, active, muted, tone = 'accent', onClick, label,
+  children, icon, iconSize, variant = 'plain', size, wide, active, muted, tone = 'accent', onClick, label,
   disabled, title, pressed, expanded, controls, className, style,
 }) {
   const off = !!disabled || !onClick;
   const tonal = variant === 'tonal';
+  const play = variant === 'play';
   const look = LOOK[variant] || LOOK.plain;
   const step = size || (tonal ? 'xs' : 'sm');
-  const ink = variant === 'scrim' ? 'var(--on-scrim)'
+  const ink = play ? 'var(--play-contrast)'
+    : variant === 'scrim' ? 'var(--on-scrim)'
     : active ? (tonal ? 'var(--accent-ink)' : ACTIVE[tone] || ACTIVE.accent)
     : tone === 'inherit' ? 'inherit'
     : muted ? 'var(--surface-fg-muted)' : 'var(--surface-fg)';
@@ -50,7 +57,7 @@ export function IconButton({
   }, [icon, tonal]); // eslint-disable-line
   const glyph = (name, out) => (
     <Icon key={name + (out ? '-out' : '')} name={name} size={iconSize || (tonal ? 'xs' : 'sm')}
-      filled={tonal && !!active} weight={tonal && active ? 'strong' : 'body'}
+      filled={play || (tonal && !!active)} weight={play || (tonal && active) ? 'strong' : 'body'}
       className={tonal ? 'sn-glyph' : undefined}
       style={tonal ? sx('position:absolute;animation:sn-glyph-' + (out ? 'out' : 'in') + ' var(--duration-quick) var(--ease-standard) both') : undefined} />
   );
@@ -65,7 +72,7 @@ export function IconButton({
   return (
     <button
       ref={ref}
-      className={'sn-int' + (look.filled ? ' sn-filled' : '') + (className ? ' ' + className : '')}
+      className={'sn-int' + (look.filled ? ' sn-filled' : '') + ' sn-iconbutton' + (className ? ' ' + className : '')}
       onClick={off ? undefined : onClick}
       disabled={off}
       aria-label={label}
@@ -76,11 +83,10 @@ export function IconButton({
       style={{
         ...sx('position:relative;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;padding:0;border:none;cursor:pointer;' +
           'height:var(--control-' + step + ');' +
-          'width:' + (tonal ? 'calc(var(--control-' + step + ') + var(--spacing-sm))' : 'var(--control-' + step + ')') + ';' +
-          'border-radius:' + (tonal ? 'var(--radius-pill)' : 'var(--radius-round)') + ';' +
+          'width:' + (wide ? 'var(--rail-pill-width)' : tonal ? 'calc(var(--control-' + step + ') + var(--spacing-sm))' : 'var(--control-' + step + ')') + ';' +
+          'border-radius:' + (wide || tonal ? 'var(--radius-pill)' : 'var(--radius-round)') + ';' +
           'background:' + look.fill + ';' + (look.css ? look.css + ';' : '') +
-          'color:' + ink + ';' +
-          'transition:background var(--duration-fast) var(--ease-standard),color var(--duration-fast) var(--ease-standard)'),
+          'color:' + ink),
         ...style,
       }}
     >

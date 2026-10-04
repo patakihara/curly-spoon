@@ -3,7 +3,7 @@ import { NS, sx } from '../shared.js';
 
 /** The desktop navigation rail: a bg-alt column of RailItems that widens between collapsed and expanded, with a menu toggle above, destinations pinned to its foot, and an optional footer below. */
 export function NavRail({ items = [], footerItems = [], active, onChange, expanded: given = true, onToggleExpanded, toggle = false, footer, header }) {
-  const { RailItem, StateLayer, Icon } = NS();
+  const { RailItem, IconButton } = NS();
   /* With `toggle` and no handler the rail holds its own state: it starts from `expanded`, follows
      it when the window changes layout, and the hamburger flips it in between. */
   const [own, setOwn] = React.useState(given);
@@ -30,11 +30,7 @@ export function NavRail({ items = [], footerItems = [], active, onChange, expand
     )}>
       {onToggle && (
         <div style={sx('display:flex;align-items:center;flex-shrink:0;box-sizing:border-box;height:var(--appbar-height);padding-top:0px;padding-bottom:0px;padding-right:var(--spacing-xl);padding-left:calc(var(--spacing-xl) + 6px)')}>
-          <button className="sn-int" onClick={onToggle} aria-label={expanded ? 'Collapse rail' : 'Expand rail'}
-            style={sx("width:56px;height:40px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--surface-fg-muted);cursor:pointer;border-radius:var(--radius-pill)")}>
-            <Icon name={expanded ? 'menu_open' : 'menu'} />
-            {StateLayer && <StateLayer />}
-          </button>
+          <IconButton wide muted size="md" icon={expanded ? 'menu_open' : 'menu'} label={expanded ? 'Collapse rail' : 'Expand rail'} onClick={onToggle} />
         </div>
       )}
       {header}

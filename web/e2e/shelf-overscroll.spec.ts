@@ -201,3 +201,63 @@ for (const t of THUMBS) {
     });
   });
 }
+
+test("[M0.sonoraclean/d] a Browse shelf's forward arrow keeps its raised look while it fades out at the end, and then cannot be reached", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.locator('img').first().waitFor();
+  const forward = page.getByRole('button', { name: 'Scroll forward' }).first();
+  const track = page.locator(`[id="${await forward.getAttribute('aria-controls')}"]`);
+  const box = await track.boundingBox();
+  if (box === null) throw new Error('the shelf track has no box');
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await expect.poll(() => forward.evaluate((el) => getComputedStyle(el).opacity)).not.toBe('0');
+  const raised = await forward.evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return { background: cs.backgroundColor, shadow: cs.boxShadow };
+  });
+
+  // Every frame of the fade, from the scroll that reaches the end until the arrow is gone.
+  const frames = await forward.evaluate(
+    (el, id) =>
+      new Promise<{ opacity: number; background: string; shadow: string }[]>((done) => {
+        const scroller = document.getElementById(id);
+        if (scroller === null) throw new Error('no track');
+        scroller.scrollLeft = scroller.scrollWidth;
+        const seen: { opacity: number; background: string; shadow: string }[] = [];
+        const start = performance.now();
+        const frame = () => {
+          let opacity = 1;
+          for (let n: Element | null = el; n !== null; n = n.parentElement)
+            opacity *= Number(getComputedStyle(n).opacity);
+          const cs = getComputedStyle(el);
+          seen.push({ opacity, background: cs.backgroundColor, shadow: cs.boxShadow });
+          if (performance.now() - start < 600) requestAnimationFrame(frame);
+          else done(seen);
+        };
+        requestAnimationFrame(frame);
+      }),
+    (await forward.getAttribute('aria-controls')) ?? '',
+  );
+  const fading = frames.filter((f) => f.opacity > 0);
+  expect(fading.length, 'the arrow is seen fading').toBeGreaterThan(0);
+  for (const f of fading)
+    expect({ background: f.background, shadow: f.shadow }, 'still raised while it fades').toEqual(
+      raised,
+    );
+  expect(frames.at(-1)?.opacity, 'gone at the end').toBe(0);
+
+  const reachable = await forward.evaluate((el) => {
+    (el as HTMLElement).focus();
+    return {
+      focused: document.activeElement === el,
+      hidden: el.closest('[inert],[aria-hidden="true"]') !== null,
+    };
+  });
+  expect(reachable, 'neither focusable nor announced once gone').toEqual({
+    focused: false,
+    hidden: true,
+  });
+});
