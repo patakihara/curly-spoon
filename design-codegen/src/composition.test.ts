@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 import { REPO_ROOT, SONORA_DIR } from './outputs.js';
@@ -149,4 +149,20 @@ describe("Sonora's glyphs, read from its sources", () => {
       expect(rendered(source('IconButton')).map((e) => e.tag)).toContain('Icon');
     },
   );
+
+  it('[M0.sonoraclean/d] no showcase card or snippet hand-draws a glyph in the icon font', () => {
+    const root = `${REPO_ROOT}/${SONORA_DIR}`;
+    const files = [
+      ...readdirSync(`${root}/components`, { recursive: true, encoding: 'utf8' })
+        .filter((f) => f.endsWith('.card.html'))
+        .map((f) => `components/${f}`),
+      ...readdirSync(`${root}/docs/examples`)
+        .filter((f) => f.endsWith('.snippet.jsx'))
+        .map((f) => `docs/examples/${f}`),
+    ];
+    const offenders = files.filter((f) =>
+      ICON_FONT.some((re) => re.test(readFileSync(`${root}/${f}`, 'utf8'))),
+    );
+    expect(offenders).toEqual([]);
+  });
 });
