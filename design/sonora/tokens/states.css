@@ -8,6 +8,11 @@
 --disabled-container:0.12; /* @kind other */
 --disabled-content:0.38; /* @kind other */
 
+/* Opacities for content that is present but quieter */
+--opacity-dim:0.45; /* @kind other */       /* an off toggle, a grabber */
+--opacity-scrollbar:0.6; /* @kind other */  /* a scrollbar thumb at rest */
+--opacity-rest:0.72; /* @kind other */      /* a shelf arrow before hover */
+
 /* Keyboard focus draws a ring outside the shape, following its corners, clear of it by the offset.
    Its colour is the themed --focus-ring (tokens/colors.css). */
 --focus-ring-width:3px;

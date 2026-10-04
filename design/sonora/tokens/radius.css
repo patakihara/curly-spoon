@@ -1,8 +1,11 @@
 :root{
 /* Radius scale — used across all platforms */
+--radius-3xs:2px; /* slider handle */
+--radius-2xs:6px; /* desktop art tiles */
 --radius-xs:8px;
 --radius-sm:16px;
 --radius-md:24px;
 --radius-lg:32px;
 --radius-pill:999px;
+--radius-round:50%; /* a circle on any square */
 }

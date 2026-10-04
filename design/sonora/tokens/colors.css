@@ -9,6 +9,7 @@
 --neutral-100:rgb(215,215,215);
 --neutral-50:rgb(225,225,225);
 --neutral-0:rgb(255,255,255);
+--neutral-1000:#000;
 
 /* ---- One surface system for both platforms — dark is the default, set data-theme="light" to flip ---- */
 color-scheme:dark;
@@ -28,6 +29,13 @@ color-scheme:dark;
 --scrim:rgb(0 0 0 / 46%);        /* state overlay: progress, queued, failed */
 --scrim-strong:rgb(0 0 0 / 55%); /* label pills and "not in library" darkening */
 --on-scrim:#fff;                 /* ink on any scrim */
+--on-scrim-track:rgb(255 255 255 / 28%); /* the unfilled track of a bar over a scrim */
+--scrim-accent:color-mix(in srgb, var(--accent) 82%, transparent); /* an accent pill over artwork */
+--slider-thumb-ink:var(--on-scrim);
+--switch-thumb:var(--on-scrim);
+
+/* The top edge of the front layer: a light rule on dark chrome, the border on light */
+--front-edge:rgb(225 225 225 / 16%);
 
 /* Hover wash for transparent controls — inverts with the theme */
 
@@ -80,6 +88,23 @@ color-scheme:dark;
 /* ---- Decorative duotone for album-art placeholders ---- */
 --art-gradient-start:#B6C4FF;
 --art-gradient-end:#FFB7DB;
+
+/* ---- Accent tints. The ones mixed from a themed colour repeat in each theme block below, so a
+   nested theme re-mixes them from its own surfaces ---- */
+--rail-pill-active:color-mix(in oklab, var(--surface-bg-alt) 90%, var(--accent));
+--tint-accent-card:color-mix(in oklch, var(--surface-card) 78%, var(--accent));
+--art-tint-1-end:color-mix(in oklch, var(--accent) 45%, var(--art-gradient-end));
+--art-tint-4-start:color-mix(in oklch, var(--accent) 52%, var(--art-gradient-start));
+--art-tint-4-end:color-mix(in oklch, var(--accent) 42%, var(--art-gradient-end));
+
+/* Placeholder art: five gradient pairs on the accent, picked by a title's seed */
+--art-tint-1-start:var(--accent);
+--art-tint-2-start:color-mix(in oklch, var(--accent) 62%, var(--neutral-0));
+--art-tint-2-end:var(--accent);
+--art-tint-3-start:color-mix(in oklch, var(--accent) 58%, var(--state-warning));
+--art-tint-3-end:color-mix(in oklch, var(--accent) 78%, var(--neutral-1000));
+--art-tint-5-start:color-mix(in oklch, var(--accent) 82%, var(--neutral-1000));
+--art-tint-5-end:color-mix(in oklch, var(--accent) 52%, var(--neutral-0));
 }
 
 /* Light theme — set data-theme="light" on any container (never OS/browser sniffing). Dark above is the default. */
@@ -109,6 +134,12 @@ color-scheme:light;
 --scroll-edge:rgb(0 0 0 / 18%);
 --art-gradient-start:#4D5C92;
 --art-gradient-end:#75546F;
+--front-edge:rgb(0 0 0 / 8%);
+--rail-pill-active:color-mix(in oklab, var(--surface-bg-alt) 90%, var(--accent));
+--tint-accent-card:color-mix(in oklch, var(--surface-card) 78%, var(--accent));
+--art-tint-1-end:color-mix(in oklch, var(--accent) 45%, var(--art-gradient-end));
+--art-tint-4-start:color-mix(in oklch, var(--accent) 52%, var(--art-gradient-start));
+--art-tint-4-end:color-mix(in oklch, var(--accent) 42%, var(--art-gradient-end));
 }
 
 /* Dark declared explicitly too, so data-theme="dark" forces dark even nested inside a light scope. */
@@ -138,4 +169,10 @@ color-scheme:dark;
 --scroll-edge:rgb(255 255 255 / 22%);
 --art-gradient-start:#B6C4FF;
 --art-gradient-end:#FFB7DB;
+--front-edge:rgb(225 225 225 / 16%);
+--rail-pill-active:color-mix(in oklab, var(--surface-bg-alt) 90%, var(--accent));
+--tint-accent-card:color-mix(in oklch, var(--surface-card) 78%, var(--accent));
+--art-tint-1-end:color-mix(in oklch, var(--accent) 45%, var(--art-gradient-end));
+--art-tint-4-start:color-mix(in oklch, var(--accent) 52%, var(--art-gradient-start));
+--art-tint-4-end:color-mix(in oklch, var(--accent) 42%, var(--art-gradient-end));
 }

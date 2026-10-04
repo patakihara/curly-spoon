@@ -53,4 +53,38 @@
 --now-playing-art-max:300px;
 /* Lyrics/queue preview windows on that page — both the same fixed height, contents clipped */
 --now-playing-preview-height:204px;
+/* Cover art width on the mobile Now Playing page, as a share of the page */
+--now-playing-art-width:76%;
+--bottomnav-height:60px;
+--miniplayer-height:82px;
+/* Readable caps on a seek row and a listening-progress bar */
+--seek-max-width:480px;
+--progress-max-width:280px;
+/* A time readout's fixed width, so the bar does not shift as digits change */
+--time-readout-width:36px;
+/* Card widths in a shelf, small to large */
+--card-width-xs:116px;
+--card-width-sm:132px;
+--card-width-md:152px;
+--card-width-lg:176px;
+
+/* ---- Rail, menus and sheets ---- */
+--rail-pill-width:56px;
+--rail-pill-width-wide:72px;
+--menu-row-height:44px;
+--menu-min-width:260px;
+--sheet-max-height:80%;
+--grabber-width:32px;
+--grabber-height:4px;
+/* A shelf's paging arrows sit at this share of the shelf's height, level with the art */
+--shelf-arrow-top:38%;
+
+/* ---- Stacking: one scale, named by what sits there ---- */
+--z-raised:1; /* @kind other */   /* focus ring, a lifted card, a sticky bar */
+--z-overlay:2; /* @kind other */  /* arrows, overlays on art, headers */
+--z-edge:3; /* @kind other */     /* scroll-edge fades over an overlay */
+--z-menu:20; /* @kind other */
+--z-sheet:30; /* @kind other */
+--z-modal-scrim:40; /* @kind other */
+--z-modal:41; /* @kind other */
 }

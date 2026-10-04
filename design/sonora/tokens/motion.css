@@ -3,10 +3,21 @@
 /* One easing curve across the system: Material's standard curve. Durations are named by role,
    not by number, so a component says how important a change is rather than how long it takes. */
 --ease-standard:cubic-bezier(.4,0,.2,1); /* @kind other */
+/* Constant speed, for loops that must not breathe: spinners and equaliser bars */
+--ease-linear:linear; /* @kind other */
 
 --duration-instant:70ms; /* @kind other */  /* scroll-linked: corners, hairlines */
 --duration-fast:150ms; /* @kind other */    /* hover/press feedback, image fades */
 --duration-quick:200ms; /* @kind other */   /* small state swaps: colour, radius */
 --duration-medium:280ms; /* @kind other */  /* app bar rows, side sheets */
 --duration-slow:420ms; /* @kind other */    /* rail expand/collapse, nav pills */
+--duration-settle:30ms; /* @kind other */   /* a ripple's last beat after the press ends */
+--duration-linger:900ms; /* @kind other */  /* an idle scrollbar stays this long before it hides */
+
+/* Loops: each is one full turn of an animation that repeats */
+--duration-sweep:1500ms; /* @kind other */  /* ProgressRing's arc sweep */
+--duration-spin:1600ms; /* @kind other */   /* ProgressRing's rotation */
+--duration-eq-a:900ms; /* @kind other */    /* equaliser bars, three out of step */
+--duration-eq-b:620ms; /* @kind other */
+--duration-eq-c:1150ms; /* @kind other */
 }

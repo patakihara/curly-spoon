@@ -32,6 +32,12 @@
   --scroll-edge: rgb(255 255 255 / 22%);
   --art-gradient-start: #B6C4FF;
   --art-gradient-end: #FFB7DB;
+  --front-edge: rgb(225 225 225 / 16%);
+  --rail-pill-active: color-mix(in oklab, var(--surface-bg-alt) 90%, var(--accent));
+  --tint-accent-card: color-mix(in oklch, var(--surface-card) 78%, var(--accent));
+  --art-tint-1-end: color-mix(in oklch, var(--accent) 45%, var(--art-gradient-end));
+  --art-tint-4-start: color-mix(in oklch, var(--accent) 52%, var(--art-gradient-start));
+  --art-tint-4-end: color-mix(in oklch, var(--accent) 42%, var(--art-gradient-end));
 }
 
 [data-theme="light"] {
@@ -60,4 +66,10 @@
   --scroll-edge: rgb(0 0 0 / 18%);
   --art-gradient-start: #4D5C92;
   --art-gradient-end: #75546F;
+  --front-edge: rgb(0 0 0 / 8%);
+  --rail-pill-active: color-mix(in oklab, var(--surface-bg-alt) 90%, var(--accent));
+  --tint-accent-card: color-mix(in oklch, var(--surface-card) 78%, var(--accent));
+  --art-tint-1-end: color-mix(in oklch, var(--accent) 45%, var(--art-gradient-end));
+  --art-tint-4-start: color-mix(in oklch, var(--accent) 52%, var(--art-gradient-start));
+  --art-tint-4-end: color-mix(in oklch, var(--accent) 42%, var(--art-gradient-end));
 }

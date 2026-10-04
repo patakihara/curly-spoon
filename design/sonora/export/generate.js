@@ -51,6 +51,21 @@ const themeScope = (name) => Object.assign({}, root, parseScope(srcs.colors, new
 const light = themeScope('light');
 const dark = themeScope('dark');
 const themedNames = Object.keys(parseScope(srcs.colors, /\[data-theme="light"\]\s*\{([\s\S]*?)\n\}/));
+// Families named by prefix, each one Compose object: stacking, unitless line-heights,
+// letter-spacing and opacities.
+const FAMILIES = [
+  { prefix: '--z-', object: 'SonoraLayer', doc: 'Stacking: one z scale, named by what sits there.', value: (v) => num(v) && num(v) + 'f' },
+  { prefix: '--line-height-', object: 'SonoraLeading', doc: 'Line-heights as a ratio of the text\'s own size.', value: (v) => num(v) && ktNum(num(v)) + '.em' },
+  { prefix: '--tracking-', object: 'SonoraTracking', doc: 'Letter-spacing as a share of the text\'s own size.', value: (v) => em(v) && ktNum(em(v)) + '.em' },
+  { prefix: '--opacity-', object: 'SonoraOpacity', doc: 'Opacities for content that is present but quieter.', value: (v) => num(v) && num(v) + 'f' },
+];
+const familyOf = (k) => FAMILIES.find((f) => k.indexOf(f.prefix) === 0 && f.value(resolve(root[k], root, 0)));
+const easeValue = (k) => {
+  const v = resolve(root[k], root, 0);
+  if (v === 'linear') return 'LinearEasing';
+  const c = bezier(v);
+  return c && c.length === 4 ? 'CubicBezierEasing(' + c.map((n) => n + 'f').join(', ') + ')' : null;
+};
 
 const resolve = (v, scope, depth) => {
   const d = depth || 0;
@@ -78,6 +93,11 @@ const argb = (v) => {
 const px = (v) => { const m = String(v).match(/^(-?[\d.]+)px$/); return m ? m[1] : null; };
 const rem = (v) => { const m = String(v).match(/^(-?[\d.]+)rem$/); return m ? String(parseFloat(m[1]) * 16) : null; };
 const ms = (v) => { const m = String(v).match(/^(\d+)ms$/); return m ? m[1] : null; };
+const num = (v) => { const m = String(v).match(/^(-?(?:\d*\.)?\d+)$/); return m ? String(parseFloat(m[1])) : null; };
+const em = (v) => { const m = String(v).match(/^(-?(?:\d*\.)?\d+)em$/); return m ? String(parseFloat(m[1])) : null; };
+// A Kotlin literal for a number, negatives parenthesised so a unit suffix binds to the whole value.
+const ktNum = (n) => (n.charAt(0) === '-' ? '(' + n + ')' : n);
+const bezier = (v) => { const m = String(v).match(/^cubic-bezier\(([^)]*)\)$/); return m ? m[1].split(',').map((n) => parseFloat(n)) : null; };
 const camel = (n) => n.replace(/^--/, '').replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
 const pascal = (n) => { const c = camel(n); return c.charAt(0).toUpperCase() + c.slice(1); };
 
@@ -88,9 +108,15 @@ const staticColors = colorNames.filter((k) => themedColors.indexOf(k) < 0);
 const dimenNames = order.filter((k) => !isColor(k, root) && px(resolve(root[k], root, 0)));
 const typeNames = order.filter((k) => rem(resolve(root[k], root, 0)));
 const motionNames = order.filter((k) => ms(root[k]));
-const other = order.filter((k) => [].concat(colorNames, dimenNames, typeNames, motionNames).indexOf(k) < 0);
+const easeNames = order.filter((k) => k.indexOf('--ease-') === 0 && easeValue(k));
+const familyNames = order.filter((k) => familyOf(k));
+const other = order.filter((k) => [].concat(colorNames, dimenNames, typeNames, motionNames, easeNames, familyNames).indexOf(k) < 0);
+// Theme-dependent values that are no single colour (a mix of themed colours): repeated in each
+// theme block, so a nested theme re-mixes them from its own colours.
+const themedOther = themedNames.filter((k) => themedColors.indexOf(k) < 0);
+const staticOther = other.filter((k) => themedOther.indexOf(k) < 0);
 // Interaction states: the state layer's opacities and the focus ring's measures, one Compose object.
-const stateNames = Object.keys(parseScope(srcs.states || '', /:root\s*\{([\s\S]*?)\n\}/));
+const stateNames = Object.keys(parseScope(srcs.states || '', /:root\s*\{([\s\S]*?)\n\}/)).filter((k) => !familyOf(k));
 const notState = (k) => stateNames.indexOf(k) < 0;
 const stateValue = (k) => {
   const v = resolve(root[k], root, 0);
@@ -103,11 +129,12 @@ const HEAD = (what) => '/**\n * GENERATED — ' + what + '\n * Source: the Sonor
 const decl = (k, scope) => '  ' + k + ': ' + scope[k] + ';';
 await saveFile('export/web/sonora-tokens.css', HEAD('static token families (identical in both themes)') + '\n:root {\n'
   + staticColors.map((k) => decl(k, root)).join('\n') + '\n\n'
-  + [].concat(dimenNames, typeNames, motionNames, other).map((k) => decl(k, root)).join('\n')
+  + [].concat(dimenNames, typeNames, motionNames, easeNames, familyNames, staticOther).map((k) => decl(k, root)).join('\n')
   + '\n}\n');
+const themed = [].concat(themedColors, themedOther);
 await saveFile('export/web/sonora-theme.css', HEAD('theme-dependent families — scope these selectors to your theme root') + '\n'
-  + '[data-theme="dark"] {\n' + themedColors.map((k) => decl(k, dark)).join('\n') + '\n}\n\n'
-  + '[data-theme="light"] {\n' + themedColors.map((k) => decl(k, light)).join('\n') + '\n}\n');
+  + '[data-theme="dark"] {\n' + themed.map((k) => decl(k, dark)).join('\n') + '\n}\n\n'
+  + '[data-theme="light"] {\n' + themed.map((k) => decl(k, light)).join('\n') + '\n}\n');
 
 /* ---- android ---- */
 const kt = '// GENERATED — Sonora tokens as Compose values.\n'
@@ -115,8 +142,10 @@ const kt = '// GENERATED — Sonora tokens as Compose values.\n'
   + '// export/generate.js when tokens change.\n'
   + 'package com.sonora.design\n\n'
   + 'import androidx.compose.animation.core.CubicBezierEasing\n'
+  + 'import androidx.compose.animation.core.LinearEasing\n'
   + 'import androidx.compose.ui.graphics.Color\n'
   + 'import androidx.compose.ui.unit.dp\n'
+  + 'import androidx.compose.ui.unit.em\n'
   + 'import androidx.compose.ui.unit.sp\n\n'
   + '/** Colors that carry one value regardless of theme. */\n'
   + 'object SonoraPalette {\n'
@@ -140,15 +169,19 @@ const kt = '// GENERATED — Sonora tokens as Compose values.\n'
   + 'object SonoraType {\n'
   + typeNames.map((k) => '    val ' + camel(k) + ' = ' + rem(resolve(root[k], root, 0)) + '.sp').join('\n')
   + '\n}\n\n'
-  + '/** Motion: one curve, durations named by role (milliseconds). */\n'
+  + '/** Motion: the curves, and durations named by role (milliseconds). */\n'
   + 'object SonoraMotion {\n'
-  + '    val EaseStandard = CubicBezierEasing(0.4f, 0f, 0.2f, 1f)\n'
+  + easeNames.map((k) => '    val ' + pascal(k) + ' = ' + easeValue(k) + '\n').join('')
   + motionNames.map((k) => '    const val ' + camel(k) + ' = ' + ms(root[k])).join('\n')
   + '\n}\n\n'
   + '/** Interaction states: state-layer opacities over the content colour, and the focus ring. */\n'
   + 'object SonoraState {\n'
   + stateNames.map((k) => '    val ' + camel(k.replace(/^--state-layer-/, '--')) + ' = ' + stateValue(k)).join('\n')
   + '\n}\n\n'
+  + FAMILIES.map((f) => '/** ' + f.doc + ' */\n'
+    + 'object ' + f.object + ' {\n'
+    + familyNames.filter((k) => k.indexOf(f.prefix) === 0).map((k) => '    val ' + camel(k.replace(f.prefix, '--')) + ' = ' + f.value(resolve(root[k], root, 0))).join('\n')
+    + '\n}\n\n').join('')
   + '/*\n * Not exported — no single Compose equivalent; read these from the CSS:\n'
   + other.filter(notState).map((k) => ' *   ' + k + ': ' + root[k]).join('\n')
   + '\n */\n';
@@ -194,6 +227,7 @@ for (let di = 0; di < dts.length; di++) {
 await saveFile('export/component-api.md', md);
 
 log('tokens: ' + colorNames.length + ' colors (' + themedColors.length + ' themed), ' + dimenNames.length + ' dimens, '
-  + typeNames.length + ' type, ' + motionNames.length + ' motion, ' + other.length + ' unmapped');
+  + typeNames.length + ' type, ' + motionNames.length + ' motion, ' + easeNames.length + ' easing, ' + familyNames.length + ' in families, '
+  + other.length + ' unmapped');
 log('components documented: ' + dts.length);
 }

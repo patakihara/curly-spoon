@@ -11,6 +11,7 @@
 --space-4xl:2.5rem;  /* 40px */
 
 /* Layout spacing aliases used by the components and their cards */
+--spacing-2xs:2px; /* a text gap: title to subtitle */
 --spacing-xs:4px;
 --spacing-sm:8px;
 --spacing-md:12px;
@@ -24,7 +25,51 @@
 --icon-xs:20px;
 --icon-sm:24px;
 --icon-md:28px;
+--icon-lg:32px;
+--icon-xl:40px; /* transport play glyph */
 
-/* Mini-player album thumb */
---miniplayer-album-size:44px;
+/* Control sizes — the square footprint of a round or icon control, and a button's height */
+--control-xs:32px;
+--control-sm:36px;
+--control-md:40px;
+--control-lg:44px;
+--control-xl:48px;
+
+/* Art sizes — the square edge of a cover in a row, card or header */
+--art-2xs:40px;
+--art-xs:44px; /* mini player */
+--art-sm:48px;
+--art-md:52px;
+--art-lg:64px;
+--art-xl:80px;
+--art-2xl:96px;
+--art-hero-compact:208px;
+--art-hero:232px;
+
+/* Strokes, rings and small marks */
+--hairline:1px; /* every 1px border, edge and divider */
+--focus-ring-room:calc(var(--focus-ring-width) + var(--focus-ring-offset)); /* clip room a ring needs */
+--progress-sm:3px;
+--progress-md:5px;
+--dot-sm:8px;
+--dot-md:10px;
+--badge-sm:18px;
+--badge-md:24px;
+
+/* Switch and slider parts */
+--switch-height:24px;
+--switch-thumb:18px;
+--slider-track:4px;
+--slider-track-mobile:8px;
+--slider-thumb:12px;
+--slider-handle:20px;
+
+/* Scrollbars and scroll edges */
+--scrollbar-width:4px;
+--scrollbar-thumb-min:32px;
+--scrollbar-inset:2px;
+--scroll-edge-fade:24px;
+
+/* Backdrop blur behind a control over artwork */
+--blur-sm:6px;
 }

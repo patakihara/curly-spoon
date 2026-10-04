@@ -16,6 +16,18 @@
 --leading-lg:1.25rem;  /* 20px */
 --leading-xl:1.5rem;   /* 24px */
 
+/* Unitless line-heights, for text whose size varies: a ratio of its own size */
+--line-height-none:1;      /* glyphs and single-line icons */
+--line-height-tight:1.15;  /* display titles */
+--line-height-snug:1.25;   /* titles and labels */
+--line-height-body:1.4;    /* body copy */
+--line-height-relaxed:1.5; /* lyrics and long descriptions */
+
+/* Letter-spacing, as a share of the text's own size */
+--tracking-label:.02em;
+--tracking-caps:.1em;      /* uppercase overlines */
+--tracking-display:-.02em; /* wide display titles */
+
 /* Weights — name the role, never the number, at the call site */
 --weight-regular:400;
 --weight-body:500;

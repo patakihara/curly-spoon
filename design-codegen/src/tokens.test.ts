@@ -98,7 +98,12 @@ interface KotlinTokens {
   type: Map<string, number>;
   motion: Map<string, number>;
   state: Map<string, number>;
+  layer: Map<string, number>;
+  leading: Map<string, number>;
+  tracking: Map<string, number>;
+  opacity: Map<string, number>;
   ease: number[];
+  easeLinear: boolean;
   notExported: Map<string, string>;
 }
 
@@ -114,8 +119,13 @@ function entries(body: string, re: RegExp, parse: (s: string) => number): Map<st
   return new Map([...body.matchAll(re)].map((m) => [m[1]!, parse(m[2]!)]));
 }
 
+/** A Kotlin number as written: `1.15`, `(-0.02)`. */
+const kotlinNumber = (s: string) => Number(s.replace(/[()]/g, ''));
+
 function readKotlin(kt: string): KotlinTokens {
   const color = /(\w+) = Color\((0x[0-9A-F]{8})\)/g;
+  const float = /val (\w+) = (-?[\d.]+)f$/gm;
+  const em = /val (\w+) = (\(?-?[\d.]+\)?)\.em$/gm;
   const ease = /EaseStandard = CubicBezierEasing\(([^)]*)\)/.exec(kt);
   return {
     palette: entries(block(kt, /object SonoraPalette \{\n/), color, Number),
@@ -129,7 +139,12 @@ function readKotlin(kt: string): KotlinTokens {
       /val (\w+) = ([\d.]+)(?:\.dp|f)$/gm,
       Number,
     ),
+    layer: entries(block(kt, /object SonoraLayer \{\n/), float, Number),
+    leading: entries(block(kt, /object SonoraLeading \{\n/), em, kotlinNumber),
+    tracking: entries(block(kt, /object SonoraTracking \{\n/), em, kotlinNumber),
+    opacity: entries(block(kt, /object SonoraOpacity \{\n/), float, Number),
     ease: ease === null ? [] : ease[1]!.split(',').map((n) => parseFloat(n)),
+    easeLinear: /val EaseLinear = LinearEasing$/m.test(block(kt, /object SonoraMotion \{\n/)),
     notExported: new Map(
       [...block(kt, /Not exported[^\n]*\n/).matchAll(/^ \* {3}(--[a-z0-9-]+): (.*)$/gm)].map(
         (m) => [m[1]!, m[2]!],
@@ -141,8 +156,17 @@ function readKotlin(kt: string): KotlinTokens {
 const camel = (name: string) =>
   name.slice(2).replace(/-([a-z0-9])/g, (_, c: string) => c.toUpperCase());
 const pascal = (name: string) => camel(name).charAt(0).toUpperCase() + camel(name).slice(1);
-/** An interaction-state token: the state layer's opacities and the focus ring's measures. */
-const STATE = /^--(state-layer|disabled|focus-ring)-/;
+/**
+ * An interaction-state token: the state layer's opacities and the focus ring's measures, the
+ * tokens/states.css names outside the opacity family.
+ */
+const STATE = new Set(
+  rules(readFileSync(join(sonoraDir, 'tokens', 'states.css'), 'utf8'))
+    .flatMap((r) => [...r.decls.keys()])
+    .filter((name) => !name.startsWith('--opacity-')),
+);
+/** The Kotlin name of a token in a family that drops its prefix: `--z-modal` is `SonoraLayer.modal`. */
+const unprefixed = (name: string, prefix: string) => camel(name.replace(prefix, '--'));
 const stateName = (name: string) => camel(name.replace(/^--state-layer-/, '--'));
 const cssNumber = (value: string, unit: string) => {
   const m = new RegExp(`^(-?[\\d.]+)${unit}$`).exec(value);
@@ -217,13 +241,33 @@ describe('Sonora tokens, generated for web and Android', () => {
       const value = resolved(dark, raw);
       const colour = argb(value);
       const listed = kt.notExported.get(name);
-      if (themed.has(name)) {
+      if (themed.has(name) && colour === undefined) {
+        expect(listed, `${name} is a themed non-colour, listed as not exported`).toBe(raw);
+      } else if (themed.has(name)) {
         expect(kt.dark.get(camel(name)), `${name} dark`).toBe(colour);
         expect(kt.light.get(camel(name)), `${name} light`).toBe(
           argb(resolved(light, light.get(name)!)),
         );
         matched.add(`dark.${camel(name)}`).add(`light.${camel(name)}`);
-      } else if (STATE.test(name)) {
+      } else if (name.startsWith('--z-')) {
+        expect(kt.layer.get(unprefixed(name, '--z-')), name).toBe(Number(value));
+        matched.add(`layer.${unprefixed(name, '--z-')}`);
+      } else if (name.startsWith('--line-height-')) {
+        expect(kt.leading.get(unprefixed(name, '--line-height-')), name).toBe(Number(value));
+        matched.add(`leading.${unprefixed(name, '--line-height-')}`);
+      } else if (name.startsWith('--tracking-')) {
+        expect(kt.tracking.get(unprefixed(name, '--tracking-')), name).toBe(cssNumber(value, 'em'));
+        matched.add(`tracking.${unprefixed(name, '--tracking-')}`);
+      } else if (name.startsWith('--opacity-')) {
+        expect(kt.opacity.get(unprefixed(name, '--opacity-')), name).toBe(Number(value));
+        matched.add(`opacity.${unprefixed(name, '--opacity-')}`);
+      } else if (name === '--ease-standard') {
+        const curve = /^cubic-bezier\(([^)]*)\)$/.exec(value)![1]!.split(',').map(Number);
+        expect(kt.ease, name).toEqual(curve);
+      } else if (name === '--ease-linear') {
+        expect(value, name).toBe('linear');
+        expect(kt.easeLinear, name).toBe(true);
+      } else if (STATE.has(name)) {
         const n = cssNumber(value, 'px') ?? Number(value);
         expect(kt.state.get(stateName(name)), name).toBe(n);
         matched.add(`state.${stateName(name)}`);
@@ -241,10 +285,6 @@ describe('Sonora tokens, generated for web and Android', () => {
         matched.add(`motion.${camel(name)}`);
       } else {
         expect(listed, `${name} is neither exported nor listed as not exported`).toBe(raw);
-        if (name === '--ease-standard') {
-          const curve = /^cubic-bezier\(([^)]*)\)$/.exec(value)![1]!.split(',').map(Number);
-          expect(kt.ease).toEqual(curve);
-        }
       }
     }
 
@@ -257,6 +297,10 @@ describe('Sonora tokens, generated for web and Android', () => {
       ...[...kt.type.keys()].map((k) => `type.${k}`),
       ...[...kt.motion.keys()].map((k) => `motion.${k}`),
       ...[...kt.state.keys()].map((k) => `state.${k}`),
+      ...[...kt.layer.keys()].map((k) => `layer.${k}`),
+      ...[...kt.leading.keys()].map((k) => `leading.${k}`),
+      ...[...kt.tracking.keys()].map((k) => `tracking.${k}`),
+      ...[...kt.opacity.keys()].map((k) => `opacity.${k}`),
     ];
     expect(kotlinNames.filter((k) => !matched.has(k))).toEqual([]);
     expect([...kt.notExported.keys()].filter((k) => !dark.has(k))).toEqual([]);
@@ -335,5 +379,90 @@ describe('Sonora tokens, generated for web and Android', () => {
     }
     expect(colorScheme(css)).toBe('dark');
     expect(colorScheme(css, 'light')).toBe('light');
+  });
+});
+
+describe('Sonora without hard-coding: the token families its components need', () => {
+  const SIZE_RAMP = [
+    '--spacing-2xs',
+    '--control-xs',
+    '--control-sm',
+    '--control-md',
+    '--control-lg',
+    '--control-xl',
+    '--art-2xs',
+    '--art-xs',
+    '--art-sm',
+    '--art-md',
+    '--art-lg',
+    '--art-xl',
+    '--art-2xl',
+    '--art-hero-compact',
+    '--art-hero',
+    '--icon-lg',
+    '--icon-xl',
+    '--hairline',
+    '--progress-sm',
+    '--progress-md',
+  ];
+  const Z = [
+    '--z-raised',
+    '--z-overlay',
+    '--z-edge',
+    '--z-menu',
+    '--z-sheet',
+    '--z-modal-scrim',
+    '--z-modal',
+  ];
+  const LINE_HEIGHT = [
+    '--line-height-none',
+    '--line-height-tight',
+    '--line-height-snug',
+    '--line-height-body',
+    '--line-height-relaxed',
+  ];
+  const TRACKING = ['--tracking-label', '--tracking-caps', '--tracking-display'];
+  const OPACITY = ['--opacity-dim', '--opacity-scrollbar', '--opacity-rest'];
+  const DURATION = [
+    '--duration-settle',
+    '--duration-linger',
+    '--duration-sweep',
+    '--duration-spin',
+    '--duration-eq-a',
+    '--duration-eq-b',
+    '--duration-eq-c',
+  ];
+  const strip = (prefix: string) => (name: string) => camel(name.replace(prefix, '--'));
+
+  it('[M0.sonoraclean/b] the web export defines the scrim-track, size-ramp, z-index, line-height, letter-spacing, opacity, duration and easing tokens', () => {
+    const names = cascade(webCss(), 'dark');
+    for (const name of [
+      '--on-scrim-track',
+      ...SIZE_RAMP,
+      ...Z,
+      ...LINE_HEIGHT,
+      ...TRACKING,
+      ...OPACITY,
+      ...DURATION,
+      '--ease-standard',
+      '--ease-linear',
+    ]) {
+      expect(names.has(name), name).toBe(true);
+    }
+    expect(names.has('--miniplayer-album-size'), 'replaced by --art-xs').toBe(false);
+  });
+
+  it('[M0.sonoraclean/b] SonoraTokens.kt carries each of those tokens, in its own family', () => {
+    const kt = readKotlin(kotlin());
+    expect(kt.palette.has('OnScrimTrack'), 'OnScrimTrack').toBe(true);
+    for (const name of SIZE_RAMP) expect(kt.dimens.has(camel(name)), name).toBe(true);
+    expect(Z.map(strip('--z-')).filter((n) => !kt.layer.has(n))).toEqual([]);
+    expect(LINE_HEIGHT.map(strip('--line-height-')).filter((n) => !kt.leading.has(n))).toEqual([]);
+    expect(TRACKING.map(strip('--tracking-')).filter((n) => !kt.tracking.has(n))).toEqual([]);
+    expect(OPACITY.map(strip('--opacity-')).filter((n) => !kt.opacity.has(n))).toEqual([]);
+    for (const name of DURATION) expect(kt.motion.has(camel(name)), name).toBe(true);
+    expect(kt.ease).toEqual([0.4, 0, 0.2, 1]);
+    expect(kt.easeLinear, 'EaseLinear = LinearEasing').toBe(true);
+    expect(kotlin()).not.toMatch(/miniplayerAlbumSize/);
   });
 });

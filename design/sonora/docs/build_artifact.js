@@ -104,7 +104,15 @@ function mix(value) { // color-mix(in oklch|oklab|srgb, A p%, B [q%]) -> hex (hu
   return '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('');
 }
 
-const colorTokens = [], other = { spacing: [], radius: [], shadow: [], layout: [], timing: [] }, residue = [], report = { mixed: [], residue: [] };
+const colorTokens = [], other = { spacing: [], size: [], radius: [], shadow: [], layout: [], timing: [], zIndex: [], opacity: [], lineHeight: [], letterSpacing: [] }, residue = [], report = { mixed: [], residue: [] };
+// Families named by prefix win over the file a token sits in: each is its own section on the page.
+const PREFIX_FAMILY = [[/^z-/, 'zIndex'], [/^(opacity|state-layer|disabled)-/, 'opacity'], [/^line-height-/, 'lineHeight'], [/^tracking-/, 'letterSpacing']];
+const familyOf = (name, file) => {
+  const byPrefix = PREFIX_FAMILY.find(([re]) => re.test(name));
+  if (byPrefix) return byPrefix[1];
+  if (file === 'spacing.css') return /^(space|spacing|grid-gap)/.test(name) ? 'spacing' : 'size';
+  return file === 'radius.css' ? 'radius' : file === 'shadows.css' ? 'shadow' : file === 'motion.css' ? 'timing' : 'layout';
+};
 const typeVars = {};
 for (const [name, e] of Object.entries(byName)) {
   const any = e.base || e.dark || e.light;
@@ -128,9 +136,10 @@ for (const [name, e] of Object.entries(byName)) {
     colorTokens.push({ name, value, ...(usage && { usage }) });
     continue;
   }
-  if (any.file === 'typography.css' || any.file === 'fonts.css') { typeVars[name] = resolve(name, 'base'); residue.push(name); continue; }
+  const byPrefix = PREFIX_FAMILY.some(([re]) => re.test(name));
+  if (!byPrefix && (any.file === 'typography.css' || any.file === 'fonts.css')) { typeVars[name] = resolve(name, 'base'); residue.push(name); continue; }
   const v = resolve(name, 'base');
-  const fam = any.file === 'spacing.css' ? 'spacing' : any.file === 'radius.css' ? 'radius' : any.file === 'shadows.css' ? 'shadow' : any.file === 'motion.css' ? 'timing' : 'layout';
+  const fam = familyOf(name, any.file);
   if (v && !/var\(|url\(/.test(v) && v.length <= 200 && /^[A-Za-z0-9 #%(),./+_-]+$/.test(v)) other[fam].push({ name, value: v, ...(usage && { usage }) });
   else { residue.push(name); report.residue.push(name + ' (' + fam + ': ' + any.value + ')'); }
 }

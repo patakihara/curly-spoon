@@ -127,7 +127,7 @@ export function MiniPlayer({
       borderTop: '1px solid var(--surface-border)', borderBottom: '1px solid var(--surface-border)',
     }}>
       <div style={{
-        width: 'var(--miniplayer-album-size)', height: 'var(--miniplayer-album-size)', flexShrink: 0,
+        width: 'var(--art-xs)', height: 'var(--art-xs)', flexShrink: 0,
         borderRadius: 'var(--radius-xs)', overflow: 'hidden', background: image ? undefined : 'var(--art-gradient-end)',
       }}>
         {image && <img src={image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}

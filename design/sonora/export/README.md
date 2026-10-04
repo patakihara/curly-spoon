@@ -8,7 +8,7 @@ with `node docs/run_generate.mjs` from `design/sonora`, and `pnpm gen` from the 
 | --- | --- |
 | `web/sonora-tokens.css` | the token families that are the same in both themes (`:root`) |
 | `web/sonora-theme.css` | the theme-dependent families, one block per theme — rescope the selectors to your theme root |
-| `android/SonoraTokens.kt` | Compose `Color`/`Dp`/`TextUnit` values plus the motion curve; `package` line is a placeholder |
+| `android/SonoraTokens.kt` | Compose `Color`/`Dp`/`TextUnit` values, the motion curves and durations, and the stacking, line-height, letter-spacing and opacity scales; `package` line is a placeholder |
 | `component-api.md` | every component's props, types and notes, from the `.d.ts` files |
 
 ## What ports and what doesn't
