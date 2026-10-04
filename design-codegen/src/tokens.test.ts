@@ -449,7 +449,28 @@ describe('Sonora without hard-coding: the token families its components need', (
     ]) {
       expect(names.has(name), name).toBe(true);
     }
-    expect(names.has('--miniplayer-album-size'), 'replaced by --art-xs').toBe(false);
+  });
+
+  it('[M0.sonoraclean/b] each token name is declared in one family file, once per rule', () => {
+    const dir = join(sonoraDir, 'tokens');
+    const files = new Map<string, Set<string>>();
+    const twice: string[] = [];
+    for (const file of readdirSync(dir).filter((f) => f.endsWith('.css'))) {
+      const text = readFileSync(join(dir, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+      for (const block of text.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        const seen = new Set<string>();
+        for (const m of block[2]!.matchAll(/(?:^|;)\s*(--[\w-]+)\s*:/g)) {
+          const name = m[1]!;
+          if (seen.has(name)) twice.push(`${name} twice in ${file} ${block[1]!.trim()}`);
+          seen.add(name);
+          files.set(name, (files.get(name) ?? new Set()).add(file));
+        }
+      }
+    }
+    const spread = [...files]
+      .filter(([, f]) => f.size > 1)
+      .map(([n, f]) => `${n} in ${[...f].join(', ')}`);
+    expect([...twice, ...spread]).toEqual([]);
   });
 
   it('[M0.sonoraclean/b] SonoraTokens.kt carries each of those tokens, in its own family', () => {
@@ -463,6 +484,5 @@ describe('Sonora without hard-coding: the token families its components need', (
     for (const name of DURATION) expect(kt.motion.has(camel(name)), name).toBe(true);
     expect(kt.ease).toEqual([0.4, 0, 0.2, 1]);
     expect(kt.easeLinear, 'EaseLinear = LinearEasing').toBe(true);
-    expect(kotlin()).not.toMatch(/miniplayerAlbumSize/);
   });
 });

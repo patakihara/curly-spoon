@@ -28,6 +28,7 @@ object SonoraPalette {
     val OnScrim = Color(0xFFFFFFFF)
     val OnScrimTrack = Color(0x47FFFFFF)
     val SliderThumbInk = Color(0xFFFFFFFF)
+    val SwitchThumb = Color(0xFFFFFFFF)
     val Accent = Color(0xFF8B5CF6)
     val AccentContrast = Color(0xFFFFFFFF)
     val Play = Color(0xFFF44862)
@@ -128,7 +129,6 @@ val SonoraLightColors = SonoraColors(
 
 /** Spacing, icon sizes, radii, and frame measurements. */
 object SonoraDimens {
-    val switchThumb = 18.dp
     val space0 = 0.dp
     val spacing2xs = 2.dp
     val spacingXs = 4.dp
@@ -166,6 +166,7 @@ object SonoraDimens {
     val badgeSm = 18.dp
     val badgeMd = 24.dp
     val switchHeight = 24.dp
+    val switchThumbSize = 18.dp
     val sliderTrack = 4.dp
     val sliderTrackMobile = 8.dp
     val sliderThumb = 12.dp

@@ -58,7 +58,7 @@
 
 /* Switch and slider parts */
 --switch-height:24px;
---switch-thumb:18px;
+--switch-thumb-size:18px;
 --slider-track:4px;
 --slider-track-mobile:8px;
 --slider-thumb:12px;

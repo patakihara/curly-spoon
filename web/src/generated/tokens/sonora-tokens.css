@@ -22,6 +22,7 @@
   --on-scrim: #fff;
   --on-scrim-track: rgb(255 255 255 / 28%);
   --slider-thumb-ink: var(--on-scrim);
+  --switch-thumb: var(--on-scrim);
   --accent: #8B5CF6;
   --accent-contrast: #fff;
   --play: #F44862;
@@ -34,7 +35,6 @@
   --art-tint-1-start: var(--accent);
   --art-tint-2-end: var(--accent);
 
-  --switch-thumb: 18px;
   --space-0: 0px;
   --spacing-2xs: 2px;
   --spacing-xs: 4px;
@@ -72,6 +72,7 @@
   --badge-sm: 18px;
   --badge-md: 24px;
   --switch-height: 24px;
+  --switch-thumb-size: 18px;
   --slider-track: 4px;
   --slider-track-mobile: 8px;
   --slider-thumb: 12px;
