@@ -21,6 +21,15 @@ class SonoraGalleryTest {
             .toSet()
     }
 
+    /** Each themed colour's token name, in the order the generated `SonoraColors` declares it. */
+    private fun themed(): List<String> {
+        val tokens =
+            File("src/main/java/net/develivarr/auralis/generated/theme/SonoraTokens.kt").readText()
+        val body = Regex("""data class SonoraColors\((.*?)\n\)""", RegexOption.DOT_MATCHES_ALL)
+            .find(tokens)!!.groupValues[1]
+        return Regex("""val (\w+): Color""").findAll(body).map { it.groupValues[1] }.toList()
+    }
+
     @Test
     fun `M0_tokens_c the gallery names are unique and not blank`() {
         assertTrue(names.none { it.isBlank() })
@@ -48,7 +57,8 @@ class SonoraGalleryTest {
     @Test
     fun `M0_tokens_c a palette swatch is each theme colour under its token name`() {
         val swatches = swatches(SonoraDarkColors).toMap()
-        assertEquals(24, swatches.size)
+        assertTrue("read only ${themed().size} themed colours", themed().size >= 20)
+        assertEquals(themed(), swatches.keys.toList())
         assertEquals(SonoraDarkColors.surfaceBg, swatches["surfaceBg"])
         assertEquals(SonoraDarkColors.accentInk, swatches["accentInk"])
     }
