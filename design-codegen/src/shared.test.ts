@@ -207,6 +207,10 @@ describe("Sonora's shared helpers", () => {
     ],
     ['a reduced-motion query', "const r = matchMedia('(prefers-reduced-motion: reduce)').matches;"],
     ['a scroll-edge sum', 'const max = (el) => el.scrollWidth - el.clientWidth;'],
+    [
+      'a scroll-max comparison with a pixel of slack',
+      'const scrolls = (el) => el.scrollHeight > el.clientHeight + 1;',
+    ],
     ['a second hover-reveal rule', "const css = '.x-host:hover .x-act{opacity:1}';"],
     ['a second badge-tone map', "const t = { progress: 'accent', request: 'warning' };"],
   ])('[M0.sonoraclean/e] a component carrying %s fails the check', (_, snippet) => {
