@@ -34,6 +34,8 @@
 --control-md:40px;
 --control-lg:44px;
 --control-xl:48px;
+--control-2xl:56px; /* transport step */
+--control-3xl:72px; /* transport play on a phone */
 
 /* Art sizes — the square edge of a cover in a row, card or header */
 --art-2xs:40px;

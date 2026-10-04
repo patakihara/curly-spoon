@@ -4,7 +4,13 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { actionProps } from '../../design-codegen/src/actions';
-import { pressKey, STATE_ENTRIES, type StateEntry, type Variant } from '../src/states-list';
+import {
+  componentOf,
+  pressKey,
+  STATE_ENTRIES,
+  type StateEntry,
+  type Variant,
+} from '../src/states-list';
 import { decode, distance } from './pixels';
 
 /**
@@ -116,8 +122,10 @@ test('[M0.states/a] every interactive Sonora component shows enabled, disabled, 
     const { cell, host, layer } = await drawing(page, entry, 'action');
     const at = await box(host);
 
+    // The pointer stays where the last entry left it, which may lie over this one: once it moves
+    // away, the hover wash fades out before the drawing is at rest.
     await page.mouse.move(0, 0);
-    expect(await level(layer), `${entry.name} at rest`).toBe(0);
+    await expect.poll(() => level(layer), `${entry.name} at rest`).toBe(0);
     const enabled = hash((await shot(page, at)).png);
 
     await host.hover();
@@ -405,17 +413,27 @@ test('[M0.states/c] every component with an action, and every disabled prop, is 
     .filter(({ name, source }) => actionProps(name, source).length > 0)
     .map(({ name }) => name)
     .sort();
-  expect(STATE_ENTRIES.map((e) => e.name).sort()).toEqual(actions);
+  expect([...new Set(STATE_ENTRIES.map(componentOf))].sort()).toEqual(actions);
   const disabled = declared
     // StateLayer takes `disabled` from its control and has no action of its own.
     .filter(({ name, source }) => actions.includes(name) && /^\s*disabled\??:/m.test(source))
     .map(({ name }) => name)
     .sort();
-  expect(
-    STATE_ENTRIES.filter((e) => e.disabled)
-      .map((e) => e.name)
-      .sort(),
-  ).toEqual(disabled);
+  expect([...new Set(STATE_ENTRIES.filter((e) => e.disabled).map(componentOf))].sort()).toEqual(
+    disabled,
+  );
+});
+
+test('[M0.states/a] each IconButton variant has its own entry in the states fixture', () => {
+  const declared = readFileSync(join(sonora, 'basic', 'IconButton.d.ts'), 'utf8');
+  const union = /variant\?:\s*([^;]+);/.exec(declared);
+  expect(union, 'IconButton declares its variants').not.toBeNull();
+  const variants = [...union![1]!.matchAll(/'([a-z]+)'/g)].map((m) => m[1]!);
+  expect(variants).toContain('plain');
+  const drawn = STATE_ENTRIES.filter((e) => componentOf(e) === 'IconButton').map((e) =>
+    e.name === 'IconButton' ? 'plain' : e.name.split('.')[1]!,
+  );
+  expect(drawn.sort()).toEqual(variants.sort());
 });
 
 test('[M0.states/a] a disabled button group still shows which segment is selected', async ({

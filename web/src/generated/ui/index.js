@@ -63,7 +63,6 @@ export { StateLayer } from './basic/StateLayer.jsx';
 export { StatusBanner } from './components/StatusBanner.jsx';
 export { Switch } from './basic/Switch.jsx';
 export { TabBar } from './components/TabBar.jsx';
-export { TonalIconButton } from './basic/TonalIconButton.jsx';
 export { TransportBar } from './components/TransportBar.jsx';
 export { ValueRow } from './components/ValueRow.jsx';
 export { ViewToggle } from './basic/ViewToggle.jsx';

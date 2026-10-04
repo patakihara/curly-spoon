@@ -10,20 +10,19 @@ import { NS, sx } from '../shared.js';
 export function FeatureCard({ image, kind, title, meta, description, tint, explicit = false, saved = false, onSave, onPlay, onMore, preview, platform = 'desktop' }) {
   const mobile = platform === 'mobile';
   const fg = 'var(--surface-fg)', muted = 'var(--surface-fg-muted)';
-  const { CoverArt, Badge, StateLayer, Icon } = NS();
+  const { CoverArt, Badge, IconButton, StateLayer, Icon } = NS();
   const kindLabel = kind ? kind.toLowerCase() : 'item';
   const saveLabel = saved ? 'Remove from saved' : 'Save ' + kindLabel;
   const playLabel = 'Play ' + kindLabel;
   return (
     <div style={sx('position:relative;display:flex;flex-direction:column;gap:var(--spacing-sm);padding:var(--spacing-md);border-radius:var(--radius-md);background:' + (tint || 'var(--surface-card)'))}>
-      {onMore && (
-        <button className="sn-int" onClick={onMore} aria-label="More options" title="More options"
-          style={sx('position:absolute;top:var(--spacing-sm);right:var(--spacing-sm);width:30px;height:30px;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:transparent;color:' + muted)}>
+      {onMore && IconButton && (
+        <IconButton size="xs" muted label="More options" title="More options" onClick={onMore}
+          style={sx('position:absolute;top:var(--spacing-sm);right:var(--spacing-sm)')}>
           <Icon name="more_vert" weight="strong" />
-          {StateLayer && <StateLayer />}
-        </button>
+        </IconButton>
       )}
-      <div style={sx('display:flex;gap:var(--spacing-md);padding-right:' + (onMore ? '30px' : '0'))}>
+      <div style={sx('display:flex;gap:var(--spacing-md);padding-right:' + (onMore ? 'var(--control-xs)' : '0'))}>
         {/* position:relative is load-bearing, not tidiness: CoverArt fills its parent with
             position:absolute;inset:0, so without a positioned ancestor here the gradient escapes
             and covers the whole card, hiding every line of text under it. */}
@@ -52,17 +51,15 @@ export function FeatureCard({ image, kind, title, meta, description, tint, expli
       <div style={sx('display:flex;align-items:center;gap:var(--spacing-sm);margin-top:var(--spacing-xs)')}>
         {preview}
         <div style={sx('display:flex;align-items:center;gap:var(--spacing-sm);margin-left:auto')}>
-          {onSave && (
-            <button className="sn-int" onClick={onSave} aria-label={saveLabel} title={saveLabel} aria-pressed={saved}
-              style={sx('display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex-shrink:0;border-radius:50%;border:none;background:transparent;cursor:pointer;color:' + (saved ? 'var(--tone-library)' : muted) + ';transition:color var(--duration-fast) var(--ease-standard)')}>
+          {onSave && IconButton && (
+            <IconButton muted active={saved} tone="library" pressed={saved} label={saveLabel} title={saveLabel} onClick={onSave}>
               <Icon name="bookmark" filled={saved} weight="strong" />
-              {StateLayer && <StateLayer />}
-            </button>
+            </IconButton>
           )}
           {/* Omitted for an audiobook: a sample is the only playback a preview offers there. */}
           {onPlay && (
             <button className="sn-int sn-filled" onClick={onPlay} aria-label={playLabel} title={playLabel}
-              style={sx('display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex-shrink:0;border-radius:50%;border:none;background:var(--play);color:var(--play-contrast);cursor:pointer')}>
+              style={sx('display:flex;align-items:center;justify-content:center;width:var(--control-sm);height:var(--control-sm);flex-shrink:0;border-radius:var(--radius-round);border:none;background:var(--play);color:var(--play-contrast);cursor:pointer')}>
               <Icon name="play_arrow" filled weight="strong" />
               {StateLayer && <StateLayer />}
             </button>

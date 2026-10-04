@@ -14,7 +14,7 @@ const TONES = {
 /** Persistent, non-blocking statement of system state — Spotify's "You're offline" bar. Unlike a toast it never times out. */
 export function StatusBanner({ children, tone = 'info', icon, actionLabel, onAction, onDismiss }) {
   const [bg, fg] = TONES[tone] || TONES.info;
-  const { StateLayer, Icon } = NS();
+  const { IconButton, StateLayer, Icon } = NS();
   return (
     <div role="status" aria-live="polite"
       style={sx('display:flex;align-items:center;gap:var(--spacing-md);width:100%;box-sizing:border-box;padding:var(--spacing-sm) var(--spacing-lg);background:' + bg + ';color:' + fg)}>
@@ -26,12 +26,10 @@ export function StatusBanner({ children, tone = 'info', icon, actionLabel, onAct
           {StateLayer && <StateLayer disabled={!onAction} />}
         </button>
       )}
-      {onDismiss && (
-        <button className="sn-int" onClick={onDismiss} aria-label="Dismiss"
-          style={sx('flex-shrink:0;display:flex;align-items:center;justify-content:center;width:var(--icon-md);height:var(--icon-md);border:none;border-radius:50%;background:transparent;cursor:pointer;padding:0;color:inherit')}>
-          <Icon name="close" />
-          {StateLayer && <StateLayer />}
-        </button>
+      {/* Drawn the smallest control size, its footprint held to the glyph's so the banner keeps its height. */}
+      {onDismiss && IconButton && (
+        <IconButton size="xs" tone="inherit" icon="close" label="Dismiss" onClick={onDismiss}
+          style={sx('margin:calc((var(--icon-md) - var(--control-xs)) / 2) 0')} />
       )}
     </div>
   );

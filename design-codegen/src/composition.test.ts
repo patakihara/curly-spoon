@@ -1,4 +1,5 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 import { REPO_ROOT, SONORA_DIR } from './outputs.js';
@@ -110,18 +111,23 @@ const GLYPH_COMPONENTS = [
   'Rating',
   'ResultRow',
   'SearchField',
-  'SectionHeader',
-  'Shelf',
-  'SideSheet',
   'SortFilterBar',
   'StatusBanner',
   'TabBar',
-  'TonalIconButton',
   'TransportBar',
 ];
 
 /** The components whose only glyphs are IconButton's, named through its `icon`. */
-const ICON_BUTTON_GLYPHS = ['NowPlayingPage', 'PlayerSubPage', 'SearchButton'];
+const ICON_BUTTON_GLYPHS = [
+  'LyricsSyncButton',
+  'NowPlayingPage',
+  'PlayerSubPage',
+  'SearchButton',
+  'SectionHeader',
+  'Shelf',
+  'SideSheet',
+  'ViewToggle',
+];
 
 const SHOWCASE_ROOT = `${REPO_ROOT}/${SONORA_DIR}`;
 
@@ -182,5 +188,160 @@ describe("Sonora's glyphs, read from its sources", () => {
         .map((m) => `${f}: ${m[1]} ${m[2]!.trim()}`),
     );
     expect(offenders).toEqual([]);
+  });
+});
+
+/**
+ * Every file in the repo, tracked or new, that names a folded component in its path or its text,
+ * outside the plan, which records the fold, and this test. `spellings` are its other names: a
+ * card's file name, an injected style's id.
+ */
+function namesOf(name: string, spellings: RegExp[]): string[] {
+  const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+  })
+    .split('\n')
+    .filter((f) => f !== '' && !f.startsWith('docs/plan/') && !f.endsWith('composition.test.ts'))
+    .filter((f) => existsSync(`${REPO_ROOT}/${f}`));
+  const patterns = [new RegExp(name), ...spellings];
+  return files.filter(
+    (f) =>
+      patterns.some((re) => re.test(f)) ||
+      patterns.some((re) => re.test(readFileSync(`${REPO_ROOT}/${f}`, 'utf8'))),
+  );
+}
+
+/** A `<button>` whose own style rounds it into a circle. */
+const ROUND = /50%|--radius-round/;
+
+/**
+ * Each component's `<button>` elements that round themselves, by the text of their style and of
+ * any style helper or constant of the file that the style names.
+ */
+function roundButtons(src: string): string[] {
+  const file = ts.createSourceFile('c.jsx', src, ts.ScriptTarget.Latest, true, ts.ScriptKind.JSX);
+  const helpers = new Map<string, string>();
+  const collect = (node: ts.Node) => {
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name))
+      helpers.set(node.name.text, node.getText(file));
+    if (ts.isFunctionDeclaration(node) && node.name !== undefined)
+      helpers.set(node.name.text, node.getText(file));
+    ts.forEachChild(node, collect);
+  };
+  collect(file);
+  const styleText = (attr: ts.Node): string => {
+    const names: string[] = [];
+    const find = (n: ts.Node) => {
+      if (ts.isIdentifier(n)) names.push(n.text);
+      ts.forEachChild(n, find);
+    };
+    find(attr);
+    return [attr.getText(file), ...names.map((n) => helpers.get(n) ?? '')].join('\n');
+  };
+  const out: string[] = [];
+  const visit = (node: ts.Node) => {
+    if (
+      (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) &&
+      node.tagName.getText(file) === 'button'
+    ) {
+      const style = node.attributes.properties.find(
+        (a) => ts.isJsxAttribute(a) && a.name.getText(file) === 'style',
+      );
+      if (style !== undefined && ROUND.test(styleText(style)))
+        out.push(`line ${file.getLineAndCharacterOfPosition(node.getStart()).line + 1}`);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(file);
+  return out;
+}
+
+/** The round buttons that stay hand-built, each with why. */
+const OWN_ROUND_BUTTONS: Record<string, string> = {
+  AccountButton: 'an avatar: the round button is the picture, not a glyph',
+  FeatureCard: 'its play button on the play fill, which no IconButton variant draws',
+  IconButton: 'the one round glyph button',
+  MiniPlayer: "its transport, which moves onto IconButton with the mini player's own fold",
+  PlayActions: 'the play cluster over artwork, on the play fill and the accent scrim',
+};
+
+/** The hand-built round buttons folded into IconButton, and the variant each now takes. */
+const FORMER_ROUND_BUTTONS: [string, string][] = [
+  ['DownloadButton', 'outline'],
+  ['FeatureCard', 'plain'],
+  ['MediaCard', 'scrim'],
+  ['MediaHeader', 'outline'],
+  ['OverflowMenu', 'scrim'],
+  ['SearchField', 'plain'],
+  ['SectionHeader', 'plain'],
+  ['Shelf', 'raised'],
+  ['SideSheet', 'plain'],
+  ['StatusBanner', 'plain'],
+];
+
+describe("Sonora's icon buttons, read from its sources", () => {
+  it('[M0.sonoraclean/c] TonalIconButton is gone: no file, export, card, doc or source names it', () => {
+    expect(components.has('TonalIconButton')).toBe(false);
+    expect(namesOf('TonalIconButton', [/tonal-icon-button/i, /tonalicon/i])).toEqual([]);
+  });
+
+  it.each(['LyricsSyncButton', 'ViewToggle', 'QueuePage'])(
+    '[M0.sonoraclean/c] %s renders a tonal IconButton in its place',
+    (name) => {
+      expect(rendered(source(name))).toContainEqual({
+        tag: 'IconButton',
+        attrs: expect.objectContaining({ variant: 'tonal' }),
+      });
+    },
+  );
+
+  it.each(FORMER_ROUND_BUTTONS)(
+    '[M0.sonoraclean/d] %s renders IconButton for its round button, as %s',
+    (name, variant) => {
+      const buttons = rendered(source(name)).filter((e) => e.tag === 'IconButton');
+      expect(buttons.length).toBeGreaterThan(0);
+      if (variant === 'plain') {
+        expect(buttons.some((b) => b.attrs.variant === undefined)).toBe(true);
+      } else {
+        const named = buttons.some((b) => b.attrs.variant === variant);
+        const chosen = buttons.some((b) => b.attrs.variant === true);
+        expect(named || (chosen && source(name).includes(`'${variant}'`))).toBe(true);
+      }
+    },
+  );
+
+  it('[M0.sonoraclean/d] no Sonora source but IconButton hand-builds a round button, past the listed few', () => {
+    const own = sonoraSources()
+      .filter(([name]) => !(name in OWN_ROUND_BUTTONS))
+      .flatMap(([name, src]) => roundButtons(src).map((where) => `${name}: ${where}`));
+    expect(own).toEqual([]);
+    for (const name of Object.keys(OWN_ROUND_BUTTONS))
+      expect(components.has(name), name).toBe(true);
+  });
+
+  it('[M0.sonoraclean/d] names a round button drawn by hand, and passes one drawn by IconButton', () => {
+    expect(
+      roundButtons(`export const A = () => <button style={sx('border-radius:50%')}>a</button>;`),
+    ).toEqual(['line 1']);
+    expect(
+      roundButtons(
+        `export const B = () => <button style={{ borderRadius: 'var(--radius-round)' }} />;`,
+      ),
+    ).toEqual(['line 1']);
+    expect(
+      roundButtons(
+        `const arrow = () => sx('border-radius:var(--radius-round)');\nexport const C = () => <button style={arrow()} />;`,
+      ),
+    ).toEqual(['line 2']);
+    expect(
+      roundButtons(`export const D = () => <IconButton variant="scrim" label="More" />;`),
+    ).toEqual([]);
+  });
+
+  it('[M0.sonoraclean/d] SearchButton names its glyph through IconButton', () => {
+    const buttons = rendered(source('SearchButton')).filter((e) => e.tag === 'IconButton');
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0]!.attrs).toHaveProperty('icon');
   });
 });

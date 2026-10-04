@@ -15,6 +15,7 @@ export function OverflowMenu({ items = [], label = 'More options', open, onOpenC
   // The menu's verbs are its action: with nothing to select, the button is drawn disabled.
   const off = !onSelect;
   const mobile = platform === 'mobile';
+  const scrim = tone === 'scrim';
   const [own, setOwn] = React.useState(false);
   const shown = open === undefined ? own : open;
   const set = (next) => { if (open === undefined) setOwn(next); if (onOpenChange) onOpenChange(next); };
@@ -54,14 +55,11 @@ export function OverflowMenu({ items = [], label = 'More options', open, onOpenC
     <div style={sx('position:relative;display:inline-flex;flex-shrink:0')}>
       {/* Over artwork the button sits on a scrim in on-scrim ink, as a card's corner button does:
           surface ink would vanish on a dark or a light cover. */}
-      {tone === 'scrim'
-        ? <button className="sn-int sn-filled" aria-label={label} title={label} aria-expanded={shown} disabled={off}
-            onClick={off ? undefined : (e) => { if (e && e.stopPropagation) e.stopPropagation(); set(!shown); }}
-            style={sx('width:30px;height:30px;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--scrim-soft);color:var(--on-scrim)')}>
-            <Icon name="more_vert" />
-            {StateLayer && <StateLayer disabled={off} />}
-          </button>
-        : IconButton && <IconButton icon="more_vert" label={label} active={shown} onClick={off ? undefined : () => set(!shown)} />}
+      {IconButton && (scrim
+        ? <IconButton variant="scrim" size="xs" icon="more_vert" label={label} title={label} expanded={shown}
+            onClick={off ? undefined : (e) => { if (e && e.stopPropagation) e.stopPropagation(); set(!shown); }} />
+        : <IconButton variant="plain" icon="more_vert" label={label} active={shown} expanded={shown}
+            onClick={off ? undefined : () => set(!shown)} />)}
       {mobile ? sheet : menu}
     </div>
   );

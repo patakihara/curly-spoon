@@ -37,7 +37,7 @@ export function NowPlayingPage({
   const longWord = String(title || '').split(/\s+/).some((w) => w.length > 10);
   const sleeping = sleep !== 'Off';
   const sleepButton = IconButton && (
-    <IconButton label={'Sleep timer, ' + sleep} active={sleeping} muted={!sleeping} size={mobile ? 48 : 40} onClick={onSleep} icon="bedtime" />
+    <IconButton label={'Sleep timer, ' + sleep} active={sleeping} muted={!sleeping} size={mobile ? 'xl' : 'md'} onClick={onSleep} icon="bedtime" />
   );
 
   const body = (
@@ -53,7 +53,7 @@ export function NowPlayingPage({
           {!mobile && context && <div style={sx('margin-top:6px;font-size:var(--text-sm);color:var(--surface-fg-muted)')}>{context}</div>}
         </div>
         {(favourite !== undefined || onFavourite) && IconButton && (
-          <IconButton label={favourite ? 'Remove from favourites' : 'Add to favourites'} active={favourite} muted={!favourite} size={mobile ? 44 : 36} onClick={onFavourite}
+          <IconButton label={favourite ? 'Remove from favourites' : 'Add to favourites'} active={favourite} muted={!favourite} size={mobile ? 'lg' : 'sm'} onClick={onFavourite}
             icon={favourite ? 'favorite' : 'favorite_border'} />
         )}
       </div>

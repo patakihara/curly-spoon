@@ -3,10 +3,10 @@ import React from 'react';
 import { ButtonGroup } from '../basic/ButtonGroup.jsx';
 import { EditableList } from '../components/EditableList.jsx';
 import { Icon } from '../basic/Icon.jsx';
+import { IconButton } from '../basic/IconButton.jsx';
 import { PlayerSubPage } from './PlayerSubPage.jsx';
 import { QueueRow } from '../components/QueueRow.jsx';
 import { SectionHeader } from '../components/SectionHeader.jsx';
-import { TonalIconButton } from '../basic/TonalIconButton.jsx';
 import { sx } from '../shared.js';
 
 /**
@@ -51,9 +51,9 @@ export function QueuePage({
   if (!PlayerSubPage || !EditableList) return null;
   return (
     <PlayerSubPage platform={platform} heading={heading} scroll={scroll} meta={context} footer={footer} onClose={onClose}
-      controls={TonalIconButton ? (
-        <TonalIconButton glyph={edit ? 'edit_off' : 'edit'} active={edit}
-          label={edit ? 'Done editing queue' : 'Edit queue'} onClick={editable ? () => setEdit(!edit) : undefined} />
+      controls={IconButton ? (
+        <IconButton variant="tonal" icon={edit ? 'edit_off' : 'edit'} active={edit}
+          label={edit ? 'Done editing queue' : 'Edit queue'} title={edit ? 'Done editing queue' : 'Edit queue'} onClick={editable ? () => setEdit(!edit) : undefined} />
       ) : null}>
       {queues && queues.length > 1 && ButtonGroup && (
         <div style={sx('order:-1')}>

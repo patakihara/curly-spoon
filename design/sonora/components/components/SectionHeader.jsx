@@ -4,7 +4,7 @@ import { NS, activate } from '../shared.js';
 /** Row heading above a carousel or grid, with an optional trailing action. */
 export function SectionHeader({ title, action, actionLabel = 'More', onAction, platform = 'mobile', eyebrow, image, round = false, onSubject, actionText, trailing }) {
   const isMobile = platform === 'mobile';
-  const { CoverArt, StateLayer, Icon } = NS();
+  const { CoverArt, IconButton, StateLayer } = NS();
   const off = !onAction;
   const titleEl = (
     <div style={{
@@ -58,13 +58,8 @@ export function SectionHeader({ title, action, actionLabel = 'More', onAction, p
           fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-strong)',
           color: 'var(--surface-fg-muted)',
         }}>{actionText}{StateLayer && <StateLayer disabled={off} />}</button>
-      ) : action && (
-        <button className="sn-int" aria-label={actionLabel} onClick={off ? undefined : onAction} disabled={off} style={{
-          width: 36, height: 36, borderRadius: '50%', border: 'none', flexShrink: 0,
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          background: 'transparent', color: 'var(--surface-fg-muted)',
-          cursor: 'pointer',
-        }}><Icon name={action} />{StateLayer && <StateLayer disabled={off} />}</button>
+      ) : action && IconButton && (
+        <IconButton muted icon={action} label={actionLabel} onClick={off ? undefined : onAction} />
       )}
     </div>
   );

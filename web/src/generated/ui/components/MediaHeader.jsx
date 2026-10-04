@@ -4,6 +4,7 @@ import { Button } from '../basic/Button.jsx';
 import { CoverArt } from '../basic/CoverArt.jsx';
 import { DownloadButton } from '../basic/DownloadButton.jsx';
 import { Icon } from '../basic/Icon.jsx';
+import { IconButton } from '../basic/IconButton.jsx';
 import { StateLayer } from '../basic/StateLayer.jsx';
 import { percentOf, sx, useMeasure } from '../shared.js';
 
@@ -74,14 +75,12 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
           {/* The round controls stay together, so a phone's row too narrow for them all wraps them to a
               line of their own rather than leaving the menu alone under the rest. */}
           {(add || offline || menu != null) && <div style={sx('display:flex;align-items:center;gap:' + (mobile ? '10px' : '12px'))}>
-          {/* Saving the item into a list, drawn here rather than borrowed, as round and as quiet as the
+          {/* Saving the item into a list, an outlined IconButton, as round and as quiet as the
               download control beside it: a verb, not a queue button, so it takes no label of its own. */}
-          {add && (
-            <button className="sn-int" onClick={onAdd} disabled={!onAdd} aria-label={addLabel} title={addLabel}
-              style={sx('display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex-shrink:0;border-radius:50%;border:1px solid var(--surface-border);background:transparent;padding:0;cursor:pointer;color:var(--surface-fg-muted)')}>
+          {add && IconButton && (
+            <IconButton variant="outline" muted label={addLabel} title={addLabel} onClick={onAdd}>
               <Icon name="playlist_add" weight="strong" />
-              {StateLayer && <StateLayer disabled={!onAdd} />}
-            </button>
+            </IconButton>
           )}
           {offline && <DownloadButton state={download} onClick={onDownload} />}
           {menu}

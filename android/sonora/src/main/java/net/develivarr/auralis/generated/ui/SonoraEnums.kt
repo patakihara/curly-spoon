@@ -32,6 +32,16 @@ enum class SizeSmMdLg(val value: String) {
     LG("lg"),
 }
 
+enum class SizeXsSmMdLgXl2xl3xl(val value: String) {
+    XS("xs"),
+    SM("sm"),
+    MD("md"),
+    LG("lg"),
+    XL("xl"),
+    _2XL("2xl"),
+    _3XL("3xl"),
+}
+
 enum class SyncMode(val value: String) {
     SYNC("sync"),
     DOT("dot"),

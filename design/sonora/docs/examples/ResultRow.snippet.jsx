@@ -6,6 +6,6 @@
   onClick={() => {}}
   onAction={() => {}}
   trailing={
-    <IconButton label="More" size={34} icon="more_vert" onClick={() => {}} />
+    <IconButton label="More" icon="more_vert" onClick={() => {}} />
   }
 />

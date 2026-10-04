@@ -58,7 +58,6 @@ import {
   StatusBanner,
   Switch,
   TabBar,
-  TonalIconButton,
   TransportBar,
   ValueRow,
   ViewToggle,
@@ -146,6 +145,44 @@ const DRAW: Record<string, (act: Act, disabled: boolean) => ReactNode> = {
   FollowButton: (act) => <FollowButton onChange={act} />,
   IconButton: (act, disabled) => (
     <IconButton icon="favorite" label="Favourite" onClick={act} disabled={disabled} />
+  ),
+  'IconButton.outline': (act, disabled) => (
+    <IconButton
+      variant="outline"
+      icon="playlist_add"
+      label="Add to a list"
+      onClick={act}
+      disabled={disabled}
+    />
+  ),
+  'IconButton.raised': (act, disabled) => (
+    <IconButton
+      variant="raised"
+      size="md"
+      icon="chevron_right"
+      label="Scroll forward"
+      onClick={act}
+      disabled={disabled}
+    />
+  ),
+  'IconButton.scrim': (act, disabled) => (
+    <IconButton
+      variant="scrim"
+      size="xs"
+      icon="more_vert"
+      label="More options"
+      onClick={act}
+      disabled={disabled}
+    />
+  ),
+  'IconButton.tonal': (act, disabled) => (
+    <IconButton
+      variant="tonal"
+      icon="grid_view"
+      label="Switch to grid view"
+      onClick={act}
+      disabled={disabled}
+    />
   ),
   Input: (act, disabled) => <Input placeholder="Name" onChange={act} disabled={disabled} />,
   Lyrics: (act) => (
@@ -266,9 +303,6 @@ const DRAW: Record<string, (act: Act, disabled: boolean) => ReactNode> = {
   ),
   Switch: (act) => <Switch checked onChange={act} />,
   TabBar: (act) => <TabBar items={TABS} value="now" onChange={act} />,
-  TonalIconButton: (act, disabled) => (
-    <TonalIconButton glyph="grid_view" label="Grid" onClick={act} disabled={disabled} />
-  ),
   TransportBar: (act) => (
     <TransportBar
       platform="desktop"

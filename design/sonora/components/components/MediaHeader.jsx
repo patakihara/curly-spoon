@@ -13,7 +13,7 @@ import { NS, percentOf, sx, useMeasure } from '../shared.js';
  * and no action row (a person), kind and meta are a caption, centred beside the art when wide.
  */
 export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Play', nextLabel = 'Next', lastLabel = 'Last', round = false, image, covers, platform, compactAt = 600, onPlay, onPlayNext, onPlayLast, onSubtitle, partOf, onPartOf, rating, actions, menu, progress = null, download = null, onDownload, addLabel = null, onAdd }) {
-  const { Button, CoverArt, DownloadButton, StateLayer, Icon } = NS();
+  const { Button, CoverArt, DownloadButton, IconButton, StateLayer, Icon } = NS();
   const ref = React.useRef(null);
   // Measures itself, so a header inside a 412px phone frame or a narrow desktop pane both go compact.
   const [narrow, setNarrow] = React.useState(false);
@@ -69,14 +69,12 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
           {/* The round controls stay together, so a phone's row too narrow for them all wraps them to a
               line of their own rather than leaving the menu alone under the rest. */}
           {(add || offline || menu != null) && <div style={sx('display:flex;align-items:center;gap:' + (mobile ? '10px' : '12px'))}>
-          {/* Saving the item into a list, drawn here rather than borrowed, as round and as quiet as the
+          {/* Saving the item into a list, an outlined IconButton, as round and as quiet as the
               download control beside it: a verb, not a queue button, so it takes no label of its own. */}
-          {add && (
-            <button className="sn-int" onClick={onAdd} disabled={!onAdd} aria-label={addLabel} title={addLabel}
-              style={sx('display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex-shrink:0;border-radius:50%;border:1px solid var(--surface-border);background:transparent;padding:0;cursor:pointer;color:var(--surface-fg-muted)')}>
+          {add && IconButton && (
+            <IconButton variant="outline" muted label={addLabel} title={addLabel} onClick={onAdd}>
               <Icon name="playlist_add" weight="strong" />
-              {StateLayer && <StateLayer disabled={!onAdd} />}
-            </button>
+            </IconButton>
           )}
           {offline && <DownloadButton state={download} onClick={onDownload} />}
           {menu}

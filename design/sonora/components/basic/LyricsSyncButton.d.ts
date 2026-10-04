@@ -1,5 +1,5 @@
 /**
- * The lyric sheet's sync toggle, a TonalIconButton (the list/grid toggle's shape). Synced
+ * The lyric sheet's sync toggle, a tonal IconButton (the list/grid toggle's pill). Synced
  * (`sync`), the current line leads in accent ink; off, every line is at full strength and a dot
  * marks the current one (`dot`), or nothing does (`off`) when the dot is switched off from the
  * player's menu.

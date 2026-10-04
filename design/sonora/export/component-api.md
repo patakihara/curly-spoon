@@ -71,14 +71,14 @@ The artwork layer used inside every art container in the system. Absolutely fill
 
 ### DownloadButton
 
-Offline availability as a three-state control: idle -> downloading (determinate or indeterminate, cancellable mid-flight) -> done, and pressing a done button removes the download. Composes ProgressRing for the downloading state rather than drawing a second ring.
+Offline availability as a three-state control: idle -> downloading (determinate or indeterminate, cancellable mid-flight) -> done, and pressing a done button removes the download. An IconButton: outlined at rest and done, plain while its ProgressRing runs, so the ring is not drawn inside a second one.
 
 | prop | type | notes |
 | --- | --- | --- |
 | `state` | `'idle' \| 'downloading' \| 'done'` |  |
 | `progress` | `number \| null` | 0–1. Indeterminate ring when null and `state` is 'downloading'. |
 | `onClick` | `() => void` | Fires on press in every state: starts, cancels, or removes, depending on `state`. Without it the button is drawn disabled. |
-| `size` | `number` | Control diameter in px. |
+| `size` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| '2xl' \| '3xl'` | A step of IconButton's control ramp. Default 'sm' (36px). |
 
 ### ExpandableText
 
@@ -121,19 +121,27 @@ A Material Symbols Rounded glyph: the only Sonora component that sets the icon f
 
 ### IconButton
 
-A round, transparent glyph button: surface ink, muted ink, or the active colour.
+Sonora's one icon-only button, round on every variant but tonal. `variant` picks its container: `plain` (none: a glyph in surface ink, muted ink or the active colour), `outline` (a hairline ring, for a quiet verb beside a row of buttons), `tonal` (a squat pill on the card fill, for a control sitting on the page, such as the list/grid switch; changing `icon` turns the glyph over rather than cutting to it, instantly under reduced motion), `raised` (the card fill and a shadow, floating over content, as a shelf's arrows do) or `scrim` (the soft scrim in on-scrim ink, over artwork). `label` is always its accessible name.
 
 | prop | type | notes |
 | --- | --- | --- |
-| `children` | `ReactNode` | A glyph span, or any content. Ignored when `icon` is given. |
-| `icon` | `string` | A Material Symbols Rounded glyph name, drawn at `--icon-sm` in place of `children`. |
-| `size` | `number` |  |
-| `active` | `boolean` |  |
-| `tone` | `'accent' \| 'play'` | The colour `active` takes: `accent` (default), or `play` for the transport's play/pause. |
-| `muted` | `boolean` |  |
-| `label` *(required)* | `string` |  |
+| `children` | `ReactNode` | A glyph, an `Icon`, or any content. Ignored when `icon` is given. |
+| `icon` | `string` | A Material Symbols Rounded glyph name, drawn through Icon in place of `children`. |
+| `iconSize` | `'2xs' \| 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | The `icon` glyph's step of Icon's ramp. Default 'sm' (24px); 'xs' (20px) on tonal. |
+| `variant` | `'plain' \| 'outline' \| 'tonal' \| 'raised' \| 'scrim'` | The container. Default 'plain'. |
+| `size` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| '2xl' \| '3xl'` |  A step of the control ramp, `--control-xs` (32px) to `--control-3xl` (72px): its height, and its width but on tonal, which is a spacing step wider. Default 'sm' (36px); 'xs' on tonal.  |
+| `active` | `boolean` | On: the glyph in the `tone` colour; on tonal, accent ink and the glyph filled. |
+| `tone` | `'accent' \| 'play' \| 'library' \| 'inherit'` |  The colour `active` takes: `accent` (default), `play` for the transport's play/pause, or `library` for an item kept in the library. `inherit` takes the ink of what the button sits on, at rest and active, as on a status banner.  |
+| `muted` | `boolean` | The muted surface ink at rest. |
+| `label` *(required)* | `string` | Its accessible name. |
 | `onClick` | `() => void` | The action. Without it the button is drawn disabled. |
-| `disabled` | `boolean` | Drawn disabled: the glyph at 38%, no focus or press. |
+| `disabled` | `boolean` | Drawn disabled: the glyph at 38%, a filled container at 12%, no focus or press. |
+| `title` | `string` | A tooltip, usually the label. |
+| `pressed` | `boolean` | For a toggle: whether it is on, announced as pressed. |
+| `expanded` | `boolean` | For a menu or disclosure button: whether what it opens is open. |
+| `controls` | `string` | The id of the element it opens, closes or scrolls. |
+| `className` | `string` | A class for a reveal or animation hook, such as a corner button shown on hover. |
+| `style` | `CSSProperties` | Placement only: position, offsets, margin, opacity. Never its size, fill or ink. |
 
 ### Input
 
@@ -150,7 +158,7 @@ The new text, on every keystroke. Without it the field is drawn disabled.
 
 ### LyricsSyncButton
 
-The lyric sheet's sync toggle, a TonalIconButton (the list/grid toggle's shape). Synced (`sync`), the current line leads in accent ink; off, every line is at full strength and a dot marks the current one (`dot`), or nothing does (`off`) when the dot is switched off from the player's menu.
+The lyric sheet's sync toggle, a tonal IconButton (the list/grid toggle's pill). Synced (`sync`), the current line leads in accent ink; off, every line is at full strength and a dot marks the current one (`dot`), or nothing does (`off`) when the dot is switched off from the player's menu.
 
 | prop | type | notes |
 | --- | --- | --- |
@@ -320,23 +328,6 @@ Receives the next checked state. Without it the switch is drawn disabled.
 | `checked` *(required)* | `boolean` |  |
 | `onChange` | `(next: boolean) => void` | Receives the next checked state. Without it the switch is drawn disabled. |
 | `label` | `string` |  |
-
-### TonalIconButton
-
-Icon button on a tonal (card) fill — a squat pill rather than a circle, for controls sitting on the page instead of in a bar (the list/grid switch above a collection). Changing `glyph` turns the icon over rather than cutting to it; instant under prefers-reduced-motion.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `glyph` *(required)* | `string` | Material Symbols glyph name. Change it and the icon animates over. |
-| `label` | `string` | Accessible name and tooltip. |
-| `onClick` | `() => void` | The action. Without it the button is drawn disabled. |
-| `disabled` | `boolean` | Drawn disabled: the fill at 12% and the glyph at 38% of the surface ink, no focus or press. |
-| `width` | `number` | Default 40×32 with a 16px radius — a pill wider than it is tall. |
-| `height` | `number` |  |
-| `radius` | `string` |  |
-| `iconSize` | `'2xs' \| 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | Glyph size, a step of Icon's ramp. Default 'xs' (20px). |
-| `active` | `boolean` | Accent ink and a filled glyph. |
-| `background` | `string` |  |
 
 ### ViewToggle
 

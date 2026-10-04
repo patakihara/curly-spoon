@@ -4,7 +4,8 @@ package net.develivarr.auralis.generated.ui
 /**
  * Offline availability as a three-state control: idle -> downloading (determinate or
  * indeterminate, cancellable mid-flight) -> done, and pressing a done button removes the
- * download. Composes ProgressRing for the downloading state rather than drawing a second ring.
+ * download. An IconButton: outlined at rest and done, plain while its ProgressRing runs, so the
+ * ring is not drawn inside a second one.
  */
 data class DownloadButtonProps(
     val state: Download? = null,
@@ -12,6 +13,6 @@ data class DownloadButtonProps(
     val progress: Float? = null,
     /** Fires on press in every state: starts, cancels, or removes, depending on `state`. Without it the button is drawn disabled. */
     val onClick: (() -> Unit)? = null,
-    /** Control diameter in px. */
-    val size: Float? = null,
+    /** A step of IconButton's control ramp. Default 'sm' (36px). */
+    val size: SizeXsSmMdLgXl2xl3xl? = null,
 )

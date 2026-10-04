@@ -2,17 +2,18 @@ import React from 'react';
 import { NS } from '../shared.js';
 
 /**
- * Turns the lyric sheet's sync on and off, on the same tonal pill the list/grid toggle uses. Off,
+ * Turns the lyric sheet's sync on and off, on a tonal IconButton, the list/grid toggle's pill. Off,
  * the sheet marks the current line with a dot (`dot`), unless the dot is switched off from the
  * player's menu, and then nothing marks it.
  */
 export function LyricsSyncButton({ mode = 'sync', dot = true, onChange }) {
-  const TonalIconButton = NS().TonalIconButton;
-  if (!TonalIconButton) return null;
+  const IconButton = NS().IconButton;
+  if (!IconButton) return null;
   const synced = mode === 'sync';
+  const label = synced ? 'Lyrics follow the song: turn sync off' : 'Lyrics not synced: turn sync on';
   return (
-    <TonalIconButton glyph={synced ? 'sync_lock' : 'sync_disabled'} active={synced}
-      label={synced ? 'Lyrics follow the song: turn sync off' : 'Lyrics not synced: turn sync on'}
+    <IconButton variant="tonal" icon={synced ? 'sync_lock' : 'sync_disabled'} active={synced}
+      label={label} title={label}
       onClick={onChange ? () => onChange(synced ? (dot ? 'dot' : 'off') : 'sync') : undefined} />
   );
 }

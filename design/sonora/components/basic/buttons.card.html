@@ -1,4 +1,4 @@
-<!-- @dsCard group="Basic" viewport="1200x340" name="Buttons & Icon Buttons" subtitle="Primary / secondary / ghost / danger, leading icons, circular icon-only controls, desktop + mobile radii" -->
+<!-- @dsCard group="Basic" viewport="1200x400" name="Buttons & Icon Buttons" subtitle="Primary / secondary / ghost / danger, leading icons, icon-only controls in each variant (plain, outline, tonal, raised, scrim), desktop + mobile radii" -->
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -24,12 +24,19 @@ function Demo(){
     </div>
     <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap'}}>
       <IconButton label="Previous" icon="skip_previous" onClick={() => {}} />
-      <IconButton label="Play" size={56} onClick={() => {}}><Icon name="play_arrow" size="md" style={{color:'var(--accent)'}} /></IconButton>
+      <IconButton label="Play" size="2xl" onClick={() => {}}><Icon name="play_arrow" size="md" style={{color:'var(--accent)'}} /></IconButton>
       <IconButton label="Next" icon="skip_next" onClick={() => {}} />
       <IconButton label="Shuffle" muted icon="shuffle" onClick={() => {}} />
       <IconButton label="More" muted icon="more_vert" onClick={() => {}} />
       <IconButton label="Close" icon="close" onClick={() => {}} />
       <IconButton label="Queue" icon="queue_music" active onClick={() => {}} />
+    </div>
+    <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap'}}>
+      <IconButton label="Add to a list" variant="outline" muted icon="playlist_add" onClick={() => {}} />
+      <IconButton label="Switch to list view" variant="tonal" icon="view_list" onClick={() => {}} />
+      <IconButton label="Edit queue" variant="tonal" icon="edit" active onClick={() => {}} />
+      <IconButton label="Scroll forward" variant="raised" size="md" icon="chevron_right" onClick={() => {}} />
+      <IconButton label="More options" variant="scrim" size="xs" iconSize="xs" icon="more_vert" onClick={() => {}} />
     </div>
     <div style={{display:'flex',gap:10,flexWrap:'wrap',background:'var(--surface-card)',padding:12,borderRadius:12}}>
       <Button variant="primary" platform="mobile" icon={<Icon name="play_arrow" weight="text" />} onClick={() => {}}>Play all</Button>

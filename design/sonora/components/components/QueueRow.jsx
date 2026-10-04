@@ -24,7 +24,7 @@ export function QueueRow({
       draggable={draggable && (editing || handle)} onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop} onDragEnd={onDragEnd}
       style={sx('display:flex;align-items:center;gap:var(--spacing-md);padding:var(--spacing-sm);cursor:pointer;transition:background var(--duration-quick) var(--ease-standard);border-radius:var(--radius-' + (mobile ? 'sm' : 'xs') + ');background:' + (selected ? 'color-mix(in oklab, var(--surface-card) 80%, var(--accent))' : current ? 'var(--surface-card)' : 'transparent'))}>
       {editing && IconButton && (
-        <IconButton label={selected ? 'Deselect' : 'Select'} size={mobile ? 40 : 36} active={selected} muted={!selected} onClick={stop(onSelectToggle)}>
+        <IconButton label={selected ? 'Deselect' : 'Select'} size={mobile ? 'md' : 'sm'} active={selected} muted={!selected} onClick={stop(onSelectToggle)}>
           <Icon name={selected ? 'check_circle' : 'radio_button_unchecked'} filled={selected} weight={selected ? 'strong' : 'body'} />
         </IconButton>
       )}
@@ -42,7 +42,7 @@ export function QueueRow({
       </div>
       {time && !editing && <span style={sx('font-size:var(--text-sm);color:var(--surface-fg-muted)')}>{time}</span>}
       {onRemove && IconButton && (
-        <IconButton label="Remove from queue" size={mobile ? 40 : 36} muted onClick={stop(onRemove)}><Icon name="close" size={mobile ? 'sm' : 'xs'} /></IconButton>
+        <IconButton label="Remove from queue" size={mobile ? 'md' : 'sm'} muted onClick={stop(onRemove)}><Icon name="close" size={mobile ? 'sm' : 'xs'} /></IconButton>
       )}
       {StateLayer && <StateLayer disabled={off} />}
     </div>

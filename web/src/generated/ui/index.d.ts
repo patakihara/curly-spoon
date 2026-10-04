@@ -63,7 +63,6 @@ export { StateLayer, type StateLayerProps } from './basic/StateLayer';
 export { StatusBanner, type StatusBannerProps } from './components/StatusBanner';
 export { Switch, type SwitchProps } from './basic/Switch';
 export { TabBar, type TabBarItem, type TabBarProps } from './components/TabBar';
-export { TonalIconButton, type TonalIconButtonProps } from './basic/TonalIconButton';
 export { TransportBar, type TransportBarProps } from './components/TransportBar';
 export { ValueRow, type ValueRowProps } from './components/ValueRow';
 export { ViewToggle, type ViewToggleProps } from './basic/ViewToggle';

@@ -3,20 +3,68 @@ package net.develivarr.auralis.generated.ui
 
 import androidx.compose.runtime.Composable
 
-/** A round, transparent glyph button: surface ink, muted ink, or the active colour. */
+/**
+ * Sonora's one icon-only button, round on every variant but tonal. `variant` picks its container:
+ * `plain` (none: a glyph in surface ink, muted ink or the active colour), `outline` (a hairline
+ * ring, for a quiet verb beside a row of buttons), `tonal` (a squat pill on the card fill, for a
+ * control sitting on the page, such as the list/grid switch; changing `icon` turns the glyph over
+ * rather than cutting to it, instantly under reduced motion), `raised` (the card fill and a shadow,
+ * floating over content, as a shelf's arrows do) or `scrim` (the soft scrim in on-scrim ink, over
+ * artwork). `label` is always its accessible name.
+ *
+ * Web only: className, style.
+ */
 data class IconButtonProps(
-    /** A glyph span, or any content. Ignored when `icon` is given. */
+    /** A glyph, an `Icon`, or any content. Ignored when `icon` is given. */
     val children: (@Composable () -> Unit)? = null,
-    /** A Material Symbols Rounded glyph name, drawn at `--icon-sm` in place of `children`. */
+    /** A Material Symbols Rounded glyph name, drawn through Icon in place of `children`. */
     val icon: String? = null,
-    val size: Float? = null,
+    /** The `icon` glyph's step of Icon's ramp. Default 'sm' (24px); 'xs' (20px) on tonal. */
+    val iconSize: IconSize? = null,
+    /** The container. Default 'plain'. */
+    val variant: IconButtonVariant? = null,
+    /**
+     * A step of the control ramp, `--control-xs` (32px) to `--control-3xl` (72px): its height, and
+     * its width but on tonal, which is a spacing step wider. Default 'sm' (36px); 'xs' on tonal.
+     */
+    val size: SizeXsSmMdLgXl2xl3xl? = null,
+    /** On: the glyph in the `tone` colour; on tonal, accent ink and the glyph filled. */
     val active: Boolean? = null,
-    /** The colour `active` takes: `accent` (default), or `play` for the transport's play/pause. */
-    val tone: Tone? = null,
+    /**
+     * The colour `active` takes: `accent` (default), `play` for the transport's play/pause, or
+     * `library` for an item kept in the library. `inherit` takes the ink of what the button sits on,
+     * at rest and active, as on a status banner.
+     */
+    val tone: IconButtonTone? = null,
+    /** The muted surface ink at rest. */
     val muted: Boolean? = null,
+    /** Its accessible name. */
     val label: String,
     /** The action. Without it the button is drawn disabled. */
     val onClick: (() -> Unit)? = null,
-    /** Drawn disabled: the glyph at 38%, no focus or press. */
+    /** Drawn disabled: the glyph at 38%, a filled container at 12%, no focus or press. */
     val disabled: Boolean? = null,
+    /** A tooltip, usually the label. */
+    val title: String? = null,
+    /** For a toggle: whether it is on, announced as pressed. */
+    val pressed: Boolean? = null,
+    /** For a menu or disclosure button: whether what it opens is open. */
+    val expanded: Boolean? = null,
+    /** The id of the element it opens, closes or scrolls. */
+    val controls: String? = null,
 )
+
+enum class IconButtonVariant(val value: String) {
+    PLAIN("plain"),
+    OUTLINE("outline"),
+    TONAL("tonal"),
+    RAISED("raised"),
+    SCRIM("scrim"),
+}
+
+enum class IconButtonTone(val value: String) {
+    ACCENT("accent"),
+    PLAY("play"),
+    LIBRARY("library"),
+    INHERIT("inherit"),
+}

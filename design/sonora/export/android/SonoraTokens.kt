@@ -149,6 +149,8 @@ object SonoraDimens {
     val controlMd = 40.dp
     val controlLg = 44.dp
     val controlXl = 48.dp
+    val control2xl = 56.dp
+    val control3xl = 72.dp
     val art2xs = 40.dp
     val artXs = 44.dp
     val artSm = 48.dp

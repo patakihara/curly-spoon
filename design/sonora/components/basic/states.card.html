@@ -1,4 +1,4 @@
-<!-- @dsCard group="Basic" viewport="1200x760" name="States" subtitle="Preview: every basic control enabled, disabled, hovered, focused and pressed" -->
+<!-- @dsCard group="Basic" viewport="1200x900" name="States" subtitle="Preview: every basic control enabled, disabled, hovered, focused and pressed" -->
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -7,13 +7,16 @@
 <style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
 <div id="root"></div>
 <script type="text/babel">
-const { StateLayer, Button, IconButton, TonalIconButton, ButtonGroup, Switch, Slider, Input, RailItem } = window.SonoraDesignSystem_6c1435;
+const { StateLayer, Button, IconButton, ButtonGroup, Switch, Slider, Input, RailItem } = window.SonoraDesignSystem_6c1435;
 const STATES = ['enabled', 'disabled', 'hovered', 'focused', 'pressed'];
 const CONTROLS = [
   ['Filled', <Button onClick={() => {}}>Play</Button>],
   ['Outlined', <Button variant="secondary" onClick={() => {}}>Shuffle</Button>],
   ['Icon', <IconButton icon="favorite" label="Favourite" onClick={() => {}} />],
-  ['Tonal icon', <TonalIconButton glyph="grid_view" label="Grid" onClick={() => {}} />],
+  ['Outline icon', <IconButton variant="outline" icon="playlist_add" label="Add to a list" onClick={() => {}} />],
+  ['Tonal icon', <IconButton variant="tonal" icon="grid_view" label="Switch to grid view" onClick={() => {}} />],
+  ['Raised icon', <IconButton variant="raised" size="md" icon="chevron_right" label="Scroll forward" onClick={() => {}} />],
+  ['Scrim icon', <IconButton variant="scrim" size="xs" icon="more_vert" label="More options" onClick={() => {}} />],
   ['Segment', <ButtonGroup items={['All']} value="All" onChange={() => {}} />],
   ['Switch', <Switch checked onChange={() => {}} />],
   ['Slider', <div style={{width:120}}><Slider value={0.5} onChange={() => {}} /></div>],

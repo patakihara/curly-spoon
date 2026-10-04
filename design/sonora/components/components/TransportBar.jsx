@@ -12,7 +12,7 @@ import { NS, sx } from '../shared.js';
 export function TransportBar({ playing = false, platform = 'mobile', onTogglePlay, onPrev, onNext, onShuffle, onRepeat, variant = 'music', onSkipBack, onSkipForward, skipSeconds = 15, leading, trailing }) {
   const { IconButton, Icon } = NS();
   const mobile = platform === 'mobile';
-  const side = mobile ? 48 : 40, step = mobile ? 56 : 48, main = mobile ? 72 : 56;
+  const side = mobile ? 'xl' : 'md', step = mobile ? '2xl' : 'xl', main = mobile ? '3xl' : '2xl';
   // Play and pause are drawn filled, as on every play button; the other glyphs keep their outline.
   const g = (name, size) => {
     const play = name === 'pause' || name === 'play_arrow';
@@ -32,11 +32,11 @@ export function TransportBar({ playing = false, platform = 'mobile', onTogglePla
     );
     return (
       <div style={sx('display:flex;align-items:center;justify-content:space-between;width:100%')}>
-        <div style={sx('display:flex;align-items:center;justify-content:flex-start;width:' + side + 'px;flex-shrink:0')}>{leading}</div>
+        <div style={sx('display:flex;align-items:center;justify-content:flex-start;width:var(--control-' + side + ');flex-shrink:0')}>{leading}</div>
         <IconButton label={'Skip back ' + skipSeconds + ' seconds'} size={step} onClick={onSkipBack}>{skip('back', mobile ? 'lg' : 'sm')}</IconButton>
         <IconButton label={playing ? 'Pause' : 'Play'} size={main} active tone="play" onClick={onTogglePlay}>{g(playing ? 'pause' : 'play_arrow', mobile ? 'xl' : 'lg')}</IconButton>
         <IconButton label={'Skip forward ' + skipSeconds + ' seconds'} size={step} onClick={onSkipForward}>{skip('forward', mobile ? 'lg' : 'sm')}</IconButton>
-        <div style={sx('display:flex;align-items:center;justify-content:flex-end;width:' + side + 'px;flex-shrink:0')}>{trailing}</div>
+        <div style={sx('display:flex;align-items:center;justify-content:flex-end;width:var(--control-' + side + ');flex-shrink:0')}>{trailing}</div>
       </div>
     );
   }

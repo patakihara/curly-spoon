@@ -1,14 +1,11 @@
 import React from 'react';
 import { NS, scrollEdges, sx } from '../shared.js';
 
+// Placement only: the arrow itself is a raised IconButton.
 const arrow = (side, shown, enabled, inset) => sx(
   // --shelf-arrow-top (38%) rather than 50%: the cards' art is square with a caption beneath, so mid-art sits above mid-card.
   // Sits half a page margin outside the content edge, so it straddles the gutter.
   'position:absolute;top:var(--shelf-arrow-top);' + side + ':' + inset + ';transform:translateY(-50%);z-index:var(--z-overlay);' +
-  'width:var(--control-md);height:var(--control-md);border-radius:var(--radius-round);border:none;cursor:pointer;' +
-  'display:inline-flex;align-items:center;justify-content:center;' +
-  'background:var(--surface-card);color:var(--surface-fg);' +
-  'box-shadow:var(--shadow-md);' +
   'opacity:' + (shown && enabled ? 'var(--opacity-rest)' : '0') + ';' +
   'pointer-events:' + (shown && enabled ? 'auto' : 'none') + ';' +
   'transition:opacity var(--duration-fast) var(--ease-standard)'
@@ -22,7 +19,7 @@ const arrow = (side, shown, enabled, inset) => sx(
  */
 export function Shelf({ children, gap, margin, platform = 'desktop', step = 2, arrows, scrollbar }) {
   const mobile = platform === 'mobile';
-  const { StateLayer, ScrollArea, Icon } = NS();
+  const { IconButton, ScrollArea } = NS();
   const g = gap || 'var(--grid-gutter' + (mobile ? '-mobile' : '') + ')';
   const m = margin || 'var(--grid-margin' + (mobile ? '-mobile' : '') + ')';
   const showArrows = arrows === undefined ? !mobile : arrows;
@@ -59,10 +56,10 @@ export function Shelf({ children, gap, margin, platform = 'desktop', step = 2, a
         <ScrollArea axis="x" id={trackId} thumb={showBar} scrollRef={ref} onScroll={measure}
           style={sx('display:flex;gap:' + g + ';padding:var(--focus-ring-room) ' + m + ' calc(var(--spacing-xs) + var(--focus-ring-room))')}>{children}</ScrollArea>
       </div>
-      {showArrows && (
+      {showArrows && IconButton && (
         <React.Fragment>
-          <button className="sn-int" aria-label="Scroll back" aria-controls={trackId} disabled={ends.start} onClick={() => page(-1)} style={arrow('left', hot, !ends.start, 'calc(-1 * ' + m + ' / 2)')}><Icon name="chevron_left" />{StateLayer && <StateLayer />}</button>
-          <button className="sn-int" aria-label="Scroll forward" aria-controls={trackId} disabled={ends.end} onClick={() => page(1)} style={arrow('right', hot, !ends.end, 'calc(-1 * ' + m + ' / 2)')}><Icon name="chevron_right" />{StateLayer && <StateLayer />}</button>
+          <IconButton variant="raised" size="md" icon="chevron_left" label="Scroll back" controls={trackId} disabled={ends.start} onClick={() => page(-1)} style={arrow('left', hot, !ends.start, 'calc(-1 * ' + m + ' / 2)')} />
+          <IconButton variant="raised" size="md" icon="chevron_right" label="Scroll forward" controls={trackId} disabled={ends.end} onClick={() => page(1)} style={arrow('right', hot, !ends.end, 'calc(-1 * ' + m + ' / 2)')} />
         </React.Fragment>
       )}
     </div>

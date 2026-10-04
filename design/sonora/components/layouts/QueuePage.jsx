@@ -17,7 +17,7 @@ export function QueuePage({
   editing, onEditingChange, onPlay, onRemove, onReorder, onRemoveSelected,
   footer, scroll, onClose,
 }) {
-  const { PlayerSubPage, EditableList, TonalIconButton, SectionHeader, QueueRow, ButtonGroup, Icon } = NS();
+  const { PlayerSubPage, EditableList, IconButton, SectionHeader, QueueRow, ButtonGroup, Icon } = NS();
   const [ownEditing, setOwnEditing] = React.useState(false);
   const editable = !!(onRemove || onRemoveSelected || onReorder);
   const edit = editing === undefined ? ownEditing : editing;
@@ -44,9 +44,9 @@ export function QueuePage({
   if (!PlayerSubPage || !EditableList) return null;
   return (
     <PlayerSubPage platform={platform} heading={heading} scroll={scroll} meta={context} footer={footer} onClose={onClose}
-      controls={TonalIconButton ? (
-        <TonalIconButton glyph={edit ? 'edit_off' : 'edit'} active={edit}
-          label={edit ? 'Done editing queue' : 'Edit queue'} onClick={editable ? () => setEdit(!edit) : undefined} />
+      controls={IconButton ? (
+        <IconButton variant="tonal" icon={edit ? 'edit_off' : 'edit'} active={edit}
+          label={edit ? 'Done editing queue' : 'Edit queue'} title={edit ? 'Done editing queue' : 'Edit queue'} onClick={editable ? () => setEdit(!edit) : undefined} />
       ) : null}>
       {queues && queues.length > 1 && ButtonGroup && (
         <div style={sx('order:-1')}>

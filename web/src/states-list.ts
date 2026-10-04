@@ -8,6 +8,7 @@
 export type Variant = 'action' | 'none' | 'disabled' | 'own';
 
 export interface StateEntry {
+  /** The component, or `Component.variant` for each look of one drawn in several. */
   name: string;
   /** Whether it declares a `disabled` prop, and so is drawn a third way. */
   disabled: boolean;
@@ -43,6 +44,10 @@ export const STATE_ENTRIES: readonly StateEntry[] = [
   { name: 'FieldRow', disabled: false, ripple: false },
   { name: 'FollowButton', disabled: false, ripple: true },
   { name: 'IconButton', disabled: true, ripple: true },
+  { name: 'IconButton.outline', disabled: true, ripple: true },
+  { name: 'IconButton.raised', disabled: true, ripple: true },
+  { name: 'IconButton.scrim', disabled: true, ripple: true },
+  { name: 'IconButton.tonal', disabled: true, ripple: true },
   { name: 'Input', disabled: true, ripple: false },
   { name: 'Lyrics', disabled: false, ripple: true, omits: true },
   { name: 'LyricsPage', disabled: false, ripple: true },
@@ -76,7 +81,6 @@ export const STATE_ENTRIES: readonly StateEntry[] = [
   { name: 'StatusBanner', disabled: false, ripple: true },
   { name: 'Switch', disabled: false, ripple: true },
   { name: 'TabBar', disabled: false, ripple: true },
-  { name: 'TonalIconButton', disabled: true, ripple: true },
   { name: 'TransportBar', disabled: false, ripple: true },
   { name: 'ValueRow', disabled: false, ripple: true },
   { name: 'ViewToggle', disabled: false, ripple: true },
@@ -88,6 +92,9 @@ declare global {
     __presses: Record<string, number>;
   }
 }
+
+/** The Sonora component an entry draws: its name before any `.variant`. */
+export const componentOf = (entry: StateEntry) => entry.name.split('.')[0]!;
 
 /** The key a press of one drawing counts under, in `window.__presses`. */
 export const pressKey = (name: string, variant: Variant) => `${name}/${variant}`;

@@ -5,7 +5,7 @@ import { ScrollArea } from './ScrollArea.jsx';
 /** Side sheet: a full-height panel beside the bar+content column, animating open from zero width. Its header matches the app bar strip's height, so the title lines up with the bar's. Its close names the content it acts on in aria-controls. */
 export function SideSheet({ open = false, title, onClose, children, width = 'var(--side-sheet-width)', side = 'right', closeGlyph = 'close' }) {
   const right = side !== 'left';
-  const { StateLayer, Icon } = NS();
+  const { IconButton } = NS();
   const ease = 'var(--duration-medium) var(--ease-standard)';
   const contentId = React.useId();
   return (
@@ -23,8 +23,9 @@ export function SideSheet({ open = false, title, onClose, children, width = 'var
             <div style={sx('display:flex;align-items:center;width:100%;box-sizing:border-box;height:var(--appbar-height);padding:0 var(--spacing-xl)')}>
               <div style={sx('flex:1;min-width:0;padding-right:44px;font-family:var(--font-heading);font-weight:var(--weight-super-strong);font-size:var(--h3-size);color:var(--surface-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{title}</div>
             </div>
-            {onClose && (
-              <button className="sn-int" onClick={onClose} aria-controls={contentId} aria-label={'Close ' + (title || 'panel')} style={sx("position:absolute;top:var(--spacing-md);right:var(--spacing-md);width:40px;height:40px;border:none;border-radius:50%;background:transparent;color:var(--surface-fg-muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center")}><Icon name={closeGlyph} />{StateLayer && <StateLayer />}</button>
+            {onClose && IconButton && (
+              <IconButton size="md" muted icon={closeGlyph} label={'Close ' + (title || 'panel')} controls={contentId} onClick={onClose}
+                style={sx('position:absolute;top:var(--spacing-md);right:var(--spacing-md)')} />
             )}
           </div>
         )}

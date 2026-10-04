@@ -29,7 +29,7 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
   const OverflowMenu = NS().OverflowMenu;
   const tap = requestable ? () => { setAsked(true); onRequest(); } : onClick;
   const hasProgress = typeof progress === 'number';
-  const { PlayActions, CoverArt, StateLayer, Icon } = NS();
+  const { PlayActions, CoverArt, IconButton, StateLayer, Icon } = NS();
   const off = !tap;
   // Desktop only: these are revealed by hover, which a touch surface has no equivalent for.
   const showActions = !mobile && !absent && PlayActions && (onPlay || onPlayNext || onPlayLast);
@@ -53,13 +53,11 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
           : <CoverArt src={image} covers={covers} fallback={coverArt} />)}
         {/* Over the play actions' scrim, which covers the whole art once hovered: More stays the
             control a click in its corner reaches. */}
-        {showMore && (
-          <button onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); onMore(e); }} aria-label="More options" title="More options"
-            className={mobile ? 'sn-int' : 'sn-int ' + REVEAL.item}
-            style={sx('position:absolute;top:6px;right:6px;z-index:var(--z-overlay);width:30px;height:30px;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--scrim-soft);color:var(--on-scrim)' + (mobile ? ';opacity:1' : ''))}>
-            <Icon name="more_vert" size="xs" />
-            {StateLayer && <StateLayer />}
-          </button>
+        {showMore && IconButton && (
+          <IconButton variant="scrim" size="xs" iconSize="xs" icon="more_vert" label="More options" title="More options"
+            className={mobile ? undefined : REVEAL.item}
+            onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); onMore(e); }}
+            style={sx('position:absolute;top:var(--spacing-xs);right:var(--spacing-xs);z-index:var(--z-overlay)' + (mobile ? ';opacity:1' : ''))} />
         )}
         {/* New/unlistened is a property of the item, not of the card chrome, so it sits on the art
             itself rather than in the caption — same corner QuickPick uses for it.
@@ -105,7 +103,7 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
       </div>
       {/* Outside the art, whose overflow would clip the menu it opens; its clicks stay its own. */}
       {requestable && onClick && OverflowMenu && (
-        <div onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); }} style={sx('position:absolute;top:6px;right:6px')}>
+        <div onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); }} style={sx('position:absolute;top:var(--spacing-xs);right:var(--spacing-xs)')}>
           <OverflowMenu tone="scrim" platform={platform} items={[{ key: 'open', label: 'Open', icon: 'open_in_new' }]} onSelect={() => onClick()} />
         </div>
       )}
