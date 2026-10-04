@@ -15,12 +15,14 @@
  * count where they are object values (style keys, size maps), all-number arrays (ramps), size- or
  * timing-named defaults and JSX props, timer delays, and bounds of Math.min/max/clamp, read in the
  * context of the result. Ratios (an operand of `*` or `/`, a unitless number inside calc()) are
- * not literals, nor is geometry on SVG elements (`r`, `cx`, `width`, `strokeWidth` on a circle).
+ * not literals, nor is geometry on SVG elements (`r`, `cx`, `width`, `strokeWidth` on a circle),
+ * whether written as a number or a string with a unit (`<svg width="24px">`).
  *
  * Kotlin (android/sonora/src/main/java/.../ui/sonora) is read by pattern: `N.dp`, `N.sp`, `N.em`,
  * `(N).dp`, `Dp(N)`, `Color(0x…)`, `alpha = N`, `.alpha(N`, `tween(N` and `tween<T>(N`,
- * `durationMillis = N`, `delayMillis = N`, spring `stiffness = N` and `dampingRatio = N`, and
- * `zIndex(N`.
+ * `durationMillis = N`, `delayMillis = N`, `delay(N`, spring `stiffness = N` and
+ * `dampingRatio = N`, `zIndex(N`, `CubicBezierEasing(…)`, `Color.Black`/`Color.White` and the
+ * percent form `RoundedCornerShape(N)`; negative numbers (`(-0.2).sp`, `Dp(-1f)`) count too.
  *
  * Exempt everywhere: the value 0, `100%`, `@keyframes` blocks, and the generated token files
  * (tokens/, export/, any `generated` folder), which sit outside the scanned folders.
@@ -409,6 +411,13 @@ function isSvgGeometry(attr) {
   return SVG_TAGS.has(tag) && ts.isIdentifier(attr.name) && SVG_GEOMETRY.has(attr.name.text);
 }
 
+/** True when `node` is the whole value of an SVG geometry attribute: `<svg width="24px">`. */
+function isSvgGeometryValue(node) {
+  let p = node.parent;
+  if (ts.isJsxExpression(p)) p = p.parent;
+  return ts.isJsxAttribute(p) && isSvgGeometry(p);
+}
+
 /** Calls whose result is one of their arguments: a bound in Math.min/max/clamp means what the result means. */
 const isBoundCall = (call) => /^(?:Math\.(?:min|max)|clamp)$/.test(call.expression.getText());
 
@@ -674,6 +683,7 @@ export function scanJsx(source, file) {
     if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) return;
     const cssRoot =
       (isStringy(node) || (isPlus(node) && plusHasString(node))) && !isChainPart(node);
+    if (cssRoot && isSvgGeometryValue(node)) return;
     if (cssRoot) {
       const initialProp = styleContext(node);
       for (const reading of readings(flatten(node, sf))) {
@@ -705,7 +715,7 @@ export function scanJsx(source, file) {
 // ---------------------------------------------------------------------------------------------
 // Kotlin
 
-const KOTLIN_NUMBER = String.raw`\d*\.?\d+f?`;
+const KOTLIN_NUMBER = String.raw`-?\d*\.?\d+f?`;
 const KOTLIN_RULES = [
   [new RegExp(String.raw`(?<![\w.])(\d+(?:\.\d+)?f?)\.(?:dp|sp|em)\b`, 'g'), 'size'],
   [new RegExp(String.raw`\(\s*(${KOTLIN_NUMBER})\s*\)\.(?:dp|sp|em)\b`, 'g'), 'size'],
@@ -717,6 +727,10 @@ const KOTLIN_RULES = [
   [/\b(?:durationMillis|delayMillis)\s*=\s*(\d+)/g, 'duration'],
   [new RegExp(String.raw`\b(?:stiffness|dampingRatio)\s*=\s*(${KOTLIN_NUMBER})`, 'g'), 'easing'],
   [new RegExp(String.raw`\bzIndex\(\s*(${KOTLIN_NUMBER})`, 'g'), 'z-index'],
+  [/\bCubicBezierEasing\([^()]*\)/g, 'easing'],
+  [/\bColor\.(?:Black|White)\b/g, 'colour'],
+  [/\bRoundedCornerShape\(\s*(?:percent\s*=\s*)?(\d+)\s*\)/g, 'percent'],
+  [/\bdelay\(\s*(\d+)/g, 'duration'],
 ];
 
 /** A size in a `letterSpacing =` or `lineHeight =` argument takes that kind instead. */
@@ -740,6 +754,7 @@ export function scanKotlin(source, file) {
   for (const [re, kind] of KOTLIN_RULES) {
     for (const m of text.matchAll(re)) {
       if (m[1] !== undefined && isZero(m[1])) continue;
+      if (kind === 'percent' && m[1] === '100') continue;
       found.push({ index: m.index, literal: m[0], kind: kotlinKind(text, m.index, kind) });
     }
   }

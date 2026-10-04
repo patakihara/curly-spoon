@@ -465,3 +465,42 @@ test('ui/sonora Kotlin long colours, typed tweens, Dp(), em, parenthesised units
     'size 8.dp',
   ]);
 });
+
+test('SVG geometry written as a string with a unit is exempt on SVG elements, not elsewhere', () => {
+  const src = [
+    'export const A = () => (',
+    '  <svg width="24px" height="24px" viewBox="0 0 24 24">',
+    '    <circle cx="12px" cy="12px" r="10px" strokeWidth="2px" />',
+    '  </svg>',
+    ');',
+    'export const B = () => <div width="24px"><img height="40px" /></div>;',
+  ].join('\n');
+  assert.deepEqual(literals(scanJsx(src, 'X.jsx')), ['size 24px', 'size 40px']);
+});
+
+test('ui/sonora Kotlin easing curves, named black and white, percent corners, delays and negative units are found', () => {
+  const src = [
+    'val a = CubicBezierEasing(0.2f, 0f, 0f, 1f)',
+    'val b = Color.Black.copy(alpha = SonoraOpacity.dim)',
+    'val c = Color.White',
+    'val d = RoundedCornerShape(50)',
+    'val e = RoundedCornerShape(percent = 25)',
+    'val f = RoundedCornerShape(0)',
+    'val g = RoundedCornerShape(100)',
+    'suspend fun h() { delay(300) }',
+    'val i = TextStyle(letterSpacing = (-0.2).sp)',
+    'val j = Dp(-1f)',
+    'val k = Color.Transparent',
+    'val l = delay(SonoraMotion.durationFast)',
+  ].join('\n');
+  assert.deepEqual(literals(scanKotlin(src, 'X.kt')), [
+    'easing CubicBezierEasing(0.2f, 0f, 0f, 1f)',
+    'colour Color.Black',
+    'colour Color.White',
+    'percent RoundedCornerShape(50)',
+    'percent RoundedCornerShape(percent = 25)',
+    'duration delay(300',
+    'letter-spacing (-0.2).sp',
+    'size Dp(-1f)',
+  ]);
+});
