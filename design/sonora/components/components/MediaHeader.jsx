@@ -1,5 +1,5 @@
 import React from 'react';
-import { NS, percentOf, sx, useMeasure } from '../shared.js';
+import { NS, sx, useMeasure } from '../shared.js';
 
 /**
  * Detail-page header for an album, book, podcast or artist. Switches between the stacked/centred
@@ -13,7 +13,7 @@ import { NS, percentOf, sx, useMeasure } from '../shared.js';
  * and no action row (a person), kind and meta are a caption, centred beside the art when wide.
  */
 export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Play', nextLabel = 'Next', lastLabel = 'Last', round = false, image, covers, platform, compactAt = 600, onPlay, onPlayNext, onPlayLast, onSubtitle, partOf, onPartOf, rating, actions, menu, progress = null, download = null, onDownload, addLabel = null, onAdd }) {
-  const { Button, CoverArt, DownloadButton, IconButton, StateLayer, Icon } = NS();
+  const { Button, CoverArt, DownloadButton, IconButton, StateLayer, Icon, ProgressBar } = NS();
   const ref = React.useRef(null);
   // Measures itself, so a header inside a 412px phone frame or a narrow desktop pane both go compact.
   const [narrow, setNarrow] = React.useState(false);
@@ -52,9 +52,7 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
             the bar that describes it. Gated the QuickPick/MediaCard way: null (the default) draws
             nothing, not a zero-width rule. */}
         {typeof progress === 'number' && (
-          <div style={sx('width:100%;max-width:260px;height:3px;border-radius:var(--radius-pill);overflow:hidden;background:var(--surface-border)' + (mobile ? ';margin-left:auto;margin-right:auto' : ''))}>
-            <div style={sx('height:100%;background:var(--play);width:' + percentOf(progress))} />
-          </div>
+          <ProgressBar value={progress} label="Played" style={sx('width:100%;max-width:var(--progress-max-width)' + (mobile ? ';margin-left:auto;margin-right:auto' : ''))} />
         )}
         {acts && <div style={sx('display:flex;flex-wrap:wrap;align-items:center;justify-content:' + (mobile ? 'center' : 'flex-start') + ';gap:' + (mobile ? '10px' : '12px') + ';margin-top:' + (mobile ? '8px' : '10px'))}>
           {actions != null ? actions : (

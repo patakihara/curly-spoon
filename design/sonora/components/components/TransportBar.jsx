@@ -1,5 +1,5 @@
 import React from 'react';
-import { NS, sx } from '../shared.js';
+import { NS, skipGlyph, sx } from '../shared.js';
 
 /**
  * Full transport row: shuffle, previous, play/pause, next, repeat — the Now Playing control
@@ -20,16 +20,8 @@ export function TransportBar({ playing = false, platform = 'mobile', onTogglePla
   };
   if (!IconButton) return null;
   if (variant === 'spoken') {
-    // There is no "replay_<n>"-style glyph for an arbitrary interval — the icon font only
-    // ships fixed 5/10/30 variants, and skipSeconds is configurable (default 15, unrepresented).
-    // So the number is drawn as text over a plain circular-arrow glyph instead of picked from a
-    // fixed icon set; the arrow alone is mirrored for "forward" so the overlaid number stays legible.
-    const skip = (dir, size) => (
-      <span style={sx('position:relative;display:inline-flex;align-items:center;justify-content:center')}>
-        <Icon name="replay" size={size} style={sx('display:inline-block' + (dir === 'forward' ? ';transform:scaleX(-1)' : ''))} />
-        <span aria-hidden="true" style={sx('position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-body);font-weight:var(--weight-strong);font-size:calc(var(--icon-' + size + ') * .34)')}>{skipSeconds}</span>
-      </span>
-    );
+    // The interval is drawn as a number over a circular arrow: shared.js's skipGlyph.
+    const skip = (dir, size) => skipGlyph(Icon, dir, skipSeconds, size);
     return (
       <div style={sx('display:flex;align-items:center;justify-content:space-between;width:100%')}>
         <div style={sx('display:flex;align-items:center;justify-content:flex-start;width:var(--control-' + side + ');flex-shrink:0')}>{leading}</div>

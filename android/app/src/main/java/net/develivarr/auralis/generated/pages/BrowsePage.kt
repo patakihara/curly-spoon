@@ -33,7 +33,7 @@ import net.develivarr.auralis.generated.ui.ResultRowProps
 import net.develivarr.auralis.generated.ui.SectionProps
 import net.develivarr.auralis.generated.ui.ShelfProps
 import net.develivarr.auralis.generated.ui.SizeSmMd
-import net.develivarr.auralis.generated.ui.Tone
+import net.develivarr.auralis.generated.ui.ToneAccentPlay
 import net.develivarr.auralis.generated.ui.Variant
 import net.develivarr.auralis.ui.sonora.AccountButton
 import net.develivarr.auralis.ui.sonora.ArtistCard
@@ -81,7 +81,7 @@ fun BrowsePage(navController: NavController, actions: PageActions) {
                                     ),
                                     value = "All",
                                     platform = Platform.MOBILE,
-                                    tone = Tone.PLAY,
+                                    tone = ToneAccentPlay.PLAY,
                                 ),
                             )
                         },

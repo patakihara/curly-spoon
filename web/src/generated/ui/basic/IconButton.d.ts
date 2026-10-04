@@ -34,10 +34,11 @@ export interface IconButtonProps {
   active?: boolean;
   /**
    * The colour `active` takes: `accent` (default), `play` for the transport's play/pause, or
-   * `library` for an item kept in the library. `inherit` takes the ink of what the button sits on,
-   * at rest and active, as on a status banner.
+   * `library` for an item kept in the library. `accent-ink` and `play-ink` are the text-strength
+   * versions, for a toggle on a tinted surface such as the player bar. `inherit` takes the ink of
+   * what the button sits on, at rest and active, as on a status banner.
    */
-  tone?: 'accent' | 'play' | 'library' | 'inherit';
+  tone?: 'accent' | 'accent-ink' | 'play' | 'play-ink' | 'library' | 'inherit';
   /** The muted surface ink at rest. */
   muted?: boolean;
   /** Its accessible name. */

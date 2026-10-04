@@ -149,3 +149,17 @@ export const findPageScroller = (host, accept = () => true) => {
   }
   return found;
 };
+
+/**
+ * The spoken transport's skip glyph: the interval as a number over a plain circular arrow, the
+ * arrow alone mirrored for forward so the number stays legible. The icon font ships only fixed
+ * 5, 10 and 30 second glyphs, and the interval is configurable. `Icon` is Sonora's Icon, passed in
+ * by the caller; `size` is a step of its ramp, and the number is a third of that size.
+ */
+export const skipGlyph = (Icon, dir, seconds, size = 'sm') =>
+  React.createElement('span', { style: sx('position:relative;display:inline-flex;align-items:center;justify-content:center') },
+    React.createElement(Icon, { name: 'replay', size, style: sx('display:inline-block' + (dir === 'forward' ? ';transform:scaleX(-1)' : '')) }),
+    React.createElement('span', {
+      'aria-hidden': 'true',
+      style: sx('position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-body);font-weight:var(--weight-strong);font-size:calc(var(--icon-' + size + ') * .34)'),
+    }, seconds));

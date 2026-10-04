@@ -1,4 +1,4 @@
-/** Seek slider plus the elapsed / remaining readouts. Pass duration in seconds; value is 0–1. */
+/** Seek slider plus its time readouts. Pass duration in seconds; value is 0–1. */
 export interface SeekBarProps {
   value?: number;
   /** Track length in seconds. */
@@ -6,7 +6,11 @@ export interface SeekBarProps {
   platform?: 'desktop' | 'mobile';
   /** Receives the position sought, 0–1. Without it the slider is drawn disabled. */
   onChange?: (next: number) => void;
-  /** false shows total length on the right instead of a countdown. */
-  remainingAsCountdown?: boolean;
+  /**
+   * The readouts: `remaining` (default) puts elapsed and a countdown beneath the slider, `total`
+   * elapsed and the length beneath it, `inline` elapsed and the length either side of it on one
+   * row, in the small text size, as the desktop player bar shows them.
+   */
+  readout?: 'remaining' | 'total' | 'inline';
 }
 export declare function SeekBar(props: SeekBarProps): JSX.Element;

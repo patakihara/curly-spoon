@@ -36,16 +36,11 @@ data class OverflowMenuProps(
      * The button's own look: 'surface' (default) is a plain icon button in surface ink; 'scrim' is
      * a small round button on a scrim in on-scrim ink, for a menu that sits over artwork.
      */
-    val tone: OverflowMenuTone? = null,
+    val tone: ToneSurfaceScrim? = null,
     val platform: Platform? = null,
 )
 
 enum class OverflowMenuAlign(val value: String) {
     START("start"),
     END("end"),
-}
-
-enum class OverflowMenuTone(val value: String) {
-    SURFACE("surface"),
-    SCRIM("scrim"),
 }

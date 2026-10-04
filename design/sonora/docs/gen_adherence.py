@@ -1,23 +1,21 @@
 #!/usr/bin/env python3
 """Regenerate _adherence.oxlintrc.json's per-component rules from the .d.ts files.
 
-Unlike export/component-api.md there is no generator for this in the project — it is produced
-app-side — so this reproduces it. That is only safe because the output is checkable: the file
-already contains rules for 59 components, so a correct generator must reproduce all 59
-byte-for-byte and add exactly the new ones. `--check` does that comparison and is the reason
-this is trustworthy rather than a plausible guess.
+Unlike export/component-api.md there is no generator for this in the project: it is produced
+app-side, so this reproduces it. scripts/sonora/adherence.test.mjs runs it into a temporary file
+and fails unless the committed file equals that output, so a prop change cannot leave a rule stale.
 
-Two rule shapes, both read off the existing file rather than invented:
+Two rule shapes, both read off the app's own file rather than invented:
 
-  prop allowlist   JSXOpeningElement[name.name='X'] > JSXAttribute > JSXIdentifier[name!=/^(?:…)$/]
-  literal union    JSXOpeningElement[name.name='X'] > JSXAttribute[name.name='p'] > Literal[value!=/^(?:…)$/]
+  prop allowlist   JSXOpeningElement[name.name='X'] > JSXAttribute > JSXIdentifier[name!=/^(?:...)$/]
+  literal union    JSXOpeningElement[name.name='X'] > JSXAttribute[name.name='p'] > Literal[value!=/^(?:...)$/]
 
-The allowlist suffix is always key|ref|className|style|children, appended verbatim — which is why
+The allowlist suffix is always key|ref|className|style|children, appended verbatim, which is why
 a component declaring `children` lists it twice. That duplication is in the original; reproducing
 it is the point.
 
-    python3 docs/gen_adherence.py --check    # compare against the current file, write nothing
-    python3 docs/gen_adherence.py            # rewrite it
+    python3 docs/gen_adherence.py                # rewrite it
+    python3 docs/gen_adherence.py --out <path>   # write the result to <path> instead
 """
 import json
 import os
@@ -151,33 +149,16 @@ def emit(rules, iface, props):
 
 
 def main():
+    out = sys.argv[sys.argv.index("--out") + 1] if "--out" in sys.argv else CONFIG
     cfg = json.load(open(CONFIG))
     existing = cfg["rules"]["no-restricted-syntax"]
     severity, old = existing[0], existing[1:]
     globals_ = [r for r in old if "name.name=" not in r["selector"]]
-    old_comp = [r for r in old if "name.name=" in r["selector"]]
-
     new_comp = build()
-    by_sel_old = {r["selector"]: r for r in old_comp}
-    by_sel_new = {r["selector"]: r for r in new_comp}
-
-    reproduced = [s for s in by_sel_old if s in by_sel_new and by_sel_old[s] == by_sel_new[s]]
-    changed = [s for s in by_sel_old if s in by_sel_new and by_sel_old[s] != by_sel_new[s]]
-    lost = [s for s in by_sel_old if s not in by_sel_new]
-    added = [s for s in by_sel_new if s not in by_sel_old]
 
     def comp(sel):
         m = re.search(r"name\.name='(\w+)'", sel)
         return m.group(1) if m else "?"
-
-    print("existing component rules: %d   regenerated: %d" % (len(old_comp), len(new_comp)))
-    print("  reproduced byte-identically: %d" % len(reproduced))
-    print("  differing message/selector:  %d %s" % (len(changed), sorted({comp(s) for s in changed})))
-    print("  no longer produced:          %d %s" % (len(lost), sorted({comp(s) for s in lost})))
-    print("  newly produced:              %d %s" % (len(added), sorted({comp(s) for s in added})))
-
-    if "--check" in sys.argv:
-        return 0 if not lost else 1
 
     cfg["rules"]["no-restricted-syntax"] = [severity] + globals_ + new_comp
 
@@ -188,10 +169,10 @@ def main():
     cfg["x-omelette"]["components"] = {
         n: omelette.get(n, {"replaces": []}) for n in names
     }
-    with open(CONFIG, "w") as fh:
+    with open(out, "w") as fh:
         json.dump(cfg, fh, ensure_ascii=False, indent=2)
         fh.write("\n")
-    print("wrote %s (%d globals + %d component rules)" % (CONFIG, len(globals_), len(new_comp)))
+    print("wrote %s (%d globals + %d component rules)" % (out, len(globals_), len(new_comp)))
     return 0
 
 

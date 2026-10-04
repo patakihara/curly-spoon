@@ -26,7 +26,7 @@ data class ButtonGroupProps(
     /** @deprecated No longer needed — the edge-fade affordance is now automatic whenever the row overflows. Kept as a no-op for existing callers. */
     val scroll: Boolean? = null,
     /** The selected segment's fill: `accent` (default), or `play` for the Browse media filter (All, Music, Podcasts, Books). */
-    val tone: Tone? = null,
+    val tone: ToneAccentPlay? = null,
 )
 
 data class ButtonGroupItem(

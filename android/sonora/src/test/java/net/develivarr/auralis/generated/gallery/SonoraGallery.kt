@@ -55,7 +55,7 @@ import net.develivarr.auralis.generated.ui.StatusBannerTone
 import net.develivarr.auralis.generated.ui.SyncMode
 import net.develivarr.auralis.generated.ui.TabBarItem
 import net.develivarr.auralis.generated.ui.TabBarProps
-import net.develivarr.auralis.generated.ui.Tone
+import net.develivarr.auralis.generated.ui.ToneAccentPlay
 import net.develivarr.auralis.generated.ui.ValueRowProps
 import net.develivarr.auralis.generated.ui.Variant
 import net.develivarr.auralis.generated.ui.ViewToggleProps
@@ -257,7 +257,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                 value = "All",
                 onChange = { _ -> },
                 platform = Platform.MOBILE,
-                tone = Tone.PLAY,
+                tone = ToneAccentPlay.PLAY,
             ),
         )
     },

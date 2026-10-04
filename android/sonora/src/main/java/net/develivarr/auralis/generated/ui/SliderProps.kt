@@ -9,5 +9,5 @@ data class SliderProps(
     /** Desktop: thin track + round handle (Feishin). Mobile: thick pill split by a divider notch (Booming Music). */
     val platform: Platform? = null,
     /** The fill: `accent` (default), or `play` for playback position (SeekBar passes it). */
-    val tone: Tone? = null,
+    val tone: ToneAccentPlay? = null,
 )

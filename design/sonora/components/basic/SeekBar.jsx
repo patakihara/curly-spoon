@@ -2,16 +2,31 @@ import React from 'react';
 import { NS, clamp01, formatTime, sx } from '../shared.js';
 
 
-/** Seek slider with elapsed and remaining readouts beneath it. */
-export function SeekBar({ value = 0, duration = 0, platform = 'mobile', onChange, remainingAsCountdown = true }) {
+/**
+ * Seek slider with its time readouts: elapsed and remaining beneath it, elapsed and total length
+ * beneath it, or elapsed and total length either side of it on one row.
+ */
+export function SeekBar({ value = 0, duration = 0, platform = 'mobile', onChange, readout = 'remaining' }) {
   const Slider = NS().Slider;
   const secs = clamp01(value) * duration;
+  const slider = Slider && <Slider value={value} onChange={onChange} platform={platform} tone="play" />;
+  if (readout === 'inline') {
+    const time = (t) => <span style={sx('flex-shrink:0;width:var(--time-readout-width);font-size:var(--text-xs);color:var(--surface-fg-muted)')}>{formatTime(t)}</span>;
+    return (
+      <div style={sx('display:flex;align-items:center;gap:var(--spacing-sm);width:100%')}>
+        {time(secs)}
+        <div style={sx('flex:1;display:flex')}>{slider}</div>
+        {time(duration)}
+      </div>
+    );
+  }
+  const countdown = readout === 'remaining';
   return (
     <div style={sx('display:flex;flex-direction:column;gap:var(--spacing-sm);width:100%')}>
-      {Slider && <Slider value={value} onChange={onChange} platform={platform} tone="play" />}
+      {slider}
       <div style={sx('display:flex;justify-content:space-between;font-size:var(--text-sm);color:var(--surface-fg-muted)')}>
         <span>{formatTime(secs)}</span>
-        <span>{(remainingAsCountdown ? '-' : '') + formatTime(remainingAsCountdown ? duration - secs : duration)}</span>
+        <span>{(countdown ? '-' : '') + formatTime(countdown ? duration - secs : duration)}</span>
       </div>
     </div>
   );

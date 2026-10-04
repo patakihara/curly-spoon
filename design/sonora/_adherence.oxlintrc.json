@@ -145,8 +145,8 @@
         "message": "<IconButton> size must be one of 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:accent|play|library|inherit)$/]",
-        "message": "<IconButton> tone must be one of 'accent' | 'play' | 'library' | 'inherit'."
+        "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:accent|accent-ink|play|play-ink|library|inherit)$/]",
+        "message": "<IconButton> tone must be one of 'accent' | 'accent-ink' | 'play' | 'play-ink' | 'library' | 'inherit'."
       },
       {
         "selector": "JSXOpeningElement[name.name='Input'] > JSXAttribute > JSXIdentifier[name!=/^(?:placeholder|icon|platform|value|onChange|disabled|key|ref|className|style|children)$/]",
@@ -197,6 +197,18 @@
         "message": "<PreviewButton> platform must be one of 'desktop' | 'mobile'."
       },
       {
+        "selector": "JSXOpeningElement[name.name='ProgressBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|size|tone|label|style|key|ref|className|style|children)$/]",
+        "message": "<ProgressBar> doesn't accept that prop. Declared props: value, size, tone, label, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ProgressBar'] > JSXAttribute[name.name='size'] > Literal[value!=/^(?:sm|md)$/]",
+        "message": "<ProgressBar> size must be one of 'sm' | 'md'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ProgressBar'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:surface|scrim)$/]",
+        "message": "<ProgressBar> tone must be one of 'surface' | 'scrim'."
+      },
+      {
         "selector": "JSXOpeningElement[name.name='ProgressRing'] > JSXAttribute > JSXIdentifier[name!=/^(?:size|value|thickness|color|track|label|key|ref|className|style|children)$/]",
         "message": "<ProgressRing> doesn't accept that prop. Declared props: size, value, thickness, color, track, label."
       },
@@ -225,12 +237,16 @@
         "message": "<SearchField> platform must be one of 'desktop' | 'mobile'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='SeekBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|duration|platform|onChange|remainingAsCountdown|key|ref|className|style|children)$/]",
-        "message": "<SeekBar> doesn't accept that prop. Declared props: value, duration, platform, onChange, remainingAsCountdown."
+        "selector": "JSXOpeningElement[name.name='SeekBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|duration|platform|onChange|readout|key|ref|className|style|children)$/]",
+        "message": "<SeekBar> doesn't accept that prop. Declared props: value, duration, platform, onChange, readout."
       },
       {
         "selector": "JSXOpeningElement[name.name='SeekBar'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
         "message": "<SeekBar> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='SeekBar'] > JSXAttribute[name.name='readout'] > Literal[value!=/^(?:remaining|total|inline)$/]",
+        "message": "<SeekBar> readout must be one of 'remaining' | 'total' | 'inline'."
       },
       {
         "selector": "JSXOpeningElement[name.name='Slider'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onChange|platform|tone|key|ref|className|style|children)$/]",
@@ -803,6 +819,9 @@
         "replaces": []
       },
       "PreviewButton": {
+        "replaces": []
+      },
+      "ProgressBar": {
         "replaces": []
       },
       "ProgressRing": {

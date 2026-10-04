@@ -1,5 +1,5 @@
 import React from 'react';
-import { NS, REVEAL, activate, clamp01, percentOf, sx } from '../shared.js';
+import { NS, REVEAL, activate, sx } from '../shared.js';
 // Enter and Space press it as a click does, unless they come from a control inside it.
 
 /**
@@ -11,11 +11,10 @@ import { NS, REVEAL, activate, clamp01, percentOf, sx } from '../shared.js';
 export function EpisodeRow({ image, title, description, meta, finished = false, progress = null, explicit = false, absent = false, actions, onPlay, onClick, divider = false, platform = 'desktop' }) {
   const mobile = platform === 'mobile';
   const fg = 'var(--surface-fg)', muted = 'var(--surface-fg-muted)';
-  const { CoverArt, Badge, StateLayer, Icon } = NS();
+  const { CoverArt, Badge, StateLayer, Icon, ProgressBar } = NS();
   const off = !onClick;
   const art = mobile ? 56 : 64;
   const hasProgress = typeof progress === 'number';
-  const pct = hasProgress ? clamp01(progress) : 0;
   const metaLine = meta && meta.filter(Boolean).join(' • ');
   return (
     <div className="sn-int" role="button" tabIndex={off ? -1 : 0} aria-disabled={off}
@@ -62,9 +61,7 @@ export function EpisodeRow({ image, title, description, meta, finished = false, 
           </div>
         )}
         {hasProgress && (
-          <div style={sx('width:100%;max-width:280px;height:2px;background:var(--surface-border);overflow:hidden')}>
-            <div style={sx('height:100%;background:var(--play);width:' + percentOf(pct))} />
-          </div>
+          <ProgressBar value={progress} label="Played" style={sx('width:100%;max-width:var(--progress-max-width)')} />
         )}
         {description && (
           <div style={sx('font-size:var(--text-sm);line-height:1.4;color:' + muted + ';display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden')}>{description}</div>

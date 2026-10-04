@@ -40,6 +40,7 @@ export { PlayerPanel } from './layouts/PlayerPanel.jsx';
 export { PlayerSheet } from './layouts/PlayerSheet.jsx';
 export { PlayerSubPage } from './layouts/PlayerSubPage.jsx';
 export { PreviewButton } from './basic/PreviewButton.jsx';
+export { ProgressBar } from './basic/ProgressBar.jsx';
 export { ProgressRing } from './basic/ProgressRing.jsx';
 export { QueuePage } from './layouts/QueuePage.jsx';
 export { QueueRow } from './components/QueueRow.jsx';

@@ -40,6 +40,7 @@ export { PlayerPanel, type PlayerPanelProps } from './layouts/PlayerPanel';
 export { PlayerSheet, type PlayerSheetProps } from './layouts/PlayerSheet';
 export { PlayerSubPage, type PlayerSubPageProps } from './layouts/PlayerSubPage';
 export { PreviewButton, type PreviewButtonProps } from './basic/PreviewButton';
+export { ProgressBar, type ProgressBarProps } from './basic/ProgressBar';
 export { ProgressRing, type ProgressRingProps } from './basic/ProgressRing';
 export { QueuePage, type QueueItem, type QueuePageProps } from './layouts/QueuePage';
 export { QueueRow, type QueueRowProps } from './components/QueueRow';

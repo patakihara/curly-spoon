@@ -6,8 +6,9 @@ import { Icon } from '../basic/Icon.jsx';
 import { IconButton } from '../basic/IconButton.jsx';
 import { OverflowMenu } from '../basic/OverflowMenu.jsx';
 import { PlayActions } from './PlayActions.jsx';
+import { ProgressBar } from '../basic/ProgressBar.jsx';
 import { StateLayer } from '../basic/StateLayer.jsx';
-import { REVEAL, activate, badgeTone, percentOf, sx, useMeasure } from '../shared.js';
+import { REVEAL, activate, badgeTone, sx, useMeasure } from '../shared.js';
 // Enter and Space press it as a click does, unless they come from a control inside it.
 
 /** Shelf/grid card for any library item — album, book, podcast, episode. Replaces the old Card. */
@@ -100,9 +101,7 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
           <React.Fragment>
             {/* Gradient behind the bar so a light cover can't wash out the track. */}
             <div style={sx('position:absolute;left:0;right:0;bottom:0;height:38%;pointer-events:none;background:linear-gradient(to top, var(--scrim-strong), transparent)')} />
-            <div style={sx('position:absolute;left:0;right:0;bottom:0;height:5px;margin:var(--spacing-sm) var(--spacing-md);border-radius:var(--radius-pill);overflow:hidden;background:var(--scrim)')}>
-              <div style={sx('position:absolute;height:100%;background:var(--play);width:' + percentOf(progress || 0))} />
-            </div>
+            <ProgressBar value={progress} size="md" tone="scrim" label="Played" style={sx('position:absolute;left:0;right:0;bottom:0;margin:var(--spacing-sm) var(--spacing-md)')} />
           </React.Fragment>
         )}
       </div>

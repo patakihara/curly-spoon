@@ -2,8 +2,9 @@
 import React from 'react';
 import { CoverArt } from '../basic/CoverArt.jsx';
 import { Icon } from '../basic/Icon.jsx';
+import { ProgressBar } from '../basic/ProgressBar.jsx';
 import { StateLayer } from '../basic/StateLayer.jsx';
-import { activate, percentOf, sx } from '../shared.js';
+import { activate, sx } from '../shared.js';
 // Enter and Space press it as a click does, unless they come from a control inside it.
 
 /** Continue-listening / jump-back-in row tile: small square art plus two lines. Replaces the old QuickTile. */
@@ -24,9 +25,7 @@ export function QuickPick({ title, sub, platform = 'desktop', icon, image, onCli
         {CoverArt && <CoverArt src={image} />}
         {unplayed && <div aria-hidden="true" style={sx('position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--accent)')} />}
         {hasProgress && (
-          <div style={sx('position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--scrim)')}>
-            <div style={sx('position:absolute;height:100%;background:var(--play);width:' + percentOf(progress))} />
-          </div>
+          <ProgressBar value={progress} tone="scrim" label="Played" style={sx('position:absolute;left:0;right:0;bottom:0')} />
         )}
       </div>;
   return (

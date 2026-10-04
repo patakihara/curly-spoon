@@ -98,7 +98,6 @@ const GLYPH_COMPONENTS = [
   'IconButton',
   'MediaCard',
   'MediaHeader',
-  'MiniPlayer',
   'NowPlaying',
   'OverflowMenu',
   'PlayActions',
@@ -261,7 +260,6 @@ function roundButtons(src: string): string[] {
 const OWN_ROUND_BUTTONS: Record<string, string> = {
   AccountButton: 'an avatar: the round button is the picture, not a glyph',
   IconButton: 'the one round glyph button',
-  MiniPlayer: "its transport, which moves onto IconButton with the mini player's own fold",
   PlayActions: 'the play cluster over artwork, on the play fill and the accent scrim',
 };
 
@@ -353,4 +351,80 @@ describe("Sonora's icon buttons, read from its sources", () => {
     expect(buttons).toHaveLength(1);
     expect(buttons[0]!.attrs).toHaveProperty('icon');
   });
+});
+
+/** A call of the shared spoken-skip glyph helper. */
+const SKIP_GLYPH = /\bskipGlyph\(/;
+
+describe("Sonora's mini player, read from its sources", () => {
+  it('[M0.sonoraclean/d] MiniPlayer renders IconButton and SeekBar and draws no button, slider or readout of its own', () => {
+    const src = source('MiniPlayer');
+    const tags = rendered(src).map((e) => e.tag);
+    expect(tags).toContain('IconButton');
+    expect(tags).toContain('SeekBar');
+    expect(tags).not.toContain('button');
+    expect(tags).not.toContain('Slider');
+    expect(src).not.toMatch(/\biconBtn\b|\bplayBtn\b|formatTime/);
+  });
+
+  it("[M0.sonoraclean/d] MiniPlayer's play is IconButton's play variant, on both platforms", () => {
+    const plays = rendered(source('MiniPlayer')).filter(
+      (e) => e.tag === 'IconButton' && e.attrs.variant === 'play',
+    );
+    expect(plays.length).toBeGreaterThan(0);
+    for (const b of plays) expect(b.attrs).toHaveProperty('icon');
+  });
+
+  it("[M0.sonoraclean/d] MiniPlayer names its glyphs through IconButton's icon, past the spoken skip and the speed readout", () => {
+    const src = source('MiniPlayer');
+    const own = rendered(src).filter((e) => e.tag === 'IconButton' && !('icon' in e.attrs));
+    // The two skips draw the shared skip glyph; the speed button shows its rate as text.
+    expect(own).toHaveLength(3);
+    expect(src.match(new RegExp(SKIP_GLYPH, 'g'))).toHaveLength(2);
+    expect(rendered(src).map((e) => e.tag)).not.toContain('Icon');
+  });
+
+  it('[M0.sonoraclean/d] MiniPlayer and TransportBar draw the spoken skip through the one shared helper, which draws through Icon', () => {
+    for (const name of ['MiniPlayer', 'TransportBar']) {
+      const src = source(name);
+      expect(src, name).toMatch(SKIP_GLYPH);
+      expect(src, name).not.toMatch(/['"]replay['"]/);
+    }
+    const shared = readFileSync(`${REPO_ROOT}/${SONORA_DIR}/components/shared.js`, 'utf8');
+    expect(shared).toMatch(/export const skipGlyph\b/);
+    expect(shared).toMatch(/createElement\(Icon\b/);
+  });
+});
+
+/** A bar's fill drawn by hand: a width set from a fraction, or the progressbar role. */
+const PROGRESS = [/\bwidth\b['"]?\s*[:+]\s*['"]?\s*\+?\s*percentOf\(/, /progressbar/];
+
+/** The components that draw a progress fill of their own: the one bar, the ring and the slider. */
+const OWN_PROGRESS = ['ProgressBar', 'ProgressRing', 'Slider'];
+
+describe("Sonora's progress bar, read from its sources", () => {
+  it('[M0.sonoraclean/d] outside ProgressBar, ProgressRing and Slider, no source draws a progress fill or a progressbar', () => {
+    const offenders = sonoraSources()
+      .filter(([name]) => !OWN_PROGRESS.includes(name))
+      .flatMap(([name, src]) =>
+        PROGRESS.filter((re) => re.test(src)).map((re) => `${name}: ${re.source}`),
+      );
+    expect(offenders).toEqual([]);
+    expect(source('ProgressBar')).toMatch(/role="progressbar"/);
+  });
+
+  it('[M0.sonoraclean/d] names a hand-drawn fill, in CSS text or a style key', () => {
+    const fill = (src: string) => PROGRESS.some((re) => re.test(src));
+    expect(fill(`sx('height:100%;width:' + percentOf(p))`)).toBe(true);
+    expect(fill(`{ height: '100%', width: percentOf(value) }`)).toBe(true);
+    expect(fill(`<div role="progressbar" />`)).toBe(true);
+    expect(fill(`sx('left:' + percentOf(p))`)).toBe(false);
+  });
+
+  it.each(['QuickPick', 'MediaCard', 'EpisodeRow', 'MediaHeader'])(
+    '[M0.sonoraclean/d] %s renders ProgressBar for its progress',
+    (name) => {
+      expect(rendered(source(name)).map((e) => e.tag)).toContain('ProgressBar');
+    },
+  );
 });

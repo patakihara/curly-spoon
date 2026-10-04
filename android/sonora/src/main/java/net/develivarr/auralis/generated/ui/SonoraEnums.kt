@@ -48,9 +48,14 @@ enum class SyncMode(val value: String) {
     OFF("off"),
 }
 
-enum class Tone(val value: String) {
+enum class ToneAccentPlay(val value: String) {
     ACCENT("accent"),
     PLAY("play"),
+}
+
+enum class ToneSurfaceScrim(val value: String) {
+    SURFACE("surface"),
+    SCRIM("scrim"),
 }
 
 enum class Variant(val value: String) {

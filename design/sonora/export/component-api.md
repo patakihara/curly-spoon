@@ -121,17 +121,18 @@ A Material Symbols Rounded glyph: the only Sonora component that sets the icon f
 
 ### IconButton
 
-Sonora's one icon-only button, round on every variant but tonal. `variant` picks its container: `plain` (none: a glyph in surface ink, muted ink or the active colour), `outline` (a hairline ring, for a quiet verb beside a row of buttons), `tonal` (a squat pill on the card fill, for a control sitting on the page, such as the list/grid switch; changing `icon` turns the glyph over rather than cutting to it, instantly under reduced motion), `raised` (the card fill and a shadow, floating over content, as a shelf's arrows do) or `scrim` (the soft scrim in on-scrim ink, over artwork). `label` is always its accessible name.
+Sonora's one icon-only button, round on every variant but tonal. `variant` picks its container: `plain` (none: a glyph in surface ink, muted ink or the active colour), `outline` (a hairline ring, for a quiet verb beside a row of buttons), `tonal` (a squat pill on the card fill, for a control sitting on the page, such as the list/grid switch; changing `icon` turns the glyph over rather than cutting to it, instantly under reduced motion), `raised` (the card fill and a shadow, floating over content, as a shelf's arrows do), `scrim` (the soft scrim in on-scrim ink, over artwork) or `play` (the play fill, its glyph filled and strong in the play contrast ink, white, for a play button on a card). `label` is always its accessible name.
 
 | prop | type | notes |
 | --- | --- | --- |
 | `children` | `ReactNode` | A glyph, an `Icon`, or any content. Ignored when `icon` is given. |
 | `icon` | `string` | A Material Symbols Rounded glyph name, drawn through Icon in place of `children`. |
 | `iconSize` | `'2xs' \| 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | The `icon` glyph's step of Icon's ramp. Default 'sm' (24px); 'xs' (20px) on tonal. |
-| `variant` | `'plain' \| 'outline' \| 'tonal' \| 'raised' \| 'scrim'` | The container. Default 'plain'. |
+| `variant` | `'plain' \| 'outline' \| 'tonal' \| 'raised' \| 'scrim' \| 'play'` | The container. Default 'plain'. |
 | `size` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| '2xl' \| '3xl'` |  A step of the control ramp, `--control-xs` (32px) to `--control-3xl` (72px): its height, and its width but on tonal, which is a spacing step wider. Default 'sm' (36px); 'xs' on tonal.  |
+| `wide` | `boolean` |  The rail's pill in place of a circle: `--rail-pill-width` across and the `size` step tall, so the rail's own toggle sits over its items' pills.  |
 | `active` | `boolean` | On: the glyph in the `tone` colour; on tonal, accent ink and the glyph filled. |
-| `tone` | `'accent' \| 'play' \| 'library' \| 'inherit'` |  The colour `active` takes: `accent` (default), `play` for the transport's play/pause, or `library` for an item kept in the library. `inherit` takes the ink of what the button sits on, at rest and active, as on a status banner.  |
+| `tone` | `'accent' \| 'accent-ink' \| 'play' \| 'play-ink' \| 'library' \| 'inherit'` |  The colour `active` takes: `accent` (default), `play` for the transport's play/pause, or `library` for an item kept in the library. `accent-ink` and `play-ink` are the text-strength versions, for a toggle on a tinted surface such as the player bar. `inherit` takes the ink of what the button sits on, at rest and active, as on a status banner.  |
 | `muted` | `boolean` | The muted surface ink at rest. |
 | `label` *(required)* | `string` | Its accessible name. |
 | `onClick` | `() => void` | The action. Without it the button is drawn disabled. |
@@ -140,7 +141,7 @@ Sonora's one icon-only button, round on every variant but tonal. `variant` picks
 | `pressed` | `boolean` | For a toggle: whether it is on, announced as pressed. |
 | `expanded` | `boolean` | For a menu or disclosure button: whether what it opens is open. |
 | `controls` | `string` | The id of the element it opens, closes or scrolls. |
-| `className` | `string` | A class for a reveal or animation hook, such as a corner button shown on hover. |
+| `className` | `string` |  A class for a reveal or animation hook, such as a corner button shown on hover. Its transition replaces the button's own fades, so the button fades with what it is revealed beside.  |
 | `style` | `CSSProperties` | Placement only: position, offsets, margin, opacity. Never its size, fill or ink. |
 
 ### Input
@@ -194,6 +195,18 @@ Auditions a sample without committing it — plays without adding the item to th
 | `disabled` | `boolean` | No sample available: drawn disabled, the fill at 12% and the label at 38% of the surface ink. |
 | `onClick` | `() => void` | Plays the sample. Without it the button is drawn disabled. |
 | `platform` | `'desktop' \| 'mobile'` |  |
+
+### ProgressBar
+
+How far into an item the listener is: a thin pill track filled in the play colour, announced as a progressbar from 0 to 100. Sonora's one linear progress bar: a card's, a row's and a header's resume position all draw it. It fills its container's width.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `value` | `number` | 0–1, held to that range. |
+| `size` | `'sm' \| 'md'` | A step of the progress ramp: `sm` (default, `--progress-sm`) or `md` (`--progress-md`). |
+| `tone` | `'surface' \| 'scrim'` | What it sits on: `surface` (default, a hairline track on the page) or `scrim` (over artwork). |
+| `label` | `string` | Its accessible name. Default "Progress". |
+| `style` | `CSSProperties` | Placement only: position, offsets, margin, width. Never its height, track or fill. |
 
 ### ProgressRing
 
@@ -266,7 +279,7 @@ Filled search field with no outline and soft rectangular corners (radius-xs) —
 
 ### SeekBar
 
-Seek slider plus the elapsed / remaining readouts. Pass duration in seconds; value is 0–1.
+Seek slider plus its time readouts. Pass duration in seconds; value is 0–1.
 
 | prop | type | notes |
 | --- | --- | --- |
@@ -274,7 +287,7 @@ Seek slider plus the elapsed / remaining readouts. Pass duration in seconds; val
 | `duration` | `number` | Track length in seconds. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `onChange` | `(next: number) => void` | Receives the position sought, 0–1. Without it the slider is drawn disabled. |
-| `remainingAsCountdown` | `boolean` | false shows total length on the right instead of a countdown. |
+| `readout` | `'remaining' \| 'total' \| 'inline'` |  The readouts: `remaining` (default) puts elapsed and a countdown beneath the slider, `total` elapsed and the length beneath it, `inline` elapsed and the length either side of it on one row, in the small text size, as the desktop player bar shows them.  |
 
 ### Slider
 

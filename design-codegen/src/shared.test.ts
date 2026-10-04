@@ -32,6 +32,7 @@ const HELPERS = [
   'prefersReducedMotion',
   'scrollEdges',
   'scrollMax',
+  'skipGlyph',
   'sx',
   'tokenMs',
   'tokenPx',
@@ -63,6 +64,7 @@ const BODIES: [string, RegExp][] = [
   ['useMeasure', /\bResizeObserver\b|\bonresize\b|addEventListener\( ?'resize'/],
   ['isScrollerY', /\.overflow[XY]?\b(?![-\w])/],
   ['prefersReducedMotion', /matchMedia\(/],
+  ['skipGlyph', /name ?[=:] ?\{? ?'replay'/],
   [
     'scrollMax',
     /scroll(Width|Height) ?(-|[<>]=?|[!=]==?) ?[\w.]*(client|offset)(Width|Height)|(client|offset)(Width|Height)( ?[-+] ?[\w.]+)? ?(-|[<>]=?|[!=]==?) ?[\w.]*scroll(Width|Height)/,

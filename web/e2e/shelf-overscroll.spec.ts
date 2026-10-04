@@ -261,3 +261,38 @@ test("[M0.sonoraclean/d] a Browse shelf's forward arrow keeps its raised look wh
     hidden: true,
   });
 });
+
+test("[M0.sonoraclean/d] pressing a Browse shelf's forward arrow until it goes at the end moves focus to the back arrow, never the page", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.locator('img').first().waitFor();
+  const forward = page.getByRole('button', { name: 'Scroll forward' }).first();
+  const id = (await forward.getAttribute('aria-controls')) ?? '';
+  const back = page.locator(`button[aria-label="Scroll back"][aria-controls="${id}"]`);
+  await forward.focus();
+  await expect(forward).toBeFocused();
+
+  // Press until the forward arrow goes, waiting out each smooth page.
+  for (let n = 0; n < 40; n++) {
+    const gone = await forward.evaluate((el) => el.closest('[inert]') !== null);
+    if (gone) break;
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(400);
+  }
+  expect(await forward.evaluate((el) => el.closest('[inert]') !== null), 'gone at the end').toBe(
+    true,
+  );
+  await expect(back, 'focus lands on the back arrow').toBeFocused();
+  expect(await page.evaluate(() => document.activeElement === document.body)).toBe(false);
+
+  // And the same the other way: back to the start, focus moves to the forward arrow.
+  for (let n = 0; n < 40; n++) {
+    const gone = await back.evaluate((el) => el.closest('[inert]') !== null);
+    if (gone) break;
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(400);
+  }
+  await expect(forward, 'focus lands on the forward arrow').toBeFocused();
+});

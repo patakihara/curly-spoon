@@ -89,6 +89,36 @@ describe("Sonora's spoken transport", () => {
   });
 });
 
+describe("Sonora's mini player", () => {
+  it('[M0.sonoraclean/d] plays from a button on the play fill, its glyph filled, on both platforms', () => {
+    for (const platform of ['mobile', 'desktop'] as const) {
+      const html = draw(MiniPlayer, { title: 't', artist: 'a', platform, onTogglePlay: () => {} });
+      const play = /<button[^>]*aria-label="Play"[^>]*>/.exec(html)?.[0];
+      expect(play, platform).toContain('background:var(--play)');
+      expect(play, platform).toContain('height:var(--control-lg)');
+    }
+  });
+
+  it('[M0.sonoraclean/d] sets the elapsed time and the length either side of its seek slider on desktop', () => {
+    const html = draw(MiniPlayer, {
+      title: 't',
+      artist: 'a',
+      platform: 'desktop',
+      progress: 0.5,
+      duration: 200,
+    });
+    expect(html).toMatch(/>1:40<\/span><div[^>]*>.*role="slider".*<\/div><span[^>]*>3:20</);
+  });
+
+  it('[M0.sonoraclean/d] draws its controls in the now-playing ink, its off toggles dimmed', () => {
+    const html = draw(MiniPlayer, { title: 't', artist: 'a', platform: 'desktop' });
+    expect(html).toContain('--surface-fg:var(--surface-now-playing-fg)');
+    expect(html).toContain('--surface-fg-muted:var(--surface-now-playing-fg-muted)');
+    const shuffle = /<button[^>]*aria-label="Shuffle"[^>]*>/.exec(html)?.[0];
+    expect(shuffle).toContain('opacity:var(--opacity-dim)');
+  });
+});
+
 describe("Sonora's player on desktop", () => {
   it('[M0.canvas] leaves the seek bar and transport to the player bar, so the panel never repeats them', () => {
     const html = draw(NowPlayingPage, { platform: 'desktop', title: 'Heartbeats in Silence' });

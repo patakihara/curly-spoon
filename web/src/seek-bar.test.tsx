@@ -5,9 +5,7 @@ import { SeekBar } from './generated/ui/index.js';
 
 /** The elapsed readout SeekBar shows at the end of a track `duration` seconds long. */
 const elapsedAtEnd = (duration: number) => {
-  const html = renderToString(
-    createElement(SeekBar, { value: 1, duration, remainingAsCountdown: false }),
-  );
+  const html = renderToString(createElement(SeekBar, { value: 1, duration, readout: 'total' }));
   return /<span>([^<]*)<\/span>/.exec(html)?.[1];
 };
 
@@ -23,5 +21,28 @@ describe("Sonora's time readout", () => {
     [-5, '0:00'],
   ])('[M0.sonoraclean/e] reads %s seconds as %s', (seconds, shown) => {
     expect(elapsedAtEnd(seconds)).toBe(shown);
+  });
+});
+
+describe("Sonora's seek bar readouts", () => {
+  const seek = (props: Record<string, unknown>) =>
+    renderToString(createElement(SeekBar, { value: 0.5, duration: 200, ...props }));
+
+  it('[M0.sonoraclean/d] counts down the time left beneath the slider by default', () => {
+    const html = seek({});
+    expect(html).toContain('<span>1:40</span><span>-1:40</span>');
+    expect(html).toContain('flex-direction:column');
+  });
+
+  it('[M0.sonoraclean/d] total shows the length beneath the slider in place of the countdown', () => {
+    expect(seek({ readout: 'total' })).toContain('<span>1:40</span><span>3:20</span>');
+  });
+
+  it('[M0.sonoraclean/d] inline sets the elapsed time and the length either side of the slider, on one row', () => {
+    const html = seek({ readout: 'inline' });
+    expect(html).not.toContain('flex-direction:column');
+    expect(html).toMatch(
+      /<span style="[^"]*width:var\(--time-readout-width\)[^"]*">1:40<\/span><div[^>]*>.*role="slider".*<\/div><span style="[^"]*width:var\(--time-readout-width\)[^"]*">3:20<\/span>/,
+    );
   });
 });

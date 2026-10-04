@@ -1,0 +1,21 @@
+import React from 'react';
+import { clamp01, percentOf, sx } from '../shared.js';
+
+/**
+ * How far into an item the listener is: a thin pill track filled in the play colour. `size` is a
+ * step of the progress ramp; `tone` is what it sits on, the page or artwork under a scrim. It fills
+ * its container's width; `style` places it.
+ */
+export function ProgressBar({ value = 0, size = 'sm', tone = 'surface', label = 'Progress', style }) {
+  const pct = clamp01(Number.isFinite(value) ? value : 0);
+  return (
+    <div role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct * 100)}
+      style={{
+        ...sx('position:relative;overflow:hidden;border-radius:var(--radius-pill);' +
+          'height:var(--progress-' + size + ');background:var(' + (tone === 'scrim' ? '--scrim' : '--surface-border') + ');'),
+        ...style,
+      }}>
+      <div style={sx('position:absolute;top:0;left:0;height:100%;background:var(--play);width:' + percentOf(pct))} />
+    </div>
+  );
+}

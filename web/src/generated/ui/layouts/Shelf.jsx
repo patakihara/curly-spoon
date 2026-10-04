@@ -39,6 +39,23 @@ export function Shelf({ children, gap, margin, platform = 'desktop', step = 2, a
     setEnds({ start: !hidden.start, end: !hidden.end });
   }, []);
   React.useEffect(() => { measure(); }, [measure, children]);
+  // An arrow pressed until it goes at its end hands focus to the other arrow rather than dropping
+  // it to the page: the arrow that had focus is remembered until focus moves somewhere real.
+  const holders = { start: React.useRef(null), end: React.useRef(null) };
+  const focused = React.useRef(null);
+  const remember = (side) => ({
+    onFocus: () => { focused.current = side; },
+    onBlur: (e) => { if (e.relatedTarget) focused.current = null; },
+  });
+  React.useLayoutEffect(() => {
+    const side = focused.current;
+    const other = side === 'end' ? 'start' : side === 'start' ? 'end' : null;
+    if (!other || !ends[side] || ends[other]) return;
+    const active = document.activeElement;
+    if (active && active !== document.body && !holders[side].current.contains(active)) return;
+    const button = holders[other].current && holders[other].current.querySelector('button');
+    if (button) button.focus();
+  }, [ends]); // eslint-disable-line
   // Pages by whole items: measures the first child plus the gap rather than guessing a pixel amount.
   // The arrows name the track they scroll.
   const trackId = React.useId();
@@ -62,10 +79,10 @@ export function Shelf({ children, gap, margin, platform = 'desktop', step = 2, a
       </div>
       {showArrows && IconButton && (
         <React.Fragment>
-          <span inert={ends.start} style={arrow('left', hot, !ends.start, 'calc(-1 * ' + m + ' / 2)')}>
+          <span ref={holders.start} {...remember('start')} inert={ends.start} style={arrow('left', hot, !ends.start, 'calc(-1 * ' + m + ' / 2)')}>
             <IconButton variant="raised" size="md" icon="chevron_left" label="Scroll back" controls={trackId} onClick={() => page(-1)} />
           </span>
-          <span inert={ends.end} style={arrow('right', hot, !ends.end, 'calc(-1 * ' + m + ' / 2)')}>
+          <span ref={holders.end} {...remember('end')} inert={ends.end} style={arrow('right', hot, !ends.end, 'calc(-1 * ' + m + ' / 2)')}>
             <IconButton variant="raised" size="md" icon="chevron_right" label="Scroll forward" controls={trackId} onClick={() => page(1)} />
           </span>
         </React.Fragment>

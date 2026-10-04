@@ -38,8 +38,9 @@ data class IconButtonProps(
     val active: Boolean? = null,
     /**
      * The colour `active` takes: `accent` (default), `play` for the transport's play/pause, or
-     * `library` for an item kept in the library. `inherit` takes the ink of what the button sits on,
-     * at rest and active, as on a status banner.
+     * `library` for an item kept in the library. `accent-ink` and `play-ink` are the text-strength
+     * versions, for a toggle on a tinted surface such as the player bar. `inherit` takes the ink of
+     * what the button sits on, at rest and active, as on a status banner.
      */
     val tone: IconButtonTone? = null,
     /** The muted surface ink at rest. */
@@ -71,7 +72,9 @@ enum class IconButtonVariant(val value: String) {
 
 enum class IconButtonTone(val value: String) {
     ACCENT("accent"),
+    ACCENT_INK("accent-ink"),
     PLAY("play"),
+    PLAY_INK("play-ink"),
     LIBRARY("library"),
     INHERIT("inherit"),
 }

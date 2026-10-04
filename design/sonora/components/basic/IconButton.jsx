@@ -10,7 +10,10 @@ injectCss('sonora-iconbutton-css', '@keyframes sn-glyph-in{from{opacity:0;transf
     // a revealed button fades with what it is revealed beside.
     + ':where(.sn-iconbutton){transition:background var(--duration-fast) var(--ease-standard),color var(--duration-fast) var(--ease-standard)}');
 
-const ACTIVE = { accent: 'var(--accent)', play: 'var(--play)', library: 'var(--tone-library)', inherit: 'inherit' };
+const ACTIVE = {
+  accent: 'var(--accent)', 'accent-ink': 'var(--accent-ink)', play: 'var(--play)', 'play-ink': 'var(--play-ink)',
+  library: 'var(--tone-library)', inherit: 'inherit',
+};
 
 // Each look's container. A filled one dims to the disabled container colour.
 const LOOK = {
