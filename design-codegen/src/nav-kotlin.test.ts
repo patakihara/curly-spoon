@@ -155,7 +155,7 @@ describe('the Android nav graph, from nav.json', () => {
         '        composable<Route.Queue>(',
         '            enterTransition = { if (isPlayerTab(initialState.destination)) EnterTransition.None else null },',
         '            exitTransition = { if (isPlayerTab(targetState.destination)) ExitTransition.None else null },',
-        '        ) { entry -> PlayerTab(showing, entry) { QueuePage(navController, actions) } }',
+        '        ) { PlayerTab(showing) { QueuePage(navController, actions) } }',
       ].join('\n'),
     );
     expect(graph).toContain(
@@ -164,10 +164,14 @@ describe('the Android nav graph, from nav.json', () => {
     expect(graph).toContain('composable<Route.Album> { AlbumPage(navController, actions) }');
   });
 
-  it('[M0.canvas] draws a player tab only while it shows, or while the sheet closes, so two tabs never share a frame', () => {
+  it('[M0.canvas] draws a player tab until NavHost composes the next, or while the sheet closes, so every frame shows one tab', () => {
     expect(graph).toContain(
-      '    if (now == null || now.id == entry.id || !isPlayerTab(now.destination)) page()',
+      'private fun AnimatedVisibilityScope.PlayerTab(showing: State<NavBackStackEntry?>, page: @Composable () -> Unit) {',
     );
+    expect(graph).toContain(
+      '    if (transition.targetState == EnterExitState.Visible || now == null || !isPlayerTab(now.destination)) page()',
+    );
+    expect(graph).not.toContain('now.id == entry.id');
     expect(graph).toContain(
       'val showing = remember(navController) { mutableStateOf(navController.currentBackStackEntry) }',
     );

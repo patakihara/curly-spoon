@@ -78,7 +78,7 @@ export function generateKotlinNav(nav: Nav, drawn: Set<string>): string {
     const page = `${componentName(p.id)}Page(navController, actions)`;
     if (!tabIds.has(p.id))
       return `        composable<${route}>${drawn.has(p.id) ? ` { ${page} }` : ' {}'}`;
-    const content = drawn.has(p.id) ? ` { entry -> PlayerTab(showing, entry) { ${page} } }` : ' {}';
+    const content = drawn.has(p.id) ? ` { PlayerTab(showing) { ${page} } }` : ' {}';
     return [
       `        composable<${route}>(`,
       '            enterTransition = { if (isPlayerTab(initialState.destination)) EnterTransition.None else null },',
@@ -91,8 +91,11 @@ export function generateKotlinNav(nav: Nav, drawn: Set<string>): string {
     `// ${APP_NOTE}`,
     `package ${KOTLIN_NAV_PACKAGE}`,
     '',
+    'import androidx.compose.animation.AnimatedVisibilityScope',
+    'import androidx.compose.animation.EnterExitState',
     'import androidx.compose.animation.EnterTransition',
     'import androidx.compose.animation.ExitTransition',
+    'import androidx.compose.animation.ExperimentalAnimationApi',
     'import androidx.compose.runtime.Composable',
     'import androidx.compose.runtime.DisposableEffect',
     'import androidx.compose.runtime.State',
@@ -256,14 +259,15 @@ export function generateKotlinNav(nav: Nav, drawn: Set<string>): string {
     '}',
     '',
     '/**',
-    " * A player tab's page, drawn while it is the page showing, or while the page showing is no tab,",
-    ' * as the sheet closes: [showing] changes as navigation does, before NavHost draws the next tab,',
-    ' * so one tab leaves in the very frame the next arrives, never both on screen.',
+    " * A player tab's page, drawn while NavHost holds it as the entry arriving or settled, or while the",
+    ' * page showing is no tab, as the sheet closes. The leaving tab learns it is leaving in the very',
+    ' * composition NavHost first draws the next, so every frame of a switch shows exactly one tab.',
     ' */',
+    '@OptIn(ExperimentalAnimationApi::class)',
     '@Composable',
-    'private fun PlayerTab(showing: State<NavBackStackEntry?>, entry: NavBackStackEntry, page: @Composable () -> Unit) {',
+    'private fun AnimatedVisibilityScope.PlayerTab(showing: State<NavBackStackEntry?>, page: @Composable () -> Unit) {',
     '    val now = showing.value',
-    '    if (now == null || now.id == entry.id || !isPlayerTab(now.destination)) page()',
+    '    if (transition.targetState == EnterExitState.Visible || now == null || !isPlayerTab(now.destination)) page()',
     '}',
     '',
     "/** Whether [destination] is one of the player's tabs, which switch in place. */",
