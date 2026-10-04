@@ -22,3 +22,10 @@ export interface StateLayerProps {
   ripple?: boolean;
 }
 export declare function StateLayer(props: StateLayerProps): JSX.Element;
+export declare namespace StateLayer {
+  /**
+   * A motion token's length in milliseconds, read off `el`: `900ms` and `.9s` both give 900;
+   * `fallback` when the token is not set. Every Sonora timer reads its duration through this.
+   */
+  function ms(el: Element, token: string, fallback: number): number;
+}

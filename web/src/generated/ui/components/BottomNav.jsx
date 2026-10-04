@@ -2,12 +2,15 @@
 import React from 'react';
 import { RailItem } from '../basic/RailItem.jsx';
 
-/** Mobile tab bar. Each destination is a collapsed RailItem, so the bar and the desktop rail are the same control. */
+/**
+ * Mobile tab bar. Each destination is a collapsed RailItem, so the bar and the desktop rail are the same control. The bar
+ * clips sideways: a tab's open label, hidden while collapsed, runs past the last tab and would otherwise widen the page.
+ */
 export function BottomNav({ items, active, onChange }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'stretch', justifyContent: 'space-around', width: '100%', height: 60, boxSizing: 'border-box', padding: '6px 4px',
-      background: 'var(--surface-bg-alt)', borderTop: '1px solid var(--surface-card)',
+      overflowX: 'clip', background: 'var(--surface-bg-alt)', borderTop: '1px solid var(--surface-card)',
     }}>
       {items.map((it) => (
         <div key={it.key} style={{ width: it.key === active ? 96 : 56, flexShrink: 0, height: 48, transition: 'width var(--duration-slow) var(--ease-standard)' }}>

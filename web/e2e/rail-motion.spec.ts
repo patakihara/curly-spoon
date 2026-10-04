@@ -537,3 +537,94 @@ test.describe('the labelled rail as its web font arrives', () => {
     expect(swaps, 'no pill eases its width as the font lands').toEqual([]);
   });
 });
+
+/** The lit pill, its width, its row's open label (the row's fourth child) and that label's fade. */
+async function litPill(page: Page) {
+  return page.evaluate(() => {
+    const w = window as unknown as RailWindow & { __label?: Element };
+    const pill = w
+      .__findPills(w.__findRail()!)
+      .find((p) => p.style.background.includes('color-mix'));
+    if (pill === undefined) throw new Error('no lit pill');
+    const label = pill.parentElement!.children[3] as HTMLElement | undefined;
+    const style = label && getComputedStyle(label);
+    const fade = style
+      ? style.transitionProperty.split(',').some((p) => p.trim() === 'opacity') &&
+        style.transitionDuration.split(',').some((d) => parseFloat(d) > 0)
+      : false;
+    const same = w.__label === undefined || w.__label === label;
+    w.__label = label;
+    return {
+      width: pill.getBoundingClientRect().width,
+      hugs: label ? 56 + Math.ceil(label.scrollWidth) + 20 : 0,
+      label: label?.textContent ?? null,
+      opacity: style ? Number(style.opacity) : null,
+      fade,
+      same,
+    };
+  });
+}
+
+test.describe('the rail label across the hamburger', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(railScript());
+  });
+
+  test('[M0.sonoraclean/e] after collapsing and expanding, the lit pill fits its label as on first load, and the label fades out and back', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/music', { waitUntil: 'networkidle' });
+    await settle(page);
+    const first = await litPill(page);
+    expect(first.width).toBeGreaterThan(ICON_PILL);
+    expect(Math.abs(first.width - first.hugs)).toBeLessThan(0.5);
+    expect(first).toMatchObject({ opacity: 1, fade: true });
+
+    await toggle(page).click();
+    await expect(toggle(page)).toHaveAttribute('aria-label', 'Expand rail');
+    await settle(page);
+    const collapsed = await litPill(page);
+    expect(collapsed, 'the same label, faded out, not removed').toMatchObject({
+      label: first.label,
+      opacity: 0,
+      fade: true,
+      same: true,
+    });
+
+    await toggle(page).click();
+    await expect(toggle(page)).toHaveAttribute('aria-label', 'Collapse rail');
+    await settle(page);
+    const expanded = await litPill(page);
+    expect(expanded, 'the same label, faded back in').toMatchObject({
+      label: first.label,
+      opacity: 1,
+      fade: true,
+      same: true,
+    });
+    expect(Math.abs(expanded.width - first.width), 'the lit pill as on first load').toBeLessThan(
+      0.5,
+    );
+  });
+
+  test('[M0.sonoraclean/e] expanding a rail that started collapsed fits the lit pill to its label', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 800, height: 900 });
+    await page.goto('/music', { waitUntil: 'networkidle' });
+    await settle(page);
+    await expect(toggle(page)).toHaveAttribute('aria-label', 'Expand rail');
+    const start = await litPill(page);
+    expect(start, 'the label is there, faded out').toMatchObject({ opacity: 0, fade: true });
+
+    await toggle(page).click();
+    await expect(toggle(page)).toHaveAttribute('aria-label', 'Collapse rail');
+    await settle(page);
+    const expanded = await litPill(page);
+    expect(expanded).toMatchObject({ label: start.label, opacity: 1, same: true });
+    expect(expanded.width).toBeGreaterThan(ICON_PILL);
+    expect(Math.abs(expanded.width - expanded.hugs), 'the lit pill hugs its label').toBeLessThan(
+      0.5,
+    );
+  });
+});

@@ -64,9 +64,7 @@ export function RailItem({ icon, label, active = false, expanded = true, rowHeig
         <span style={sx("font-family:'Material Symbols Rounded';font-size:24px;line-height:1;transition:font-variation-settings" + ease + ";font-variation-settings:'FILL' " + (on ? 1 : 0) + ",'wght' " + (on ? 500 : 400))}>{icon}</span>
       </span>
       <span style={sx('position:absolute;left:50%;top:36px;transform:translateX(-50%);width:max-content;max-width:80px;text-align:center;font-size:12px;line-height:1;font-weight:var(--weight-strong);letter-spacing:.02em;white-space:nowrap;pointer-events:none;transition:opacity .14s ease' + (open ? '' : ' .14s') + ';opacity:' + (open || iconOnly ? '0' : '1'))}>{label}</span>
-      {/* A tab bar never opens, so it carries no open label: a hidden one would still run past the
-          last tab, and the screen, widening the page. */}
-      {!tabs && <span ref={labelRef} style={sx('position:absolute;left:56px;top:' + (rowHeight / 2) + 'px;font-size:14px;font-weight:var(--weight-strong);letter-spacing:.02em;white-space:nowrap;transform:translateY(-50%);pointer-events:none;transition:opacity .14s ease' + (open ? ' .14s' : '') + ';opacity:' + (open ? '1' : '0'))}>{label}</span>}
+      <span ref={labelRef} style={sx('position:absolute;left:56px;top:' + (rowHeight / 2) + 'px;font-size:14px;font-weight:var(--weight-strong);letter-spacing:.02em;white-space:nowrap;transform:translateY(-50%);pointer-events:none;transition:opacity .14s ease' + (open ? ' .14s' : '') + ';opacity:' + (open ? '1' : '0'))}>{label}</span>
     </div>
   );
 }

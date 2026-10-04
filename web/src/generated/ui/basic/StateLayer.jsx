@@ -41,10 +41,14 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-statelay
   document.head.appendChild(el);
 }
 
-/** A motion token's length in milliseconds, read where it applies. */
-const duration = (el, token, fallback) => {
-  const v = parseFloat(getComputedStyle(el).getPropertyValue(token));
-  return Number.isFinite(v) ? v : fallback;
+/**
+ * A motion token's length in milliseconds, read where it applies: `900ms` and `.9s` (a minifier's
+ * spelling of the same token) both give 900. The fallback stands in for a token that is not set.
+ * Every Sonora timer reads its duration through this, as `StateLayer.ms`.
+ */
+const ms = (el, token, fallback) => {
+  const m = /^\s*(-?(?:\d*\.)?\d+)(ms|s)\s*$/.exec(getComputedStyle(el).getPropertyValue(token));
+  return m ? parseFloat(m[1]) * (m[2] === 's' ? 1000 : 1) : fallback;
 };
 
 /**
@@ -110,7 +114,7 @@ export function StateLayer({ disabled = false, ripple = true }) {
     };
     const release = () => {
       flag('pressed', false);
-      const grow = duration(host, '--duration-medium', 280), fade = duration(host, '--duration-fast', 150);
+      const grow = ms(host, '--duration-medium', 280), fade = ms(host, '--duration-fast', 150);
       layer.querySelectorAll('[data-sn-ripple]:not([data-leaving])').forEach((wave) => {
         // A ripple finishes growing before it fades, so a quick tap still reads as one.
         const left = Math.max(0, grow - (performance.now() - Number(wave.dataset.born)));
@@ -155,3 +159,4 @@ export function StateLayer({ disabled = false, ripple = true }) {
   }, [disabled, ripple]);
   return <span ref={ref} data-sn-state-layer="" data-ripple={ripple ? undefined : 'off'} aria-hidden="true" />;
 }
+StateLayer.ms = ms;

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 /**
  * A Browse shelf scrolled to its end leaves the page where it was: the page's own scroller and the
@@ -124,6 +124,80 @@ for (const size of SIZES) {
         );
       }
       expect(await trackLeft(page)).toBeCloseTo(left, 0);
+    });
+  });
+}
+
+/**
+ * A ScrollArea's overlay thumb, Android's: hidden at rest, shown at `--opacity-scrollbar` while
+ * its scroller moves, and faded out once it has stood still for `--duration-linger`. The thumb is
+ * the `aria-hidden` span beside the scroller, inside ScrollArea's clipped frame.
+ */
+const thumbOpacity = (scroller: Locator) =>
+  scroller.evaluate((s) => {
+    const thumb = s.nextElementSibling;
+    if (!(thumb instanceof HTMLElement) || thumb.getAttribute('aria-hidden') !== 'true') {
+      throw new Error('the scroller has no overlay thumb beside it');
+    }
+    return Number(getComputedStyle(thumb).opacity);
+  });
+
+const restOpacity = (page: Page) =>
+  page.evaluate(() =>
+    Number(getComputedStyle(document.documentElement).getPropertyValue('--opacity-scrollbar')),
+  );
+
+/** Marks the page's own scroller: the first element that scrolls up and down. */
+const markPage = (page: Page) =>
+  page.evaluate(() => {
+    const scroller = [...document.querySelectorAll('div')].find(
+      (d) =>
+        /auto|scroll/.test(getComputedStyle(d).overflowY) && d.scrollHeight > d.clientHeight + 1,
+    );
+    if (scroller === undefined) throw new Error('nothing on the page scrolls up and down');
+    scroller.dataset.e2ePage = '';
+  });
+
+/** Where each scroller shows its thumb: a shelf only on a phone, the page everywhere. */
+const THUMBS = [
+  { which: 'a Browse shelf', mark: '[data-e2e-track]', width: 390, height: 844, touch: true },
+  { which: 'the page', mark: '[data-e2e-page]', width: 1440, height: 900, touch: false },
+];
+
+for (const t of THUMBS) {
+  test.describe(`the overlay scrollbar at ${t.width} px`, () => {
+    test.use({
+      viewport: { width: t.width, height: t.height },
+      hasTouch: t.touch,
+      isMobile: t.touch,
+    });
+
+    test(`[M0.sonoraclean/e] ${t.which} shows its thumb while it scrolls and fades it after`, async ({
+      page,
+    }) => {
+      await page.goto('/', { waitUntil: 'networkidle' });
+      await page.locator('img').first().waitFor();
+      await markTrack(page);
+      await markPage(page);
+      const scroller = page.locator(t.mark);
+      const rest = await restOpacity(page);
+      expect(rest).toBeGreaterThan(0);
+      expect(await thumbOpacity(scroller)).toBe(0);
+
+      if (t.touch) {
+        // The shelf scrolls as a swipe leaves it; the thumb answers the scroll, whatever moved it.
+        await scroller.evaluate((s) => {
+          s.scrollLeft += s.clientWidth / 2;
+        });
+      } else {
+        const box = await scroller.boundingBox();
+        if (box === null) throw new Error('the scroller has no box');
+        await page.mouse.move(box.x + box.width / 2, box.y + Math.min(box.height / 2, 200));
+        await page.mouse.wheel(0, 300);
+      }
+
+      await expect.poll(() => thumbOpacity(scroller), { timeout: 2000 }).toBeCloseTo(rest, 2);
+      await expect.poll(() => thumbOpacity(scroller), { timeout: 5000 }).toBe(0);
     });
   });
 }

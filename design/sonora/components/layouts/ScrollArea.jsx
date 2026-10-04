@@ -1,8 +1,6 @@
 import React from 'react';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
-
-/** A token's number read off an element (`--duration-linger` gives 900), for the timers that need one. */
-const tokenNumber = (el, name) => parseFloat(getComputedStyle(el).getPropertyValue(name));
+const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{};
 
 /**
  * Scroll container with an Android-style overlay scrollbar: the thumb appears while scrolling and fades out shortly after it stops.
@@ -10,6 +8,7 @@ const tokenNumber = (el, name) => parseFloat(getComputedStyle(el).getPropertyVal
  * up and down), and the thumb is drawn inside its clipped frame, so the thumb never widens what holds it.
  */
 export function ScrollArea({ children, id, onScroll, style, scrollRef, axis = 'y', thumb: showThumb = true, edgeFade = false }) {
+  const { StateLayer } = NS();
   const x = axis === 'x';
   const ref = React.useRef(null);
   const attach = (el) => { ref.current = el; if (typeof scrollRef === 'function') scrollRef(el); else if (scrollRef) scrollRef.current = el; };
@@ -35,7 +34,7 @@ export function ScrollArea({ children, id, onScroll, style, scrollRef, axis = 'y
     if (showThumb) {
       setThumb((t) => (t.visible || t.size === 0 ? t : { ...t, visible: true }));
       if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(() => setThumb((t) => ({ ...t, visible: false })), tokenNumber(e.currentTarget, '--duration-linger'));
+      timer.current = setTimeout(() => setThumb((t) => ({ ...t, visible: false })), StateLayer.ms(e.currentTarget, '--duration-linger', 0));
     }
     if (onScroll) onScroll(e);
   };
