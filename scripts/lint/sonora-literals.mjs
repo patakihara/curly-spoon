@@ -9,12 +9,18 @@
  *
  * JSX (design/sonora/components/**\/*.jsx) is read with the TypeScript AST. Every string literal
  * and template chunk is read as CSS, joined across `+` and `${}` so a value split over pieces is
- * still seen; that covers sx() strings, style values and injected <style> text. Numbers count
- * where they are style-object values, size- or timing-named defaults and JSX props, and timer
- * delays. Ratios (an operand of `*` or `/`, a unitless number inside calc()) are not literals.
+ * still seen; that covers sx() strings, style values and injected <style> text. A named colour
+ * counts only in a colour position (a colour property, a JSX colour attribute, or inside
+ * color-mix, a gradient or drop-shadow), so prose such as "black and white" is never one. Numbers
+ * count where they are object values (style keys, size maps), all-number arrays (ramps), size- or
+ * timing-named defaults and JSX props, timer delays, and bounds of Math.min/max/clamp, read in the
+ * context of the result. Ratios (an operand of `*` or `/`, a unitless number inside calc()) are
+ * not literals, nor is geometry on SVG elements (`r`, `cx`, `width`, `strokeWidth` on a circle).
  *
- * Kotlin (android/sonora/src/main/java/.../ui/sonora) is read by pattern: `N.dp`, `N.sp`,
- * `Color(0x…)`, `alpha = N`, `.alpha(N`, `tween(N`, `durationMillis = N` and `zIndex(N`.
+ * Kotlin (android/sonora/src/main/java/.../ui/sonora) is read by pattern: `N.dp`, `N.sp`, `N.em`,
+ * `(N).dp`, `Dp(N)`, `Color(0x…)`, `alpha = N`, `.alpha(N`, `tween(N` and `tween<T>(N`,
+ * `durationMillis = N`, `delayMillis = N`, spring `stiffness = N` and `dampingRatio = N`, and
+ * `zIndex(N`.
  *
  * Exempt everywhere: the value 0, `100%`, `@keyframes` blocks, and the generated token files
  * (tokens/, export/, any `generated` folder), which sit outside the scanned folders.
@@ -86,11 +92,39 @@ const isZero = (num) => Number(num.replace(/[a-z%]+$/i, '').replace(/f$/, '')) =
 const COLOUR_FN = /(?<![\w-])(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(/g;
 const BEZIER_FN = /(?<![\w-])(?:cubic-bezier|steps)\(/g;
 const HEX = /(?<![\w&#])#[0-9a-fA-F]{3,8}(?![\w-])/g;
-const COLOUR_WORD = /(?<![\w-])(?:white|black)(?![\w-])/g;
+/** Every CSS named colour (CSS Color 4), matched case-insensitively and only in a colour position. */
+const NAMED_COLOURS = (
+  'aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue blueviolet ' +
+  'brown burlywood cadetblue chartreuse chocolate coral cornflowerblue cornsilk crimson cyan ' +
+  'darkblue darkcyan darkgoldenrod darkgray darkgreen darkgrey darkkhaki darkmagenta ' +
+  'darkolivegreen darkorange darkorchid darkred darksalmon darkseagreen darkslateblue ' +
+  'darkslategray darkslategrey darkturquoise darkviolet deeppink deepskyblue dimgray dimgrey ' +
+  'dodgerblue firebrick floralwhite forestgreen fuchsia gainsboro ghostwhite gold goldenrod gray ' +
+  'green greenyellow grey honeydew hotpink indianred indigo ivory khaki lavender lavenderblush ' +
+  'lawngreen lemonchiffon lightblue lightcoral lightcyan lightgoldenrodyellow lightgray ' +
+  'lightgreen lightgrey lightpink lightsalmon lightseagreen lightskyblue lightslategray ' +
+  'lightslategrey lightsteelblue lightyellow lime limegreen linen magenta maroon ' +
+  'mediumaquamarine mediumblue mediumorchid mediumpurple mediumseagreen mediumslateblue ' +
+  'mediumspringgreen mediumturquoise mediumvioletred midnightblue mintcream mistyrose moccasin ' +
+  'navajowhite navy oldlace olive olivedrab orange orangered orchid palegoldenrod palegreen ' +
+  'paleturquoise palevioletred papayawhip peachpuff peru pink plum powderblue purple ' +
+  'rebeccapurple red rosybrown royalblue saddlebrown salmon sandybrown seagreen seashell sienna ' +
+  'silver skyblue slateblue slategray slategrey snow springgreen steelblue tan teal thistle ' +
+  'tomato turquoise violet wheat white whitesmoke yellow yellowgreen'
+).split(' ');
+const COLOUR_WORD = new RegExp(`(?<![\\w-])(?:${NAMED_COLOURS.join('|')})(?![\\w-])`, 'gi');
+/** A property whose value holds a colour, and the functions whose arguments do: a colour position. */
+const COLOUR_PROP =
+  /^(?:--.*|.*colou?r.*|background.*|border.*|outline.*|fill|stroke|.*shadow|text-decoration.*|column-rule.*|caret.*|accent.*|-webkit-text-stroke.*|-webkit-tap-highlight.*)$/;
+const COLOUR_ARG_FN =
+  /^(?:color-mix|(?:repeating-)?(?:linear|radial|conic)-gradient|drop-shadow|light-dark)$/;
 const EASING =
   /(?<![\w-])(?:ease-in-out|ease-in|ease-out|ease|linear|step-start|step-end)(?![\w(-])/g;
 const DURATION = /(?<![\w.#-])-?(?:\d*\.\d+|\d+)(?:ms|s)(?![\w-])/g;
-const LENGTH = /(?<![\w.#-])-?(?:\d*\.\d+|\d+)(?:px|rem|em)(?![\w-])/g;
+const LENGTH =
+  /(?<![\w.#-])-?(?:\d*\.\d+|\d+)(?:px|rem|em|ex|ch|vh|vw|dvh|dvw|svh|svw|lvh|lvw|vmin|vmax)(?![\w-])/g;
+/** The line-height after the size in a `font` shorthand: `14px/1.4`, `12px/16px`. */
+const FONT_LINE_HEIGHT = /(?<=\/\s*)(?:\d*\.\d+|\d+)(?:px|rem|em|%)?(?![\w.%-])/g;
 const PERCENT = /(?<![\w.#-])-?(?:\d*\.\d+|\d+)%/g;
 const UNITLESS = /(?<![\w.#-])-?(?:\d*\.\d+|\d+)(?![\w.%(-])/g;
 
@@ -183,15 +217,27 @@ export function scanCss(text, initialProp = null) {
     const at = (m) => valueStart + m.index;
     const push = (m, kind) => found.push({ index: at(m), literal: m[0], kind });
     for (const m of value.matchAll(HEX)) push(m, 'colour');
-    for (const m of value.matchAll(COLOUR_WORD)) push(m, 'colour');
+    const colourProp = prop !== null && COLOUR_PROP.test(prop);
+    for (const m of value.matchAll(COLOUR_WORD)) {
+      if (colourProp || stacks[at(m)].some((fn) => COLOUR_ARG_FN.test(fn))) push(m, 'colour');
+    }
     for (const m of value.matchAll(EASING)) push(m, 'easing');
     for (const m of value.matchAll(DURATION)) if (!isZero(m[0])) push(m, 'duration');
+    const claimed = new Set();
+    if (prop === 'font') {
+      for (const m of value.matchAll(FONT_LINE_HEIGHT)) {
+        claimed.add(m.index);
+        if (!isZero(m[0])) push(m, 'line-height');
+      }
+    }
     const lengthKind = prop === 'letter-spacing' || prop === 'line-height' ? prop : 'size';
-    for (const m of value.matchAll(LENGTH)) if (!isZero(m[0])) push(m, lengthKind);
+    for (const m of value.matchAll(LENGTH)) {
+      if (!isZero(m[0]) && !claimed.has(m.index)) push(m, lengthKind);
+    }
     for (const m of value.matchAll(PERCENT)) {
-      if (isZero(m[0]) || m[0] === '100%') continue;
-      const inMix = stacks[at(m)].includes('color-mix');
-      if (inMix || (prop && isBoxProp(prop))) push(m, 'percent');
+      if (isZero(m[0]) || m[0] === '100%' || claimed.has(m.index)) continue;
+      if (prop && UNITLESS_PROPS.has(prop)) push(m, prop);
+      else if (stacks[at(m)].includes('color-mix') || (prop && isBoxProp(prop))) push(m, 'percent');
     }
     if (prop && UNITLESS_PROPS.has(prop)) {
       for (const m of value.matchAll(UNITLESS)) {
@@ -267,24 +313,115 @@ const LENGTH_KEYS = new Set([
   'borderRightWidth',
 ]);
 
-/** The kind a number takes as the value of style key `key`, or null when it is not a literal. */
-function kindForStyleKey(key) {
+/** Object keys whose numbers are counts, positions in a list or bounds, not sizes. */
+const COUNT_KEYS = new Set([
+  'index',
+  'count',
+  'rows',
+  'columns',
+  'cols',
+  'span',
+  'min',
+  'max',
+  'step',
+  'steps',
+  'length',
+  'level',
+  'page',
+  'seed',
+  'id',
+  'key',
+  'maxLines',
+  'digits',
+  'decimals',
+  'precision',
+]);
+
+/**
+ * The kind a number `value` takes as the value of object key `key`, or null when it is no literal.
+ * A known style key counts any value. Any other key counts a value of magnitude 2 or more, of the
+ * kind its name says or else a size: that catches size maps (`{sm: 32}`) and numeric style keys
+ * outside the lists (`WebkitTextStroke: 2`). A 1 under an unknown key is left as a flag, count or
+ * unit ratio; the unitless-allowed keys (`flexGrow`, `fontWeight`, ...) and count keys never count.
+ */
+function kindForObjectKey(key, value) {
   if (key === 'zIndex') return 'z-index';
   if (key === 'opacity') return 'opacity';
   if (key === 'lineHeight') return 'line-height';
   if (key === 'letterSpacing') return 'letter-spacing';
-  if (UNCOVERED_NUMERIC_KEYS.has(key)) return null;
-  return LENGTH_KEYS.has(key) ? 'size' : null;
+  if (UNCOVERED_NUMERIC_KEYS.has(key) || COUNT_KEYS.has(key)) return null;
+  if (LENGTH_KEYS.has(key)) return 'size';
+  return Math.abs(value) >= 2 ? (kindForName(key) ?? 'size') : null;
 }
+
+const SVG_TAGS = new Set([
+  'svg',
+  'circle',
+  'ellipse',
+  'rect',
+  'path',
+  'line',
+  'polyline',
+  'polygon',
+  'g',
+  'text',
+  'tspan',
+  'use',
+  'mask',
+  'clipPath',
+  'pattern',
+  'defs',
+  'symbol',
+  'linearGradient',
+  'radialGradient',
+  'stop',
+]);
+const SVG_GEOMETRY = new Set([
+  'width',
+  'height',
+  'viewBox',
+  'r',
+  'rx',
+  'ry',
+  'cx',
+  'cy',
+  'x',
+  'y',
+  'x1',
+  'y1',
+  'x2',
+  'y2',
+  'dx',
+  'dy',
+  'fx',
+  'fy',
+  'd',
+  'points',
+  'pathLength',
+  'strokeWidth',
+  'offset',
+]);
+
+/** True when JSX attribute `attr` is geometry on an SVG element: drawing, not layout. */
+function isSvgGeometry(attr) {
+  const el = attr.parent.parent;
+  const tag = ts.isIdentifier(el.tagName) ? el.tagName.text : null;
+  return SVG_TAGS.has(tag) && ts.isIdentifier(attr.name) && SVG_GEOMETRY.has(attr.name.text);
+}
+
+/** Calls whose result is one of their arguments: a bound in Math.min/max/clamp means what the result means. */
+const isBoundCall = (call) => /^(?:Math\.(?:min|max)|clamp)$/.test(call.expression.getText());
 
 /** The kind a number takes as the default or value of a binding or prop named `name`. */
 function kindForName(name) {
   if (name === 'zIndex' || /zIndex$/.test(name)) return 'z-index';
   if (/opacity$/i.test(name)) return 'opacity';
-  if (/(after|delay|ms|millis)$/i.test(name) || name === 'fade') return 'duration';
+  if (/(after|delay|ms|millis|duration|timeout|interval)$/i.test(name) || name === 'fade') {
+    return 'duration';
+  }
   if (/^(h|w|r)$/.test(name) || /At$/.test(name)) return 'size';
   if (
-    /(size|width|height|thickness|radius|pad|padding|inset|gap|margin|offset|thumb|threshold)$/i.test(
+    /(size|width|height|thickness|radius|pad|padding|inset|gap|margin|offset|thumb|threshold|spacing|elevation)$/i.test(
       name,
     )
   ) {
@@ -334,10 +471,14 @@ function styleContext(node) {
       n = p;
     else break;
   }
-  const p = n.parent;
+  let p = n.parent;
   if (ts.isPropertyAssignment(p) && p.initializer === n) {
     const key = propName(p.name);
     return key ? kebab(key) : null;
+  }
+  if (ts.isJsxExpression(p)) p = p.parent;
+  if (ts.isJsxAttribute(p) && ts.isIdentifier(p.name) && !isSvgGeometry(p)) {
+    return kebab(p.name.text);
   }
   return null;
 }
@@ -433,12 +574,40 @@ function localHelpers(sf) {
   return helpers;
 }
 
-/** Walks a number up to what gives it meaning; returns its kind, or null when it is no literal. */
+/** The name a value is bound to: a variable, parameter or binding default, or an object key. */
+function bindingName(node) {
+  const p = node.parent;
+  if (
+    (ts.isBindingElement(p) || ts.isParameter(p) || ts.isVariableDeclaration(p)) &&
+    p.initializer === node &&
+    ts.isIdentifier(p.name)
+  ) {
+    return p.name.text;
+  }
+  if (ts.isPropertyAssignment(p) && p.initializer === node) return propName(p.name);
+  return null;
+}
+
+const isNumberLike = (e) =>
+  ts.isNumericLiteral(e) || (ts.isPrefixUnaryExpression(e) && ts.isNumericLiteral(e.operand));
+
+/**
+ * Walks a number up to what gives it meaning; returns its kind, or null when it is no literal.
+ * An array made only of numbers is a ramp: each element of magnitude 2 or more counts, of the
+ * kind its binding's name says or else a size (`[24, 48]`); a 1 is left as a flag or ratio.
+ */
 function numberKind(node, helpers) {
+  const value = Number(node.text);
   let n = node;
   for (;;) {
     const p = n.parent;
-    if (ts.isParenthesizedExpression(p)) n = p;
+    if (ts.isArrayLiteralExpression(p)) {
+      if (!p.elements.every(isNumberLike) || Math.abs(value) < 2) return null;
+      const name = bindingName(p);
+      return (name && kindForName(name)) ?? 'size';
+    }
+    if (ts.isCallExpression(p) && p.arguments.includes(n) && isBoundCall(p)) n = p;
+    else if (ts.isParenthesizedExpression(p)) n = p;
     else if (ts.isPrefixUnaryExpression(p)) n = p;
     else if (ts.isConditionalExpression(p)) {
       if (p.condition === n) return null;
@@ -466,7 +635,7 @@ function numberKind(node, helpers) {
   if (ts.isTemplateSpan(p)) return null;
   if (ts.isPropertyAssignment(p) && p.initializer === n) {
     const key = propName(p.name);
-    return key ? kindForStyleKey(key) : null;
+    return key ? kindForObjectKey(key, value) : null;
   }
   if (
     (ts.isBindingElement(p) || ts.isParameter(p) || ts.isVariableDeclaration(p)) &&
@@ -486,6 +655,7 @@ function numberKind(node, helpers) {
   }
   if (ts.isJsxExpression(p) && ts.isJsxAttribute(p.parent)) {
     const name = p.parent.name;
+    if (isSvgGeometry(p.parent)) return null;
     return ts.isIdentifier(name) ? kindForName(name.text) : null;
   }
   return null;
@@ -535,15 +705,29 @@ export function scanJsx(source, file) {
 // ---------------------------------------------------------------------------------------------
 // Kotlin
 
+const KOTLIN_NUMBER = String.raw`\d*\.?\d+f?`;
 const KOTLIN_RULES = [
-  [/(?<![\w.])(\d+(?:\.\d+)?f?)\.(?:dp|sp)\b/g, 'size'],
-  [/\bColor\(\s*0x[0-9A-Fa-f_]+\s*\)/g, 'colour'],
-  [/(?<![\w.])alpha\s*=\s*(\d*\.?\d+f?)/g, 'opacity'],
-  [/\.alpha\(\s*(\d*\.?\d+f?)/g, 'opacity'],
-  [/\btween\(\s*(\d+)/g, 'duration'],
-  [/\bdurationMillis\s*=\s*(\d+)/g, 'duration'],
-  [/\bzIndex\(\s*(\d*\.?\d+f?)/g, 'z-index'],
+  [new RegExp(String.raw`(?<![\w.])(\d+(?:\.\d+)?f?)\.(?:dp|sp|em)\b`, 'g'), 'size'],
+  [new RegExp(String.raw`\(\s*(${KOTLIN_NUMBER})\s*\)\.(?:dp|sp|em)\b`, 'g'), 'size'],
+  [new RegExp(String.raw`\bDp\(\s*(${KOTLIN_NUMBER})\s*\)`, 'g'), 'size'],
+  [/\bColor\(\s*0x[0-9A-Fa-f_]+[uUL]*\s*\)/g, 'colour'],
+  [new RegExp(String.raw`(?<![\w.])alpha\s*=\s*(${KOTLIN_NUMBER})`, 'g'), 'opacity'],
+  [new RegExp(String.raw`\.alpha\(\s*(${KOTLIN_NUMBER})`, 'g'), 'opacity'],
+  [/\btween(?:<[^>()]*>)?\(\s*(\d+)/g, 'duration'],
+  [/\b(?:durationMillis|delayMillis)\s*=\s*(\d+)/g, 'duration'],
+  [new RegExp(String.raw`\b(?:stiffness|dampingRatio)\s*=\s*(${KOTLIN_NUMBER})`, 'g'), 'easing'],
+  [new RegExp(String.raw`\bzIndex\(\s*(${KOTLIN_NUMBER})`, 'g'), 'z-index'],
 ];
+
+/** A size in a `letterSpacing =` or `lineHeight =` argument takes that kind instead. */
+function kotlinKind(text, index, kind) {
+  if (kind !== 'size') return kind;
+  const arg = /\b(letterSpacing|lineHeight)\s*=\s*\(?\s*$/.exec(
+    text.slice(Math.max(0, index - 40), index),
+  );
+  if (!arg) return kind;
+  return arg[1] === 'letterSpacing' ? 'letter-spacing' : 'line-height';
+}
 
 /** `source` with its comments blanked, line breaks kept. */
 const stripKotlinComments = (source) =>
@@ -556,7 +740,7 @@ export function scanKotlin(source, file) {
   for (const [re, kind] of KOTLIN_RULES) {
     for (const m of text.matchAll(re)) {
       if (m[1] !== undefined && isZero(m[1])) continue;
-      found.push({ index: m.index, literal: m[0], kind });
+      found.push({ index: m.index, literal: m[0], kind: kotlinKind(text, m.index, kind) });
     }
   }
   return found

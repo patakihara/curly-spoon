@@ -305,3 +305,163 @@ test('ui/sonora Kotlin raw dp, sp, colours, alphas, tweens and z-indices are fou
     'duration tween(300',
   ]);
 });
+
+test('numbers in a size map or an all-number array are found, counts and string tables are not', () => {
+  const src = [
+    'const SIZES = { sm: 32, md: 40, lg: { box: 48, glyph: 24 } };',
+    'const ramp = [24, 48];',
+    'const timings = [120, 240];',
+    "const units = [[1e9, 'B'], [1e6, 'M']];",
+    'const page = { index: 4, count: 3, rows: 2, flag: 1 };',
+  ].join('\n');
+  assert.deepEqual(literals(scanJsx(src, 'X.jsx')), [
+    'size 32',
+    'size 40',
+    'size 48',
+    'size 24',
+    'size 24',
+    'size 48',
+    'size 120',
+    'size 240',
+  ]);
+});
+
+test('a numeric style key outside the unitless allowed set is found, of the kind its name says', () => {
+  const src =
+    'const s = { transitionDuration: 200, animationDelay: 80, WebkitTextStroke: 2, flexGrow: 1, fontWeight: 600, order: 2 };';
+  assert.deepEqual(literals(scanJsx(src, 'X.jsx')), ['duration 200', 'duration 80', 'size 2']);
+});
+
+test('viewport- and font-relative units are lengths', () => {
+  const src =
+    "const s = sx('height:80vh;min-height:100dvh;max-height:90svh;top:10lvh;width:60ch;margin:2ex;left:5vw;inset:3vmin;right:4vmax');";
+  assert.deepEqual(literals(scanJsx(src, 'X.jsx')), [
+    'size 80vh',
+    'size 100dvh',
+    'size 90svh',
+    'size 10lvh',
+    'size 60ch',
+    'size 2ex',
+    'size 5vw',
+    'size 3vmin',
+    'size 4vmax',
+  ]);
+});
+
+test('an opacity written as a percentage is found', () => {
+  assert.deepEqual(literals(scanJsx("const s = sx('opacity:50%');", 'X.jsx')), ['opacity 50%']);
+});
+
+test('a named CSS colour counts in a colour position only', () => {
+  const src = [
+    "const a = sx('color:rebeccapurple;background:linear-gradient(red, transparent);border:1px solid Gold');",
+    "const b = { backgroundColor: 'navy', fill: 'tomato' };",
+    "const c = 'color-mix(in oklch, var(--accent) 62%, white)';",
+    "const d = sx('filter:drop-shadow(0 0 var(--x) black);outline-color:orange');",
+  ].join('\n');
+  assert.deepEqual(literals(scanJsx(src, 'X.jsx')), [
+    'colour rebeccapurple',
+    'colour red',
+    'size 1px',
+    'colour Gold',
+    'colour navy',
+    'colour tomato',
+    'percent 62%',
+    'colour white',
+    'colour black',
+    'colour orange',
+  ]);
+});
+
+test('the words white and black in prose, labels and enum comparisons are not colours', () => {
+  const src = [
+    "const label = 'Black and white mode';",
+    "const t = tone === 'white' ? 'a' : 'b';",
+    'export const A = () => <button aria-label="Turn black" data-tone="white">{\'white noise\'}</button>;',
+    "const o = { tone: 'black', text: 'red alert' };",
+  ].join('\n');
+  assert.deepEqual(literals(scanJsx(src, 'X.jsx')), []);
+});
+
+test('the line-height in a font shorthand is found as a line-height', () => {
+  const src =
+    "const a = sx('font:14px/1.4 var(--font-sans)'); const b = { font: '600 12px/16px x' };";
+  assert.deepEqual(literals(scanJsx(src, 'X.jsx')), [
+    'size 14px',
+    'line-height 1.4',
+    'size 12px',
+    'line-height 16px',
+  ]);
+});
+
+test('timing, spacing and elevation props are found', () => {
+  const src = [
+    'export const A = () => (',
+    '  <B duration={250} spacing={8} elevation={4} gap={6} radius={12} offset={2} delay={90} timeout={3000} index={5} />',
+    ');',
+  ].join('\n');
+  assert.deepEqual(literals(scanJsx(src, 'X.jsx')), [
+    'duration 250',
+    'size 8',
+    'size 4',
+    'size 6',
+    'size 12',
+    'size 2',
+    'duration 90',
+    'duration 3000',
+  ]);
+});
+
+test('a Math.min, Math.max or clamp bound is read in the context of its result', () => {
+  const src = [
+    'const size = Math.max(32, w * 2);',
+    'const s = { width: Math.min(480, vw), height: clamp(24, h, 96) };',
+    'const pct = Math.max(0, Math.min(1, progress));',
+  ].join('\n');
+  assert.deepEqual(literals(scanJsx(src, 'X.jsx')), ['size 32', 'size 480', 'size 24', 'size 96']);
+});
+
+test('SVG geometry attributes are exempt on SVG elements only', () => {
+  const src = [
+    'export const A = () => (',
+    '  <svg width={24} height={24} viewBox="0 0 24 24">',
+    '    <circle cx={12} cy={12} r={10} strokeWidth={2} />',
+    '    <rect x={2} y={4} width={8} height={6} rx={1} />',
+    '    <path d="M2 2L22 22" strokeWidth={3} />',
+    '    <line x1={1} y1={1} x2={9} y2={9} />',
+    '  </svg>',
+    ');',
+    'export const B = () => <div width={24} height={24}><img width={40} /></div>;',
+  ].join('\n');
+  assert.deepEqual(literals(scanJsx(src, 'X.jsx')), ['size 24', 'size 24', 'size 40']);
+});
+
+test('a literal fallback inside var() stays a finding', () => {
+  assert.deepEqual(literals(scanJsx("const s = sx('width:var(--x, 52px)');", 'X.jsx')), [
+    'size 52px',
+  ]);
+});
+
+test('ui/sonora Kotlin long colours, typed tweens, Dp(), em, parenthesised units and springs are found', () => {
+  const src = [
+    'val a = Color(0x80000000L)',
+    'val b = tween<Float>(220)',
+    'val c = Dp(52f)',
+    'val d = TextStyle(letterSpacing = 0.02.em, lineHeight = 1.4.em)',
+    'val e = (52).dp',
+    'val f = spring(dampingRatio = 0.8f, stiffness = 380f)',
+    'val g = RoundedCornerShape(8.dp)',
+    'val h = spring(stiffness = Spring.StiffnessLow)',
+  ].join('\n');
+  assert.deepEqual(literals(scanKotlin(src, 'X.kt')), [
+    'colour Color(0x80000000L)',
+    'duration tween<Float>(220',
+    'size Dp(52f)',
+    'letter-spacing 0.02.em',
+    'line-height 1.4.em',
+    'size (52).dp',
+    'easing dampingRatio = 0.8f',
+    'easing stiffness = 380f',
+    'size 8.dp',
+  ]);
+});
