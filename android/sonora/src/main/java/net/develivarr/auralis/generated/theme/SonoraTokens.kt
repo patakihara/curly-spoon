@@ -361,4 +361,5 @@ object SonoraOpacity {
  *   --font-body: 'Inter',-apple-system,'Segoe UI',sans-serif
  *   --font-display: 'Archivo','Inter',sans-serif
  *   --font-heading: 'Archivo','Inter',sans-serif
+ *   --font-icon: 'Material Symbols Rounded'
  */

@@ -67,3 +67,86 @@ describe("Sonora's scrolling, read from its sources", () => {
     expect(area).toMatch(/translateY\(/);
   });
 });
+
+/** Every Sonora source under components/: each component's `.jsx` and the shared helpers. */
+const sonoraSources = (): [string, string][] => [
+  ...[...components.values()].map((c): [string, string] => [c.name, readFileSync(c.jsx, 'utf8')]),
+  ['shared.js', readFileSync(`${REPO_ROOT}/${SONORA_DIR}/components/shared.js`, 'utf8')],
+];
+
+/** Naming the icon font, or setting its fill or weight axis, in CSS text or a style key. */
+const ICON_FONT = [
+  /Material Symbols/,
+  /--font-icon/,
+  /font-variation-settings\s*:/,
+  /fontVariationSettings\s*:/,
+  /['"]FILL['"]/,
+  /['"]wght['"]/,
+];
+
+/** The components that draw a Material Symbols glyph. */
+const GLYPH_COMPONENTS = [
+  'AccountButton',
+  'Badge',
+  'ButtonGroup',
+  'DownloadButton',
+  'EmptyState',
+  'EpisodeRow',
+  'ExpanderRow',
+  'FeatureCard',
+  'IconButton',
+  'MediaCard',
+  'MediaHeader',
+  'MiniPlayer',
+  'NavRail',
+  'NowPlaying',
+  'OverflowMenu',
+  'PlayActions',
+  'PreviewButton',
+  'QueuePage',
+  'QueueRow',
+  'QuickPick',
+  'RailItem',
+  'Rating',
+  'ResultRow',
+  'SearchField',
+  'SectionHeader',
+  'Shelf',
+  'SideSheet',
+  'SortFilterBar',
+  'StatusBanner',
+  'TabBar',
+  'TonalIconButton',
+  'TransportBar',
+];
+
+/** The components whose only glyphs are IconButton's, named through its `icon`. */
+const ICON_BUTTON_GLYPHS = ['NowPlayingPage', 'PlayerSubPage', 'SearchButton'];
+
+describe("Sonora's glyphs, read from its sources", () => {
+  it('[M0.sonoraclean/d] only Icon names the icon font or sets its fill or weight', () => {
+    const offenders = sonoraSources()
+      .filter(([name]) => name !== 'Icon')
+      .flatMap(([name, src]) =>
+        ICON_FONT.filter((re) => re.test(src)).map((re) => `${name}: ${re.source}`),
+      );
+    expect(offenders).toEqual([]);
+    expect(ICON_FONT.some((re) => re.test(source('Icon')))).toBe(true);
+  });
+
+  it.each(GLYPH_COMPONENTS)('[M0.sonoraclean/d] %s draws its glyphs through Icon', (name) => {
+    const src = source(name);
+    expect(rendered(src).map((e) => e.tag)).toContain('Icon');
+    expect(src).toMatch(/\bIcon\b[^;]*=\s*NS\(\)|\{[^}]*\bIcon\b[^}]*\}\s*=\s*NS\(\)/);
+  });
+
+  it.each(ICON_BUTTON_GLYPHS)(
+    '[M0.sonoraclean/d] %s names its glyphs through IconButton, which draws them through Icon',
+    (name) => {
+      const buttons = rendered(source(name)).filter((e) => e.tag === 'IconButton');
+      expect(buttons.length).toBeGreaterThan(0);
+      for (const b of buttons) expect(b.attrs, name).toHaveProperty('icon');
+      expect(rendered(source('IconButton')).map((e) => e.tag)).toContain('Icon');
+    },
+  );
+});

@@ -20,7 +20,7 @@ export function NowPlaying({
   track = {}, player = {}, lyrics = {}, queue = {},
   zIndex = 30, children,
 }) {
-  const { PlayerSheet, PlayerPanel, NowPlayingPage, LyricsPage, QueuePage, TabBar, IconButton } = NS();
+  const { PlayerSheet, PlayerPanel, NowPlayingPage, LyricsPage, QueuePage, TabBar, IconButton, Icon } = NS();
   const mobile = platform === 'mobile';
   const tabs = variant === 'spoken' ? TABS.filter((t) => t.key !== 'lyrics') : TABS;
   const [ownTab, setOwnTab] = React.useState('now');
@@ -38,13 +38,12 @@ export function NowPlaying({
     return <PlayerPanel open={open} tab={active} onTabChange={setTab} onClose={onClose} tabs={tabs}>{page}</PlayerPanel>;
   }
   if (!PlayerSheet) return null;
-  const icon = (name, size) => <span style={{ fontFamily: 'Material Symbols Rounded', fontSize: size || 'var(--icon-sm)', lineHeight: 1 }}>{name}</span>;
   return (
     <PlayerSheet open={open} from={from} zIndex={zIndex} background="var(--surface-bg-alt)">
       <div style={sx('display:flex;align-items:center;gap:var(--spacing-sm);flex-shrink:0;box-sizing:border-box;height:var(--appbar-height-mobile);padding:0 var(--spacing-lg)')}>
-        {IconButton && <IconButton label="Collapse player" muted onClick={onClose}>{icon('keyboard_arrow_down', 'var(--icon-md)')}</IconButton>}
+        {IconButton && <IconButton label="Collapse player" muted onClick={onClose}><Icon name="keyboard_arrow_down" size="md" /></IconButton>}
         <div style={sx('flex:1;min-width:0;text-align:center;font-size:var(--text-xs);letter-spacing:.12em;text-transform:uppercase;font-weight:var(--weight-strong);color:var(--surface-fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{track.context}</div>
-        {IconButton && <IconButton label="More options" muted onClick={onMore}>{icon('more_vert')}</IconButton>}
+        {IconButton && <IconButton label="More options" muted onClick={onMore} icon="more_vert" />}
       </div>
       {TabBar && (
         <div style={sx('flex-shrink:0;padding:0 var(--spacing-lg);border-bottom:1px solid var(--surface-border)')}>

@@ -11,7 +11,7 @@ import { NS, REVEAL, activate, clamp01, percentOf, sx } from '../shared.js';
 export function EpisodeRow({ image, title, description, meta, finished = false, progress = null, explicit = false, absent = false, actions, onPlay, onClick, divider = false, platform = 'desktop' }) {
   const mobile = platform === 'mobile';
   const fg = 'var(--surface-fg)', muted = 'var(--surface-fg-muted)';
-  const { CoverArt, Badge, StateLayer } = NS();
+  const { CoverArt, Badge, StateLayer, Icon } = NS();
   const off = !onClick;
   const art = mobile ? 56 : 64;
   const hasProgress = typeof progress === 'number';
@@ -33,7 +33,7 @@ export function EpisodeRow({ image, title, description, meta, finished = false, 
             onKeyDown={activate((e) => { e.stopPropagation(); onPlay(e); })} tabIndex={0}
             aria-label="Play episode" role="button" title="Play episode"
             style={sx('position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:var(--radius-xs);background:var(--scrim-strong)')}>
-            <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 1,'wght' 500;font-size:var(--icon-md);color:var(--on-scrim)")}>play_arrow</span>
+            <Icon name="play_arrow" size="md" filled weight="strong" style={sx('color:var(--on-scrim)')} />
             {StateLayer && <StateLayer />}
           </div>
         )}
@@ -55,7 +55,7 @@ export function EpisodeRow({ image, title, description, meta, finished = false, 
               // A filled check in --tone-library rather than a second pill — this is a state of
               // the episode, not another badge competing with the status pills elsewhere.
               <span style={sx('flex-shrink:0;display:inline-flex;align-items:center;gap:2px;color:var(--tone-library);font-weight:var(--weight-strong)')}>
-                <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 1,'wght' 500;font-size:var(--icon-xs);line-height:1")}>check_circle</span>
+                <Icon name="check_circle" size="xs" filled weight="strong" />
                 Finished
               </span>
             )}

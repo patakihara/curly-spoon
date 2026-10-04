@@ -19,8 +19,8 @@ data class TonalIconButtonProps(
     val width: Float? = null,
     val height: Float? = null,
     val radius: String? = null,
-    /** Glyph size. Default `--icon-xs` (20px). */
-    val iconSize: String? = null,
+    /** Glyph size, a step of Icon's ramp. Default 'xs' (20px). */
+    val iconSize: IconSize? = null,
     /** Accent ink and a filled glyph. */
     val active: Boolean? = null,
     val background: String? = null,

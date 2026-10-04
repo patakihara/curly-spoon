@@ -7,6 +7,15 @@ enum class Download(val value: String) {
     DONE("done"),
 }
 
+enum class IconSize(val value: String) {
+    _2XS("2xs"),
+    XS("xs"),
+    SM("sm"),
+    MD("md"),
+    LG("lg"),
+    XL("xl"),
+}
+
 enum class Platform(val value: String) {
     DESKTOP("desktop"),
     MOBILE("mobile"),

@@ -7,8 +7,6 @@
   onSkipForward={() => {}}
   leading={<SpeedControl value={1.5} onClick={() => {}} />}
   trailing={
-    <IconButton label="Sleep timer" onClick={() => {}}>
-      <span style={{fontFamily:'Material Symbols Rounded',fontSize:'var(--icon-sm)',lineHeight:1}}>bedtime</span>
-    </IconButton>
+    <IconButton label="Sleep timer" icon="bedtime" onClick={() => {}} />
   }
 />

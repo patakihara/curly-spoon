@@ -11,7 +11,7 @@ const LABELS = { episode: 'Preview episode', playlist: 'Preview playlist', audio
 
 /** Auditions a sample without committing — plays without adding the item to the library or displacing what's currently playing. */
 export function PreviewButton({ kind = 'track', label, playing = false, muted = false, disabled = false, onClick, platform = 'desktop' }) {
-  const StateLayer = NS().StateLayer;
+  const { StateLayer, Icon } = NS();
   const off = !!disabled || !onClick;
   const mobile = platform === 'mobile';
   // Sound-off outranks playing: a muted preview is still "playing with sound off", not idle.
@@ -20,7 +20,7 @@ export function PreviewButton({ kind = 'track', label, playing = false, muted = 
   return (
     <button className="sn-int sn-filled" onClick={off ? undefined : onClick} disabled={off}
       style={sx('display:inline-flex;align-items:center;gap:var(--spacing-sm);border:none;border-radius:var(--radius-pill);cursor:pointer;background:var(--scrim-soft);color:var(--on-scrim);padding:' + (mobile ? '8px 16px' : '6px 14px') + ';font-family:var(--font-body);font-size:var(--text-sm);font-weight:var(--weight-strong)')}>
-      <span key={glyph} className="sn-pb-glyph" style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-sm);line-height:1;font-variation-settings:'FILL' 1,'wght' 500")}>{glyph}</span>
+      <Icon key={glyph} className="sn-pb-glyph" name={glyph} filled weight="strong" />
       {text}
       {StateLayer && <StateLayer disabled={off} />}
     </button>

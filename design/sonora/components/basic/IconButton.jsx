@@ -2,7 +2,7 @@ import React from 'react';
 import { NS } from '../shared.js';
 
 export function IconButton({ children, icon, size = 36, active, muted, tone = 'accent', onClick, label, disabled }) {
-  const StateLayer = NS().StateLayer;
+  const { StateLayer, Icon } = NS();
   const off = !!disabled || !onClick;
   return (
     <button
@@ -19,7 +19,7 @@ export function IconButton({ children, icon, size = 36, active, muted, tone = 'a
       }}
     >
       {icon
-        ? <span aria-hidden="true" style={{ fontFamily: 'Material Symbols Rounded', fontSize: 'var(--icon-sm)', lineHeight: 1 }}>{icon}</span>
+        ? <Icon name={icon} />
         : children}
       {StateLayer && <StateLayer disabled={off} />}
     </button>

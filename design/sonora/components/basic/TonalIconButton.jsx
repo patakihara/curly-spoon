@@ -13,9 +13,9 @@ injectCss('sonora-tonalicon-css', '@keyframes ti-in{from{opacity:0;transform:rot
  */
 export function TonalIconButton({
   glyph, label, onClick, width = 40, height = 32, radius = '16px',
-  iconSize = 'var(--icon-xs)', active = false, background = 'var(--surface-card)', disabled = false,
+  iconSize = 'xs', active = false, background = 'var(--surface-card)', disabled = false,
 }) {
-  const StateLayer = NS().StateLayer;
+  const { StateLayer, Icon } = NS();
   const off = !!disabled || !onClick;
   // Keep the outgoing glyph mounted for one animation so the two can cross over.
   const [pair, setPair] = React.useState({ current: glyph, prev: null });
@@ -26,10 +26,8 @@ export function TonalIconButton({
     return () => clearTimeout(t);
   }, [glyph]); // eslint-disable-line
   const face = (name, out) => (
-    <span key={name + (out ? '-out' : '')} className="ti-glyph" aria-hidden="true"
-      style={sx("position:absolute;font-family:'Material Symbols Rounded';font-size:" + iconSize + ';line-height:1;' +
-        "font-variation-settings:'FILL' " + (active ? 1 : 0) + ",'wght' " + (active ? 500 : 400) + ';' +
-        'animation:ti-' + (out ? 'out' : 'in') + ' var(--duration-quick) var(--ease-standard) both')}>{name}</span>
+    <Icon key={name + (out ? '-out' : '')} className="ti-glyph" name={name} size={iconSize} filled={active} weight={active ? 'strong' : 'body'}
+      style={sx('position:absolute;animation:ti-' + (out ? 'out' : 'in') + ' var(--duration-quick) var(--ease-standard) both')} />
   );
   return (
     <button className="sn-int sn-filled" onClick={off ? undefined : onClick} disabled={off} aria-label={label} title={label}

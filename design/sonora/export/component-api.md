@@ -106,6 +106,19 @@ Subscription toggle whose label states the current state, not the action to take
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `size` | `'sm' \| 'md' \| 'lg'` |  |
 
+### Icon
+
+A Material Symbols Rounded glyph: the only Sonora component that sets the icon font, its size, its fill and its weight. Every glyph in Sonora draws through it, hidden from assistive technology: the control's label or the text beside it names what it does.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `name` *(required)* | `string` | Material Symbols Rounded glyph name, e.g. "play_arrow". |
+| `size` | `'2xs' \| 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | A step of the icon size ramp, `--icon-2xs` (14px) to `--icon-xl` (40px). Default 'sm', 24px. |
+| `filled` | `boolean` | The glyph's filled form, as play, active and on-state glyphs take. |
+| `weight` | `'body' \| 'strong'` | 'body' is the regular stroke (wght 400); 'strong' the heavier one (wght 500). Default 'body'. |
+| `style` | `CSSProperties` | Colour, placement or a transform; never the font settings Icon owns. |
+| `className` | `string` | A class for an animation hook, such as a glyph that fades in when it changes. |
+
 ### IconButton
 
 A round, transparent glyph button: surface ink, muted ink, or the active colour.
@@ -321,7 +334,7 @@ Icon button on a tonal (card) fill — a squat pill rather than a circle, for co
 | `width` | `number` | Default 40×32 with a 16px radius — a pill wider than it is tall. |
 | `height` | `number` |  |
 | `radius` | `string` |  |
-| `iconSize` | `string` | Glyph size. Default `--icon-xs` (20px). |
+| `iconSize` | `'2xs' \| 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | Glyph size, a step of Icon's ramp. Default 'xs' (20px). |
 | `active` | `boolean` | Accent ink and a filled glyph. |
 | `background` | `string` |  |
 
@@ -589,7 +602,7 @@ Material Symbols Rounded glyph name.
 
 ### PlayActions
 
-The three queue actions a music item offers: **play next** (arrow_top_right), **play** (play_arrow / pause, emphasised in --play) and **play last** (last_page). Deliberately a *disconnected* group — three separate circles with a gap — to distinguish these one-shot actions from ButtonGroup's connected segments, which express a persistent selection. Hidden until the user hovers or keyboard-focuses an ancestor carrying the sn-acts-host class (MediaCard's artwork does this for you), because a desktop pointer can reveal them on demand while a permanently visible set would compete with the cover art. Touch surfaces should pass `always` or use a long-press menu instead — there is no hover to reveal them.
+The three queue actions a music item offers: **play next** (arrow_top_right), **play** (play_arrow / pause, emphasised in --play) and **play last** (last_page). Deliberately a *disconnected* group — three separate circles with a gap — to distinguish these one-shot actions from ButtonGroup's connected segments, which express a persistent selection. Hidden until the user hovers or keyboard-focuses an ancestor carrying Sonora's shared reveal host class, `REVEAL.host` (MediaCard's artwork does this for you), because a desktop pointer can reveal them on demand while a permanently visible set would compete with the cover art. Touch surfaces should pass `always` or use a long-press menu instead — there is no hover to reveal them.
 
 | prop | type | notes |
 | --- | --- | --- |

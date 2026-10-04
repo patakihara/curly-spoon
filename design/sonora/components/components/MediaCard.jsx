@@ -29,7 +29,7 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
   const OverflowMenu = NS().OverflowMenu;
   const tap = requestable ? () => { setAsked(true); onRequest(); } : onClick;
   const hasProgress = typeof progress === 'number';
-  const { PlayActions, CoverArt, StateLayer } = NS();
+  const { PlayActions, CoverArt, StateLayer, Icon } = NS();
   const off = !tap;
   // Desktop only: these are revealed by hover, which a touch surface has no equivalent for.
   const showActions = !mobile && !absent && PlayActions && (onPlay || onPlayNext || onPlayLast);
@@ -57,7 +57,7 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
           <button onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); onMore(e); }} aria-label="More options" title="More options"
             className={mobile ? 'sn-int' : 'sn-int ' + REVEAL.item}
             style={sx('position:absolute;top:6px;right:6px;z-index:var(--z-overlay);width:30px;height:30px;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--scrim-soft);color:var(--on-scrim)' + (mobile ? ';opacity:1' : ''))}>
-            <span style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-xs);line-height:1")}>more_vert</span>
+            <Icon name="more_vert" size="xs" />
             {StateLayer && <StateLayer />}
           </button>
         )}
@@ -68,13 +68,13 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
         {unplayed && <div aria-hidden="true" style={sx('position:absolute;top:' + (showMore ? '40px' : '6px') + ';right:6px;width:10px;height:10px;border-radius:50%;background:var(--accent)')} />}
         {savedBadge && (
           <div aria-hidden="true" title="Saved" style={sx('position:absolute;left:8px;bottom:8px;width:22px;height:26px;display:flex;align-items:flex-start;justify-content:center;padding-top:3px;border-radius:0 0 var(--radius-xs) var(--radius-xs);background:var(--accent);color:var(--accent-contrast)')}>
-            <span style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-xs);line-height:1;font-variation-settings:'FILL' 1,'wght' 500")}>bookmark</span>
+            <Icon name="bookmark" size="xs" filled weight="strong" />
           </div>
         )}
         {/* Not in library: the real artwork, darkened — the item exists, you just don't have it yet.
             Sits at the bottom, clear of the corner menu and any progress the item might otherwise show. */}
         {notInLibrary && <div style={sx('position:absolute;inset:0;background:var(--scrim-strong)')} />}
-        {notInLibrary && <div title="Not in library" style={sx('position:absolute;left:8px;bottom:8px;display:flex;align-items:center;gap:4px;white-space:nowrap;padding:3px ' + (tight ? '5px' : 'var(--spacing-md) 3px var(--spacing-sm)') + ';border-radius:var(--radius-pill);font-size:var(--text-xs);font-weight:var(--weight-strong);background:var(--scrim-strong);color:var(--on-scrim)')}><span style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-2xs);line-height:1;font-variation-settings:'FILL' 0,'wght' 500")}>cloud_off</span>{!tight && 'Not in library'}</div>}
+        {notInLibrary && <div title="Not in library" style={sx('position:absolute;left:8px;bottom:8px;display:flex;align-items:center;gap:4px;white-space:nowrap;padding:3px ' + (tight ? '5px' : 'var(--spacing-md) 3px var(--spacing-sm)') + ';border-radius:var(--radius-pill);font-size:var(--text-xs);font-weight:var(--weight-strong);background:var(--scrim-strong);color:var(--on-scrim)')}><Icon name="cloud_off" size="2xs" weight="strong" />{!tight && 'Not in library'}</div>}
         {/* A request, not yet playable: the art greyed the way a not-playable item is, and its status
             pill in the request's tone where the "Not in library" pill would sit. A narrow card keeps
             the pill to what still reads: the percentage for a download, the word otherwise. */}
@@ -117,7 +117,7 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
       {markers && markers.length > 0 ? (
         <div style={sx('margin-top:2px;display:flex;align-items:center;gap:4px;min-width:0')}>
           <span style={sx('flex-shrink:0;display:inline-flex;gap:2px')}>
-            {markers.map((m, i) => <span key={i} style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-xs);line-height:1;color:" + muted + ";font-variation-settings:'FILL' 1,'wght' 500")}>{m}</span>)}
+            {markers.map((m, i) => <Icon key={i} name={m} size="xs" filled weight="strong" style={sx('color:' + muted)} />)}
           </span>
           <div style={sx('min-width:0;font-size:var(--text-' + (small ? 'xs' : 'sm') + ');line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;color:' + muted)}>{sub}</div>
         </div>

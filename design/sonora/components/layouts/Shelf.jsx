@@ -7,7 +7,6 @@ const arrow = (side, shown, enabled, inset) => sx(
   'position:absolute;top:var(--shelf-arrow-top);' + side + ':' + inset + ';transform:translateY(-50%);z-index:var(--z-overlay);' +
   'width:var(--control-md);height:var(--control-md);border-radius:var(--radius-round);border:none;cursor:pointer;' +
   'display:inline-flex;align-items:center;justify-content:center;' +
-  "font-family:'Material Symbols Rounded';font-size:var(--icon-sm);" +
   'background:var(--surface-card);color:var(--surface-fg);' +
   'box-shadow:var(--shadow-md);' +
   'opacity:' + (shown && enabled ? 'var(--opacity-rest)' : '0') + ';' +
@@ -23,7 +22,7 @@ const arrow = (side, shown, enabled, inset) => sx(
  */
 export function Shelf({ children, gap, margin, platform = 'desktop', step = 2, arrows, scrollbar }) {
   const mobile = platform === 'mobile';
-  const { StateLayer, ScrollArea } = NS();
+  const { StateLayer, ScrollArea, Icon } = NS();
   const g = gap || 'var(--grid-gutter' + (mobile ? '-mobile' : '') + ')';
   const m = margin || 'var(--grid-margin' + (mobile ? '-mobile' : '') + ')';
   const showArrows = arrows === undefined ? !mobile : arrows;
@@ -62,8 +61,8 @@ export function Shelf({ children, gap, margin, platform = 'desktop', step = 2, a
       </div>
       {showArrows && (
         <React.Fragment>
-          <button className="sn-int" aria-label="Scroll back" aria-controls={trackId} disabled={ends.start} onClick={() => page(-1)} style={arrow('left', hot, !ends.start, 'calc(-1 * ' + m + ' / 2)')}>chevron_left{StateLayer && <StateLayer />}</button>
-          <button className="sn-int" aria-label="Scroll forward" aria-controls={trackId} disabled={ends.end} onClick={() => page(1)} style={arrow('right', hot, !ends.end, 'calc(-1 * ' + m + ' / 2)')}>chevron_right{StateLayer && <StateLayer />}</button>
+          <button className="sn-int" aria-label="Scroll back" aria-controls={trackId} disabled={ends.start} onClick={() => page(-1)} style={arrow('left', hot, !ends.start, 'calc(-1 * ' + m + ' / 2)')}><Icon name="chevron_left" />{StateLayer && <StateLayer />}</button>
+          <button className="sn-int" aria-label="Scroll forward" aria-controls={trackId} disabled={ends.end} onClick={() => page(1)} style={arrow('right', hot, !ends.end, 'calc(-1 * ' + m + ' / 2)')}><Icon name="chevron_right" />{StateLayer && <StateLayer />}</button>
         </React.Fragment>
       )}
     </div>

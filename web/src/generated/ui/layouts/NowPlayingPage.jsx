@@ -30,7 +30,6 @@ export function NowPlayingPage({
   const scrolls = scroll === undefined ? mobile : scroll;
   const pad = mobile ? 'var(--spacing-2xl)' : '0px';
   const gap = mobile ? 'var(--spacing-xl)' : 'var(--spacing-lg)';
-  const icon = (name, size) => <span style={{ fontFamily: 'Material Symbols Rounded', fontSize: size || 'var(--icon-sm)', lineHeight: 1 }}>{name}</span>;
   // Song, art and seek share one measure: the art's width, centred, with the seek bar inset a hair.
   const artWidth = mobile ? 'min(76%, var(--now-playing-art-max))' : '100%';
   // A word too wide for the phone's display step beside the favourite, as an episode's often is, takes
@@ -38,7 +37,7 @@ export function NowPlayingPage({
   const longWord = String(title || '').split(/\s+/).some((w) => w.length > 10);
   const sleeping = sleep !== 'Off';
   const sleepButton = IconButton && (
-    <IconButton label={'Sleep timer, ' + sleep} active={sleeping} muted={!sleeping} size={mobile ? 48 : 40} onClick={onSleep}>{icon('bedtime')}</IconButton>
+    <IconButton label={'Sleep timer, ' + sleep} active={sleeping} muted={!sleeping} size={mobile ? 48 : 40} onClick={onSleep} icon="bedtime" />
   );
 
   const body = (
@@ -54,9 +53,8 @@ export function NowPlayingPage({
           {!mobile && context && <div style={sx('margin-top:6px;font-size:var(--text-sm);color:var(--surface-fg-muted)')}>{context}</div>}
         </div>
         {(favourite !== undefined || onFavourite) && IconButton && (
-          <IconButton label={favourite ? 'Remove from favourites' : 'Add to favourites'} active={favourite} muted={!favourite} size={mobile ? 44 : 36} onClick={onFavourite}>
-            {icon(favourite ? 'favorite' : 'favorite_border')}
-          </IconButton>
+          <IconButton label={favourite ? 'Remove from favourites' : 'Add to favourites'} active={favourite} muted={!favourite} size={mobile ? 44 : 36} onClick={onFavourite}
+            icon={favourite ? 'favorite' : 'favorite_border'} />
         )}
       </div>
       {mobile && SeekBar && (

@@ -6,8 +6,6 @@
   onClick={() => {}}
   onAction={() => {}}
   trailing={
-    <IconButton label="More" size={34} onClick={() => {}}>
-      <span style={{fontFamily:'Material Symbols Rounded',fontSize:'var(--icon-sm)',lineHeight:1}}>more_vert</span>
-    </IconButton>
+    <IconButton label="More" size={34} icon="more_vert" onClick={() => {}} />
   }
 />

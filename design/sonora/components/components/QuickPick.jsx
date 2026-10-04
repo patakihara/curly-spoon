@@ -5,17 +5,17 @@ import { NS, activate, percentOf, sx } from '../shared.js';
 /** Continue-listening / jump-back-in row tile: small square art plus two lines. Replaces the old QuickTile. */
 export function QuickPick({ title, sub, platform = 'desktop', icon, image, onClick, progress = null, unplayed = false }) {
   const mobile = platform === 'mobile';
-  const { CoverArt, StateLayer } = NS();
+  const { CoverArt, StateLayer, Icon } = NS();
   const off = !onClick;
   const size = 52;
   const hasProgress = typeof progress === 'number';
-  // `icon` swaps the artwork square for a Material Symbols glyph on a flat accent tint — for
+  // `icon` swaps the artwork square for an Icon glyph on a flat accent tint — for
   // destinations that have no cover art of their own (Shuffle, Downloads, Liked, a genre).
   // Resume/new-episode state is a property of real cover art, not of a utility glyph tile, so
   // `progress`/`unplayed` only ever decorate the image branch below.
   const leading = icon
     ? <div style={sx('width:' + size + 'px;height:' + size + 'px;flex-shrink:0;border-radius:8px;display:flex;align-items:center;justify-content:center;background:color-mix(in oklch, var(--surface-card) 76%, var(--accent));color:var(--accent-ink)')}>
-        <span style={sx("font-family:'Material Symbols Rounded';font-size:24px;line-height:1;font-variation-settings:'FILL' 1,'wght' 500")}>{icon}</span>
+        <Icon name={icon} filled weight="strong" />
       </div>
     : <div style={sx('position:relative;overflow:hidden;width:' + size + 'px;height:' + size + 'px;flex-shrink:0;border-radius:8px')}>
         {CoverArt && <CoverArt src={image} />}

@@ -2,6 +2,7 @@
 import React from 'react';
 import { ButtonGroup } from '../basic/ButtonGroup.jsx';
 import { EditableList } from '../components/EditableList.jsx';
+import { Icon } from '../basic/Icon.jsx';
 import { PlayerSubPage } from './PlayerSubPage.jsx';
 import { QueueRow } from '../components/QueueRow.jsx';
 import { SectionHeader } from '../components/SectionHeader.jsx';
@@ -42,7 +43,7 @@ export function QueuePage({
   // rest waits, paused, until it is started again.
   const mark = (glyph, label, color) => (
     <div style={sx('display:flex;align-items:center;gap:var(--spacing-sm);padding:var(--spacing-xs) var(--spacing-sm) 0;font-size:var(--text-sm);font-weight:var(--weight-strong);color:' + color)}>
-      <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-xs);line-height:1")}>{glyph}</span>
+      <Icon name={glyph} size="xs" />
       {label}
     </div>
   );

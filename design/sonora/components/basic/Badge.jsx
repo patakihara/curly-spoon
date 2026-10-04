@@ -1,4 +1,5 @@
 import React from 'react';
+import { NS } from '../shared.js';
 
 const TONES = {
   accent: ['var(--accent)', 'var(--accent-contrast)'],
@@ -10,6 +11,7 @@ const TONES = {
 
 export function Badge({ children, tone = 'accent', size = 'sm', icon, square = false, plain = false }) {
   const [bg, fg] = TONES[tone] || TONES.accent;
+  const Icon = NS().Icon;
   const lg = size === 'md';
   return (
     <span style={{
@@ -27,7 +29,7 @@ export function Badge({ children, tone = 'accent', size = 'sm', icon, square = f
       background: plain ? 'transparent' : bg, color: plain ? (tone === 'neutral' ? fg : bg) : fg, whiteSpace: 'nowrap',
       fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-strong)',
     }}>
-      {icon && <span aria-hidden="true" style={{ fontFamily: "'Material Symbols Rounded'", fontSize: 'var(--icon-2xs)', lineHeight: 1, fontVariationSettings: "'FILL' 1,'wght' 500" }}>{icon}</span>}
+      {icon && <Icon name={icon} size="2xs" filled weight="strong" />}
       {children}
     </span>
   );

@@ -2,6 +2,7 @@
 import React from 'react';
 import { Badge } from '../basic/Badge.jsx';
 import { CoverArt } from '../basic/CoverArt.jsx';
+import { Icon } from '../basic/Icon.jsx';
 import { ProgressRing } from '../basic/ProgressRing.jsx';
 import { StateLayer } from '../basic/StateLayer.jsx';
 import { REVEAL, activate, badgeTone, clamp01, injectCss, sx } from '../shared.js';
@@ -53,9 +54,8 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
             aria-label={failed ? 'Retry' : (spinning || queued ? 'Cancel request' : 'Play')}
             title={failed ? 'Retry' : (spinning || queued ? 'Cancel request' : 'Play')}
             style={sx('position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;border-radius:' + (mobile ? '8px' : '6px') + ';background:var(--scrim-strong)')}>
-            <span style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 1,'wght' 400;font-size:" + (mobile ? '26px' : '24px') + ';color:var(--on-scrim)')}>
-              {failed ? 'refresh' : (spinning || queued ? 'close' : (actionGlyph === 'downloading' ? 'pause' : (actionGlyph || 'play_arrow')))}
-            </span>
+            <Icon name={failed ? 'refresh' : (spinning || queued ? 'close' : (actionGlyph === 'downloading' ? 'pause' : (actionGlyph || 'play_arrow')))}
+              filled style={sx('color:var(--on-scrim)')} />
             {StateLayer && <StateLayer />}
           </div>
         )}
@@ -63,7 +63,7 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
           <div style={sx('position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:' + (mobile ? '8px' : '6px') + ';background:var(--scrim)')}>
             {pct !== null && ProgressRing && <ProgressRing size={ringSize} value={pct} />}
             {spinning && ProgressRing && <ProgressRing size={ringSize} />}
-            {(queued || failed) && <span style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 0,'wght' 400;font-size:" + ringSize + 'px;color:var(--accent-contrast)')}>{failed ? 'error' : 'schedule'}</span>}
+            {(queued || failed) && <Icon name={failed ? 'error' : 'schedule'} style={sx('color:var(--accent-contrast)')} />}
           </div>
         )}
       </div>

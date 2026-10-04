@@ -7,7 +7,7 @@ injectCss('sonora-expanderrow-css', '.sn-expander-chevron{transition:transform v
 
 /** Collapses a homogeneous group inside an otherwise heterogeneous list — seven versions of one song folded behind "More releases · Show all" so the other result types stay reachable. */
 export function ExpanderRow({ label, actionLabel = 'Show all', expanded = false, onToggle, image }) {
-  const { CoverArt, StateLayer } = NS();
+  const { CoverArt, StateLayer, Icon } = NS();
   const off = !onToggle;
   const toggle = () => onToggle(!expanded);
   return (
@@ -24,8 +24,7 @@ export function ExpanderRow({ label, actionLabel = 'Show all', expanded = false,
       <div style={sx('flex:1;min-width:0;font-family:var(--font-body);font-size:var(--text-md);font-weight:var(--weight-strong);color:var(--surface-fg)')}>{label}</div>
       <div style={sx('flex-shrink:0;display:flex;align-items:center;gap:var(--spacing-xs);color:var(--surface-fg-muted);font-family:var(--font-body);font-size:var(--text-sm);font-weight:var(--weight-strong)')}>
         {actionLabel}
-        <span aria-hidden="true" className={'sn-expander-chevron' + (expanded ? ' sn-open' : '')}
-          style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-sm);line-height:1;font-variation-settings:'FILL' 0,'wght' 400")}>expand_more</span>
+        <Icon name="expand_more" className={'sn-expander-chevron' + (expanded ? ' sn-open' : '')} />
       </div>
       {StateLayer && <StateLayer disabled={off} />}
     </div>

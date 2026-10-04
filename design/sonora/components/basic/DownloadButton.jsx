@@ -7,7 +7,7 @@ import { NS, clamp01, sx } from '../shared.js';
  * everywhere else — an episode row's action bar, a header, anywhere there is no cover to borrow.
  */
 export function DownloadButton({ state = 'idle', progress = null, onClick, size = 34 }) {
-  const { ProgressRing, StateLayer } = NS();
+  const { ProgressRing, StateLayer, Icon } = NS();
   const off = !onClick;
   const downloading = state === 'downloading';
   const done = state === 'done';
@@ -29,9 +29,7 @@ export function DownloadButton({ state = 'idle', progress = null, onClick, size 
             : <ProgressRing size={size} color="var(--accent-ink)" track="var(--surface-border)" />}
         </div>
       )}
-      <span aria-hidden="true" style={sx("position:relative;font-family:'Material Symbols Rounded';font-variation-settings:'FILL' " + (done ? 1 : 0) + ",'wght' 500;font-size:var(--icon-" + (downloading ? 'xs' : 'sm') + ');line-height:1')}>
-        {downloading ? 'stop' : (done ? 'download_done' : 'download')}
-      </span>
+      <Icon name={downloading ? 'stop' : (done ? 'download_done' : 'download')} size={downloading ? 'xs' : 'sm'} filled={done} weight="strong" style={sx('position:relative')} />
       {StateLayer && <StateLayer disabled={off} />}
     </button>
   );

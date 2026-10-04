@@ -74,12 +74,13 @@ describe('the Android gallery draws what the web gallery draws', () => {
     const icons = galleryIcons([
       usage('BottomNav', `<BottomNav items={[{key:'a',label:'A',icon:'explore'}]} />`),
       usage('IconButton', `<IconButton icon="share" />`),
+      usage('Icon', `<Icon size="lg" name="bookmark" filled />`),
       usage(
         'Input',
         `<Input leading={<span style={{ fontFamily: 'Material Symbols Rounded' }}>search</span>} />`,
       ),
     ]);
-    expect(icons).toEqual(['explore', 'search', 'share']);
+    expect(icons).toEqual(['bookmark', 'explore', 'search', 'share']);
     expect(galleryIcons(entries).length).toBeGreaterThan(10);
   });
 });

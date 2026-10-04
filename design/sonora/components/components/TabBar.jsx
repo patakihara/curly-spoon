@@ -7,7 +7,7 @@ import { NS, prefersReducedMotion, sx } from '../shared.js';
  */
 export function TabBar({ items = [], value, onChange, platform = 'desktop', fill = false }) {
   const mobile = platform === 'mobile';
-  const StateLayer = NS().StateLayer;
+  const { StateLayer, Icon } = NS();
   const off = !onChange;
   const opts = items.map((it) => (typeof it === 'string' ? { key: it, label: it } : it));
   const ref = React.useRef(null);
@@ -52,7 +52,7 @@ export function TabBar({ items = [], value, onChange, platform = 'desktop', fill
               'font-family:var(--font-body);font-size:var(--text-sm);font-weight:var(--weight-strong);' +
               'color:' + (on ? 'var(--accent-ink)' : 'var(--surface-fg-muted)') + ';transition:color var(--duration-quick) ease-in-out')}>
             <span style={sx('display:flex;align-items:center;gap:var(--spacing-sm);white-space:nowrap;height:' + (mobile ? '30px' : '32px') + ';padding:0 ' + (fill ? 'var(--spacing-xs)' : 'var(--spacing-md)'))}>
-              {o.icon && <span style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-xs);line-height:1;font-variation-settings:'FILL' " + (on ? 1 : 0) + ",'wght' " + (on ? 500 : 400))}>{o.icon}</span>}
+              {o.icon && <Icon name={o.icon} size="xs" filled={on} weight={on ? 'strong' : 'body'} />}
               {o.label}
             </span>
             {/* Indicator is always in flow, so switching tabs never shifts the row's height. */}

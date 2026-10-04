@@ -20,6 +20,7 @@ export { FieldRow } from './components/FieldRow.jsx';
 export { FollowButton } from './basic/FollowButton.jsx';
 export { FrontLayer } from './layouts/FrontLayer.jsx';
 export { FrontLayerHeader } from './layouts/FrontLayerHeader.jsx';
+export { Icon } from './basic/Icon.jsx';
 export { IconButton } from './basic/IconButton.jsx';
 export { Input } from './basic/Input.jsx';
 export { LayoutGrid } from './layouts/LayoutGrid.jsx';

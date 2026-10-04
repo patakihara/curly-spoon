@@ -17,8 +17,8 @@ export interface TonalIconButtonProps {
   width?: number;
   height?: number;
   radius?: string;
-  /** Glyph size. Default `--icon-xs` (20px). */
-  iconSize?: string;
+  /** Glyph size, a step of Icon's ramp. Default 'xs' (20px). */
+  iconSize?: '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   /** Accent ink and a filled glyph. */
   active?: boolean;
   background?: string;

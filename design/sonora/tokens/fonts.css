@@ -6,6 +6,7 @@
 --font-body:'Inter',-apple-system,'Segoe UI',sans-serif;
 --font-display:'Archivo','Inter',sans-serif;
 --font-heading:'Archivo','Inter',sans-serif;
+--font-icon:'Material Symbols Rounded'; /* glyphs as ligatures, set only by the Icon basic */
 }
 /* Body copy is medium by default — 400 read too light in the player UI. */
 body{font-family:var(--font-body);font-weight:var(--weight-body)}

@@ -20,6 +20,7 @@ export { FieldRow, type FieldRowProps } from './components/FieldRow';
 export { FollowButton, type FollowButtonProps } from './basic/FollowButton';
 export { FrontLayer, type FrontLayerProps } from './layouts/FrontLayer';
 export { FrontLayerHeader, type FrontLayerHeaderProps } from './layouts/FrontLayerHeader';
+export { Icon, type IconProps } from './basic/Icon';
 export { IconButton, type IconButtonProps } from './basic/IconButton';
 export { Input, type InputProps } from './basic/Input';
 export { LayoutGrid, type LayoutGridProps } from './layouts/LayoutGrid';

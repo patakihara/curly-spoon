@@ -4,7 +4,7 @@ import { NS, activate } from '../shared.js';
 /** Row heading above a carousel or grid, with an optional trailing action. */
 export function SectionHeader({ title, action, actionLabel = 'More', onAction, platform = 'mobile', eyebrow, image, round = false, onSubject, actionText, trailing }) {
   const isMobile = platform === 'mobile';
-  const { CoverArt, StateLayer } = NS();
+  const { CoverArt, StateLayer, Icon } = NS();
   const off = !onAction;
   const titleEl = (
     <div style={{
@@ -63,8 +63,8 @@ export function SectionHeader({ title, action, actionLabel = 'More', onAction, p
           width: 36, height: 36, borderRadius: '50%', border: 'none', flexShrink: 0,
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           background: 'transparent', color: 'var(--surface-fg-muted)',
-          cursor: 'pointer', fontFamily: 'Material Symbols Rounded', fontSize: 'var(--icon-sm)',
-        }}><span aria-hidden="true">{action}</span>{StateLayer && <StateLayer disabled={off} />}</button>
+          cursor: 'pointer',
+        }}><Icon name={action} />{StateLayer && <StateLayer disabled={off} />}</button>
       )}
     </div>
   );

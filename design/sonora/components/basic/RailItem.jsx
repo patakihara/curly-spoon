@@ -3,7 +3,7 @@ import { NS, activate, sx, useMeasure } from '../shared.js';
 
 /** Navigation rail row. One highlight morphs from a 56×32 icon pill (collapsed) to a pill that hugs icon + label (expanded). Replaces the old SidebarItem. */
 export function RailItem({ icon, label, active = false, expanded = true, rowHeight = 56, tabs = false, wideActive, centerIcon, onClick }) {
-  const StateLayer = NS().StateLayer;
+  const { StateLayer, Icon } = NS();
   const on = !!active, open = expanded !== false;
   const off = !onClick;
   const labelRef = React.useRef(null);
@@ -54,7 +54,7 @@ export function RailItem({ icon, label, active = false, expanded = true, rowHeig
         {StateLayer && <StateLayer disabled={off} />}
       </span>
       <span style={sx('position:absolute;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:height' + ease + ',top' + ease + ';top:' + shift + 'px;left:' + (center ? 'calc(50% - 28px)' : '0px') + ';width:56px;height:' + (open ? rowHeight + 'px' : '32px'))}>
-        <span style={sx("font-family:'Material Symbols Rounded';font-size:24px;line-height:1;transition:font-variation-settings" + ease + ";font-variation-settings:'FILL' " + (on ? 1 : 0) + ",'wght' " + (on ? 500 : 400))}>{icon}</span>
+        <Icon name={icon} filled={on} weight={on ? 'strong' : 'body'} style={sx('transition:font-variation-settings' + ease)} />
       </span>
       <span style={sx('position:absolute;left:50%;top:36px;transform:translateX(-50%);width:max-content;max-width:80px;text-align:center;font-size:12px;line-height:1;font-weight:var(--weight-strong);letter-spacing:.02em;white-space:nowrap;pointer-events:none;transition:opacity .14s ease' + (open ? '' : ' .14s') + ';opacity:' + (open || iconOnly ? '0' : '1'))}>{label}</span>
       <span ref={labelRef} style={sx('position:absolute;left:56px;top:' + (rowHeight / 2) + 'px;font-size:14px;font-weight:var(--weight-strong);letter-spacing:.02em;white-space:nowrap;transform:translateY(-50%);pointer-events:none;transition:opacity .14s ease' + (open ? ' .14s' : '') + ';opacity:' + (open ? '1' : '0'))}>{label}</span>

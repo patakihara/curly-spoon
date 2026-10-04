@@ -197,13 +197,15 @@ function usage(node: t.Node, name: string): t.JSXElement | undefined {
 }
 
 /**
- * The icon names the web gallery draws, sorted: every `icon` prop or item field given a name, and
- * every glyph span set in Material Symbols Rounded.
+ * The icon names the web gallery draws, sorted: every `icon` prop or item field given a name, every
+ * Icon's `name`, and every glyph span set in Material Symbols Rounded.
  */
 export function galleryIcons(entries: GalleryEntry[]): string[] {
   const names = new Set<string>();
   for (const { jsx } of entries) {
     for (const m of jsx.matchAll(/\bicon\s*[=:]\s*["'`]([a-z0-9_]+)["'`]/g)) names.add(m[1]!);
+    for (const m of jsx.matchAll(/<Icon\b[^>]*?\bname\s*=\s*["'`]([a-z0-9_]+)["'`]/g))
+      names.add(m[1]!);
     for (const m of jsx.matchAll(/Material Symbols Rounded[^>]*>\s*([a-z0-9_]+)\s*</g))
       names.add(m[1]!);
   }

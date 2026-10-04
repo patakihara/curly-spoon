@@ -2,6 +2,7 @@
 import React from 'react';
 import { Badge } from '../basic/Badge.jsx';
 import { CoverArt } from '../basic/CoverArt.jsx';
+import { Icon } from '../basic/Icon.jsx';
 import { StateLayer } from '../basic/StateLayer.jsx';
 import { sx } from '../shared.js';
 
@@ -22,7 +23,7 @@ export function FeatureCard({ image, kind, title, meta, description, tint, expli
       {onMore && (
         <button className="sn-int" onClick={onMore} aria-label="More options" title="More options"
           style={sx('position:absolute;top:var(--spacing-sm);right:var(--spacing-sm);width:30px;height:30px;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:transparent;color:' + muted)}>
-          <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 0,'wght' 500;font-size:var(--icon-sm);line-height:1")}>more_vert</span>
+          <Icon name="more_vert" weight="strong" />
           {StateLayer && <StateLayer />}
         </button>
       )}
@@ -58,7 +59,7 @@ export function FeatureCard({ image, kind, title, meta, description, tint, expli
           {onSave && (
             <button className="sn-int" onClick={onSave} aria-label={saveLabel} title={saveLabel} aria-pressed={saved}
               style={sx('display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex-shrink:0;border-radius:50%;border:none;background:transparent;cursor:pointer;color:' + (saved ? 'var(--tone-library)' : muted) + ';transition:color var(--duration-fast) var(--ease-standard)')}>
-              <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' " + (saved ? 1 : 0) + ",'wght' 500;font-size:var(--icon-sm);line-height:1")}>bookmark</span>
+              <Icon name="bookmark" filled={saved} weight="strong" />
               {StateLayer && <StateLayer />}
             </button>
           )}
@@ -66,7 +67,7 @@ export function FeatureCard({ image, kind, title, meta, description, tint, expli
           {onPlay && (
             <button className="sn-int sn-filled" onClick={onPlay} aria-label={playLabel} title={playLabel}
               style={sx('display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex-shrink:0;border-radius:50%;border:none;background:var(--play);color:var(--play-contrast);cursor:pointer')}>
-              <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 1,'wght' 500;font-size:var(--icon-sm);line-height:1")}>play_arrow</span>
+              <Icon name="play_arrow" filled weight="strong" />
               {StateLayer && <StateLayer />}
             </button>
           )}

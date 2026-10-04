@@ -7,7 +7,7 @@ injectCss('sonora-buttongroup-css', '.sn-btngroup-track{scrollbar-width:none}.sn
 
 /** M3 connected button group: one filter/mode row, outer ends pill, 8px inner corners, selected segment morphs to fully rounded. */
 export function ButtonGroup({ items = [], value, onChange, platform = 'desktop', scroll = false, tone = 'accent' }) {
-  const StateLayer = NS().StateLayer;
+  const { StateLayer, Icon } = NS();
   const off = !onChange;
   const mobile = platform === 'mobile';
   const play = tone === 'play';
@@ -43,7 +43,7 @@ export function ButtonGroup({ items = [], value, onChange, platform = 'desktop',
               'color:' + (on ? (play ? 'var(--play-contrast)' : 'var(--accent-contrast)') : 'var(--surface-fg)') + ';' +
               'transition:border-radius var(--duration-quick) ease-in-out,background var(--duration-quick) ease-in-out,color var(--duration-quick) ease-in-out;' +
               'border-radius:' + l + 'px ' + right + 'px ' + right + 'px ' + l + 'px')}>
-            {o.icon && <span style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-xs);line-height:1;font-variation-settings:'FILL' " + (on ? 1 : 0) + ",'wght' " + (on ? 500 : 400))}>{o.icon}</span>}
+            {o.icon && <Icon name={o.icon} size="xs" filled={on} weight={on ? 'strong' : 'body'} />}
             {o.label}
             {StateLayer && <StateLayer disabled={off} />}
           </div>

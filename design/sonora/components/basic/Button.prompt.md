@@ -3,7 +3,7 @@ A clickable action button in four variants and two platform radii, for desktop o
 ```jsx
 <Button variant="primary" size="md" onClick={play}>Play</Button>
 <Button variant="secondary" platform="mobile">Shuffle</Button>
-<Button variant="ghost" icon={<span style={{fontFamily:'Material Symbols Rounded',fontSize:'var(--icon-sm)'}}>settings</span>}>Settings</Button>
+<Button variant="ghost" icon={<Icon name="settings" />}>Settings</Button>
 <Button variant="danger" disabled>Delete</Button>
 ```
 

@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '../basic/Button.jsx';
 import { CoverArt } from '../basic/CoverArt.jsx';
 import { DownloadButton } from '../basic/DownloadButton.jsx';
+import { Icon } from '../basic/Icon.jsx';
 import { StateLayer } from '../basic/StateLayer.jsx';
 import { percentOf, sx, useMeasure } from '../shared.js';
 
@@ -18,7 +19,6 @@ import { percentOf, sx, useMeasure } from '../shared.js';
  * and no action row (a person), kind and meta are a caption, centred beside the art when wide.
  */
 export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Play', nextLabel = 'Next', lastLabel = 'Last', round = false, image, covers, platform, compactAt = 600, onPlay, onPlayNext, onPlayLast, onSubtitle, partOf, onPartOf, rating, actions, menu, progress = null, download = null, onDownload, addLabel = null, onAdd }) {
-  const glyph = (name) => React.createElement('span', { style: sx("font-family:'Material Symbols Rounded';font-size:20px;line-height:1") }, name);
   const ref = React.useRef(null);
   // Measures itself, so a header inside a 412px phone frame or a narrow desktop pane both go compact.
   const [narrow, setNarrow] = React.useState(false);
@@ -66,9 +66,9 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
             <React.Fragment>
               {/* Same three queue actions as PlayActions, but labelled: on a detail page there is room
                   for words, and only Play carries a fill, the play rose. */}
-              {Button && playLabel !== null && <Button variant="play" platform={mobile ? 'mobile' : 'desktop'} icon={glyph('play_arrow')} onClick={onPlay}>{playLabel}</Button>}
-              {Button && nextLabel !== null && <Button variant="secondary" platform={mobile ? 'mobile' : 'desktop'} icon={glyph('arrow_top_right')} onClick={onPlayNext}>{nextLabel}</Button>}
-              {Button && lastLabel !== null && <Button variant="secondary" platform={mobile ? 'mobile' : 'desktop'} icon={glyph('last_page')} onClick={onPlayLast}>{lastLabel}</Button>}
+              {Button && playLabel !== null && <Button variant="play" platform={mobile ? 'mobile' : 'desktop'} icon={<Icon name="play_arrow" size="xs" />} onClick={onPlay}>{playLabel}</Button>}
+              {Button && nextLabel !== null && <Button variant="secondary" platform={mobile ? 'mobile' : 'desktop'} icon={<Icon name="arrow_top_right" size="xs" />} onClick={onPlayNext}>{nextLabel}</Button>}
+              {Button && lastLabel !== null && <Button variant="secondary" platform={mobile ? 'mobile' : 'desktop'} icon={<Icon name="last_page" size="xs" />} onClick={onPlayLast}>{lastLabel}</Button>}
             </React.Fragment>
           )}
           {/* The round controls stay together, so a phone's row too narrow for them all wraps them to a
@@ -79,7 +79,7 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
           {add && (
             <button className="sn-int" onClick={onAdd} disabled={!onAdd} aria-label={addLabel} title={addLabel}
               style={sx('display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex-shrink:0;border-radius:50%;border:1px solid var(--surface-border);background:transparent;padding:0;cursor:pointer;color:var(--surface-fg-muted)')}>
-              <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-variation-settings:'FILL' 0,'wght' 500;font-size:var(--icon-sm);line-height:1")}>playlist_add</span>
+              <Icon name="playlist_add" weight="strong" />
               {StateLayer && <StateLayer disabled={!onAdd} />}
             </button>
           )}

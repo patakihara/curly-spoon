@@ -106,6 +106,7 @@ val galleryIcons: List<String> = listOf(
     "album",
     "auto_stories",
     "book_2",
+    "bookmark",
     "check_circle",
     "explore",
     "library_add",

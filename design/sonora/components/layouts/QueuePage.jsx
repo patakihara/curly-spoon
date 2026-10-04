@@ -17,7 +17,7 @@ export function QueuePage({
   editing, onEditingChange, onPlay, onRemove, onReorder, onRemoveSelected,
   footer, scroll, onClose,
 }) {
-  const { PlayerSubPage, EditableList, TonalIconButton, SectionHeader, QueueRow, ButtonGroup } = NS();
+  const { PlayerSubPage, EditableList, TonalIconButton, SectionHeader, QueueRow, ButtonGroup, Icon } = NS();
   const [ownEditing, setOwnEditing] = React.useState(false);
   const editable = !!(onRemove || onRemoveSelected || onReorder);
   const edit = editing === undefined ? ownEditing : editing;
@@ -36,7 +36,7 @@ export function QueuePage({
   // rest waits, paused, until it is started again.
   const mark = (glyph, label, color) => (
     <div style={sx('display:flex;align-items:center;gap:var(--spacing-sm);padding:var(--spacing-xs) var(--spacing-sm) 0;font-size:var(--text-sm);font-weight:var(--weight-strong);color:' + color)}>
-      <span aria-hidden="true" style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-xs);line-height:1")}>{glyph}</span>
+      <Icon name={glyph} size="xs" />
       {label}
     </div>
   );

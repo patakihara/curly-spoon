@@ -24,9 +24,7 @@ const STEPS = [0, 0.25, 0.5, 0.75, 1];
 /** A destination on the rail: the row drawing its icon and its label. */
 const destination = (page: Page, label: string): Locator =>
   page
-    .locator(
-      `xpath=//div[span[text()="${label}"] and span/span[contains(@style, "Material Symbols")]]`,
-    )
+    .locator(`xpath=//div[span[text()="${label}"] and span/span[contains(@style, "--font-icon")]]`)
     .first();
 
 const toggle = (page: Page) => page.getByRole('button', { name: /^(Collapse|Expand) rail$/ });
