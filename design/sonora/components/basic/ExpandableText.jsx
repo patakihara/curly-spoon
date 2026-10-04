@@ -1,5 +1,5 @@
 import React from 'react';
-import { NS, sx, useMeasure } from '../shared.js';
+import { NS, scrollMax, sx, useMeasure } from '../shared.js';
 
 /**
  * Folds a paragraph, not a list group — distinct from ExpanderRow, which collapses a homogeneous
@@ -26,7 +26,7 @@ export function ExpandableText({ children, text, lines = 3, moreLabel = 'see mor
   // the last collapsed answer is kept and `isExpanded` holds the control open for the way back.
   const bodyRef = React.useRef(null);
   const [overflows, setOverflows] = React.useState(false);
-  useMeasure(bodyRef, (el) => { if (!isExpanded) setOverflows(el.scrollHeight - el.clientHeight > 1); }, [isExpanded, content, lines]);
+  useMeasure(bodyRef, (el) => { if (!isExpanded) setOverflows(scrollMax(el, 'y') > 1); }, [isExpanded, content, lines]);
   const showToggle = overflows || isExpanded;
   return (
     <div>

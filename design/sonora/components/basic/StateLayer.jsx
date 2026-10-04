@@ -1,5 +1,5 @@
 import React from 'react';
-import { injectCss, isActivationKey, isScrollerX, isScrollerY, tokenMs, tokenPx } from '../shared.js';
+import { injectCss, isActivationKey, isScrollerX, isScrollerY, scrollMax, tokenMs, tokenPx } from '../shared.js';
 
 const DISABLED = ':is(:disabled,[aria-disabled="true"],[data-disabled])';
 const FORCED_OFF = '[data-sn-force="disabled"] .sn-int';
@@ -56,8 +56,8 @@ const reveal = (layer) => {
     const c = a.getBoundingClientRect();
     const x0 = c.left + a.clientLeft, y0 = c.top + a.clientTop;
     const within = (v, max) => Math.max(0, Math.min(max, v));
-    const dx = onX ? within(a.scrollLeft + nearest(left, right, x0, x0 + a.clientWidth), a.scrollWidth - a.clientWidth) - a.scrollLeft : 0;
-    const dy = onY ? within(a.scrollTop + nearest(top, bottom, y0, y0 + a.clientHeight), a.scrollHeight - a.clientHeight) - a.scrollTop : 0;
+    const dx = onX ? within(a.scrollLeft + nearest(left, right, x0, x0 + a.clientWidth), scrollMax(a, 'x')) - a.scrollLeft : 0;
+    const dy = onY ? within(a.scrollTop + nearest(top, bottom, y0, y0 + a.clientHeight), scrollMax(a, 'y')) - a.scrollTop : 0;
     if (dx === 0 && dy === 0) continue;
     a.scrollBy({ left: dx, top: dy });
     left -= dx; right -= dx; top -= dy; bottom -= dy;

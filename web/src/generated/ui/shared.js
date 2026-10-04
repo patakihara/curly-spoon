@@ -24,8 +24,29 @@ export const activate = (fn) => (e) => {
   fn(e);
 };
 
-/** Seconds as `m:ss`. */
-export const formatTime = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
+/** Two digits, zero-padded: `7` as `07`. */
+const pad2 = (n) => String(n).padStart(2, '0');
+
+/**
+ * Seconds as `m:ss`, or `h:mm:ss` from an hour up. A time that is not a number yet, or is below
+ * zero, reads `0:00`.
+ */
+export const formatTime = (t) => {
+  const s = Number.isFinite(t) && t > 0 ? Math.floor(t) : 0;
+  const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60;
+  return (h ? h + ':' + pad2(m) : m) + ':' + pad2(s % 60);
+};
+
+/**
+ * The Badge tone for a status's tone: a download in flight takes the accent, as the plan's
+ * "Downloading" pill does, a request the warning tone, a failure the error tone.
+ */
+const BADGE_TONES = { library: 'accent', progress: 'accent', request: 'warning', error: 'error' };
+export const badgeTone = (tone) => BADGE_TONES[tone] || 'accent';
+
+/** Whether the viewer asked for reduced motion, so a scroll jumps rather than glides. */
+export const prefersReducedMotion = () =>
+  typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** A fraction held to 0..1. */
 export const clamp01 = (v) => Math.min(1, Math.max(0, v));
@@ -58,6 +79,15 @@ export const injectCss = (id, css) => {
 };
 
 /**
+ * The hover reveal: an element with `REVEAL.item` stays hidden, and takes no pointer, until its
+ * `REVEAL.host` ancestor is hovered or holds focus, or the host carries `data-always="true"` (a
+ * touch surface, which has no hover). One rule, injected once, for every control shown that way.
+ */
+export const REVEAL = { host: 'sn-reveal-host', item: 'sn-reveal' };
+injectCss('sonora-reveal-css', '.sn-reveal{opacity:0;pointer-events:none;transition:opacity var(--duration-quick) var(--ease-standard)}'
+  + '.sn-reveal-host:hover .sn-reveal,.sn-reveal-host:focus-within .sn-reveal,.sn-reveal:focus-visible,.sn-reveal-host[data-always="true"] .sn-reveal{opacity:1;pointer-events:auto}');
+
+/**
  * Calls `measure(el, entry)` whenever the element behind `ref` changes size, first when it is laid
  * out. `deps` restart the watch, as an effect's do.
  */
@@ -69,6 +99,21 @@ export const useMeasure = (ref, measure, deps) => {
     ro.observe(el);
     return () => ro.disconnect();
   }, deps);
+};
+
+/** How far the element can scroll on `axis` ('x' or 'y'): its content's length past its own. */
+export const scrollMax = (el, axis = 'y') =>
+  axis === 'x' ? el.scrollWidth - el.clientWidth : el.scrollHeight - el.clientHeight;
+
+/**
+ * Which edges of the element have content scrolled out of sight past them, on `axis`: not whether
+ * it can scroll, but whether something is hidden in that direction right now. A pixel of slack
+ * either way counts as none.
+ */
+export const scrollEdges = (el, axis = 'x') => {
+  const max = scrollMax(el, axis);
+  const pos = axis === 'x' ? el.scrollLeft : el.scrollTop;
+  return max <= 1 ? { start: false, end: false } : { start: pos > 1, end: pos < max - 1 };
 };
 
 /** Whether the element scrolls on that axis. */
@@ -98,7 +143,7 @@ export const findPageScroller = (host, accept = () => true) => {
   let found = null;
   for (let i = 0; i < all.length; i++) {
     const n = all[i];
-    if (isScrollerY(n) && n.scrollHeight > n.clientHeight + 1 && accept(n)) found = n;
+    if (isScrollerY(n) && scrollMax(n, 'y') > 1 && accept(n)) found = n;
   }
   return found;
 };

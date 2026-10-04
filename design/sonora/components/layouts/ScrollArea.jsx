@@ -1,5 +1,5 @@
 import React from 'react';
-import { sx, tokenMs } from '../shared.js';
+import { scrollEdges, scrollMax, sx, tokenMs } from '../shared.js';
 
 /**
  * Scroll container with an Android-style overlay scrollbar: the thumb appears while scrolling and fades out shortly after it stops.
@@ -20,12 +20,11 @@ export function ScrollArea({ children, id, onScroll, style, scrollRef, axis = 'y
     const el = ref.current;
     if (!el) return;
     const client = x ? el.clientWidth : el.clientHeight;
-    const scroll = x ? el.scrollWidth : el.scrollHeight;
     const pos = x ? el.scrollLeft : el.scrollTop;
-    const max = scroll - client;
-    setEdges({ start: pos > 1, end: max > 1 && pos < max - 1 });
+    const max = scrollMax(el, x ? 'x' : 'y');
+    setEdges(scrollEdges(el, x ? 'x' : 'y'));
     if (max <= 1) { setThumb((t) => ({ ...t, size: 0, visible: false })); return; }
-    setThumb((t) => ({ size: (client / scroll) * client, client, at: pos / max, visible: t.visible }));
+    setThumb((t) => ({ size: (client / (client + max)) * client, client, at: pos / max, visible: t.visible }));
   }, [x]);
   const handle = (e) => {
     measure();

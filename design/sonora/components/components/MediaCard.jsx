@@ -1,11 +1,6 @@
 import React from 'react';
-import { NS, activate, injectCss, percentOf, sx, useMeasure } from '../shared.js';
+import { NS, REVEAL, activate, badgeTone, percentOf, sx, useMeasure } from '../shared.js';
 // Enter and Space press it as a click does, unless they come from a control inside it.
-
-// Desktop reveals the corner menu on hover/focus, the same way PlayActions reveals over the art;
-// mobile has no hover, so it renders at full opacity there instead.
-injectCss('sonora-mediacard-css', '.sn-more{opacity:0;transition:opacity var(--duration-fast) ease}'
-    + '.sn-more-host:hover .sn-more,.sn-more-host:focus-within .sn-more{opacity:1}');
 
 /** Shelf/grid card for any library item — album, book, podcast, episode. Replaces the old Card. */
 export function MediaCard({ title, sub, platform = 'desktop', progress = null, absent = false, image, covers, width, size = 'md', onClick, onPlay, onPlayNext, onPlayLast, playing = false, onMore, onRequest, eyebrow, unplayed = false, savedBadge = false, markers, status, tone = 'progress' }) {
@@ -39,7 +34,9 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
   // Desktop only: these are revealed by hover, which a touch surface has no equivalent for.
   const showActions = !mobile && !absent && PlayActions && (onPlay || onPlayNext || onPlayLast);
   const showMore = !!onMore && !requestable;
-  const hostClasses = [showActions && 'sn-acts-host', showMore && !mobile && 'sn-more-host'].filter(Boolean).join(' ') || undefined;
+  // Desktop reveals the play actions and the corner menu on hover or focus; mobile has no hover,
+  // so the corner menu renders at full opacity there instead.
+  const revealing = showActions || (showMore && !mobile);
   // Below ~132px the pill's label crowds the art, so the badge drops to its glyph alone.
   const artRef = React.useRef(null);
   const [tight, setTight] = React.useState(false);
@@ -48,7 +45,7 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
     <div className="sn-int" role="button" aria-label={title} tabIndex={off ? -1 : 0} aria-disabled={off}
       onClick={off ? undefined : tap} onKeyDown={off ? undefined : activate(tap)}
       style={sx('position:relative;display:flex;flex-direction:column;cursor:pointer;min-width:0;border-radius:var(--radius-' + (small || mobile ? 'sm' : 'md') + ');width:' + w + (w === '100%' ? '' : ';flex-shrink:0'))}>
-      <div ref={artRef} className={hostClasses} style={sx('position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:var(--radius-' + (small || mobile ? 'sm' : 'md') + ')')}>
+      <div ref={artRef} className={revealing ? REVEAL.host : undefined} style={sx('position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:var(--radius-' + (small || mobile ? 'sm' : 'md') + ')')}>
         {/* Greyed, not just darkened: an item that cannot play yet loses its colour, so it reads
             as out of reach beside the ones you own even where its cover is already dark. */}
         {CoverArt && (greyed
@@ -56,7 +53,7 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
           : <CoverArt src={image} covers={covers} fallback={coverArt} />)}
         {showMore && (
           <button onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); onMore(e); }} aria-label="More options" title="More options"
-            className={mobile ? 'sn-int' : 'sn-int sn-more'}
+            className={mobile ? 'sn-int' : 'sn-int ' + REVEAL.item}
             style={sx('position:absolute;top:6px;right:6px;width:30px;height:30px;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--scrim-soft);color:var(--on-scrim)' + (mobile ? ';opacity:1' : ''))}>
             <span style={sx("font-family:'Material Symbols Rounded';font-size:var(--icon-xs);line-height:1")}>more_vert</span>
             {StateLayer && <StateLayer />}
@@ -83,15 +80,14 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
         {shownStatus && Badge && (() => {
           const pct = /(\d+)\s*%/.exec(shownStatus);
           const glyph = { progress: 'downloading', request: 'checklist', error: 'error' }[shownTone] || 'downloading';
-          const badgeTone = { progress: 'accent', request: 'warning', error: 'error' }[shownTone] || 'accent';
           return (
             <div title={shownStatus} style={sx('position:absolute;left:8px;right:8px;bottom:8px;display:flex')}>
-              <Badge tone={badgeTone} size={tight ? 'sm' : 'md'} icon={tight && !pct ? undefined : glyph}>{tight && pct ? pct[1] + '%' : shownStatus}</Badge>
+              <Badge tone={badgeTone(shownTone)} size={tight ? 'sm' : 'md'} icon={tight && !pct ? undefined : glyph}>{tight && pct ? pct[1] + '%' : shownStatus}</Badge>
             </div>
           );
         })()}
         {showActions && (
-          <div className="sn-acts sn-acts-scrim" style={sx('position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--scrim-soft)')}>
+          <div className={REVEAL.item} style={sx('position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--scrim-soft)')}>
             <PlayActions onNext={onPlayNext} onPlay={onPlay} onLast={onPlayLast} playing={playing} always />
           </div>
         )}

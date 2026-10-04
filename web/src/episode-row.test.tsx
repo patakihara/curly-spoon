@@ -17,8 +17,8 @@ describe("Sonora's EpisodeRow for a show you don't follow", () => {
 
   it('[M0.canvas] still offers to play it: playing one is how you subscribe', () => {
     const play = () => {};
-    expect(row({ absent: true, onPlay: play })).toContain('sn-ep-act');
-    expect(row({ absent: true })).not.toContain('sn-ep-act');
+    expect(row({ absent: true, onPlay: play })).toContain('aria-label="Play episode"');
+    expect(row({ absent: true })).not.toContain('aria-label="Play episode"');
   });
 
   it('[M0.canvas] keeps an episode of a show you follow in full colour', () => {

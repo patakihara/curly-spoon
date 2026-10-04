@@ -1,4 +1,5 @@
 import React from 'react';
+import { prefersReducedMotion } from '../shared.js';
 
 /**
  * The mobile player surface: covers everything and opens as an expansion of the now-playing bar it
@@ -9,7 +10,7 @@ export function PlayerSheet({ open = false, from, children, zIndex = 30, radius 
   const ref = React.useRef(null);
   const [box, setBox] = React.useState(null);
   const [shown, setShown] = React.useState(open);
-  const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced = prefersReducedMotion();
 
   // Measure the bar's rect against our own box the moment we are asked to open, so the clip starts
   // exactly where the bar sits — not where it sat when the component mounted.

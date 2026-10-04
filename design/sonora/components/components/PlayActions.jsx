@@ -1,11 +1,5 @@
 import React from 'react';
-import { NS, injectCss, sx } from '../shared.js';
-
-// Hover/focus reveal has to be CSS: an inline style cannot express :hover on an ancestor.
-injectCss('sonora-playactions-css', '.sn-acts{opacity:0;transform:translateY(4px);transition:opacity var(--duration-fast) ease,transform var(--duration-fast) ease;pointer-events:none}'
-    + '.sn-acts-host:hover .sn-acts,.sn-acts-host:focus-within .sn-acts{opacity:1;transform:none;pointer-events:auto}'
-    + '.sn-acts[data-always="true"]:not(.sn-acts-scrim .sn-acts){opacity:1;transform:none;pointer-events:auto}'
-    + '.sn-acts-scrim .sn-acts{opacity:inherit;transform:none;pointer-events:inherit}');
+import { NS, REVEAL, sx } from '../shared.js';
 
 const BTN = (primary, size, height) => sx(
   // Uniform height with narrower side buttons: a pill row rather than three circles.
@@ -21,7 +15,7 @@ const BTN = (primary, size, height) => sx(
 /**
  * The three queue actions for a music item: play next, play now, play last. A *disconnected*
  * group — three separate circles, unlike ButtonGroup's connected segments — revealed on hover
- * or keyboard focus of an ancestor carrying the sn-acts-host class.
+ * or keyboard focus of an ancestor carrying the shared `REVEAL.host` class, or always shown.
  */
 export function PlayActions({ onNext, onPlay, onLast, playing = false, size = 40, always = false, gap = 'var(--spacing-sm)' }) {
   const StateLayer = NS().StateLayer;
@@ -34,7 +28,7 @@ export function PlayActions({ onNext, onPlay, onLast, playing = false, size = 40
     </button>
   );
   return (
-    <div className="sn-acts" data-always={always ? 'true' : 'false'} style={sx('display:flex;align-items:center;gap:' + gap)}>
+    <div className={always ? undefined : REVEAL.item} style={sx('display:flex;align-items:center;gap:' + gap)}>
       {act('Play next', onNext, false, 'arrow_top_right')}
       {act(playing ? 'Pause' : 'Play', onPlay, true, playing ? 'pause' : 'play_arrow')}
       {act('Play last', onLast, false, 'last_page')}

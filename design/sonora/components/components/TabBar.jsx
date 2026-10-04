@@ -1,5 +1,5 @@
 import React from 'react';
-import { NS, sx } from '../shared.js';
+import { NS, prefersReducedMotion, sx } from '../shared.js';
 
 /**
  * Icon + label tabs for the app bar's second row: scrolls sideways, active tab keeps an accent
@@ -30,7 +30,7 @@ export function TabBar({ items = [], value, onChange, platform = 'desktop', fill
       if (end - left > c.width - pad) left = end - c.width + pad;
       if (start - left < pad) left = Math.max(0, start - pad);
       if (left === el.scrollLeft) return;
-      const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const reduced = prefersReducedMotion();
       el.scrollTo({ left, behavior: smooth && !reduced ? 'smooth' : 'auto' });
     };
     place(el.scrollLeft, true);

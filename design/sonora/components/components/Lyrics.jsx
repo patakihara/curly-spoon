@@ -1,5 +1,5 @@
 import React from 'react';
-import { NS, activate, nearestScroller, sx } from '../shared.js';
+import { NS, activate, nearestScroller, prefersReducedMotion, sx } from '../shared.js';
 
 /**
  * The lyric list, in the three states the sync control cycles through:
@@ -25,7 +25,7 @@ export function Lyrics({
     if (!synced || !autoScroll) return;
     const el = linesRef.current, row = el && el.children[activeIndex], sc = nearestScroller(ref.current);
     if (!row || !sc) return;
-    const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = prefersReducedMotion();
     const delta = (row.getBoundingClientRect().top - sc.getBoundingClientRect().top) - sc.clientHeight * 0.32;
     sc.scrollTo({ top: sc.scrollTop + delta, behavior: reduced ? 'auto' : 'smooth' });
   }, [activeIndex, synced, autoScroll]);

@@ -2,7 +2,7 @@
 import React from 'react';
 import { ScrollArea } from './ScrollArea.jsx';
 import { StateLayer } from '../basic/StateLayer.jsx';
-import { sx } from '../shared.js';
+import { scrollEdges, sx } from '../shared.js';
 
 const arrow = (side, shown, enabled, inset) => sx(
   // --shelf-arrow-top (38%) rather than 50%: the cards' art is square with a caption beneath, so mid-art sits above mid-card.
@@ -32,12 +32,13 @@ export function Shelf({ children, gap, margin, platform = 'desktop', step = 2, a
   const showBar = scrollbar === undefined ? mobile : scrollbar;
   const ref = React.useRef(null);
   const [hot, setHot] = React.useState(false);
+  // Whether the row sits at each end, so the arrow that would scroll past it is disabled.
   const [ends, setEnds] = React.useState({ start: true, end: false });
   const measure = React.useCallback(() => {
     const el = ref.current;
     if (!el) return;
-    const max = el.scrollWidth - el.clientWidth;
-    setEnds({ start: el.scrollLeft <= 1, end: el.scrollLeft >= max - 1 });
+    const hidden = scrollEdges(el, 'x');
+    setEnds({ start: !hidden.start, end: !hidden.end });
   }, []);
   React.useEffect(() => { measure(); }, [measure, children]);
   // Pages by whole items: measures the first child plus the gap rather than guessing a pixel amount.

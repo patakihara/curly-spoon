@@ -1,8 +1,8 @@
 import React from 'react';
-import { NS, activate, clamp01, injectCss, sx } from '../shared.js';
+import { NS, REVEAL, activate, badgeTone, clamp01, injectCss, sx } from '../shared.js';
 // Enter and Space press it as a click does, unless they come from a control inside it.
 
-injectCss('sonora-resultrow-css', '.rr-act{opacity:0;transition:opacity var(--duration-quick) ease-in-out}.rr-art:hover .rr-act,.rr-act:focus-visible,.rr-art[data-always="true"] .rr-act{opacity:1}@keyframes rr-bar{0%,100%{transform:scaleY(.25)}50%{transform:scaleY(1)}}.rr-bars{display:flex;align-items:center;gap:2px;height:16px;flex-shrink:0}.rr-bars i{display:block;width:3px;height:16px;border-radius:2px;background:var(--play-ink);transform-origin:center;animation:rr-bar .9s ease-in-out infinite}.rr-bars i:nth-child(2){animation-duration:.62s}.rr-bars i:nth-child(3){animation-duration:1.15s}@media (prefers-reduced-motion:reduce){.rr-bars i{animation:none;transform:scaleY(.6)}}');
+injectCss('sonora-resultrow-css', '@keyframes rr-bar{0%,100%{transform:scaleY(.25)}50%{transform:scaleY(1)}}.rr-bars{display:flex;align-items:center;gap:2px;height:16px;flex-shrink:0}.rr-bars i{display:block;width:3px;height:16px;border-radius:2px;background:var(--play-ink);transform-origin:center;animation:rr-bar .9s ease-in-out infinite}.rr-bars i:nth-child(2){animation-duration:.62s}.rr-bars i:nth-child(3){animation-duration:1.15s}@media (prefers-reduced-motion:reduce){.rr-bars i{animation:none;transform:scaleY(.6)}}');
 
 /** One row of a track / search / request list. Replaces the old TrackRow. */
 export function ResultRow({ title, meta, detail, status, progress = null, tone = 'library', actionGlyph, image, platform = 'desktop', onClick, onAction, divider = false, trailing, number = null }) {
@@ -22,14 +22,13 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
   const ring = (pct !== null || spinning) && !!ProgressRing;
   const dimmed = ring || queued || failed;
   const showAction = !!act && !(mobile && dimmed);
-  const badgeTone = { library: 'accent', request: 'warning', progress: 'warning', error: 'error' }[tone || 'library'] || 'accent';
   const nowPlaying = st === 'playing';
   // On a phone the title shares its line with the pill and any trailing control, so a status
   // with a percentage keeps only the percentage: the ring over the art already says it is in flight.
   const label = mobile && pctMatch ? pctMatch[1] + '%' : status;
   const statusPill = nowPlaying
     ? <div className="rr-bars" role="img" aria-label="Now playing"><i /><i /><i /></div>
-    : (status && Badge ? <div style={sx('flex-shrink:0')}><Badge tone={badgeTone} size="md">{label}</Badge></div> : null);
+    : (status && Badge ? <div style={sx('flex-shrink:0')}><Badge tone={badgeTone(tone)} size="md">{label}</Badge></div> : null);
   // A track number leads an album's rows in place of the art, which would only repeat the cover.
   const numbered = typeof number === 'number';
   const lead = numbered ? (mobile ? 28 : 32) : 52;
@@ -40,12 +39,12 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
       {numbered ? (
         <div style={sx('width:' + lead + 'px;flex-shrink:0;text-align:center;font-size:var(--text-md);font-variant-numeric:tabular-nums;color:' + (nowPlaying ? 'var(--play-ink)' : muted))}>{number}</div>
       ) : (
-      <div className="rr-art" data-always={mobile ? 'true' : 'false'} style={sx('position:relative;width:52px;height:52px;flex-shrink:0')}>
+      <div className={REVEAL.host} data-always={mobile ? 'true' : 'false'} style={sx('position:relative;width:52px;height:52px;flex-shrink:0')}>
         <div style={sx('position:relative;overflow:hidden;width:52px;height:52px;border-radius:' + (mobile ? '8px' : '6px'))}>
           {CoverArt && <CoverArt src={image} />}
         </div>
         {showAction && (
-          <div className="rr-act sn-int" role="button" tabIndex={0} onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); act(e); }}
+          <div className={REVEAL.item + ' sn-int'} role="button" tabIndex={0} onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); act(e); }}
             onKeyDown={activate((e) => { e.stopPropagation(); act(e); })}
             aria-label={failed ? 'Retry' : (spinning || queued ? 'Cancel request' : 'Play')}
             title={failed ? 'Retry' : (spinning || queued ? 'Cancel request' : 'Play')}

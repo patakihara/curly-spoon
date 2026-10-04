@@ -1,10 +1,6 @@
 import React from 'react';
-import { NS, activate, clamp01, injectCss, percentOf, sx } from '../shared.js';
+import { NS, REVEAL, activate, clamp01, percentOf, sx } from '../shared.js';
 // Enter and Space press it as a click does, unless they come from a control inside it.
-
-// Same hover/always-on-mobile reveal ResultRow uses for its overlay action, kept local to this
-// component's own class names so the two rows don't share injected state.
-injectCss('sonora-episoderow-css', '.sn-ep-act{opacity:0;transition:opacity var(--duration-quick) ease-in-out}.sn-ep-art:hover .sn-ep-act,.sn-ep-act:focus-visible,.sn-ep-art[data-always="true"] .sn-ep-act{opacity:1}');
 
 /**
  * List row for serial spoken-word content — an episode is not a track: it carries a synopsis you
@@ -25,7 +21,7 @@ export function EpisodeRow({ image, title, description, meta, finished = false, 
     <div className="sn-int" role="button" tabIndex={off ? -1 : 0} aria-disabled={off}
       onClick={off ? undefined : onClick} onKeyDown={off ? undefined : activate(onClick)}
       style={sx('position:relative;display:flex;gap:' + (mobile ? '12px' : '16px') + ';padding:' + (mobile ? '10px 4px' : '12px') + ';border-radius:var(--radius-xs);cursor:pointer')}>
-      <div className="sn-ep-art" data-always={mobile ? 'true' : 'false'} style={sx('position:relative;width:' + art + 'px;height:' + art + 'px;flex-shrink:0')}>
+      <div className={REVEAL.host} data-always={mobile ? 'true' : 'false'} style={sx('position:relative;width:' + art + 'px;height:' + art + 'px;flex-shrink:0')}>
         <div style={sx('position:relative;overflow:hidden;width:100%;height:100%;border-radius:var(--radius-xs)')}>
           {/* Greyed the way MediaCard greys an item you don't own: no colour, so a dark cover reads greyed too. */}
           {CoverArt && (absent
@@ -33,7 +29,7 @@ export function EpisodeRow({ image, title, description, meta, finished = false, 
             : <CoverArt src={image} />)}
         </div>
         {onPlay && (
-          <div className="sn-ep-act sn-int" onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); onPlay(e); }}
+          <div className={REVEAL.item + ' sn-int'} onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); onPlay(e); }}
             onKeyDown={activate((e) => { e.stopPropagation(); onPlay(e); })} tabIndex={0}
             aria-label="Play episode" role="button" title="Play episode"
             style={sx('position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:var(--radius-xs);background:var(--scrim-strong)')}>
