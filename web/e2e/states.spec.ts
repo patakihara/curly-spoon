@@ -496,3 +496,18 @@ test('[M0.sonoraclean] a desktop MediaCard hovered with its play actions shown s
   expect(await presses(page, 'MediaCard.more'), 'the click reaches onMore').toBe(1);
   expect(await presses(page, 'MediaCard.card'), 'and not the card under it').toBe(0);
 });
+
+test('[M0.sonoraclean] a desktop MediaCard fades its corner More in with its play actions, not cutting to it', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1100, height: 900 });
+  await page.goto('/states.html?card=more', { waitUntil: 'networkidle' });
+  const more = page.getByRole('button', { name: 'More options' });
+  const actions = page.locator('div.sn-reveal').first();
+  const fade = (l: Locator) =>
+    l.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { property: cs.transitionProperty, duration: cs.transitionDuration };
+    });
+  expect(await fade(more), 'More reveals the way the play actions do').toEqual(await fade(actions));
+});
