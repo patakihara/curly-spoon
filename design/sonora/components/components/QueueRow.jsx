@@ -31,7 +31,7 @@ export function QueueRow({
       {/* The grip only drags: a press on it is not a press on the row. */}
       {(handle || editing) && (
         <span onClick={(e) => e.stopPropagation()} title="Drag to reorder" aria-label="Drag to reorder"
-          style={sx('display:inline-flex;flex-shrink:0;cursor:grab;color:var(--surface-fg-muted)')}><Icon name="drag_handle" size={mobile ? 'sm' : 'xs'} /></span>
+          style={sx('display:inline-flex;flex-shrink:0;cursor:grab;color:var(--surface-fg-muted)')}><Icon name="drag_handle" size={mobile ? 'sm' : 'xs'} weight="text" /></span>
       )}
       <div style={sx('position:relative;overflow:hidden;width:' + art + 'px;height:' + art + 'px;flex-shrink:0;border-radius:' + (mobile ? '8px' : '6px') + ';background:var(--accent)')}>
         {image && CoverArt && <CoverArt src={image} alt="" />}

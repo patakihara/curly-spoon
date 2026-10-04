@@ -61,9 +61,9 @@ export function MediaHeader({ kindLabel, title, subtitle, meta, playLabel = 'Pla
             <React.Fragment>
               {/* Same three queue actions as PlayActions, but labelled: on a detail page there is room
                   for words, and only Play carries a fill, the play rose. */}
-              {Button && playLabel !== null && <Button variant="play" platform={mobile ? 'mobile' : 'desktop'} icon={<Icon name="play_arrow" size="xs" />} onClick={onPlay}>{playLabel}</Button>}
-              {Button && nextLabel !== null && <Button variant="secondary" platform={mobile ? 'mobile' : 'desktop'} icon={<Icon name="arrow_top_right" size="xs" />} onClick={onPlayNext}>{nextLabel}</Button>}
-              {Button && lastLabel !== null && <Button variant="secondary" platform={mobile ? 'mobile' : 'desktop'} icon={<Icon name="last_page" size="xs" />} onClick={onPlayLast}>{lastLabel}</Button>}
+              {Button && playLabel !== null && <Button variant="play" platform={mobile ? 'mobile' : 'desktop'} icon={<Icon name="play_arrow" size="xs" weight="text" />} onClick={onPlay}>{playLabel}</Button>}
+              {Button && nextLabel !== null && <Button variant="secondary" platform={mobile ? 'mobile' : 'desktop'} icon={<Icon name="arrow_top_right" size="xs" weight="text" />} onClick={onPlayNext}>{nextLabel}</Button>}
+              {Button && lastLabel !== null && <Button variant="secondary" platform={mobile ? 'mobile' : 'desktop'} icon={<Icon name="last_page" size="xs" weight="text" />} onClick={onPlayLast}>{lastLabel}</Button>}
             </React.Fragment>
           )}
           {/* The round controls stay together, so a phone's row too narrow for them all wraps them to a

@@ -31,6 +31,12 @@ describe("Sonora's Icon", () => {
     );
   });
 
+  it("[M0.sonoraclean/d] weight text sets no weight axis, so the glyph follows the text's font-weight", () => {
+    const html = icon({ filled: true, weight: 'text' });
+    expect(html).toMatch(/font-variation-settings:&#x27;FILL&#x27; 1[;"]/);
+    expect(html).not.toContain('wght');
+  });
+
   it('[M0.sonoraclean/d] an IconButton given an icon name draws it through Icon', () => {
     const html = renderToString(createElement(IconButton, { icon: 'close', label: 'Close' }));
     expect(html).toContain('font-family:var(--font-icon)');

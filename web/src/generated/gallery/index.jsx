@@ -60,7 +60,7 @@ export const gallery = [
   {
     name: 'Button',
     card: 'basic/buttons.card.html',
-    render: () => (<div style={{display:'flex',gap:10,flexWrap:'wrap'}}><Button variant="ghost" onClick={() => {}}>Settings</Button></div>),
+    render: () => (<div style={{display:'flex',gap:10,flexWrap:'wrap'}}><Button variant="primary" icon={<Icon name="play_arrow" weight="text" />} onClick={() => {}}>Play</Button></div>),
   },
   {
     name: 'ButtonGroup',
@@ -160,18 +160,18 @@ export const gallery = [
   },
   {
     name: 'Icon',
-    card: 'basic/icon.card.html',
-    render: () => (<div style={{display:'flex',gap:16,alignItems:'center',color:'var(--surface-fg-muted)'}}><Icon name="bookmark" /></div>),
+    card: 'basic/buttons.card.html',
+    render: () => (<Icon name="play_arrow" weight="text" />),
   },
   {
     name: 'IconButton',
     card: 'basic/button-group-badges.card.html',
-    render: () => (<div style={{display:'flex',gap:10,alignItems:'center'}}><IconButton label="More" muted onClick={() => {}}><span style={{ fontFamily: 'Material Symbols Rounded', fontSize: 'var(--icon-sm)' }}>more_vert</span></IconButton></div>),
+    render: () => (<div style={{display:'flex',gap:10,alignItems:'center'}}><IconButton label="More" muted icon="more_vert" onClick={() => {}} /></div>),
   },
   {
     name: 'Input',
     card: 'basic/inputs-switches-sliders.card.html',
-    render: () => (<div style={{display:'flex',flexDirection:'column',gap:18,width:340}}><Input placeholder="Search" onChange={() => {}} icon={<span style={{ fontFamily: 'Material Symbols Rounded', fontSize: 'var(--icon-sm)' }}>search</span>} /></div>),
+    render: () => (<div style={{display:'flex',flexDirection:'column',gap:18,width:340}}><Input placeholder="Search" onChange={() => {}} icon={<Icon name="search" weight="text" />} /></div>),
   },
   {
     name: 'LayoutGrid',
@@ -205,9 +205,23 @@ export const gallery = [
   },
   {
     name: 'MediaHeader',
-    card: 'components/player-tracks.card.html',
-    render: () => (<div style={{display:'flex',flexDirection:'column',gap:24}}><MediaHeader kindLabel="Audiobook" title="The Ink Orchard" subtitle="Linnea Frost" onSubtitle={() => {}}
-      meta="2023 · 18 chapters · 14 h 42 m" onPlay={() => {}} onPlayNext={() => {}} onPlayLast={() => {}} /></div>),
+    card: 'components/about-cards.card.html',
+    render: () => (<div><MediaHeader
+        kindLabel="Episode"
+        title="Aftershocks: the second call"
+        subtitle="Static & Signal"
+        onSubtitle={() => {}}
+        meta="8 Aug 2024 · 22min left"
+        progress={0.65}
+        actions={
+          <div style={{display:'flex',gap:'var(--spacing-sm)',alignItems:'center'}}>
+            <IconButton label="Saved" active icon="bookmark" onClick={() => {}} />
+            <IconButton label="Downloaded" active icon="download_done" onClick={() => {}} />
+            <IconButton label="Share" icon="share" onClick={() => {}} />
+            <IconButton label="More" muted icon="more_vert" onClick={() => {}} />
+          </div>
+        }
+      /></div>),
   },
   {
     name: 'MiniPlayer',

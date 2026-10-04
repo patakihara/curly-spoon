@@ -13,8 +13,12 @@ export interface IconProps {
   size?: '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   /** The glyph's filled form, as play, active and on-state glyphs take. */
   filled?: boolean;
-  /** 'body' is the regular stroke (wght 400); 'strong' the heavier one (wght 500). Default 'body'. */
-  weight?: 'body' | 'strong';
+  /**
+   * 'body' is the regular stroke (wght 400); 'strong' the heavier one (wght 500). 'text' sets no
+   * weight: the glyph follows the font-weight of the text it sits in, as a glyph beside a button's
+   * label or in a bold caption does. Default 'body'.
+   */
+  weight?: 'body' | 'strong' | 'text';
   /** Colour, placement or a transform; never the font settings Icon owns. */
   style?: CSSProperties;
   /** A class for an animation hook, such as a glyph that fades in when it changes. */

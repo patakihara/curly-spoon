@@ -51,8 +51,10 @@ import { NS, sx } from '../shared.js';
 - **Props are destructured with defaults in the signature**, `platform = 'desktop'` style.
 - **Component-scoped CSS** (only when a pseudo-class or keyframe is genuinely needed) is injected
   once with `injectCss(id, css)` — see the `sonora-mediacard-css` call. Prefix classes `sn-`.
-- **Icons are Material Symbols Rounded glyph names as element text**, styled with
-  `font-family:'Material Symbols Rounded'` and `font-variation-settings:'FILL' 1,'wght' 500`.
+- **Every glyph draws through the `Icon` basic**, `<Icon name="play_arrow" filled weight="strong" />`,
+  taken from `NS()`. Icon alone sets the icon font, its size, fill and weight; a component never
+  names the font or sets `FILL` or `wght` itself. `weight="text"` lets a glyph follow the weight
+  of the label it sits beside.
 - Comments explain **why**, not what. Look at how `MediaCard` explains its scrim and its
   ResizeObserver — that register.
 

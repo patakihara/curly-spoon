@@ -12,7 +12,6 @@ const { AboutCard, ExpandableText, MediaHeader, FollowButton, Badge, IconButton 
 function Caption({ children }) {
   return <div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)',marginBottom:'var(--spacing-md)',maxWidth:960}}>{children}</div>;
 }
-const glyph = (name, size) => <span style={{fontFamily:'Material Symbols Rounded',fontSize:size||'var(--icon-sm)'}}>{name}</span>;
 
 function Demo(){
   return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-xl)'}}>
@@ -70,10 +69,10 @@ function Demo(){
         progress={0.65}
         actions={
           <div style={{display:'flex',gap:'var(--spacing-sm)',alignItems:'center'}}>
-            <IconButton label="Saved" active onClick={() => {}}>{glyph('bookmark')}</IconButton>
-            <IconButton label="Downloaded" active onClick={() => {}}>{glyph('download_done')}</IconButton>
-            <IconButton label="Share" onClick={() => {}}>{glyph('share')}</IconButton>
-            <IconButton label="More" muted onClick={() => {}}>{glyph('more_vert')}</IconButton>
+            <IconButton label="Saved" active icon="bookmark" onClick={() => {}} />
+            <IconButton label="Downloaded" active icon="download_done" onClick={() => {}} />
+            <IconButton label="Share" icon="share" onClick={() => {}} />
+            <IconButton label="More" muted icon="more_vert" onClick={() => {}} />
           </div>
         }
       />

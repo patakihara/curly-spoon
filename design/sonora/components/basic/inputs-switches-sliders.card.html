@@ -9,7 +9,7 @@
 </head><body>
 <div id="root"></div>
 <script type="text/babel">
-const { Input, Switch, Slider, FieldRow, SettingRow, SearchField } = window.SonoraDesignSystem_6c1435;
+const { Icon, Input, Switch, Slider, FieldRow, SettingRow, SearchField } = window.SonoraDesignSystem_6c1435;
 function Demo(){
   const [v,setV]=React.useState(0.35);
   const [on,setOn]=React.useState(true);
@@ -20,7 +20,7 @@ function Demo(){
       <SearchField placeholder="Search your Audiobooks" value={q} onChange={setQ} />
       <FieldRow label="Find anything" placeholder="Album, book, podcast…" value={q} onChange={setQ} />
       <FieldRow label="Library folder" platform="mobile" value="/storage/Sonora" onChange={() => {}} />
-      <Input placeholder="Search" onChange={() => {}} icon={<span style={{ fontFamily: 'Material Symbols Rounded', fontSize: 'var(--icon-sm)' }}>search</span>} />
+      <Input placeholder="Search" onChange={() => {}} icon={<Icon name="search" weight="text" />} />
       <Switch checked={on} onChange={setOn} label="Gapless playback" />
       <div><div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',marginBottom:6}}>Desktop</div><Slider value={v} onChange={setV} platform="desktop" /></div>
       <div><div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',marginBottom:6}}>Mobile</div><Slider value={v} onChange={setV} platform="mobile" /></div>

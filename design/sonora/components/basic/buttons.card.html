@@ -7,13 +7,12 @@
 <style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
 <div id="root"></div>
 <script type="text/babel">
-const { Button, IconButton } = window.SonoraDesignSystem_6c1435;
-const glyph = (name, size) => <span style={{fontFamily:'Material Symbols Rounded',fontSize:size||'var(--icon-sm)'}}>{name}</span>;
+const { Button, IconButton, Icon } = window.SonoraDesignSystem_6c1435;
 function Demo(){
   return <div style={{display:'flex',flexDirection:'column',gap:14}}>
     <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
-      <Button variant="primary" icon={glyph('play_arrow')} onClick={() => {}}>Play</Button>
-      <Button variant="secondary" icon={glyph('shuffle')} onClick={() => {}}>Shuffle</Button>
+      <Button variant="primary" icon={<Icon name="play_arrow" weight="text" />} onClick={() => {}}>Play</Button>
+      <Button variant="secondary" icon={<Icon name="shuffle" weight="text" />} onClick={() => {}}>Shuffle</Button>
       <Button variant="ghost" onClick={() => {}}>Settings</Button>
       <Button variant="danger" onClick={() => {}}>Delete</Button>
       <Button variant="primary" disabled onClick={() => {}}>Disabled</Button>
@@ -24,16 +23,16 @@ function Demo(){
       <Button variant="primary" size="lg" onClick={() => {}}>Large</Button>
     </div>
     <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap'}}>
-      <IconButton label="Previous" onClick={() => {}}><span style={{fontFamily:'Material Symbols Rounded',fontSize:'var(--icon-sm)'}}>skip_previous</span></IconButton>
-      <IconButton label="Play" size={56} onClick={() => {}}><span style={{fontFamily:'Material Symbols Rounded',fontSize:'var(--icon-md)',color:'var(--accent)'}}>play_arrow</span></IconButton>
-      <IconButton label="Next" onClick={() => {}}><span style={{fontFamily:'Material Symbols Rounded',fontSize:'var(--icon-sm)'}}>skip_next</span></IconButton>
-      <IconButton label="Shuffle" muted onClick={() => {}}><span style={{fontFamily:'Material Symbols Rounded',fontSize:'var(--icon-sm)'}}>shuffle</span></IconButton>
-      <IconButton label="More" muted onClick={() => {}}><span style={{fontFamily:'Material Symbols Rounded',fontSize:'var(--icon-sm)'}}>more_vert</span></IconButton>
+      <IconButton label="Previous" icon="skip_previous" onClick={() => {}} />
+      <IconButton label="Play" size={56} onClick={() => {}}><Icon name="play_arrow" size="md" style={{color:'var(--accent)'}} /></IconButton>
+      <IconButton label="Next" icon="skip_next" onClick={() => {}} />
+      <IconButton label="Shuffle" muted icon="shuffle" onClick={() => {}} />
+      <IconButton label="More" muted icon="more_vert" onClick={() => {}} />
       <IconButton label="Close" icon="close" onClick={() => {}} />
       <IconButton label="Queue" icon="queue_music" active onClick={() => {}} />
     </div>
     <div style={{display:'flex',gap:10,flexWrap:'wrap',background:'var(--surface-card)',padding:12,borderRadius:12}}>
-      <Button variant="primary" platform="mobile" icon={glyph('play_arrow')} onClick={() => {}}>Play all</Button>
+      <Button variant="primary" platform="mobile" icon={<Icon name="play_arrow" weight="text" />} onClick={() => {}}>Play all</Button>
       <Button variant="secondary" platform="mobile" onClick={() => {}}>Shuffle play</Button>
     </div>
   </div>;

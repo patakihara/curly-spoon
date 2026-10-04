@@ -115,7 +115,7 @@ A Material Symbols Rounded glyph: the only Sonora component that sets the icon f
 | `name` *(required)* | `string` | Material Symbols Rounded glyph name, e.g. "play_arrow". |
 | `size` | `'2xs' \| 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | A step of the icon size ramp, `--icon-2xs` (14px) to `--icon-xl` (40px). Default 'sm', 24px. |
 | `filled` | `boolean` | The glyph's filled form, as play, active and on-state glyphs take. |
-| `weight` | `'body' \| 'strong'` | 'body' is the regular stroke (wght 400); 'strong' the heavier one (wght 500). Default 'body'. |
+| `weight` | `'body' \| 'strong' \| 'text'` |  'body' is the regular stroke (wght 400); 'strong' the heavier one (wght 500). 'text' sets no weight: the glyph follows the font-weight of the text it sits in, as a glyph beside a button's label or in a bold caption does. Default 'body'.  |
 | `style` | `CSSProperties` | Colour, placement or a transform; never the font settings Icon owns. |
 | `className` | `string` | A class for an animation hook, such as a glyph that fades in when it changes. |
 

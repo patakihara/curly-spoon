@@ -20,7 +20,7 @@ export function SearchField({ placeholder, value, onChange, platform = 'desktop'
   }, [autoFocus]);
   return (
     <div className="sn-int sn-filled" data-disabled={off ? '' : undefined} style={sx('display:flex;align-items:center;gap:var(--spacing-md);width:' + width + ';height:' + (height || (mobile ? '40px' : '44px')) + ';padding:0 var(--spacing-lg);box-sizing:border-box;border:none;border-radius:var(--radius-xs);background:var(--surface-card);color:var(--surface-fg)')}>
-      <Icon name="search" size="xs" style={sx('flex-shrink:0;color:var(--surface-fg-muted)')} />
+      <Icon name="search" size="xs" weight="text" style={sx('flex-shrink:0;color:var(--surface-fg-muted)')} />
       <input ref={ref} id={id} value={value} placeholder={placeholder} disabled={off} onChange={off ? undefined : (e) => onChange(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter' && onSubmit) onSubmit(e.target.value); }}
         style={sx('flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:var(--font-body);font-weight:var(--weight-body);font-size:var(--text-md);color:var(--surface-fg)')} />

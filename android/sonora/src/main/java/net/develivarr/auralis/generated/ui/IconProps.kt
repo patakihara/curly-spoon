@@ -15,11 +15,16 @@ data class IconProps(
     val size: IconSize? = null,
     /** The glyph's filled form, as play, active and on-state glyphs take. */
     val filled: Boolean? = null,
-    /** 'body' is the regular stroke (wght 400); 'strong' the heavier one (wght 500). Default 'body'. */
+    /**
+     * 'body' is the regular stroke (wght 400); 'strong' the heavier one (wght 500). 'text' sets no
+     * weight: the glyph follows the font-weight of the text it sits in, as a glyph beside a button's
+     * label or in a bold caption does. Default 'body'.
+     */
     val weight: IconWeight? = null,
 )
 
 enum class IconWeight(val value: String) {
     BODY("body"),
     STRONG("strong"),
+    TEXT("text"),
 }

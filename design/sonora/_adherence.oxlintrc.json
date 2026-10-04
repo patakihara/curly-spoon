@@ -121,8 +121,8 @@
         "message": "<Icon> size must be one of '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='Icon'] > JSXAttribute[name.name='weight'] > Literal[value!=/^(?:body|strong)$/]",
-        "message": "<Icon> weight must be one of 'body' | 'strong'."
+        "selector": "JSXOpeningElement[name.name='Icon'] > JSXAttribute[name.name='weight'] > Literal[value!=/^(?:body|strong|text)$/]",
+        "message": "<Icon> weight must be one of 'body' | 'strong' | 'text'."
       },
       {
         "selector": "JSXOpeningElement[name.name='IconButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|icon|size|active|tone|muted|label|onClick|disabled|key|ref|className|style|children)$/]",

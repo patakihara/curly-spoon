@@ -108,12 +108,14 @@ val galleryIcons: List<String> = listOf(
     "book_2",
     "bookmark",
     "check_circle",
+    "download_done",
     "explore",
     "library_add",
     "link_off",
     "menu_book",
     "more_vert",
     "person",
+    "play_arrow",
     "podcasts",
     "schedule",
     "search",
@@ -237,10 +239,11 @@ val componentGallery: List<GalleryEntry> = listOf(
     GalleryEntry("Button") {
         Button(
             ButtonProps(
-                variant = ButtonVariant.GHOST,
+                variant = ButtonVariant.PRIMARY,
                 platform = Platform.MOBILE,
+                icon = {},
                 onClick = {},
-                children = { BasicText("Settings") },
+                children = { BasicText("Play") },
             ),
         )
     },
@@ -367,14 +370,7 @@ val componentGallery: List<GalleryEntry> = listOf(
         )
     },
     GalleryEntry("IconButton") {
-        IconButton(
-            IconButtonProps(
-                muted = true,
-                label = "More",
-                onClick = {},
-                children = { BasicText("more_vert") },
-            ),
-        )
+        IconButton(IconButtonProps(icon = "more_vert", muted = true, label = "More", onClick = {}))
     },
     GalleryEntry("LayoutGrid") {
         LayoutGrid(
@@ -454,14 +450,39 @@ val componentGallery: List<GalleryEntry> = listOf(
         MediaHeader(
             MediaHeaderProps(
                 platform = Platform.MOBILE,
-                kindLabel = "Audiobook",
-                title = "The Ink Orchard",
-                subtitle = "Linnea Frost",
-                meta = "2023 · 18 chapters · 14 h 42 m",
-                onPlay = {},
-                onPlayNext = {},
-                onPlayLast = {},
+                kindLabel = "Episode",
+                title = "Aftershocks: the second call",
+                subtitle = "Static & Signal",
+                meta = "8 Aug 2024 · 22min left",
                 onSubtitle = {},
+                actions = {
+                    IconButton(
+                        IconButtonProps(
+                            icon = "bookmark",
+                            active = true,
+                            label = "Saved",
+                            onClick = {},
+                        ),
+                    )
+                    IconButton(
+                        IconButtonProps(
+                            icon = "download_done",
+                            active = true,
+                            label = "Downloaded",
+                            onClick = {},
+                        ),
+                    )
+                    IconButton(IconButtonProps(icon = "share", label = "Share", onClick = {}))
+                    IconButton(
+                        IconButtonProps(
+                            icon = "more_vert",
+                            muted = true,
+                            label = "More",
+                            onClick = {},
+                        ),
+                    )
+                },
+                progress = 0.65f,
             ),
         )
     },
