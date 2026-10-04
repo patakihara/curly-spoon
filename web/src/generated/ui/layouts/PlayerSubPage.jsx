@@ -17,7 +17,7 @@ export function PlayerSubPage({
   const pad = mobile ? 'var(--spacing-lg)' : 'var(--spacing-md)';
   const scrolls = scroll === undefined ? mobile : scroll;
   const Scroller = scrolls
-    ? (ScrollArea || (({ children: kids, style }) => <div style={Object.assign({ flex: 1, minHeight: 0, overflowY: 'auto' }, style)}>{kids}</div>))
+    ? ScrollArea
     : (({ children: kids }) => <div>{kids}</div>);
   const inner = (
     <div style={sx('display:flex;flex-direction:column;gap:' + (mobile ? 'var(--spacing-lg)' : 'var(--spacing-md)'))}>

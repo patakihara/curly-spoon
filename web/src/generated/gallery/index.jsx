@@ -328,7 +328,7 @@ export const gallery = [
   {
     name: 'ScrollArea',
     card: 'layouts/scroll-area.card.html',
-    render: () => (<div style={{height:240,maxWidth:420}}><ScrollArea edgeFade style={{height:240}}>
+    render: () => (<div style={{maxWidth:420}}><ScrollArea edgeFade style={{height:240}}>
       <QueueRow title="Tidal Lines" sub="The Nebula Collective" time="3:34" onClick={() => {}}/>
       <QueueRow title="Static Coast" sub="The Nebula Collective" time="3:18" onClick={() => {}}/>
       <QueueRow title="Empty Rooms" sub="Echo Fields" time="5:01" onClick={() => {}}/>

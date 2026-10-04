@@ -2,49 +2,71 @@
 import React from 'react';
 const sx=(s)=>Object.fromEntries(String(s).split(';').filter(d=>d.trim()).map(d=>{const i=d.indexOf(':');const k=d.slice(0,i).trim();return [k.startsWith('--')?k:k.replace(/-([a-z])/g,(_,c)=>c.toUpperCase()),d.slice(i+1).trim()];}));
 
-/** Scroll container with an Android-style overlay scrollbar: the thumb appears while scrolling and fades out shortly after it stops. Native scrollbars are suppressed. */
-export function ScrollArea({ children, onScroll, style, scrollRef, axis = 'y', thumbWidth = 4, hideAfter = 900, fade = 500, minThumb = 32, edgeFade = false }) {
+/** A token's number read off an element (`--duration-linger` gives 900), for the timers that need one. */
+const tokenNumber = (el, name) => parseFloat(getComputedStyle(el).getPropertyValue(name));
+
+/**
+ * Scroll container with an Android-style overlay scrollbar: the thumb appears while scrolling and fades out shortly after it stops.
+ * Native scrollbars are suppressed. It scrolls one axis only: the other is hidden, so nothing inside can make it scroll sideways (or
+ * up and down), and the thumb is drawn inside its clipped frame, so the thumb never widens what holds it.
+ */
+export function ScrollArea({ children, id, onScroll, style, scrollRef, axis = 'y', thumb: showThumb = true, edgeFade = false }) {
+  const x = axis === 'x';
   const ref = React.useRef(null);
   const attach = (el) => { ref.current = el; if (typeof scrollRef === 'function') scrollRef(el); else if (scrollRef) scrollRef.current = el; };
   const timer = React.useRef(null);
-  const [thumb, setThumb] = React.useState({ size: 0, offset: 0, visible: false });
+  const [thumb, setThumb] = React.useState({ size: 0, client: 0, at: 0, visible: false });
   // Whether content runs past each edge, so the fade marks hidden content rather than sitting there.
-  const [edges, setEdges] = React.useState({ top: false, bottom: false });
+  const [edges, setEdges] = React.useState({ start: false, end: false });
+  // Measuring never reveals the thumb: it also runs on mount and on content changes, and an overlay
+  // scrollbar that is visible at rest never fades. Only scrolling reveals it.
   const measure = React.useCallback(() => {
     const el = ref.current;
     if (!el) return;
-    const client = el.clientHeight, scroll = el.scrollHeight;
+    const client = x ? el.clientWidth : el.clientHeight;
+    const scroll = x ? el.scrollWidth : el.scrollHeight;
+    const pos = x ? el.scrollLeft : el.scrollTop;
     const max = scroll - client;
-    setEdges({ top: el.scrollTop > 2, bottom: max > 2 && el.scrollTop < max - 2 });
-    if (scroll <= client + 1) { setThumb((t) => ({ ...t, visible: false })); return; }
-    const size = Math.max(minThumb, (client / scroll) * client);
-    const offset = (el.scrollTop / (scroll - client)) * (client - size);
-    setThumb({ size, offset, visible: true });
-  }, [minThumb]);
+    setEdges({ start: pos > 1, end: max > 1 && pos < max - 1 });
+    if (max <= 1) { setThumb((t) => ({ ...t, size: 0, visible: false })); return; }
+    setThumb((t) => ({ size: (client / scroll) * client, client, at: pos / max, visible: t.visible }));
+  }, [x]);
   const handle = (e) => {
     measure();
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setThumb((t) => ({ ...t, visible: false })), hideAfter);
+    if (showThumb) {
+      setThumb((t) => (t.visible || t.size === 0 ? t : { ...t, visible: true }));
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => setThumb((t) => ({ ...t, visible: false })), tokenNumber(e.currentTarget, '--duration-linger'));
+    }
     if (onScroll) onScroll(e);
   };
   React.useEffect(() => () => timer.current && clearTimeout(timer.current), []);
-  React.useEffect(() => { if (edgeFade) measure(); }, [edgeFade, children, measure]);
-  const fadeSize = typeof edgeFade === 'number' ? edgeFade : 28;
-  const mask = edgeFade && (edges.top || edges.bottom)
-    ? 'linear-gradient(to bottom, transparent 0px, #000 ' + (edges.top ? fadeSize : 0) + 'px, #000 calc(100% - ' + (edges.bottom ? fadeSize : 0) + 'px), transparent 100%)'
+  React.useEffect(() => { measure(); }, [children, measure]);
+  const fadeAt = (on) => (on ? 'var(--scroll-edge-fade)' : '0px');
+  const mask = edgeFade && (edges.start || edges.end)
+    ? 'linear-gradient(to ' + (x ? 'right' : 'bottom') + ', transparent 0px, #000 ' + fadeAt(edges.start) + ', #000 calc(100% - ' + fadeAt(edges.end) + '), transparent 100%)'
     : undefined;
+  // The thumb's length is the visible share of the content, never shorter than the minimum; it
+  // travels the frame less its own length.
+  const length = 'max(var(--scrollbar-thumb-min), ' + thumb.size.toFixed(1) + 'px)';
+  const travel = 'calc((' + thumb.client.toFixed(1) + 'px - ' + length + ') * ' + thumb.at.toFixed(4) + ')';
+  const scroller = sx(
+    'flex:1;min-width:0;min-height:0;scrollbar-width:none;' +
+    (x ? 'overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain' : 'overflow-y:auto;overflow-x:hidden')
+  );
   return (
     <div style={sx('position:relative;flex:1;min-width:0;min-height:0;display:flex;overflow:hidden')}>
-      <div ref={attach} onScroll={handle} style={Object.assign(sx('flex:1;min-width:0;min-height:0;overflow-' + axis + ':auto;scrollbar-width:none'), style || {}, mask ? { maskImage: mask, WebkitMaskImage: mask } : {})}>{children}</div>
-      <span aria-hidden="true" style={sx(
-        'position:absolute;right:2px;pointer-events:none;border-radius:var(--radius-pill);' +
-        'width:' + thumbWidth + 'px;' +
-        'height:' + thumb.size.toFixed(1) + 'px;' +
-        'transform:translateY(' + thumb.offset.toFixed(1) + 'px);' +
-        'top:0;background:var(--surface-fg-muted);' +
-        'opacity:' + (thumb.visible ? '0.6' : '0') + ';' +
-        'transition:opacity ' + (thumb.visible ? '120ms' : fade + 'ms') + ' linear'
-      )} />
+      <div ref={attach} id={id} onScroll={handle} style={Object.assign(scroller, style || {}, mask ? { maskImage: mask, WebkitMaskImage: mask } : {})}>{children}</div>
+      {showThumb && (
+        <span aria-hidden="true" style={sx(
+          'position:absolute;pointer-events:none;border-radius:var(--radius-pill);background:var(--surface-fg-muted);' +
+          (x
+            ? 'left:0;bottom:var(--scrollbar-inset);height:var(--scrollbar-width);width:' + length + ';transform:translateX(' + travel + ');'
+            : 'top:0;right:var(--scrollbar-inset);width:var(--scrollbar-width);height:' + length + ';transform:translateY(' + travel + ');') +
+          'opacity:' + (thumb.visible ? 'var(--opacity-scrollbar)' : '0') + ';' +
+          'transition:opacity ' + (thumb.visible ? 'var(--duration-fast)' : 'var(--duration-slow)') + ' var(--ease-linear)'
+        )} />
+      )}
     </div>
   );
 }

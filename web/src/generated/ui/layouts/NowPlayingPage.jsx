@@ -78,10 +78,9 @@ export function NowPlayingPage({
   );
 
   if (!scrolls) return body;
-  const Scroller = ScrollArea || (({ children: kids, style }) => <div style={Object.assign({ flex: 1, minHeight: 0, overflowY: 'auto' }, style)}>{kids}</div>);
   return (
     <div style={sx('display:flex;flex-direction:column;flex:1;min-height:0')}>
-      <Scroller>{body}</Scroller>
+      <ScrollArea>{body}</ScrollArea>
     </div>
   );
 }

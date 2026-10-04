@@ -108,9 +108,7 @@ export function FrontLayer({ children, subheader, scroll = true, scrollKey, onPr
       ))
     : subheader;
   const body = scroll
-    ? (ScrollArea
-        ? <ScrollArea scrollRef={scroller} onScroll={track}>{children}</ScrollArea>
-        : <div ref={scroller} onScroll={track} style={sx('flex:1;min-width:0;min-height:0;overflow-y:auto')}>{children}</div>)
+    ? <ScrollArea scrollRef={scroller} onScroll={track}>{children}</ScrollArea>
     : children;
   if (!scroll) return <div ref={root} onScrollCapture={track} style={surface}>{head}{body}{edge}</div>;
   return <div ref={root} style={surface}>{head}{body}{edge}</div>;

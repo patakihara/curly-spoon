@@ -601,8 +601,8 @@
         "message": "<QueuePage> platform must be one of 'desktop' | 'mobile'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='ScrollArea'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|onScroll|style|scrollRef|axis|thumbWidth|hideAfter|fade|minThumb|edgeFade|key|ref|className|style|children)$/]",
-        "message": "<ScrollArea> doesn't accept that prop. Declared props: children, onScroll, style, scrollRef, axis, thumbWidth, hideAfter, fade, minThumb, edgeFade."
+        "selector": "JSXOpeningElement[name.name='ScrollArea'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|id|onScroll|style|scrollRef|axis|thumb|edgeFade|key|ref|className|style|children)$/]",
+        "message": "<ScrollArea> doesn't accept that prop. Declared props: children, id, onScroll, style, scrollRef, axis, thumb, edgeFade."
       },
       {
         "selector": "JSXOpeningElement[name.name='ScrollArea'] > JSXAttribute[name.name='axis'] > Literal[value!=/^(?:y|x)$/]",

@@ -1,4 +1,4 @@
-<!-- @dsCard group="Layouts" viewport="1200x320" name="ScrollArea" subtitle="Preview: a scroller with its overlay thumb and edge fades, over rows that run past it" -->
+<!-- @dsCard group="Layouts" viewport="1200x520" name="ScrollArea" subtitle="Preview: a scroller on each axis with its overlay thumb and edge fades, over rows and cards that run past it" -->
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -7,9 +7,9 @@
 <style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
 <div id="root"></div>
 <script type="text/babel">
-const { ScrollArea, QueueRow } = window.SonoraDesignSystem_6c1435;
+const { ScrollArea, QueueRow, MediaCard } = window.SonoraDesignSystem_6c1435;
 function Demo(){
-  return <div style={{height:240,maxWidth:420}}>
+  return <div style={{maxWidth:420}}>
     <ScrollArea edgeFade style={{height:240}}>
       <QueueRow title="Tidal Lines" sub="The Nebula Collective" time="3:34" onClick={() => {}}/>
       <QueueRow title="Static Coast" sub="The Nebula Collective" time="3:18" onClick={() => {}}/>
@@ -18,6 +18,11 @@ function Demo(){
       <QueueRow title="Hollow Fields" sub="Halcyon Bloom" time="4:12" onClick={() => {}}/>
       <QueueRow title="Aftershocks" sub="Static & Signal" time="52:10" onClick={() => {}}/>
     </ScrollArea>
+    <div style={{display:'flex',marginTop:20}}>
+      <ScrollArea axis="x" edgeFade style={{display:'flex',gap:12,paddingBottom:12}}>
+        {['Driftwave','Static Coast','Hollow Fields','Signal Fires','Empty Rooms','Aftershocks'].map((t) => <MediaCard key={t} title={t} sub="The Nebula Collective" width="120px" onClick={() => {}}/>)}
+      </ScrollArea>
+    </div>
   </div>;
 }
 function Themed(){

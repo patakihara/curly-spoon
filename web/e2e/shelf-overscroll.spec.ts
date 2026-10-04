@@ -1,0 +1,129 @@
+import { expect, test, type Page } from '@playwright/test';
+
+/**
+ * A Browse shelf scrolled to its end leaves the page where it was: the page's own scroller and the
+ * document never scroll sideways, by wheel, by touch or by setting `scrollLeft`, and nothing
+ * between the shelf and the document runs wider than the viewport.
+ */
+const SIZES = [
+  { name: 'a phone', width: 390, height: 844, touch: true },
+  { name: 'a desktop', width: 1440, height: 900, touch: false },
+];
+
+/** Marks Browse's first shelf track, the first element on the page that scrolls sideways. */
+const markTrack = (page: Page) =>
+  page.evaluate(() => {
+    const track = [...document.querySelectorAll('div')].find(
+      (d) => /auto|scroll/.test(getComputedStyle(d).overflowX) && d.scrollWidth > d.clientWidth + 1,
+    );
+    if (track === undefined) throw new Error('no shelf scrolls sideways');
+    track.dataset.e2eTrack = '';
+  });
+
+/**
+ * Every box between the shelf's track and the document that clips or scrolls (an
+ * `overflow: visible` box such as the shelf's own wrapper lets the bleed through to the next),
+ * each asked to scroll sideways, with how far it went and how wide its content runs past it.
+ */
+const sideways = (page: Page) =>
+  page.evaluate(() => {
+    const track = document.querySelector<HTMLElement>('[data-e2e-track]');
+    if (track === null) throw new Error('the shelf track is gone');
+    const out: { el: string; scrollLeft: number; overflow: number }[] = [];
+    for (let n = track.parentElement; n !== null; n = n.parentElement) {
+      if (n !== document.documentElement && getComputedStyle(n).overflowX === 'visible') continue;
+      n.scrollLeft = 200;
+      out.push({
+        el: `${n.tagName.toLowerCase()} ${n.getAttribute('style') ?? ''}`.slice(0, 160),
+        scrollLeft: n.scrollLeft,
+        overflow: n.scrollWidth - n.clientWidth,
+      });
+      n.scrollLeft = 0;
+    }
+    const doc = document.scrollingElement ?? document.documentElement;
+    out.push({
+      el: 'document',
+      scrollLeft: window.scrollX,
+      overflow: doc.scrollWidth - window.innerWidth,
+    });
+    return out;
+  });
+
+/** Where the shelf's track sits on screen; the page moving sideways moves it. */
+const trackLeft = (page: Page) =>
+  page.locator('[data-e2e-track]').evaluate((t) => t.getBoundingClientRect().left);
+
+for (const size of SIZES) {
+  test.describe(`on ${size.name}`, () => {
+    test.use({
+      viewport: { width: size.width, height: size.height },
+      hasTouch: size.touch,
+      isMobile: size.touch,
+    });
+
+    test(`[M0.sonoraclean/e] a Browse shelf scrolled to its end leaves the page unscrollable sideways at ${size.width} px`, async ({
+      page,
+    }) => {
+      await page.goto('/', { waitUntil: 'networkidle' });
+      await page.locator('img').first().waitFor();
+      await markTrack(page);
+      const track = page.locator('[data-e2e-track]');
+      const left = await trackLeft(page);
+
+      // To the end, the way a reader gets there: the wheel or a swipe on the shelf itself.
+      const box = await track.boundingBox();
+      if (box === null) throw new Error('the shelf track has no box');
+      const y = box.y + box.height / 2;
+      if (size.touch) {
+        const cdp = await page.context().newCDPSession(page);
+        for (let i = 0; i < 4; i++) {
+          await cdp.send('Input.synthesizeScrollGesture', {
+            x: Math.round(box.x + box.width * 0.8),
+            y: Math.round(y),
+            xDistance: -Math.round(box.width * 2),
+            yDistance: 0,
+            gestureSourceType: 'touch',
+            speed: 3000,
+          });
+        }
+        // Past the end, and then a swipe on the page beneath the shelf.
+        await cdp.send('Input.synthesizeScrollGesture', {
+          x: Math.round(box.x + box.width * 0.8),
+          y: Math.round(y),
+          xDistance: -300,
+          yDistance: 0,
+          gestureSourceType: 'touch',
+        });
+        await cdp.send('Input.synthesizeScrollGesture', {
+          x: Math.round(size.width * 0.8),
+          y: Math.round(Math.min(size.height - 220, box.y + box.height + 60)),
+          xDistance: -300,
+          yDistance: 0,
+          gestureSourceType: 'touch',
+        });
+      } else {
+        await page.mouse.move(box.x + box.width / 2, y);
+        for (let i = 0; i < 8; i++) await page.mouse.wheel(1000, 0);
+      }
+      await track.evaluate((t) => {
+        t.scrollLeft = t.scrollWidth;
+      });
+      await expect
+        .poll(() => track.evaluate((t) => t.scrollWidth - t.clientWidth - t.scrollLeft))
+        .toBeLessThan(2);
+      // One more push past the end, on the wheel, while the end's overlay is showing.
+      await page.mouse.move(box.x + box.width / 2, y);
+      await page.mouse.wheel(400, 0);
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r(null))));
+
+      const boxes = await sideways(page);
+      for (const n of boxes) {
+        expect(n, `${n.el} scrolls sideways`).toMatchObject({ scrollLeft: 0 });
+        expect(n.overflow, `${n.el} runs ${n.overflow} px wider than its box`).toBeLessThanOrEqual(
+          0,
+        );
+      }
+      expect(await trackLeft(page)).toBeCloseTo(left, 0);
+    });
+  });
+}
