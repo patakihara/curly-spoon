@@ -4,7 +4,7 @@ import { StateLayer } from './StateLayer.jsx';
 import { clamp01, percentOf } from '../shared.js';
 
 
-export function Slider({ value = 0.3, onChange, platform = 'desktop', tone = 'accent', label }) {
+export function Slider({ value = 0.3, onChange, platform = 'desktop', tone = 'accent', label, valueText }) {
   const ref = React.useRef(null);
   const off = !onChange;
   // The last value a held pointer sought, so a move or a release that stays on it sends nothing:
@@ -44,7 +44,7 @@ export function Slider({ value = 0.3, onChange, platform = 'desktop', tone = 'ac
   // Disabled, the fill and the handle take the content colour, which the state layer sets to 38%.
   const fill = off ? 'currentColor' : tone === 'play' ? 'var(--play)' : 'var(--accent)';
   return (
-    <div ref={ref} className="sn-int sn-filled" role="slider" aria-label={label} aria-valuemin={0} aria-valuemax={1} aria-valuenow={value}
+    <div ref={ref} className="sn-int sn-filled" role="slider" aria-label={label} aria-valuemin={0} aria-valuemax={1} aria-valuenow={value} aria-valuetext={valueText}
       tabIndex={off ? -1 : 0} aria-disabled={off}
       onPointerDown={off ? undefined : down} onPointerMove={off ? undefined : drag} onPointerUp={off ? undefined : release}
       onKeyDown={off ? undefined : step}

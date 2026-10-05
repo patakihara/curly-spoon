@@ -60,7 +60,8 @@ export default function Browse({ data }) {
         >
           <Shelf>
             <Each of={data.people} as="person">
-              <ArtistCard
+              <MediaCard
+                shape="round"
                 title={person.title}
                 sub={person.sub}
                 image={person.image}

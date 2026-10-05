@@ -395,5 +395,5 @@ Record these; do not build them.
 - **Tabs.** `TabBar` already does Episodes / About / More like this, with the underline indicator.
 - **Bottom navigation.** `BottomNav` exists and matches, "Create" included.
 - **List/grid switch.** `ViewToggle` exists; it goes in `SortFilterBar`'s `trailing` slot.
-- **Circular artist cards.** `ArtistCard` exists.
+- **Circular artist cards.** `MediaCard` takes `shape="round"`.
 - **Horizontal shelves and responsive grids.** `Shelf` and `LayoutGrid` exist.

@@ -300,6 +300,7 @@ Seek slider plus its time readouts. Pass duration in seconds; value is 0–1.
 | `platform` | `'desktop' \| 'mobile'` | Desktop: thin track + round handle (Feishin). Mobile: thick pill split by a divider notch (Booming Music). |
 | `tone` | `'accent' \| 'play'` | The fill: `accent` (default), or `play` for playback position (SeekBar passes it). |
 | `label` | `string` | Its accessible name, such as "Seek" or "Volume". |
+| `valueText` | `string` | What a screen reader announces for the value, such as "1:05 of 3:20"; without it, the 0–1 value. |
 
 ### SortFilterBar
 
@@ -371,19 +372,6 @@ Learn about what you're listening to without leaving the player — about the ep
 | `action` | `ReactNode` | A FollowButton, typically. |
 | `badge` | `ReactNode` | A Badge — the played check. |
 | `platform` | `'desktop' \| 'mobile'` |  |
-
-### ArtistCard
-
-Circular artist/author/narrator card for a people shelf.
-
-| prop | type | notes |
-| --- | --- | --- |
-| `title` *(required)* | `string` |  |
-| `sub` | `string` |  |
-| `platform` | `'desktop' \| 'mobile'` |  |
-| `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
-| `width` | `string` |  |
-| `onClick` | `() => void` | Without it the card is drawn disabled. |
 
 ### BottomNav
 
@@ -495,7 +483,7 @@ The lyric list in the three states the sync control cycles through. Only `sync` 
 
 ### MediaCard
 
-Shelf/grid card for any library item — album, book, podcast, episode. Cover art is a deterministic tint derived from the title, so a shelf reads as distinct artwork. In a mixed shelf pass the content type as the first part of `sub` ("Book · 6 h 12 m left").
+Shelf/grid card for any library item — album, book, podcast, episode — or, round, for a person (an artist, author or narrator) on a people shelf. Cover art is a deterministic tint derived from the title, so a shelf reads as distinct artwork. In a mixed shelf pass the content type as the first part of `sub` ("Book · 6 h 12 m left").
 
 | prop | type | notes |
 | --- | --- | --- |
@@ -521,6 +509,7 @@ Shelf/grid card for any library item — album, book, podcast, episode. Cover ar
 | `markers` | `string[]` | Small glyphs rendered before `sub` — 'push_pin' pinned, 'download_done' offline — so the caption carries state without a second row. |
 | `status` | `string \| null` |  A requested item's status, e.g. "Downloading · 42%", "Needs choice", "Failed"; null for an item that is no request. The art is greyed as an absent item's is, since it cannot play yet, and the status sits on it as a pill in `tone`. On a card narrower than about 132px the pill keeps only the percentage (with its glyph) or the word.  |
 | `tone` | `'progress' \| 'request' \| 'error' \| null` | The request's tone for `status`: `progress` (downloading, the accent), `request` (needs your choice), `error` (failed). |
+| `shape` | `'square' \| 'round'` | `square` (default) for an item; `round` for a person: circular art, the title and `sub` centred beneath it. |
 
 ### MediaHeader
 

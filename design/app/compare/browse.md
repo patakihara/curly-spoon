@@ -21,7 +21,7 @@ kit's Browse destination). No Spotify screen was needed for intent: the kits cov
   ink. "Jump back in": a 2-up grid of
   `QuickPick` tiles, art on the left, title and a "Book · 6 h 12 m left" line. "Recently
   added": a `Shelf` of large `MediaCard`s, one with a progress bar, bleeding off the right edge,
-  with an arrow action. "Artists & authors": a shelf of round `ArtistCard`s. Below the fold,
+  with an arrow action. "Artists & authors": a shelf of round `MediaCard`s. Below the fold,
   "Picked for you" (small cards) and "Recently played" (`ResultRow`s). The mini-player and the
   bottom nav belong to the shell.
 - **Desktop kit.** The same feed at desktop density: the title in the app bar, the filters in

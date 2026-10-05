@@ -249,8 +249,8 @@
         "message": "<SeekBar> readout must be one of 'remaining' | 'total' | 'inline'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='Slider'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onChange|platform|tone|label|key|ref|className|style|children)$/]",
-        "message": "<Slider> doesn't accept that prop. Declared props: value, onChange, platform, tone, label."
+        "selector": "JSXOpeningElement[name.name='Slider'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|onChange|platform|tone|label|valueText|key|ref|className|style|children)$/]",
+        "message": "<Slider> doesn't accept that prop. Declared props: value, onChange, platform, tone, label, valueText."
       },
       {
         "selector": "JSXOpeningElement[name.name='Slider'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
@@ -299,14 +299,6 @@
       {
         "selector": "JSXOpeningElement[name.name='AboutCard'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
         "message": "<AboutCard> platform must be one of 'desktop' | 'mobile'."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='ArtistCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|sub|platform|image|width|onClick|key|ref|className|style|children)$/]",
-        "message": "<ArtistCard> doesn't accept that prop. Declared props: title, sub, platform, image, width, onClick."
-      },
-      {
-        "selector": "JSXOpeningElement[name.name='ArtistCard'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
-        "message": "<ArtistCard> platform must be one of 'desktop' | 'mobile'."
       },
       {
         "selector": "JSXOpeningElement[name.name='BottomNavItem'] > JSXAttribute > JSXIdentifier[name!=/^(?:key|label|icon|key|ref|className|style|children)$/]",
@@ -377,8 +369,8 @@
         "message": "<Lyrics> syncMode must be one of 'sync' | 'dot' | 'off'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='MediaCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|sub|platform|progress|absent|width|size|onPlay|onPlayNext|onPlayLast|playing|image|covers|onClick|onRequest|onMore|eyebrow|unplayed|savedBadge|markers|status|tone|key|ref|className|style|children)$/]",
-        "message": "<MediaCard> doesn't accept that prop. Declared props: title, sub, platform, progress, absent, width, size, onPlay, onPlayNext, onPlayLast, playing, image, covers, onClick, onRequest, onMore, eyebrow, unplayed, savedBadge, markers, status, tone."
+        "selector": "JSXOpeningElement[name.name='MediaCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|sub|platform|progress|absent|width|size|onPlay|onPlayNext|onPlayLast|playing|image|covers|onClick|onRequest|onMore|eyebrow|unplayed|savedBadge|markers|status|tone|shape|key|ref|className|style|children)$/]",
+        "message": "<MediaCard> doesn't accept that prop. Declared props: title, sub, platform, progress, absent, width, size, onPlay, onPlayNext, onPlayLast, playing, image, covers, onClick, onRequest, onMore, eyebrow, unplayed, savedBadge, markers, status, tone, shape."
       },
       {
         "selector": "JSXOpeningElement[name.name='MediaCard'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
@@ -391,6 +383,10 @@
       {
         "selector": "JSXOpeningElement[name.name='MediaCard'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:progress|request|error)$/]",
         "message": "<MediaCard> tone must be one of 'progress' | 'request' | 'error'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='MediaCard'] > JSXAttribute[name.name='shape'] > Literal[value!=/^(?:square|round)$/]",
+        "message": "<MediaCard> shape must be one of 'square' | 'round'."
       },
       {
         "selector": "JSXOpeningElement[name.name='MediaHeader'] > JSXAttribute > JSXIdentifier[name!=/^(?:platform|image|covers|compactAt|kindLabel|title|subtitle|meta|playLabel|nextLabel|lastLabel|round|onPlay|onPlayNext|onPlayLast|onSubtitle|partOf|onPartOf|rating|actions|menu|progress|download|onDownload|addLabel|onAdd|key|ref|className|style|children)$/]",
@@ -690,9 +686,6 @@
         "replaces": []
       },
       "AccountButton": {
-        "replaces": []
-      },
-      "ArtistCard": {
         "replaces": []
       },
       "BackLayer": {

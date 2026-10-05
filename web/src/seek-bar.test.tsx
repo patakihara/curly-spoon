@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { SeekBar } from './generated/ui/index.js';
+import { SeekBar, Slider } from './generated/ui/index.js';
 
 /** The elapsed readout SeekBar shows at the end of a track `duration` seconds long. */
 const elapsedAtEnd = (duration: number) => {
@@ -57,4 +57,23 @@ describe("Sonora's seek slider", () => {
       expect(html).toMatch(/role="slider" aria-label="Seek"/);
     },
   );
+});
+
+describe("Sonora's seek slider value", () => {
+  it.each(['remaining', 'total', 'inline'] as const)(
+    '[M0.sonoraclean/d] announces the elapsed time of the length with %s readouts, not a fraction',
+    (readout) => {
+      const html = renderToString(
+        createElement(SeekBar, { value: 0.325, duration: 200, readout, onChange: () => undefined }),
+      );
+      expect(html).toContain('aria-valuetext="1:05 of 3:20"');
+    },
+  );
+
+  it('[M0.sonoraclean/d] a Slider given valueText announces it, and one without announces none', () => {
+    const slider = (props: Record<string, unknown>) =>
+      renderToString(createElement(Slider, { value: 0.5, label: 'Volume', ...props }));
+    expect(slider({ valueText: '50%' })).toContain('aria-valuetext="50%"');
+    expect(slider({})).not.toContain('aria-valuetext');
+  });
 });

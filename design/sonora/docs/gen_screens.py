@@ -200,7 +200,7 @@ SCREENS = [
    ("MediaCard", "`eyebrow`", "\"Artist\" / \"Playlist\" above the name."),
  ],
  "existing": [
-   ("ArtistCard", "Circular person card — already exists, unchanged."),
+   ("MediaCard", "`shape=\"round\"` — the circular person card, unchanged."),
    ("Shelf", "Carousel."),
  ] + CHROME,
  "notbuilt": [],
@@ -526,7 +526,7 @@ SCREENS = [
  ],
  "existing": [
    ("ViewToggle", "The list/grid switch already exists; it goes in `SortFilterBar`'s `trailing` slot."),
-   ("ArtistCard", "Circular artwork for people."),
+   ("MediaCard", "`shape=\"round\"` — circular artwork for people."),
    ("LayoutGrid", "The item grid."),
  ] + CHROME,
  "notbuilt": [],
@@ -707,14 +707,14 @@ SCREENS = [
  "created": [("AboutCard", "Image, badge, action and an expandable bio in one card.")],
  "extended": [],
  "existing": [
-   ("ArtistCard", "Circular person card — the role goes in `sub`, which is what a credits shelf needs."),
+   ("MediaCard", "`shape=\"round\"` — the circular person card; the role goes in `sub`, which is what a credits shelf needs."),
    ("Section", "Titles the credits block and carries the feed rhythm."),
    ("Badge", "The verified mark (wave 1's `icon` + `plain`)."),
    ("FollowButton", "The follow control."),
  ],
  "notbuilt": [
    "**World ranking and monthly-listener counts.** Service-scale popularity is meaningless for a private library. `Rating` already covers the ratings a real Audiobookshelf or Jellyfin item carries.",
-   "**A dedicated credits card.** The affordance — who made this, in what role — is already served by `ArtistCard` (`sub` = role) laid out by `Shelf` under a `Section`. Worth building only if a role-grouped layout is wanted.",
+   "**A dedicated credits card.** The affordance — who made this, in what role — is already served by a round `MediaCard` (`sub` = role) laid out by `Shelf` under a `Section`. Worth building only if a role-grouped layout is wanted.",
  ],
 },
 {
@@ -727,7 +727,7 @@ SCREENS = [
  "created": [],
  "extended": [],
  "existing": [
-   ("ArtistCard", "Contributor cards."),
+   ("MediaCard", "`shape=\"round\"` — contributor cards."),
    ("Section", "`actionText` (wave 1) carries the \"Explore\" affordance already."),
  ],
  "notbuilt": [

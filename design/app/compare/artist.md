@@ -17,7 +17,7 @@ request states, and Spotify's S41 (the artist card: a big image, the name, follo
 
 - **Kits' album screens.** `MediaHeader` over a list; `round` exists for a person, unused there.
 - **S41.** The artist's photo, the name with a verified mark, a follow button, a clamped bio, and
-  credits as round `ArtistCard`s on a shelf.
+  credits as round person cards on a shelf.
 
 ## What the canvas page draws
 
@@ -32,7 +32,7 @@ Albums, EPs, Singles, Compilations, Live, one entry per album, each opening its 
 with its "Downloading · 42%" pill in the progress tone, the rest greyed with "Not in library"
 (`MediaCard.absent`). EPs and the smaller groups use the compact card. Then "Popular", song rows each
 with its `OverflowMenu`, Add to library only on a song you don't own, and "Similar artists", round
-`ArtistCard`s.
+`MediaCard`s (`shape="round"`).
 
 **Empty state**, per nav.json: owning nothing by them drops the "In your library" carousel and
 shows the whole catalogue greyed and requestable.

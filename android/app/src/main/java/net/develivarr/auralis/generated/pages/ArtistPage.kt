@@ -9,13 +9,13 @@ import net.develivarr.auralis.generated.nav.Route
 import net.develivarr.auralis.generated.nav.closePage
 import net.develivarr.auralis.generated.nav.litDestination
 import net.develivarr.auralis.generated.nav.openDestination
-import net.develivarr.auralis.generated.ui.ArtistCardProps
 import net.develivarr.auralis.generated.ui.BackLayerProps
 import net.develivarr.auralis.generated.ui.BackdropShellProps
 import net.develivarr.auralis.generated.ui.BottomNavItem
 import net.develivarr.auralis.generated.ui.BottomNavProps
 import net.develivarr.auralis.generated.ui.IconButtonProps
 import net.develivarr.auralis.generated.ui.MediaCardProps
+import net.develivarr.auralis.generated.ui.MediaCardShape
 import net.develivarr.auralis.generated.ui.MediaCardTone
 import net.develivarr.auralis.generated.ui.MediaHeaderProps
 import net.develivarr.auralis.generated.ui.MiniPlayerProps
@@ -28,7 +28,6 @@ import net.develivarr.auralis.generated.ui.SectionProps
 import net.develivarr.auralis.generated.ui.ShelfProps
 import net.develivarr.auralis.generated.ui.SizeSmMd
 import net.develivarr.auralis.generated.ui.Variant
-import net.develivarr.auralis.ui.sonora.ArtistCard
 import net.develivarr.auralis.ui.sonora.BackLayer
 import net.develivarr.auralis.ui.sonora.BackdropShell
 import net.develivarr.auralis.ui.sonora.BottomNav
@@ -460,8 +459,8 @@ fun ArtistPage(navController: NavController, actions: PageActions) {
                                             ShelfProps(
                                                 platform = Platform.MOBILE,
                                                 children = {
-                                                    ArtistCard(
-                                                        ArtistCardProps(
+                                                    MediaCard(
+                                                        MediaCardProps(
                                                             title = "Soul Vertex",
                                                             sub = "Artist",
                                                             platform = Platform.MOBILE,
@@ -469,10 +468,11 @@ fun ArtistPage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Artist(ref = "soul-vertex"))
                                                             },
+                                                            shape = MediaCardShape.ROUND,
                                                         ),
                                                     )
-                                                    ArtistCard(
-                                                        ArtistCardProps(
+                                                    MediaCard(
+                                                        MediaCardProps(
                                                             title = "Fleeting Verses",
                                                             sub = "Artist",
                                                             platform = Platform.MOBILE,
@@ -480,10 +480,11 @@ fun ArtistPage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Artist(ref = "fleeting-verses"))
                                                             },
+                                                            shape = MediaCardShape.ROUND,
                                                         ),
                                                     )
-                                                    ArtistCard(
-                                                        ArtistCardProps(
+                                                    MediaCard(
+                                                        MediaCardProps(
                                                             title = "Sonic Tales",
                                                             sub = "Artist",
                                                             platform = Platform.MOBILE,
@@ -491,10 +492,11 @@ fun ArtistPage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Artist(ref = "sonic-tales"))
                                                             },
+                                                            shape = MediaCardShape.ROUND,
                                                         ),
                                                     )
-                                                    ArtistCard(
-                                                        ArtistCardProps(
+                                                    MediaCard(
+                                                        MediaCardProps(
                                                             title = "Adam Rivers",
                                                             sub = "Artist",
                                                             platform = Platform.MOBILE,
@@ -502,6 +504,7 @@ fun ArtistPage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Artist(ref = "adam-rivers"))
                                                             },
+                                                            shape = MediaCardShape.ROUND,
                                                         ),
                                                     )
                                                 },

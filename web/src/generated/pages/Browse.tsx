@@ -4,7 +4,7 @@ import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
 import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
 import type { ShellNav } from '../../shell-nav';
-import { AccountButton, ArtistCard, BackLayer, BottomNav, ButtonGroup, FeatureCard, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, PageBody, PreviewButton, QuickPick, ResultRow, Section, Shelf } from '../ui/index.js';
+import { AccountButton, BackLayer, BottomNav, ButtonGroup, FeatureCard, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, PageBody, PreviewButton, QuickPick, ResultRow, Section, Shelf } from '../ui/index.js';
 
 const placeholder = {
   "sections": [
@@ -510,7 +510,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
         <Shelf platform={platform}>
           {data.people.map((person, i) => (
             <Fragment key={i}>
-              <ArtistCard title={person.title} sub={person.sub} image={person.image} onClick={() => navigate(generatePath(routes[person.page]!, { ref: person.ref }))} platform={platform} />
+              <MediaCard shape="round" title={person.title} sub={person.sub} image={person.image} onClick={() => navigate(generatePath(routes[person.page]!, { ref: person.ref }))} platform={platform} />
             </Fragment>
           ))}
         </Shelf>

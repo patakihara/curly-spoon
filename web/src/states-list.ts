@@ -31,7 +31,6 @@ export interface StateEntry {
 /** Every interactive Sonora component, at each level. */
 export const STATE_ENTRIES: readonly StateEntry[] = [
   { name: 'AccountButton', disabled: false, ripple: true },
-  { name: 'ArtistCard', disabled: false, ripple: true },
   { name: 'BottomNav', disabled: false, ripple: true },
   { name: 'Button', disabled: true, ripple: true },
   { name: 'ButtonGroup', disabled: false, ripple: true },
@@ -54,6 +53,7 @@ export const STATE_ENTRIES: readonly StateEntry[] = [
   { name: 'LyricsPage', disabled: false, ripple: true },
   { name: 'LyricsSyncButton', disabled: false, ripple: true },
   { name: 'MediaCard', disabled: false, ripple: true },
+  { name: 'MediaCard.round', disabled: false, ripple: true },
   { name: 'MediaHeader', disabled: false, ripple: true },
   { name: 'MiniPlayer', disabled: false, ripple: true },
   { name: 'NavRail', disabled: false, ripple: true },

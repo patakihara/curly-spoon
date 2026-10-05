@@ -2,11 +2,13 @@ import React from 'react';
 import { NS, REVEAL, activate, badgeTone, sx, useMeasure } from '../shared.js';
 // Enter and Space press it as a click does, unless they come from a control inside it.
 
-/** Shelf/grid card for any library item — album, book, podcast, episode. Replaces the old Card. */
-export function MediaCard({ title, sub, platform = 'desktop', progress = null, absent = false, image, covers, width, size = 'md', onClick, onPlay, onPlayNext, onPlayLast, playing = false, onMore, onRequest, eyebrow, unplayed = false, savedBadge = false, markers, status, tone = 'progress' }) {
+/** Shelf/grid card for any library item — album, book, podcast, episode — or, round, for a person. */
+export function MediaCard({ title, sub, platform = 'desktop', progress = null, absent = false, image, covers, width, size = 'md', onClick, onPlay, onPlayNext, onPlayLast, playing = false, onMore, onRequest, eyebrow, unplayed = false, savedBadge = false, markers, status, tone = 'progress', shape = 'square' }) {
   const Badge = NS().Badge;
   const mobile = platform === 'mobile';
   const small = size === 'sm';
+  // A person's card: circular art, with the caption centred under it.
+  const round = shape === 'round';
   const fg = 'var(--surface-fg)', muted = 'var(--surface-fg-muted)';
   const w = width || (small ? (mobile ? '116px' : '132px') : (mobile ? '152px' : '176px'));
   const seed = String(title || '').split('').reduce((a, ch) => a + ch.charCodeAt(0), 0);
@@ -44,8 +46,8 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
   return (
     <div className="sn-int" role="button" aria-label={title} tabIndex={off ? -1 : 0} aria-disabled={off}
       onClick={off ? undefined : tap} onKeyDown={off ? undefined : activate(tap)}
-      style={sx('position:relative;display:flex;flex-direction:column;cursor:pointer;min-width:0;border-radius:var(--radius-' + (small || mobile ? 'sm' : 'md') + ');width:' + w + (w === '100%' ? '' : ';flex-shrink:0'))}>
-      <div ref={artRef} className={revealing ? REVEAL.host : undefined} style={sx('position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:var(--radius-' + (small || mobile ? 'sm' : 'md') + ')')}>
+      style={sx('position:relative;display:flex;flex-direction:column;cursor:pointer;min-width:0;border-radius:var(--radius-' + (small || mobile ? 'sm' : 'md') + ');width:' + w + (w === '100%' ? '' : ';flex-shrink:0') + (round ? ';text-align:center' : ''))}>
+      <div ref={artRef} className={revealing ? REVEAL.host : undefined} style={sx('position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:' + (round ? 'var(--radius-round)' : 'var(--radius-' + (small || mobile ? 'sm' : 'md') + ')'))}>
         {/* Greyed, not just darkened: an item that cannot play yet loses its colour, so it reads
             as out of reach beside the ones you own even where its cover is already dark. */}
         {CoverArt && (greyed
@@ -111,7 +113,7 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
       {eyebrow && <div style={sx('margin-top:' + (small ? '8px' : '10px') + ';font-size:var(--text-xs);font-weight:var(--weight-strong);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + muted)}>{eyebrow}</div>}
       <div style={sx('margin-top:' + (eyebrow ? '2px' : (small ? '8px' : '10px')) + ';font-size:var(--text-' + (small ? 'sm' : 'md') + ');font-weight:var(--weight-medium);line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;color:' + (greyed ? muted : fg))}>{title}</div>
       {markers && markers.length > 0 ? (
-        <div style={sx('margin-top:2px;display:flex;align-items:center;gap:4px;min-width:0')}>
+        <div style={sx('margin-top:2px;display:flex;align-items:center;gap:4px;min-width:0' + (round ? ';justify-content:center' : ''))}>
           <span style={sx('flex-shrink:0;display:inline-flex;gap:2px')}>
             {markers.map((m, i) => <Icon key={i} name={m} size="xs" filled weight="strong" style={sx('color:' + muted)} />)}
           </span>

@@ -2,7 +2,6 @@ package net.develivarr.auralis.ui.sonora
 
 import androidx.compose.runtime.Composable
 import net.develivarr.auralis.generated.ui.AccountButtonProps
-import net.develivarr.auralis.generated.ui.ArtistCardProps
 import net.develivarr.auralis.generated.ui.BottomNavItem
 import net.develivarr.auralis.generated.ui.BottomNavProps
 import net.develivarr.auralis.generated.ui.ButtonGroupItem
@@ -66,7 +65,6 @@ private fun off(v: Variant): Boolean? = if (v == Variant.DISABLED) true else nul
 /** Every interactive Compose component in `ui/sonora`, by name. */
 val sonoraStates: List<StateEntry> = listOf(
     StateEntry("AccountButton") { v -> AccountButton(AccountButtonProps(label = "Account", onClick = act(v))) },
-    StateEntry("ArtistCard") { v -> ArtistCard(ArtistCardProps(title = "Artist", onClick = act(v))) },
     StateEntry("BottomNav") { v ->
         BottomNav(
             BottomNavProps(

@@ -4,7 +4,6 @@ package net.develivarr.auralis.generated.gallery
 import androidx.compose.foundation.text.BasicText
 import net.develivarr.auralis.generated.ui.AboutCardProps
 import net.develivarr.auralis.generated.ui.AccountButtonProps
-import net.develivarr.auralis.generated.ui.ArtistCardProps
 import net.develivarr.auralis.generated.ui.BackLayerProps
 import net.develivarr.auralis.generated.ui.BackdropShellProps
 import net.develivarr.auralis.generated.ui.BottomNavItem
@@ -62,7 +61,6 @@ import net.develivarr.auralis.generated.ui.ViewToggleProps
 import net.develivarr.auralis.generated.ui.ViewToggleValue
 import net.develivarr.auralis.ui.sonora.AboutCard
 import net.develivarr.auralis.ui.sonora.AccountButton
-import net.develivarr.auralis.ui.sonora.ArtistCard
 import net.develivarr.auralis.ui.sonora.BackLayer
 import net.develivarr.auralis.ui.sonora.BackdropShell
 import net.develivarr.auralis.ui.sonora.BottomNav
@@ -140,17 +138,6 @@ val componentGallery: List<GalleryEntry> = listOf(
     },
     GalleryEntry("AccountButton") {
         AccountButton(AccountButtonProps(onClick = {}))
-    },
-    GalleryEntry("ArtistCard") {
-        ArtistCard(
-            ArtistCardProps(
-                title = "Natasha Beller",
-                sub = "Artist",
-                platform = Platform.MOBILE,
-                width = "160px",
-                onClick = {},
-            ),
-        )
     },
     GalleryEntry("BackLayer") {
         BackLayer(BackLayerProps(title = "Library", platform = Platform.MOBILE))

@@ -57,7 +57,8 @@ export default function Artist({ data }) {
         <Section title="Similar artists" last>
           <Shelf>
             <Each of={data.similar} as="artist">
-              <ArtistCard
+              <MediaCard
+                shape="round"
                 title={artist.title}
                 sub={artist.sub}
                 image={artist.image}

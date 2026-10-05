@@ -12,7 +12,6 @@ import './generated/tokens/sonora-tokens.css';
 import './generated/tokens/sonora-theme.css';
 import {
   AccountButton,
-  ArtistCard,
   BottomNav,
   Button,
   ButtonGroup,
@@ -111,9 +110,6 @@ const Frame = ({ height, children }: { height: number; children: ReactNode }) =>
 /** Each entry's drawing, given its press handler and whether `disabled` is set. */
 const DRAW: Record<string, (act: Act, disabled: boolean) => ReactNode> = {
   AccountButton: (act) => <AccountButton onClick={act} />,
-  ArtistCard: (act) => (
-    <ArtistCard title="Halcyon Bloom" sub="Artist" width="120px" onClick={act} />
-  ),
   BottomNav: (act) => <BottomNav items={NAV} active="home" onChange={act} />,
   Button: (act, disabled) => (
     <Button onClick={act} disabled={disabled}>
@@ -225,6 +221,9 @@ const DRAW: Record<string, (act: Act, disabled: boolean) => ReactNode> = {
   // No onPlay: the card's own press is the control here, not the play actions over its art.
   MediaCard: (act) => (
     <MediaCard title="Driftwave" sub="Halcyon Bloom" width="140px" onClick={act} />
+  ),
+  'MediaCard.round': (act) => (
+    <MediaCard shape="round" title="Halcyon Bloom" sub="Artist" width="120px" onClick={act} />
   ),
   MediaHeader: (act) => (
     <MediaHeader

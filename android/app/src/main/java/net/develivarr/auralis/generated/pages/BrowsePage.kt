@@ -10,7 +10,6 @@ import net.develivarr.auralis.generated.nav.Route
 import net.develivarr.auralis.generated.nav.litDestination
 import net.develivarr.auralis.generated.nav.openDestination
 import net.develivarr.auralis.generated.ui.AccountButtonProps
-import net.develivarr.auralis.generated.ui.ArtistCardProps
 import net.develivarr.auralis.generated.ui.BackLayerProps
 import net.develivarr.auralis.generated.ui.BackdropShellProps
 import net.develivarr.auralis.generated.ui.BottomNavItem
@@ -23,6 +22,7 @@ import net.develivarr.auralis.generated.ui.FrontLayerHeaderSection
 import net.develivarr.auralis.generated.ui.LayoutGridItem
 import net.develivarr.auralis.generated.ui.LayoutGridProps
 import net.develivarr.auralis.generated.ui.MediaCardProps
+import net.develivarr.auralis.generated.ui.MediaCardShape
 import net.develivarr.auralis.generated.ui.MiniPlayerProps
 import net.develivarr.auralis.generated.ui.PageBodyProps
 import net.develivarr.auralis.generated.ui.Platform
@@ -36,7 +36,6 @@ import net.develivarr.auralis.generated.ui.SizeSmMd
 import net.develivarr.auralis.generated.ui.ToneAccentPlay
 import net.develivarr.auralis.generated.ui.Variant
 import net.develivarr.auralis.ui.sonora.AccountButton
-import net.develivarr.auralis.ui.sonora.ArtistCard
 import net.develivarr.auralis.ui.sonora.BackLayer
 import net.develivarr.auralis.ui.sonora.BackdropShell
 import net.develivarr.auralis.ui.sonora.BottomNav
@@ -370,8 +369,8 @@ fun BrowsePage(navController: NavController, actions: PageActions) {
                                             ShelfProps(
                                                 platform = Platform.MOBILE,
                                                 children = {
-                                                    ArtistCard(
-                                                        ArtistCardProps(
+                                                    MediaCard(
+                                                        MediaCardProps(
                                                             title = "Sonic Tales",
                                                             sub = "Artist",
                                                             platform = Platform.MOBILE,
@@ -379,10 +378,11 @@ fun BrowsePage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Artist(ref = "sonic-tales"))
                                                             },
+                                                            shape = MediaCardShape.ROUND,
                                                         ),
                                                     )
-                                                    ArtistCard(
-                                                        ArtistCardProps(
+                                                    MediaCard(
+                                                        MediaCardProps(
                                                             title = "Evelyn Harper",
                                                             sub = "Author",
                                                             platform = Platform.MOBILE,
@@ -390,10 +390,11 @@ fun BrowsePage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Author(ref = "evelyn-harper"))
                                                             },
+                                                            shape = MediaCardShape.ROUND,
                                                         ),
                                                     )
-                                                    ArtistCard(
-                                                        ArtistCardProps(
+                                                    MediaCard(
+                                                        MediaCardProps(
                                                             title = "Adam Rivers",
                                                             sub = "Author",
                                                             platform = Platform.MOBILE,
@@ -401,10 +402,11 @@ fun BrowsePage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Author(ref = "adam-rivers"))
                                                             },
+                                                            shape = MediaCardShape.ROUND,
                                                         ),
                                                     )
-                                                    ArtistCard(
-                                                        ArtistCardProps(
+                                                    MediaCard(
+                                                        MediaCardProps(
                                                             title = "Deep Inertia",
                                                             sub = "Artist",
                                                             platform = Platform.MOBILE,
@@ -412,10 +414,11 @@ fun BrowsePage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Artist(ref = "deep-inertia"))
                                                             },
+                                                            shape = MediaCardShape.ROUND,
                                                         ),
                                                     )
-                                                    ArtistCard(
-                                                        ArtistCardProps(
+                                                    MediaCard(
+                                                        MediaCardProps(
                                                             title = "Fleeting Verses",
                                                             sub = "Artist",
                                                             platform = Platform.MOBILE,
@@ -423,6 +426,7 @@ fun BrowsePage(navController: NavController, actions: PageActions) {
                                                             onClick = {
                                                                 navController.navigate(Route.Artist(ref = "fleeting-verses"))
                                                             },
+                                                            shape = MediaCardShape.ROUND,
                                                         ),
                                                     )
                                                 },

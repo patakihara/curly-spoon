@@ -159,7 +159,9 @@ describe('Artist', () => {
   });
 
   it('[M0.canvas] opens the album from every card of its library carousel and its discography', () => {
-    const cards = elements(tree).filter((e) => e.component === 'MediaCard');
+    const cards = elements(tree).filter(
+      (e) => e.component === 'MediaCard' && e.props.shape === undefined,
+    );
     expect(cards).toHaveLength(2);
     for (const card of cards) {
       const item = card.props.title?.kind === 'binding' ? card.props.title.path[0]! : '';
@@ -174,7 +176,11 @@ describe('Artist', () => {
   });
 
   it('opens each similar artist on their own page', () => {
-    const similar = elements(tree).filter((e) => e.component === 'ArtistCard');
+    const similar = elements(tree).filter(
+      (e) =>
+        e.component === 'MediaCard' &&
+        JSON.stringify(e.props.shape) === '{"kind":"literal","value":"round"}',
+    );
     expect(similar).toHaveLength(1);
     expect(similar[0]!.props.onClick).toEqual({
       kind: 'open',

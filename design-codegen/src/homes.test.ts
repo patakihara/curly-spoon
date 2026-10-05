@@ -144,10 +144,7 @@ describe('a tab row', () => {
 
 /** Every card a page draws, with the data path of the Each list it is drawn for. */
 function cards(tree: PageTree, of: string[] = [], into: { card: Element; of: string[] }[] = []) {
-  if (
-    tree.kind === 'element' &&
-    ['MediaCard', 'ArtistCard', 'QuickPick'].includes(tree.component)
-  ) {
+  if (tree.kind === 'element' && ['MediaCard', 'QuickPick'].includes(tree.component)) {
     into.push({ card: tree, of });
   }
   if ('children' in tree) {

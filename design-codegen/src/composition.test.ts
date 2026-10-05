@@ -4,6 +4,7 @@ import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 import { REPO_ROOT, SONORA_DIR } from './outputs.js';
 import { discoverComponents } from './sonora.js';
+import { elements, readPage } from './test-pages.js';
 
 /**
  * Sonora reuses by composition: a component that needs another's behaviour renders it rather than
@@ -354,6 +355,36 @@ describe("Sonora's icon buttons, read from its sources", () => {
 });
 
 /** A call of the shared spoken-skip glyph helper. */
+describe("Sonora's cards, read from its sources and the canvas pages", () => {
+  it('[M0.sonoraclean/c] ArtistCard is gone: no file, export, card, doc, Android stub or source names it', () => {
+    expect(components.has('ArtistCard')).toBe(false);
+    expect(namesOf('ArtistCard', [/artist-card/i, /artistcard/i, /artist_card/i])).toEqual([]);
+  });
+
+  it('[M0.sonoraclean/c] MediaCard takes a round shape for people', () => {
+    expect(source('MediaCard')).toMatch(/shape\s*=\s*'square'/);
+    expect(readFileSync(components.get('MediaCard')!.dts, 'utf8')).toMatch(
+      /shape\?:\s*'square'\s*\|\s*'round'/,
+    );
+  });
+
+  it.each([
+    ['artist', 'similar'],
+    ['browse', 'people'],
+  ])('[M0.sonoraclean/c] the %s page draws its people shelf as round MediaCards', (page, list) => {
+    const people = elements(readPage(page).tree).filter(
+      (e) =>
+        e.component === 'MediaCard' &&
+        JSON.stringify(e.props.shape) === JSON.stringify({ kind: 'literal', value: 'round' }),
+    );
+    expect(people).toHaveLength(1);
+    expect(JSON.stringify(people[0]!.props.title)).toContain(
+      page === 'artist' ? '"artist"' : '"person"',
+    );
+    expect(readPage(page).data[list]).toBeDefined();
+  });
+});
+
 const SKIP_GLYPH = /\bskipGlyph\(/;
 
 describe("Sonora's mini player, read from its sources", () => {

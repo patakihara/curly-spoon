@@ -29,7 +29,11 @@ export function Shelf({ children, gap, margin, platform = 'desktop', step = 2, a
   const showArrows = arrows === undefined ? !mobile : arrows;
   const showBar = scrollbar === undefined ? mobile : scrollbar;
   const ref = React.useRef(null);
-  const [hot, setHot] = React.useState(false);
+  // The arrows show while the pointer is over the shelf or focus is within it, each on its own: a
+  // focused arrow stays shown when the mouse leaves.
+  const [hovered, setHovered] = React.useState(false);
+  const [focused, setFocused] = React.useState(false);
+  const hot = hovered || focused;
   const holders = { start: React.useRef(null), end: React.useRef(null) };
   // Whether the row sits at each end, so the arrow that would scroll past it goes.
   const [ends, setEnds] = React.useState({ start: true, end: false });
@@ -76,8 +80,9 @@ export function Shelf({ children, gap, margin, platform = 'desktop', step = 2, a
   };
   return (
     <div style={sx('position:relative')}
-      onMouseEnter={() => setHot(true)} onMouseLeave={() => setHot(false)}
-      onFocusCapture={() => setHot(true)} onBlurCapture={() => setHot(false)}>
+      onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+      onFocusCapture={() => setFocused(true)}
+      onBlurCapture={(e) => setFocused(!!e.relatedTarget && e.currentTarget.contains(e.relatedTarget))}>
       {/* The frame bleeds out to the page edge, and a focus ring's room above and below, taken
           back by the track's padding, so a focused card's ring is not clipped. */}
       <div style={sx('display:flex;margin:calc(-1 * var(--focus-ring-room)) calc(-1 * ' + m + ')')}>

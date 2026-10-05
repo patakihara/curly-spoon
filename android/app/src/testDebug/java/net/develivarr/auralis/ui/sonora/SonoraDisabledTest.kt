@@ -13,7 +13,6 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import net.develivarr.auralis.generated.ui.AccountButtonProps
-import net.develivarr.auralis.generated.ui.ArtistCardProps
 import net.develivarr.auralis.generated.ui.BottomNavItem
 import net.develivarr.auralis.generated.ui.BottomNavProps
 import net.develivarr.auralis.generated.ui.ButtonGroupItem
@@ -59,7 +58,6 @@ import org.robolectric.annotation.GraphicsMode
 /** Each interactive Sonora component, drawn with no action. */
 internal val unbound: List<Pair<String, @Composable () -> Unit>> = listOf(
     "AccountButton" to { AccountButton(AccountButtonProps(label = "Account")) },
-    "ArtistCard" to { ArtistCard(ArtistCardProps(title = "Artist")) },
     "BottomNav" to { BottomNav(BottomNavProps(items = listOf(BottomNavItem("home", "Home", "home")), active = "home")) },
     "Button" to { Button(ButtonProps(children = null)) },
     "ButtonGroup" to { ButtonGroup(ButtonGroupProps(items = listOf(ButtonGroupItem("all", "All")))) },

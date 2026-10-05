@@ -1,5 +1,6 @@
 /**
- * Shelf/grid card for any library item — album, book, podcast, episode.
+ * Shelf/grid card for any library item — album, book, podcast, episode — or, round, for a person
+ * (an artist, author or narrator) on a people shelf.
  * Cover art is a deterministic tint derived from the title, so a shelf reads as distinct artwork.
  * In a mixed shelf pass the content type as the first part of `sub` ("Book · 6 h 12 m left").
  */
@@ -60,5 +61,7 @@ export interface MediaCardProps {
   status?: string | null;
   /** The request's tone for `status`: `progress` (downloading, the accent), `request` (needs your choice), `error` (failed). */
   tone?: 'progress' | 'request' | 'error' | null;
+  /** `square` (default) for an item; `round` for a person: circular art, the title and `sub` centred beneath it. */
+  shape?: 'square' | 'round';
 }
 export declare function MediaCard(props: MediaCardProps): JSX.Element;

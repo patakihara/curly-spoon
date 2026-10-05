@@ -154,7 +154,7 @@ literally, `@dsCard` first line, pinned CDN scripts with integrity unchanged, da
   meaningless for a private library. `Rating` (wave 1) already covers the ratings that a real
   Audiobookshelf or Jellyfin item actually carries.
 - **A credits/contributor card.** The affordance — *who made this, and in what role* — is
-  already served: `ArtistCard` takes `title` and `sub`, so the role goes in `sub`, laid out by
+  already served: a round `MediaCard` takes `title` and `sub`, so the role goes in `sub`, laid out by
   `Shelf` under a `Section`. Worth building only if a role-grouped layout is ever wanted.
 - **A share sheet.** Platform-provided.
 - **Queue sheet, lyrics page, sync modes, edit mode, drag reorder.** `QueuePage`, `QueueRow`,

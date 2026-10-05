@@ -14,6 +14,8 @@ export interface SliderProps {
   tone?: 'accent' | 'play';
   /** Its accessible name, such as "Seek" or "Volume". */
   label?: string;
+  /** What a screen reader announces for the value, such as "1:05 of 3:20"; without it, the 0–1 value. */
+  valueText?: string;
 }
 
 /** Declared by pnpm gen: Sonora declares only the props. */

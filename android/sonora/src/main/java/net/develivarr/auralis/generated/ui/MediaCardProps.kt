@@ -2,7 +2,8 @@
 package net.develivarr.auralis.generated.ui
 
 /**
- * Shelf/grid card for any library item — album, book, podcast, episode.
+ * Shelf/grid card for any library item — album, book, podcast, episode — or, round, for a person
+ * (an artist, author or narrator) on a people shelf.
  * Cover art is a deterministic tint derived from the title, so a shelf reads as distinct artwork.
  * In a mixed shelf pass the content type as the first part of `sub` ("Book · 6 h 12 m left").
  */
@@ -63,10 +64,17 @@ data class MediaCardProps(
     val status: String? = null,
     /** The request's tone for `status`: `progress` (downloading, the accent), `request` (needs your choice), `error` (failed). */
     val tone: MediaCardTone? = null,
+    /** `square` (default) for an item; `round` for a person: circular art, the title and `sub` centred beneath it. */
+    val shape: MediaCardShape? = null,
 )
 
 enum class MediaCardTone(val value: String) {
     PROGRESS("progress"),
     REQUEST("request"),
     ERROR("error"),
+}
+
+enum class MediaCardShape(val value: String) {
+    SQUARE("square"),
+    ROUND("round"),
 }

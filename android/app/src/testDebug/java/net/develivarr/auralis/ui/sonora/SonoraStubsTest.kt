@@ -22,7 +22,6 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import net.develivarr.auralis.generated.ui.AboutCardProps
 import net.develivarr.auralis.generated.ui.AccountButtonProps
-import net.develivarr.auralis.generated.ui.ArtistCardProps
 import net.develivarr.auralis.generated.ui.BackLayerProps
 import net.develivarr.auralis.generated.ui.BackdropShellProps
 import net.develivarr.auralis.generated.ui.BottomNavItem
@@ -88,7 +87,6 @@ class SonoraStubsTest {
     private val stubs = listOf(
         stub("AboutCard") { AboutCard(AboutCardProps(title = "About")) },
         stub("AccountButton") { AccountButton(AccountButtonProps()) },
-        stub("ArtistCard") { ArtistCard(ArtistCardProps(title = "Artist")) },
         stub("BackLayer") { BackLayer(BackLayerProps()) },
         stub("BackdropShell") { BackdropShell(BackdropShellProps()) },
         stub("BottomNav") { BottomNav(BottomNavProps(items = listOf(BottomNavItem(key = "browse", label = "Browse", icon = "explore")), active = "browse")) },

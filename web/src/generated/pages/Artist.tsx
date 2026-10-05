@@ -4,7 +4,7 @@ import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
 import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
 import type { ShellNav } from '../../shell-nav';
-import { ArtistCard, BackLayer, BottomNav, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, OverflowMenu, PageBody, ResultRow, Section, Shelf } from '../ui/index.js';
+import { BackLayer, BottomNav, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, OverflowMenu, PageBody, ResultRow, Section, Shelf } from '../ui/index.js';
 
 const placeholder = {
   "title": "Deep Inertia",
@@ -484,7 +484,7 @@ export default function Artist({ data = placeholder, state = 'full' }: ArtistPro
         <Shelf platform={platform}>
           {data.similar.map((artist, i) => (
             <Fragment key={i}>
-              <ArtistCard title={artist.title} sub={artist.sub} image={artist.image} onClick={() => navigate(generatePath('/music/artists/:ref', { ref: artist.ref }))} platform={platform} />
+              <MediaCard shape="round" title={artist.title} sub={artist.sub} image={artist.image} onClick={() => navigate(generatePath('/music/artists/:ref', { ref: artist.ref }))} platform={platform} />
             </Fragment>
           ))}
         </Shelf>

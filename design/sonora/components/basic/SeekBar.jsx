@@ -9,7 +9,7 @@ import { NS, clamp01, formatTime, sx } from '../shared.js';
 export function SeekBar({ value = 0, duration = 0, platform = 'mobile', onChange, readout = 'remaining' }) {
   const Slider = NS().Slider;
   const secs = clamp01(value) * duration;
-  const slider = Slider && <Slider value={value} onChange={onChange} platform={platform} tone="play" label="Seek" />;
+  const slider = Slider && <Slider value={value} onChange={onChange} platform={platform} tone="play" label="Seek" valueText={formatTime(secs) + ' of ' + formatTime(duration)} />;
   if (readout === 'inline') {
     // Each readout holds at least the m:ss width, so the slider stays put as digits change, and
     // grows rather than clips for an hour or more; tabular digits keep it still as seconds tick.

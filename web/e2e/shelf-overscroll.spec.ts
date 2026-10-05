@@ -328,3 +328,31 @@ test('[M0.sonoraclean/d] a Browse shelf scrolled to its end by wheel, after focu
   await expect(back, 'no arrow takes focus the listener did not give it').not.toBeFocused();
   expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
 });
+
+test("[M0.sonoraclean/d] a Browse shelf's arrow holding keyboard focus stays shown when the mouse leaves the shelf", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.locator('img').first().waitFor();
+  const forward = page.getByRole('button', { name: 'Scroll forward' }).first();
+  const track = page.locator(`[id="${await forward.getAttribute('aria-controls')}"]`);
+  const box = await track.boundingBox();
+  if (box === null) throw new Error('the shelf track has no box');
+  const shown = () =>
+    forward.evaluate((el) => {
+      let opacity = 1;
+      for (let n: Element | null = el; n !== null; n = n.parentElement)
+        opacity *= Number(getComputedStyle(n).opacity);
+      return opacity;
+    });
+
+  // Hover the shelf, then put keyboard focus on its forward arrow, then move the mouse away.
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await forward.focus();
+  await expect.poll(shown).toBe(1);
+  await page.mouse.move(box.x + box.width / 2, 2);
+  await page.waitForTimeout(600);
+  expect(await forward.evaluate((el) => document.activeElement === el), 'still focused').toBe(true);
+  expect(await shown(), 'the focused arrow is still shown').toBe(1);
+});

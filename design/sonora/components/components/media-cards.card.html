@@ -9,7 +9,7 @@
 </head><body>
 <div id="root"></div>
 <script type="text/babel">
-const { MediaCard, ArtistCard, PlayActions } = window.SonoraDesignSystem_6c1435;
+const { MediaCard, PlayActions } = window.SonoraDesignSystem_6c1435;
 const cover = (t, s) => 'https://picsum.photos/seed/sonora-' + encodeURIComponent(String(t).toLowerCase().replace(/[^a-z0-9]+/g, '-')) + '/' + (s || 400);
 function Demo(){
   return <div style={{display:'flex',flexDirection:'column',gap:24}}>
@@ -40,9 +40,9 @@ function Demo(){
       <MediaCard platform="mobile" title="The Digest" sub="Digest · 8 episodes" covers={[cover("Sonic Tales"), cover("Tidal Lines"), cover("Low Orbit"), cover("Harbour Glass")]} onClick={() => {}} />
     </div>
     <div style={{display:'flex',gap:20,flexWrap:'wrap'}}>
-      <ArtistCard title="Natasha Beller" sub="Artist" image={cover("Natasha Beller", 320)} onClick={() => {}} />
-      <ArtistCard title="Evelyn Harper" sub="Author" image={cover("Evelyn Harper", 320)} onClick={() => {}} />
-      <ArtistCard platform="mobile" title="Deep Inertia" sub="Artist" image={cover("Deep Inertia", 320)} onClick={() => {}} />
+      <MediaCard shape="round" title="Natasha Beller" sub="Artist" image={cover("Natasha Beller", 320)} onClick={() => {}} />
+      <MediaCard shape="round" title="Evelyn Harper" sub="Author" image={cover("Evelyn Harper", 320)} onClick={() => {}} />
+      <MediaCard shape="round" platform="mobile" title="Deep Inertia" sub="Artist" image={cover("Deep Inertia", 320)} onClick={() => {}} />
     </div>
   </div>;
 }
