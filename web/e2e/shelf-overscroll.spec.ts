@@ -346,13 +346,18 @@ test("[M0.sonoraclean/d] a Browse shelf's arrow holding keyboard focus stays sho
         opacity *= Number(getComputedStyle(n).opacity);
       return opacity;
     });
+  // A shown arrow rests at `--opacity-rest`, not full opacity.
+  const rest = await page.evaluate(() =>
+    Number(getComputedStyle(document.documentElement).getPropertyValue('--opacity-rest')),
+  );
+  expect(rest).toBeGreaterThan(0);
 
   // Hover the shelf, then put keyboard focus on its forward arrow, then move the mouse away.
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await forward.focus();
-  await expect.poll(shown).toBe(1);
+  await expect.poll(shown).toBeCloseTo(rest, 2);
   await page.mouse.move(box.x + box.width / 2, 2);
   await page.waitForTimeout(600);
   expect(await forward.evaluate((el) => document.activeElement === el), 'still focused').toBe(true);
-  expect(await shown(), 'the focused arrow is still shown').toBe(1);
+  expect(await shown(), 'the focused arrow is still shown').toBeCloseTo(rest, 2);
 });
