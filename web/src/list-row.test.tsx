@@ -114,7 +114,7 @@ describe("Sonora's rows, drawn", () => {
   it.each(ROWS)('[M0.sonoraclean/d] %s draws the row shell at its root', (name, el) => {
     const html = renderToString(el);
     // The shell's root: a full-width flex row whose text column fills between the slots.
-    expect(root(html), name).toContain('box-sizing:border-box;width:100%;display:flex');
+    expect(root(html), name).toContain('box-sizing:border-box;display:flex');
     expect(html, name).toContain('flex:1;min-width:0;display:flex;flex-direction:column');
   });
 

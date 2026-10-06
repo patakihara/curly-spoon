@@ -50,7 +50,7 @@ export function ListRow({
       tabIndex={pressable ? (off ? -1 : 0) : undefined} aria-disabled={pressable ? off : undefined} aria-expanded={expanded}
       onClick={off ? undefined : press} onKeyDown={off ? undefined : activate((e) => onClick(e))}
       draggable={draggable} onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop} onDragEnd={onDragEnd}
-      style={sx('position:relative;box-sizing:border-box;width:100%;display:flex;align-items:' + (align === 'start' ? 'flex-start' : 'center')
+      style={sx('position:relative;box-sizing:border-box;display:flex;align-items:' + (align === 'start' ? 'flex-start' : 'center')
         + ';gap:' + gap + ';padding:' + padY + ' ' + padX + ';border-radius:' + radius + ';background:' + (SURFACE[surface] || SURFACE.none)
         + ';transition:background var(--duration-quick) var(--ease-standard)' + (pressable ? ';cursor:pointer' : ''))}>
       {leading}
