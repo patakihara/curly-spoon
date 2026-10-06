@@ -157,6 +157,30 @@
         "message": "<Input> platform must be one of 'desktop' | 'mobile'."
       },
       {
+        "selector": "JSXOpeningElement[name.name='ListRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|leading|trailing|image|artSize|artGrey|artStatus|onArt|artLabel|artIcon|onClick|disabled|divider|density|surface|align|platform|expanded|draggable|onDragStart|onDragOver|onDrop|onDragEnd|key|ref|className|style|children)$/]",
+        "message": "<ListRow> doesn't accept that prop. Declared props: children, leading, trailing, image, artSize, artGrey, artStatus, onArt, artLabel, artIcon, onClick, disabled, divider, density, surface, align, platform, expanded, draggable, onDragStart, onDragOver, onDrop, onDragEnd."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ListRow'] > JSXAttribute[name.name='artSize'] > Literal[value!=/^(?:3xs|2xs|xs|sm|md|lg)$/]",
+        "message": "<ListRow> artSize must be one of '3xs' | '2xs' | 'xs' | 'sm' | 'md' | 'lg'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ListRow'] > JSXAttribute[name.name='density'] > Literal[value!=/^(?:compact|regular|roomy|card)$/]",
+        "message": "<ListRow> density must be one of 'compact' | 'regular' | 'roomy' | 'card'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ListRow'] > JSXAttribute[name.name='surface'] > Literal[value!=/^(?:none|card|selected)$/]",
+        "message": "<ListRow> surface must be one of 'none' | 'card' | 'selected'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ListRow'] > JSXAttribute[name.name='align'] > Literal[value!=/^(?:center|start)$/]",
+        "message": "<ListRow> align must be one of 'center' | 'start'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ListRow'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<ListRow> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
         "selector": "JSXOpeningElement[name.name='LyricsSyncButton'] > JSXAttribute > JSXIdentifier[name!=/^(?:mode|dot|onChange|key|ref|className|style|children)$/]",
         "message": "<LyricsSyncButton> doesn't accept that prop. Declared props: mode, dot, onChange."
       },
@@ -758,6 +782,9 @@
         "replaces": []
       },
       "LayoutGrid": {
+        "replaces": []
+      },
+      "ListRow": {
         "replaces": []
       },
       "Lyrics": {

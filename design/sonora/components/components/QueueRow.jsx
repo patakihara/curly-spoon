@@ -1,5 +1,5 @@
 import React from 'react';
-import { NS, activate, sx } from '../shared.js';
+import { NS, sx } from '../shared.js';
 
 /**
  * One row of the play queue: drag handle, art, title/sub, duration and a remove control. In the
@@ -11,40 +11,33 @@ export function QueueRow({
   handle = true, editing = false, selected = false, onSelectToggle,
   draggable = true, onDragStart, onDragOver, onDrop, onDragEnd,
 }) {
-  const { CoverArt, IconButton, StateLayer, Icon } = NS();
+  const { IconButton, Icon, ListRow } = NS();
   const mobile = platform === 'mobile';
-  const art = mobile ? 44 : 40;
-  const off = !onClick;
-  // A press on a control in the row stays its own; one with no handler is drawn disabled.
-  const stop = (fn) => (fn ? (e) => { if (e && e.stopPropagation) e.stopPropagation(); fn(e); } : undefined);
-  return (
-    <div className="sn-int" role="button" tabIndex={off ? -1 : 0} aria-disabled={off}
-      onClick={off ? undefined : onClick}
-      onKeyDown={off ? undefined : activate(() => onClick())}
+  return ListRow ? (
+    <ListRow platform={platform} density="compact" onClick={onClick} disabled={!onClick}
+      surface={selected ? 'selected' : current ? 'card' : 'none'}
       draggable={draggable && (editing || handle)} onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop} onDragEnd={onDragEnd}
-      style={sx('display:flex;align-items:center;gap:var(--spacing-md);padding:var(--spacing-sm);cursor:pointer;transition:background var(--duration-quick) var(--ease-standard);border-radius:var(--radius-' + (mobile ? 'sm' : 'xs') + ');background:' + (selected ? 'color-mix(in oklab, var(--surface-card) 80%, var(--accent))' : current ? 'var(--surface-card)' : 'transparent'))}>
-      {editing && IconButton && (
-        <IconButton label={selected ? 'Deselect' : 'Select'} size={mobile ? 'md' : 'sm'} active={selected} muted={!selected} onClick={stop(onSelectToggle)}>
-          <Icon name={selected ? 'check_circle' : 'radio_button_unchecked'} filled={selected} weight={selected ? 'strong' : 'body'} />
-        </IconButton>
-      )}
-      {/* The grip only drags: a press on it is not a press on the row. */}
-      {(handle || editing) && (
-        <span onClick={(e) => e.stopPropagation()} title="Drag to reorder" aria-label="Drag to reorder"
-          style={sx('display:inline-flex;flex-shrink:0;cursor:grab;color:var(--surface-fg-muted)')}><Icon name="drag_handle" size={mobile ? 'sm' : 'xs'} weight="text" /></span>
-      )}
-      <div style={sx('position:relative;overflow:hidden;width:' + art + 'px;height:' + art + 'px;flex-shrink:0;border-radius:' + (mobile ? '8px' : '6px') + ';background:var(--accent)')}>
-        {image && CoverArt && <CoverArt src={image} alt="" />}
-      </div>
-      <div style={sx('min-width:0;flex:1')}>
-        <div style={sx('font-size:var(--text-md);font-weight:var(--weight-medium);color:' + (current ? 'var(--play-ink)' : 'var(--surface-fg)') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{title}</div>
-        <div style={sx('font-size:var(--text-sm);color:var(--surface-fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{sub}</div>
-      </div>
-      {time && !editing && <span style={sx('font-size:var(--text-sm);color:var(--surface-fg-muted)')}>{time}</span>}
-      {onRemove && IconButton && (
-        <IconButton label="Remove from queue" size={mobile ? 'md' : 'sm'} muted onClick={stop(onRemove)}><Icon name="close" size={mobile ? 'sm' : 'xs'} /></IconButton>
-      )}
-      {StateLayer && <StateLayer disabled={off} />}
-    </div>
-  );
+      leading={<React.Fragment>
+        {editing && IconButton && (
+          <IconButton label={selected ? 'Deselect' : 'Select'} size={mobile ? 'md' : 'sm'} active={selected} muted={!selected} onClick={onSelectToggle}>
+            <Icon name={selected ? 'check_circle' : 'radio_button_unchecked'} filled={selected} weight={selected ? 'strong' : 'body'} />
+          </IconButton>
+        )}
+        {/* The grip only drags: a press on it is not a press on the row. */}
+        {(handle || editing) && (
+          <span data-sn-own-press="" title="Drag to reorder" aria-label="Drag to reorder"
+            style={sx('display:inline-flex;flex-shrink:0;cursor:grab;color:var(--surface-fg-muted)')}><Icon name="drag_handle" size={mobile ? 'sm' : 'xs'} weight="text" /></span>
+        )}
+      </React.Fragment>}
+      image={image} artSize={mobile ? 'xs' : '2xs'}
+      trailing={<React.Fragment>
+        {time && !editing && <span style={sx('font-size:var(--text-sm);color:var(--surface-fg-muted)')}>{time}</span>}
+        {onRemove && IconButton && (
+          <IconButton label="Remove from queue" size={mobile ? 'md' : 'sm'} muted onClick={onRemove}><Icon name="close" size={mobile ? 'sm' : 'xs'} /></IconButton>
+        )}
+      </React.Fragment>}>
+      <div style={sx('font-size:var(--text-md);font-weight:var(--weight-medium);color:' + (current ? 'var(--play-ink)' : 'var(--surface-fg)') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{title}</div>
+      <div style={sx('font-size:var(--text-sm);color:var(--surface-fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{sub}</div>
+    </ListRow>
+  ) : null;
 }

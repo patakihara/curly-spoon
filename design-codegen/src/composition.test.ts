@@ -522,3 +522,93 @@ describe("Sonora's progress bar, read from its sources", () => {
     },
   );
 });
+
+/** The rows that draw the one row shell: every `*Row` but FieldRow, a label over an Input. */
+const ROWS = ['EpisodeRow', 'ExpanderRow', 'QueueRow', 'ResultRow', 'SettingRow', 'ValueRow'];
+
+/**
+ * What only the row shell draws, each with the pattern that finds a copy of it: the press (a
+ * button role, the keyboard activation, the focus order, the disabled flag, the state layer), the
+ * divider (an absolutely placed hairline along the bottom) and the art with its overlay (the hover
+ * reveal, the cover, a scrim over it, the grey of an absent item).
+ */
+const SHELL: Record<string, RegExp[]> = {
+  press: [
+    /role=["']button["']/,
+    /\bactivate\(/,
+    /\bonKeyDown\b/,
+    /\btabIndex\b/,
+    /aria-disabled/,
+    /\bStateLayer\b/,
+  ],
+  divider: [/bottom:\s*0/, /height:\s*(1px|var\(--hairline\))/, /--surface-border/],
+  'art overlay': [/\bREVEAL\b/, /\bCoverArt\b/, /var\(--scrim(-strong|-soft)?\)/, /grayscale\(/],
+};
+
+/** Which parts of the row shell a source draws for itself. */
+const ownShell = (src: string): string[] =>
+  Object.entries(SHELL).flatMap(([part, patterns]) =>
+    patterns.filter((re) => re.test(src)).map((re) => `${part}: ${re.source}`),
+  );
+
+describe("Sonora's rows, read from their sources", () => {
+  it('[M0.sonoraclean/d] the row family is every *Row but FieldRow, and the shell is ListRow', () => {
+    const rows = [...components.keys()]
+      .filter((name) => /Row$/.test(name) && name !== 'FieldRow' && name !== 'ListRow')
+      .sort();
+    expect(rows).toEqual(ROWS);
+    expect(components.get('ListRow')?.folder).toBe('basic');
+  });
+
+  it.each(ROWS)('[M0.sonoraclean/d] %s renders ListRow', (name) => {
+    expect(rendered(source(name)).map((e) => e.tag)).toContain('ListRow');
+  });
+
+  it.each(ROWS)(
+    '[M0.sonoraclean/d] %s draws no press, divider or art overlay of its own',
+    (name) => {
+      expect(ownShell(source(name))).toEqual([]);
+    },
+  );
+
+  it('[M0.sonoraclean/d] ListRow draws the press, the divider and the art overlay', () => {
+    const own = ownShell(source('ListRow')).map((f) => f.split(':')[0]);
+    expect(new Set(own)).toEqual(new Set(Object.keys(SHELL)));
+  });
+
+  it.each([
+    ['a button role', `<div role="button" onClick={onClick} />`],
+    ['keyboard activation', `<div onKeyDown={activate(onClick)} />`],
+    ['a focus order', `<div tabIndex={0} />`],
+    ['a disabled flag', `<div aria-disabled={off} />`],
+    ['a state layer', `{StateLayer && <StateLayer disabled={off} />}`],
+    [
+      'a divider',
+      `<div style={sx('position:absolute;bottom:0;left:72px;height:1px;background:var(--surface-border)')} />`,
+    ],
+    [
+      'a hairline divider',
+      `<div style={{ position: 'absolute', bottom: 0, height: 'var(--hairline)' }} />`,
+    ],
+    ['the hover reveal', `<div className={REVEAL.host} />`],
+    ['a cover', `{CoverArt && <CoverArt src={image} />}`],
+    ['a scrim over the art', `sx('position:absolute;inset:0;background:var(--scrim-strong)')`],
+    ['a greyed cover', `sx('filter:grayscale(1)')`],
+  ])('[M0.sonoraclean/d] names a row drawing its own shell: %s', (_, src) => {
+    expect(ownShell(src)).not.toEqual([]);
+  });
+
+  it.each([
+    [
+      'a row handing its press to ListRow',
+      `<ListRow onClick={onClick} disabled={!onClick} divider={divider} />`,
+    ],
+    ['a control inside a row', `<IconButton label="Remove" onClick={stop(onRemove)} />`],
+    [
+      'art handed to ListRow',
+      `<ListRow image={image} artSize="md" onArt={onPlay} artLabel="Play" />`,
+    ],
+  ])('[M0.sonoraclean/d] leaves alone a row that hands its shell on: %s', (_, src) => {
+    expect(ownShell(src)).toEqual([]);
+  });
+});

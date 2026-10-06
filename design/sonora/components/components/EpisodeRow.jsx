@@ -1,6 +1,5 @@
 import React from 'react';
-import { NS, REVEAL, activate, sx } from '../shared.js';
-// Enter and Space press it as a click does, unless they come from a control inside it.
+import { NS, sx } from '../shared.js';
 
 /**
  * List row for serial spoken-word content — an episode is not a track: it carries a synopsis you
@@ -11,33 +10,13 @@ import { NS, REVEAL, activate, sx } from '../shared.js';
 export function EpisodeRow({ image, title, description, meta, finished = false, progress = null, explicit = false, absent = false, actions, onPlay, onClick, divider = false, platform = 'desktop' }) {
   const mobile = platform === 'mobile';
   const fg = 'var(--surface-fg)', muted = 'var(--surface-fg-muted)';
-  const { CoverArt, Badge, StateLayer, Icon, ProgressBar } = NS();
-  const off = !onClick;
-  const art = mobile ? 56 : 64;
+  const { Badge, Icon, ListRow, ProgressBar } = NS();
   const hasProgress = typeof progress === 'number';
   const metaLine = meta && meta.filter(Boolean).join(' • ');
-  return (
-    <div className="sn-int" role="button" tabIndex={off ? -1 : 0} aria-disabled={off}
-      onClick={off ? undefined : onClick} onKeyDown={off ? undefined : activate(onClick)}
-      style={sx('position:relative;display:flex;gap:' + (mobile ? '12px' : '16px') + ';padding:' + (mobile ? '10px 4px' : '12px') + ';border-radius:var(--radius-xs);cursor:pointer')}>
-      <div className={REVEAL.host} data-always={mobile ? 'true' : 'false'} style={sx('position:relative;width:' + art + 'px;height:' + art + 'px;flex-shrink:0')}>
-        <div style={sx('position:relative;overflow:hidden;width:100%;height:100%;border-radius:var(--radius-xs)')}>
-          {/* Greyed the way MediaCard greys an item you don't own: no colour, so a dark cover reads greyed too. */}
-          {CoverArt && (absent
-            ? <div style={sx('position:absolute;inset:0;filter:grayscale(1)')}><CoverArt src={image} /></div>
-            : <CoverArt src={image} />)}
-        </div>
-        {onPlay && (
-          <div className={REVEAL.item + ' sn-int'} onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); onPlay(e); }}
-            onKeyDown={activate((e) => { e.stopPropagation(); onPlay(e); })} tabIndex={0}
-            aria-label="Play episode" role="button" title="Play episode"
-            style={sx('position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:var(--radius-xs);background:var(--scrim-strong)')}>
-            <Icon name="play_arrow" size="md" filled weight="strong" style={sx('color:var(--on-scrim)')} />
-            {StateLayer && <StateLayer />}
-          </div>
-        )}
-      </div>
-      <div style={sx('flex:1;min-width:0;display:flex;flex-direction:column;gap:4px')}>
+  return ListRow ? (
+    <ListRow platform={platform} density="roomy" align="start" onClick={onClick} disabled={!onClick} divider={divider}
+      image={image} artSize={mobile ? 'md' : 'lg'} artGrey={absent} onArt={onPlay} artLabel="Play episode">
+      <div style={sx('display:flex;flex-direction:column;gap:4px')}>
         <div style={sx('display:flex;align-items:baseline;gap:6px;min-width:0')}>
           {/* Same square, uncounted Badge the feature card uses — one marker, one implementation. */}
           {explicit && Badge && (
@@ -66,10 +45,9 @@ export function EpisodeRow({ image, title, description, meta, finished = false, 
         {description && (
           <div style={sx('font-size:var(--text-sm);line-height:1.4;color:' + muted + ';display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden')}>{description}</div>
         )}
-        {actions && <div onClick={(e) => e && e.stopPropagation && e.stopPropagation()} style={sx('margin-top:4px')}>{actions}</div>}
+        {/* A press between its actions stays there, as one on an action does. */}
+        {actions && <div data-sn-own-press="" style={sx('margin-top:4px')}>{actions}</div>}
       </div>
-      {divider && <div aria-hidden="true" style={sx('position:absolute;bottom:0;right:' + (mobile ? '4px' : '12px') + ';left:' + (mobile ? (art + 20) + 'px' : (art + 28) + 'px') + ';height:1px;background:var(--surface-border)')} />}
-      {StateLayer && <StateLayer disabled={off} />}
-    </div>
-  );
+    </ListRow>
+  ) : null;
 }

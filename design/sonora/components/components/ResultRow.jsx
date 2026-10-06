@@ -1,6 +1,5 @@
 import React from 'react';
-import { NS, REVEAL, activate, badgeTone, clamp01, injectCss, sx } from '../shared.js';
-// Enter and Space press it as a click does, unless they come from a control inside it.
+import { NS, badgeTone, clamp01, injectCss, sx } from '../shared.js';
 
 injectCss('sonora-resultrow-css', '@keyframes rr-bar{0%,100%{transform:scaleY(.25)}50%{transform:scaleY(1)}}.rr-bars{display:flex;align-items:center;gap:2px;height:16px;flex-shrink:0}.rr-bars i{display:block;width:3px;height:16px;border-radius:2px;background:var(--play-ink);transform-origin:center;animation:rr-bar .9s ease-in-out infinite}.rr-bars i:nth-child(2){animation-duration:.62s}.rr-bars i:nth-child(3){animation-duration:1.15s}@media (prefers-reduced-motion:reduce){.rr-bars i{animation:none;transform:scaleY(.6)}}');
 
@@ -15,8 +14,7 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
   const queued = pct === null && st.indexOf('queued') > -1;
   const spinning = pct === null && st.indexOf('searching') > -1;
   const failed = pct === null && (st.indexOf('failed') > -1 || st.indexOf('error') > -1);
-  const { Badge, CoverArt, ProgressRing, StateLayer, Icon } = NS();
-  const off = !onClick;
+  const { Badge, ListRow, ProgressRing, Icon } = NS();
   const act = onAction || onClick;
   // No scrim without something to put on it — a bare dark square reads as a broken cover, not as work in flight.
   const ring = (pct !== null || spinning) && !!ProgressRing;
@@ -31,39 +29,24 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
     : (status && Badge ? <div style={sx('flex-shrink:0')}><Badge tone={badgeTone(tone)} size="md">{label}</Badge></div> : null);
   // A track number leads an album's rows in place of the art, which would only repeat the cover.
   const numbered = typeof number === 'number';
-  const lead = numbered ? (mobile ? 28 : 32) : 52;
-  return (
-    <div className="sn-int" role="button" tabIndex={off ? -1 : 0} aria-disabled={off}
-      onClick={off ? undefined : onClick} onKeyDown={off ? undefined : activate(onClick)}
-      style={sx('position:relative;display:flex;align-items:center;gap:' + (mobile ? '12px' : '16px') + ';padding:' + (mobile ? '8px 4px' : '10px 12px') + ';border-radius:var(--radius-xs);cursor:pointer')}>
-      {numbered ? (
-        <div style={sx('width:' + lead + 'px;flex-shrink:0;text-align:center;font-size:var(--text-md);font-variant-numeric:tabular-nums;color:' + (nowPlaying ? 'var(--play-ink)' : muted))}>{number}</div>
-      ) : (
-      <div className={REVEAL.host} data-always={mobile ? 'true' : 'false'} style={sx('position:relative;width:52px;height:52px;flex-shrink:0')}>
-        <div style={sx('position:relative;overflow:hidden;width:52px;height:52px;border-radius:' + (mobile ? '8px' : '6px'))}>
-          {CoverArt && <CoverArt src={image} />}
-        </div>
-        {showAction && (
-          <div className={REVEAL.item + ' sn-int'} role="button" tabIndex={0} onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); act(e); }}
-            onKeyDown={activate((e) => { e.stopPropagation(); act(e); })}
-            aria-label={failed ? 'Retry' : (spinning || queued ? 'Cancel request' : 'Play')}
-            title={failed ? 'Retry' : (spinning || queued ? 'Cancel request' : 'Play')}
-            style={sx('position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;border-radius:' + (mobile ? '8px' : '6px') + ';background:var(--scrim-strong)')}>
-            <Icon name={failed ? 'refresh' : (spinning || queued ? 'close' : (actionGlyph === 'downloading' ? 'pause' : (actionGlyph || 'play_arrow')))}
-              filled style={sx('color:var(--on-scrim)')} />
-            {StateLayer && <StateLayer />}
-          </div>
-        )}
-        {dimmed && (
-          <div style={sx('position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:' + (mobile ? '8px' : '6px') + ';background:var(--scrim)')}>
-            {pct !== null && ProgressRing && <ProgressRing size={ringSize} value={pct} />}
-            {spinning && ProgressRing && <ProgressRing size={ringSize} />}
-            {(queued || failed) && <Icon name={failed ? 'error' : 'schedule'} style={sx('color:var(--accent-contrast)')} />}
-          </div>
-        )}
-      </div>
-      )}
-      <div style={sx('flex:1;min-width:0;display:flex;flex-direction:column;gap:3px')}>
+  const actionLabel = failed ? 'Retry' : (spinning || queued ? 'Cancel request' : 'Play');
+  return ListRow ? (
+    <ListRow platform={platform} density="regular" onClick={onClick} disabled={!onClick} divider={divider}
+      leading={numbered ? (
+        <div style={sx('width:' + (mobile ? 28 : 32) + 'px;flex-shrink:0;text-align:center;font-size:var(--text-md);font-variant-numeric:tabular-nums;color:' + (nowPlaying ? 'var(--play-ink)' : muted))}>{number}</div>
+      ) : null}
+      image={image} artSize={numbered ? undefined : 'md'}
+      onArt={showAction ? act : undefined} artLabel={actionLabel}
+      artIcon={failed ? 'refresh' : (spinning || queued ? 'close' : (actionGlyph === 'downloading' ? 'pause' : (actionGlyph || 'play_arrow')))}
+      artStatus={dimmed ? (
+        <React.Fragment>
+          {pct !== null && ProgressRing && <ProgressRing size={ringSize} value={pct} />}
+          {spinning && ProgressRing && <ProgressRing size={ringSize} />}
+          {(queued || failed) && <Icon name={failed ? 'error' : 'schedule'} style={sx('color:var(--accent-contrast)')} />}
+        </React.Fragment>
+      ) : null}
+      trailing={mobile ? null : <React.Fragment>{statusPill}{trailing}</React.Fragment>}>
+      <div style={sx('display:flex;flex-direction:column;gap:3px')}>
         <div style={sx('display:flex;align-items:center;gap:var(--spacing-md)')}>
           <div style={sx('flex:1;min-width:0;font-size:var(--text-md);font-weight:var(--weight-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + fg)}>{title}</div>
           {mobile && statusPill}
@@ -72,11 +55,6 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
         <div style={sx('font-size:var(--text-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + muted)}>{meta}</div>
         {detail && <div style={sx('font-size:var(--text-sm);line-height:var(--leading-sm);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:' + fg)}>{detail}</div>}
       </div>
-      {!mobile && statusPill}
-      {!mobile && trailing}
-      {/* Inset to the text column, so the artwork column reads as one continuous edge. */}
-      {divider && <div aria-hidden="true" style={sx('position:absolute;bottom:0;right:' + (mobile ? '4px' : '12px') + ';left:' + ((mobile ? 16 : 28) + lead) + 'px' + ';height:1px;background:var(--surface-border)')} />}
-      {StateLayer && <StateLayer disabled={off} />}
-    </div>
-  );
+    </ListRow>
+  ) : null;
 }

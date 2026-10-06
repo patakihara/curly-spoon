@@ -157,6 +157,36 @@ The new text, on every keystroke. Without it the field is drawn disabled.
 | `onChange` | `(next: string) => void` | The new text, on every keystroke. Without it the field is drawn disabled. |
 | `disabled` | `boolean` | Drawn disabled: text at 38%, the fill at 12% of the surface ink, no focus or typing. |
 
+### ListRow
+
+The one row shell every list row draws (ResultRow, EpisodeRow, QueueRow, ExpanderRow, ValueRow, SettingRow): a press as a button's, with Enter and Space, the hairline divider inset to the text column, the leading, text and trailing slots, the density, and the row's art with its hover play overlay. A press inside a control of the row stays the control's.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `children` | `ReactNode` | The text slot, a column filling the row between the leading and trailing slots. |
+| `leading` | `ReactNode` | Drawn first, before any art: a track number, a select control, a drag handle. |
+| `trailing` | `ReactNode` | Drawn at the row's trailing edge: a status pill, a duration, a value, a switch, a control. |
+| `image` | `string` | Cover art URL for the art, which `artSize` draws. Falls back to the accent tile when omitted. |
+| `artSize` | `'3xs' \| '2xs' \| 'xs' \| 'sm' \| 'md' \| 'lg'` | A step of the art ramp (`--art-<size>`). Set, the row draws its art after `leading`; omitted, none. |
+| `artGrey` | `boolean` | Greys the art to no colour: an item you don't have, such as an episode of a show you don't follow. |
+| `artStatus` | `ReactNode` | Drawn centred over the art on a scrim: work in flight, such as a progress ring. |
+| `onArt` | `(e?: any) => void` | The art's own action, a glyph over the art on a strong scrim, shown on hover or focus (always on a phone). Without it there is none. |
+| `artLabel` | `string` | The art action's accessible name. Default "Play". |
+| `artIcon` | `string` | The art action's glyph, a Material Symbols name. Default `play_arrow`. |
+| `onClick` | `(e?: any) => void` | Presses the row. With neither it nor `disabled` the row is no button, only a container for its own controls. |
+| `disabled` | `boolean` | Draws the row as a button that is off. |
+| `divider` | `boolean` | Hairline separator along the bottom, inset to the text column. Set on all but the last row of a list. |
+| `density` | `'compact' \| 'regular' \| 'roomy' \| 'card'` |  Padding and gap: `compact` (the queue), `regular` (default, a track list), `roomy` (an episode list, a folded group) or `card` (a filled settings row).  |
+| `surface` | `'none' \| 'card' \| 'selected'` | What it sits on: `none` (default), `card` (the card fill) or `selected` (the card tinted toward the accent). |
+| `align` | `'center' \| 'start'` | How the slots line up across the row: `center` (default) or `start`, the top, for a row whose text runs long. |
+| `platform` | `'desktop' \| 'mobile'` |  |
+| `expanded` | `boolean` | For a row that shows or hides something: whether it is shown, announced as expanded. |
+| `draggable` | `boolean` | Whether the row can be dragged, to reorder it. |
+| `onDragStart` | `(e?: any) => void` |  |
+| `onDragOver` | `(e?: any) => void` |  |
+| `onDrop` | `(e?: any) => void` |  |
+| `onDragEnd` | `(e?: any) => void` |  |
+
 ### LyricsSyncButton
 
 The lyric sheet's sync toggle, a tonal IconButton (the list/grid toggle's pill). Synced (`sync`), the current line leads in accent ink; off, every line is at full strength and a dot marks the current one (`dot`), or nothing does (`off`) when the dot is switched off from the player's menu.

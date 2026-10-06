@@ -1,0 +1,44 @@
+<!-- @dsCard group="Basic" viewport="1200x520" name="ListRow" subtitle="Preview: the row shell at each density: a track row with its art, play overlay and divider, a number-led row, an episode row aligned to the top, the queue's current row, a filled value row, a plain row holding its own switch, and one drawn off" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
+<div id="root"></div>
+<script type="text/babel">
+const { ListRow, Badge, Switch } = window.SonoraDesignSystem_6c1435;
+function Demo(){
+  const [on, setOn] = React.useState(true);
+  return <div style={{display:'flex',flexDirection:'column',gap:'var(--spacing-xs)',maxWidth:480}}>
+    <ListRow artSize="md" onArt={() => {}} onClick={() => {}} divider trailing={<Badge tone="accent" size="md">In library</Badge>}>
+      <div style={{fontSize:'var(--text-md)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg)'}}>Tidal Lines</div><div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)'}}>Halcyon Bloom • Driftwave</div>
+    </ListRow>
+    <ListRow leading={<div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)'}}>2</div>} onClick={() => {}}>
+      <div style={{fontSize:'var(--text-md)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg)'}}>Static Coast</div><div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)'}}>Halcyon Bloom</div>
+    </ListRow>
+    <ListRow density="roomy" align="start" artSize="lg" onArt={() => {}} artLabel="Play episode" onClick={() => {}}>
+      <div style={{fontSize:'var(--text-md)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg)'}}>Episode 12: The night ferry</div><div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)'}}>Sep 30 • 48 min</div><div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)'}}>A crossing nobody timetabled, and the crew who kept it running.</div>
+    </ListRow>
+    <ListRow density="compact" surface="card" artSize="2xs" onClick={() => {}} trailing={<div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)'}}>3:34</div>}>
+      <div style={{fontSize:'var(--text-md)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg)'}}>Empty Rooms</div><div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)'}}>Echo Fields</div>
+    </ListRow>
+    <ListRow density="card" surface="card" onClick={() => {}} trailing={<div style={{fontSize:'var(--text-md)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg)'}}>1.0x</div>}>
+      <div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)'}}>Speed</div>
+    </ListRow>
+    <ListRow density="card" surface="card" trailing={<Switch checked={on} onChange={setOn} />}>
+      <div style={{fontSize:'var(--text-md)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg)'}}>Gapless</div><div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)'}}>No gap between tracks</div>
+    </ListRow>
+    <ListRow disabled artSize="md">
+      <div style={{fontSize:'var(--text-md)',fontWeight:'var(--weight-strong)',color:'var(--surface-fg)'}}>Unavailable track</div><div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)'}}>Not on this server</div>
+    </ListRow>
+  </div>;
+}
+function Themed(){
+  return <div style={{display:'flex',flexWrap:'wrap',alignItems:'flex-start'}}>
+    <div data-theme="dark" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+    <div data-theme="light" style={{flex:'1 1 380px',minWidth:0,background:'var(--surface-bg)',color:'var(--surface-fg)',fontFamily:'var(--font-body)',padding:20}}><Demo/></div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Themed/>);
+</script>

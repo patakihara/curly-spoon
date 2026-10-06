@@ -38,6 +38,7 @@
 --control-3xl:72px; /* transport play on a phone */
 
 /* Art sizes — the square edge of a cover in a row, card or header */
+--art-3xs:36px; /* a folded group's lead art */
 --art-2xs:40px;
 --art-xs:44px; /* mini player */
 --art-sm:48px;

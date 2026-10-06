@@ -25,6 +25,7 @@ import {
   FollowButton,
   IconButton,
   Input,
+  ListRow,
   Lyrics,
   LyricsPage,
   LyricsSyncButton,
@@ -198,6 +199,11 @@ const DRAW: Record<string, (act: Act, disabled: boolean) => ReactNode> = {
     />
   ),
   Input: (act, disabled) => <Input placeholder="Name" onChange={act} disabled={disabled} />,
+  ListRow: (act, disabled) => (
+    <ListRow onClick={act} disabled={disabled}>
+      Low Tide
+    </ListRow>
+  ),
   Lyrics: (act) => (
     <Lyrics
       lines={['First line', 'Second line']}

@@ -23,6 +23,7 @@ export { Icon } from './basic/Icon.jsx';
 export { IconButton } from './basic/IconButton.jsx';
 export { Input } from './basic/Input.jsx';
 export { LayoutGrid } from './layouts/LayoutGrid.jsx';
+export { ListRow } from './basic/ListRow.jsx';
 export { Lyrics } from './components/Lyrics.jsx';
 export { LyricsPage } from './layouts/LyricsPage.jsx';
 export { LyricsSyncButton } from './basic/LyricsSyncButton.jsx';

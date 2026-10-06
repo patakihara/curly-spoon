@@ -3,15 +3,11 @@ import { NS, sx } from '../shared.js';
 
 /** Settings list row: title, explanatory line, and a Switch. */
 export function SettingRow({ title, sub, checked = false, platform = 'desktop', onChange }) {
-  const Switch = NS().Switch;
-  const mobile = platform === 'mobile';
-  return (
-    <div style={sx('display:flex;align-items:center;justify-content:space-between;gap:' + (mobile ? '16px' : '24px') + ';padding:var(--spacing-lg) var(--spacing-lg);border-radius:var(--radius-' + (mobile ? 'sm' : 'xs') + ');background:var(--surface-card)')}>
-      <div style={sx('min-width:0')}>
-        <div style={sx('font-size:var(--text-md);font-weight:var(--weight-strong);color:var(--surface-fg)')}>{title}</div>
-        <div style={sx('font-size:var(--text-sm);line-height:1.5;color:var(--surface-fg-muted)')}>{sub}</div>
-      </div>
-      {Switch && <Switch checked={!!checked} onChange={onChange} />}
-    </div>
-  );
+  const { ListRow, Switch } = NS();
+  return ListRow ? (
+    <ListRow platform={platform} density="card" surface="card" trailing={Switch && <Switch checked={!!checked} onChange={onChange} />}>
+      <div style={sx('font-size:var(--text-md);font-weight:var(--weight-strong);color:var(--surface-fg)')}>{title}</div>
+      <div style={sx('font-size:var(--text-sm);line-height:1.5;color:var(--surface-fg-muted)')}>{sub}</div>
+    </ListRow>
+  ) : null;
 }

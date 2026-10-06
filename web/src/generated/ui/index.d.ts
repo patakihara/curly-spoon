@@ -23,6 +23,7 @@ export { Icon, type IconProps } from './basic/Icon';
 export { IconButton, type IconButtonProps } from './basic/IconButton';
 export { Input, type InputProps } from './basic/Input';
 export { LayoutGrid, type LayoutGridProps } from './layouts/LayoutGrid';
+export { ListRow, type ListRowProps } from './basic/ListRow';
 export { Lyrics, type LyricsProps } from './components/Lyrics';
 export { LyricsPage, type LyricsPageProps } from './layouts/LyricsPage';
 export { LyricsSyncButton, type LyricsSyncButtonProps } from './basic/LyricsSyncButton';
