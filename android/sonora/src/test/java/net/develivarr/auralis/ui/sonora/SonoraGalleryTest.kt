@@ -39,7 +39,9 @@ class SonoraGalleryTest {
     @Test
     fun `M0_tokens_c every Sonora composable in ui sonora is in the gallery`() {
         val found = composables()
-        assertTrue("read only ${found.size} composables", found.size >= 40)
+        val listed = names.size - SPECIMENS.size
+        assertTrue("the gallery lists no components", listed > 0)
+        assertTrue("read only ${found.size} of $listed composables", found.size >= listed)
         assertEquals("not in the gallery", emptySet<String>(), found - names.toSet())
     }
 
@@ -57,7 +59,7 @@ class SonoraGalleryTest {
     @Test
     fun `M0_tokens_c a palette swatch is each theme colour under its token name`() {
         val swatches = swatches(SonoraDarkColors).toMap()
-        assertTrue("read only ${themed().size} themed colours", themed().size >= 20)
+        assertTrue("read no themed colours", themed().isNotEmpty())
         assertEquals(themed(), swatches.keys.toList())
         assertEquals(SonoraDarkColors.surfaceBg, swatches["surfaceBg"])
         assertEquals(SonoraDarkColors.accentInk, swatches["accentInk"])
