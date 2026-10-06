@@ -195,8 +195,8 @@ export const gallery = [
   },
   {
     name: 'MediaCard',
-    card: 'components/card-states.card.html',
-    render: () => (<div style={{display:'flex',gap:'var(--spacing-lg)',flexWrap:'wrap'}}><MediaCard width="160px" eyebrow="Album" title="Driftwave" sub="Halcyon Bloom" onClick={() => {}} /></div>),
+    card: 'components/media-cards.card.html',
+    render: () => (<div style={{display:'flex',gap:20,flexWrap:'wrap',alignItems:'flex-start'}}><MediaCard title="Saved for later" sub="List · empty" covers={[]} onClick={() => {}} /></div>),
   },
   {
     name: 'MediaHeader',

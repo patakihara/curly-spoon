@@ -9,8 +9,8 @@ spotify: [S31]
 
 Canvas renders: `books/canvas-phone.png` (390 px) and `books/canvas-desktop.png` (1440 px), both in
 the app shell. Sonora UI kit renders, the design this page is compared against:
-`sonora/kit-desktop-books.png` and `sonora/kit-mobile-books.png`. Also looked at: the Media &
-Artist Cards and Backdrop Local Search cards, the page scrolled on the phone, and Spotify's S31
+`sonora/kit-desktop-books.png` and `sonora/kit-mobile-books.png`. Also looked at: the Media
+Cards and Backdrop Local Search cards, the page scrolled on the phone, and Spotify's S31
 (Your Library) for the sort row; S25's notes for intent.
 
 ## What the Sonora UI kit renders show

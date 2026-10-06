@@ -353,6 +353,7 @@ object SonoraOpacity {
  *   --now-playing-art-width: 76%
  *   --sheet-max-height: 80%
  *   --shelf-arrow-top: 38%
+ *   --round-inset: 14.65%
  *   --radius-round: 50%
  *   --shadow-xs: 0 1px 2px rgba(0,0,0,0.05)
  *   --shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)

@@ -378,7 +378,62 @@ const only = new URLSearchParams(window.location.search).get('only');
  */
 const card = new URLSearchParams(window.location.search).get('card');
 
+/** Every marker a card can carry on its art, one card each, for `?card=round` and `?card=square`. */
+const MARKED: { marker: string; props: Partial<Parameters<typeof MediaCard>[0]> }[] = [
+  { marker: 'progress', props: { progress: 0.42 } },
+  { marker: 'absent', props: { absent: true } },
+  { marker: 'requestable', props: { absent: true, onRequest: () => undefined } },
+  { marker: 'download', props: { status: 'Downloading 45%', tone: 'progress' } },
+  { marker: 'requested', props: { status: 'Requested', tone: 'request' } },
+  { marker: 'saved', props: { savedBadge: true } },
+  { marker: 'unplayed', props: { unplayed: true, onMore: () => undefined } },
+];
+
+/**
+ * `?card=round` and `?card=square` draw each art marker on a card of that shape, on a phone card
+ * and a desktop one, for the test that no marker is clipped by a round card's circle.
+ * `?card=titles` draws a shelf of cards whose titles run one line, two, and one unbreakable word.
+ */
+function Marked({ shape }: { shape: 'round' | 'square' }) {
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, padding: 24 }}>
+      {(['mobile', 'desktop'] as const).flatMap((platform) =>
+        MARKED.map(({ marker, props }) => (
+          <div key={platform + marker} data-marker={marker} data-platform={platform}>
+            <MediaCard
+              shape={shape}
+              platform={platform}
+              title="Halcyon Bloom"
+              sub="Artist"
+              onClick={() => undefined}
+              {...props}
+            />
+          </div>
+        )),
+      )}
+    </div>
+  );
+}
+
 function States() {
+  if (card === 'round' || card === 'square') return <Marked shape={card} />;
+  if (card === 'titles') {
+    return (
+      <div data-shelf style={{ display: 'flex', gap: 12, padding: 24, alignItems: 'flex-start' }}>
+        <MediaCard title="Driftwave" sub="Halcyon Bloom" onClick={() => undefined} />
+        <MediaCard
+          title="Aftershocks: the second call, live from the harbour"
+          sub="Static & Signal"
+          onClick={() => undefined}
+        />
+        <MediaCard
+          title="Supercalifragilisticexpialidociousantidisestablishmentarianismness"
+          sub="Long Word Ensemble"
+          onClick={() => undefined}
+        />
+      </div>
+    );
+  }
   if (card === 'more') {
     return (
       <div style={{ padding: 24 }}>

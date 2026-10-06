@@ -358,7 +358,7 @@ describe("Sonora's icon buttons, read from its sources", () => {
 describe("Sonora's cards, read from its sources and the canvas pages", () => {
   it('[M0.sonoraclean/c] ArtistCard is gone: no file, export, card, doc, Android stub or source names it', () => {
     expect(components.has('ArtistCard')).toBe(false);
-    expect(namesOf('ArtistCard', [/artist-card/i, /artistcard/i, /artist_card/i])).toEqual([]);
+    expect(namesOf('ArtistCard', [/Artist\s+Cards?\b/, /artist[-_]?cards?/i])).toEqual([]);
   });
 
   it('[M0.sonoraclean/c] MediaCard takes a round shape for people', () => {

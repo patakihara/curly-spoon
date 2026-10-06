@@ -417,12 +417,11 @@ val componentGallery: List<GalleryEntry> = listOf(
     GalleryEntry("MediaCard") {
         MediaCard(
             MediaCardProps(
-                title = "Driftwave",
-                sub = "Halcyon Bloom",
+                title = "Saved for later",
+                sub = "List · empty",
                 platform = Platform.MOBILE,
-                width = "160px",
+                covers = listOf(),
                 onClick = {},
-                eyebrow = "Album",
             ),
         )
     },

@@ -6,6 +6,8 @@
  * In a mixed shelf pass the content type as the first part of `sub` ("Book · 6 h 12 m left").
  */
 export interface MediaCardProps {
+  /** Two lines at most, ending in an ellipsis; a word too long for the card breaks. The text block
+   * always keeps room for two title lines and `sub`, so a shelf of cards ends level. */
   title: string;
   sub?: string;
   platform?: 'desktop' | 'mobile';
@@ -62,7 +64,14 @@ export interface MediaCardProps {
   status?: string | null;
   /** The request's tone for `status`: `progress` (downloading, the accent), `request` (needs your choice), `error` (failed). */
   tone?: 'progress' | 'request' | 'error' | null;
-  /** `square` (default) for an item; `round` for a person: circular art, the title and `sub` centred beneath it. */
+  /**
+   * `square` (default) for an item; `round` for a person: circular art, the title and `sub` centred
+   * beneath it. On round art every marker (progress, the "Not in library" pill, the status pill,
+   * the saved ribbon, the unplayed dot, the corner menu) sits inside the circle's inscribed square,
+   * `--round-inset` in from each edge, so the circle clips none of them: progress spans the square's
+   * foot, the pills and the ribbon centre on it, the corner controls sit in its top-right corner.
+   * The pills drop to their short form while the square's side is under ~132px.
+   */
   shape?: 'square' | 'round';
 }
 export declare function MediaCard(props: MediaCardProps): JSX.Element;

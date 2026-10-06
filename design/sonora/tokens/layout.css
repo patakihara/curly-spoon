@@ -78,6 +78,8 @@
 --grabber-height:4px;
 /* A shelf's paging arrows sit at this share of the shelf's height, level with the art */
 --shelf-arrow-top:38%;
+/* A marker on round art sits in the circle's inscribed square, this far in from each edge: (1 - 1/sqrt 2) / 2 */
+--round-inset:14.65%;
 
 /* ---- Stacking: one scale, named by what sits there ---- */
 --z-raised:1; /* @kind other */   /* focus ring, a lifted card, a sticky bar */

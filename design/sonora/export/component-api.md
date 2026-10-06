@@ -487,7 +487,7 @@ Shelf/grid card for any library item — album, book, podcast, episode — or, r
 
 | prop | type | notes |
 | --- | --- | --- |
-| `title` *(required)* | `string` |  |
+| `title` *(required)* | `string` | Two lines at most, ending in an ellipsis; a word too long for the card breaks. The text block always keeps room for two title lines and `sub`, so a shelf of cards ends level. |
 | `sub` | `string` |  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 | `progress` | `number \| null` | 0–1 resume position; draws a progress bar across the bottom of the art. |
@@ -509,7 +509,7 @@ Shelf/grid card for any library item — album, book, podcast, episode — or, r
 | `markers` | `string[]` | Small glyphs rendered before `sub` — 'push_pin' pinned, 'download_done' offline — so the caption carries state without a second row. |
 | `status` | `string \| null` |  A requested item's status, e.g. "Downloading · 42%", "Needs choice", "Failed"; null for an item that is no request. The art is greyed as an absent item's is, since it cannot play yet, and the status sits on it as a pill in `tone`. On a card narrower than about 132px the pill keeps only the percentage (with its glyph) or the word.  |
 | `tone` | `'progress' \| 'request' \| 'error' \| null` | The request's tone for `status`: `progress` (downloading, the accent), `request` (needs your choice), `error` (failed). |
-| `shape` | `'square' \| 'round'` | `square` (default) for an item; `round` for a person: circular art, the title and `sub` centred beneath it. |
+| `shape` | `'square' \| 'round'` |  `square` (default) for an item; `round` for a person: circular art, the title and `sub` centred beneath it. On round art every marker (progress, the "Not in library" pill, the status pill, the saved ribbon, the unplayed dot, the corner menu) sits inside the circle's inscribed square, `--round-inset` in from each edge, so the circle clips none of them: progress spans the square's foot, the pills and the ribbon centre on it, the corner controls sit in its top-right corner. The pills drop to their short form while the square's side is under ~132px.  |
 
 ### MediaHeader
 

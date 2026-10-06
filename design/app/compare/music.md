@@ -10,8 +10,8 @@ spotify: [S31]
 Canvas renders: `music/canvas-phone.png` (390 px, the bottom bar's layout) and
 `music/canvas-desktop.png` (1440 px, the labelled rail with the Now Playing panel), both in the
 app shell. Sonora UI kit renders, the design this page is compared against:
-`sonora/kit-mobile-music.png` and `sonora/kit-desktop-music.png`. Also looked at: Sonora's Media &
-Artist Cards card (the request pills) and the new Backdrop Local Search card, rendered at rest and
+`sonora/kit-mobile-music.png` and `sonora/kit-desktop-music.png`. Also looked at: Sonora's Media
+Cards card (the request pills) and the new Backdrop Local Search card, rendered at rest and
 scrolled, and Spotify's S31 (Your Library) for the sort row.
 
 ## What the Sonora UI kit renders show

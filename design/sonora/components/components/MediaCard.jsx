@@ -7,8 +7,10 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
   const Badge = NS().Badge;
   const mobile = platform === 'mobile';
   const small = size === 'sm';
-  // A person's card: circular art, with the caption centred under it.
+  // A person's card: circular art, with the caption centred under it. Its markers sit inside the
+  // circle's inscribed square, so the circle clips none of them.
   const round = shape === 'round';
+  const inset = 'var(--round-inset)';
   const fg = 'var(--surface-fg)', muted = 'var(--surface-fg-muted)';
   const w = width || (small ? (mobile ? '116px' : '132px') : (mobile ? '152px' : '176px'));
   const seed = String(title || '').split('').reduce((a, ch) => a + ch.charCodeAt(0), 0);
@@ -39,10 +41,11 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
   // Desktop reveals the play actions and the corner menu on hover or focus; mobile has no hover,
   // so the corner menu renders at full opacity there instead.
   const revealing = showActions || (showMore && !mobile);
-  // Below ~132px the pill's label crowds the art, so the badge drops to its glyph alone.
+  // Below ~132px of room the pill's label crowds the art, so the badge drops to its glyph alone. On
+  // round art the room is the inscribed square's side.
   const artRef = React.useRef(null);
   const [tight, setTight] = React.useState(false);
-  useMeasure(artRef, (el, entry) => setTight(entry.contentRect.width < 132), []);
+  useMeasure(artRef, (el, entry) => setTight(entry.contentRect.width * (round ? Math.SQRT1_2 : 1) < 132), [round]);
   return (
     <div className="sn-int" role="button" aria-label={title} tabIndex={off ? -1 : 0} aria-disabled={off}
       onClick={off ? undefined : tap} onKeyDown={off ? undefined : activate(tap)}
@@ -59,22 +62,22 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
           <IconButton variant="scrim" size="xs" iconSize="xs" icon="more_vert" label="More options" title="More options"
             className={mobile ? undefined : REVEAL.item}
             onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); onMore(e); }}
-            style={sx('position:absolute;top:var(--spacing-xs);right:var(--spacing-xs);z-index:var(--z-overlay)' + (mobile ? ';opacity:1' : ''))} />
+            style={sx('position:absolute;top:' + (round ? inset : 'var(--spacing-xs)') + ';right:' + (round ? inset : 'var(--spacing-xs)') + ';z-index:var(--z-overlay)' + (mobile ? ';opacity:1' : ''))} />
         )}
         {/* New/unlistened is a property of the item, not of the card chrome, so it sits on the art
             itself rather than in the caption — same corner QuickPick uses for it.
             Dropped below the more-options button when both are present, so it doesn't paint
             under that button's hit area. */}
-        {unplayed && <div aria-hidden="true" style={sx('position:absolute;top:' + (showMore ? '40px' : '6px') + ';right:6px;width:10px;height:10px;border-radius:50%;background:var(--accent)')} />}
+        {unplayed && <div aria-hidden="true" title="Unplayed" style={sx('position:absolute;top:' + (round ? (showMore ? 'calc(' + inset + ' + var(--control-xs) + var(--spacing-xs))' : inset) : (showMore ? '40px' : '6px')) + ';right:' + (round ? inset : '6px') + ';width:10px;height:10px;border-radius:50%;background:var(--accent)')} />}
         {savedBadge && (
-          <div aria-hidden="true" title="Saved" style={sx('position:absolute;left:8px;bottom:8px;width:22px;height:26px;display:flex;align-items:flex-start;justify-content:center;padding-top:3px;border-radius:0 0 var(--radius-xs) var(--radius-xs);background:var(--accent);color:var(--accent-contrast)')}>
+          <div aria-hidden="true" title="Saved" style={sx('position:absolute;' + (round ? 'left:' + inset + ';right:' + inset + ';margin:0 auto;bottom:' + inset : 'left:8px;bottom:8px') + ';width:22px;height:26px;display:flex;align-items:flex-start;justify-content:center;padding-top:3px;border-radius:0 0 var(--radius-xs) var(--radius-xs);background:var(--accent);color:var(--accent-contrast)')}>
             <Icon name="bookmark" size="xs" filled weight="strong" />
           </div>
         )}
         {/* Not in library: the real artwork, darkened — the item exists, you just don't have it yet.
             Sits at the bottom, clear of the corner menu and any progress the item might otherwise show. */}
         {notInLibrary && <div style={sx('position:absolute;inset:0;background:var(--scrim-strong)')} />}
-        {notInLibrary && <div title="Not in library" style={sx('position:absolute;left:8px;bottom:8px;display:flex;align-items:center;gap:4px;white-space:nowrap;padding:3px ' + (tight ? '5px' : 'var(--spacing-md) 3px var(--spacing-sm)') + ';border-radius:var(--radius-pill);font-size:var(--text-xs);font-weight:var(--weight-strong);background:var(--scrim-strong);color:var(--on-scrim)')}><Icon name="cloud_off" size="2xs" weight="strong" />{!tight && 'Not in library'}</div>}
+        {notInLibrary && <div title="Not in library" style={sx('position:absolute;' + (round ? 'left:' + inset + ';right:' + inset + ';width:fit-content;margin:0 auto;bottom:' + inset : 'left:8px;bottom:8px') + ';display:flex;align-items:center;gap:4px;white-space:nowrap;padding:3px ' + (tight ? '5px' : 'var(--spacing-md) 3px var(--spacing-sm)') + ';border-radius:var(--radius-pill);font-size:var(--text-xs);font-weight:var(--weight-strong);background:var(--scrim-strong);color:var(--on-scrim)')}><Icon name="cloud_off" size="2xs" weight="strong" />{!tight && 'Not in library'}</div>}
         {/* A request, not yet playable: the art greyed the way a not-playable item is, and its status
             pill in the request's tone where the "Not in library" pill would sit. A narrow card keeps
             the pill to what still reads: the percentage for a download, the word otherwise. */}
@@ -83,7 +86,7 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
           const pct = /(\d+)\s*%/.exec(shownStatus);
           const glyph = { progress: 'downloading', request: 'checklist', error: 'error' }[shownTone] || 'downloading';
           return (
-            <div title={shownStatus} style={sx('position:absolute;left:8px;right:8px;bottom:8px;display:flex')}>
+            <div title={shownStatus} style={sx('position:absolute;' + (round ? 'left:' + inset + ';right:' + inset + ';bottom:' + inset + ';justify-content:center' : 'left:8px;right:8px;bottom:8px') + ';display:flex')}>
               <Badge tone={badgeTone(shownTone)} size={tight ? 'sm' : 'md'} icon={tight && !pct ? undefined : glyph}>{tight && pct ? pct[1] + '%' : shownStatus}</Badge>
             </div>
           );
@@ -97,31 +100,39 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
           <React.Fragment>
             {/* Gradient behind the bar so a light cover can't wash out the track. */}
             <div style={sx('position:absolute;left:0;right:0;bottom:0;height:38%;pointer-events:none;background:linear-gradient(to top, var(--scrim-strong), transparent)')} />
-            <ProgressBar value={progress} size="md" tone="scrim" label="Played" style={sx('position:absolute;left:0;right:0;bottom:0;margin:var(--spacing-sm) var(--spacing-md)')} />
+            <ProgressBar value={progress} size="md" tone="scrim" label="Played" style={sx('position:absolute;' + (round ? 'left:' + inset + ';right:' + inset + ';bottom:' + inset : 'left:0;right:0;bottom:0;margin:var(--spacing-sm) var(--spacing-md)'))} />
           </React.Fragment>
         )}
       </div>
       {/* Outside the art, whose overflow would clip the menu it opens; its clicks stay its own. */}
       {requestable && onClick && OverflowMenu && (
-        <div onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); }} style={sx('position:absolute;top:var(--spacing-xs);right:var(--spacing-xs)')}>
+        <div onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); }} style={sx('position:absolute;' + (round ? 'top:0;right:' + inset + ';margin-top:' + inset : 'top:var(--spacing-xs);right:var(--spacing-xs)'))}>
+          {/* A margin's percentage reads the card's width, as the art's own inset does: the
+              menu lands in the same corner of the circle's inscribed square as More. */}
           <OverflowMenu tone="scrim" platform={platform} items={[{ key: 'open', label: 'Open', icon: 'open_in_new' }]} onSelect={() => onClick()} />
         </div>
       )}
-      {/* Type-before-name: in a mixed shelf the kind of thing is scanned for first, so it leads
-          rather than trailing in `sub` — kept as its own line rather than folded into the title
-          so the title's own two-line clamp is untouched. */}
-      {eyebrow && <div style={sx('margin-top:' + (small ? '8px' : '10px') + ';font-size:var(--text-xs);font-weight:var(--weight-strong);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + muted)}>{eyebrow}</div>}
-      <div style={sx('margin-top:' + (eyebrow ? '2px' : (small ? '8px' : '10px')) + ';font-size:var(--text-' + (small ? 'sm' : 'md') + ');font-weight:var(--weight-medium);line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;color:' + (greyed ? muted : fg))}>{title}</div>
-      {markers && markers.length > 0 ? (
-        <div style={sx('margin-top:2px;display:flex;align-items:center;gap:4px;min-width:0' + (round ? ';justify-content:center' : ''))}>
-          <span style={sx('flex-shrink:0;display:inline-flex;gap:2px')}>
-            {markers.map((m, i) => <Icon key={i} name={m} size="xs" filled weight="strong" style={sx('color:' + muted)} />)}
-          </span>
-          <div style={sx('min-width:0;font-size:var(--text-' + (small ? 'xs' : 'sm') + ');line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;color:' + muted)}>{sub}</div>
-        </div>
-      ) : (
-        <div style={sx('margin-top:2px;font-size:var(--text-' + (small ? 'xs' : 'sm') + ');line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;color:' + muted)}>{sub}</div>
-      )}
+      {/* The text block is as tall as a two-line title and its subtitle, whatever the title runs
+          to, so a shelf of cards ends level; the subtitle stays right under the title. */}
+      <div style={sx('margin-top:' + (small ? '8px' : '10px') + ';min-height:calc(' + (eyebrow ? '1.3 * var(--text-xs) + var(--spacing-2xs) + ' : '') + '2 * 1.3 * var(--text-' + (small ? 'sm' : 'md') + ') + var(--spacing-2xs) + 1.3 * var(--text-' + (small ? 'xs' : 'sm') + '))')}>
+        {/* Type-before-name: in a mixed shelf the kind of thing is scanned for first, so it leads
+            rather than trailing in `sub` — kept as its own line rather than folded into the title
+            so the title's own two-line clamp is untouched. */}
+        {eyebrow && <div style={sx('font-size:var(--text-xs);font-weight:var(--weight-strong);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + muted)}>{eyebrow}</div>}
+        {/* Two lines at most, ending in an ellipsis; a word too long for the card breaks rather
+            than running out of it. */}
+        <div style={sx('margin-top:' + (eyebrow ? 'var(--spacing-2xs)' : '0') + ';font-size:var(--text-' + (small ? 'sm' : 'md') + ');font-weight:var(--weight-medium);line-height:1.3;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;color:' + (greyed ? muted : fg))}>{title}</div>
+        {markers && markers.length > 0 ? (
+          <div style={sx('margin-top:var(--spacing-2xs);display:flex;align-items:center;gap:4px;min-width:0' + (round ? ';justify-content:center' : ''))}>
+            <span style={sx('flex-shrink:0;display:inline-flex;gap:2px')}>
+              {markers.map((m, i) => <Icon key={i} name={m} size="xs" filled weight="strong" style={sx('color:' + muted)} />)}
+            </span>
+            <div style={sx('min-width:0;font-size:var(--text-' + (small ? 'xs' : 'sm') + ');line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;color:' + muted)}>{sub}</div>
+          </div>
+        ) : (
+          <div style={sx('margin-top:var(--spacing-2xs);font-size:var(--text-' + (small ? 'xs' : 'sm') + ');line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden;color:' + muted)}>{sub}</div>
+        )}
+      </div>
       {StateLayer && <StateLayer disabled={off} />}
     </div>
   );
