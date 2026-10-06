@@ -196,7 +196,7 @@ export const gallery = [
   {
     name: 'MediaCard',
     card: 'components/media-cards.card.html',
-    render: () => (<div style={{display:'flex',gap:20,flexWrap:'wrap',alignItems:'flex-start'}}><MediaCard title="Saved for later" sub="List · empty" covers={[]} onClick={() => {}} /></div>),
+    render: () => (<div style={{display:'flex',gap:20,flexWrap:'wrap'}}><MediaCard eyebrow="Album" title="Golden Scars" sub="Fleeting Verses" image="/art/golden-scars.jpg" onPlay={() => {}} onPlayNext={() => {}} onPlayLast={() => {}} onMore={() => {}} onClick={() => {}} /></div>),
   },
   {
     name: 'MediaHeader',

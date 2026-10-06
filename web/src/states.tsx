@@ -50,6 +50,7 @@ import {
   SectionHeader,
   SeekBar,
   SettingRow,
+  Shelf,
   SideSheet,
   Slider,
   SortFilterBar,
@@ -392,7 +393,7 @@ const MARKED: { marker: string; props: Partial<Parameters<typeof MediaCard>[0]> 
 /**
  * `?card=round` and `?card=square` draw each art marker on a card of that shape, on a phone card
  * and a desktop one, for the test that no marker is clipped by a round card's circle.
- * `?card=titles` draws a shelf of cards whose titles run one line, two, and one unbreakable word.
+ * `?card=titles` draws a Sonora Shelf of cards whose titles run one line, two, and one unbreakable word.
  */
 function Marked({ shape }: { shape: 'round' | 'square' }) {
   return (
@@ -419,18 +420,20 @@ function States() {
   if (card === 'round' || card === 'square') return <Marked shape={card} />;
   if (card === 'titles') {
     return (
-      <div data-shelf style={{ display: 'flex', gap: 12, padding: 24, alignItems: 'flex-start' }}>
-        <MediaCard title="Driftwave" sub="Halcyon Bloom" onClick={() => undefined} />
-        <MediaCard
-          title="Aftershocks: the second call, live from the harbour"
-          sub="Static & Signal"
-          onClick={() => undefined}
-        />
-        <MediaCard
-          title="Supercalifragilisticexpialidociousantidisestablishmentarianismness"
-          sub="Long Word Ensemble"
-          onClick={() => undefined}
-        />
+      <div data-shelf style={{ padding: 48 }}>
+        <Shelf>
+          <MediaCard title="Driftwave" sub="Halcyon Bloom" onClick={() => undefined} />
+          <MediaCard
+            title="Aftershocks: the second call, live from the harbour"
+            sub="Static & Signal"
+            onClick={() => undefined}
+          />
+          <MediaCard
+            title="Supercalifragilisticexpialidociousantidisestablishmentarianismness"
+            sub="Long Word Ensemble"
+            onClick={() => undefined}
+          />
+        </Shelf>
       </div>
     );
   }

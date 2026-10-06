@@ -112,9 +112,9 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
           <OverflowMenu tone="scrim" platform={platform} items={[{ key: 'open', label: 'Open', icon: 'open_in_new' }]} onSelect={() => onClick()} />
         </div>
       )}
-      {/* The text block is as tall as a two-line title and its subtitle, whatever the title runs
-          to, so a shelf of cards ends level; the subtitle stays right under the title. */}
-      <div style={sx('margin-top:' + (small ? '8px' : '10px') + ';min-height:calc(' + (eyebrow ? '1.3 * var(--text-xs) + var(--spacing-2xs) + ' : '') + '2 * 1.3 * var(--text-' + (small ? 'sm' : 'md') + ') + var(--spacing-2xs) + 1.3 * var(--text-' + (small ? 'xs' : 'sm') + '))')}>
+      {/* The caption sits tight under the art, as tall as its own lines; a row or shelf stretches
+          its cards to the tallest, so their hover areas end level with no band reserved. */}
+      <div style={sx('margin-top:' + (small ? '8px' : '10px'))}>
         {/* Type-before-name: in a mixed shelf the kind of thing is scanned for first, so it leads
             rather than trailing in `sub` — kept as its own line rather than folded into the title
             so the title's own two-line clamp is untouched. */}
