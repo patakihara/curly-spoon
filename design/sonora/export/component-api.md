@@ -173,10 +173,11 @@ The one row shell every list row draws (ResultRow, EpisodeRow, QueueRow, Expande
 | `onArt` | `(e?: any) => void` | The art's own action, a glyph over the art on a strong scrim, shown on hover or focus (always on a phone). Without it there is none. |
 | `artLabel` | `string` | The art action's accessible name. Default "Play". |
 | `artIcon` | `string` | The art action's glyph, a Material Symbols name. Default `play_arrow`. |
+| `artIconSize` | `'2xs' \| 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | The art action's glyph size, a step of the Icon ramp. Default `sm`. |
 | `onClick` | `(e?: any) => void` | Presses the row. With neither it nor `disabled` the row is no button, only a container for its own controls. |
 | `disabled` | `boolean` | Draws the row as a button that is off. |
 | `divider` | `boolean` | Hairline separator along the bottom, inset to the text column. Set on all but the last row of a list. |
-| `density` | `'compact' \| 'regular' \| 'roomy' \| 'card'` |  Padding and gap: `compact` (the queue), `regular` (default, a track list), `roomy` (an episode list, a folded group) or `card` (a filled settings row).  |
+| `density` | `'compact' \| 'regular' \| 'roomy' \| 'group' \| 'card' \| 'flush'` |  Padding and gap: `compact` (the queue), `regular` (default, a track list), `roomy` (an episode list), `group` (a folded group), `card` (a filled settings row) or `flush` (no padding: a tile whose art meets its edge, such as QuickPick).  |
 | `surface` | `'none' \| 'card' \| 'selected'` | What it sits on: `none` (default), `card` (the card fill) or `selected` (the card tinted toward the accent). |
 | `align` | `'center' \| 'start'` | How the slots line up across the row: `center` (default) or `start`, the top, for a row whose text runs long. |
 | `platform` | `'desktop' \| 'mobile'` |  |

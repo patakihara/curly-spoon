@@ -16,6 +16,15 @@ const attr = (el: t.JSXElement, name: string) =>
 
 /** Whether a className value mentions `sn-int`: a literal, or any string inside an expression. */
 function isHost(el: t.JSXElement, source: string): boolean {
+  // shared.js's `press(...)`, spread onto the element, makes it a host: it sets the class.
+  const pressed = el.openingElement.attributes.some(
+    (a) =>
+      a.type === 'JSXSpreadAttribute' &&
+      a.argument.type === 'CallExpression' &&
+      a.argument.callee.type === 'Identifier' &&
+      a.argument.callee.name === 'press',
+  );
+  if (pressed) return true;
   const value = attr(el, 'className')?.value;
   if (value == null) return false;
   return /\bsn-int\b/.test(source.slice(value.start!, value.end!));

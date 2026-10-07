@@ -7,6 +7,7 @@ import {
   ListRow,
   QueueRow,
   ResultRow,
+  QuickPick,
   SettingRow,
   ValueRow,
 } from './generated/ui/index.js';
@@ -72,13 +73,14 @@ describe("Sonora's row shell", () => {
   });
 
   it('[M0.sonoraclean/d] takes a density step: a track list unless told otherwise', () => {
-    expect(root(row({}))).toContain('padding:10px var(--spacing-md)');
+    expect(root(row({}))).toContain('padding:var(--row-padding) var(--spacing-md)');
     expect(root(row({ density: 'compact' }))).toContain(
       'padding:var(--spacing-sm) var(--spacing-sm)',
     );
     expect(root(row({ density: 'card', platform: 'mobile' }))).toContain(
-      'padding:14px var(--spacing-lg)',
+      'padding:var(--row-padding-card) var(--spacing-lg)',
     );
+    expect(root(row({ density: 'flush' }))).toContain('gap:var(--spacing-md);padding:0 0;');
   });
 
   it('[M0.sonoraclean/d] announces whether what it shows is expanded', () => {
@@ -114,7 +116,7 @@ describe("Sonora's rows, drawn", () => {
   it.each(ROWS)('[M0.sonoraclean/d] %s draws the row shell at its root', (name, el) => {
     const html = renderToString(el);
     // The shell's root: a full-width flex row whose text column fills between the slots.
-    expect(root(html), name).toContain('box-sizing:border-box;display:flex');
+    expect(root(html), name).toContain('box-sizing:border-box;min-width:0;display:flex');
     expect(html, name).toContain('flex:1;min-width:0;display:flex;flex-direction:column');
   });
 
@@ -129,5 +131,55 @@ describe("Sonora's rows, drawn", () => {
     const html = renderToString(ROWS.find(([n]) => n === 'SettingRow')![1]);
     expect(root(html)).not.toContain('role=');
     expect(html).toContain('role="switch"');
+  });
+});
+
+/** The size step of the glyph over a row's art: the Icon after the art action's accessible name. */
+const artGlyph = (html: string, label: string): string | undefined => {
+  const at = html.indexOf(`aria-label="${label}"`);
+  return at < 0 ? undefined : /font-size:var\(--icon-([\w-]+)\)/.exec(html.slice(at))?.[1];
+};
+
+describe("The glyph over a row's art, sized as each row drew it before the shell", () => {
+  it.each<[string, 'desktop' | 'mobile', string]>([
+    ['ResultRow', 'desktop', 'sm'],
+    ['ResultRow', 'mobile', 'sm'],
+    ['EpisodeRow', 'desktop', 'md'],
+    ['EpisodeRow', 'mobile', 'md'],
+  ])('[M0.sonoraclean/d] %s on %s draws its play glyph at --icon-%s', (name, platform, size) => {
+    const html =
+      name === 'ResultRow'
+        ? renderToString(
+            createElement(ResultRow, {
+              title: 'Low Tide',
+              meta: 'Halcyon',
+              platform,
+              onClick: () => {},
+            }),
+          )
+        : renderToString(
+            createElement(EpisodeRow, { title: 'Episode 12', platform, onPlay: () => {} }),
+          );
+    expect(artGlyph(html, name === 'ResultRow' ? 'Play' : 'Play episode')).toBe(size);
+  });
+
+  it('[M0.sonoraclean/d] a row with art takes the glyph size it is given, sm unless told', () => {
+    const art = { artSize: 'lg', onArt: () => {}, artLabel: 'Play' };
+    expect(artGlyph(row(art), 'Play')).toBe('sm');
+    expect(artGlyph(row({ ...art, artIconSize: 'md' }), 'Play')).toBe('md');
+  });
+});
+
+describe('QuickPick, a tile drawn on the row shell', () => {
+  it('[M0.sonoraclean/d] is the flush row on the card fill, a button that is off without a press', () => {
+    const on = root(renderToString(createElement(QuickPick, { title: 'Dune', onClick: () => {} })));
+    expect(on).toContain('role="button"');
+    expect(on).toContain('tabindex="0"');
+    expect(on).toContain(
+      'padding:0 0;border-radius:var(--radius-xs);background:var(--surface-card)',
+    );
+    const off = root(renderToString(createElement(QuickPick, { title: 'Dune' })));
+    expect(off).toContain('tabindex="-1"');
+    expect(off).toContain('aria-disabled="true"');
   });
 });

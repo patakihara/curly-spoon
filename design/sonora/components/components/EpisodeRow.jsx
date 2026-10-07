@@ -15,7 +15,7 @@ export function EpisodeRow({ image, title, description, meta, finished = false, 
   const metaLine = meta && meta.filter(Boolean).join(' • ');
   return ListRow ? (
     <ListRow platform={platform} density="roomy" align="start" onClick={onClick} disabled={!onClick} divider={divider}
-      image={image} artSize={mobile ? 'md' : 'lg'} artGrey={absent} onArt={onPlay} artLabel="Play episode">
+      image={image} artSize={mobile ? 'md' : 'lg'} artGrey={absent} onArt={onPlay} artLabel="Play episode" artIconSize="md">
       <div style={sx('display:flex;flex-direction:column;gap:4px')}>
         <div style={sx('display:flex;align-items:baseline;gap:6px;min-width:0')}>
           {/* Same square, uncounted Badge the feature card uses — one marker, one implementation. */}

@@ -30,6 +30,8 @@ data class ListRowProps(
     val artLabel: String? = null,
     /** The art action's glyph, a Material Symbols name. Default `play_arrow`. */
     val artIcon: String? = null,
+    /** The art action's glyph size, a step of the Icon ramp. Default `sm`. */
+    val artIconSize: ArtIconSize? = null,
     /** Presses the row. With neither it nor `disabled` the row is no button, only a container for its own controls. */
     val onClick: (() -> Unit)? = null,
     /** Draws the row as a button that is off. */
@@ -38,7 +40,8 @@ data class ListRowProps(
     val divider: Boolean? = null,
     /**
      * Padding and gap: `compact` (the queue), `regular` (default, a track list), `roomy` (an episode
-     * list, a folded group) or `card` (a filled settings row).
+     * list), `group` (a folded group), `card` (a filled settings row) or `flush` (no padding: a tile
+     * whose art meets its edge, such as QuickPick).
      */
     val density: ListRowDensity? = null,
     /** What it sits on: `none` (default), `card` (the card fill) or `selected` (the card tinted toward the accent). */
@@ -69,7 +72,9 @@ enum class ListRowDensity(val value: String) {
     COMPACT("compact"),
     REGULAR("regular"),
     ROOMY("roomy"),
+    GROUP("group"),
     CARD("card"),
+    FLUSH("flush"),
 }
 
 enum class ListRowSurface(val value: String) {

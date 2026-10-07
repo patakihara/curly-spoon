@@ -30,6 +30,7 @@ const HELPERS = [
   'nearestScroller',
   'percentOf',
   'prefersReducedMotion',
+  'press',
   'scrollEdges',
   'scrollMax',
   'skipGlyph',

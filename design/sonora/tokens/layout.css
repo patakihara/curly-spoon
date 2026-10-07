@@ -74,6 +74,17 @@
 --menu-row-height:44px;
 --menu-min-width:260px;
 --sheet-max-height:80%;
+
+/* ---- List rows ---- */
+/* A list row's padding where 8 is too tight and 12 too loose: a track row's top and bottom on desktop, an episode row's on a phone */
+--row-padding:10px;
+/* A filled settings row's padding: its top and bottom on a phone, its sides on desktop */
+--row-padding-card:14px;
+/* The track-number column that leads an album's rows in place of the art */
+--row-number-width:32px;
+--row-number-width-mobile:28px;
+/* A track row's title to its meta line */
+--row-text-gap:3px;
 --grabber-width:32px;
 --grabber-height:4px;
 /* A shelf's paging arrows sit at this share of the shelf's height, level with the art */

@@ -3,7 +3,7 @@ import React from 'react';
 import { CoverArt } from '../basic/CoverArt.jsx';
 import { IconButton } from '../basic/IconButton.jsx';
 import { StateLayer } from '../basic/StateLayer.jsx';
-import { activate } from '../shared.js';
+import { press } from '../shared.js';
 
 /** Row heading above a carousel or grid, with an optional trailing action. */
 export function SectionHeader({ title, action, actionLabel = 'More', onAction, platform = 'mobile', eyebrow, image, round = false, onSubject, actionText, trailing }) {
@@ -39,8 +39,7 @@ export function SectionHeader({ title, action, actionLabel = 'More', onAction, p
   // The subject is a link to its page only with onSubject; without it, it is the heading, not a
   // control, so it is drawn plain rather than disabled.
   const subject = !subjectInner ? titleEl : onSubject ? (
-    <div className="sn-int" role="button" tabIndex={0} onClick={onSubject}
-      onKeyDown={activate(() => onSubject())}
+    <div {...press(() => onSubject())}
       style={{ ...row, cursor: 'pointer', borderRadius: 'var(--radius-xs)' }}>
       {subjectInner}
       {StateLayer && <StateLayer />}

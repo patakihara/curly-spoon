@@ -12,7 +12,7 @@ data class IconProps(
     /** Material Symbols Rounded glyph name, e.g. "play_arrow". */
     val name: String,
     /** A step of the icon size ramp, `--icon-2xs` (14px) to `--icon-xl` (40px). Default 'sm', 24px. */
-    val size: IconSize? = null,
+    val size: ArtIconSize? = null,
     /** The glyph's filled form, as play, active and on-state glyphs take. */
     val filled: Boolean? = null,
     /**

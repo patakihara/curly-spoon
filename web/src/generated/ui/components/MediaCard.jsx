@@ -8,7 +8,7 @@ import { OverflowMenu } from '../basic/OverflowMenu.jsx';
 import { PlayActions } from './PlayActions.jsx';
 import { ProgressBar } from '../basic/ProgressBar.jsx';
 import { StateLayer } from '../basic/StateLayer.jsx';
-import { REVEAL, activate, badgeTone, sx, useMeasure } from '../shared.js';
+import { REVEAL, badgeTone, press, sx, useMeasure } from '../shared.js';
 // Enter and Space press it as a click does, unless they come from a control inside it.
 
 /** Shelf/grid card for any library item — album, book, podcast, episode — or, round, for a person. */
@@ -53,8 +53,7 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
   const [tight, setTight] = React.useState(false);
   useMeasure(artRef, (el, entry) => setTight(entry.contentRect.width * (round ? Math.SQRT1_2 : 1) < 132), [round]);
   return (
-    <div className="sn-int" role="button" aria-label={title} tabIndex={off ? -1 : 0} aria-disabled={off}
-      onClick={off ? undefined : tap} onKeyDown={off ? undefined : activate(tap)}
+    <div {...press(tap, off)} aria-label={title}
       style={sx('position:relative;display:flex;flex-direction:column;cursor:pointer;min-width:0;border-radius:var(--radius-' + (small || mobile ? 'sm' : 'md') + ');width:' + w + (w === '100%' ? '' : ';flex-shrink:0') + (round ? ';text-align:center' : ''))}>
       <div ref={artRef} className={revealing ? REVEAL.host : undefined} style={sx('position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:' + (round ? 'var(--radius-round)' : 'var(--radius-' + (small || mobile ? 'sm' : 'md') + ')'))}>
         {/* Greyed, not just darkened: an item that cannot play yet loses its colour, so it reads

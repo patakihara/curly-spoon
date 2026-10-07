@@ -34,7 +34,7 @@ describe("Sonora's round MediaCard, for a person", () => {
     const html = card({ shape: 'round', sub: 'Artist', onClick: noop });
     expect(html).toMatch(/aspect-ratio:1;[^"]*border-radius:var\(--radius-round\)/);
     expect(html).toMatch(/text-align:center/);
-    expect(html).toContain('role="button" aria-label="A Grain of Salt"');
+    expect(html).toMatch(/role="button"[^>]*aria-label="A Grain of Salt"/);
   });
 
   it('[M0.sonoraclean/c] square is the default: rounded-corner art, text set from the start', () => {

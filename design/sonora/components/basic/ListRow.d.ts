@@ -27,6 +27,8 @@ export interface ListRowProps {
   artLabel?: string;
   /** The art action's glyph, a Material Symbols name. Default `play_arrow`. */
   artIcon?: string;
+  /** The art action's glyph size, a step of the Icon ramp. Default `sm`. */
+  artIconSize?: '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   /** Presses the row. With neither it nor `disabled` the row is no button, only a container for its own controls. */
   onClick?: (e?: any) => void;
   /** Draws the row as a button that is off. */
@@ -35,9 +37,10 @@ export interface ListRowProps {
   divider?: boolean;
   /**
    * Padding and gap: `compact` (the queue), `regular` (default, a track list), `roomy` (an episode
-   * list, a folded group) or `card` (a filled settings row).
+   * list), `group` (a folded group), `card` (a filled settings row) or `flush` (no padding: a tile
+   * whose art meets its edge, such as QuickPick).
    */
-  density?: 'compact' | 'regular' | 'roomy' | 'card';
+  density?: 'compact' | 'regular' | 'roomy' | 'group' | 'card' | 'flush';
   /** What it sits on: `none` (default), `card` (the card fill) or `selected` (the card tinted toward the accent). */
   surface?: 'none' | 'card' | 'selected';
   /** How the slots line up across the row: `center` (default) or `start`, the top, for a row whose text runs long. */

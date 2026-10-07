@@ -33,7 +33,7 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
   return ListRow ? (
     <ListRow platform={platform} density="regular" onClick={onClick} disabled={!onClick} divider={divider}
       leading={numbered ? (
-        <div style={sx('width:' + (mobile ? 28 : 32) + 'px;flex-shrink:0;text-align:center;font-size:var(--text-md);font-variant-numeric:tabular-nums;color:' + (nowPlaying ? 'var(--play-ink)' : muted))}>{number}</div>
+        <div style={sx('width:var(--row-number-width' + (mobile ? '-mobile' : '') + ');flex-shrink:0;text-align:center;font-size:var(--text-md);font-variant-numeric:tabular-nums;color:' + (nowPlaying ? 'var(--play-ink)' : muted))}>{number}</div>
       ) : null}
       image={image} artSize={numbered ? undefined : 'md'}
       onArt={showAction ? act : undefined} artLabel={actionLabel}
@@ -46,7 +46,7 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
         </React.Fragment>
       ) : null}
       trailing={mobile ? null : <React.Fragment>{statusPill}{trailing}</React.Fragment>}>
-      <div style={sx('display:flex;flex-direction:column;gap:3px')}>
+      <div style={sx('display:flex;flex-direction:column;gap:var(--row-text-gap)')}>
         <div style={sx('display:flex;align-items:center;gap:var(--spacing-md)')}>
           <div style={sx('flex:1;min-width:0;font-size:var(--text-md);font-weight:var(--weight-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + fg)}>{title}</div>
           {mobile && statusPill}

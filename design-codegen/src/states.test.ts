@@ -49,4 +49,16 @@ describe("Sonora's controls, read from their sources", () => {
 }`;
     expect(unlayeredControls(elsewhere)).toEqual(['<span onClick> (line 4)']);
   });
+
+  it('[M0.states/a] takes an element spreading the shared press as its state host', () => {
+    const pressed = `${NS}export function P({ onClick, onMore }) {
+  const { StateLayer } = NS();
+  return <div {...press(onClick)}><span onClick={onMore} /><StateLayer /></div>;
+}`;
+    expect(unlayeredControls(pressed)).toEqual([]);
+    const bare = `${NS}export function P({ onClick, onMore }) {
+  return <div {...press(onClick)}><span onClick={onMore} /></div>;
+}`;
+    expect(unlayeredControls(bare)).toEqual(['<span onClick> (line 3)']);
+  });
 });

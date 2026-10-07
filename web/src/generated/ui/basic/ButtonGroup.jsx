@@ -2,7 +2,7 @@
 import React from 'react';
 import { Icon } from './Icon.jsx';
 import { StateLayer } from './StateLayer.jsx';
-import { activate, injectCss, scrollEdges, sx, useMeasure } from '../shared.js';
+import { injectCss, press, scrollEdges, sx, useMeasure } from '../shared.js';
 
 // No scrollbar in this component — the edge fade below is the only affordance that the row
 // scrolls, in both mouse and touch UAs.
@@ -35,9 +35,8 @@ export function ButtonGroup({ items = [], value, onChange, platform = 'desktop',
           // chip's focus ring inside it.
           // Disabled, only the selected segment keeps a container (Material's 12% on-surface), so
           // the group still says which is chosen; the others lose theirs.
-          <div key={o.key} className={'sn-int' + (on || !off ? ' sn-filled' : '')} role="button" aria-pressed={on} tabIndex={off ? -1 : 0} aria-disabled={off}
-            onClick={off ? undefined : () => onChange(o.key)}
-            onKeyDown={off ? undefined : activate(() => onChange(o.key))} aria-label={o.ariaLabel || o.label || o.key} title={iconOnly ? (o.ariaLabel || o.label || o.key) : undefined}
+          <div key={o.key} {...press(() => onChange(o.key), off)} className={'sn-int' + (on || !off ? ' sn-filled' : '')} aria-pressed={on}
+            aria-label={o.ariaLabel || o.label || o.key} title={iconOnly ? (o.ariaLabel || o.label || o.key) : undefined}
             style={sx('display:flex;align-items:center;justify-content:center;gap:var(--spacing-sm);flex-shrink:0;white-space:nowrap;cursor:pointer;user-select:none;' +
               'height:' + h + 'px;' + (iconOnly ? 'width:' + (mobile ? 52 : 48) + 'px;padding:0;' : 'padding:0 var(--spacing-lg);') + 'border:none;' +
               'font-family:var(--font-body);font-size:var(--text-sm);font-weight:var(--weight-strong);' +

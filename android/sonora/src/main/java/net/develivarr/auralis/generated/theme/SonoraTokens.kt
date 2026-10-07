@@ -217,6 +217,11 @@ object SonoraDimens {
     val railPillWidthWide = 72.dp
     val menuRowHeight = 44.dp
     val menuMinWidth = 260.dp
+    val rowPadding = 10.dp
+    val rowPaddingCard = 14.dp
+    val rowNumberWidth = 32.dp
+    val rowNumberWidthMobile = 28.dp
+    val rowTextGap = 3.dp
     val grabberWidth = 32.dp
     val grabberHeight = 4.dp
     val radius3xs = 2.dp

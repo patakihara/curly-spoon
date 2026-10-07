@@ -534,6 +534,7 @@ const ROWS = ['EpisodeRow', 'ExpanderRow', 'QueueRow', 'ResultRow', 'SettingRow'
  */
 const SHELL: Record<string, RegExp[]> = {
   press: [
+    /\bpress\(/,
     /role=["']button["']/,
     /\bactivate\(/,
     /\bonKeyDown\b/,
@@ -610,5 +611,45 @@ describe("Sonora's rows, read from their sources", () => {
     ],
   ])('[M0.sonoraclean/d] leaves alone a row that hands its shell on: %s', (_, src) => {
     expect(ownShell(src)).toEqual([]);
+  });
+});
+
+/**
+ * A press shell built by hand: the button role on an element that is not a `<button>`, given a place
+ * in the focus order or Enter and Space. Sonora builds it once, in shared.js's `press`; a native
+ * `<button>` (Button, IconButton and the other basics on one) needs no shell.
+ */
+const HAND_PRESS = /role(=|\s*:\s*)\{?\s*["']button["']/;
+const PRESS_PARTS = /\btabIndex\b|\bactivate\(/;
+const handPress = (src: string): boolean => HAND_PRESS.test(src) && PRESS_PARTS.test(src);
+
+describe("Sonora's press shell, read from every component's source", () => {
+  it.each([...components.keys()].sort())(
+    '[M0.sonoraclean/d] %s builds no press shell of its own',
+    (name) => {
+      expect(handPress(source(name))).toBe(false);
+    },
+  );
+
+  it('[M0.sonoraclean/d] QuickPick, a row-shaped tile, renders ListRow', () => {
+    expect(rendered(source('QuickPick')).map((e) => e.tag)).toContain('ListRow');
+  });
+
+  it.each([
+    ['a button role in the focus order', `<div className="sn-int" role="button" tabIndex={0} />`],
+    ['a button role pressed by key', `<div role='button' onKeyDown={activate(onClick)} />`],
+    ['a role in braces', `<span role={'button'} tabIndex={off ? -1 : 0} />`],
+    ['a props object', `const shell = { role: 'button', tabIndex: 0 };`],
+  ])('[M0.sonoraclean/d] names a component building its own press shell: %s', (_, src) => {
+    expect(handPress(src)).toBe(true);
+  });
+
+  it.each([
+    ['the shared shell', `<div {...press(onClick, off)} aria-label={title} />`],
+    ['a native button', `<button className="sn-int" onClick={onClick} disabled={off} />`],
+    ['another role', `<div role="menuitem" tabIndex={-1} />`],
+    ['a button role with no press', `<div role="button" aria-label="Seek" />`],
+  ])('[M0.sonoraclean/d] leaves alone what is no hand-built shell: %s', (_, src) => {
+    expect(handPress(src)).toBe(false);
   });
 });

@@ -122,6 +122,11 @@
   --rail-pill-width-wide: 72px;
   --menu-row-height: 44px;
   --menu-min-width: 260px;
+  --row-padding: 10px;
+  --row-padding-card: 14px;
+  --row-number-width: 32px;
+  --row-number-width-mobile: 28px;
+  --row-text-gap: 3px;
   --grabber-width: 32px;
   --grabber-height: 4px;
   --radius-3xs: 2px;

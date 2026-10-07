@@ -157,16 +157,20 @@
         "message": "<Input> platform must be one of 'desktop' | 'mobile'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='ListRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|leading|trailing|image|artSize|artGrey|artStatus|onArt|artLabel|artIcon|onClick|disabled|divider|density|surface|align|platform|expanded|draggable|onDragStart|onDragOver|onDrop|onDragEnd|key|ref|className|style|children)$/]",
-        "message": "<ListRow> doesn't accept that prop. Declared props: children, leading, trailing, image, artSize, artGrey, artStatus, onArt, artLabel, artIcon, onClick, disabled, divider, density, surface, align, platform, expanded, draggable, onDragStart, onDragOver, onDrop, onDragEnd."
+        "selector": "JSXOpeningElement[name.name='ListRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|leading|trailing|image|artSize|artGrey|artStatus|onArt|artLabel|artIcon|artIconSize|onClick|disabled|divider|density|surface|align|platform|expanded|draggable|onDragStart|onDragOver|onDrop|onDragEnd|key|ref|className|style|children)$/]",
+        "message": "<ListRow> doesn't accept that prop. Declared props: children, leading, trailing, image, artSize, artGrey, artStatus, onArt, artLabel, artIcon, artIconSize, onClick, disabled, divider, density, surface, align, platform, expanded, draggable, onDragStart, onDragOver, onDrop, onDragEnd."
       },
       {
         "selector": "JSXOpeningElement[name.name='ListRow'] > JSXAttribute[name.name='artSize'] > Literal[value!=/^(?:3xs|2xs|xs|sm|md|lg)$/]",
         "message": "<ListRow> artSize must be one of '3xs' | '2xs' | 'xs' | 'sm' | 'md' | 'lg'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='ListRow'] > JSXAttribute[name.name='density'] > Literal[value!=/^(?:compact|regular|roomy|card)$/]",
-        "message": "<ListRow> density must be one of 'compact' | 'regular' | 'roomy' | 'card'."
+        "selector": "JSXOpeningElement[name.name='ListRow'] > JSXAttribute[name.name='artIconSize'] > Literal[value!=/^(?:2xs|xs|sm|md|lg|xl)$/]",
+        "message": "<ListRow> artIconSize must be one of '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ListRow'] > JSXAttribute[name.name='density'] > Literal[value!=/^(?:compact|regular|roomy|group|card|flush)$/]",
+        "message": "<ListRow> density must be one of 'compact' | 'regular' | 'roomy' | 'group' | 'card' | 'flush'."
       },
       {
         "selector": "JSXOpeningElement[name.name='ListRow'] > JSXAttribute[name.name='surface'] > Literal[value!=/^(?:none|card|selected)$/]",

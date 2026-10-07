@@ -1,5 +1,5 @@
 import React from 'react';
-import { NS, activate, sx, useMeasure } from '../shared.js';
+import { NS, press, sx, useMeasure } from '../shared.js';
 
 /** Navigation rail row. One highlight morphs from a 56×32 icon pill (collapsed) to a pill that hugs icon + label (expanded). Replaces the old SidebarItem. */
 export function RailItem({ icon, label, active = false, expanded = true, rowHeight = 56, tabs = false, wideActive, centerIcon, onClick }) {
@@ -46,9 +46,7 @@ export function RailItem({ icon, label, active = false, expanded = true, rowHeig
   return (
     // The whole row takes the press; the pill shows its state, as in Material's rail. The active
     // destination says so: pressing it again shows what already shows.
-    <div className="sn-int" role="button" aria-label={label} aria-current={on ? 'page' : undefined} tabIndex={off ? -1 : 0} aria-disabled={off}
-      onClick={off ? undefined : onClick}
-      onKeyDown={off ? undefined : activate(() => onClick())}
+    <div {...press(() => onClick(), off)} aria-label={label} aria-current={on ? 'page' : undefined}
       style={sx('position:relative;width:100%;height:' + rowHeight + 'px;box-sizing:border-box;cursor:pointer;display:flex;justify-content:' + (open ? 'flex-start' : 'center') + ';transition:color' + ease + ';color:' + (on ? 'var(--accent-ink)' : 'var(--surface-fg-muted)'))}>
       <span ref={pillRef} style={sx('position:relative;flex-shrink:0;pointer-events:none;line-height:0;border-radius:var(--radius-pill);transition:' + (snap ? '' : 'width' + ease + ',') + 'height' + ease + ',margin-top' + ease + ',background' + ease + ';margin-top:' + shift + 'px;width:' + w + ';height:' + (open ? rowHeight + 'px' : '32px') + ';background:' + (on ? pill : 'transparent'))}>
         {StateLayer && <StateLayer disabled={off} />}

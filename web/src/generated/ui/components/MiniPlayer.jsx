@@ -4,7 +4,7 @@ import { Icon } from '../basic/Icon.jsx';
 import { IconButton } from '../basic/IconButton.jsx';
 import { SeekBar } from '../basic/SeekBar.jsx';
 import { StateLayer } from '../basic/StateLayer.jsx';
-import { activate, skipGlyph } from '../shared.js';
+import { press, skipGlyph } from '../shared.js';
 
 // Over the bar's tint the controls take the now-playing inks: IconButton's surface inks, rebound
 // for the bar, so its plain and muted glyphs, the seek bar's readouts, the slider's halo and the
@@ -32,10 +32,10 @@ export function MiniPlayer({
   const spoken = variant === 'spoken';
   // Every control on the bar: one with no handler is drawn disabled, and a press on one never
   // reaches the bar beneath it.
-  const press = (fn) => fn && ((e) => { e.stopPropagation(); fn(); });
+  const alone = (fn) => fn && ((e) => { e.stopPropagation(); fn(); });
   // The play or pause glyph is filled, white on the rose: IconButton's play variant.
   const play = (
-    <IconButton variant="play" size="lg" icon={playing ? 'pause' : 'play_arrow'} label={playing ? 'Pause' : 'Play'} onClick={press(onTogglePlay)} />
+    <IconButton variant="play" size="lg" icon={playing ? 'pause' : 'play_arrow'} label={playing ? 'Pause' : 'Play'} onClick={alone(onTogglePlay)} />
   );
   if (platform === 'desktop') {
     const fg = 'var(--surface-now-playing-fg)';
@@ -46,8 +46,7 @@ export function MiniPlayer({
         background: 'var(--surface-now-playing)', ...INKS,
         display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'center', padding: '0 var(--spacing-xl)', gap: 'var(--spacing-lg)',
       }}>
-        <div className="sn-int" role="button" aria-label={'Open player, ' + title} tabIndex={onOpen ? 0 : -1} aria-disabled={!onOpen}
-          onClick={onOpen} onKeyDown={onOpen && activate(() => onOpen())}
+        <div {...press(onOpen && (() => onOpen()))} aria-label={'Open player, ' + title}
           style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', minWidth: 0, justifySelf: 'start', maxWidth: '100%', cursor: 'pointer', borderRadius: 'var(--radius-xs)', color: 'var(--surface-fg)' }}>
           <div style={{
             width: 52, height: 52, flexShrink: 0, borderRadius: 'var(--radius-xs)', overflow: 'hidden',
@@ -65,27 +64,27 @@ export function MiniPlayer({
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-lg)' }}>
             {spoken ? (
               <>
-                <IconButton label={'Playback speed, ' + speed + ' times'} onClick={press(onSpeed)} active={speed !== 1} muted={speed === 1} tone="play-ink">
+                <IconButton label={'Playback speed, ' + speed + ' times'} onClick={alone(onSpeed)} active={speed !== 1} muted={speed === 1} tone="play-ink">
                   <span style={{ fontFamily: 'var(--font-body)', fontWeight: 'var(--weight-strong)', fontSize: 'var(--text-sm)' }}>{speed + '×'}</span>
                 </IconButton>
-                <IconButton label={'Skip back ' + skipSeconds + ' seconds'} onClick={press(onSkipBack)}>{skipGlyph(Icon, 'back', skipSeconds)}</IconButton>
+                <IconButton label={'Skip back ' + skipSeconds + ' seconds'} onClick={alone(onSkipBack)}>{skipGlyph(Icon, 'back', skipSeconds)}</IconButton>
               </>
             ) : (
               <>
-                <IconButton icon="shuffle" label="Shuffle" onClick={press(onShuffle)} style={DIM} />
-                <IconButton icon="skip_previous" label="Previous" onClick={press(onPrev)} />
+                <IconButton icon="shuffle" label="Shuffle" onClick={alone(onShuffle)} style={DIM} />
+                <IconButton icon="skip_previous" label="Previous" onClick={alone(onPrev)} />
               </>
             )}
             {play}
             {spoken ? (
               <>
-                <IconButton label={'Skip forward ' + skipSeconds + ' seconds'} onClick={press(onSkipForward)}>{skipGlyph(Icon, 'forward', skipSeconds)}</IconButton>
-                <IconButton icon="bedtime" label={'Sleep timer, ' + sleep} onClick={press(onSleep)} active={sleep !== 'Off'} tone="accent-ink" style={sleep === 'Off' ? DIM : undefined} />
+                <IconButton label={'Skip forward ' + skipSeconds + ' seconds'} onClick={alone(onSkipForward)}>{skipGlyph(Icon, 'forward', skipSeconds)}</IconButton>
+                <IconButton icon="bedtime" label={'Sleep timer, ' + sleep} onClick={alone(onSleep)} active={sleep !== 'Off'} tone="accent-ink" style={sleep === 'Off' ? DIM : undefined} />
               </>
             ) : (
               <>
-                <IconButton icon="skip_next" label="Next" onClick={press(onNext)} />
-                <IconButton icon="repeat" label="Repeat" onClick={press(onRepeat)} style={DIM} />
+                <IconButton icon="skip_next" label="Next" onClick={alone(onNext)} />
+                <IconButton icon="repeat" label="Repeat" onClick={alone(onRepeat)} style={DIM} />
               </>
             )}
           </div>
@@ -94,17 +93,16 @@ export function MiniPlayer({
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 'var(--spacing-lg)' }}>
-          {!spoken && <IconButton icon="lyrics" label="Lyrics" onClick={press(onToggleLyrics)} active={lyricsOpen} tone="play-ink" pressed={lyricsOpen} />}
-          <IconButton icon="queue_music" label="Queue" onClick={press(onToggleQueue)} active={queueOpen} tone="play-ink" pressed={queueOpen} />
-          <IconButton icon="volume_up" label="Volume" onClick={press(onVolume)} />
+          {!spoken && <IconButton icon="lyrics" label="Lyrics" onClick={alone(onToggleLyrics)} active={lyricsOpen} tone="play-ink" pressed={lyricsOpen} />}
+          <IconButton icon="queue_music" label="Queue" onClick={alone(onToggleQueue)} active={queueOpen} tone="play-ink" pressed={queueOpen} />
+          <IconButton icon="volume_up" label="Volume" onClick={alone(onVolume)} />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="sn-int" role="button" aria-label={'Open player, ' + title} tabIndex={onOpen ? 0 : -1} aria-disabled={!onOpen}
-      onClick={onOpen} onKeyDown={onOpen && activate(() => onOpen())}
+    <div {...press(onOpen && (() => onOpen()))} aria-label={'Open player, ' + title}
       style={{
       display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)',
       padding: 'var(--spacing-md)', cursor: 'pointer', color: 'var(--surface-now-playing-fg)',

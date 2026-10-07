@@ -21,7 +21,7 @@ data class IconButtonProps(
     /** A Material Symbols Rounded glyph name, drawn through Icon in place of `children`. */
     val icon: String? = null,
     /** The `icon` glyph's step of Icon's ramp. Default 'sm' (24px); 'xs' (20px) on tonal. */
-    val iconSize: IconSize? = null,
+    val iconSize: ArtIconSize? = null,
     /** The container. Default 'plain'. */
     val variant: IconButtonVariant? = null,
     /**

@@ -1,5 +1,5 @@
 import React from 'react';
-import { NS, activate, nearestScroller, prefersReducedMotion, sx } from '../shared.js';
+import { NS, nearestScroller, prefersReducedMotion, press, sx } from '../shared.js';
 
 /**
  * The lyric list, in the three states the sync control cycles through:
@@ -60,8 +60,7 @@ export function Lyrics({
           // A line is a control only when a press on it seeks; a plain sheet's lines are text.
           if (!onLineClick) return <div key={i} style={sx(css)}>{text}</div>;
           return (
-            <div key={i} className="sn-int" role="button" tabIndex={0} onClick={() => onLineClick(i)}
-              onKeyDown={activate(() => onLineClick(i))}
+            <div key={i} {...press(() => onLineClick(i))}
               style={sx(css + ';cursor:pointer;border-radius:var(--radius-xs);margin:0 calc(-1 * var(--spacing-sm));padding:0 var(--spacing-sm)')}>
               {text}
               {StateLayer && <StateLayer />}
