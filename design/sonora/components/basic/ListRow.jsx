@@ -28,7 +28,7 @@ const SURFACE = {
  * neither `onClick` nor `disabled` it is a plain row holding its own controls.
  */
 export function ListRow({
-  children, leading, trailing, image, artSize, artGrey = false, artStatus, onArt, artLabel = 'Play', artIcon = 'play_arrow', artIconSize = 'sm',
+  children, leading, trailing, image, artSize, artGrey = false, artStatus, onArt, artLabel = 'Play', artIcon = 'play_arrow', artIconSize = 'sm', artRadius,
   onClick, disabled = false, divider = false, density = 'regular', surface = 'none', align = 'center', platform = 'desktop',
   expanded, draggable, onDragStart, onDragOver, onDrop, onDragEnd,
 }) {
@@ -39,8 +39,9 @@ export function ListRow({
   const [padY, padX, gap] = (DENSITY[density] || DENSITY.regular)[mobile ? 'mobile' : 'desktop'];
   // A filled row rounds a step more on a phone; a list row keeps the small corner of its art.
   const radius = mobile && (density === 'compact' || density === 'card') ? 'var(--radius-sm)' : 'var(--radius-xs)';
-  const artRadius = mobile ? 'var(--radius-xs)' : 'var(--radius-2xs)';
-  const fill = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:' + artRadius;
+  // The art keeps the corner its row gives it, else the small corner on a phone, a smaller on desktop.
+  const artCorner = 'var(--radius-' + (artRadius || (mobile ? 'xs' : '2xs')) + ')';
+  const fill = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:' + artCorner;
   // A press inside a control of the row, or inside what is marked as pressing on its own, stays
   // there: it never presses the row too.
   const own = (e) => { const inner = e.target && e.target.closest && e.target.closest('.sn-int,[data-sn-own-press]'); return !!inner && inner !== e.currentTarget; };
@@ -55,7 +56,7 @@ export function ListRow({
       {artSize && (
         <div className={REVEAL.host} data-always={mobile ? 'true' : 'false'}
           style={sx('position:relative;width:var(--art-' + artSize + ');height:var(--art-' + artSize + ');flex-shrink:0')}>
-          <div style={sx('position:relative;overflow:hidden;width:100%;height:100%;border-radius:' + artRadius)}>
+          <div style={sx('position:relative;overflow:hidden;width:100%;height:100%;border-radius:' + artCorner)}>
             {/* Greyed the way MediaCard greys an item you don't own: no colour, so a dark cover reads greyed too. */}
             {CoverArt && (artGrey
               ? <div style={sx('position:absolute;inset:0;filter:grayscale(1)')}><CoverArt src={image} /></div>

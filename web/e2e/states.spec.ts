@@ -511,3 +511,48 @@ test('[M0.sonoraclean] a desktop MediaCard fades its corner More in with its pla
     });
   expect(await fade(more), 'More reveals the way the play actions do').toEqual(await fade(actions));
 });
+
+/**
+ * Every element pressing through Sonora's press shell, with what its action is handed: the event
+ * itself, or the data the component passes in its place (a lyric line's index, a segment's key).
+ */
+const PRESS_HOSTS: [string, 'event' | string][] = [
+  ['ListRow', 'event'],
+  ['ResultRow', 'event'],
+  ['EpisodeRow', 'event'],
+  ['QueueRow', 'event'],
+  ['ValueRow', 'event'],
+  ['QuickPick', 'event'],
+  ['MediaCard', 'event'],
+  ['RailItem', 'event'],
+  ['MiniPlayer', 'event'],
+  ['SectionHeader.subject', 'event'],
+  ['Lyrics', 'number'],
+  ['ButtonGroup', 'string'],
+];
+
+const pressedWith = (page: Page, key: string) =>
+  page.evaluate((k) => window.__pressedWith[k] ?? [], key) as Promise<string[]>;
+
+test('[M0.sonoraclean/d] a press shell presses once on a click, on Enter and on Space, handing its action the event', async ({
+  page,
+}) => {
+  test.setTimeout(PRESS_HOSTS.length * 15_000);
+  for (const [name, handed] of PRESS_HOSTS) {
+    const entry = STATE_ENTRIES.find((e) => e.name === name);
+    expect(entry, `${name} is in the states fixture`).toBeDefined();
+    await open(page, entry!);
+    const { cell, host } = await drawing(page, entry!, 'action');
+    const key = pressKey(name, 'action');
+    expect(await tabInto(page, cell, host), `${name} takes focus from Tab`).toBe(true);
+    await page.keyboard.press('Enter');
+    await page.keyboard.press(' ');
+    await page.mouse.move(0, 0);
+    const at = await box(host);
+    await page.mouse.click(at.x + at.width / 2, at.y + at.height / 2);
+    expect(await presses(page, key), `${name} presses once each`).toBe(3);
+    expect(await pressedWith(page, key), `what ${name} hands its action`).toEqual(
+      handed === 'event' ? ['keydown', 'keydown', 'click'] : [handed, handed, handed],
+    );
+  }
+});

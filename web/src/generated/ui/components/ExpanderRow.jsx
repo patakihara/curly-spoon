@@ -12,7 +12,7 @@ injectCss('sonora-expanderrow-css', '.sn-expander-chevron{transition:transform v
 export function ExpanderRow({ label, actionLabel = 'Show all', expanded = false, onToggle, image }) {
   return ListRow ? (
     <ListRow density="group" surface="card" expanded={expanded} onClick={onToggle ? () => onToggle(!expanded) : undefined} disabled={!onToggle}
-      image={image} artSize={image ? '3xs' : undefined}
+      image={image} artSize={image ? '3xs' : undefined} artRadius="xs"
       trailing={(
         <div style={sx('flex-shrink:0;display:flex;align-items:center;gap:var(--spacing-xs);color:var(--surface-fg-muted);font-family:var(--font-body);font-size:var(--text-sm);font-weight:var(--weight-strong)')}>
           {actionLabel}

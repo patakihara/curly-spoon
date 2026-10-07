@@ -32,6 +32,8 @@ data class ListRowProps(
     val artIcon: String? = null,
     /** The art action's glyph size, a step of the Icon ramp. Default `sm`. */
     val artIconSize: ArtIconSize? = null,
+    /** The art's corner, a step of the radius ramp. Default `xs` on a phone, `2xs` on desktop. */
+    val artRadius: ListRowArtRadius? = null,
     /** Presses the row. With neither it nor `disabled` the row is no button, only a container for its own controls. */
     val onClick: (() -> Unit)? = null,
     /** Draws the row as a button that is off. */
@@ -66,6 +68,11 @@ enum class ListRowArtSize(val value: String) {
     SM("sm"),
     MD("md"),
     LG("lg"),
+}
+
+enum class ListRowArtRadius(val value: String) {
+    _2XS("2xs"),
+    XS("xs"),
 }
 
 enum class ListRowDensity(val value: String) {

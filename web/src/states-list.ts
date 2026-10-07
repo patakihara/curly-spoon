@@ -74,6 +74,7 @@ export const STATE_ENTRIES: readonly StateEntry[] = [
   { name: 'SearchField', disabled: true, ripple: false },
   { name: 'Section', disabled: false, ripple: true },
   { name: 'SectionHeader', disabled: false, ripple: true },
+  { name: 'SectionHeader.subject', disabled: false, ripple: true, omits: true },
   { name: 'SeekBar', disabled: false, ripple: false },
   { name: 'SettingRow', disabled: false, ripple: true },
   { name: 'SideSheet', disabled: false, ripple: true, omits: true },
@@ -92,6 +93,8 @@ declare global {
   interface Window {
     /** Presses of each drawing's bound action, by `pressKey`. */
     __presses: Record<string, number>;
+    /** What each press handed the bound action, by `pressKey`: the event's type, or what it was. */
+    __pressedWith: Record<string, string[]>;
   }
 }
 

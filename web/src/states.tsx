@@ -2,7 +2,8 @@
  * The states fixture, `/states.html`: each interactive Sonora component drawn with its action
  * bound, with none, with `disabled` set, and keeping its own state (src/states-list.ts), for the
  * browser test of Material's states (web/e2e/states.spec.ts). Its own entry beside the app and
- * the gallery, linked from nowhere. A bound action counts its presses in `window.__presses`.
+ * the gallery, linked from nowhere. A bound action counts its presses in `window.__presses`, and
+ * notes in `window.__pressedWith` what each press handed it: the event's type, or what it was.
  * `?theme=light` draws it in the light theme, and `?only=<Name>` draws one entry.
  */
 import { StrictMode, useEffect, useRef, type ReactNode } from 'react';
@@ -66,9 +67,10 @@ import {
 import { pressKey, STATE_ENTRIES, type Variant } from './states-list';
 
 window.__presses = {};
+window.__pressedWith = {};
 
 /** How one drawing is pressed: its action for `action` and `disabled`, nothing for `none`. */
-type Act = (() => void) | undefined;
+type Act = ((arg?: unknown) => void) | undefined;
 
 const LONG =
   'A paragraph long enough to fold: the description of a book, a show or an album, which runs on ' +
@@ -308,6 +310,10 @@ const DRAW: Record<string, (act: Act, disabled: boolean) => ReactNode> = {
   SectionHeader: (act) => (
     <SectionHeader title="New" action="arrow_forward" actionLabel="See all" onAction={act} />
   ),
+  // The subject, a link to the shelf's page, as its own press.
+  'SectionHeader.subject': (act) => (
+    <SectionHeader eyebrow="More like" title="Static & Signal" onSubject={act} />
+  ),
   SeekBar: (act) => <SeekBar value={0.3} duration={200} onChange={act} />,
   SettingRow: (act) => <SettingRow title="Gapless" sub="No gap between tracks" onChange={act} />,
   SideSheet: (act) => (
@@ -344,8 +350,10 @@ const OWN: Record<string, () => ReactNode> = {
   ExpandableText: () => <ExpandableText text={LONG} lines={1} />,
 };
 
-const press = (key: string) => () => {
+const press = (key: string) => (arg?: unknown) => {
   window.__presses[key] = (window.__presses[key] ?? 0) + 1;
+  const type = (arg as { type?: unknown } | null)?.type;
+  (window.__pressedWith[key] ??= []).push(typeof type === 'string' ? type : typeof arg);
 };
 
 function own(name: string) {

@@ -27,14 +27,15 @@ export const activate = (fn) => (e) => {
 /**
  * The props that make an element that is not a `<button>` press as one: the button role, a place in
  * the focus order, the state layer's host class, a click, and Enter and Space through `activate`.
- * Off (by default when there is no `fn`), it stays a button but leaves the focus order, says it is
- * disabled and presses nothing. Spread onto the element, which draws its own `<StateLayer />`.
+ * The handler gets the event, from a click or a key. Off (by default when there is no `fn`), it
+ * stays a button but leaves the focus order, says it is disabled and presses nothing; on, it says
+ * nothing of being disabled. Spread onto the element, which draws its own `<StateLayer />`.
  */
 export const press = (fn, off = !fn) => ({
   className: 'sn-int',
   role: 'button',
   tabIndex: off ? -1 : 0,
-  'aria-disabled': off,
+  ...(off ? { 'aria-disabled': true } : {}),
   onClick: off ? undefined : fn,
   onKeyDown: off ? undefined : activate(fn),
 });

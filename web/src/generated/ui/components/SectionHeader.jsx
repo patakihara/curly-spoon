@@ -39,7 +39,7 @@ export function SectionHeader({ title, action, actionLabel = 'More', onAction, p
   // The subject is a link to its page only with onSubject; without it, it is the heading, not a
   // control, so it is drawn plain rather than disabled.
   const subject = !subjectInner ? titleEl : onSubject ? (
-    <div {...press(() => onSubject())}
+    <div {...press(onSubject)}
       style={{ ...row, cursor: 'pointer', borderRadius: 'var(--radius-xs)' }}>
       {subjectInner}
       {StateLayer && <StateLayer />}

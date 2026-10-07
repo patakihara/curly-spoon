@@ -30,6 +30,8 @@ export interface ListRowProps {
   artIcon?: string;
   /** The art action's glyph size, a step of the Icon ramp. Default `sm`. */
   artIconSize?: '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  /** The art's corner, a step of the radius ramp. Default `xs` on a phone, `2xs` on desktop. */
+  artRadius?: '2xs' | 'xs';
   /** Presses the row. With neither it nor `disabled` the row is no button, only a container for its own controls. */
   onClick?: (e?: any) => void;
   /** Draws the row as a button that is off. */

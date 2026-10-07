@@ -523,6 +523,12 @@ describe("Sonora's progress bar, read from its sources", () => {
   );
 });
 
+/**
+ * The button role however it is spelled: an attribute or a key, quoted or not, a string in
+ * braces or a template literal, or set as an attribute by hand.
+ */
+const BUTTON_ROLE = /(?<![\w-])role["'`]?\]?\s*(=|:|,)\s*\{?\s*(["'`])\s*button\s*\2/i;
+
 /** The rows that draw the one row shell: every `*Row` but FieldRow, a label over an Input. */
 const ROWS = ['EpisodeRow', 'ExpanderRow', 'QueueRow', 'ResultRow', 'SettingRow', 'ValueRow'];
 
@@ -535,7 +541,7 @@ const ROWS = ['EpisodeRow', 'ExpanderRow', 'QueueRow', 'ResultRow', 'SettingRow'
 const SHELL: Record<string, RegExp[]> = {
   press: [
     /\bpress\(/,
-    /role=["']button["']/,
+    BUTTON_ROLE,
     /\bactivate\(/,
     /\bonKeyDown\b/,
     /\btabIndex\b/,
@@ -619,15 +625,46 @@ describe("Sonora's rows, read from their sources", () => {
  * in the focus order or Enter and Space. Sonora builds it once, in shared.js's `press`; a native
  * `<button>` (Button, IconButton and the other basics on one) needs no shell.
  */
-const HAND_PRESS = /role(=|\s*:\s*)\{?\s*["']button["']/;
-const PRESS_PARTS = /\btabIndex\b|\bactivate\(/;
-const handPress = (src: string): boolean => HAND_PRESS.test(src) && PRESS_PARTS.test(src);
+const PRESS_PARTS = /\btabindex\b|\bactivate\(|\bisActivationKey\b/i;
+const handPress = (src: string): boolean => BUTTON_ROLE.test(src) && PRESS_PARTS.test(src);
+
+/**
+ * A press handed a handler that throws the event away: an arrow taking nothing that calls a
+ * handler with nothing, where the handler itself would have been given the event.
+ */
+const DROPS_EVENT = /\bpress\(\s*(?:\w+\s*&&\s*)?\(\s*\(?\s*\)\s*=>\s*\w+\(\s*\)\s*\)?/;
 
 describe("Sonora's press shell, read from every component's source", () => {
   it.each([...components.keys()].sort())(
     '[M0.sonoraclean/d] %s builds no press shell of its own',
     (name) => {
       expect(handPress(source(name))).toBe(false);
+    },
+  );
+
+  it.each([...components.keys()].sort())(
+    '[M0.sonoraclean/d] %s hands every press its event',
+    (name) => {
+      expect(source(name)).not.toMatch(DROPS_EVENT);
+    },
+  );
+
+  it.each([
+    ['a handler called with nothing', `<div {...press(() => onSubject())} />`],
+    ['a handler called with nothing, off', `<div {...press(() => onClick(), off)} />`],
+    ['a guarded handler called with nothing', `<div {...press(onOpen && (() => onOpen()))} />`],
+  ])('[M0.sonoraclean/d] names a press that drops its event: %s', (_, src) => {
+    expect(src).toMatch(DROPS_EVENT);
+  });
+
+  it.each([
+    ['the handler itself', `<div {...press(onClick, off)} />`],
+    ['a handler given what it presses', `<div {...press(() => onLineClick(i))} />`],
+    ['a handler given a key', `<div {...press(() => onChange(o.key), off)} />`],
+  ])(
+    '[M0.sonoraclean/d] leaves alone a press that keeps its event or passes data: %s',
+    (_, src) => {
+      expect(src).not.toMatch(DROPS_EVENT);
     },
   );
 
@@ -640,6 +677,19 @@ describe("Sonora's press shell, read from every component's source", () => {
     ['a button role pressed by key', `<div role='button' onKeyDown={activate(onClick)} />`],
     ['a role in braces', `<span role={'button'} tabIndex={off ? -1 : 0} />`],
     ['a props object', `const shell = { role: 'button', tabIndex: 0 };`],
+    ['a template literal', '<div role={`button`} tabIndex={0} />'],
+    ['a double-quoted string in braces', `<div role={"button"} onKeyDown={activate(go)} />`],
+    ['spaces inside the braces', `<div role = { 'button' } tabIndex={0} />`],
+    ['a quoted key', `const shell = { 'role': "button", tabIndex: 0 };`],
+    ['a template-literal key value', 'const shell = { role: `button`, tabIndex: 0 };'],
+    [
+      'an attribute set by hand',
+      `el.setAttribute('role', 'button'); el.setAttribute('tabindex', '0');`,
+    ],
+    [
+      'the activation keys read by hand',
+      '<div role={`button`} onKeyDown={(e) => isActivationKey(e) && go()} />',
+    ],
   ])('[M0.sonoraclean/d] names a component building its own press shell: %s', (_, src) => {
     expect(handPress(src)).toBe(true);
   });
@@ -649,6 +699,8 @@ describe("Sonora's press shell, read from every component's source", () => {
     ['a native button', `<button className="sn-int" onClick={onClick} disabled={off} />`],
     ['another role', `<div role="menuitem" tabIndex={-1} />`],
     ['a button role with no press', `<div role="button" aria-label="Seek" />`],
+    ['another role in a template literal', '<div role={`menuitem`} tabIndex={-1} />'],
+    ['a data attribute', `<div data-role="button" tabIndex={0} />`],
   ])('[M0.sonoraclean/d] leaves alone what is no hand-built shell: %s', (_, src) => {
     expect(handPress(src)).toBe(false);
   });

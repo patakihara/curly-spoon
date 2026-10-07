@@ -1,4 +1,6 @@
 import { createElement, type ReactNode } from 'react';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import {
@@ -23,7 +25,7 @@ describe("Sonora's row shell", () => {
     const tag = root(row({ onClick: () => {} }));
     expect(tag).toContain('role="button"');
     expect(tag).toContain('tabindex="0"');
-    expect(tag).toContain('aria-disabled="false"');
+    expect(tag).not.toContain('aria-disabled');
     expect(tag).toContain('cursor:pointer');
   });
 
@@ -181,5 +183,60 @@ describe('QuickPick, a tile drawn on the row shell', () => {
     const off = root(renderToString(createElement(QuickPick, { title: 'Dune' })));
     expect(off).toContain('tabindex="-1"');
     expect(off).toContain('aria-disabled="true"');
+  });
+});
+
+/** Sonora's radius ramp, read from its tokens: `--radius-xs` is 8px, `--radius-2xs` 6px. */
+const RADII = Object.fromEntries(
+  [
+    ...readFileSync(
+      fileURLToPath(new URL('../../design/sonora/tokens/radius.css', import.meta.url)),
+      'utf8',
+    ).matchAll(/--(radius-[\w-]+):\s*([^;]+);/g),
+  ].map(([, name, value]) => [name!, value!.trim()]),
+);
+
+/** Every corner the row's art draws (the cover, a status scrim, the play overlay), in pixels. */
+const artCorners = (html: string): string[] => {
+  const art = html.slice(html.indexOf('width:var(--art-'));
+  return [
+    ...art.matchAll(
+      /inset:0;[^"]*?border-radius:var\(--(radius-[\w-]+)\)|overflow:hidden;width:100%;height:100%;border-radius:var\(--(radius-[\w-]+)\)/g,
+    ),
+  ].map(([, a, b]) => RADII[(a ?? b)!]!);
+};
+
+describe("The corners of a row's art, as each row drew them before the shell", () => {
+  it.each<[string, 'desktop' | 'mobile', string]>([
+    ['ResultRow', 'desktop', '6px'],
+    ['ResultRow', 'mobile', '8px'],
+    ['EpisodeRow', 'desktop', '8px'],
+    ['EpisodeRow', 'mobile', '8px'],
+    ['QueueRow', 'desktop', '6px'],
+    ['QueueRow', 'mobile', '8px'],
+    ['ExpanderRow', 'desktop', '8px'],
+  ])('[M0.sonoraclean/d] %s on %s rounds its art %s', (name, platform, px) => {
+    const props = { title: 'Low Tide', label: 'More releases', image: '/a.jpg', platform };
+    const el =
+      name === 'ResultRow'
+        ? createElement(ResultRow, { ...props, onClick: () => {}, onAction: () => {} })
+        : name === 'EpisodeRow'
+          ? createElement(EpisodeRow, { ...props, onPlay: () => {} })
+          : name === 'QueueRow'
+            ? createElement(QueueRow, props)
+            : createElement(ExpanderRow, { ...props, onToggle: () => {} });
+    const corners = artCorners(renderToString(el));
+    expect(corners.length, name).toBeGreaterThan(0);
+    expect(new Set(corners), name).toEqual(new Set([px]));
+  });
+
+  it('[M0.sonoraclean/d] a row keeps the corner it is given, else the small corner on desktop', () => {
+    expect(artCorners(row({ artSize: 'md' }))).toContain('6px');
+    expect(new Set(artCorners(row({ artSize: 'md', artRadius: 'xs', onArt: () => {} })))).toEqual(
+      new Set(['8px']),
+    );
+    expect(new Set(artCorners(row({ artSize: 'md', platform: 'mobile' })))).toEqual(
+      new Set(['8px']),
+    );
   });
 });

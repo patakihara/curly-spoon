@@ -42,7 +42,7 @@ export function MiniPlayer({
         background: 'var(--surface-now-playing)', ...INKS,
         display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'center', padding: '0 var(--spacing-xl)', gap: 'var(--spacing-lg)',
       }}>
-        <div {...press(onOpen && (() => onOpen()))} aria-label={'Open player, ' + title}
+        <div {...press(onOpen)} aria-label={'Open player, ' + title}
           style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', minWidth: 0, justifySelf: 'start', maxWidth: '100%', cursor: 'pointer', borderRadius: 'var(--radius-xs)', color: 'var(--surface-fg)' }}>
           <div style={{
             width: 52, height: 52, flexShrink: 0, borderRadius: 'var(--radius-xs)', overflow: 'hidden',
@@ -98,7 +98,7 @@ export function MiniPlayer({
   }
 
   return (
-    <div {...press(onOpen && (() => onOpen()))} aria-label={'Open player, ' + title}
+    <div {...press(onOpen)} aria-label={'Open player, ' + title}
       style={{
       display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)',
       padding: 'var(--spacing-md)', cursor: 'pointer', color: 'var(--surface-now-playing-fg)',
