@@ -507,7 +507,8 @@ the old and new mockup. Play on an album: two runs of the new mockup give identi
 against the old, 3 are identical and 2 differ by 65 pixels in the peek's art square. Sampling that square's box at 8
 times (20–160 ms into the motion) gives identical positions in old and new to 0.1 px, so the 65 pixels were the two
 screenshots landing at slightly different moments. Last (the header button again): the 58 moving or fixed pieces on
-screen match at 6 sample times within 0.1 px (one press ripple). Next was not sampled (needs a second album).
+screen match at 6 sample times within 0.1 px (one press ripple). Next (Blue Hours, after playing Arcadia): the 57
+moving or fixed pieces match exactly at 6 sample times; the screen before the tap is pixel-identical.
 (Virtual time, Emulation.setVirtualTimePolicy, did not pin the animations: two runs of the same code differed.)
 Steps: 1 sizes ✓ · 2 core ✓ (navigation, compose, contracts, layout) · 3 API ✓ (api.d.ts 18.0.0; roles / refs / draft
 deleted) · 4 config ✓ · 5 shell ✓ (view code reads nodes) — the DCs are unchanged and still take the shell's flattened
