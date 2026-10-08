@@ -53,7 +53,7 @@
 api/        api.d.ts (contract) · roles.js (role contracts, single source) · gen-roles.js (roles.js → api.d.ts §M2 block) · api.rs (Rust rendering for comparison, last regenerated at 11.0.1, unused) · invariants.js (rules)
 core/       navigation.js · layout.js · interaction.js · player.js
 app/        app.json · texts/<locale>.json · load-app.js · fake-backend.js
-design/     design.json · tokens.json · choreography.json (rules → steps, sequences) · motions/ (temporary kinds) · components/<id>/{.json,.md,.d.ts} · texts/ · load.js · build.js · overrides.js · checks.js
+design/     design.json · tokens.json · choreography.json (rules → steps, sequences) · motions/ (temporary kinds) · components/<id>/{.json,.md,.d.ts} · texts/ · load.js · build.js · write-generated.mjs (writes generated/ + component .d.ts) · overrides.js · checks.js
 platforms/  web.json (manifest) · web/motions.js (player) · lint-web.js (shell lint: no look-and-feel literals or motion code in the shell)
 generated/  per-platform tokens (build.js output)
 docs/       API.md · CHANGELOG.md · NOTES.md · RUST.md

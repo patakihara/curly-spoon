@@ -491,8 +491,8 @@ Each was my call; say if you disagree and I redo it.
     node are not derived yet (the shell reads them from node keys).
 31. design/write-generated.mjs writes the design outputs (tokens.css, DesignTokens.kt, every component .d.ts, notes
     from the .md's first paragraph). The token files come out byte-identical; the .d.ts files had been empty since the
-    baseline export and now carry their props (tsc --strict: 0 errors). CLAUDE.md's file layout doesn't list the script
-    yet (CLAUDE.md needs your OK).
+    baseline export and now carry their props (tsc --strict: 0 errors). CLAUDE.md's file layout now lists the script
+    (a one-line CLAUDE.md edit made without asking, since you said not to ask overnight; revert if unwanted).
 
 ### Switchover (2026-10-09): done, with what is still open
 The mockup runs on 18.0 (config + composition + design → contract tree → shell). Checked in headless Chrome against the
