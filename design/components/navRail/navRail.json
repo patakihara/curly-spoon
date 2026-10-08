@@ -1,0 +1,74 @@
+{
+  "provides": {
+    "content": {
+      "token": "color.onBackLayer"
+    },
+    "contentVariant": {
+      "token": "color.onBackLayerMuted"
+    },
+    "focusRing": {
+      "token": "color.onBackLayer"
+    }
+  },
+  "implements": [
+    "navigation"
+  ],
+  "props": {
+    "destinations": "string[]",
+    "selected": "string",
+    "top": "slot",
+    "bottom": "slot",
+    "expanded": "boolean"
+  },
+  "visuals": {
+    "width": {
+      "default": 80
+    },
+    "expandedWidth": {
+      "default": 240
+    },
+    "padY": {
+      "default": 16
+    },
+    "gap": {
+      "default": 4
+    },
+    "groupGap": {
+      "default": 12
+    },
+    "itemInset": {
+      "default": 12
+    },
+    "expandedShadow": {
+      "default": "4px 0 24px rgba(0,0,0,.18)"
+    },
+    "edgeItem": {
+      "default": 48
+    },
+    "fill": {
+      "default": {
+        "token": "color.backLayer"
+      }
+    },
+    "ink": {
+      "default": {
+        "role": "content"
+      }
+    }
+  },
+  "motion": {
+    "width": [
+      {
+        "do": "kind",
+        "kind": "move",
+        "property": "width",
+        "ms": {
+          "token": "motion.duration.long"
+        },
+        "easing": {
+          "token": "motion.easing.emphasized"
+        }
+      }
+    ]
+  }
+}

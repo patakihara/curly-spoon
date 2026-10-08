@@ -1,0 +1,19 @@
+{
+  "common.retry": "Retry",
+  "common.cancel": "Cancel",
+  "common.ok": "OK",
+  "common.dismiss": "Dismiss",
+  "search.clear": "Clear search",
+  "content.empty": "Nothing here yet",
+  "content.error": "Couldn’t load this",
+  "content.offline": "You’re offline and this hasn’t been saved",
+  "content.stale": "Offline · showing saved content",
+  "nowPlaying.open": "Open Now playing",
+  "nowPlaying.close": "Close Now playing",
+  "nowPlaying.collapse": "Collapse Now playing",
+  "player.play": "Play",
+  "player.pause": "Pause",
+  "player.next": "Next track",
+  "player.nothing": "Nothing playing",
+  "splash.loading": "Loading…"
+}

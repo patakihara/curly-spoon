@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><script src="./interactive.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"><style>.ms{font-family:'Material Symbols Rounded';font-size:24px;line-height:1;font-feature-settings:'liga'}</style></helmet>
+<button ref="{{ rootRef }}" onClick="{{ onClick }}" onKeyDown="{{ onKeyDown }}" onPointerEnter="{{ onPointerEnter }}" onPointerLeave="{{ onPointerLeave }}" onPointerDown="{{ onPointerDown }}" onFocus="{{ onFocus }}" onBlur="{{ onBlur }}" tabIndex="{{ tab }}" aria-label="{{ label }}" aria-busy="{{ busy }}" data-status="{{ status }}" disabled="{{ disabled }}" style="white-space:nowrap;position:relative;overflow:hidden;width:100%;height:48px;border:0;background-color:transparent;color:{{ ink }};font:inherit;font-size:14px;letter-spacing:.5px;text-transform:uppercase;border-radius:{{ radius }};box-shadow:{{ layerShadow }};transition:{{ ixTrans }};transform:scale({{ pressScale }});outline:{{ outline }};outline-offset:-2px;cursor:{{ cur }};opacity:{{ op }}">{{ text }}</button>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:160,&quot;height&quot;:60}}">
+// Web implementation of a design-system component (§20 interactive): state, state layer, ripples, focus ring and the base
+// state-transition motions come from the shared helper interactive.js (design/components/interactive). Each placed instance owns its
+// hover / press / focus and its ripples; it is identified by props.id (its slot path). When the slot path
+// changes (the instance is reused for another place), all of that is dropped.
+// Props from the shell: id, label, resolve(input) → InteractionView (core), look(state) → visuals (design),
+// activate(event), dim, motion (press: ripple descriptor), motions (per visual: stateLayer, rotation…; design §15); plus the component's own content props.
+class Component extends DCLogic {
+  state = { input: {} };
+  rootRef = React.createRef(); iconRef = React.createRef();
+  componentDidMount() { if (!window.DCInteractive) { this._ready = () => this.forceUpdate(); window.addEventListener('dc-interactive-ready', this._ready); } }
+  componentDidUpdate(prev) { if (window.DCInteractive) window.DCInteractive.update(this, prev); }
+  componentWillUnmount() { if (this._ready) window.removeEventListener('dc-interactive-ready', this._ready); if (window.DCInteractive) window.DCInteractive.drop(this); }
+  // shared helper (interactive.js); inert until it has loaded
+  base() { const I = window.DCInteractive; if (I) return I.base(this); const no = () => {}; return { vis: {}, rootRef: this.rootRef, status: '', busy: false, disabled: true, tab: -1, label: this.props.label || '', layerShadow: 'none', ixTrans: 'none', pressScale: 1, outline: 'none', radius: '0px', op: 1, cur: 'default', onClick: no, onKeyDown: no, onPointerEnter: no, onPointerLeave: no, onPointerDown: no, onFocus: no, onBlur: no }; }
+  renderVals() { const b = this.base(); return { ...b, text: this.props.text || '', ink: b.vis.ink || 'inherit' }; }
+}
+</script>
+</body>
+</html>

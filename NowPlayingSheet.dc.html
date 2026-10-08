@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div ref="{{ nnRef }}" onMouseLeave="{{ nnLeave }}" onPointerDownCapture="{{ focusnowPlaying }}" style="position:absolute;left:{{ nn.left }}px;width:{{ nn.w }}px;top:{{ nn.top }}px;height:{{ nn.h }}px;transform:translateX({{ nn.tx }}px);background:{{ sv.sheet.fill }};border-radius:{{ nn.rad }};box-shadow:{{ nn.shadow }};overflow:hidden;transition:{{ mx.layer.nowPlaying.surface }}">
+  <div style="position:absolute;left:0;right:0;top:0;height:{{ npH }}px;display:flex;opacity:{{ nn.peekOp }};pointer-events:{{ nn.peekEv }};transition:{{ mx.layer.nowPlaying.content }};overflow:hidden"><dc-import name="NowPlaying" image="{{ nn.peekArt }}" title="{{ nn.peekTitle }}" subtitle="{{ nn.peekSub }}" controls="{{ pl.peek }}" row-ix="{{ nn.peekIx }}" visuals="{{ npVis }}" style="width:100%" hint-size="100%,48px"></dc-import>
+  </div>
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column;opacity:{{ nn.sheetOp }};pointer-events:{{ nn.sheetEv }};transition:{{ mx.layer.nowPlaying.content }}">
+    <div style="flex:none;opacity:{{ nn.hop }};transition:{{ mx.layer.nowPlaying.content }}"><dc-import name="Bar" height="{{ nn.hh }}" start="{{ nn.start }}" end="{{ nn.end }}" title="{{ nn.title }}" title-ix="{{ nn.titleIx }}" title-vis="{{ titleVisBar }}" divider="{{ nn.hb }}" ease="{{ ease }}" motion="{{ barMo }}" visuals="{{ barVisLayer }}" hint-size="100%,56px"></dc-import></div>
+    <sc-if value="{{ nn.isList }}" hint-placeholder-val="{{ false }}"><div style="flex:1;min-height:0;overflow:auto;background:{{ sv.sheet.listFill }}">
+      <sc-for list="{{ nn.rows }}" as="lr" hint-placeholder-count="4">
+        <dc-import name="ListRow" dc-props="{{ lr.ix }}" item-id="{{ lr.id }}" text="{{ lr.label }}" sub="{{ lr.sub }}" art="{{ lr.art }}" trailing="{{ lr.icon }}" thumb="36" hint-size="100%,61px"></dc-import>
+      </sc-for>
+    </div></sc-if>
+    <sc-if value="{{ nn.isPlayer }}" hint-placeholder-val="{{ false }}"><div style="flex:1;min-height:0;position:relative;overflow:hidden;background:{{ sv.sheet.fill }}">
+      <div style="position:absolute;inset:0 0 {{ np.peekH }}px 0;display:flex;flex-direction:column;justify-content:center;gap:{{ npVis.bodyGap }}px;padding:0 {{ npVis.bodyPadX }}px;opacity:{{ np.bodyOp }};transition:{{ mx.layer.nowPlaying.content }}">
+        <dc-import name="Artwork" image="{{ np.art }}" size="{{ np.artW }}" visuals="{{ np.artVis }}" hint-size="240px,240px"></dc-import>
+        <dc-import name="TrackInfo" title="{{ np.title }}" subtitle="{{ np.sub }}" visuals="{{ np.infoVis }}" hint-size="100%,48px"></dc-import>
+        <dc-import name="SeekBar" value="{{ np.pos }}" max="{{ np.dur }}" on-seek="{{ np.onSeek }}" label="{{ np.seekLabel }}" pos-text="{{ np.posText }}" dur-text="{{ np.durText }}" visuals="{{ np.seekVis }}" hint-size="100%,40px"></dc-import>
+        <dc-import name="Row" children="{{ np.ctrls }}" visuals="{{ np.rowVis }}" hint-size="100%,64px"></dc-import>
+      </div>
+      <div style="position:absolute;left:0;right:0;top:0;opacity:{{ np.miniOp }};pointer-events:{{ np.miniEv }};transition:{{ mx.layer.nowPlaying.content }}"><dc-import name="NowPlaying" image="{{ np.art }}" title="{{ np.title }}" subtitle="{{ np.sub }}" controls="{{ pl.mini }}" visuals="{{ npVis }}" style="width:100%" hint-size="100%,48px"></dc-import></div>
+      <dc-import name="UpNextSheet" np="{{ np }}" sheet-vis="{{ sheetVis }}" mx="{{ mx }}" style="display:contents" hint-size="0px,0px"></dc-import>
+    </div></sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:640},&quot;nnRef&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;nnLeave&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;focusnowPlaying&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;nn&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;sv&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;mx&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;npH&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;pl&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;npVis&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;titleVisBar&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;ease&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;barMo&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;barVisLayer&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;np&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;sheetVis&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;}}">
+// Web implementation of the Now playing layer's sheet (design components bottomSheet / sideSheet by layout): surface,
+// corners, shadow, its peek, header and pages (list / player with UpNextSheet). The shell places it and feeds it values.
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

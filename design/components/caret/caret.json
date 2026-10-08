@@ -1,0 +1,22 @@
+{
+  "extends": "iconButton",
+  "variant": true,
+  "implements": [
+    "disclosure"
+  ],
+  "props": {
+    "expanded": "boolean"
+  },
+  "visuals": {
+    "rotation": {
+      "default": {
+        "if": {
+          "path": "back.expanded",
+          "equals": true
+        },
+        "then": 180,
+        "else": 0
+      }
+    }
+  }
+}

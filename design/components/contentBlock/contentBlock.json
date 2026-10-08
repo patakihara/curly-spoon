@@ -1,0 +1,70 @@
+{
+  "extends": "listItem",
+  "implements": [
+    "item"
+  ],
+  "props": {
+    "title": "string",
+    "subtitle": "string",
+    "image": "string",
+    "navigable": "boolean"
+  },
+  "visuals": {
+    "radius": {
+      "default": {
+        "token": "radius.md"
+      }
+    },
+    "itemPadding": {
+      "default": 10
+    },
+    "itemRadius": {
+      "default": {
+        "token": "radius.md"
+      }
+    },
+    "artRadius": {
+      "default": 8
+    }
+  },
+  "placeholder": {
+    "visuals": {
+      "bar": {
+        "default": {
+          "token": "color.placeholder"
+        }
+      },
+      "barStrong": {
+        "default": {
+          "token": "color.placeholderStrong"
+        }
+      },
+      "lineHeight": {
+        "default": 10
+      },
+      "line2Height": {
+        "default": 8
+      },
+      "line2Width": {
+        "default": 90
+      },
+      "barRadius": {
+        "default": 4
+      },
+      "artHeight": {
+        "default": 160
+      },
+      "artRadius": {
+        "default": {
+          "token": "radius.sm"
+        }
+      },
+      "gap": {
+        "default": 10
+      },
+      "line2Bar": {
+        "default": "bar"
+      }
+    }
+  }
+}

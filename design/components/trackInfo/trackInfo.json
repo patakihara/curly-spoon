@@ -1,0 +1,70 @@
+{
+  "props": {
+    "title": "string",
+    "subtitle": "string"
+  },
+  "variants": {
+    "size": {
+      "options": [
+        "md",
+        "lg"
+      ],
+      "default": "md"
+    }
+  },
+  "visuals": {
+    "titleSize": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "md": 15,
+          "lg": 22
+        }
+      }
+    },
+    "titleWeight": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "md": 500,
+          "lg": 600
+        }
+      }
+    },
+    "subFont": {
+      "default": {
+        "token": "font.subtitle.family"
+      }
+    },
+    "subSize": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "md": 11,
+          "lg": 13
+        }
+      }
+    },
+    "subColor": {
+      "default": {
+        "token": "color.onSurfaceMuted"
+      }
+    },
+    "gap": {
+      "default": 4
+    },
+    "align": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "md": "start",
+          "lg": "center"
+        }
+      }
+    }
+  },
+  "parts": [
+    "title",
+    "subtitle"
+  ]
+}

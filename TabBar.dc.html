@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:relative;display:flex;border-bottom:1px solid {{ divider }}">
+  <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3"><div style="flex:1;min-width:0;display:flex"><dc-import name="Tab" dc-props="{{ t.ix }}" text="{{ t.label }}" style="width:100%;height:{{ h }}px" hint-size="100%,48px"></dc-import></div></sc-for>
+  <div style="position:absolute;bottom:-1px;height:{{ ih }}px;background:{{ ic }};inset-inline-start:{{ left }}%;width:{{ w }}%;transition:{{ tr }};pointer-events:none"></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:60},&quot;tabs&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ ix: object; label: string }[]&quot;},&quot;selected&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;tsType&quot;:&quot;number&quot;},&quot;motion&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ ms: number; ease: string }&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
+// Web implementation of design component tabBar (role input, accepts choice). Props: tabs [{ ix, label }] (Tab props from the shell),
+// selected (index), motion ({ ms, ease } of the indicator motion), visuals (resolved: height, divider, indicator, indicatorHeight). No values of its own.
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.visuals || {}, tabs = this.props.tabs || [], n = Math.max(1, tabs.length), m = this.props.motion || {};
+    return { tabs, h: +v.height || 48, divider: v.divider || 'transparent', ic: v.indicator || 'currentColor', ih: +v.indicatorHeight || 2,
+      left: 100 * (this.props.selected || 0) / n, w: 100 / n, tr: m.ms ? 'left ' + m.ms + 'ms ' + (m.ease || 'ease') : 'none' };
+  }
+}
+</script>
+</body>
+</html>

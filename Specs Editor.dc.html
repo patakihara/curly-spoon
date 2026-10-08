@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><style>body{margin:0;background:#ecebe8;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c}a{color:#1c1c1c}a:hover{color:#555}</style></helmet>
+<div style="max-width:960px;margin:0 auto;padding:32px 24px 64px;display:flex;flex-direction:column;gap:28px">
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px;justify-content:space-between">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">design/ · contract {{ version }}</div>
+      <div style="font-size:26px;font-weight:500">UI specs</div>
+      <div style="font-size:13px;color:#666;max-width:560px">Tokens, components and choreography. Edits apply live to the mockup in this browser; export to make them permanent.</div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <div style="align-self:center;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:{{ statusColor }}">{{ status }}</div>
+      <button onClick="{{ exportJson }}" style="height:36px;padding:0 16px;border-radius:18px;border:0;background:#1c1c1c;color:#fff;font:inherit;font-size:13px;white-space:nowrap;cursor:pointer">Copy JSON</button>
+      <button onClick="{{ reset }}" style="height:36px;padding:0 16px;border-radius:18px;border:1px solid #1c1c1c;background:transparent;font:inherit;font-size:13px;white-space:nowrap;cursor:pointer">Reset to file</button>
+      <a href="Backdrop Nav Skeleton.dc.html" style="height:36px;padding:0 16px;border-radius:18px;border:1px solid #1c1c1c;display:flex;align-items:center;font-size:13px;text-decoration:none;white-space:nowrap">Open mockup</a>
+    </div>
+  </div>
+
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Tokens</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px">
+      <sc-for list="{{ tokens }}" as="t" hint-placeholder-count="8">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border:1px solid #e3e2de;border-radius:8px">
+          <sc-if value="{{ t.isColor }}" hint-placeholder-val="{{ false }}"><input type="color" value="{{ t.hex }}" onChange="{{ t.onColor }}" style="width:28px;height:28px;padding:0;border:1px solid #d6d5d0;border-radius:6px;background:transparent;flex:none;cursor:pointer"></input></sc-if>
+          <div style="flex:1;min-width:0;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.name }}</div>
+          <input value="{{ t.value }}" onChange="{{ t.onText }}" style="width:120px;height:28px;box-sizing:border-box;padding:0 8px;border:1px solid #d6d5d0;border-radius:6px;font:12px ui-monospace,Menlo,monospace;color:#1c1c1c;background:#fafaf8;outline:none"></input>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Choreography · model event → transition</div>
+    <div style="display:flex;flex-direction:column;background:#fff;border:1px solid #e3e2de;border-radius:8px">
+      <sc-for list="{{ rules }}" as="r" hint-placeholder-count="6">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #efeeea">
+          <div style="flex:1;min-width:180px;font-family:ui-monospace,Menlo,monospace;font-size:12px">{{ r.label }}</div>
+          <select value="{{ r.kind }}" onChange="{{ r.onKind }}" style="height:30px;border:1px solid #d6d5d0;border-radius:6px;background:#fafaf8;font:inherit;font-size:12px">
+            <sc-for list="{{ kinds }}" as="k" hint-placeholder-count="6"><option value="{{ k }}">{{ k }}</option></sc-for>
+          </select>
+          <select value="{{ r.ms }}" onChange="{{ r.onMs }}" style="height:30px;border:1px solid #d6d5d0;border-radius:6px;background:#fafaf8;font:inherit;font-size:12px">
+            <option value="">— duration —</option>
+            <sc-for list="{{ durTokens }}" as="d" hint-placeholder-count="3"><option value="{{ d }}">{{ d }}</option></sc-for>
+          </select>
+          <select value="{{ r.easing }}" onChange="{{ r.onEasing }}" style="height:30px;border:1px solid #d6d5d0;border-radius:6px;background:#fafaf8;font:inherit;font-size:12px">
+            <option value="">— easing —</option>
+            <sc-for list="{{ easeTokens }}" as="d" hint-placeholder-count="3"><option value="{{ d }}">{{ d }}</option></sc-for>
+          </select>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Components · registry</div>
+    <div style="font-size:12px;color:#777">Visual values: <code>@token.name</code> = token, <code>none</code> = off, anything else = literal. Columns are component states.</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px">
+      <sc-for list="{{ components }}" as="c" hint-placeholder-count="6">
+        <div style="display:flex;flex-direction:column;gap:10px;padding:14px;background:#fff;border:1px solid #e3e2de;border-radius:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="flex:1;font-size:15px;font-weight:500">{{ c.id }}</div>
+            <div style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#888">{{ c.lineage }}</div>
+          </div>
+          <sc-if value="{{ c.hasProps }}" hint-placeholder-val="{{ false }}"><div style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#888">props: {{ c.props }}</div></sc-if>
+          <sc-if value="{{ c.hasVisuals }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;gap:6px;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:#999"><div style="width:72px;flex:none"></div><sc-for list="{{ c.cols }}" as="col" hint-placeholder-count="3"><div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ col }}</div></sc-for></div>
+              <sc-for list="{{ c.rows }}" as="row" hint-placeholder-count="3">
+                <div style="display:flex;gap:6px;align-items:center">
+                  <div style="width:72px;flex:none;font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#444;overflow:hidden;text-overflow:ellipsis">{{ row.name }}</div>
+                  <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="3">
+                    <input value="{{ cell.value }}" onChange="{{ cell.onChange }}" placeholder="{{ cell.fallback }}" style="flex:1;min-width:0;height:26px;box-sizing:border-box;padding:0 6px;border:1px solid #d6d5d0;border-radius:5px;font:11px ui-monospace,Menlo,monospace;background:#fafaf8;outline:none"></input>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+let KINDS = ['instant'];   // filled from design/motions on load
+const clone = v => JSON.parse(JSON.stringify(v));
+const show = v => v == null ? 'none' : typeof v === 'object' && 'token' in v ? '@' + v.token : String(v);
+const parse = s => { s = s.trim(); if (s === '' ) return undefined; if (s === 'none') return null; if (s[0] === '@') return { token: s.slice(1) }; return isNaN(+s) ? s : +s; };
+const toHex = v => /^#[0-9a-f]{6}$/i.test(v) ? v : '#000000';
+
+class Component extends DCLogic {
+  state = { specs: null, fileSpecs: null, status: 'loading…', statusColor: '#777' };
+  async componentDidMount() {
+    const get = p => fetch(new URL(p, location.href).href, { cache: 'no-store' });
+    const imp = async p => import(URL.createObjectURL(new Blob([await get(p).then(r => r.text())], { type: 'text/javascript' })));
+    const [O, DL] = await Promise.all([imp('./design/overrides.js'), imp('./design/load.js')]);
+    this.O = O; this.DL = DL;
+    const fileM = await DL.loadDesignRaw(p => get('./design/' + p).then(r => r.text())); KINDS = ['instant', ...Object.keys(fileM.motions || {})];
+    const file = await DL.loadDesignRaw(p => get('./design/' + p).then(r => r.text()));
+    let patch = null; try { patch = JSON.parse(localStorage.getItem(this.O.PATCH_KEY) || 'null'); } catch (e) {}
+    const n = patch ? this.count(patch) : 0;
+    this.setState({ fileSpecs: file, specs: this.O.applySpecs(file, patch), status: n ? n + ' local change' + (n > 1 ? 's' : '') + ' active' : 'matches file', statusColor: n ? '#b26a00' : '#2e7d32' });
+  }
+  count(p) {
+    const leaves = o => o && typeof o === 'object' && !('token' in o) && !('kind' in o) ? Object.values(o).reduce((a, v) => a + leaves(v), 0) : 1;
+    return leaves(p);
+  }
+  edit(fn) {
+    const specs = clone(this.state.specs); fn(specs);
+    const patch = this.O.diffSpecs(this.state.fileSpecs, specs), n = this.count(patch);
+    if (n) localStorage.setItem(this.O.PATCH_KEY, JSON.stringify(patch)); else localStorage.removeItem(this.O.PATCH_KEY);
+    this.setState({ specs, status: n ? n + ' local change' + (n > 1 ? 's' : '') + ' · live in mockup' : 'matches file', statusColor: n ? '#b26a00' : '#2e7d32' });
+  }
+  renderVals() {
+    const sp = this.state.specs;
+    if (!sp) return { version: '', status: this.state.status, statusColor: '#777', tokens: [], rules: [], components: [], kinds: KINDS, durTokens: [], easeTokens: [] };
+    const T = sp.tokens;
+    const tokens = Object.keys(T).map(k => {
+      const v = T[k], isColor = k.startsWith('color.') && typeof v === 'string' && v[0] === '#';
+      return { name: k, value: String(v), isColor, hex: toHex(v),
+        onColor: e => { const x = e.target.value; this.edit(s => { s.tokens[k] = x; }); },
+        onText: e => { const x = e.target.value; this.edit(s => { s.tokens[k] = typeof v === 'number' && x !== '' && !isNaN(+x) ? +x : x; }); } };
+    });
+    const durTokens = Object.keys(T).filter(k => k.startsWith('motion.duration'));
+    const easeTokens = Object.keys(T).filter(k => k.startsWith('motion.easing'));
+    const ruleRow = (label, get, set) => {
+      const t = get(sp);
+      return { label, kind: t.kind, ms: t.ms && t.ms.token || '', easing: t.easing && t.easing.token || '',
+        onKind: e => { const x = e.target.value; this.edit(s => { get(s).kind = x; }); },
+        onMs: e => { const x = e.target.value; this.edit(s => { const r = get(s); if (x) r.ms = { token: x }; else delete r.ms; }); },
+        onEasing: e => { const x = e.target.value; this.edit(s => { const r = get(s); if (x) r.easing = { token: x }; else delete r.easing; }); } };
+    };
+    const kindStep = list => list.find(x => x.do === 'kind') || list[0];   // 17.0: the rule's hand-built kind (temporary) — the editor edits that step
+    const rules = sp.choreography.rules.map((r, i) => ruleRow(r.on.event + (r.on.kind ? ' · ' + r.on.kind : '') + (r.on.layer ? ' · ' + r.on.layer : '') + (r.on.position ? ' · ' + r.on.position : '') + (r.on.motion ? ' · ' + r.on.motion : '') + (r.on.signedIn !== undefined ? ' · signedIn ' + r.on.signedIn : ''), s => kindStep(s.choreography.rules[i].steps)));
+    rules.push(ruleRow('reduced motion (replaces all)', s => kindStep(s.choreography.reduced)));
+    const R = this.DL.resolveExtends(sp);
+    const components = Object.keys(sp.components).map(id => {
+      const c = sp.components[id], r = R.components[id], parent = c.extends ? R.components[c.extends] : null;
+      const states = r.states || [], cols = ['default', ...states];
+      const fallback = (vn, st) => {
+        if (parent) { const pv = (parent.visuals || {})[vn] || {}; const v = st in pv ? pv[st] : st !== 'default' ? pv.default : undefined; return '↑ ' + show(v); }
+        return st === 'default' ? '' : '= default';
+      };
+      return {
+        id, hasProps: !!r.props, props: r.props ? Object.keys(r.props).join(', ') : '',
+        lineage: c.extends ? (c.variant ? 'variant of ' : 'extends ') + c.extends : '',
+        hasVisuals: !!r.visuals, cols,
+        rows: r.visuals ? Object.keys(r.visuals).map(vn => ({ name: vn, cells: cols.map(st => {
+          const own = ((c.visuals || {})[vn] || {})[st];
+          return {
+            value: own === undefined ? '' : show(own), fallback: fallback(vn, st),
+            onChange: e => { const x = parse(e.target.value); this.edit(s => {
+              const C = s.components[id];
+              if (x === undefined && (C.extends || st !== 'default')) { if (C.visuals && C.visuals[vn]) { delete C.visuals[vn][st]; if (!Object.keys(C.visuals[vn]).length) delete C.visuals[vn]; if (!Object.keys(C.visuals).length) delete C.visuals; } }
+              else { C.visuals = C.visuals || {}; C.visuals[vn] = C.visuals[vn] || {}; C.visuals[vn][st] = x === undefined ? null : x; }
+            }); }
+          };
+        }) })) : []
+      };
+    });
+    return {
+      version: sp.contractVersion || '', status: this.state.status, statusColor: this.state.statusColor,
+      tokens, rules, components, kinds: KINDS, durTokens, easeTokens,
+      exportJson: async () => { try { await navigator.clipboard.writeText(JSON.stringify(this.O.diffSpecs(this.state.fileSpecs, sp), null, 2)); this.setState({ status: 'changes copied — paste them to me to apply to design/', statusColor: '#2e7d32' }); } catch (e) { this.setState({ status: 'copy failed', statusColor: '#b3261e' }); } },
+      reset: () => { localStorage.removeItem(this.O.PATCH_KEY); this.setState({ specs: clone(this.state.fileSpecs), status: 'reset to file', statusColor: '#2e7d32' }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

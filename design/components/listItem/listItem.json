@@ -1,0 +1,57 @@
+{
+  "visuals": {
+    "radius": {
+      "default": {
+        "token": "radius.none"
+      }
+    },
+    "contentOpacity": {
+      "default": 1,
+      "disabled": {
+        "token": "state.disabled.opacity"
+      }
+    },
+    "color": {
+      "default": {
+        "role": "content"
+      }
+    },
+    "scale": {
+      "default": 1,
+      "pressed": 1
+    }
+  },
+  "motion": {
+    "placeholder": [
+      {
+        "do": "kind",
+        "kind": "pulse",
+        "trigger": "loop",
+        "ms": {
+          "token": "motion.duration.pulse"
+        },
+        "easing": {
+          "token": "motion.easing.smooth"
+        }
+      }
+    ]
+  },
+  "placeholder": {
+    "visuals": {
+      "bar": {
+        "default": {
+          "token": "color.placeholder"
+        }
+      },
+      "barStrong": {
+        "default": {
+          "token": "color.placeholderStrong"
+        }
+      }
+    }
+  },
+  "extends": "interactive",
+  "parts": [
+    "image"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "props": {
+    "children": "slot"
+  },
+  "variants": {
+    "justify": {
+      "options": [
+        "start",
+        "spread"
+      ],
+      "default": "start"
+    }
+  },
+  "visuals": {
+    "justify": {
+      "default": {
+        "variant": "justify",
+        "cases": {
+          "start": "flex-start",
+          "spread": "space-between"
+        }
+      }
+    },
+    "gap": {
+      "default": 0
+    },
+    "controlBox": {
+      "default": 48
+    }
+  }
+}

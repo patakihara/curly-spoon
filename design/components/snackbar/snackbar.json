@@ -1,0 +1,64 @@
+{
+  "props": {
+    "text": "string",
+    "action": "string"
+  },
+  "provides": {
+    "content": {
+      "token": "color.snackbarAction"
+    },
+    "contentVariant": {
+      "token": "color.snackbarAction"
+    },
+    "focusRing": {
+      "token": "color.onBackLayer"
+    }
+  },
+  "implements": [
+    "overlay"
+  ],
+  "visuals": {
+    "fill": {
+      "default": {
+        "token": "color.inverseSurface"
+      }
+    },
+    "ink": {
+      "default": {
+        "token": "color.onInverseSurface"
+      }
+    },
+    "radius": {
+      "default": {
+        "token": "radius.sm"
+      }
+    },
+    "minHeight": {
+      "default": 48
+    },
+    "gap": {
+      "default": 12
+    },
+    "padding": {
+      "default": "8px 8px 8px 16px"
+    },
+    "fontSize": {
+      "default": 14
+    },
+    "shadow": {
+      "default": "0 4px 12px rgba(0,0,0,.2)"
+    },
+    "maxWidth": {
+      "default": 400
+    },
+    "margin": {
+      "default": 16
+    },
+    "bottomCompact": {
+      "default": 8
+    },
+    "bottomWide": {
+      "default": 16
+    }
+  }
+}

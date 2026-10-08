@@ -1,0 +1,59 @@
+{
+  "provides": {
+    "content": {
+      "token": "color.onSurface"
+    },
+    "contentVariant": {
+      "token": "color.onSurface"
+    },
+    "focusRing": {
+      "token": "color.focusRing"
+    }
+  },
+  "visuals": {
+    "logo": {
+      "default": {
+        "token": "color.accent"
+      }
+    },
+    "logoSize": {
+      "default": 64
+    },
+    "fill": {
+      "default": {
+        "token": "color.surface"
+      }
+    },
+    "ink": {
+      "default": {
+        "role": "content"
+      }
+    },
+    "gap": {
+      "default": 16
+    },
+    "padding": {
+      "default": 32
+    },
+    "titleSize": {
+      "default": 22
+    },
+    "titleWeight": {
+      "default": 500
+    },
+    "textSize": {
+      "default": 13
+    },
+    "textInk": {
+      "default": {
+        "token": "color.onSurfaceSubtle"
+      }
+    },
+    "textMaxWidth": {
+      "default": 260
+    }
+  },
+  "parts": [
+    "logo"
+  ]
+}

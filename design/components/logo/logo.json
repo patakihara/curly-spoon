@@ -1,0 +1,69 @@
+{
+  "extends": "iconButton",
+  "variant": true,
+  "props": {
+    "playing": "boolean"
+  },
+  "visuals": {
+    "unit": {
+      "default": {
+        "token": "size.logo.unit"
+      }
+    },
+    "bars": {
+      "default": "2 5 13 7 3 11 2"
+    },
+    "barRadius": {
+      "default": {
+        "token": "radius.logoBar"
+      }
+    },
+    "frameWidth": {
+      "default": {
+        "token": "size.logo.width"
+      }
+    },
+    "frameHeight": {
+      "default": {
+        "token": "size.logo.height"
+      }
+    },
+    "smallImage": {
+      "default": "assets/logo-small-4x.png"
+    },
+    "smallBelow": {
+      "default": 64
+    },
+    "contentOpacity": {
+      "default": 1,
+      "disabled": 1
+    },
+    "stateLayer": {
+      "default": null,
+      "disabled": null
+    }
+  },
+  "motion": {
+    "levels": [
+      {
+        "do": "kind",
+        "kind": "levels",
+        "trigger": "loop",
+        "ms": {
+          "token": "motion.duration.long"
+        },
+        "easing": {
+          "token": "motion.easing.smooth"
+        },
+        "min": 1,
+        "max": 13,
+        "settleMs": {
+          "token": "motion.duration.long"
+        }
+      }
+    ]
+  },
+  "parts": [
+    "bars"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "props": {
+    "text": "string",
+    "retry": "string"
+  },
+  "implements": [
+    "errorState"
+  ],
+  "extends": "emptyState",
+  "variant": true,
+  "visuals": {
+    "icon": {
+      "default": "error"
+    },
+    "offlineIcon": {
+      "default": "cloud_off"
+    }
+  }
+}

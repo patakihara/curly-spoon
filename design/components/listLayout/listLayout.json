@@ -1,0 +1,15 @@
+{
+  "visuals": {
+    "divider": {
+      "default": {
+        "token": "color.divider"
+      }
+    }
+  },
+  "implements": [
+    "layout"
+  ],
+  "props": {
+    "groups": "list"
+  }
+}

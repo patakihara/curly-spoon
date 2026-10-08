@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:absolute;left:0;right:0;top:{{ oc.top }}px;height:{{ oc.h }}px;border-radius:{{ oc.rad }};overflow:hidden;clip-path:{{ ovInsetCss }};transition:{{ mx.page.surface }}">
+<div style="position:absolute;top:{{ ov.top }}px;left:{{ ov.left }}px;width:{{ ov.w }}px;height:{{ ov.h }}px;border-radius:{{ ov.r }}px;background:{{ sv.front.fill }};overflow:hidden;transition:{{ mx.page.surface }}">
+  <div data-part="fill" style="position:relative;width:{{ cw }}px;height:{{ contentH }}px;background:{{ barVisApp.fill }};opacity:{{ ov.op }};transition:{{ mx.page.content }}">
+    <div data-part="list" ref="{{ ovScrollRef }}" onScroll="{{ onOvScroll }}" style="position:absolute;inset:0;overflow:auto;display:flex;flex-direction:column;background:{{ barVisApp.sheetFill }};clip-path:inset({{ ab.sheetH }}px 0px 0px 0px)">
+      <div data-part="rows" style="flex:none;display:flex;flex-direction:column">
+      <div style="flex:none;height:{{ ab.sheetH }}px"></div>
+      <sc-for list="{{ ovRows }}" as="or" hint-placeholder-count="5">
+        <dc-import name="ListRow" dc-props="{{ or.ix }}" item-id="{{ or.id }}" text="{{ or.label }}" sub="{{ or.sub }}" art="{{ or.art }}" thumb="40" hint-size="100%,65px"></dc-import>
+      </sc-for>
+      </div>
+    </div>
+    <div ref="{{ ovThumbRef }}" style="position:absolute;z-index:2;right:{{ sv.front.scrollThumbInset }}px;top:0;width:{{ sv.front.scrollThumbWidth }}px;height:0;border-radius:{{ sv.front.scrollThumbRadius }}px;background:{{ sv.front.scrollThumb }};opacity:0;pointer-events:none"></div>
+    <div style="position:absolute;left:0;right:0;top:0"><dc-import name="AppBarSheet" height="{{ ab.sheetH }}" visuals="{{ barVisApp }}" info="{{ ovX }}" find="{{ ab.find }}" buttons="{{ ab.buttons }}" btn-ref="{{ abBtnRef }}" ease="{{ ease }}" hint-size="100%,144px"></dc-import></div>
+  </div>
+</div>
+<div data-part="bar" style="position:absolute;left:0;right:0;top:0;opacity:{{ ahOp }};transition:{{ ahTrans }};pointer-events:{{ ahEv }}">
+  <dc-import name="Bar" height="{{ ahH }}" start="{{ ahLeft }}" end="{{ ahRight }}" title="{{ ahTitle }}" title-vis="{{ titleVisBar }}" title-op="{{ ahTitleOp }}" title-max-w="{{ ahTitleW }}" shadow="{{ ahShadow }}" ease="{{ ease }}" motion="{{ ahMo }}" visuals="{{ barVisApp }}" hint-size="100%,56px"></dc-import>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:640},&quot;oc&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;ovInsetCss&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;mx&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;ov&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;sv&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;cw&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;contentH&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;barVisApp&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;ovScrollRef&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;onOvScroll&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;function&quot;},&quot;ab&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;ovRows&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object[]&quot;},&quot;ovThumbRef&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;ovX&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;abBtnRef&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;ease&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;ahOp&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;ahTrans&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;ahEv&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;ahH&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;ahLeft&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object[]&quot;},&quot;ahRight&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object[]&quot;},&quot;ahTitle&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;titleVisBar&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;ahTitleOp&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;ahTitleW&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;ahShadow&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;ahMo&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;}}">
+// Web implementation of an app-bar page (design component appBar, page form): the page surface, the back-layer fill behind the
+// top row, the track list (its own fill stays solid in motions; what fades / slides is design (expandSurface fadeParts / slideParts) by data-part), the sheet (AppBarSheet, data-sheet)
+// and the top row (Bar). The shell places one instance and feeds it resolved visuals, layout and refs.
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

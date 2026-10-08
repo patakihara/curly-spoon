@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="display:flex;flex-direction:column;gap:{{ v.gap }}px"><input type="range" min="0" max="{{ max }}" value="{{ value }}" onChange="{{ onSeek }}" aria-label="{{ label }}" style="width:100%;accent-color:{{ v.fill }};margin:0"><div style="display:flex;justify-content:space-between;font-size:{{ v.timeSize }}px;color:{{ v.timeColor }};font-variant-numeric:tabular-nums"><span>{{ posText }}</span><span>{{ durText }}</span></div></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:320,&quot;height&quot;:48},&quot;value&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:30000,&quot;tsType&quot;:&quot;number&quot;},&quot;max&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:180000,&quot;tsType&quot;:&quot;number&quot;},&quot;onSeek&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(e: Event) =&gt; void&quot;},&quot;label&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Seek&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;posText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;0:30&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;durText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;3:00&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
+// Web implementation of design component seekBar (role input, accepts number). Props: value, max (durationMs), onSeek(e), label, posText, durText, visuals (resolved). No values of its own.
+class Component extends DCLogic {
+  renderVals() { const p = this.props; return { v: p.visuals || {}, value: p.value || 0, max: p.max || 1, onSeek: p.onSeek || (() => {}), label: p.label || '', posText: p.posText || '', durText: p.durText || '' }; }
+}
+</script>
+</body>
+</html>

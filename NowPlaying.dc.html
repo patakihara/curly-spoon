@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div data-peek-root="1" data-occluder="bottom" style="position:relative;width:100%;height:{{ h }}px;box-sizing:border-box;display:flex;align-items:center;gap:{{ gap }}px;padding:0 {{ padEnd }}px 0 {{ padStart }}px;overflow:hidden">
+  <sc-if value="{{ hasRow }}" hint-placeholder-val="{{ false }}"><dc-import name="ListItem" dc-props="{{ rowIx }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
+  <div data-peek="art" data-empty="{{ emptyArt }}" data-filled-at="{{ filledAt }}" style="position:relative;z-index:1;width:{{ art }}px;height:{{ art }}px;border-radius:{{ artR }}px;background:{{ image }};flex:none"></div>
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:{{ textGap }}px">
+    <div data-peek="title" style="font-size:{{ titleSize }}px;font-weight:{{ titleWeight }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ title }}</div>
+    <div data-peek="subtitle" style="font-family:{{ subFamily }};font-size:{{ subSize }}px;color:{{ subColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ subtitle }}</div>
+  </div>
+  <div data-peek="controls" style="position:relative;z-index:1;display:flex;align-items:center;gap:{{ controlGap }}px;flex:none">
+    <sc-for list="{{ controls }}" as="c" hint-placeholder-count="2"><dc-import name="IconButton" dc-props="{{ c.ix }}" icon="{{ c.icon }}" hint-size="36px,36px"></dc-import></sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:48},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Orbit&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;subtitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Maren Holt · Paper Satellites&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;image&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;linear-gradient(135deg,#c63,#633)&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;},&quot;controls&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ ix: unknown; icon: string }[]&quot;},&quot;rowIx&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;}}">
+// Web implementation of design component nowPlaying: one row (art, title, subtitle, controls) used by the peek, the floating card
+// and the bar above an expanded Up next sheet. Props: image (CSS), title, subtitle, controls [{ ix, icon }], rowIx (tap target), visuals (resolved). No values of its own.
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props, v = p.visuals || {};
+    if (p.image && !this._img) this._filledAt = Date.now();   // when the art went from empty to an image (motions read data-filled-at)
+    this._img = p.image || '';
+    return { image: p.image || 'transparent', emptyArt: p.image ? '0' : '1', filledAt: String(this._filledAt || 0), title: p.title || '', subtitle: p.subtitle || '', controls: p.controls || [], hasRow: !!p.rowIx, rowIx: p.rowIx || {},
+      h: +v.height || 48, art: +v.artSize || 28, artR: +v.artRadius || 0, gap: +v.gap || 12, padStart: +v.padStart || 0, padEnd: +v.padEnd || 0, textGap: +v.textGap || 0,
+      titleSize: +v.titleSize || 14, titleWeight: v.titleWeight || 500, subFamily: v.subFamily || 'inherit', subSize: +v.subSize || 11, subColor: v.subColor || 'inherit', controlGap: +v.controlGap || 0 };
+  }
+}
+</script>
+</body>
+</html>

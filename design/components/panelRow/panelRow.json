@@ -1,0 +1,26 @@
+{
+  "props": {
+    "text": "string"
+  },
+  "visuals": {
+    "fontFamily": {
+      "default": {
+        "token": "font.subtitle.family"
+      }
+    },
+    "fontSize": {
+      "default": {
+        "token": "font.subtitle.size"
+      }
+    },
+    "letterSpacing": {
+      "default": ".4px"
+    },
+    "textTransform": {
+      "default": "none"
+    },
+    "opacity": {
+      "default": 0.8
+    }
+  }
+}

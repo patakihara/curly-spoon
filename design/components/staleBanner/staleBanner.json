@@ -1,0 +1,38 @@
+{
+  "props": {
+    "text": "string"
+  },
+  "implements": [
+    "staleBanner"
+  ],
+  "visuals": {
+    "fill": {
+      "default": {
+        "token": "color.surfaceVariant"
+      }
+    },
+    "ink": {
+      "default": {
+        "token": "color.onSurfaceSubtle"
+      }
+    },
+    "fontSize": {
+      "default": 12
+    },
+    "padY": {
+      "default": 8
+    },
+    "padX": {
+      "default": 16
+    },
+    "gap": {
+      "default": 10
+    },
+    "icon": {
+      "default": "cloud_off"
+    },
+    "iconSize": {
+      "default": 18
+    }
+  }
+}

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:relative;flex:none;height:{{ v.height }}px;width:{{ w }};box-sizing:border-box;border-radius:{{ v.radius }}px;overflow:hidden;display:flex;align-items:center;gap:{{ gap }}px;padding:0 {{ v.padX }}px;color:{{ ink }};white-space:nowrap;background:{{ bg }};transition:{{ tr }}"><dc-import name="ListItem" dc-props="{{ ix }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import><dc-import name="Symbol" icon="{{ icon }}" visuals="{{ iconVis }}" hint-size="24px,24px"></dc-import><span style="font-size:{{ v.fontSize }}px;font-weight:{{ v.fontWeight }};max-width:{{ labelW }};overflow:hidden;opacity:{{ labelOp }};transition:{{ labelTr }}">{{ text }}</span></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:280,&quot;height&quot;:64},&quot;ix&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;icon&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;settings&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;text&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Settings&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;filled&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;bg&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;collapsed&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;width&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;motion&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ ms: number; ease: string }&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
+// Web implementation of design component drawerItem (variant of navItem; size drawer | rail). Props: ix (ListItem props), icon, text, filled (icon FILL),
+// bg (indicator, resolved by the shell from status), collapsed (rail: icon only, label hidden), motion ({ ms, ease } of navRail width), visuals (resolved with the size variant). No values of its own.
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props, v = p.visuals || {}, m = p.motion || {}, c = !!p.collapsed, tr = m.ms ? m.ms + 'ms ' + (m.ease || 'ease') : '';
+    return { v, ix: p.ix || {}, icon: p.icon || '', text: p.text || '', bg: p.bg || 'transparent', ink: v.ink || 'inherit',
+      iconVis: { size: +v.iconSize || 24, fill: p.filled ? 1 : 0 }, w: c ? v.height + 'px' : (p.width || 'auto'), gap: c ? 0 : +v.gap || 0,
+      labelW: c ? '0px' : '200px', labelOp: c ? 0 : 1, tr: tr ? 'width ' + tr : 'none', labelTr: tr ? 'opacity ' + tr : 'none' };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div role="img" aria-label="{{ label }}" style="width:{{ size }};height:{{ size }};align-self:center;flex:none;border-radius:{{ radius }}px;background:{{ image }};box-shadow:{{ shadow }}"></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:240,&quot;height&quot;:240},&quot;image&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;label&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;size&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:200,&quot;tsType&quot;:&quot;number&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
+// Web implementation of design component artwork (size sm | lg). Props: image (CSS background), label, size (px, from the shell: lg fills its column within
+// visuals minSize / maxSize / inset), visuals (resolved with the size variant). No values of its own.
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.visuals || {}, sz = this.props.size ?? v.size;
+    return { image: this.props.image || v.empty || 'transparent', label: this.props.label || '', size: typeof sz === 'number' || /^\d+$/.test(sz) ? sz + 'px' : (sz || '100%'), radius: +v.radius || 0, shadow: v.shadow || 'none' };
+  }
+}
+</script>
+</body>
+</html>

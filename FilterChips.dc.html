@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<sc-if value="{{ row }}" hint-placeholder-val="{{ true }}"><div style="height:{{ h }}px;display:flex;align-items:center;overflow-x:auto;margin:0 -{{ inset }}px;padding:0 {{ inset }}px"><div style="display:flex;gap:{{ gap }}px;flex:none"><sc-for list="{{ chips }}" as="f" hint-placeholder-count="3"><dc-import name="Chip" dc-props="{{ f.ix }}" text="{{ f.label }}" hint-size="72px,32px"></dc-import></sc-for></div></div></sc-if>
+<sc-if value="{{ wrap }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-wrap:wrap;gap:{{ gap }}px"><sc-for list="{{ chips }}" as="f" hint-placeholder-count="3"><dc-import name="Chip" dc-props="{{ f.ix }}" text="{{ f.label }}" hint-size="72px,32px"></dc-import></sc-for></div></sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:60},&quot;chips&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ ix: object; label: string }[]&quot;},&quot;wrap&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
+// Web implementation of design component filterChips (and its variant choiceChips). Props: chips [{ ix, label }] (Chip props from the shell),
+// wrap (true in panels: chips wrap; else one scrolling row bleeding by `inset`), visuals (resolved: height, gap, inset). No values of its own.
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.visuals || {}, wrap = !!this.props.wrap;
+    return { chips: this.props.chips || [], wrap, row: !wrap, h: +v.height || 48, gap: +v.gap || 8, inset: +v.inset || 0 };
+  }
+}
+</script>
+</body>
+</html>

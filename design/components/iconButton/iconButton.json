@@ -1,0 +1,159 @@
+{
+  "visuals": {
+    "radius": {
+      "default": {
+        "token": "radius.full"
+      }
+    },
+    "color": {
+      "default": {
+        "role": "contentVariant"
+      },
+      "checked": {
+        "token": "color.accent"
+      }
+    },
+    "size": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "xs": {
+            "token": "size.iconButton.xs"
+          },
+          "sm": {
+            "token": "size.iconButton.sm"
+          },
+          "md": {
+            "token": "size.iconButton.md"
+          },
+          "lg": {
+            "token": "size.iconButton.lg"
+          },
+          "xl": {
+            "token": "size.iconButton.xl"
+          }
+        }
+      }
+    },
+    "iconSize": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "xs": {
+            "token": "size.icon.xs"
+          },
+          "sm": {
+            "token": "size.icon.sm"
+          },
+          "md": {
+            "token": "size.icon.md"
+          },
+          "lg": {
+            "token": "size.icon.lg"
+          },
+          "xl": {
+            "token": "size.icon.xl"
+          }
+        }
+      }
+    },
+    "markSize": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "xs": {
+            "token": "size.mark.lg"
+          },
+          "sm": {
+            "token": "size.mark.lg"
+          },
+          "md": {
+            "token": "size.mark.lg"
+          },
+          "lg": {
+            "token": "size.mark.lg"
+          },
+          "xl": {
+            "token": "size.mark.xl"
+          }
+        }
+      }
+    },
+    "offsetStart": {
+      "default": {
+        "variant": "edge",
+        "cases": {
+          "none": 0,
+          "start": -24
+        }
+      }
+    },
+    "slotMaxWidth": {
+      "default": 48
+    },
+    "offsetTop": {
+      "default": {
+        "variant": "edge",
+        "cases": {
+          "none": 0,
+          "start": 4
+        }
+      }
+    }
+  },
+  "props": {
+    "icon": "string",
+    "label": "string"
+  },
+  "variants": {
+    "size": {
+      "options": [
+        "xs",
+        "sm",
+        "md",
+        "lg",
+        "xl"
+      ],
+      "default": "lg"
+    },
+    "edge": {
+      "options": [
+        "none",
+        "start"
+      ],
+      "default": "none"
+    }
+  },
+  "statuses": [
+    "busy",
+    "error",
+    "checked"
+  ],
+  "motion": {
+    "rotation": [
+      {
+        "do": "kind",
+        "kind": "rotate",
+        "ms": {
+          "token": "motion.duration.medium"
+        },
+        "easing": {
+          "token": "motion.easing.standard"
+        }
+      }
+    ],
+    "icon": [
+      {
+        "do": "kind",
+        "kind": "symbolMorph",
+        "ms": {
+          "token": "motion.duration.medium"
+        },
+        "easing": {
+          "token": "motion.easing.emphasized"
+        }
+      }
+    ]
+  },
+  "extends": "interactive"
+}

@@ -1,0 +1,19 @@
+{
+  "common.retry": "Yritä uudelleen",
+  "common.cancel": "Peruuta",
+  "common.ok": "OK",
+  "common.dismiss": "Sulje",
+  "search.clear": "Tyhjennä haku",
+  "content.empty": "Täällä ei ole vielä mitään",
+  "content.error": "Lataus epäonnistui",
+  "content.offline": "Olet offline-tilassa, eikä tätä ole tallennettu",
+  "content.stale": "Offline · näytetään tallennettu sisältö",
+  "nowPlaying.open": "Avaa Nyt soi",
+  "nowPlaying.close": "Sulje Nyt soi",
+  "nowPlaying.collapse": "Pienennä Nyt soi",
+  "player.play": "Toista",
+  "player.pause": "Tauko",
+  "player.next": "Seuraava kappale",
+  "player.nothing": "Ei toistoa",
+  "splash.loading": "Ladataan…"
+}

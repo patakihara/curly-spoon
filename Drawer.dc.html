@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="width:100%;height:100%;box-sizing:border-box;background:{{ v.fill }};border-radius:{{ v.radius }};display:flex;flex-direction:column;gap:{{ v.gap }}px;padding:{{ v.padding }};box-shadow:{{ v.shadow }}">
+  <div style="height:{{ v.titleHeight }}px;display:flex;align-items:center;padding:0 {{ v.titlePadX }}px"><dc-import name="Title" text="{{ title }}" visuals="{{ titleVis }}" hint-size="100%,24px"></dc-import></div>
+  <sc-for list="{{ items }}" as="di" hint-placeholder-count="3"><dc-import name="DrawerItem" ix="{{ di.ix }}" icon="{{ di.icon }}" text="{{ di.text }}" filled="{{ di.fill }}" bg="{{ di.bg }}" width="100%" visuals="{{ itemVis }}" hint-size="100%,56px"></dc-import></sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:320,&quot;height&quot;:400},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Menu&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;titleVis&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;},&quot;items&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object[]&quot;},&quot;itemVis&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;},&quot;width&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:300,&quot;tsType&quot;:&quot;number&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
+// Web implementation of design component drawer (the drawer layer's surface: title + drawerItem rows). Props: title, titleVis, items [{ ix, icon, text, fill, bg }], itemVis (drawerItem, size drawer), width (layer presentation), visuals (drawer). Slide / scrim come from the shell. No values of its own.
+class Component extends DCLogic {
+  renderVals() { const p = this.props; return { v: p.visuals || {}, w: p.width || 300, title: p.title || '', titleVis: p.titleVis || {}, items: p.items || [], itemVis: p.itemVis || {} }; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div ref="{{ rootRef }}" role="img" aria-label="{{ label }}" style="width:{{ w }}px;height:{{ h }}px;flex:none;display:flex;flex-direction:row;align-items:center;justify-content:space-between;color:{{ color }}"><sc-for list="{{ bars }}" as="b" hint-placeholder-count="7"><div style="width:{{ b.w }}px;height:{{ b.h }}px;flex:none;border-radius:{{ b.r }}px;background-color:currentColor"></div></sc-for><sc-if value="{{ hasImg }}" hint-placeholder-val="{{ false }}"><div style="width:100%;height:100%;background-color:currentColor;-webkit-mask:{{ mask }};mask:{{ mask }}"></div></sc-if></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:240,&quot;height&quot;:240},&quot;size&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:160,&quot;min&quot;:16,&quot;max&quot;:365,&quot;step&quot;:1,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;},&quot;playing&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;color&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#1c1c1c&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;label&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Logo&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;},&quot;motion&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;TransitionDescriptor&quot;}}">
+// Web implementation of the logo's mark (design/components/logo). IconButton mounts it for the logo variant and
+// passes the resolved visuals (unit, bars, barRadius, frameWidth, frameHeight) and the `levels` motion descriptor.
+// Standalone (preview) it loads design/ itself. No geometry or timing of its own.
+class Component extends DCLogic {
+  state = { vis: null, mo: null };
+  rootRef = React.createRef();
+  anims = [];
+  async componentDidMount() {
+    if (!this.props.visuals) {
+      const get = p => fetch(new URL(p, location.href).href, { cache: 'no-store' }).then(r => r.text());
+      const imp = async p => import(URL.createObjectURL(new Blob([await get(p)], { type: 'text/javascript' })));
+      const [DL, P] = await Promise.all([imp('./design/load.js'), imp('./core/layout.js')]);
+      const sp = await DL.loadDesign(p => get('./design/' + p));
+      const reducedMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+      this.setState({ vis: P.resolveVisuals(sp, 'logo', 'enabled'), mo: P.motionFor(sp, 'logo', 'levels', { reducedMotion }) });
+    }
+    this.sync();
+  }
+  componentDidUpdate(p) {   // the runtime passes prevProps only: compare state against the last synced copy
+    const q = this.props, L = this._last || {};
+    if (p.playing !== q.playing || p.size !== q.size || p.visuals !== q.visuals || p.motion !== q.motion || L.vis !== this.state.vis || L.mo !== this.state.mo) { this._last = { vis: this.state.vis, mo: this.state.mo }; this.sync(); }
+  }
+  componentWillUnmount() { if (this.retry) cancelAnimationFrame(this.retry); this.anims.forEach(a => a && a.cancel()); }
+  vis() { return this.props.visuals || this.state.vis || {}; }
+  mo() { return this.props.motion || this.state.mo || { kind: 'instant' }; }
+  geo() {
+    const v = this.vis(), rest = String(v.bars || '').trim().split(/\s+/).filter(Boolean).map(Number);
+    const fh = +v.frameHeight || 1, k = (+this.props.size || fh) / fh, unit = (+v.unit || 0) * k;
+    const g = { rest, k, unit, w: (+v.frameWidth || 0) * k, h: fh * k, r: (+v.barRadius || 0) * k, img: null };
+    // small sizes: the design's pre-rendered resting mark (an image used as a mask, so it keeps currentColor); no bars to animate
+    if (v.smallImage && g.h < (+v.smallBelow || 0)) return { ...g, rest: [], img: './design/' + v.smallImage };
+    return g;
+  }
+  sync() {
+    const g = this.geo(), m = this.mo(), px = u => u * g.unit + 'px';
+    const on = !!this.props.playing && m.kind === 'levels' && +m.ms > 0;
+    const els = this.rootRef.current ? [...this.rootRef.current.children] : [];
+    if (els.length < g.rest.length) { if (g.rest.length && !this.retry) this.retry = requestAnimationFrame(() => { this.retry = 0; this.sync(); }); return; }
+    g.rest.forEach((restU, i) => {
+      const el = els[i];
+      const from = getComputedStyle(el).height;
+      if (this.anims[i]) this.anims[i].cancel();
+      this.anims[i] = null;
+      if (!on) {
+        if (m.kind === 'levels' && from !== px(restU)) this.anims[i] = el.animate([{ height: from }, { height: px(restU) }], { duration: +(m.settleMs ?? m.ms) || 0, easing: m.easing });
+        return;
+      }
+      // a fixed pseudo-random level sequence per bar; each bar loops on its own length so they never line up
+      let s = (i + 1) * 9301 + 49297; const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+      const lo = +m.min || 1, hi = +m.max || Math.max(...g.rest), n = 8, ease = m.stepped ? 'steps(1, end)' : m.easing;
+      const frames = Array.from({ length: n }, () => ({ height: px(Math.round(lo + rnd() * (hi - lo))), easing: ease }));
+      frames.push({ height: frames[0].height });
+      const intro = el.animate([{ height: from }, { height: frames[0].height }], { duration: m.ms / 2, easing: m.easing, fill: 'forwards' });
+      this.anims[i] = intro;
+      intro.onfinish = () => { if (this.anims[i] !== intro) return; intro.cancel(); this.anims[i] = el.animate(frames, { duration: m.ms * n * (1 + (i % 3) * .15), iterations: Infinity }); };
+    });
+  }
+  renderVals() {
+    const g = this.geo();
+    return {
+      rootRef: this.rootRef, label: this.props.label || '', color: this.props.color || 'currentColor', w: g.w, h: g.h,
+      hasImg: !!g.img, mask: g.img ? 'url("' + g.img + '") center / contain no-repeat' : 'none',
+      bars: g.rest.map(u => ({ w: g.unit, r: g.r, h: u * g.unit }))
+    };
+  }
+}
+</script>
+</body>
+</html>

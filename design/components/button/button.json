@@ -1,0 +1,156 @@
+{
+  "visuals": {
+    "radius": {
+      "default": {
+        "token": "radius.full"
+      }
+    },
+    "ink": {
+      "default": {
+        "variant": "emphasis",
+        "cases": {
+          "text": {
+            "role": "content"
+          },
+          "outlined": {
+            "role": "content"
+          },
+          "filled": {
+            "variant": "tone",
+            "cases": {
+              "default": {
+                "token": "color.onBackLayer"
+              },
+              "inverse": {
+                "token": "color.backLayer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "fill": {
+      "default": {
+        "variant": "emphasis",
+        "cases": {
+          "text": "transparent",
+          "outlined": "transparent",
+          "filled": {
+            "variant": "tone",
+            "cases": {
+              "default": {
+                "token": "color.backLayer"
+              },
+              "inverse": {
+                "token": "color.onBackLayer"
+              }
+            }
+          }
+        }
+      }
+    },
+    "border": {
+      "default": {
+        "variant": "emphasis",
+        "cases": {
+          "text": null,
+          "outlined": {
+            "role": "content"
+          },
+          "filled": null
+        }
+      }
+    },
+    "height": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "sm": {
+            "token": "size.button.height.sm"
+          },
+          "md": {
+            "token": "size.button.height.md"
+          },
+          "lg": {
+            "token": "size.button.height.lg"
+          }
+        }
+      }
+    },
+    "padX": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "sm": {
+            "token": "size.button.padX.sm"
+          },
+          "md": {
+            "token": "size.button.padX.md"
+          },
+          "lg": {
+            "token": "size.button.padX.lg"
+          }
+        }
+      }
+    },
+    "fontSize": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "sm": {
+            "token": "size.button.font.sm"
+          },
+          "md": {
+            "token": "size.button.font.md"
+          },
+          "lg": {
+            "token": "size.button.font.lg"
+          }
+        }
+      }
+    },
+    "iconSize": {
+      "default": 18
+    },
+    "iconGap": {
+      "default": 6
+    },
+    "padStartWithIcon": {
+      "default": 12
+    }
+  },
+  "variants": {
+    "emphasis": {
+      "options": [
+        "text",
+        "outlined",
+        "filled"
+      ],
+      "default": "text"
+    },
+    "size": {
+      "options": [
+        "sm",
+        "md",
+        "lg"
+      ],
+      "default": "md"
+    },
+    "tone": {
+      "options": [
+        "default",
+        "inverse"
+      ],
+      "default": "default"
+    }
+  },
+  "props": {
+    "text": "string",
+    "icon": "string"
+  },
+  "statuses": [
+    "busy",
+    "error"
+  ],
+  "extends": "interactive"
+}

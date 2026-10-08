@@ -1,0 +1,31 @@
+{
+  "props": {
+    "text": "string"
+  },
+  "visuals": {
+    "fontFamily": {
+      "default": {
+        "token": "font.subtitle.family"
+      }
+    },
+    "fontSize": {
+      "default": {
+        "token": "font.subtitle.size"
+      }
+    },
+    "color": {
+      "default": {
+        "role": "contentVariant"
+      }
+    },
+    "padX": {
+      "default": 8
+    },
+    "slotMaxWidth": {
+      "default": 120
+    },
+    "slotWidth": {
+      "default": 72
+    }
+  }
+}

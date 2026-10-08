@@ -1,0 +1,61 @@
+{
+  "props": {
+    "image": "string",
+    "label": "string"
+  },
+  "variants": {
+    "size": {
+      "options": [
+        "sm",
+        "lg"
+      ],
+      "default": "lg"
+    }
+  },
+  "visuals": {
+    "radius": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "sm": 4,
+          "lg": 8
+        }
+      }
+    },
+    "size": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "sm": 40,
+          "lg": "100%"
+        }
+      }
+    },
+    "shadow": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "sm": "none",
+          "lg": "0 8px 24px rgba(0,0,0,.18)"
+        }
+      }
+    },
+    "minSize": {
+      "default": 120
+    },
+    "maxSize": {
+      "default": 300
+    },
+    "inset": {
+      "default": 56
+    },
+    "empty": {
+      "default": {
+        "token": "color.placeholder"
+      }
+    }
+  },
+  "parts": [
+    "image"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "implements": [
+    "input"
+  ],
+  "accepts": [
+    "number"
+  ],
+  "props": {
+    "value": "value",
+    "options": "options",
+    "fromLabel": "string",
+    "toLabel": "string"
+  },
+  "visuals": {
+    "height": {
+      "default": 40
+    },
+    "radius": {
+      "default": {
+        "token": "radius.sm"
+      }
+    },
+    "border": {
+      "default": {
+        "token": "color.chipOutline"
+      }
+    },
+    "ink": {
+      "default": {
+        "role": "content"
+      }
+    },
+    "width": {
+      "default": 88
+    },
+    "gap": {
+      "default": 8
+    },
+    "fontSize": {
+      "default": 14
+    },
+    "padX": {
+      "default": 10
+    },
+    "separatorOpacity": {
+      "default": 0.8
+    }
+  }
+}

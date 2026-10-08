@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="height:{{ h }}px;display:flex;align-items:center;padding:0 {{ padX }}px;background:{{ fill }};font-size:{{ fs }}px;font-weight:{{ fw }};color:{{ color }}">{{ text }}</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:320,&quot;height&quot;:32},&quot;text&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;A&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;padX&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:16,&quot;tsType&quot;:&quot;number&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
+// Web implementation of design component groupHeader (sticky group label). Props: text, padX (the layout's margin), visuals (resolved). No values of its own.
+class Component extends DCLogic {
+  renderVals() { const p = this.props, v = p.visuals || {}; return { text: p.text || '', padX: +p.padX || 0, h: +v.height || 32, fs: +v.fontSize || 13, fw: v.fontWeight || 600, color: v.color || 'inherit', fill: v.fill || 'transparent' }; }
+}
+</script>
+</body>
+</html>

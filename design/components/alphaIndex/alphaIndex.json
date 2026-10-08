@@ -1,0 +1,36 @@
+{
+  "props": {
+    "keys": "string[]"
+  },
+  "visuals": {
+    "width": {
+      "default": 20
+    },
+    "fontSize": {
+      "default": 10
+    },
+    "fontWeight": {
+      "default": 600
+    },
+    "color": {
+      "default": {
+        "role": "contentVariant"
+      }
+    },
+    "keyPad": {
+      "default": "1px 4px"
+    },
+    "gap": {
+      "default": 1
+    },
+    "slotWidth": {
+      "default": 20
+    },
+    "insetBottom": {
+      "default": 8
+    },
+    "offsetTop": {
+      "default": 8
+    }
+  }
+}

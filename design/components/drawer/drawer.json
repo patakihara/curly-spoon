@@ -1,0 +1,53 @@
+{
+  "provides": {
+    "content": {
+      "token": "color.onSurface"
+    },
+    "contentVariant": {
+      "token": "color.onSurfaceVariant"
+    },
+    "focusRing": {
+      "token": "color.focusRing"
+    }
+  },
+  "visuals": {
+    "fill": {
+      "default": {
+        "token": "color.surfaceRaised"
+      }
+    },
+    "radius": {
+      "default": "0 16px 16px 0"
+    },
+    "shadow": {
+      "default": "4px 0 24px rgba(0,0,0,.12)"
+    },
+    "padding": {
+      "default": "8px 12px"
+    },
+    "gap": {
+      "default": 4
+    },
+    "titleHeight": {
+      "default": 56
+    },
+    "titlePadX": {
+      "default": 16
+    },
+    "scrim": {
+      "default": {
+        "token": "color.scrim"
+      }
+    },
+    "maxWidth": {
+      "default": "85%"
+    }
+  },
+  "implements": [
+    "drawerLayer"
+  ],
+  "props": {
+    "open": "boolean",
+    "form": "string"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "params": {
+    "ms": {
+      "type": "duration"
+    },
+    "easing": {
+      "type": "easing"
+    },
+    "scope": {
+      "type": "string",
+      "default": "all"
+    },
+    "split": {
+      "type": "number",
+      "default": 0.3
+    },
+    "easingOut": {
+      "type": "easing"
+    },
+    "easingIn": {
+      "type": "easing"
+    },
+    "scaleIn": {
+      "type": "number",
+      "default": 1
+    },
+    "shared": {
+      "type": "string",
+      "default": ""
+    },
+    "sharedMs": {
+      "type": "duration"
+    },
+    "sharedEasing": {
+      "type": "easing"
+    },
+    "enterStagger": {
+      "type": "duration"
+    },
+    "enterDelay": {
+      "type": "duration"
+    },
+    "enterMs": {
+      "type": "duration"
+    },
+    "enterDistance": {
+      "type": "number",
+      "default": 0
+    },
+    "enterEasing": {
+      "type": "easing"
+    },
+    "fadeMs": {
+      "type": "duration"
+    },
+    "fixedParts": {
+      "type": "string",
+      "default": "stay"
+    }
+  },
+  "reduced": "fade"
+}

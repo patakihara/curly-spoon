@@ -1,0 +1,19 @@
+{
+  "common.retry": "ניסיון חוזר",
+  "common.cancel": "ביטול",
+  "common.ok": "אישור",
+  "common.dismiss": "סגירה",
+  "search.clear": "ניקוי החיפוש",
+  "content.empty": "אין כאן עדיין כלום",
+  "content.error": "הטעינה נכשלה",
+  "content.offline": "אין חיבור, והתוכן הזה לא נשמר",
+  "content.stale": "אין חיבור · מוצג תוכן שמור",
+  "nowPlaying.open": "פתיחת מתנגן עכשיו",
+  "nowPlaying.close": "סגירת מתנגן עכשיו",
+  "nowPlaying.collapse": "כיווץ מתנגן עכשיו",
+  "player.play": "הפעלה",
+  "player.pause": "השהיה",
+  "player.next": "הרצועה הבאה",
+  "player.nothing": "לא מתנגן כלום",
+  "splash.loading": "בטעינה…"
+}

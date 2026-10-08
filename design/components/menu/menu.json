@@ -1,0 +1,124 @@
+{
+  "props": {
+    "items": "string[]"
+  },
+  "provides": {
+    "content": {
+      "token": "color.onSurface"
+    },
+    "contentVariant": {
+      "token": "color.onSurfaceVariant"
+    },
+    "focusRing": {
+      "token": "color.focusRing"
+    }
+  },
+  "implements": [
+    "overlay"
+  ],
+  "visuals": {
+    "fill": {
+      "default": {
+        "token": "color.surfaceRaised"
+      }
+    },
+    "ink": {
+      "default": {
+        "token": "color.onSurface"
+      }
+    },
+    "radius": {
+      "default": {
+        "if": {
+          "env": "layout",
+          "equals": "wide"
+        },
+        "then": "8px",
+        "else": "16px 16px 0 0"
+      }
+    },
+    "padding": {
+      "default": {
+        "if": {
+          "env": "layout",
+          "equals": "wide"
+        },
+        "then": "8px 0",
+        "else": "8px 0 16px"
+      }
+    },
+    "shadow": {
+      "default": {
+        "if": {
+          "env": "layout",
+          "equals": "wide"
+        },
+        "then": "0 4px 16px rgba(0,0,0,.18)",
+        "else": "0 -8px 24px rgba(0,0,0,.16)"
+      }
+    },
+    "scrim": {
+      "default": {
+        "if": {
+          "env": "layout",
+          "equals": "wide"
+        },
+        "then": "transparent",
+        "else": {
+          "token": "color.scrimLight"
+        }
+      }
+    },
+    "maxWidth": {
+      "default": 400
+    },
+    "rowHeight": {
+      "default": {
+        "if": {
+          "env": "layout",
+          "equals": "wide"
+        },
+        "then": 44,
+        "else": 52
+      }
+    },
+    "fontSize": {
+      "default": {
+        "if": {
+          "env": "layout",
+          "equals": "wide"
+        },
+        "then": 14,
+        "else": 15
+      }
+    },
+    "rowPadX": {
+      "default": 20
+    },
+    "rowGap": {
+      "default": 16
+    },
+    "iconSize": {
+      "default": 22
+    },
+    "iconColor": {
+      "default": {
+        "token": "color.onSurfaceVariant"
+      }
+    },
+    "handleWidth": {
+      "default": 32
+    },
+    "handleHeight": {
+      "default": 4
+    },
+    "handle": {
+      "default": {
+        "token": "color.handle"
+      }
+    },
+    "handleRadius": {
+      "default": 2
+    }
+  }
+}

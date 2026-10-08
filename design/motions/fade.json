@@ -1,0 +1,19 @@
+{
+  "params": {
+    "ms": {
+      "type": "duration"
+    },
+    "easing": {
+      "type": "easing"
+    },
+    "split": {
+      "type": "number",
+      "default": 0.5
+    },
+    "scaleIn": {
+      "type": "number",
+      "default": 1
+    }
+  },
+  "reduced": "fade"
+}

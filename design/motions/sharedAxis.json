@@ -1,0 +1,37 @@
+{
+  "params": {
+    "ms": {
+      "type": "duration"
+    },
+    "easing": {
+      "type": "easing"
+    },
+    "easingOut": {
+      "type": "easing"
+    },
+    "easingIn": {
+      "type": "easing"
+    },
+    "split": {
+      "type": "number",
+      "default": 0.3
+    },
+    "axis": {
+      "type": "string",
+      "default": "x"
+    },
+    "distance": {
+      "type": "number",
+      "default": 30
+    },
+    "direction": {
+      "type": "number",
+      "default": 0
+    },
+    "scaleIn": {
+      "type": "number",
+      "default": 1
+    }
+  },
+  "reduced": "fade"
+}

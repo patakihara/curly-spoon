@@ -1,0 +1,84 @@
+{
+  "extends": "navItem",
+  "variant": true,
+  "props": {
+    "text": "string",
+    "icon": "string"
+  },
+  "statuses": [
+    "selected",
+    "checked"
+  ],
+  "visuals": {
+    "width": {
+      "default": "100%"
+    },
+    "height": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "drawer": 56,
+          "rail": 48
+        }
+      }
+    },
+    "radius": {
+      "default": {
+        "token": "radius.full"
+      }
+    },
+    "indicator": {
+      "default": "transparent",
+      "checked": {
+        "token": "color.navIndicator"
+      }
+    },
+    "padX": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "drawer": 16,
+          "rail": 12
+        }
+      }
+    },
+    "gap": {
+      "default": 12
+    },
+    "iconSize": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "drawer": 22,
+          "rail": 24
+        }
+      }
+    },
+    "fontSize": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "drawer": 15,
+          "rail": 14
+        }
+      }
+    },
+    "fontWeight": {
+      "default": 500
+    },
+    "ink": {
+      "default": {
+        "role": "content"
+      }
+    }
+  },
+  "variants": {
+    "size": {
+      "options": [
+        "drawer",
+        "rail"
+      ],
+      "default": "drawer"
+    }
+  }
+}

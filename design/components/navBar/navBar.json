@@ -1,0 +1,32 @@
+{
+  "provides": {
+    "content": {
+      "token": "color.onBackLayer"
+    },
+    "contentVariant": {
+      "token": "color.onBackLayerMuted"
+    },
+    "focusRing": {
+      "token": "color.onBackLayer"
+    }
+  },
+  "implements": [
+    "navigation"
+  ],
+  "props": {
+    "destinations": "string[]",
+    "selected": "string"
+  },
+  "visuals": {
+    "height": {
+      "default": {
+        "token": "size.navBar.height"
+      }
+    },
+    "fill": {
+      "default": {
+        "token": "color.backLayer"
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "extends": "listRow",
+  "variant": true,
+  "props": {
+    "current": "boolean"
+  },
+  "visuals": {
+    "fill": {
+      "default": "transparent"
+    },
+    "handle": {
+      "default": "drag_handle"
+    },
+    "currentFill": {
+      "default": {
+        "token": "color.surfaceVariant"
+      }
+    }
+  }
+}

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="display:flex;align-items:center;gap:{{ gap }}px;color:{{ ink }}">
+  <input type="number" value="{{ from }}" min="{{ min }}" max="{{ max }}" onChange="{{ onFrom }}" aria-label="{{ fromLabel }}" style="width:{{ w }}px;height:{{ h }}px;box-sizing:border-box;border-radius:{{ rad }}px;border:1px solid {{ border }};background:transparent;color:inherit;font:inherit;font-size:{{ fs }}px;padding:0 {{ px }}px">
+  <span style="opacity:{{ sop }}">–</span>
+  <input type="number" value="{{ to }}" min="{{ min }}" max="{{ max }}" onChange="{{ onTo }}" aria-label="{{ toLabel }}" style="width:{{ w }}px;height:{{ h }}px;box-sizing:border-box;border-radius:{{ rad }}px;border:1px solid {{ border }};background:transparent;color:inherit;font:inherit;font-size:{{ fs }}px;padding:0 {{ px }}px">
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:240,&quot;height&quot;:60},&quot;from&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1990,&quot;tsType&quot;:&quot;number&quot;},&quot;to&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:2020,&quot;tsType&quot;:&quot;number&quot;},&quot;min&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;max&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;onFrom&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(e: Event) =&gt; void&quot;},&quot;onTo&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(e: Event) =&gt; void&quot;},&quot;fromLabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;From&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;toLabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;To&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
+// Web implementation of design component rangeField (role input, accepts number ranges). Props: from, to, min, max, onFrom(e), onTo(e), fromLabel, toLabel, visuals (resolved). No values of its own.
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.visuals || {}, p = this.props, no = () => {};
+    return { from: p.from ?? '', to: p.to ?? '', min: p.min, max: p.max, onFrom: p.onFrom || no, onTo: p.onTo || no, fromLabel: p.fromLabel || '', toLabel: p.toLabel || '',
+      w: +v.width || 88, h: +v.height || 40, rad: +v.radius || 0, border: v.border || 'currentColor', ink: v.ink || 'inherit', fs: +v.fontSize || 14, px: +v.padX || 0, gap: +v.gap || 0, sop: v.separatorOpacity ?? 1 };
+  }
+}
+</script>
+</body>
+</html>

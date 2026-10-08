@@ -1,0 +1,52 @@
+{
+  "implements": [
+    "input"
+  ],
+  "props": {
+    "value": "value",
+    "options": "options"
+  },
+  "placeholder": {
+    "visuals": {
+      "bar": {
+        "default": {
+          "token": "color.placeholder"
+        }
+      },
+      "barStrong": {
+        "default": {
+          "token": "color.placeholderStrong"
+        }
+      }
+    }
+  },
+  "motion": {
+    "placeholder": [
+      {
+        "do": "kind",
+        "kind": "pulse",
+        "trigger": "loop",
+        "ms": {
+          "token": "motion.duration.pulse"
+        },
+        "easing": {
+          "token": "motion.easing.smooth"
+        }
+      }
+    ]
+  },
+  "accepts": [
+    "choices"
+  ],
+  "visuals": {
+    "height": {
+      "default": 48
+    },
+    "gap": {
+      "default": 8
+    },
+    "inset": {
+      "default": 16
+    }
+  }
+}

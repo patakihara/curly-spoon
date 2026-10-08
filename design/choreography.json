@@ -1,0 +1,795 @@
+{
+  "rules": [
+    {
+      "on": {
+        "event": "pushed",
+        "kind": "backdrop"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "expandFromItem",
+          "ms": {
+            "token": "motion.duration.medium"
+          },
+          "easing": {
+            "token": "motion.easing.standard"
+          },
+          "scope": "all",
+          "split": {
+            "token": "motion.fadeThrough.split"
+          },
+          "easingOut": {
+            "token": "motion.fadeThrough.easingOut"
+          },
+          "easingIn": {
+            "token": "motion.fadeThrough.easingIn"
+          },
+          "scaleIn": {
+            "token": "motion.fadeThrough.scaleIn"
+          },
+          "shared": "image",
+          "sharedMs": {
+            "token": "motion.duration.long"
+          },
+          "sharedEasing": {
+            "token": "motion.easing.inOutSoftEnd"
+          },
+          "enterStagger": 50,
+          "enterDelay": 120,
+          "enterMs": {
+            "token": "motion.duration.medium"
+          },
+          "enterDistance": 12,
+          "enterEasing": {
+            "token": "motion.easing.decelerate"
+          },
+          "fadeMs": {
+            "token": "motion.fadeThrough.ms"
+          },
+          "fixedParts": "stay"
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "popped",
+        "kind": "backdrop"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "expandFromItem",
+          "ms": {
+            "token": "motion.duration.medium"
+          },
+          "easing": {
+            "token": "motion.easing.standard"
+          },
+          "scope": "all",
+          "split": {
+            "token": "motion.fadeThrough.split"
+          },
+          "easingOut": {
+            "token": "motion.fadeThrough.easingOut"
+          },
+          "easingIn": {
+            "token": "motion.fadeThrough.easingIn"
+          },
+          "scaleIn": {
+            "token": "motion.fadeThrough.scaleIn"
+          },
+          "shared": "image",
+          "sharedMs": {
+            "token": "motion.duration.long"
+          },
+          "sharedEasing": {
+            "token": "motion.easing.inOutSoftEnd"
+          },
+          "enterStagger": 50,
+          "enterDelay": 120,
+          "enterMs": {
+            "token": "motion.duration.medium"
+          },
+          "enterDistance": 12,
+          "enterEasing": {
+            "token": "motion.easing.decelerate"
+          },
+          "fadeMs": {
+            "token": "motion.fadeThrough.ms"
+          },
+          "fixedParts": "stay"
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "pushed",
+        "kind": "appBar"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "expandSurface",
+          "surface": "frontLayer",
+          "to": "content",
+          "ms": {
+            "token": "motion.duration.medium"
+          },
+          "easing": {
+            "token": "motion.easing.standard"
+          },
+          "fadeMs": {
+            "token": "motion.fadeThrough.ms"
+          },
+          "split": {
+            "token": "motion.fadeThrough.split"
+          },
+          "easingOut": {
+            "token": "motion.fadeThrough.easingOut"
+          },
+          "easingIn": {
+            "token": "motion.fadeThrough.easingIn"
+          },
+          "scaleIn": {
+            "token": "motion.fadeThrough.scaleIn"
+          },
+          "shared": "image",
+          "sharedMs": {
+            "token": "motion.duration.long"
+          },
+          "sharedEasing": {
+            "token": "motion.easing.inOutSoftEnd"
+          },
+          "revealBand": 100,
+          "fadeParts": "rows bar sheetContent",
+          "slideParts": "sheet"
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "popped",
+        "kind": "appBar"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "expandSurface",
+          "surface": "frontLayer",
+          "to": "content",
+          "ms": {
+            "token": "motion.duration.medium"
+          },
+          "easing": {
+            "token": "motion.easing.standard"
+          },
+          "fadeMs": {
+            "token": "motion.fadeThrough.ms"
+          },
+          "split": {
+            "token": "motion.fadeThrough.split"
+          },
+          "easingOut": {
+            "token": "motion.fadeThrough.easingOut"
+          },
+          "easingIn": {
+            "token": "motion.fadeThrough.easingIn"
+          },
+          "scaleIn": {
+            "token": "motion.fadeThrough.scaleIn"
+          },
+          "shared": "image",
+          "sharedMs": {
+            "token": "motion.duration.long"
+          },
+          "sharedEasing": {
+            "token": "motion.easing.inOutSoftEnd"
+          },
+          "revealBand": 100,
+          "fadeParts": "rows bar sheetContent",
+          "slideParts": "sheet"
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "deckSwitched"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "fadeThrough",
+          "scope": "all",
+          "ms": {
+            "token": "motion.fadeThrough.ms"
+          },
+          "split": {
+            "token": "motion.fadeThrough.split"
+          },
+          "easingOut": {
+            "token": "motion.fadeThrough.easingOut"
+          },
+          "easingIn": {
+            "token": "motion.fadeThrough.easingIn"
+          },
+          "scaleIn": {
+            "token": "motion.fadeThrough.scaleIn"
+          }
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "expandedChanged"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "move",
+          "property": "frontLayer.top",
+          "ms": {
+            "token": "motion.duration.medium"
+          },
+          "easing": {
+            "token": "motion.easing.standard"
+          }
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "paramChanged",
+        "motion": "slide"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "sharedAxis",
+          "axis": "x",
+          "ms": {
+            "token": "motion.duration.long"
+          },
+          "easing": {
+            "token": "motion.easing.standard"
+          },
+          "easingOut": {
+            "token": "motion.fadeThrough.easingOut"
+          },
+          "easingIn": {
+            "token": "motion.fadeThrough.easingIn"
+          },
+          "split": {
+            "token": "motion.fadeThrough.split"
+          },
+          "distance": {
+            "token": "motion.sharedAxis.distance"
+          },
+          "scaleIn": {
+            "token": "motion.fadeThrough.scaleIn"
+          }
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "paramChanged",
+        "motion": "swap"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "fadeThrough",
+          "ms": {
+            "token": "motion.fadeThrough.ms"
+          },
+          "split": {
+            "token": "motion.fadeThrough.split"
+          },
+          "scope": "content",
+          "easingOut": {
+            "token": "motion.fadeThrough.easingOut"
+          },
+          "easingIn": {
+            "token": "motion.fadeThrough.easingIn"
+          },
+          "scaleIn": {
+            "token": "motion.fadeThrough.scaleIn"
+          }
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "paramChanged"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "instant"
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "headerVisibilityChanged"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "move",
+          "property": "top",
+          "ms": {
+            "token": "motion.duration.short"
+          },
+          "easing": {
+            "token": "motion.easing.standard"
+          }
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "layerOpened",
+        "layer": "Dedede"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "circularReveal",
+          "ms": {
+            "token": "motion.duration.long"
+          },
+          "easing": {
+            "token": "motion.easing.standard"
+          }
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "layerClosed",
+        "layer": "Dedede"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "circularReveal",
+          "ms": {
+            "token": "motion.duration.long"
+          },
+          "easing": {
+            "token": "motion.easing.standard"
+          }
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "layerOpened",
+        "layer": "nowPlaying"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "containerMorph",
+          "ms": {
+            "token": "motion.duration.extraLong"
+          },
+          "easing": {
+            "token": "motion.easing.emphasized"
+          }
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "layerClosed",
+        "layer": "nowPlaying"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "containerMorph",
+          "ms": {
+            "token": "motion.duration.extraLong"
+          },
+          "easing": {
+            "token": "motion.easing.emphasized"
+          }
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "layerOpened"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "move",
+          "property": "sheet.position",
+          "ms": {
+            "token": "motion.duration.medium"
+          },
+          "easing": {
+            "token": "motion.easing.standard"
+          }
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "layerClosed"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "move",
+          "property": "sheet.position",
+          "ms": {
+            "token": "motion.duration.medium"
+          },
+          "easing": {
+            "token": "motion.easing.standard"
+          }
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "overlayOpened"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "fade",
+          "ms": {
+            "token": "motion.duration.short"
+          },
+          "easing": {
+            "token": "motion.easing.decelerate"
+          }
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "overlayClosed"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "fade",
+          "ms": {
+            "token": "motion.duration.short"
+          },
+          "easing": {
+            "token": "motion.easing.accelerate"
+          }
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "sessionChanged",
+        "signedIn": true
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "enterApp",
+          "ms": {
+            "token": "motion.duration.medium"
+          },
+          "easing": {
+            "token": "motion.easing.emphasizedDecelerate"
+          },
+          "easingOut": {
+            "token": "motion.easing.standard"
+          },
+          "logoMs": {
+            "token": "motion.duration.long"
+          },
+          "logoEasing": {
+            "token": "motion.easing.emphasized"
+          },
+          "layerMs": {
+            "token": "motion.duration.extraLong"
+          },
+          "stagger": {
+            "token": "motion.duration.stagger"
+          },
+          "distance": 40,
+          "peekStagger": {
+            "token": "motion.duration.staggerShort"
+          }
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "sessionChanged",
+        "signedIn": false
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "fadeThrough",
+          "ms": {
+            "token": "motion.fadeThrough.ms"
+          },
+          "split": {
+            "token": "motion.fadeThrough.split"
+          },
+          "easingOut": {
+            "token": "motion.fadeThrough.easingOut"
+          },
+          "easingIn": {
+            "token": "motion.fadeThrough.easingIn"
+          },
+          "scaleIn": {
+            "token": "motion.fadeThrough.scaleIn"
+          }
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "urlChanged"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "instant"
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "exit"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "instant"
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "retryRequested"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "instant"
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "focusRestore"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "instant"
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "queued",
+        "position": "now"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "dropIntoPeek",
+          "shrinkEasing": {
+            "token": "motion.easing.standard"
+          },
+          "minFallHeight": 60,
+          "riseHeight": 20,
+          "throwEasing": {
+            "token": "motion.easing.accelerate"
+          },
+          "bounce": 4,
+          "bounceMs": {
+            "token": "motion.duration.short"
+          },
+          "bounceEasing": {
+            "token": "motion.easing.decelerate"
+          },
+          "makeRoomMs": {
+            "token": "motion.duration.short"
+          },
+          "makeRoomEasing": {
+            "token": "motion.easing.standard"
+          },
+          "stagger": 60,
+          "tuckShadow": "2px 0 6px rgba(0,0,0,.35)",
+          "holdMs": 200,
+          "closeMs": {
+            "token": "motion.duration.long"
+          },
+          "closeEasing": {
+            "token": "motion.easing.smooth"
+          },
+          "controlStagger": 30,
+          "coverShadow": "-3px 0 5px -4px rgba(0,0,0,.18)",
+          "dropShadow": "0 2px 6px rgba(0,0,0,.18)",
+          "shade": "rgba(0,0,0,.25)",
+          "shadeWidth": 8,
+          "msPerPx": 0.9,
+          "cutOverlap": 2,
+          "bounceAt": 0.4,
+          "tuckShadowIn": 0.3,
+          "tuckShadowOut": 0.8,
+          "coverShadowRamp": 0.05,
+          "controlOrder": "endFirst",
+          "apex": "higher"
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "queued",
+        "position": "next"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "dropIntoPeek",
+          "shrinkEasing": {
+            "token": "motion.easing.standard"
+          },
+          "minFallHeight": 60,
+          "riseHeight": 20,
+          "throwEasing": {
+            "token": "motion.easing.accelerate"
+          },
+          "bounce": 4,
+          "bounceMs": {
+            "token": "motion.duration.short"
+          },
+          "bounceEasing": {
+            "token": "motion.easing.decelerate"
+          },
+          "makeRoomMs": {
+            "token": "motion.duration.short"
+          },
+          "makeRoomEasing": {
+            "token": "motion.easing.standard"
+          },
+          "stagger": 60,
+          "tuckShadow": "2px 0 6px rgba(0,0,0,.35)",
+          "holdMs": 200,
+          "closeMs": {
+            "token": "motion.duration.long"
+          },
+          "closeEasing": {
+            "token": "motion.easing.smooth"
+          },
+          "controlStagger": 30,
+          "coverShadow": "-3px 0 5px -4px rgba(0,0,0,.18)",
+          "dropShadow": "0 2px 6px rgba(0,0,0,.18)",
+          "shade": "rgba(0,0,0,.25)",
+          "shadeWidth": 8,
+          "msPerPx": 0.9,
+          "cutOverlap": 2,
+          "bounceAt": 0.4,
+          "tuckShadowIn": 0.3,
+          "tuckShadowOut": 0.8,
+          "coverShadowRamp": 0.05,
+          "controlOrder": "endFirst",
+          "apex": "higher"
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "queued",
+        "position": "last"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "dropIntoPeek",
+          "shrinkEasing": {
+            "token": "motion.easing.standard"
+          },
+          "minFallHeight": 60,
+          "riseHeight": 20,
+          "throwEasing": {
+            "token": "motion.easing.accelerate"
+          },
+          "bounce": 4,
+          "bounceMs": {
+            "token": "motion.duration.short"
+          },
+          "bounceEasing": {
+            "token": "motion.easing.decelerate"
+          },
+          "makeRoomMs": {
+            "token": "motion.duration.short"
+          },
+          "makeRoomEasing": {
+            "token": "motion.easing.standard"
+          },
+          "stagger": 60,
+          "tuckShadow": "2px 0 6px rgba(0,0,0,.35)",
+          "holdMs": 200,
+          "closeMs": {
+            "token": "motion.duration.long"
+          },
+          "closeEasing": {
+            "token": "motion.easing.smooth"
+          },
+          "controlStagger": 30,
+          "coverShadow": "-3px 0 5px -4px rgba(0,0,0,.18)",
+          "dropShadow": "0 2px 6px rgba(0,0,0,.18)",
+          "shade": "rgba(0,0,0,.25)",
+          "shadeWidth": 8,
+          "msPerPx": 0.9,
+          "cutOverlap": 2,
+          "bounceAt": 0.4,
+          "tuckShadowIn": 0.3,
+          "tuckShadowOut": 0.8,
+          "coverShadowRamp": 0.05,
+          "controlOrder": "endFirst",
+          "apex": "higher"
+        }
+      ]
+    },
+    {
+      "on": {
+        "event": "launched"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "enterApp",
+          "ms": {
+            "token": "motion.duration.medium"
+          },
+          "easing": {
+            "token": "motion.easing.emphasizedDecelerate"
+          },
+          "easingOut": {
+            "token": "motion.easing.standard"
+          },
+          "logoMs": {
+            "token": "motion.duration.long"
+          },
+          "logoEasing": {
+            "token": "motion.easing.emphasized"
+          },
+          "layerMs": {
+            "token": "motion.duration.extraLong"
+          },
+          "stagger": {
+            "token": "motion.duration.stagger"
+          },
+          "distance": 40,
+          "peekStagger": {
+            "token": "motion.duration.staggerShort"
+          }
+        }
+      ]
+    }
+  ],
+  "reduced": [
+    {
+      "do": "kind",
+      "kind": "fade",
+      "ms": {
+        "token": "motion.duration.short"
+      },
+      "easing": {
+        "token": "motion.easing.standard"
+      }
+    }
+  ]
+}

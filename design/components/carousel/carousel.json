@@ -1,0 +1,87 @@
+{
+  "extends": "listItem",
+  "implements": [
+    "item"
+  ],
+  "props": {
+    "title": "string",
+    "subtitle": "string",
+    "image": "string",
+    "navigable": "boolean",
+    "entries": "slot"
+  },
+  "visuals": {
+    "entrySize": {
+      "default": {
+        "token": "grid.column.max"
+      }
+    },
+    "snap": {
+      "default": "start"
+    },
+    "itemPadding": {
+      "default": 10
+    },
+    "itemRadius": {
+      "default": {
+        "token": "radius.md"
+      }
+    },
+    "inset": {
+      "default": 16
+    },
+    "gap": {
+      "default": 10
+    },
+    "headingHeight": {
+      "default": 44
+    },
+    "headingGap": {
+      "default": 8
+    },
+    "titleSize": {
+      "default": 17
+    },
+    "titleWeight": {
+      "default": 500
+    },
+    "subFont": {
+      "default": {
+        "token": "font.subtitle.family"
+      }
+    },
+    "subSize": {
+      "default": {
+        "token": "font.subtitle.size"
+      }
+    },
+    "subColor": {
+      "default": {
+        "token": "color.onSurfaceMuted"
+      }
+    },
+    "chevron": {
+      "default": "chevron_right"
+    },
+    "chevronSize": {
+      "default": 22
+    },
+    "chevronColor": {
+      "default": {
+        "token": "color.onSurfaceMuted"
+      }
+    },
+    "entryGap": {
+      "default": 6
+    },
+    "entryFontSize": {
+      "default": 13
+    },
+    "entryArtRadius": {
+      "default": 6
+    },
+    "entryArtRadiusCircle": {
+      "default": 999
+    }
+  }
+}

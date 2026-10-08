@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"><style>body{margin:0;background:#ecebe8;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c}a{color:#1c1c1c}a:hover{color:#555}.ms{font-family:'Material Symbols Rounded';line-height:1;font-feature-settings:'liga'}.sc-placeholder:not(:has(.sc-placeholder-error)){visibility:hidden}</style></helmet>
+<div style="min-height:100vh;box-sizing:border-box;padding:40px 32px;display:flex;flex-direction:column;gap:32px">
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">design/ · generated preview</div>
+      <div style="font-size:26px;font-weight:500">Components</div>
+      <div style="font-size:13px;color:#666;max-width:620px;text-wrap:pretty">Built from each component's .json and .md at load time. Interactive components are the web shell's real instances, forced into each state; the rest are drawn from their resolved visuals and tokens. ↑ marks a prop inherited from the parent.</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div style="font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#777">{{ summary }}</div>
+      <a href="Specs Editor.dc.html" style="height:36px;padding:0 16px;border-radius:18px;border:1px solid #1c1c1c;display:flex;align-items:center;font-size:13px;text-decoration:none;white-space:nowrap">Edit in Specs Editor</a>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Colour tokens</div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px">
+      <sc-for list="{{ colors }}" as="t" hint-placeholder-count="4">
+        <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #e3e2de;border-radius:8px;padding:6px 10px 6px 6px">
+          <div style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(0,0,0,.1);background:{{ t.value }}"></div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <div style="font-family:ui-monospace,Menlo,monospace;font-size:11px">{{ t.name }}</div>
+            <div style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#888">{{ t.value }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <sc-for list="{{ groups }}" as="g" hint-placeholder-count="3">
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">{{ g.title }}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px">
+    <sc-for list="{{ g.items }}" as="c" hint-placeholder-count="6">
+      <div id="{{ c.id }}" style="background:#fff;border:1px solid #e3e2de;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+          <div style="font-family:ui-monospace,Menlo,monospace;font-size:14px;font-weight:600">{{ c.id }}</div>
+          <sc-for list="{{ c.roles }}" as="r" hint-placeholder-count="1">
+            <div style="height:20px;padding:0 8px;border-radius:10px;background:#1c1c1c;color:#fff;font-size:11px;display:flex;align-items:center">{{ r }}</div>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ c.hasIx }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:12px;border-radius:8px;background:{{ c.ixBg }};color:{{ c.ixFg }}">
+            <sc-for list="{{ c.states }}" as="s" hint-placeholder-count="6">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0">
+                <div style="width:100%;min-height:48px;display:flex;align-items:center;justify-content:center;position:relative">
+                  <sc-if value="{{ s.isIconButton }}" hint-placeholder-val="{{ false }}"><div style="border-radius:999px;background:{{ s.wrapBg }};color:{{ s.wrapFg }};overflow:hidden;display:flex"><dc-import name="IconButton" dc-props="{{ s.ix }}" icon="{{ s.icon }}" mark="{{ s.mark }}" hint-size="48px,48px"></dc-import></div></sc-if>
+                  <sc-if value="{{ s.isButton }}" hint-placeholder-val="{{ false }}"><dc-import name="Button" dc-props="{{ s.ix }}" text="{{ s.text }}" hint-size="96px,36px"></dc-import></sc-if>
+                  <sc-if value="{{ s.isChip }}" hint-placeholder-val="{{ false }}"><dc-import name="Chip" dc-props="{{ s.ix }}" text="{{ s.text }}" hint-size="72px,32px"></dc-import></sc-if>
+                  <sc-if value="{{ s.isTab }}" hint-placeholder-val="{{ false }}"><div style="width:100%;height:44px;display:flex"><dc-import name="Tab" dc-props="{{ s.ix }}" text="{{ s.text }}" style="flex:1" hint-size="100%,44px"></dc-import></div></sc-if>
+                  <sc-if value="{{ s.isNav }}" hint-placeholder-val="{{ false }}"><div style="width:100%;height:56px;display:flex"><dc-import name="NavItem" dc-props="{{ s.ix }}" form="{{ s.form }}" text="{{ s.text }}" icon="{{ s.icon }}" hint-size="100%,56px"></dc-import></div></sc-if>
+                  <sc-if value="{{ s.isListItem }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;height:44px;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:13px"><dc-import name="ListItem" dc-props="{{ s.ix }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import>{{ s.text }}</div></sc-if>
+                  <sc-if value="{{ s.isListRow }}" hint-placeholder-val="{{ false }}"><div style="width:100%"><dc-import name="ListRow" dc-props="{{ s.ix }}" item-id="{{ s.text }}" text="{{ s.text }}" sub="{{ s.sub }}" art="{{ s.art }}" trailing="{{ s.trailing }}" thumb="36" hint-size="100%,56px"></dc-import></div></sc-if>
+                  <sc-if value="{{ s.isGridCard }}" hint-placeholder-val="{{ false }}"><div style="width:96px"><dc-import name="GridCard" dc-props="{{ s.ix }}" item-id="{{ s.text }}" text="{{ s.text }}" sub="{{ s.sub }}" art="{{ s.art }}" shape="{{ s.shape }}" style="width:100%" hint-size="96px,150px"></dc-import></div></sc-if>
+                  <sc-if value="{{ s.isBlock }}" hint-placeholder-val="{{ false }}"><div style="width:100%"><dc-import name="ContentBlock" dc-props="{{ s.ix }}" item-id="{{ s.text }}" text="{{ s.text }}" sub="{{ s.sub }}" art="{{ s.art }}" hint-size="100%,80px"></dc-import></div></sc-if>
+                </div>
+                <div style="font-family:ui-monospace,Menlo,monospace;font-size:10px;opacity:.6">{{ s.name }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ c.hasDc }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ c.dcs }}" as="d" hint-placeholder-count="1">
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <div style="position:relative;min-height:48px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:12px;padding:{{ d.pad }};border-radius:8px;background:{{ d.bg }};color:{{ d.fg }};border:1px solid #e3e2de;overflow:hidden">
+                  <sc-if value="{{ d.isSymbol }}" hint-placeholder-val="{{ false }}"><sc-for list="{{ d.icons }}" as="ic" hint-placeholder-count="5"><dc-import name="Symbol" icon="{{ ic }}" visuals="{{ d.vis }}" hint-size="32px,24px"></dc-import></sc-for></sc-if>
+                  <sc-if value="{{ d.isLabel }}" hint-placeholder-val="{{ false }}"><dc-import name="Label" text="{{ d.text }}" visuals="{{ d.vis }}" hint-size="80px,16px"></dc-import></sc-if>
+                  <sc-if value="{{ d.isPanelRow }}" hint-placeholder-val="{{ false }}"><div style="width:100%"><dc-import name="PanelRow" text="{{ d.text }}" visuals="{{ d.vis }}" hint-size="100%,16px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isMorph }}" hint-placeholder-val="{{ false }}"><dc-import name="Morph" open="{{ d.open }}" hint="{{ d.text }}" width="240" closed-size="40" light="1" visuals="{{ d.vis }}" motion="{{ d.mo }}" hint-size="250px,40px"></dc-import></sc-if>
+                  <sc-if value="{{ d.isFab }}" hint-placeholder-val="{{ false }}"><dc-import name="Fab" ix="{{ d.ix }}" icon="{{ d.text }}" visuals="{{ d.vis }}" hint-size="40px,40px"></dc-import></sc-if>
+                  <sc-if value="{{ d.isDetail }}" hint-placeholder-val="{{ false }}"><div style="width:100%;height:{{ d.h }}px"><dc-import name="DetailHeader" title="{{ d.title }}" subtitle="{{ d.sub }}" meta="{{ d.meta }}" image="{{ d.img }}" visuals="{{ d.vis }}" style="width:100%;height:100%" hint-size="100%,100%"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isTabBar }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="TabBar" tabs="{{ d.tabs }}" selected="0" visuals="{{ d.vis }}" hint-size="100%,48px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isFilterChips }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="FilterChips" chips="{{ d.chips }}" wrap="{{ d.wrap }}" visuals="{{ d.vis }}" hint-size="100%,48px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isSearchField }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="SearchField" value="{{ d.text }}" hint="Search" clear-ix="{{ d.ix }}" visuals="{{ d.vis }}" hint-size="100%,48px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isDropdown }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="Dropdown" options="{{ d.options }}" label="Sort" visuals="{{ d.vis }}" hint-size="140px,40px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isRange }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="RangeField" from="1990" to="2020" from-label="From" to-label="To" visuals="{{ d.vis }}" hint-size="200px,40px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isSuggest }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="SuggestionRow" ix="{{ d.ix }}" text="{{ d.text }}" visuals="{{ d.vis }}" hint-size="100%,40px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isStale }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="StaleBanner" text="{{ d.text }}" retry="Retry" retry-ix="{{ d.ix }}" visuals="{{ d.vis }}" hint-size="100%,40px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isEmpty }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="EmptyState" text="{{ d.text }}" icon="{{ d.icon }}" retry="{{ d.retry }}" retry-ix="{{ d.ix }}" visuals="{{ d.vis }}" hint-size="100%,160px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isCarousel }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="Carousel" id="c" title="New music" sub="13 albums" ix="{{ d.ix }}" entries="{{ d.entries }}" visuals="{{ d.vis }}" hint-size="100%,230px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isMenu }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="Menu" sheet="{{ d.sheet }}" items="{{ d.items }}" anchor="{{ d.anchor }}" visuals="{{ d.vis }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isDialog }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="Dialog" title="Remove download?" body="It stays in your library." cancel="Cancel" ok="Remove" cancel-ix="{{ d.ix }}" ok-ix="{{ d.ix2 }}" visuals="{{ d.vis }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isSnack }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="Snackbar" text="Link copied" action="Dismiss" ix="{{ d.ix }}" visuals="{{ d.vis }}" hint-size="100%,48px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isDrawerItem }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="DrawerItem" ix="{{ d.ix }}" icon="{{ d.icon }}" text="{{ d.text }}" filled="{{ d.filled }}" bg="{{ d.bgItem }}" collapsed="{{ d.collapsed }}" width="100%" visuals="{{ d.vis }}" hint-size="100%,56px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isArtwork }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="Artwork" image="{{ d.img }}" size="{{ d.size }}" visuals="{{ d.vis }}" hint-size="120px,120px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isTrackInfo }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="TrackInfo" title="Orbit" subtitle="Maren Holt · Paper Satellites" visuals="{{ d.vis }}" hint-size="100%,48px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isSeek }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="SeekBar" value="61000" max="196000" pos-text="1:01" dur-text="3:16" label="Seek" visuals="{{ d.vis }}" hint-size="100%,40px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isRow }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="Row" children="{{ d.children }}" visuals="{{ d.vis }}" hint-size="100%,64px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isBar }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="Bar" start="{{ d.start }}" end="{{ d.end }}" title="{{ d.title }}" title-vis="{{ d.titleVis }}" visuals="{{ d.vis }}" hint-size="100%,56px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isAppBarSheet }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;background:{{ d.top }}"><div style="height:{{ d.topH }}px"></div><dc-import name="AppBarSheet" height="{{ d.sheetH }}" visuals="{{ d.vis }}" info="{{ d.info }}" find="{{ d.find }}" buttons="{{ d.buttons }}" hint-size="100%,200px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isNavBar }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="NavBar" items="{{ d.items }}" visuals="{{ d.vis }}" hint-size="100%,56px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isNavRail }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><div style="height:{{ d.h }}px;display:flex"><dc-import name="NavRail" rail="{{ d.rail }}" top="{{ d.top }}" nav="{{ d.items }}" bottom="{{ d.bottom }}" item-vis="{{ d.itemVis }}" visuals="{{ d.vis }}" style="height:100%" hint-size="80px,100%"></dc-import></div></div></sc-if>
+                  <sc-if value="{{ d.isDrawer }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><div style="height:{{ d.h }}px;width:280px"><dc-import name="Drawer" title="Menu" title-vis="{{ d.titleVis }}" items="{{ d.items }}" item-vis="{{ d.itemVis }}" visuals="{{ d.vis }}" style="height:100%" hint-size="100%,100%"></dc-import></div></div></sc-if>
+                  <sc-if value="{{ d.isSplash }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="Splash" state="{{ d.state }}" fill="{{ d.fill }}" logo-vis="{{ d.logoVis }}" logo-motion="{{ d.logoMo }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isSignIn }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="SignIn" title="Welcome" text="Sign in to sync your library across devices." button="Sign in" ix="{{ d.ix }}" logo-vis="{{ d.logoVis }}" logo-motion="{{ d.logoMo }}" visuals="{{ d.vis }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isEdge }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><div style="display:flex;justify-content:flex-end"><dc-import name="EdgeHandle" visuals="{{ d.vis }}" hint-size="18px,72px"></dc-import></div></div></sc-if>
+                  <sc-if value="{{ d.isPlaceholder }}" hint-placeholder-val="{{ false }}"><div style="position:relative;width:100%;min-height:{{ d.h }}px;display:flex;flex-direction:column;justify-content:center"><dc-import name="Placeholder" form="{{ d.form }}" width="70" visuals="{{ d.vis }}" hint-size="100%,77px"></dc-import></div></sc-if>
+                  <sc-if value="{{ d.isNowPlaying }}" hint-placeholder-val="{{ false }}"><div style="width:100%"><dc-import name="NowPlaying" image="{{ d.img }}" title="{{ d.title }}" subtitle="{{ d.sub }}" controls="{{ d.controls }}" visuals="{{ d.vis }}" style="width:100%" hint-size="100%,48px"></dc-import></div></sc-if>
+                </div>
+                <sc-if value="{{ d.caption }}" hint-placeholder-val="{{ false }}"><div style="font-family:ui-monospace,Menlo,monospace;font-size:10px;color:#888">{{ d.caption }}</div></sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ c.hasPv }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ c.frames }}" as="fr" hint-placeholder-count="1">
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <div style="position:relative;box-sizing:border-box;min-height:{{ fr.h }}px;display:flex;flex-direction:{{ fr.dir }};align-items:{{ fr.align }};justify-content:{{ fr.justify }};flex-wrap:{{ fr.wrap }};gap:{{ fr.gap }}px;padding:{{ fr.pad }};border-radius:{{ fr.r }};background:{{ fr.bg }};color:{{ fr.fg }};border:{{ fr.border }};overflow:{{ fr.overflow }};margin-bottom:{{ fr.mb }}px">
+                  <sc-for list="{{ fr.items }}" as="p" hint-placeholder-count="3">
+                    <sc-if value="{{ p.isSym }}" hint-placeholder-val="{{ false }}"><span class="ms" style="flex:none;font-size:{{ p.size }}px;color:{{ p.color }};font-variation-settings:'FILL' {{ p.fill }}, 'wght' {{ p.wght }};transform:rotate({{ p.rot }}deg)">{{ p.icon }}</span></sc-if>
+                    <sc-if value="{{ p.isText }}" hint-placeholder-val="{{ false }}"><div style="flex:{{ p.flex }};min-width:0;font-size:{{ p.size }}px;font-weight:{{ p.weight }};color:{{ p.color }};opacity:{{ p.op }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:{{ p.align }};letter-spacing:{{ p.ls }}">{{ p.text }}</div></sc-if>
+                    <sc-if value="{{ p.isBox }}" hint-placeholder-val="{{ false }}"><div style="flex:none;position:{{ p.pos }};inset-inline-end:{{ p.end }}px;bottom:{{ p.bottom }}px;width:{{ p.w }};height:{{ p.h }}px;border-radius:{{ p.r }};background:{{ p.bg }};border:{{ p.border }};box-shadow:{{ p.shadow }};color:{{ p.fg }};display:flex;align-items:center;justify-content:{{ p.justify }};gap:6px;padding:{{ p.pad }};box-sizing:border-box;font-size:{{ p.fs }}px;overflow:hidden"><sc-if value="{{ p.hasIcon }}" hint-placeholder-val="{{ false }}"><span class="ms" style="font-size:{{ p.isz }}px">{{ p.icon }}</span></sc-if><sc-if value="{{ p.hasText }}" hint-placeholder-val="{{ false }}"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.text }}</span></sc-if></div></sc-if>
+                    <sc-if value="{{ p.isBreak }}" hint-placeholder-val="{{ false }}"><div style="flex-basis:100%;height:0"></div></sc-if>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ fr.caption }}" hint-placeholder-val="{{ false }}"><div style="font-family:ui-monospace,Menlo,monospace;font-size:10px;color:#888">{{ fr.caption }}</div></sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ c.hasLineage }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:4px;padding:8px 10px;border-radius:8px;background:#f4f3f0">
+            <sc-if value="{{ c.lineage }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;font-weight:600">{{ c.lineage }}</div><div style="font-size:12px;color:#555;text-wrap:pretty">{{ c.lineageNote }}</div></sc-if>
+            <sc-if value="{{ c.kidsText }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#555">{{ c.kidsText }}</div></sc-if>
+          </div>
+        </sc-if>
+        <div style="font-size:13px;line-height:1.45;color:#444;text-wrap:pretty">{{ c.note }}</div>
+        <div style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#777;text-wrap:pretty">{{ c.propsText }}</div>
+        <sc-if value="{{ c.hasValues }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:3px;max-height:140px;overflow:auto">
+            <sc-for list="{{ c.values }}" as="v" hint-placeholder-count="2">
+              <div style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#555">{{ v }}</div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </sc-for>
+    </div>
+  </div>
+  </sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+// Previews: interactive components are the web shell's real DC instances, each forced into a state through its
+// resolve / look props (the same contract the shell uses); everything else is drawn from resolved visuals + tokens.
+const GROUPS = [
+  ['Interactive', ['interactive', 'iconButton', 'caret', 'viewSwitch', 'logo', 'fab', 'button', 'chip', 'tab', 'navItem', 'drawerItem', 'listItem', 'suggestionRow', 'listRow', 'queueRow', 'gridCard', 'contentBlock', 'carousel']],
+  ['Inputs', ['tabBar', 'filterChips', 'choiceChips', 'searchField', 'localSearch', 'morph', 'dropdown', 'rangeField', 'seekBar']],
+  ['Bars & headers', ['header', 'frontHeader', 'appBar', 'detailHeader', 'title', 'trackedTitle', 'label', 'panelRow', 'groupHeader', 'alphaIndex']],
+  ['Content & layout', ['listLayout', 'gridLayout', 'scrollerLayout', 'row', 'symbol', 'artwork', 'trackInfo']],
+  ['Surfaces', ['backLayer', 'frontLayer', 'navBar', 'navRail', 'bottomSheet', 'sideSheet', 'peekCard', 'nowPlaying', 'drawer', 'signInPage', 'splash']],
+  ['Placeholders', ['placeholder:listRow', 'placeholder:gridCard', 'placeholder:contentBlock']],
+  ['Overlays & states', ['menu', 'dialog', 'snackbar', 'emptyState', 'errorState', 'staleBanner']]
+];
+const DC = { iconButton: 'isIconButton', caret: 'isIconButton', viewSwitch: 'isIconButton', logo: 'isIconButton', fab: 'isIconButton', interactive: 'isListItem', button: 'isButton', chip: 'isChip', tab: 'isTab', navItem: 'isNav', drawerItem: 'isNav', listItem: 'isListItem', suggestionRow: 'isListItem', listRow: 'isListRow', queueRow: 'isListRow', gridCard: 'isGridCard', contentBlock: 'isBlock', carousel: 'isBlock' };
+const ON_BACK = { chip: 1, tab: 1, navItem: 1, logo: 1, suggestionRow: 1 };
+const SURF = { chip: 'backLayer', tab: 'backLayer', navItem: 'navBar', logo: 'backLayer', suggestionRow: 'backLayer' };
+const art = id => { let x = 0; for (const ch of String(id)) x = (x * 31 + ch.charCodeAt(0)) >>> 0; const h = x % 360; return 'linear-gradient(135deg, oklch(0.62 0.13 ' + h + '), oklch(0.42 0.11 ' + ((h + 60) % 360) + '))'; };
+const sym = (icon, o = {}) => ({ isSym: true, icon, size: o.size || 24, color: o.color || 'inherit', fill: o.fill || 0, wght: o.wght || 400, rot: o.rot || 0 });
+const txt = (text, o = {}) => ({ isText: true, text, size: o.size || 14, weight: o.weight || 400, color: o.color || 'inherit', op: o.op ?? 1, flex: o.flex || 'none', align: o.align || 'start', ls: o.ls || 'normal' });
+const box = (o = {}) => ({ isBox: true, w: o.w == null ? 'auto' : typeof o.w === 'number' ? o.w + 'px' : o.w, h: o.h || 40, r: o.r == null ? '8px' : typeof o.r === 'number' ? o.r + 'px' : o.r, bg: o.bg || 'transparent', border: o.border || '0', shadow: o.shadow || 'none', fg: o.fg || 'inherit', justify: o.justify || 'center', pad: o.pad || '0', fs: o.fs || 13, hasIcon: !!o.icon, icon: o.icon || '', isz: o.isz || 20, hasText: !!o.text, text: o.text || '', pos: o.pos || 'relative', end: o.end ?? 0, bottom: o.bottom ?? 0 });
+const br = { isBreak: true };
+const frame = (items, o = {}) => ({ items, h: o.h || 48, dir: o.dir || 'row', align: o.align || 'center', justify: o.justify || 'flex-start', wrap: o.wrap || 'nowrap', gap: o.gap ?? 8, pad: o.pad || '0 12px', r: o.r || '8px', bg: o.bg || '#fafaf8', fg: o.fg || '#1c1c1c', border: o.border || '1px solid #e3e2de', caption: o.caption || '', overflow: o.overflow || 'hidden', mb: o.mb || 0 });
+
+class Component extends DCLogic {
+  state = { specs: null, notes: {}, error: '' };
+  async componentDidMount() {
+    try {
+      const get = p => fetch(new URL(p, location.href).href, { cache: 'no-store' }).then(r => r.text());
+      const imp = async p => import(URL.createObjectURL(new Blob([await get(p)], { type: 'text/javascript' })));
+      const [DL, P] = await Promise.all([imp('./design/load.js'), imp('./core/layout.js')]);
+      const read = p => get('./design/' + p);
+      const raw = await DL.loadDesignRaw(read), specs = DL.resolveExtends(raw);
+      const notes = await DL.loadNotes(read, Object.keys(specs.components));
+      this.P = P;
+      this.setState({ specs, raw, notes });
+    } catch (e) { this.setState({ error: e.message }); }
+  }
+  forced(id, st, o = {}) {
+    const sp = this.state.specs, P = this.P, surface = o.surface || SURF[id] || 'frontLayer', variant = o.variant || {}, status = o.status || [];
+    const flags = { hover: st === 'hover', pressed: st === 'pressed', focus: st === 'focus', keyboardFocus: st === 'keyboardFocus' };
+    const mo = k => P.motionFor(sp, id, k, {});
+    return { id: 'preview/' + id + '/' + st, label: o.label || id,
+      resolve: () => ({ state: st, enabled: st !== 'disabled', flags, status, activatable: st !== 'disabled' }),
+      look: () => P.resolveVisuals(sp, id, st, { surface, variant, status }),
+      activate: () => {}, motion: mo('press'), motions: { stateLayer: mo('stateLayer'), rotation: mo('rotation'), levels: mo('levels'), icon: mo('icon'), scale: mo('scale'), focusRing: mo('focusRing') } };
+  }
+  ixStates(id, C) {
+    const T = this.state.specs.tokens, kind = DC[id];
+    const TEXT = { chip: 'Jazz', tab: 'Albums', navItem: 'Library', drawerItem: 'Settings', button: 'Retry', suggestionRow: 'Blue Hours', listRow: 'Orbit', queueRow: 'Orbit', gridCard: 'Northbound', contentBlock: 'Curious Minds', carousel: 'New music', interactive: 'Any surface', listItem: 'Any surface' };
+    const SUB = { listRow: 'Maren Holt · 3:16', queueRow: 'Maren Holt · 3:16', gridCard: 'Maren Holt', contentBlock: 'Mira Castell', carousel: '13 · music' };
+    return (C.states || []).map(st => {
+      const o = {};
+      if (['chip', 'tab', 'navItem'].includes(id) && st === 'enabled') o.status = ['selected'];
+      if (id === 'drawerItem' && st === 'enabled') o.status = ['checked'];
+      if (id === 'caret' || id === 'viewSwitch') o.variant = { size: 'xs' };
+      if (id === 'fab') o.variant = { size: 'md' };
+      const s = { name: st + (o.status ? ' · ' + o.status.join(' ') : ''), ix: this.forced(id, st, o), isIconButton: false, isButton: false, isChip: false, isTab: false, isNav: false, isListItem: false, isListRow: false, isGridCard: false, isBlock: false,
+        icon: { caret: 'expand_more', viewSwitch: 'grid_view', fab: 'play_arrow' }[id] || 'favorite', mark: id === 'logo', text: TEXT[id] || id, sub: SUB[id] || '', art: art(id), trailing: id === 'queueRow' ? 'drag_handle' : '', shape: 'square', form: 'bar',
+        wrapBg: id === 'fab' ? (T['color.accent'] || '#e8590c') : 'transparent', wrapFg: id === 'fab' ? (T['color.onAccent'] || '#fff') : 'inherit' };
+      s[kind] = true;
+      return s;
+    });
+  }
+  // components with their own web DC: preview the real DC, fed its resolved visuals (same as the shell)
+  dcPreview(id) {
+    const sp = this.state.specs, T = sp.tokens, V = (cid, ctx = {}) => this.P.resolveVisuals(sp, cid, 'enabled', ctx), back = T['color.backLayer'], on = T['color.onBackLayer'];
+    const base = { pad: '12px', bg: '#fafaf8', fg: '#1c1c1c', caption: '', isSymbol: false, isLabel: false, isPanelRow: false, isMorph: false, isFab: false, isDetail: false, isNowPlaying: false, icons: [], text: '', vis: {} };
+    const m = o => ({ ...base, ...o });
+    switch (id) {
+      case 'symbol': return [m({ isSymbol: true, icons: ['home', 'search', 'library_music', 'play_arrow', 'favorite', 'settings'], vis: V('symbol', { surface: 'frontLayer' }), caption: 'Material Symbols Rounded' }), m({ isSymbol: true, icons: ['home', 'search', 'library_music', 'play_arrow', 'favorite', 'settings'], vis: V('symbol', { surface: 'backLayer', status: ['selected'] }), bg: back, fg: on, caption: 'selected → fill 1, on the back layer' })];
+      case 'label': return [m({ isLabel: true, text: '2 filters', vis: V('label', { surface: 'frontLayer' }) })];
+      case 'panelRow': return [m({ isPanelRow: true, text: 'Sort by', vis: V('panelRow', { surface: 'backLayer' }), bg: back, fg: on })];
+      case 'morph': case 'localSearch': { const mo = this.P.motionFor(sp, 'morph', 'morphed', {}); return [m({ isMorph: true, open: false, text: 'Search albums', vis: V('localSearch'), mo, caption: 'morphed false — the search icon' }), m({ isMorph: true, open: true, text: 'Search albums', vis: V('localSearch'), mo, caption: 'morphed true — the field (containerMorph)' })]; }
+      case 'fab': return ['enabled', 'hover', 'pressed'].map(st => m({ isFab: true, text: 'play_arrow', vis: this.P.resolveVisuals(sp, 'fab', st, {}), ix: this.forced('fab', st, { variant: { size: 'md' } }), caption: st }));
+      case 'detailHeader': return [m({ isDetail: true, h: 210, title: 'Maren Holt', sub: 'Artist · Pop', meta: '2 collections · 9 tracks', img: art('Maren Holt'), vis: V('detailHeader', { surface: 'backLayer', variant: { shape: 'circle', layout: 'column' } }), bg: back, fg: on, pad: '0', caption: 'shape circle · layout column (backdrop pages)' }),
+        m({ isDetail: true, h: 150, title: 'Paper Satellites', sub: 'Maren Holt · 2023', img: art('Paper Satellites'), vis: V('detailHeader', { surface: 'appBar', variant: { shape: 'square', layout: 'row' } }), bg: '#fff', pad: '0', caption: 'shape square · layout row (app-bar pages)' })];
+      case 'nowPlaying': return [m({ isNowPlaying: true, img: art('Orbit'), title: 'Orbit', sub: 'Maren Holt · Paper Satellites', controls: [{ ix: this.forced('iconButton', 'enabled', { variant: { size: 'sm' } }), icon: 'pause' }, { ix: this.forced('iconButton', 'enabled', { variant: { size: 'sm' } }), icon: 'skip_next' }], vis: V('nowPlaying', { surface: 'bottomSheet' }), bg: '#fff', pad: '0', caption: 'peek · floating card · bar above an expanded queue — one component' })];
+      default: return this.dcPreview2(id);
+    }
+  }
+  dcPreview2(id) {
+    const sp = this.state.specs, T = sp.tokens, V = (cid, ctx = {}, st = 'enabled') => this.P.resolveVisuals(sp, cid, st, ctx), back = T['color.backLayer'], on = T['color.onBackLayer'], surf = T['color.surface'];
+    const m = o => ({ pad: '12px', bg: surf, fg: T['color.onSurface'], caption: '', h: 48, icons: [], text: '', vis: {}, ...o });
+    const F = (cid, st = 'enabled', o = {}) => this.forced(cid, st, o), onBack = { bg: back, fg: on };
+    const tabsOn = surface => ['Albums', 'Songs', 'Similar'].map((l, k) => ({ label: l, ix: F('tab', 'enabled', { status: k ? [] : ['selected'], label: l, surface }) })), tabs = tabsOn('backLayer');
+    const chips = ['All', 'Music', 'Audiobooks', 'Podcasts'].map((l, k) => ({ label: l, ix: F('chip', 'enabled', { status: k ? [] : ['selected'], label: l }) }));
+    const item = (icon, label, surface) => ({ isControl: true, ix: F('iconButton', 'enabled', { label, surface }), icon });
+    const navItems = [['explore', 'Browse'], ['library_music', 'Library'], ['search', 'Search']].map(([icon, label], k) => ({ icon, label, ix: F('navItem', 'enabled', { status: k ? [] : ['selected'], label, surface: 'navRail' }), fill: k ? 0 : 1, pill: k ? 'transparent' : T['color.navIndicator'] }));
+    const drawerRows = [['explore', 'Listen now', 1], ['settings', 'Settings', 0], ['account_circle', 'Account', 0]].map(([icon, text, c]) => ({ icon, text, fill: c, bg: c ? T['color.navIndicator'] : 'transparent', ix: F('listItem', 'enabled', { label: text }) }));
+    const logoVis = V('logo'), logoMo = this.P.motionFor(sp, 'logo', 'levels', {});
+    const RV = this.P.resolveVisuals(sp, 'navRail', 'enabled', {}), rail = ex => ({ w: ex ? +RV.expandedWidth : +RV.width, padY: +RV.padY, gap: +RV.gap, groupGap: +RV.groupGap, padX: ex ? +RV.itemInset : 0, align: ex ? 'stretch' : 'center', shadow: 'none', ms: 0, ease: 'ease', mo: {}, collapsed: !ex, ex });
+    switch (id) {
+      case 'tabBar': return [m({ isTabBar: true, tabs, vis: V('tabBar', { surface: 'backLayer', variant: { tone: 'back' } }), ...onBack, caption: 'tone back' }), m({ isTabBar: true, tabs: tabsOn('bottomSheet'), vis: V('tabBar', { surface: 'bottomSheet', variant: { tone: 'surface' } }), bg: '#fff', caption: 'tone surface (Now playing sheet)' })];
+      case 'filterChips': case 'choiceChips': return [m({ isFilterChips: true, chips, vis: V(id, { surface: 'backLayer' }), ...onBack, caption: 'basic action: one scrolling row' }), m({ isFilterChips: true, chips, wrap: true, vis: V(id, { surface: 'backLayer' }), ...onBack, caption: 'panel: wraps' })];
+      case 'searchField': return [m({ isSearchField: true, text: 'blue hours', ix: F('iconButton', 'enabled', { variant: { size: 'xs' }, label: 'Clear' }), vis: V('searchField', { surface: 'backLayer' }), ...onBack })];
+      case 'dropdown': return [m({ isDropdown: true, options: [{ value: 'name', label: 'Name', on: true }, { value: 'year', label: 'Year' }], vis: V('dropdown', { surface: 'backLayer' }), ...onBack })];
+      case 'rangeField': return [m({ isRange: true, vis: V('rangeField', { surface: 'backLayer' }), ...onBack })];
+      case 'suggestionRow': return ['enabled', 'hover'].map(st => m({ isSuggest: true, text: 'blue hours', ix: F('suggestionRow', st, { label: 'blue hours' }), vis: V('suggestionRow', { surface: 'backLayer' }), ...onBack, caption: st }));
+      case 'staleBanner': return [m({ isStale: true, text: 'Offline — showing saved content', ix: F('button', 'enabled', { variant: { emphasis: 'text', size: 'sm' } }), vis: V('staleBanner'), pad: '0' })];
+      case 'emptyState': return [m({ isEmpty: true, text: 'Nothing here yet', icon: V('emptyState').icon, vis: V('emptyState'), h: 150 }), m({ isEmpty: true, text: 'Nothing playing', icon: '', vis: V('emptyState', { variant: { size: 'sm' } }), h: 100, caption: 'size sm (queue)' })];
+      case 'errorState': { const ev = V('errorState'); return [m({ isEmpty: true, text: 'Couldn’t load', icon: ev.icon, retry: 'Retry', ix: F('button', 'enabled', { variant: { emphasis: 'outlined' } }), vis: ev, h: 190 })]; }
+      case 'carousel': return [m({ isCarousel: true, ix: F('listItem'), entries: ['Northbound', 'Paper Satellites', 'Low Tide', 'Field Notes'].map((t, k) => ({ id: t, title: t, art: art(t), shape: k ? '' : 'circle', ix: F('gridCard', 'enabled', { label: t }) })), vis: { ...V('carousel'), entrySize: +T['grid.column.max'] || 140 }, pad: '0', h: 240 })];
+      case 'menu': { const items = [['play_arrow', 'Play'], ['queue_music', 'Add to queue'], ['link', 'Copy link']].map(([icon, label]) => ({ icon, label, ix: F('listItem', 'enabled', { label }) }));
+        return [m({ isMenu: true, sheet: true, items, vis: V('menu', { env: { layout: 'compact' } }), h: 230, pad: '0', caption: 'compact: bottom sheet' }), m({ isMenu: true, sheet: false, items, anchor: { top: 8, end: 8 }, vis: V('menu', { env: { layout: 'wide' } }), h: 170, pad: '0', caption: 'wide: anchored popup' })]; }
+      case 'dialog': return [m({ isDialog: true, ix: F('button', 'enabled', { variant: { emphasis: 'text' } }), ix2: F('button', 'enabled', { variant: { emphasis: 'filled' } }), vis: V('dialog'), h: 230, pad: '0' })];
+      case 'snackbar': return [m({ isSnack: true, ix: F('button', 'enabled', { variant: { emphasis: 'text', size: 'sm' } }), vis: V('snackbar') })];
+      case 'drawerItem': return [m({ isDrawerItem: true, icon: 'explore', text: 'Listen now', filled: true, bgItem: T['color.navIndicator'], ix: F('listItem'), vis: V('drawerItem', { variant: { size: 'drawer' } }), bg: '#fff', caption: 'size drawer · checked' }),
+        m({ isDrawerItem: true, icon: 'settings', text: 'Settings', ix: F('listItem'), vis: V('drawerItem', { surface: 'navRail', variant: { size: 'rail' } }), ...onBack, caption: 'size rail · expanded' }), m({ isDrawerItem: true, icon: 'settings', text: 'Settings', collapsed: true, ix: F('listItem'), vis: V('drawerItem', { surface: 'navRail', variant: { size: 'rail' } }), ...onBack, caption: 'size rail · collapsed' })];
+      case 'artwork': return [m({ isArtwork: true, img: art('Orbit'), size: 140, vis: V('artwork', { variant: { size: 'lg' } }), h: 160, caption: 'size lg' }), m({ isArtwork: true, img: art('Orbit'), vis: V('artwork', { variant: { size: 'sm' } }), caption: 'size sm' })];
+      case 'trackInfo': return [m({ isTrackInfo: true, vis: V('trackInfo', { variant: { size: 'lg' } }), caption: 'size lg' }), m({ isTrackInfo: true, vis: V('trackInfo', { variant: { size: 'md' } }), caption: 'size md' })];
+      case 'seekBar': return [m({ isSeek: true, vis: V('seekBar', { surface: 'bottomSheet' }), bg: '#fff' })];
+      case 'row': return [m({ isRow: true, vis: V('row', { variant: { justify: 'spread' } }), bg: '#fff', h: 72, caption: 'justify spread · transport', children: [item('shuffle', 'Shuffle', 'bottomSheet'), item('skip_previous', 'Previous', 'bottomSheet'), { isFab: true, icon: 'play_arrow', ix: F('fab', 'enabled', { variant: { size: 'lg', tone: 'ink' } }), vis: V('fab', { variant: { size: 'lg', tone: 'ink' } }) }, item('skip_next', 'Next', 'bottomSheet'), item('repeat', 'Repeat', 'bottomSheet')] })];
+      case 'header': return [m({ isBar: true, start: [item('menu', 'Menu', 'backLayer')], end: [item('account_circle', 'Account', 'backLayer')], title: 'Browse', titleVis: V('title', { surface: 'backLayer', variant: { size: 'lg' } }), vis: V('header', { surface: 'backLayer' }), ...onBack, pad: '0' })];
+      case 'frontHeader': return [m({ isBar: true, start: [item('expand_more', 'Filters')], end: [item('search', 'Search')], title: 'All (7)', titleVis: V('title', { surface: 'frontLayer', variant: { size: 'sm' } }), vis: V('frontHeader', { surface: 'frontLayer' }), pad: '0' })];
+      case 'appBar': return [m({ isBar: true, start: [item('close', 'Close', 'backLayer')], end: [item('more_vert', 'More', 'backLayer')], title: 'Paper Satellites', titleVis: V('title', { surface: 'appBar' }), vis: V('appBar', { surface: 'appBar', variant: { form: 'page' } }), pad: '0', caption: 'form page' }), m({ isBar: true, start: [item('close', 'Close', 'appBar')], title: 'Account', titleVis: V('title', { surface: 'appBar' }), vis: V('appBar', { surface: 'appBar', variant: { form: 'layer' } }), pad: '0', caption: 'form layer' }),
+        ...[0, 1].map(k => { const AV = V('appBar', { surface: 'appBar', variant: { form: 'page' } }), top = +AV.topHeight || 0, sheetH = (k ? +AV.height : +AV.expandedHeight) - top, XV = V('detailHeader', { surface: 'appBar', variant: { shape: 'square', layout: 'row' } }), infoH = sheetH - (+AV.sheetPadTop || 0) - (+AV.bottomRowHeight || 0), art = Math.max(+AV.infoArtMin || 0, Math.min(+XV.artSize || 0, infoH - (+XV.padTop || 0) - (+AV.infoPadBottom || 0)));
+          return m({ isAppBarSheet: true, top: AV.fill, topH: 24, sheetH, h: sheetH + 24, vis: AV, info: { show: true, title: 'Paper Satellites', sub: 'Maren Holt · 2023', img: art && art > 0 ? 'linear-gradient(135deg, #3b8fd0, #2a4a8a)' : '', vis: { ...XV, artSize: art, padBottom: +AV.infoPadBottom || 0 } }, find: [{ isControl: true, ix: F('iconButton', 'enabled', { label: 'Search', surface: 'appBar' }), icon: 'search' }], buttons: [{ text: 'Play', icon: 'play_arrow', ix: F('button', 'enabled', { variant: { emphasis: 'filled' }, label: 'Play' }) }], pad: '0', bg: AV.fill, caption: k ? 'form page · sheet collapsed (144)' : 'form page · sheet expanded' }); })];
+      case 'navBar': return [m({ isNavBar: true, items: navItems, vis: V('navBar'), pad: '0' })];
+      case 'navRail': { const top = [{ icon: 'menu', ix: F('iconButton', 'enabled', { label: 'Menu', surface: 'navRail' }) }], bottom = [{ icon: 'settings', text: 'Settings', ix: F('listItem') }, { icon: 'account_circle', text: 'Account', ix: F('listItem') }], iv = V('drawerItem', { surface: 'navRail', variant: { size: 'rail' } });
+        return [false, true].map(ex => m({ isNavRail: true, rail: rail(ex), top, items: navItems, bottom, itemVis: iv, vis: V('navRail', { surface: 'navRail' }), h: 380, pad: '0', caption: ex ? 'expanded (menu layer, wide rail)' : 'collapsed' })); }
+      case 'drawer': return [m({ isDrawer: true, items: drawerRows, titleVis: V('title', { surface: 'appBar' }), itemVis: V('drawerItem', { variant: { size: 'drawer' } }), vis: V('drawer'), h: 260, pad: '0', bg: '#ecebe8' })];
+      case 'splash': return [m({ isSplash: true, state: { logoOp: 1, logoSc: 1, logo: V('splash').logo, logoSize: 64, playing: true }, fill: V('splash').fill, logoVis, logoMo, h: 160, pad: '0' })];
+      case 'signInPage': return [m({ isSignIn: true, ix: F('button', 'enabled', { variant: { emphasis: 'filled' } }), logoVis, logoMo, vis: V('signInPage', { surface: 'signInPage' }), h: 320, pad: '0' })];
+      case 'sideSheet': return [m({ isEdge: true, vis: V('sideSheet'), caption: 'auto mode: edge handle (hover opens)' })];
+    }
+    return null;
+  }
+  preview(id, C) {
+    const sp = this.state.specs, T = sp.tokens, V = (st = 'enabled', ctx = {}) => this.P.resolveVisuals(sp, id, st, ctx);
+    const back = T['color.backLayer'], on = T['color.onBackLayer'], surf = T['color.surface'], acc = T['color.accent'];
+    const chips = (labels, sel) => labels.map((l, k) => box({ h: 32, r: 999, pad: '0 12px', text: l, border: sel.includes(k) ? '0' : '1px solid ' + T['color.chipOutline'], bg: sel.includes(k) ? on : 'transparent', fg: sel.includes(k) ? back : on }));
+    const D = { bg: back, fg: on, border: '0' };
+    switch (id) {
+      case 'symbol': { const icons = ['home', 'search', 'library_music', 'play_arrow', 'favorite', 'settings', 'account_circle']; return [frame(icons.map(i => sym(i)), { gap: 14, caption: 'Material Symbols Rounded · fill 0' }), frame(icons.map(i => sym(i, { fill: 1 })), { gap: 14, caption: 'fill 1 (selected / checked) · icon change → symbolMorph' })]; }
+      case 'morph': case 'localSearch': { const fv = this.P.resolveVisuals(sp, 'localSearch', 'enabled', {}); return [frame([sym('expand_more', { size: 20 }), txt('Your albums (13)', { flex: 1, size: 14, weight: 500 }), sym('search', { size: 20 })], { h: 32, caption: 'morphed false — from: the search icon' }), frame([sym('expand_more', { size: 20 }), box({ w: '100%', h: Math.min(+fv.height || 32, 28), r: (+fv.radius || 6), bg: 'rgba(0,0,0,.06)', justify: 'flex-start', pad: '0 8px', icon: 'search', isz: 16, text: 'Search albums', fs: 13 })], { h: 32, caption: 'morphed true — to: the field, spanning the bar (containerMorph)' })]; }
+      case 'dropdown': return [frame([box({ h: +V().height || 40, r: +V().radius || 8, border: '1px solid ' + on, fg: on, pad: '0 12px', text: 'Name', icon: 'arrow_drop_down', isz: 20, justify: 'space-between' })], { ...D, h: 56 })];
+      case 'rangeField': return [frame([box({ w: 88, h: 40, r: 8, border: '1px solid ' + on, fg: on, text: '2000' }), txt('–', { color: on }), box({ w: 88, h: 40, r: 8, border: '1px solid ' + on, fg: on, text: '2026' })], { ...D, h: 56, caption: 'number range param (min / max clamp)' })];
+      case 'seekBar': return [frame([box({ w: '100%', h: 4, r: 2, bg: 'linear-gradient(90deg,#1c1c1c 35%,' + T['color.divider'] + ' 35%)' }), br, txt('1:12', { size: 12, op: .7 }), txt('', { flex: 1 }), txt('3:16', { size: 12, op: .7 })], { h: 56, wrap: 'wrap', gap: 6, pad: '10px 12px' })];
+      case 'detailHeader': return [frame([box({ w: 96, h: 96, r: 999, bg: art('Maren Holt') }), txt('Maren Holt', { size: 22, weight: 600, align: 'center' }), txt('Artist · Pop', { size: 13, op: .8 }), txt('2 collections · 9 tracks', { size: 12, op: .7 })], { ...D, h: 190, dir: 'column', justify: 'center', gap: 6, caption: 'shape circle (people) — in a bar\'s expanded slot, fades as it collapses' }), frame([box({ w: 96, h: 96, r: 8, bg: art('Paper Satellites') }), txt('Paper Satellites', { size: 20, weight: 500 })], { h: 120, gap: 16, caption: 'shape square (collections)' })];
+      case 'groupHeader': return [frame([txt('A', { size: 13, weight: 600, color: '#555' })], { h: +V().height || 32 }), frame([txt('1990s', { size: 13, weight: 600, color: '#555' })], { h: +V().height || 32, caption: 'sticky while its group scrolls' })];
+      case 'alphaIndex': return [frame('ABCFHLNPS'.split('').map(k => txt(k, { size: 10, weight: 600, color: '#555' })), { h: 150, dir: 'column', justify: 'center', gap: 2, pad: '0', caption: 'tap / drag scrolls to the group' })];
+      case 'artwork': return [frame([box({ w: 40, h: 40, r: 4, bg: art('Orbit') }), box({ w: 120, h: 120, r: 8, bg: art('Orbit'), shadow: '0 8px 24px rgba(0,0,0,.18)' })], { h: 140, gap: 20, caption: 'sm (peek) · lg (Now playing)' })];
+      case 'trackInfo': return [frame([txt('Orbit', { size: 14, weight: 500 }), txt('Maren Holt · Paper Satellites', { size: 12, op: .7 })], { dir: 'column', align: 'flex-start', justify: 'center', gap: 2, h: 52, caption: 'md' }), frame([txt('Orbit', { size: 22, weight: 600 }), txt('Maren Holt · Paper Satellites', { size: 15, op: .7 })], { dir: 'column', justify: 'center', gap: 4, h: 70, caption: 'lg' })];
+      case 'row': return [frame([sym('shuffle'), sym('skip_previous', { size: 32 }), box({ w: 64, h: 64, r: 999, bg: '#1c1c1c', fg: '#fff', icon: 'play_arrow', isz: 32 }), sym('skip_next', { size: 32 }), sym('repeat')], { h: 80, justify: 'space-between', pad: '0 20px', caption: 'justify spread — the transport controls' })];
+      case 'header': return [frame([sym('menu'), box({ w: 18, h: 28, r: 2, bg: on }), txt('Library', { size: 20, weight: 500, flex: 1 }), sym('account_circle')], { ...D, h: 56, gap: 14, caption: 'role bar: start · title · end' }), frame([sym('arrow_back'), txt('Maren Holt', { size: 20, weight: 500, flex: 1, op: 0.35 })], { ...D, h: 56, gap: 14, caption: 'with an expanded slot: title fades in as the bar collapses' })];
+      case 'frontHeader': { const h = +V().height || 32, e = +(T['size.fab.edge'] || 20); return [frame([sym('expand_more', { size: 20 }), txt('Your albums (13)', { flex: 1, size: 14, weight: 500 }), sym('search', { size: 20 })], { h, r: '16px 16px 0 0', caption: h + 'px — starts with the caret' }), frame([sym('expand_more', { size: 20 }), txt('Albums (2)', { flex: 1, size: 14, weight: 500 }), sym('search', { size: 20 }), box({ pos: 'absolute', end: 2, bottom: -20, w: 40, h: 40, r: 999, bg: acc, fg: '#fff', icon: 'play_arrow', isz: 22, shadow: '0 3px 8px rgba(0,0,0,.25)' })], { h: h + e, align: 'flex-start', pad: '10px 12px 0', r: '16px 16px 0 0', overflow: 'visible', mb: 24, caption: (h + e) + 'px with a FAB (+' + e + ' at the bottom; FAB under the last end item)' })]; }
+      case 'appBar': { const h = +V().height || 56; return [frame([sym('arrow_back'), txt('Paper Satellites', { flex: 1, size: 20, weight: 500 }), sym('search'), sym('more_vert')], { h, bg: '#fff', gap: 14, caption: h + 'px' })]; }
+      case 'title': return [frame([txt('Library', { size: 20, weight: 500 })], D)];
+      case 'trackedTitle': return [frame([txt('Blue Hours', { size: 15, weight: 500 })], { caption: 'the title of the item under the header (shell-tracked)' })];
+      case 'label': return [frame([txt('2 filters', { size: 11, color: '#777' })])];
+      case 'panelRow': { const v = V(); return [frame([txt('Sort by', { size: +v.fontSize || 11, ls: v.letterSpacing || 'normal', op: v.opacity ?? 1 })], { ...D, caption: 'font ' + (v.fontFamily || '') + ' · ' + (v.fontSize || '') + 'px · ' + (v.textTransform || 'none') })]; }
+      case 'tabBar': return [frame([txt('MUSIC', { flex: 1, align: 'center', size: 14, weight: 500 }), txt('AUDIOBOOKS', { flex: 1, align: 'center', size: 14, op: .7 }), txt('PODCASTS', { flex: 1, align: 'center', size: 14, op: .7 })], { ...D, h: 52, caption: 'indicator slides (move)' })];
+      case 'filterChips': return [frame(chips(['Pop', 'Rock', 'Jazz', 'Folk'], [0, 2]), { ...D, h: 56, caption: 'choices: any number selected' })];
+      case 'choiceChips': return [frame(chips(['All', 'Music', 'Audiobooks'], [0]), { ...D, h: 56, caption: 'choice: one selected' })];
+      case 'searchField': return [frame([box({ w: '100%', h: 48, r: 8, bg: 'rgba(255,255,255,.1)', fg: on, justify: 'flex-start', pad: '0 12px', icon: 'search', text: 'Artists, albums, books, podcasts' })], { ...D, h: 64 })];
+      case 'listLayout': return [frame([0, 1, 2].map(k => box({ w: '100%', h: 36, r: 0, bg: k % 2 ? '#f4f3f0' : '#fff' })), { dir: 'column', h: 124, gap: 1, pad: '6px', caption: 'rows separated by color.divider' })];
+      case 'gridLayout': { const v = V('enabled', { env: { layout: 'compact' } }); return [frame(Array.from({ length: 6 }, (_, k) => box({ w: 70, h: 70, r: 4, bg: art('g' + k) })), { wrap: 'wrap', h: 180, gap: +v.gap || 8, pad: (+v.margin || 16) + 'px', caption: 'columns ≤ ' + (v.maxColumnWidth || 140) + 'px; as many as fit · gutter ' + v.gap + ' · margin ' + v.margin })]; }
+      case 'carousel': { const p = +(V().itemPadding ?? 6), w = +(T['grid.column.max'] || 140) * 0.6; return [frame([0, 1, 2, 3].map(k => box({ w: w + 2 * p, h: w + 2 * p + 22, r: 8, pad: p + 'px', bg: k === 1 ? 'color-mix(in srgb, #1c1c1c 8%, transparent)' : 'transparent', justify: 'flex-start', text: '' })), { h: w + 2 * p + 30, gap: 0, pad: '4px ' + Math.max(0, 16 - p) + 'px', caption: 'no gap: each entry padded ' + p + 'px, so hover (2nd) covers the space around the image; row starts at margin − padding' })]; }
+      case 'scrollerLayout': return [frame([box({ w: '100%', h: 40, bg: '#f4f3f0' }), box({ w: '100%', h: 40, bg: '#f4f3f0' })], { dir: 'column', h: 110, pad: '8px', caption: 'vertical stack of item components' })];
+      case 'backLayer': case 'navBar': case 'navRail': case 'frontLayer': case 'bottomSheet': case 'sideSheet': case 'peekCard': case 'nowPlaying': case 'signInPage': {
+        const pr = C.provides || {}, res = k => this.P.resolveValue(sp, id, pr[k], {}), bg = { backLayer: back, navBar: back, navRail: back }[id] || (id === 'frontLayer' ? surf : '#fff');
+        return [frame([txt('Aa content', { color: res('content'), size: 15, weight: 500 }), txt('Aa variant', { color: res('contentVariant'), size: 13 }), box({ w: 28, h: 28, r: 999, border: '2px solid ' + res('focusRing') })], { bg, h: 56, gap: 14, r: id === 'frontLayer' ? '16px 16px 0 0' : '8px', caption: 'provides content · contentVariant · focusRing' })]; }
+      case 'splash': return [frame([box({ w: 40, h: 60, r: 4, bg: acc })], { ...D, h: 100, justify: 'center', caption: 'the logo in color.accent, levels loop' })];
+      case 'menu': return [frame([['history', 'Recently played'], ['bookmark', 'Saved'], ['link', 'Copy link']].map(([i, t]) => box({ w: '100%', h: 40, r: 0, justify: 'flex-start', pad: '0 12px', icon: i, text: t, fs: 14 })), { dir: 'column', gap: 0, h: 128, pad: '4px 0', bg: '#fff' })];
+      case 'dialog': return [frame([txt('Sure?', { size: 18, weight: 500 }), br, txt('This can’t be undone.', { size: 14, op: .7 }), br, txt('', { flex: 1 }), box({ h: 36, pad: '0 12px', text: 'Cancel' }), box({ h: 36, pad: '0 12px', text: 'OK' })], { wrap: 'wrap', h: 140, pad: '20px', bg: '#fff', r: '16px', gap: 8 })];
+      case 'snackbar': return [frame([txt('Link copied', { flex: 1, color: '#fff' }), txt('DISMISS', { color: T['color.snackbarAction'], weight: 500 })], { bg: '#323232', fg: '#fff', border: '0', h: 48, pad: '0 16px' })];
+      case 'emptyState': return [frame([sym('inbox', { size: 36, color: '#888' }), txt('Nothing here yet', { color: '#666' })], { dir: 'column', h: 110, justify: 'center' })];
+      case 'errorState': return [frame([sym('error', { size: 36, color: '#888' }), txt('Couldn’t load', { color: '#666' }), box({ h: 32, r: 999, pad: '0 14px', border: '1px solid #1c1c1c', text: 'Retry' })], { dir: 'column', h: 140, justify: 'center' })];
+      case 'staleBanner': return [frame([sym('cloud_off', { size: 18 }), txt('Offline — showing saved content', { size: 13 })], { bg: '#fff4e5', h: 36 })];
+    }
+    return null;
+  }
+  renderVals() {
+    const sp = this.state.specs;
+    if (!sp) return { summary: this.state.error || 'loading design/…', colors: [], groups: [] };
+    const show = v => v == null ? 'none' : typeof v === 'object' && 'token' in v ? '@' + v.token + ' = ' + sp.tokens[v.token] : typeof v === 'object' ? JSON.stringify(v) : String(v);
+    const raw = this.state.raw || { components: {} }, T = sp.tokens;
+    const card = id => {
+      if (id.startsWith('placeholder:')) { const cid = id.slice(12), PV = ((sp.components[cid] || {}).placeholder || {}).visuals || {}, tv = x => { const d = x && x.default; return d && d.token ? T[d.token] : d; };
+        const vis = Object.fromEntries(Object.entries(PV).map(([k, x]) => [k, tv(x)])), form = { listRow: 'list', gridCard: 'grid', contentBlock: 'block' }[cid];
+        return { id, roles: [], note: cid + '.placeholder.visuals — drawn while content loads (pulse: motion.placeholder)', propsText: '', values: Object.entries(vis).map(([k, v]) => k + ': ' + v), hasIx: false, hasDc: true, hasPv: false, dcs: [{ pad: '12px', bg: T['color.surface'], fg: 'inherit', caption: 'form ' + form, isPlaceholder: true, form, vis, h: form === 'list' ? 77 : 200 }], states: [], frames: [] }; }
+      const C = sp.components[id]; if (!C) return null;
+      const own = raw.components[id] || {}, kids = Object.keys(sp.components).filter(k => sp.components[k].extends === id);
+      const ownKeys = [...Object.keys(own.props || {}).map(k => 'prop ' + k), ...Object.keys(own.visuals || {}), ...(own.implements || []).map(r => 'role ' + r), ...Object.keys(own.motion || {}).map(m => 'motion ' + m)];
+      const dcs = this.dcPreview(id), hasIx = !dcs && !!DC[id] && (C.states || []).length > 0, frames = dcs || (hasIx && id !== 'carousel') ? null : this.preview(id, C);
+      const values = Object.entries(C.visuals || {}).flatMap(([v, byState]) => Object.entries(byState).map(([st, x]) => v + (st === 'default' ? '' : ' · ' + st) + ': ' + show(x)));
+      return {
+        id, roles: C.implements || [], note: this.state.notes[id] || '',
+        propsText: Object.keys(C.props || {}).length ? Object.entries(C.props).map(([k, t]) => k + ': ' + t + (own.props && k in own.props ? '' : C.extends ? ' ↑' : '')).join(' · ') : 'no props',
+        hasLineage: !!C.extends || kids.length > 0,
+        lineage: C.extends ? (C.variant ? 'Variant of ' : 'Extends ') + C.extends : '',
+        lineageNote: C.extends ? (C.variant ? 'Drawn by ' + C.extends + '\'s implementation; no code of its own.' : 'Own implementation; inherits roles, props, states and visuals.') + ' Own: ' + (ownKeys.length ? ownKeys.join(', ') : 'nothing') + '.' : '',
+        kidsText: kids.length ? 'Extended by ' + kids.map(k => k + (sp.components[k].variant ? ' (variant)' : '')).join(', ') : '',
+        hasIx, states: hasIx ? this.ixStates(id, C) : [], ixBg: ON_BACK[id] ? T['color.backLayer'] : '#fafaf8', ixFg: ON_BACK[id] ? T['color.onBackLayer'] : '#1c1c1c',
+        hasPv: !!frames, frames: frames || [], hasDc: !!dcs, dcs: dcs || [],
+        hasValues: values.length > 0, values
+      };
+    };
+    const listed = new Set(GROUPS.flatMap(g => g[1]));
+    const rest = Object.keys(sp.components).filter(id => !listed.has(id));
+    const groups = [...GROUPS, ...(rest.length ? [['Other', rest]] : [])].map(([title, ids]) => ({ title, items: ids.map(card).filter(Boolean) }));
+    const colors = Object.entries(T).filter(([k, v]) => k.startsWith('color.') && typeof v === 'string').map(([name, value]) => ({ name, value }));
+    return { summary: Object.keys(sp.components).length + ' components · ' + Object.keys(T).length + ' tokens · contract ' + sp.contractVersion, colors, groups };
+  }
+}
+
+</script>
+</body>
+</html>

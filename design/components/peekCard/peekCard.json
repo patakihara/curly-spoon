@@ -1,0 +1,28 @@
+{
+  "props": {
+    "title": "string",
+    "subtitle": "string"
+  },
+  "provides": {
+    "content": {
+      "token": "color.onSurface"
+    },
+    "contentVariant": {
+      "token": "color.onSurface"
+    },
+    "focusRing": {
+      "token": "color.focusRing"
+    }
+  },
+  "visuals": {
+    "fill": {
+      "default": "#fff"
+    },
+    "radius": {
+      "default": 12
+    },
+    "shadow": {
+      "default": "0 2px 6px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.10)"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "params": {
+    "ms": {
+      "type": "duration"
+    },
+    "easing": {
+      "type": "easing"
+    },
+    "fadeSplit": {
+      "type": "number",
+      "default": 0.35
+    }
+  },
+  "reduced": "fade"
+}

@@ -1,0 +1,72 @@
+{
+  "props": {
+    "art": "string",
+    "title": "string",
+    "subtitle": "string",
+    "controls": "slot"
+  },
+  "provides": {
+    "content": {
+      "token": "color.onSurface"
+    },
+    "contentVariant": {
+      "token": "color.onSurfaceVariant"
+    },
+    "focusRing": {
+      "token": "color.focusRing"
+    }
+  },
+  "visuals": {
+    "height": {
+      "default": 48
+    },
+    "artSize": {
+      "default": 28
+    },
+    "artRadius": {
+      "default": 4
+    },
+    "gap": {
+      "default": 12
+    },
+    "padStart": {
+      "default": 16
+    },
+    "padEnd": {
+      "default": 12
+    },
+    "textGap": {
+      "default": 2
+    },
+    "titleSize": {
+      "default": 14
+    },
+    "titleWeight": {
+      "default": 500
+    },
+    "subFamily": {
+      "default": {
+        "token": "font.subtitle.family"
+      }
+    },
+    "subSize": {
+      "default": {
+        "token": "font.subtitle.size"
+      }
+    },
+    "subColor": {
+      "default": {
+        "role": "contentVariant"
+      }
+    },
+    "controlGap": {
+      "default": 2
+    },
+    "bodyPadX": {
+      "default": 28
+    },
+    "bodyGap": {
+      "default": 18
+    }
+  }
+}

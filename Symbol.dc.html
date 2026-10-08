@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"></helmet>
+<span data-piece="glyph" style="font-family:{{ font }};font-feature-settings:'liga';line-height:1;font-size:{{ size }}px;color:{{ color }};padding-inline-end:{{ padEnd }}px;font-variation-settings:{{ axes }}">{{ icon }}</span>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:64,&quot;height&quot;:64},&quot;icon&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;favorite&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;fill&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;weight&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;grade&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;opticalSize&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
+// Design component: symbol (design/components/symbol). Parts: glyph. Props: icon, fill, weight, grade, opticalSize (design props; a prop wins over the visual of the same name) + visuals (resolved by the shell). No values of its own.
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props, v = p.visuals || {}, pick = k => p[k] ?? v[k];
+    const opsz = pick('opticalSize');
+    return {
+      icon: p.icon,
+      font: "'" + v.font + "'",
+      size: v.size, color: v.color, padEnd: v.padEnd,
+      axes: "'FILL' " + pick('fill') + ", 'wght' " + pick('weight') + ", 'GRAD' " + pick('grade') + (opsz != null ? ", 'opsz' " + opsz : '')
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+{
+  "props": {
+    "title": "string",
+    "subtitle": "string",
+    "image": "string",
+    "meta": "string"
+  },
+  "variants": {
+    "shape": {
+      "options": [
+        "square",
+        "circle"
+      ],
+      "default": "square"
+    },
+    "layout": {
+      "options": [
+        "column",
+        "row"
+      ],
+      "default": "column"
+    }
+  },
+  "visuals": {
+    "artSize": {
+      "default": {
+        "variant": "layout",
+        "cases": {
+          "column": 96,
+          "row": 120
+        }
+      }
+    },
+    "artRadius": {
+      "default": {
+        "variant": "shape",
+        "cases": {
+          "square": 8,
+          "circle": 999
+        }
+      }
+    },
+    "gap": {
+      "default": {
+        "variant": "layout",
+        "cases": {
+          "column": 8,
+          "row": 16
+        }
+      }
+    },
+    "textGap": {
+      "default": 4
+    },
+    "padX": {
+      "default": {
+        "variant": "layout",
+        "cases": {
+          "column": 24,
+          "row": 16
+        }
+      }
+    },
+    "padTop": {
+      "default": {
+        "variant": "layout",
+        "cases": {
+          "column": 0,
+          "row": 8
+        }
+      }
+    },
+    "padBottom": {
+      "default": 24
+    },
+    "titleSize": {
+      "default": {
+        "variant": "layout",
+        "cases": {
+          "column": 22,
+          "row": 20
+        }
+      }
+    },
+    "titleWeight": {
+      "default": 600
+    },
+    "titleLineHeight": {
+      "default": 1.2
+    },
+    "subFamily": {
+      "default": {
+        "token": "font.subtitle.family"
+      }
+    },
+    "subSize": {
+      "default": 12
+    },
+    "subOpacity": {
+      "default": {
+        "variant": "layout",
+        "cases": {
+          "column": 0.8,
+          "row": 1
+        }
+      }
+    },
+    "subColor": {
+      "default": {
+        "role": "contentVariant"
+      }
+    },
+    "metaSize": {
+      "default": {
+        "token": "font.subtitle.size"
+      }
+    },
+    "metaOpacity": {
+      "default": 0.7
+    },
+    "align": {
+      "default": {
+        "variant": "layout",
+        "cases": {
+          "column": "center",
+          "row": "start"
+        }
+      }
+    }
+  },
+  "parts": [
+    "image"
+  ]
+}

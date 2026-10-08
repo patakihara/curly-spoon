@@ -1,0 +1,128 @@
+{
+  "states": [
+    "enabled",
+    "disabled",
+    "hover",
+    "pressed",
+    "focus",
+    "keyboardFocus"
+  ],
+  "implements": [
+    "interactive"
+  ],
+  "statuses": [
+    "busy",
+    "error"
+  ],
+  "visuals": {
+    "stateLayer": {
+      "default": null,
+      "hover": {
+        "token": "state.hover.opacity.default"
+      },
+      "pressed": {
+        "token": "state.pressed.opacity.default"
+      },
+      "focus": null,
+      "keyboardFocus": {
+        "token": "state.focus.opacity"
+      }
+    },
+    "stateLayerColor": {
+      "default": "content"
+    },
+    "ripple": {
+      "default": {
+        "token": "state.ripple.opacity.default"
+      }
+    },
+    "radius": {
+      "default": {
+        "token": "radius.full"
+      }
+    },
+    "focusRing": {
+      "default": null,
+      "keyboardFocus": {
+        "role": "focusRing"
+      }
+    },
+    "contentOpacity": {
+      "default": 1,
+      "disabled": {
+        "token": "state.disabled.opacity"
+      },
+      "busy": {
+        "token": "state.busy.opacity"
+      }
+    },
+    "scale": {
+      "default": 1,
+      "pressed": 0.97
+    }
+  },
+  "motion": {
+    "stateLayer": [
+      {
+        "do": "kind",
+        "kind": "fade",
+        "ms": {
+          "token": "motion.duration.short"
+        },
+        "easing": {
+          "token": "motion.easing.standard"
+        }
+      }
+    ],
+    "press": [
+      {
+        "do": "kind",
+        "kind": "ripple",
+        "trigger": "press",
+        "ms": {
+          "token": "motion.ripple.duration"
+        },
+        "easing": {
+          "token": "motion.easing.standard"
+        }
+      }
+    ],
+    "focusRing": [
+      {
+        "do": "kind",
+        "kind": "fade",
+        "ms": {
+          "token": "motion.duration.short"
+        },
+        "easing": {
+          "token": "motion.easing.standard"
+        }
+      }
+    ],
+    "contentOpacity": [
+      {
+        "do": "kind",
+        "kind": "fade",
+        "ms": {
+          "token": "motion.duration.short"
+        },
+        "easing": {
+          "token": "motion.easing.standard"
+        }
+      }
+    ],
+    "scale": [
+      {
+        "do": "kind",
+        "kind": "move",
+        "property": "scale",
+        "ms": {
+          "token": "motion.duration.short"
+        },
+        "easing": {
+          "token": "motion.easing.standard"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "extends": "searchField",
+  "variant": true,
+  "accepts": [
+    "text"
+  ],
+  "visuals": {
+    "radius": {
+      "default": 6
+    },
+    "height": {
+      "default": 32
+    },
+    "fill": {
+      "default": "rgba(0,0,0,.06)"
+    },
+    "fillClosed": {
+      "default": "rgba(0,0,0,0)"
+    },
+    "iconBoxOpen": {
+      "default": 30
+    },
+    "iconSizeOpen": {
+      "default": 18
+    },
+    "iconSizeClosed": {
+      "default": 22
+    },
+    "iconSizeClosedSmall": {
+      "default": 20
+    },
+    "iconOpacityOpen": {
+      "default": 0.7
+    },
+    "fontSize": {
+      "default": 13
+    },
+    "padX": {
+      "default": 4
+    },
+    "minWidth": {
+      "default": 120
+    },
+    "width": {
+      "default": 168
+    },
+    "slotPad": {
+      "default": 8
+    },
+    "endGap": {
+      "default": 2
+    }
+  },
+  "props": {
+    "end": "slot"
+  },
+  "provides": {
+    "content": {
+      "token": "color.onSurface"
+    },
+    "contentVariant": {
+      "token": "color.onSurface"
+    },
+    "focusRing": {
+      "token": "color.focusRing"
+    }
+  }
+}

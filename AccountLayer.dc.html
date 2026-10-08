@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:absolute;left:{{ ddLeft }}px;right:0;top:0;bottom:0;background:{{ sv.pageFill }};display:flex;flex-direction:column;transform:translateY({{ acc.ty }}%);transition:{{ mx.layer.account.surface }};pointer-events:{{ acc.ev }}">
+  <dc-import name="Bar" start="{{ acc.start }}" title="{{ acc.title }}" title-vis="{{ titleVisBar }}" visuals="{{ barVisLayer }}" hint-size="100%,56px"></dc-import>
+  <div style="flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;align-items:center;gap:{{ barVisLayer.bodyGap }}px;padding:{{ barVisLayer.bodyPadding }}">
+    <dc-import name="DetailHeader" title="{{ acc.name }}" subtitle="{{ acc.email }}" image="{{ acc.art }}" visuals="{{ acc.headVis }}" style="width:100%" hint-size="100%,180px"></dc-import>
+    <dc-import name="PanelRow" text="{{ acc.plan }}" visuals="{{ acc.planVis }}" hint-size="160px,16px"></dc-import>
+    <dc-import name="Button" dc-props="{{ acc.signIx }}" text="{{ acc.signText }}" hint-size="120px,36px"></dc-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:640},&quot;ddLeft&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;sv&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;acc&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;mx&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;titleVisBar&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;barVisLayer&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;}}">
+// Web implementation of the Account fullscreen layer page: page fill, header (Bar) and its body. The shell places it and
+// feeds it values.
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

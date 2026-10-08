@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="width:{{ size }}px;height:{{ size }}px;border-radius:{{ radius }};overflow:hidden;background:{{ fill }};color:{{ ink }};box-shadow:{{ shadow }};display:flex;align-items:center;justify-content:center"><dc-import name="IconButton" dc-props="{{ ix }}" icon="{{ icon }}" hint-size="40px,40px"></dc-import></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:80,&quot;height&quot;:80},&quot;icon&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;play_arrow&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;},&quot;ix&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
+// Web implementation of design component fab: the surface (fill, ink, shadow, radius, size) around an interactive IconButton.
+// Props: ix (the shell's interactive props, component 'fab'), icon, visuals (fab, resolved). No values of its own.
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.visuals || {};
+    return { ix: this.props.ix || {}, icon: this.props.icon || '', size: +v.size || 40, radius: (v.radius ?? 999) + 'px', fill: v.fill || 'transparent', ink: v.ink || 'inherit', shadow: v.shadow || 'none' };
+  }
+}
+</script>
+</body>
+</html>

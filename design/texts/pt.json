@@ -1,0 +1,19 @@
+{
+  "common.retry": "Tentar novamente",
+  "common.cancel": "Cancelar",
+  "common.ok": "OK",
+  "common.dismiss": "Dispensar",
+  "search.clear": "Limpar pesquisa",
+  "content.empty": "Ainda não há nada aqui",
+  "content.error": "Não foi possível carregar",
+  "content.offline": "Você está offline e isto não foi salvo",
+  "content.stale": "Offline · mostrando conteúdo salvo",
+  "nowPlaying.open": "Abrir A tocar",
+  "nowPlaying.close": "Fechar A tocar",
+  "nowPlaying.collapse": "Recolher A tocar",
+  "player.play": "Reproduzir",
+  "player.pause": "Pausar",
+  "player.next": "Próxima faixa",
+  "player.nothing": "Nada tocando",
+  "splash.loading": "Carregando…"
+}

@@ -1,0 +1,35 @@
+{
+  "extends": "listItem",
+  "variant": true,
+  "props": {
+    "text": "string"
+  },
+  "visuals": {
+    "height": {
+      "default": 40
+    },
+    "gap": {
+      "default": 12
+    },
+    "fontSize": {
+      "default": 14
+    },
+    "padX": {
+      "default": 8
+    },
+    "radius": {
+      "default": {
+        "token": "radius.sm"
+      }
+    },
+    "icon": {
+      "default": "search"
+    },
+    "iconSize": {
+      "default": 20
+    },
+    "iconOpacity": {
+      "default": 0.75
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "props": {
+    "text": "string"
+  },
+  "variants": {
+    "size": {
+      "options": [
+        "sm",
+        "lg"
+      ],
+      "default": "lg"
+    }
+  },
+  "visuals": {
+    "fontSize": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "sm": 14,
+          "lg": 20
+        }
+      }
+    },
+    "fontWeight": {
+      "default": 500
+    },
+    "letterSpacing": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "sm": "normal",
+          "lg": ".15px"
+        }
+      }
+    },
+    "padStart": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "sm": 0,
+          "lg": 4
+        }
+      }
+    },
+    "color": {
+      "default": {
+        "role": "content"
+      }
+    }
+  }
+}

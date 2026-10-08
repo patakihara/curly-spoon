@@ -1,0 +1,15 @@
+{
+  "params": {
+    "ms": {
+      "type": "duration"
+    },
+    "easing": {
+      "type": "easing"
+    },
+    "property": {
+      "type": "string",
+      "default": "top"
+    }
+  },
+  "reduced": "instant"
+}

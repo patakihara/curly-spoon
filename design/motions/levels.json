@@ -1,0 +1,25 @@
+{
+  "params": {
+    "ms": {
+      "type": "duration"
+    },
+    "easing": {
+      "type": "easing"
+    },
+    "min": {
+      "type": "number",
+      "default": 1
+    },
+    "max": {
+      "type": "number"
+    },
+    "stepped": {
+      "type": "boolean",
+      "default": false
+    },
+    "settleMs": {
+      "type": "duration"
+    }
+  },
+  "reduced": "instant"
+}

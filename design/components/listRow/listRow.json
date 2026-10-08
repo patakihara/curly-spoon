@@ -1,0 +1,73 @@
+{
+  "extends": "listItem",
+  "implements": [
+    "item"
+  ],
+  "props": {
+    "title": "string",
+    "subtitle": "string",
+    "image": "string",
+    "navigable": "boolean",
+    "shape": "string"
+  },
+  "visuals": {
+    "artRadius": {
+      "default": 4
+    },
+    "artRadiusCircle": {
+      "default": 999
+    },
+    "thumbRadius": {
+      "default": 4
+    }
+  },
+  "placeholder": {
+    "visuals": {
+      "bar": {
+        "default": {
+          "token": "color.placeholder"
+        }
+      },
+      "barStrong": {
+        "default": {
+          "token": "color.placeholderStrong"
+        }
+      },
+      "lineHeight": {
+        "default": 10
+      },
+      "line2Height": {
+        "default": 8
+      },
+      "line2Width": {
+        "default": 40
+      },
+      "barRadius": {
+        "default": 4
+      },
+      "thumb": {
+        "default": 52
+      },
+      "thumbRadius": {
+        "default": 4
+      },
+      "gap": {
+        "default": 16
+      },
+      "padY": {
+        "default": 12
+      },
+      "padX": {
+        "default": 16
+      },
+      "divider": {
+        "default": {
+          "token": "color.surfaceVariant"
+        }
+      },
+      "line2Bar": {
+        "default": "bar"
+      }
+    }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "extends": "button",
+  "visuals": {
+    "radius": {
+      "default": {
+        "token": "radius.md"
+      }
+    },
+    "ink": {
+      "default": {
+        "role": "contentVariant"
+      },
+      "selected": {
+        "role": "content"
+      }
+    },
+    "indicator": {
+      "default": "transparent",
+      "selected": {
+        "variant": "form",
+        "cases": {
+          "bar": "transparent",
+          "rail": {
+            "token": "color.navIndicator"
+          }
+        }
+      }
+    },
+    "width": {
+      "default": {
+        "variant": "form",
+        "cases": {
+          "bar": "100%",
+          "rail": 64
+        }
+      }
+    },
+    "height": {
+      "default": {
+        "variant": "form",
+        "cases": {
+          "bar": "100%",
+          "rail": 56
+        }
+      }
+    }
+  },
+  "variants": {
+    "form": {
+      "options": [
+        "bar",
+        "rail"
+      ],
+      "default": "bar"
+    }
+  },
+  "props": {
+    "text": "string",
+    "icon": "string"
+  },
+  "statuses": [
+    "selected"
+  ]
+}

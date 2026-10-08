@@ -1,0 +1,96 @@
+{
+  "params": {
+    "riseHeight": {
+      "type": "number",
+      "default": 0
+    },
+    "shrinkEasing": {
+      "type": "easing"
+    },
+    "minFallHeight": {
+      "type": "number",
+      "default": 0
+    },
+    "throwEasing": {
+      "type": "easing"
+    },
+    "bounce": {
+      "type": "number",
+      "default": 4
+    },
+    "bounceMs": {
+      "type": "duration"
+    },
+    "bounceEasing": {
+      "type": "easing"
+    },
+    "makeRoomMs": {
+      "type": "duration"
+    },
+    "makeRoomEasing": {
+      "type": "easing"
+    },
+    "stagger": {
+      "type": "duration"
+    },
+    "tuckShadow": {
+      "type": "string",
+      "default": ""
+    },
+    "holdMs": {
+      "type": "duration"
+    },
+    "closeMs": {
+      "type": "duration"
+    },
+    "closeEasing": {
+      "type": "easing"
+    },
+    "controlStagger": {
+      "type": "duration"
+    },
+    "coverShadow": {
+      "type": "string",
+      "default": ""
+    },
+    "dropShadow": {
+      "type": "string",
+      "default": ""
+    },
+    "shade": {
+      "type": "string",
+      "default": ""
+    },
+    "shadeWidth": {
+      "type": "number",
+      "default": 0
+    },
+    "msPerPx": {
+      "type": "number",
+      "default": 0
+    },
+    "cutOverlap": {
+      "type": "number",
+      "default": 0
+    },
+    "bounceAt": {
+      "type": "number"
+    },
+    "tuckShadowIn": {
+      "type": "number"
+    },
+    "tuckShadowOut": {
+      "type": "number"
+    },
+    "coverShadowRamp": {
+      "type": "number"
+    },
+    "controlOrder": {
+      "type": "string"
+    },
+    "apex": {
+      "type": "string"
+    }
+  },
+  "reduced": "instant"
+}

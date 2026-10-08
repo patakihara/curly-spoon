@@ -1,0 +1,28 @@
+{
+  "visuals": {
+    "gap": {
+      "default": 14
+    },
+    "padding": {
+      "default": 16
+    },
+    "listGap": {
+      "default": 14
+    },
+    "carouselPadTop": {
+      "default": 8
+    },
+    "carouselPadBottom": {
+      "default": 24
+    },
+    "carouselGap": {
+      "default": 20
+    }
+  },
+  "implements": [
+    "layout"
+  ],
+  "props": {
+    "groups": "list"
+  }
+}

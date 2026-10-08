@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}"><div data-ph="1" style="display:flex;align-items:center;gap:{{ v.gap }}px;padding:{{ v.padY }}px {{ v.padX }}px;border-bottom:1px solid {{ v.divider }}">
+  <div style="width:{{ v.thumb }}px;height:{{ v.thumb }}px;border-radius:{{ v.thumbRadius }}px;background:{{ v.barStrong }};flex:none"></div>
+  <div style="flex:1;display:flex;flex-direction:column;gap:8px"><div style="height:{{ v.lineHeight }}px;width:{{ w }}%;background:{{ v.barStrong }};border-radius:{{ v.barRadius }}px"></div><div style="height:{{ v.line2Height }}px;width:{{ v.line2Width }}%;background:{{ line2 }};border-radius:{{ v.barRadius }}px"></div></div>
+</div></sc-if>
+<sc-if value="{{ isGrid }}" hint-placeholder-val="{{ false }}"><div data-ph="1" style="aspect-ratio:{{ aspect }};box-sizing:border-box;background:{{ v.bar }};display:flex;flex-direction:column;justify-content:flex-end;gap:{{ v.gap }}px;padding:{{ v.padding }}px">
+  <div style="height:{{ v.lineHeight }}px;width:{{ w }}%;background:{{ v.barStrong }};border-radius:{{ v.barRadius }}px"></div>
+  <div style="height:{{ v.line2Height }}px;width:{{ v.line2Width }}%;background:{{ line2 }};border-radius:{{ v.barRadius }}px"></div>
+</div></sc-if>
+<sc-if value="{{ isBlock }}" hint-placeholder-val="{{ false }}"><div data-ph="1" style="display:flex;flex-direction:column;gap:{{ v.gap }}px">
+  <div style="height:{{ v.artHeight }}px;border-radius:{{ v.artRadius }}px;background:{{ v.bar }}"></div>
+  <div style="height:{{ v.lineHeight }}px;width:{{ w }}%;background:{{ v.barStrong }};border-radius:{{ v.barRadius }}px"></div>
+  <div style="height:{{ v.line2Height }}px;width:{{ v.line2Width }}%;background:{{ line2 }};border-radius:{{ v.barRadius }}px"></div>
+</div></sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:320,&quot;height&quot;:120},&quot;form&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;list&quot;,&quot;grid&quot;,&quot;block&quot;],&quot;default&quot;:&quot;list&quot;,&quot;tsType&quot;:&quot;'list' | 'grid' | 'block'&quot;},&quot;width&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:70,&quot;tsType&quot;:&quot;number&quot;},&quot;aspect&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
+// Web drawing of an item component's placeholder form (design: <component>.placeholder.visuals) — listRow → 'list', gridCard → 'grid', contentBlock → 'block'.
+// Props: form, width (first line, %), aspect (grid), visuals (resolved placeholder visuals). The pulse runs on [data-ph] from the shell (motion.placeholder). No values of its own.
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.visuals || {}, f = this.props.form || 'list';
+    return { v, isList: f === 'list', isGrid: f === 'grid', isBlock: f === 'block', w: this.props.width || 70, aspect: String(this.props.aspect || 0.75), line2: v[v.line2Bar] || v.bar };
+  }
+}
+</script>
+</body>
+</html>

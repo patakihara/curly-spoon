@@ -1,0 +1,28 @@
+{
+  "extends": "iconButton",
+  "variant": true,
+  "implements": [
+    "input"
+  ],
+  "accepts": [
+    "choice"
+  ],
+  "props": {
+    "value": "value",
+    "options": "options"
+  },
+  "placeholder": {
+    "visuals": {
+      "bar": {
+        "default": {
+          "token": "color.placeholder"
+        }
+      },
+      "barStrong": {
+        "default": {
+          "token": "color.placeholderStrong"
+        }
+      }
+    }
+  }
+}

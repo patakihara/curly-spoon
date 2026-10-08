@@ -1,0 +1,103 @@
+{
+  "props": {
+    "icon": "string",
+    "fill": "number",
+    "weight": "number",
+    "grade": "number",
+    "opticalSize": "number"
+  },
+  "variants": {
+    "size": {
+      "options": [
+        "xs",
+        "sm",
+        "md",
+        "lg",
+        "xl"
+      ],
+      "default": "lg"
+    }
+  },
+  "visuals": {
+    "font": {
+      "default": "Material Symbols Rounded"
+    },
+    "fill": {
+      "default": 0,
+      "selected": 1,
+      "checked": 1
+    },
+    "weight": {
+      "default": 400
+    },
+    "grade": {
+      "default": 0
+    },
+    "size": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "xs": {
+            "token": "size.icon.xs"
+          },
+          "sm": {
+            "token": "size.icon.sm"
+          },
+          "md": {
+            "token": "size.icon.md"
+          },
+          "lg": {
+            "token": "size.icon.lg"
+          },
+          "xl": {
+            "token": "size.icon.xl"
+          }
+        }
+      }
+    },
+    "color": {
+      "default": {
+        "role": "contentVariant"
+      }
+    },
+    "padEnd": {
+      "default": 8
+    },
+    "slotMaxWidth": {
+      "default": 30
+    }
+  },
+  "statuses": [
+    "selected",
+    "checked"
+  ],
+  "motion": {
+    "icon": [
+      {
+        "do": "kind",
+        "kind": "symbolMorph",
+        "ms": {
+          "token": "motion.duration.medium"
+        },
+        "easing": {
+          "token": "motion.easing.emphasized"
+        }
+      }
+    ],
+    "fill": [
+      {
+        "do": "kind",
+        "kind": "fade",
+        "ms": {
+          "token": "motion.duration.short"
+        },
+        "easing": {
+          "token": "motion.easing.standard"
+        }
+      }
+    ]
+  },
+  "parts": [
+    "glyph"
+  ]
+}

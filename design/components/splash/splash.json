@@ -1,0 +1,66 @@
+{
+  "props": {
+    "label": "string"
+  },
+  "visuals": {
+    "logo": {
+      "default": {
+        "token": "color.accent"
+      }
+    },
+    "logoSize": {
+      "default": 112
+    },
+    "logoOpacity": {
+      "entering": 0,
+      "default": 1
+    },
+    "logoScale": {
+      "entering": 0.8,
+      "default": 1
+    },
+    "fill": {
+      "default": {
+        "token": "color.backLayer"
+      }
+    }
+  },
+  "states": [
+    "entering",
+    "enabled"
+  ],
+  "motion": {
+    "logoOpacity": [
+      {
+        "do": "kind",
+        "kind": "fade",
+        "trigger": "change",
+        "ms": {
+          "token": "motion.duration.extraLong2"
+        },
+        "easing": {
+          "token": "motion.easing.decelerate"
+        }
+      }
+    ],
+    "logoScale": [
+      {
+        "do": "kind",
+        "kind": "move",
+        "trigger": "change",
+        "ms": {
+          "token": "motion.duration.extraLong2"
+        },
+        "easing": {
+          "token": "motion.easing.decelerate"
+        }
+      }
+    ]
+  },
+  "implements": [
+    "splash"
+  ],
+  "parts": [
+    "logo"
+  ]
+}

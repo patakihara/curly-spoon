@@ -1,0 +1,67 @@
+{
+  "props": {
+    "text": "string"
+  },
+  "implements": [
+    "emptyState"
+  ],
+  "visuals": {
+    "ink": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "md": {
+            "token": "color.onSurfaceMuted"
+          },
+          "sm": {
+            "token": "color.onSurfaceMuted"
+          }
+        }
+      }
+    },
+    "iconColor": {
+      "default": {
+        "token": "color.onSurfaceFaint"
+      }
+    },
+    "iconSize": {
+      "default": 36
+    },
+    "fontSize": {
+      "default": 14
+    },
+    "padY": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "md": 48,
+          "sm": 40
+        }
+      }
+    },
+    "padX": {
+      "default": 24
+    },
+    "gap": {
+      "default": 12
+    },
+    "icon": {
+      "default": {
+        "variant": "size",
+        "cases": {
+          "md": "inbox",
+          "sm": ""
+        }
+      }
+    }
+  },
+  "variants": {
+    "size": {
+      "options": [
+        "md",
+        "sm"
+      ],
+      "default": "md"
+    }
+  }
+}

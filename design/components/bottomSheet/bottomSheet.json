@@ -1,0 +1,69 @@
+{
+  "provides": {
+    "content": {
+      "token": "color.onSurface"
+    },
+    "contentVariant": {
+      "token": "color.onSurface"
+    },
+    "focusRing": {
+      "token": "color.focusRing"
+    }
+  },
+  "visuals": {
+    "cornerTop": {
+      "default": {
+        "token": "radius.frontLayer"
+      }
+    },
+    "fill": {
+      "default": "#fff"
+    },
+    "shadow": {
+      "default": "0 -1px 0 #e3e2de, 0 -6px 16px rgba(0,0,0,.06)"
+    },
+    "clip": {
+      "default": true
+    },
+    "handleTop": {
+      "default": 10
+    },
+    "handleGap": {
+      "default": 6
+    },
+    "handleWidth": {
+      "default": 32
+    },
+    "handleHeight": {
+      "default": 4
+    },
+    "handle": {
+      "default": {
+        "token": "color.handle"
+      }
+    },
+    "tabInset": {
+      "default": 16
+    },
+    "contentPadY": {
+      "default": 8
+    },
+    "listFill": {
+      "default": {
+        "token": "color.surface"
+      }
+    },
+    "closedRadius": {
+      "default": "12px 12px 0 0"
+    },
+    "handleRadius": {
+      "default": 2
+    }
+  },
+  "implements": [
+    "pageSheet"
+  ],
+  "props": {
+    "expanded": "boolean"
+  }
+}

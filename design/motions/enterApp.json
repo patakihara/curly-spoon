@@ -1,0 +1,34 @@
+{
+  "params": {
+    "ms": {
+      "type": "duration"
+    },
+    "easing": {
+      "type": "easing"
+    },
+    "easingOut": {
+      "type": "easing"
+    },
+    "logoMs": {
+      "type": "duration"
+    },
+    "logoEasing": {
+      "type": "easing"
+    },
+    "layerMs": {
+      "type": "duration"
+    },
+    "stagger": {
+      "type": "duration",
+      "default": 0
+    },
+    "distance": {
+      "type": "number",
+      "default": 40
+    },
+    "peekStagger": {
+      "type": "duration"
+    }
+  },
+  "reduced": "fade"
+}

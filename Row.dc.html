@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="display:flex;align-items:center;justify-content:{{ v.justify }};gap:{{ v.gap }}px"><sc-for list="{{ children }}" as="c" hint-placeholder-count="5"><sc-if value="{{ c.isFab }}" hint-placeholder-val="{{ false }}"><dc-import name="Fab" ix="{{ c.ix }}" icon="{{ c.icon }}" visuals="{{ c.vis }}" hint-size="64px,64px"></dc-import></sc-if><sc-if value="{{ c.isButton }}" hint-placeholder-val="{{ true }}"><div style="width:{{ v.controlBox }}px;height:{{ v.controlBox }}px;display:flex;align-items:center;justify-content:center"><dc-import name="IconButton" dc-props="{{ c.ix }}" icon="{{ c.icon }}" hint-size="48px,48px"></dc-import></div></sc-if></sc-for></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:320,&quot;height&quot;:80},&quot;children&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ ix: object; icon: string; isFab: boolean; vis: object }[]&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
+// Web implementation of design component row (justify start | spread). Props: children [{ ix, icon, isFab, vis (fab visuals) }], visuals (resolved with the justify variant). No values of its own.
+class Component extends DCLogic {
+  renderVals() { return { v: this.props.visuals || {}, children: (this.props.children || []).map(c => ({ ...c, isButton: !c.isFab })) }; }
+}
+</script>
+</body>
+</html>

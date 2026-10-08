@@ -1,0 +1,19 @@
+{
+  "params": {
+    "ms": {
+      "type": "duration"
+    },
+    "easing": {
+      "type": "easing"
+    },
+    "low": {
+      "type": "number",
+      "default": 0.45
+    },
+    "stagger": {
+      "type": "number",
+      "default": 0.125
+    }
+  },
+  "reduced": "instant"
+}

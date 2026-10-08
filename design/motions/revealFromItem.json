@@ -1,0 +1,15 @@
+{
+  "params": {
+    "ms": {
+      "type": "duration"
+    },
+    "easing": {
+      "type": "easing"
+    },
+    "fadeContent": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "reduced": "fade"
+}

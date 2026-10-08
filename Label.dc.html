@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="font-family:{{ ff }};font-size:{{ fs }}px;color:{{ color }};white-space:nowrap;padding:0 {{ padX }}px">{{ text }}</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:160,&quot;height&quot;:32},&quot;text&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;2 filters&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
+// Design component: label (design/components/label). Props: text + visuals (resolved by the shell). No parts. No values of its own.
+class Component extends DCLogic {
+  renderVals() { const v = this.props.visuals || {}; return { text: this.props.text, ff: v.fontFamily, fs: v.fontSize, color: v.color, padX: v.padX }; }
+}
+</script>
+</body>
+</html>

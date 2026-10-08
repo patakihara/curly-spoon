@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:absolute;inset:0">
+  <div ref="{{ bgRef }}" style="position:absolute;inset:0;background:{{ fill }}"></div>
+  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+    <div ref="{{ logoRef }}" style="display:flex;color:{{ logo }}"><div style="display:flex;opacity:{{ op }};transform:scale({{ sc }});transition:{{ tr }}"><dc-import name="Logo" size="{{ size }}" playing="{{ playing }}" visuals="{{ logoVis }}" motion="{{ logoMotion }}" label="" hint-size="73px,112px"></dc-import></div></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:640},&quot;state&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;fill&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;logoVis&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;logoMotion&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;bgRef&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;logoRef&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;}}">
+// Web implementation of design component splash. Props: state (logoOp, logoSc, logoTr, logo, logoSize, playing — resolved by the shell from splash visuals per state + motion), fill, logoVis / logoMotion, bgRef / logoRef (enterApp motion). No values of its own.
+class Component extends DCLogic {
+  renderVals() { const p = this.props, s = p.state || {}; return { fill: p.fill || 'transparent', op: s.logoOp ?? 1, sc: s.logoSc ?? 1, tr: s.logoTr || 'none', logo: s.logo || 'currentColor', size: s.logoSize || 112, playing: !!s.playing, logoVis: p.logoVis || null, logoMotion: p.logoMotion || null, bgRef: p.bgRef || null, logoRef: p.logoRef || null }; }
+}
+</script>
+</body>
+</html>

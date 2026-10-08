@@ -1,0 +1,57 @@
+{
+  "provides": {
+    "content": {
+      "token": "color.onSurface"
+    },
+    "contentVariant": {
+      "token": "color.onSurface"
+    },
+    "focusRing": {
+      "token": "color.focusRing"
+    }
+  },
+  "visuals": {
+    "handleWidth": {
+      "default": 18
+    },
+    "handleHeight": {
+      "default": 72
+    },
+    "handleRadius": {
+      "default": "10px 0 0 10px"
+    },
+    "handleFill": {
+      "default": {
+        "token": "color.backLayer"
+      }
+    },
+    "handleInk": {
+      "default": "rgba(255,255,255,.8)"
+    },
+    "handleShadow": {
+      "default": "-2px 0 8px rgba(0,0,0,.12)"
+    },
+    "handleIcon": {
+      "default": "chevron_left"
+    },
+    "handleIconSize": {
+      "default": 18
+    },
+    "scrim": {
+      "default": {
+        "token": "color.scrim"
+      }
+    },
+    "fill": {
+      "default": {
+        "token": "color.surfaceRaised"
+      }
+    },
+    "shadowBeside": {
+      "default": "-1px 0 0 #e3e2de"
+    },
+    "shadowOver": {
+      "default": "-8px 0 24px rgba(0,0,0,.12)"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div onPointerDownCapture="{{ focusDedede }}" style="position:absolute;left:{{ ddLeft }}px;top:0;bottom:{{ ddBottom }}px;right:{{ ddRight }}px;display:flex;flex-direction:column;background:{{ sv.pageFill }};clip-path:{{ dd.clip }};pointer-events:{{ dd.ev }};transition:{{ mx.layer.Dedede.surface }}">
+    <dc-import name="Bar" start="{{ dd.start }}" end="{{ dd.end }}" title="{{ dd.title }}" title-vis="{{ titleVisBar }}" visuals="{{ barVisLayer }}" hint-size="100%,56px"></dc-import>
+    <div style="flex:1;min-height:0;overflow:auto;background:{{ sv.pageFill }}">
+      <sc-for list="{{ dd.rows }}" as="lr" hint-placeholder-count="4">
+        <dc-import name="ListRow" dc-props="{{ lr.ix }}" item-id="{{ lr.id }}" text="{{ lr.label }}" sub="{{ lr.sub }}" art="{{ lr.art }}" trailing="{{ lr.icon }}" thumb="36" hint-size="100%,61px"></dc-import>
+      </sc-for>
+    </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:640},&quot;focusDedede&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;ddLeft&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;ddBottom&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;ddRight&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;sv&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;dd&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;mx&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;titleVisBar&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;barVisLayer&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;}}">
+// Web implementation of the Dedede (Settings) fullscreen layer page: page fill, header (Bar) and its rows. The shell
+// places it and feeds it values.
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

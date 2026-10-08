@@ -1,0 +1,6 @@
+{
+  "implements": [
+    "appBarPage"
+  ],
+  "props": {}
+}

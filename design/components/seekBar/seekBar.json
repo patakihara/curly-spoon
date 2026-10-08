@@ -1,0 +1,40 @@
+{
+  "implements": [
+    "input"
+  ],
+  "accepts": [
+    "number"
+  ],
+  "props": {
+    "value": "value",
+    "options": "options",
+    "durationMs": "number",
+    "label": "string"
+  },
+  "visuals": {
+    "track": {
+      "default": {
+        "token": "color.divider"
+      }
+    },
+    "fill": {
+      "default": {
+        "role": "content"
+      }
+    },
+    "thumb": {
+      "default": 12
+    },
+    "timeSize": {
+      "default": 12
+    },
+    "timeColor": {
+      "default": {
+        "token": "color.onSurfaceMuted"
+      }
+    },
+    "gap": {
+      "default": 4
+    }
+  }
+}

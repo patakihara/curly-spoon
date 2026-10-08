@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><style>body{margin:0;background:#ecebe8;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c}a{color:#1c1c1c}a:hover{color:#555}</style></helmet>
+<div style="max-width:720px;margin:0 auto;padding:40px 24px;display:flex;flex-direction:column;gap:20px">
+  <div style="display:flex;flex-direction:column;gap:6px">
+    <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Contract check</div>
+    <div style="font-size:24px;font-weight:500">core (navigation · layout · interaction · player) + app/app.json against api/invariants.js</div>
+    <div style="font-family:ui-monospace,Menlo,monospace;font-size:13px;color:#555">{{ summary }}</div>
+  </div>
+  <div style="display:flex;flex-direction:column;background:#fff;border:1px solid #e3e2de;border-radius:8px">
+    <sc-for list="{{ results }}" as="r" hint-placeholder-count="6">
+      <div style="display:flex;gap:12px;align-items:baseline;padding:10px 14px;border-bottom:1px solid #efeeea">
+        <div style="flex:none;width:44px;font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:600;color:{{ r.color }}">{{ r.mark }}</div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+          <div style="font-size:14px">{{ r.name }}</div>
+          <div style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:{{ r.color }}">{{ r.error }}</div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px;margin-top:12px">
+    <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Platform check · web shell</div>
+    <div style="font-size:16px;font-weight:500">Shell + motion runtime hold no look-and-feel values (platforms/lint-web.js)</div>
+    <div style="font-family:ui-monospace,Menlo,monospace;font-size:13px;color:{{ lintColor }}">{{ lintSummary }}</div>
+  </div>
+  <sc-if value="{{ hasLint }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;flex-direction:column;background:#fff;border:1px solid #e3e2de;border-radius:8px">
+    <sc-for list="{{ lint }}" as="f" hint-placeholder-count="3">
+      <div style="display:flex;gap:12px;align-items:baseline;padding:8px 14px;border-bottom:1px solid #efeeea;font-family:ui-monospace,Menlo,monospace;font-size:11px">
+        <div style="flex:none;width:96px;color:#b3261e;font-weight:600">{{ f.rule }} · {{ f.line }}</div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><div style="font-weight:600">{{ f.match }}</div><div style="color:#555;white-space:pre-wrap;word-break:break-all">{{ f.context }}</div></div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+  <button onClick="{{ rerun }}" style="align-self:flex-start;height:36px;padding:0 16px;border-radius:18px;border:1px solid #1c1c1c;background:transparent;font:inherit;font-size:13px;white-space:nowrap;cursor:pointer">Run again</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { results: [], summary: 'running…' };
+  componentDidMount() { this.run(); }
+  async run() {
+    // load plain ES modules via blob URLs (fresh copy every run)
+    // plain ES modules via blob URLs (fresh copy every run); relative imports inside them are loaded the same way and rewritten
+    const blobs = {}, blobOf = url => blobs[url] || (blobs[url] = (async () => { let src = await (await fetch(url, { cache: 'no-store' })).text(); for (const m of [...src.matchAll(/(from\s*|import\s*\(\s*)(['"])(\.\.?\/[^'"]+)\2/g)]) src = src.split(m[2] + m[3] + m[2]).join(m[2] + await blobOf(new URL(m[3], url).href) + m[2]); return URL.createObjectURL(new Blob([src], { type: 'text/javascript' })); })());
+    const load = async p => import(await blobOf(new URL(p, location.href).href));
+    try {
+      const [M, SM, I, Pl, Pr, Ix, appCfg] = await Promise.all([load('./core/navigation.js'), load('./app/fake-backend.js'), load('./api/invariants.js'), load('./core/player.js'), load('./core/layout.js'), load('./core/interaction.js'), import(URL.createObjectURL(new Blob([await (await fetch(new URL('./app/load-app.js', location.href).href, { cache: 'no-store' })).text()], { type: 'text/javascript' }))).then(m => m.loadApp(p => fetch(new URL('./' + p, location.href).href, { cache: 'no-store' }).then(r => r.text())))]);
+      const S = SM.bind(appCfg);
+      const DL = await load('./design/load.js'), specs = await DL.loadDesign(p => fetch(new URL('./design/' + p, location.href).href, { cache: 'no-store' }).then(r => r.text()));
+      const platforms = [await fetch(new URL('./platforms/web.json', location.href).href, { cache: 'no-store' }).then(r => r.json())];
+      const results = I.runInvariants(M.createModel, { ...S.fixtures, createPlayer: Pl.createPlayer, layout: Pr, interaction: Ix, roles: M.ROLES, formatMessage: M.formatMessage, specs, platforms });
+      const pass = results.filter(r => r.ok && !r.skipped).length, sk = results.filter(r => r.skipped).length;
+      const LW = await load('./platforms/lint-web.js'), shell = await (await fetch(new URL('./Backdrop Nav Skeleton.dc.html', location.href).href, { cache: 'no-store' })).text();
+      this.setState({ results, summary: pass + ' pass · ' + sk + ' skipped · ' + (results.length - pass - sk) + ' fail', lint: [...LW.lintShell(shell).map(f => ({ ...f, rule: 'shell ' + f.rule })), ...LW.lintShell(await (await fetch(new URL('./platforms/web/motions.js', location.href).href, { cache: 'no-store' })).text(), true).map(f => ({ ...f, rule: 'motions ' + f.rule }))] });
+    } catch (e) {
+      this.setState({ results: [], summary: 'load failed: ' + e.message });
+    }
+  }
+  renderVals() {
+    return {
+      summary: this.state.summary,
+      lint: this.state.lint || [], hasLint: !!(this.state.lint && this.state.lint.length),
+      lintSummary: !this.state.lint ? 'running…' : this.state.lint.length ? this.state.lint.length + ' hard-coded value' + (this.state.lint.length > 1 ? 's' : '') + ' — move them to design / config' : 'clean · 0 hard-coded values',
+      lintColor: this.state.lint && this.state.lint.length ? '#b3261e' : '#2e7d32',
+      results: this.state.results.map(r => ({ name: r.name, error: r.error || '', mark: r.skipped ? 'SKIP' : r.ok ? 'PASS' : 'FAIL', color: r.skipped ? '#8a8984' : r.ok ? '#2e7d32' : '#b3261e' })),
+      rerun: () => { this.setState({ summary: 'running…' }); this.run(); }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+{
+  "implements": [
+    "input"
+  ],
+  "props": {
+    "value": "value",
+    "options": "options"
+  },
+  "motion": {
+    "indicator": [
+      {
+        "do": "kind",
+        "kind": "move",
+        "property": "left",
+        "ms": {
+          "token": "motion.duration.long"
+        },
+        "easing": {
+          "token": "motion.easing.standard"
+        }
+      }
+    ],
+    "placeholder": [
+      {
+        "do": "kind",
+        "kind": "pulse",
+        "trigger": "loop",
+        "ms": {
+          "token": "motion.duration.pulse"
+        },
+        "easing": {
+          "token": "motion.easing.smooth"
+        }
+      }
+    ]
+  },
+  "placeholder": {
+    "visuals": {
+      "bar": {
+        "default": {
+          "token": "color.placeholder"
+        }
+      },
+      "barStrong": {
+        "default": {
+          "token": "color.placeholderStrong"
+        }
+      }
+    }
+  },
+  "accepts": [
+    "choice"
+  ],
+  "visuals": {
+    "height": {
+      "default": 48
+    },
+    "divider": {
+      "default": {
+        "variant": "tone",
+        "cases": {
+          "back": {
+            "token": "color.backLayerDivider"
+          },
+          "surface": {
+            "token": "color.divider"
+          }
+        }
+      }
+    },
+    "indicator": {
+      "default": {
+        "role": "content"
+      }
+    },
+    "indicatorHeight": {
+      "default": 2
+    }
+  },
+  "variants": {
+    "tone": {
+      "options": [
+        "back",
+        "surface"
+      ],
+      "default": "back"
+    }
+  }
+}

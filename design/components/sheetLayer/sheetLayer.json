@@ -1,0 +1,10 @@
+{
+  "implements": [
+    "sheetLayer"
+  ],
+  "props": {
+    "open": "boolean",
+    "form": "string",
+    "side": "string"
+  }
+}

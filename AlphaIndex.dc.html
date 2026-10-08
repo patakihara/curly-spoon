@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="width:{{ w }}px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:{{ gap }}px"><sc-for list="{{ keys }}" as="k" hint-placeholder-count="6"><div onClick="{{ k.go }}" style="font-size:{{ fs }}px;font-weight:{{ fw }};color:{{ color }};padding:{{ kp }};cursor:pointer">{{ k.key }}</div></sc-for></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:40,&quot;height&quot;:200},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;},&quot;keys&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ key: string; go: () =&gt; void }[]&quot;}}">
+// Web implementation of design component alphaIndex (fast-scroll index). Props: keys [{ key, go }], visuals (resolved). No values of its own.
+class Component extends DCLogic {
+  renderVals() { const p = this.props, v = p.visuals || {}; return { keys: p.keys || [], w: +v.width || 20, gap: +v.gap || 0, fs: +v.fontSize || 10, fw: v.fontWeight || 600, color: v.color || 'inherit', kp: v.keyPad || '0' }; }
+}
+</script>
+</body>
+</html>

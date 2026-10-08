@@ -1,0 +1,26 @@
+{
+  "props": {
+    "text": "string"
+  },
+  "visuals": {
+    "height": {
+      "default": 32
+    },
+    "fontSize": {
+      "default": 13
+    },
+    "fontWeight": {
+      "default": 600
+    },
+    "color": {
+      "default": {
+        "role": "contentVariant"
+      }
+    },
+    "fill": {
+      "default": {
+        "token": "color.surface"
+      }
+    }
+  }
+}

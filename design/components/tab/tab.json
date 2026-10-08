@@ -1,0 +1,30 @@
+{
+  "extends": "button",
+  "props": {
+    "label": "string"
+  },
+  "visuals": {
+    "radius": {
+      "default": {
+        "token": "radius.none"
+      }
+    },
+    "ink": {
+      "default": {
+        "role": "content"
+      }
+    },
+    "contentOpacity": {
+      "default": {
+        "token": "state.unselected.opacity"
+      },
+      "selected": 1,
+      "disabled": {
+        "token": "state.disabled.opacity"
+      }
+    }
+  },
+  "statuses": [
+    "selected"
+  ]
+}

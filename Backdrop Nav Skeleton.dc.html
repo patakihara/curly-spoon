@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"><style>body{margin:0;background:#ecebe8;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c}a{color:#1c1c1c}a:hover{color:#555}.ms{font-family:'Material Symbols Rounded';font-size:24px;line-height:1;font-feature-settings:'liga'}input::placeholder{color:rgba(255,255,255,.55)}input[data-light]::placeholder{color:rgba(0,0,0,.45)}*{scrollbar-width:none}*::-webkit-scrollbar{display:none}.sc-placeholder:not(:has(.sc-placeholder-error)){visibility:hidden}</style></helmet>
+<div data-harness="frame" style="min-height:100vh;display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start;justify-content:safe center;padding:40px 24px;box-sizing:border-box">
+
+  <div ref="{{ phoneRef }}" data-harness="frame" style="width:{{ pw }}px;height:{{ phoneH }}px;flex:none;position:relative;overflow:hidden;background:{{ backBg }}">
+    <div dir="{{ dir }}" style="position:absolute;inset:0;opacity:{{ appFx.op }};transform:scale({{ appFx.sc }});transition:{{ appFx.tr }}">
+    <div ref="{{ screenRef }}" onPointerDownCapture="{{ focusDeck }}" style="position:absolute;transition:{{ rail.tr }};left:{{ screenLeft }}px;right:{{ screenRight }}px;top:0;bottom:0;overflow:hidden;background:{{ backBg }}">
+
+      <div ref="{{ backRef }}" onClick="{{ onBackTap }}" style="position:absolute;left:0;right:0;top:0;bottom:0;transform-origin:50% 0;opacity:{{ ftB.op }};transform:scale({{ ftB.sc }});transition:{{ ftB.tr }}">
+      <sc-for list="{{ rHeader }}" as="ri" hint-placeholder-count="1"><div data-enter="header" style="position:absolute;left:0;right:0;top:{{ ri.top }}px;opacity:{{ ri.op }};pointer-events:{{ ri.ev }};transition:{{ mx.expand.both }}">
+      <sc-if value="{{ bhX.show }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:0;right:0;top:{{ barVisBack.height }}px;height:{{ bhX.h }}px;overflow:hidden;color:{{ bhX.fg }};opacity:{{ bhX.op }};transform:scale({{ bhX.sc }});transform-origin:50% 0"><dc-import name="DetailHeader" title="{{ bhX.title }}" subtitle="{{ bhX.sub }}" meta="{{ bhX.meta }}" image="{{ bhX.img }}" visuals="{{ bhX.vis }}" style="width:100%;height:100%" hint-size="100%,100%"></dc-import></div></sc-if>
+      <dc-import name="Bar" start="{{ bhLeft }}" end="{{ bhRight }}" title="{{ bhTitle }}" title-vis="{{ titleVisBack }}" title-op="{{ bhTitleOp }}" title-pad="{{ bhTitlePad }}" ease="{{ ease }}" visuals="{{ barVisBack }}" hint-size="100%,56px"></dc-import>
+      </div></sc-for>
+
+      <sc-for list="{{ rBasic }}" as="ri" hint-placeholder-count="1"><div data-enter="basic" style="position:absolute;left:0;right:0;top:{{ ri.top }}px;opacity:{{ ri.op }};pointer-events:{{ ri.ev }};transition:{{ mx.expand.both }}">
+      <div style="height:{{ basicH }}px;box-sizing:border-box;overflow:hidden;padding:{{ sv.back.basicPadding }};color:{{ sv.back.ink }}">
+        <sc-if value="{{ isFilters }}" hint-placeholder-val="{{ true }}"><dc-import name="FilterChips" chips="{{ filters }}" visuals="{{ fcVis }}" hint-size="100%,48px"></dc-import></sc-if>
+        <sc-if value="{{ isTabs }}" hint-placeholder-val="{{ false }}"><dc-import name="TabBar" tabs="{{ tabs }}" selected="{{ tabSel }}" motion="{{ tabMo }}" visuals="{{ tbVis }}" hint-size="100%,48px"></dc-import></sc-if>
+        <sc-if value="{{ isSearch }}" hint-placeholder-val="{{ false }}"><dc-import name="SearchField" value="{{ query }}" hint="{{ searchHint }}" on-input="{{ onQuery }}" on-key="{{ onQueryKey }}" clear-ix="{{ clearIx }}" visuals="{{ sfVis }}" hint-size="100%,48px"></dc-import></sc-if>
+      </div>
+      </div></sc-for>
+
+      <sc-for list="{{ rActions }}" as="ri" hint-placeholder-count="0"><div data-enter="actions" style="position:absolute;left:0;right:0;top:{{ ri.top }}px;opacity:{{ ri.op }};pointer-events:{{ ri.ev }};transition:{{ mx.expand.both }}">
+        <div style="height:{{ actH }}px;box-sizing:border-box;padding:{{ sv.back.basicPadding }};display:flex;align-items:center;justify-content:center;gap:{{ sv.back.panelGap }}px"><sc-for list="{{ actBtns }}" as="ab" hint-placeholder-count="1"><dc-import name="Button" dc-props="{{ ab.ix }}" text="{{ ab.text }}" icon="{{ ab.icon }}" hint-size="88px,40px"></dc-import></sc-for></div>
+      </div></sc-for>
+
+      <sc-for list="{{ rPanel }}" as="ri" hint-placeholder-count="1"><div style="position:absolute;left:0;right:0;top:{{ ri.top }}px;opacity:{{ ri.op }};pointer-events:{{ ri.ev }};transition:{{ mx.expand.both }}">
+        <div ref="{{ panelRef }}" style="height:{{ panelH }};box-sizing:border-box;padding:{{ sv.back.panelPadding }};border-top:1px solid {{ sv.back.panelDivider }};color:{{ sv.back.ink }};display:flex;flex-direction:column;gap:{{ sv.back.panelGap }}px">
+          <sc-for list="{{ panelItems }}" as="pr" hint-placeholder-count="3">
+            <div style="display:flex;flex-direction:column">
+              <sc-if value="{{ pr.isText }}" hint-placeholder-val="{{ true }}"><dc-import name="PanelRow" text="{{ pr.text }}" visuals="{{ pr.vis }}" hint-size="100%,16px"></dc-import></sc-if>
+              <sc-if value="{{ pr.isChips }}" hint-placeholder-val="{{ false }}"><dc-import name="FilterChips" chips="{{ pr.chips }}" wrap="{{ true }}" visuals="{{ pr.vis }}" hint-size="100%,32px"></dc-import></sc-if>
+              <sc-if value="{{ pr.isDropdown }}" hint-placeholder-val="{{ false }}"><dc-import name="Dropdown" options="{{ pr.options }}" label="{{ pr.text }}" on-pick="{{ pr.onPick }}" visuals="{{ pr.vis }}" hint-size="120px,40px"></dc-import></sc-if>
+              <sc-if value="{{ pr.isRange }}" hint-placeholder-val="{{ false }}"><dc-import name="RangeField" from="{{ pr.from }}" to="{{ pr.to }}" min="{{ pr.min }}" max="{{ pr.max }}" on-from="{{ pr.onFrom }}" on-to="{{ pr.onTo }}" from-label="{{ pr.fromLabel }}" to-label="{{ pr.toLabel }}" visuals="{{ pr.vis }}" hint-size="200px,40px"></dc-import></sc-if>
+              <sc-if value="{{ pr.isSuggest }}" hint-placeholder-val="{{ false }}"><dc-import name="SuggestionRow" ix="{{ pr.ix }}" text="{{ pr.text }}" visuals="{{ pr.vis }}" hint-size="100%,40px"></dc-import></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div></sc-for>
+
+      </div>
+
+      <div aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;visibility:hidden"><dc-import name="AppBarSheet" height="0" visuals="{{ barVisApp }}" info="{{ warm.info }}" find="{{ warm.none }}" buttons="{{ warm.buttons }}" hint-size="0px,0px"></dc-import><dc-import name="SearchField" value="" hint="" on-input="{{ warm.noop }}" on-key="{{ warm.noop }}" clear-ix="{{ warm.ix }}" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="SuggestionRow" ix="{{ warm.ix }}" text="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import></div>
+      <dc-import name="FrontLayer" show-overlay="{{ showOverlay }}" surf-ref="{{ surfRef }}" sv="{{ sv }}" front-ref="{{ frontRef }}" front-top="{{ frontTop }}" screen-bottom="{{ screenBottom }}" front-t-l="{{ frontTL }}" front-t-r="{{ frontTR }}" front-tr="{{ frontTr }}" fc-ref="{{ fcRef }}" ft-f="{{ ftF }}" fab="{{ fab }}" header-static="{{ headerStatic }}" fh-h="{{ fhH }}" fh-row="{{ fhRow }}" fh-left="{{ fhLeft }}" fh-right="{{ fhRight }}" fh-title="{{ fhTitle }}" title-vis-front="{{ titleVisFront }}" fh-title-op="{{ fhTitleOp }}" fh-title-w="{{ fhTitleW }}" sub-ix="{{ subIx }}" fh-border="{{ fhBorder }}" ease="{{ ease }}" fh-mo="{{ fhMo }}" bar-vis-front="{{ barVisFront }}" scroll-ref="{{ scrollRef }}" on-front-scroll="{{ onFrontScroll }}" cv="{{ cv }}" retry-text="{{ retryText }}" retry-ix="{{ retryIx }}" grid="{{ grid }}" scroller="{{ scroller }}" is-carousels="{{ isCarousels }}" carousels="{{ carousels }}" carousel-vis="{{ carouselVis }}" is-generic="{{ isGeneric }}" block-row-pad="{{ blockRowPad }}" generic-blocks="{{ genericBlocks }}" is-grid="{{ isGrid }}" groups="{{ groups }}" group-vis="{{ groupVis }}" is-list="{{ isList }}" alpha="{{ alpha }}" alpha-vis="{{ alphaVis }}" thumb-ref="{{ thumbRef }}" on-scrim="{{ onScrim }}" mx="{{ mx }}" style="display:contents" hint-size="0px,0px"></dc-import>
+
+      <div aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;visibility:hidden"><dc-import name="AppBarSheet" height="0" visuals="{{ barVisApp }}" info="{{ warm.info }}" find="{{ warm.none }}" buttons="{{ warm.buttons }}" hint-size="0px,0px"></dc-import><dc-import name="AppBarPage" oc="{{ warm.box }}" ov-inset-css="none" mx="{{ mx }}" ov="{{ warm.box }}" sv="{{ sv }}" cw="0" content-h="0" bar-vis-app="{{ barVisApp }}" ov-scroll-ref="{{ warm.ref }}" on-ov-scroll="{{ warm.noop }}" ab="{{ warm.ab }}" ov-rows="{{ warm.none }}" ov-thumb-ref="{{ warm.ref2 }}" ov-x="{{ warm.info }}" ab-btn-ref="{{ warm.ref3 }}" ease="{{ ease }}" ah-op="0" ah-trans="none" ah-ev="none" ah-h="0" ah-left="{{ warm.none }}" ah-right="{{ warm.none }}" ah-title="" title-vis-bar="{{ titleVisBar }}" ah-title-op="0" ah-title-w="0px" ah-shadow="none" ah-mo="{{ ahMo }}" hint-size="0px,0px"></dc-import><dc-import name="SearchField" value="" hint="" on-input="{{ warm.noop }}" on-key="{{ warm.noop }}" clear-ix="{{ warm.ix }}" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="SuggestionRow" ix="{{ warm.ix }}" text="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import></div>
+      <sc-if value="{{ showOverlay }}" hint-placeholder-val="{{ false }}">
+      <div ref="{{ ovRef }}" style="position:absolute;top:0;left:0;right:0;bottom:{{ screenBottom }}px;pointer-events:none;opacity:{{ ftO.op }};transform:scale({{ ftO.sc }});transition:{{ ftO.tr }}"><div style="position:absolute;inset:0;transform-origin:50% 0;pointer-events:{{ ovEv }}">
+        <dc-import name="AppBarPage" oc="{{ oc }}" ov-inset-css="{{ ovInsetCss }}" mx="{{ mx }}" ov="{{ ov }}" sv="{{ sv }}" cw="{{ cw }}" content-h="{{ contentH }}" bar-vis-app="{{ barVisApp }}" ov-scroll-ref="{{ ovScrollRef }}" on-ov-scroll="{{ onOvScroll }}" ab="{{ ab }}" ov-rows="{{ ovRows }}" ov-thumb-ref="{{ ovThumbRef }}" ov-x="{{ ovX }}" ab-btn-ref="{{ abBtnRef }}" ease="{{ ease }}" ah-op="{{ ahOp }}" ah-trans="{{ ahTrans }}" ah-ev="{{ ahEv }}" ah-h="{{ ahH }}" ah-left="{{ ahLeft }}" ah-right="{{ ahRight }}" ah-title="{{ ahTitle }}" title-vis-bar="{{ titleVisBar }}" ah-title-op="{{ ahTitleOp }}" ah-title-w="{{ ahTitleW }}" ah-shadow="{{ ahShadow }}" ah-mo="{{ ahMo }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import>
+      </div></div>
+      </sc-if>
+    </div>
+
+
+    <sc-if value="{{ showRail }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:0;top:0;bottom:0;display:flex"><dc-import name="NavRail" root-ref="{{ railRef }}" rail="{{ rail }}" top="{{ railTop }}" nav="{{ railNav }}" bottom="{{ railBottom }}" item-vis="{{ railItemVis }}" visuals="{{ sv.rail }}" style="height:100%" hint-size="80px,100%"></dc-import></div>
+    </sc-if>
+    <sc-if value="{{ showNnCard }}" hint-placeholder-val="{{ false }}">
+      <dc-import name="PeekCard" nn-card-ref="{{ nnCardRef }}" nn-card="{{ nnCard }}" np-h="{{ npH }}" card-vis="{{ cardVis }}" mx="{{ mx }}" nn="{{ nn }}" pl="{{ pl }}" np-vis="{{ npVis }}" style="display:contents" hint-size="0px,0px"></dc-import>
+    </sc-if>
+    <div style="position:absolute;inset:0;pointer-events:none"><dc-import name="Scrim" color="{{ sv.side.scrim }}" shown="{{ nnScrimOp }}" on-click="{{ nnScrimClick }}" ms="{{ mx.layer.nowPlaying.ms }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></div>
+    <sc-if value="{{ showNnEdge }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;right:0;top:50%;transform:translateY(-50%)"><dc-import name="EdgeHandle" on-enter="{{ nnEdgeEnter }}" visuals="{{ edgeVis }}" hint-size="18px,72px"></dc-import></div>
+    </sc-if>
+    <dc-import name="NowPlayingSheet" nn-ref="{{ nnRef }}" nn-leave="{{ nnLeave }}" focusnow-playing="{{ focusnowPlaying }}" nn="{{ nn }}" sv="{{ sv }}" mx="{{ mx }}" np-h="{{ npH }}" pl="{{ pl }}" np-vis="{{ npVis }}" title-vis-bar="{{ titleVisBar }}" ease="{{ ease }}" bar-mo="{{ barMo }}" bar-vis-layer="{{ barVisLayer }}" np="{{ np }}" sheet-vis="{{ sheetVis }}" style="display:contents" hint-size="0px,0px"></dc-import>
+    <div ref="{{ navBarRef }}" style="position:absolute;left:0;right:0;bottom:0;transform:translateY({{ navShift }}px);transition:{{ mx.expand.surface }}"><dc-import name="NavBar" items="{{ nav }}" visuals="{{ sv.navBar }}" hint-size="100%,56px"></dc-import></div>
+    <dc-import name="DededeLayer" focus-dedede="{{ focusDedede }}" dd-left="{{ ddLeft }}" dd-bottom="{{ ddBottom }}" dd-right="{{ ddRight }}" sv="{{ sv }}" dd="{{ dd }}" mx="{{ mx }}" title-vis-bar="{{ titleVisBar }}" bar-vis-layer="{{ barVisLayer }}" style="display:contents" hint-size="0px,0px"></dc-import>
+    <div style="position:absolute;inset:0;pointer-events:none"><dc-import name="Scrim" color="{{ sv.drawer.scrim }}" shown="{{ dr.op }}" on-click="{{ dr.scrim }}" ms="{{ mx.layer.menu.ms }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></div>
+    <div style="position:absolute;top:0;bottom:0;inset-inline-start:0;width:{{ dr.w }}px;max-width:{{ sv.drawer.maxWidth }};transform:translateX({{ dr.tx }}%);transition:{{ mx.layer.menu.surface }};pointer-events:{{ dr.ev }}"><dc-import name="Drawer" title="{{ dr.title }}" title-vis="{{ titleVisBar }}" items="{{ dr.items }}" item-vis="{{ drawerItemVis }}" visuals="{{ sv.drawer }}" style="height:100%" hint-size="100%,100%"></dc-import></div>
+    <dc-import name="AccountLayer" dd-left="{{ ddLeft }}" sv="{{ sv }}" acc="{{ acc }}" mx="{{ mx }}" title-vis-bar="{{ titleVisBar }}" bar-vis-layer="{{ barVisLayer }}" style="display:contents" hint-size="0px,0px"></dc-import>
+    <sc-if value="{{ dialog.show }}" hint-placeholder-val="{{ false }}"><dc-import name="Dialog" title="{{ dialog.title }}" body="{{ dialog.body }}" cancel="{{ dialog.cancelText }}" ok="{{ dialog.okText }}" cancel-ix="{{ dialog.cancelIx }}" ok-ix="{{ dialog.okIx }}" on-cancel="{{ dialog.cancel }}" visuals="{{ dialog.vis }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
+    <sc-if value="{{ menu.show }}" hint-placeholder-val="{{ false }}"><dc-import name="Menu" sheet="{{ menu.sheet }}" items="{{ menu.items }}" on-close="{{ menu.close }}" anchor="{{ menu.anchor }}" visuals="{{ menu.vis }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
+    <sc-if value="{{ snack.show }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:{{ snack.left }}px;bottom:{{ snack.bottom }}px;width:{{ snack.w }}px"><dc-import name="Snackbar" text="{{ snack.message }}" action="{{ snack.text }}" ix="{{ snack.ix }}" visuals="{{ snack.vis }}" hint-size="100%,48px"></dc-import></div></sc-if>
+    </div>
+    <sc-if value="{{ gate.show }}" hint-placeholder-val="{{ false }}">
+      <div dir="{{ dir }}" style="position:absolute;inset:0;z-index:4;pointer-events:{{ gate.ev }};opacity:{{ gateFx.op }};transform:scale({{ gateFx.sc }});transition:{{ gateFx.tr }}">
+        <dc-import name="SignIn" title="{{ gate.title }}" text="{{ gate.text }}" button="{{ gate.button }}" ix="{{ gate.ix }}" logo-vis="{{ logoVis }}" logo-motion="{{ logoMotion }}" bg-ref="{{ gateBgRef }}" logo-ref="{{ gateLogoRef }}" text-ref="{{ gateTextRef }}" visuals="{{ sv.signIn }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import>
+      </div>
+    </sc-if>
+    <sc-if value="{{ splash.show }}" hint-placeholder-val="{{ false }}">
+      <div dir="{{ dir }}" role="status" aria-busy="{{ splash.busy }}" aria-label="{{ splash.label }}" style="position:absolute;inset:0;z-index:5;pointer-events:{{ splash.ev }};opacity:{{ splashFx.op }};transition:{{ splashFx.tr }}">
+        <dc-import name="Splash" state="{{ splash }}" fill="{{ backBg }}" logo-vis="{{ logoVis }}" logo-motion="{{ logoMotion }}" bg-ref="{{ splashBgRef }}" logo-ref="{{ splashLogoRef }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import>
+      </div>
+    </sc-if>
+  </div>
+
+  <div aria-hidden="true" style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none"><dc-import name="IconButton" hint-size="1px,1px"></dc-import><dc-import name="Button" hint-size="1px,1px"></dc-import><dc-import name="Chip" hint-size="1px,1px"></dc-import><dc-import name="Tab" hint-size="1px,1px"></dc-import><dc-import name="NavItem" hint-size="1px,1px"></dc-import><dc-import name="ListItem" hint-size="1px,1px"></dc-import><dc-import name="ListRow" hint-size="1px,1px"></dc-import><dc-import name="GridCard" hint-size="1px,1px"></dc-import><dc-import name="ContentBlock" hint-size="1px,1px"></dc-import></div>
+  <div data-harness="panel" style="width:300px;display:flex;flex-direction:column;gap:20px;font-size:13px;line-height:1.5">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Layout width</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <sc-for list="{{ layouts }}" as="lo" hint-placeholder-count="3">
+          <button onClick="{{ lo.pick }}" style="flex:none;height:32px;padding:0 12px;border-radius:16px;border:1px solid #1c1c1c;background:{{ lo.bg }};color:{{ lo.fg }};font:inherit;font-size:12px;white-space:nowrap;cursor:pointer">{{ lo.label }}</button>
+        </sc-for>
+      </div>
+      <div style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#777">{{ layoutInfo }}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Slow motion</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <input type="range" min="0" max="4" step="1" value="{{ slowStep }}" onInput="{{ onSlow }}" style="flex:1;accent-color:#1c1c1c"></input>
+        <span style="font-family:ui-monospace,Menlo,monospace;font-size:11px;min-width:28px;text-align:right">{{ slowLabel }}</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Language</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <sc-for list="{{ locales }}" as="lc" hint-placeholder-count="5">
+          <button onClick="{{ lc.pick }}" style="flex:none;height:30px;padding:0 12px;border-radius:15px;border:1px solid #1c1c1c;background:{{ lc.bg }};color:{{ lc.fg }};font:inherit;font-size:12px;white-space:nowrap;cursor:pointer">{{ lc.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Address bar</div>
+      <input value="{{ urlDraft }}" onChange="{{ onUrlChange }}" onKeyDown="{{ onUrlKey }}" style="height:36px;box-sizing:border-box;padding:0 12px;border-radius:8px;border:1px solid #d6d5d0;background:#fff;font:12px ui-monospace,Menlo,monospace;color:#1c1c1c;outline:none"></input>
+      <div style="font-size:11px;color:#999">Enter to navigate · deep links rebuild the stack</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Simulate</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <sc-for list="{{ simToggles }}" as="st" hint-placeholder-count="6">
+          <button onClick="{{ st.toggle }}" style="flex:none;height:30px;padding:0 12px;border-radius:15px;border:1px solid #1c1c1c;background:{{ st.bg }};color:{{ st.fg }};font:inherit;font-size:12px;white-space:nowrap;cursor:pointer">{{ st.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onClick="{{ backBtn }}" style="flex:1;height:40px;border-radius:20px;border:1px solid #1c1c1c;background:#1c1c1c;color:#fff;font:inherit;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><span class="ms" style="font-size:18px">arrow_back</span><span style="white-space:nowrap">{{ backLabel }}</span></button>
+      <sc-if value="{{ showAndroidBack }}" hint-placeholder-val="{{ false }}"><button onClick="{{ androidBack }}" style="flex:1;height:40px;border-radius:20px;border:1px solid #1c1c1c;background:transparent;color:#1c1c1c;font:inherit;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><span class="ms" style="font-size:18px">arrow_back</span><span style="white-space:nowrap">Android back</span></button></sc-if>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Focus · History</div>
+      <div style="font-family:ui-monospace,Menlo,monospace;font-size:11px;background:#fff;padding:10px 12px;border-radius:8px;border:1px solid #e3e2de;display:flex;flex-direction:column;gap:3px">
+        <div style="font-weight:600;font-size:12px">focus: {{ focusLabel }}</div>
+        <div style="color:#999">{{ historyCaption }}</div>
+        <sc-for list="{{ historyList }}" as="hr" hint-placeholder-count="0"><div style="color:#555">{{ hr }}</div></sc-for>
+        <sc-if value="{{ historyEmpty }}" hint-placeholder-val="{{ true }}"><div style="color:#999">history empty</div></sc-if>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Stacks</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <sc-for list="{{ stackInfo }}" as="s" hint-placeholder-count="3">
+          <div style="font-family:ui-monospace,Menlo,monospace;font-size:11px;background:#fff;padding:10px 12px;border-radius:8px;border:1px solid {{ s.border }};display:flex;flex-direction:column;gap:3px">
+            <div style="font-weight:600;font-size:12px">{{ s.name }} · {{ s.action }}</div>
+            <div style="color:#555">{{ s.path }}</div>
+            <div style="color:#999">backdrop {{ s.open }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Flow rules</div>
+      <div style="display:flex;flex-direction:column;gap:4px;color:#444">
+        <div>Bottom nav switches Browse / Library / Search; each keeps its own stack, params and backdrop state</div>
+        <div>Re-tap active destination → pop to root; at root → reset by policy (scroll to top, conceal)</div>
+        <div>Every app control is an InteractiveComponent (§20): unavailable actions render disabled</div>
+        <div>Back layer: Browse one-of filters · Library tabs + per-tab options · Search with suggestions</div>
+        <div><span class="ms" style="font-size:14px;vertical-align:-2px">layers</span> in-backdrop child: replaces front layer, back arrow in app bar</div>
+        <div><span class="ms" style="font-size:14px;vertical-align:-2px">open_in_full</span> app bar child: expands from its card into a full page with its own app bar</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Log</div>
+      <div style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#555;display:flex;flex-direction:column;gap:2px">
+        <sc-for list="{{ log }}" as="l" hint-placeholder-count="0"><div>{{ l }}</div></sc-for>
+      </div>
+    </div>
+    <button onClick="{{ reset }}" style="align-self:flex-start;height:32px;padding:0 14px;border-radius:16px;border:1px solid #bbb;background:transparent;font:inherit;font-size:12px;cursor:pointer">Reset</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;palette&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Grey&quot;,&quot;M2 purple&quot;],&quot;default&quot;:&quot;Grey&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;peek&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0,&quot;max&quot;:120,&quot;step&quot;:4,&quot;unit&quot;:&quot;px&quot;,&quot;default&quot;:0,&quot;tsType&quot;:&quot;number&quot;}}">
+// ═══ VIEW + MOTION layer ═══
+// Core:    core/navigation.js · core/layout.js · core/interaction.js (implement api/api.d.ts — pure)
+// Config:  app/app.json · design: design/ · fake backend: app/fake-backend.js
+// This class only: dispatches intents, reads model state + queries, owns animation state.
+
+let E = 'ease';   // replaced by the design's motion.easing.standard once design/ is loaded
+/* lint:off harness — simulated devices (the preview frame, not app UI) */
+const PHONE_H = 720;
+const DEVICES = {
+  phone:   { label: 'Phone 360',    width: 360,  touch: true },
+  tablet:  { label: 'Tablet 720',   width: 720,  touch: true },
+  window:  { label: 'Window 720',   width: 720,  touch: false },
+  desktop: { label: 'Desktop 1100', width: 1100, touch: false }
+};
+/* lint:on */
+const G = { layout: 'compact', PW: DEVICES.phone.width, CW: DEVICES.phone.width, H: PHONE_H, side: null, touch: true, RAIL: 0 };
+const FF = () => ({ top: 0, left: 0, w: G.CW, h: G.H, r: 0, op: 1 });
+const CF = () => ({ top: G.AH || 0, left: 0, w: G.CW, h: G.H - (G.AH || 0), r: 0, op: 1 });
+const underIndex = st => { for (let i = st.length - 1; i >= 0; i--) if (st[i].page.config.kind === 'backdrop') return i; return 0; };
+const layoutHeight = (B, L) => L.reduce((s, id) => s + B.regions[id].height, 0);
+const topIn = (B, L, id) => layoutHeight(B, L.slice(0, L.indexOf(id)));
+const staysPut = (B, id) => { const C = B.layouts.concealed, X = B.layouts.expanded; return C.slice(0, C.indexOf(id)).join('|') === X.slice(0, X.indexOf(id)).join('|'); };
+function regionInstances(B, ex) {
+  const C = B.layouts.concealed, X = B.layouts.expanded, out = {};
+  for (const id in B.regions) {
+    const inC = C.includes(id), inX = X.includes(id); out[id] = [];
+    if (inC && inX && staysPut(B, id)) { out[id].push({ top: topIn(B, C, id), op: 1, ev: 'auto' }); continue; }
+    if (inC) out[id].push({ top: topIn(B, C, id), op: ex ? 0 : 1, ev: ex ? 'none' : 'auto' });
+    if (inX) out[id].push({ top: topIn(B, X, id), op: ex ? 1 : 0, ev: ex ? 'auto' : 'none' });
+  }
+  return out;
+}
+const BACK_KEYS = ['rActions', 'actBtns', 'actH', 'bhX', 'bhTitleOp', 'panelItems', 'panelH', 'panelRef', 'rHeader', 'rBasic', 'rPanel', 'bhLeft', 'bhRight', 'bhTitle', 'bhTitlePad', 'isFilters', 'isTabs', 'isSearch', 'filters', 'tabs', 'tabInd', 'query', 'hasQuery', 'onQuery', 'clearIx', 'searchHint', 'canBack', 'basicH', 'panelRows'];
+const SHELL_ACTIONS = ['copyLink'];   // shell actions this mockup implements (§20)
+// artwork for mock content: two colours from the item id (the backend has no images)
+/* lint:off fake backend artwork */
+const artCss = x => !x ? 'transparent' : String(x).startsWith('mock:') ? artOf(String(x).slice(5)) : 'center / cover no-repeat url("' + x + '")';
+const artOf = id => { let x = 0; for (const ch of String(id || '')) x = (x * 31 + ch.charCodeAt(0)) >>> 0; const h1 = x % 360, h2 = (h1 + 40 + (x >> 9) % 80) % 360; return 'linear-gradient(135deg, oklch(0.62 0.13 ' + h1 + '), oklch(0.42 0.11 ' + h2 + '))'; };
+/* lint:on */
+const INERT = {};   // not a control: an instance without resolve renders disabled
+const STUB_LISTS = ['rActions', 'actBtns', 'railTop', 'railBottom', 'carousels', 'panelItems', 'simToggles', 'railNav', 'rHeader', 'rBasic', 'rPanel', 'cards', 'genericBlocks', 'nav', 'layouts', 'stackInfo', 'historyList', 'log', 'filters', 'tabs', 'panelRows', 'bhLeft', 'bhRight', 'fhLeft', 'fhRight', 'ahLeft', 'ahRight'];
+
+async function loadModules() {
+  // plain ES modules via blob URLs; relative imports inside them are loaded the same way and rewritten
+  const blobs = {}, blobOf = url => blobs[url] || (blobs[url] = (async () => { let src = await (await fetch(url, { cache: 'no-store' })).text(); for (const m of [...src.matchAll(/(from\s*|import\s*\(\s*)(['"])(\.\.?\/[^'"]+)\2/g)]) src = src.split(m[2] + m[3] + m[2]).join(m[2] + await blobOf(new URL(m[3], url).href) + m[2]); return URL.createObjectURL(new Blob([src], { type: 'text/javascript' })); })());
+  const load = async p => import(await blobOf(new URL(p, location.href).href));
+  const [M, SM, Pl, P, IX, O, DL, MO, appCfg] = await Promise.all([load('./core/navigation.js'), load('./app/fake-backend.js'), load('./core/player.js'), load('./core/layout.js'), load('./core/interaction.js'), load('./design/overrides.js'), load('./design/load.js'), load('./platforms/web/motions.js'), import(URL.createObjectURL(new Blob([await (await fetch(new URL('./app/load-app.js', location.href).href, { cache: 'no-store' })).text()], { type: 'text/javascript' }))).then(m => m.loadApp(p => fetch(new URL('./' + p, location.href).href, { cache: 'no-store' }).then(r => r.text())))]);
+  const S = { ...SM, ...SM.bind(appCfg) };
+  const fileSpecs = await DL.loadDesignRaw(p => fetch(new URL('./design/' + p, location.href).href, { cache: 'no-store' }).then(r => r.text()));   // raw design; edits patch it, then extends is resolved
+  let specs = DL.resolveExtends(fileSpecs);
+  try { specs = DL.resolveExtends(O.applySpecs(fileSpecs, JSON.parse(localStorage.getItem(O.PATCH_KEY) || 'null'))); } catch (e) {}
+  return { M, S, Pl, P, IX, O, DL, MO, specs, fileSpecs };
+}
+
+class Component extends DCLogic {
+  state = { ready: false, layout: 'phone', log: ['start'], frontTopOverride: null, backOverride: null,
+            ovRect: null, ovInset: null, ahOp: 1, ahTrans: 'none', ft: null, ghost: null, frontTr: null, ax: null, ddOrigin: null, gScrolled: false, gTitle: '', gKey: null };
+  panelRef = React.createRef(); abBtnRef = React.createRef(); ovThumbRef = React.createRef(); ovScrollRef = React.createRef(); ovRef = React.createRef(); fcRef = React.createRef(); surfRef = React.createRef(); measured = {};
+  backRef = React.createRef(); railRef = React.createRef(); navBarRef = React.createRef(); nnRef = React.createRef(); nnCardRef = React.createRef();
+  splashBgRef = React.createRef(); splashLogoRef = React.createRef(); gateBgRef = React.createRef(); gateLogoRef = React.createRef(); gateTextRef = React.createRef();
+  // cover (splash / sign-in page) → app, choreography enterApp. The state changes at once; the cover stays drawn
+  // (state.entry) while its logo moves onto the app's logo and the layers come in: back, then front, then nav + peek.
+  // Leaving the app for a cover (sessionChanged signedIn false: its own rule) and any other kind (reduced: fade) go through coverFade.
+  enterApp(ev, cover, mid) {
+    const d = this.tr(ev);
+    if (cover === 'app' || !d || d.kind !== 'enterApp') return this.coverFade(ev, cover, mid);
+    this.mo.clear('cf'); this.cancelEntry();
+    this.setState({ cf: null, entry: { cover, gate: cover === 'gate' ? this.gateSnap : null } });
+    mid();
+    const logo = cover === 'splash' ? this.splashLogoRef : this.gateLogoRef;
+    this.afterCommit(() => this.runEntry(d, cover), () => !!logo.current);
+    // safety: never leave the cover up if the entry could not start
+    this.entryT = setTimeout(() => { this.pendingAnim = null; this.setState({ entry: null }, () => this.cancelEntry()); }, 1000);
+  }
+  runEntry(d, cover) {
+    clearTimeout(this.entryT);
+    const S = cover === 'splash', toGate = S && !!this.model.query.gate(this.ms, this.model.config);   // launched while signed out: splash → sign-in page
+    const shown = el => el && el.getBoundingClientRect().width > 0;
+    const target = toGate ? this.gateLogoRef.current : [...((this.screenRef.current && this.screenRef.current.querySelectorAll('[role="img"]')) || [])].find(shown);
+    const r = this.mo.enterApp('entry', d, { base: this.phoneRef.current, bg: (S ? this.splashBgRef : this.gateBgRef).current, text: S ? null : this.gateTextRef.current, logo: (S ? this.splashLogoRef : this.gateLogoRef).current, target, toGate,
+      back: this.backRef.current, front: [this.frontRef.current, this.surfRef.current, this.ovRef.current], side: [this.railRef.current], bottom: [this.navBarRef.current], peek: [this.nnRef.current, this.nnCardRef.current] });
+    this.entryHidden = r.hidden;
+    this.entryT = setTimeout(() => this.setState({ entry: null }, () => this.cancelEntry()), r.total);
+  }
+  cancelEntry() {
+    clearTimeout(this.entryT); this.mo && this.mo.cancel('entry');
+    if (this.entryHidden) { this.entryHidden.style.visibility = ''; this.entryHidden = null; }
+  }
+  // the front layer's shape in screen coordinates (clip-path): where an app-bar page's clip starts / ends
+  // an app-bar page's sheet in screen coordinates (page form with a sheet, 14.2): below its top row, sheet corners
+  sheetShape(page) {
+    const H = page && page.config.kind === 'appBar' && page.config.header, S = (H && H.slots) || {};
+    if (!H || !((S.bottom || []).length || (S.expanded || []).length)) return null;
+    const V = this.P.resolveVisuals(this.specs, H.component, 'enabled', { surface: 'appBar' }), r = (+V.sheetRadius || 0) + 'px';
+    return this.mo.clipShape(+V.topHeight || 0, r + ' ' + r, 0);
+  }
+  frontShape() {
+    const f = this.frontRef.current; if (!f) return this.mo.clipShape(0, null, 0);
+    const cs = getComputedStyle(f);
+    return this.mo.clipShape(f.offsetTop, cs.borderTopLeftRadius + ' ' + cs.borderTopRightRadius, 0);
+  }
+  // splash / sign-in gate ↔ app, fade through timed by choreography (launched / sessionChanged); out = 'splash' | 'gate' | 'app'
+  coverFade(ev, out, mid) { this.mo.cover('cf', this.tr(ev), { out, mid, set: cf => this.setState({ cf }) }); }
+  // AppConfig.launch: the shell reports 'launched' once state is restored and first data is in, after minMs
+  scheduleLaunch() {
+    clearTimeout(this.launchT);
+    const L = this.model.config.launch, model = this.model;
+    if (!L || this.ms.launch !== 'starting') return;
+    // the splash appears: state entering for one frame, then enabled (design: splash visuals + motion)
+    this.setState({ splashIn: false }, () => requestAnimationFrame(() => requestAnimationFrame(() => this.setState({ splashIn: true }))));
+    this.launchT = setTimeout(() => { if (this.model === model) this.enterApp({ type: 'launched' }, 'splash', () => this.dispatch({ type: 'launched' }, 'launched')); }, L.minMs || 0);
+  }
+  fx(role) { return this.mo.coverStyle(this.state.cf, role); }
+  // start element animations right after the commit that renders their end state, before it is painted
+  // (Web Animations on the real nodes — independent of how React batches the state changes)
+  afterCommit(run, ready) { this.pendingAnim = { run, ready }; }
+  cancelEx() { this.mo && this.mo.cancel('surface'); }
+  measuredFor(ps) { return this.measured[ps.config.id] || {}; }
+  screenRef = React.createRef(); scrollRef = React.createRef(); frontRef = React.createRef(); thumbRef = React.createRef(); phoneRef = React.createRef();
+  // motion: every duration / easing comes from the design's choreography (layout.transitionFor)
+  tr(ev) { return this.P.transitionFor(ev, this.specs, this.model ? this.ms.prefs : {}, {}); }
+  // motion timing: platforms/web/motions.js
+  parts(d) { const P = this.mo.timing(d); return { outMs: P.OUT, inMs: P.IN, easingOut: P.eo, easingIn: P.ei, scaleIn: P.sc }; }
+  msOf(d) { return this.mo.msOf(d); }
+  easeOf(d) { return this.mo.easeOf(d); }
+  get dur() { return this.specs ? this.msOf(this.tr({ type: 'expandedChanged' })) : 0; }
+  get ease() { return this.specs ? this.easeOf(this.tr({ type: 'expandedChanged' })) : E; }
+  get T() { if (!this.specs) return 0; const d = this.tr({ type: 'pushed', kind: 'appBar' }); return d.kind === 'expandSurface' ? this.parts(d).inMs : this.msOf(d); }
+  get reduced() { return !!(this.model && this.ms.prefs.reducedMotion); }
+
+  async componentDidMount() {
+    const { M, S, Pl, P, IX, O, DL, MO, specs, fileSpecs } = await loadModules();
+    this.mo = MO.createMotions({ fallbackEasing: () => this.specs && this.specs.tokens['motion.easing.standard'] });
+    this.M = M; this.S = S; this.P = P; this.IX = IX; this.O = O; this.DL = DL; this.specs = specs; this.fileSpecs = fileSpecs; E = specs.tokens['motion.easing.standard'] || E;
+    this.dataSrc = { get: (r, p) => this.getData(r, p) };
+    this.player = Pl.createPlayer();
+    this.model = M.createModel(S.config, DEVICES.phone, this.dataSrc, this.player);
+    this.sim = { offline: false, slow: false, fail: false };
+    this.loaded = new Set(); this.cache = {};
+    this.tick = setInterval(() => this.playerTick(), 1000);
+    this.onKey = e => this.handleKey(e);
+    window.addEventListener('keydown', this.onKey);
+    this.onStorage = e => { if (e.key === this.O.PATCH_KEY) { try { this.specs = this.DL.resolveExtends(this.O.applySpecs(this.fileSpecs, e.newValue ? JSON.parse(e.newValue) : null)); } catch (x) {} this.forceUpdate(); } };
+    window.addEventListener('storage', this.onStorage);
+    this.setState({ ready: true });
+    this.scheduleLaunch();
+  }
+  componentWillUnmount() { clearTimeout(this.launchT); this.cancelEntry(); clearInterval(this.tick); window.removeEventListener('keydown', this.onKey); window.removeEventListener('storage', this.onStorage); }
+
+  // ── simulated data layer (offline / slow / failing) ────
+  getData(ref, params = {}) {
+    const key = ref + JSON.stringify(params), sim = this.sim;
+    if (sim.fail) return { status: 'error', items: [], error: { message: 'Server error', retryable: true } };
+    if (sim.offline) return this.cache[key] ? { status: 'ready', items: this.cache[key], stale: true } : { status: 'error', items: [], error: { message: 'Offline', retryable: false } };
+    if (sim.slow && !this.loaded.has(key)) {
+      if (!this.pending) this.pending = new Set();
+      if (!this.pending.has(key)) { this.pending.add(key); setTimeout(() => { this.pending.delete(key); this.loaded.add(key); this.forceUpdate(); }, 900); }
+      return { status: 'loading', items: [] };
+    }
+    const d = this.S.data.get(ref, params);
+    this.loaded.add(key); this.cache[key] = d.items;
+    return d;
+  }
+  // ── side effects of model events (shell responsibilities) ──
+  handleEvents(ev) {
+    ev.forEach(e => {
+      if (e.type === 'retryRequested') { this.loaded.delete(e.dataSource + JSON.stringify(e.params || {})); }
+      if (e.type === 'focusRestore' && e.element) { const el = document.getElementById(e.element); if (el) el.focus(); }
+      if (e.type === 'overlayOpened') {
+        const o = this.ms.overlays.find(x => x.spec.id === e.id);
+        if (o && o.spec.timeoutMs) setTimeout(() => { if (this.ms.overlays.some(x => x.spec.id === e.id)) this.dispatch({ type: 'closeOverlay', id: e.id }, 'snackbar timeout'); }, o.spec.timeoutMs);
+      }
+    });
+  }
+  // ── player shell: executes commands, reports facts ─────
+  execPlayer(cmds) {
+    cmds.forEach(c => {
+      if (c.type === 'load') setTimeout(() => { this.player.dispatch({ type: 'reported', fact: { kind: 'ready' } }); if (!c.autoplay) this.player.dispatch({ type: 'pause' }); this.forceUpdate(); }, 200);
+    });
+    this.forceUpdate();
+  }
+  // choreography 'queued': the item's image drops into the visible peek (motion in platforms/web/motions.js)
+  queuedMotion(ev, src) {
+    const shown = el => el && el.getBoundingClientRect().height > 0 && getComputedStyle(el).visibility !== 'hidden';
+    const peek = [this.nnCardRef.current, this.nnRef.current].map(x => x && x.querySelector('[data-peek="art"]') && x.querySelector('[data-peek="art"]').closest('[data-peek-root]')).find(shown);
+    requestAnimationFrame(() => this.mo.dropIntoPeek(this.tr(ev), ev.position, { base: this.phoneRef.current, src, peek: peek || null }));
+  }
+  playerCmd(i) { this.execPlayer(this.player.dispatch(i)); }
+  playerTick() {
+    if (!this.player) return;
+    const s = this.player.getState(), t = this.player.current();
+    if (s.status !== 'playing' || !t) return;
+    const pos = s.positionMs + 1000;
+    if (t.durationMs && pos >= t.durationMs) this.execPlayer(this.player.dispatch({ type: 'reported', fact: { kind: 'ended' } }));
+    else { this.player.dispatch({ type: 'reported', fact: { kind: 'position', ms: pos } }); this.forceUpdate(); }
+  }
+  // ── keyboard shortcuts (pointer devices) ───────────────
+  handleKey(e) {
+    if (!this.model || /input|textarea/i.test((e.target && e.target.tagName) || '')) return;
+    const keys = (e.metaKey || e.ctrlKey ? 'Mod+' : '') + (e.key.length === 1 ? e.key.toUpperCase() : e.key);
+    const i = this.model.query.intentForShortcut(this.ms, this.model.config, keys);
+    if (!i) return;
+    e.preventDefault();
+    if (i.type === 'back') this.back();
+    else if (i.type === 'switchDeck') this.switchDeck(i.deck);
+    else if (i.type === 'openLayer') this.openLayer(i.layer);
+    else this.dispatch(i, 'shortcut · ' + keys);
+  }
+  restart() {
+    const snap = this.model.query.snapshot(this.ms, this.model.config), d = DEVICES[this.state.layout];
+    this.model = this.M.createModel(this.S.config, { width: d.width, touch: d.touch }, this.dataSrc, this.player);
+    this.model.dispatch({ type: 'restore', snapshot: JSON.parse(JSON.stringify(snap)) });
+    this.setState({ ovRect: null, ovInset: null, backOverride: null, frontTopOverride: null, ft: null, cf: null, entry: null });
+    this.cancelEntry();
+    this.log('restart · restored snapshot');
+    this.scheduleLaunch();
+  }
+  // placeholder forms pulse while shown (design: <item>.motion.placeholder), staggered down the rows
+  syncPulse() {
+    const root = this.screenRef.current; if (!root || !this.mo) return;
+    this.mo.pulse([...root.querySelectorAll('[data-ph]')], this.phMotion);
+  }
+  componentDidUpdate() { this.didUpdate(); const q = this.renderQueue; if (q && q.length) { this.renderQueue = []; q.forEach(f => f()); } }
+  didUpdate() {
+    this.syncPulse();
+    { const bw = this.abBtnRef.current ? this.abBtnRef.current.offsetWidth : 0; if (bw !== (this.abBtnW || 0)) { this.abBtnW = bw; this.forceUpdate(); } }
+    if (this.pendingAnim && this.pendingAnim.ready()) { const p = this.pendingAnim; this.pendingAnim = null; p.run(); }
+    const pe = this.panelRef.current;
+    if (pe && this.model && !this.state.backOverride) {
+      const id = this.cur().ps.config.id, hgt = pe.offsetHeight, m = this.measured[id] || {};
+      if (m.panel !== hgt) { this.measured = { ...this.measured, [id]: { ...m, panel: hgt } }; this.forceUpdate(); }
+    }
+    if (!this.model) return;
+    { const ov = this.ovScrollRef.current, ap = this.model.query.currentPage(this.ms);
+      if (ov && ap && ap.config.kind === 'appBar') { this.bindCollapse(ov, 'ov'); this.mo.restoreScroll(ov, Math.min(this.P.contentOffset(ap, this.specs), Math.max(0, ov.scrollHeight - ov.clientHeight))); } }
+    const el = this.scrollRef.current;
+    if (!el) return;
+    this.bindCollapse(el, 'front');
+    const want = Math.min(this.P.contentOffset(this.cur().ps, this.specs), Math.max(0, el.scrollHeight - el.clientHeight));   // 15.0: scroll is collapse-first; the content holds only what is past the collapse
+    if (this.smoothScroll) { this.smoothScroll = false; if (Math.abs(el.scrollTop - want) > 1) el.scrollTo({ top: want, behavior: this.reduced ? 'auto' : 'smooth' }); }
+    else if (this.mo.restoreScroll(el, want)) this.quietScroll = true;
+    this.track(el);
+  }
+
+  // ── model access ───────────────────────────────────────
+  get ms() { return this.model.getState(); }
+  cur() {
+    const s = this.ms, stack = s.decks[s.activeDeck].stack, ui = underIndex(stack);
+    return { s, stack, ui, ps: stack[ui].page, top: stack[stack.length - 1] };
+  }
+  log(msg) { this.setState(st => ({ log: [msg, ...st.log].slice(0, 12) })); }
+  dispatch(intent, msg) { if (this.lastMove === 'scroll') this.lastMove = null; const ev = this.model.dispatch(intent); if (msg) this.log(msg); this.handleEvents(ev); this.forceUpdate(); return ev; }
+
+  // ── geometry (view) ────────────────────────────────────
+  // sizes come from layout (config + design tokens); the shell keeps none of its own
+  geometry() {
+    const D = DEVICES[this.state.layout], s = this.ms, c = this.model.config, q = this.model.query, g = this.pgeom();
+    const S = c.layers.find(L => L.presentation.kind === 'sheet');
+    G.PW = D.width; G.touch = D.touch; G.layout = q.layoutClass(s, c); G.side = g.side;
+    G.RAIL = g.railWidth; G.CW = g.contentWidth; G.H = g.contentHeight; G.NAV = g.navigation;
+    G.SW = S ? S.presentation.wide.width : 0;
+    G.NH = +(this.P.resolveVisuals(this.specs, 'navBar', 'enabled').height || 0);
+  }
+  pgeom() { return this.P.geometry(this.ms, this.model.config, this.model.query, this.specs); }
+  lenv() { return this.P.env(this.ms, this.model.config, this.model.query); }
+  frontLayerView(ps) { return this.P.frontLayer(ps, this.pgeom(), this.specs, { env: this.lenv(), measured: this.measuredFor(ps) }, this.props.peek ?? 0); }
+  frontTopFor(ps) { return this.frontLayerView(ps).top; }
+  rectIn(el, base) { return this.mo.rectIn(el, base); }
+  findItem(id) {
+    const sc = this.scrollRef.current;
+    if (!sc || !id) return null;
+    const el = sc.querySelector('[data-item-id="' + CSS.escape(id) + '"]');
+    if (!el) return null;
+    const a = sc.getBoundingClientRect(), r = el.getBoundingClientRect(), row = el.parentElement && el.parentElement.getBoundingClientRect();
+    if (row && (r.right < row.left || r.left > row.right)) return null;
+    return r.bottom < a.top || r.top > a.bottom ? null : el;
+  }
+  insetFrom(r) { return { t: Math.max(0, r.top), l: Math.max(0, r.left), r: Math.max(0, G.CW - r.left - r.w), b: Math.max(0, G.H - r.top - r.h) }; }
+  maxR(x, y, w, h) { return Math.ceil(Math.max(Math.hypot(x, y), Math.hypot(w - x, y), Math.hypot(x, h - y), Math.hypot(w - x, h - y))); }
+  // collapse-first scroll (15.0): while the page's bar is (partly) expanded, wheel / touch input collapses or expands it instead
+  // of scrolling the content (the page grows); native scrolling takes over once the bar has collapsed. kind: 'front' | 'ov'
+  bindCollapse(el, kind) {
+    if (!el || el._cf) return; el._cf = true;
+    const page = () => kind === 'front' ? this.cur().ps : this.model.query.currentPage(this.ms);
+    let y = null, manual = false;
+    const take = (dy, e) => {
+      if (!this.model || !dy) return false;
+      const pg = page(); if (!pg || (kind === 'ov' && pg.config.kind !== 'appBar')) return false;
+      const d = this.P.barView(pg, this.specs).distance; if (!d) return false;
+      const S = +this.M.getField(pg, kind === 'front' ? 'front.scroll' : 'scroll') || 0, c = Math.min(S, d);
+      let top;
+      if (dy > 0 && c < d) top = Math.min(d, c + dy);
+      else if (dy < 0 && el.scrollTop <= 0 && c > 0) top = Math.max(0, c + dy);
+      else return false;
+      if (e.cancelable) e.preventDefault();
+      this.collapseScroll(top); return true;
+    };
+    el.addEventListener('wheel', e => take(e.deltaY * (e.deltaMode === 1 ? el.clientHeight / 20 : e.deltaMode === 2 ? el.clientHeight : 1), e), { passive: false });
+    el.addEventListener('touchstart', e => { y = e.touches[0].clientY; manual = false; }, { passive: true });
+    el.addEventListener('touchmove', e => {
+      if (y == null) return; const ny = e.touches[0].clientY, dy = y - ny; y = ny;
+      if (take(dy, e)) { manual = true; return; }
+      if (manual && e.cancelable) { e.preventDefault(); el.scrollTop += dy; }   // a gesture that began collapsing the bar keeps scrolling by hand
+    }, { passive: false });
+    el.addEventListener('touchend', () => { y = null; manual = false; }, { passive: true });
+  }
+  collapseScroll(top) {
+    this.model.dispatch({ type: 'scroll', top });
+    cancelAnimationFrame(this.cfRaf); this.cfRaf = requestAnimationFrame(() => { this.lastMove = 'scroll'; this.forceUpdate(() => { if (this.lastMove === 'scroll') this.lastMove = null; }); });
+  }
+  // the page's scroll from a native content scroll: whatever has collapsed + the content offset
+  pageScroll(pg, el, field) { const d = this.P.barView(pg, this.specs).distance; return (d ? Math.min(+this.M.getField(pg, field) || 0, d) : 0) + el.scrollTop; }
+  track(el) {
+    const top = el.scrollTop; let t = '';
+    el.querySelectorAll('[data-title]').forEach(n => { if (n.offsetTop <= top + 48) t = n.getAttribute('data-title'); });
+    const sc = top > 0 && !!t, key = this.cur().ps.config.id;
+    if (sc !== this.state.gScrolled || t !== this.state.gTitle || key !== this.state.gKey) this.setState({ gScrolled: sc, gTitle: t, gKey: key });
+  }
+  showThumb(el, thumb, clipTop = 0) {   // clipTop: the part of the scroller hidden under a bar (app-bar page sheet)
+    const t = (thumb || this.thumbRef).current; if (!t) return;
+    if (!thumb && this.quietScroll) { this.quietScroll = false; return; }
+    const { scrollTop, scrollHeight } = el, clientHeight = el.clientHeight - clipTop, offsetTop = el.offsetTop + clipTop;
+    if (scrollHeight <= clientHeight + 1) { t.style.opacity = '0'; return; }
+    const V = this.P.resolveVisuals(this.specs, 'frontLayer', 'enabled', {}), inset = +V.scrollThumbInset || 0, th = Math.max(+V.scrollThumbMin || 0, clientHeight * clientHeight / scrollHeight);
+    t.style.top = (offsetTop + inset + (clientHeight - th - 2 * inset) * scrollTop / (scrollHeight - clientHeight)) + 'px';
+    t.style.height = th + 'px';
+    this.mo.flash(thumb ? 'thumb2' : 'thumb', t, { inMs: +V.scrollThumbInMs || 0, holdMs: +V.scrollThumbHoldMs || 0, outMs: +V.scrollThumbOutMs || 0 });
+  }
+  // fade through, timed by the event's choreography rule (fadeThrough descriptor, or any timed descriptor split by motion.fadeThrough.split)
+  fadeThrough(scope, mid, ev = { type: 'deckSwitched' }) { this.mo.phased('ft', this.tr(ev), { mid, set: st => this.setState({ ft: st && { scope, ...st } }) }); }
+
+  // a param change, with the motion its param names (choreography: paramChanged · motion) — slide, fade through or instant
+  paramChange(ps, intent, label) {
+    const go = () => this.dispatch(intent, label || 'params');
+    if (!ps) return go();
+    const name = intent.name || Object.keys(intent.values || {})[0], S = (ps.config.params || {})[name] || {};
+    let dir = 0;
+    if (S.axis && intent.type === 'setParams') { const o = this.model.query.paramOptions(this.ms, this.model.config, ps, name).map(x => x.value); dir = Math.sign(o.indexOf(intent.values[name]) - o.indexOf(this.M.getField(ps, 'params.' + name))); }
+    const d = this.P.transitionFor({ type: 'paramChanged', name, motion: S.motion || 'default', direction: dir }, this.specs, this.ms.prefs, {});
+    if (!d || d.kind === 'instant' || (S.axis && !dir && d.kind === 'sharedAxis')) return go();
+    this.axisSwitch(d, go);
+  }
+  // content switch (sharedAxis slides; fadeThrough fades in place; reduced: fade)
+  axisSwitch(d, mid) {
+    const rtl = this.model.query.dir(this.ms, this.model.config) === 'rtl';   // directions are logical: mirror in RTL
+    const dx = d && d.kind === 'sharedAxis' && d.axis === 'x' ? d.distance * d.direction * (rtl ? -1 : 1) : 0;
+    this.mo.phased('ax', d, { mid, dx, set: st => this.setState({ ax: st && { op: st.op, tx: st.tx, tr: st.tr } }) });
+  }
+
+  // the page template an item opens (AppConfig.pages)
+  tplOf(it) { return it && it.opens && it.opens.template ? (this.model.config.pages || {})[it.opens.template] || null : null; }
+  // ── intents with motion ────────────────────────────────
+  openItem(item, e) {
+    this.lastMove = null;   // a scroll-driven render must not leave the motion transitions off
+    const { ps } = this.cur(), deck = this.ms.activeDeck, T = this.T;
+    const intent = { type: 'open', item, origin: { deck } };
+    if (this.reduced) return this.dispatch(intent, 'open (reduced motion) → ' + (item.title || item.id));
+    const TP = this.tplOf(item);
+    if (TP && TP.kind === 'backdrop') {   // choreography expandFromItem (motions.js detailTransition)
+      const src = this.mo.sharedIn(e && e.currentTarget && e.currentTarget.closest('[data-item-id]'));
+      this.detailMove({ type: 'pushed', kind: 'backdrop' }, intent, 'open [backdrop] → ' + (item.title || item.id), src,
+        () => this.mo.sharedIn(this.backRef.current, 'image', 'detail'),
+        () => { const B = this.backRef.current; return ['header', 'actions', 'basic'].map(k => B && B.querySelector('[data-enter="' + k + '"]')); });
+      return;
+    }
+    const ev = { type: 'pushed', kind: 'appBar' }; let committed = false;
+    { const src = this.mo.sharedIn(e && e.currentTarget && e.currentTarget.closest('[data-item-id]'));
+      this.mo.sharedFlight(this.tr(ev), src, this.phoneRef.current, () => committed && this.mo.sharedIn(this.ovRef.current, 'image', 'detail')); }
+    this.expandTo(intent, 'open [appBar] → ' + item.title); committed = true;
+  }
+  // app-bar child (choreography expandSurface), one continuous motion. The front layer stays where it is; the page and a
+  // surface beneath the front layer are clipped to one shape that animates from the front layer's rect + corners to the
+  // content area with corners cornerTo (ms). Within it the front content fades out (0 → out) and the page fades in (out → out + in).
+  expandTo(intent, label) {
+    const d = this.tr({ type: 'pushed', kind: 'appBar' });
+    if (this.reduced || d.kind !== 'expandSurface') return this.dispatch(intent, label);
+    const from = this.frontShape(), to = this.mo.clipShape(0, null, d.cornerTo);
+    clearTimeout(this.exT); this.cancelEx();
+    this.afterCommit(() => this.mo.expandSurface('surface', d, { surface: this.surfRef.current, page: this.ovRef.current, content: this.fcRef.current, from, to, surfaceTo: this.sheetShape(this.cur().top.page) }), () => !!this.ovRef.current && !!this.surfRef.current);
+    this.setState({ ghost: null, ovRect: null, ovInset: null, ahOp: 1, ahTrans: 'none' });
+    this.dispatch(intent, label);
+  }
+  // the reverse, also one motion: the page fades out (0 → out) while the clip shrinks back to the front layer's shape (ms)
+  // and the front content fades in (out → out + in). The popped page stays drawn (ghost) until it has faded.
+  // cross: the pop lands on another deck (back to the start deck, back across decks, nav switch): the page still collapses
+  // into the destination's front layer, which stays put (no expand move) while the page's clip lands on it.
+  collapseFrom(intent, label, cross) {
+    const d = this.tr({ type: 'popped', kind: 'appBar' });
+    if (this.reduced || d.kind !== 'expandSurface') return this.dispatch(intent, label);
+    const F = this.parts(d), total = Math.max(d.ms, F.outMs + F.inMs), ghost = this.cur().top.page, to = this.mo.clipShape(0, null, d.cornerTo);
+    clearTimeout(this.exT); this.cancelEx();
+    const from = this.cur().top.openedFrom; let committed = false;   // the detail image flies back into the item it was opened from (choreography shared)
+    this.mo.sharedFlight(d, this.mo.sharedIn(this.ovRef.current, 'image', 'detail'), this.phoneRef.current, () => committed && from && this.scrollRef.current ? this.mo.sharedIn(this.scrollRef.current.querySelector('[data-item-id="' + CSS.escape(from) + '"]')) : null);
+    this.afterCommit(() => this.mo.expandSurface('surface', d, { surface: this.surfRef.current, page: this.ovRef.current, content: this.fcRef.current, from: this.frontShape(), to, surfaceTo: this.sheetShape(ghost), reverse: true }), () => !!this.state.ghost && !!this.ovRef.current && this.cur().top.page !== ghost);
+    this.setState({ ghost, ovRect: null, ovInset: null, ahOp: 1, ahTrans: 'none', ...(cross ? { frontTr: 'none', backOverride: null } : {}) });
+    this.dispatch(intent, label); committed = true;
+    this.exT = setTimeout(() => this.setState({ ghost: null, ...(cross ? { frontTr: null } : {}) }, () => this.cancelEx()), total);
+  }
+  // pop the active deck with motion; intent = { type: 'back' } or { type: 'up', target }
+  popDeck(intent, label) {
+    const { top } = this.cur();
+    if (this.reduced) return this.dispatch(intent, label);
+    if (top.page.config.kind === 'appBar') return this.collapseFrom(intent, label);
+    // choreography expandFromItem (popped, motions.js detailTransition): the detail image flies back into the item it was opened from
+    const from = top.openedFrom;
+    this.detailMove({ type: 'popped', kind: 'backdrop' }, intent, label, this.mo.sharedIn(this.backRef.current, 'image', 'detail'),
+      () => from && this.scrollRef.current ? this.mo.sharedIn(this.scrollRef.current.querySelector('[data-item-id="' + CSS.escape(from) + '"]')) : null, null);
+  }
+  // a detail push / pop: the motion player runs it; the shell only commits (front layer's own CSS transition off meanwhile —
+  // the player moves it) and hands over the elements
+  detailMove(ev, intent, label, src, target, enter) {
+    const d = this.tr(ev);
+    if (d.kind !== 'expandFromItem') return this.dispatch(intent, label);
+    clearTimeout(this.dmT);
+    const total = this.mo.detailTransition('detail', d, { base: this.phoneRef.current, back: this.backRef.current, front: this.frontRef.current, content: this.fcRef.current, src },
+      after => { this.renderQueue = [...(this.renderQueue || []), after]; this.setState({ frontTr: 'none', ft: null }); this.dispatch(intent, label); }, target, enter);
+    this.dmT = setTimeout(() => this.setState({ frontTr: null }), total);
+  }
+  back() {
+    const a = this.model.query.backAction(this.ms, this.model.config);
+    const label = 'back · ' + a, fromAppBar = !this.reduced && this.cur().top.page.config.kind === 'appBar';
+    if (a === 'pop') return this.popDeck({ type: 'back' }, label);
+    if (a === 'startDeck' && fromAppBar) return this.collapseFrom({ type: 'back' }, label, true);
+    if (a === 'startDeck') return this.fadeThrough('all', () => { this.dispatch({ type: 'back' }, label); this.setState({ ovRect: null, ovInset: null }); });
+    if (a === 'undoRecord') {
+      // peek the record the model will undo, to pick the matching motion
+      const s = this.ms, r = (() => {
+        for (let k = s.history.length - 1; k >= 0; k--) {
+          const x = s.history[k];
+          if (x.kind === 'push' && s.decks[x.deck].stack.length < 2) continue;
+          if (x.kind === 'layerOpen' && !s.layers[x.layer].open) continue;
+          if (x.kind === 'layerPush' && s.layers[x.layer].stack.length < 2) continue;
+          return x;
+        }
+      })();
+      if (r && r.kind === 'push' && r.deck === s.activeDeck && r.prevDeck === r.deck) return this.popDeck({ type: 'back' }, label + ' · pop');
+      if (r && (r.kind === 'deckSwitch' || (r.kind === 'push' && r.prevDeck !== r.deck)) && fromAppBar) return this.collapseFrom({ type: 'back' }, label + ' · ' + r.kind, true);
+      if (r && (r.kind === 'deckSwitch' || (r.kind === 'push' && r.prevDeck !== r.deck)))
+        return this.fadeThrough('all', () => { this.dispatch({ type: 'back' }, label + ' · ' + r.kind); this.setState({ ovRect: null, ovInset: null, backOverride: null }); });
+    }
+    const ev = this.dispatch({ type: 'back' }, label);
+    if (ev.some(x => x.type === 'deckSwitched')) this.setState({ ovRect: null, ovInset: null, backOverride: null });
+  }
+  up() { const deck = this.ms.activeDeck; this.popDeck({ type: 'up', target: { deck } }, 'up · ' + deck); }
+  switchDeck(id) {
+    if (id === this.ms.activeDeck) {
+      if (this.ms.decks[id].stack.length > 1) return this.popDeck({ type: 'reselectDeck', deck: id }, 'reselect · ' + id);
+      this.smoothScroll = true;
+      return this.dispatch({ type: 'reselectDeck', deck: id }, 'reselect · ' + id + ' (at base → policy)');
+    }
+    if (!this.reduced && this.cur().top.page.config.kind === 'appBar') return this.collapseFrom({ type: 'switchDeck', deck: id }, 'switchDeck → ' + id, true);
+    this.fadeThrough('all', () => { this.dispatch({ type: 'switchDeck', deck: id }, 'switchDeck → ' + id); this.setState({ ovRect: null, ovInset: null, backOverride: null }); });
+  }
+  setExpanded(v, via) { this.lastMove = 'expanded'; this.dispatch({ type: 'setExpanded', expanded: v }, (v ? 'expand' : 'conceal') + ' · ' + via); }
+  openLayer(id, e) {
+    if (id === 'Dedede' && e && e.currentTarget && this.phoneRef.current) {
+      const r = this.rectIn(e.currentTarget, this.phoneRef.current);
+      this.setState({ ddOrigin: { x: r.left + r.w / 2, y: r.top + r.h / 2 } });
+    }
+    this.dispatch({ type: 'openLayer', layer: id }, 'openLayer · ' + id);
+  }
+  closeLayer(id) { this.dispatch({ type: 'closeLayer', layer: id }, 'closeLayer · ' + id); }
+  focus(target) { if (this.ms.focus !== target) this.dispatch({ type: 'focus', target }); }
+
+  sp(...a) { return this.model.query.slotPath(...a); }   // placement identity (api §1)
+
+  // ── §20 interactive components: props for one placed instance (state lives in the instance, keyed by id = slot path)
+  // which surface a slot path sits on (resolves the component's colour roles)
+  surfaceOf(id) {
+    const [surface, , slot = ''] = id.split('/'), [kind, name] = surface.split(':');
+    if (kind === 'deck') return slot.startsWith('back.') ? 'backLayer' : slot.startsWith('front.') ? 'frontLayer' : this.surfaceOfTheme(slot.startsWith('header.bottom') ? 'appbottom' : slot.startsWith('header.') ? 'appbar' : '');
+    if (kind === 'layer') { const L = this.model.config.layers.find(l => l.id === name); return L && L.presentation.kind === 'sheet' ? (G.layout === 'wide' ? 'sideSheet' : 'bottomSheet') : 'appBar'; }
+    if (kind === 'peek') return slot.startsWith('card') ? 'peekCard' : 'bottomSheet';
+    if (kind === 'nav') return slot.startsWith('rail') ? 'navRail' : 'navBar';
+    if (kind === 'overlay') { const o = this.ms.overlays.find(x => x.spec.id === name); return o && o.spec.kind === 'snackbar' ? 'snackbar' : 'dialog'; }
+    if (kind === 'gate') return 'signInPage';
+    return 'appBar';
+  }
+  ix(id, action, run, o = {}) {
+    const comp = o.component || 'button', T = this.specs.tokens, surface = o.surface || this.surfaceOf(id), variant = o.variant || {};
+    return {
+      id, label: o.label || '', dim: o.op ?? 1,
+      resolve: input => this.IX.resolveInteraction(action, input, { model: this.model, player: this.player, shellActions: SHELL_ACTIONS }, o.facts),
+      look: (st, status) => { const v = this.P.resolveVisuals(this.specs, comp, st, { surface, variant, env: this.lenv(), status, page: o.page || null }); if (this.reduced) v.ripple = null; return v; },
+      activate: run || undefined,
+      motion: this.P.motionFor(this.specs, comp, 'press', this.model ? this.ms.prefs : {}),
+      motions: Object.fromEntries(['stateLayer', 'rotation', 'levels'].map(k => [k, this.P.motionFor(this.specs, comp, k, this.model ? this.ms.prefs : {})]))
+    };
+  }
+  // a bar ref (roles bar / frontHeader / appBar / peek) → its slots
+  bp(b) { const S = (b && b.slots) || {}; return { start: S.start || [], title: (S.title || [])[0] || null, end: S.end || [], expanded: S.expanded || [], fab: S.fab || [] }; }
+  // the FAB of a bar's fab slot: the first ref whose when holds (several share one place; the icon morphs between them)
+  fabFor(bar, page, surface, top) {
+    const q = this.model.query, s = this.ms, c = this.model.config, list = q.expandSlots(s, c, this.bp(bar).fab, page);
+    for (let k = 0; k < list.length; k++) { const r = q.resolveRef(s, c, list[k].ref, page, this.sp(surface, page.config.id, 'header.fab', 0), list[k].scope); if (!r.visible) continue;
+      return { show: true, top, icon: r.props.icon || '', vis: this.P.resolveVisuals(this.specs, 'fab', 'enabled', { variant: r.variant || {} }), ix: this.ix(r.key, r.action || null, e => this.runAction(r.action, e), { component: 'fab', label: r.props.label || '' }) }; }
+    return { show: false, top: 0, icon: '', vis: {}, ix: INERT };
+  }
+  barSpan(theme, page, self) {
+    if (theme === 'appbottom') {   // the app bar's bottom row: the field spans the row except its buttons
+      const V = this.P.resolveVisuals(this.specs, 'appBar', 'enabled', {});
+      const bw = this.abBtnW || 0;   // the row's buttons, measured after layout
+      return G.CW - 2 * (+V.bottomRowPadX || 0) - (bw ? bw + (+V.bottomRowGap || 0) : 0) - 2 * (+this.P.resolveVisuals(this.specs, 'localSearch', 'enabled', {}).padX || 0);
+    }
+    const q = this.model.query, cfg = this.model.config, bar = theme === 'front' ? page.config.front.header : theme === 'back' ? page.config.back.regions.header.bar : page.config.header;
+    const B = this.bp(bar), RVc = (id, variant) => this.P.resolveVisuals(this.specs, id, 'enabled', { variant: variant || {} }), vis = r => !r.when || q.condition(this.ms, cfg, r.when, page);
+    const inset = +RVc(theme === 'front' ? 'frontHeader' : theme === 'back' ? 'header' : 'appBar').spanInset || 0;
+    const others = [...B.start].filter(r => r && !r.repeat && r.component !== 'morph' && r.component !== 'localSearch' && vis(r)).reduce((w, r) => { const V = RVc(r.component, r.variant); return w + (+(V.slotWidth ?? V.size) || 0); }, 0);
+    return G.CW - inset - others;
+  }
+  // FAB inset from the end edge: centred under the bar's last visible end item
+  fabEnd(list, page, pad) {
+    const q = this.model.query, refs = q.expandSlots(this.ms, this.model.config, list || [], page).map(x => x.ref).filter(r => !r.when || q.condition(this.ms, this.model.config, r.when, page)), r = refs[refs.length - 1];
+    if (!r) return pad;
+    const RVc = (id, variant) => this.P.resolveVisuals(this.specs, id, 'enabled', { variant: variant || {} }), fab = +RVc('fab', { size: 'md' }).size || 0;
+    if (r.component === 'morph' || r.component === 'localSearch') { const fr = ((r.slots || {}).from || [])[0], b = fr ? +RVc(fr.component, fr.variant).size || 0 : fab; return pad + (+RVc('localSearch').padX || 0) + (b - fab) / 2; }   // the closed morph: its button inside the field's padding
+    return pad + ((+RVc(r.component, r.variant).size || fab) - fab) / 2;
+  }
+  // ── header items ───────────────────────────────────────
+  // the sheet's peek shows what is playing (shell: the player state isn't reachable from config refs)
+  peekTitle() { const t = this.player && this.player.current(); return t ? t.title : this.model.query.text(this.ms, this.model.config, this.model.config.layers.find(l => l.id === 'nowPlaying').name); }
+  peekSub() {
+    const t = this.player && this.player.current(), s = this.player && this.player.getState();
+    if (!t) return this.model.query.text(this.ms, this.model.config, 'player.nothing');
+    if (t.subtitle) return t.subtitle;
+    const mm = ms => Math.floor(ms / 60000) + ':' + String(Math.floor(ms / 1000) % 60).padStart(2, '0');
+    return (s.status === 'playing' ? '▶ ' : s.status === 'loading' ? '… ' : '❚❚ ') + mm(s.positionMs) + ' / ' + mm(t.durationMs || 0) + (t.id.includes(' · ') ? ' · ' + t.id.split(' · ').slice(1).join(' · ') : '');
+  }
+  // header slots: config ComponentRefs resolved by the core; this shell maps component ids to its own drawing
+  // the surface a header row's items sit on (design providers give their colours): the app bar page form's top row is on
+  // back-layer colours, its bottom row on the front-layer-coloured sheet (14.2)
+  surfaceOfTheme(theme) { return theme === 'back' || theme === 'appbar' ? 'backLayer' : theme === 'front' || theme === 'appbottom' ? 'frontLayer' : 'appBar'; }
+  hItems(list, theme, page, side) {
+    const q = this.model.query, s = this.ms, c = this.model.config, dur = this.dur;
+    const KIND = { logo: 'isLogo', iconButton: 'isButton', viewSwitch: 'isButton', caret: 'isButton', symbol: 'isIcon', label: 'isText', localSearch: 'isFind', morph: 'isFind' };
+    return q.expandSlots(s, c, list || [], page).map(({ ref, scope }, idx) => {
+      const path = this.sp(page ? 'deck:' + s.activeDeck : 'peek', page ? page.config.id : null, (theme === 'back' ? 'back.header.' : theme === 'front' ? 'front.header.' : 'header.') + side, idx);   // appbottom: header.bottom
+      const r = q.resolveRef(s, c, ref, page, path, scope);
+      const v = { isLogo: false, isButton: false, isIcon: false, isText: false, dur, icon: r.props.icon || '', text: r.props.text || '',
+        ...(() => { const RV = this.P.resolveVisuals(this.specs, r.component, 'enabled', { variant: r.variant || {} }), off = +(RV.offsetStart || 0); return { maxW: +RV.slotMaxWidth || 0, ...(off ? { pos: 'absolute', absX: off + 'px', absY: (+RV.offsetTop || 0) + 'px' } : { pos: 'relative', absX: 'auto', absY: 'auto' }) }; })() };
+      if (KIND[r.component]) v[KIND[r.component]] = true;
+      v.vis = this.P.resolveVisuals(this.specs, r.component, 'enabled', { surface: this.surfaceOfTheme(theme), variant: r.variant || {}, env: this.lenv() });
+      v.isFind = r.component === 'localSearch' || r.component === 'morph';
+      if (v.isFind && page) {   // morph (config): 'from' (an icon) until morphed, then 'to' (the field) spanning the bar except its caret
+        const M = r.component === 'morph', fr = M ? (r.slots.from || [])[0] : null, to = M ? (r.slots.to || [])[0] || r : r, bind = to.bind;
+        const val = String(q.roleProps(s, c, { role: 'input', page, bind }).value || ''), fv = this.P.resolveVisuals(this.specs, 'localSearch', 'enabled', { env: this.lenv() });
+        const open = M ? !!r.props.morphed : !!val, span = M && ['header', 'row'].includes((r.variant || {}).span);
+        const mo = this.P.motionFor(this.specs, 'morph', 'morphed', this.ms.prefs), mms = mo.kind === 'instant' ? 0 : mo.ms || 0, split = mo.fadeSplit;
+        const bs = +this.P.resolveVisuals(this.specs, fr ? fr.component : 'iconButton', 'enabled', { variant: (fr && fr.variant) || {} }).size || 0;
+        const fw = span ? Math.max(+fv.minWidth || 0, this.barSpan(theme, page, r)) : +fv.width || 0;
+        v.find = { bs, vis: fv, mo, light: theme === 'back' ? undefined : '1', span, open, closed: !open, value: val, hint: to.props.placeholder || '', w: open ? fw : 0,
+          onInput: e => { const i = q.roleIntent(this.ms, this.model.config, { role: 'input', page, bind }, 'change', e.target.value); if (i) this.dispatch(i, 'find · ' + e.target.value); },
+          onOpen: e => { if (!open && fr) this.runAction(fr.action); const inp = e.currentTarget.querySelector('input'); if (inp) setTimeout(() => inp.focus(), mms); }, clearIx: INERT,
+          ...(() => { const E = ((to.slots || {}).end || [])[0]; if (!E || !open) return { hasEnd: false, endIx: INERT, endIcon: '' };   // the field's end slot (config): e.g. ✕ clears and closes it
+            const er = q.resolveRef(this.ms, this.model.config, E, page, this.sp('deck:' + this.ms.activeDeck, page.config.id, 'find.end', idx));
+            return { hasEnd: er.visible, endIcon: er.props.icon || '', endIx: this.ix(er.key, er.action || null, ev => { ev && ev.stopPropagation && ev.stopPropagation(); this.runAction(er.action, ev); }, { component: er.component, variant: er.variant, label: er.props.label || '', surface: 'localSearch' }) }; })() };   // on the field itself (design: localSearch provides its text colour)
+        v.maxW = (v.find.open ? v.find.w : v.find.bs) + 2 * (+v.find.vis.padX || 0) + (+fv.slotPad || 0); v.isControl = false;
+      } else v.find = {};
+      v.isControl = v.isLogo || v.isButton;
+      const interactive = ((this.specs.components[r.component] || {}).implements || []).includes('interactive');
+      // a bound control (role input): its action is the role's change — a switch steps to the next option
+      let act = r.action ?? null;
+      if (r.bind && page) { const sl = { role: 'input', page, bind: r.bind }, rp = q.roleProps(s, c, sl), o = rp.options.map(x => x.value), nx = o[(o.indexOf(rp.value) + 1) % Math.max(1, o.length)], i = o.length ? q.roleIntent(s, c, sl, 'change', nx) : null; act = i ? { nav: i } : null; }
+      v.ix = interactive ? this.ix(r.key, act, e => this.runAction(act, e), { variant: r.variant, facts: { checked: r.checked }, page, component: r.component, label: r.props.label || '' }) : INERT;
+      return { ...v, maxW: r.visible ? v.maxW : 0, op: r.visible ? 1 : 0, ev: r.visible ? 'auto' : 'none' };
+    });
+  }
+  // config actions → the motion-aware paths (anything else dispatches as is)
+  runAction(a, e) {
+    if (Array.isArray(a)) return a.forEach(x => this.runAction(x, e));
+    if (!a) return;
+    if (a.nav && a.nav.type === 'openOverlay' && e && e.currentTarget && this.phoneRef.current) { const r = this.rectIn(e.currentTarget, this.phoneRef.current); this.menuAnchor = { top: r.top + r.h, end: Math.max(8, G.PW - (r.left + r.w)) }; }
+    if (a.player) {   // core runs it (14.3): commands for the player, a queued event for the choreography
+      const card = e && e.currentTarget && e.currentTarget.closest && e.currentTarget.closest('[data-item-id]'), from = card ? card.getAttribute('data-item-id') : null;
+      const src = (card && this.mo.sharedIn(card)) || this.mo.sharedIn(this.ovRef.current, 'image', 'detail') || this.mo.sharedIn(this.backRef.current, 'image', 'detail');
+      const r = this.IX.playerAction(this.player, a.player, from); this.execPlayer(r.commands);
+      r.events.forEach(ev => this.queuedMotion(ev, src));
+      return this.closeMenu();
+    }
+    if (a.shell === 'copyLink') {
+      const u = location.origin + this.model.query.url(this.ms, this.model.config);
+      try { navigator.clipboard && navigator.clipboard.writeText(u); } catch (x) {}
+      this.closeMenu();
+      return this.dispatch({ type: 'openOverlay', overlay: { id: 'toast', kind: 'snackbar', component: 'snackbar', blocking: false, timeoutMs: 3000, props: { text: { text: 'menu.copied' } } } }, 'shell · copyLink');
+    }
+    const i = a.nav; if (!i) return;
+    if (i.type === 'up' && !i.target && !(this.ms.layers[this.ms.focus] && this.ms.layers[this.ms.focus].open)) return this.up();
+    if (i.type === 'toggleExpanded') return this.setExpanded(!this.cur().ps.back.expanded, 'header button');
+    if (i.type === 'openLayer') return this.openLayer(i.layer, e);
+    if (i.type === 'switchDeck' || i.type === 'reselectDeck') return this.switchDeck(i.deck);
+    if (i.type === 'back') return this.back();
+    if (i.type === 'setParams' || i.type === 'toggleParam' || i.type === 'resetParams') return this.paramChange(this.model.query.paramTarget(this.ms, i), i, i.type);
+    this.dispatch(i, i.type);
+  }
+  closeMenu() { if (this.ms.overlays.some(o => o.spec.kind === 'menu')) this.dispatch({ type: 'closeOverlay', id: this.ms.overlays.find(o => o.spec.kind === 'menu').spec.id }, 'menu · close'); }
+  titleText(ref, page) {
+    if (!ref) return '';
+    if (ref.component === 'trackedTitle') return this.state.gKey === page.config.id ? this.state.gTitle : '';
+    return this.model.query.resolveRef(this.ms, this.model.config, ref, page).props.text || '';
+  }
+  ctxFor(ps, isBase) {
+    const F = ps.config.front, q = this.model.query;
+    const content = this.getData(F.content.dataSource, q.contentParams(ps));
+    const items = q.visibleItems(ps, content);
+    return { isBase, ex: ps.back.expanded, items, content };
+  }
+
+  // chips for a bound choice / choices param: one selected (setParams) or each toggling (toggleParam)
+  chipsFor(ps, bind, path) {
+    const q = this.model.query, s = this.ms, cfg = this.model.config, name = typeof bind === 'string' ? bind : bind.change, P = (ps.config.params || {})[name] || {};
+    const slot = { role: 'input', page: ps, bind }, rp = q.roleProps(s, cfg, slot), val = rp.value;
+    return (rp.options || []).map(o => {
+      const many = P.type === 'choices', on = many ? Array.isArray(val) && val.includes(o.value) : val === o.value;
+      const i = many ? { type: 'toggleParam', name, option: o.value, page: ps.config.id } : q.roleIntent(s, cfg, slot, 'change', o.value);
+      return { label: o.label, on, ix: this.ix(path(undefined, o.value), i && { nav: i }, () => this.paramChange(ps, i, 'params · ' + name + ' ' + o.value), { component: 'chip', label: o.label }) };
+    });
+  }
+  // ── view values ────────────────────────────────────────
+  backVals(ps, isBase) {
+    const c = ps.config, B = c.back, ctx = this.ctxFor(ps, isBase);
+    const RI = {}; this.P.regions(ps, this.measuredFor(ps)).forEach(r => { (RI[r.region] = RI[r.region] || []).push({ top: r.top, op: r.opacity, ev: r.interactive ? 'auto' : 'none' }); });
+    const BH = this.bp(B.regions.header.bar);
+    const bhLeft = this.hItems(BH.start, 'back', ps, 'left');
+    // basic action = the control bound in the basicAction region (role input): the core supplies value + options and maps change to setParams
+    const q = this.model.query, s = this.ms, cfg = this.model.config;
+    const ctl = ((B.regions.basicAction && B.regions.basicAction.content) || []).find(r => r && r.bind) || {};
+    const baComp = ctl.component, bind = ctl.bind, name = typeof bind === 'string' ? bind : bind && bind.change, PS = (c.params || {})[name] || {};
+    const slot = { role: 'input', page: ps, bind }, rp = q.roleProps(s, cfg, slot), opts = rp.options || [], val = rp.value, ri = (ev, p) => q.roleIntent(s, cfg, slot, ev, p);
+    const setP = intent => this.paramChange(ps, intent, 'params · ' + name);
+    const path = (k, id) => this.sp('deck:' + s.activeDeck, c.id, 'back.basicAction', k, id), iClr = ri('change', '');
+    const sel = Math.max(0, opts.findIndex(o => o.value === val));
+    const BV = id => this.P.resolveVisuals(this.specs, id, 'enabled', { surface: 'backLayer' });   // design visuals of back-layer controls
+    return {
+      rHeader: RI.header || [], rBasic: RI.basicAction || [], rPanel: RI.panel || [], rActions: RI.actions || [],
+      // a plain slots region of buttons (config: e.g. the artist page's play buttons below its details)
+      ...(() => { const R = B.regions.actions; if (!R || R.kind !== 'slots') return { actBtns: [], actH: 0 };
+        const btns = q.expandSlots(s, cfg, R.content, ps).map(({ ref, scope }, k) => q.resolveRef(s, cfg, ref, ps, this.sp('deck:' + s.activeDeck, c.id, 'back.actions', k), scope)).filter(r => r.visible);
+        return { actH: R.height === 'content' ? 0 : R.height, actBtns: btns.map(r => ({ text: r.props.text || '', icon: r.props.icon || '', ix: this.ix(r.key, r.action || null, e => this.runAction(r.action, e), { component: r.component, variant: r.variant, label: r.props.text || '' }) })) }; })(),
+      bhLeft, bhRight: this.hItems(BH.end, 'back', ps, 'right'), bhTitle: this.titleText(BH.title, ps),
+      ...(() => {   // the bar's expanded slot (detail info), shrinking with barView progress (core layout)
+        const X = BH.expanded[0], bv = this.P.barView(ps, this.specs), hr = B.regions.header;
+        if (!X || !hr.expandedHeight) return { bhX: { show: false, vis: {}, fg: 'inherit', h: 0, op: 0, sc: 1, art: 0, rad: '0', img: 'none', title: '', sub: '', meta: '' }, bhTitleOp: 1 };
+        const r = q.resolveRef(s, cfg, X, ps), p = bv.progress, DV = this.P.resolveVisuals(this.specs, 'detailHeader', 'enabled', { surface: 'backLayer', variant: r.variant || {} }), HV = this.P.resolveVisuals(this.specs, 'header', 'enabled', { surface: 'backLayer' }), from = +HV.titleFadeFrom || 0;
+        return { bhX: { show: true, vis: DV, fg: this.P.resolveValue(this.specs, 'backLayer', { role: 'content' }, { surface: 'backLayer' }), h: Math.max(0, bv.height - hr.height), op: Math.max(0, 1 - p * (+HV.detailFade || 1)), sc: 1 - (+HV.detailShrink || 0) * p, art: +DV.artSize || 0, rad: (+DV.artRadius || 0) + 'px', img: artCss(r.props.image), title: r.props.title || '', sub: r.props.subtitle || '', meta: r.props.meta || '' }, bhTitleOp: Math.min(1, Math.max(0, (p - from) / (1 - from || 1))) };
+      })(),
+      isFilters: baComp === 'filterChips' || baComp === 'choiceChips', isTabs: baComp === 'tabBar', isSearch: baComp === 'searchField',
+      filters: this.chipsFor(ps, bind, path),
+      tabs: opts.map((o, k) => { const i = ri('change', o.value); return { label: o.label, ix: this.ix(path(k), i && { nav: i }, () => setP(i), { component: 'tab', label: o.label }) }; }),
+      tabSel: sel, tabMo: (() => { const d = this.P.motionFor(this.specs, 'tabBar', 'indicator', this.ms.prefs); return { ms: this.msOf(d), ease: this.easeOf(d) }; })(),
+      fcVis: BV(baComp === 'choiceChips' ? 'choiceChips' : 'filterChips'), tbVis: BV('tabBar'), sfVis: BV('searchField'),
+      query: typeof val === 'string' && baComp === 'searchField' ? val : '', hasQuery: baComp === 'searchField' && !!val,
+      onQuery: e => { const i = ri('change', e.target.value); if (i) setP(i); },
+      onQueryKey: e => { if (e.key !== 'Enter') return; const i = ri('submit', e.target.value); if (i) setP(i); },
+      clearIx: this.ix(this.sp('deck:' + s.activeDeck, c.id, 'back.basicAction.clear'), iClr && { nav: iClr }, () => setP(iClr), { component: 'iconButton', variant: { size: 'xs' }, label: this.model.query.text(this.ms, this.model.config, 'search.clear') }),
+      searchHint: ctl.component ? (q.resolveRef(s, cfg, ctl, ps).props.placeholder || '') : '',
+      canBack: !isBase, basicH: B.regions.basicAction.height, panelRef: this.panelRef,
+      panelH: B.regions.panel && B.regions.panel.height !== 'content' ? B.regions.panel.height + 'px' : 'auto',
+      // panel slots: text rows, bound chip groups (choice / choices) and suggestion rows (repeats)
+      panelItems: q.expandSlots(s, cfg, (B.regions.panel && B.regions.panel.content) || [], ps).map((x, k) => ({ x, r: q.resolveRef(s, cfg, x.ref, ps, this.sp('deck:' + s.activeDeck, c.id, 'back.panel', k), x.scope), k })).filter(({ r }) => r.visible).map(({ r, k }) => {
+        if (r.bind && (r.component === 'filterChips' || r.component === 'choiceChips')) return { isText: false, isChips: true, isSuggest: false, chips: this.chipsFor(ps, r.bind, (i, id) => this.sp('deck:' + s.activeDeck, c.id, 'back.panel.' + k, i, id)), vis: BV(r.component), ix: INERT };
+        if (r.bind && r.component === 'dropdown') { const sl = { role: 'input', page: ps, bind: r.bind }, rp2 = q.roleProps(s, cfg, sl);
+          return { isText: false, isChips: false, isSuggest: false, isDropdown: true, text: r.props.label || '', options: (rp2.options || []).map(o => ({ value: o.value, label: o.label, on: o.value === rp2.value })), onPick: e => { const i = q.roleIntent(s, cfg, sl, 'change', e.target.value); if (i) this.paramChange(ps, i, 'params · ' + r.bind); }, vis: BV('dropdown'), chips: [], ix: INERT }; }
+        if (r.bind && r.component === 'rangeField') { const sl = { role: 'input', page: ps, bind: r.bind }, v0 = q.roleProps(s, cfg, sl).value || [0, 0], PS = (c.params || {})[r.bind] || {};
+          const put = (k, x) => { const nv = v0.slice(); nv[k] = Math.max(PS.min ?? -Infinity, Math.min(PS.max ?? Infinity, +x)); if (nv[0] > nv[1]) nv[1 - k] = nv[k]; const i = q.roleIntent(s, cfg, sl, 'change', nv); if (i) this.paramChange(ps, i, 'params · ' + r.bind); };
+          return { isText: false, isChips: false, isSuggest: false, isRange: true, from: v0[0], to: v0[1], min: PS.min, max: PS.max, fromLabel: r.props.fromLabel || '', toLabel: r.props.toLabel || '', onFrom: e => put(0, e.target.value), onTo: e => put(1, e.target.value), vis: BV('rangeField'), chips: [], ix: INERT }; }
+        if (r.component === 'suggestionRow') return { isText: false, isChips: false, isSuggest: true, text: r.props.text || '', vis: BV('suggestionRow'), ix: this.ix(r.key, r.action || null, e => this.runAction(r.action, e), { component: 'suggestionRow', label: r.props.text || '' }), chips: [] };
+        const PV = this.P.resolveVisuals(this.specs, 'panelRow', 'enabled', {});   // design: panelRow visuals
+        return { isText: true, isChips: false, isSuggest: false, text: r.props.text || '', vis: PV, chips: [], ix: INERT };
+      })
+    };
+  }
+  frontVals(ps, isBase) {
+    const c = ps.config, F = c.front, FH = this.bp(F.header), ctx = this.ctxFor(ps, isBase), items = ctx.items;
+    const q = this.model.query, s = this.ms, cfg = this.model.config;
+    // presentation (core) → this shell's drawing per layout component; grid columns from the design's gridLayout visuals
+    const pres = q.presentation(ps), layout = pres.layout.component, itemComp = pres.item.component;
+    const generic = layout === 'scrollerLayout', full = F.collapse === 'full', fullC = ctx.ex && full;
+    // each item: the presentation's item ref with '$item' in scope; opens → open intent, else the ref's action (e.g. play)
+    const itemView = it => { const r = q.resolveRef(s, cfg, pres.item, ps, undefined, { item: it }), i = q.roleIntent(s, cfg, { role: 'item', page: ps, item: it }, 'open'), act = i ? { nav: i } : (r.action || null);
+      return { id: it.id, label: r.props.title || '', sub: r.props.subtitle || '', art: artCss(r.props.image), entries: (pres.item.slots && pres.item.slots.entries ? q.expandSlots(s, cfg, pres.item.slots.entries, ps, { item: it }) : []).map(x => {   // items inside a repeat open their element
+        const el = x.scope && Object.values(x.scope).find(v => v && typeof v === 'object' && v.id && v !== it) || {}, er = q.resolveRef(s, cfg, x.ref, ps, undefined, x.scope), oi = q.roleIntent(s, cfg, { role: 'item', page: ps, item: el }, 'open'), ea = oi ? { nav: oi } : (er.action || null);
+        return { id: el.id, title: er.props.title || el.id, art: artCss(er.props.image), shape: er.props.shape || '',
+          ix: this.ix(this.sp('deck:' + s.activeDeck, c.id, 'front.item.entry', undefined, it.id + '/' + el.id), ea, e2 => { if (ctx.ex) return; oi ? this.openItem(el, e2) : this.runAction(ea, e2); }, { component: 'gridCard', label: er.props.title || el.id }) }; }),
+      shape: r.props.shape || '', ix: this.ix(this.sp('deck:' + s.activeDeck, c.id, 'front.item', undefined, it.id), act, e => { if (ctx.ex) return; i ? this.openItem(it, e) : this.runAction(act, e); }, { component: itemComp, variant: pres.item.variant, label: r.props.title || it.id }) }; };
+    const typeIcon = it => (this.tplOf(it) || {}).kind === 'appBar' ? 'open_in_full' : 'layers';
+    const kindOf = it => { const T = this.tplOf(it); return !T ? '' : T.kind === 'appBar' ? 'app bar page' : 'in-backdrop · ' + it.opens.template; };
+    const gOn = this.state.gScrolled && this.state.gKey === c.id;
+    const view = this.model.query.contentView(ps, ctx.content, this.model.config, this.sim.offline);
+    const show = view.showItems, fl = this.frontLayerView(ps), t = id => q.text(s, cfg, id);
+    // loading: the item component's placeholder form (design: placeholder.visuals), as many as the core asks for
+    const phV = ((this.specs.components[itemComp] || {}).placeholder || {}).visuals || {};
+    const tok = x => { const d = x && x.default; return d && d.token ? this.specs.tokens[d.token] : d; };
+    const loading = view.state === 'loading';
+    this.phMotion = loading ? this.P.motionFor(this.specs, itemComp, 'placeholder', s.prefs) : null;
+    const cv = {
+      state: view.state, banner: !!view.banner, loading, retry: view.retry,
+      message: view.state === 'empty' || view.state === 'error',
+      text: t(view.state === 'empty' ? 'content.empty' : this.sim.offline ? 'content.offline' : 'content.error'), staleText: t('content.stale'),
+      phList: loading && layout === 'listLayout', phGrid: loading && layout === 'gridLayout', phGeneric: loading && generic,
+      phVis: Object.fromEntries(Object.entries(phV).map(([k, x]) => [k, tok(x)])),
+      bannerVis: this.P.resolveVisuals(this.specs, 'staleBanner', 'enabled', {}),
+      ...(() => { const err = view.state !== 'empty', id = err ? 'errorState' : 'emptyState', V = this.P.resolveVisuals(this.specs, id, 'enabled', {});
+        return { msgVis: V, icon: err && this.sim.offline ? (V.offlineIcon || 'cloud_off') : (V.icon || 'inbox'), retryLabel: view.retry ? t('common.retry') : '' }; })(),
+      placeholders: Array.from({ length: view.placeholders || 0 }, (_, k) => ({ w: [70, 55, 80, 60, 75][k % 5] }))
+    };
+    return {
+      cv, retryText: t('common.retry'), retryIx: this.ix(this.sp('deck:' + s.activeDeck, c.id, 'front.content.retry'), { nav: { type: 'retry' } }, () => this.dispatch({ type: 'retry' }, 'retry'), { component: 'button', variant: { emphasis: 'outlined' }, label: t('common.retry') }),
+      frontTR: fl.visual.cornerTR ?? 0, frontTL: fl.visual.cornerTL ?? 0,
+      frontTop: this.state.frontTopOverride ?? this.frontTopFor(ps),
+      subIx: this.ix(this.sp('deck:' + s.activeDeck, c.id, 'front.header'), { nav: { type: 'setExpanded', expanded: !ctx.ex } }, () => this.setExpanded(!ctx.ex, 'header'), { component: 'listItem', label: ctx.ex ? 'Conceal back layer' : 'Reveal back layer' }),
+      onScrim: () => this.setExpanded(false, 'scrim'),
+      scrimOpacity: ctx.ex && !full ? 1 : 0, scrimEvents: ctx.ex && !full ? 'auto' : 'none',
+      ...(() => { const left = this.hItems(FH.start, 'front', ps, 'left'), right = this.hItems(FH.end, 'front', ps, 'right'), open = right.some(x => x.isFind && x.find.open && x.find.span);
+        return { fhLeft: left, fhRight: open ? right.map(x => x.isFind ? x : { ...x, maxW: 0, op: 0, ev: 'none' }) : right, fhTitle: this.titleText(FH.title, ps), fhTitleW: open ? '0px' : '100%', fhTitleOp: open ? 0 : 1 }; })(),
+      fhBorder: fl.visual.divider || 'transparent',
+      headerStatic: true, headerTracking: false,
+      ...(() => { const hh = +fl.visual.headerHeight || 0, fab = this.fabFor(F.header, ps, 'deck:' + s.activeDeck, hh), edge = fab.show ? +fab.vis.headerExtra || 0 : 0;
+        fab.end = this.fabEnd(this.bp(F.header).end, ps, +fl.visual.fabEndPad || 0); return { fhH: hh + edge, fhRow: hh, fab }; })(),
+      ...(() => {   // groups (core) → sticky headers + an alphabetical index
+        const vis = generic || !show ? [] : items, gs = vis.length ? q.groups(s, cfg, ps, vis) : [], G0 = (pres.groups || []).find(g => !g.when || q.condition(s, cfg, g.when, ps));
+        const anchor = k => 'grp-' + c.id.replace(/[^a-z0-9]/gi, '') + '-' + encodeURIComponent(k).replace(/%/g, '');
+        const go = k => () => { const el = document.getElementById(anchor(k)); let p = el && el.parentElement; while (p && !(p.scrollHeight > p.clientHeight + 4 && /auto|scroll/.test(getComputedStyle(p).overflowY))) p = p.parentElement; if (el && p) p.scrollTo({ top: el.offsetTop - p.offsetTop, behavior: this.reduced ? 'auto' : 'smooth' }); };
+        return { groups: gs.map(g => ({ key: g.key, hasKey: !!g.key, anchor: anchor(g.key), cards: g.items.map(itemView) })),
+          alpha: { show: !!(G0 && G0.index && gs.length > 1), top: (+fl.visual.headerHeight || 0) + (+this.P.resolveVisuals(this.specs, 'alphaIndex', 'enabled', {}).offsetTop || 0), keys: gs.map(g => ({ key: g.key, go: go(g.key) })) } };
+      })(),
+      cards: generic || !show ? [] : items.map(itemView),
+      carousels: show && itemComp === 'carousel' ? items.map(itemView) : [], isCarousels: show && itemComp === 'carousel',
+      genericBlocks: generic && show && itemComp !== 'carousel' ? items.map(it => { const v = itemView(it); return { ...v, title: v.label, typeIcon: typeIcon(it) }; }) : [],
+      carouselVis: { ...this.P.resolveVisuals(this.specs, 'carousel', 'enabled', {}), entrySize: +this.specs.tokens['grid.column.max'] },
+      scroller: this.P.resolveVisuals(this.specs, 'scrollerLayout', 'enabled', {}), blockRowPad: Math.max(0, (+this.P.resolveVisuals(this.specs, 'scrollerLayout', 'enabled', {}).padding || 0) - (+this.P.resolveVisuals(this.specs, 'contentBlock', 'enabled', {}).itemPadding || 0)),
+      isGeneric: generic && show && itemComp !== 'carousel', isList: show && layout === 'listLayout', isGrid: show && layout === 'gridLayout',
+      grid: (() => {   // responsive grid (design tokens): columns never wider than grid.column.max; as many as fit
+        const g = this.P.resolveVisuals(this.specs, 'gridLayout', 'enabled', { env: this.lenv() }), gap = +g.gap || 0, mx = +g.maxColumnWidth || +this.specs.tokens['grid.column.max'], pad = +g.margin || 0;
+        const W = G.CW - 2 * pad, n = Math.max(1, Math.ceil((W + gap) / (mx + gap)));
+        return { cols: 'repeat(' + n + ', minmax(0, 1fr))', gap: gap + 'px', pad, padEnd: pad + (+g.scrollbarGutter || 0), aspect: String(+g.itemAspect || 1) }; })(),
+      onFrontScroll: e => { const restored = !this.mo.userScrolled(e.currentTarget); const before = q.derived(this.ms, cfg, 'scrolled', this.model.query.underPage(this.ms)), hx = ps.config.back.regions.header.expandedHeight, top = this.pageScroll(this.cur().ps, e.currentTarget, 'front.scroll'), ev = this.model.dispatch({ type: 'scroll', top });
+        if (before !== q.derived(this.ms, cfg, 'scrolled', this.model.query.underPage(this.ms)) || (hx && top < hx + 40)) { if (restored) return this.track(e.currentTarget);   // a page change restoring its scroll: keep that change's motion (front layer slide)
+          cancelAnimationFrame(this.scrRaf); this.scrRaf = requestAnimationFrame(() => { this.lastMove = 'scroll'; this.forceUpdate(() => { if (this.lastMove === 'scroll') this.lastMove = null; }); }); } this.track(e.currentTarget); this.showThumb(e.currentTarget); if (ev.some(x => x.type === 'headerVisibilityChanged')) { this.lastMove = 'header'; this.forceUpdate(); } }
+    };
+  }
+  layerVals(id) {
+    const L = this.model.config.layers.find(l => l.id === id), ls = this.ms.layers[id];
+    const top = ls.stack[ls.stack.length - 1].page.config, deep = ls.stack.length > 1;
+    const items = top.content ? this.S.data.get(top.content.dataSource, this.model.query.contentParams(ls.stack[ls.stack.length - 1].page)).items : [];
+    const target = L.linkTarget && L.linkTarget.deck ? L.linkTarget.deck : 'active deck';
+    return {
+      title: top.body ? '' : top.title && typeof top.title === 'object' ? this.model.query.text(this.ms, this.model.config, top.title) : top.title,
+      isList: !!top.content, isPlayer: !!top.body, hb: top.body ? 'transparent' : '', hh: top.body && ls.stack[ls.stack.length - 1].page.sheet && ls.stack[ls.stack.length - 1].page.sheet.expanded ? 0 : 56, hop: top.body && ls.stack[ls.stack.length - 1].page.sheet && ls.stack[ls.stack.length - 1].page.sheet.expanded ? 0 : 1,
+      rows: items.map(it => ({ it, r: this.model.query.resolveRef(this.ms, this.model.config, this.model.query.presentation(ls.stack[ls.stack.length - 1].page).item, ls.stack[ls.stack.length - 1].page, undefined, { item: it }) })).map(({ it, r }) => ({
+        id: it.id, label: r.props.title || it.id,
+        sub: r.props.subtitle || '', art: artCss(r.props.image),
+        icon: !it.opens ? '' : it.opens.kind === 'layerPage' ? 'chevron_right' : 'arrow_outward',
+        ix: (() => {
+          const slot = { role: 'item', page: ls.stack[ls.stack.length - 1].page, item: it, origin: { layer: id } };
+          const open = this.model.query.roleIntent(this.ms, this.model.config, slot, 'open'), act = open ? { nav: open } : (r.action || null);
+          return this.ix(this.sp('layer:' + id, top.id, 'content.item', undefined, it.id), act, e => {
+            if (!open) return this.runAction(act, e);
+            const ev = this.dispatch(open, id + (it.opens.kind === 'layerPage' ? ' → ' : ' link → ') + (r.props.title || it.id));
+            if (ev.some(x => x.type === 'deckSwitched')) this.setState({ ovRect: null, ovInset: null, backOverride: null });
+          }, { component: this.model.query.presentation(ls.stack[ls.stack.length - 1].page).item.component, label: r.props.title || it.id });
+        })()
+      })),
+      leftIcon: deep ? 'arrow_back' : L.presentation.kind === 'sheet' && G.layout === 'compact' ? 'expand_more' : 'close',
+      leftIx: this.ix(this.sp('layer:' + id, top.id, 'header.left', 0), { nav: deep ? { type: 'up', target: { layer: id } } : { type: 'closeLayer', layer: id } }, () => deep ? this.dispatch({ type: 'up', target: { layer: id } }, id + ' up') : this.closeLayer(id), { component: 'iconButton', label: this.model.query.text(this.ms, this.model.config, deep ? 'action.back' : 'action.close') }),
+      ...(() => { const m = this.bp(top.header).end.find(x => x.component === 'iconButton'), a = m ? m.action : null; return { hasMore: !!a, moreIx: a ? this.ix(this.sp('layer:' + id, top.id, 'header.right', 0), a, e => this.runAction(a, e), { component: 'iconButton', label: this.model.query.text(this.ms, this.model.config, 'action.more') }) : INERT }; })()
+    };
+  }
+
+  renderVals() {
+    if (!this.model) {
+      const v = { panelH: 'auto', dur: 0, ovDur: 0, ease: E, ddDur: 0, ddEase: E, frontTL: 0, pw: DEVICES.phone.width, frameRad: 0, screenBottom: 0, screenLeft: 0, screenRight: 0, frontTop: 0, navShift: 0, backBg: 'transparent', phoneH: PHONE_H, scrollRoom: 0, warm: { noop: () => {}, none: [], info: { show: false }, buttons: [], ix: {} }, ab: { range: 0, full: 0, sheetH: 0, none: [], rowVis: {}, find: [], buttons: [] }, mx: { expand: {}, page: {}, layer: { nowPlaying: {}, Dedede: {}, menu: {}, account: {} } } };
+      STUB_LISTS.forEach(k => { v[k] = []; });
+      v.nn = { rows: [], top: PHONE_H, h: PHONE_H, w: DEVICES.phone.width, left: 0, tx: 0, peekOp: 0, sheetOp: 0, rad: '0' }; v.dd = { rows: [], clip: 'circle(0)', ev: 'none' };
+      v.ftB = v.ftF = v.ftO = { op: 1, sc: 1, tr: 'none', tx: 0 }; v.ahShadow = 'none'; v.ahTitleOp = 1; v.barVisBack = v.barVisFront = v.barVisApp = v.barVisLayer = {}; v.sv = { front: {}, back: {}, sheet: {}, side: {}, drawer: {}, signIn: {}, splash: {}, navBar: {}, rail: {}, pageFill: 'transparent', frontScrim: 'transparent', frontScrimOn: false }; v.barMo = v.fhMo = v.ahMo = {}; v.ovX = { show: false }; v.railTop = []; v.railBottom = []; v.rail = { tr: 'none', collapsed: true, ex: false, w: 0, align: 'center', padX: 0, shadow: 'none', ms: 0, ease: E, mo: {}, padY: 0, gap: 0, groupGap: 0 }; v.railItemVis = v.drawerItemVis = {}; 
+      v.blockRowPad = 9; v.fab = v.ahFab = { show: false, ix: INERT, end: 0, top: 0, vis: {}, icon: '' }; v.bhX = { show: false }; v.bhTitleOp = 1; v.fhH = 0; v.fhRow = 0; v.ahH = 0; v.alpha = { show: false, keys: [] }; v.groups = []; v.np = { ctrls: [], tabs: [], rows: [], mini: [], miniOp: 0, miniEv: 'none', bodyOp: 1, empty: false, emptyText: '', artVis: {}, infoVis: {}, seekVis: {}, rowVis: {}, tabVis: {}, tabMo: {}, tabSel: 0, emptyVis: {} }; v.dr = { items: [], ev: 'none', title: '', w: 0, tx: -110, op: 0 }; v.acc = { ev: 'none', closeIx: INERT, rows: [], signIx: INERT, title: '', name: '', email: '', plan: '', art: '', signText: '', ty: 100 };
+      v.cv = {}; v.gate = { ix: INERT }; v.dialog = { cancelIx: INERT, okIx: INERT }; v.snack = { ix: INERT }; v.menu = { show: false, items: [] }; v.ovRows = []; v.ovHead = { title: '', sub: '', art: '' }; v.pl = { icon: '', t: INERT, n: INERT, t2: INERT, n2: INERT, card: [], peek: [], mini: [] }; v.sheetVis = { overflow: 'hidden' }; v.npVis = {}; v.npH = 0; v.cardVis = {}; v.titleVisBack = v.titleVisFront = v.titleVisBar = v.groupVis = v.alphaVis = {}; v.urlDraft = '';
+      v.clearIx = v.subIx = v.retryIx = v.ddCircleIx = INERT; v.tabInd = { left: 0, w: 0, tr: 'none' }; v.onQuery = () => {};
+      Object.assign(v.nn, { peekSub: '', peekTitle: '', peekArt: '', leftIcon: '', title: '', peekIx: INERT, titleIx: INERT, leftIx: INERT, moreIx: INERT }); Object.assign(v.dd, { leftIcon: '', title: '', leftIx: INERT, moreIx: INERT });
+      v.layoutInfo = 'loading model…'; v.backLabel = 'Back'; v.focusLabel = '—'; v.historyCaption = '';
+      v.dir = 'ltr'; v.locales = []; v.appFx = v.gateFx = v.splashFx = { op: 1, sc: 1, tr: 'none' };
+      v.splash = { show: true, logoOp: 0, logoSc: 1, logoTr: 'none', logo: 'transparent', logoSize: 0, playing: false, busy: true, ev: 'auto', label: '' }; v.logoVis = null; v.logoMotion = null; v.retryText = ''; v.cv = {};
+      return v;
+    }
+    this.geometry();
+    const barVisApp = this.P.resolveVisuals(this.specs, 'appBar', 'enabled', { surface: 'appBar', variant: { form: 'page' } });
+    const ms = this.ms, cfg = this.model.config, q = this.model.query;
+    const { stack, ui, ps, top } = this.cur();
+    const v = { surfRef: this.surfRef, backRef: this.backRef, railRef: this.railRef, navBarRef: this.navBarRef, nnRef: this.nnRef, nnCardRef: this.nnCardRef,
+      splashBgRef: this.splashBgRef, splashLogoRef: this.splashLogoRef, gateBgRef: this.gateBgRef, gateLogoRef: this.gateLogoRef, gateTextRef: this.gateTextRef, ovRef: this.ovRef, fcRef: this.fcRef, screenRef: this.screenRef, scrollRef: this.scrollRef, frontRef: this.frontRef, thumbRef: this.thumbRef, phoneRef: this.phoneRef };
+    v.phoneH = PHONE_H;
+    v.backBg = this.specs.tokens[(this.props.palette ?? 'Grey') === 'Grey' ? 'color.backLayer' : 'color.backLayerAlt'];
+    v.dur = this.dur; v.ovDur = this.T; v.ease = this.ease;
+    { const dd = this.tr({ type: ms.layers.Dedede.open ? 'layerOpened' : 'layerClosed', layer: 'Dedede' }); v.ddDur = this.msOf(dd); v.ddEase = this.easeOf(dd); }
+    Object.assign(v, this.backVals(ps, ui === 0), this.frontVals(ps, ui === 0));
+    if (this.state.backOverride) { const o = this.backVals(this.state.backOverride, false); BACK_KEYS.forEach(k => { v[k] = o[k]; }); }
+
+    // fade through
+    const ft = this.state.ft, NONE = { op: 1, sc: 1, tr: 'none' };
+    const ph = ft && { op: ft.op, sc: ft.sc, tr: ft.tr };
+    v.ftB = ph || NONE; v.ftF = ph && ft.scope === 'all' ? ph : NONE; v.ftO = { ...v.ftF, sc: 1 };
+    v.ftF = this.state.ax ? { sc: 1, ...this.state.ax } : { tx: 0, ...v.ftF };
+    if (top.page.config.kind === 'appBar') v.ftF = { ...v.ftF, op: 0, tr: 'none' };
+    { const d = this.tr({ type: this.lastMove === 'header' ? 'headerVisibilityChanged' : 'expandedChanged' });
+      // state-driven transitions (platforms/web/motions.js): expand / header moves, each layer's open / close, app-bar page
+      const MX = ev => this.mo.cssAll(this.tr(ev));
+      v.mx = { expand: this.mo.forMove(d, this.lastMove), page: MX({ type: 'pushed', kind: 'appBar' }),
+        layer: Object.fromEntries(Object.keys(ms.layers).map(id => [id, MX({ type: ms.layers[id].open ? 'layerOpened' : 'layerClosed', layer: id })])) }; }
+    v.frontTr = this.state.frontTr || v.mx.expand.surface;
+    // tapping the back layer outside any interactive element toggles it (config back.toggleOnTap, default on)
+    v.onBackTap = e => {
+      if (e.target.closest && e.target.closest('button,input,textarea,select,a,[role="button"]')) return;
+      const u = this.cur().ps;
+      if (u.config.back.toggleOnTap !== false) this.setExpanded(!u.back.expanded, 'back layer tap');
+    };
+
+    // in-backdrop expansion + app bar page reveal
+    const apage = this.state.ghost || top.page, ac = apage.config;   // ghost: a popped page still fading out
+    v.showOverlay = ac.kind === 'appBar'; v.ovEv = this.state.ghost ? 'none' : 'auto';
+    v.oc = { top: 0, h: G.H, rad: '0px' };
+    if (v.showOverlay) G.AH = +barVisApp.topHeight || +barVisApp.height || 0;   // before CF(): the page's content box starts below its top row on the very first render too
+    const ovr = this.state.ovRect || CF(); v.ov = { ...ovr, top: ovr.top };
+    // the app-bar page's own content (its data source, its presentation's item component)
+    { const ap = v.showOverlay ? apage : null, items = ap ? (this.S.data.get(ap.config.content.dataSource, q.contentParams(ap)).items || []) : [];
+      const pi = ap ? q.presentation(ap).item : null, rv = it => q.resolveRef(ms, cfg, pi, ap, undefined, { item: it });
+      v.ovRows = items.map(it => { const r = rv(it), act = it.opens ? null : (r.action || null); return { id: it.id, label: r.props.title || it.id, sub: r.props.subtitle || '', art: artCss(r.props.image), ix: this.ix(this.sp('deck:' + ms.activeDeck, ap.config.id, 'content.item', undefined, it.id), act, e => this.runAction(act, e), { component: pi.component, label: r.props.title || it.id }) }; });
+      v.ovHead = ap ? { title: typeof ap.config.title === 'string' ? ap.config.title : '', sub: items.length ? String(rv(items[0]).props.subtitle || '').split(' · ')[0] + ' · ' + items.length : '', art: artOf(String(ap.config.id).split('/').pop()) } : { title: '', sub: '', art: '' }; }
+    const AH = this.bp(ac && ac.header), ahBase = +barVisApp.height || 0, ahH = +barVisApp.topHeight || ahBase;   // page form: the top row; the sheet below it holds expanded + bottom (14.2)
+    G.AH = ahH; v.ahLeft = v.showOverlay ? this.hItems(AH.start, 'appbar', apage, 'left') : []; v.ahRight = v.showOverlay ? this.hItems(AH.end, 'appbar', apage, 'right') : [];
+    v.ahTitle = v.showOverlay ? this.titleText(AH.title, apage) : ''; v.ahH = ahH;
+    v.ahSpan = v.ahRight.some(x => x.isFind && x.find.open && x.find.span); if (v.ahSpan) v.ahRight = v.ahRight.map(x => x.isFind ? x : { ...x, maxW: 0, op: 0, ev: 'none' });
+    const bvA = apage ? this.P.barView(apage, this.specs) : { height: ahBase, progress: 1 }, Xr = AH.expanded[0];
+    { const BOT = (ac && ac.header && ac.header.slots && ac.header.slots.bottom) || [], RV = this.P.resolveVisuals(this.specs, 'appBar', 'enabled', { surface: 'appBar' });
+      const ex = v.showOverlay ? q.expandSlots(ms, cfg, BOT, apage).map((x, k) => ({ ...x, k })) : [], isFind = r => r.component === 'morph' || r.component === 'localSearch';
+      const btns = ex.filter(x => !isFind(x.ref)).map(({ ref, scope, k }) => q.resolveRef(ms, cfg, ref, apage, this.sp('deck:' + ms.activeDeck, ac.id, 'header.bottom', k), scope)).filter(r => r.visible);
+      const hasSheet = !!(BOT.length || (AH.expanded && AH.expanded.length));   // a page form header with nothing below its top row has no sheet
+      v.ab = { full: hasSheet ? (+barVisApp.expandedHeight || ahBase) - ahH : 0, sheetH: hasSheet ? Math.max(0, bvA.height - ahH) : 0, range: hasSheet ? Math.max(0, (+barVisApp.expandedHeight || 0) - ahBase) : 0,
+        find: v.showOverlay ? this.hItems(ex.filter(x => isFind(x.ref)).map(x => x.ref), 'appbottom', apage, 'bottom') : [],
+        buttons: btns.map(r => ({ text: r.props.text || '', icon: r.props.icon || '', ix: this.ix(r.key, r.action || null, e => this.runAction(r.action, e), { component: r.component, variant: r.variant, label: r.props.text || '' }) })) }; }
+    v.ab = v.ab || { full: 0, sheetH: 0, none: [], rowVis: {}, find: [], buttons: [] }; v.ovX = { show: false, vis: {}, h: 0, op: 1, art: 0, rad: '0', img: 'none', title: '', sub: '' }; v.ahTitleOp = 1;
+    if (v.showOverlay && apage && Xr) { const xr = q.resolveRef(ms, cfg, Xr, apage), XV = this.P.resolveVisuals(this.specs, 'detailHeader', 'enabled', { surface: 'appBar', variant: xr.variant || {} });
+      const infoH = Math.max(0, v.ab.sheetH - (+barVisApp.sheetPadTop || 0) - (+barVisApp.bottomRowHeight || 0)), padB = +barVisApp.infoPadBottom || 0;
+      const art = Math.max(+barVisApp.infoArtMin || 0, Math.min(+XV.artSize || 0, infoH - (+XV.padTop || 0) - padB));   // the info stays: its artwork shrinks with the sheet
+      v.ovX = { show: true, vis: { ...XV, artSize: art, padBottom: padB }, h: infoH, op: 1, art, rad: (+XV.artRadius || 0) + 'px', img: artCss(xr.props.image), title: xr.props.title || '', sub: xr.props.subtitle || '' };
+      v.ahTitleOp = 0; }
+    if (v.ahSpan) v.ahTitleOp = 0; v.ahTitleW = v.ahSpan ? '0px' : '100%';
+    v.barVisApp = barVisApp; v.abBtnRef = this.abBtnRef; v.ovThumbRef = this.ovThumbRef; v.ovScrollRef = this.ovScrollRef;
+    // warm-up instances (hidden, real props): the app-bar page's component files are loaded before its first open
+    { const wix = this.ix('warm/appbar', null, () => {}, { component: 'button', label: '' }); v.warm = { noop: () => {}, none: [], info: { show: true, title: '', sub: '', img: '', vis: {} }, buttons: [{ text: '', icon: '', ix: wix }], ix: this.ix('warm/row', null, () => {}, { component: 'listRow', label: '' }) }; }
+    if (!this.warmRefs) this.warmRefs = [React.createRef(), React.createRef(), React.createRef()];
+    Object.assign(v.warm, { ref: this.warmRefs[0], ref2: this.warmRefs[1], ref3: this.warmRefs[2], box: { top: 0, h: 0, rad: '0', left: 0, w: 0, r: 0, op: 0 }, ab: { sheetH: 0, find: [], buttons: [] } });
+    v.ahShadow = 'none';
+    v.onOvScroll = e => { if (!apage) return; this.showThumb(e.currentTarget, this.ovThumbRef, v.ab.sheetH); if (!this.mo.userScrolled(e.currentTarget)) return; const before = this.P.barView(apage, this.specs).progress; this.model.dispatch({ type: 'scroll', top: this.pageScroll(apage, e.currentTarget, 'scroll') }); const ap2 = this.model.query.currentPage(this.ms); if (ap2.config.kind === 'appBar' && this.P.barView(ap2, this.specs).progress !== before) { cancelAnimationFrame(this.ovRaf); this.ovRaf = requestAnimationFrame(() => { this.lastMove = 'scroll'; this.forceUpdate(() => { if (this.lastMove === 'scroll') this.lastMove = null; }); }); } };
+    v.ahFab = v.showOverlay && apage ? this.fabFor(ac.header, apage, 'deck:' + ms.activeDeck, v.ovX.show ? Math.max(ahBase, ahBase + v.ovX.h - (+this.M.getField(apage, 'scroll') || 0) - 20) : ahBase) : { show: false, ix: INERT }; v.ahFab.end = apage ? this.fabEnd(AH.end, apage, 4) : 4; v.ahOp = this.state.ahOp; v.ahTrans = this.state.ahTrans; v.ahEv = this.state.ahOp > 0 ? 'auto' : 'none';
+    const ins = this.state.ovInset || { t: 0, r: 0, b: 0, l: 0 };
+    v.ovInsetCss = 'inset(' + ins.t + 'px ' + ins.r + 'px ' + ins.b + 'px ' + ins.l + 'px)';
+    v.cw = G.CW; v.contentH = G.H - (G.AH || 0);
+
+    // layers
+    const wide = G.layout === 'wide', nOpen = ms.layers.nowPlaying.open, dOpen = ms.layers.Dedede.open;
+    const SSV = this.P.resolveVisuals(this.specs, 'sideSheet', 'enabled', {}), BSV = this.P.resolveVisuals(this.specs, 'bottomSheet', 'enabled', {});
+    const nnTop = ms.layers.nowPlaying.stack[ms.layers.nowPlaying.stack.length - 1].page.config.title;
+    v.nn = { ...this.layerVals('nowPlaying'),
+      ...(wide
+        ? { left: G.PW - G.SW, w: G.SW, top: 0, h: 720, tx: nOpen ? 0 : G.SW + 16, rad: '0px', shadow: (G.side === 'beside' ? SSV.shadowBeside : SSV.shadowOver) || 'none', peekOp: 0, peekEv: 'none', sheetOp: 1, sheetEv: nOpen ? 'auto' : 'none' }
+        : { left: 0, w: G.PW, top: nOpen ? 0 : G.H, h: 720, tx: 0, rad: nOpen ? '0px' : BSV.closedRadius || '0px', shadow: BSV.shadow || 'none', peekOp: nOpen ? 0 : 1, peekEv: nOpen ? 'none' : 'auto', sheetOp: nOpen ? 1 : 0, sheetEv: nOpen ? 'auto' : 'none' }),
+      peekSub: this.peekSub(), peekTitle: this.peekTitle(), peekArt: this.player.current() ? artCss(this.player.current().image) : '',
+      peekIx: this.ix(this.sp('peek:nowPlaying', null, 'peek'), { nav: { type: 'openLayer', layer: 'nowPlaying' } }, () => this.openLayer('nowPlaying'), { component: 'listItem', label: q.text(ms, cfg, 'nowPlaying.open') }),
+      titleIx: wide ? INERT : this.ix(this.sp('layer:nowPlaying', null, 'header.title'), { nav: { type: 'closeLayer', layer: 'nowPlaying' } }, () => this.closeLayer('nowPlaying'), { component: 'listItem', label: q.text(ms, cfg, 'nowPlaying.collapse') }) };
+    { const tv = (surface, size) => this.P.resolveVisuals(this.specs, 'title', 'enabled', { surface, variant: { size } });
+      v.titleVisBack = tv('backLayer', 'lg'); v.titleVisFront = tv('frontLayer', 'sm'); v.titleVisBar = tv('appBar', 'lg');
+      v.groupVis = this.P.resolveVisuals(this.specs, 'groupHeader', 'enabled', { surface: 'frontLayer' }); v.alphaVis = this.P.resolveVisuals(this.specs, 'alphaIndex', 'enabled', { surface: 'frontLayer' }); }
+    { const sv = this.P.resolveVisuals(this.specs, 'bottomSheet', 'enabled', {}); v.sheetVis = { ...sv, overflow: sv.clip ? 'hidden' : 'visible' }; }
+    v.npVis = this.P.resolveVisuals(this.specs, 'nowPlaying', 'enabled', { surface: 'bottomSheet' }); v.npH = +v.npVis.height || 0;
+    v.cardVis = this.P.resolveVisuals(this.specs, 'peekCard', 'enabled', {});
+    const ddo = this.state.ddOrigin || { x: 28, y: 28 };
+    const ddRight = wide && G.side === 'beside' && nOpen ? G.SW : 0, ddLeft = G.RAIL, ddBottom = 0;
+    const dx = ddo.x - ddLeft, dW = G.PW - ddRight - ddLeft;
+    v.ddLeft = ddLeft; v.ddRight = ddRight; v.ddBottom = ddBottom;
+    v.dd = { ...this.layerVals('Dedede'), clip: 'circle(' + (dOpen ? this.maxR(dx, ddo.y, dW, 720) : 0) + 'px at ' + dx + 'px ' + ddo.y + 'px)', ev: dOpen ? 'auto' : 'none' };
+    // Now playing page (config: body refs + inner sheet), drawer and account layers — all drawn from their config refs
+    {
+      const t = id => q.text(ms, cfg, id), npL = ms.layers.nowPlaying, npPage = npL.stack[npL.stack.length - 1].page, npc = npPage.config, R2 = (ref, k, sc) => q.resolveRef(ms, cfg, ref, npPage, this.sp('layer:nowPlaying', npc.id, 'body', k), sc);
+      const mm = x => Math.floor((x || 0) / 60000) + ':' + String(Math.floor((x || 0) / 1000) % 60).padStart(2, '0');
+      const np = { mini: [], miniOp: 0, miniEv: 'none', bodyOp: 1, empty: false, emptyText: '', ctrls: [], tabs: [], rows: [], art: '', title: t('player.nothing'), sub: '', dur: 1, pos: 0, posText: '0:00', durText: '0:00', onSeek: () => {}, seekLabel: '', peekH: 56, sheetTop: 0, handleIx: INERT, artVis: {}, infoVis: {}, seekVis: {}, rowVis: {}, tabVis: {}, tabMo: {}, tabSel: 0, emptyVis: {} };
+      if (npc.body) {
+        const nnW = wide ? G.SW : G.PW, RV = (id, variant) => this.P.resolveVisuals(this.specs, id, 'enabled', { surface: 'bottomSheet', variant });
+        np.artVis = RV('artwork', { size: 'lg' }); np.infoVis = RV('trackInfo', { size: 'lg' }); np.seekVis = RV('seekBar'); np.rowVis = RV('row', { justify: 'spread' });
+        np.artW = Math.max(+np.artVis.minSize || 0, Math.min(nnW - (+np.artVis.inset || 0), +np.artVis.maxSize || nnW));
+        (npc.body || []).forEach((ref, k) => {
+          const r = R2(ref, k);
+          if (r.component === 'artwork') { np.art = r.props.image ? artCss(r.props.image) : ''; np.artVis = RV('artwork', r.variant || { size: 'lg' }); }
+          if (r.component === 'trackInfo') np.infoVis = RV('trackInfo', r.variant || { size: 'lg' });
+          if (r.component === 'row') np.rowVis = RV('row', r.variant || {});
+          if (r.component === 'trackInfo') { if (r.props.title) np.title = r.props.title; np.sub = r.props.subtitle || ''; }
+          if (r.component === 'seekBar') { const sl = { role: 'input', page: npPage, bind: r.bind }, val = +q.roleProps(ms, cfg, sl).value || 0; np.dur = +r.props.durationMs || 1; np.pos = val; np.posText = mm(val); np.durText = mm(r.props.durationMs); np.seekLabel = r.props.label || '';
+            np.onSeek = e => { const i = q.roleIntent(this.ms, cfg, sl, 'change', +e.target.value); if (i) this.playerCmd(i); }; }
+          if (r.component === 'row') np.ctrls = (r.slots.children || []).map((c2, j) => { const big = c2.component === 'fab';
+            return { icon: c2.props.icon || '', isFab: big, vis: big ? RV('fab', c2.variant || {}) : {}, ix: this.ix(this.sp('layer:nowPlaying', npc.id, 'body.controls', j), c2.action || null, e => this.runAction(c2.action, e), { component: big ? 'fab' : 'iconButton', variant: c2.variant, facts: { checked: c2.checked }, label: c2.props.label || '' }) }; });
+        });
+        const sh = npc.sheet, ex = !!(npPage.sheet && npPage.sheet.expanded); np.peekH = sh ? sh.peekHeight : 0; np.sheetTop = ex ? (+this.P.resolveVisuals(this.specs, 'nowPlaying', 'enabled', {}).height || 0) + 'px' : 'calc(100% - ' + np.peekH + 'px)'; np.miniOp = ex ? 1 : 0; np.miniEv = ex ? 'auto' : 'none'; np.bodyOp = ex ? 0 : 1;
+
+        np.handleIx = this.ix(this.sp('layer:nowPlaying', npc.id, 'sheet.handle'), { nav: { type: 'toggleExpanded' } }, () => this.dispatch({ type: 'toggleExpanded' }, 'sheet · toggle'), { component: 'listItem', label: t('player.upNext') });
+        if (sh) {
+          const tb = (this.bp(sh.header).title), sl = tb && { role: 'input', page: npPage, bind: tb.bind }, rp = sl ? q.roleProps(ms, cfg, sl) : { options: [] };
+          np.tabs = rp.options.map((o, j) => { const i = q.roleIntent(ms, cfg, sl, 'change', o.value); return { label: o.label, on: o.value === rp.value, ix: this.ix(this.sp('layer:nowPlaying', npc.id, 'sheet.tabs', j), i && { nav: i }, () => this.dispatch(i, 'sheet tab · ' + o.value), { component: 'tab', label: o.label }) }; });
+          const params = { ...q.resolveRef(ms, cfg, { component: '-', props: sh.content.params || {} }, npPage).props, ...q.contentParams(npPage) }, data = this.getData(sh.content.dataSource, params);
+          const pres = sh.content.presentations[q.contentParams(npPage)[sh.content.view] || 'default'] || Object.values(sh.content.presentations)[0];
+          const QV = this.P.resolveVisuals(this.specs, pres.item.component, 'enabled', {});
+          np.rows = (data.items || []).map(it => { const r = q.resolveRef(ms, cfg, pres.item, npPage, undefined, { item: it }), oi = q.roleIntent(ms, cfg, { role: 'item', page: npPage, item: it, origin: { layer: 'nowPlaying' } }, 'open'), act = oi ? { nav: oi } : (r.action || null);
+            return { id: it.id, label: r.props.title || r.props.text || '', sub: r.props.subtitle || '', art: r.props.image ? artCss(r.props.image) : 'transparent', trailing: pres.item.component === 'queueRow' ? (QV.handle || '') : '', bg: r.props.current ? (QV.currentFill || 'transparent') : 'transparent',
+              ix: this.ix(this.sp('layer:nowPlaying', npc.id, 'sheet.item', undefined, it.id), act, e => this.runAction(act, e), { component: pres.item.component === 'queueRow' ? 'listRow' : pres.item.component, label: r.props.title || '' }) }; });
+        }
+      }
+      np.empty = !np.rows.length; np.emptyText = t('player.nothing'); np.emptyVis = this.P.resolveVisuals(this.specs, 'emptyState', 'enabled', { variant: { size: 'sm' } });
+      np.tabSel = Math.max(0, np.tabs.findIndex(x => x.on)); np.tabVis = this.P.resolveVisuals(this.specs, 'tabBar', 'enabled', { surface: 'bottomSheet', variant: { tone: 'surface' } }); np.tabMo = (() => { const d = this.P.motionFor(this.specs, 'tabBar', 'indicator', ms.prefs); return { ms: this.msOf(d), ease: this.easeOf(d) }; })(); v.np = np;
+      const ML = cfg.layers.find(l => l.id === 'menu'), mOpen = !!(ms.layers.menu && ms.layers.menu.open) && !(ML && ML.presentation.wide === 'rail' && G.layout === 'wide');
+      v.drawerItemVis = this.P.resolveVisuals(this.specs, 'drawerItem', 'enabled', { variant: { size: 'drawer' } });
+      v.dr = { items: [], w: ML ? ML.presentation.width : 300, tx: mOpen ? 0 : -110, op: mOpen ? 1 : 0, ev: mOpen ? 'auto' : 'none', title: '', scrim: () => this.closeLayer('menu') };
+      if (ML) { const mp = ms.layers.menu.stack[0].page; v.dr.title = this.titleText(this.bp(mp.config.header).title, mp);
+        v.dr.items = (mp.config.body || []).map((ref, k) => { const r = q.resolveRef(ms, cfg, ref, mp, this.sp('layer:menu', mp.config.id, 'body', k)); return { icon: r.props.icon || '', text: r.props.text || '', fill: r.checked ? 1 : 0, bg: r.checked ? this.specs.tokens['color.navIndicator'] : 'transparent', ix: this.ix(r.key, r.action || null, e => this.runAction(r.action, e), { component: 'listItem', label: r.props.text || '' }) }; }); }
+      const AL = cfg.layers.find(l => l.id === 'account'), aOpen = !!(ms.layers.account && ms.layers.account.open);
+      v.acc = { ty: aOpen ? 0 : 100, ev: aOpen ? 'auto' : 'none', title: '', name: '', email: '', plan: '', art: '', signText: '', signIx: INERT, closeIx: INERT, headVis: {}, planVis: {} };
+      if (AL) { const ap2 = ms.layers.account.stack[0].page, H2 = this.bp(ap2.config.header); v.acc.title = this.titleText(H2.title, ap2);
+        const cl = H2.start[0]; if (cl) v.acc.closeIx = this.ix(this.sp('layer:account', ap2.config.id, 'header.start', 0), cl.action, e => this.runAction(cl.action, e), { component: 'iconButton', label: t('action.close') });
+        (ap2.config.body || []).forEach((ref, k) => { const r = q.resolveRef(ms, cfg, ref, ap2, this.sp('layer:account', ap2.config.id, 'body', k));
+          if (r.component === 'detailHeader') Object.assign(v.acc, { name: r.props.title || '', email: r.props.subtitle || '', art: artCss(r.props.image), headVis: this.P.resolveVisuals(this.specs, 'detailHeader', 'enabled', { surface: 'appBar', variant: r.variant || { shape: 'circle' } }) });
+          if (r.component === 'panelRow') { v.acc.plan = r.props.text || ''; v.acc.planVis = this.P.resolveVisuals(this.specs, 'panelRow', 'enabled', { surface: 'appBar' }); }
+          if (r.component === 'button') { v.acc.signText = r.props.text || ''; v.acc.signIx = this.ix(r.key, r.action, e => this.runAction(r.action, e), { component: 'button', variant: r.variant, label: r.props.text || '' }); } }); }
+    }
+    const modal = wide && G.side === 'modal' && nOpen, auto = wide && G.side === 'auto';
+    v.nnScrimOp = modal ? 1 : 0; v.nnScrimEv = modal ? 'auto' : 'none'; v.nnScrimClick = () => this.closeLayer('nowPlaying');
+    v.showNnEdge = auto && !nOpen && !dOpen; v.edgeVis = this.P.resolveVisuals(this.specs, 'sideSheet', 'enabled', {}); v.nnEdgeEnter = () => this.openLayer('nowPlaying');
+    v.nnLeave = () => { if (auto && this.ms.layers.nowPlaying.open) this.closeLayer('nowPlaying'); };
+    v.showNnCard = wide;
+    const place = this.P.peekPlacement(ms, cfg, this.pgeom(), top.page.config.kind === 'appBar' ? 0 : v.frontTop, top.page.config.kind === 'backdrop' ? ps : null);
+    v.nnCard = place ? { w: place.w, left: place.left, top: place.top } : { w: 0, left: 0, top: 0 };
+    v.nnCard.ix = this.ix(this.sp('peek:nowPlaying', null, 'card'), { nav: nOpen ? { type: 'closeLayer', layer: 'nowPlaying' } : { type: 'openLayer', layer: 'nowPlaying' } }, () => nOpen ? this.closeLayer('nowPlaying') : this.openLayer('nowPlaying'), { component: 'listItem', label: nOpen ? 'Close nowPlaying' : 'Open nowPlaying' });
+    v.ddCircleIx = this.ix(this.sp('nav', null, 'rail.dedede'), { nav: { type: 'openLayer', layer: 'Dedede' } }, e => this.openLayer('Dedede', e), { component: 'iconButton', variant: { size: 'xl' }, label: q.text(ms, cfg, 'layer.settings') });
+    v.focusDeck = () => { if (auto && this.ms.layers.nowPlaying.open) this.closeLayer('nowPlaying'); this.focus(this.ms.activeDeck); };
+    v.focusnowPlaying = () => this.focus('nowPlaying'); v.focusDedede = () => this.focus('Dedede');
+
+    // frame / nav
+    v.pw = G.PW; v.frameRad = wide ? 16 : 28;
+    v.screenLeft = G.RAIL; v.screenRight = G.PW - G.RAIL - G.CW; v.screenBottom = 720 - G.H;
+    v.navShift = G.NAV !== 'navBar' || !q.navVisible(ms, cfg) ? G.NH : 0;
+    v.showRail = G.NAV === 'navRail';
+    const navSlot = { role: 'navigation', page: ps }, navP = q.roleProps(ms, cfg, navSlot);
+    const navItems = form => navP.destinations.map(id => { const d = cfg.decks.find(x => x.id === id), i = q.roleIntent(ms, cfg, navSlot, 'select', id); return { label: q.text(ms, cfg, d.name), icon: d.icon, selected: id === navP.selected, ix: this.ix(this.sp('nav', null, form, undefined, id), i && { nav: i }, () => this.switchDeck(id), { component: 'navItem', variant: { form }, label: q.text(ms, cfg, d.name) }) }; });
+    v.nav = navItems('bar'); v.railNav = navItems('rail');
+    { const NW = cfg.navigation.wide, slot = k => q.expandSlots(ms, cfg, (NW.slots || {})[k] || [], ps).map(({ ref, scope }, i) => { const r = q.resolveRef(ms, cfg, ref, ps, this.sp('nav', null, 'rail.' + k, i), scope); return r; }).filter(r => r.visible)
+        .map(r => ({ icon: r.props.icon || '', text: r.props.text || r.props.label || '', mark: r.component === 'logo', ix: r.component === 'logo' ? { ...this.ix(r.key, null, null, { component: 'logo', label: r.props.label || '', surface: 'navRail' }), resolve: () => ({ state: 'enabled', enabled: true, flags: {}, status: [], activatable: false }) } : this.ix(r.key, r.action || null, e => this.runAction(r.action, e), { component: r.component === 'drawerItem' ? 'listItem' : 'iconButton', label: r.props.text || r.props.label || '', surface: 'navRail' }) }));
+      const ML = cfg.layers.find(l => l.presentation.kind === 'drawer' && l.presentation.wide === 'rail'), ex = !!(ML && ms.layers[ML.id].open && G.NAV === 'navRail'), V = this.P.resolveVisuals(this.specs, 'navRail', 'enabled', {}), mo = this.P.motionFor(this.specs, 'navRail', 'width', ms.prefs);
+      v.railNav = v.railNav.map(n => ({ ...n, pill: n.selected ? this.specs.tokens['color.navIndicator'] : 'transparent', fill: n.selected ? 1 : 0 }));
+      v.rail = { tr: this.mo.css(mo), collapsed: !ex, w: ex ? +V.expandedWidth || 0 : +V.width || 0, align: ex ? 'stretch' : 'center', padX: ex ? +V.itemInset || 0 : 0, shadow: ex ? V.expandedShadow || 'none' : 'none', ms: this.msOf(mo), ease: this.easeOf(mo), ex, padY: +V.padY || 0, gap: +V.gap || 0, groupGap: +V.groupGap || 0 };
+      v.rail.mo = { ms: v.rail.ms, ease: v.rail.ease };
+      v.railItemVis = this.P.resolveVisuals(this.specs, 'drawerItem', 'enabled', { surface: 'navRail', variant: { size: 'rail' } });
+      if (ex) v.screenLeft = v.rail.w;   // not modal: the expanded rail pushes the content aside
+      v.railTop = G.NAV === 'navRail' ? slot('top') : []; v.railBottom = G.NAV === 'navRail' ? slot('bottom') : []; }
+
+    /* lint:off harness — debug side panel */
+    // side panel
+    { const SK = 'backdrop-nav-slow-motion'; let st = 0; try { st = Math.max(0, Math.min(4, +localStorage.getItem(SK) || 0)); } catch (e) {}
+      v.slowStep = st; v.slowLabel = Math.pow(2, st) + '×';
+      v.onSlow = e => { try { localStorage.setItem(SK, String(+e.target.value)); } catch (x) {} this.forceUpdate(); }; }   // motions.js scales every duration × 2^step
+    v.layouts = Object.entries(DEVICES).map(([k, d]) => { const on = this.state.layout === k; return { label: d.label, bg: on ? '#1c1c1c' : 'transparent', fg: on ? '#fff' : '#1c1c1c', pick: () => { this.setState({ layout: k, ovRect: null, ovInset: null, backOverride: null }); this.dispatch({ type: 'setDevice', device: { width: d.width, touch: d.touch } }, 'device · ' + d.label); } }; });
+    v.layoutInfo = (G.touch ? 'touch' : 'pointer') + ' · ' + G.layout + ' · nowPlaying ' + (wide ? { beside: 'side sheet beside content', modal: 'modal side sheet', auto: 'auto-collapsing sidebar' }[G.side] : 'bottom sheet') + ' · back: ' + (G.touch ? 'Android = browser' : 'browser history');
+    v.backBtn = () => this.back();
+    v.backLabel = G.touch ? 'Back · Android = browser' : 'Browser back';
+    v.showAndroidBack = false; v.androidBack = () => {};
+    v.historyCaption = G.touch ? 'touch · entries derived from state (newest first)' : 'pointer · recorded history (newest first)';
+    v.historyList = q.historyEntries(ms, cfg).slice().reverse().map(r =>
+      r.kind === 'push' ? 'push · ' + r.deck + (r.prevDeck && r.prevDeck !== r.deck ? ' (from ' + r.prevDeck + ')' : '')
+      : r.kind === 'deckSwitch' ? 'deckSwitch · ' + r.from + ' → ' + r.to
+      : r.kind === 'expand' ? 'expand · ' + r.deck
+      : r.kind + ' · ' + r.layer);
+    v.historyEmpty = v.historyList.length === 0;
+    v.focusLabel = ms.focus + (ms.layers[ms.focus] ? ' (layer)' : ' (deck)');
+    v.stackInfo = [
+      ...cfg.decks.map(d => { const st = ms.decks[d.id].stack, up = st[underIndex(st)].page; return { name: q.text(ms, cfg, d.name) + (d.id === ms.activeDeck ? ' ●' : ''), action: Object.entries(up.config.params || {}).map(([k, P]) => k + ' ' + P.type).join(', '), border: d.id === ms.activeDeck ? '#1c1c1c' : '#e3e2de', path: st.map((e, k) => k === 0 ? 'base' : e.page.config.title + ' [' + e.page.config.kind + ']').join(' › '), open: up.back.expanded ? 'expanded' : 'concealed' }; }),
+      ...cfg.layers.map(L => { const ls = ms.layers[L.id]; return { name: q.text(ms, cfg, L.name) + (ms.focus === L.id ? ' ●' : ''), action: 'layer · history ' + q.historyMode(ms, cfg, L), border: ms.focus === L.id ? '#1c1c1c' : '#e3e2de', path: ls.stack.map(e => e.page.config.title).join(' › '), open: ls.open ? 'open' : 'closed' }; })
+    ];
+    v.log = this.state.log;
+    /* lint:on */
+    // player (mini controls in the peek)
+    const pst = this.player.getState(), cur = this.player.current();
+    const playAct = cur ? { type: 'toggle' } : { type: 'playQueue', tracks: this.S.fixtures.tracks(4).map(t => ({ ...t, durationMs: 20000 })) };
+    const plIx = k => ({
+      ['t' + k]: this.ix(this.sp('peek:nowPlaying', null, (k ? 'peek' : 'card') + '.player.toggle'), { player: playAct }, () => this.playerCmd(playAct), { component: 'iconButton', variant: { size: 'sm' }, label: q.text(ms, cfg, pst.status === 'playing' || pst.status === 'loading' ? 'player.pause' : 'player.play') }),
+      ['n' + k]: this.ix(this.sp('peek:nowPlaying', null, (k ? 'peek' : 'card') + '.player.next'), { player: { type: 'next' } }, () => this.playerCmd({ type: 'next' }), { component: 'iconButton', variant: { size: 'sm' }, label: q.text(ms, cfg, 'player.next') })
+    });
+    v.pl = { icon: pst.status === 'playing' || pst.status === 'loading' ? 'pause' : 'play_arrow', ...plIx(''), ...plIx('2') };
+    // peek controls: the layer presentation's peek header end slots (config), per form
+    const peekCtrls = (form, tag) => { const NL = cfg.layers.find(l => l.id === 'nowPlaying'), H = NL && NL.presentation[form] && NL.presentation[form].peek && NL.presentation[form].peek.header;
+      return q.expandSlots(ms, cfg, (H && H.slots && H.slots.end) || [], null).map(({ ref, scope }, k) => q.resolveRef(ms, cfg, ref, null, this.sp('peek:nowPlaying', null, tag + '.end', k), scope)).filter(r => r.visible)
+        .map(r => ({ icon: r.props.icon || '', ix: this.ix(r.key, r.action || null, e => this.runAction(r.action, e), { component: r.component, variant: r.variant, label: r.props.label || '' }) })); };
+    v.pl.peek = peekCtrls('compact', 'peek'); v.pl.card = peekCtrls('wide', 'card'); v.pl.mini = peekCtrls('compact', 'mini');
+    // texts + direction (current locale)
+    const t = id => q.text(ms, cfg, id);
+    v.dir = q.dir(ms, cfg);
+    /* lint:off harness — locale picker */
+    v.locales = cfg.locales.supported.map(L => { const on = ms.prefs.locale === L.id; return { label: L.id + (L.dir === 'rtl' ? ' · rtl' : ''), bg: on ? '#1c1c1c' : 'transparent', fg: on ? '#fff' : '#1c1c1c', pick: () => this.dispatch({ type: 'setPrefs', prefs: { locale: L.id } }, 'prefs · locale ' + L.id) }; });
+    /* lint:on */
+    // launch splash (AppConfig.launch) → app; sign-in gate ↔ app: fade through (coverFade)
+    v.appFx = this.fx('app'); v.gateFx = this.fx('gate'); v.splashFx = this.fx('splash');
+    // logo on the covers: the design's logo visuals + levels loop; colour and size from the cover component
+    const entry = this.state.entry;
+    v.logoVis = this.P.resolveVisuals(this.specs, 'logo', 'enabled'); v.logoMotion = this.P.motionFor(this.specs, 'logo', 'levels', ms.prefs);
+    { const sst = this.state.splashIn ? 'enabled' : 'entering', sv = this.P.resolveVisuals(this.specs, 'splash', sst), starting = ms.launch === 'starting';
+      const mo = k => this.P.motionFor(this.specs, 'splash', k, ms.prefs);
+      v.splash = { logoOp: sv.logoOpacity ?? 1, logoSc: sv.logoScale ?? 1, logoTr: this.state.splashIn ? this.mo.cssFor({ opacity: mo('logoOpacity'), transform: mo('logoScale') }) : 'none', show: starting || (entry && entry.cover === 'splash'), playing: starting && !entry, busy: starting, ev: entry ? 'none' : 'auto', logo: sv.logo, logoSize: sv.logoSize, label: t('splash.loading') }; }
+    // session gate
+    const gid = q.gate(ms, cfg);
+    const gateEv = gid === 'signIn' ? { type: 'signedIn' } : gid === 'onboarding' ? { type: 'onboarded' } : null;
+    { const gv = this.P.resolveVisuals(this.specs, 'signInPage', 'enabled'), look = { logo: gv.logo, logoSize: gv.logoSize };
+      v.gate = gid ? { show: true, ev: entry ? 'none' : 'auto', title: t('gate.' + gid + '.title'), text: t('gate.' + gid + '.text'), button: t('gate.' + gid + '.button'), ...look }
+        : entry && entry.cover === 'gate' && entry.gate ? { ...entry.gate, show: true, ev: 'none' } : { show: false, ...look };
+      this.gateSnap = gid ? { title: v.gate.title, text: v.gate.text, button: v.gate.button, ...look } : null; }
+    v.gate.ix = gateEv && !entry ? this.ix(this.sp('gate:' + gid, null, 'action'), { nav: { type: 'session', event: gateEv } }, () => this.enterApp({ type: 'sessionChanged', session: { signedIn: true } }, 'gate', () => this.dispatch({ type: 'session', event: gateEv }, 'session · ' + gateEv.type)), { component: 'button', variant: { emphasis: 'filled', size: 'lg' }, label: v.gate.button }) : INERT;
+    // overlays
+    const dlg = ms.overlays.find(o => o.spec.kind === 'dialog'), sn = ms.overlays.find(o => o.spec.kind === 'snackbar');
+    const mn = ms.overlays.find(o => o.spec.kind === 'menu');
+    const mWide = G.layout === 'wide', ma = this.menuAnchor || { top: 0, end: 0 };
+    v.menu = mn ? { show: true, sheet: !mWide, anchor: ma, vis: this.P.resolveVisuals(this.specs, 'menu', 'enabled', { env: this.lenv() }), close: () => this.dispatch({ type: 'closeOverlay', id: mn.spec.id }, 'menu · close'), stop: e => e.stopPropagation(),
+      items: ((mn.spec.props && mn.spec.props.items) || []).map((it, k) => ({ label: t(it.label.text || it.label), icon: it.icon || '', ix: this.ix(this.sp('overlay:' + mn.spec.id, null, 'items', k), it.action, e => this.runAction(it.action, e), { component: 'listItem', label: t(it.label.text || it.label) }) })) } : { show: false, items: [] };
+    v.dialog = dlg ? { show: true, vis: this.P.resolveVisuals(this.specs, 'dialog', 'enabled', {}), title: dlg.spec.props && dlg.spec.props.title ? t(dlg.spec.props.title.text || dlg.spec.props.title) : '', body: dlg.spec.props && dlg.spec.props.body ? t(dlg.spec.props.body.text || dlg.spec.props.body) : '', cancelText: t('common.cancel'), okText: t('common.ok'), stop: e => e.stopPropagation(),
+      cancel: () => this.dispatch({ type: 'closeOverlay', id: dlg.spec.id, result: 'cancel' }, 'dialog · cancel'),
+      cancelIx: this.ix(this.sp('overlay:' + dlg.spec.id, null, 'actions', 0), { nav: { type: 'closeOverlay', id: dlg.spec.id, result: 'cancel' } }, () => this.dispatch({ type: 'closeOverlay', id: dlg.spec.id, result: 'cancel' }, 'dialog · cancel'), { component: 'button', variant: { emphasis: 'text' }, label: t('common.cancel') }),
+      okIx: this.ix(this.sp('overlay:' + dlg.spec.id, null, 'actions', 1), { nav: { type: 'closeOverlay', id: dlg.spec.id, result: 'ok' } }, () => this.dispatch({ type: 'closeOverlay', id: dlg.spec.id, result: 'ok' }, 'dialog · ok'), { component: 'button', variant: { emphasis: 'filled' }, label: t('common.ok') }) } : { show: false, cancelIx: INERT, okIx: INERT };
+    v.snack = sn ? { show: true, text: t('common.dismiss'), message: sn.spec.props && sn.spec.props.text ? t(sn.spec.props.text.text || sn.spec.props.text) : '', ...(() => { const SV = this.P.resolveVisuals(this.specs, 'snackbar', 'enabled', {}), m = +SV.margin || 0; return { vis: SV, left: G.RAIL + m, w: Math.min(G.CW - 2 * m, +SV.maxWidth || G.CW), bottom: PHONE_H - G.H + (wide ? +SV.bottomWide || 0 : +SV.bottomCompact || 0) }; })(), ix: this.ix(this.sp('overlay:' + sn.spec.id, null, 'action'), { nav: { type: 'closeOverlay', id: sn.spec.id } }, () => this.dispatch({ type: 'closeOverlay', id: sn.spec.id }, 'snackbar · dismiss'), { component: 'button', variant: { emphasis: 'text', size: 'sm' }, label: t('common.dismiss') }) } : { show: false, ix: INERT };
+    /* lint:off harness — simulate toggles, address bar */
+    // simulate toggles
+    const tog = (label, on, fn) => ({ label, bg: on ? '#1c1c1c' : 'transparent', fg: on ? '#fff' : '#1c1c1c', toggle: fn });
+    v.simToggles = [
+      tog('Signed in', ms.session.signedIn, () => { const e = ms.session.signedIn ? 'signedOut' : 'signedIn'; this.enterApp({ type: 'sessionChanged', session: { signedIn: e !== 'signedOut' } }, e === 'signedOut' ? 'app' : 'gate', () => this.dispatch({ type: 'session', event: { type: e } }, 'session · ' + e)); }),
+      tog('Offline', this.sim.offline, () => { this.sim.offline = !this.sim.offline; this.log('sim · offline ' + this.sim.offline); this.forceUpdate(); }),
+      tog('Slow data', this.sim.slow, () => { this.sim.slow = !this.sim.slow; this.loaded.clear(); this.log('sim · slow ' + this.sim.slow); this.forceUpdate(); }),
+      tog('Failing data', this.sim.fail, () => { this.sim.fail = !this.sim.fail; this.log('sim · fail ' + this.sim.fail); this.forceUpdate(); }),
+      tog('Reduced motion', ms.prefs.reducedMotion, () => this.dispatch({ type: 'setPrefs', prefs: { reducedMotion: !ms.prefs.reducedMotion } }, 'prefs · reducedMotion')),
+      tog('Open dialog', !!dlg, () => this.dispatch({ type: 'openOverlay', overlay: this.S.fixtures.sampleDialog }, 'overlay · dialog')),
+      tog('Show snackbar', !!sn, () => this.dispatch({ type: 'openOverlay', overlay: this.S.fixtures.sampleSnackbar }, 'overlay · snackbar')),
+      tog('Simulate restart', false, () => this.restart())
+    ];
+    // address bar
+    v.urlDraft = this.state.urlEditing ? this.state.urlDraft : q.url(ms, cfg);
+    v.onUrlChange = e => this.setState({ urlDraft: e.target.value, urlEditing: true });
+    v.onUrlKey = e => {
+      if (e.key === 'Enter') { const u = this.state.urlDraft || ''; this.setState({ urlEditing: false, ovRect: null, ovInset: null, backOverride: null }); this.dispatch({ type: 'navigateUrl', url: u }, 'navigateUrl · ' + u); }
+      if (e.key === 'Escape') this.setState({ urlEditing: false });
+    };
+    v.reset = () => { const d = DEVICES[this.state.layout]; this.model = this.M.createModel(this.S.config, { width: d.width, touch: d.touch }, this.dataSrc); this.setState({ log: ['reset'], ovRect: null, ovInset: null, backOverride: null, frontTopOverride: null, ft: null, cf: null, entry: null }); this.cancelEntry(); this.scheduleLaunch(); };
+    /* lint:on */
+    // bars (design: header / frontHeader / appBar); layer headers as slot items
+    { const ctl = (ix, icon) => ({ isControl: true, ix, icon }), RVb = (id, ctx) => this.P.resolveVisuals(this.specs, id, 'enabled', ctx);
+      v.barVisBack = RVb('header', { surface: 'backLayer' }); v.barVisFront = RVb('frontHeader', { surface: 'frontLayer' });
+      v.barVisLayer = RVb('appBar', { surface: 'appBar', variant: { form: 'layer' } });
+      v.barMo = { ms: this.dur }; v.fhMo = { ms: this.dur, titleMs: +v.barVisFront.titleMs || 0 }; v.ahMo = { ms: +v.barVisApp.shadowMs || 0 };
+      v.bhTitlePad = (v.bhLeft || []).some(x => x.op) ? +v.barVisBack.titlePadAfterStart || 0 : +v.barVisBack.titlePadAlone || 0;
+      if (v.nn) { v.nn.start = [ctl(v.nn.leftIx, v.nn.leftIcon)]; v.nn.end = v.nn.hasMore ? [ctl(v.nn.moreIx, 'more_vert')] : []; }
+      if (v.dd) { v.dd.start = [ctl(v.dd.leftIx, v.dd.leftIcon)]; v.dd.end = v.dd.hasMore ? [ctl(v.dd.moreIx, 'more_vert')] : []; }
+      if (v.acc) v.acc.start = [ctl(v.acc.closeIx, 'close')]; }
+    { const RS = (id, st, ctx) => this.P.resolveVisuals(this.specs, id, st || 'enabled', ctx || {});
+      v.sv = { front: RS('frontLayer'), back: RS('backLayer'), sheet: RS('bottomSheet', 0, { env: this.lenv() }), side: RS('sideSheet'), drawer: RS('drawer'), signIn: RS('signInPage', 0, { surface: 'signInPage' }), splash: RS('splash'), navBar: RS('navBar'), rail: RS('navRail', 0, { surface: 'navRail' }), pageFill: RS('appBar').pageFill };
+      v.sv.frontScrim = RS('frontLayer', 'partlyCollapsed').scrim || 'transparent'; v.sv.frontScrimOn = +v.scrimOpacity > 0; }
+    return v;
+  }
+}
+</script>
+</body>
+</html>

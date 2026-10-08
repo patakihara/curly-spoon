@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="display:flex;flex-direction:column;gap:{{ gap }}px">
+  <div data-item-id="{{ id }}" style="position:relative;height:{{ hh }}px;display:flex;align-items:center;gap:{{ hg }}px;padding:0 {{ inset }}px"><dc-import name="ListItem" dc-props="{{ ix }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import><div style="flex:1;min-width:0;display:flex;flex-direction:column"><div style="font-size:{{ ts }}px;font-weight:{{ tw }}">{{ title }}</div><div style="font-family:{{ sf }};font-size:{{ ss }}px;color:{{ sc }}">{{ sub }}</div></div><dc-import name="Symbol" icon="{{ chev }}" visuals="{{ chevVis }}" hint-size="22px,22px"></dc-import></div>
+  <div style="display:flex;overflow-x:auto;padding:0 {{ rowPad }}px;scroll-snap-type:x mandatory;scroll-padding:0 {{ rowPad }}px">
+    <sc-for list="{{ entries }}" as="en" hint-placeholder-count="4">
+      <div data-item-id="{{ en.id }}" data-title="{{ en.title }}" style="position:relative;flex:none;width:{{ w }}px;display:flex;flex-direction:column;gap:{{ eg }}px;padding:{{ pad }}px;scroll-snap-align:{{ snap }};border-radius:{{ ir }}px;overflow:hidden"><dc-import name="ListItem" dc-props="{{ en.ix }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import><div data-shared="image" style="width:{{ w }}px;height:{{ w }}px;border-radius:{{ en.rad }}px;background:{{ en.art }}"></div><div style="font-size:{{ efs }}px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:{{ en.align }}">{{ en.title }}</div></div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:240},&quot;id&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;New releases&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;sub&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;12 albums&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;ix&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;entries&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ id: string; title: string; art: string; shape: string; ix: object }[]&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
+// Web implementation of design component carousel (item; heading + a snapping row of entries). Props: id, title, sub, ix (ListItem props for the heading),
+// entries [{ id, title, art, shape, ix }], visuals (resolved carousel visuals). No values of its own.
+class Component extends DCLogic {
+  renderVals() {
+    const v = this.props.visuals || {}, pad = +(v.itemPadding ?? 10), inset = +(v.inset ?? 16);
+    return { id: this.props.id || '', title: this.props.title || '', sub: this.props.sub || '', ix: this.props.ix || {},
+      gap: +v.gap || 0, hh: +v.headingHeight || 44, hg: +v.headingGap || 0, inset, ts: +v.titleSize || 17, tw: v.titleWeight || 500, sf: v.subFont || 'inherit', ss: +v.subSize || 11, sc: v.subColor || 'inherit',
+      chev: v.chevron || 'chevron_right', chevVis: { size: +v.chevronSize || 22, color: v.chevronColor },
+      rowPad: Math.max(0, inset - pad), w: +v.entrySize || 140, pad, ir: +(v.itemRadius ?? 12), eg: +v.entryGap || 0, efs: +v.entryFontSize || 13, snap: v.snap || 'start',
+      entries: (this.props.entries || []).map(e => ({ ...e, rad: e.shape === 'circle' ? +(v.entryArtRadiusCircle ?? 999) : +(v.entryArtRadius ?? 6), align: e.shape === 'circle' ? 'center' : 'start' })) };
+  }
+}
+</script>
+</body>
+</html>

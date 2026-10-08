@@ -1,0 +1,62 @@
+{
+  "params": {
+    "ms": {
+      "type": "duration"
+    },
+    "easing": {
+      "type": "easing"
+    },
+    "surface": {
+      "type": "string",
+      "default": "frontLayer"
+    },
+    "to": {
+      "type": "string",
+      "default": "content"
+    },
+    "fadeMs": {
+      "type": "duration"
+    },
+    "split": {
+      "type": "number",
+      "default": 0.3
+    },
+    "easingOut": {
+      "type": "easing"
+    },
+    "easingIn": {
+      "type": "easing"
+    },
+    "scaleIn": {
+      "type": "number",
+      "default": 0.92
+    },
+    "cornerTo": {
+      "type": "number",
+      "default": 0
+    },
+    "shared": {
+      "type": "string",
+      "default": ""
+    },
+    "sharedMs": {
+      "type": "duration"
+    },
+    "sharedEasing": {
+      "type": "easing"
+    },
+    "revealBand": {
+      "type": "number",
+      "default": 0
+    },
+    "fadeParts": {
+      "type": "string",
+      "default": ""
+    },
+    "slideParts": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "reduced": "fade"
+}

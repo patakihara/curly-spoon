@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<sc-if value="{{ showOverlay }}" hint-placeholder-val="{{ false }}"><div ref="{{ surfRef }}" style="position:absolute;inset:0;background:{{ sv.front.fill }};pointer-events:none"></div></sc-if>
+<div ref="{{ frontRef }}" style="position:absolute;z-index:0;left:0;right:0;bottom:0;top:{{ frontTop }}px;box-sizing:border-box;background:{{ sv.front.fill }};border-radius:{{ frontTL }}px {{ frontTR }}px 0 0;transition:{{ frontTr }};display:flex;flex-direction:column;overflow:hidden">
+  <div ref="{{ fcRef }}" style="flex:1;min-height:0;display:flex;flex-direction:column;position:relative;transform-origin:50% 0;opacity:{{ ftF.op }};transform:translateX({{ ftF.tx }}px) scale({{ ftF.sc }});transition:{{ ftF.tr }}">
+  <sc-if value="{{ fab.show }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset-inline-end:{{ fab.end }}px;top:{{ fab.top }}px;z-index:4"><dc-import name="Fab" ix="{{ fab.ix }}" icon="{{ fab.icon }}" visuals="{{ fab.vis }}" hint-size="40px,40px"></dc-import></div></sc-if>
+  <sc-if value="{{ headerStatic }}" hint-placeholder-val="{{ true }}">
+  <dc-import name="Bar" height="{{ fhH }}" row="{{ fhRow }}" start="{{ fhLeft }}" end="{{ fhRight }}" title="{{ fhTitle }}" title-vis="{{ titleVisFront }}" title-op="{{ fhTitleOp }}" title-max-w="{{ fhTitleW }}" surface-ix="{{ subIx }}" divider="{{ fhBorder }}" ease="{{ ease }}" motion="{{ fhMo }}" visuals="{{ barVisFront }}" hint-size="100%,48px"></dc-import>
+  </sc-if>
+  <div ref="{{ scrollRef }}" data-scroller="1" onScroll="{{ onFrontScroll }}" style="flex:1;overflow:auto;position:relative"><div style="min-height:100%;box-sizing:border-box;padding-bottom:{{ screenBottom }}px">
+    <sc-if value="{{ cv.banner }}" hint-placeholder-val="{{ false }}"><dc-import name="StaleBanner" text="{{ cv.staleText }}" retry="{{ retryText }}" retry-ix="{{ retryIx }}" visuals="{{ cv.bannerVis }}" hint-size="100%,44px"></dc-import></sc-if>
+    <sc-if value="{{ cv.phList }}" hint-placeholder-val="{{ false }}">
+      <div aria-busy="true" style="display:flex;flex-direction:column"><sc-for list="{{ cv.placeholders }}" as="ph" hint-placeholder-count="5"><dc-import name="Placeholder" form="list" width="{{ ph.w }}" visuals="{{ cv.phVis }}" hint-size="100%,77px"></dc-import></sc-for></div>
+    </sc-if>
+    <sc-if value="{{ cv.phGrid }}" hint-placeholder-val="{{ false }}">
+      <div aria-busy="true" style="display:grid;grid-template-columns:{{ grid.cols }};gap:{{ grid.gap }}"><sc-for list="{{ cv.placeholders }}" as="ph" hint-placeholder-count="4"><dc-import name="Placeholder" form="grid" width="{{ ph.w }}" aspect="{{ grid.aspect }}" visuals="{{ cv.phVis }}" hint-size="100%,200px"></dc-import></sc-for></div>
+    </sc-if>
+    <sc-if value="{{ cv.phGeneric }}" hint-placeholder-val="{{ false }}">
+      <div aria-busy="true" style="padding:{{ scroller.padding }}px;display:flex;flex-direction:column;gap:{{ scroller.gap }}px"><sc-for list="{{ cv.placeholders }}" as="ph" hint-placeholder-count="3"><dc-import name="Placeholder" form="block" width="{{ ph.w }}" visuals="{{ cv.phVis }}" hint-size="100%,200px"></dc-import></sc-for></div>
+    </sc-if>
+    <sc-if value="{{ cv.message }}" hint-placeholder-val="{{ false }}"><dc-import name="EmptyState" text="{{ cv.text }}" icon="{{ cv.icon }}" retry="{{ cv.retryLabel }}" retry-ix="{{ retryIx }}" visuals="{{ cv.msgVis }}" hint-size="100%,180px"></dc-import></sc-if>
+    <sc-if value="{{ isCarousels }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:{{ scroller.carouselPadTop }}px 0 {{ scroller.carouselPadBottom }}px;display:flex;flex-direction:column;gap:{{ scroller.carouselGap }}px">
+        <sc-for list="{{ carousels }}" as="cr" hint-placeholder-count="3"><dc-import name="Carousel" id="{{ cr.id }}" title="{{ cr.label }}" sub="{{ cr.sub }}" ix="{{ cr.ix }}" entries="{{ cr.entries }}" visuals="{{ carouselVis }}" hint-size="100%,230px"></dc-import></sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ isGeneric }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:{{ blockRowPad }}px;display:flex;flex-direction:column">
+        <sc-for list="{{ genericBlocks }}" as="g" hint-placeholder-count="4">
+          <dc-import name="ContentBlock" dc-props="{{ g.ix }}" item-id="{{ g.id }}" text="{{ g.title }}" sub="{{ g.sub }}" art="{{ g.art }}" icon="{{ g.typeIcon }}" hint-size="100%,220px"></dc-import>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ isGrid }}" hint-placeholder-val="{{ false }}">
+      <sc-for list="{{ groups }}" as="gr" hint-placeholder-count="1"><div id="{{ gr.anchor }}" style="display:flex;flex-direction:column">
+        <sc-if value="{{ gr.hasKey }}" hint-placeholder-val="{{ false }}"><div style="position:sticky;top:0;z-index:2"><dc-import name="GroupHeader" text="{{ gr.key }}" pad-x="{{ grid.pad }}" visuals="{{ groupVis }}" hint-size="100%,32px"></dc-import></div></sc-if>
+        <div style="display:grid;grid-template-columns:{{ grid.cols }};gap:{{ grid.gap }};padding:0 {{ grid.padEnd }}px 0 {{ grid.pad }}px">
+        <sc-for list="{{ gr.cards }}" as="c" hint-placeholder-count="4">
+          <div style="min-width:0;display:flex;flex-direction:column"><dc-import name="GridCard" dc-props="{{ c.ix }}" item-id="{{ c.id }}" text="{{ c.label }}" sub="{{ c.sub }}" art="{{ c.art }}" shape="{{ c.shape }}" style="width:100%" hint-size="100%,200px"></dc-import></div>
+        </sc-for>
+        </div>
+      </div></sc-for>
+    </sc-if>
+    <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-direction:column">
+      <sc-for list="{{ groups }}" as="gr" hint-placeholder-count="1"><div id="{{ gr.anchor }}" style="display:flex;flex-direction:column">
+        <sc-if value="{{ gr.hasKey }}" hint-placeholder-val="{{ false }}"><div style="position:sticky;top:0;z-index:2"><dc-import name="GroupHeader" text="{{ gr.key }}" pad-x="16" visuals="{{ groupVis }}" hint-size="100%,32px"></dc-import></div></sc-if>
+        <sc-for list="{{ gr.cards }}" as="c" hint-placeholder-count="5">
+          <dc-import name="ListRow" dc-props="{{ c.ix }}" item-id="{{ c.id }}" text="{{ c.label }}" sub="{{ c.sub }}" art="{{ c.art }}" thumb="52" hint-size="100%,77px"></dc-import>
+        </sc-for>
+      </div></sc-for>
+    </div>
+    </sc-if>
+  </div></div>
+
+  </div>
+  <sc-if value="{{ alpha.show }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset-inline-end:0;top:{{ alpha.top }}px;bottom:{{ alphaVis.insetBottom }}px;width:{{ alphaVis.slotWidth }}px;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px"><dc-import name="AlphaIndex" keys="{{ alpha.keys }}" visuals="{{ alphaVis }}" style="height:100%" hint-size="20px,100%"></dc-import></div></sc-if>
+  <div ref="{{ thumbRef }}" style="position:absolute;z-index:2;right:{{ sv.front.scrollThumbInset }}px;top:0;width:{{ sv.front.scrollThumbWidth }}px;height:0;border-radius:{{ sv.front.scrollThumbRadius }}px;background:{{ sv.front.scrollThumb }};opacity:0;pointer-events:none"></div>
+  <div style="position:absolute;inset:0;pointer-events:none"><dc-import name="Scrim" color="{{ sv.frontScrim }}" shown="{{ sv.frontScrimOn }}" on-click="{{ onScrim }}" ms="{{ mx.expand.ms }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:640},&quot;showOverlay&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;surfRef&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;sv&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;frontRef&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;frontTop&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;screenBottom&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;frontTL&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;frontTR&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;frontTr&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;fcRef&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;ftF&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;fab&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;headerStatic&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;fhH&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;fhRow&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;fhLeft&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;fhRight&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;fhTitle&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;titleVisFront&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;fhTitleOp&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;fhTitleW&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;subIx&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;fhBorder&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;ease&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;fhMo&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;barVisFront&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;scrollRef&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;onFrontScroll&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;cv&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;retryText&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;retryIx&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;grid&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;scroller&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;isCarousels&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;carousels&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;carouselVis&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;isGeneric&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;blockRowPad&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;genericBlocks&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;isGrid&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;groups&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;groupVis&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;isList&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;alpha&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;alphaVis&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;thumbRef&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;onScrim&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;mx&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;}}">
+// Web implementation of design component frontLayer: its surface (fill, top corners), the expand surface an app-bar page
+// grows from, the front header (Bar), the scrolling content (layouts / states), alpha index, scroll thumb and scrim. The shell
+// places it and feeds it values and refs.
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

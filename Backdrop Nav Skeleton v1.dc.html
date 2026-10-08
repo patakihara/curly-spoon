@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"><style>body{margin:0;background:#ecebe8;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c}a{color:#1c1c1c}a:hover{color:#555}.ms{font-family:'Material Symbols Outlined';font-size:24px;line-height:1;font-feature-settings:'liga'}input::placeholder{color:rgba(255,255,255,.55)}*{scrollbar-width:none}*::-webkit-scrollbar{display:none}</style></helmet>
+<div style="min-height:100vh;display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start;justify-content:safe center;padding:40px 24px;box-sizing:border-box">
+
+  <div ref="{{ phoneRef }}" style="width:{{ pw }}px;height:720px;flex:none;position:relative;overflow:hidden;border-radius:{{ frameRad }}px;background:#fafaf8;box-shadow:0 0 0 10px #1c1c1c, 0 24px 60px rgba(0,0,0,.25)">
+    <div ref="{{ screenRef }}" onPointerDownCapture="{{ focusDeck }}" style="position:absolute;left:{{ screenLeft }}px;right:{{ screenRight }}px;top:0;bottom:{{ screenBottom }}px;overflow:hidden;background:{{ backBg }}">
+
+      <div style="position:absolute;left:0;right:0;top:0;bottom:0;transform-origin:50% 0;opacity:{{ ftB.op }};transform:scale({{ ftB.sc }});transition:{{ ftB.tr }}">
+      <sc-for list="{{ rHeader }}" as="ri" hint-placeholder-count="1"><div style="position:absolute;left:0;right:0;top:{{ ri.top }}px;opacity:{{ ri.op }};pointer-events:{{ ri.ev }};transition:opacity {{ dur }}ms">
+      <div style="height:56px;display:flex;align-items:center;padding:0 4px;color:#fff">
+        <div style="display:flex;align-items:center"><sc-for list="{{ bhLeft }}" as="hi" hint-placeholder-count="1"><div style="flex:none;display:flex;align-items:center;overflow:hidden;max-width:{{ hi.maxW }}px;opacity:{{ hi.op }};pointer-events:{{ hi.ev }};transition:max-width {{ hi.dur }}ms cubic-bezier(.4,0,.2,1), opacity {{ hi.dur }}ms">
+  <sc-if value="{{ hi.isLogo }}" hint-placeholder-val="{{ false }}"><div onClick="{{ hi.onClick }}" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer"><div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.35)"></div></div></sc-if>
+  <sc-if value="{{ hi.isButton }}" hint-placeholder-val="{{ true }}"><button onClick="{{ hi.onClick }}" style="width:{{ hi.size }}px;height:{{ hi.size }}px;flex:none;padding:0;border:0;background:transparent;color:{{ hi.color }};border-radius:24px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:{{ hi.hover }}"><span class="ms" style="font-size:{{ hi.iconSize }}px">{{ hi.icon }}</span></button></sc-if>
+  <sc-if value="{{ hi.isIcon }}" hint-placeholder-val="{{ false }}"><span class="ms" style="font-size:22px;color:{{ hi.color }};padding-right:8px">{{ hi.icon }}</span></sc-if>
+  <sc-if value="{{ hi.isText }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;font-family:ui-monospace,Menlo,monospace;color:#777;white-space:nowrap;padding:0 8px">{{ hi.text }}</div></sc-if>
+</div></sc-for></div>
+        <div style="flex:1;min-width:0;padding-left:{{ bhTitlePad }}px;font-size:20px;font-weight:500;letter-spacing:.15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ bhTitle }}</div>
+        <div style="display:flex;align-items:center"><sc-for list="{{ bhRight }}" as="hi" hint-placeholder-count="1"><div style="flex:none;display:flex;align-items:center;overflow:hidden;max-width:{{ hi.maxW }}px;opacity:{{ hi.op }};pointer-events:{{ hi.ev }};transition:max-width {{ hi.dur }}ms cubic-bezier(.4,0,.2,1), opacity {{ hi.dur }}ms">
+  <sc-if value="{{ hi.isLogo }}" hint-placeholder-val="{{ false }}"><div onClick="{{ hi.onClick }}" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer"><div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.35)"></div></div></sc-if>
+  <sc-if value="{{ hi.isButton }}" hint-placeholder-val="{{ true }}"><button onClick="{{ hi.onClick }}" style="width:{{ hi.size }}px;height:{{ hi.size }}px;flex:none;padding:0;border:0;background:transparent;color:{{ hi.color }};border-radius:24px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:{{ hi.hover }}"><span class="ms" style="font-size:{{ hi.iconSize }}px">{{ hi.icon }}</span></button></sc-if>
+  <sc-if value="{{ hi.isIcon }}" hint-placeholder-val="{{ false }}"><span class="ms" style="font-size:22px;color:{{ hi.color }};padding-right:8px">{{ hi.icon }}</span></sc-if>
+  <sc-if value="{{ hi.isText }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;font-family:ui-monospace,Menlo,monospace;color:#777;white-space:nowrap;padding:0 8px">{{ hi.text }}</div></sc-if>
+</div></sc-for></div>
+      </div>
+      </div></sc-for>
+
+      <sc-for list="{{ rBasic }}" as="ri" hint-placeholder-count="1"><div style="position:absolute;left:0;right:0;top:{{ ri.top }}px;opacity:{{ ri.op }};pointer-events:{{ ri.ev }};transition:opacity {{ dur }}ms">
+      <div style="height:{{ basicH }}px;box-sizing:border-box;overflow:hidden;padding:0 16px 12px;color:#fff">
+        <sc-if value="{{ isFilters }}" hint-placeholder-val="{{ true }}">
+          <div style="height:48px;display:flex;align-items:center">
+            <div style="display:flex;gap:8px">
+              <sc-for list="{{ filters }}" as="f" hint-placeholder-count="3">
+                <button onClick="{{ f.toggle }}" style="height:32px;padding:0 14px;border-radius:16px;border:1px solid rgba(255,255,255,.5);background:{{ f.bg }};color:{{ f.fg }};font:inherit;font-size:13px;white-space:nowrap;cursor:pointer">{{ f.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isTabs }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;border-bottom:1px solid rgba(255,255,255,.2)">
+            <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+              <button onClick="{{ t.select }}" style="flex:1;height:48px;border:0;border-bottom:2px solid {{ t.line }};margin-bottom:-1px;background:transparent;color:#fff;opacity:{{ t.op }};font:inherit;font-size:14px;letter-spacing:.5px;text-transform:uppercase;cursor:pointer">{{ t.label }}</button>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isSearch }}" hint-placeholder-val="{{ false }}">
+          <div style="height:48px;box-sizing:border-box;display:flex;align-items:center;gap:10px;padding:0 12px;border-radius:8px;background:rgba(255,255,255,.1)">
+            <span class="ms" style="font-size:20px;opacity:.7">search</span>
+            <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="{{ searchHint }}" style="flex:1;min-width:0;border:0;outline:0;background:transparent;color:#fff;font:inherit;font-size:15px">
+            <sc-if value="{{ hasQuery }}" hint-placeholder-val="{{ false }}"><span onClick="{{ clearQuery }}" class="ms" style="font-size:18px;cursor:pointer;opacity:.7">close</span></sc-if>
+          </div>
+        </sc-if>
+      </div>
+      </div></sc-for>
+
+      <sc-for list="{{ rPanel }}" as="ri" hint-placeholder-count="1"><div style="position:absolute;left:0;right:0;top:{{ ri.top }}px;opacity:{{ ri.op }};pointer-events:{{ ri.ev }};transition:opacity {{ dur }}ms">
+        <div style="height:160px;box-sizing:border-box;padding:12px 16px 16px;border-top:1px solid rgba(255,255,255,.15);color:#fff;display:flex;flex-direction:column;gap:12px">
+          <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:.7">Filter panel</div>
+          <sc-for list="{{ panelRows }}" as="pr" hint-placeholder-count="3">
+            <div style="height:28px;display:flex;align-items:center;justify-content:space-between">
+              <div style="height:8px;width:{{ pr.w }}px;border-radius:4px;background:rgba(255,255,255,.35)"></div>
+              <div style="width:32px;height:16px;border-radius:8px;background:rgba(255,255,255,.25)"></div>
+            </div>
+          </sc-for>
+        </div>
+      </div></sc-for>
+
+      </div>
+
+      <div ref="{{ frontRef }}" style="position:absolute;left:0;right:0;bottom:0;top:{{ frontTop }}px;background:#fafaf8;border-radius:16px {{ frontTR }}px 0 0;transition:top {{ dur }}ms cubic-bezier(.4,0,.2,1), border-radius {{ dur }}ms cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden">
+        <div style="flex:1;min-height:0;display:flex;flex-direction:column;position:relative;transform-origin:50% 0;opacity:{{ ftF.op }};transform:scale({{ ftF.sc }});transition:{{ ftF.tr }}">
+        <sc-if value="{{ headerStatic }}" hint-placeholder-val="{{ true }}">
+        <div onClick="{{ onSubheader }}" style="height:48px;flex:none;box-sizing:border-box;display:flex;align-items:center;padding:0 6px 0 16px;cursor:pointer;border-bottom:1px solid {{ fhBorder }};transition:border-color {{ dur }}ms">
+          <div style="display:flex;align-items:center"><sc-for list="{{ fhLeft }}" as="hi" hint-placeholder-count="1"><div style="flex:none;display:flex;align-items:center;overflow:hidden;max-width:{{ hi.maxW }}px;opacity:{{ hi.op }};pointer-events:{{ hi.ev }};transition:max-width {{ hi.dur }}ms cubic-bezier(.4,0,.2,1), opacity {{ hi.dur }}ms">
+  <sc-if value="{{ hi.isLogo }}" hint-placeholder-val="{{ false }}"><div onClick="{{ hi.onClick }}" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer"><div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.35)"></div></div></sc-if>
+  <sc-if value="{{ hi.isButton }}" hint-placeholder-val="{{ true }}"><button onClick="{{ hi.onClick }}" style="width:{{ hi.size }}px;height:{{ hi.size }}px;flex:none;padding:0;border:0;background:transparent;color:{{ hi.color }};border-radius:24px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:{{ hi.hover }}"><span class="ms" style="font-size:{{ hi.iconSize }}px">{{ hi.icon }}</span></button></sc-if>
+  <sc-if value="{{ hi.isIcon }}" hint-placeholder-val="{{ false }}"><span class="ms" style="font-size:22px;color:{{ hi.color }};padding-right:8px">{{ hi.icon }}</span></sc-if>
+  <sc-if value="{{ hi.isText }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;font-family:ui-monospace,Menlo,monospace;color:#777;white-space:nowrap;padding:0 8px">{{ hi.text }}</div></sc-if>
+</div></sc-for></div>
+          <div style="flex:1;min-width:0;font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ fhTitle }}</div>
+          <div style="display:flex;align-items:center"><sc-for list="{{ fhRight }}" as="hi" hint-placeholder-count="1"><div style="flex:none;display:flex;align-items:center;overflow:hidden;max-width:{{ hi.maxW }}px;opacity:{{ hi.op }};pointer-events:{{ hi.ev }};transition:max-width {{ hi.dur }}ms cubic-bezier(.4,0,.2,1), opacity {{ hi.dur }}ms">
+  <sc-if value="{{ hi.isLogo }}" hint-placeholder-val="{{ false }}"><div onClick="{{ hi.onClick }}" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer"><div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.35)"></div></div></sc-if>
+  <sc-if value="{{ hi.isButton }}" hint-placeholder-val="{{ true }}"><button onClick="{{ hi.onClick }}" style="width:{{ hi.size }}px;height:{{ hi.size }}px;flex:none;padding:0;border:0;background:transparent;color:{{ hi.color }};border-radius:24px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:{{ hi.hover }}"><span class="ms" style="font-size:{{ hi.iconSize }}px">{{ hi.icon }}</span></button></sc-if>
+  <sc-if value="{{ hi.isIcon }}" hint-placeholder-val="{{ false }}"><span class="ms" style="font-size:22px;color:{{ hi.color }};padding-right:8px">{{ hi.icon }}</span></sc-if>
+  <sc-if value="{{ hi.isText }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;font-family:ui-monospace,Menlo,monospace;color:#777;white-space:nowrap;padding:0 8px">{{ hi.text }}</div></sc-if>
+</div></sc-for></div>
+        </div>
+        </sc-if>
+        <div ref="{{ scrollRef }}" data-scroller="1" onScroll="{{ onFrontScroll }}" style="flex:1;overflow:auto;position:relative">
+          <sc-if value="{{ isGeneric }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+              <sc-for list="{{ genericBlocks }}" as="g" hint-placeholder-count="4">
+                <div data-item-id="{{ g.id }}" data-title="{{ g.title }}" onClick="{{ g.open }}" style="display:flex;flex-direction:column;gap:10px;cursor:pointer;background:#fafaf8" style-hover="opacity:.75">
+                  <div style="height:160px;border-radius:8px;background:repeating-linear-gradient(45deg,#e4e3df 0 8px,#ecebe7 8px 16px);display:flex;align-items:flex-start;justify-content:flex-end;padding:8px;box-sizing:border-box"><span class="ms" style="font-size:18px;color:#888">{{ g.typeIcon }}</span></div>
+                  <div style="height:10px;width:50%;background:#dcdbd6;border-radius:4px"></div>
+                  <div style="height:8px;width:100%;background:#e6e5e1;border-radius:4px"></div>
+                  <div style="height:8px;width:88%;background:#e6e5e1;border-radius:4px"></div>
+                  <div style="height:8px;width:64%;background:#e6e5e1;border-radius:4px"></div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isGrid }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px">
+              <sc-for list="{{ cards }}" as="c" hint-placeholder-count="4">
+                <div data-item-id="{{ c.id }}" onClick="{{ c.open }}" style="display:flex;flex-direction:column;cursor:pointer;background:#fafaf8" style-hover="background:#f1f0ec">
+                  <div style="aspect-ratio:1;background:repeating-linear-gradient(45deg,#e4e3df 0 6px,#ecebe7 6px 12px)"></div>
+                  <div style="padding:8px 12px 12px;display:flex;flex-direction:column;gap:4px;min-width:0">
+                    <div style="font-size:14px">{{ c.label }}</div>
+                    <div style="display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:#888"><span class="ms" style="font-size:14px;flex:none">{{ c.typeIcon }}</span>{{ c.shortType }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column">
+            <sc-for list="{{ cards }}" as="c" hint-placeholder-count="5">
+              <div data-item-id="{{ c.id }}" onClick="{{ c.open }}" style="display:flex;align-items:center;gap:16px;padding:12px 16px;border-bottom:1px solid #efeeea;cursor:pointer" style-hover="background:#f1f0ec">
+                <div style="width:52px;height:52px;border-radius:4px;background:repeating-linear-gradient(45deg,#e4e3df 0 6px,#ecebe7 6px 12px);flex:none"></div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+                  <div style="font-size:14px">{{ c.label }}</div>
+                  <div style="display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px;font-family:ui-monospace,Menlo,monospace;color:#888"><span class="ms" style="font-size:14px;flex:none">{{ c.typeIcon }}</span>{{ c.typeLabel }}</div>
+                </div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:40px 16px;text-align:center;font-size:13px;color:#888">No matches</div>
+            </sc-if>
+          </div>
+          </sc-if>
+        </div>
+        <sc-if value="{{ headerTracking }}" hint-placeholder-val="{{ false }}">
+          <div data-occluder="top" onClick="{{ onSubheader }}" style="position:absolute;top:0;left:0;right:0;height:48px;box-sizing:border-box;display:flex;align-items:center;padding:0 6px 0 16px;background:#fafaf8;border-bottom:1px solid #e3e2de;cursor:pointer;opacity:{{ trackOpacity }};transform:translateY({{ trackShift }}px);pointer-events:{{ trackEvents }};transition:{{ trackTrans }}">
+            <div style="display:flex;align-items:center"><sc-for list="{{ fhLeft }}" as="hi" hint-placeholder-count="1"><div style="flex:none;display:flex;align-items:center;overflow:hidden;max-width:{{ hi.maxW }}px;opacity:{{ hi.op }};pointer-events:{{ hi.ev }};transition:max-width {{ hi.dur }}ms cubic-bezier(.4,0,.2,1), opacity {{ hi.dur }}ms">
+  <sc-if value="{{ hi.isLogo }}" hint-placeholder-val="{{ false }}"><div onClick="{{ hi.onClick }}" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer"><div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.35)"></div></div></sc-if>
+  <sc-if value="{{ hi.isButton }}" hint-placeholder-val="{{ true }}"><button onClick="{{ hi.onClick }}" style="width:{{ hi.size }}px;height:{{ hi.size }}px;flex:none;padding:0;border:0;background:transparent;color:{{ hi.color }};border-radius:24px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:{{ hi.hover }}"><span class="ms" style="font-size:{{ hi.iconSize }}px">{{ hi.icon }}</span></button></sc-if>
+  <sc-if value="{{ hi.isIcon }}" hint-placeholder-val="{{ false }}"><span class="ms" style="font-size:22px;color:{{ hi.color }};padding-right:8px">{{ hi.icon }}</span></sc-if>
+  <sc-if value="{{ hi.isText }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;font-family:ui-monospace,Menlo,monospace;color:#777;white-space:nowrap;padding:0 8px">{{ hi.text }}</div></sc-if>
+</div></sc-for></div>
+            <div style="flex:1;min-width:0;font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ fhTitle }}</div>
+            <div style="display:flex;align-items:center"><sc-for list="{{ fhRight }}" as="hi" hint-placeholder-count="1"><div style="flex:none;display:flex;align-items:center;overflow:hidden;max-width:{{ hi.maxW }}px;opacity:{{ hi.op }};pointer-events:{{ hi.ev }};transition:max-width {{ hi.dur }}ms cubic-bezier(.4,0,.2,1), opacity {{ hi.dur }}ms">
+  <sc-if value="{{ hi.isLogo }}" hint-placeholder-val="{{ false }}"><div onClick="{{ hi.onClick }}" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer"><div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.35)"></div></div></sc-if>
+  <sc-if value="{{ hi.isButton }}" hint-placeholder-val="{{ true }}"><button onClick="{{ hi.onClick }}" style="width:{{ hi.size }}px;height:{{ hi.size }}px;flex:none;padding:0;border:0;background:transparent;color:{{ hi.color }};border-radius:24px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:{{ hi.hover }}"><span class="ms" style="font-size:{{ hi.iconSize }}px">{{ hi.icon }}</span></button></sc-if>
+  <sc-if value="{{ hi.isIcon }}" hint-placeholder-val="{{ false }}"><span class="ms" style="font-size:22px;color:{{ hi.color }};padding-right:8px">{{ hi.icon }}</span></sc-if>
+  <sc-if value="{{ hi.isText }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;font-family:ui-monospace,Menlo,monospace;color:#777;white-space:nowrap;padding:0 8px">{{ hi.text }}</div></sc-if>
+</div></sc-for></div>
+          </div>
+        </sc-if>
+
+        </div>
+        <div ref="{{ thumbRef }}" style="position:absolute;right:2px;top:0;width:4px;height:0;border-radius:2px;background:rgba(0,0,0,.35);opacity:0;pointer-events:none"></div>
+        <div onClick="{{ onScrim }}" style="position:absolute;inset:0;background:rgba(250,250,248,.6);opacity:{{ scrimOpacity }};pointer-events:{{ scrimEvents }};transition:opacity {{ dur }}ms;cursor:pointer"></div>
+      </div>
+
+      <sc-if value="{{ showBAnim }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;left:0;right:0;top:{{ bc.top }}px;height:{{ bc.h }}px;overflow:hidden;pointer-events:none;transition:top {{ dur }}ms cubic-bezier(.4,0,.2,1), height {{ dur }}ms cubic-bezier(.4,0,.2,1)">
+        <div style="position:absolute;top:{{ ba.top }}px;left:{{ ba.left }}px;width:{{ ba.w }}px;height:{{ ba.h }}px;opacity:{{ ba.op }};border-radius:{{ ba.rad }};overflow:hidden;background:#fafaf8;pointer-events:none;transition:top {{ dur }}ms cubic-bezier(.4,0,.2,1), left {{ dur }}ms cubic-bezier(.4,0,.2,1), width {{ dur }}ms cubic-bezier(.4,0,.2,1), height {{ dur }}ms cubic-bezier(.4,0,.2,1), border-radius {{ dur }}ms cubic-bezier(.4,0,.2,1), opacity {{ baFade }}ms"></div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ showOverlay }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;inset:0;pointer-events:none;opacity:{{ ftO.op }};transform:scale({{ ftO.sc }});transition:{{ ftO.tr }}"><div style="pointer-events:auto">
+        <div style="position:absolute;left:0;right:0;top:{{ oc.top }}px;height:{{ oc.h }}px;border-radius:{{ oc.rad }};overflow:hidden;clip-path:{{ ovInsetCss }};transition:clip-path {{ ovDur }}ms cubic-bezier(.4,0,.2,1), top {{ ovDur }}ms cubic-bezier(.4,0,.2,1), height {{ ovDur }}ms cubic-bezier(.4,0,.2,1), border-radius {{ ovDur }}ms cubic-bezier(.4,0,.2,1), clip-path {{ ovDur }}ms cubic-bezier(.4,0,.2,1)">
+        <div style="position:absolute;top:{{ ov.top }}px;left:{{ ov.left }}px;width:{{ ov.w }}px;height:{{ ov.h }}px;border-radius:{{ ov.r }}px;background:#fafaf8;overflow:hidden;transition:all {{ ovDur }}ms cubic-bezier(.4,0,.2,1)">
+          <div style="width:{{ cw }}px;height:{{ contentH }}px;display:flex;flex-direction:column;opacity:{{ ov.op }};transition:opacity {{ ovDur }}ms">
+            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+              <div style="height:200px;border-radius:8px;background:repeating-linear-gradient(45deg,#e4e3df 0 8px,#ecebe7 8px 16px);display:flex;align-items:center;justify-content:center;font:12px ui-monospace,Menlo,monospace;color:#888">app bar page content</div>
+              <div style="height:8px;width:100%;background:#e6e5e1;border-radius:4px"></div>
+              <div style="height:8px;width:92%;background:#e6e5e1;border-radius:4px"></div>
+              <div style="height:8px;width:60%;background:#e6e5e1;border-radius:4px"></div>
+            </div>
+          </div>
+        </div>
+        <div style="position:absolute;left:0;right:0;top:0;opacity:{{ ahOp }};transition:{{ ahTrans }};pointer-events:{{ ahEv }}">
+          <div style="height:56px;flex:none;display:flex;align-items:center;padding:0 4px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.12)">
+            <div style="display:flex;align-items:center"><sc-for list="{{ ahLeft }}" as="hi" hint-placeholder-count="1"><div style="flex:none;display:flex;align-items:center;overflow:hidden;max-width:{{ hi.maxW }}px;opacity:{{ hi.op }};pointer-events:{{ hi.ev }};transition:max-width {{ hi.dur }}ms cubic-bezier(.4,0,.2,1), opacity {{ hi.dur }}ms">
+  <sc-if value="{{ hi.isLogo }}" hint-placeholder-val="{{ false }}"><div onClick="{{ hi.onClick }}" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer"><div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.35)"></div></div></sc-if>
+  <sc-if value="{{ hi.isButton }}" hint-placeholder-val="{{ true }}"><button onClick="{{ hi.onClick }}" style="width:{{ hi.size }}px;height:{{ hi.size }}px;flex:none;padding:0;border:0;background:transparent;color:{{ hi.color }};border-radius:24px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:{{ hi.hover }}"><span class="ms" style="font-size:{{ hi.iconSize }}px">{{ hi.icon }}</span></button></sc-if>
+  <sc-if value="{{ hi.isIcon }}" hint-placeholder-val="{{ false }}"><span class="ms" style="font-size:22px;color:{{ hi.color }};padding-right:8px">{{ hi.icon }}</span></sc-if>
+  <sc-if value="{{ hi.isText }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;font-family:ui-monospace,Menlo,monospace;color:#777;white-space:nowrap;padding:0 8px">{{ hi.text }}</div></sc-if>
+</div></sc-for></div>
+            <div style="flex:1;min-width:0;padding-left:4px;font-size:20px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ ahTitle }}</div>
+            <div style="display:flex;align-items:center"><sc-for list="{{ ahRight }}" as="hi" hint-placeholder-count="1"><div style="flex:none;display:flex;align-items:center;overflow:hidden;max-width:{{ hi.maxW }}px;opacity:{{ hi.op }};pointer-events:{{ hi.ev }};transition:max-width {{ hi.dur }}ms cubic-bezier(.4,0,.2,1), opacity {{ hi.dur }}ms">
+  <sc-if value="{{ hi.isLogo }}" hint-placeholder-val="{{ false }}"><div onClick="{{ hi.onClick }}" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer"><div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.35)"></div></div></sc-if>
+  <sc-if value="{{ hi.isButton }}" hint-placeholder-val="{{ true }}"><button onClick="{{ hi.onClick }}" style="width:{{ hi.size }}px;height:{{ hi.size }}px;flex:none;padding:0;border:0;background:transparent;color:{{ hi.color }};border-radius:24px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:{{ hi.hover }}"><span class="ms" style="font-size:{{ hi.iconSize }}px">{{ hi.icon }}</span></button></sc-if>
+  <sc-if value="{{ hi.isIcon }}" hint-placeholder-val="{{ false }}"><span class="ms" style="font-size:22px;color:{{ hi.color }};padding-right:8px">{{ hi.icon }}</span></sc-if>
+  <sc-if value="{{ hi.isText }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;font-family:ui-monospace,Menlo,monospace;color:#777;white-space:nowrap;padding:0 8px">{{ hi.text }}</div></sc-if>
+</div></sc-for></div>
+          </div>
+        </div>
+        </div>
+      </div></div>
+      </sc-if>
+    </div>
+
+
+    <sc-if value="{{ showRail }}" hint-placeholder-val="{{ false }}">
+      <div onPointerDownCapture="{{ focusDeck }}" style="position:absolute;left:0;top:0;bottom:0;width:80px;box-sizing:border-box;padding:16px 0;background:{{ backBg }};display:flex;flex-direction:column;align-items:center;gap:4px">
+        <sc-for list="{{ nav }}" as="n" hint-placeholder-count="3">
+          <button onClick="{{ n.go }}" style="width:64px;height:56px;flex:none;border:0;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:inherit;font-size:12px;cursor:pointer;background:{{ n.railBg }};color:{{ n.color }}" style-hover="background:rgba(255,255,255,.08)"><span class="ms" style="font-size:22px">{{ n.icon }}</span>{{ n.label }}</button>
+        </sc-for>
+        <div style="flex:1"></div>
+        <div onClick="{{ openDedede }}" style="width:56px;height:56px;flex:none;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:8px"><div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.35)"></div></div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ showNnCard }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ nnCardClick }}" style="position:absolute;bottom:16px;left:{{ nnCard.left }}px;width:{{ nnCard.w }}px;height:48px;box-sizing:border-box;display:flex;align-items:center;gap:12px;padding:0 16px;background:#fff;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.10);cursor:pointer;transition:left {{ dur }}ms cubic-bezier(.4,0,.2,1), width {{ dur }}ms cubic-bezier(.4,0,.2,1)">
+        <div style="width:28px;height:28px;border-radius:6px;background:repeating-linear-gradient(45deg,#e4e3df 0 4px,#ecebe7 4px 8px);flex:none"></div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+          <div style="font-size:14px;font-weight:500">Nonono</div>
+          <div style="font-size:11px;font-family:ui-monospace,Menlo,monospace;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ nn.peekSub }}</div>
+        </div>
+      </div>
+    </sc-if>
+    <div onClick="{{ nnScrimClick }}" style="position:absolute;inset:0;background:rgba(0,0,0,.32);opacity:{{ nnScrimOp }};pointer-events:{{ nnScrimEv }};transition:opacity {{ dur }}ms"></div>
+    <sc-if value="{{ showNnEdge }}" hint-placeholder-val="{{ false }}">
+      <div onMouseEnter="{{ nnEdgeEnter }}" style="position:absolute;right:0;top:50%;margin-top:-36px;width:18px;height:72px;border-radius:10px 0 0 10px;background:{{ backBg }};color:rgba(255,255,255,.8);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:-2px 0 8px rgba(0,0,0,.12)"><span class="ms" style="font-size:18px">chevron_left</span></div>
+    </sc-if>
+    <div onMouseLeave="{{ nnLeave }}" onPointerDownCapture="{{ focusNonono }}" style="position:absolute;left:{{ nn.left }}px;width:{{ nn.w }}px;top:{{ nn.top }}px;height:{{ nn.h }}px;transform:translateX({{ nn.tx }}px);background:#fff;border-radius:{{ nn.rad }};box-shadow:{{ nn.shadow }};overflow:hidden;transition:top {{ dur }}ms cubic-bezier(.4,0,.2,1), border-radius {{ dur }}ms cubic-bezier(.4,0,.2,1), transform {{ dur }}ms cubic-bezier(.4,0,.2,1)">
+      <div onClick="{{ nn.openSheet }}" style="position:absolute;left:0;right:0;top:0;height:48px;box-sizing:border-box;display:flex;align-items:center;gap:12px;padding:0 12px 0 16px;cursor:pointer;opacity:{{ nn.peekOp }};pointer-events:{{ nn.peekEv }};transition:opacity {{ dur }}ms">
+        <div style="width:28px;height:28px;border-radius:6px;background:repeating-linear-gradient(45deg,#e4e3df 0 4px,#ecebe7 4px 8px);flex:none"></div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+          <div style="font-size:14px;font-weight:500">Nonono</div>
+          <div style="font-size:11px;font-family:ui-monospace,Menlo,monospace;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ nn.peekSub }}</div>
+        </div>
+        <span class="ms" style="font-size:22px;color:#666">expand_less</span>
+      </div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;opacity:{{ nn.sheetOp }};pointer-events:{{ nn.sheetEv }};transition:opacity {{ dur }}ms">
+        <div style="height:56px;flex:none;display:flex;align-items:center;padding:0 4px;border-bottom:1px solid #e3e2de;background:#fff">
+          <button onClick="{{ nn.leftClick }}" style="width:48px;height:48px;flex:none;padding:0;border:0;background:transparent;color:#1c1c1c;border-radius:24px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(0,0,0,.06)"><span class="ms">{{ nn.leftIcon }}</span></button>
+          <div onClick="{{ nn.titleClick }}" style="flex:1;min-width:0;align-self:stretch;display:flex;align-items:center;padding-left:4px;cursor:{{ nn.titleCursor }};font-size:20px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ nn.title }}</div>
+          <button style="width:48px;height:48px;flex:none;padding:0;border:0;background:transparent;color:#1c1c1c;border-radius:24px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(0,0,0,.06)"><span class="ms">more_vert</span></button>
+        </div>
+        <div style="flex:1;min-height:0;overflow:auto;background:#fafaf8">
+          <sc-for list="{{ nn.rows }}" as="lr" hint-placeholder-count="4">
+            <div onClick="{{ lr.go }}" style="display:flex;align-items:center;gap:16px;padding:12px 16px;border-bottom:1px solid #efeeea;cursor:pointer" style-hover="background:#f1f0ec">
+              <div style="width:36px;height:36px;border-radius:4px;background:repeating-linear-gradient(45deg,#e4e3df 0 5px,#ecebe7 5px 10px);flex:none"></div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+                <div style="font-size:14px">{{ lr.label }}</div>
+                <div style="font-size:11px;font-family:ui-monospace,Menlo,monospace;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ lr.sub }}</div>
+              </div>
+              <span class="ms" style="font-size:20px;color:#999">{{ lr.icon }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    <div style="position:absolute;left:0;right:0;bottom:0;height:56px;display:flex;background:{{ backBg }};transform:translateY({{ navShift }}px);transition:transform {{ dur }}ms cubic-bezier(.4,0,.2,1)">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="3">
+        <button onClick="{{ n.go }}" style="flex:1;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:{{ n.color }};font:inherit;font-size:12px;cursor:pointer"><span class="ms" style="font-size:22px">{{ n.icon }}</span>{{ n.label }}</button>
+      </sc-for>
+      <sc-if value="{{ showNnBtn }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ toggleNn }}" style="flex:none;width:96px;border:0;border-left:1px solid #e3e2de;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:{{ nnBtnColor }};font:inherit;font-size:12px;cursor:pointer"><span class="ms" style="font-size:22px">view_sidebar</span>Nonono</button>
+      </sc-if>
+    </div>
+    <div onPointerDownCapture="{{ focusDedede }}" style="position:absolute;left:{{ ddLeft }}px;top:0;bottom:{{ ddBottom }}px;right:{{ ddRight }}px;display:flex;flex-direction:column;background:#fafaf8;clip-path:{{ dd.clip }};pointer-events:{{ dd.ev }};transition:clip-path {{ ovDur }}ms cubic-bezier(.4,0,.2,1)">
+        <div style="height:56px;flex:none;display:flex;align-items:center;padding:0 4px;border-bottom:1px solid #e3e2de;background:#fff">
+          <button onClick="{{ dd.leftClick }}" style="width:48px;height:48px;flex:none;padding:0;border:0;background:transparent;color:#1c1c1c;border-radius:24px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(0,0,0,.06)"><span class="ms">{{ dd.leftIcon }}</span></button>
+          <div style="flex:1;min-width:0;padding-left:4px;font-size:20px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ dd.title }}</div>
+          <button style="width:48px;height:48px;flex:none;padding:0;border:0;background:transparent;color:#1c1c1c;border-radius:24px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(0,0,0,.06)"><span class="ms">more_vert</span></button>
+        </div>
+        <div style="flex:1;min-height:0;overflow:auto;background:#fafaf8">
+          <sc-for list="{{ dd.rows }}" as="lr" hint-placeholder-count="4">
+            <div onClick="{{ lr.go }}" style="display:flex;align-items:center;gap:16px;padding:12px 16px;border-bottom:1px solid #efeeea;cursor:pointer" style-hover="background:#f1f0ec">
+              <div style="width:36px;height:36px;border-radius:4px;background:repeating-linear-gradient(45deg,#e4e3df 0 5px,#ecebe7 5px 10px);flex:none"></div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+                <div style="font-size:14px">{{ lr.label }}</div>
+                <div style="font-size:11px;font-family:ui-monospace,Menlo,monospace;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ lr.sub }}</div>
+              </div>
+              <span class="ms" style="font-size:20px;color:#999">{{ lr.icon }}</span>
+            </div>
+          </sc-for>
+        </div>
+    </div>
+  </div>
+
+  <div style="width:300px;display:flex;flex-direction:column;gap:20px;font-size:13px;line-height:1.5">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Layout width</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <sc-for list="{{ layouts }}" as="lo" hint-placeholder-count="3">
+          <button onClick="{{ lo.pick }}" style="flex:none;height:32px;padding:0 12px;border-radius:16px;border:1px solid #1c1c1c;background:{{ lo.bg }};color:{{ lo.fg }};font:inherit;font-size:12px;white-space:nowrap;cursor:pointer">{{ lo.label }}</button>
+        </sc-for>
+      </div>
+      <div style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#777">{{ layoutInfo }}</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onClick="{{ backBtn }}" style="flex:1;height:40px;border-radius:20px;border:1px solid #1c1c1c;background:#1c1c1c;color:#fff;font:inherit;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><span class="ms" style="font-size:18px">arrow_back</span><span style="white-space:nowrap">{{ backLabel }}</span></button>
+      <sc-if value="{{ showAndroidBack }}" hint-placeholder-val="{{ false }}"><button onClick="{{ androidBack }}" style="flex:1;height:40px;border-radius:20px;border:1px solid #1c1c1c;background:transparent;color:#1c1c1c;font:inherit;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><span class="ms" style="font-size:18px">arrow_back</span><span style="white-space:nowrap">Android back</span></button></sc-if>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Focus · History</div>
+      <div style="font-family:ui-monospace,Menlo,monospace;font-size:11px;background:#fff;padding:10px 12px;border-radius:8px;border:1px solid #e3e2de;display:flex;flex-direction:column;gap:3px">
+        <div style="font-weight:600;font-size:12px">focus: {{ focusLabel }}</div>
+        <div style="color:#999">{{ historyCaption }}</div>
+        <sc-for list="{{ historyList }}" as="hr" hint-placeholder-count="0"><div style="color:#555">{{ hr }}</div></sc-for>
+        <sc-if value="{{ historyEmpty }}" hint-placeholder-val="{{ true }}"><div style="color:#999">history empty</div></sc-if>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Stacks</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <sc-for list="{{ stackInfo }}" as="s" hint-placeholder-count="3">
+          <div style="font-family:ui-monospace,Menlo,monospace;font-size:11px;background:#fff;padding:10px 12px;border-radius:8px;border:1px solid {{ s.border }};display:flex;flex-direction:column;gap:3px">
+            <div style="font-weight:600;font-size:12px">{{ s.name }} · {{ s.action }}</div>
+            <div style="color:#555">{{ s.path }}</div>
+            <div style="color:#999">backdrop {{ s.open }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Flow rules</div>
+      <div style="display:flex;flex-direction:column;gap:4px;color:#444">
+        <div>Bottom nav switches Bororo / Libibi / Serere; each keeps its own stack, actions and backdrop state</div>
+        <div>Re-tap active destination → pop to root</div>
+        <div>Back layer: Bororo filters · Libibi tabs · Serere search (scoped per page)</div>
+        <div><span class="ms" style="font-size:14px;vertical-align:-2px">layers</span> in-backdrop child: replaces front layer, back arrow in app bar</div>
+        <div><span class="ms" style="font-size:14px;vertical-align:-2px">open_in_full</span> app bar child: expands from its card into a full page with its own app bar</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777">Log</div>
+      <div style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#555;display:flex;flex-direction:column;gap:2px">
+        <sc-for list="{{ log }}" as="l" hint-placeholder-count="0"><div>{{ l }}</div></sc-for>
+      </div>
+    </div>
+    <button onClick="{{ reset }}" style="align-self:flex-start;height:32px;padding:0 14px;border-radius:16px;border:1px solid #bbb;background:transparent;font:inherit;font-size:12px;cursor:pointer">Reset</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;palette&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Grey&quot;,&quot;M2 purple&quot;],&quot;default&quot;:&quot;Grey&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;duration&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0,&quot;max&quot;:800,&quot;step&quot;:10,&quot;unit&quot;:&quot;ms&quot;,&quot;default&quot;:250,&quot;tsType&quot;:&quot;number&quot;},&quot;peek&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0,&quot;max&quot;:120,&quot;step&quot;:4,&quot;unit&quot;:&quot;px&quot;,&quot;default&quot;:0,&quot;tsType&quot;:&quot;number&quot;}}">
+// ── CONFIG (fixed) ─────────────────────────────  (see API.md)
+const TAGS = ['Tag X', 'Tag Y', 'Tag Z'];
+const TAB_LETTERS = ['A', 'B', 'C'];
+const ACTION_ICON = { filters: 'filter_list', tabs: 'tab', search: 'search' };
+const BASIC_H = 60, PANEL_H = 160;   // phone 720 − nav 56 − Nonono peek 48
+// live geometry (updated each render from the chosen layout width)
+const SIDE_W = 320, RAIL_W = 80, COMPACT_MAX = 600, MIN_CONTENT = 600;
+// device = width + input; touch devices get Android back (= browser back via history trick)
+const DEVICES = {
+  phone:   { label: 'Phone 360',     w: 360,  touch: true },
+  tablet:  { label: 'Tablet 720',    w: 720,  touch: true },
+  window:  { label: 'Window 720',    w: 720,  touch: false },
+  desktop: { label: 'Desktop 1100',  w: 1100, touch: false }
+};
+const G = { layout: 'compact', PW: 360, CW: 360, H: 616, side: 'modal', touch: true, RAIL: 0 };
+const FF = () => ({ top: 0, left: 0, w: G.CW, h: G.H, r: 0, op: 1 });
+const CF = () => ({ top: 56, left: 0, w: G.CW, h: G.H - 56, r: 0, op: 1 });   // app bar page content area (below its app bar)
+
+// Header { left: HeaderItem | HeaderItem[], title: Title, right: HeaderItem | HeaderItem[], visible?: 'always' | 'whenScrolled' }
+// HeaderItem { kind: 'logo'|'back'|'toggleExpanded'|'viewToggle'|'caret'|'filterSummary'|'more', icon?, when?: 'expanded'|'concealed' }
+// Title { kind: 'text', text } | { kind: 'deckName' | 'pageTitle' | 'contentSummary' | 'trackedItem' }
+const frontHeaderFor = (content, collapse) => content === 'generic'
+  ? { left: [], title: { kind: 'trackedItem' }, right: [], visible: 'whenScrolled' }
+  : { left: collapse === 'full' ? [{ kind: 'caret', when: 'expanded' }] : [], title: { kind: 'contentSummary' },
+      right: [{ kind: 'filterSummary', when: 'concealed' }, { kind: 'viewToggle', when: 'concealed' }], visible: 'always' };
+const APPBAR_HEADER = { left: { kind: 'back' }, title: { kind: 'pageTitle' }, right: { kind: 'more' } };
+const defaultInput = a => a === 'filters' ? { kind: 'filters', active: [] } : a === 'tabs' ? { kind: 'tabs', selected: 0 } : { kind: 'search', query: '' };
+// PagePolicy mirrors BackdropPageState: FieldPolicy { default, resetOn, scope }
+const policyFor = (basicAction, expandedDefault = false) => {
+  const perTab = basicAction === 'tabs' ? 'back.input.selected' : null;
+  return {
+    back: {
+      expanded: { default: expandedDefault, resetOn: ['return', 'deckSwitch'], scope: null },
+      input: { default: defaultInput(basicAction), resetOn: [], scope: null }
+    },
+    front: {
+      view: { default: 'list', resetOn: [], scope: perTab },
+      scroll: { default: 0, resetOn: perTab ? [] : ['inputChange'], scope: perTab }
+    }
+  };
+};
+function genItems(title, isRoot, content, letter) {
+  const n = content === 'generic' ? 6 : 8;
+  return Array.from({ length: n }, (_, i) => {
+    const t = content === 'generic' ? title + ' — Entry ' + letter + (i + 1) : isRoot ? title + ' ' + letter + (i + 1) : title + '.' + letter + (i + 1);
+    const basicAction = ['filters', 'tabs', 'search'][(i / 2 | 0) % 3];
+    return {
+      id: t, title: t, tag: TAGS[i % 3],
+      opens: i % 2 ? { kind: 'appBar' } : { kind: 'backdrop', basicAction, content: i % 4 === 2 ? 'generic' : 'listOrGrid', collapse: basicAction === 'search' ? 'full' : 'partial' }
+    };
+  });
+}
+// BackLayerConfig { basicAction, regions: { [id]: Region }, layouts: { concealed: id[], expanded: id[] } }
+// Region heights are fixed per region (constraint that makes staysPut decidable from config alone)
+function backLayer(asRoot, basicAction) {
+  const regions = {
+    header: { kind: 'header', height: 56, header: asRoot
+      ? { left: { kind: 'logo' }, title: { kind: 'deckName' }, right: { kind: 'toggleExpanded', icon: 'filter_alt' } }
+      : { left: { kind: 'back' }, title: { kind: 'pageTitle' }, right: { kind: 'toggleExpanded', icon: ACTION_ICON[basicAction] } } },
+    basicAction: { kind: 'basicAction', height: BASIC_H }
+  };
+  if (asRoot) regions.panel = { kind: 'panel', height: PANEL_H };
+  const layouts = asRoot
+    ? { concealed: ['header', 'basicAction'], expanded: ['header', 'basicAction', 'panel'] }
+    : { concealed: ['header'], expanded: ['header', 'basicAction'] };
+  return { basicAction, regions, layouts };
+}
+const layoutHeight = (B, L) => L.reduce((s, id) => s + B.regions[id].height, 0);
+const topIn = (B, L, id) => layoutHeight(B, L.slice(0, L.indexOf(id)));
+const staysPut = (B, id) => {
+  const C = B.layouts.concealed, E = B.layouts.expanded;
+  return C.slice(0, C.indexOf(id)).join('|') === E.slice(0, E.indexOf(id)).join('|');
+};
+// per region: 1 instance if shared & stays put, else one per layout it appears in (crossfade / fade)
+function regionInstances(B, expanded) {
+  const C = B.layouts.concealed, E = B.layouts.expanded, out = {};
+  for (const id in B.regions) {
+    const inC = C.includes(id), inE = E.includes(id);
+    out[id] = [];
+    if (inC && inE && staysPut(B, id)) { out[id].push({ top: topIn(B, C, id), op: 1, ev: 'auto' }); continue; }
+    if (inC) out[id].push({ top: topIn(B, C, id), op: expanded ? 0 : 1, ev: expanded ? 'none' : 'auto' });
+    if (inE) out[id].push({ top: topIn(B, E, id), op: expanded ? 1 : 0, ev: expanded ? 'auto' : 'none' });
+  }
+  return out;
+}
+const cfgCache = {};
+// asRoot only picks a sample back-layer preset; it is not stored on the config
+function backdropPage({ id, title, asRoot, basicAction, content, collapse, expanded = false }) {
+  if (cfgCache[id]) return cfgCache[id];
+  const itemSets = basicAction === 'tabs'
+    ? TAB_LETTERS.map(l => ({ label: 'Tab ' + l, items: genItems(title, asRoot, content, l) }))
+    : [{ label: null, items: genItems(title, asRoot, content, '') }];
+  return (cfgCache[id] = {
+    id, kind: 'backdrop', title,
+    back: backLayer(asRoot, basicAction),
+    front: { header: frontHeaderFor(content, collapse), collapse, content: { type: content, itemSets } },
+    policy: policyFor(basicAction, expanded)
+  });
+}
+const appBarPage = (id, title) => cfgCache[id] || (cfgCache[id] = { id, kind: 'appBar', title, header: APPBAR_HEADER });
+const childConfig = (parent, item) => item.opens.kind === 'appBar'
+  ? appBarPage(parent.id + '/' + item.id, item.title)
+  : backdropPage({ id: parent.id + '/' + item.id, title: item.title, ...item.opens });
+
+// RootConfig { name, icon, page }
+const DECKS = [
+  { name: 'Bororo', icon: 'circle', page: backdropPage({ id: 'Bororo', title: 'Bororo', asRoot: true, basicAction: 'filters', content: 'generic', collapse: 'partial' }) },
+  { name: 'Libibi', icon: 'change_history', page: backdropPage({ id: 'Libibi', title: 'Libibi', asRoot: true, basicAction: 'tabs', content: 'listOrGrid', collapse: 'partial' }) },
+  { name: 'Serere', icon: 'square', page: backdropPage({ id: 'Serere', title: 'Serere', asRoot: true, basicAction: 'search', content: 'listOrGrid', collapse: 'full', expanded: true }), policy: { stack: { resetOn: ['deckSwitch'] } } }
+];
+
+// ── STATE (runtime) ────────────────────────────
+const clone = v => JSON.parse(JSON.stringify(v));
+const readPath = (o, path) => path.split('.').reduce((x, k) => x == null ? x : x[k], o);
+const PAGE_LAYERS = ['back', 'front'];
+// BackdropPageState { config, back: { input }, front: { collapsed, view, scroll } } — built from policy defaults
+function newPageState(cfg) {
+  if (cfg.kind === 'appBar') return { config: cfg };
+  const st = { config: cfg };
+  PAGE_LAYERS.forEach(L => { st[L] = {}; for (const f in cfg.policy[L]) { const p = cfg.policy[L][f]; st[L][f] = p.scope ? {} : clone(p.default); } });
+  return st;
+}
+function getField(ps, L, f) {
+  const p = ps.config.policy[L][f], v = ps[L][f];
+  if (!p.scope) return v;
+  const k = readPath(ps, p.scope);
+  return k in v ? v[k] : p.default;
+}
+function setField(ps, L, f, val) {
+  const p = ps.config.policy[L][f];
+  const nv = p.scope ? { ...ps[L][f], [readPath(ps, p.scope)]: val } : val;
+  return { ...ps, [L]: { ...ps[L], [f]: nv } };
+}
+// LifecycleEvent: 'enter' | 'return' | 'deckSwitch' | 'inputChange'
+function applyEvent(ps, ev) {
+  if (ps.config.kind !== 'backdrop') return ps;
+  let out = ps;
+  PAGE_LAYERS.forEach(L => { for (const f in ps.config.policy[L]) {
+    const p = ps.config.policy[L][f];
+    if (p.resetOn.includes(ev)) out = { ...out, [L]: { ...out[L], [f]: p.scope ? {} : clone(p.default) } };
+  } });
+  return out;
+}
+// AppState { activeDeck, decks: RootState[] }   RootState { stack: StackEntry[] }   StackEntry { page, openedFrom }
+const deckState = rc => ({ stack: [{ page: newPageState(rc.page), openedFrom: null }] });
+// ── LAYERS (config) ───────────────────────────
+const DEDEDE_NAMES = ['Fliboo', 'Granto', 'Pesquil', 'Wumbel', 'Zorrit', 'Quimbo'];
+const LAYERS = {
+  Nonono: {
+    id: 'Nonono', name: 'Nonono', history: 'ignore', linkTarget: { deck: 0 }, base: 'home',
+    policy: { stack: { resetOn: ['layerOpen'] } },
+    presentation: { kind: 'sheet', compact: { form: 'bottomSheet', peek: { height: 48 }, hidesNavBarWhenOpen: true }, wide: { form: 'sideSheet', width: 320, peek: { form: 'floatingCard', height: 48, maxWidth: 500, align: 'contentCenter', persistsWhenOpen: true } } },
+    pages: {
+      home: { title: 'Nonono', links: [{ label: 'Lolo', to: { page: 'lolo' } }, { label: 'Mimi', to: { page: 'mimi' } }, { label: 'Bororo — Entry 1', to: { deckItem: 0 } }, { label: 'Bororo — Entry 2', to: { deckItem: 1 } }] },
+      lolo: { title: 'Lolo', links: [{ label: 'Mimi', to: { page: 'mimi' } }, { label: 'Bororo — Entry 3', to: { deckItem: 2 } }] },
+      mimi: { title: 'Mimi', links: [{ label: 'Bororo — Entry 5', to: { deckItem: 4 } }, { label: 'Bororo — Entry 6', to: { deckItem: 5 } }] }
+    }
+  },
+  Dedede: {
+    id: 'Dedede', name: 'Dedede', history: 'record', base: 'home',
+    policy: { stack: { resetOn: [] } },
+    presentation: { kind: 'fullscreen', hidesNavBar: false },
+    pages: Object.assign(
+      { home: { title: 'Dedede', links: DEDEDE_NAMES.map(n => ({ label: n, to: { page: n } })) } },
+      ...DEDEDE_NAMES.map(n => ({ [n]: { title: n, settings: ['Brimble', 'Snorf', 'Twaddle', 'Quonk'] } })))
+  }
+};
+const layerState = L => ({ open: false, stack: [L.base] });
+const initState = () => ({ focus: 'deck', history: [], layers: { Nonono: layerState(LAYERS.Nonono), Dedede: layerState(LAYERS.Dedede) }, activeDeck: 0, decks: DECKS.map(deckState), ovRect: null, ovClip: null, bAnim: null, bClip: null, gScrolled: false, gTitle: '', log: ['start · Bororo'] });
+
+function visibleItems(cfg, input) {
+  const items = cfg.front.content.itemSets[input.kind === 'tabs' ? input.selected : 0].items;
+  if (input.kind === 'filters') return input.active.length ? items.filter(it => input.active.includes(it.tag)) : items;
+  if (input.kind === 'search') { const q = input.query.trim().toLowerCase(); return q ? items.filter(it => it.title.toLowerCase().includes(q)) : items; }
+  return items;
+}
+const underIndex = stack => { for (let i = stack.length - 1; i >= 0; i--) if (stack[i].page.config.kind === 'backdrop') return i; };
+
+const BACK_KEYS = ['rHeader', 'rBasic', 'rPanel', 'bhLeft', 'bhRight', 'bhTitle', 'bhTitlePad', 'isFilters', 'isTabs', 'isSearch', 'filters', 'tabs', 'query', 'hasQuery', 'searchHint', 'canBack', 'basicH', 'panelRows'];
+class Component extends DCLogic {
+  state = initState();
+  screenRef = React.createRef();
+  scrollRef = React.createRef();
+  frontRef = React.createRef();
+  thumbRef = React.createRef();
+  phoneRef = React.createRef();
+  // circular reveal helpers
+  maxR(x, y, w, hh) { return Math.ceil(Math.max(Math.hypot(x, y), Math.hypot(w - x, y), Math.hypot(x, hh - y), Math.hypot(w - x, hh - y))); }
+  centerIn(el, base) { const r = this.rectIn(el, base); return { x: r.left + r.w / 2, y: r.top + r.h / 2 }; }
+  showThumb(el) {
+    const t = this.thumbRef.current;
+    if (!t) return;
+    if (this.quietScroll) { this.quietScroll = false; return; }
+    const { scrollTop, scrollHeight, clientHeight, offsetTop } = el;
+    if (scrollHeight <= clientHeight + 1) { t.style.opacity = '0'; return; }
+    const th = Math.max(24, clientHeight * clientHeight / scrollHeight);
+    t.style.top = (offsetTop + 2 + (clientHeight - th - 4) * scrollTop / (scrollHeight - clientHeight)) + 'px';
+    t.style.height = th + 'px';
+    t.style.transition = 'opacity 120ms';
+    t.style.opacity = '1';
+    clearTimeout(this.thumbT);
+    this.thumbT = setTimeout(() => { t.style.transition = 'opacity 400ms'; t.style.opacity = '0'; }, 700);
+  }
+  // root-switch crossfade: static DOM snapshots fade out over the new render
+  snapSwitch(whole) {
+    const scr = this.screenRef.current, fr = this.frontRef.current, sc = this.scrollRef.current;
+    if (!scr || !fr) return;
+    const D = this.dur, nodes = [];
+    const mk = n => { Object.assign(n.style, { position: 'absolute', inset: '0', pointerEvents: 'none', opacity: '1', transition: 'opacity ' + D + 'ms' }); nodes.push(n); return n; };
+    const fixScroll = n => { const s = n.querySelector('[data-scroller]'); if (s && sc) s.scrollTop = sc.scrollTop; };
+    if (whole) {
+      const c = mk(scr.cloneNode(true));
+      c.style.background = getComputedStyle(scr).backgroundColor;
+      scr.appendChild(c); fixScroll(c);
+    } else {
+      const b = mk(document.createElement('div'));
+      for (const ch of scr.children) { if (ch === fr) break; b.appendChild(ch.cloneNode(true)); }
+      scr.insertBefore(b, fr);
+      const f = mk(document.createElement('div'));
+      f.style.background = '#fafaf8'; f.style.overflow = 'hidden'; f.style.display = 'flex'; f.style.flexDirection = 'column';
+      for (const ch of fr.children) f.appendChild(ch.cloneNode(true));
+      fr.appendChild(f); fixScroll(f);
+    }
+    requestAnimationFrame(() => requestAnimationFrame(() => nodes.forEach(n => { n.style.opacity = '0'; })));
+    setTimeout(() => nodes.forEach(n => n.remove()), D + 60);
+  }
+  get dur() { return this.props.duration ?? 250; }
+  get cur() {
+    const rs = this.state.decks[this.state.activeDeck], ui = underIndex(rs.stack);
+    return { rs, ui, ps: rs.stack[ui].page, top: rs.stack[rs.stack.length - 1] };
+  }
+  // tracking header is derived from DOM + scroll; cached only to avoid needless re-renders
+  track(el) {
+    const top = el.scrollTop;
+    let t = '';
+    el.querySelectorAll('[data-title]').forEach(n => { if (n.offsetTop <= top + 48) t = n.getAttribute('data-title'); });
+    const sc = top > 0 && !!t, key = this.cur.ps.config.id;
+    if (sc !== this.state.gScrolled || t !== this.state.gTitle || key !== this.state.gKey) this.setState({ gScrolled: sc, gTitle: t, gKey: key });
+  }
+  componentDidMount() { this.componentDidUpdate(); }
+  componentDidUpdate() {
+    const el = this.scrollRef.current;
+    if (!el) return;
+    const want = getField(this.cur.ps, 'front', 'scroll');
+    if (Math.abs(el.scrollTop - want) > 1) { this.quietScroll = true; el.scrollTop = want; }
+    this.track(el);
+  }
+  log(msg, patch) { this.setState(s => ({ ...(typeof patch === 'function' ? patch(s) : patch), log: [msg, ...s.log].slice(0, 12) })); }
+  deckPatch(s, fn, i = s.activeDeck) { const decks = s.decks.slice(); decks[i] = fn(decks[i]); return { decks }; }
+  underPatch(s, fn, i = s.activeDeck) {
+    return this.deckPatch(s, r => { const stack = r.stack.slice(), j = underIndex(stack); stack[j] = { ...stack[j], page: fn(stack[j].page) }; return { ...r, stack }; }, i);
+  }
+  updUnder(fn) { this.setState(s => this.underPatch(s, fn)); }
+  updInput(fn) { this.updUnder(ps => applyEvent({ ...ps, back: { ...ps.back, input: fn(ps.back.input) } }, 'inputChange')); }
+  setCollapsed(v, via) { this.log((v ? 'expand back' : 'conceal back') + ' · ' + via, s => this.underPatch(s, ps => ({ ...ps, back: { ...ps.back, expanded: v } }))); }
+  frontTopFor(ps) {
+    const B = ps.config.back, ex = ps.back.expanded;
+    if (ex && ps.config.front.collapse === 'full') return G.H - 48;
+    return layoutHeight(B, ex ? B.layouts.expanded : B.layouts.concealed) + (ex ? 0 : (this.props.peek ?? 0));
+  }
+  // item rect clipped to the visible part of the scroll container, in base coords
+  visibleRectIn(el, base) {
+    const b = base.getBoundingClientRect(), r = el.getBoundingClientRect(), k = base.offsetWidth / b.width;
+    const sc = this.scrollRef.current ? this.scrollRef.current.getBoundingClientRect() : r;
+    let clipTop = sc.top;
+    // overlays pinned to the top of the front layer (e.g. tracking header) occlude the item too
+    const fr = this.frontRef.current;
+    if (fr) fr.querySelectorAll('[data-occluder="top"]').forEach(o => {
+      if (parseFloat(getComputedStyle(o).opacity) > 0.5) clipTop = Math.max(clipTop, o.getBoundingClientRect().bottom);
+    });
+    const top = Math.max(r.top, clipTop), bottom = Math.min(r.bottom, sc.bottom);
+    const left = Math.max(r.left, sc.left), right = Math.min(r.right, sc.right);
+    return { top: (top - b.top) * k, left: (left - b.left) * k, w: Math.max(0, right - left) * k, h: Math.max(0, bottom - top) * k };
+  }
+  // reveal: content stays in place; a clip box grows from the item's visible box (screen coords → inset of the content area)
+  insetFrom(r) {
+    const bottom = G.H;   // clip covers the whole page incl. its app bar
+    return { t: Math.max(0, r.top), l: Math.max(0, r.left), r: Math.max(0, G.CW - r.left - r.w), b: Math.max(0, bottom - r.top - r.h) };
+  }
+  rectIn(el, base) {
+    const b = base.getBoundingClientRect(), r = el.getBoundingClientRect(), k = base.offsetWidth / b.width;
+    return { top: (r.top - b.top) * k, left: (r.left - b.left) * k, w: r.width * k, h: r.height * k };
+  }
+  findItem(id) {
+    const sc = this.scrollRef.current;
+    if (!sc || !id) return null;
+    const el = sc.querySelector('[data-item-id="' + CSS.escape(id) + '"]');
+    if (!el) return null;
+    const a = sc.getBoundingClientRect(), r = el.getBoundingClientRect();
+    return r.bottom < a.top || r.top > a.bottom ? null : el;
+  }
+  open(item, e) {
+    const cfg = childConfig(this.cur.ps.config, item);
+    const entry = { page: newPageState(cfg), openedFrom: item.id };
+    const pushE = extra => s => ({ ...this.deckPatch(s, r => ({ ...r, stack: [...r.stack, entry] })), history: [...s.history, { kind: 'push', deck: s.activeDeck, prevDeck: s.activeDeck }], ...extra });
+    const T = Math.round(this.dur * 1.2);
+    if (cfg.kind === 'backdrop') {
+      // single motion: item expands straight to the child's front-layer rect while the front layer moves there
+      const from = this.visibleRectIn(e.currentTarget, this.screenRef.current);
+      const childTop = this.frontTopFor(entry.page);
+      const target = { top: childTop, left: 0, w: G.CW, h: G.H - childTop };
+      this.setState({ bAnim: { ...from, op: 1, rad: '0px' }, bClip: null, baFade: 150 });
+      requestAnimationFrame(() => requestAnimationFrame(() => this.setState({ bAnim: { ...target, op: 1, rad: '16px 16px 0 0' }, frontTopOverride: childTop })));
+      this.fadeThrough('back', () => this.setState({ backOverride: entry.page }));
+      setTimeout(() => {
+        this.log('push [backdrop] → ' + cfg.title, pushE({ bAnim: { ...target, op: 0, rad: '16px 16px 0 0' }, frontTopOverride: null, backOverride: null }));
+        setTimeout(() => this.setState({ bAnim: null, bClip: null }), 160);
+      }, this.dur);
+      return;
+    }
+    const from = this.visibleRectIn(e.currentTarget, this.screenRef.current);
+    const OUT = Math.round(this.dur * 0.3), IN = this.dur - OUT;
+    this.log('push [appBar] → ' + cfg.title, pushE({ ovRect: { ...CF(), op: 0 }, ovInset: this.insetFrom(from), ovClip: null, ahOp: 0, ahTrans: 'none' }));
+    requestAnimationFrame(() => requestAnimationFrame(() => this.setState({ ovRect: CF(), ovInset: null, ahOp: 1, ahTrans: 'opacity ' + Math.round(this.dur * 1.2) + 'ms' })));
+  }
+  back(fromHistory) {
+    const stack = this.cur.rs.stack, entry = stack[stack.length - 1];
+    if (stack.length < 2) return;
+    if (!fromHistory) this.dropRecord(r => r.kind === 'push' && r.deck === this.state.activeDeck);
+    const T = Math.round(this.dur * 1.2), title = entry.page.config.title;
+    const pop = s => this.deckPatch(s, r => {
+      const st = r.stack.slice(0, -1), j = underIndex(st);
+      st[j] = { ...st[j], page: applyEvent(st[j].page, 'return') };
+      return { ...r, stack: st };
+    });
+    if (entry.page.config.kind === 'appBar') {
+      const el = this.findItem(entry.openedFrom);
+      const OUT = Math.round(this.dur * 0.3);
+      this.setState({ ahOp: 0, ahTrans: 'opacity ' + T + 'ms', ovRect: { ...CF(), op: 0 }, ovInset: el ? this.insetFrom(this.visibleRectIn(el, this.screenRef.current)) : null });
+      setTimeout(() => this.log('pop ← ' + title, s => ({ ...pop(s), ovRect: null, ovClip: null, ovInset: null, ahOp: 1, ahTrans: 'none' })), T + 30);
+      return;
+    }
+    const curTop = this.rectIn(this.frontRef.current, this.screenRef.current).top;
+    const D = this.dur;
+    this.log('pop ← ' + title, s => ({ ...pop(s), bAnim: { top: curTop, left: 0, w: G.CW, h: G.H - curTop, op: 1, rad: '16px 16px 0 0' }, baFade: D, frontTopOverride: curTop, backOverride: entry.page }));
+    this.fadeThrough('back', () => this.setState({ backOverride: null }));
+    requestAnimationFrame(() => {
+      const pTop = this.frontTopFor(this.cur.ps);
+      const el = this.findItem(entry.openedFrom);
+      let target = { top: pTop, left: 0, w: G.CW, h: G.H - pTop, rad: '16px 16px 0 0' };
+      if (el) { const r = this.visibleRectIn(el, this.frontRef.current); target = { top: pTop + r.top, left: r.left, w: r.w, h: r.h, rad: '0px' }; }
+      requestAnimationFrame(() => this.setState({ frontTopOverride: null, bAnim: { ...target, op: 0 } }));
+    });
+    setTimeout(() => this.setState({ bAnim: null, bClip: null }), D + 60);
+  }
+  fadeThrough(scope, mid) {
+    const OUT = Math.round(this.dur * 0.3), IN = this.dur - OUT;
+    clearTimeout(this.ftT1); clearTimeout(this.ftT2);
+    this.setState({ ft: { phase: 'out', scope, OUT, IN } });
+    this.ftT1 = setTimeout(() => {
+      mid();
+      this.setState({ ft: { phase: 'pre', scope, OUT, IN } });
+      requestAnimationFrame(() => requestAnimationFrame(() => this.setState({ ft: { phase: 'in', scope, OUT, IN } })));
+      this.ftT2 = setTimeout(() => this.setState({ ft: null }), IN + 30);
+    }, OUT);
+  }
+  // ── history / focus / layers
+  dropRecord(pred) { this.setState(s => { const h = s.history.slice(); for (let k = h.length - 1; k >= 0; k--) if (pred(h[k])) { h.splice(k, 1); break; } return { history: h }; }); }
+  switchDeck(i, record) {
+    const r = DECKS[i], from = this.state.activeDeck;
+    if (i === from) return;
+    this.fadeThrough('all', () => this.log('deckSwitch → ' + r.name, s => ({
+      ...((r.policy && r.policy.stack.resetOn.includes('deckSwitch')) ? this.deckPatch(s, () => deckState(r), i) : this.underPatch(s, p => applyEvent(p, 'deckSwitch'), i)),
+      activeDeck: i, focus: 'deck', ovRect: null, ovClip: null, ovCirc: null, backOverride: null,
+      history: record ? [...s.history, { kind: 'deckSwitch', from, to: i }] : s.history
+    })));
+  }
+  setFocus(f) { if (this.state.focus !== f) this.setState({ focus: f }); }
+  layerPatch(s, id, fn) { return { layers: { ...s.layers, [id]: fn(s.layers[id]) } }; }
+  openLayer(id, e) {
+    const L = LAYERS[id];
+    if (this.state.layers[id].open) return;
+    if (id === 'Dedede') {
+      const o = e && e.currentTarget && this.phoneRef.current ? this.centerIn(e.currentTarget, this.phoneRef.current) : (this.state.ddOrigin || { x: 28, y: 28 });
+      this.setState({ ddOrigin: o });
+    }
+    this.log('layerOpen · ' + id, s => ({
+      ...this.layerPatch(s, id, x => ({ open: true, stack: L.policy.stack.resetOn.includes('layerOpen') ? [L.base] : x.stack })),
+      focus: id, history: L.history === 'record' ? [...s.history, { kind: 'layerOpen', layer: id }] : s.history
+    }));
+  }
+  closeLayer(id, fromHistory) {
+    const L = LAYERS[id];
+    this.log('layerClose · ' + id, s => {
+      let hist = s.history;
+      if (!fromHistory && L.history === 'record') {   // closing undoes the layer's own history segment
+        let k = hist.length - 1; while (k >= 0 && !(hist[k].kind === 'layerOpen' && hist[k].layer === id)) k--;
+        if (k >= 0) hist = hist.filter((r, j) => j < k || (j > k && r.layer !== id));
+      }
+      return { ...this.layerPatch(s, id, x => ({ ...x, open: false })), focus: 'deck', history: hist };
+    });
+  }
+  layerPush(id, page) {
+    const L = LAYERS[id];
+    this.log(id + ' push → ' + L.pages[page].title, s => ({
+      ...this.layerPatch(s, id, x => ({ ...x, stack: [...x.stack, page] })),
+      history: L.history === 'record' ? [...s.history, { kind: 'layerPush', layer: id }] : s.history
+    }));
+  }
+  layerPop(id, fromHistory) {
+    if (!fromHistory && LAYERS[id].history === 'record') this.dropRecord(r => r.kind === 'layerPush' && r.layer === id);
+    this.log(id + ' pop', s => this.layerPatch(s, id, x => ({ ...x, stack: x.stack.slice(0, -1) })));
+  }
+  followLink(layerId, idx) {
+    const d = LAYERS[layerId].linkTarget.deck, base = DECKS[d].page;
+    const item = base.front.content.itemSets[0].items[idx];
+    const entry = { page: newPageState(childConfig(base, item)), openedFrom: null };
+    this.log(layerId + ' link → ' + DECKS[d].name + ' push ' + item.title, s => ({
+      ...this.deckPatch(s, r => ({ ...r, stack: [...r.stack, entry] }), d),
+      ...this.layerPatch(s, layerId, x => ({ ...x, open: G.layout === 'wide' && G.side === 'beside' ? x.open : false })),   // closes when presented 'over'
+      activeDeck: d, focus: 'deck', ovRect: null, ovClip: null, ovCirc: null, backOverride: null,
+      history: [...s.history, { kind: 'push', deck: d, prevDeck: s.activeDeck }]
+    }));
+  }
+  // compact layout: the history-trick entries implied by current state, oldest first
+  derivedHistory() {
+    const S = this.state, out = [], d = S.activeDeck, ds = S.decks[d].stack;
+    if (d !== 0) out.push('deck · ' + DECKS[d].name + '  (back → Bororo)');
+    ds.slice(1).forEach(e => out.push('push · ' + e.page.config.title));
+    const up = ds[underIndex(ds)].page;
+    if (ds[ds.length - 1].page.config.kind === 'backdrop' && up.back.expanded && !up.config.policy.back.expanded.default) out.push('expand · ' + up.config.title);
+    ['Dedede', 'Nonono'].forEach(id => { const L = S.layers[id]; if (!L.open) return; out.push('open · ' + id); L.stack.slice(1).forEach(p => out.push(id + ' · ' + LAYERS[id].pages[p].title)); });
+    return out;
+  }
+  systemBack() {
+    const f = this.state.focus;
+    if (f !== 'deck' && this.state.layers[f].open) return this.state.layers[f].stack.length > 1 ? this.layerPop(f) : this.closeLayer(f);
+    const { ps, rs, top } = this.cur;
+    if (top.page.config.kind === 'backdrop' && ps.back.expanded) return this.setCollapsed(false, 'system back');
+    if (rs.stack.length > 1) return this.back();
+    if (this.state.activeDeck !== 0) return this.switchDeck(0, false);
+    this.log('system back → exit app', {});
+  }
+  browserBack() {
+    const hist = this.state.history;
+    for (let k = hist.length - 1; k >= 0; k--) {
+      const r = hist[k], rest = hist.slice(0, k), st = this.state;
+      if (r.kind === 'push') {
+        if (st.decks[r.deck].stack.length < 2) continue;      // stale (e.g. popped to base)
+        this.setState({ history: rest });
+        if (st.activeDeck === r.deck && r.prevDeck === r.deck) return this.back(true);
+        return this.log('browser back · undo push in ' + DECKS[r.deck].name, s => ({
+          ...this.deckPatch(s, x => ({ ...x, stack: x.stack.slice(0, -1) }), r.deck), activeDeck: r.prevDeck, ovRect: null
+        }));
+      }
+      if (r.kind === 'deckSwitch') { this.setState({ history: rest }); return this.switchDeck(r.from, false); }
+      if (r.kind === 'layerOpen') { this.setState({ history: rest }); return this.closeLayer(r.layer, true); }
+      if (r.kind === 'layerPush') { if (st.layers[r.layer].stack.length < 2) continue; this.setState({ history: rest }); return this.layerPop(r.layer, true); }
+    }
+    this.setState({ history: [] });
+    this.log('browser back → leaves site', {});
+  }
+  layerVals(id) {
+    const L = LAYERS[id], st = this.state.layers[id], pid = st.stack[st.stack.length - 1], P = L.pages[pid], deep = st.stack.length > 1;
+    const rows = P.links ? P.links.map(l => ({
+      label: l.label,
+      sub: l.to.page ? id + ' page' : '→ pushes onto ' + DECKS[L.linkTarget.deck].name,
+      icon: l.to.page ? 'chevron_right' : 'arrow_outward',
+      go: () => l.to.page ? this.layerPush(id, l.to.page) : this.followLink(id, l.to.deckItem)
+    })) : P.settings.map(n => ({ label: n, sub: 'setting', icon: 'toggle_off', go: () => {} }));
+    return {
+      title: P.title, rows,
+      leftIcon: deep ? 'arrow_back' : L.presentation.kind === 'sheet' && G.layout === 'compact' ? 'expand_more' : 'close',
+      leftClick: () => deep ? this.layerPop(id) : this.closeLayer(id)
+    };
+  }
+  geometry() {
+    const D = DEVICES[this.state.layout || 'phone'];
+    G.PW = D.w; G.touch = D.touch;
+    G.layout = G.PW < COMPACT_MAX ? 'compact' : 'wide';
+    // wide Nonono: room → beside; no room → modal (touch) or auto-collapsing sidebar (pointer)
+    G.side = G.PW - RAIL_W - SIDE_W >= MIN_CONTENT ? 'beside' : G.touch ? 'modal' : 'auto';
+    const nOpen = this.state.layers.Nonono.open;
+    G.RAIL = G.layout === 'wide' ? RAIL_W : 0;
+    G.CW = G.PW - G.RAIL - (G.layout === 'wide' && G.side === 'beside' && nOpen ? SIDE_W : 0);
+    G.H = G.layout === 'compact' ? 720 - 56 - 48 : 720;   // wide: nav rail instead of bottom bar
+  }
+  renderVals() {
+    this.geometry();
+    const { ui, ps } = this.cur;
+    const v = this.valsFor(ps, ui);
+    const o = this.state.backOverride;
+    if (o) { const ov = this.valsFor(o, ui + 1); BACK_KEYS.forEach(k => { v[k] = ov[k]; }); }
+    const ft = this.state.ft, NONE = { op: 1, sc: 1, tr: 'none' };
+    const ph = ft && (ft.phase === 'out' ? { op: 0, sc: 1, tr: 'opacity ' + ft.OUT + 'ms cubic-bezier(.4,0,1,1)' }
+      : ft.phase === 'pre' ? { op: 0, sc: .92, tr: 'none' }
+      : { op: 1, sc: 1, tr: 'opacity ' + ft.IN + 'ms cubic-bezier(0,0,.2,1), transform ' + ft.IN + 'ms cubic-bezier(0,0,.2,1)' });
+    v.ftB = ph || NONE;
+    v.ftF = ph && ft.scope === 'all' ? ph : NONE;
+    v.ftO = { ...v.ftF, sc: 1 };   // app bar pages: fade only, no scale
+    const LS = this.state.layers, nOpen = LS.Nonono.open, dOpen = LS.Dedede.open;
+    const wide = G.layout === 'wide';
+    v.nn = { ...this.layerVals('Nonono'),
+      ...(wide
+        ? { left: G.PW - SIDE_W, w: SIDE_W, top: 0, h: 720, tx: nOpen ? 0 : SIDE_W + 16, rad: '0px', shadow: G.side === 'beside' ? '-1px 0 0 #e3e2de' : '-8px 0 24px rgba(0,0,0,.12)',
+            peekOp: 0, peekEv: 'none', sheetOp: 1, sheetEv: nOpen ? 'auto' : 'none' }
+        : { left: 0, w: G.PW, top: nOpen ? 0 : G.H, h: 720, tx: 0, rad: nOpen ? '0px' : '12px 12px 0 0', shadow: '0 -1px 0 #e3e2de, 0 -6px 16px rgba(0,0,0,.06)',
+            peekOp: nOpen ? 0 : 1, peekEv: nOpen ? 'none' : 'auto', sheetOp: nOpen ? 1 : 0, sheetEv: nOpen ? 'auto' : 'none' }),
+      peekSub: 'peek · ' + LAYERS.Nonono.pages[LS.Nonono.stack[LS.Nonono.stack.length - 1]].title, openSheet: () => this.openLayer('Nonono') };
+    const ddo = this.state.ddOrigin || { x: 28, y: 28 };
+    const ddRight = G.layout === 'wide' && G.side === 'beside' && nOpen ? SIDE_W : 0;
+    v.ddRight = ddRight;
+    // compact: covers nav bar + peek (no slide); wide: rail stays visible
+    const ddLeft = G.RAIL, ddBottom = 0, dx = ddo.x - ddLeft, dW = G.PW - ddRight - ddLeft, dH = 720 - ddBottom;
+    v.ddLeft = ddLeft; v.ddBottom = ddBottom;
+    v.dd = { ...this.layerVals('Dedede'), clip: 'circle(' + (dOpen ? this.maxR(dx, ddo.y, dW, dH) : 0) + 'px at ' + dx + 'px ' + ddo.y + 'px)', ev: dOpen ? 'auto' : 'none' };
+    v.phoneRef = this.phoneRef;
+    const ins = this.state.ovInset || { t: 0, r: 0, b: 0, l: 0 };
+    v.ovInsetCss = 'inset(' + ins.t + 'px ' + ins.r + 'px ' + ins.b + 'px ' + ins.l + 'px)';
+    v.navShift = (nOpen && !wide) || wide ? 56 : 0;
+    v.frontTR = wide && nOpen ? 0 : 16;   // square where the front layer meets an open side sheet
+    v.pw = G.PW; v.cw = G.CW; v.contentH = G.H - 56; v.frameRad = wide ? 16 : 28;
+    v.screenLeft = G.RAIL; v.screenRight = G.PW - G.RAIL - G.CW; v.screenBottom = wide ? 0 : 104;
+    v.showNnBtn = false; v.showRail = wide; v.nnRailBg = nOpen ? 'rgba(255,255,255,.14)' : 'transparent'; v.nnBtnColor = nOpen ? '#fff' : 'rgba(255,255,255,.6)';
+    v.toggleNn = () => nOpen ? this.closeLayer('Nonono') : this.openLayer('Nonono');
+    v.layouts = Object.entries(DEVICES).map(([k, d]) => { const label = d.label;
+      const on = (this.state.layout || 'phone') === k;
+      return { label, bg: on ? '#1c1c1c' : 'transparent', fg: on ? '#fff' : '#1c1c1c', pick: () => this.setState({ layout: k, ovRect: null, ovClip: null, bAnim: null }) };
+    });
+    v.layoutInfo = (G.touch ? 'touch' : 'pointer') + ' · ' + G.layout + ' · Nonono ' + (wide ? { beside: 'side sheet beside content', modal: 'modal side sheet', auto: 'auto-collapsing sidebar' }[G.side] : 'bottom sheet') + ' · back: ' + (G.touch ? 'Android = browser' : 'browser history');
+    const modal = wide && G.side === 'modal' && nOpen;
+    const auto = wide && G.side === 'auto';
+    v.showNnEdge = auto && !nOpen && !dOpen;
+    v.showNnCard = wide;   // floating peek card, persists while Nonono is open
+    const cardW = Math.min(LAYERS.Nonono.presentation.wide.peek.maxWidth, G.CW - 32);
+    v.nnCard = { w: cardW, left: G.RAIL + (G.CW - cardW) / 2 };
+    v.nnCardClick = () => nOpen ? this.closeLayer('Nonono') : this.openLayer('Nonono');
+    v.nnEdgeEnter = () => this.openLayer('Nonono');
+    v.nnLeave = () => { if (auto && this.state.layers.Nonono.open) this.closeLayer('Nonono'); };
+    v.openDedede = e => this.openLayer('Dedede', e);
+    v.nnScrimOp = modal ? 1 : 0; v.nnScrimEv = modal ? 'auto' : 'none'; v.nnScrimClick = () => this.closeLayer('Nonono');
+    v.nn.titleClick = wide ? undefined : () => this.closeLayer('Nonono'); v.nn.titleCursor = wide ? 'default' : 'pointer';
+    v.focusDeck = () => { if (wide && G.side === 'auto' && nOpen) this.closeLayer('Nonono'); this.setFocus('deck'); };
+    v.focusNonono = () => this.setFocus('Nonono');
+    v.focusDedede = () => this.setFocus('Dedede');
+    v.backBtn = () => G.touch ? this.systemBack() : this.browserBack();
+    v.showAndroidBack = false;
+    v.androidBack = () => this.systemBack();
+    v.backLabel = G.touch ? 'Back · Android = browser' : 'Browser back';
+    v.historyCaption = G.touch ? 'compact · entries derived from state (newest first)' : 'wide · recorded history (newest first)';
+    v.focusLabel = this.state.focus === 'deck' ? DECKS[this.state.activeDeck].name + ' (deck)' : this.state.focus + ' (layer)';
+    v.historyList = G.touch ? this.derivedHistory().reverse() : this.state.history.slice().reverse().map(r =>
+      r.kind === 'push' ? 'push · ' + DECKS[r.deck].name + (r.prevDeck !== r.deck ? ' (from ' + DECKS[r.prevDeck].name + ')' : '')
+      : r.kind === 'deckSwitch' ? 'deckSwitch · ' + DECKS[r.from].name + ' → ' + DECKS[r.to].name
+      : r.kind + ' · ' + r.layer);
+    v.historyEmpty = v.historyList.length === 0;
+    v.stackInfo = [...v.stackInfo, ...['Nonono', 'Dedede'].map(id => ({
+      name: id + (this.state.focus === id ? ' ●' : ''), action: 'layer · history ' + LAYERS[id].history,
+      border: this.state.focus === id ? '#1c1c1c' : '#e3e2de',
+      path: LS[id].stack.map(p => LAYERS[id].pages[p].title).join(' › '), open: LS[id].open ? 'open' : 'closed'
+    }))];
+    return v;
+  }
+  valsFor(ps, ui) {
+    const { activeDeck, decks, log } = this.state;
+    const rc = DECKS[activeDeck], { rs, top } = this.cur;
+    const c = ps.config, B = c.back, F = c.front, input = ps.back.input;
+    const collapsed = ps.back.expanded, view = getField(ps, 'front', 'view');
+    const isRoot = ui === 0, generic = F.content.type === 'generic', full = F.collapse === 'full', fullC = collapsed && full;
+    const dur = this.dur;
+    const items = visibleItems(c, input);
+    const active = input.kind === 'filters' ? input.active : [];
+    let frontTitle = items.length + ' items';
+    if (input.kind === 'tabs') frontTitle = F.content.itemSets[input.selected].label;
+    if (input.kind === 'search') frontTitle = input.query ? 'Results for “' + input.query + '”' : 'All';
+    if (generic) frontTitle = 'Content';
+    const go = it => e => { if (!collapsed) this.open(it, e); };
+    const typeIcon = it => it.opens.kind === 'appBar' ? 'open_in_full' : 'layers';
+    const RI = regionInstances(B, collapsed);
+    const gOn = this.state.gScrolled && this.state.gKey === c.id;
+    const bc = this.state.bClip || { top: 0, h: G.H };
+    const oc = this.state.ovClip || { top: 0, h: G.H, rad: '0px' };
+    const norm = x => x == null ? [] : Array.isArray(x) ? x : [x];
+    const titleOf = (t, pc) => t.kind === 'text' ? t.text : t.kind === 'deckName' ? rc.name : t.kind === 'pageTitle' ? pc.title : t.kind === 'trackedItem' ? (this.state.gKey === pc.id ? this.state.gTitle : '') : frontTitle;
+    const hItems = (list, theme) => norm(list).filter(it => (it.kind !== 'back' || !isRoot || theme === 'appbar') && !(it.kind === 'logo' && G.layout === 'wide')).map(it => {
+      const shown = !it.when || (it.when === 'expanded') === collapsed;
+      const v = { isLogo: false, isButton: false, isIcon: false, isText: false, dur, color: theme === 'back' ? '#fff' : theme === 'front' ? '#444' : '#1c1c1c', hover: theme === 'back' ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.06)', size: theme === 'front' ? 40 : 48, iconSize: theme === 'front' ? 22 : 24, maxW: 48 };
+      if (it.kind === 'logo') Object.assign(v, { isLogo: true, onClick: e => this.openLayer('Dedede', e) });
+      else if (it.kind === 'back') Object.assign(v, { isButton: true, icon: 'arrow_back', onClick: () => this.back() });
+      else if (it.kind === 'toggleExpanded') Object.assign(v, { isButton: true, icon: collapsed ? 'close' : it.icon, onClick: () => this.setCollapsed(!collapsed, 'header button') });
+      else if (it.kind === 'viewToggle') Object.assign(v, { isButton: true, icon: view === 'list' ? 'grid_view' : 'view_list', onClick: e => { e.stopPropagation(); this.updUnder(p => setField(p, 'front', 'view', getField(p, 'front', 'view') === 'list' ? 'grid' : 'list')); } });
+      else if (it.kind === 'caret') Object.assign(v, { isIcon: true, icon: 'expand_less', color: '#666', maxW: 30 });
+      else if (it.kind === 'filterSummary') Object.assign(v, { isText: true, text: active.length + ' filter' + (active.length > 1 ? 's' : ''), maxW: 120 });
+      else if (it.kind === 'more') Object.assign(v, { isButton: true, icon: 'more_vert', onClick: () => {} });
+      const on = shown && !(it.kind === 'filterSummary' && !active.length);
+      return { ...v, maxW: on ? v.maxW : 0, op: on ? 1 : 0, ev: on ? 'auto' : 'none' };
+    });
+    const BH = B.regions.header.header, FH = F.header, AH = top.page.config.kind === 'appBar' ? top.page.config.header : APPBAR_HEADER;
+    return {
+      screenRef: this.screenRef, scrollRef: this.scrollRef, frontRef: this.frontRef, thumbRef: this.thumbRef,
+      backBg: (this.props.palette ?? 'Grey') === 'Grey' ? '#3b3b3b' : '#5b3fa8',
+      dur, ovDur: Math.round(dur * 1.2),
+      frontTop: this.state.frontTopOverride ?? this.frontTopFor(ps),
+      bhLeft: hItems(BH.left, 'back'), bhRight: hItems(BH.right, 'back'), bhTitle: titleOf(BH.title, c), bhTitlePad: hItems(BH.left, 'back').length ? 4 : 12,
+      fhLeft: hItems(FH.left, 'front'), fhRight: hItems(FH.right, 'front'), fhTitle: titleOf(FH.title, c),
+      ahLeft: hItems(AH.left, 'appbar'), ahRight: hItems(AH.right, 'appbar'), ahTitle: titleOf(AH.title, top.page.config),
+      rHeader: RI.header || [], rBasic: RI.basicAction || [], rPanel: RI.panel || [],
+      canBack: !isRoot,
+      basicH: BASIC_H,
+      panelRows: [140, 100, 120].map(w => ({ w })),
+      titlePad: 0,
+      onBack: () => this.back(),
+      appTitle: isRoot ? rc.name : collapsed ? c.title + ' · ' + B.basicAction : c.title,
+      
+      onTrail: () => this.setCollapsed(!collapsed, 'app bar icon'),
+      onSubheader: () => this.setCollapsed(!collapsed, 'header'),
+      onScrim: () => this.setCollapsed(false, 'scrim'),
+      scrimOpacity: collapsed && !full ? 1 : 0, scrimEvents: collapsed && !full ? 'auto' : 'none',
+      isFilters: input.kind === 'filters', isTabs: input.kind === 'tabs', isSearch: input.kind === 'search',
+      filters: TAGS.map(t => ({
+        label: t, bg: active.includes(t) ? '#fff' : 'transparent', fg: active.includes(t) ? '#1c1c1c' : '#fff',
+        toggle: () => this.updInput(inp => ({ ...inp, active: inp.active.includes(t) ? inp.active.filter(x => x !== t) : [...inp.active, t] }))
+      })),
+      tabs: input.kind === 'tabs' ? F.content.itemSets.map((t, i) => ({
+        label: t.label, line: i === input.selected ? '#fff' : 'transparent', op: i === input.selected ? 1 : .65,
+        select: () => { this.updInput(inp => ({ ...inp, selected: i })); if (!B.layouts.concealed.includes('basicAction')) this.setCollapsed(false, t.label); }
+      })) : [],
+      query: input.kind === 'search' ? input.query : '', hasQuery: input.kind === 'search' && !!input.query,
+      searchHint: 'Search ' + c.title,
+      onQuery: e => { const v = e.target.value; this.updInput(inp => ({ ...inp, query: v })); },
+      clearQuery: () => this.updInput(inp => ({ ...inp, query: '' })),
+      frontTitle,
+      hasSummary: !collapsed && active.length > 0,
+      summary: active.length + ' filter' + (active.length > 1 ? 's' : ''),
+      fhBorder: fullC ? 'transparent' : '#e3e2de',
+      headerStatic: F.header.visible !== 'whenScrolled', headerTracking: F.header.visible === 'whenScrolled',
+      toggleW: fullC ? 0 : 40, toggleOp: fullC ? 0 : 1, toggleEvents: fullC ? 'none' : 'auto',
+      cards: generic ? [] : items.map(it => ({
+        id: it.id, label: it.title, typeIcon: typeIcon(it),
+        typeLabel: (it.opens.kind === 'appBar' ? 'app bar page' : 'in-backdrop · ' + (it.opens.content === 'generic' ? 'generic' : 'list/grid') + ' · ' + it.opens.basicAction) + (input.kind === 'filters' ? ' · ' + it.tag : ''),
+        shortType: it.opens.kind === 'appBar' ? 'app bar' : it.opens.content === 'generic' ? 'generic' : 'list/grid',
+        open: go(it)
+      })),
+      empty: items.length === 0,
+      isCollection: !generic, isGeneric: generic,
+      isList: !generic && view === 'list', isGrid: !generic && view === 'grid',
+      viewIcon: view === 'list' ? 'grid_view' : 'view_list',
+      toggleView: e => { e.stopPropagation(); this.updUnder(p => setField(p, 'front', 'view', getField(p, 'front', 'view') === 'list' ? 'grid' : 'list')); },
+      genericBlocks: generic ? items.map(it => ({ id: it.id, title: it.title, typeIcon: typeIcon(it), open: go(it) })) : [],
+      showBAnim: !!this.state.bAnim, bc: bc, ba: this.state.bAnim ? { ...this.state.bAnim, top: this.state.bAnim.top - bc.top } : {}, baFade: this.state.baFade || 150,
+      onFrontScroll: e => {
+        const p = this.cur.ps, pol = p.config.policy.front.scroll, v = e.currentTarget.scrollTop;
+        if (pol.scope) p.front.scroll[readPath(p, pol.scope)] = v; else p.front.scroll = v;   // written without re-render
+        this.track(e.currentTarget);
+        this.showThumb(e.currentTarget);
+      },
+      trackTitle: gOn ? this.state.gTitle : '', trackOpacity: gOn ? 1 : 0,
+      trackShift: gOn ? 0 : -8, trackEvents: gOn ? 'auto' : 'none', trackTrans: this.state.gKey === c.id ? 'opacity 150ms, transform 150ms' : 'none',
+      showOverlay: top.page.config.kind === 'appBar', oc, ov: { ...(this.state.ovRect || CF()), top: (this.state.ovRect || CF()).top - oc.top }, ahOp: this.state.ahOp ?? 1, ahTrans: this.state.ahTrans || 'none', ahEv: (this.state.ahOp ?? 1) > 0 ? 'auto' : 'none', ovTitle: top.page.config.title,
+      nav: DECKS.map((r, i) => ({
+        label: r.name, icon: r.icon, color: i === activeDeck ? '#fff' : 'rgba(255,255,255,.6)', railBg: i === activeDeck ? 'rgba(255,255,255,.14)' : 'transparent',
+        go: () => {
+          if (i !== activeDeck) {
+            return this.switchDeck(i, true);
+            this.fadeThrough('all', () => this.log('deckSwitch → ' + r.name, s => ({ ...((r.policy && r.policy.stack.resetOn.includes('deckSwitch')) ? this.deckPatch(s, () => deckState(r), i) : this.underPatch(s, p => applyEvent(p, 'deckSwitch'), i)), activeDeck: i, ovRect: null, ovClip: null, backOverride: null })));
+          }
+          if (decks[i].stack.length > 1) this.log('pop to root · ' + r.name, s => ({ ...this.deckPatch(s, x => ({ ...x, stack: [{ ...x.stack[0], page: applyEvent(x.stack[0].page, 'return') }] })), ovRect: null }));
+        }
+      })),
+      stackInfo: DECKS.map((r, i) => {
+        const st = decks[i].stack, up = st[underIndex(st)].page;
+        return {
+          name: r.name + (i === activeDeck ? ' ●' : ''), action: up.config.back.basicAction,
+          border: i === activeDeck ? '#1c1c1c' : '#e3e2de',
+          path: st.map((e, k) => k === 0 ? 'root' : e.page.config.title + ' [' + e.page.config.kind + ']').join(' › '),
+          open: up.back.expanded ? 'expanded' : 'concealed'
+        };
+      }),
+      log,
+      reset: () => this.setState(initState())
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "extends": "button",
+  "props": {
+    "label": "string"
+  },
+  "visuals": {
+    "ink": {
+      "default": {
+        "role": "content"
+      },
+      "selected": {
+        "token": "color.backLayer"
+      }
+    },
+    "fill": {
+      "default": "transparent",
+      "selected": {
+        "role": "content"
+      }
+    },
+    "border": {
+      "default": {
+        "token": "color.chipOutline"
+      }
+    }
+  },
+  "statuses": [
+    "selected"
+  ]
+}

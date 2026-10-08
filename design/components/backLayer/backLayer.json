@@ -1,0 +1,45 @@
+{
+  "props": {
+    "palette": "token",
+    "expanded": "boolean",
+    "headerHidden": "boolean"
+  },
+  "provides": {
+    "content": {
+      "token": "color.onBackLayer"
+    },
+    "contentVariant": {
+      "token": "color.onBackLayer"
+    },
+    "focusRing": {
+      "token": "color.onBackLayer"
+    }
+  },
+  "visuals": {
+    "fill": {
+      "default": {
+        "token": "color.backLayer"
+      }
+    },
+    "ink": {
+      "default": {
+        "token": "color.onBackLayer"
+      }
+    },
+    "basicPadding": {
+      "default": "0 16px 12px"
+    },
+    "panelPadding": {
+      "default": "12px 16px 16px"
+    },
+    "panelDivider": {
+      "default": "rgba(255,255,255,.15)"
+    },
+    "panelGap": {
+      "default": 12
+    }
+  },
+  "implements": [
+    "backLayer"
+  ]
+}

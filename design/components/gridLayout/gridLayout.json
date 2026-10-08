@@ -1,0 +1,66 @@
+{
+  "visuals": {
+    "maxColumnWidth": {
+      "default": {
+        "token": "grid.column.max"
+      }
+    },
+    "columns": {
+      "default": {
+        "if": {
+          "env": "layout",
+          "equals": "wide"
+        },
+        "then": {
+          "token": "grid.columns.wide"
+        },
+        "else": {
+          "token": "grid.columns.compact"
+        }
+      }
+    },
+    "gap": {
+      "default": {
+        "if": {
+          "env": "layout",
+          "equals": "wide"
+        },
+        "then": {
+          "token": "grid.gutter.wide"
+        },
+        "else": {
+          "token": "grid.gutter.compact"
+        }
+      }
+    },
+    "margin": {
+      "default": {
+        "if": {
+          "env": "layout",
+          "equals": "wide"
+        },
+        "then": {
+          "token": "grid.margin.wide"
+        },
+        "else": {
+          "token": "grid.margin.compact"
+        }
+      }
+    },
+    "itemAspect": {
+      "default": 0.75
+    },
+    "snap": {
+      "default": "none"
+    },
+    "scrollbarGutter": {
+      "default": 8
+    }
+  },
+  "implements": [
+    "layout"
+  ],
+  "props": {
+    "groups": "list"
+  }
+}

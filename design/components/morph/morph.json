@@ -1,0 +1,38 @@
+{
+  "props": {
+    "morphed": "boolean",
+    "from": "slot",
+    "to": "slot"
+  },
+  "variants": {
+    "span": {
+      "options": [
+        "none",
+        "header",
+        "row"
+      ],
+      "default": "none"
+    }
+  },
+  "visuals": {
+    "radius": {
+      "default": {
+        "token": "radius.sm"
+      }
+    }
+  },
+  "motion": {
+    "morphed": [
+      {
+        "do": "kind",
+        "kind": "containerMorph",
+        "ms": {
+          "token": "motion.duration.long"
+        },
+        "easing": {
+          "token": "motion.easing.emphasized"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:absolute;inset:0">
+  <div ref="{{ bgRef }}" style="position:absolute;inset:0;background:{{ v.fill }}"></div>
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:{{ v.gap }}px;padding:{{ v.padding }}px;text-align:center;color:{{ v.ink }}">
+    <div ref="{{ logoRef }}" style="display:flex;color:{{ v.logo }}"><dc-import name="Logo" size="{{ v.logoSize }}" playing="{{ false }}" visuals="{{ logoVis }}" motion="{{ logoMotion }}" label="" hint-size="42px,64px"></dc-import></div>
+    <div ref="{{ textRef }}" style="display:flex;flex-direction:column;align-items:center;gap:{{ v.gap }}px">
+      <div style="font-size:{{ v.titleSize }}px;font-weight:{{ v.titleWeight }}">{{ title }}</div>
+      <div style="font-size:{{ v.textSize }}px;color:{{ v.textInk }};max-width:{{ v.textMaxWidth }}px">{{ text }}</div>
+      <dc-import name="Button" dc-props="{{ ix }}" text="{{ button }}" hint-size="120px,40px"></dc-import>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:640},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Welcome&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;text&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Sign in to continue&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;button&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Sign in&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;ix&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;logoVis&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;logoMotion&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;bgRef&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;logoRef&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;textRef&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
+// Web implementation of design component signInPage (gate). Props: title, text, button (label), ix (Button props), logoVis / logoMotion (logo design), bgRef / logoRef / textRef (the shell's enterApp motion measures and animates these), visuals (signInPage). No values of its own.
+class Component extends DCLogic {
+  renderVals() { const p = this.props; return { v: p.visuals || {}, title: p.title || '', text: p.text || '', button: p.button || '', ix: p.ix || {}, logoVis: p.logoVis || null, logoMotion: p.logoMotion || null, bgRef: p.bgRef || null, logoRef: p.logoRef || null, textRef: p.textRef || null }; }
+}
+</script>
+</body>
+</html>

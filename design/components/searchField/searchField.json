@@ -1,0 +1,51 @@
+{
+  "implements": [
+    "input"
+  ],
+  "props": {
+    "value": "value",
+    "options": "options",
+    "placeholder": "string"
+  },
+  "accepts": [
+    "text"
+  ],
+  "visuals": {
+    "height": {
+      "default": 48
+    },
+    "radius": {
+      "default": {
+        "token": "radius.sm"
+      }
+    },
+    "fill": {
+      "default": {
+        "token": "color.backLayerFill"
+      }
+    },
+    "ink": {
+      "default": {
+        "role": "content"
+      }
+    },
+    "padX": {
+      "default": 12
+    },
+    "gap": {
+      "default": 10
+    },
+    "fontSize": {
+      "default": 15
+    },
+    "icon": {
+      "default": "search"
+    },
+    "iconSize": {
+      "default": 20
+    },
+    "iconOpacity": {
+      "default": 0.7
+    }
+  }
+}

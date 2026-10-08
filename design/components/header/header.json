@@ -1,0 +1,53 @@
+{
+  "props": {
+    "start": "slot",
+    "title": "slot",
+    "end": "slot",
+    "expanded": "slot",
+    "progress": "number"
+  },
+  "implements": [
+    "bar",
+    "peek"
+  ],
+  "visuals": {
+    "height": {
+      "default": 64
+    },
+    "padding": {
+      "default": "0 4px"
+    },
+    "fill": {
+      "default": "transparent"
+    },
+    "ink": {
+      "default": {
+        "role": "content"
+      }
+    },
+    "divider": {
+      "default": "transparent"
+    },
+    "align": {
+      "default": "center"
+    },
+    "titlePadAfterStart": {
+      "default": 4
+    },
+    "titlePadAlone": {
+      "default": 12
+    },
+    "spanInset": {
+      "default": 24
+    },
+    "detailFade": {
+      "default": 1.6
+    },
+    "detailShrink": {
+      "default": 0.15
+    },
+    "titleFadeFrom": {
+      "default": 0.5
+    }
+  }
+}

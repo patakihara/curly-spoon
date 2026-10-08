@@ -1,0 +1,36 @@
+{
+  "implements": [
+    "frontHeader"
+  ],
+  "props": {
+    "start": "slot",
+    "title": "slot",
+    "end": "slot",
+    "fab": "slot"
+  },
+  "visuals": {
+    "height": {
+      "default": {
+        "token": "size.frontHeader.height"
+      }
+    },
+    "padding": {
+      "default": "0 6px 0 4px"
+    },
+    "fill": {
+      "default": "transparent"
+    },
+    "ink": {
+      "default": "inherit"
+    },
+    "align": {
+      "default": "flex-start"
+    },
+    "titleMs": {
+      "default": 150
+    },
+    "spanInset": {
+      "default": 38
+    }
+  }
+}

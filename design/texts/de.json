@@ -1,0 +1,19 @@
+{
+  "common.retry": "Erneut versuchen",
+  "common.cancel": "Abbrechen",
+  "common.ok": "OK",
+  "common.dismiss": "Schließen",
+  "search.clear": "Suche löschen",
+  "content.empty": "Hier ist noch nichts",
+  "content.error": "Konnte nicht geladen werden",
+  "content.offline": "Du bist offline und dies wurde nicht gespeichert",
+  "content.stale": "Offline · gespeicherte Inhalte",
+  "nowPlaying.open": "„Läuft gerade“ öffnen",
+  "nowPlaying.close": "„Läuft gerade“ schließen",
+  "nowPlaying.collapse": "„Läuft gerade“ minimieren",
+  "player.play": "Abspielen",
+  "player.pause": "Pause",
+  "player.next": "Nächster Titel",
+  "player.nothing": "Keine Wiedergabe",
+  "splash.loading": "Wird geladen…"
+}
