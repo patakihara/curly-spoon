@@ -41,6 +41,12 @@
     },
     "panelGap": {
       "default": 12
+    },
+    "basicHeight": {
+      "default": 60
+    },
+    "actionsHeight": {
+      "default": 56
     }
   },
   "implements": [

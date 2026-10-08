@@ -41,6 +41,9 @@
     },
     "maxWidth": {
       "default": "85%"
+    },
+    "width": {
+      "default": 300
     }
   },
   "implements": [

@@ -341,7 +341,7 @@ export interface Hire {
 export interface ParamMatch { name?: ParamName; type?: ParamType; axis?: boolean; draft?: boolean }   // controls: picked by the bound param (its name, or its spec)
 export interface Placement {
   contract: ContractName;
-  within?: ContractName;                 // an ancestor contract (a header in a backLayer, an appBarPage or a sheetLayer: the peek)
+  within?: ContractName | ContractName[];   // the nearest ancestor contract, or the nearest few in order (['appBarPage', 'sheetLayer']: a layer page's header)
   overlay?: OverlaySpec['kind'];         // overlays: by kind
   match?: ItemSelector;                  // items: a kind or a name (destinations: the deck id; overlays: the kind)
   param?: ParamMatch;                    // basic actions and panel rows

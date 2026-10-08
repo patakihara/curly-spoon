@@ -3,8 +3,10 @@
 
 // a place: { contract, page, within: ancestor contracts nearest first, kind?, name?, param?, presentation?, entry?, state?, overlay?, env? }
 // page exceptions first, then the defaults; the first placement whose given fields all match wins
+// within: the nearest ancestor contract, or the nearest few in order (['appBarPage', 'sheetLayer']: a layer page's)
+const nearest = (want, have) => want.every((w, i) => (have || [])[i] === w);
 const fits = (p, at) => p.contract === at.contract
-  && (!p.within || (at.within || []).includes(p.within))
+  && (!p.within || nearest([].concat(p.within), at.within))
   && (!p.overlay || p.overlay === at.overlay)
   && (!p.match || ((!p.match.kind || p.match.kind === at.kind) && (!p.match.name || p.match.name === at.name)))
   && (!p.param || Object.entries(p.param).every(([k, v]) => at.param && at.param[k] === v))
@@ -31,4 +33,15 @@ export function freeComponent(components, id, depth = 0) {
   const events = [...(parent ? parent.events : []), ...(d.events || []).map(e => e.name)];
   const variants = { ...(parent ? parent.variants : {}), ...(d.variants || {}) };
   return { props, slots, events, variants };
+}
+
+// a size the hire drawing a place gives: its own token named after the size ('<hire>.<name>', aliasing a design token),
+// else its free component's visual of that name (with the hire's variant picks). specs: loaded design (tokens flattened).
+import { resolveVisuals } from './layout.js';
+export function sizeOf(specs, composition, at, name) {
+  const hn = placementFor(composition, at), h = hn ? hireOf(composition, hn) : null; if (!h) return undefined;
+  const t = (h.tokens || []).find(x => x.name === h.name + '.' + name);
+  if (t) return specs.tokens[t.alias];
+  const variant = Object.fromEntries((h.variants || []).map(v => [v.axis, v.option]));
+  return resolveVisuals(specs, h.hires, 'enabled', { variant })[name];
 }

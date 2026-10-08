@@ -103,6 +103,10 @@ object DesignTokens {
     val SizeFabMd = 40f
     val SizeFabLg = 64f
     val SizeFabEdge = 20f
+    val SizePeekHeight = 48f
+    val SizePeekMaxWidth = 500f
+    val SizeSideSheetWidth = 320f
+    val SizeHeaderExpandedDetail = 272f
     val GridColumnMax = 140f
     val GridColumnsCompact = 4f
     val GridColumnsWide = 12f
@@ -180,6 +184,8 @@ object BackLayerTokens {
     val PanelPadding = "12px 16px 16px"
     val PanelDivider = Color(255, 255, 255, 38)
     val PanelGap = 12f
+    val BasicHeight = 60f
+    val ActionsHeight = 56f
 }
 
 object HeaderTokens {
@@ -1038,4 +1044,5 @@ object DrawerTokens {
     val TitlePadX = 16f
     val Scrim = DesignTokens.ColorScrim
     val MaxWidth = "85%"
+    val Width = 300f
 }

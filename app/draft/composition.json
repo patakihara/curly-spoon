@@ -64,6 +64,12 @@
      "event": "close",
      "send": "closeLayer"
     }
+   ],
+   "tokens": [
+    {
+     "name": "sheetLayer.sideWidth",
+     "alias": "size.sideSheet.width"
+    }
    ]
   },
   {
@@ -156,6 +162,67 @@
    ]
   },
   {
+   "name": "personHeader",
+   "hires": "header",
+   "contract": "header",
+   "clauses": [
+    {
+     "slot": "start",
+     "fill": [
+      {
+       "child": "items",
+       "pick": [
+        {
+         "name": "menu"
+        },
+        {
+         "name": "up"
+        },
+        {
+         "kind": "logo"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "slot": "title",
+     "fill": [
+      {
+       "hire": "backTitle"
+      }
+     ]
+    },
+    {
+     "slot": "end",
+     "fill": [
+      {
+       "child": "items",
+       "pick": [
+        {
+         "rest": true
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "slot": "expanded",
+     "fill": [
+      {
+       "child": "detail"
+      }
+     ]
+    }
+   ],
+   "tokens": [
+    {
+     "name": "personHeader.expandedHeight",
+     "alias": "size.header.expandedDetail"
+    }
+   ]
+  },
+  {
    "name": "appBarHeader",
    "hires": "appBar",
    "contract": "header",
@@ -235,6 +302,95 @@
        "child": "detail"
       }
      ]
+    }
+   ]
+  },
+  {
+   "name": "layerAppBarHeader",
+   "hires": "appBar",
+   "contract": "header",
+   "clauses": [
+    {
+     "slot": "start",
+     "fill": [
+      {
+       "child": "items",
+       "pick": [
+        {
+         "name": "up"
+        },
+        {
+         "name": "close"
+        },
+        {
+         "name": "collapse"
+        },
+        {
+         "kind": "logo"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "slot": "title",
+     "fill": [
+      {
+       "hire": "appBarTitle"
+      }
+     ]
+    },
+    {
+     "slot": "end",
+     "fill": [
+      {
+       "child": "items",
+       "pick": [
+        {
+         "kind": "find"
+        },
+        {
+         "name": "more"
+        },
+        {
+         "rest": true
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "slot": "fab",
+     "fill": [
+      {
+       "child": "items",
+       "pick": [
+        {
+         "name": "playNow"
+        },
+        {
+         "name": "playNext"
+        },
+        {
+         "name": "playLast"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "slot": "expanded",
+     "fill": [
+      {
+       "child": "detail"
+      }
+     ]
+    }
+   ],
+   "variants": [
+    {
+     "axis": "form",
+     "option": "layer"
     }
    ]
   },
@@ -348,6 +504,16 @@
        ]
       }
      ]
+    }
+   ],
+   "tokens": [
+    {
+     "name": "peekHeader.height",
+     "alias": "size.peek.height"
+    },
+    {
+     "name": "peekHeader.maxWidth",
+     "alias": "size.peek.maxWidth"
     }
    ]
   },
@@ -2230,8 +2396,27 @@
   },
   {
    "contract": "header",
-   "within": "sheetLayer",
-   "hire": "peekHeader"
+   "within": [
+    "appBarPage",
+    "sheetLayer"
+   ],
+   "hire": "layerAppBarHeader"
+  },
+  {
+   "contract": "header",
+   "within": [
+    "appBarPage",
+    "drawerLayer"
+   ],
+   "hire": "layerAppBarHeader"
+  },
+  {
+   "contract": "header",
+   "within": [
+    "appBarPage",
+    "fullscreenLayer"
+   ],
+   "hire": "layerAppBarHeader"
   },
   {
    "contract": "header",
@@ -2239,8 +2424,16 @@
    "hire": "appBarHeader"
   },
   {
-   "contract": "detail",
+   "contract": "header",
    "within": "sheetLayer",
+   "hire": "peekHeader"
+  },
+  {
+   "contract": "detail",
+   "within": [
+    "header",
+    "sheetLayer"
+   ],
    "hire": "peekDetail"
   },
   {
@@ -2434,7 +2627,10 @@
    "match": {
     "name": "playPause"
    },
-   "within": "sheetLayer",
+   "within": [
+    "header",
+    "sheetLayer"
+   ],
    "hire": "peekPlayPause"
   },
   {
@@ -2442,7 +2638,10 @@
    "match": {
     "name": "next"
    },
-   "within": "header",
+   "within": [
+    "header",
+    "sheetLayer"
+   ],
    "hire": "peekNext"
   },
   {
@@ -2615,7 +2814,10 @@
   {
    "contract": "item",
    "presentation": "default",
-   "within": "frontLayer",
+   "within": [
+    "content",
+    "frontLayer"
+   ],
    "hire": "carousel"
   },
   {
@@ -2720,6 +2922,11 @@
     {
      "contract": "detail",
      "hire": "personDetail"
+    },
+    {
+     "contract": "header",
+     "within": "backLayer",
+     "hire": "personHeader"
     }
    ]
   },
