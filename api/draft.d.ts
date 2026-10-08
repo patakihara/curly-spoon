@@ -3,53 +3,54 @@
  * Status: draft, agreed direction 2026-10-08 (docs/NOTES.md "Component contracts, from scratch"). Nothing reads this file
  * yet. When the backdrop page is settled it replaces the matching parts of api.d.ts; roles, refs, supplies / emits,
  * roleProps / roleIntent and Role.parts go then.
- * Scope so far: the backdrop page (back layer, front layer, their headers) and the types of the new layers around it.
- * Types this draft does not change come from api.d.ts.
+ * Scope: every drawn part of the app config (pages, layers, peek, navigation, launch, content states, overlays) and the
+ * types of the new layers around it. Types this draft does not change come from api.d.ts.
  *
- *   1  Config: the backdrop page, as plain data (no slots, no look values)
+ *   1  Config: what exists, as plain data (no slots, no sides, no look values)
  *   2  Contracts: what each drawn config object offers (config · values · intents · children)
  *   3  Free components: design's building blocks (no API names)
  *   4  Composition: hired components, clauses, placements (app/composition.json)
  */
 import type {
-  ComponentId, PageId, ParamName, Title, Params, PropValue, Condition, EnvEquals, Actions, DraftBind, Source, SourceRef,
-  FieldPolicy, BackPolicy, Intent, Scoped, FrontPosition, ToggleExpandedIntent, ScrollIntent, RetryIntent, SetParamsIntent, OpenIntent,
-  ParamValue, ParamOption, ParamType, ContentView, ItemData, ItemGroup, GroupKey, StatePath, InteractionView, PropType, Visuals,
-  VariantAxis, StatusState, Step, PlaceholderForm,
+  ComponentId, PageId, DeckId, LayerId, ParamName, Title, Params, PropValue, Condition, EnvEquals, Actions, DraftBind, Source,
+  SourceRef, FieldPolicy, BackPolicy, SheetPolicy, DeckPolicy, LayerPolicy, LinkTarget, HistoryMode, HistoryByLayout, CoversNav,
+  DrawerWideForm, SideMode, SheetForm, Intent, Scoped, FrontPosition, ToggleExpandedIntent, ScrollIntent, RetryIntent,
+  SetParamsIntent, OpenIntent, OpenLayerIntent, CloseLayerIntent, CloseOverlayIntent, SwitchDeckIntent, ReselectDeckIntent, Seek,
+  ParamValue, ParamOption, ParamType, ContentView, ContentViewState, ItemData, ItemGroup, GroupKey, StatePath, InteractionView,
+  PropType, Visuals, VariantAxis, StatusState, Step, PlaceholderForm, Rect, ItemId, TextId, LocaleConfig, LocaleId, Breakpoints,
+  RouteTable, PersistPolicy, Shortcut, Wire, SemVer, SessionPredicate, GateId, SessionState,
 } from './api';
 
 // ═════════════════════════════════════════════════════════════
-// 1. CONFIG — the backdrop page. Says what exists; never which component draws it, where it sits, or how big it is.
+// 1. CONFIG — says what exists. Never which component draws it, where it sits, or how big it is.
 // ═════════════════════════════════════════════════════════════
-export type ItemName = string;           // names an item within its header or region; composition may single it out
-export type ItemKind = 'button' | 'logo' | 'text' | 'switch' | 'find';
+export type ItemName = string;           // names an item within its list; composition may single it out
+export type ItemKind = 'button' | 'logo' | 'text' | 'switch' | 'find' | 'detail' | 'seek';
 
-// ── Header items: what a header holds. Which side an item sits on is composition's choice.
-export interface ButtonItem { kind: 'button'; name: ItemName; label: PropValue; action: Actions; when?: Condition }
+// ── Items: what a header, body or row holds. Which side or row an item sits in is composition's choice.
+export interface ButtonItem { kind: 'button'; name: ItemName; label: PropValue; action: Actions; when?: Condition; checked?: Condition }   // checked: a toggle's state (play / pause)
 export interface LogoItem { kind: 'logo'; name: ItemName; label: PropValue }                 // the brand; reacts to the player
 export interface TextItem { kind: 'text'; name: ItemName; text: PropValue; when?: Condition }
 export interface SwitchItem { kind: 'switch'; name: ItemName; param: ParamName; label: PropValue; when?: Condition }   // steps a choice param to its next option
 export interface FindItem { kind: 'find'; name: ItemName; param: ParamName; placeholder: PropValue }   // a local search over the content; open / closed is engine state (FindState)
+export interface DetailConfig { title: PropValue; subtitle?: PropValue; image?: PropValue; meta?: PropValue }   // one item shown large: the opened item, the current track, the account
+export interface DetailItem { kind: 'detail'; name: ItemName; detail: DetailConfig }
+export interface SeekItem { kind: 'seek'; name: ItemName; label: PropValue }                 // the player's position
 export type HeaderItem = ButtonItem | LogoItem | TextItem | SwitchItem | FindItem;
+export type BodyItem = ButtonItem | TextItem | DetailItem | SeekItem;
 
-// ── Back layer: named regions with fixed meanings (replaces regions + layouts + heights).
-//   header, actions and basicAction show concealed and expanded; panel shows only expanded.
-export interface DetailConfig { title: PropValue; subtitle?: PropValue; image?: PropValue; meta?: PropValue }   // the opened item, shown large in the header
-export interface BackHeaderConfig { items: HeaderItem[]; detail?: DetailConfig }   // its title is the page's title
+// ── Headers: the back layer's, an app-bar page's and the peek's. Their title is the page's title (none on the peek).
+export interface HeaderConfig { items: HeaderItem[]; detail?: DetailConfig }
+
+// ── Controls and panel rows
 export interface BasicActionConfig { bind: ParamName | DraftBind; placeholder?: PropValue }   // one control for one param
 export interface ParamRow { kind: 'param'; label?: PropValue; bind: ParamName; when?: Condition }
 export interface SuggestionsRow { kind: 'suggestions'; label: PropValue; source: Source<ItemData[]>; fills: DraftBind }   // picking one sets both params to its title
 export type PanelRow = ParamRow | SuggestionsRow;
-export interface BackLayerConfig {
-  header: BackHeaderConfig;
-  actions?: ButtonItem[];
-  basicAction?: BasicActionConfig;
-  panel?: PanelRow[];
-  toggleOnTap?: boolean;                 // default true
-}
 
-// ── Front layer
-export interface FrontHeaderConfig { title: PropValue; items: HeaderItem[] }   // the disclosure is built in: every front header has one
+// ── Content. A shelf is an item holding entries (Browse's "Artists to know"). Data decides which shelves and entries exist;
+//   activating a shelf or an entry opens it (ItemData.opens; a shelf opens the template shelfPage).
+export interface ShelfData { entries?: ItemData[] }                     // joins api.d.ts ItemData: the engine reads id, opens, entries
 export type PresentationKey = string;
 export interface ContentParam { name: string; value: PropValue }
 export interface GroupConfig { by: StatePath; key: GroupKey; when?: Condition; index?: boolean }   // index: a fast-scroll index over the keys
@@ -60,20 +61,31 @@ export interface ContentConfig {
   view?: ParamName;                      // the param that picks the presentation
   presentations: PresentationConfig[];
 }
-export interface FrontLayerConfig { header: FrontHeaderConfig; collapse: 'partial' | 'full'; content: ContentConfig }
 
-// ── Find (local search): the engine owns whether it is open.
+// ── Find (local search): the engine owns whether it is open, on the page part that scrolls (front layer, app-bar page).
 //   open = (content scrolled and not closed) or opened or its text is not empty
 export interface FindState { opened: boolean; closed: boolean }          // opened: the find button was pressed · closed: ✕ was pressed
 export interface FindPolicy { opened: FieldPolicy<boolean>; closed: FieldPolicy<boolean> }   // mirrors FindState (e.g. both reset on scrollTop)
-export interface FrontState { scroll: Scoped<number>; find?: FindState }                      // replaces api.d.ts FrontState (scroll unchanged)
-export interface FrontPolicy { scroll: FieldPolicy<number>; find?: FindPolicy }               // find: required when the front header holds a find item
-export interface BackdropPagePolicy { params: Record<ParamName, FieldPolicy<ParamValue>>; back: BackPolicy; front: FrontPolicy }   // OPEN: params still a Record
 export interface OpenFindIntent { type: 'openFind' }                     // opened = true, closed = false
 export interface CloseFindIntent { type: 'closeFind' }                   // the find text = '', opened = false, closed = true
 export type DraftIntent = Intent | OpenFindIntent | CloseFindIntent;
 export type IntentType = DraftIntent['type'];
+export type ParamPolicies = Record<ParamName, FieldPolicy<ParamValue>>; // OPEN: still a Record (as in api.d.ts)
 
+// ── Backdrop page. The back layer has named regions with fixed meanings (replaces regions + layouts + heights):
+//   header, actions and basicAction show concealed and expanded; panel shows only expanded.
+export interface BackLayerConfig {
+  header: HeaderConfig;
+  actions?: ButtonItem[];
+  basicAction?: BasicActionConfig;
+  panel?: PanelRow[];
+  toggleOnTap?: boolean;                 // default true
+}
+export interface FrontHeaderConfig { title: PropValue; items: HeaderItem[] }   // the disclosure is built in: every front header has one
+export interface FrontLayerConfig { header: FrontHeaderConfig; collapse: 'partial' | 'full'; content: ContentConfig }
+export interface FrontState { scroll: Scoped<number>; find?: FindState }    // replaces api.d.ts FrontState (scroll unchanged)
+export interface FrontPolicy { scroll: FieldPolicy<number>; find?: FindPolicy }   // find: required when the front header holds a find item
+export interface BackdropPagePolicy { params: ParamPolicies; back: BackPolicy; front: FrontPolicy }
 export interface BackdropPageConfig {
   id: PageId;
   kind: 'backdrop';
@@ -84,18 +96,76 @@ export interface BackdropPageConfig {
   policy: BackdropPagePolicy;            // engine only: no contract reads it
 }
 
+// ── App-bar page: a header over content or a body, with an optional inner sheet (Now playing: Up next / Lyrics / Related)
+export interface PageSheetConfig { control?: BasicActionConfig; content: ContentConfig }   // control: the tabs in its header
+export interface AppBarPagePolicy { params?: ParamPolicies; scroll: FieldPolicy<number>; sheet?: SheetPolicy; find?: FindPolicy }
+export interface AppBarPageState { config: AppBarPageConfig; opener?: ItemData; params: Record<ParamName, Scoped<ParamValue>>; scroll: Scoped<number>; sheet?: { expanded: boolean }; find?: FindState }   // OPEN: replaces api.d.ts AppBarPageState (+ find); inline types to name
+export interface AppBarPageConfig {
+  id: PageId;
+  kind: 'appBar';
+  title: Title;
+  header: HeaderConfig;
+  params?: Params;
+  content?: ContentConfig;               // scrolling content — or a fixed body; exactly one
+  body?: BodyItem[];
+  sheet?: PageSheetConfig;               // requires policy.sheet
+  policy: AppBarPagePolicy;
+}
+export type PageConfig = BackdropPageConfig | AppBarPageConfig;
+
+// ── Decks and layers (unchanged but for the drawing values that moved to design: peek heights, widths, max widths)
+export interface DeckConfig { id: DeckId; name: string; page: BackdropPageConfig; linkTarget?: LinkTarget; policy: DeckPolicy }   // icon: composition (a token per deck)
+export interface PeekConfig { header: HeaderConfig }
+export interface BottomSheetForm { form: 'bottomSheet'; peek: PeekConfig; hidesNavWhenOpen: boolean }
+export interface FloatingCardPeek extends PeekConfig { form: 'floatingCard'; persistsWhenOpen: boolean }
+export interface SideSheetForm { form: 'sideSheet'; peek: FloatingCardPeek }
+export interface SheetPresentation { kind: 'sheet'; compact: BottomSheetForm; wide: SideSheetForm }
+export interface FullscreenPresentation { kind: 'fullscreen'; coversNav: CoversNav }
+export interface DrawerPresentation { kind: 'drawer'; side: 'start'; scrim: boolean; wide?: DrawerWideForm }
+export type LayerPresentation = SheetPresentation | FullscreenPresentation | DrawerPresentation;
+export interface LayerPages { base: PageId; set: Record<PageId, PageConfig> }   // OPEN: still a Record (as in api.d.ts)
+export interface LayerConfig { id: LayerId; name: string; pages: LayerPages; linkTarget?: LinkTarget; presentation: LayerPresentation; history: HistoryMode | HistoryByLayout; policy: LayerPolicy }
+
+// ── App: navigation lists extra buttons beside the decks (the rail's menu toggle, Settings, Account); launch, overlays
+export interface NavigationConfig { items: ButtonItem[] }
+export interface LaunchConfig { minMs?: number }                        // the splash: composition
+export interface OverlayText { name: string; value: PropValue }         // 'title', 'body', 'confirm', 'cancel', 'text', 'action'
+export interface OverlaySpec { id: string; kind: 'dialog' | 'menu' | 'actionSheet' | 'snackbar'; texts: OverlayText[]; blocking: boolean; timeoutMs?: number; history?: 'transient' | 'ignore' }   // the component: composition, by kind
+export interface Gate { id: GateId; when: SessionPredicate; page: PageConfig }
+export interface SessionConfig { initial?: Partial<SessionState>; gates: Gate[] }
+export interface AppConfig {
+  contractVersion: SemVer;
+  decks: DeckConfig[];
+  layers: LayerConfig[];
+  startDeck: DeckId;
+  breakpoints: Breakpoints;
+  routes?: RouteTable;
+  persist?: PersistPolicy;
+  session?: SessionConfig;
+  shortcuts?: Shortcut[];
+  launch?: LaunchConfig;
+  locales: LocaleConfig;
+  texts: Record<LocaleId, Record<TextId, string>>;   // OPEN: still Records (as in api.d.ts)
+  wire?: Wire;
+  navigation: NavigationConfig;
+  pages?: Record<string, PageConfig>;   // OPEN: still a Record (as in api.d.ts)
+}
+// Removed from config: contentStates (composition), NavigationConfig refs, LaunchConfig.splash, OverlaySpec.component / props,
+// DeckConfig.icon, every height / width / maxWidth, slots and sides.
+
 // ═════════════════════════════════════════════════════════════
 // 2. CONTRACTS — what a drawn config object offers whatever draws it.
 //   config: the object · values: current, computed by core from State, queries and Layout (never stored) ·
 //   intents: what it may send · children: config fields holding other drawn objects (each drawn by its own hire).
-//   Engine-only config (policy, collapse, routes …) is never offered as a value.
+//   Engine-only config (policy, collapse, routes …) is never offered as a value. Lists of children hold only the members
+//   whose `when` holds.
 // ═════════════════════════════════════════════════════════════
 export interface Contract<C, V, I> { config: C; values: V; intents: I }
 export interface NoValues {}
 export type NoIntents = never;
 
-// ── Header items
-export interface ButtonValues { label: string; interaction: InteractionView }
+// ── Items
+export interface ButtonValues { label: string; checked: boolean; interaction: InteractionView }
 export interface ButtonContract extends Contract<ButtonItem, ButtonValues, Actions> {}          // sends: runs its action
 export interface LogoValues { label: string; playing: boolean }
 export interface LogoContract extends Contract<LogoItem, LogoValues, NoIntents> {}
@@ -105,16 +175,21 @@ export interface SwitchValues { label: string; value: ParamValue | null; next: P
 export interface SwitchContract extends Contract<SwitchItem, SwitchValues, SetParamsIntent> {}
 export interface FindValues { open: boolean; value: string; placeholder: string; closeLabel: string }   // closeLabel: text find.close
 export interface FindContract extends Contract<FindItem, FindValues, OpenFindIntent | CloseFindIntent | SetParamsIntent> {}
-export type HeaderItemContract = ButtonContract | LogoContract | TextContract | SwitchContract | FindContract;
-
-// ── Back layer
 export interface DetailValues { title: string; subtitle: string | null; image: string | null; meta: string | null }
 export interface DetailContract extends Contract<DetailConfig, DetailValues, NoIntents> {}
-export interface BackHeaderValues { title: string; progress: number }      // progress: collapse 0 … 1 (Layout.barView)
-export interface BackHeaderChildren { items: HeaderItemContract[]; detail?: DetailContract }   // only the items whose `when` holds
-export interface BackHeaderContract extends Contract<BackHeaderConfig, BackHeaderValues, NoIntents> { children: BackHeaderChildren }
+export interface SeekValues { label: string; positionMs: number; durationMs: number | null }
+export interface SeekContract extends Contract<SeekItem, SeekValues, Seek> {}
+export type HeaderItemContract = ButtonContract | LogoContract | TextContract | SwitchContract | FindContract;
+export type BodyItemContract = ButtonContract | TextContract | DetailContract | SeekContract;
+
+// ── Headers (back layer, app bar, peek: told apart by the contract they sit in)
+export interface HeaderValues { title: string | null; progress: number }    // progress: collapse 0 … 1 (Layout.barView)
+export interface HeaderChildren { items: HeaderItemContract[]; detail?: DetailContract }
+export interface HeaderContract extends Contract<HeaderConfig, HeaderValues, NoIntents> { children: HeaderChildren }
+
+// ── Controls and rows
 export interface InputValues { value: ParamValue | null; options: ParamOption[]; placeholder: string | null }
-export interface InputContract extends Contract<BasicActionConfig | ParamRow, InputValues, SetParamsIntent> {}   // one control for one param (basic action, a panel row's control)
+export interface InputContract extends Contract<BasicActionConfig | ParamRow, InputValues, SetParamsIntent> {}   // one control for one param
 export interface ParamRowValues { label: string | null }
 export interface ParamRowChildren { control: InputContract }
 export interface ParamRowContract extends Contract<ParamRow, ParamRowValues, NoIntents> { children: ParamRowChildren }
@@ -124,38 +199,68 @@ export interface SuggestionsValues { label: string }
 export interface SuggestionsChildren { items: SuggestionContract[] }
 export interface SuggestionsContract extends Contract<SuggestionsRow, SuggestionsValues, NoIntents> { children: SuggestionsChildren }
 export type PanelRowContract = ParamRowContract | SuggestionsContract;
-export type BackRegionName = 'header' | 'actions' | 'basicAction' | 'panel';
-export interface BackRegionView { region: BackRegionName; top: number; height: number; opacity: number; interactive: boolean }   // Layout
-export interface BackLayerValues { expanded: boolean; headerHidden: boolean; regions: BackRegionView[] }
-export interface BackLayerChildren { header: BackHeaderContract; actions: ButtonContract[]; basicAction?: InputContract; panel: PanelRowContract[] }
-export interface BackLayerContract extends Contract<BackLayerConfig, BackLayerValues, ToggleExpandedIntent> { children: BackLayerChildren }   // toggle only while toggleOnTap
 
-// ── Front layer
-// A shelf is an item holding entries (Browse's "Artists to know"). Data decides which shelves and entries exist; activating
-// a shelf or an entry opens it (ItemData.opens; a shelf opens the template shelfPage). The engine reads ItemData.id, .opens
-// and .entries (ShelfData).
-export interface ShelfData { entries?: ItemData[] }                     // OPEN: joins api.d.ts ItemData
+// ── Content
 export interface ItemValues { item: ItemData; navigable: boolean }
 export interface ItemChildren { entries: ItemContract[] }              // recursive: a shelf's entries are items; [] for other items
 export interface ItemContract extends Contract<PresentationConfig, ItemValues, OpenIntent> { children: ItemChildren }
-export interface ContentValues { view: ContentView; presentation: PresentationKey; groups: ItemGroup[] }
-export interface ContentChildren { items: ItemContract[] }
-export interface ContentContract extends Contract<ContentConfig, ContentValues, RetryIntent> { children: ContentChildren }
+export interface ContentStateValues { state: ContentViewState; text: string; retry: boolean }   // empty · error · offlineStale (the banner)
+export interface ContentStateContract extends Contract<ContentConfig, ContentStateValues, RetryIntent> {}
+export interface ContentValues { view: ContentView; presentation: PresentationKey; groups: ItemGroup[]; placeholders: number }
+export interface ContentChildren { items: ItemContract[]; state?: ContentStateContract; banner?: ContentStateContract }
+export interface ContentContract extends Contract<ContentConfig, ContentValues, NoIntents> { children: ContentChildren }
+
+// ── Backdrop page
+export type BackRegionName = 'header' | 'actions' | 'basicAction' | 'panel';
+export interface BackRegionView { region: BackRegionName; top: number; height: number; opacity: number; interactive: boolean }   // Layout
+export interface BackLayerValues { expanded: boolean; headerHidden: boolean; regions: BackRegionView[] }
+export interface BackLayerChildren { header: HeaderContract; actions: ButtonContract[]; basicAction?: InputContract; panel: PanelRowContract[] }
+export interface BackLayerContract extends Contract<BackLayerConfig, BackLayerValues, ToggleExpandedIntent> { children: BackLayerChildren }   // toggle only while toggleOnTap
 export interface FrontHeaderValues { title: string; expanded: boolean; disclosureLabel: string }   // the built-in disclosure: the back layer's expanded + its label (texts backLayer.reveal / backLayer.conceal)
 export interface FrontHeaderChildren { items: HeaderItemContract[] }
 export interface FrontHeaderContract extends Contract<FrontHeaderConfig, FrontHeaderValues, ToggleExpandedIntent> { children: FrontHeaderChildren }
 export interface FrontLayerValues { position: FrontPosition; top: number; contentOffset: number }   // top: Layout.frontLayer · contentOffset: Layout.contentOffset
 export interface FrontLayerChildren { header: FrontHeaderContract; content: ContentContract }
 export interface FrontLayerContract extends Contract<FrontLayerConfig, FrontLayerValues, ScrollIntent> { children: FrontLayerChildren }
-
-// ── The page
 export interface BackdropPageChildren { back: BackLayerContract; front: FrontLayerContract }
 export interface BackdropPageContract extends Contract<BackdropPageConfig, NoValues, NoIntents> { children: BackdropPageChildren }
 
+// ── App-bar page
+export interface PageSheetValues { expanded: boolean }
+export interface PageSheetChildren { control?: InputContract; content: ContentContract }
+export interface PageSheetContract extends Contract<PageSheetConfig, PageSheetValues, ToggleExpandedIntent> { children: PageSheetChildren }
+export interface AppBarPageValues { contentOffset: number }
+export interface AppBarPageChildren { header: HeaderContract; content?: ContentContract; body: BodyItemContract[]; sheet?: PageSheetContract }
+export interface AppBarPageContract extends Contract<AppBarPageConfig, AppBarPageValues, ScrollIntent> { children: AppBarPageChildren }
+export type PageContract = BackdropPageContract | AppBarPageContract;
+
+// ── Layers (each draws its open page; its stack and policy are engine-only)
+export interface SheetLayerValues { open: boolean; form: SheetForm; side: SideMode | null; peek: Rect | null }   // peek: Layout.peekPlacement
+export interface SheetLayerChildren { peek: HeaderContract; page: PageContract }
+export interface SheetLayerContract extends Contract<LayerConfig, SheetLayerValues, OpenLayerIntent | CloseLayerIntent> { children: SheetLayerChildren }   // open: the peek was tapped
+export interface DrawerLayerValues { open: boolean; form: DrawerWideForm | 'modal' }
+export interface LayerChildren { page: PageContract }
+export interface DrawerLayerContract extends Contract<LayerConfig, DrawerLayerValues, CloseLayerIntent> { children: LayerChildren }   // close: the scrim was tapped
+export interface FullscreenLayerValues { open: boolean }
+export interface FullscreenLayerContract extends Contract<LayerConfig, FullscreenLayerValues, NoIntents> { children: LayerChildren }
+
+// ── App
+export interface DestinationValues { deck: DeckId; label: string; selected: boolean }
+export interface DestinationContract extends Contract<DeckConfig, DestinationValues, SwitchDeckIntent | ReselectDeckIntent> {}
+export interface NavigationValues { expanded: boolean }                 // the rail expanded in place (a rail-form drawer is open)
+export interface NavigationChildren { destinations: DestinationContract[]; items: ButtonContract[] }
+export interface NavigationContract extends Contract<NavigationConfig, NavigationValues, NoIntents> { children: NavigationChildren }
+export interface SplashValues { label: string }
+export interface SplashContract extends Contract<LaunchConfig, SplashValues, NoIntents> {}
+export interface OverlayValueText { name: string; text: string }
+export interface OverlayValues { texts: OverlayValueText[] }
+export interface OverlayContract extends Contract<OverlaySpec, OverlayValues, CloseOverlayIntent> {}
+
 export type ContractName =
-  | 'backdropPage' | 'backLayer' | 'backHeader' | 'detail' | 'input' | 'paramRow' | 'suggestions' | 'suggestion'
-  | 'frontLayer' | 'frontHeader' | 'content' | 'item'
-  | 'button' | 'logo' | 'text' | 'switch' | 'find';
+  | 'backdropPage' | 'backLayer' | 'frontLayer' | 'frontHeader' | 'appBarPage' | 'pageSheet'
+  | 'sheetLayer' | 'drawerLayer' | 'fullscreenLayer' | 'navigation' | 'destination' | 'splash' | 'overlay'
+  | 'header' | 'detail' | 'input' | 'paramRow' | 'suggestions' | 'suggestion' | 'content' | 'contentState' | 'item'
+  | 'button' | 'logo' | 'text' | 'switch' | 'find' | 'seek';
 export type ChildName = string;          // a field of a contract's children: 'header', 'items', 'panel' …
 export type ValueName = string;          // a field of a contract's values: 'expanded', 'top' …
 
@@ -219,10 +324,12 @@ export interface Hire {
 export interface ParamMatch { name?: ParamName; type?: ParamType; axis?: boolean; draft?: boolean }   // controls: picked by the bound param (its name, or its spec)
 export interface Placement {
   contract: ContractName;
-  match?: ItemSelector;                  // header items: a kind or a name
+  within?: ContractName;                 // the contract it sits in (a header in a back layer, an app-bar page or a peek)
+  match?: ItemSelector;                  // items: a kind or a name (destinations: the deck id; overlays: the kind)
   param?: ParamMatch;                    // basic actions and panel rows
   presentation?: PresentationKey;        // content items
   entry?: boolean;                       // content items: an entry on a shelf (true) or a top-level item
+  state?: ContentViewState;              // content states: empty · error · offlineStale
   env?: EnvEquals;                       // e.g. layout compact only
   hire: HireName | null;                 // null: not drawn here (e.g. the menu button on wide, where the rail has it)
 }
