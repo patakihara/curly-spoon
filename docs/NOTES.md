@@ -403,6 +403,16 @@ roleProps / roleIntent and Role.parts once built. Starting point: the backdrop p
   item may hold entries (ItemData.entries, from data); data decides which shelves exist. The front header and the back
   header become one free component (`header`), the front-header hire picking a variant. Contracts as data generate the
   TS (roles.js pattern); the contract list doubles as the marker of which config types are drawn.
+- Rule (Sofia): as few free components as possible; merge similar ones; inherit wherever possible (variants for looks).
+  Proposed tree (69 design components today → about 17 roots):
+  text ← label, title, panelRow, groupHeader, trackedTitle · symbol · artwork · morph · row · alphaIndex · seekBar ·
+  interactive → button ← chip, tab, navItem, drawerItem → iconButton ← caret, logo, viewSwitch, fab ·
+  interactive → listItem ← listRow, gridCard, contentBlock, carousel, suggestionRow, queueRow ·
+  choiceGroup ← filterChips, choiceChips, tabBar · field ← searchField, localSearch, dropdown, rangeField ·
+  header ← frontHeader, appBar (+ the peek's row) · info ← detailHeader, trackInfo · layout ← grid, list, scroller ·
+  surface ← backLayer, frontLayer, bottomSheet, sideSheet, drawer, peekCard (+ empty backdropPage, appBarPage,
+  sheetLayer, fullscreenLayer) · message ← emptyState, errorState, staleBanner, snackbar · dialog ← menu ·
+  navigation ← navBar, navRail · page ← splash, signInPage. nowPlaying (peek content) = row of artwork + info + buttons.
 - Walls (need Sofia): "shelf" instead of "presentation": which thing is renamed (the content arrangement type, or the
   section items holding entries)?
   (a second place to look, no home for per-job looks).
