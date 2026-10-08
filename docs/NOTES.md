@@ -492,9 +492,10 @@ Each was my call; say if you disagree and I redo it.
 
 ### Switchover (2026-10-09): done, with what is still open
 The mockup runs on 18.0 (config + composition + design → contract tree → shell). Checked in headless Chrome against the
-pre-switch mockup, same clicks, PNG hashes: 13 of 14 screens pixel-identical (browse, expanded, artist, search,
-collection, Now playing, drawer, account, collection ⋮ menu, library panel, desktop browse / rail / Now playing). Library
-grid: a 1px text shift with identical DOM and no scroll offsets — cause not found. Motion was not sampled frame by frame.
+pre-switch mockup, same clicks, PNG hashes: 14 of 14 screens pixel-identical (browse, expanded, artist, search,
+collection, Now playing, drawer, account, collection ⋮ menu, library panel, desktop browse / rail / Now playing, Library).
+Library first looked shifted: its shot was taken 2 s after the tap, while the grid was still animating in; shot at 4 s,
+old and new are identical (and all 658 element boxes match to 0.01 px). Motion was not sampled frame by frame.
 Layout numbers old vs new: 169 / 169 cases equal. Rules (01:30): 103 pass · 3 skipped · 0 fail (90 invariants + 13
 composition). The dev panel's stack readout no longer lists the searching / searchClosed params (find is engine state).
 Motion (01:50): Play on an album, sampled at 16 … 1100 ms under Chrome's virtual time (Emulation.setVirtualTimePolicy),
@@ -531,7 +532,6 @@ fields, not nodes · 6 verify ✓ (screens above).
   them; design/build.js buildDts can, but nobody calls it.
 - 18.0: api/api.rs is still the 11.0.1 snapshot (docs/API.md and RUST.md describe 18.0).
 - 18.0: the free-component merge tree is proposed, not applied (69 design components).
-- 18.0: Library grid 1px text shift vs the pre-switch mockup.
 - Design checks are not shown on the Invariants page yet (needs Invariants.dc.html).
 - Still in the player (ordering, not yet params): detail transition order (out → swap → front move + in → header parts), flight cut sources (top: header / bars above the middle; bottom: peek / nav bar), app-bar sheet start (front layer top), the reveal band shape.
 - Components page: no previews yet for FrontLayer, AppBarPage, NowPlayingSheet, UpNextSheet, PeekCard, DededeLayer, AccountLayer.
