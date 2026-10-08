@@ -11,7 +11,7 @@ data class MiniPlayerProps(
     val artist: String,
     val image: String? = null,
     val playing: Boolean? = null,
-    /** Every control with no handler is drawn disabled, the bar itself with no onOpen. */
+    /** Every control with no handler is drawn disabled, the bar itself with no onOpen. Each control's handler is handed the click or key event. */
     val onTogglePlay: (() -> Unit)? = null,
     /** Tapping the card body (mobile) or the track block (desktop) expands the full player. Handed the click or key event. */
     val onOpen: (() -> Unit)? = null,

@@ -11,7 +11,6 @@ type Press = (
   role: string;
   tabIndex: number;
   'aria-disabled'?: boolean;
-  'data-sn-press': string;
   onClick?: Handler;
   onKeyDown?: Handler;
 };
@@ -45,10 +44,13 @@ describe("Sonora's press shell", () => {
     expect(got).toEqual([enter, space]);
   });
 
-  it('[M0.sonoraclean/d] marks every element it presses, on or off, so a browser test finds each', () => {
-    expect(press(() => {})['data-sn-press']).toBe('');
-    expect(press(() => {}, true)['data-sn-press']).toBe('');
-    expect(press()['data-sn-press']).toBe('');
+  it('[M0.sonoraclean/d] draws only a button and its state layer host, with no mark for a test', () => {
+    const keys = ['className', 'role', 'tabIndex', 'onClick', 'onKeyDown'];
+    expect(Object.keys(press(() => {})).sort()).toEqual(keys.sort());
+    expect(Object.keys(press(() => {}, true)).sort()).toEqual([...keys, 'aria-disabled'].sort());
+    for (const off of [false, true]) {
+      expect(press(() => {}, off)).toMatchObject({ className: 'sn-int', role: 'button' });
+    }
   });
 
   it('[M0.sonoraclean/d] says it is disabled only when it is off', () => {

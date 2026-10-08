@@ -727,12 +727,144 @@ describe("Sonora's press shell, read from every component's source", () => {
 /** A row as tall as the app bar: a height read from either app-bar height token. */
 const APPBAR_TALL = /--appbar-height/;
 
-/** A close drawn: the close handler, a close or collapse glyph, or a control named Close or Collapse. */
-const CLOSES =
-  /\bonClose\b|["'`](close|keyboard_arrow_down)["'`]|label=\{?\s*["'`](Close|Collapse)\b/;
+/** A handler named for closing: `onClose`, `onDismiss`, or a close, dismiss, hide or collapse. */
+const CLOSING =
+  /\bon(Close|Dismiss)\b|\b(close|dismiss|hide|collapse)\w*\s*\(|\b(close|dismiss|hide|collapse)\b/i;
 
-/** Whether a source builds a title-and-close row at the app bar's height. */
-const titleCloseRow = (src: string): boolean => APPBAR_TALL.test(src) && CLOSES.test(src);
+/** A close glyph: the cross, or the arrow a sheet collapses on. */
+const CLOSE_GLYPH = /^(close|keyboard_arrow_down)$/;
+
+/** A control's name that closes: Close, Dismiss or Collapse. */
+const CLOSE_NAME = /^(Close|Dismiss|Collapse)\b/;
+
+/** Heading type: the heading or display face, the heading weight, a heading size. */
+const HEADING_TYPE = /--font-heading|--font-display|--heading-weight|--h[1-6]-size/;
+
+/** A value standing for a title: `title`, `heading`, or a property of that name. */
+const TITLE_VALUE = /^(\w+\.)*(title|heading)$/;
+
+/** An attribute's text, a string literal's own text, or '' when there is none. */
+const attrText = (a: ts.JsxAttribute, file: ts.SourceFile): string => {
+  const v = a.initializer;
+  if (v === undefined) return '';
+  if (ts.isStringLiteral(v)) return v.text;
+  const e = ts.isJsxExpression(v) ? v.expression : undefined;
+  if (e !== undefined && (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e)))
+    return e.text;
+  return v.getText(file);
+};
+
+const attrsOf = (node: ts.JsxOpeningLikeElement, file: ts.SourceFile): Map<string, string> =>
+  new Map(
+    node.attributes.properties
+      .filter(ts.isJsxAttribute)
+      .map((a) => [a.name.getText(file), attrText(a, file)]),
+  );
+
+const opening = (node: ts.Node): ts.JsxOpeningLikeElement | undefined =>
+  ts.isJsxElement(node) ? node.openingElement : ts.isJsxSelfClosingElement(node) ? node : undefined;
+
+/** An element of the page itself, `div` or `h2`, rather than a component it composes. */
+const intrinsic = (node: ts.JsxOpeningLikeElement, file: ts.SourceFile) =>
+  /^[a-z]/.test(node.tagName.getText(file));
+
+/**
+ * A close control: a control pressed into a close or dismiss, one drawing a close glyph, or one
+ * named Close, Dismiss or Collapse, whatever draws it.
+ */
+function closeControl(node: ts.Node, file: ts.SourceFile): boolean {
+  const open = opening(node);
+  if (open === undefined) return false;
+  const attrs = attrsOf(open, file);
+  const press = attrs.get('onClick') ?? attrs.get('onPress');
+  if (press !== undefined && CLOSING.test(press)) return true;
+  for (const glyph of ['icon', 'name', 'glyph'])
+    if (
+      CLOSE_GLYPH.test(attrs.get(glyph) ?? '') ||
+      /^\{?\s*closeGlyph\s*\}?$/.test(attrs.get(glyph) ?? '')
+    )
+      return true;
+  for (const label of ['label', 'aria-label', 'title'])
+    if (CLOSE_NAME.test(attrs.get(label) ?? '')) return true;
+  if (press !== undefined && ts.isJsxElement(node))
+    return node.children.some((c) => closeControl(c, file));
+  return false;
+}
+
+/** A title: a heading element or role, text in heading type, or a value standing for a title. */
+function titleNode(node: ts.Node, file: ts.SourceFile): boolean {
+  if (ts.isJsxExpression(node) && node.expression !== undefined)
+    return TITLE_VALUE.test(node.expression.getText(file).trim());
+  const open = opening(node);
+  if (open === undefined || !intrinsic(open, file)) return false;
+  const attrs = attrsOf(open, file);
+  return (
+    /^h[1-6]$/.test(open.tagName.getText(file)) ||
+    attrs.get('role') === 'heading' ||
+    HEADING_TYPE.test(attrs.get('style') ?? '')
+  );
+}
+
+/**
+ * What a child of a row holds, looking through the page's own elements and the expressions
+ * between them but never into a component it composes: a title, a close control, or both.
+ */
+function holds(node: ts.Node, file: ts.SourceFile, out = { title: false, close: false }) {
+  if (closeControl(node, file)) out.close = true;
+  if (titleNode(node, file)) out.title = true;
+  const open = opening(node);
+  if (open !== undefined && !intrinsic(open, file)) return out;
+  if (open !== undefined && ts.isJsxSelfClosingElement(node)) return out;
+  const walk = (n: ts.Node): void => {
+    if (opening(n) !== undefined || ts.isJsxExpression(n)) holds(n, file, out);
+    else if (!ts.isJsxAttributes(n)) ts.forEachChild(n, walk);
+  };
+  if (ts.isJsxElement(node)) node.children.forEach(walk);
+  else if (ts.isJsxExpression(node) && node.expression !== undefined) walk(node.expression);
+  else if (ts.isJsxFragment(node)) node.children.forEach(walk);
+  return out;
+}
+
+/** The children of an element or fragment, with a fragment's children spread in its place. */
+const childrenOf = (node: ts.JsxElement | ts.JsxFragment): ts.Node[] =>
+  node.children.flatMap((c) => (ts.isJsxFragment(c) ? childrenOf(c) : [c]));
+
+/**
+ * The rows in a source that draw a title beside a close: any element of the page, of any height,
+ * one child of which holds a title and another a close control. A panel handing both to
+ * PanelHeader draws neither itself, so composing it is no such row. Each row by its line.
+ */
+function titleCloseRows(src: string): number[] {
+  const file = ts.createSourceFile('s.jsx', src, ts.ScriptTarget.Latest, true, ts.ScriptKind.JSX);
+  const rows: number[] = [];
+  const visit = (node: ts.Node) => {
+    if (ts.isJsxElement(node) || ts.isJsxFragment(node)) {
+      const parts = childrenOf(node).map((c) => holds(c, file));
+      if (parts.some((p, i) => p.title && parts.some((q, j) => j !== i && q.close)))
+        rows.push(file.getLineAndCharacterOfPosition(node.getStart(file)).line + 1);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(file);
+  return rows;
+}
+
+/** A card's own code: the JSX of its Babel scripts, or nothing for a card of plain markup. */
+const cardCode = (html: string): string =>
+  [...html.matchAll(/<script type="text\/babel"[^>]*>([\s\S]*?)<\/script>/g)]
+    .map((m) => m[1])
+    .join('\n');
+
+/** Every Sonora source and card a panel header could be drawn in, by name, with its code. */
+const panelSources = (): [string, string][] => [
+  ...sonoraSources(),
+  ...readdirSync(SHOWCASE_ROOT, { recursive: true, encoding: 'utf8' })
+    .filter((f) => f.endsWith('.card.html'))
+    .map((f): [string, string] => [f, cardCode(readFileSync(`${SHOWCASE_ROOT}/${f}`, 'utf8'))]),
+  ...showcaseFiles()
+    .filter((f) => f.endsWith('.snippet.jsx'))
+    .map((f): [string, string] => [f, readFileSync(`${SHOWCASE_ROOT}/${f}`, 'utf8')]),
+];
 
 /**
  * Every panel-like Sonora component, any that closes or stands as tall as the app bar, with what
@@ -770,9 +902,14 @@ describe("Sonora's panel headers, read from their sources", () => {
     expect(rendered(source(name)).map((e) => e.tag)).toContain(header);
   });
 
-  it('[M0.sonoraclean/d] Sonora has a single panel header: no other source builds an app-bar-height title-and-close row', () => {
-    const rows = [...components.keys()].filter((name) => titleCloseRow(source(name))).sort();
-    expect(rows).toEqual(['BackLayer', 'PanelHeader']);
+  it('[M0.sonoraclean/d] Sonora has a single panel header: no source or card but PanelHeader draws a title beside a close, whatever its height', () => {
+    const sources = panelSources();
+    expect(sources.filter(([f]) => f.endsWith('.card.html')).length).toBeGreaterThan(60);
+    const rows = sources
+      .filter(([name]) => name !== 'PanelHeader')
+      .flatMap(([name, src]) => titleCloseRows(src).map((line) => `${name}:${line}`));
+    expect(rows).toEqual([]);
+    expect(titleCloseRows(source('PanelHeader'))).not.toEqual([]);
   });
 
   it.each([
@@ -782,14 +919,38 @@ describe("Sonora's panel headers, read from their sources", () => {
     ],
     [
       'a desktop bar with a collapse',
-      `<div style={sx('height:var(--appbar-height)')}><IconButton label="Collapse player" onClick={hide} /></div>`,
+      `<div style={sx('height:var(--appbar-height)')}><div>{heading}</div><IconButton label="Collapse player" onClick={toggle} /></div>`,
     ],
     [
       'a bar whose close glyph is a template literal',
-      '<div style={{ height: "var(--appbar-height)" }}><IconButton icon={`close`} /></div>',
+      '<div style={{ height: "var(--appbar-height)" }}><span>{title}</span><IconButton icon={`close`} /></div>',
+    ],
+    [
+      'a 60px row',
+      `<div style={{ display: 'flex', height: 60 }}><div style={sx('font-family:var(--font-heading)')}>Queue</div><IconButton icon="close" onClick={() => {}} /></div>`,
+    ],
+    [
+      'a row as tall as the largest control, with a dismiss',
+      `<div style={sx('height:var(--control-3xl)')}><h3>{props.title}</h3>{onDismiss && IconButton && <IconButton label="Dismiss" onClick={onDismiss} />}</div>`,
+    ],
+    [
+      'a title held deep in its own wrappers',
+      `<div><div><div style={sx('font-size:var(--h3-size)')}>{heading}</div></div>{open ? <IconButton icon="keyboard_arrow_down" onClick={onClose} /> : null}</div>`,
+    ],
+    [
+      'a button drawing a close glyph',
+      `<div><span role="heading">{title}</span><button onClick={hide}><Icon name="close" /></button></div>`,
+    ],
+    [
+      'a fragment with the close glyph handed on',
+      `<><div>{title}</div><IconButton icon={closeGlyph} onClick={go} /></>`,
+    ],
+    [
+      'a card row with no height at all',
+      `<div style={{display:'flex'}}><div style={{fontFamily:'var(--font-heading)',fontSize:'var(--h3-size)'}}>Queue</div><IconButton label="Close queue" icon="close" onClick={() => {}} /></div>`,
     ],
   ])('[M0.sonoraclean/d] names a title-and-close row built by hand: %s', (_, src) => {
-    expect(titleCloseRow(src)).toBe(true);
+    expect(titleCloseRows(src)).not.toEqual([]);
   });
 
   it.each([
@@ -798,11 +959,34 @@ describe("Sonora's panel headers, read from their sources", () => {
       `<PanelHeader variant="page" title={heading} onClose={onClose} />`,
     ],
     [
-      'a rail head as tall as the bar, with no close',
-      `<div style={sx('height:var(--appbar-height)')}><IconButton icon="menu" label="Menu" /></div>`,
+      'a panel handing its header on beside its body',
+      `<div><PanelHeader variant="sheet" title={title} onClose={onClose} /><div>{children}</div></div>`,
     ],
-    ['a field that folds away', `<IconButton icon={closeGlyph} label="Close search" />`],
+    [
+      'a rail head as tall as the bar, with no close',
+      `<div style={sx('height:var(--appbar-height)')}><div>{title}</div><IconButton icon="menu" label="Menu" /></div>`,
+    ],
+    [
+      'a field that folds away',
+      `<div><input /><IconButton icon={closeGlyph} label="Close search" /></div>`,
+    ],
+    [
+      'a banner message with its dismiss',
+      `<div role="status"><div>{children}</div><IconButton icon="close" label="Dismiss" onClick={onDismiss} /></div>`,
+    ],
+    [
+      'an app bar title beside a search field that closes',
+      `<div><div>{title}</div><SearchField onClose={() => toggle(false)} /></div>`,
+    ],
+    [
+      'a row whose close sits in a slot of a composed row',
+      `<ListRow trailing={<IconButton icon="close" onClick={onRemove} />}>{title}</ListRow>`,
+    ],
+    [
+      'a title with a control that does not close',
+      `<div><h3>{title}</h3><IconButton icon="more_vert" label="More" onClick={onMore} /></div>`,
+    ],
   ])('[M0.sonoraclean/d] leaves alone what is no hand-built panel header: %s', (_, src) => {
-    expect(titleCloseRow(src)).toBe(false);
+    expect(titleCloseRows(src)).toEqual([]);
   });
 });

@@ -7,7 +7,7 @@
 <style id="__card-page-css">html,body{margin:0;background:var(--surface-bg)}</style>
 <div id="root"></div>
 <script type="text/babel">
-const { BackdropShell, BackLayer, SideSheet, SectionHeader, ResultRow } = window.SonoraDesignSystem_6c1435;
+const { BackdropShell, BackLayer, SideSheet, PanelHeader, SectionHeader, ResultRow } = window.SonoraDesignSystem_6c1435;
 
 const PLAYED = [
   {title:'Tidal Lines', meta:'Halcyon Bloom · 3:34'},
@@ -26,12 +26,12 @@ const Queue = () => <div style={{display:'flex',flexDirection:'column',gap:'var(
 </div>;
 
 /* `behind` is handed plain panel content rather than a SideSheet: a panel at the lower elevation
-   must not be outlined, so the shell draws both rules and the panel draws none. The title row is
-   measured with the same --appbar-height token as the back layer's heading strip, which is what
+   must not be outlined, so the shell draws both rules and the panel draws none. Its title row is
+   PanelHeader's sheet row with no close, as tall as the back layer's heading strip, which is what
    lets the shell's horizontal rule land exactly under it and the two titles share a baseline. */
 function PanelBody(){
   return <div style={{display:'flex',flexDirection:'column',flex:1,minHeight:0}}>
-    <div style={{display:'flex',alignItems:'center',flexShrink:0,boxSizing:'border-box',height:'var(--appbar-height)',padding:'0 var(--spacing-xl)',fontFamily:'var(--font-heading)',fontWeight:'var(--heading-weight)',fontSize:'var(--h3-size)',color:'var(--surface-fg)'}}>Queue</div>
+    <PanelHeader variant="sheet" title="Queue" />
     <div style={{flex:1,minHeight:0,overflow:'hidden',padding:'var(--spacing-xl) var(--spacing-xl) var(--spacing-2xl)'}}><Queue/></div>
   </div>;
 }

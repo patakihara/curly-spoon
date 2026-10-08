@@ -533,13 +533,14 @@ interface Pressed {
 }
 
 /**
- * Presses every press shell the page draws, found by the mark `press` gives each, by Enter, by
+ * Presses every press shell the page draws, found as `press` draws each, a button role on the
+ * state layer's host class `sn-int` (a native button needs no role), by Enter, by
  * Space and by a click, noting from `window.__pressLog` what each press handed its action, and
  * whether it was on before each: a press can turn it off, as a card's request does.
  */
 async function pressEvery(page: Page): Promise<Pressed[]> {
   const count = await page
-    .locator('[data-sn-press]')
+    .locator('[role="button"].sn-int')
     .evaluateAll(
       (els) =>
         els

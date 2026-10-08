@@ -31,8 +31,8 @@ export function MiniPlayer({
 }) {
   const spoken = variant === 'spoken';
   // Every control on the bar: one with no handler is drawn disabled, and a press on one never
-  // reaches the bar beneath it.
-  const alone = (fn) => fn && ((e) => { e.stopPropagation(); fn(); });
+  // reaches the bar beneath it. Its handler gets the event, as every press does.
+  const alone = (fn) => fn && ((e) => { e.stopPropagation(); fn(e); });
   // The play or pause glyph is filled, white on the rose: IconButton's play variant.
   const play = (
     <IconButton variant="play" size="lg" icon={playing ? 'pause' : 'play_arrow'} label={playing ? 'Pause' : 'Play'} onClick={alone(onTogglePlay)} />
