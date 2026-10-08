@@ -13,6 +13,20 @@ _Unreleased (no contract change):_ shared image: plain morph from the source as 
 
 _Unreleased (no contract change):_ web: the shell draws no UI itself — FrontLayer, AppBarPage, NowPlayingSheet, UpNextSheet, PeekCard, DededeLayer, AccountLayer DCs; content runs under the peek / nav bar; one fade through for detail / app-bar push and pop; app-bar push: only the sheet moves (revealBand); dropIntoPeek semicircle path. Design: motion params fadeMs (expandFromItem), revealBand (expandSurface), msPerPx / riseHeight / cutOverlap (dropIntoPeek). API comment header version fixed (15.0.0). Design checks (design/checks.js): motion params all valued; component parts (design) + manifest parts (platform). Player keyframe positions / order → dropIntoPeek / fade params.
 
+## 18.0.0 — component contracts, from scratch (major, draft — branch component-contracts)
+- Not released; nothing reads the draft yet (api/draft.d.ts, api/contracts.js, app/draft/, api/draft-rules.js,
+  core/compose.js). Plan and calls to review: docs/NOTES.md "Component contracts, from scratch".
+- Config says what exists, as plain data: items (button · logo · text · switch · find · detail · seek) instead of ref
+  trees; no slots, sides, heights or widths; the back layer has fixed regions; one header config for back layer, app bar
+  and peek; local search state is engine state (FrontState.find, openFind / closeFind).
+- Contracts (api/contracts.js, single source; the TS is generated) say what each drawn config object offers: config,
+  values (State, queries, Layout), intents, children. Free components (design) know nothing of the API; composition
+  (app/draft/composition.json) hires them per contract with clauses and places the hires by kind.
+- Replaces (at the switch): roles, refs, supplies / emits, roleProps / roleIntent, Role.parts, typed refs, §M2.
+- Design (already in, additive): icon tokens, events and slots on free components, size tokens / visuals that config
+  held. Composition rules: 7 / 9 pass (navBar / navRail destinations and menu items become slots at the switch;
+  detailHeader peek / player layouts to draw).
+
 ## 17.0.0 — motion as steps (major, in progress)
 - API (§N): choreography says which piece does what, when. Four blocks every platform implements once: `TweenStep` (props of a piece: opacity, translate, scale, size, radius, colour, shadow, clip, scroll, visibility; keyframes, stagger, loop, hold), `TravelStep` (a copy flies to another piece / measure; path straight | arc; end vanish | join; from whole | visible with `cutBy`), `SwapStep` (fade through around the commit; match slot+content; enter stagger; axis), `RevealStep` (circle · rect → rect · follow an edge). `UseStep` + `Choreography.sequences` (named step lists with params). Pieces: `PieceRef` ('<role>.<slot|part>' · '<component>.<part>' · source / target · a step id; '[]' lists). Measures (`RectOf`, `EdgeOf`, `DistanceOf`, `CentreOn`, `PressPoint`, `ScrollInto`), `ByEvent` (an event field picks), clocks (`TimeClock` with `Anchor` on other steps · `ProgressClock` on bar / scroll / contentOffset — input-driven, applied directly), `MotionCondition` (+ `EventIs`). `ChoreoRule { on, steps, reduced? }`, `Choreography { rules, reduced, sequences? }` (was transition / reducedMotion). `ComponentDef.motion: Record<string, Step[]>`, `ComponentDef.parts`. `QueuedPattern` joins ChoreoPattern; a pattern matches only when every field it gives agrees (core ignored queued `position` before). Layout `stepsFor`, `componentSteps`. Also: `rotate` prop and component visuals as props (`PropTracks` keys); `FromValue` ('current' · 'previous'); `Wander` (roaming value, level meter); `Loop.period` (per item); `PieceShown` condition; `StepTrigger` on tween / reveal (component motion: change · press · release · loop); pieces `origin`, '<component>' (its visible instance), '@before' / '@after'. Removed: `MotionTemplate`, `TransitionTemplate`.
 - Renamed `PageSheet` → `PageSheetConfig` (a Config type; the role id `pageSheet` is unchanged). Type-only, JSON unchanged.

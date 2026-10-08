@@ -451,9 +451,9 @@ Each was my call; say if you disagree and I redo it.
     changes (fadeThrough tokens, header height 64).
 
 ### Switchover plan (draft → 18.0.0), not started — the branch's mockup still runs the old model
-Status at 02:13 stop: the draft is whole on the API / config / composition / rules side; core, the shell and the DCs are
-untouched (master and this branch draw the same mockup). Order, each step committed and checked:
-1. Sizes (decide first, see below). 2. Core: navigation.js on the new config (nested policy init for find, openFind /
+Status: the draft is whole on the API / config / composition / rules side, and sizes are settled (below); core, the
+shell and the DCs are untouched, so master and this branch draw the same mockup. Order, each step committed and checked:
+1. Sizes: done (recommendation below, checked 24 / 24). 2. Core: navigation.js on the new config (nested policy init for find, openFind /
    closeFind, presentations as a list, content params as a list, contentView without component ids, hideHeaderOnScroll,
    sizes passed in instead of breakpoints.railWidth / presentation widths); remove resolveRef / expandSlots / roleProps /
    roleIntent / slotPath / ROLES; add core/contracts.js computing the contract tree (values from queries + Layout,
@@ -466,12 +466,22 @@ untouched (master and this branch draw the same mockup). Order, each step commit
    navBar / navRail destinations and menu items become slots; DetailHeader gains the peek and player layouts.
    6. Verify in headless Chrome against the screenshots taken 2026-10-08 (browse, expanded, artist, artist scrolled,
    library, wide), frame by frame for motion.
-- Sizes (my recommendation, needs a check on screen): Layout reads sizes from design through composition — a bar's
+- Sizes (my call, checked: every size config sets today comes out the same, 24 / 24): Layout reads sizes from design
+  through composition — a bar's
   height / expandedHeight is its hire's visual (hire tokens named after a visual override it: personHeader.expandedHeight
   → a new design token for 272); the back layer's basicAction / actions region heights become backLayer visuals (60 /
   56); the panel stays measured by the platform (as today); peek height, side-sheet width, rail width come from the peek /
   side sheet / rail hires. Breakpoints keep compactMax and minContent only (behaviour thresholds). sideMode then needs the
   side-sheet and rail widths: the model gets them as `sizes` at creation (Layout.sizes(specs, composition)).
+  core/compose.js sizeOf does it: the hire's own token named after the size, else its free component's visual.
+- Shell survey (2026-10-09): no DC receives refs or slot lists; the shell flattens refs into plain view fields (about 70
+  calls to resolveRef / expandSlots / roleProps / roleIntent / slotPath, by region: bars 674–779, back layer 791–846,
+  content 856–861, layer sheets 929–945, app-bar pages 1004–1020, Now playing 1062–1089, menu / account 1100–1108, nav
+  1127–1131, peek 1173–1175). So step 5 rewrites the shell's view-model code; the DCs and the DOM markers motion uses
+  (data-occluder, data-fixed, data-shared, data-sheet, data-part, data-peek) can stay. The shell also makes choices of
+  its own that belong in composition: app-bar form page / layer (965, 1235), the component per item kind (KIND table
+  715, branches 840–846, 1071–1078, 1105–1108); events go through runAction (749–772) and surfaceOf parses slot paths
+  (651–658), which the contract tree's path keys replace.
 
 ## Open (current)
 - Design checks are not shown on the Invariants page yet (needs Invariants.dc.html).
