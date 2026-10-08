@@ -43,13 +43,14 @@ record.
 
 ## Usage gate
 
-- `scripts/hooks/usage-gate.sh` runs on SessionStart, UserPromptSubmit and every PreToolUse.
-  The reading and the limits come from budget.py on mediaserver, the same check the autorun
-  makes before starting a session: `ssh mediaserver python3 .claude-shared/skills/auralis-autorun/budget.py`.
+- `scripts/hooks/usage-gate.sh` runs on SessionStart, UserPromptSubmit, every PreToolUse and
+  SessionEnd. It calls the shared autorun gate, `~/.claude-shared/skills/autorun/gate.sh`, as the
+  `auralis` instance. The reading and the limits come from that skill's budget.py, the same check
+  the autorun makes before it starts or resumes a session.
 - It blocks every tool call at 80% of the 5-hour window, at 95% of the week, or when the
-  weekly share runs out. A few points before that it warns on every call: commit, push, write
-  the branch note, start nothing new. A background job also stops, after a 10-minute grace,
-  when the autorun switch is paused.
+  weekly share runs out. Shortly before that it warns: land the work (commit, push, branch note),
+  then run `autorun hold`. A background job also stops, after a 10-minute grace, when the
+  autorun switch is paused.
 - When it denies, stop. Do not retry or switch tools; say where usage stands and end the turn.
 - The thresholds, the usage gate and its entries in `.claude/settings.json` are Sofia's; never
   edit them or `scripts/hooks/`. The plan's own guards live in `scripts/guards/`. Start sessions
