@@ -28,7 +28,11 @@ export type ItemName = string;           // names an item within its list; compo
 export type ItemKind = 'button' | 'logo' | 'text' | 'switch' | 'find' | 'detail' | 'seek';
 
 // ── Items: what a header, body or row holds. Which side or row an item sits in is composition's choice.
-export interface ButtonItem { kind: 'button'; name: ItemName; label: PropValue; action: Actions; when?: Condition; checked?: Condition }   // checked: a toggle's state (play / pause)
+export interface ButtonItem {
+  kind: 'button'; name: ItemName; label: PropValue; action: Actions; when?: Condition;
+  checked?: PropValue;                   // a toggle's on / off (shuffle, repeat)
+  state?: PropValue;                     // a name for what the button shows now ('pause' | 'playNow', 'repeat' | 'repeatOne'); composition picks tokens by it
+}
 export interface LogoItem { kind: 'logo'; name: ItemName; label: PropValue }                 // the brand; reacts to the player
 export interface TextItem { kind: 'text'; name: ItemName; text: PropValue; when?: Condition }
 export interface SwitchItem { kind: 'switch'; name: ItemName; param: ParamName; label: PropValue; when?: Condition }   // steps a choice param to its next option
@@ -54,7 +58,7 @@ export interface ShelfData { entries?: ItemData[] }                     // joins
 export type PresentationKey = string;
 export interface ContentParam { name: string; value: PropValue }
 export interface GroupConfig { by: StatePath; key: GroupKey; when?: Condition; index?: boolean }   // index: a fast-scroll index over the keys
-export interface PresentationConfig { key: PresentationKey; groups?: GroupConfig[] }   // how items are laid out is composition's choice
+export interface PresentationConfig { key: PresentationKey; groups?: GroupConfig[]; itemAction?: Actions }   // itemAction: what activating an item that does not open does (a track plays) · the layout: composition
 export interface ContentConfig {
   dataSource: SourceRef;
   params?: ContentParam[];               // extra dataSource params ({ name: 'id', value: { bind: '$opener.id' } })
@@ -130,7 +134,7 @@ export interface LayerConfig { id: LayerId; name: string; pages: LayerPages; lin
 export interface NavigationConfig { items: ButtonItem[] }
 export interface LaunchConfig { minMs?: number }                        // the splash: composition
 export interface OverlayText { name: string; value: PropValue }         // 'title', 'body', 'confirm', 'cancel', 'text', 'action'
-export interface OverlaySpec { id: string; kind: 'dialog' | 'menu' | 'actionSheet' | 'snackbar'; texts: OverlayText[]; blocking: boolean; timeoutMs?: number; history?: 'transient' | 'ignore' }   // the component: composition, by kind
+export interface OverlaySpec { id: string; kind: 'dialog' | 'menu' | 'actionSheet' | 'snackbar'; texts: OverlayText[]; items?: ButtonItem[]; blocking: boolean; timeoutMs?: number; history?: 'transient' | 'ignore' }   // the component: composition, by kind
 export interface Gate { id: GateId; when: SessionPredicate; page: PageConfig }
 export interface SessionConfig { initial?: Partial<SessionState>; gates: Gate[] }
 export interface AppConfig {
@@ -165,7 +169,7 @@ export interface NoValues {}
 export type NoIntents = never;
 
 // ── Items
-export interface ButtonValues { label: string; checked: boolean; interaction: InteractionView }
+export interface ButtonValues { label: string; checked: boolean | null; state: string | null; interaction: InteractionView }
 export interface ButtonContract extends Contract<ButtonItem, ButtonValues, Actions> {}          // sends: runs its action
 export interface LogoValues { label: string; playing: boolean }
 export interface LogoContract extends Contract<LogoItem, LogoValues, NoIntents> {}
@@ -203,7 +207,7 @@ export type PanelRowContract = ParamRowContract | SuggestionsContract;
 // ── Content
 export interface ItemValues { item: ItemData; navigable: boolean }
 export interface ItemChildren { entries: ItemContract[] }              // recursive: a shelf's entries are items; [] for other items
-export interface ItemContract extends Contract<PresentationConfig, ItemValues, OpenIntent> { children: ItemChildren }
+export interface ItemContract extends Contract<PresentationConfig, ItemValues, OpenIntent | Actions> { children: ItemChildren }   // sends: open, or the presentation's itemAction
 export interface ContentStateValues { state: ContentViewState; text: string; retry: boolean }   // empty · error · offlineStale (the banner)
 export interface ContentStateContract extends Contract<ContentConfig, ContentStateValues, RetryIntent> {}
 export interface ContentValues { view: ContentView; presentation: PresentationKey; groups: ItemGroup[]; placeholders: number }
@@ -254,7 +258,8 @@ export interface SplashValues { label: string }
 export interface SplashContract extends Contract<LaunchConfig, SplashValues, NoIntents> {}
 export interface OverlayValueText { name: string; text: string }
 export interface OverlayValues { texts: OverlayValueText[] }
-export interface OverlayContract extends Contract<OverlaySpec, OverlayValues, CloseOverlayIntent> {}
+export interface OverlayChildren { items: ButtonContract[] }
+export interface OverlayContract extends Contract<OverlaySpec, OverlayValues, CloseOverlayIntent> { children: OverlayChildren }
 
 export type ContractName =
   | 'backdropPage' | 'backLayer' | 'frontLayer' | 'frontHeader' | 'appBarPage' | 'pageSheet'

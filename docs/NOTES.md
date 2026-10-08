@@ -417,6 +417,29 @@ roleProps / roleIntent and Role.parts once built. Starting point: the backdrop p
   page template `shelf` becomes `shelfPage` (draft pages.json; app.json / fake-backend opens at the switch).
   (a second place to look, no home for per-job looks).
 
+### Decisions made while Sofia slept (2026-10-09, 00:15–02:13) — review these
+Each was my call; say if you disagree and I redo it.
+1. The draft lives beside the old API (api/draft.d.ts, app/draft/app.json, app/draft/composition.json) until it is whole;
+   then it replaces api.d.ts / app.json and the old roles, refs and draft files are deleted in the same change.
+2. The back layer has fixed regions (header · actions · basicAction · panel; panel only when expanded) instead of free
+   regions + layouts. All five backdrop pages fit; a page wanting another region would need an API change.
+3. One header config and contract for the back header, the app bar and the peek; composition tells them apart by the
+   contract they sit in (Placement.within).
+4. Items are named (ItemName) so composition can single one out (menu, up, playNow …). Names came from the icons
+   the converter found; they are config names now.
+5. Icons are looks: composition picks them through hire tokens aliasing new design tokens (icon.menu …). Deck icons
+   left DeckConfig for the same reason. Buttons whose icon changes with state carry `state` (a name such as 'pause'),
+   and composition maps it to tokens.
+6. A presentation keeps `itemAction` for items that do not open (bare tracks play; queue rows play their index). Sofia
+   said shelves' entries always open; this keeps tracks in lists playable.
+7. Overlays lose `component` and `props`: composition picks the component by kind; texts become named texts and a
+   menu's items become button items.
+8. The built-in caret's label comes from fixed texts (backLayer.reveal / backLayer.conceal), as the find ✕'s comes from
+   find.close: core reads these text ids.
+9. Content states (empty / error / stale banner) are children of the content contract; composition picks their
+   components (was AppConfig.contentStates).
+10. Merge tree for free components (above) is my proposal; applied when design moves to the new model.
+
 ## Open (current)
 - Design checks are not shown on the Invariants page yet (needs Invariants.dc.html).
 - Still in the player (ordering, not yet params): detail transition order (out → swap → front move + in → header parts), flight cut sources (top: header / bars above the middle; bottom: peek / nav bar), app-bar sheet start (front layer top), the reveal band shape.
