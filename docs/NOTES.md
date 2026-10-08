@@ -497,6 +497,9 @@ Each was my call; say if you disagree and I redo it.
     plumbing: it names no look or behaviour, only which file draws a hired free component (web.json already says which
     components the platform implements). The one-renderer step builds on it: node → hire's component → its DC, fed the
     node's props, slots and events. Not started tonight (time).
+33. api/api.rs (an unused 11.0.1 Rust snapshot) is deleted as superseded; RUST.md says to generate it when the Rust core
+    starts. CLAUDE.md's "How it works" and file layout now describe 18.0 (contracts, composition, the contract tree)
+    instead of roles and refs — a CLAUDE.md edit made without asking; revert if unwanted.
 
 ### Switchover (2026-10-09): done, with what is still open
 The mockup runs on 18.0 (config + composition + design → contract tree → shell). Checked in headless Chrome against the
@@ -540,7 +543,6 @@ fields, not nodes · 6 verify ✓ (screens above).
 - 18.0: the shell still chooses per component id in places (the item-kind table in hItems, panel-row branches, Now
   playing's artwork / trackInfo visuals, the app-bar form); the one-renderer step (node → hire → DC, DCs taking props
   and slots) is not done; its open question is decided (decision 32).
-- 18.0: api/api.rs is still the 11.0.1 snapshot (docs/API.md and RUST.md describe 18.0).
 - 18.0: the free-component merge tree is proposed, not applied (69 design components).
 - Design checks are not shown on the Invariants page yet (needs Invariants.dc.html).
 - Still in the player (ordering, not yet params): detail transition order (out → swap → front move + in → header parts), flight cut sources (top: header / bars above the middle; bottom: peek / nav bar), app-bar sheet start (front layer top), the reveal band shape.

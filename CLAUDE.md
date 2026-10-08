@@ -12,12 +12,12 @@
 - Type style (api.d.ts): every object shape is a named type; unions list named members (`type A = B | C`); no anonymous `{ }` in fields; every type is defined before it is used (recursive cycles: one marked forward reference).
 
 ## Before claiming or building anything
-- Look it up first, in this order: api/api.d.ts (shapes, roles + slots, surfaces) → app/app.json (which pages / slots / components are actually used) → design/components/<id>/ + design/design.json (what is registered, its visuals and .md) → docs/NOTES.md + CHANGELOG.md (why it is so). Quote what you found; if it isn't there, say "not defined" — never fill the gap from the DOM or from memory.
+- Look it up first, in this order: api/api.d.ts + api/contracts.js (shapes, contracts and their children) → app/app.json + app/composition.json (which pages and items exist, which component each contract hires) → design/components/<id>/ + design/design.json (what is registered, its visuals and .md) → docs/NOTES.md + CHANGELOG.md (why it is so). Quote what you found; if it isn't there, say "not defined" — never fill the gap from the DOM or from memory.
 - What a thing is, which parts it has and what uses it come from those files, never from how a .dc.html happens to be nested.
 
 ## Components
 - A component DC exists only for a component registered in design (design/components/<id>/). No DC without a design component; no design component drawn by two DCs or by the shell. Name the DC after it (frontLayer → FrontLayer.dc.html).
-- Its structure follows the API: its role's slots / the config shape it draws (e.g. appBar: start · title · end · expanded · fab · bottom; an app-bar page: header · content | body · sheet). Its look comes only from its design visuals.
+- Its structure follows the API: its contract's children / the config shape it draws (e.g. header: items · detail; an app-bar page: header · content | body · sheet). Its look comes only from its design visuals.
 - Missing design component? Stop and propose it (design files + manifest), don't create the DC first.
 - Never move shell markup into files mechanically and call them components. A DC's header comment names its real design component; if there is none, the file is wrong.
 
@@ -30,29 +30,29 @@
 - Everything the mockup draws is a component: one `.dc.html` per design component (like IconButton, PanelRow), fed its resolved visuals / props by the shell. The shell (Backdrop Nav Skeleton) only arranges component instances — no inline-drawn UI. The Components page previews those same DCs.
 
 ## Division of powers (test before adding anything to the API)
-- API = roles + state + behaviour. Something is in the API only if the engine's behaviour depends on it.
-- App config (`app/`) = which roles, arrangement, policies, which component fills each slot, texts.
+- API = contracts + state + behaviour. Something is in the API only if the engine's behaviour depends on it.
+- App config (`app/`) = which pages and items, arrangement, policies, texts (app.json); which component fills each contract (composition.json).
 - Design (`design/`) = what components look like and how things move (tokens, components, motions, choreography, design texts).
 - Core (`core/`) = one implementation of the API: navigation, layout, interaction, player (optional).
 - Platform = draws; publishes a manifest (`platforms/<name>.json`) of components and motions it implements.
 - If a look-and-feel tweak would need an API release, that's a sign it's in the wrong layer.
 
-## How it works (as of 17.0.0)
-- **State + config.** The engine (core) holds state; config (app.json) says which pages, layers, policies and components exist. Intents change state; queries and Layout read state + config + design and give the platform what to draw.
-- **Roles = contracts.** A role (api/roles.js, the single source; api.d.ts types it) is the minimum config and the engine rely on: `supplies` (props computed from state by `roleProps`; config never sets them), `emits` (events → intents via `roleIntent`; `activate` runs the ref's action), `slots` (ref roles: the minimum slots a component must declare) or `parts` (page / surface roles: the config object's own fields). A component may declare more slots; config may use those only on that component.
-- **Refs.** Config fills a slot with a typed ref (`BarRef`, `FrontHeaderRef`, `AppBarRef`, `PeekRef`, …): `{ component, slots, … }`. The component must implement the ref's role (design `implements`). Page / surface roles (backdropPage, backLayer, frontLayer, appBarPage, pageSheet, sheetLayer, drawerLayer, fullscreenLayer) are not named by config: design registers exactly one component per role (`Layout.componentFor`).
+## How it works (as of 18.0.0)
+- **State + config.** The engine (core) holds state; config (app/app.json) says what exists as plain data: pages, decks, layers, policies, params and items (button · logo · text · switch · find · detail · seek). Config names no components, slots, sides or sizes. Intents change state; queries and Layout read state + config + design and give the platform what to draw.
+- **Contracts.** A contract (api/contracts.js, the single source; api/gen-contracts.js writes its TS block into api.d.ts) is what a drawn config object offers: its config, the values the engine gives it, the intents it can send, its children.
+- **Composition** (app/composition.json) hires one free design component per contract: clauses feed its props (from values, fixed tokens, design texts), send its events as intents or the item's action, and fill its slots from children. Placements pick the hire by contract, nearest ancestor, kind / name, param, presentation, state, overlay and layout class; page exceptions (by template) come first. core/contracts.js builds the contract tree: one node per drawn object with its hire, props, slots and events; its keys identify instances. Items whose `when` fails stay in the tree, hidden.
 - **Config vs state naming.** Config says how far something may go (`front.collapse`); state says where it is now (`frontPosition`).
-- **Design** = what components look like (tokens, component visuals per state, `props`, `parts`) and how things move (choreography). Parts are pieces a component draws itself that motion may name (`<component>.<part>`); they are declared in design, never invented by a platform.
-- **Motion as steps.** A choreography rule (`on` an event pattern; every field it gives must match) is a list of steps: `tween` (a piece's props), `travel` (a copy flies to another piece / measure), `swap` (fade through around the state change), `reveal` (shown through a moving shape); `use` runs a named sequence. Steps name pieces (`<role>.<slot|part>`, `<component>.<part>`, `<component>`, `source` / `target` / `origin`, step ids; `[]` lists, `@before` / `@after`), measure geometry after the commit, pick values by event fields (`ByEvent`), and run on time (anchored to other steps) or on progress (bar collapse, scroll). Component motions are steps too (`ComponentDef.motion`, triggers change · press · release · loop). `KindStep` (a hand-built motion kind) is temporary until every motion is ported, then removed with `Specs.motions`, `transitionFor` / `motionFor`.
+- **Design** = what components look like (tokens, component visuals per state, `props`, `optional`, `parts`) and how things move (choreography). Sizes Layout needs come from design through composition (a Look, core/compose.js). Parts are pieces a component draws itself that motion may name (`<component>.<part>`); they are declared in design, never invented by a platform. Components inherit with `extends`; interactive ones extend `interactive`.
+- **Motion as steps.** A choreography rule (`on` an event pattern; every field it gives must match) is a list of steps: `tween` (a piece's props), `travel` (a copy flies to another piece / measure), `swap` (fade through around the state change), `reveal` (shown through a moving shape); `use` runs a named sequence. Steps name pieces (`<contract>.<child>`, `<component>.<part>`, `<component>`, `source` / `target` / `origin`, step ids; `[]` lists, `@before` / `@after`), measure geometry after the commit, pick values by event fields (`ByEvent`), and run on time (anchored to other steps) or on progress (bar collapse, scroll). Component motions are steps too (`ComponentDef.motion`, triggers change · press · release · loop). `KindStep` (a hand-built motion kind) is temporary until every motion is ported, then removed with `Specs.motions`, `transitionFor` / `motionFor`.
 - **Platform** (TARGET — not built yet; motions.js still plays the hand-built kinds) implements the four blocks once (platforms/web/motions.js), plus mechanics only (sampling, layering, clipping technique, measuring at rest, cleanup). It finds pieces through the DCs' `data-piece` attributes — names from roles / design only.
-- **Component DCs** (TARGET — rebuild not started; current DCs are improvised and use ad-hoc data-* markers) are built from the contract + design (not from old DOM): structure = role slots / parts + declared parts, each marked `data-piece`; props = `ComponentDef.props` + the role's supplies; events out through the role; look = design visuals (the look the user has seen in the mockup is the reference). One DC per design component; the shell only arranges them.
+- **Component DCs** (TARGET — rebuild not started; current DCs are improvised and use ad-hoc data-* markers) are built from the contract + design (not from old DOM): structure = the contract node's slots + declared parts, each marked `data-piece`; props = `ComponentDef.props` fed by the hire's clauses; events out through the node; look = design visuals (the look the user has seen in the mockup is the reference). One DC per design component; the shell only arranges them. The platform may map component ids to DCs (NOTES decision 32).
 - **Rules** (api/invariants.js, Invariants.dc.html) check config, design, contracts, steps and the platform manifest; design-only data checks live in design/checks.js.
 
 ## File layout
 ```
-api/        api.d.ts (contract) · roles.js (role contracts, single source) · gen-roles.js (roles.js → api.d.ts §M2 block) · api.rs (Rust rendering for comparison, last regenerated at 11.0.1, unused) · invariants.js (rules)
-core/       navigation.js · layout.js · interaction.js · player.js
-app/        app.json · texts/<locale>.json · load-app.js · fake-backend.js
+api/        api.d.ts (contract) · contracts.js (contracts as data, single source) · gen-contracts.js (contracts.js → api.d.ts block) · invariants.js (rules) · composition-rules.js (composition against contracts + design)
+core/       navigation.js · layout.js · interaction.js · player.js · compose.js (placements, hires, the look) · contracts.js (the contract tree)
+app/        app.json · composition.json · texts/<locale>.json · load-app.js · fake-backend.js
 design/     design.json · tokens.json · choreography.json (rules → steps, sequences) · motions/ (temporary kinds) · components/<id>/{.json,.md,.d.ts} · texts/ · load.js · build.js · write-generated.mjs (writes generated/ + component .d.ts) · overrides.js · checks.js
 platforms/  web.json (manifest) · web/motions.js (player) · lint-web.js (shell lint: no look-and-feel literals or motion code in the shell)
 generated/  per-platform tokens (build.js output)

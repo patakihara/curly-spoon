@@ -62,11 +62,10 @@ Rules of thumb
 - `core/interaction.js` → crate `interaction`: pure, depends on `nav` (supports) and `player` (supports). Shells feed raw input, draw spec visuals.
 
 ## Contract in Rust
-- `api/api.d.ts` stays the source; `api/api.rs` is generated from it (serde structs / tagged + untagged enums / traits; recursion via Box). Generator: currently an ad-hoc script — make it a checked-in `api/gen-rust.js` when the Rust core starts, and add a rule that api.rs is up to date.
+- `api/api.d.ts` stays the source; `api/api.rs` will be generated from it when the Rust core starts (the 11.0.1 snapshot was deleted in 18.0) (serde structs / tagged + untagged enums / traits; recursion via Box). Generator: currently an ad-hoc script — make it a checked-in `api/gen-rust.js` when the Rust core starts, and add a rule that api.rs is up to date.
 
 ## 13.0
 - New modules map as before; `Role.slots` is data (validated by the rules runner). Player access from config = the core holds an optional `&PlayerModel` (trait object) for '$player' paths and PlayerIs.
-- api.rs is still the 11.0.1 snapshot — regenerate from api.d.ts 16.0.0 (open; see NOTES).
 
 ## 14.2 / 14.3 additions to port
 - Role appBar slot `bottom` (contract only).
