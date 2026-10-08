@@ -502,10 +502,13 @@ Library first looked shifted: its shot was taken 2 s after the tap, while the gr
 old and new are identical (and all 658 element boxes match to 0.01 px). Motion was not sampled frame by frame.
 Layout numbers old vs new: 169 / 169 cases equal. Rules (01:30): 103 pass · 3 skipped · 0 fail (90 invariants + 13
 composition). The dev panel's stack readout no longer lists the searching / searchClosed params (find is engine state).
-Motion (01:50): Play on an album, sampled at 16 … 1100 ms under Chrome's virtual time (Emulation.setVirtualTimePolicy),
-old vs new mockup. Every frame shows the same pieces (the art's square drops toward the peek, rows dim, the header
-button becomes Last), but two runs of the same code put the square at different places at the same virtual
-millisecond: virtual time does not pin the WAAPI animations here, so frames can't be compared by hash. Still unmeasured.
+Motion (02:00), measured: Chrome's animation clock slowed 50× (CDP Animation.setPlaybackRate 0.02), same clicks on
+the old and new mockup. Play on an album: two runs of the new mockup give identical screenshots at all 5 sample times;
+against the old, 3 are identical and 2 differ by 65 pixels in the peek's art square. Sampling that square's box at 8
+times (20–160 ms into the motion) gives identical positions in old and new to 0.1 px, so the 65 pixels were the two
+screenshots landing at slightly different moments. Last (the header button again): the 58 moving or fixed pieces on
+screen match at 6 sample times within 0.1 px (one press ripple). Next was not sampled (needs a second album).
+(Virtual time, Emulation.setVirtualTimePolicy, did not pin the animations: two runs of the same code differed.)
 Steps: 1 sizes ✓ · 2 core ✓ (navigation, compose, contracts, layout) · 3 API ✓ (api.d.ts 18.0.0; roles / refs / draft
 deleted) · 4 config ✓ · 5 shell ✓ (view code reads nodes) — the DCs are unchanged and still take the shell's flattened
 fields, not nodes · 6 verify ✓ (screens above).
