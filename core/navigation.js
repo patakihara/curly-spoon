@@ -288,6 +288,10 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
   }
   const deepResolve = (x, page, scope) => x === null || typeof x !== 'object' ? x : Array.isArray(x) ? x.map(y => deepResolve(y, page, scope)) : 'bind' in x && Object.keys(x).length === 1 ? pageValue(page, x.bind, scope) : Object.fromEntries(Object.entries(x).map(([k, y]) => [k, deepResolve(y, page, scope)]));
   Object.assign(query, {
+    // 18.0: a config value (PropValue / Actions with binds) → plain, for contracts (core/contracts.js); scope: { item } etc.
+    value(s, c, v, page, scope) { return resolveValue(v, page, scope, s, c); },
+    resolved(x, page, scope) { return deepResolve(x, page, scope); },
+    playerView() { return playerView(); },
     derived(s, c, id, page, of) {
       const v = of ? pageValue(page, of) : undefined;
       switch (id) {
