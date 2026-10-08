@@ -1,7 +1,8 @@
 // Generated from listItem.json by design/build.js — edit the .json, not this file.
+import type { InteractiveProps } from '../interactive/interactive';
 
 /** A generic tappable surface: the sheet peek, the floating card, the front-layer header.
-
-While its data loads it shows its placeholder form, pulsing (motion.placeholder: pulse, staggered across rows). */
-export interface ListItemProps {
+ *  Extends interactive. */
+export interface ListItemProps extends InteractiveProps {
 }
+export type ListItemState = 'enabled' | 'disabled' | 'hover' | 'pressed' | 'focus' | 'keyboardFocus';

@@ -1,5 +1,9 @@
 // Generated from searchField.json by design/build.js — edit the .json, not this file.
+export type ParamValue = string | string[] | boolean | number | [number, number] | [string, string] | null;   // api.d.ts §1
 
-/** A control for a text param: one text field with a clear button. Implements input (accepts text); value comes from the engine, placeholder from the config. Bind { change, submit } to keep a draft (predictions) apart from the submitted query. */
+/** A control for a text param: one text field with a clear button. Composition hires it for input / find contracts on a text param; value comes from the engine, placeholder from the config. Bind { change, submit } to keep a draft (predictions) apart from the submitted query. */
 export interface SearchFieldProps {
+  value: ParamValue;
+  options: { value: string; label: string }[];
+  placeholder: string;
 }

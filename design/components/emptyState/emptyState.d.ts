@@ -2,4 +2,5 @@
 
 /** No items: one short line. Never shown while loading. */
 export interface EmptyStateProps {
+  text: string;
 }

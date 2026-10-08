@@ -1,7 +1,12 @@
 // Generated from contentBlock.json by design/build.js — edit the .json, not this file.
+import type { ListItemProps } from '../listItem/listItem';
 
-/** One item in generic content: a large block. Implements the item role.
-
-Blocks have no gap between them: each is padded by `itemPadding` (10, corners `radius.md`) so its hover / press area includes the space around the image; the list starts at margin − itemPadding. */
-export interface ContentBlockProps {
+/** One item in generic content: a large block. Composition hires it for the item contract.
+ *  Extends listItem. */
+export interface ContentBlockProps extends ListItemProps {
+  title: string;
+  subtitle: string;
+  image: string;
+  navigable: boolean;
 }
+export type ContentBlockState = 'enabled' | 'disabled' | 'hover' | 'pressed' | 'focus' | 'keyboardFocus';

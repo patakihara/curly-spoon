@@ -2,4 +2,5 @@
 
 /** Header title text. */
 export interface TitleProps {
+  text: string;
 }

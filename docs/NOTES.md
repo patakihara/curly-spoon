@@ -489,6 +489,10 @@ Each was my call; say if you disagree and I redo it.
     hires each component for.
 30. "Every surface a component is placed on provides every colour role" is skipped, not ported: surfaces per contract
     node are not derived yet (the shell reads them from node keys).
+31. design/write-generated.mjs writes the design outputs (tokens.css, DesignTokens.kt, every component .d.ts, notes
+    from the .md's first paragraph). The token files come out byte-identical; the .d.ts files had been empty since the
+    baseline export and now carry their props (tsc --strict: 0 errors). CLAUDE.md's file layout doesn't list the script
+    yet (CLAUDE.md needs your OK).
 
 ### Switchover (2026-10-09): done, with what is still open
 The mockup runs on 18.0 (config + composition + design → contract tree → shell). Checked in headless Chrome against the
@@ -528,8 +532,6 @@ fields, not nodes · 6 verify ✓ (screens above).
 - 18.0: the shell still chooses per component id in places (the item-kind table in hItems, panel-row branches, Now
   playing's artwork / trackInfo visuals, the app-bar form); the planned one-renderer step (node → hire → DC, DCs taking
   props and slots) is not done.
-- design/components/*/*.d.ts are stale since the baseline export (empty prop interfaces) and nothing in the repo writes
-  them; design/build.js buildDts can, but nobody calls it.
 - 18.0: api/api.rs is still the 11.0.1 snapshot (docs/API.md and RUST.md describe 18.0).
 - 18.0: the free-component merge tree is proposed, not applied (69 design components).
 - Design checks are not shown on the Invariants page yet (needs Invariants.dc.html).

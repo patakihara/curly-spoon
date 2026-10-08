@@ -2,4 +2,5 @@
 
 /** Small inline text without an action (for example the filter summary). */
 export interface LabelProps {
+  text: string;
 }

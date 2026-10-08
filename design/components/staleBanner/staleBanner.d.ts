@@ -2,4 +2,5 @@
 
 /** Offline with cached items: a strip above the items, with retry. */
 export interface StaleBannerProps {
+  text: string;
 }

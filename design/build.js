@@ -1,4 +1,4 @@
-// Design system build: Specs (from load.js) → per-platform outputs. Pure; the caller writes the files.
+// Design system build: Specs (from load.js) → per-platform outputs. Pure; design/write-generated.mjs writes the files.
 //   buildCss(specs)            → generated/web/tokens.css
 //   buildKotlin(specs)         → generated/android/DesignTokens.kt
 //   buildDts(id, raw, resolved, note) → design/components/<id>/<id>.d.ts   (own props from <id>.json; extends → interface extends)
