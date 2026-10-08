@@ -144,6 +144,7 @@ object DesignTokens {
     val IconBrowse = "explore"
     val IconLibrary = "library_music"
     val IconSearch = "search"
+    val IconLink = "link"
 }
 
 object InteractiveTokens {

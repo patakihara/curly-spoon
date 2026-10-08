@@ -138,6 +138,7 @@
   --icon-browse: explore;
   --icon-library: library_music;
   --icon-search: search;
+  --icon-link: link;
 
   --interactive-stateLayer-hover: var(--state-hover-opacity-default);
   --interactive-stateLayer-pressed: var(--state-pressed-opacity-default);

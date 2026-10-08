@@ -665,12 +665,12 @@ class Component extends DCLogic {
   nix(n, o = {}) {
     if (!n || !n.component) return INERT;
     const a = o.action !== undefined ? o.action : this.actOf(n, o.event || 'press', o.payload);
-    return this.ix(n.key, a, o.run || (e => this.runAction(a, e)), { component: o.component || n.component, variant: n.variants, facts: { checked: n.values.checked }, label: o.label ?? (n.props.label || n.props.text || n.values.label || ''), surface: o.surface, page: n.page });
+    return this.ix(n.key, a, o.run || (e => this.runAction(a, e)), { component: o.component || n.component, variant: n.variants, facts: { checked: n.values.checked }, label: o.label ?? (n.props.label || n.props.text || n.props.title || n.values.label || n.values.title || ''), surface: o.surface, page: n.page });
   }
   vis(n, extra = {}) { return n && n.component ? this.P.resolveVisuals(this.specs, n.component, 'enabled', { variant: n.variants || {}, env: this.lenv(), ...extra }) : {}; }
   // the FAB of a header's fab slot: its first node (several share one place; the icon morphs between them)
   fabFor(nodes, top) {
-    const n = nodes[0]; if (!n) return { show: false, top: 0, icon: '', vis: {}, ix: INERT };
+    const n = nodes.find(x => x.shown !== false); if (!n) return { show: false, top: 0, icon: '', vis: {}, ix: INERT };
     return { show: true, top, icon: n.props.icon || '', vis: this.vis(n), ix: this.nix(n, { component: 'fab' }) };
   }
   barSpan(theme, start) {
@@ -681,12 +681,12 @@ class Component extends DCLogic {
     }
     const RVc = (id, variant) => this.P.resolveVisuals(this.specs, id, 'enabled', { variant: variant || {} });
     const inset = +RVc(theme === 'front' ? 'frontHeader' : theme === 'back' ? 'header' : 'appBar').spanInset || 0;
-    const others = (start || []).filter(n => n.contract !== 'find').reduce((w, n) => { const V = this.vis(n); return w + (+(V.slotWidth ?? V.size) || 0); }, 0);
+    const others = (start || []).filter(n => n.contract !== 'find' && n.shown !== false).reduce((w, n) => { const V = this.vis(n); return w + (+(V.slotWidth ?? V.size) || 0); }, 0);
     return G.CW - inset - others;
   }
   // FAB inset from the end edge: centred under the bar's last end item
   fabEnd(nodes, pad) {
-    const r = nodes[nodes.length - 1]; if (!r) return pad;
+    const r = nodes.filter(x => x.shown !== false).pop(); if (!r) return pad;
     const RVc = (id, variant) => this.P.resolveVisuals(this.specs, id, 'enabled', { variant: variant || {} }), fab = +RVc('fab', { size: 'md' }).size || 0;
     if (r.contract === 'find') { const fr = this.sl(r, 'from')[0], b = fr ? +this.vis(fr).size || 0 : fab; return pad + (+RVc('localSearch').padX || 0) + (b - fab) / 2; }   // the closed morph: its button inside the field's padding
     return pad + ((+this.vis(r).size || fab) - fab) / 2;
@@ -732,7 +732,8 @@ class Component extends DCLogic {
       v.isControl = v.isLogo || v.isButton;
       const interactive = ((this.specs.components[n.component] || {}).implements || []).includes('interactive');
       v.ix = interactive ? this.nix(n, { surface: this.surfaceOfTheme(theme) }) : INERT;
-      return { ...v, op: 1, ev: 'auto' };
+      const on = n.shown !== false;
+      return { ...v, maxW: on ? v.maxW : 0, op: on ? 1 : 0, ev: on ? 'auto' : 'none' };
     });
   }
   // config actions → the motion-aware paths (anything else dispatches as is)
@@ -807,7 +808,7 @@ class Component extends DCLogic {
     return {
       rHeader: RI.header || [], rBasic: RI.basicAction || [], rPanel: RI.panel || [], rActions: RI.actions || [],
       // the actions region's buttons (config back.actions: e.g. the artist page's play buttons below its details)
-      actH: RH.actions || 0, actBtns: back.children.actions.map(n => ({ text: n.props.text || '', icon: n.props.icon || '', ix: this.nix(n, { surface: 'backLayer' }) })),
+      actH: RH.actions || 0, actBtns: back.children.actions.filter(n => n.shown !== false).map(n => ({ text: n.props.text || '', icon: n.props.icon || '', ix: this.nix(n, { surface: 'backLayer' }) })),
       bhLeft, bhRight: this.hItems(this.sl(H, 'end'), 'back', ps, this.sl(H, 'start')), bhTitle: this.titleText(this.sl(H, 'title'), ps),
       ...(() => {   // the header's expanded slot (detail info), shrinking with barView progress (core layout)
         const X = this.sl(H, 'expanded')[0], bv = this.P.barView(ps, look), base = bv.height - bv.distance * (1 - bv.progress);
@@ -834,7 +835,7 @@ class Component extends DCLogic {
         if (row.contract === 'suggestions') return [...label, ...row.children.items.map(n => ({ isText: false, isChips: false, isSuggest: true, text: n.values.text, vis: BV('suggestionRow'), ix: this.nix(n, { run: () => { const a = this.actOf(n); if (a) this.paramChange(ps, a.nav, 'suggestion · ' + n.values.text); }, label: n.values.text }), chips: [] }))];
         const r = row.children.control, comp = r.component;
         if (comp === 'filterChips' || comp === 'choiceChips') return [...label, { isText: false, isChips: true, isSuggest: false, chips: this.chipsFor(ps, r), vis: BV(comp), ix: INERT }];
-        if (comp === 'dropdown') return [{ isText: false, isChips: false, isSuggest: false, isDropdown: true, text: row.values.label || '', options: (r.values.options || []).map(o => ({ value: o.value, label: o.label, on: o.value === r.values.value })), onPick: e => { const a = this.actOf(r, 'change', e.target.value); if (a) this.paramChange(ps, a.nav, 'params · ' + r.at.param.name); }, vis: BV('dropdown'), chips: [], ix: INERT }];
+        if (comp === 'dropdown') return [...label, { isText: false, isChips: false, isSuggest: false, isDropdown: true, text: r.props.label || '', options: (r.values.options || []).map(o => ({ value: o.value, label: o.label, on: o.value === r.values.value })), onPick: e => { const a = this.actOf(r, 'change', e.target.value); if (a) this.paramChange(ps, a.nav, 'params · ' + r.at.param.name); }, vis: BV('dropdown'), chips: [], ix: INERT }];
         if (comp === 'rangeField') { const v0 = r.values.value || [0, 0];
           const put = (k, x) => { const nv = v0.slice(); nv[k] = Math.max(r.values.min ?? -Infinity, Math.min(r.values.max ?? Infinity, +x)); if (nv[0] > nv[1]) nv[1 - k] = nv[k]; const a = this.actOf(r, 'change', nv); if (a) this.paramChange(ps, a.nav, 'params · ' + r.at.param.name); };
           return [...label, { isText: false, isChips: false, isSuggest: false, isRange: true, from: v0[0], to: v0[1], min: r.values.min, max: r.values.max, fromLabel: r.props.fromLabel || '', toLabel: r.props.toLabel || '', onFrom: e => put(0, e.target.value), onTo: e => put(1, e.target.value), vis: BV('rangeField'), chips: [], ix: INERT }]; }
@@ -996,7 +997,7 @@ class Component extends DCLogic {
     v.ahSpan = v.ahRight.some(x => x.isFind && x.find.open && x.find.span); if (v.ahSpan) v.ahRight = v.ahRight.map(x => x.isFind ? x : { ...x, maxW: 0, op: 0, ev: 'none' });
     const bvA = apage ? this.P.barView(apage, this.look()) : { height: ahBase, progress: 1 }, Xr = this.sl(AHN, 'expanded')[0];
     { const BOT = this.sl(AHN, 'bottom');
-      const btns = BOT.filter(n => n.contract !== 'find');
+      const btns = BOT.filter(n => n.contract !== 'find' && n.shown !== false);
       const hasSheet = !!(BOT.length || Xr);   // a page form header with nothing below its top row has no sheet
       v.ab = { full: hasSheet ? (+barVisApp.expandedHeight || ahBase) - ahH : 0, sheetH: hasSheet ? Math.max(0, bvA.height - ahH) : 0, range: hasSheet ? Math.max(0, (+barVisApp.expandedHeight || 0) - ahBase) : 0,
         find: v.showOverlay ? this.hItems(BOT.filter(n => n.contract === 'find'), 'appbottom', apage) : [],
@@ -1104,9 +1105,10 @@ class Component extends DCLogic {
     v.navShift = G.NAV !== 'navBar' || !q.navVisible(ms, cfg) ? G.NH : 0;
     v.showRail = G.NAV === 'navRail';
     const TR = this.tree(), NAVN = TR.navigation;
+    const shown = ns => ns.filter(n => n.shown !== false);
     const navItems = form => this.sl(NAVN, 'destinations').map(n => ({ label: n.props.text || n.values.label, icon: n.props.icon || '', selected: n.values.selected, ix: this.nix(n, { run: () => this.switchDeck(n.values.deck), component: 'navItem', label: n.values.label }) }));
     v.nav = navItems('bar'); v.railNav = navItems('rail');
-    { const slot = k => this.sl(NAVN, k).map(n => ({ icon: n.props.icon || '', text: n.props.text || n.values.label || '', mark: n.component === 'logo', ix: n.component === 'logo' ? { ...this.nix(n, { action: null, run: null, surface: 'navRail' }), resolve: () => ({ state: 'enabled', enabled: true, flags: {}, status: [], activatable: false }) } : this.nix(n, { component: n.component === 'drawerItem' ? 'listItem' : 'iconButton', surface: 'navRail' }) }));
+    { const slot = k => shown(this.sl(NAVN, k)).map(n => ({ icon: n.props.icon || '', text: n.props.text || n.values.label || '', mark: n.component === 'logo', ix: n.component === 'logo' ? { ...this.nix(n, { action: null, run: null, surface: 'navRail' }), resolve: () => ({ state: 'enabled', enabled: true, flags: {}, status: [], activatable: false }) } : this.nix(n, { component: n.component === 'drawerItem' ? 'listItem' : 'iconButton', surface: 'navRail' }) }));
       const ML = cfg.layers.find(l => l.presentation.kind === 'drawer' && l.presentation.wide === 'rail'), ex = !!(ML && ms.layers[ML.id].open && G.NAV === 'navRail'), V = this.P.resolveVisuals(this.specs, 'navRail', 'enabled', {}), mo = this.P.motionFor(this.specs, 'navRail', 'width', ms.prefs);
       v.railNav = v.railNav.map(n => ({ ...n, pill: n.selected ? this.specs.tokens['color.navIndicator'] : 'transparent', fill: n.selected ? 1 : 0 }));
       v.rail = { tr: this.mo.css(mo), collapsed: !ex, w: ex ? +V.expandedWidth || 0 : +V.width || 0, align: ex ? 'stretch' : 'center', padX: ex ? +V.itemInset || 0 : 0, shadow: ex ? V.expandedShadow || 'none' : 'none', ms: this.msOf(mo), ease: this.easeOf(mo), ex, padY: +V.padY || 0, gap: +V.gap || 0, groupGap: +V.groupGap || 0 };
@@ -1149,7 +1151,7 @@ class Component extends DCLogic {
     v.pl = { icon: pst.status === 'playing' || pst.status === 'loading' ? 'pause' : 'play_arrow', ...plIx(''), ...plIx('2') };
     // peek controls: the layer presentation's peek header end slots (config), per form
     const PK = (TR.layers.find(n => n.contract === 'sheetLayer') || { children: {} }).children.peek;
-    const peekCtrls = () => this.sl(PK, 'end').map(n => ({ icon: n.props.icon || '', ix: this.nix(n) }));
+    const peekCtrls = () => this.sl(PK, 'end').filter(n => n.shown !== false).map(n => ({ icon: n.props.icon || '', ix: this.nix(n) }));
     v.pl.peek = peekCtrls(); v.pl.card = peekCtrls(); v.pl.mini = peekCtrls();
     // texts + direction (current locale)
     const t = id => q.text(ms, cfg, id);

@@ -7,7 +7,8 @@
 //   contractTree(model, specs, composition, opts) → Node (the app)
 //   opts = { look (compose.js lookAt), measured: { <pageId>: { panel } }, peek: number, data: DataSource, page?, within?, origin?, key? }
 //   with opts.page: { page: Node } — that page alone
-//   Node = { key, contract, at, page, config, values, hire, component, variants, props, slots, events, children }
+//   Node = { key, contract, at, page, config, values, hire, component, variants, props, slots, events, children, shown? }
+//   shown: false on an item whose when does not hold (lists keep it, so a platform can fade it in and out)
 //   events: { <event>: payload → Intent | { action: Actions } | null }
 
 import { placementFor, hireOf, freeComponent } from './compose.js';
@@ -125,7 +126,8 @@ export function contractTree(model, specs, composition, opts = {}) {
     const page = ctx.page, v = x => x == null ? null : val(x, page) ?? null;
     return node('detail', key, ctx, config, { title: String(v(d.title) ?? ''), subtitle: v(d.subtitle), image: v(d.image), meta: v(d.meta) }, {}, { at });
   }
-  const items = (list, key, ctx) => (list || []).filter(it => holds(it, ctx.page)).map(it => itemNode(it, key, ctx)).filter(Boolean);
+  // every item, each with shown (its when holds): a platform keeps hidden ones drawn so they can fade in and out
+  const items = (list, key, ctx) => (list || []).map(it => { const n = itemNode(it, key, ctx); if (n) n.shown = holds(it, ctx.page); return n; }).filter(Boolean);
   const inside = (ctx, contract) => ({ ...ctx, within: [contract, ...ctx.within] });
 
   // a Source: a list, or a data source with params (values resolved on the page)

@@ -2345,6 +2345,81 @@
    ]
   },
   {
+   "name": "playNowMenuItem",
+   "hires": "drawerItem",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "prop": "icon",
+     "token": "playNowMenuItem.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "playNowMenuItem.icon",
+     "alias": "icon.playNow"
+    }
+   ]
+  },
+  {
+   "name": "playLastMenuItem",
+   "hires": "drawerItem",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "prop": "icon",
+     "token": "playLastMenuItem.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "playLastMenuItem.icon",
+     "alias": "icon.playLast"
+    }
+   ]
+  },
+  {
+   "name": "linkMenuItem",
+   "hires": "drawerItem",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "prop": "icon",
+     "token": "linkMenuItem.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "linkMenuItem.icon",
+     "alias": "icon.link"
+    }
+   ]
+  },
+  {
    "name": "menuItem",
    "hires": "drawerItem",
    "contract": "button",
@@ -2589,6 +2664,30 @@
    },
    "within": "overlay",
    "hire": "savedMenuItem"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "playNow"
+   },
+   "within": "overlay",
+   "hire": "playNowMenuItem"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "playLast"
+   },
+   "within": "overlay",
+   "hire": "playLastMenuItem"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "link"
+   },
+   "within": "overlay",
+   "hire": "linkMenuItem"
   },
   {
    "contract": "button",
