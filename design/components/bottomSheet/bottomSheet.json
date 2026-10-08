@@ -64,6 +64,14 @@
     "pageSheet"
   ],
   "props": {
-    "expanded": "boolean"
-  }
+    "expanded": "boolean",
+    "control": "slot",
+    "content": "slot"
+  },
+  "events": [
+    {
+      "name": "tap",
+      "payload": null
+    }
+  ]
 }

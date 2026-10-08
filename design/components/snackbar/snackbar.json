@@ -60,5 +60,11 @@
     "bottomWide": {
       "default": 16
     }
-  }
+  },
+  "events": [
+    {
+      "name": "close",
+      "payload": "value"
+    }
+  ]
 }

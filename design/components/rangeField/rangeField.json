@@ -45,5 +45,11 @@
     "separatorOpacity": {
       "default": 0.8
     }
-  }
+  },
+  "events": [
+    {
+      "name": "change",
+      "payload": "value"
+    }
+  ]
 }

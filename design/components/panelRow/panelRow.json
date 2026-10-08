@@ -1,6 +1,7 @@
 {
   "props": {
-    "text": "string"
+    "text": "string",
+    "content": "slot"
   },
   "visuals": {
     "fontFamily": {

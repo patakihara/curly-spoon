@@ -47,5 +47,15 @@
     "iconOpacity": {
       "default": 0.7
     }
-  }
+  },
+  "events": [
+    {
+      "name": "change",
+      "payload": "value"
+    },
+    {
+      "name": "submit",
+      "payload": "value"
+    }
+  ]
 }

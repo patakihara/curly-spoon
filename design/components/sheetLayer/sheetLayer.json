@@ -5,6 +5,18 @@
   "props": {
     "open": "boolean",
     "form": "string",
-    "side": "string"
-  }
+    "side": "string",
+    "peek": "slot",
+    "page": "slot"
+  },
+  "events": [
+    {
+      "name": "open",
+      "payload": null
+    },
+    {
+      "name": "close",
+      "payload": null
+    }
+  ]
 }

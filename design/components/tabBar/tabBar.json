@@ -85,5 +85,11 @@
       ],
       "default": "back"
     }
-  }
+  },
+  "events": [
+    {
+      "name": "change",
+      "payload": "value"
+    }
+  ]
 }

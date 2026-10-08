@@ -3,6 +3,7 @@
     "fullscreenLayer"
   ],
   "props": {
-    "open": "boolean"
+    "open": "boolean",
+    "page": "slot"
   }
 }

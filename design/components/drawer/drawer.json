@@ -48,6 +48,13 @@
   ],
   "props": {
     "open": "boolean",
-    "form": "string"
-  }
+    "form": "string",
+    "page": "slot"
+  },
+  "events": [
+    {
+      "name": "close",
+      "payload": null
+    }
+  ]
 }

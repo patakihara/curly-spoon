@@ -120,5 +120,11 @@
     "handleRadius": {
       "default": 2
     }
-  }
+  },
+  "events": [
+    {
+      "name": "close",
+      "payload": "value"
+    }
+  ]
 }

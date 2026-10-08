@@ -2,5 +2,16 @@
   "implements": [
     "appBarPage"
   ],
-  "props": {}
+  "props": {
+    "header": "slot",
+    "content": "slot",
+    "body": "slot",
+    "sheet": "slot"
+  },
+  "events": [
+    {
+      "name": "scroll",
+      "payload": "number"
+    }
+  ]
 }

@@ -34,5 +34,11 @@
     "iconSize": {
       "default": 18
     }
-  }
+  },
+  "events": [
+    {
+      "name": "retry",
+      "payload": null
+    }
+  ]
 }

@@ -2,7 +2,11 @@
   "props": {
     "palette": "token",
     "expanded": "boolean",
-    "headerHidden": "boolean"
+    "headerHidden": "boolean",
+    "header": "slot",
+    "actions": "slot",
+    "basicAction": "slot",
+    "panel": "slot"
   },
   "provides": {
     "content": {
@@ -41,5 +45,11 @@
   },
   "implements": [
     "backLayer"
+  ],
+  "events": [
+    {
+      "name": "tap",
+      "payload": null
+    }
   ]
 }

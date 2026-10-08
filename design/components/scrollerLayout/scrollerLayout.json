@@ -23,6 +23,9 @@
     "layout"
   ],
   "props": {
-    "groups": "list"
+    "groups": "list",
+    "items": "slot",
+    "state": "slot",
+    "banner": "slot"
   }
 }

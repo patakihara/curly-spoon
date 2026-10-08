@@ -63,5 +63,11 @@
       ],
       "default": "md"
     }
-  }
+  },
+  "events": [
+    {
+      "name": "retry",
+      "payload": null
+    }
+  ]
 }

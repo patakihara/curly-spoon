@@ -85,6 +85,14 @@
     "frontLayer"
   ],
   "props": {
-    "position": "string"
-  }
+    "position": "string",
+    "header": "slot",
+    "content": "slot"
+  },
+  "events": [
+    {
+      "name": "scroll",
+      "payload": "number"
+    }
+  ]
 }

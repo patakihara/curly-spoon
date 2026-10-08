@@ -60,5 +60,15 @@
   },
   "statuses": [
     "selected"
+  ],
+  "events": [
+    {
+      "name": "press",
+      "payload": null
+    },
+    {
+      "name": "reselect",
+      "payload": null
+    }
   ]
 }

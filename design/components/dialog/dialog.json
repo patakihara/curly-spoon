@@ -65,5 +65,11 @@
     "actionsTop": {
       "default": 8
     }
-  }
+  },
+  "events": [
+    {
+      "name": "close",
+      "payload": "value"
+    }
+  ]
 }
