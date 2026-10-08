@@ -29,11 +29,13 @@ export const activate = (fn) => (e) => {
  * the focus order, the state layer's host class, a click, and Enter and Space through `activate`.
  * The handler gets the event, from a click or a key. Off (by default when there is no `fn`), it
  * stays a button but leaves the focus order, says it is disabled and presses nothing; on, it says
- * nothing of being disabled. Spread onto the element, which draws its own `<StateLayer />`.
+ * nothing of being disabled. `data-sn-press` marks the element, so a test finds every press drawn.
+ * Spread onto the element, which draws its own `<StateLayer />`.
  */
 export const press = (fn, off = !fn) => ({
   className: 'sn-int',
   role: 'button',
+  'data-sn-press': '',
   tabIndex: off ? -1 : 0,
   ...(off ? { 'aria-disabled': true } : {}),
   onClick: off ? undefined : fn,

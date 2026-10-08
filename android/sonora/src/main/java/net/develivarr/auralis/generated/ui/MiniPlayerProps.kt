@@ -13,7 +13,7 @@ data class MiniPlayerProps(
     val playing: Boolean? = null,
     /** Every control with no handler is drawn disabled, the bar itself with no onOpen. */
     val onTogglePlay: (() -> Unit)? = null,
-    /** Tapping the card body (mobile) or the track block (desktop) expands the full player. */
+    /** Tapping the card body (mobile) or the track block (desktop) expands the full player. Handed the click or key event. */
     val onOpen: (() -> Unit)? = null,
     /** mobile = docked tinted pill; desktop = full-width transport bar with seek and queue controls. */
     val platform: Platform? = null,

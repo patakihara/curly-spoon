@@ -174,6 +174,7 @@ The one row shell every list row draws (ResultRow, EpisodeRow, QueueRow, Expande
 | `artLabel` | `string` | The art action's accessible name. Default "Play". |
 | `artIcon` | `string` | The art action's glyph, a Material Symbols name. Default `play_arrow`. |
 | `artIconSize` | `'2xs' \| 'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | The art action's glyph size, a step of the Icon ramp. Default `sm`. |
+| `artRadius` | `'2xs' \| 'xs'` | The art's corner, a step of the radius ramp. Default `xs` on a phone, `2xs` on desktop. |
 | `onClick` | `(e?: any) => void` | Presses the row. With neither it nor `disabled` the row is no button, only a container for its own controls. |
 | `disabled` | `boolean` | Draws the row as a button that is off. |
 | `divider` | `boolean` | Hairline separator along the bottom, inset to the text column. Set on all but the last row of a list. |
@@ -266,7 +267,7 @@ Navigation rail row, following the M3 rail spec. One highlight element morphs fr
 | `tabs` | `boolean` | Mobile tab-bar behaviour: inactive tabs hide their label and centre the icon; the active tab keeps its label and gets a wider pill. |
 | `wideActive` | `boolean` | Whether the active pill widens to 72px. Defaults to `tabs` — set false in a rail. |
 | `centerIcon` | `boolean` |  Centre the icon against the row's midpoint. Defaults to `tabs`. Must be false wherever the row's width animates (a rail), or the icon slides out and back during the transition.  |
-| `onClick` | `() => void` | The destination's action. Without it the row is drawn disabled. |
+| `onClick` | `(e?: any) => void` | The destination's action, handed the click or key event. Without it the row is drawn disabled. |
 
 ### Rating
 
@@ -531,8 +532,8 @@ Shelf/grid card for any library item — album, book, podcast, episode — or, r
 | `playing` | `boolean` |  |
 | `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
 | `covers` | `string[]` |  A collection with no `image` of its own, a list or a digest: its items' covers, four different ones as a 2×2 mosaic, fewer as the first alone, none as the plain tile (CoverArt's `covers`).  |
-| `onClick` | `() => void` | Without it the card is drawn disabled. |
-| `onRequest` | `() => void` |  Requests the item. Given with `absent` and no `status`, a tap requests it instead of calling `onClick`, and the card shows "Requested" until `status` carries the request's live status. Opening the item stays a verb, Open, in a corner menu over the art.  |
+| `onClick` | `(e?: any) => void` | Presses the card, handed the click or key event. Without it the card is drawn disabled. |
+| `onRequest` | `(e?: any) => void` |  Requests the item. Given with `absent` and no `status`, a tap requests it instead of calling `onClick`, and the card shows "Requested" until `status` carries the request's live status. Opening the item stays a verb, Open, in a corner menu over the art. Handed the click or key event.  |
 | `onMore` | `(e?: any) => void` | Renders a corner menu button (top-right) — hover/focus-revealed on desktop, always visible on mobile. Without it the corner menu is left out. |
 | `eyebrow` | `string` | Muted line ABOVE the title at text-xs — the type or genre ("Playlist", "Album", "Society & Culture"). Leaves `sub` untouched. |
 | `unplayed` | `boolean` | Marks unlistened/new content with a small accent dot on the artwork's top-right. |
@@ -586,7 +587,7 @@ The persistent now-playing surface, in both platform variants: the tinted pill d
 | `image` | `string` |  |
 | `playing` | `boolean` |  |
 | `onTogglePlay` | `() => void` | Every control with no handler is drawn disabled, the bar itself with no onOpen. |
-| `onOpen` | `() => void` | Tapping the card body (mobile) or the track block (desktop) expands the full player. |
+| `onOpen` | `(e?: any) => void` | Tapping the card body (mobile) or the track block (desktop) expands the full player. Handed the click or key event. |
 | `platform` | `'mobile' \| 'desktop'` | mobile = docked tinted pill; desktop = full-width transport bar with seek and queue controls. |
 | `progress` | `number` | 0–1. Desktop only — drives the seek bar and the mm:ss elapsed readout. |
 | `onSeek` | `(value: number) => void` |  |
@@ -624,6 +625,23 @@ Material Symbols Rounded glyph name.
 | `toggle` | `boolean` |  Shows the menu toggle with no handler: the rail holds its own expanded state, starting from `expanded` and following it when it changes, and the hamburger (`menu`, or `menu_open` while expanded) collapses the labelled rail to the icon rail and back.  |
 | `footer` | `ReactNode` | Pinned to the bottom — an account row, theme switch, storage meter. |
 | `header` | `ReactNode` | Sits between the toggle and the items — a logo or brand mark. |
+
+### PanelHeader
+
+The header of a panel: its title, any controls before and after it, and its close. Sonora's one panel header: the phone player sheet (`NowPlaying`), the player's sub-pages (`PlayerSubPage`) and the side sheet (`SideSheet`) all draw it. The app bar is `BackLayer`'s, not this.
+
+| prop | type | notes |
+| --- | --- | --- |
+| `title` | `string` | What the panel holds. It clips to one line. |
+| `variant` | `'page' \| 'player' \| 'sheet'` |  `page` (default): a player sub-page's bar, `--appbar-height-mobile` tall, its title in the body face, the close at its end. `player`: the phone player sheet's bar, what it plays from as a centred overline between `leading` and `trailing`. `sheet`: a side sheet's title row, as tall as the desktop app bar (`--appbar-height`) on the sheet's fill, its title a heading, the close pinned to the top corner.  |
+| `platform` | `'desktop' \| 'mobile'` | `page` only: its inset, `--spacing-lg` on a phone and `--spacing-md` on desktop. |
+| `leading` | `ReactNode` | Controls before the title, such as the player sheet's collapse. |
+| `trailing` | `ReactNode` | Controls after the title, such as the player sheet's menu. |
+| `onClose` | `(e?: any) => void` | Closes the panel, handed the click event. Without it there is no close. |
+| `closeLabel` | `string` | The close's accessible name. Default "Close" and the title. |
+| `closeGlyph` | `string` | Material Symbols glyph for the close. Default 'close'. |
+| `closeControls` | `string` | The id of what the close folds away, announced as what it controls. |
+| `divider` | `boolean` | A hairline under the header. |
 
 ### PlayActions
 
@@ -713,7 +731,7 @@ Heading row above a carousel, grid or list, with an optional trailing icon actio
 | `eyebrow` | `string` | Relationship line above the title — "More like", "Popular with listeners of" — that explains why this shelf exists. |
 | `image` | `string` | Subject artwork, leading the header. Falls back to the sibling CoverArt's own placeholder. |
 | `round` | `boolean` | Circular thumbnail for an artist or a person; square (the default) for a show or a genre. |
-| `onSubject` | `() => void` | Makes the eyebrow+title block a link to the subject the shelf is about. Without it the subject is the heading, not a link. |
+| `onSubject` | `(e?: any) => void` | Makes the eyebrow+title block a link to the subject the shelf is about, handed the click or key event. Without it the subject is the heading, not a link. |
 | `actionText` | `string` | A text action ("Show all") in place of the glyph `action`. Mutually exclusive with `action` — wins if both are set. |
 | `trailing` | `ReactNode` |  A control of the section's own at the trailing edge, such as the `ViewToggle` over the collection the section holds. Wins over `actionText` and `action` if more than one is set.  |
 

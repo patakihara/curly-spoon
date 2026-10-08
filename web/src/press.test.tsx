@@ -11,6 +11,7 @@ type Press = (
   role: string;
   tabIndex: number;
   'aria-disabled'?: boolean;
+  'data-sn-press': string;
   onClick?: Handler;
   onKeyDown?: Handler;
 };
@@ -42,6 +43,12 @@ describe("Sonora's press shell", () => {
     onKeyDown!(space);
     onKeyDown!(key('a'));
     expect(got).toEqual([enter, space]);
+  });
+
+  it('[M0.sonoraclean/d] marks every element it presses, on or off, so a browser test finds each', () => {
+    expect(press(() => {})['data-sn-press']).toBe('');
+    expect(press(() => {}, true)['data-sn-press']).toBe('');
+    expect(press()['data-sn-press']).toBe('');
   });
 
   it('[M0.sonoraclean/d] says it is disabled only when it is off', () => {

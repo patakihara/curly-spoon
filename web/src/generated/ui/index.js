@@ -35,6 +35,7 @@ export { NowPlaying } from './layouts/NowPlaying.jsx';
 export { NowPlayingPage } from './layouts/NowPlayingPage.jsx';
 export { OverflowMenu } from './basic/OverflowMenu.jsx';
 export { PageBody } from './layouts/PageBody.jsx';
+export { PanelHeader } from './components/PanelHeader.jsx';
 export { PlayActions } from './components/PlayActions.jsx';
 export { PlayerPanel } from './layouts/PlayerPanel.jsx';
 export { PlayerSheet } from './layouts/PlayerSheet.jsx';

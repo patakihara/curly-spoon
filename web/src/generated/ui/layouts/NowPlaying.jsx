@@ -4,6 +4,7 @@ import { Icon } from '../basic/Icon.jsx';
 import { IconButton } from '../basic/IconButton.jsx';
 import { LyricsPage } from './LyricsPage.jsx';
 import { NowPlayingPage } from './NowPlayingPage.jsx';
+import { PanelHeader } from '../components/PanelHeader.jsx';
 import { PlayerPanel } from './PlayerPanel.jsx';
 import { PlayerSheet } from './PlayerSheet.jsx';
 import { QueuePage } from './QueuePage.jsx';
@@ -48,11 +49,11 @@ export function NowPlaying({
   if (!PlayerSheet) return null;
   return (
     <PlayerSheet open={open} from={from} zIndex={zIndex} background="var(--surface-bg-alt)">
-      <div style={sx('display:flex;align-items:center;gap:var(--spacing-sm);flex-shrink:0;box-sizing:border-box;height:var(--appbar-height-mobile);padding:0 var(--spacing-lg)')}>
-        {IconButton && <IconButton label="Collapse player" muted onClick={onClose}><Icon name="keyboard_arrow_down" size="md" /></IconButton>}
-        <div style={sx('flex:1;min-width:0;text-align:center;font-size:var(--text-xs);letter-spacing:.12em;text-transform:uppercase;font-weight:var(--weight-strong);color:var(--surface-fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{track.context}</div>
-        {IconButton && <IconButton label="More options" muted onClick={onMore} icon="more_vert" />}
-      </div>
+      {PanelHeader && IconButton && (
+        <PanelHeader variant="player" title={track.context}
+          leading={<IconButton label="Collapse player" muted onClick={onClose}><Icon name="keyboard_arrow_down" size="md" /></IconButton>}
+          trailing={<IconButton label="More options" muted onClick={onMore} icon="more_vert" />} />
+      )}
       {TabBar && (
         <div style={sx('flex-shrink:0;padding:0 var(--spacing-lg);border-bottom:1px solid var(--surface-border)')}>
           <TabBar platform="mobile" fill items={tabs} value={active} onChange={setTab} />

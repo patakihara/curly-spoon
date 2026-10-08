@@ -512,47 +512,96 @@ test('[M0.sonoraclean] a desktop MediaCard fades its corner More in with its pla
   expect(await fade(more), 'More reveals the way the play actions do').toEqual(await fade(actions));
 });
 
+/** Every Sonora component whose source presses through shared.js's `press`, by name. */
+const PRESSERS = LEVELS.flatMap((level) =>
+  readdirSync(join(sonora, level))
+    .filter((f) => f.endsWith('.jsx'))
+    .filter((f) => /\bpress\(/.test(readFileSync(join(sonora, level, f), 'utf8')))
+    .map((f) => f.slice(0, -'.jsx'.length)),
+).sort();
+
+/** What one press of a press shell drawn on the page handed its action, and where it was drawn. */
+interface Pressed {
+  /** The states entry or gallery section drawing it. */
+  owner: string;
+  /** Whether it is the hover play overlay over a row's art. */
+  art: boolean;
+  /** Whether it is drawn on, rather than off, before Enter, Space and the click. */
+  on: boolean[];
+  /** What Enter, Space and a click each handed the action, in that order. */
+  handed: string[][];
+}
+
 /**
- * Every element pressing through Sonora's press shell, with what its action is handed: the event
- * itself, or the data the component passes in its place (a lyric line's index, a segment's key).
+ * Presses every press shell the page draws, found by the mark `press` gives each, by Enter, by
+ * Space and by a click, noting from `window.__pressLog` what each press handed its action, and
+ * whether it was on before each: a press can turn it off, as a card's request does.
  */
-const PRESS_HOSTS: [string, 'event' | string][] = [
-  ['ListRow', 'event'],
-  ['ResultRow', 'event'],
-  ['EpisodeRow', 'event'],
-  ['QueueRow', 'event'],
-  ['ValueRow', 'event'],
-  ['QuickPick', 'event'],
-  ['MediaCard', 'event'],
-  ['RailItem', 'event'],
-  ['MiniPlayer', 'event'],
-  ['SectionHeader.subject', 'event'],
-  ['Lyrics', 'number'],
-  ['ButtonGroup', 'string'],
-];
+async function pressEvery(page: Page): Promise<Pressed[]> {
+  const count = await page
+    .locator('[data-sn-press]')
+    .evaluateAll(
+      (els) =>
+        els
+          .filter((el) => el.checkVisibility())
+          .map((el, i) => el.setAttribute('data-probe-press', String(i))).length,
+    );
+  const out: Pressed[] = [];
+  for (let i = 0; i < count; i++) {
+    const el = page.locator(`[data-probe-press="${i}"]`);
+    const where = await el.evaluate((node) => ({
+      owner:
+        node.closest('[data-states]')?.getAttribute('data-states') ??
+        node.closest('[data-component]')?.getAttribute('data-component') ??
+        '',
+      art: node.parentElement?.classList.contains('sn-reveal-host') ?? false,
+    }));
+    const on: boolean[] = [];
+    const handed: string[][] = [];
+    const log = () => page.evaluate(() => (window.__pressLog ??= []).length);
+    const since = (n: number) => page.evaluate((k) => window.__pressLog.slice(k), n);
+    for (const act of ['Enter', ' ', 'click']) {
+      on.push(await el.evaluate((node) => !node.hasAttribute('aria-disabled')));
+      const before = await log();
+      await el.evaluate((node: HTMLElement) => node.focus());
+      if (act === 'click') await el.evaluate((node: HTMLElement) => node.click());
+      else await page.keyboard.press(act);
+      handed.push(await since(before));
+    }
+    out.push({ ...where, on, handed });
+  }
+  return out;
+}
 
-const pressedWith = (page: Page, key: string) =>
-  page.evaluate((k) => window.__pressedWith[k] ?? [], key) as Promise<string[]>;
+/** What a press hands its action: the event itself, or data the component passes in its place. */
+const handsSomething = (got: string[], event: string) =>
+  got.length === 1 && (got[0] === event || !['undefined', 'keydown', 'click'].includes(got[0]!));
 
-test('[M0.sonoraclean/d] a press shell presses once on a click, on Enter and on Space, handing its action the event', async ({
+test('[M0.sonoraclean/d] every press shell the states fixture and the gallery draw presses once on Enter, Space and a click, handing its action the event or its data', async ({
   page,
 }) => {
-  test.setTimeout(PRESS_HOSTS.length * 15_000);
-  for (const [name, handed] of PRESS_HOSTS) {
-    const entry = STATE_ENTRIES.find((e) => e.name === name);
-    expect(entry, `${name} is in the states fixture`).toBeDefined();
-    await open(page, entry!);
-    const { cell, host } = await drawing(page, entry!, 'action');
-    const key = pressKey(name, 'action');
-    expect(await tabInto(page, cell, host), `${name} takes focus from Tab`).toBe(true);
-    await page.keyboard.press('Enter');
-    await page.keyboard.press(' ');
-    await page.mouse.move(0, 0);
-    const at = await box(host);
-    await page.mouse.click(at.x + at.width / 2, at.y + at.height / 2);
-    expect(await presses(page, key), `${name} presses once each`).toBe(3);
-    expect(await pressedWith(page, key), `what ${name} hands its action`).toEqual(
-      handed === 'event' ? ['keydown', 'keydown', 'click'] : [handed, handed, handed],
-    );
+  test.setTimeout(600_000);
+  await page.setViewportSize({ width: 1400, height: 900 });
+  const found: Pressed[] = [];
+  for (const fixture of ['/states.html', '/gallery.html']) {
+    await page.goto(fixture, { waitUntil: 'networkidle' });
+    await page.evaluate(() => document.fonts.ready);
+    found.push(...(await pressEvery(page)));
   }
+  for (const p of found) {
+    ['keydown', 'keydown', 'click'].forEach((event, k) => {
+      const what = `${p.owner}${p.art ? ' art' : ''}, press ${k + 1} (${p.on[k] ? 'on' : 'off'})`;
+      if (!p.on[k]) expect(p.handed[k], `${what} presses nothing`).toEqual([]);
+      else expect(handsSomething(p.handed[k]!, event), `${what} handed ${p.handed[k]}`).toBe(true);
+    });
+  }
+  const owners = new Set(found.filter((p) => p.on[0]).map((p) => p.owner.split('.')[0]));
+  expect(
+    PRESSERS.filter((name) => !owners.has(name)),
+    'each component pressing through press draws an enabled one',
+  ).toEqual([]);
+  expect(
+    found.some((p) => p.on[0] && p.art && p.owner === 'ListRow'),
+    "ListRow's art overlay is pressed",
+  ).toBe(true);
 });

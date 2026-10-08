@@ -95,7 +95,7 @@ const y = <div style={{height: 320, position: 'relative'}} onClick={() => go()}>
     const [chip, row] = entriesOf(dir).entries;
     expect(chip?.jsx).toBe('<Chip label="A"/>');
     expect(row?.jsx).toBe(
-      `<div style={{height: 320, position: 'relative'}} onClick={() => {}}><Row/></div>`,
+      `<div style={{height: 320, position: 'relative'}} onClick={pressed}><Row/></div>`,
     );
   });
 
@@ -235,5 +235,26 @@ const y = <List renderRow={() => <Chip label={outside}/>}/>;`),
     expect(jsx).toContain('data-theme="dark"');
     expect(jsx).toContain('data-theme="light"');
     expect(jsx).toContain('data-component={name}');
+  });
+
+  it('[M0.sonoraclean/d] hands every handler one that changes nothing and notes what it was handed', () => {
+    const dir = sonoraOf({
+      ...component('Chip'),
+      'basic/a.card.html': card(
+        `const x = <Chip label="A" onClick={() => setOpen(true)} onMore={go}/>;`,
+      ),
+    });
+    const jsx = generateGallery(dir, discoverComponents(dir)).get('index.jsx')!;
+    expect(jsx).toContain(`render: () => (<Chip label="A" onClick={pressed} onMore={pressed}/>)`);
+    const pressed = /\nconst pressed = [^\n]*\n(?: {2}[^\n]*\n)*\};\n/.exec(jsx)?.[0];
+    expect(pressed, 'the gallery defines pressed').toBeDefined();
+    const log: string[] = [];
+    const fn = new Function('window', `${pressed!}\nreturn pressed;`)({ __pressLog: log }) as (
+      arg?: unknown,
+    ) => void;
+    fn({ type: 'click' });
+    fn(3);
+    fn();
+    expect(log).toEqual(['click', 'number', 'undefined']);
   });
 });

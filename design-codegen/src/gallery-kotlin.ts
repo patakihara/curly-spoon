@@ -11,7 +11,7 @@
  */
 import { parseExpression } from '@babel/parser';
 import type * as t from '@babel/types';
-import type { GalleryEntry } from './gallery.js';
+import { GALLERY_HANDLER, type GalleryEntry } from './gallery.js';
 import {
   call,
   declsOf,
@@ -43,6 +43,8 @@ interface Fn {
 }
 const isElement = (v: unknown): v is Element =>
   v !== null && typeof v === 'object' && Object.hasOwn(v, 'jsx');
+/** A handler that does nothing, which the web gallery's one handler reads as. */
+const NO_OP = parseExpression('() => {}') as t.ArrowFunctionExpression;
 const isFn = (v: unknown): v is Fn => v !== null && typeof v === 'object' && Object.hasOwn(v, 'fn');
 
 /** Text as the browser lays it out: runs of whitespace are one space. */
@@ -75,7 +77,10 @@ class GalleryWriter extends KotlinValues {
         return typeof value === 'number' ? -value : this.fail('a minus on a non-number');
       }
       case 'Identifier':
-        return node.name === 'undefined' ? undefined : this.fail(`${node.name} is not a literal`);
+        if (node.name === 'undefined') return undefined;
+        // The web gallery's one handler stands for the card's, as a no-op lambda does here.
+        if (node.name === GALLERY_HANDLER) return { fn: NO_OP } satisfies Fn;
+        return this.fail(`${node.name} is not a literal`);
       case 'ArrayExpression':
         return node.elements.flatMap((e) =>
           e === null

@@ -38,7 +38,7 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
   const requestable = absent && !shownStatus && !!onRequest;
   const notInLibrary = absent && !shownStatus;
   const greyed = absent || !!shownStatus;
-  const tap = requestable ? () => { setAsked(true); onRequest(); } : onClick;
+  const tap = requestable ? (e) => { setAsked(true); onRequest(e); } : onClick;
   const hasProgress = typeof progress === 'number';
   const off = !tap;
   // Desktop only: these are revealed by hover, which a touch surface has no equivalent for.

@@ -29,6 +29,6 @@ data class RailItemProps(
      * row's width animates (a rail), or the icon slides out and back during the transition.
      */
     val centerIcon: Boolean? = null,
-    /** The destination's action. Without it the row is drawn disabled. */
+    /** The destination's action, handed the click or key event. Without it the row is drawn disabled. */
     val onClick: (() -> Unit)? = null,
 )

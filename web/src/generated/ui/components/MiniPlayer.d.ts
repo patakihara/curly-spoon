@@ -11,8 +11,8 @@ export interface MiniPlayerProps {
   playing?: boolean;
   /** Every control with no handler is drawn disabled, the bar itself with no onOpen. */
   onTogglePlay?: () => void;
-  /** Tapping the card body (mobile) or the track block (desktop) expands the full player. */
-  onOpen?: () => void;
+  /** Tapping the card body (mobile) or the track block (desktop) expands the full player. Handed the click or key event. */
+  onOpen?: (e?: any) => void;
   /** mobile = docked tinted pill; desktop = full-width transport bar with seek and queue controls. */
   platform?: 'mobile' | 'desktop';
   /** 0–1. Desktop only — drives the seek bar and the mm:ss elapsed readout. */

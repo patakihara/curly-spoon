@@ -31,7 +31,7 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
   const notInLibrary = absent && !shownStatus;
   const greyed = absent || !!shownStatus;
   const OverflowMenu = NS().OverflowMenu;
-  const tap = requestable ? () => { setAsked(true); onRequest(); } : onClick;
+  const tap = requestable ? (e) => { setAsked(true); onRequest(e); } : onClick;
   const hasProgress = typeof progress === 'number';
   const { PlayActions, CoverArt, IconButton, StateLayer, Icon, ProgressBar } = NS();
   const off = !tap;

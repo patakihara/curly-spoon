@@ -121,11 +121,10 @@ const ICON_BUTTON_GLYPHS = [
   'LyricsSyncButton',
   'NavRail',
   'NowPlayingPage',
-  'PlayerSubPage',
+  'PanelHeader',
   'SearchButton',
   'SectionHeader',
   'Shelf',
-  'SideSheet',
   'ViewToggle',
 ];
 
@@ -274,8 +273,8 @@ const FORMER_ROUND_BUTTONS: [string, string][] = [
   ['OverflowMenu', 'scrim'],
   ['SearchField', 'plain'],
   ['SectionHeader', 'plain'],
+  ['PanelHeader', 'plain'],
   ['Shelf', 'raised'],
-  ['SideSheet', 'plain'],
   ['StatusBanner', 'plain'],
 ];
 
@@ -525,9 +524,11 @@ describe("Sonora's progress bar, read from its sources", () => {
 
 /**
  * The button role however it is spelled: an attribute or a key, quoted or not, a string in
- * braces or a template literal, or set as an attribute by hand.
+ * braces or a template literal, set as an attribute by hand, or any expression for the role that
+ * holds a 'button' string, as a role given only when there is an action.
  */
-const BUTTON_ROLE = /(?<![\w-])role["'`]?\]?\s*(=|:|,)\s*\{?\s*(["'`])\s*button\s*\2/i;
+const BUTTON_ROLE =
+  /(?<![\w-])role["'`]?\]?\s*(?:=\s*\{[^}]*?|:[^,;}\n]*?|=\s*|,\s*)(["'`])\s*button\s*\1/i;
 
 /** The rows that draw the one row shell: every `*Row` but FieldRow, a label over an Input. */
 const ROWS = ['EpisodeRow', 'ExpanderRow', 'QueueRow', 'ResultRow', 'SettingRow', 'ValueRow'];
@@ -690,6 +691,18 @@ describe("Sonora's press shell, read from every component's source", () => {
       'the activation keys read by hand',
       '<div role={`button`} onKeyDown={(e) => isActivationKey(e) && go()} />',
     ],
+    [
+      'a role given only with an action',
+      `<div role={onOpen ? 'button' : undefined} tabIndex={onOpen ? 0 : -1} />`,
+    ],
+    [
+      'a key given only with an action',
+      `const shell = { role: onOpen ? "button" : undefined, tabIndex: 0 };`,
+    ],
+    [
+      'a role chosen between two strings',
+      '<div role={link ? `link` : `button`} onKeyDown={activate(go)} />',
+    ],
   ])('[M0.sonoraclean/d] names a component building its own press shell: %s', (_, src) => {
     expect(handPress(src)).toBe(true);
   });
@@ -701,7 +714,95 @@ describe("Sonora's press shell, read from every component's source", () => {
     ['a button role with no press', `<div role="button" aria-label="Seek" />`],
     ['another role in a template literal', '<div role={`menuitem`} tabIndex={-1} />'],
     ['a data attribute', `<div data-role="button" tabIndex={0} />`],
+    ['another role beside a title', `<div role="menuitem" title="button" tabIndex={-1} />`],
+    [
+      'another role in braces beside a label',
+      `<div role={'menuitem'} aria-label={'button'} tabIndex={-1} />`,
+    ],
   ])('[M0.sonoraclean/d] leaves alone what is no hand-built shell: %s', (_, src) => {
     expect(handPress(src)).toBe(false);
+  });
+});
+
+/** A row as tall as the app bar: a height read from either app-bar height token. */
+const APPBAR_TALL = /--appbar-height/;
+
+/** A close drawn: the close handler, a close or collapse glyph, or a control named Close or Collapse. */
+const CLOSES =
+  /\bonClose\b|["'`](close|keyboard_arrow_down)["'`]|label=\{?\s*["'`](Close|Collapse)\b/;
+
+/** Whether a source builds a title-and-close row at the app bar's height. */
+const titleCloseRow = (src: string): boolean => APPBAR_TALL.test(src) && CLOSES.test(src);
+
+/**
+ * Every panel-like Sonora component, any that closes or stands as tall as the app bar, with what
+ * draws its header: PanelHeader, a panel it hands its header to, or why it has none.
+ */
+const PANEL_LIKE: Record<string, string> = {
+  PanelHeader: 'the one panel header',
+  NowPlaying: 'PanelHeader',
+  PlayerSubPage: 'PanelHeader',
+  SideSheet: 'PanelHeader',
+  PlayerPanel: 'SideSheet',
+  QueuePage: 'PlayerSubPage',
+  LyricsPage: 'PlayerSubPage',
+  BackLayer: 'the app bar itself',
+  BackdropShell: 'no header: it lines its dividers up with the app bar',
+  NavRail: 'no header: its head holds the app bar strip, with no close',
+  SearchField: 'no header: a field that folds away, with no title',
+};
+
+describe("Sonora's panel headers, read from their sources", () => {
+  it('[M0.sonoraclean/d] the panel-like components are every one that closes or stands as tall as the app bar', () => {
+    const found = [...components.keys()]
+      .filter((name) => /\bonClose\b/.test(source(name)) || APPBAR_TALL.test(source(name)))
+      .sort();
+    expect(found).toEqual(Object.keys(PANEL_LIKE).sort());
+    expect(components.get('PanelHeader')?.folder).toBe('components');
+  });
+
+  it.each(
+    Object.entries(PANEL_LIKE).filter(([, header]) => /^[A-Z]\w+$/.test(header)) as [
+      string,
+      string,
+    ][],
+  )('[M0.sonoraclean/d] %s renders %s for its header', (name, header) => {
+    expect(rendered(source(name)).map((e) => e.tag)).toContain(header);
+  });
+
+  it('[M0.sonoraclean/d] Sonora has a single panel header: no other source builds an app-bar-height title-and-close row', () => {
+    const rows = [...components.keys()].filter((name) => titleCloseRow(source(name))).sort();
+    expect(rows).toEqual(['BackLayer', 'PanelHeader']);
+  });
+
+  it.each([
+    [
+      'a phone bar with a close',
+      `<div style={sx('display:flex;height:var(--appbar-height-mobile)')}>{title}<IconButton icon="close" onClick={onClose} /></div>`,
+    ],
+    [
+      'a desktop bar with a collapse',
+      `<div style={sx('height:var(--appbar-height)')}><IconButton label="Collapse player" onClick={hide} /></div>`,
+    ],
+    [
+      'a bar whose close glyph is a template literal',
+      '<div style={{ height: "var(--appbar-height)" }}><IconButton icon={`close`} /></div>',
+    ],
+  ])('[M0.sonoraclean/d] names a title-and-close row built by hand: %s', (_, src) => {
+    expect(titleCloseRow(src)).toBe(true);
+  });
+
+  it.each([
+    [
+      'a panel handing its header on',
+      `<PanelHeader variant="page" title={heading} onClose={onClose} />`,
+    ],
+    [
+      'a rail head as tall as the bar, with no close',
+      `<div style={sx('height:var(--appbar-height)')}><IconButton icon="menu" label="Menu" /></div>`,
+    ],
+    ['a field that folds away', `<IconButton icon={closeGlyph} label="Close search" />`],
+  ])('[M0.sonoraclean/d] leaves alone what is no hand-built panel header: %s', (_, src) => {
+    expect(titleCloseRow(src)).toBe(false);
   });
 });

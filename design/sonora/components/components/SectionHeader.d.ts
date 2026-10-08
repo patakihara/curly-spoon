@@ -18,8 +18,8 @@ export interface SectionHeaderProps {
   image?: string;
   /** Circular thumbnail for an artist or a person; square (the default) for a show or a genre. */
   round?: boolean;
-  /** Makes the eyebrow+title block a link to the subject the shelf is about. Without it the subject is the heading, not a link. */
-  onSubject?: () => void;
+  /** Makes the eyebrow+title block a link to the subject the shelf is about, handed the click or key event. Without it the subject is the heading, not a link. */
+  onSubject?: (e?: any) => void;
   /** A text action ("Show all") in place of the glyph `action`. Mutually exclusive with `action` — wins if both are set. */
   actionText?: string;
   /**

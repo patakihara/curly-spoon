@@ -26,7 +26,7 @@ export interface RailItemProps {
    * row's width animates (a rail), or the icon slides out and back during the transition.
    */
   centerIcon?: boolean;
-  /** The destination's action. Without it the row is drawn disabled. */
-  onClick?: () => void;
+  /** The destination's action, handed the click or key event. Without it the row is drawn disabled. */
+  onClick?: (e?: any) => void;
 }
 export declare function RailItem(props: RailItemProps): JSX.Element;

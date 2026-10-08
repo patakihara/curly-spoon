@@ -10,7 +10,7 @@ import { NS, sx } from '../shared.js';
 export function PlayerSubPage({
   platform = 'mobile', heading, meta, controls, footer, scroll, onClose, closeGlyph = 'close', children,
 }) {
-  const { ScrollArea, IconButton } = NS();
+  const { ScrollArea, PanelHeader } = NS();
   const mobile = platform === 'mobile';
   const pad = mobile ? 'var(--spacing-lg)' : 'var(--spacing-md)';
   const scrolls = scroll === undefined ? mobile : scroll;
@@ -31,12 +31,10 @@ export function PlayerSubPage({
   if (!scrolls) return <div style={sx('display:flex;flex-direction:column;gap:var(--spacing-md)')}>{inner}{footer}</div>;
   return (
     <div style={sx('display:flex;flex-direction:column;flex:1;min-height:0;background:var(--surface-bg)')}>
-      {(heading || onClose) && <div style={sx('display:flex;align-items:center;flex-shrink:0;box-sizing:border-box;height:var(--appbar-height-mobile);padding:0 ' + pad + ';border-bottom:1px solid var(--surface-border)')}>
-        {heading && <div style={sx('flex:1;min-width:0;font-family:var(--font-body);font-weight:var(--weight-strong);font-size:var(--text-xl);line-height:1.2;color:var(--surface-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap')}>{heading}</div>}
-        {onClose && IconButton && (
-          <IconButton label={'Close ' + (heading || 'page').toLowerCase()} muted onClick={onClose} icon={closeGlyph} />
-        )}
-      </div>}
+      {(heading || onClose) && PanelHeader && (
+        <PanelHeader variant="page" platform={platform} title={heading} divider onClose={onClose}
+          closeLabel={'Close ' + (heading || 'page').toLowerCase()} closeGlyph={closeGlyph} />
+      )}
       <Scroller edgeFade style={sx('padding:' + pad + ' ' + pad + ' var(--spacing-2xl)')}>{inner}</Scroller>
       {footer}
     </div>

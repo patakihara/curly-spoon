@@ -35,6 +35,7 @@ export { NowPlaying, type NowPlayingProps } from './layouts/NowPlaying';
 export { NowPlayingPage, type NowPlayingPageProps } from './layouts/NowPlayingPage';
 export { OverflowMenu, type OverflowMenuItem, type OverflowMenuProps } from './basic/OverflowMenu';
 export { PageBody, type PageBodyProps } from './layouts/PageBody';
+export { PanelHeader, type PanelHeaderProps } from './components/PanelHeader';
 export { PlayActions, type PlayActionsProps } from './components/PlayActions';
 export { PlayerPanel, type PlayerPanelProps } from './layouts/PlayerPanel';
 export { PlayerSheet, type PlayerSheetProps } from './layouts/PlayerSheet';

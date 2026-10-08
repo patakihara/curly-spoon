@@ -453,6 +453,18 @@
         "message": "<NavRail> doesn't accept that prop. Declared props: items, footerItems, active, onChange, expanded, onToggleExpanded, toggle, footer, header."
       },
       {
+        "selector": "JSXOpeningElement[name.name='PanelHeader'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|variant|platform|leading|trailing|onClose|closeLabel|closeGlyph|closeControls|divider|key|ref|className|style|children)$/]",
+        "message": "<PanelHeader> doesn't accept that prop. Declared props: title, variant, platform, leading, trailing, onClose, closeLabel, closeGlyph, closeControls, divider."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PanelHeader'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:page|player|sheet)$/]",
+        "message": "<PanelHeader> variant must be one of 'page' | 'player' | 'sheet'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PanelHeader'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
+        "message": "<PanelHeader> platform must be one of 'desktop' | 'mobile'."
+      },
+      {
         "selector": "JSXOpeningElement[name.name='PlayActions'] > JSXAttribute > JSXIdentifier[name!=/^(?:onNext|onPlay|onLast|playing|size|always|gap|key|ref|className|style|children)$/]",
         "message": "<PlayActions> doesn't accept that prop. Declared props: onNext, onPlay, onLast, playing, size, always, gap."
       },
@@ -832,6 +844,9 @@
         "replaces": []
       },
       "PageBody": {
+        "replaces": []
+      },
+      "PanelHeader": {
         "replaces": []
       },
       "PlayActions": {

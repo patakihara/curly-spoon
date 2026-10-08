@@ -3,7 +3,8 @@
  * bound, with none, with `disabled` set, and keeping its own state (src/states-list.ts), for the
  * browser test of Material's states (web/e2e/states.spec.ts). Its own entry beside the app and
  * the gallery, linked from nowhere. A bound action counts its presses in `window.__presses`, and
- * notes in `window.__pressedWith` what each press handed it: the event's type, or what it was.
+ * notes in `window.__pressLog`, beside every other press, what each press handed it: the event's
+ * type, or what it was.
  * `?theme=light` draws it in the light theme, and `?only=<Name>` draws one entry.
  */
 import { StrictMode, useEffect, useRef, type ReactNode } from 'react';
@@ -37,6 +38,7 @@ import {
   NowPlaying,
   NowPlayingPage,
   OverflowMenu,
+  PanelHeader,
   PlayActions,
   PlayerPanel,
   PlayerSubPage,
@@ -67,7 +69,7 @@ import {
 import { pressKey, STATE_ENTRIES, type Variant } from './states-list';
 
 window.__presses = {};
-window.__pressedWith = {};
+window.__pressLog = [];
 
 /** How one drawing is pressed: its action for `action` and `disabled`, nothing for `none`. */
 type Act = ((arg?: unknown) => void) | undefined;
@@ -231,6 +233,10 @@ const DRAW: Record<string, (act: Act, disabled: boolean) => ReactNode> = {
   MediaCard: (act) => (
     <MediaCard title="Driftwave" sub="Halcyon Bloom" width="140px" onClick={act} />
   ),
+  // An item you don't have: a press requests it.
+  'MediaCard.request': (act) => (
+    <MediaCard title="The Ink Orchard" sub="Book" width="140px" absent onRequest={act} />
+  ),
   'MediaCard.round': (act) => (
     <MediaCard shape="round" title="Halcyon Bloom" sub="Artist" width="120px" onClick={act} />
   ),
@@ -269,6 +275,7 @@ const DRAW: Record<string, (act: Act, disabled: boolean) => ReactNode> = {
       onFavourite={act}
     />
   ),
+  PanelHeader: (act) => <PanelHeader title="Queue" closeLabel="Close queue" onClose={act} />,
   PlayActions: (act) => <PlayActions always onNext={act} onPlay={act} onLast={act} />,
   PlayerPanel: (act) => (
     <PlayerPanel open width="208px" tabs={TABS} tab="now" onTabChange={act} onClose={act}>
@@ -353,7 +360,7 @@ const OWN: Record<string, () => ReactNode> = {
 const press = (key: string) => (arg?: unknown) => {
   window.__presses[key] = (window.__presses[key] ?? 0) + 1;
   const type = (arg as { type?: unknown } | null)?.type;
-  (window.__pressedWith[key] ??= []).push(typeof type === 'string' ? type : typeof arg);
+  window.__pressLog.push(typeof type === 'string' ? type : typeof arg);
 };
 
 function own(name: string) {

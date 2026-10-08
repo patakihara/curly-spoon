@@ -7,8 +7,8 @@
  * literal is a string, number, boolean or null, an object or array of literals, an element whose
  * own props and children are literals (a glyph span, another Sonora component), or a top-level
  * `const` of the card's script holding one, which is written inline, or a function that reads only
- * its own arguments and literals (a `renderRow`). A handler (`on…`) becomes a no-op, whatever the
- * card's does. A usage that reads state or calls a function in any other prop is skipped for the
+ * its own arguments and literals (a `renderRow`). A handler (`on…`) becomes `pressed`, whatever the
+ * card's does: it changes nothing, and notes what it was handed for the press shell's browser test. A usage that reads state or calls a function in any other prop is skipped for the
  * next one. An intrinsic element holding the usage, with literal props, frames it in the gallery as
  * in the card, so a layout that fills its parent gets the box the card gives it. A component with none is missing, and the
  * gallery test names it: its card needs a usage with literal props (docs/plan/11-front.md).
@@ -61,7 +61,20 @@ export function readCards(sonoraDir: string): Card[] {
   return cards;
 }
 
-const NO_OP = '{() => {}}';
+/** The name of every handler in the gallery, which the gallery defines once. */
+export const GALLERY_HANDLER = 'pressed';
+const PRESSED = `{${GALLERY_HANDLER}}`;
+
+/**
+ * The gallery's one handler. It changes nothing, as no card's own handler runs in the gallery, and
+ * notes in `window.__pressLog` what it was handed: the event's type, or what it was.
+ */
+const PRESSED_FN = `/** Every handler here: it changes nothing, and notes in window.__pressLog what it was handed. */
+const ${GALLERY_HANDLER} = (arg) => {
+  const type = arg !== null && typeof arg === 'object' ? arg.type : undefined;
+  (window.__pressLog ??= []).push(typeof type === 'string' ? type : typeof arg);
+};
+`;
 const NONE: ReadonlySet<string> = new Set();
 
 /** Adds the names a parameter binds to `names`; false for a pattern this reader does not take. */
@@ -193,7 +206,7 @@ class Script {
           else if (attr.value == null) continue;
           else if (attr.name.type === 'JSXIdentifier' && /^on[A-Z]/.test(attr.name.name)) {
             // A handler does nothing in the gallery, whatever the card's does.
-            edits.push({ start: attr.value.start!, end: attr.value.end!, text: () => NO_OP });
+            edits.push({ start: attr.value.start!, end: attr.value.end!, text: () => PRESSED });
           } else given.push(attr.value);
         }
         return all(given) && all(node.children) ? edits : undefined;
@@ -396,6 +409,7 @@ export function generateGallery(sonoraDir: string, components: Component[]): Map
   const jsx =
     `// ${GENERATED_NOTE}\n` +
     `import { ${imports.join(', ')} } from '../ui';\n\n` +
+    `${PRESSED_FN}\n` +
     `/** Each Sonora component as its first card usage whose props are all literals. */\n` +
     `export const gallery = [\n${list}];\n\n` +
     THEMED;

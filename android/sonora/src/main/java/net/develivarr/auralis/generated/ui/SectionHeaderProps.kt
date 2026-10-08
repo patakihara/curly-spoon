@@ -19,7 +19,7 @@ data class SectionHeaderProps(
     val image: String? = null,
     /** Circular thumbnail for an artist or a person; square (the default) for a show or a genre. */
     val round: Boolean? = null,
-    /** Makes the eyebrow+title block a link to the subject the shelf is about. Without it the subject is the heading, not a link. */
+    /** Makes the eyebrow+title block a link to the subject the shelf is about, handed the click or key event. Without it the subject is the heading, not a link. */
     val onSubject: (() -> Unit)? = null,
     /** A text action ("Show all") in place of the glyph `action`. Mutually exclusive with `action` — wins if both are set. */
     val actionText: String? = null,

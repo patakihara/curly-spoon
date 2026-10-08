@@ -55,12 +55,14 @@ export const STATE_ENTRIES: readonly StateEntry[] = [
   { name: 'LyricsSyncButton', disabled: false, ripple: true },
   { name: 'MediaCard', disabled: false, ripple: true },
   { name: 'MediaCard.round', disabled: false, ripple: true },
+  { name: 'MediaCard.request', disabled: false, ripple: true },
   { name: 'MediaHeader', disabled: false, ripple: true },
   { name: 'MiniPlayer', disabled: false, ripple: true },
   { name: 'NavRail', disabled: false, ripple: true },
   { name: 'NowPlaying', disabled: false, ripple: true },
   { name: 'NowPlayingPage', disabled: false, ripple: true },
   { name: 'OverflowMenu', disabled: false, ripple: true },
+  { name: 'PanelHeader', disabled: false, ripple: true, omits: true },
   { name: 'PlayActions', disabled: false, ripple: true },
   { name: 'PlayerPanel', disabled: false, ripple: true, target: '[role="tab"]' },
   { name: 'PlayerSubPage', disabled: false, ripple: true, omits: true },
@@ -93,8 +95,11 @@ declare global {
   interface Window {
     /** Presses of each drawing's bound action, by `pressKey`. */
     __presses: Record<string, number>;
-    /** What each press handed the bound action, by `pressKey`: the event's type, or what it was. */
-    __pressedWith: Record<string, string[]>;
+    /**
+     * What every press handed its action, in order, in the states fixture and the gallery alike:
+     * the event's type, or what it was.
+     */
+    __pressLog: string[];
   }
 }
 
