@@ -1,16 +1,18 @@
 # Backdrop Nav — API
 
-Contract version: 17.0.0 · rules: 112 (api/invariants.js) · history: CHANGELOG.md
+Contract version: 18.0.0 · rules: 90 invariants (api/invariants.js) + 13 composition rules (api/composition-rules.js) · history: CHANGELOG.md
 
 > **Source of truth for the contract: `api/api.d.ts`** (shapes, intents, events, queries, Model) and `api/invariants.js` (rules any implementation must pass).
 > This document is the human-readable companion + implementation status.
 >
 > **Map of the project**
-> - `api/api.d.ts` — contract **v14.1.0**: nav §1–8, overlay §9, session §10, route §11, persist §12, player §13, layout §14, specs §15, wire §16, content states §17, focus §18, windows §19 (single)
+> - `api/api.d.ts` — contract **v18.0.0**: config (F–H), intents and events, state, queries, Layout, contracts and the contract tree, design specs, composition
+> - `api/contracts.js` — the contracts as data (config, values, intents, children); `api/gen-contracts.js` writes their TS block into api.d.ts
+> - `api/composition-rules.js` — rules for app/composition.json against the contracts and design
 > - `CHANGELOG.md` — versions + compatibility policy
-> - `api/invariants.js` — 102 rules (property-based; skip when a config lacks a subject)
-> - `core/navigation.js` · `core/player.js` · `core/layout.js` — reference core (pure JS)
-> - `app/app.json` — the app (AppConfig, plain JSON)
+> - `api/invariants.js` — 90 rules (property-based; skip when a config lacks a subject)
+> - `core/navigation.js` · `core/player.js` · `core/layout.js` · `core/compose.js` (placements, hires, the look) · `core/contracts.js` (the contract tree) — reference core (pure JS)
+> - `app/app.json` — the app (AppConfig, plain JSON) · `app/composition.json` — which free component fills each contract (hires, placements)
 > - `design/` — the design system (tokens, choreography, one folder per component); `design/load.js` assembles the Specs object (§15); `generated/` — per-platform tokens · `Components.dc.html` — generated preview
 > - `platforms/web.json` — what the web shell implements (each platform publishes one; checked by the rules)
 > - `app/fake-backend.js` — fake backend data + test fixtures (`bind(config)`)
@@ -79,29 +81,26 @@ ParamSpec { type: 'choice'|'choices'|'text'|'flag'|'number'|'date', options?: So
 // default + reactions live in policy.params.<name>: { default, resetOn, scope?, on? }
 // state: page.params.<name> · paths: 'params.<name>' · data: contentParams(page) = params with data ≠ false
 ```
-- **Controls**: `{ component, bind: 'f' }` (role `input`: supplies value + options, emits change / submit). `bind: { change: 'qd', submit: 'q' }` keeps a draft apart from the submitted value (predictions). Registry `accepts` lists the types a component holds.
+- **Controls** (18.0): a basic action or panel row binds a param (`bind: 'f'`); its `input` contract gives value + options and sends change / submit; composition places a component by the param's type. `bind: { change: 'qd', submit: 'q' }` keeps a draft apart from the submitted value (predictions).
 - **Repeats**: `{ repeat: Source<unknown[]> | { options: 'f' }, as: 's', ref }` — one ref per element, `$s` usable in its props / action.
 - **Intents**: `setParams { values, page? }` · `toggleParam { name, option }` · `resetParams { names? }`. Event `paramChanged { name, axis, direction }`.
 - **Reactions** (policy): `resetOn: ['paramChange' | { paramChange: name }]`, `on: [{ event, set }]` (e.g. expand while typing). A param never reacts to its own change.
 - **URL** (`routes.params`): `;name=value` per url param off its default; codec per type, invalid values ignored. `pushFirst`: leaving the default pushes; back returns it to the default.
 
-### Back layer ✅ (the strict RegionSet of backdrop pages)
+### Back layer ✅ (18.0: fixed regions)
 ```
-RegionSet { regions: { [id]: Region }, layouts: { [name]: RegionId[] } }
-Region = { kind: 'bar', height, bar: Bar, hideOnScroll? } | { kind: 'slots', height | 'content', content: Slot[] }
-BackLayerConfig extends RegionSet<'concealed'|'expanded'> { toggleOnTap? }
-// rules: 'basicAction' = slots with exactly one bound control · concealed starts with 'header' · the disclosure lives at the start of the front header (13.0 / 14.0)
-// Transition: in one layout → fade; in both & staysPut → static; in both & moved → crossfade.
+BackLayerConfig { header: HeaderConfig, actions?: ButtonItem[], basicAction?: BasicActionConfig, panel?: PanelRow[], toggleOnTap?, hideHeaderOnScroll? }
+// regions are fixed: header · actions · basicAction · panel. Their heights are design (through composition); the panel is measured.
 ```
 
 ### Front layer ✅
 ```
-FrontLayerConfig { header: FrontHeaderRef, collapse: 'partial' | 'full', content: ContentConfig }
-ContentConfig { dataSource, view?: ParamName, presentations: { [option | 'default']: { layout: ComponentRef, item: ItemRef } } }   // the data source applies contentParams
+FrontLayerConfig { header: FrontHeaderConfig, collapse: 'partial' | 'full', content: ContentConfig }
+ContentConfig { dataSource, params?, view?: ParamName, presentations: PresentationConfig[] }   // presentations: a named list; composition picks the layout and item component per presentation key
 ```
 
-### Bars ✅ (13.0: role-typed refs, no `Bar` shape)
-Every header is a ref whose role declares its slots: `{ "component": "frontHeader", "slots": { "start": [ caret, … ], "title": [ … ], "end": [ … ], "fab": [ … ] } }`. Roles: `bar` (back header; `expanded` slot), `frontHeader` (start begins with the disclosure — 14.0), `appBar` (`expanded`, `fab`), `peek`.
+### Headers ✅ (18.0: one HeaderConfig, items as data)
+`HeaderConfig { items: HeaderItem[], detail? }` serves the back layer, app bars and the peek; the front header adds a title, and its disclosure is built in. Items are plain data — `button · logo · text · switch · find` in headers, `button · text · detail · seek` in bodies — each with a `name`, so composition can place a component by kind or name. Items whose `when` fails stay drawn, hidden (`shown: false`).
 
 ### Policy ✅ (metastate config — mirrors state shape)
 ```
@@ -200,7 +199,7 @@ Note: Chrome skips history entries created without user activation, so the trick
 
 
 ## §20 Interactive components
-Every actionable component (registry `implements: ['interactive']`) implements `InteractiveComponent { id, component, action, label }`.
+Every actionable component (one that extends `interactive` in design) implements `InteractiveComponent { id, component, action, label }`.
 `action` is `{ nav: Intent } | { player: PlayerIntent } | { shell: ShellActionId } | null`.
 State is never set by the component — `resolveInteraction(action, input, env)` (core/interaction.js) derives it:
 - available iff nav → `model.query.supports`, player → `player.supports` (transport needs a current track), shell → listed in `env.shellActions`; `null` = not built.
@@ -214,32 +213,13 @@ Tapping the active deck's nav item: deeper than base → pop to base (`return` f
 ## Tabs
 A choice param with `axis: true` (tabs) emits `paramChanged { axis: true, direction }` (sign of the option index change). Specs map `paramChanged · axis` to `sharedAxis`; other param changes are instant.
 
-## Component references (headers)
-Config never says what a header item *is*; it names a design-system component:
-```json
-{ "component": "iconButton",
-  "props": { "icon": { "if": { "path": "back.expanded", "equals": true }, "then": "close", "else": "filter_alt" }, "label": "Filters" },
-  "action": { "nav": { "type": "toggleExpanded" } } }
-```
-- API: the slot exists (the role's `SlotContract`, e.g. `frontHeader.start`). Config: which component fills it. Design: what the component looks like.
-- Values depend on state only through page-state paths (inside policy-declared fields), engine-derived values and conditions (`not/all/any`, env layout/touch). Anything needing more logic becomes its own component (e.g. `trackedTitle`).
-- Shells call `resolveRef` and map component ids to their own implementations.
+## What fills a contract (18.0)
+Config never names a component. Each drawn config object meets a **contract** (api/contracts.js: its config, the values the engine gives it, the intents it can send, its children). **Composition** (app/composition.json) hires one free design component per contract: a hire's clauses feed the component's props from contract values, fixed tokens or design texts, send its events as intents or the item's action, and fill its slots from children. Placements pick the hire by contract, nearest ancestor (`within`), kind / name, param, presentation, state, overlay kind and layout class; page exceptions, keyed by template, come first.
+- The contract tree (core/contracts.js `contractTree`) holds this moment's nodes: `{ key, contract, at, values, children, hire, component, props, slots, events, shown? }`. Its keys identify instances, so hover, press and focus never travel between pages.
+- Platforms draw nodes. Each publishes `{ platform, implements: [...] }`; the rules check that every component composition hires is implemented on every platform (a variant counts where its parent does).
 
-## Roles
-A slot can demand a kind of component. The API defines **roles** (abstract component contracts); design-system components declare `implements`; the config picks one.
-- `input` (a control bound to a param; `accepts` its types) · `item` (content) · `navigation` · `disclosure` · `interactive` (§20).
-- The engine supplies the role's props (`roleProps`) and turns its events into intents (`roleIntent`): a tab bar bound to `tab` emits `change('B')` → `setParams { values: { tab: 'B' } }`. The config never sets supplied props.
-```json
-"params": { "tab": { "type": "choice", "axis": true, "options": [{ "value": "A", "label": "Tab A" }], "url": true } },
-"basicAction": { "kind": "slots", "height": 60, "content": [{ "component": "tabBar", "bind": "tab" }] }
-```
-
-## Component inheritance and platforms
-- A component can `extends` another: it inherits roles, props, states and visuals, and stores only what differs. A `variant` has no code of its own — its parent's implementation draws it with the child's values.
-- The design never says which platforms have built a component. Each platform publishes `{ platform, implements: [...] }`; the rules check that every component the config uses is implemented on every platform (a variant counts where its parent does).
-
-## Placement identity (2.1)
-A placed component is identified by **where it sits**: `slotPath(surface, pageId, slot, index?, itemId?)`, e.g. `deck:Bororo/Bororo/back.header.right[0]`. Hover, press, focus and ripples are keyed by it, so two controls never share state and a control never carries state to another page.
+## Component inheritance
+A component can `extends` another: it inherits props, optional props, states and visuals, and stores only what differs. A `variant` has no code of its own — its parent's implementation draws it with the child's values. "Interactive" components (state layer, ripple, focus) are those that extend `interactive`.
 
 ## 3.0.0 — surfaces, variants, layout from data
 - **Surfaces** (`backLayer`, `frontLayer`, `appBar`, sheets, nav, dialog, snackbar) declare `provides`: colour roles such as `content`, `contentVariant`, `focusRing`. Components ask for a role (`{ "role": "contentVariant" }`), never a hex — the same icon button is white on the back layer and dark on an app bar. A rule checks every surface provides the roles of what is placed on it.
@@ -323,7 +303,7 @@ The web shell (Backdrop Nav Skeleton) only arranges component instances; every d
 ## 14.3 — queued event ✅
 - A playQueue (now) or enqueue (next | last) that takes effect yields `{ type: 'queued', position, count, from }` (core `playerAction`); choreography rules match `{ event: 'queued', position }`. Sample design: dropIntoPeek — the item's image drops into the Now playing peek (onto its image · beside it then tucked behind · after its last control).
 
-## 16.0 — component contracts
+## 16.0 — component contracts (replaced by 18.0: roles, refs and slot paths are gone)
 - A **contract** is the minimum config and the engine rely on: what a component is supplied from state, what its events become, which slots (refs) or parts (page / surface config fields) it has. A design component may declare more (extra slots); config may use those only on that component. Motion is not part of a contract (parts that motions name are design).
 - **Typed refs** replace `SlotRef<R>` (removed): `BarRef`, `FrontHeaderRef`, `AppBarRef`, `PeekRef`, `NavigationRef`, `LayoutRef`, `ItemRef` with typed minimum slots (`BarSlots` …). JSON unchanged.
 - **Page / surface roles**: backdropPage · backLayer · frontLayer · appBarPage · pageSheet · sheetLayer · drawerLayer · fullscreenLayer. Their parts are the config's own fields (`Role.parts`, `PartContract { field, role?, optional? }`). Design registers exactly one component per role (`Layout.componentFor`); config doesn't name it.
@@ -334,3 +314,10 @@ The web shell (Backdrop Nav Skeleton) only arranges component instances; every d
 ## 17.0 — motion as steps (in progress)
 - A choreography rule is a list of steps: `tween` (a piece's properties), `travel` (a copy flies to another piece), `swap` (fade through around the state change, matching old / new pieces), `reveal` (shown through a moving shape); `use` runs a named sequence. Steps name pieces (contract slots / parts, component parts, source / target), measure geometry after the commit, pick values by event fields, and run on time (anchored to other steps) or on progress (bar collapse, scroll). Platforms implement the four blocks once.
 - Until every motion is ported, a `kind` step plays a hand-built motion kind (temporary).
+
+## 18.0 — component contracts, from scratch
+- Config says what exists, as plain data (items, fixed back-layer regions, one header config, named presentations and overlay texts); no components, slots, sides, heights or widths.
+- Contracts as data (api/contracts.js) generate their TS; composition hires free components for them; the contract tree joins state, config and composition.
+- Layout reads sizes through composition (a Look, core/compose.js `lookAt`); createModel takes `sizes`.
+- Local search open / closed is engine state (`find`, intents openFind / closeFind).
+- Removed: roles, refs, SlotPath, region layouts, ScreenSpec, Layout.componentFor, `resolveRef` / `expandSlots` / `slotPath` / `roleProps` / `roleIntent`; design `implements` / `accepts`.
