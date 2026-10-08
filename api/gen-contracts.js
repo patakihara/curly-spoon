@@ -1,4 +1,4 @@
-// Generates the contract types in api/draft.d.ts (section 2) from api/contracts.js. Pure: text in, text out.
+// Generates the contract types in api/api.d.ts (section M2) from api/contracts.js. Pure: text in, text out.
 //   contractsDts(CONTRACTS, UNIONS, INTENT_TS)       → the generated block (between the markers)
 //   applyContractsDts(dts, CONTRACTS, UNIONS, INTENT_TS) → the file with the block replaced
 //   contractsDtsInSync(dts, CONTRACTS, UNIONS, INTENT_TS) → true when the file matches contracts.js
@@ -37,7 +37,7 @@ export function contractsDts(CONTRACTS, UNIONS, INTENT_TS) {
 }
 export function applyContractsDts(dts, CONTRACTS, UNIONS, INTENT_TS) {
   const a = dts.indexOf(BEGIN), b = dts.indexOf(END);
-  if (a < 0 || b < a) throw new Error('draft.d.ts has no contracts:generated markers');
+  if (a < 0 || b < a) throw new Error('api.d.ts has no contracts:generated markers');
   return dts.slice(0, a) + contractsDts(CONTRACTS, UNIONS, INTENT_TS) + dts.slice(b + END.length);
 }
 export const contractsDtsInSync = (dts, ...a) => { try { return applyContractsDts(dts, ...a) === dts; } catch (e) { return false; } };

@@ -1,8 +1,8 @@
-// Backdrop Nav — CONTRACTS (single source, draft for 18.0.0)
+// Backdrop Nav — CONTRACTS (single source, 18.0)
 // What each drawn config object offers whatever draws it, as data: its config type, its values (current, computed by core from
 // State, queries and Layout), the intents it may send ('action': the item's own config action) and its children (config fields
 // holding other drawn objects). Only config types listed here are drawn; every other config type is engine-only.
-// Used by: the rules (composition checks), core (values / children), api/gen-contracts.js (the TS block in api/draft.d.ts).
+// Used by: the rules (composition checks), core (values / children), api/gen-contracts.js (the TS block in api/api.d.ts, section M2).
 
 // a child: one contract, or a named union of contracts (UNIONS); list: an array; optional: may be absent
 const one = (contract, optional = false) => ({ contract, ...(optional ? { optional } : {}) });

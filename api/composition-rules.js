@@ -1,8 +1,8 @@
-// Backdrop Nav — COMPOSITION RULES (draft for 18.0.0; joins api/invariants.js when the draft replaces api.d.ts)
-// Check composition (app/draft/composition.json) against the contracts (api/contracts.js), the draft config
-// (app/draft/app.json) and design's free components and tokens.
+// Backdrop Nav — COMPOSITION RULES (18.0)
+// Check composition (app/composition.json) against the contracts (api/contracts.js), the config (app/app.json) and
+// design's free components, tokens and texts.
 //
-// runDraftRules(f) → [{ name, ok, skipped?, error? }]
+// runCompositionRules(f) → [{ name, ok, skipped?, error? }]
 // f = { contracts, unions, config, composition, components: { <id>: raw design json }, tokens: design tokens.json, designTexts: { <locale>: design/texts/<locale>.json } }
 
 import { placementFor, hireOf as findHire, freeComponent } from '../core/compose.js';
@@ -14,7 +14,7 @@ const skip = msg => { throw new Skip(msg); };
 const tokenExists = (tokens, name) => { let n = tokens; for (const k of name.split('.')) { if (!n || typeof n !== 'object' || !(k in n)) return false; n = n[k]; } return !!n && typeof n === 'object' && '$value' in n; };
 const hireOf = (f, name) => findHire(f.composition, name);
 
-// ── the drawn objects of the draft config: one 'place' per contract instance, with what placement may match on
+// ── the drawn objects of the config: one 'place' per contract instance, with what placement may match on
 export function placesOf(config) {
   const out = [];
   const paramSpec = (page, bind) => {
@@ -85,7 +85,7 @@ const covers = (q, p) => q.contract === p.contract
 const sameHire = (a, b) => a.hires === b.hires && a.contract === b.contract && JSON.stringify(a.clauses) === JSON.stringify(b.clauses)
   && JSON.stringify(a.variants || []) === JSON.stringify(b.variants || []) && JSON.stringify((a.tokens || []).map(t => [t.name.slice(a.name.length), t.alias])) === JSON.stringify((b.tokens || []).map(t => [t.name.slice(b.name.length), t.alias]));
 
-export const DRAFT_RULES = [
+export const COMPOSITION_RULES = [
   ['every hire wraps a registered free component and meets a declared contract', f => {
     f.composition.hires.forEach(h => {
       assert(f.components[h.hires], h.name + ': free component ' + h.hires + ' is not registered in design');
@@ -193,8 +193,8 @@ export const DRAFT_RULES = [
   }],
 ];
 
-export function runDraftRules(f) {
-  return DRAFT_RULES.map(([name, fn]) => {
+export function runCompositionRules(f) {
+  return COMPOSITION_RULES.map(([name, fn]) => {
     try { fn(f); return { name, ok: true }; }
     catch (e) { return e instanceof Skip ? { name, ok: true, skipped: true, error: e.message } : { name, ok: false, error: e.message }; }
   });

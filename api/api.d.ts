@@ -3,7 +3,7 @@
  * Abstract API layer: shapes, intents, queries, events, invariants. No logic.
  * Every implementation (web core, native, …) must satisfy this. Invariants live in ./invariants.js and run against any Model.
  *
- * VERSION: contract 17.0.0 (semver — see docs/CHANGELOG.md for the compatibility policy)
+ * VERSION: contract 18.0.0 (semver — see docs/CHANGELOG.md for the compatibility policy)
  *   minor: additive & optional · major: removals, renames, changed meaning, newly required fields.
  *   Implementations MUST reject config / specs / snapshots whose major differs from theirs.
  *
@@ -19,9 +19,11 @@
  *      (prefs, session, persist,     K  Data + content states
  *       player, overlay, items)      L  Queries
  *   E  Intents & actions             M  Layout (§14)
- *   F  Components: roles, refs,      N  Specs (§15) + platform manifests
- *      bars, regions, content        O  Interaction (§20)
+ *   F  Config objects (items,        N  Specs (§15) + platform manifests
+ *      headers, rows, content)       O  Interaction (§20)
  *                                    P  Model
+ *   M2 Contracts (what each drawn    Q  Composition (hires, clauses,
+ *      config object offers)            placements: app/composition.json)
  * Domains map 1:1 to Rust modules (docs/RUST.md): nav · overlay · session · route · persist · player (optional) · layout ·
  * specs · wire · interaction.
  */
@@ -29,7 +31,7 @@
 // ═════════════════════════════════════════════════════════════
 // A. VERSION & PRIMITIVES
 // ═════════════════════════════════════════════════════════════
-export declare const CONTRACT_VERSION: '17.0.0';
+export declare const CONTRACT_VERSION: '18.0.0';
 export type SemVer = `${number}.${number}.${number}`;
 
 export type DeckId = string;
@@ -52,7 +54,7 @@ export type StatePath = string;
 export type LayoutClass = 'compact' | 'wide';
 export type Direction = 'ltr' | 'rtl';
 export interface Device { width: number; height?: number; touch: boolean }   // height defaults to 720 in layout
-export interface Breakpoints { compactMax: number; minContent: number; railWidth: number }
+export interface Breakpoints { compactMax: number; minContent: number }   // the rail's width: design (navigation hire)
 export interface Rect { top: number; left: number; w: number; h: number }
 export interface Point { x: number; y: number }
 
@@ -120,8 +122,6 @@ export interface ParamSpec {
 }
 export type Params = Record<ParamName, ParamSpec>;
 export interface DraftBind { change: ParamName; submit: ParamName }   // typing updates change (a draft), submitting sets both
-export interface PlayerBind { player: 'positionMs' }                 // a control for player state: change → seek
-export interface OptionsOf { options: ParamName }
 
 // ═════════════════════════════════════════════════════════════
 // D. DOMAINS USED BY ACTIONS
@@ -196,21 +196,17 @@ export interface PlayerModel {
 }
 export declare const PLAYER_INTENT_TYPES: readonly PlayerIntent['type'][];
 // ── D5. Overlay (§9) — transient UI above everything; back closes the topmost blocking one first
-export interface OverlaySpec {
-  id: string;
-  kind: 'dialog' | 'menu' | 'actionSheet' | 'snackbar';
-  component: ComponentId;                // implements role 'overlay'
-  props?: Record<string, unknown>;
-  blocking: boolean;
-  timeoutMs?: number;
-  history?: 'transient' | 'ignore';
-}
+export type OverlayKind = 'dialog' | 'menu' | 'actionSheet' | 'snackbar';
+export type OverlayHistory = 'transient' | 'ignore';
+export interface OverlayTexts { title?: PropValue; body?: PropValue; confirm?: PropValue; cancel?: PropValue; text?: PropValue; action?: PropValue }   // a dialog's · a snackbar's text and action
+// recursive: refers to ButtonItem (§F) — a menu's items
+export interface OverlaySpec { id: string; kind: OverlayKind; texts: OverlayTexts; items?: ButtonItem[]; blocking: boolean; timeoutMs?: number; history?: OverlayHistory }   // the component: composition, by kind
 // ── D6. Items — content. The engine reads only id and opens; other fields are for components ('$item.<field>').
 // What an item opens: a page template (AppConfig.pages) or a page of a layer's fixed set. Where: decided by origin, never by item type.
 export interface PageLink { template: PageTemplateId }
 export interface LayerPageSpec { kind: 'layerPage'; page: PageId }
 export type ItemLink = PageLink | LayerPageSpec;
-export interface ItemData { id: ItemId; opens: ItemLink | null; [field: string]: unknown }   // opens null = not navigable
+export interface ItemData { id: ItemId; opens: ItemLink | null; entries?: ItemData[]; [field: string]: unknown }   // opens null = not navigable · entries: a shelf's · OPEN: the other fields are the backend's
 export interface DeckTarget { deck: DeckId }
 export interface LayerTarget { layer: LayerId }
 export type Origin = DeckTarget | LayerTarget;
@@ -243,12 +239,16 @@ export interface SessionIntent { type: 'session'; event: SessionEvent }
 export interface NavigateUrlIntent { type: 'navigateUrl'; url: string }
 export interface RestoreIntent { type: 'restore'; snapshot: Snapshot }
 export interface LaunchedIntent { type: 'launched' }
+export interface OpenFindIntent { type: 'openFind' }                     // the current page's find: opened = true, closed = false
+export interface CloseFindIntent { type: 'closeFind' }                   // its text = '', opened = false, closed = true
 export type Intent =
   | OpenIntent | OpenLayerPageIntent | BackIntent | UpIntent | SwitchDeckIntent | ReselectDeckIntent
   | SetParamsIntent | ToggleParamIntent | ResetParamsIntent | SetExpandedIntent | ToggleExpandedIntent | ScrollIntent
   | OpenLayerIntent | CloseLayerIntent | FocusIntent | SetDeviceIntent | SetPrefsIntent
-  | OpenOverlayIntent | RetryIntent | CloseOverlayIntent | SessionIntent | NavigateUrlIntent | RestoreIntent | LaunchedIntent;
-export declare const INTENT_TYPES: readonly Intent['type'][];
+  | OpenOverlayIntent | RetryIntent | CloseOverlayIntent | SessionIntent | NavigateUrlIntent | RestoreIntent | LaunchedIntent
+  | OpenFindIntent | CloseFindIntent;
+export type IntentType = Intent['type'];
+export declare const INTENT_TYPES: readonly IntentType[];
 
 export interface NavAction { nav: Intent }
 export interface PlayerAction { player: PlayerIntent }
@@ -257,118 +257,50 @@ export type Action = NavAction | PlayerAction | ShellAction | null;   // null = 
 export type Actions = Action | Action[];  // a list runs in order (e.g. play, then open Now playing); available iff every member is
 
 // ═════════════════════════════════════════════════════════════
-// F. COMPONENTS — roles, references, bars, regions, content
-// A place in the UI names a registered component, its props, its action and when it shows.
-// A role is a component interface: what the engine supplies, what the component emits, and which slots it has.
-// Everything component-like in the config is a ref whose component implements a role (typed refs: BarRef, FrontHeaderRef, …).
+// F. CONFIG OBJECTS — what exists, as plain data. Never which component draws it, where it sits, or how big it is
+// (composition, §Q, and design, §N, say that). No slots, no sides, no look values.
 // ═════════════════════════════════════════════════════════════
-export type RoleId =
-  | 'interactive' | 'input' | 'item' | 'navigation' | 'disclosure'
-  | 'bar' | 'frontHeader' | 'appBar' | 'peek' | 'fab' | 'layout'
-  | 'emptyState' | 'errorState' | 'staleBanner' | 'splash' | 'overlay'
-  | 'backdropPage' | 'backLayer' | 'frontLayer' | 'appBarPage' | 'pageSheet'          // 16.0: pages and surfaces
-  | 'sheetLayer' | 'drawerLayer' | 'fullscreenLayer';
-export type PropType = 'string' | 'number' | 'boolean' | 'token' | 'slot' | 'string[]' | 'value' | 'options' | 'list';
-// Contracts (16.0) are minimums: what config and the engine rely on. A component may declare more (extra slots); config may
-// use those only on that component (rule). Motion is not part of a contract: parts that motions name are design.
-export interface SlotContract {
-  roles?: RoleId[];                      // every ref in the slot implements one of these
-  min?: number;
-  max?: number;
-  first?: RoleId;                        // the first ref implements this role (a front header starts with the disclosure)
-  last?: RoleId;                         // the last ref implements this role
-}
-export type ConfigPath = string;         // a dotted path into the config object a role draws: 'header', 'compact.peek.header'
-export interface PartContract {
-  field: ConfigPath;                     // where config holds the part
-  role?: RoleId;                         // the part is a ref implementing this role
-  optional?: boolean;
-}
-export interface RoleTypes { supplies?: Record<string, string>; emits?: Record<string, string> }   // prop / event → a type name in this file
-export interface Role {
-  supplies: Record<string, PropType>;    // props the engine fills in from state; the config may not set them
-  emits: Record<string, PropType | null>; // events → intents (Queries.roleIntent; types in §M2); 'activate' runs the ref's action (§O)
-  slots?: Record<string, SlotContract>;  // ref roles: the minimum slots the component must declare (props of type 'slot')
-  parts?: Record<string, PartContract>;  // page / surface roles: parts held by the config object's own fields
-  ts?: RoleTypes;                        // TypeScript type names for §M2 (generation only)
-  note?: string;
-}
-export declare const ROLES: Record<RoleId, Role>;   // data: api/roles.js (single source); the TS contracts in §M2 are generated from it
-export type RefScope = Record<string, unknown>;
+export type ItemName = string;           // names an item within its list; composition may single it out
+export type ItemKind = 'button' | 'logo' | 'text' | 'switch' | 'find' | 'detail' | 'seek';
 
-// recursive: refers to Slot (defined below)
-export interface ComponentRef {
-  component: ComponentId;                // registered (§N)
-  props?: Record<string, PropValue>;
-  action?: Actions;                      // required key for interactive components (null = not built), unless bound
-  when?: Condition;
-  slots?: Record<string, Slot[]>;        // children, for props the component declares as 'slot' (repeats allowed)
-  variant?: Record<string, string>;
-  checked?: PropValue;
-  bind?: ParamName | DraftBind | PlayerBind;
+// ── Items: what a header, body or row holds. Which side or row an item sits in is composition's choice.
+export interface ButtonItem {
+  kind: 'button'; name: ItemName; label: PropValue; action: Actions; when?: Condition;
+  checked?: PropValue;                   // a toggle's on / off (shuffle, repeat)
+  state?: PropValue;                     // a name for what the button shows now ('pause' | 'playNow', 'repeat' | 'repeatOne'); composition picks tokens by it
 }
-export interface Repeat {
-  repeat: Source<unknown[]> | OptionsOf | Bind;   // Bind: a list in state ('$player.queue', '$opener.entries')
-  as: string;
-  ref: ComponentRef;
-}
-export type Slot = ComponentRef | Repeat;
-// 16.0 typed refs: a ref whose component implements the role; its slots are the role's minimum plus what the component declares
-export type ExtraSlots = Record<string, Slot[] | undefined>;
-export interface BarSlots extends ExtraSlots { start?: Slot[]; title?: Slot[]; end?: Slot[]; expanded?: Slot[] }
-export interface FrontHeaderSlots extends ExtraSlots { start: Slot[]; title?: Slot[]; end?: Slot[]; fab?: Slot[] }
-export interface AppBarSlots extends ExtraSlots { start?: Slot[]; title?: Slot[]; end?: Slot[]; expanded?: Slot[]; fab?: Slot[]; bottom?: Slot[] }
-export interface PeekSlots extends ExtraSlots { start?: Slot[]; title?: Slot[]; end?: Slot[] }
-export interface BarRef extends ComponentRef { slots?: BarSlots }
-export interface FrontHeaderRef extends ComponentRef { slots: FrontHeaderSlots }
-export interface AppBarRef extends ComponentRef { slots?: AppBarSlots }
-export interface PeekRef extends ComponentRef { slots?: PeekSlots }
-export interface NavigationRef extends ComponentRef {}
-export interface LayoutRef extends ComponentRef {}
-export interface ItemRef extends ComponentRef {}
+export interface LogoItem { kind: 'logo'; name: ItemName; label: PropValue; when?: Condition }   // the brand; reacts to the player
+export interface TextItem { kind: 'text'; name: ItemName; text: PropValue; when?: Condition }
+export interface SwitchItem { kind: 'switch'; name: ItemName; param: ParamName; label: PropValue; when?: Condition }   // steps a choice param to its next option
+export interface FindItem { kind: 'find'; name: ItemName; param: ParamName; placeholder: PropValue; when?: Condition }   // a local search over the content; open / closed is engine state (FindState)
+export interface DetailConfig { title: PropValue; subtitle?: PropValue; image?: PropValue; meta?: PropValue }   // one item shown large: the opened item, the current track, the account
+export interface DetailItem { kind: 'detail'; name: ItemName; detail: DetailConfig; when?: Condition }
+export interface SeekItem { kind: 'seek'; name: ItemName; label: PropValue; when?: Condition }   // the player's position
+export type HeaderItem = ButtonItem | LogoItem | TextItem | SwitchItem | FindItem;
+export type BodyItem = ButtonItem | TextItem | DetailItem | SeekItem;
+// Items whose `when` does not hold are still drawn, hidden (contract nodes carry shown: false), so they can fade in and out.
 
-// ── Placement identity: where a component sits IS its identity
-export type SlotPath = string;
-//   '<surface>/<page id>/<slot>' + '[i]' per list position + '#<item id>' per data item
-//   surface: 'deck:<id>' | 'layer:<id>' | 'peek:<layer>' | 'nav' | 'overlay:<id>' | 'gate:<id>'
+// ── Headers: the back layer's, an app-bar page's and the peek's. Their title is the page's title (none on the peek).
+export interface HeaderConfig { items: HeaderItem[]; detail?: DetailConfig }
 
-// ── Regions: a surface made of named regions, drawn in one of several layouts
-export interface BarRegion {
-  kind: 'bar';
-  height: number;
-  bar: BarRef;
-  expandedHeight?: number;               // with a bar 'expanded' slot: height at scroll 0, shrinking to height over the first (expandedHeight − height) of scroll
-  hideOnScroll?: boolean;
-}
-export interface SlotsRegion { kind: 'slots'; height: number | 'content'; content: Slot[] }
-export type Region = BarRegion | SlotsRegion;
-export interface RegionSet<L extends string = string> { regions: Record<string, Region>; layouts: Record<L, string[]> }
-export interface BackLayerConfig extends RegionSet<'concealed' | 'expanded'> {
-  toggleOnTap?: boolean;                 // default true
-}
-// Rules: layouts.concealed starts with 'header' (a bar); 'basicAction' holds slots with exactly one bound control.
+// ── Controls and panel rows
+export interface BasicActionConfig { bind: ParamName | DraftBind; placeholder?: PropValue }   // one control for one param
+export interface ParamRow { kind: 'param'; label?: PropValue; bind: ParamName; when?: Condition }
+export interface SuggestionsRow { kind: 'suggestions'; label: PropValue; source: Source<ItemData[]>; fills: DraftBind; when?: Condition }   // picking one sets both params to its title
+export type PanelRow = ParamRow | SuggestionsRow;
 
-// ── Content: how items are drawn is presentation — a layout arranges them, an item component draws each
+// ── Content. A shelf is an item holding entries (Browse's "Artists to know"). Data decides which shelves and entries exist;
+//   activating a shelf or an entry opens it (ItemData.opens; a shelf opens the template shelfPage).
+export type PresentationKey = string;
+export interface ContentParam { name: string; value: PropValue }
 export type GroupKey = 'initial' | 'value' | 'decade';
-export interface GroupSpec {
-  by: StatePath;                         // '$item.<field>'
-  key: GroupKey;                         // initial: first letter (A–Z, '#' otherwise) · value: the field · decade: 1990s…
-  when?: Condition;                      // first matching group spec wins (e.g. follow the sort param)
-  header?: ComponentRef;                 // drawn per group, '$group' in scope ({ key, count })
-  index?: ComponentRef;                  // a fast-scroll index over the group keys
-}
-export interface Presentation {
-  layout: LayoutRef;
-  item: ItemRef;
-  groups?: GroupSpec[];
-}
-export interface ContentStateComponents { empty: ComponentId; error: ComponentId; staleBanner: ComponentId }   // implement emptyState / errorState / staleBanner
+export interface GroupConfig { by: StatePath; key: GroupKey; when?: Condition; index?: boolean }   // first matching wins · index: a fast-scroll index over the keys
+export interface PresentationConfig { key: PresentationKey; groups?: GroupConfig[]; itemAction?: Actions }   // itemAction: what activating an item that does not open does (a track plays) · the layout: composition
 export interface ContentConfig {
   dataSource: SourceRef;
-  params?: Record<string, PropValue>;    // extra dataSource params ({ id: { bind: '$opener.id' } }, { queue: { bind: '$player.queue' } })
-  states?: Partial<ContentStateComponents>;
-  view?: ParamName;
-  presentations: Record<string, Presentation>;
+  params?: ContentParam[];               // extra dataSource params ({ name: 'id', value: { bind: '$opener.id' } })
+  view?: ParamName;                      // the param that picks the presentation
+  presentations: PresentationConfig[];
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -388,17 +320,30 @@ export interface FieldPolicy<T> {
   scope?: StatePath | null;
   on?: PolicyReaction<T>[];
 }
+export type ParamPolicies = Record<ParamName, FieldPolicy<ParamValue>>;   // OPEN: still a Record
+// ── Find (local search): the engine owns whether it is open, on the page part that scrolls (front layer, app-bar page).
+//   open = (content scrolled and not closed) or opened or its text is not empty
+export interface FindState { opened: boolean; closed: boolean }          // opened: the find button was pressed · closed: ✕ was pressed
+export interface FindPolicy { opened: FieldPolicy<boolean>; closed: FieldPolicy<boolean> }   // mirrors FindState (e.g. both reset on scrollTop)
 export interface BackPolicy { expanded: FieldPolicy<boolean>; headerHidden?: FieldPolicy<boolean> }
-export interface FrontPolicy { scroll: FieldPolicy<number> }
-export interface BackdropPagePolicy { params: Record<ParamName, FieldPolicy<ParamValue>>; back: BackPolicy; front: FrontPolicy }
+export interface FrontPolicy { scroll: FieldPolicy<number>; find?: FindPolicy }   // find: required when the front header holds a find item
+export interface BackdropPagePolicy { params: ParamPolicies; back: BackPolicy; front: FrontPolicy }
 export interface SheetPolicy { expanded: FieldPolicy<boolean> }
-export interface AppBarPagePolicy { params?: Record<ParamName, FieldPolicy<ParamValue>>; scroll: FieldPolicy<number>; sheet?: SheetPolicy }   // sheet mirrors SheetState
+export interface AppBarPagePolicy { params?: ParamPolicies; scroll: FieldPolicy<number>; sheet?: SheetPolicy; find?: FindPolicy }   // sheet mirrors SheetState
 
-export interface FrontLayerConfig {
-  header: FrontHeaderRef;                // always shown; starts with the disclosure
-  collapse: 'partial' | 'full';
-  content: ContentConfig;
+// ── Backdrop page. The back layer has named regions with fixed meanings:
+//   header, actions and basicAction show concealed and expanded; panel shows only expanded.
+export interface BackLayerConfig {
+  header: HeaderConfig;
+  actions?: ButtonItem[];
+  basicAction?: BasicActionConfig;
+  panel?: PanelRow[];
+  toggleOnTap?: boolean;                 // default true
+  hideHeaderOnScroll?: boolean;          // scrolling down hides the header region (BackState.headerHidden)
 }
+export interface FrontHeaderConfig { title: PropValue; items: HeaderItem[] }   // the disclosure is built in: every front header has one
+export type FrontCollapse = 'partial' | 'full';
+export interface FrontLayerConfig { header: FrontHeaderConfig; collapse: FrontCollapse; content: ContentConfig }
 export interface BackdropPageConfig {
   id: PageId;
   kind: 'backdrop';
@@ -406,48 +351,41 @@ export interface BackdropPageConfig {
   params: Params;
   back: BackLayerConfig;
   front: FrontLayerConfig;
-  policy: BackdropPagePolicy;
+  policy: BackdropPagePolicy;            // engine only: no contract reads it
 }
-// An app-bar page's inner sheet: a peeking sheet over the body (Now playing: Up next / Lyrics / Related)
-export interface PageSheetConfig { peekHeight: number; header: BarRef; content: ContentConfig }
+// ── App-bar page: a header over content or a body, with an optional inner sheet (Now playing: Up next / Lyrics / Related)
+export interface PageSheetConfig { control?: BasicActionConfig; content: ContentConfig }   // control: the tabs in its header
 export interface AppBarPageConfig {
   id: PageId;
   kind: 'appBar';
   title: Title;
-  header: AppBarRef;
+  header: HeaderConfig;
   params?: Params;
   content?: ContentConfig;               // scrolling content — or a fixed body; exactly one
-  body?: Slot[];
+  body?: BodyItem[];
   sheet?: PageSheetConfig;               // requires policy.sheet
   policy: AppBarPagePolicy;
 }
 export type PageConfig = BackdropPageConfig | AppBarPageConfig;
 
 export interface DeckPolicy { stack: FieldPolicy<StackEntry[]> }   // StackEntry: §I (type-only reference)
-export interface DeckConfig {
-  id: DeckId;
-  name: string;
-  icon: string;
-  page: BackdropPageConfig;
-  linkTarget?: LinkTarget;
-  policy: DeckPolicy;
-}
-
+export interface DeckConfig { id: DeckId; name: string; page: BackdropPageConfig; linkTarget?: LinkTarget; policy: DeckPolicy }   // its icon: composition (a token per deck)
 export type HistoryMode = 'record' | 'ignore';
 export interface HistoryByLayout { compact: HistoryMode; wide: HistoryMode }
-export interface Peek { height: number; header: PeekRef }
-export interface BottomSheetForm { form: 'bottomSheet'; peek: Peek; hidesNavWhenOpen: boolean }
-export interface FloatingCardPeek extends Peek { form: 'floatingCard'; maxWidth: number; persistsWhenOpen: boolean }
-export interface SideSheetForm { form: 'sideSheet'; width: number; peek: FloatingCardPeek }
+export interface PeekConfig { header: HeaderConfig }
+export interface BottomSheetForm { form: 'bottomSheet'; peek: PeekConfig; hidesNavWhenOpen: boolean }
+export interface FloatingCardPeek extends PeekConfig { form: 'floatingCard'; persistsWhenOpen: boolean }
+export interface SideSheetForm { form: 'sideSheet'; peek: FloatingCardPeek }
 export interface SheetPresentation { kind: 'sheet'; compact: BottomSheetForm; wide: SideSheetForm }
 export interface CoversNav { compact: boolean; wide: boolean }
 export interface FullscreenPresentation { kind: 'fullscreen'; coversNav: CoversNav }
 export type DrawerWideForm = 'modal' | 'rail';
-export interface DrawerPresentation { kind: 'drawer'; side: 'start'; width: number; scrim: boolean; wide?: DrawerWideForm }
+export type DrawerForm = DrawerWideForm | 'modal';
+export interface DrawerPresentation { kind: 'drawer'; scrim: boolean; wide?: DrawerWideForm }   // its edge and width: design
 //   compact (and wide 'modal', the default): modal, covers nav, traps focus; back closes it.
-//   wide 'rail': the navigation rail expands to `width` in place (its slots show labels); joins the focus order (no trap); back closes it.
+//   wide 'rail': the navigation rail expands in place (its items show labels); joins the focus order (no trap); back closes it.
 export type LayerPresentation = SheetPresentation | FullscreenPresentation | DrawerPresentation;
-export interface LayerPages { base: PageId; set: Record<PageId, PageConfig> }
+export interface LayerPages { base: PageId; set: Record<PageId, PageConfig> }   // OPEN: still a Record
 export interface LayerPolicy { stack: FieldPolicy<StackEntry[]>; open: FieldPolicy<boolean> }
 export interface LayerConfig {
   id: LayerId;
@@ -462,11 +400,12 @@ export interface LayerConfig {
 // ═════════════════════════════════════════════════════════════
 // H. APP CONFIG (fixed per app version; plain JSON, no functions)
 // ═════════════════════════════════════════════════════════════
-export interface NavigationConfig { compact: NavigationRef; wide: NavigationRef }
+export interface NavigationConfig { items: ButtonItem[] }               // buttons beside the decks (the rail's menu toggle, Settings, Account)
 export interface Shortcut { keys: string; intent: Intent; when?: 'pointer' | 'always' }
-export interface LaunchConfig { splash: ComponentId; minMs?: number }   // implements 'splash'
+export interface LaunchConfig { minMs?: number }                        // the splash: composition
 export interface Gate { id: GateId; when: SessionPredicate; page: PageConfig }
-export interface SessionConfig { initial?: Partial<SessionState>; gates: Gate[] }
+export type SessionInitial = Partial<SessionState>;
+export interface SessionConfig { initial?: SessionInitial; gates: Gate[] }
 // ── Route (§11): a URL names one destination — a gate, else an open recorded layer, else the active deck's stack
 export interface RouteTable {
   base: string;
@@ -493,11 +432,10 @@ export interface AppConfig {
   shortcuts?: Shortcut[];
   launch?: LaunchConfig;
   locales: LocaleConfig;
-  texts: Record<LocaleId, Record<TextId, string>>;
-  contentStates?: ContentStateComponents;
+  texts: Record<LocaleId, Record<TextId, string>>;   // OPEN: still Records
   wire?: Wire;
   navigation: NavigationConfig;
-  pages?: Record<PageTemplateId, PageConfig>;   // the opened page's id = parent id + '/' + item id
+  pages?: Record<PageTemplateId, PageConfig>;   // OPEN: still a Record · the opened page's id = parent id + '/' + item id
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -505,11 +443,12 @@ export interface AppConfig {
 // ═════════════════════════════════════════════════════════════
 export type Scoped<T> = T | Record<string, T>;   // a field with a policy scope is stored per scope key
 export interface BackState { expanded: boolean; headerHidden?: boolean }
-export interface FrontState { scroll: Scoped<number> }   // collapse-first scroll offset (15.0): see PageScroll below
+export interface FrontState { scroll: Scoped<number>; find?: FindState }   // collapse-first scroll offset (15.0): see PageScroll below
 export interface SheetState { expanded: boolean }
 export interface BackdropPageState {
   config: BackdropPageConfig;
   opener?: ItemData;
+  template?: PageTemplateId;             // an opened page: its template (composition's page exceptions name it)
   params: Record<ParamName, Scoped<ParamValue>>;
   back: BackState;
   front: FrontState;
@@ -518,8 +457,10 @@ export interface AppBarPageState {
   config: AppBarPageConfig;
   opener?: ItemData;
   params: Record<ParamName, Scoped<ParamValue>>;
+  template?: PageTemplateId;
   scroll: Scoped<number>;                // collapse-first scroll offset (15.0): see PageScroll below
   sheet?: SheetState;
+  find?: FindState;
 }
 export type PageState = BackdropPageState | AppBarPageState;
 export interface StackEntry { page: PageState; openedFrom: ItemId | null }
@@ -594,14 +535,7 @@ export interface DataLayer extends DataSource {
   offline: boolean;
 }
 export type ContentViewState = 'loading' | 'ready' | 'empty' | 'error' | 'offlineStale';
-export interface ContentView {
-  state: ContentViewState;
-  showItems: boolean;
-  component: ComponentId | null;
-  placeholders: number;
-  banner: ComponentId | null;
-  retry: boolean;
-}
+export interface ContentView { state: ContentViewState; showItems: boolean; placeholders: number; banner: boolean; retry: boolean }   // which components: composition
 // Rules: loading never shows items; empty never shows placeholders; retryable errors offer retry;
 // offline with cached items shows them with a stale banner; offline without items = error.
 
@@ -611,21 +545,8 @@ export interface ContentView {
 export type BackAction = 'closeOverlay' | 'closeDrawer' | 'collapse' | 'collapseSheet' | 'resetParam' | 'pop' | 'popLayer' | 'closeLayer' | 'startDeck' | 'undoRecord' | 'exit';
 export type SideMode = 'beside' | 'modal' | 'auto';
 export type FrontPosition = 'expanded' | 'partial' | 'full';
-export interface CurrentPresentation extends Presentation { key: string }
 export interface ItemGroup { key: string; items: ItemData[] }
-export interface ResolvedRef {
-  component: ComponentId;
-  props: Record<string, unknown>;
-  action: Actions | undefined;
-  visible: boolean;
-  slots: Record<string, ResolvedRef[]>;
-  key?: SlotPath;
-  variant: Record<string, string>;
-  checked?: boolean | 'mixed';
-  bind?: ComponentRef['bind'];
-}
-export interface ExpandedSlot { ref: ComponentRef; scope: RefScope | null }
-export interface SlotContext { role: RoleId; page: PageState; item?: ItemData; origin?: Origin; bind?: ComponentRef['bind']; layer?: LayerId }   // layer: 16.0, layer roles
+export type Scope = Record<string, unknown>;   // OPEN: '$item', '$group' … for values resolved in a list
 export interface Queries {
   layoutClass(state: AppState, config: AppConfig): LayoutClass;
   sideMode(state: AppState, config: AppConfig, layer: LayerId): SideMode | null;
@@ -637,7 +558,7 @@ export interface Queries {
   paramOptions(state: AppState, config: AppConfig, page: PageState, name: ParamName): ParamOption[];
   paramTarget(state: AppState, intent: Intent): PageState | null;
   visibleItems(page: PageState, data: ContentData): ItemData[];
-  presentation(page: PageState): CurrentPresentation;
+  presentation(page: PageState): PresentationConfig;
   groups(state: AppState, config: AppConfig, page: PageState, items: ItemData[]): ItemGroup[];   // the first matching GroupSpec; one group '' without one. A partition: order kept
   navVisible(state: AppState, config: AppConfig): boolean;
   historyMode(state: AppState, config: AppConfig, layer: LayerConfig): HistoryMode;
@@ -651,14 +572,12 @@ export interface Queries {
   focusOrder(state: AppState, config: AppConfig): Surface[];
   supports(state: AppState, config: AppConfig, intent: Intent): boolean;
   derived(state: AppState, config: AppConfig, id: DerivedId, page: PageState | null, of?: StatePath): unknown;
-  condition(state: AppState, config: AppConfig, cond: Condition, page: PageState | null, scope?: RefScope): boolean;
-  resolveRef(state: AppState, config: AppConfig, ref: ComponentRef, page: PageState | null, path?: SlotPath, scope?: RefScope): ResolvedRef;
-  expandSlots(state: AppState, config: AppConfig, slots: Slot[], page: PageState | null, scope?: RefScope): ExpandedSlot[];
-  slotPath(surface: string, pageId: PageId | null, slot: string, index?: number, itemId?: ItemId): SlotPath;
+  condition(state: AppState, config: AppConfig, cond: Condition, page: PageState | null, scope?: Scope): boolean;
+  value(state: AppState, config: AppConfig, v: PropValue, page: PageState | null, scope?: Scope): unknown;   // 18.0: a config value → plain (contracts)
+  resolved(x: unknown, page: PageState | null, scope?: Scope): unknown;   // 18.0: binds inside an action resolved
+  playerView(): PlayerState | undefined;                                  // 18.0: with current
   text(state: AppState, config: AppConfig, ref: TextRef | TextId): string;
   dir(state: AppState, config: AppConfig): Direction;
-  roleProps(state: AppState, config: AppConfig, slot: SlotContext): Record<string, unknown>;
-  roleIntent(state: AppState, config: AppConfig, slot: SlotContext, event: string, payload?: unknown): Intent | PlayerIntent | null;
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -666,83 +585,172 @@ export interface Queries {
 // ═════════════════════════════════════════════════════════════
 export interface LayoutEnv { layout: LayoutClass; touch: boolean; sheet: 'none' | 'beside' | 'over'; dir: Direction }
 export interface Geometry { width: number; height: number; railWidth: number; navHeight: number; peekHeight: number; contentWidth: number; contentHeight: number }
-export interface LayoutGeometry extends Geometry { side: SideMode | null; wide: boolean; navigation: ComponentId }
+export interface LayoutGeometry extends Geometry { side: SideMode | null; wide: boolean; navigation: HireName | null }
 export interface RegionInstance { region: string; top: number; height: number; opacity: number; interactive: boolean }
 export interface FrontLayerView { top: number; state: 'expanded' | 'partlyCollapsed' | 'fullyCollapsed'; visual: Record<string, unknown> }
 // PageScroll (15.0): a page's scroll (FrontState.scroll / AppBarPageState.scroll) is collapse-first — 0 … distance
 //   (expandedHeight − height) collapses the bar while the content stays put (the page grows); beyond it the content scrolls by
 //   (scroll − distance). Scrolling back: the content returns to its top first, then the bar expands. No expanded slot: distance 0.
 export interface BarView { height: number; progress: number; distance: number }   // a bar with an expanded slot: current height + collapse progress (0 … 1) + collapse distance
-export interface FrontLayerContext { env?: LayoutEnv; measured?: Record<string, number> }
+export interface FrontLayerContext { measured?: Record<string, number> }
 export interface TransitionDescriptor { kind: MotionId | 'instant'; [param: string]: unknown }   // 17.0: a resolved KindStep (temporary, see §N)
 export type MotionTrigger = 'change' | 'press' | 'release' | 'loop';
 export interface Measurements { itemRect?: Rect; targetRect?: Rect; origin?: Point; shared?: Record<string, Rect> }   // shared: element rects that move between pages (e.g. { image })
 // Directions in motion params are logical (+1 = toward the end side). Shells mirror them in RTL.
 
 // ═════════════════════════════════════════════════════════════
-// M2. CONTRACTS (16.0) — what each role's component receives from state and what its events become
-// Supplies: computed by Queries.roleProps, never stored, never set by config. Events: mapped by Queries.roleIntent.
+// M2. CONTRACTS (18.0) — what each drawn config object offers whatever draws it (api/contracts.js, the single source)
+//   config: the object · values: current, computed by core from State, queries and Layout (never stored) ·
+//   intents: what it may send · children: config fields holding other drawn objects (each drawn by its own hire).
+//   Engine-only config (policy, collapse, routes …) is never offered as a value.
 // ═════════════════════════════════════════════════════════════
 export type SheetForm = 'bottomSheet' | 'sideSheet';
-// <roles:generated> — from api/roles.js by api/gen-roles.js; do not edit
-// interactive: its action(s); state via §O
-export interface InteractiveEvents { activate: Actions }
-// input: setParams on its bind (PlayerBind: seek)
-export interface InputSupplies { value: ParamValue | null; options: ParamOption[] }
-export interface InputEvents { change: SetParamsIntent | Seek; submit: SetParamsIntent }
-// item: open (inside a repeat: the element is the item)
-export interface ItemSupplies { navigable: boolean }
-export interface ItemEvents { open: OpenIntent }
-// navigation
-export interface NavigationSupplies { destinations: DeckId[]; selected: DeckId }
-export interface NavigationEvents { select: SwitchDeckIntent | ReselectDeckIntent }
-// disclosure
-export interface DisclosureSupplies { expanded: boolean }
-export interface DisclosureEvents { toggle: ToggleExpandedIntent }
-// bar: slots start · title ≤1 · end · expanded ≤1 — back-layer header regions; progress from Layout.barView
-export interface BarSupplies { progress: number }
-// frontHeader: slots start first disclosure · title ≤1 · end · fab ≤1 fab
-// appBar: slots start · title ≤1 · end · expanded ≤1 · fab ≤1 fab · bottom — bottom: a row at the bar's bottom edge, stays when it collapses
-export interface AppBarSupplies { progress: number }
-// peek: slots start · title ≤1 · end
-// fab
-export interface FabEvents { activate: Actions }
-// layout: arranges content items (list, grid, scroller); groups from Queries.groups
-export interface LayoutSupplies { groups: ItemGroup[] }
-// emptyState
-export interface EmptyStateEvents { retry: RetryIntent }
-// errorState
-export interface ErrorStateEvents { retry: RetryIntent }
-// staleBanner
-export interface StaleBannerEvents { retry: RetryIntent }
-// splash
-// overlay
-export interface OverlayEvents { close: CloseOverlayIntent }
-// backdropPage: parts back ← back · front ← front (frontLayer)
-// backLayer: parts header ← regions.header.bar (bar) — toggle only while BackLayerConfig.toggleOnTap
-export interface BackLayerSupplies { expanded: boolean; headerHidden: boolean }
-export interface BackLayerEvents { toggle: ToggleExpandedIntent }
-// frontLayer: parts header ← header (frontHeader) · content ← content
-export interface FrontLayerSupplies { position: FrontPosition }
-export interface FrontLayerEvents { scroll: ScrollIntent; retry: RetryIntent }
-// appBarPage: parts header ← header (appBar) · content? ← content · body? ← body · sheet? ← sheet (pageSheet)
-export interface AppBarPageEvents { scroll: ScrollIntent; retry: RetryIntent }
-// pageSheet: parts header ← header (bar) · content ← content
-export interface PageSheetSupplies { expanded: boolean }
-export interface PageSheetEvents { toggle: ToggleExpandedIntent }
-// sheetLayer: parts peekCompact ← presentation.compact.peek.header (peek) · peekWide ← presentation.wide.peek.header (peek) — open: the peek was tapped
-export interface SheetLayerSupplies { open: boolean; form: SheetForm; side: SideMode | null }
-export interface SheetLayerEvents { open: OpenLayerIntent; close: CloseLayerIntent }
+export type ItemShape = 'circle' | 'square';   // people draw circular, collections square (ItemData.shape)
+export type HireName = string;
+export interface Contract<C, V, I> { config: C; values: V; intents: I }
+export interface NoValues {}
+export type NoIntents = never;
+
+export type BackRegionName = 'header' | 'actions' | 'basicAction' | 'panel';
+export interface BackRegionView { region: BackRegionName; top: number; height: number; opacity: number; interactive: boolean }   // Layout
+export interface ContentView { state: ContentViewState; showItems: boolean; placeholders: number; banner: boolean; retry: boolean }   // replaces api.d.ts ContentView: no component ids (composition picks them)
+// <contracts:generated> — from api/contracts.js by api/gen-contracts.js; do not edit
+// button
+export interface ButtonValues { label: string; checked: boolean | null; state: string | null; interaction: InteractionView }
+export interface ButtonContract extends Contract<ButtonItem, ButtonValues, Actions> {}
+// logo
+export interface LogoValues { label: string; playing: boolean }
+export interface LogoContract extends Contract<LogoItem, LogoValues, NoIntents> {}
+// text
+export interface TextValues { text: string }
+export interface TextContract extends Contract<TextItem, TextValues, NoIntents> {}
+// switch: steps its param to the next option
+export interface SwitchValues { label: string; value: ParamValue | null; next: ParamValue | null; options: ParamOption[] }
+export interface SwitchContract extends Contract<SwitchItem, SwitchValues, SetParamsIntent> {}
+// find: closeLabel: text find.close
+export interface FindValues { open: boolean; value: string; placeholder: string; closeLabel: string }
+export interface FindContract extends Contract<FindItem, FindValues, OpenFindIntent | CloseFindIntent | SetParamsIntent> {}
+// detail
+export interface DetailValues { title: string; subtitle: string | null; image: string | null; meta: string | null }
+export interface DetailContract extends Contract<DetailConfig | DetailItem, DetailValues, NoIntents> {}
+// seek
+export interface SeekValues { label: string; positionMs: number; durationMs: number | null }
+export interface SeekContract extends Contract<SeekItem, SeekValues, Seek> {}
+export type HeaderItemContract = ButtonContract | LogoContract | TextContract | SwitchContract | FindContract;
+// header: progress: collapse 0 … 1 (Layout.barView)
+export interface HeaderValues { title: string | null; progress: number }
+export interface HeaderChildren { items: HeaderItemContract[]; detail?: DetailContract }
+export interface HeaderContract extends Contract<HeaderConfig, HeaderValues, NoIntents> { children: HeaderChildren }
+// input: one control for one param · label: its row's · min / max: a number param's (ParamSpec)
+export interface InputValues { value: ParamValue | null; options: ParamOption[]; placeholder: string | null; label: string | null; min: number | null; max: number | null }
+export interface InputContract extends Contract<BasicActionConfig | ParamRow, InputValues, SetParamsIntent> {}
+// paramRow
+export interface ParamRowValues { label: string | null }
+export interface ParamRowChildren { control: InputContract }
+export interface ParamRowContract extends Contract<ParamRow, ParamRowValues, NoIntents> { children: ParamRowChildren }
+// suggestion: picking it fills the draft (SuggestionsRow.fills)
+export interface SuggestionValues { text: string }
+export interface SuggestionContract extends Contract<ItemData, SuggestionValues, SetParamsIntent> {}
+// suggestions
+export interface SuggestionsValues { label: string }
+export interface SuggestionsChildren { items: SuggestionContract[] }
+export interface SuggestionsContract extends Contract<SuggestionsRow, SuggestionsValues, NoIntents> { children: SuggestionsChildren }
+// item: action: open it (ItemData.opens), else the presentation's itemAction · entries: a shelf's (absent on other items) (recursive: refers to itself)
+export interface ItemValues { title: string; subtitle: string | null; image: string | null; shape: ItemShape; current: boolean; navigable: boolean }
+export interface ItemChildren { entries?: ItemContract[] }
+export interface ItemContract extends Contract<PresentationConfig, ItemValues, Actions> { children: ItemChildren }
+// contentState: empty · error · offlineStale (the banner) · its words are design texts of the free component
+export interface ContentStateValues { state: ContentViewState; retry: boolean }
+export interface ContentStateContract extends Contract<ContentConfig, ContentStateValues, RetryIntent> {}
+// content
+export interface ContentValues { view: ContentView; presentation: PresentationKey; groups: ItemGroup[]; placeholders: number }
+export interface ContentChildren { items: ItemContract[]; state?: ContentStateContract; banner?: ContentStateContract }
+export interface ContentContract extends Contract<ContentConfig, ContentValues, NoIntents> { children: ContentChildren }
+export type PanelRowContract = ParamRowContract | SuggestionsContract;
+// backLayer: toggle only while toggleOnTap
+export interface BackLayerValues { expanded: boolean; headerHidden: boolean; regions: BackRegionView[] }
+export interface BackLayerChildren { header: HeaderContract; actions: ButtonContract[]; basicAction?: InputContract; panel: PanelRowContract[] }
+export interface BackLayerContract extends Contract<BackLayerConfig, BackLayerValues, ToggleExpandedIntent> { children: BackLayerChildren }
+// frontHeader: the built-in disclosure: the back layer's expanded + its label (texts backLayer.reveal / backLayer.conceal)
+export interface FrontHeaderValues { title: string; expanded: boolean; disclosureLabel: string }
+export interface FrontHeaderChildren { items: HeaderItemContract[] }
+export interface FrontHeaderContract extends Contract<FrontHeaderConfig, FrontHeaderValues, ToggleExpandedIntent> { children: FrontHeaderChildren }
+// frontLayer: top: Layout.frontLayer · contentOffset: Layout.contentOffset
+export interface FrontLayerValues { position: FrontPosition; top: number; contentOffset: number }
+export interface FrontLayerChildren { header: FrontHeaderContract; content: ContentContract }
+export interface FrontLayerContract extends Contract<FrontLayerConfig, FrontLayerValues, ScrollIntent> { children: FrontLayerChildren }
+// backdropPage
+export interface BackdropPageChildren { back: BackLayerContract; front: FrontLayerContract }
+export interface BackdropPageContract extends Contract<BackdropPageConfig, NoValues, NoIntents> { children: BackdropPageChildren }
+// pageSheet
+export interface PageSheetValues { expanded: boolean }
+export interface PageSheetChildren { control?: InputContract; content: ContentContract }
+export interface PageSheetContract extends Contract<PageSheetConfig, PageSheetValues, ToggleExpandedIntent> { children: PageSheetChildren }
+export type BodyItemContract = ButtonContract | TextContract | DetailContract | SeekContract;
+// appBarPage
+export interface AppBarPageValues { contentOffset: number }
+export interface AppBarPageChildren { header: HeaderContract; content?: ContentContract; body: BodyItemContract[]; sheet?: PageSheetContract }
+export interface AppBarPageContract extends Contract<AppBarPageConfig, AppBarPageValues, ScrollIntent> { children: AppBarPageChildren }
+export type PageContract = BackdropPageContract | AppBarPageContract;
+// sheetLayer: open: the peek was tapped · peek: Layout.peekPlacement
+export interface SheetLayerValues { open: boolean; form: SheetForm; side: SideMode | null; peek: Rect | null }
+export interface SheetLayerChildren { peek: HeaderContract; page: PageContract }
+export interface SheetLayerContract extends Contract<LayerConfig, SheetLayerValues, OpenLayerIntent | CloseLayerIntent> { children: SheetLayerChildren }
 // drawerLayer: close: the scrim was tapped
-export interface DrawerLayerSupplies { open: boolean; form: DrawerWideForm }
-export interface DrawerLayerEvents { close: CloseLayerIntent }
+export interface DrawerLayerValues { open: boolean; form: DrawerForm }
+export interface DrawerLayerChildren { page: PageContract }
+export interface DrawerLayerContract extends Contract<LayerConfig, DrawerLayerValues, CloseLayerIntent> { children: DrawerLayerChildren }
 // fullscreenLayer
-export interface FullscreenLayerSupplies { open: boolean }
-// </roles:generated>
+export interface FullscreenLayerValues { open: boolean }
+export interface FullscreenLayerChildren { page: PageContract }
+export interface FullscreenLayerContract extends Contract<LayerConfig, FullscreenLayerValues, NoIntents> { children: FullscreenLayerChildren }
+// destination
+export interface DestinationValues { deck: DeckId; label: string; selected: boolean }
+export interface DestinationContract extends Contract<DeckConfig, DestinationValues, SwitchDeckIntent | ReselectDeckIntent> {}
+// navigation: selected: the active deck · expanded: a rail-form drawer is open · items: drawn where a form has room (the rail)
+export interface NavigationValues { selected: DeckId; expanded: boolean }
+export interface NavigationChildren { destinations: DestinationContract[]; items?: ButtonContract[] }
+export interface NavigationContract extends Contract<NavigationConfig, NavigationValues, NoIntents> { children: NavigationChildren }
+// splash
+export interface SplashValues { label: string }
+export interface SplashContract extends Contract<LaunchConfig, SplashValues, NoIntents> {}
+// overlay: items: a menu's
+export interface OverlayValues { title: string | null; body: string | null; confirm: string | null; cancel: string | null; text: string | null; action: string | null }
+export interface OverlayChildren { items?: ButtonContract[] }
+export interface OverlayContract extends Contract<OverlaySpec, OverlayValues, CloseOverlayIntent> { children: OverlayChildren }
+export type ContractName = 'button' | 'logo' | 'text' | 'switch' | 'find' | 'detail' | 'seek' | 'header' | 'input' | 'paramRow' | 'suggestion' | 'suggestions' | 'item' | 'contentState' | 'content' | 'backLayer' | 'frontHeader' | 'frontLayer' | 'backdropPage' | 'pageSheet' | 'appBarPage' | 'sheetLayer' | 'drawerLayer' | 'fullscreenLayer' | 'destination' | 'navigation' | 'splash' | 'overlay';
+// </contracts:generated>
+
+// ── The contract tree (core/contracts.js): this moment's drawn config objects, each with what composition hired to draw it
+export type NodeKey = string;            // a node's place in the tree: 'deck:browse.back.header.items:menu' (instance identity)
+export type NodeEvent = (payload?: unknown) => Intent | ActionResult | null;
+export interface ActionResult { action: Actions }   // the config's own action (an item's open / itemAction, a button's action)
+export interface ContractNode {
+  key: NodeKey;
+  contract: ContractName;
+  at: Place;                             // §Q: what placement matched on
+  page: PageState | null;
+  config: unknown;                       // the contract's config type
+  values: unknown;                       // the contract's values type
+  children: unknown;                     // the contract's children type, as nodes
+  hire: HireName | null | undefined;     // null: not drawn here · undefined: no placement (a rule fails)
+  component: ComponentId | null;         // the hire's free component
+  variants: VariantPicks;
+  props: NodeProps;                      // the free component's props, clauses resolved
+  slots: NodeSlots;                      // the free component's slots, filled with nodes
+  events: NodeEvents;                    // the free component's events → what they send
+  shown?: boolean;                       // false: an item whose when does not hold (drawn hidden)
+}
+export interface VariantPicks { [axis: string]: string }   // OPEN: keyed by axis
+export interface NodeProps { [prop: string]: unknown }     // OPEN: keyed by prop
+export interface NodeSlots { [slot: string]: ContractNode[] }   // OPEN: keyed by slot
+export interface NodeEvents { [event: string]: NodeEvent }      // OPEN: keyed by event
+export interface ContractTree { navigation: ContractNode; deck: ContractNode; layers: ContractNode[]; overlays: ContractNode[]; splash: ContractNode | null }
 
 // ═════════════════════════════════════════════════════════════
 // N. SPECS (§15) — design-system data
 // ═════════════════════════════════════════════════════════════
+export type PropType = 'string' | 'number' | 'boolean' | 'token' | 'slot' | 'string[]' | 'value' | 'options' | 'list';   // 'slot': a hole filled from outside
 export type TokenSet = Record<string, string | number>;
 export interface TokenRef { token: string }
 export type MotionParamType = 'duration' | 'easing' | 'number' | 'string' | 'boolean';
@@ -772,9 +780,10 @@ export interface ComponentDef {
   placeholder?: PlaceholderForm;
   provides?: Record<string, VisualValue>;
   visuals?: Visuals;
-  implements?: RoleId[];                 // must declare each role's supplied props and slots
-  accepts?: ParamType[];
+  optional?: string[];                   // props a hire may leave unfed (a button's icon); inherited (union)
+  events?: FreeEventSpec[];              // 18.0: what it emits (composition maps each to an intent)
 }
+export interface FreeEventSpec { name: string; payload: PropType | null }
 export type ComponentRegistry = Record<ComponentId, ComponentDef>;
 export interface StackPattern { event: 'pushed' | 'popped'; kind?: PageConfig['kind'] | 'layerPage' }
 export interface SurfacePattern { event: 'deckSwitched' | 'expandedChanged' | 'layerOpened' | 'layerClosed' | 'overlayOpened' | 'overlayClosed'; layer?: LayerId }
@@ -787,7 +796,7 @@ export type ChoreoPattern = StackPattern | SurfacePattern | ParamPattern | Sessi
 // ── 17.0 MOTION AS STEPS: choreography says which piece does what, when. Platforms implement the four blocks (tween, travel, swap,
 // reveal) once and play any rule. Measures resolve on the platform, after the commit, at rest. Directions are logical (RTL mirrors).
 export type PieceRef = string;
-//   '<role>.<slot|part>' (api/roles.js) · '<component>.<part>' (ComponentDef.parts) · '<component>' (its visible instance) ·
+//   '<contract>.<child>' (api/contracts.js) · '<component>.<slot|part>' (ComponentDef props of type slot / parts) · '<component>' (its visible instance) ·
 //   'source' / 'target' / 'origin' (the event's pieces: the tapped item / its counterpart on the new page / the control the user
 //   activated; '.image' etc. = their parts) · '<step id>' (a step's copy) · suffix '[]' = each child (lists), '[last]' / '[first]'
 //   = one of them · '@before' / '@after' = the piece as it was before / is after the change (a swap of one piece's content)
@@ -849,35 +858,33 @@ export type Step = TweenStep | TravelStep | SwapStep | RevealStep | UseStep | Ki
 export interface Sequence { params?: Record<string, MotionParamType>; steps: Step[] }
 export interface ChoreoRule { on: ChoreoPattern; steps: Step[]; reduced?: Step[] }
 export interface Choreography { rules: ChoreoRule[]; reduced: Step[]; sequences?: Record<SequenceId, Sequence> }   // reduced: the default replacement
-export interface ScreenSpec { regions?: Record<string, ComponentId>; header?: BarRef }
 export interface Specs {
   tokens: TokenSet;
   components: ComponentRegistry;
   choreography: Choreography;
   motions: MotionRegistry;              // TEMPORARY (KindStep)
-  screens?: Record<PageId, ScreenSpec>;
 }
 export interface VisualContext { surface?: ComponentId; variant?: Record<string, string>; env?: LayoutEnv; page?: PageState | null; status?: StatusState[] }
 export interface PlatformManifest { platform: string; implements: ComponentId[]; motions?: MotionId[] }   // motions: TEMPORARY (kinds still hand-built)
-// Rules: every component the config uses is registered and implemented by every platform (variants count where their parent is);
-// every ref in a role-typed place implements that role and meets its slot contracts; surfaces provide the roles placed on them;
+// Rules: every component composition hires is registered and implemented by every platform (variants count where their parent is);
+// composition rules (api/composition-rules.js) check hires, clauses, placements and tokens against the contracts and design;
 // texts exist in every locale and parse; data components declare placeholders; every piece a step names is declared; anchors name steps;
 // every ModelEvent type has a choreography rule; every param motion names a paramChanged rule.
 
 export interface Layout {
   env(state: AppState, config: AppConfig, q: Queries): LayoutEnv;
-  geometry(state: AppState, config: AppConfig, q: Queries, specs: Specs): LayoutGeometry;
-  regions(page: BackdropPageState, measured?: Record<string, number>): RegionInstance[];   // an expandable header region shrinks with barView progress
-  barView(page: PageState, specs: Specs): BarView;          // app bar: design visuals height / expandedHeight; back header region: config heights; progress = min(1, scroll / distance)
-  contentOffset(page: PageState, specs: Specs): number;     // 15.0: the content's own offset = max(0, scroll − barView.distance)
+  sizes(look: Look): ModelSizes;         // 18.0: createModel's sizes (the wide look)
+  geometry(state: AppState, config: AppConfig, q: Queries, look: Look): LayoutGeometry;
+  regions(page: BackdropPageState, look: Look, measured?: Record<string, number>): RegionInstance[];   // fixed regions: header · actions · basicAction · panel (expanded only)
+  barView(page: PageState, look: Look, within?: ContractName[]): BarView;   // the header hire's height / expandedHeight (with a detail); progress = min(1, scroll / distance)
+  contentOffset(page: PageState, look: Look, within?: ContractName[]): number;   // 15.0: the content's own offset = max(0, scroll − barView.distance)
   resolveVisuals(specs: Specs, component: ComponentId, state: string, ctx?: VisualContext): Record<string, unknown>;
-  frontLayer(page: BackdropPageState, g: LayoutGeometry, specs: Specs, ctx?: FrontLayerContext, peek?: number): FrontLayerView;
+  frontLayer(page: BackdropPageState, g: LayoutGeometry, look: Look, ctx?: FrontLayerContext, peek?: number): FrontLayerView;
   stepsFor(event: ModelEvent, specs: Specs, prefs: Prefs): Step[];                         // 17.0: the rule's steps, tokens / ByEvent / sequences resolved
   componentSteps(specs: Specs, component: ComponentId, key: string, prefs: Prefs): Step[];   // 17.0
   transitionFor(event: ModelEvent, specs: Specs, prefs: Prefs, measure?: Measurements): TransitionDescriptor;   // TEMPORARY: the rule's first KindStep
   motionFor(specs: Specs, component: ComponentId, key: string, prefs: Prefs): TransitionDescriptor;            // TEMPORARY
-  peekPlacement(state: AppState, config: AppConfig, g: LayoutGeometry, frontTop: number, page?: BackdropPageState): Rect | null;
-  componentFor(specs: Specs, role: RoleId): ComponentId | null;   // 16.0: the design component implementing a page / surface role
+  peekPlacement(state: AppState, config: AppConfig, g: LayoutGeometry, frontTop: number, page: BackdropPageState | null, look: Look): Rect | null;
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -888,7 +895,7 @@ export type InteractionState = 'enabled' | 'disabled' | 'hover' | 'pressed' | 'f
 export declare const INTERACTION_STATES: readonly InteractionState[];
 export interface InteractionFacts { checked?: boolean | 'mixed' }
 export interface InteractionInput { hovered: boolean; pressed: boolean; focused: boolean; focusVisible: boolean; dragging?: boolean }
-export interface InteractiveComponent { id: SlotPath; component: ComponentId; action: Actions; label: string }
+export interface InteractiveComponent { id: NodeKey; component: ComponentId; action: Actions; label: string }
 export interface InteractionFlags { hover: boolean; pressed: boolean; focus: boolean; keyboardFocus: boolean }
 export interface InteractionView {
   state: InteractionState;               // disabled > pressed > keyboardFocus > focus > hover > enabled
@@ -912,7 +919,8 @@ export interface Model {
   dispatch(intent: Intent): ModelEvent[];
   query: Queries;
 }
-export type CreateModel = (config: AppConfig, device: Device, data: DataSource, player?: PlayerModel) => Model;
+export interface ModelSizes { railWidth: number; sideSheetWidth: number }   // from design through composition (Layout.sizes)
+export type CreateModel = (config: AppConfig, device: Device, data: DataSource, player?: PlayerModel, sizes?: ModelSizes) => Model;
 export interface InteractionEnv { model: Model; player?: PlayerModel; shellActions?: readonly ShellActionId[] }
 export declare function actionAvailable(action: Actions, env: InteractionEnv): boolean;
 export declare function resolveInteraction(action: Actions, input: InteractionInput, env: InteractionEnv, facts?: InteractionFacts): InteractionView;
@@ -920,3 +928,68 @@ export declare function statusOf(action: Actions, env: InteractionEnv, facts?: I
 // 14.3: run a player action; a playQueue / enqueue that took effect also yields its QueuedEvent (choreography 'queued')
 export interface PlayerActionResult { commands: PlayerCommand[]; events: QueuedEvent[] }
 export declare function playerAction(player: PlayerModel, intent: PlayerIntent, from?: ItemId | null): PlayerActionResult;
+
+// ═════════════════════════════════════════════════════════════
+// Q. COMPOSITION (app/composition.json) — hires free components for contracts and places them by config kind.
+//   Holds no look values: a fixed value is one of the hire's own tokens, which aliases a design token.
+// ═════════════════════════════════════════════════════════════
+export type TokenName = string;          // a design token: 'size.iconButton.md', 'icon.menu'
+export interface HireToken { name: TokenName; alias: TokenName }   // minted for this hire ('<hire>.<name>'); must alias a design token
+export interface VariantPick { axis: string; option: string }
+
+export type PropName = string;
+export type EventName = string;
+export type SlotName = string;
+export type ChildName = string;          // a field of a contract's children: 'header', 'items', 'panel' …
+export type ValueName = string;          // a field of a contract's values: 'expanded', 'top' …
+
+// ── Clauses: one component name ↔ one contract name. Implied where the names match; written only where they differ.
+export interface PropFrom { prop: PropName; value: ValueName }      // prop ← a contract value
+export interface PropFixed { prop: PropName; token: TokenName }     // prop ← one of the hire's tokens
+export type DesignTextId = string;       // a design text: words a free component needs whatever it draws ('content.empty', 'range.from')
+export interface PropText { prop: PropName; text: DesignTextId }    // prop ← a design text (design/texts/<locale>.json)
+export interface TokenCase { equals: string; token: TokenName }
+export interface PropByValue { prop: PropName; value: ValueName; cases: TokenCase[] }   // prop ← a hire token picked by a value (view switch icon)
+export type PlayerIntentType = PlayerIntent['type'];
+export interface EventTo { event: EventName; send: IntentType | PlayerIntentType | 'action' }   // an intent the contract accepts · action: the item's config action
+export interface ItemSelector { kind?: ItemKind; name?: ItemName; rest?: true }   // rest: every item not picked by another slot
+export interface FromChild { child: ChildName; pick?: ItemSelector[] }   // a child, or the picked items of a list child, in order
+export interface FromHire { hire: HireName }                             // a hire on this same contract (a header's title, the built-in disclosure)
+export type SlotSource = FromChild | FromHire;
+export interface SlotFrom { slot: SlotName; fill: SlotSource[] }
+export type Clause = PropFrom | PropFixed | PropText | PropByValue | EventTo | SlotFrom;
+
+export interface Hire {
+  name: HireName;
+  hires: ComponentId;                    // exactly one free component
+  contract: ContractName;                // exactly one contract
+  clauses: Clause[];
+  variants?: VariantPick[];
+  tokens?: HireToken[];
+}
+
+// ── Placements: which hire draws each config object, by contract (and, for items, kind / name / presentation)
+export interface ParamMatch { name?: ParamName; type?: ParamType; axis?: boolean; draft?: boolean }   // controls: picked by the bound param (its name, or its spec)
+export interface Placement {
+  contract: ContractName;
+  within?: ContractName | ContractName[];   // the nearest ancestor contract, or the nearest few in order (['appBarPage', 'sheetLayer']: a layer page's header)
+  overlay?: OverlayKind;         // overlays: by kind
+  match?: ItemSelector;                  // items: a kind or a name (destinations: the deck id; overlays: the kind)
+  param?: ParamMatch;                    // basic actions and panel rows
+  presentation?: PresentationKey;        // content items
+  state?: ContentViewState;              // content states: empty · error · offlineStale
+  env?: EnvEquals;                       // e.g. layout compact only
+  hire: HireName | null;                 // null: not drawn here (e.g. the menu button on wide, where the rail has it)
+}
+export interface PageExceptions { page: PageId; placements: Placement[] }   // checked first, then the defaults
+export interface Composition { hires: Hire[]; placements: Placement[]; pages: PageExceptions[] }
+
+// ── A place: what placement matches on (core/contracts.js builds one per node)
+export interface Place { contract: ContractName; page: PageId | null; within: ContractName[]; kind?: ItemKind; name?: ItemName; param?: ParamMatch; presentation?: PresentationKey; state?: ContentViewState; overlay?: OverlayKind; env?: LayoutEnv }
+// ── Look: sizes and visuals at the current env, read through placements (core/compose.js lookAt)
+export interface Look {
+  size(at: Place, name: string, state?: string): number;       // the hire's own token '<hire>.<name>', else its free component's visual; 0 where nothing is drawn
+  visuals(at: Place, state?: string, ctx?: VisualContext): Record<string, unknown> | null;
+  hire(at: Place): HireName | null;
+}
+// Rules: api/composition-rules.js (hires, clauses, children reach slots, tokens, variants, duplicates, shadowing, unfed props, design texts, placements).
