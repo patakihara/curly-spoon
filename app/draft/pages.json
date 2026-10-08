@@ -866,180 +866,6 @@
    }
   }
  },
- "shelf": {
-  "id": "shelf",
-  "kind": "backdrop",
-  "title": {
-   "from": "item"
-  },
-  "params": {
-   "sort": {
-    "type": "choice",
-    "motion": "swap",
-    "options": [
-     {
-      "value": "popular",
-      "label": {
-       "text": "browse.sort.popular"
-      }
-     },
-     {
-      "value": "new",
-      "label": {
-       "text": "browse.sort.new"
-      }
-     }
-    ]
-   },
-   "find": {
-    "type": "text"
-   },
-   "genre": {
-    "type": "choices",
-    "options": {
-     "dataSource": "options:shelf.genre",
-     "params": {
-      "id": {
-       "bind": "$opener.id"
-      }
-     }
-    },
-    "motion": "swap"
-   }
-  },
-  "back": {
-   "header": {
-    "items": [
-     {
-      "kind": "button",
-      "name": "up",
-      "label": {
-       "text": "action.back"
-      },
-      "action": {
-       "nav": {
-        "type": "up"
-       }
-      }
-     }
-    ]
-   },
-   "basicAction": {
-    "bind": "sort"
-   },
-   "panel": [
-    {
-     "kind": "param",
-     "bind": "genre",
-     "label": {
-      "text": "library.genre"
-     }
-    }
-   ]
-  },
-  "front": {
-   "header": {
-    "title": {
-     "derived": "contentSummary"
-    },
-    "items": [
-     {
-      "kind": "find",
-      "name": "find",
-      "param": "find",
-      "placeholder": {
-       "text": "find.in",
-       "args": {
-        "what": {
-         "derived": "pageTitle"
-        }
-       }
-      }
-     }
-    ]
-   },
-   "collapse": "partial",
-   "content": {
-    "dataSource": "shelf",
-    "presentations": [
-     {
-      "key": "default"
-     }
-    ],
-    "params": [
-     {
-      "name": "id",
-      "value": {
-       "bind": "$opener.id"
-      }
-     }
-    ]
-   }
-  },
-  "policy": {
-   "params": {
-    "sort": {
-     "default": "popular",
-     "resetOn": [],
-     "scope": null
-    },
-    "find": {
-     "default": "",
-     "resetOn": [],
-     "scope": null
-    },
-    "genre": {
-     "default": [],
-     "resetOn": [],
-     "scope": null
-    }
-   },
-   "back": {
-    "expanded": {
-     "default": false,
-     "resetOn": [
-      "deckSwitch",
-      "reselect"
-     ],
-     "scope": null
-    },
-    "headerHidden": {
-     "default": false,
-     "resetOn": [
-      "return",
-      "paramChange"
-     ],
-     "scope": null
-    }
-   },
-   "front": {
-    "scroll": {
-     "default": 0,
-     "resetOn": [
-      "paramChange",
-      "reselect"
-     ],
-     "scope": null
-    },
-    "find": {
-     "opened": {
-      "default": false,
-      "resetOn": [
-       "scrollTop"
-      ],
-      "scope": null
-     },
-     "closed": {
-      "default": false,
-      "resetOn": [
-       "scrollTop"
-      ],
-      "scope": null
-     }
-    }
-   }
-  }
- },
  "person": {
   "id": "person",
   "kind": "backdrop",
@@ -1352,6 +1178,180 @@
        {
         "paramChange": "section"
        }
+      ],
+      "scope": null
+     }
+    }
+   }
+  }
+ },
+ "shelfPage": {
+  "id": "shelfPage",
+  "kind": "backdrop",
+  "title": {
+   "from": "item"
+  },
+  "params": {
+   "sort": {
+    "type": "choice",
+    "motion": "swap",
+    "options": [
+     {
+      "value": "popular",
+      "label": {
+       "text": "browse.sort.popular"
+      }
+     },
+     {
+      "value": "new",
+      "label": {
+       "text": "browse.sort.new"
+      }
+     }
+    ]
+   },
+   "find": {
+    "type": "text"
+   },
+   "genre": {
+    "type": "choices",
+    "options": {
+     "dataSource": "options:shelf.genre",
+     "params": {
+      "id": {
+       "bind": "$opener.id"
+      }
+     }
+    },
+    "motion": "swap"
+   }
+  },
+  "back": {
+   "header": {
+    "items": [
+     {
+      "kind": "button",
+      "name": "up",
+      "label": {
+       "text": "action.back"
+      },
+      "action": {
+       "nav": {
+        "type": "up"
+       }
+      }
+     }
+    ]
+   },
+   "basicAction": {
+    "bind": "sort"
+   },
+   "panel": [
+    {
+     "kind": "param",
+     "bind": "genre",
+     "label": {
+      "text": "library.genre"
+     }
+    }
+   ]
+  },
+  "front": {
+   "header": {
+    "title": {
+     "derived": "contentSummary"
+    },
+    "items": [
+     {
+      "kind": "find",
+      "name": "find",
+      "param": "find",
+      "placeholder": {
+       "text": "find.in",
+       "args": {
+        "what": {
+         "derived": "pageTitle"
+        }
+       }
+      }
+     }
+    ]
+   },
+   "collapse": "partial",
+   "content": {
+    "dataSource": "shelf",
+    "presentations": [
+     {
+      "key": "default"
+     }
+    ],
+    "params": [
+     {
+      "name": "id",
+      "value": {
+       "bind": "$opener.id"
+      }
+     }
+    ]
+   }
+  },
+  "policy": {
+   "params": {
+    "sort": {
+     "default": "popular",
+     "resetOn": [],
+     "scope": null
+    },
+    "find": {
+     "default": "",
+     "resetOn": [],
+     "scope": null
+    },
+    "genre": {
+     "default": [],
+     "resetOn": [],
+     "scope": null
+    }
+   },
+   "back": {
+    "expanded": {
+     "default": false,
+     "resetOn": [
+      "deckSwitch",
+      "reselect"
+     ],
+     "scope": null
+    },
+    "headerHidden": {
+     "default": false,
+     "resetOn": [
+      "return",
+      "paramChange"
+     ],
+     "scope": null
+    }
+   },
+   "front": {
+    "scroll": {
+     "default": 0,
+     "resetOn": [
+      "paramChange",
+      "reselect"
+     ],
+     "scope": null
+    },
+    "find": {
+     "opened": {
+      "default": false,
+      "resetOn": [
+       "scrollTop"
+      ],
+      "scope": null
+     },
+     "closed": {
+      "default": false,
+      "resetOn": [
+       "scrollTop"
       ],
       "scope": null
      }

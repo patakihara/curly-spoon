@@ -131,11 +131,12 @@ export interface BackLayerChildren { header: BackHeaderContract; actions: Button
 export interface BackLayerContract extends Contract<BackLayerConfig, BackLayerValues, ToggleExpandedIntent> { children: BackLayerChildren }   // toggle only while toggleOnTap
 
 // ── Front layer
-// An item may hold entries (a shelf of items, e.g. Browse's "Artists to know"). Data decides which items and entries exist;
-// activating any of them opens it (ItemData.opens). The engine reads ItemData.id, .opens and .entries (see EntriesData).
-export interface EntriesData { entries?: ItemData[] }                   // OPEN: joins api.d.ts ItemData
+// A shelf is an item holding entries (Browse's "Artists to know"). Data decides which shelves and entries exist; activating
+// a shelf or an entry opens it (ItemData.opens; a shelf opens the template shelfPage). The engine reads ItemData.id, .opens
+// and .entries (ShelfData).
+export interface ShelfData { entries?: ItemData[] }                     // OPEN: joins api.d.ts ItemData
 export interface ItemValues { item: ItemData; navigable: boolean }
-export interface ItemChildren { entries: ItemContract[] }              // recursive: entries are items
+export interface ItemChildren { entries: ItemContract[] }              // recursive: a shelf's entries are items; [] for other items
 export interface ItemContract extends Contract<PresentationConfig, ItemValues, OpenIntent> { children: ItemChildren }
 export interface ContentValues { view: ContentView; presentation: PresentationKey; groups: ItemGroup[] }
 export interface ContentChildren { items: ItemContract[] }
@@ -221,7 +222,7 @@ export interface Placement {
   match?: ItemSelector;                  // header items: a kind or a name
   param?: ParamMatch;                    // basic actions and panel rows
   presentation?: PresentationKey;        // content items
-  entry?: boolean;                       // content items: an entry inside another item (true) or a top-level item
+  entry?: boolean;                       // content items: an entry on a shelf (true) or a top-level item
   env?: EnvEquals;                       // e.g. layout compact only
   hire: HireName | null;                 // null: not drawn here (e.g. the menu button on wide, where the rail has it)
 }

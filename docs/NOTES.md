@@ -413,8 +413,8 @@ roleProps / roleIntent and Role.parts once built. Starting point: the backdrop p
   surface ← backLayer, frontLayer, bottomSheet, sideSheet, drawer, peekCard (+ empty backdropPage, appBarPage,
   sheetLayer, fullscreenLayer) · message ← emptyState, errorState, staleBanner, snackbar · dialog ← menu ·
   navigation ← navBar, navRail · page ← splash, signInPage. nowPlaying (peek content) = row of artwork + info + buttons.
-- Walls (need Sofia): "shelf" instead of "presentation": which thing is renamed (the content arrangement type, or the
-  section items holding entries)?
+- Decided (Sofia): a shelf is an item holding entries (Browse's carousels; fake-backend shelfItem already says so). The
+  page template `shelf` becomes `shelfPage` (draft pages.json; app.json / fake-backend opens at the switch).
   (a second place to look, no home for per-job looks).
 
 ## Open (current)
