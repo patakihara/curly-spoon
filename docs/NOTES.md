@@ -439,6 +439,39 @@ Each was my call; say if you disagree and I redo it.
 9. Content states (empty / error / stale banner) are children of the content contract; composition picks their
    components (was AppConfig.contentStates).
 10. Merge tree for free components (above) is my proposal; applied when design moves to the new model.
+11. Breakpoints.railWidth (80, config) duplicates navRail's design width: it leaves config; the side-sheet and rail
+    widths reach sideMode as model `sizes` (see the switchover plan).
+12. ContentView loses `component` / `banner` ids (composition picks content-state components); keeps the state, whether
+    items show, placeholders, retry and whether the stale banner shows.
+13. Placement identity (SlotPath) becomes the contract tree's path keys (core/contracts.js), so interaction state still
+    belongs to where a component sits.
+14. Peek detail is drawn by detailHeader with a new `peek` layout, the player's artwork + track info by a new `player`
+    layout (the `info ← detailHeader, trackInfo` merge); until DetailHeader draws them, one composition rule fails.
+15. The generated token files (generated/) were stale at the baseline; regenerating them also brought in older design
+    changes (fadeThrough tokens, header height 64).
+
+### Switchover plan (draft → 18.0.0), not started — the branch's mockup still runs the old model
+Status at 02:13 stop: the draft is whole on the API / config / composition / rules side; core, the shell and the DCs are
+untouched (master and this branch draw the same mockup). Order, each step committed and checked:
+1. Sizes (decide first, see below). 2. Core: navigation.js on the new config (nested policy init for find, openFind /
+   closeFind, presentations as a list, content params as a list, contentView without component ids, hideHeaderOnScroll,
+   sizes passed in instead of breakpoints.railWidth / presentation widths); remove resolveRef / expandSlots / roleProps /
+   roleIntent / slotPath / ROLES; add core/contracts.js computing the contract tree (values from queries + Layout,
+   children by config, keys by path); layout.js sizes from composition + design (core/compose.js). 3. API: draft.d.ts
+   merges into api.d.ts as 18.0.0; delete roles.js, gen-roles.js, the §M2 block, refs, ScreenSpec, ComponentDef.implements
+   (design json `implements` keys go too), api/draft-rules.js joins invariants.js, role rules go, CHANGELOG / API.md /
+   RUST.md follow. 4. Config: app/draft/app.json → app/app.json, app/draft/composition.json → app/composition.json
+   (app/draft/ deleted); fake-backend: template shelfPage, no bare songs on Browse shelves. 5. Shell + DCs: one renderer
+   (contract node → hire → DC; clauses map values to props, slots to rendered children, DC events to intents / actions);
+   navBar / navRail destinations and menu items become slots; DetailHeader gains the peek and player layouts.
+   6. Verify in headless Chrome against the screenshots taken 2026-10-08 (browse, expanded, artist, artist scrolled,
+   library, wide), frame by frame for motion.
+- Sizes (my recommendation, needs a check on screen): Layout reads sizes from design through composition — a bar's
+  height / expandedHeight is its hire's visual (hire tokens named after a visual override it: personHeader.expandedHeight
+  → a new design token for 272); the back layer's basicAction / actions region heights become backLayer visuals (60 /
+  56); the panel stays measured by the platform (as today); peek height, side-sheet width, rail width come from the peek /
+  side sheet / rail hires. Breakpoints keep compactMax and minContent only (behaviour thresholds). sideMode then needs the
+  side-sheet and rail widths: the model gets them as `sizes` at creation (Layout.sizes(specs, composition)).
 
 ## Open (current)
 - Design checks are not shown on the Invariants page yet (needs Invariants.dc.html).
