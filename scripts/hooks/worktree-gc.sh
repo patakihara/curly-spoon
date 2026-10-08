@@ -3,21 +3,21 @@
 # Worktree/branch garbage collection for this repo's subagent worktrees.
 #
 # Called from four places, ranked by how strong a guarantee each gives that
-# it actually runs (see scripts/hooks/usage-gate.sh and bin/auralis-autorun
-# in $HOME for the call sites):
+# it actually runs (see ~/.claude-shared/skills/autorun/gate.sh and launch for the call
+# sites; this repo's scripts/hooks/usage-gate.sh calls that gate):
 #
-#   1. usage-gate.sh, at the hard usage-ceiling trigger. Strongest: fires
+#   1. the gate, at the hard usage-ceiling trigger. Strongest: fires
 #      exactly once per retirement, as part of the hook invocation that is
 #      already running on the way to denying that tool call.
-#   2. usage-gate.sh, on every SessionStart. Second-strongest: once per new
+#   2. the gate, on every SessionStart. Second-strongest: once per new
 #      session, unconditionally -- the fresh successor's own chance to finish
 #      whatever the retiring incumbent could not (e.g. a worktree still too
 #      young at that moment; see the age gate below).
-#   3. usage-gate.sh, throttled, riding ordinary PreToolUse traffic. Weakest
+#   3. the gate, throttled, riding ordinary PreToolUse traffic. Weakest
 #      guarantee, but the one that matches where the real backlog was found
 #      to accumulate: worktree-agent-* branches and worktrees pile up during
 #      ordinary, well-below-any-ceiling subagent work, not around retirement.
-#   4. bin/auralis-autorun's own timer tick, on this host. The backstop for
+#   4. the autorun launcher's own timer tick, on this host. The backstop for
 #      everything above: the one thing still running when nothing in the
 #      repo is alive to.
 #
@@ -110,7 +110,7 @@
 #                                       (default: 30)
 #   AURALIS_WORKTREE_GC_LOG            where this script's own run log is
 #                                       appended (default:
-#                                       $XDG_STATE_HOME/auralis-respawn/
+#                                       $XDG_STATE_HOME/autorun/auralis/
 #                                       worktree-gc.log)
 #   CLAUDE_PROJECT_DIR                 which checkout this pass runs for
 #                                       (same signal every hook in this repo
@@ -141,7 +141,7 @@ GIT_TIMEOUT="${AURALIS_WORKTREE_GC_GIT_TIMEOUT:-30}"
 MIN_AGE="${AURALIS_WORKTREE_GC_MIN_AGE:-86400}"
 TARGET_BRANCH="${AURALIS_WORKTREE_GC_BRANCH:-main}"
 PREFIX="${AURALIS_WORKTREE_GC_BRANCH_PREFIX:-worktree-agent-}"
-LOG_FILE="${AURALIS_WORKTREE_GC_LOG:-${XDG_STATE_HOME:-${HOME:-}/.local/state}/auralis-respawn/worktree-gc.log}"
+LOG_FILE="${AURALIS_WORKTREE_GC_LOG:-${XDG_STATE_HOME:-${HOME:-}/.local/state}/autorun/auralis/worktree-gc.log}"
 
 mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null
 
