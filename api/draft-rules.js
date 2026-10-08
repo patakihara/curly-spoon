@@ -22,8 +22,8 @@ export function placesOf(config) {
     const s = (page.params || {})[bind] || {};
     return { name: bind, type: s.type, axis: !!s.axis, draft: false };
   };
-  // within: the ancestor contracts, nearest first · when: the item's condition (an env one decides where it exists)
-  const item = (page, within, it) => out.push({ contract: it.kind, page: page.id, within, kind: it.kind, name: it.name, when: it.when });
+  // within: the ancestor contracts, nearest first · items whose when does not hold are still drawn (hidden), so they count
+  const item = (page, within, it) => out.push({ contract: it.kind, page: page.id, within, kind: it.kind, name: it.name });
   const header = (page, within, h) => { const w = ['header', ...within]; out.push({ contract: 'header', page: page.id, within }); h.items.forEach(i => item(page, w, i)); if (h.detail) out.push({ contract: 'detail', page: page.id, within: w }); };
   const content = (page, within, c) => {
     const w = ['content', ...within];
@@ -84,8 +84,6 @@ const covers = (q, p) => q.contract === p.contract
   && (!q.env || (!!p.env && q.env.env === p.env.env && q.env.equals === p.env.equals));
 const sameHire = (a, b) => a.hires === b.hires && a.contract === b.contract && JSON.stringify(a.clauses) === JSON.stringify(b.clauses)
   && JSON.stringify(a.variants || []) === JSON.stringify(b.variants || []) && JSON.stringify((a.tokens || []).map(t => [t.name.slice(a.name.length), t.alias])) === JSON.stringify((b.tokens || []).map(t => [t.name.slice(b.name.length), t.alias]));
-// an env condition on an item: false where it does not hold (the item does not exist there)
-const envHolds = (when, env) => !when || !('env' in when) || env[when.env] === when.equals;
 
 export const DRAFT_RULES = [
   ['every hire wraps a registered free component and meets a declared contract', f => {
@@ -189,7 +187,6 @@ export const DRAFT_RULES = [
   ['every drawn config object has a placement on every layout', f => {
     const errs = new Set();
     placesOf(f.config).forEach(at => ['compact', 'wide'].forEach(layout => {
-      if (!envHolds(at.when, { layout })) return;
       if (placementFor(f.composition, { ...at, env: { layout } }) === undefined) errs.add(at.contract + (at.name ? ' ' + at.name : '') + (at.presentation ? ' ' + at.presentation : '') + (at.state ? ' ' + at.state : '') + (at.within ? ' in ' + at.within : '') + (at.page ? ' (' + at.page + ')' : '') + ' on ' + layout);
     }));
     assert(!errs.size, errs.size + ': ' + [...errs].slice(0, 40).join(' · '));

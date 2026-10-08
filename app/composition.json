@@ -2568,10 +2568,6 @@
     "name": "menu"
    },
    "within": "header",
-   "env": {
-    "env": "layout",
-    "equals": "compact"
-   },
    "hire": "menuButton"
   },
   {
