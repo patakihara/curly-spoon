@@ -386,8 +386,9 @@ roleProps / roleIntent and Role.parts once built. Starting point: the backdrop p
 - Rejected: clause sets on the component (design would hold API names and grow a set per job); separate adapter files
 - Tokens: a hire's fixed values are tokens minted for it (`<hire>.<name>`), each aliasing a design token, as Sonora's
   tokens alias their scales (`--surface-fg: var(--neutral-50)`). Composition holds no literals.
-- Draft built (branch component-contracts): api/draft.d.ts (config, contracts, free components, composition types),
-  app/draft/pages.json (the five backdrop pages converted by script), app/draft/composition.json. Findings: fixed back
+- Built (18.0.0, branch component-contracts-switch): api/api.d.ts (config, contracts, composition types), api/contracts.js
+  (single source; api/gen-contracts.js writes the TS), app/app.json (converted by script), app/composition.json,
+  core/compose.js (placements, sizes), core/contracts.js (the contract tree), api/composition-rules.js. Findings: fixed back
   regions (header · actions · basicAction · panel; panel only expanded) fit every page; every back title is the page
   title; every front header starts with the caret; every control maps from its param's spec (choice → chips, axis →
   tabs, choices → filter chips, number range → range field, draft → search field; one exception: Library sort is a
@@ -419,8 +420,8 @@ roleProps / roleIntent and Role.parts once built. Starting point: the backdrop p
 
 ### Decisions made while Sofia slept (2026-10-09, 00:15–02:13) — review these
 Each was my call; say if you disagree and I redo it.
-1. The draft lives beside the old API (api/draft.d.ts, app/draft/app.json, app/draft/composition.json) until it is whole;
-   then it replaces api.d.ts / app.json and the old roles, refs and draft files are deleted in the same change.
+1. The draft lived beside the old API until it was whole; it has now replaced api.d.ts / app.json, and roles.js,
+   gen-roles.js, the draft files and the ref / role rules are deleted.
 2. The back layer has fixed regions (header · actions · basicAction · panel; panel only when expanded) instead of free
    regions + layouts. All five backdrop pages fit; a page wanting another region would need an API change.
 3. One header config and contract for the back header, the app bar and the peek; composition tells them apart by the
@@ -446,26 +447,45 @@ Each was my call; say if you disagree and I redo it.
 13. Placement identity (SlotPath) becomes the contract tree's path keys (core/contracts.js), so interaction state still
     belongs to where a component sits.
 14. Peek detail is drawn by detailHeader with a new `peek` layout, the player's artwork + track info by a new `player`
-    layout (the `info ← detailHeader, trackInfo` merge); until DetailHeader draws them, one composition rule fails.
+    layout (the `info ← detailHeader, trackInfo` merge). Values copied from artwork / trackInfo, gap between art and text
+    guessed (12 / 24). The DetailHeader DC does not draw these layouts yet: the shell still draws the peek and the player
+    with the artwork / trackInfo visuals.
 15. The generated token files (generated/) were stale at the baseline; regenerating them also brought in older design
     changes (fadeThrough tokens, header height 64).
+16. Items whose `when` does not hold stay in the contract tree with `shown: false` (the contract note said lists hold
+    only shown members): the old shell kept them drawn at zero width so they fade in and out (Library's filter summary).
+    So a hidden item still needs a placement (the menu button is placed on wide too).
+17. A new clause, PropText (prop ← a design text): range field labels (range.from / range.to moved from app texts to
+    design texts) and content-state texts (content.empty / error / stale). contentState lost its `text` value.
+18. Design may mark props optional (`optional`, inherited): a button's icon, the logo's inherited icon, search / seek
+    options. A new rule says every other prop of a hired free component is fed by a clause or a same-named value.
+19. Contract values were widened to feed props by name: item (title, subtitle, image, shape, current, navigable — `item`
+    itself went), input (label, min, max), switch (options), navigation (selected), overlay (title, body, confirm,
+    cancel, text, action; OverlaySpec.texts is a named object now).
+20. backTitle and appBarTitle were the same hire: merged as pageTitle (a new rule flags duplicate hires).
+21. Menu items get icons through hires by name (playNowMenuItem, playLastMenuItem, linkMenuItem; icon.link added) —
+    the converter had dropped the old icons.
+22. The inner sheet's peek height (69) was dropped by the converter: back as design token size.pageSheet.peek, minted by
+    the pageSheet hire.
+23. Opened pages keep their template in page state (`template`), since composition's page exceptions name templates
+    while opened pages are ids like browse/Arcadia.
+24. Instance ids are contract-tree keys; the shell makes its own keys only for instances the tree has no node for
+    (the peek card, the Dedede circle, dialog buttons) and reads surfaces from the key prefix.
+25. Episodes open an episode page (template `episode`, like an album's without the track list); Fresh episodes stays a
+    shelf of episodes (Sofia asked for this mid-night). Inside a show's page, tapping an episode now opens its page
+    instead of playing it.
+26. The 12 old invariants that tested refs, roles, slot paths and repeats are deleted, not ported; the composition rules
+    and the contract tree replace them.
 
-### Switchover plan (draft → 18.0.0), not started — the branch's mockup still runs the old model
-Status: the draft is whole on the API / config / composition / rules side, and sizes are settled (below); core, the
-shell and the DCs are untouched, so master and this branch draw the same mockup. Order, each step committed and checked:
-1. Sizes: done (recommendation below, checked 24 / 24). 2. Core: navigation.js on the new config (nested policy init for find, openFind /
-   closeFind, presentations as a list, content params as a list, contentView without component ids, hideHeaderOnScroll,
-   sizes passed in instead of breakpoints.railWidth / presentation widths); remove resolveRef / expandSlots / roleProps /
-   roleIntent / slotPath / ROLES; add core/contracts.js computing the contract tree (values from queries + Layout,
-   children by config, keys by path); layout.js sizes from composition + design (core/compose.js). 3. API: draft.d.ts
-   merges into api.d.ts as 18.0.0; delete roles.js, gen-roles.js, the §M2 block, refs, ScreenSpec, ComponentDef.implements
-   (design json `implements` keys go too), api/draft-rules.js joins invariants.js, role rules go, CHANGELOG / API.md /
-   RUST.md follow. 4. Config: app/draft/app.json → app/app.json, app/draft/composition.json → app/composition.json
-   (app/draft/ deleted); fake-backend: template shelfPage, no bare songs on Browse shelves. 5. Shell + DCs: one renderer
-   (contract node → hire → DC; clauses map values to props, slots to rendered children, DC events to intents / actions);
-   navBar / navRail destinations and menu items become slots; DetailHeader gains the peek and player layouts.
-   6. Verify in headless Chrome against the screenshots taken 2026-10-08 (browse, expanded, artist, artist scrolled,
-   library, wide), frame by frame for motion.
+### Switchover (2026-10-09): done, with what is still open
+The mockup runs on 18.0 (config + composition + design → contract tree → shell). Checked in headless Chrome against the
+pre-switch mockup, same clicks, PNG hashes: 13 of 14 screens pixel-identical (browse, expanded, artist, search,
+collection, Now playing, drawer, account, collection ⋮ menu, library panel, desktop browse / rail / Now playing). Library
+grid: a 1px text shift with identical DOM and no scroll offsets — cause not found. Motion was not sampled frame by frame.
+Layout numbers old vs new: 169 / 169 cases equal. Rules: 95 pass · 7 skipped · 11 fail (composition 13 / 13).
+Steps: 1 sizes ✓ · 2 core ✓ (navigation, compose, contracts, layout) · 3 API ✓ (api.d.ts 18.0.0; roles / refs / draft
+deleted) · 4 config ✓ · 5 shell ✓ (view code reads nodes) — the DCs are unchanged and still take the shell's flattened
+fields, not nodes · 6 verify ✓ (screens above).
 - Sizes (my call, checked: every size config sets today comes out the same, 24 / 24): Layout reads sizes from design
   through composition — a bar's
   height / expandedHeight is its hire's visual (hire tokens named after a visual override it: personHeader.expandedHeight
@@ -484,6 +504,16 @@ shell and the DCs are untouched, so master and this branch draw the same mockup.
   (651–658), which the contract tree's path keys replace.
 
 ## Open (current)
+- 18.0: 11 old invariants still read 17.0 shapes (regions, navigation refs, contentStates, refs in conditions / binds,
+  presentation layouts, the player rule); port them to the contract tree.
+- 18.0: the shell still chooses per component id in places (the item-kind table in hItems, panel-row branches, Now
+  playing's artwork / trackInfo visuals, the app-bar form); the planned one-renderer step (node → hire → DC, DCs taking
+  props and slots) is not done.
+- 18.0: design json still has `implements` keys (load.js / build.js / the shell's interactive check read them); remove
+  with the renderer step.
+- 18.0: docs/API.md and docs/RUST.md still describe roles and refs.
+- 18.0: the free-component merge tree is proposed, not applied (69 design components).
+- 18.0: Library grid 1px text shift vs the pre-switch mockup.
 - Design checks are not shown on the Invariants page yet (needs Invariants.dc.html).
 - Still in the player (ordering, not yet params): detail transition order (out → swap → front move + in → header parts), flight cut sources (top: header / bars above the middle; bottom: peek / nav bar), app-bar sheet start (front layer top), the reveal band shape.
 - Components page: no previews yet for FrontLayer, AppBarPage, NowPlayingSheet, UpNextSheet, PeekCard, DededeLayer, AccountLayer.
