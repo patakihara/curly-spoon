@@ -384,6 +384,22 @@ roleProps / roleIntent and Role.parts once built. Starting point: the backdrop p
   component draws itself, named so motion can address it (web components' ::part). Role.parts (16.0) was slot-like.
 - Style: every type named; no `Record<string, X>` in API sketches (use a named spec type with a named key type).
 - Rejected: clause sets on the component (design would hold API names and grow a set per job); separate adapter files
+- Tokens: a hire's fixed values are tokens minted for it (`<hire>.<name>`), each aliasing a design token, as Sonora's
+  tokens alias their scales (`--surface-fg: var(--neutral-50)`). Composition holds no literals.
+- Draft built (branch component-contracts): api/draft.d.ts (config, contracts, free components, composition types),
+  app/draft/pages.json (the five backdrop pages converted by script), app/draft/composition.json. Findings: fixed back
+  regions (header · actions · basicAction · panel; panel only expanded) fit every page; every back title is the page
+  title; every front header starts with the caret; every control maps from its param's spec (choice → chips, axis →
+  tabs, choices → filter chips, number range → range field, draft → search field; one exception: Library sort is a
+  dropdown). Design would need: events on interactive free components, `items` slots on layouts, a `content` slot on
+  panelRow, slots on backdropPage / backLayer / frontLayer for their children, top / contentOffset props on frontLayer,
+  icon tokens.
+- Motion: no step names a piece yet (all 48 are kind steps), so nothing breaks. Pieces become `<contract>.<child>` and
+  `<free component>.<slot|part>`; hires are never named by motion.
+- Walls (need Sofia): (1) local search: config emulates its open / closed state with params searching / searchClosed and
+  a long condition; who owns that state? (2) Browse carousel entries play instead of open: an item with entries that
+  have their own action; how does config say it? (3) contracts as data for the rules (roles.js pattern: data generates
+  the TS) or hand-written TS. Also: frontHeader vs header (one free component, as Sofia said, or two).
   (a second place to look, no home for per-job looks).
 
 ## Open (current)
