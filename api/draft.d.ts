@@ -168,104 +168,115 @@ export interface Contract<C, V, I> { config: C; values: V; intents: I }
 export interface NoValues {}
 export type NoIntents = never;
 
-// ── Items
+export type BackRegionName = 'header' | 'actions' | 'basicAction' | 'panel';
+export interface BackRegionView { region: BackRegionName; top: number; height: number; opacity: number; interactive: boolean }   // Layout
+export interface OverlayValueText { name: string; text: string }
+// <contracts:generated> — from api/contracts.js by api/gen-contracts.js; do not edit
+// button
 export interface ButtonValues { label: string; checked: boolean | null; state: string | null; interaction: InteractionView }
-export interface ButtonContract extends Contract<ButtonItem, ButtonValues, Actions> {}          // sends: runs its action
+export interface ButtonContract extends Contract<ButtonItem, ButtonValues, Actions> {}
+// logo
 export interface LogoValues { label: string; playing: boolean }
 export interface LogoContract extends Contract<LogoItem, LogoValues, NoIntents> {}
+// text
 export interface TextValues { text: string }
 export interface TextContract extends Contract<TextItem, TextValues, NoIntents> {}
+// switch: steps its param to the next option
 export interface SwitchValues { label: string; value: ParamValue | null; next: ParamValue | null }
 export interface SwitchContract extends Contract<SwitchItem, SwitchValues, SetParamsIntent> {}
-export interface FindValues { open: boolean; value: string; placeholder: string; closeLabel: string }   // closeLabel: text find.close
+// find: closeLabel: text find.close
+export interface FindValues { open: boolean; value: string; placeholder: string; closeLabel: string }
 export interface FindContract extends Contract<FindItem, FindValues, OpenFindIntent | CloseFindIntent | SetParamsIntent> {}
+// detail
 export interface DetailValues { title: string; subtitle: string | null; image: string | null; meta: string | null }
 export interface DetailContract extends Contract<DetailConfig, DetailValues, NoIntents> {}
+// seek
 export interface SeekValues { label: string; positionMs: number; durationMs: number | null }
 export interface SeekContract extends Contract<SeekItem, SeekValues, Seek> {}
 export type HeaderItemContract = ButtonContract | LogoContract | TextContract | SwitchContract | FindContract;
-export type BodyItemContract = ButtonContract | TextContract | DetailContract | SeekContract;
-
-// ── Headers (back layer, app bar, peek: told apart by the contract they sit in)
-export interface HeaderValues { title: string | null; progress: number }    // progress: collapse 0 … 1 (Layout.barView)
+// header: progress: collapse 0 … 1 (Layout.barView)
+export interface HeaderValues { title: string | null; progress: number }
 export interface HeaderChildren { items: HeaderItemContract[]; detail?: DetailContract }
 export interface HeaderContract extends Contract<HeaderConfig, HeaderValues, NoIntents> { children: HeaderChildren }
-
-// ── Controls and rows
+// input: one control for one param
 export interface InputValues { value: ParamValue | null; options: ParamOption[]; placeholder: string | null }
-export interface InputContract extends Contract<BasicActionConfig | ParamRow, InputValues, SetParamsIntent> {}   // one control for one param
+export interface InputContract extends Contract<BasicActionConfig | ParamRow, InputValues, SetParamsIntent> {}
+// paramRow
 export interface ParamRowValues { label: string | null }
 export interface ParamRowChildren { control: InputContract }
 export interface ParamRowContract extends Contract<ParamRow, ParamRowValues, NoIntents> { children: ParamRowChildren }
+// suggestion: picking it fills the draft (SuggestionsRow.fills)
 export interface SuggestionValues { text: string }
-export interface SuggestionContract extends Contract<ItemData, SuggestionValues, SetParamsIntent> {}   // picking it fills the draft (SuggestionsRow.fills)
+export interface SuggestionContract extends Contract<ItemData, SuggestionValues, SetParamsIntent> {}
+// suggestions
 export interface SuggestionsValues { label: string }
 export interface SuggestionsChildren { items: SuggestionContract[] }
 export interface SuggestionsContract extends Contract<SuggestionsRow, SuggestionsValues, NoIntents> { children: SuggestionsChildren }
-export type PanelRowContract = ParamRowContract | SuggestionsContract;
-
-// ── Content
+// item: a shelf's entries are items; action: the presentation's itemAction (recursive: refers to itself)
 export interface ItemValues { item: ItemData; navigable: boolean }
-export interface ItemChildren { entries: ItemContract[] }              // recursive: a shelf's entries are items; [] for other items
-export interface ItemContract extends Contract<PresentationConfig, ItemValues, OpenIntent | Actions> { children: ItemChildren }   // sends: open, or the presentation's itemAction
-export interface ContentStateValues { state: ContentViewState; text: string; retry: boolean }   // empty · error · offlineStale (the banner)
+export interface ItemChildren { entries: ItemContract[] }
+export interface ItemContract extends Contract<PresentationConfig, ItemValues, OpenIntent | Actions> { children: ItemChildren }
+// contentState: empty · error · offlineStale (the banner)
+export interface ContentStateValues { state: ContentViewState; text: string; retry: boolean }
 export interface ContentStateContract extends Contract<ContentConfig, ContentStateValues, RetryIntent> {}
+// content
 export interface ContentValues { view: ContentView; presentation: PresentationKey; groups: ItemGroup[]; placeholders: number }
 export interface ContentChildren { items: ItemContract[]; state?: ContentStateContract; banner?: ContentStateContract }
 export interface ContentContract extends Contract<ContentConfig, ContentValues, NoIntents> { children: ContentChildren }
-
-// ── Backdrop page
-export type BackRegionName = 'header' | 'actions' | 'basicAction' | 'panel';
-export interface BackRegionView { region: BackRegionName; top: number; height: number; opacity: number; interactive: boolean }   // Layout
+export type PanelRowContract = ParamRowContract | SuggestionsContract;
+// backLayer: toggle only while toggleOnTap
 export interface BackLayerValues { expanded: boolean; headerHidden: boolean; regions: BackRegionView[] }
 export interface BackLayerChildren { header: HeaderContract; actions: ButtonContract[]; basicAction?: InputContract; panel: PanelRowContract[] }
-export interface BackLayerContract extends Contract<BackLayerConfig, BackLayerValues, ToggleExpandedIntent> { children: BackLayerChildren }   // toggle only while toggleOnTap
-export interface FrontHeaderValues { title: string; expanded: boolean; disclosureLabel: string }   // the built-in disclosure: the back layer's expanded + its label (texts backLayer.reveal / backLayer.conceal)
+export interface BackLayerContract extends Contract<BackLayerConfig, BackLayerValues, ToggleExpandedIntent> { children: BackLayerChildren }
+// frontHeader: the built-in disclosure: the back layer's expanded + its label (texts backLayer.reveal / backLayer.conceal)
+export interface FrontHeaderValues { title: string; expanded: boolean; disclosureLabel: string }
 export interface FrontHeaderChildren { items: HeaderItemContract[] }
 export interface FrontHeaderContract extends Contract<FrontHeaderConfig, FrontHeaderValues, ToggleExpandedIntent> { children: FrontHeaderChildren }
-export interface FrontLayerValues { position: FrontPosition; top: number; contentOffset: number }   // top: Layout.frontLayer · contentOffset: Layout.contentOffset
+// frontLayer: top: Layout.frontLayer · contentOffset: Layout.contentOffset
+export interface FrontLayerValues { position: FrontPosition; top: number; contentOffset: number }
 export interface FrontLayerChildren { header: FrontHeaderContract; content: ContentContract }
 export interface FrontLayerContract extends Contract<FrontLayerConfig, FrontLayerValues, ScrollIntent> { children: FrontLayerChildren }
+// backdropPage
 export interface BackdropPageChildren { back: BackLayerContract; front: FrontLayerContract }
 export interface BackdropPageContract extends Contract<BackdropPageConfig, NoValues, NoIntents> { children: BackdropPageChildren }
-
-// ── App-bar page
+// pageSheet
 export interface PageSheetValues { expanded: boolean }
 export interface PageSheetChildren { control?: InputContract; content: ContentContract }
 export interface PageSheetContract extends Contract<PageSheetConfig, PageSheetValues, ToggleExpandedIntent> { children: PageSheetChildren }
+export type BodyItemContract = ButtonContract | TextContract | DetailContract | SeekContract;
+// appBarPage
 export interface AppBarPageValues { contentOffset: number }
 export interface AppBarPageChildren { header: HeaderContract; content?: ContentContract; body: BodyItemContract[]; sheet?: PageSheetContract }
 export interface AppBarPageContract extends Contract<AppBarPageConfig, AppBarPageValues, ScrollIntent> { children: AppBarPageChildren }
 export type PageContract = BackdropPageContract | AppBarPageContract;
-
-// ── Layers (each draws its open page; its stack and policy are engine-only)
-export interface SheetLayerValues { open: boolean; form: SheetForm; side: SideMode | null; peek: Rect | null }   // peek: Layout.peekPlacement
+// sheetLayer: open: the peek was tapped · peek: Layout.peekPlacement
+export interface SheetLayerValues { open: boolean; form: SheetForm; side: SideMode | null; peek: Rect | null }
 export interface SheetLayerChildren { peek: HeaderContract; page: PageContract }
-export interface SheetLayerContract extends Contract<LayerConfig, SheetLayerValues, OpenLayerIntent | CloseLayerIntent> { children: SheetLayerChildren }   // open: the peek was tapped
+export interface SheetLayerContract extends Contract<LayerConfig, SheetLayerValues, OpenLayerIntent | CloseLayerIntent> { children: SheetLayerChildren }
+// drawerLayer: close: the scrim was tapped
 export interface DrawerLayerValues { open: boolean; form: DrawerWideForm | 'modal' }
-export interface LayerChildren { page: PageContract }
-export interface DrawerLayerContract extends Contract<LayerConfig, DrawerLayerValues, CloseLayerIntent> { children: LayerChildren }   // close: the scrim was tapped
+export interface DrawerLayerChildren { page: PageContract }
+export interface DrawerLayerContract extends Contract<LayerConfig, DrawerLayerValues, CloseLayerIntent> { children: DrawerLayerChildren }
+// fullscreenLayer
 export interface FullscreenLayerValues { open: boolean }
-export interface FullscreenLayerContract extends Contract<LayerConfig, FullscreenLayerValues, NoIntents> { children: LayerChildren }
-
-// ── App
+export interface FullscreenLayerChildren { page: PageContract }
+export interface FullscreenLayerContract extends Contract<LayerConfig, FullscreenLayerValues, NoIntents> { children: FullscreenLayerChildren }
+// destination
 export interface DestinationValues { deck: DeckId; label: string; selected: boolean }
 export interface DestinationContract extends Contract<DeckConfig, DestinationValues, SwitchDeckIntent | ReselectDeckIntent> {}
-export interface NavigationValues { expanded: boolean }                 // the rail expanded in place (a rail-form drawer is open)
+// navigation: expanded: a rail-form drawer is open
+export interface NavigationValues { expanded: boolean }
 export interface NavigationChildren { destinations: DestinationContract[]; items: ButtonContract[] }
 export interface NavigationContract extends Contract<NavigationConfig, NavigationValues, NoIntents> { children: NavigationChildren }
+// splash
 export interface SplashValues { label: string }
 export interface SplashContract extends Contract<LaunchConfig, SplashValues, NoIntents> {}
-export interface OverlayValueText { name: string; text: string }
+// overlay
 export interface OverlayValues { texts: OverlayValueText[] }
 export interface OverlayChildren { items: ButtonContract[] }
 export interface OverlayContract extends Contract<OverlaySpec, OverlayValues, CloseOverlayIntent> { children: OverlayChildren }
-
-export type ContractName =
-  | 'backdropPage' | 'backLayer' | 'frontLayer' | 'frontHeader' | 'appBarPage' | 'pageSheet'
-  | 'sheetLayer' | 'drawerLayer' | 'fullscreenLayer' | 'navigation' | 'destination' | 'splash' | 'overlay'
-  | 'header' | 'detail' | 'input' | 'paramRow' | 'suggestions' | 'suggestion' | 'content' | 'contentState' | 'item'
-  | 'button' | 'logo' | 'text' | 'switch' | 'find' | 'seek';
+export type ContractName = 'button' | 'logo' | 'text' | 'switch' | 'find' | 'detail' | 'seek' | 'header' | 'input' | 'paramRow' | 'suggestion' | 'suggestions' | 'item' | 'contentState' | 'content' | 'backLayer' | 'frontHeader' | 'frontLayer' | 'backdropPage' | 'pageSheet' | 'appBarPage' | 'sheetLayer' | 'drawerLayer' | 'fullscreenLayer' | 'destination' | 'navigation' | 'splash' | 'overlay';
+// </contracts:generated>
 export type ChildName = string;          // a field of a contract's children: 'header', 'items', 'panel' …
 export type ValueName = string;          // a field of a contract's values: 'expanded', 'top' …
 

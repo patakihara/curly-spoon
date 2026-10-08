@@ -1,0 +1,44 @@
+// Generates the contract types in api/draft.d.ts (section 2) from api/contracts.js. Pure: text in, text out.
+//   contractsDts(CONTRACTS, UNIONS, INTENT_TS)       → the generated block (between the markers)
+//   applyContractsDts(dts, CONTRACTS, UNIONS, INTENT_TS) → the file with the block replaced
+//   contractsDtsInSync(dts, CONTRACTS, UNIONS, INTENT_TS) → true when the file matches contracts.js
+
+export const BEGIN = '// <contracts:generated> — from api/contracts.js by api/gen-contracts.js; do not edit';
+export const END = '// </contracts:generated>';
+const pascal = s => s[0].toUpperCase() + s.slice(1);
+const fields = o => Object.entries(o).map(([k, t]) => k + ': ' + t).join('; ');
+
+export function contractsDts(CONTRACTS, UNIONS, INTENT_TS) {
+  const L = [BEGIN], done = new Set(), unionsDone = new Set();
+  const childType = (c, self) => (UNIONS[c.contract] ? pascal(c.contract) : pascal(c.contract)) + 'Contract' + (c.list ? '[]' : '');
+  const needUnions = C => {
+    for (const c of Object.values(C.children || {})) {
+      const u = UNIONS[c.contract];
+      if (u && !unionsDone.has(c.contract)) {
+        L.push(`export type ${pascal(c.contract)}Contract = ${u.map(m => pascal(m) + 'Contract').join(' | ')};`);
+        unionsDone.add(c.contract);
+      }
+    }
+  };
+  for (const [id, C] of Object.entries(CONTRACTS)) {
+    needUnions(C);
+    const P = pascal(id), vals = Object.keys(C.values).length ? P + 'Values' : 'NoValues';
+    const intents = C.intents.length ? C.intents.map(t => INTENT_TS[t] || 'unknown').join(' | ') : 'NoIntents';
+    const kids = C.children && Object.keys(C.children).length ? C.children : null;
+    const selfRef = kids && Object.values(kids).some(c => c.contract === id);
+    L.push('// ' + id + (C.note ? ': ' + C.note : '') + (selfRef ? ' (recursive: refers to itself)' : ''));
+    if (vals !== 'NoValues') L.push(`export interface ${P}Values { ${fields(C.values)} }`);
+    if (kids) L.push(`export interface ${P}Children { ${Object.entries(kids).map(([k, c]) => k + (c.optional ? '?' : '') + ': ' + childType(c)).join('; ')} }`);
+    L.push(`export interface ${P}Contract extends Contract<${C.config}, ${vals}, ${intents}> {${kids ? ` children: ${P}Children ` : ''}}`);
+    done.add(id);
+  }
+  L.push(`export type ContractName = ${Object.keys(CONTRACTS).map(k => `'${k}'`).join(' | ')};`);
+  L.push(END);
+  return L.join('\n');
+}
+export function applyContractsDts(dts, CONTRACTS, UNIONS, INTENT_TS) {
+  const a = dts.indexOf(BEGIN), b = dts.indexOf(END);
+  if (a < 0 || b < a) throw new Error('draft.d.ts has no contracts:generated markers');
+  return dts.slice(0, a) + contractsDts(CONTRACTS, UNIONS, INTENT_TS) + dts.slice(b + END.length);
+}
+export const contractsDtsInSync = (dts, ...a) => { try { return applyContractsDts(dts, ...a) === dts; } catch (e) { return false; } };
