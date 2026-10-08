@@ -7,6 +7,9 @@
     "options": "options",
     "placeholder": "string"
   },
+  "optional": [
+    "options"
+  ],
   "accepts": [
     "text"
   ],

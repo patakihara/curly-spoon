@@ -20,19 +20,19 @@ export const CONTRACTS = {
   button: { config: 'ButtonItem', values: { label: 'string', checked: 'boolean | null', state: 'string | null', interaction: 'InteractionView' }, intents: ['action'] },
   logo: { config: 'LogoItem', values: { label: 'string', playing: 'boolean' }, intents: [] },
   text: { config: 'TextItem', values: { text: 'string' }, intents: [] },
-  switch: { config: 'SwitchItem', values: { label: 'string', value: 'ParamValue | null', next: 'ParamValue | null' }, intents: ['setParams'], note: 'steps its param to the next option' },
+  switch: { config: 'SwitchItem', values: { label: 'string', value: 'ParamValue | null', next: 'ParamValue | null', options: 'ParamOption[]' }, intents: ['setParams'], note: 'steps its param to the next option' },
   find: { config: 'FindItem', values: { open: 'boolean', value: 'string', placeholder: 'string', closeLabel: 'string' }, intents: ['openFind', 'closeFind', 'setParams'], note: 'closeLabel: text find.close' },
   detail: { config: 'DetailConfig | DetailItem', values: { title: 'string', subtitle: 'string | null', image: 'string | null', meta: 'string | null' }, intents: [] },
   seek: { config: 'SeekItem', values: { label: 'string', positionMs: 'number', durationMs: 'number | null' }, intents: ['seek'] },
   // headers: the back layer's, an app-bar page's, the peek's (composition tells them apart by the contract they sit in)
   header: { config: 'HeaderConfig', values: { title: 'string | null', progress: 'number' }, intents: [], children: { items: list('headerItem'), detail: one('detail', true) }, note: 'progress: collapse 0 … 1 (Layout.barView)' },
   // controls and rows
-  input: { config: 'BasicActionConfig | ParamRow', values: { value: 'ParamValue | null', options: 'ParamOption[]', placeholder: 'string | null' }, intents: ['setParams'], note: 'one control for one param' },
+  input: { config: 'BasicActionConfig | ParamRow', values: { value: 'ParamValue | null', options: 'ParamOption[]', placeholder: 'string | null', label: 'string | null', min: 'number | null', max: 'number | null' }, intents: ['setParams'], note: 'one control for one param · label: its row\'s · min / max: a number param\'s (ParamSpec)' },
   paramRow: { config: 'ParamRow', values: { label: 'string | null' }, intents: [], children: { control: one('input') } },
   suggestion: { config: 'ItemData', values: { text: 'string' }, intents: ['setParams'], note: 'picking it fills the draft (SuggestionsRow.fills)' },
   suggestions: { config: 'SuggestionsRow', values: { label: 'string' }, intents: [], children: { items: list('suggestion') } },
   // content
-  item: { config: 'PresentationConfig', values: { item: 'ItemData', navigable: 'boolean' }, intents: ['action'], children: { entries: list('item', true) }, note: "action: open it (ItemData.opens), else the presentation's itemAction · entries: a shelf's (absent on other items)" },
+  item: { config: 'PresentationConfig', values: { title: 'string', subtitle: 'string | null', image: 'string | null', shape: 'ItemShape', current: 'boolean', navigable: 'boolean' }, intents: ['action'], children: { entries: list('item', true) }, note: "action: open it (ItemData.opens), else the presentation's itemAction · entries: a shelf's (absent on other items)" },
   contentState: { config: 'ContentConfig', values: { state: 'ContentViewState', retry: 'boolean' }, intents: ['retry'], note: 'empty · error · offlineStale (the banner) · its words are design texts of the free component' },
   content: { config: 'ContentConfig', values: { view: 'ContentView', presentation: 'PresentationKey', groups: 'ItemGroup[]', placeholders: 'number' }, intents: [], children: { items: list('item'), state: one('contentState', true), banner: one('contentState', true) } },
   // backdrop page
@@ -49,9 +49,9 @@ export const CONTRACTS = {
   fullscreenLayer: { config: 'LayerConfig', values: { open: 'boolean' }, intents: [], children: { page: one('page') } },
   // app
   destination: { config: 'DeckConfig', values: { deck: 'DeckId', label: 'string', selected: 'boolean' }, intents: ['switchDeck', 'reselectDeck'] },
-  navigation: { config: 'NavigationConfig', values: { expanded: 'boolean' }, intents: [], children: { destinations: list('destination'), items: list('button', true) }, note: 'expanded: a rail-form drawer is open · items: drawn where a form has room (the rail)' },
+  navigation: { config: 'NavigationConfig', values: { selected: 'DeckId', expanded: 'boolean' }, intents: [], children: { destinations: list('destination'), items: list('button', true) }, note: 'selected: the active deck · expanded: a rail-form drawer is open · items: drawn where a form has room (the rail)' },
   splash: { config: 'LaunchConfig', values: { label: 'string' }, intents: [] },
-  overlay: { config: 'OverlaySpec', values: { texts: 'OverlayValueText[]' }, intents: ['closeOverlay'], children: { items: list('button', true) }, note: 'items: a menu\'s' },
+  overlay: { config: 'OverlaySpec', values: { title: 'string | null', body: 'string | null', confirm: 'string | null', cancel: 'string | null', text: 'string | null', action: 'string | null' }, intents: ['closeOverlay'], children: { items: list('button', true) }, note: 'items: a menu\'s' },
 };
 
 // intent types → their TS names ('action' is the item's own Actions)

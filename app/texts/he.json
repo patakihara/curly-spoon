@@ -51,8 +51,6 @@
   "view.gridShort": "רשת",
   "view.listShort": "רשימה",
   "library.layout": "פריסה",
-  "range.from": "מ־",
-  "range.to": "עד",
   "library.header": "{tab, select, audiobooks {{kind, select, people {הסופרים שלך} tracks {הפרקים שלך} other {הספרים שלך}}} podcasts {{kind, select, tracks {הפרקים שלך} other {התוכניות שלך}}} other {{kind, select, people {האמנים שלך} tracks {השירים שלך} other {האלבומים שלך}}}} ({count})",
   "find.library": "{tab, select, audiobooks {{kind, select, people {חיפוש סופרים} tracks {חיפוש פרקים} other {חיפוש ספרים}}} podcasts {{kind, select, tracks {חיפוש פרקים} other {חיפוש תוכניות}}} other {{kind, select, people {חיפוש אמנים} tracks {חיפוש שירים} other {חיפוש אלבומים}}}}",
   "find.in": "חיפוש ב{what}",

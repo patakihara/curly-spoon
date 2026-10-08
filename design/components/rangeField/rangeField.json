@@ -9,7 +9,9 @@
     "value": "value",
     "options": "options",
     "fromLabel": "string",
-    "toLabel": "string"
+    "toLabel": "string",
+    "min": "number",
+    "max": "number"
   },
   "visuals": {
     "height": {

@@ -14,7 +14,7 @@
     "navigation"
   ],
   "props": {
-    "destinations": "string[]",
+    "destinations": "slot",
     "selected": "string"
   },
   "visuals": {

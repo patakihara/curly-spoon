@@ -15,5 +15,7 @@
   "player.pause": "השהיה",
   "player.next": "הרצועה הבאה",
   "player.nothing": "לא מתנגן כלום",
-  "splash.loading": "בטעינה…"
+  "splash.loading": "בטעינה…",
+  "range.from": "מ־",
+  "range.to": "עד"
 }

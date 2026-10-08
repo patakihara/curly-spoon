@@ -11,6 +11,9 @@
     "durationMs": "number",
     "label": "string"
   },
+  "optional": [
+    "options"
+  ],
   "visuals": {
     "track": {
       "default": {

@@ -1314,7 +1314,7 @@
             "id": "menu",
             "kind": "menu",
             "blocking": true,
-            "texts": [],
+            "texts": {},
             "items": [
              {
               "kind": "button",
@@ -3374,7 +3374,7 @@
          "id": "menu",
          "kind": "menu",
          "blocking": true,
-         "texts": [],
+         "texts": {},
          "items": [
           {
            "kind": "button",
@@ -3603,7 +3603,7 @@
          "id": "menu",
          "kind": "menu",
          "blocking": true,
-         "texts": [],
+         "texts": {},
          "items": [
           {
            "kind": "button",

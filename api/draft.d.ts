@@ -139,10 +139,10 @@ export interface LayerConfig { id: LayerId; name: string; pages: LayerPages; lin
 // ── App: navigation lists extra buttons beside the decks (the rail's menu toggle, Settings, Account); launch, overlays
 export interface NavigationConfig { items: ButtonItem[] }
 export interface LaunchConfig { minMs?: number }                        // the splash: composition
-export interface OverlayText { name: string; value: PropValue }         // 'title', 'body', 'confirm', 'cancel', 'text', 'action'
+export interface OverlayTexts { title?: PropValue; body?: PropValue; confirm?: PropValue; cancel?: PropValue; text?: PropValue; action?: PropValue }   // a dialog's · a snackbar's text and action
 export type OverlayKind = 'dialog' | 'menu' | 'actionSheet' | 'snackbar';
 export type OverlayHistory = 'transient' | 'ignore';
-export interface OverlaySpec { id: string; kind: OverlayKind; texts: OverlayText[]; items?: ButtonItem[]; blocking: boolean; timeoutMs?: number; history?: OverlayHistory }   // the component: composition, by kind
+export interface OverlaySpec { id: string; kind: OverlayKind; texts: OverlayTexts; items?: ButtonItem[]; blocking: boolean; timeoutMs?: number; history?: OverlayHistory }   // the component: composition, by kind
 export interface Gate { id: GateId; when: SessionPredicate; page: PageConfig }
 export type SessionInitial = Partial<SessionState>;
 export interface SessionConfig { initial?: SessionInitial; gates: Gate[] }
@@ -180,7 +180,7 @@ export type NoIntents = never;
 
 export type BackRegionName = 'header' | 'actions' | 'basicAction' | 'panel';
 export interface BackRegionView { region: BackRegionName; top: number; height: number; opacity: number; interactive: boolean }   // Layout
-export interface OverlayValueText { name: string; text: string }
+export type ItemShape = 'circle' | 'square';   // people draw circular, collections square (ItemData.shape)
 export interface ContentView { state: ContentViewState; showItems: boolean; placeholders: number; banner: boolean; retry: boolean }   // replaces api.d.ts ContentView: no component ids (composition picks them)
 // <contracts:generated> — from api/contracts.js by api/gen-contracts.js; do not edit
 // button
@@ -193,7 +193,7 @@ export interface LogoContract extends Contract<LogoItem, LogoValues, NoIntents> 
 export interface TextValues { text: string }
 export interface TextContract extends Contract<TextItem, TextValues, NoIntents> {}
 // switch: steps its param to the next option
-export interface SwitchValues { label: string; value: ParamValue | null; next: ParamValue | null }
+export interface SwitchValues { label: string; value: ParamValue | null; next: ParamValue | null; options: ParamOption[] }
 export interface SwitchContract extends Contract<SwitchItem, SwitchValues, SetParamsIntent> {}
 // find: closeLabel: text find.close
 export interface FindValues { open: boolean; value: string; placeholder: string; closeLabel: string }
@@ -209,8 +209,8 @@ export type HeaderItemContract = ButtonContract | LogoContract | TextContract | 
 export interface HeaderValues { title: string | null; progress: number }
 export interface HeaderChildren { items: HeaderItemContract[]; detail?: DetailContract }
 export interface HeaderContract extends Contract<HeaderConfig, HeaderValues, NoIntents> { children: HeaderChildren }
-// input: one control for one param
-export interface InputValues { value: ParamValue | null; options: ParamOption[]; placeholder: string | null }
+// input: one control for one param · label: its row's · min / max: a number param's (ParamSpec)
+export interface InputValues { value: ParamValue | null; options: ParamOption[]; placeholder: string | null; label: string | null; min: number | null; max: number | null }
 export interface InputContract extends Contract<BasicActionConfig | ParamRow, InputValues, SetParamsIntent> {}
 // paramRow
 export interface ParamRowValues { label: string | null }
@@ -224,7 +224,7 @@ export interface SuggestionsValues { label: string }
 export interface SuggestionsChildren { items: SuggestionContract[] }
 export interface SuggestionsContract extends Contract<SuggestionsRow, SuggestionsValues, NoIntents> { children: SuggestionsChildren }
 // item: action: open it (ItemData.opens), else the presentation's itemAction · entries: a shelf's (absent on other items) (recursive: refers to itself)
-export interface ItemValues { item: ItemData; navigable: boolean }
+export interface ItemValues { title: string; subtitle: string | null; image: string | null; shape: ItemShape; current: boolean; navigable: boolean }
 export interface ItemChildren { entries?: ItemContract[] }
 export interface ItemContract extends Contract<PresentationConfig, ItemValues, Actions> { children: ItemChildren }
 // contentState: empty · error · offlineStale (the banner) · its words are design texts of the free component
@@ -275,15 +275,15 @@ export interface FullscreenLayerContract extends Contract<LayerConfig, Fullscree
 // destination
 export interface DestinationValues { deck: DeckId; label: string; selected: boolean }
 export interface DestinationContract extends Contract<DeckConfig, DestinationValues, SwitchDeckIntent | ReselectDeckIntent> {}
-// navigation: expanded: a rail-form drawer is open · items: drawn where a form has room (the rail)
-export interface NavigationValues { expanded: boolean }
+// navigation: selected: the active deck · expanded: a rail-form drawer is open · items: drawn where a form has room (the rail)
+export interface NavigationValues { selected: DeckId; expanded: boolean }
 export interface NavigationChildren { destinations: DestinationContract[]; items?: ButtonContract[] }
 export interface NavigationContract extends Contract<NavigationConfig, NavigationValues, NoIntents> { children: NavigationChildren }
 // splash
 export interface SplashValues { label: string }
 export interface SplashContract extends Contract<LaunchConfig, SplashValues, NoIntents> {}
 // overlay: items: a menu's
-export interface OverlayValues { texts: OverlayValueText[] }
+export interface OverlayValues { title: string | null; body: string | null; confirm: string | null; cancel: string | null; text: string | null; action: string | null }
 export interface OverlayChildren { items?: ButtonContract[] }
 export interface OverlayContract extends Contract<OverlaySpec, OverlayValues, CloseOverlayIntent> { children: OverlayChildren }
 export type ContractName = 'button' | 'logo' | 'text' | 'switch' | 'find' | 'detail' | 'seek' | 'header' | 'input' | 'paramRow' | 'suggestion' | 'suggestions' | 'item' | 'contentState' | 'content' | 'backLayer' | 'frontHeader' | 'frontLayer' | 'backdropPage' | 'pageSheet' | 'appBarPage' | 'sheetLayer' | 'drawerLayer' | 'fullscreenLayer' | 'destination' | 'navigation' | 'splash' | 'overlay';
@@ -312,6 +312,7 @@ export interface FreeMotion { [trigger: string]: Step[] }                // OPEN
 export interface FreeComponentDef {
   extends?: ComponentId;                 // inherits props, events, parts, variants and visuals; its own win
   props?: FreeProps;
+  optional?: PropName[];                 // props a hire may leave unfed (a button's icon); inherited (union)
   events?: EventSpec[];
   parts?: PartName[];
   states?: string[];
@@ -334,6 +335,8 @@ export interface VariantPick { axis: string; option: string }
 // ── Clauses: one component name ↔ one contract name. Implied where the names match; written only where they differ.
 export interface PropFrom { prop: PropName; value: ValueName }      // prop ← a contract value
 export interface PropFixed { prop: PropName; token: TokenName }     // prop ← one of the hire's tokens
+export type DesignTextId = string;       // a design text: words a free component needs whatever it draws ('content.empty', 'range.from')
+export interface PropText { prop: PropName; text: DesignTextId }    // prop ← a design text (design/texts/<locale>.json)
 export interface TokenCase { equals: string; token: TokenName }
 export interface PropByValue { prop: PropName; value: ValueName; cases: TokenCase[] }   // prop ← a hire token picked by a value (view switch icon)
 export interface EventTo { event: EventName; send: IntentType | PlayerIntentType | 'action' }   // an intent the contract accepts · action: the item's config action
@@ -342,7 +345,7 @@ export interface FromChild { child: ChildName; pick?: ItemSelector[] }   // a ch
 export interface FromHire { hire: HireName }                             // a hire on this same contract (a header's title, the built-in disclosure)
 export type SlotSource = FromChild | FromHire;
 export interface SlotFrom { slot: SlotName; fill: SlotSource[] }
-export type Clause = PropFrom | PropFixed | PropByValue | EventTo | SlotFrom;
+export type Clause = PropFrom | PropFixed | PropText | PropByValue | EventTo | SlotFrom;
 
 export interface Hire {
   name: HireName;

@@ -1,7 +1,7 @@
 // Backdrop Nav — COMPOSITION (draft for 18.0.0): which hire draws a drawn config object, and what that hire is.
 // Pure: composition (app/composition.json) + design components → hires. Used by the rules, Layout (sizes) and platforms.
 
-// a place: { contract, page, within: ancestor contracts nearest first, kind?, name?, param?, presentation?, entry?, state?, overlay?, env? }
+// a place: { contract, page, within: ancestor contracts nearest first, kind?, name?, param?, presentation?, state?, overlay?, env? }
 // page exceptions first, then the defaults; the first placement whose given fields all match wins
 // within: the nearest ancestor contract, or the nearest few in order (['appBarPage', 'sheetLayer']: a layer page's)
 const nearest = (want, have) => want.every((w, i) => (have || [])[i] === w);
@@ -11,7 +11,6 @@ const fits = (p, at) => p.contract === at.contract
   && (!p.match || ((!p.match.kind || p.match.kind === at.kind) && (!p.match.name || p.match.name === at.name)))
   && (!p.param || Object.entries(p.param).every(([k, v]) => at.param && at.param[k] === v))
   && (p.presentation == null || p.presentation === at.presentation)
-  && (p.entry == null || !!p.entry === !!at.entry)
   && (p.state == null || p.state === at.state)
   && (!p.env || (at.env && at.env[p.env.env] === p.env.equals));
 
@@ -23,7 +22,7 @@ export function placementFor(composition, at) {
 }
 export const hireOf = (composition, name) => composition.hires.find(h => h.name === name) || null;
 
-// a free component's own + inherited props, slots, events and variants (design json: props of type 'slot' are slots)
+// a free component's own + inherited props, slots, events, variants and optional props (design json: props of type 'slot' are slots)
 export function freeComponent(components, id, depth = 0) {
   const d = components[id]; if (!d || depth > 8) return null;
   const parent = d.extends ? freeComponent(components, d.extends, depth + 1) : null;
@@ -32,7 +31,8 @@ export function freeComponent(components, id, depth = 0) {
   const slots = [...(parent ? parent.slots : []), ...Object.keys(own).filter(k => own[k] === 'slot')];
   const events = [...(parent ? parent.events : []), ...(d.events || []).map(e => e.name)];
   const variants = { ...(parent ? parent.variants : {}), ...(d.variants || {}) };
-  return { props, slots, events, variants };
+  const optional = [...new Set([...(parent ? parent.optional : []), ...(d.optional || [])])];
+  return { props, slots, events, variants, optional };
 }
 
 // a size the hire drawing a place gives: its own token named after the size ('<hire>.<name>', aliasing a design token),

@@ -15,5 +15,7 @@
   "player.pause": "Tauko",
   "player.next": "Seuraava kappale",
   "player.nothing": "Ei toistoa",
-  "splash.loading": "Ladataan…"
+  "splash.loading": "Ladataan…",
+  "range.from": "Alkaen",
+  "range.to": "Asti"
 }

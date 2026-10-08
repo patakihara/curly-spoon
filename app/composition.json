@@ -13,8 +13,18 @@
    "contract": "backLayer",
    "clauses": [
     {
+     "prop": "palette",
+     "token": "backLayer.palette"
+    },
+    {
      "event": "tap",
      "send": "toggleExpanded"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "backLayer.palette",
+     "alias": "color.backLayer"
     }
    ]
   },
@@ -123,7 +133,7 @@
      "slot": "title",
      "fill": [
       {
-       "hire": "backTitle"
+       "hire": "pageTitle"
       }
      ]
     },
@@ -151,7 +161,7 @@
    ]
   },
   {
-   "name": "backTitle",
+   "name": "pageTitle",
    "hires": "title",
    "contract": "header",
    "clauses": [
@@ -189,7 +199,7 @@
      "slot": "title",
      "fill": [
       {
-       "hire": "backTitle"
+       "hire": "pageTitle"
       }
      ]
     },
@@ -253,7 +263,7 @@
      "slot": "title",
      "fill": [
       {
-       "hire": "appBarTitle"
+       "hire": "pageTitle"
       }
      ]
     },
@@ -336,7 +346,7 @@
      "slot": "title",
      "fill": [
       {
-       "hire": "appBarTitle"
+       "hire": "pageTitle"
       }
      ]
     },
@@ -416,7 +426,7 @@
      "slot": "title",
      "fill": [
       {
-       "hire": "appBarTitle"
+       "hire": "pageTitle"
       }
      ]
     },
@@ -465,17 +475,6 @@
        "child": "detail"
       }
      ]
-    }
-   ]
-  },
-  {
-   "name": "appBarTitle",
-   "hires": "title",
-   "contract": "header",
-   "clauses": [
-    {
-     "prop": "text",
-     "value": "title"
     }
    ]
   },
@@ -1309,6 +1308,10 @@
    "contract": "seek",
    "clauses": [
     {
+     "prop": "value",
+     "value": "positionMs"
+    },
+    {
      "event": "change",
      "send": "seek"
     }
@@ -1795,6 +1798,14 @@
    "contract": "input",
    "clauses": [
     {
+     "prop": "fromLabel",
+     "text": "range.from"
+    },
+    {
+     "prop": "toLabel",
+     "text": "range.to"
+    },
+    {
      "event": "change",
      "send": "setParams"
     }
@@ -2031,7 +2042,7 @@
    "clauses": [
     {
      "prop": "text",
-     "value": "text"
+     "text": "content.empty"
     },
     {
      "event": "retry",
@@ -2046,7 +2057,7 @@
    "clauses": [
     {
      "prop": "text",
-     "value": "text"
+     "text": "content.error"
     },
     {
      "event": "retry",
@@ -2061,7 +2072,7 @@
    "clauses": [
     {
      "prop": "text",
-     "value": "text"
+     "text": "content.stale"
     },
     {
      "event": "retry",
@@ -2326,6 +2337,21 @@
      "alias": "icon.saved"
     }
    ]
+  },
+  {
+   "name": "menuItem",
+   "hires": "drawerItem",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ]
   }
  ],
  "placements": [
@@ -2472,14 +2498,6 @@
    "match": {
     "name": "menu"
    },
-   "within": "header",
-   "hire": null
-  },
-  {
-   "contract": "button",
-   "match": {
-    "name": "menu"
-   },
    "within": "navigation",
    "env": {
     "env": "layout",
@@ -2565,6 +2583,11 @@
    },
    "within": "overlay",
    "hire": "savedMenuItem"
+  },
+  {
+   "contract": "button",
+   "within": "overlay",
+   "hire": "menuItem"
   },
   {
    "contract": "button",
@@ -2807,9 +2830,8 @@
   },
   {
    "contract": "item",
-   "presentation": "default",
-   "entry": true,
-   "hire": "carouselEntry"
+   "hire": "carouselEntry",
+   "within": "item"
   },
   {
    "contract": "item",
@@ -2951,21 +2973,24 @@
      "match": {
       "name": "playNow"
      },
-     "hire": "playNowFilled"
+     "hire": "playNowFilled",
+     "within": "header"
     },
     {
      "contract": "button",
      "match": {
       "name": "playNext"
      },
-     "hire": "playNextFilled"
+     "hire": "playNextFilled",
+     "within": "header"
     },
     {
      "contract": "button",
      "match": {
       "name": "playLast"
      },
-     "hire": "playLastFilled"
+     "hire": "playLastFilled",
+     "within": "header"
     }
    ]
   },
@@ -2986,21 +3011,24 @@
      "match": {
       "name": "playNow"
      },
-     "hire": "playNowFilled"
+     "hire": "playNowFilled",
+     "within": "header"
     },
     {
      "contract": "button",
      "match": {
       "name": "playNext"
      },
-     "hire": "playNextFilled"
+     "hire": "playNextFilled",
+     "within": "header"
     },
     {
      "contract": "button",
      "match": {
       "name": "playLast"
      },
-     "hire": "playLastFilled"
+     "hire": "playLastFilled",
+     "within": "header"
     }
    ]
   },

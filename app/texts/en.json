@@ -51,8 +51,6 @@
   "view.gridShort": "Grid",
   "view.listShort": "List",
   "library.layout": "Layout",
-  "range.from": "From",
-  "range.to": "To",
   "library.header": "{tab, select, audiobooks {{kind, select, people {Your authors} tracks {Your chapters} other {Your books}}} podcasts {{kind, select, tracks {Your episodes} other {Your shows}}} other {{kind, select, people {Your artists} tracks {Your songs} other {Your albums}}}} ({count})",
   "find.library": "{tab, select, audiobooks {{kind, select, people {Search authors} tracks {Search chapters} other {Search books}}} podcasts {{kind, select, tracks {Search episodes} other {Search shows}}} other {{kind, select, people {Search artists} tracks {Search songs} other {Search albums}}}}",
   "find.in": "Search {what}",

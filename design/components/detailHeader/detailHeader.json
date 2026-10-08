@@ -16,7 +16,9 @@
     "layout": {
       "options": [
         "column",
-        "row"
+        "row",
+        "peek",
+        "player"
       ],
       "default": "column"
     }
@@ -27,16 +29,32 @@
         "variant": "layout",
         "cases": {
           "column": 96,
-          "row": 120
+          "row": 120,
+          "peek": 40,
+          "player": "100%"
         }
       }
     },
     "artRadius": {
       "default": {
-        "variant": "shape",
+        "variant": "layout",
         "cases": {
-          "square": 8,
-          "circle": 999
+          "column": {
+            "variant": "shape",
+            "cases": {
+              "square": 8,
+              "circle": 999
+            }
+          },
+          "row": {
+            "variant": "shape",
+            "cases": {
+              "square": 8,
+              "circle": 999
+            }
+          },
+          "peek": 4,
+          "player": 8
         }
       }
     },
@@ -45,7 +63,9 @@
         "variant": "layout",
         "cases": {
           "column": 8,
-          "row": 16
+          "row": 16,
+          "peek": 12,
+          "player": 24
         }
       }
     },
@@ -57,7 +77,9 @@
         "variant": "layout",
         "cases": {
           "column": 24,
-          "row": 16
+          "row": 16,
+          "peek": 0,
+          "player": 0
         }
       }
     },
@@ -66,24 +88,44 @@
         "variant": "layout",
         "cases": {
           "column": 0,
-          "row": 8
+          "row": 8,
+          "peek": 0,
+          "player": 0
         }
       }
     },
     "padBottom": {
-      "default": 24
+      "default": {
+        "variant": "layout",
+        "cases": {
+          "column": 24,
+          "row": 24,
+          "peek": 0,
+          "player": 24
+        }
+      }
     },
     "titleSize": {
       "default": {
         "variant": "layout",
         "cases": {
           "column": 22,
-          "row": 20
+          "row": 20,
+          "peek": 15,
+          "player": 22
         }
       }
     },
     "titleWeight": {
-      "default": 600
+      "default": {
+        "variant": "layout",
+        "cases": {
+          "column": 600,
+          "row": 600,
+          "peek": 500,
+          "player": 600
+        }
+      }
     },
     "titleLineHeight": {
       "default": 1.2
@@ -94,14 +136,24 @@
       }
     },
     "subSize": {
-      "default": 12
+      "default": {
+        "variant": "layout",
+        "cases": {
+          "column": 12,
+          "row": 12,
+          "peek": 11,
+          "player": 13
+        }
+      }
     },
     "subOpacity": {
       "default": {
         "variant": "layout",
         "cases": {
           "column": 0.8,
-          "row": 1
+          "row": 1,
+          "peek": 1,
+          "player": 1
         }
       }
     },
@@ -123,7 +175,53 @@
         "variant": "layout",
         "cases": {
           "column": "center",
-          "row": "start"
+          "row": "start",
+          "peek": "start",
+          "player": "center"
+        }
+      }
+    },
+    "artShadow": {
+      "default": {
+        "variant": "layout",
+        "cases": {
+          "column": "none",
+          "row": "none",
+          "peek": "none",
+          "player": "0 8px 24px rgba(0,0,0,.18)"
+        }
+      }
+    },
+    "artMin": {
+      "default": {
+        "variant": "layout",
+        "cases": {
+          "column": null,
+          "row": null,
+          "peek": null,
+          "player": 120
+        }
+      }
+    },
+    "artMax": {
+      "default": {
+        "variant": "layout",
+        "cases": {
+          "column": null,
+          "row": null,
+          "peek": null,
+          "player": 300
+        }
+      }
+    },
+    "artInset": {
+      "default": {
+        "variant": "layout",
+        "cases": {
+          "column": null,
+          "row": null,
+          "peek": null,
+          "player": 56
         }
       }
     }

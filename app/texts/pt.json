@@ -51,8 +51,6 @@
   "view.gridShort": "Grelha",
   "view.listShort": "Lista",
   "library.layout": "Esquema",
-  "range.from": "De",
-  "range.to": "Até",
   "library.header": "{tab, select, audiobooks {{kind, select, people {Os seus autores} tracks {Os seus capítulos} other {Os seus livros}}} podcasts {{kind, select, tracks {Os seus episódios} other {Os seus programas}}} other {{kind, select, people {Os seus artistas} tracks {As suas músicas} other {Os seus álbuns}}}} ({count})",
   "find.library": "{tab, select, audiobooks {{kind, select, people {Pesquisar autores} tracks {Pesquisar capítulos} other {Pesquisar livros}}} podcasts {{kind, select, tracks {Pesquisar episódios} other {Pesquisar programas}}} other {{kind, select, people {Pesquisar artistas} tracks {Pesquisar músicas} other {Pesquisar álbuns}}}}",
   "find.in": "Pesquisar em {what}",

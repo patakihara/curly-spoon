@@ -51,8 +51,6 @@
   "view.gridShort": "Raster",
   "view.listShort": "Liste",
   "library.layout": "Ansicht",
-  "range.from": "Von",
-  "range.to": "Bis",
   "library.header": "{tab, select, audiobooks {{kind, select, people {Deine Autor:innen} tracks {Deine Kapitel} other {Deine Bücher}}} podcasts {{kind, select, tracks {Deine Folgen} other {Deine Sendungen}}} other {{kind, select, people {Deine Künstler:innen} tracks {Deine Songs} other {Deine Alben}}}} ({count})",
   "find.library": "{tab, select, audiobooks {{kind, select, people {Autor:innen suchen} tracks {Kapitel suchen} other {Bücher suchen}}} podcasts {{kind, select, tracks {Folgen suchen} other {Sendungen suchen}}} other {{kind, select, people {Künstler:innen suchen} tracks {Songs suchen} other {Alben suchen}}}}",
   "find.in": "In {what} suchen",

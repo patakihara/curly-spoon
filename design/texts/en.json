@@ -15,5 +15,7 @@
   "player.pause": "Pause",
   "player.next": "Next track",
   "player.nothing": "Nothing playing",
-  "splash.loading": "Loading…"
+  "splash.loading": "Loading…",
+  "range.from": "From",
+  "range.to": "To"
 }

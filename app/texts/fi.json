@@ -51,8 +51,6 @@
   "view.gridShort": "Ruudukko",
   "view.listShort": "Lista",
   "library.layout": "Asettelu",
-  "range.from": "Alkaen",
-  "range.to": "Asti",
   "library.header": "{tab, select, audiobooks {{kind, select, people {Kirjailijasi} tracks {Lukusi} other {Kirjasi}}} podcasts {{kind, select, tracks {Jaksosi} other {Ohjelmasi}}} other {{kind, select, people {Artistisi} tracks {Kappaleesi} other {Albumisi}}}} ({count})",
   "find.library": "{tab, select, audiobooks {{kind, select, people {Hae kirjailijoita} tracks {Hae lukuja} other {Hae kirjoja}}} podcasts {{kind, select, tracks {Hae jaksoja} other {Hae ohjelmia}}} other {{kind, select, people {Hae artisteja} tracks {Hae kappaleita} other {Hae albumeita}}}}",
   "find.in": "Hae: {what}",

@@ -4,6 +4,9 @@
   "props": {
     "playing": "boolean"
   },
+  "optional": [
+    "icon"
+  ],
   "visuals": {
     "unit": {
       "default": {

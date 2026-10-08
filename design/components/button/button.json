@@ -148,6 +148,9 @@
     "text": "string",
     "icon": "string"
   },
+  "optional": [
+    "icon"
+  ],
   "statuses": [
     "busy",
     "error"

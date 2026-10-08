@@ -3,7 +3,7 @@
 // (app/draft/app.json) and design's free components and tokens.
 //
 // runDraftRules(f) → [{ name, ok, skipped?, error? }]
-// f = { contracts, unions, config, composition, components: { <id>: raw design json }, tokens: design tokens.json }
+// f = { contracts, unions, config, composition, components: { <id>: raw design json }, tokens: design tokens.json, designTexts: { <locale>: design/texts/<locale>.json } }
 
 import { placementFor, hireOf as findHire, freeComponent } from '../core/compose.js';
 
@@ -22,12 +22,15 @@ export function placesOf(config) {
     const s = (page.params || {})[bind] || {};
     return { name: bind, type: s.type, axis: !!s.axis, draft: false };
   };
-  // within: the ancestor contracts, nearest first
-  const item = (page, within, it) => out.push({ contract: it.kind, page: page.id, within, kind: it.kind, name: it.name });
+  // within: the ancestor contracts, nearest first · when: the item's condition (an env one decides where it exists)
+  const item = (page, within, it) => out.push({ contract: it.kind, page: page.id, within, kind: it.kind, name: it.name, when: it.when });
   const header = (page, within, h) => { const w = ['header', ...within]; out.push({ contract: 'header', page: page.id, within }); h.items.forEach(i => item(page, w, i)); if (h.detail) out.push({ contract: 'detail', page: page.id, within: w }); };
   const content = (page, within, c) => {
     const w = ['content', ...within];
-    c.presentations.forEach(pr => { out.push({ contract: 'content', page: page.id, within, presentation: pr.key }); out.push({ contract: 'item', page: page.id, within: w, presentation: pr.key }); });
+    c.presentations.forEach(pr => {
+      out.push({ contract: 'content', page: page.id, within, presentation: pr.key }, { contract: 'item', page: page.id, within: w, presentation: pr.key });
+      out.push({ contract: 'item', page: page.id, within: ['item', ...w], presentation: pr.key });   // a shelf's entries (data decides whether any exist)
+    });
     ['empty', 'error', 'offlineStale'].forEach(state => out.push({ contract: 'contentState', page: page.id, within: w, state }));
   };
   const input = (page, within, bind) => out.push({ contract: 'input', page: page.id, within, param: paramSpec(page, bind) });
@@ -65,10 +68,24 @@ export function placesOf(config) {
   ((config.session || {}).gates || []).forEach(g => pageOf(g.page));
   out.push({ contract: 'navigation', page: null });
   config.navigation.items.forEach(i => item({ id: null }, ['navigation'], i));
-  ['dialog', 'menu', 'snackbar'].forEach(overlay => out.push({ contract: 'overlay', page: null, overlay }));
+  ['dialog', 'snackbar'].forEach(overlay => out.push({ contract: 'overlay', page: null, overlay }));   // the shell's own (fixtures)
+  const overlays = []; (function walk(o) { if (Array.isArray(o)) o.forEach(walk); else if (o && typeof o === 'object') { if (o.type === 'openOverlay' && o.overlay) overlays.push(o.overlay); Object.values(o).forEach(walk); } })(config);
+  overlays.forEach(ov => { out.push({ contract: 'overlay', page: null, overlay: ov.kind, name: ov.id }); (ov.items || []).forEach(i => item({ id: null }, ['overlay'], i)); });
   if (config.launch) out.push({ contract: 'splash', page: null });
   return out;
 }
+
+// a placement Q catches every place P catches (P listed later is then never reached)
+const covers = (q, p) => q.contract === p.contract
+  && (!q.within || (!!p.within && [].concat(q.within).every((w, i) => [].concat(p.within)[i] === w)))
+  && ['overlay', 'presentation', 'state'].every(k => q[k] == null || q[k] === p[k])
+  && (!q.match || (!!p.match && Object.entries(q.match).every(([k, v]) => p.match[k] === v)))
+  && (!q.param || (!!p.param && Object.entries(q.param).every(([k, v]) => p.param[k] === v)))
+  && (!q.env || (!!p.env && q.env.env === p.env.env && q.env.equals === p.env.equals));
+const sameHire = (a, b) => a.hires === b.hires && a.contract === b.contract && JSON.stringify(a.clauses) === JSON.stringify(b.clauses)
+  && JSON.stringify(a.variants || []) === JSON.stringify(b.variants || []) && JSON.stringify((a.tokens || []).map(t => [t.name.slice(a.name.length), t.alias])) === JSON.stringify((b.tokens || []).map(t => [t.name.slice(b.name.length), t.alias]));
+// an env condition on an item: false where it does not hold (the item does not exist there)
+const envHolds = (when, env) => !when || !('env' in when) || env[when.env] === when.equals;
 
 export const DRAFT_RULES = [
   ['every hire wraps a registered free component and meets a declared contract', f => {
@@ -138,15 +155,41 @@ export const DRAFT_RULES = [
     });
     assert(!errs.length, errs.length + ': ' + errs.join(' · '));
   }],
+  ['every design text a clause names exists in every locale', f => {
+    const errs = [];
+    f.composition.hires.forEach(h => h.clauses.forEach(cl => { if ('text' in cl) Object.entries(f.designTexts || {}).forEach(([loc, T]) => { if (!(cl.text in T)) errs.push(h.name + ': ' + cl.text + ' (' + loc + ')'); }); }));
+    assert(!errs.length, errs.length + ': ' + errs.join(' · '));
+  }],
   ['variant picks name a declared axis and option of the free component', f => {
     f.composition.hires.forEach(h => {
       const c = freeComponent(f.components, h.hires); if (!c) return;
       (h.variants || []).forEach(v => { const ax = c.variants[v.axis]; assert(ax && ax.options.includes(v.option), h.name + ': ' + h.hires + ' has no variant ' + v.axis + ' = ' + v.option); });
     });
   }],
+  ['two hires are never the same (same free component, contract, clauses, variants and token aliases)', f => {
+    const errs = [];
+    f.composition.hires.forEach((h, i) => f.composition.hires.slice(i + 1).forEach(o => { if (sameHire(h, o)) errs.push(h.name + ' = ' + o.name); }));
+    assert(!errs.length, errs.length + ': ' + errs.join(' · '));
+  }],
+  ['no placement is shadowed by an earlier one in the same list', f => {
+    const errs = [];
+    const check = (list, where) => list.forEach((p, j) => { const q = list.slice(0, j).find(q => covers(q, p)); if (q) errs.push(where + ': ' + JSON.stringify(p) + ' never reached (caught by ' + (q.hire === null ? 'null' : q.hire) + ')'); });
+    check(f.composition.placements, 'defaults');
+    (f.composition.pages || []).forEach(pg => check(pg.placements, pg.page));
+    assert(!errs.length, errs.length + ': ' + errs.join(' · '));
+  }],
+  ['every prop of a hired free component is fed (by a clause or a contract value of the same name), unless design marks it optional', f => {
+    const errs = [];
+    f.composition.hires.forEach(h => {
+      const c = freeComponent(f.components, h.hires), C = f.contracts[h.contract]; if (!c || !C) return;
+      Object.keys(c.props).forEach(prop => { if (!c.optional.includes(prop) && !h.clauses.some(cl => cl.prop === prop) && !(prop in C.values)) errs.push(h.name + '.' + prop); });
+    });
+    assert(!errs.length, errs.length + ' unfed: ' + errs.join(' · '));
+  }],
   ['every drawn config object has a placement on every layout', f => {
     const errs = new Set();
     placesOf(f.config).forEach(at => ['compact', 'wide'].forEach(layout => {
+      if (!envHolds(at.when, { layout })) return;
       if (placementFor(f.composition, { ...at, env: { layout } }) === undefined) errs.add(at.contract + (at.name ? ' ' + at.name : '') + (at.presentation ? ' ' + at.presentation : '') + (at.state ? ' ' + at.state : '') + (at.within ? ' in ' + at.within : '') + (at.page ? ' (' + at.page + ')' : '') + ' on ' + layout);
     }));
     assert(!errs.size, errs.size + ': ' + [...errs].slice(0, 40).join(' · '));
