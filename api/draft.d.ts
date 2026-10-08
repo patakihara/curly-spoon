@@ -14,7 +14,7 @@
 import type {
   ComponentId, PageId, ParamName, Title, Params, PropValue, Condition, EnvEquals, Actions, DraftBind, Source, SourceRef,
   BackdropPagePolicy, FrontPosition, ToggleExpandedIntent, ScrollIntent, RetryIntent, SetParamsIntent, OpenIntent,
-  ParamValue, ParamOption, ContentView, ItemData, ItemGroup, GroupKey, StatePath, InteractionView, PropType, Visuals,
+  ParamValue, ParamOption, ParamType, ContentView, ItemData, ItemGroup, GroupKey, StatePath, InteractionView, PropType, Visuals,
   VariantAxis, StatusState, Step, PlaceholderForm,
 } from './api';
 
@@ -101,16 +101,20 @@ export interface BackHeaderValues { title: string; progress: number }      // pr
 export interface BackHeaderChildren { items: HeaderItemContract[]; detail?: DetailContract }   // only the items whose `when` holds
 export interface BackHeaderContract extends Contract<BackHeaderConfig, BackHeaderValues, NoIntents> { children: BackHeaderChildren }
 export interface InputValues { value: ParamValue | null; options: ParamOption[]; placeholder: string | null }
-export interface BasicActionContract extends Contract<BasicActionConfig, InputValues, SetParamsIntent> {}
-export interface ParamRowValues extends InputValues { label: string | null }
-export interface ParamRowContract extends Contract<ParamRow, ParamRowValues, SetParamsIntent> {}
-export interface SuggestionsValues { label: string; suggestions: ItemData[] }
-export interface SuggestionsContract extends Contract<SuggestionsRow, SuggestionsValues, SetParamsIntent> {}
+export interface InputContract extends Contract<BasicActionConfig | ParamRow, InputValues, SetParamsIntent> {}   // one control for one param (basic action, a panel row's control)
+export interface ParamRowValues { label: string | null }
+export interface ParamRowChildren { control: InputContract }
+export interface ParamRowContract extends Contract<ParamRow, ParamRowValues, NoIntents> { children: ParamRowChildren }
+export interface SuggestionValues { text: string }
+export interface SuggestionContract extends Contract<ItemData, SuggestionValues, SetParamsIntent> {}   // picking it fills the draft (SuggestionsRow.fills)
+export interface SuggestionsValues { label: string }
+export interface SuggestionsChildren { items: SuggestionContract[] }
+export interface SuggestionsContract extends Contract<SuggestionsRow, SuggestionsValues, NoIntents> { children: SuggestionsChildren }
 export type PanelRowContract = ParamRowContract | SuggestionsContract;
 export type BackRegionName = 'header' | 'actions' | 'basicAction' | 'panel';
 export interface BackRegionView { region: BackRegionName; top: number; height: number; opacity: number; interactive: boolean }   // Layout
 export interface BackLayerValues { expanded: boolean; headerHidden: boolean; regions: BackRegionView[] }
-export interface BackLayerChildren { header: BackHeaderContract; actions: ButtonContract[]; basicAction?: BasicActionContract; panel: PanelRowContract[] }
+export interface BackLayerChildren { header: BackHeaderContract; actions: ButtonContract[]; basicAction?: InputContract; panel: PanelRowContract[] }
 export interface BackLayerContract extends Contract<BackLayerConfig, BackLayerValues, ToggleExpandedIntent> { children: BackLayerChildren }   // toggle only while toggleOnTap
 
 // ── Front layer
@@ -119,7 +123,7 @@ export interface ItemContract extends Contract<PresentationConfig, ItemValues, O
 export interface ContentValues { view: ContentView; presentation: PresentationKey; groups: ItemGroup[] }
 export interface ContentChildren { items: ItemContract[] }
 export interface ContentContract extends Contract<ContentConfig, ContentValues, RetryIntent> { children: ContentChildren }
-export interface FrontHeaderValues { title: string; expanded: boolean }     // expanded: the back layer's, for the built-in disclosure
+export interface FrontHeaderValues { title: string; expanded: boolean; disclosureLabel: string }   // the built-in disclosure: the back layer's expanded + its label (texts backLayer.reveal / backLayer.conceal)
 export interface FrontHeaderChildren { items: HeaderItemContract[] }
 export interface FrontHeaderContract extends Contract<FrontHeaderConfig, FrontHeaderValues, ToggleExpandedIntent> { children: FrontHeaderChildren }
 export interface FrontLayerValues { position: FrontPosition; top: number; contentOffset: number }   // top: Layout.frontLayer · contentOffset: Layout.contentOffset
@@ -131,7 +135,7 @@ export interface BackdropPageChildren { back: BackLayerContract; front: FrontLay
 export interface BackdropPageContract extends Contract<BackdropPageConfig, NoValues, NoIntents> { children: BackdropPageChildren }
 
 export type ContractName =
-  | 'backdropPage' | 'backLayer' | 'backHeader' | 'detail' | 'basicAction' | 'paramRow' | 'suggestions'
+  | 'backdropPage' | 'backLayer' | 'backHeader' | 'detail' | 'input' | 'paramRow' | 'suggestions' | 'suggestion'
   | 'frontLayer' | 'frontHeader' | 'content' | 'item'
   | 'button' | 'logo' | 'text' | 'switch' | 'find';
 export type ChildName = string;          // a field of a contract's children: 'header', 'items', 'panel' …
@@ -174,10 +178,15 @@ export interface VariantPick { axis: string; option: string }
 // ── Clauses: one component name ↔ one contract name. Implied where the names match; written only where they differ.
 export interface PropFrom { prop: PropName; value: ValueName }      // prop ← a contract value
 export interface PropFixed { prop: PropName; token: TokenName }     // prop ← one of the hire's tokens
+export interface TokenCase { equals: string; token: TokenName }
+export interface PropByValue { prop: PropName; value: ValueName; cases: TokenCase[] }   // prop ← a hire token picked by a value (view switch icon)
 export interface EventTo { event: EventName; send: 'intent' | 'action' }   // intent: the contract's intent · action: the item's config action
 export interface ItemSelector { kind?: ItemKind; name?: ItemName; rest?: true }   // rest: every item not picked by another slot
-export interface SlotFrom { slot: SlotName; child: ChildName; pick?: ItemSelector[] }   // pick: which items of a list child, in order
-export type Clause = PropFrom | PropFixed | EventTo | SlotFrom;
+export interface FromChild { child: ChildName; pick?: ItemSelector[] }   // a child, or the picked items of a list child, in order
+export interface FromHire { hire: HireName }                             // a hire on this same contract (a header's title, the built-in disclosure)
+export type SlotSource = FromChild | FromHire;
+export interface SlotFrom { slot: SlotName; fill: SlotSource[] }
+export type Clause = PropFrom | PropFixed | PropByValue | EventTo | SlotFrom;
 
 export interface Hire {
   name: HireName;
@@ -189,9 +198,11 @@ export interface Hire {
 }
 
 // ── Placements: which hire draws each config object, by contract (and, for items, kind / name / presentation)
+export interface ParamMatch { name?: ParamName; type?: ParamType; axis?: boolean; draft?: boolean }   // controls: picked by the bound param (its name, or its spec)
 export interface Placement {
   contract: ContractName;
   match?: ItemSelector;                  // header items: a kind or a name
+  param?: ParamMatch;                    // basic actions and panel rows
   presentation?: PresentationKey;        // content items
   env?: EnvEquals;                       // e.g. layout compact only
   hire: HireName | null;                 // null: not drawn here (e.g. the menu button on wide, where the rail has it)
