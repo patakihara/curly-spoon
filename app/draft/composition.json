@@ -1,5 +1,5 @@
 {
- "$description": "DRAFT (api/draft.d.ts section 4): hires free design components for contracts and places them by config kind. Covers the backdrop page. Clauses are written only where names differ; every fixed value is a hire token aliasing a design token.",
+ "$description": "DRAFT (api/draft.d.ts section 4): hires free design components for contracts and places them by config kind, for the whole app. Clauses are written only where names differ; every fixed value is a hire token aliasing a design token.",
  "hires": [
   {
    "name": "backdropPage",
@@ -19,9 +19,80 @@
    ]
   },
   {
+   "name": "frontLayer",
+   "hires": "frontLayer",
+   "contract": "frontLayer",
+   "clauses": [
+    {
+     "event": "scroll",
+     "send": "scroll"
+    }
+   ]
+  },
+  {
+   "name": "appBarPage",
+   "hires": "appBarPage",
+   "contract": "appBarPage",
+   "clauses": [
+    {
+     "event": "scroll",
+     "send": "scroll"
+    }
+   ]
+  },
+  {
+   "name": "pageSheet",
+   "hires": "bottomSheet",
+   "contract": "pageSheet",
+   "clauses": [
+    {
+     "event": "tap",
+     "send": "toggleExpanded"
+    }
+   ]
+  },
+  {
+   "name": "sheetLayer",
+   "hires": "sheetLayer",
+   "contract": "sheetLayer",
+   "clauses": [
+    {
+     "event": "open",
+     "send": "openLayer"
+    },
+    {
+     "event": "close",
+     "send": "closeLayer"
+    }
+   ]
+  },
+  {
+   "name": "drawerLayer",
+   "hires": "drawer",
+   "contract": "drawerLayer",
+   "clauses": [
+    {
+     "event": "close",
+     "send": "closeLayer"
+    }
+   ]
+  },
+  {
+   "name": "fullscreenLayer",
+   "hires": "fullscreenLayer",
+   "contract": "fullscreenLayer",
+   "clauses": []
+  },
+  {
+   "name": "splash",
+   "hires": "splash",
+   "contract": "splash",
+   "clauses": []
+  },
+  {
    "name": "backHeader",
    "hires": "header",
-   "contract": "backHeader",
+   "contract": "header",
    "clauses": [
     {
      "slot": "start",
@@ -76,7 +147,281 @@
   {
    "name": "backTitle",
    "hires": "title",
-   "contract": "backHeader",
+   "contract": "header",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "title"
+    }
+   ]
+  },
+  {
+   "name": "appBarHeader",
+   "hires": "appBar",
+   "contract": "header",
+   "clauses": [
+    {
+     "slot": "start",
+     "fill": [
+      {
+       "child": "items",
+       "pick": [
+        {
+         "name": "up"
+        },
+        {
+         "name": "close"
+        },
+        {
+         "name": "collapse"
+        },
+        {
+         "kind": "logo"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "slot": "title",
+     "fill": [
+      {
+       "hire": "appBarTitle"
+      }
+     ]
+    },
+    {
+     "slot": "end",
+     "fill": [
+      {
+       "child": "items",
+       "pick": [
+        {
+         "kind": "find"
+        },
+        {
+         "name": "more"
+        },
+        {
+         "rest": true
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "slot": "fab",
+     "fill": [
+      {
+       "child": "items",
+       "pick": [
+        {
+         "name": "playNow"
+        },
+        {
+         "name": "playNext"
+        },
+        {
+         "name": "playLast"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "slot": "expanded",
+     "fill": [
+      {
+       "child": "detail"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "collectionHeader",
+   "hires": "appBar",
+   "contract": "header",
+   "clauses": [
+    {
+     "slot": "start",
+     "fill": [
+      {
+       "child": "items",
+       "pick": [
+        {
+         "name": "close"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "slot": "title",
+     "fill": [
+      {
+       "hire": "appBarTitle"
+      }
+     ]
+    },
+    {
+     "slot": "end",
+     "fill": [
+      {
+       "child": "items",
+       "pick": [
+        {
+         "name": "more"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "slot": "bottom",
+     "fill": [
+      {
+       "child": "items",
+       "pick": [
+        {
+         "kind": "find"
+        },
+        {
+         "name": "playNow"
+        },
+        {
+         "name": "playNext"
+        },
+        {
+         "name": "playLast"
+        },
+        {
+         "rest": true
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "slot": "expanded",
+     "fill": [
+      {
+       "child": "detail"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "appBarTitle",
+   "hires": "title",
+   "contract": "header",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "title"
+    }
+   ]
+  },
+  {
+   "name": "peekHeader",
+   "hires": "header",
+   "contract": "header",
+   "clauses": [
+    {
+     "slot": "title",
+     "fill": [
+      {
+       "child": "detail"
+      }
+     ]
+    },
+    {
+     "slot": "end",
+     "fill": [
+      {
+       "child": "items",
+       "pick": [
+        {
+         "rest": true
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "frontHeader",
+   "hires": "frontHeader",
+   "contract": "frontHeader",
+   "clauses": [
+    {
+     "slot": "start",
+     "fill": [
+      {
+       "hire": "disclosure"
+      }
+     ]
+    },
+    {
+     "slot": "title",
+     "fill": [
+      {
+       "hire": "frontTitle"
+      }
+     ]
+    },
+    {
+     "slot": "end",
+     "fill": [
+      {
+       "child": "items",
+       "pick": [
+        {
+         "rest": true
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "disclosure",
+   "hires": "caret",
+   "contract": "frontHeader",
+   "clauses": [
+    {
+     "prop": "label",
+     "value": "disclosureLabel"
+    },
+    {
+     "prop": "icon",
+     "token": "disclosure.icon"
+    },
+    {
+     "event": "press",
+     "send": "toggleExpanded"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "size",
+     "option": "md"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "disclosure.icon",
+     "alias": "icon.expand"
+    }
+   ]
+  },
+  {
+   "name": "frontTitle",
+   "hires": "title",
+   "contract": "frontHeader",
    "clauses": [
     {
      "prop": "text",
@@ -103,6 +448,58 @@
     {
      "axis": "layout",
      "option": "column"
+    }
+   ]
+  },
+  {
+   "name": "collectionDetail",
+   "hires": "detailHeader",
+   "contract": "detail",
+   "clauses": [],
+   "variants": [
+    {
+     "axis": "shape",
+     "option": "square"
+    },
+    {
+     "axis": "layout",
+     "option": "row"
+    }
+   ]
+  },
+  {
+   "name": "accountDetail",
+   "hires": "detailHeader",
+   "contract": "detail",
+   "clauses": [],
+   "variants": [
+    {
+     "axis": "shape",
+     "option": "circle"
+    }
+   ]
+  },
+  {
+   "name": "peekDetail",
+   "hires": "detailHeader",
+   "contract": "detail",
+   "clauses": [],
+   "variants": [
+    {
+     "axis": "layout",
+     "option": "peek"
+    }
+   ]
+  },
+  {
+   "name": "playerDetail",
+   "hires": "detailHeader",
+   "contract": "detail",
+   "clauses": [],
+   "variants": [
+    {
+     "axis": "layout",
+     "option": "player"
     }
    ]
   },
@@ -176,6 +573,69 @@
    ]
   },
   {
+   "name": "closeButton",
+   "hires": "iconButton",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "icon",
+     "token": "closeButton.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "closeButton.icon",
+     "alias": "icon.close"
+    }
+   ]
+  },
+  {
+   "name": "moreButton",
+   "hires": "iconButton",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "icon",
+     "token": "moreButton.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "moreButton.icon",
+     "alias": "icon.more"
+    }
+   ]
+  },
+  {
+   "name": "collapseButton",
+   "hires": "iconButton",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "icon",
+     "token": "collapseButton.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "collapseButton.icon",
+     "alias": "icon.collapse"
+    }
+   ]
+  },
+  {
    "name": "logo",
    "hires": "logo",
    "contract": "logo",
@@ -217,6 +677,58 @@
    ]
   },
   {
+   "name": "playNowFilled",
+   "hires": "button",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "prop": "icon",
+     "token": "playNowFilled.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "emphasis",
+     "option": "filled"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "playNowFilled.icon",
+     "alias": "icon.playNow"
+    }
+   ]
+  },
+  {
+   "name": "playNowFab",
+   "hires": "fab",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "icon",
+     "token": "playNowFab.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "playNowFab.icon",
+     "alias": "icon.playNow"
+    }
+   ]
+  },
+  {
    "name": "playNextButton",
    "hires": "button",
    "contract": "button",
@@ -247,6 +759,58 @@
    "tokens": [
     {
      "name": "playNextButton.icon",
+     "alias": "icon.playNext"
+    }
+   ]
+  },
+  {
+   "name": "playNextFilled",
+   "hires": "button",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "prop": "icon",
+     "token": "playNextFilled.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "emphasis",
+     "option": "filled"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "playNextFilled.icon",
+     "alias": "icon.playNext"
+    }
+   ]
+  },
+  {
+   "name": "playNextFab",
+   "hires": "fab",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "icon",
+     "token": "playNextFab.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "playNextFab.icon",
      "alias": "icon.playNext"
     }
    ]
@@ -283,6 +847,735 @@
     {
      "name": "playLastButton.icon",
      "alias": "icon.playLast"
+    }
+   ]
+  },
+  {
+   "name": "playLastFilled",
+   "hires": "button",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "prop": "icon",
+     "token": "playLastFilled.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "emphasis",
+     "option": "filled"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "playLastFilled.icon",
+     "alias": "icon.playLast"
+    }
+   ]
+  },
+  {
+   "name": "playLastFab",
+   "hires": "fab",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "icon",
+     "token": "playLastFab.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "playLastFab.icon",
+     "alias": "icon.playLast"
+    }
+   ]
+  },
+  {
+   "name": "peekPlayPause",
+   "hires": "iconButton",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "icon",
+     "value": "state",
+     "cases": [
+      {
+       "equals": "pause",
+       "token": "peekPlayPause.pause"
+      },
+      {
+       "equals": "playNow",
+       "token": "peekPlayPause.playNow"
+      }
+     ]
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "size",
+     "option": "md"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "peekPlayPause.pause",
+     "alias": "icon.pause"
+    },
+    {
+     "name": "peekPlayPause.playNow",
+     "alias": "icon.playNow"
+    }
+   ]
+  },
+  {
+   "name": "peekNext",
+   "hires": "iconButton",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "icon",
+     "token": "peekNext.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "size",
+     "option": "md"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "peekNext.icon",
+     "alias": "icon.next"
+    }
+   ]
+  },
+  {
+   "name": "shuffleButton",
+   "hires": "iconButton",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "icon",
+     "token": "shuffleButton.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "size",
+     "option": "md"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "shuffleButton.icon",
+     "alias": "icon.shuffle"
+    }
+   ]
+  },
+  {
+   "name": "previousButton",
+   "hires": "iconButton",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "icon",
+     "token": "previousButton.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "size",
+     "option": "lg"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "previousButton.icon",
+     "alias": "icon.previous"
+    }
+   ]
+  },
+  {
+   "name": "playPauseFab",
+   "hires": "fab",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "icon",
+     "value": "state",
+     "cases": [
+      {
+       "equals": "pause",
+       "token": "playPauseFab.pause"
+      },
+      {
+       "equals": "playNow",
+       "token": "playPauseFab.playNow"
+      }
+     ]
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "size",
+     "option": "lg"
+    },
+    {
+     "axis": "tone",
+     "option": "ink"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "playPauseFab.pause",
+     "alias": "icon.pause"
+    },
+    {
+     "name": "playPauseFab.playNow",
+     "alias": "icon.playNow"
+    }
+   ]
+  },
+  {
+   "name": "nextButton",
+   "hires": "iconButton",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "icon",
+     "token": "nextButton.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "size",
+     "option": "lg"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "nextButton.icon",
+     "alias": "icon.next"
+    }
+   ]
+  },
+  {
+   "name": "repeatButton",
+   "hires": "iconButton",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "icon",
+     "value": "state",
+     "cases": [
+      {
+       "equals": "repeat",
+       "token": "repeatButton.repeat"
+      },
+      {
+       "equals": "repeatOne",
+       "token": "repeatButton.repeatOne"
+      }
+     ]
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "size",
+     "option": "md"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "repeatButton.repeat",
+     "alias": "icon.repeat"
+    },
+    {
+     "name": "repeatButton.repeatOne",
+     "alias": "icon.repeatOne"
+    }
+   ]
+  },
+  {
+   "name": "seek",
+   "hires": "seekBar",
+   "contract": "seek",
+   "clauses": [
+    {
+     "event": "change",
+     "send": "seek"
+    }
+   ]
+  },
+  {
+   "name": "listenNowDrawerItem",
+   "hires": "drawerItem",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "prop": "icon",
+     "token": "listenNowDrawerItem.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "listenNowDrawerItem.icon",
+     "alias": "icon.listenNow"
+    }
+   ]
+  },
+  {
+   "name": "listenNowRailItem",
+   "hires": "drawerItem",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "prop": "icon",
+     "token": "listenNowRailItem.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "form",
+     "option": "rail"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "listenNowRailItem.icon",
+     "alias": "icon.listenNow"
+    }
+   ]
+  },
+  {
+   "name": "settingsDrawerItem",
+   "hires": "drawerItem",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "prop": "icon",
+     "token": "settingsDrawerItem.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "settingsDrawerItem.icon",
+     "alias": "icon.settings"
+    }
+   ]
+  },
+  {
+   "name": "settingsRailItem",
+   "hires": "drawerItem",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "prop": "icon",
+     "token": "settingsRailItem.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "form",
+     "option": "rail"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "settingsRailItem.icon",
+     "alias": "icon.settings"
+    }
+   ]
+  },
+  {
+   "name": "accountDrawerItem",
+   "hires": "drawerItem",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "prop": "icon",
+     "token": "accountDrawerItem.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "accountDrawerItem.icon",
+     "alias": "icon.account"
+    }
+   ]
+  },
+  {
+   "name": "accountRailItem",
+   "hires": "drawerItem",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "prop": "icon",
+     "token": "accountRailItem.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "form",
+     "option": "rail"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "accountRailItem.icon",
+     "alias": "icon.account"
+    }
+   ]
+  },
+  {
+   "name": "railMenu",
+   "hires": "iconButton",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "icon",
+     "token": "railMenu.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "railMenu.icon",
+     "alias": "icon.menu"
+    }
+   ]
+  },
+  {
+   "name": "railMenuClose",
+   "hires": "iconButton",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "icon",
+     "token": "railMenuClose.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "railMenuClose.icon",
+     "alias": "icon.menuClose"
+    }
+   ]
+  },
+  {
+   "name": "signOut",
+   "hires": "button",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "emphasis",
+     "option": "outlined"
+    }
+   ]
+  },
+  {
+   "name": "bodyText",
+   "hires": "panelRow",
+   "contract": "text",
+   "clauses": []
+  },
+  {
+   "name": "summary",
+   "hires": "label",
+   "contract": "text",
+   "clauses": []
+  },
+  {
+   "name": "viewSwitch",
+   "hires": "viewSwitch",
+   "contract": "switch",
+   "clauses": [
+    {
+     "prop": "icon",
+     "value": "next",
+     "cases": [
+      {
+       "equals": "grid",
+       "token": "viewSwitch.grid"
+      },
+      {
+       "equals": "list",
+       "token": "viewSwitch.list"
+      }
+     ]
+    },
+    {
+     "event": "press",
+     "send": "setParams"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "size",
+     "option": "md"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "viewSwitch.grid",
+     "alias": "icon.viewGrid"
+    },
+    {
+     "name": "viewSwitch.list",
+     "alias": "icon.viewList"
+    }
+   ]
+  },
+  {
+   "name": "find",
+   "hires": "morph",
+   "contract": "find",
+   "clauses": [
+    {
+     "prop": "morphed",
+     "value": "open"
+    },
+    {
+     "slot": "from",
+     "fill": [
+      {
+       "hire": "findButton"
+      }
+     ]
+    },
+    {
+     "slot": "to",
+     "fill": [
+      {
+       "hire": "findField"
+      }
+     ]
+    }
+   ],
+   "variants": [
+    {
+     "axis": "span",
+     "option": "header"
+    }
+   ]
+  },
+  {
+   "name": "findRow",
+   "hires": "morph",
+   "contract": "find",
+   "clauses": [
+    {
+     "prop": "morphed",
+     "value": "open"
+    },
+    {
+     "slot": "from",
+     "fill": [
+      {
+       "hire": "findButton"
+      }
+     ]
+    },
+    {
+     "slot": "to",
+     "fill": [
+      {
+       "hire": "findField"
+      }
+     ]
+    }
+   ],
+   "variants": [
+    {
+     "axis": "span",
+     "option": "row"
+    }
+   ]
+  },
+  {
+   "name": "findButton",
+   "hires": "iconButton",
+   "contract": "find",
+   "clauses": [
+    {
+     "prop": "label",
+     "value": "placeholder"
+    },
+    {
+     "prop": "icon",
+     "token": "findButton.icon"
+    },
+    {
+     "event": "press",
+     "send": "openFind"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "size",
+     "option": "md"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "findButton.icon",
+     "alias": "icon.find"
+    }
+   ]
+  },
+  {
+   "name": "findField",
+   "hires": "localSearch",
+   "contract": "find",
+   "clauses": [
+    {
+     "event": "change",
+     "send": "setParams"
+    },
+    {
+     "slot": "end",
+     "fill": [
+      {
+       "hire": "findClose"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "findClose",
+   "hires": "iconButton",
+   "contract": "find",
+   "clauses": [
+    {
+     "prop": "label",
+     "value": "closeLabel"
+    },
+    {
+     "prop": "icon",
+     "token": "findClose.icon"
+    },
+    {
+     "event": "press",
+     "send": "closeFind"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "size",
+     "option": "xs"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "findClose.icon",
+     "alias": "icon.close"
     }
    ]
   },
@@ -406,252 +1699,6 @@
    ]
   },
   {
-   "name": "frontLayer",
-   "hires": "frontLayer",
-   "contract": "frontLayer",
-   "clauses": [
-    {
-     "event": "scroll",
-     "send": "scroll"
-    }
-   ]
-  },
-  {
-   "name": "frontHeader",
-   "hires": "frontHeader",
-   "contract": "frontHeader",
-   "clauses": [
-    {
-     "slot": "start",
-     "fill": [
-      {
-       "hire": "disclosure"
-      }
-     ]
-    },
-    {
-     "slot": "title",
-     "fill": [
-      {
-       "hire": "frontTitle"
-      }
-     ]
-    },
-    {
-     "slot": "end",
-     "fill": [
-      {
-       "child": "items",
-       "pick": [
-        {
-         "rest": true
-        }
-       ]
-      }
-     ]
-    }
-   ]
-  },
-  {
-   "name": "disclosure",
-   "hires": "caret",
-   "contract": "frontHeader",
-   "clauses": [
-    {
-     "prop": "label",
-     "value": "disclosureLabel"
-    },
-    {
-     "prop": "icon",
-     "token": "disclosure.icon"
-    },
-    {
-     "event": "press",
-     "send": "toggleExpanded"
-    }
-   ],
-   "variants": [
-    {
-     "axis": "size",
-     "option": "md"
-    }
-   ],
-   "tokens": [
-    {
-     "name": "disclosure.icon",
-     "alias": "icon.expand"
-    }
-   ]
-  },
-  {
-   "name": "frontTitle",
-   "hires": "title",
-   "contract": "frontHeader",
-   "clauses": [
-    {
-     "prop": "text",
-     "value": "title"
-    }
-   ]
-  },
-  {
-   "name": "summary",
-   "hires": "label",
-   "contract": "text",
-   "clauses": []
-  },
-  {
-   "name": "viewSwitch",
-   "hires": "viewSwitch",
-   "contract": "switch",
-   "clauses": [
-    {
-     "prop": "icon",
-     "value": "next",
-     "cases": [
-      {
-       "equals": "grid",
-       "token": "viewSwitch.grid"
-      },
-      {
-       "equals": "list",
-       "token": "viewSwitch.list"
-      }
-     ]
-    },
-    {
-     "event": "press",
-     "send": "setParams"
-    }
-   ],
-   "variants": [
-    {
-     "axis": "size",
-     "option": "md"
-    }
-   ],
-   "tokens": [
-    {
-     "name": "viewSwitch.grid",
-     "alias": "icon.viewGrid"
-    },
-    {
-     "name": "viewSwitch.list",
-     "alias": "icon.viewList"
-    }
-   ]
-  },
-  {
-   "name": "find",
-   "hires": "morph",
-   "contract": "find",
-   "clauses": [
-    {
-     "prop": "morphed",
-     "value": "open"
-    },
-    {
-     "slot": "from",
-     "fill": [
-      {
-       "hire": "findButton"
-      }
-     ]
-    },
-    {
-     "slot": "to",
-     "fill": [
-      {
-       "hire": "findField"
-      }
-     ]
-    }
-   ],
-   "variants": [
-    {
-     "axis": "span",
-     "option": "header"
-    }
-   ]
-  },
-  {
-   "name": "findButton",
-   "hires": "iconButton",
-   "contract": "find",
-   "clauses": [
-    {
-     "prop": "label",
-     "value": "placeholder"
-    },
-    {
-     "prop": "icon",
-     "token": "findButton.icon"
-    },
-    {
-     "event": "press",
-     "send": "openFind"
-    }
-   ],
-   "variants": [
-    {
-     "axis": "size",
-     "option": "md"
-    }
-   ],
-   "tokens": [
-    {
-     "name": "findButton.icon",
-     "alias": "icon.find"
-    }
-   ]
-  },
-  {
-   "name": "findField",
-   "hires": "localSearch",
-   "contract": "find",
-   "clauses": [
-    {
-     "event": "change",
-     "send": "setParams"
-    },
-    {
-     "slot": "end",
-     "fill": [
-      {
-       "hire": "findClose"
-      }
-     ]
-    }
-   ]
-  },
-  {
-   "name": "findClose",
-   "hires": "iconButton",
-   "contract": "find",
-   "clauses": [
-    {
-     "prop": "icon",
-     "token": "findClose.icon"
-    },
-    {
-     "event": "press",
-     "send": "closeFind"
-    }
-   ],
-   "variants": [
-    {
-     "axis": "size",
-     "option": "xs"
-    }
-   ],
-   "tokens": [
-    {
-     "name": "findClose.icon",
-     "alias": "icon.close"
-    }
-   ]
-  },
-  {
    "name": "scroller",
    "hires": "scrollerLayout",
    "contract": "content",
@@ -661,6 +1708,22 @@
      "fill": [
       {
        "child": "items"
+      }
+     ]
+    },
+    {
+     "slot": "state",
+     "fill": [
+      {
+       "child": "state"
+      }
+     ]
+    },
+    {
+     "slot": "banner",
+     "fill": [
+      {
+       "child": "banner"
       }
      ]
     }
@@ -678,6 +1741,22 @@
        "child": "items"
       }
      ]
+    },
+    {
+     "slot": "state",
+     "fill": [
+      {
+       "child": "state"
+      }
+     ]
+    },
+    {
+     "slot": "banner",
+     "fill": [
+      {
+       "child": "banner"
+      }
+     ]
     }
    ]
   },
@@ -693,6 +1772,22 @@
        "child": "items"
       }
      ]
+    },
+    {
+     "slot": "state",
+     "fill": [
+      {
+       "child": "state"
+      }
+     ]
+    },
+    {
+     "slot": "banner",
+     "fill": [
+      {
+       "child": "banner"
+      }
+     ]
     }
    ]
   },
@@ -703,7 +1798,7 @@
    "clauses": [
     {
      "event": "press",
-     "send": "open"
+     "send": "action"
     }
    ]
   },
@@ -714,7 +1809,7 @@
    "clauses": [
     {
      "event": "press",
-     "send": "open"
+     "send": "action"
     }
    ],
    "variants": [
@@ -731,7 +1826,7 @@
    "clauses": [
     {
      "event": "press",
-     "send": "open"
+     "send": "action"
     }
    ]
   },
@@ -742,7 +1837,327 @@
    "clauses": [
     {
      "event": "press",
-     "send": "open"
+     "send": "action"
+    }
+   ]
+  },
+  {
+   "name": "queueRow",
+   "hires": "queueRow",
+   "contract": "item",
+   "clauses": [
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ]
+  },
+  {
+   "name": "lyricLine",
+   "hires": "contentBlock",
+   "contract": "item",
+   "clauses": []
+  },
+  {
+   "name": "emptyState",
+   "hires": "emptyState",
+   "contract": "contentState",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "text"
+    },
+    {
+     "event": "retry",
+     "send": "retry"
+    }
+   ]
+  },
+  {
+   "name": "errorState",
+   "hires": "errorState",
+   "contract": "contentState",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "text"
+    },
+    {
+     "event": "retry",
+     "send": "retry"
+    }
+   ]
+  },
+  {
+   "name": "staleBanner",
+   "hires": "staleBanner",
+   "contract": "contentState",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "text"
+    },
+    {
+     "event": "retry",
+     "send": "retry"
+    }
+   ]
+  },
+  {
+   "name": "navBar",
+   "hires": "navBar",
+   "contract": "navigation",
+   "clauses": [
+    {
+     "slot": "destinations",
+     "fill": [
+      {
+       "child": "destinations"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "navRail",
+   "hires": "navRail",
+   "contract": "navigation",
+   "clauses": [
+    {
+     "slot": "destinations",
+     "fill": [
+      {
+       "child": "destinations"
+      }
+     ]
+    },
+    {
+     "slot": "top",
+     "fill": [
+      {
+       "child": "items",
+       "pick": [
+        {
+         "name": "menu"
+        },
+        {
+         "name": "menuClose"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "slot": "bottom",
+     "fill": [
+      {
+       "child": "items",
+       "pick": [
+        {
+         "rest": true
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "barDestination",
+   "hires": "navItem",
+   "contract": "destination",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "prop": "icon",
+     "value": "deck",
+     "cases": [
+      {
+       "equals": "browse",
+       "token": "barDestination.browse"
+      },
+      {
+       "equals": "library",
+       "token": "barDestination.library"
+      },
+      {
+       "equals": "search",
+       "token": "barDestination.search"
+      }
+     ]
+    },
+    {
+     "event": "press",
+     "send": "switchDeck"
+    },
+    {
+     "event": "reselect",
+     "send": "reselectDeck"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "barDestination.browse",
+     "alias": "icon.browse"
+    },
+    {
+     "name": "barDestination.library",
+     "alias": "icon.library"
+    },
+    {
+     "name": "barDestination.search",
+     "alias": "icon.search"
+    }
+   ]
+  },
+  {
+   "name": "railDestination",
+   "hires": "navItem",
+   "contract": "destination",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "prop": "icon",
+     "value": "deck",
+     "cases": [
+      {
+       "equals": "browse",
+       "token": "railDestination.browse"
+      },
+      {
+       "equals": "library",
+       "token": "railDestination.library"
+      },
+      {
+       "equals": "search",
+       "token": "railDestination.search"
+      }
+     ]
+    },
+    {
+     "event": "press",
+     "send": "switchDeck"
+    },
+    {
+     "event": "reselect",
+     "send": "reselectDeck"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "form",
+     "option": "rail"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "railDestination.browse",
+     "alias": "icon.browse"
+    },
+    {
+     "name": "railDestination.library",
+     "alias": "icon.library"
+    },
+    {
+     "name": "railDestination.search",
+     "alias": "icon.search"
+    }
+   ]
+  },
+  {
+   "name": "dialog",
+   "hires": "dialog",
+   "contract": "overlay",
+   "clauses": [
+    {
+     "event": "close",
+     "send": "closeOverlay"
+    }
+   ]
+  },
+  {
+   "name": "menu",
+   "hires": "menu",
+   "contract": "overlay",
+   "clauses": [
+    {
+     "slot": "items",
+     "fill": [
+      {
+       "child": "items"
+      }
+     ]
+    },
+    {
+     "event": "close",
+     "send": "closeOverlay"
+    }
+   ]
+  },
+  {
+   "name": "snackbar",
+   "hires": "snackbar",
+   "contract": "overlay",
+   "clauses": [
+    {
+     "event": "close",
+     "send": "closeOverlay"
+    }
+   ]
+  },
+  {
+   "name": "recentMenuItem",
+   "hires": "drawerItem",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "prop": "icon",
+     "token": "recentMenuItem.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "recentMenuItem.icon",
+     "alias": "icon.recent"
+    }
+   ]
+  },
+  {
+   "name": "savedMenuItem",
+   "hires": "drawerItem",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "prop": "icon",
+     "token": "savedMenuItem.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "savedMenuItem.icon",
+     "alias": "icon.saved"
     }
    ]
   }
@@ -757,8 +2172,91 @@
    "hire": "backLayer"
   },
   {
-   "contract": "backHeader",
+   "contract": "frontLayer",
+   "hire": "frontLayer"
+  },
+  {
+   "contract": "appBarPage",
+   "hire": "appBarPage"
+  },
+  {
+   "contract": "pageSheet",
+   "hire": "pageSheet"
+  },
+  {
+   "contract": "sheetLayer",
+   "hire": "sheetLayer"
+  },
+  {
+   "contract": "drawerLayer",
+   "hire": "drawerLayer"
+  },
+  {
+   "contract": "fullscreenLayer",
+   "hire": "fullscreenLayer"
+  },
+  {
+   "contract": "splash",
+   "hire": "splash"
+  },
+  {
+   "contract": "frontHeader",
+   "hire": "frontHeader"
+  },
+  {
+   "contract": "logo",
+   "hire": "logo"
+  },
+  {
+   "contract": "seek",
+   "hire": "seek"
+  },
+  {
+   "contract": "paramRow",
+   "hire": "paramRow"
+  },
+  {
+   "contract": "suggestions",
+   "hire": "suggestions"
+  },
+  {
+   "contract": "suggestion",
+   "hire": "suggestion"
+  },
+  {
+   "contract": "header",
+   "within": "backLayer",
    "hire": "backHeader"
+  },
+  {
+   "contract": "header",
+   "within": "sheetLayer",
+   "hire": "peekHeader"
+  },
+  {
+   "contract": "header",
+   "within": "appBarPage",
+   "hire": "appBarHeader"
+  },
+  {
+   "contract": "detail",
+   "within": "sheetLayer",
+   "hire": "peekDetail"
+  },
+  {
+   "contract": "detail",
+   "match": {
+    "name": "track"
+   },
+   "hire": "playerDetail"
+  },
+  {
+   "contract": "detail",
+   "within": "appBarPage",
+   "match": {
+    "kind": "detail"
+   },
+   "hire": "accountDetail"
   },
   {
    "contract": "detail",
@@ -769,6 +2267,7 @@
    "match": {
     "name": "menu"
    },
+   "within": "header",
    "env": {
     "env": "layout",
     "equals": "compact"
@@ -780,14 +2279,99 @@
    "match": {
     "name": "menu"
    },
+   "within": "header",
    "hire": null
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "menu"
+   },
+   "within": "navigation",
+   "env": {
+    "env": "layout",
+    "equals": "wide"
+   },
+   "hire": "railMenu"
+  },
+  {
+   "contract": "button",
+   "within": "navigation",
+   "env": {
+    "env": "layout",
+    "equals": "compact"
+   },
+   "hire": null
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "menuClose"
+   },
+   "within": "navigation",
+   "hire": "railMenuClose"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "settings"
+   },
+   "within": "navigation",
+   "hire": "settingsRailItem"
   },
   {
    "contract": "button",
    "match": {
     "name": "account"
    },
+   "within": "navigation",
+   "hire": "accountRailItem"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "account"
+   },
+   "within": "header",
    "hire": "accountButton"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "account"
+   },
+   "within": "appBarPage",
+   "hire": "accountDrawerItem"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "settings"
+   },
+   "hire": "settingsDrawerItem"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "listenNow"
+   },
+   "hire": "listenNowDrawerItem"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "recent"
+   },
+   "within": "overlay",
+   "hire": "recentMenuItem"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "saved"
+   },
+   "within": "overlay",
+   "hire": "savedMenuItem"
   },
   {
    "contract": "button",
@@ -799,27 +2383,146 @@
   {
    "contract": "button",
    "match": {
+    "name": "close"
+   },
+   "hire": "closeButton"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "more"
+   },
+   "hire": "moreButton"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "collapse"
+   },
+   "hire": "collapseButton"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "shuffle"
+   },
+   "hire": "shuffleButton"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "previous"
+   },
+   "hire": "previousButton"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "repeat"
+   },
+   "hire": "repeatButton"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "signOut"
+   },
+   "hire": "signOut"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "playPause"
+   },
+   "within": "sheetLayer",
+   "hire": "peekPlayPause"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "next"
+   },
+   "within": "header",
+   "hire": "peekNext"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "playPause"
+   },
+   "hire": "playPauseFab"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "next"
+   },
+   "hire": "nextButton"
+  },
+  {
+   "contract": "button",
+   "match": {
     "name": "playNow"
    },
+   "within": "backLayer",
    "hire": "playNowButton"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "playNow"
+   },
+   "within": "header",
+   "hire": "playNowFab"
   },
   {
    "contract": "button",
    "match": {
     "name": "playNext"
    },
+   "within": "backLayer",
    "hire": "playNextButton"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "playNext"
+   },
+   "within": "header",
+   "hire": "playNextFab"
   },
   {
    "contract": "button",
    "match": {
     "name": "playLast"
    },
+   "within": "backLayer",
    "hire": "playLastButton"
   },
   {
-   "contract": "logo",
-   "hire": "logo"
+   "contract": "button",
+   "match": {
+    "name": "playLast"
+   },
+   "within": "header",
+   "hire": "playLastFab"
+  },
+  {
+   "contract": "text",
+   "within": "appBarPage",
+   "hire": "bodyText"
+  },
+  {
+   "contract": "text",
+   "hire": "summary"
+  },
+  {
+   "contract": "switch",
+   "hire": "viewSwitch"
+  },
+  {
+   "contract": "find",
+   "hire": "find"
   },
   {
    "contract": "input",
@@ -858,43 +2561,6 @@
    "hire": "rangeField"
   },
   {
-   "contract": "paramRow",
-   "hire": "paramRow"
-  },
-  {
-   "contract": "suggestions",
-   "hire": "suggestions"
-  },
-  {
-   "contract": "suggestion",
-   "hire": "suggestion"
-  },
-  {
-   "contract": "frontLayer",
-   "hire": "frontLayer"
-  },
-  {
-   "contract": "frontHeader",
-   "hire": "frontHeader"
-  },
-  {
-   "contract": "text",
-   "hire": "summary"
-  },
-  {
-   "contract": "switch",
-   "hire": "viewSwitch"
-  },
-  {
-   "contract": "find",
-   "hire": "find"
-  },
-  {
-   "contract": "content",
-   "presentation": "default",
-   "hire": "scroller"
-  },
-  {
    "contract": "content",
    "presentation": "grid",
    "hire": "grid"
@@ -918,6 +2584,27 @@
    "contract": "content",
    "presentation": "related",
    "hire": "grid"
+  },
+  {
+   "contract": "content",
+   "presentation": "queue",
+   "hire": "list"
+  },
+  {
+   "contract": "content",
+   "presentation": "lyrics",
+   "hire": "list"
+  },
+  {
+   "contract": "content",
+   "presentation": "default",
+   "within": "frontLayer",
+   "hire": "scroller"
+  },
+  {
+   "contract": "content",
+   "presentation": "default",
+   "hire": "list"
   },
   {
    "contract": "item",
@@ -928,7 +2615,13 @@
   {
    "contract": "item",
    "presentation": "default",
+   "within": "frontLayer",
    "hire": "carousel"
+  },
+  {
+   "contract": "item",
+   "presentation": "default",
+   "hire": "listRow"
   },
   {
    "contract": "item",
@@ -954,6 +2647,70 @@
    "contract": "item",
    "presentation": "related",
    "hire": "gridCard"
+  },
+  {
+   "contract": "item",
+   "presentation": "queue",
+   "hire": "queueRow"
+  },
+  {
+   "contract": "item",
+   "presentation": "lyrics",
+   "hire": "lyricLine"
+  },
+  {
+   "contract": "contentState",
+   "state": "empty",
+   "hire": "emptyState"
+  },
+  {
+   "contract": "contentState",
+   "state": "error",
+   "hire": "errorState"
+  },
+  {
+   "contract": "contentState",
+   "state": "offlineStale",
+   "hire": "staleBanner"
+  },
+  {
+   "contract": "navigation",
+   "env": {
+    "env": "layout",
+    "equals": "compact"
+   },
+   "hire": "navBar"
+  },
+  {
+   "contract": "navigation",
+   "hire": "navRail"
+  },
+  {
+   "contract": "destination",
+   "env": {
+    "env": "layout",
+    "equals": "compact"
+   },
+   "hire": "barDestination"
+  },
+  {
+   "contract": "destination",
+   "hire": "railDestination"
+  },
+  {
+   "contract": "overlay",
+   "overlay": "dialog",
+   "hire": "dialog"
+  },
+  {
+   "contract": "overlay",
+   "overlay": "menu",
+   "hire": "menu"
+  },
+  {
+   "contract": "overlay",
+   "overlay": "snackbar",
+   "hire": "snackbar"
   }
  ],
  "pages": [
@@ -963,6 +2720,45 @@
     {
      "contract": "detail",
      "hire": "personDetail"
+    }
+   ]
+  },
+  {
+   "page": "collection",
+   "placements": [
+    {
+     "contract": "detail",
+     "hire": "collectionDetail"
+    },
+    {
+     "contract": "header",
+     "within": "appBarPage",
+     "hire": "collectionHeader"
+    },
+    {
+     "contract": "find",
+     "hire": "findRow"
+    },
+    {
+     "contract": "button",
+     "match": {
+      "name": "playNow"
+     },
+     "hire": "playNowFilled"
+    },
+    {
+     "contract": "button",
+     "match": {
+      "name": "playNext"
+     },
+     "hire": "playNextFilled"
+    },
+    {
+     "contract": "button",
+     "match": {
+      "name": "playLast"
+     },
+     "hire": "playLastFilled"
     }
    ]
   },

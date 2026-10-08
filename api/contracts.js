@@ -6,7 +6,7 @@
 
 // a child: one contract, or a named union of contracts (UNIONS); list: an array; optional: may be absent
 const one = (contract, optional = false) => ({ contract, ...(optional ? { optional } : {}) });
-const list = contract => ({ contract, list: true });
+const list = (contract, optional = false) => ({ contract, list: true, ...(optional ? { optional } : {}) });
 
 export const UNIONS = {
   headerItem: ['button', 'logo', 'text', 'switch', 'find'],
@@ -32,7 +32,7 @@ export const CONTRACTS = {
   suggestion: { config: 'ItemData', values: { text: 'string' }, intents: ['setParams'], note: 'picking it fills the draft (SuggestionsRow.fills)' },
   suggestions: { config: 'SuggestionsRow', values: { label: 'string' }, intents: [], children: { items: list('suggestion') } },
   // content
-  item: { config: 'PresentationConfig', values: { item: 'ItemData', navigable: 'boolean' }, intents: ['open', 'action'], children: { entries: list('item') }, note: "a shelf's entries are items; action: the presentation's itemAction" },
+  item: { config: 'PresentationConfig', values: { item: 'ItemData', navigable: 'boolean' }, intents: ['action'], children: { entries: list('item', true) }, note: "action: open it (ItemData.opens), else the presentation's itemAction · entries: a shelf's (absent on other items)" },
   contentState: { config: 'ContentConfig', values: { state: 'ContentViewState', text: 'string', retry: 'boolean' }, intents: ['retry'], note: 'empty · error · offlineStale (the banner)' },
   content: { config: 'ContentConfig', values: { view: 'ContentView', presentation: 'PresentationKey', groups: 'ItemGroup[]', placeholders: 'number' }, intents: [], children: { items: list('item'), state: one('contentState', true), banner: one('contentState', true) } },
   // backdrop page
@@ -49,9 +49,9 @@ export const CONTRACTS = {
   fullscreenLayer: { config: 'LayerConfig', values: { open: 'boolean' }, intents: [], children: { page: one('page') } },
   // app
   destination: { config: 'DeckConfig', values: { deck: 'DeckId', label: 'string', selected: 'boolean' }, intents: ['switchDeck', 'reselectDeck'] },
-  navigation: { config: 'NavigationConfig', values: { expanded: 'boolean' }, intents: [], children: { destinations: list('destination'), items: list('button') }, note: 'expanded: a rail-form drawer is open' },
+  navigation: { config: 'NavigationConfig', values: { expanded: 'boolean' }, intents: [], children: { destinations: list('destination'), items: list('button', true) }, note: 'expanded: a rail-form drawer is open · items: drawn where a form has room (the rail)' },
   splash: { config: 'LaunchConfig', values: { label: 'string' }, intents: [] },
-  overlay: { config: 'OverlaySpec', values: { texts: 'OverlayValueText[]' }, intents: ['closeOverlay'], children: { items: list('button') } },
+  overlay: { config: 'OverlaySpec', values: { texts: 'OverlayValueText[]' }, intents: ['closeOverlay'], children: { items: list('button', true) }, note: 'items: a menu\'s' },
 };
 
 // intent types → their TS names ('action' is the item's own Actions)

@@ -212,10 +212,10 @@ export interface SuggestionContract extends Contract<ItemData, SuggestionValues,
 export interface SuggestionsValues { label: string }
 export interface SuggestionsChildren { items: SuggestionContract[] }
 export interface SuggestionsContract extends Contract<SuggestionsRow, SuggestionsValues, NoIntents> { children: SuggestionsChildren }
-// item: a shelf's entries are items; action: the presentation's itemAction (recursive: refers to itself)
+// item: action: open it (ItemData.opens), else the presentation's itemAction · entries: a shelf's (absent on other items) (recursive: refers to itself)
 export interface ItemValues { item: ItemData; navigable: boolean }
-export interface ItemChildren { entries: ItemContract[] }
-export interface ItemContract extends Contract<PresentationConfig, ItemValues, OpenIntent | Actions> { children: ItemChildren }
+export interface ItemChildren { entries?: ItemContract[] }
+export interface ItemContract extends Contract<PresentationConfig, ItemValues, Actions> { children: ItemChildren }
 // contentState: empty · error · offlineStale (the banner)
 export interface ContentStateValues { state: ContentViewState; text: string; retry: boolean }
 export interface ContentStateContract extends Contract<ContentConfig, ContentStateValues, RetryIntent> {}
@@ -264,16 +264,16 @@ export interface FullscreenLayerContract extends Contract<LayerConfig, Fullscree
 // destination
 export interface DestinationValues { deck: DeckId; label: string; selected: boolean }
 export interface DestinationContract extends Contract<DeckConfig, DestinationValues, SwitchDeckIntent | ReselectDeckIntent> {}
-// navigation: expanded: a rail-form drawer is open
+// navigation: expanded: a rail-form drawer is open · items: drawn where a form has room (the rail)
 export interface NavigationValues { expanded: boolean }
-export interface NavigationChildren { destinations: DestinationContract[]; items: ButtonContract[] }
+export interface NavigationChildren { destinations: DestinationContract[]; items?: ButtonContract[] }
 export interface NavigationContract extends Contract<NavigationConfig, NavigationValues, NoIntents> { children: NavigationChildren }
 // splash
 export interface SplashValues { label: string }
 export interface SplashContract extends Contract<LaunchConfig, SplashValues, NoIntents> {}
-// overlay
+// overlay: items: a menu's
 export interface OverlayValues { texts: OverlayValueText[] }
-export interface OverlayChildren { items: ButtonContract[] }
+export interface OverlayChildren { items?: ButtonContract[] }
 export interface OverlayContract extends Contract<OverlaySpec, OverlayValues, CloseOverlayIntent> { children: OverlayChildren }
 export type ContractName = 'button' | 'logo' | 'text' | 'switch' | 'find' | 'detail' | 'seek' | 'header' | 'input' | 'paramRow' | 'suggestion' | 'suggestions' | 'item' | 'contentState' | 'content' | 'backLayer' | 'frontHeader' | 'frontLayer' | 'backdropPage' | 'pageSheet' | 'appBarPage' | 'sheetLayer' | 'drawerLayer' | 'fullscreenLayer' | 'destination' | 'navigation' | 'splash' | 'overlay';
 // </contracts:generated>
@@ -340,7 +340,8 @@ export interface Hire {
 export interface ParamMatch { name?: ParamName; type?: ParamType; axis?: boolean; draft?: boolean }   // controls: picked by the bound param (its name, or its spec)
 export interface Placement {
   contract: ContractName;
-  within?: ContractName;                 // the contract it sits in (a header in a back layer, an app-bar page or a peek)
+  within?: ContractName;                 // an ancestor contract (a header in a backLayer, an appBarPage or a sheetLayer: the peek)
+  overlay?: OverlaySpec['kind'];         // overlays: by kind
   match?: ItemSelector;                  // items: a kind or a name (destinations: the deck id; overlays: the kind)
   param?: ParamMatch;                    // basic actions and panel rows
   presentation?: PresentationKey;        // content items
