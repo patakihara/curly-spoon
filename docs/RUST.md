@@ -26,10 +26,11 @@ Rules of thumb
 | 11 route              | core/navigation.js (url, navigateUrl) | `route`                         | web shell mirrors `urlChanged` to `history.pushState`; Android maps intents/deep links |
 | 12 persist            | core/navigation.js (snapshot, restore) | `persist` (serde)              | Android: save on `onStop`; web: `localStorage` |
 | 13 player             | core/player.js           | `player`                                | shells execute `PlayerCommand`s; report facts back |
-| 14 layout             | core/layout.js     | `layout`                          | shells pass measured rects in |
+| 14 layout             | core/layout.js     | `layout`                          | shells pass measured rects in; sizes come through a Look (composition + design) |
+| contracts, composition | api/contracts.js (data) · core/compose.js · core/contracts.js | `compose` (placements, hires, look) · `contracts` (the contract tree) | contracts and composition.json are data (serde); the tree is a pure function of state + config + composition + design |
 | 15 specs              | design/ (load.js assembles, resolves extends; motions/ = motion kinds) · generated/ (build.js) · platforms/*.json (manifests) | `specs` (serde + JSON Schema validation) | validated at startup / in CI; build.rs can emit the Kotlin/CSS tokens |
 | 16 wire               | app/fake-backend.js (fake data; config in app/app.json via serde) | `data` (reqwest, cache, offline)      | shares data types with the backend if it's Rust |
-| rules                 | api/invariants.js         | `tests/` + data-driven `rules.yaml` runner | same rules for every implementation |
+| rules                 | api/invariants.js · api/composition-rules.js | `tests/` + data-driven `rules.yaml` runner | same rules for every implementation |
 
 ## Bindings
 
@@ -74,8 +75,13 @@ Rules of thumb
 ## 15.0 to port
 - `BarView.distance`; `Layout::content_offset(page, specs) = max(0, scroll − distance)`. Scroll stays one f64 per page; its meaning is collapse-first (platforms split it into bar collapse + native content offset).
 
-## 16.0 to port
+## 16.0 to port (superseded by 18.0: skip)
 - Typed refs are type aliases over ComponentRef with typed slot maps (`HashMap<String, Vec<Slot>>` + named fields). `Role.parts` (`PartContract`) is data like `Role.slots`. Roles come from api/roles.js — port it as data (serde from JSON), not code. New role ids and their roleProps / roleIntent arms; `Layout::component_for(specs, role)`; `SlotContext.layer`.
 
 ## 17.0 to port
 - Steps are data (serde, tagged by `do`); `Layout::steps_for`, `component_steps` resolve tokens / ByEvent / sequences. Platforms (Compose, web) implement tween / travel / swap / reveal; measures resolve on the platform. KindStep is temporary.
+
+## 18.0 to port
+- Config items are tagged enums by `kind` (button · logo · text · switch · find · detail · seek); BackLayerConfig has fixed regions. No roles, refs or slot paths.
+- `CONTRACTS` (api/contracts.js) and app/composition.json are data (serde). `compose::placement_for`, `hire_of`, `look_at` (size / visuals per place); `contracts::contract_tree(model, specs, composition, ctx) -> ContractTree`, whose node events return an Intent, an action or nothing.
+- `create_model(config, sizes)`: Layout.sizes(look) gives rail and side-sheet widths. FrontState / AppBarPageState gain `find`; intents OpenFind / CloseFind.
