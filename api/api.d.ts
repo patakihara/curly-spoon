@@ -361,7 +361,7 @@ export interface AppBarPageConfig {
   title: Title;
   header: HeaderConfig;
   params?: Params;
-  content?: ContentConfig;               // scrolling content — or a fixed body; exactly one
+  content?: ContentConfig;               // scrolling content — or a fixed body; at most one (neither: the page is its header)
   body?: BodyItem[];
   sheet?: PageSheetConfig;               // requires policy.sheet
   policy: AppBarPagePolicy;

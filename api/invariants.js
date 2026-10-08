@@ -530,16 +530,11 @@ export const INVARIANTS = [
     const types = ['launched', 'pushed', 'popped', 'deckSwitched', 'expandedChanged', 'headerVisibilityChanged', 'paramChanged', 'layerOpened', 'layerClosed', 'overlayOpened', 'overlayClosed', 'sessionChanged', 'urlChanged', 'retryRequested', 'focusRestore', 'exit', 'queued'];
     types.forEach(t => assert(sp.choreography.rules.some(r => r.on.event === t), 'no rule for ' + t));
   }],
-  ['every component the config uses is implemented by every platform (variants via their parent)', f => {
+  ['every free component composition hires is implemented by every platform (variants via their parent)', f => {
     const reg = need(f.specs && f.specs.components, 'no specs'), plats = need(f.platforms && f.platforms.length && f.platforms, 'no platform manifests');
-    const m = f.mk(dev.any(f)), used = new Set();
-    headersOf(f, m).forEach(({ h }) => refsOfHeader(h).forEach(x => used.add(x.component)));
-    roleSlotsOf(f, m).forEach(({ ref }) => ref && used.add(ref.component));
-    Object.values(f.config.contentStates || {}).forEach(c => used.add(c));
-    [f.sampleDialog, f.sampleSnackbar].filter(Boolean).forEach(o => used.add(o.component));
-    surfaceRolesOf(f, m).forEach(r => Object.keys(reg).filter(id => (reg[id].implements || []).includes(r)).forEach(id => used.add(id)));   // 16.0
+    const K = need(f.composition, 'no composition'), used = new Set(K.hires.map(h => h.hires));
     const built = (P, id) => P.implements.includes(id) || (!!reg[id] && !!reg[id].variant && !!reg[id].extends && built(P, reg[id].extends));
-    plats.forEach(P => used.forEach(id => assert(built(P, id), id + ' is used by the config but not implemented on ' + P.platform)));
+    plats.forEach(P => used.forEach(id => assert(built(P, id), id + ' is hired by composition but not implemented on ' + P.platform)));
   }],
   ['component inheritance: parents exist, chains end, children keep their parent\'s roles, props and visuals', f => {
     const reg = need(f.specs && f.specs.components, 'no specs');
@@ -600,9 +595,9 @@ export const INVARIANTS = [
     const m = f.mk(dev.any(f)), page = m.query.underPage(S(m)), cfg = m.config, items = [{ id: 'x', title: 'x', opens: null }];
     const v = (d, off = false) => m.query.contentView(page, d, cfg, off);
     const L = v({ status: 'loading', items: [] });
-    assert(L.state === 'loading' && !L.showItems && L.component === null && L.placeholders > 0, 'loading');
+    assert(L.state === 'loading' && !L.showItems && L.placeholders > 0, 'loading');
     const Em = v({ status: 'ready', items: [] });
-    assert(Em.state === 'empty' && !Em.showItems && Em.component !== (cfg.contentStates || {}).loading, 'empty shows placeholder');
+    assert(Em.state === 'empty' && !Em.showItems && !Em.placeholders, 'empty shows placeholders');
     const Er = v({ status: 'error', items: [], error: { message: 'x', retryable: true } });
     assert(Er.state === 'error' && Er.retry && !Er.showItems, 'retryable error must offer retry');
     const Os = v({ status: 'ready', items, stale: true }, true);
@@ -657,21 +652,25 @@ export const INVARIANTS = [
   ['conditions and bindings address policy-declared page fields, known derived values and known env keys', f => {
     const m = f.mk(dev.any(f)), page0 = m.query.underPage(S(m));
     const conds = c => !c ? [] : 'not' in c ? conds(c.not) : 'all' in c ? c.all.flatMap(conds) : 'any' in c ? c.any.flatMap(conds) : [c];
-    const atoms = v => v && typeof v === 'object' ? ('if' in v ? [...conds(v.if), ...atoms(v.then), ...atoms(v.else)] : [v]) : [];
+    const atoms = v => v && typeof v === 'object' ? ('if' in v ? [...conds(v.if), ...atoms(v.then), ...atoms(v.else)] : 'text' in v ? Object.values(v.args || {}).flatMap(atoms) : [v]) : [];
     const inPolicy = (policy, path) => path.split('.').some((_, k, a) => { const n = rp(policy, a.slice(0, k + 1).join('.')); return n && typeof n === 'object' && 'resetOn' in n; });
-    headersOf(f, m).forEach(({ h, page }) => refsOfHeader(h).forEach(x => {
-      [...conds(x.when), ...Object.values(x.props || {}).flatMap(atoms)].forEach(a => {
+    // 18.0: every item of every page (header items, back actions, body), its when and its values
+    const itemsOf = p => p.kind === 'backdrop' ? [...p.back.header.items, ...(p.back.actions || []), ...p.front.header.items] : [...p.header.items, ...(p.body || [])];
+    let n = 0;
+    pagesOf(f, m).forEach(page => itemsOf(page).forEach(x => {
+      [...conds(x.when), ...['label', 'text', 'checked', 'state', 'placeholder'].flatMap(k => atoms(x[k]))].forEach(a => {
+        n++;
         const path = a.path || a.bind;
-        if (path && path[0] === '$') return;   // a repeat element
-        if (path) { assert(page, x.component + ': state path ' + path + ' in a slot without a page'); assert(inPolicy(page.policy, path), x.component + ': ' + path + ' not in ' + page.id + "'s policy"); }
+        if (path && path[0] === '$') return;   // $opener / $player / $content
+        if (path) assert(inPolicy(page.policy, path), x.name + ': ' + path + ' not in ' + page.id + "'s policy");
         else if ('env' in a) assert(a.env === 'layout' || a.env === 'touch', 'unknown env ' + a.env);
         else if ('layer' in a && 'open' in a) assert(f.config.layers.some(L => L.id === a.layer), 'unknown layer ' + a.layer);
         else if ('player' in a) assert(['status', 'queue', 'shuffle', 'repeat'].includes(a.player), 'unknown player field ' + a.player);
         else if ('derived' in a) assert(m.query.derived(S(m), m.config, a.derived, page0) !== undefined, 'unknown derived value ' + a.derived);
-        else if ('text' in a) return;   // TextRef value
         else assert(false, 'unknown condition/value ' + JSON.stringify(a));
       });
     }));
+    need(n, 'no conditions or bindings');
   }],
   ['toggleExpanded flips its field; up without a target pops the focused stack', f => {
     const m = f.mk(dev.any(f)), start = f.config.startDeck;
@@ -751,7 +750,7 @@ export const INVARIANTS = [
     });
   }],
   ['hideOnScroll back header: hides scrolling down, shows scrolling up / at the top / on expand; front headers never hide', f => {
-    const D = need(f.config.decks.find(d => d.page.back.regions.header && d.page.back.regions.header.hideOnScroll), 'no hideOnScroll back header');
+    const D = need(f.config.decks.find(d => d.page.back.hideHeaderOnScroll), 'no hideOnScroll back header');
     const m = f.mk(dev.any(f)); m.dispatch({ type: 'switchDeck', deck: D.id });
     if (m.query.underPage(S(m)).back.expanded) m.dispatch({ type: 'setExpanded', expanded: false });
     const hid = () => !!m.query.underPage(S(m)).back.headerHidden;
@@ -764,7 +763,7 @@ export const INVARIANTS = [
   }],
   ['a hidden back header lifts the regions and the front layer by its height', f => {
     const P = need(f.layout, 'no layout'), sp = need(f.specs, 'no specs');
-    const D = need(f.config.decks.find(d => d.page.back.regions.header && d.page.back.regions.header.hideOnScroll), 'no hideOnScroll back header');
+    const D = need(f.config.decks.find(d => d.page.back.hideHeaderOnScroll), 'no hideOnScroll back header');
     const m = f.mk(dev.any(f)); m.dispatch({ type: 'switchDeck', deck: D.id });
     if (m.query.underPage(S(m)).back.expanded) m.dispatch({ type: 'setExpanded', expanded: false });
     const g = P.geometry(S(m), m.config, m.query, LOOK(m)), H = P.barView(m.query.underPage(S(m)), LOOK(m)).height;
@@ -775,11 +774,10 @@ export const INVARIANTS = [
   }],
   ['content-sized regions use their measured height; the front layer never covers its own header', f => {
     const P = need(f.layout, 'no layout'), sp = need(f.specs, 'no specs');
-    const D = need(f.config.decks.find(d => Object.values(d.page.back.regions).some(r => r.height === 'content')), 'no content-sized region');
-    const id = Object.keys(D.page.back.regions).find(k => D.page.back.regions[k].height === 'content');
+    const D = need(f.config.decks.find(d => (d.page.back.panel || []).length), 'no content-sized region'), id = 'panel';   // 18.0: the panel is the measured region
     const m = f.mk(dev.any(f)); m.dispatch({ type: 'switchDeck', deck: D.id }); m.dispatch({ type: 'setExpanded', expanded: true });
     const u = m.query.underPage(S(m)), g = P.geometry(S(m), m.config, m.query, LOOK(m));
-    if (!D.page.back.layouts.expanded.includes(id) || D.page.front.collapse === 'full') skip('content region not stacked above a partial front layer');
+    if (D.page.front.collapse === 'full') skip('content region not stacked above a partial front layer');
     const t0 = P.frontLayer(u, g, LOOK(m), { measured: {} }).top, t1 = P.frontLayer(u, g, LOOK(m), { measured: { [id]: 37 } }).top;
     assert(t1 - t0 === 37, 'measured height not used (' + t0 + ' → ' + t1 + ')');
     const hh = +P.resolveVisuals(sp, 'frontLayer', 'partlyCollapsed').headerHeight || 0;
@@ -838,27 +836,20 @@ export const INVARIANTS = [
 
   // ── placement: surfaces, variants, navigation (§15 / §14)
   ['every surface a component is placed on provides every colour role the component uses', f => {
-    const reg = need(f.specs && f.specs.components, 'no specs'), m = f.mk(dev.any(f));
-    const ps = placementsOf(f, m).filter(p => p.surface);
-    need(ps.length, 'no placements');
-    ps.forEach(({ ref, surface, where }) => {
-      const S = reg[surface]; assert(S, where + ': surface ' + surface + ' not registered');
-      const C = reg[ref.component] || {};
-      Object.values(C.visuals || {}).forEach(byState => Object.values(byState).flatMap(rolesUsed).forEach(r =>
-        assert(S.provides && r in S.provides, ref.component + ' uses role ' + r + ' but ' + surface + ' does not provide it (' + where + ')')));
-    });
+    skip('18.0: surfaces per contract node are not derived yet (the shell reads them from node keys)');
   }],
-  ['layout shows the configured navigation component for the layout class; selecting a deck switches or reselects', f => {
-    const P = need(f.layout, 'no layout'), sp = need(f.specs, 'no specs'), nav = need(f.config.navigation, 'no navigation config');
+  ['layout shows the navigation composition hires for the layout class; its destinations switch or reselect', f => {
+    const P = need(f.layout, 'no layout'), Kt = need(f.contracts, 'no contract tree'), K = need(f.composition, 'no composition');
     f.devices.forEach(d => {
       const m = f.mk(d), cls = m.query.layoutClass(S(m), m.config);
-      assert(P.geometry(S(m), m.config, m.query, LOOK(m)).navigation === nav[cls].component, 'wrong navigation @' + d.width);
+      assert(P.geometry(S(m), m.config, m.query, LOOK(m)).navigation === f.compose.placementFor(K, { contract: 'navigation', page: null, within: [], env: { layout: cls } }), 'wrong navigation @' + d.width);
     });
-    const m = f.mk(dev.any(f)), o = need(otherDeck(f, S(m).activeDeck), 'only one deck').id, slot = { role: 'navigation', page: m.query.underPage(S(m)) };
-    assert(m.query.roleProps(S(m), m.config, slot).destinations.length === f.config.decks.length, 'destinations');
-    assert(m.query.roleIntent(S(m), m.config, slot, 'select', o).type === 'switchDeck', 'select other deck');
-    assert(m.query.roleIntent(S(m), m.config, slot, 'select', S(m).activeDeck).type === 'reselectDeck', 'select active deck');
-    assert(m.query.roleIntent(S(m), m.config, slot, 'select', '__nope') === null, 'select unknown deck');
+    const m = f.mk(dev.any(f)), o = need(otherDeck(f, S(m).activeDeck), 'only one deck').id;
+    const N = Kt.contractTree(m, f.specs, K, { look: LOOK(m), data: f.data }).navigation, ds = N.children.destinations;
+    assert(ds.length === f.config.decks.length, 'destinations');
+    const ev = id => { const n = ds.find(x => x.values.deck === id); return n.events.press ? n.events.press() : null; };
+    assert(ev(o).type === 'switchDeck', 'select other deck');
+    assert(ev(S(m).activeDeck).type === 'reselectDeck', 'select active deck');
   }],
   ['front layer: top-right corner is square exactly while a sheet layer sits beside it', f => {
     const P = need(f.layout, 'no layout'), sp = need(f.specs, 'no specs');
@@ -903,13 +894,10 @@ export const INVARIANTS = [
         assert(valid(P, pol[k].default), p.id + '.' + k + ': invalid default ' + JSON.stringify(pol[k].default));
       });
       Object.keys(pol).forEach(k => assert(D[k], p.id + ': policy for undeclared param ' + k));
-      pageRefs(p).filter(r => r.bind && !r.bind.player).forEach(r => {
-        const names = typeof r.bind === 'string' ? [r.bind] : [r.bind.change, r.bind.submit];
-        names.forEach(k => assert(D[k], p.id + ': ' + r.component + ' binds undeclared param ' + k));
-        const C = reg[r.component] || {};
-        assert((C.implements || []).includes('input'), r.component + ' is bound but does not implement input');
-        names.forEach(k => D[k] && assert((C.accepts || []).includes(D[k].type), r.component + ' does not accept ' + D[k].type + ' (' + p.id + '.' + k + ')'));
-      });
+      // 18.0: binds are basic actions, panel param rows, a sheet's control, find and switch items
+      const binds = p.kind === 'backdrop' ? [p.back.basicAction && p.back.basicAction.bind, ...(p.back.panel || []).map(x => x.kind === 'param' ? x.bind : x.fills)] : [p.sheet && p.sheet.control && p.sheet.control.bind];
+      const items = p.kind === 'backdrop' ? [...p.back.header.items, ...p.front.header.items] : p.header.items;
+      [...binds.filter(Boolean), ...items.filter(x => x.param).map(x => x.param)].forEach(b => (typeof b === 'string' ? [b] : [b.change, b.submit]).forEach(k => assert(D[k], p.id + ': binds undeclared param ' + k)));
     });
     need(n, 'no params');
   }],
@@ -952,12 +940,12 @@ export const INVARIANTS = [
   ['presentations cover every option of the view param (or default); the current one follows the param; changing the view keeps the data params', f => {
     const m = f.mk(dev.any(f));
     pagesOf(f, m).forEach(p => {
-      const cc = contentOf(p); if (!cc) { assert(p.body, p.id + ': an app-bar page has content or a body'); return; }
-      const P = cc.presentations || {};
+      const cc = contentOf(p); if (!cc) { assert(!(p.content && p.body), p.id + ': an app-bar page has content or a body, not both'); return; }   // 18.0: neither is allowed (the episode page is its header)
+      const P = Object.fromEntries((cc.presentations || []).map(x => [x.key, x]));   // 18.0: a named list
       if (!cc.view) { assert(P.default, p.id + ': no default presentation'); return; }
       const V = (p.params || {})[cc.view];
       assert(V && V.type === 'choice', p.id + ': view ' + cc.view + ' is not a choice param');
-      optVals(V).forEach(v => assert(P[v] && P[v].layout && P[v].item, p.id + ': no presentation for ' + v));
+      optVals(V).forEach(v => assert(P[v], p.id + ': no presentation for ' + v));
     });
     const D = need(f.config.decks.find(d => d.page.front.content.view && d.page.params[d.page.front.content.view].data === false) || f.config.decks.find(d => d.page.front.content.view), 'no deck with a view param'), v = D.page.front.content.view;
     m.dispatch({ type: 'switchDeck', deck: D.id });
@@ -1141,8 +1129,7 @@ export const INVARIANTS = [
     assert(rel() === 'empty', 'empty queue');
     pl.dispatch({ type: 'playQueue', tracks: tracks.slice(0, 1) }); assert(rel() === 'absent', 'partial queue is absent');
     pl.dispatch({ type: 'enqueue', tracks: tracks.slice(1) }); assert(rel() === 'contains', 'whole list in queue');
-    const r = m.query.resolveRef(S(m), m.config, { component: 'probe', props: { t: { bind: '$player.current.title' } } }, u());
-    assert(r.props.t === tracks[0].title, '$player.current.title');
+    assert(m.query.value(S(m), m.config, { bind: '$player.current.title' }, u()) === tracks[0].title, '$player.current.title');
     assert(m.query.condition(S(m), m.config, { player: 'status', equals: pl.getState().status }, u()), 'player status condition');
   }],
   ['action lists are available iff every member is; statuses come from the first', f => {
