@@ -57,7 +57,11 @@ class Component extends DCLogic {
       const S = SM.bind(appCfg);
       const DL = await load('./design/load.js'), specs = await DL.loadDesign(p => fetch(new URL('./design/' + p, location.href).href, { cache: 'no-store' }).then(r => r.text()));
       const platforms = [await fetch(new URL('./platforms/web.json', location.href).href, { cache: 'no-store' }).then(r => r.json())];
-      const results = I.runInvariants(M.createModel, { ...S.fixtures, createPlayer: Pl.createPlayer, layout: Pr, interaction: Ix, roles: M.ROLES, formatMessage: M.formatMessage, specs, platforms });
+      const [compose, CR, CT, composition, designTexts] = await Promise.all([load('./core/compose.js'), load('./api/composition-rules.js'), load('./api/contracts.js'), fetch(new URL('./app/composition.json', location.href).href, { cache: 'no-store' }).then(r => r.json()), Promise.all(appCfg.locales.supported.map(L => fetch(new URL('./design/texts/' + L.id + '.json', location.href).href, { cache: 'no-store' }).then(r => r.json()).then(t => [L.id, t]))).then(Object.fromEntries)]);
+      const raw = await (async () => { const out = {}; for (const id of Object.keys(specs.components)) { try { out[id] = await (await fetch(new URL('./design/components/' + id + '/' + id + '.json', location.href).href, { cache: 'no-store' })).json(); } catch (e) {} } return out; })();
+      const tokens = await (await fetch(new URL('./design/tokens.json', location.href).href, { cache: 'no-store' })).json();
+      const results = [...I.runInvariants(M.createModel, { ...S.fixtures, createPlayer: Pl.createPlayer, layout: Pr, interaction: Ix, formatMessage: M.formatMessage, specs, platforms, compose, composition }),
+        ...CR.runCompositionRules({ contracts: CT.CONTRACTS, unions: CT.UNIONS, config: appCfg, composition, components: raw, tokens, designTexts }).map(r => ({ ...r, name: 'composition · ' + r.name }))];
       const pass = results.filter(r => r.ok && !r.skipped).length, sk = results.filter(r => r.skipped).length;
       const LW = await load('./platforms/lint-web.js'), shell = await (await fetch(new URL('./Backdrop Nav Skeleton.dc.html', location.href).href, { cache: 'no-store' })).text();
       this.setState({ results, summary: pass + ' pass · ' + sk + ' skipped · ' + (results.length - pass - sk) + ' fail', lint: [...LW.lintShell(shell).map(f => ({ ...f, rule: 'shell ' + f.rule })), ...LW.lintShell(await (await fetch(new URL('./platforms/web/motions.js', location.href).href, { cache: 'no-store' })).text(), true).map(f => ({ ...f, rule: 'motions ' + f.rule }))] });

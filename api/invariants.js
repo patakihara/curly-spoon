@@ -112,7 +112,7 @@ const collapsingPages = (f, P, sp) => {
     for (let depth = 0; depth < 2; depth++) {
       const it = f.item(m, kind) || (depth === 0 && kind === 'appBar' ? f.item(m, 'backdrop') : null); if (!it) return;
       m.dispatch({ type: 'open', item: it, origin: { deck: D.id } });
-      if (P.barView(m.query.currentPage(S(m)), sp).distance > 0) { out.push({ m, kind: D.id + ' ' + kind }); return; }
+      if (P.barView(m.query.currentPage(S(m)), LOOK(m)).distance > 0) { out.push({ m, kind: D.id + ' ' + kind }); return; }
     }
   }));
   return out;
@@ -356,11 +356,11 @@ export const INVARIANTS = [
   ['sheet side mode: compact → none; room → beside; else touch → modal, pointer → auto', f => {
     const sheets = f.config.layers.filter(L => L.presentation.kind === 'sheet');
     need(sheets.length, 'no sheet layers');
-    const B = f.config.breakpoints;
+    const B = f.config.breakpoints, Z = f.sizes || { railWidth: 0, sideSheetWidth: 0 };   // 18.0: widths from design through composition
     f.devices.forEach(d => sheets.forEach(L => {
       const m = f.mk(d);
       const want = d.width < B.compactMax ? null
-        : d.width - B.railWidth - L.presentation.wide.width >= B.minContent ? 'beside'
+        : d.width - Z.railWidth - Z.sideSheetWidth >= B.minContent ? 'beside'
         : d.touch ? 'modal' : 'auto';
       const got = m.query.sideMode(S(m), m.config, L.id);
       assert(got === want, L.id + ' @' + d.width + (d.touch ? 't' : 'p') + ': ' + got + ' ≠ ' + want);
@@ -555,10 +555,6 @@ export const INVARIANTS = [
       Object.keys(P.visuals || {}).forEach(v => assert(C.visuals && v in C.visuals, id + ' lost visual ' + v));
     });
   }],
-  ['every component referenced by overlays is registered', f => {
-    const sp = need(f.specs, 'no specs');
-    [f.sampleDialog, f.sampleSnackbar].filter(Boolean).forEach(o => assert(sp.components[o.component], o.component + ' not registered'));
-  }],
   ['reduced motion replaces every transition with the reduced template', f => {
     const sp = need(f.specs, 'no specs'), P = need(f.layout, 'no layout');
     const want = (sp.choreography.reduced.find(x => x.do === 'kind') || {}).kind;
@@ -570,8 +566,8 @@ export const INVARIANTS = [
   ['front layer visuals come from the component spec state', f => {
     const sp = need(f.specs, 'no specs'), P = need(f.layout, 'no layout');
     const m = f.mk(dev.any(f)), start = f.config.startDeck;
-    const page = m.query.underPage(S(m)), g = P.geometry(S(m), m.config, m.query, sp);
-    const fl = P.frontLayer(page, g, sp);
+    const page = m.query.underPage(S(m)), g = P.geometry(S(m), m.config, m.query, LOOK(m));
+    const fl = P.frontLayer(page, g, LOOK(m));
     const want = P.resolveVisuals(sp, 'frontLayer', fl.state);
     Object.keys(want).forEach(k => assert(JSON.stringify(fl.visual[k]) === JSON.stringify(want[k]), 'visual ' + k + ' not from spec'));
   }],
@@ -658,20 +654,6 @@ export const INVARIANTS = [
   }],
 
   // ── component references (§1 Header)
-  ['header slots name registered components with declared props; interactive ones carry an action', f => {
-    const reg = need(f.specs && f.specs.components, 'no specs'), m = f.mk(dev.any(f));
-    const TYPE = { string: 'string', token: 'string', number: 'number', boolean: 'boolean' };
-    const leaves = v => v && typeof v === 'object' ? ('if' in v ? [...leaves(v.then), ...leaves(v.else)] : []) : [v];
-    headersOf(f, m).forEach(({ h }) => refsOfHeader(h).forEach(x => {
-      const C = reg[x.component]; assert(C, x.component + ' not registered');
-      Object.entries(x.props || {}).forEach(([k, v]) => {
-        const t = (C.props || {})[k]; assert(t && t !== 'slot', x.component + '.' + k + ' not declared');
-        leaves(v).forEach(l => assert(l === null || typeof l === TYPE[t], x.component + '.' + k + ' should be ' + t));
-      });
-      Object.keys(x.slots || {}).forEach(k => assert((C.props || {})[k] === 'slot', x.component + ' has no slot ' + k));
-      if ((C.implements || []).includes('interactive')) assert('action' in x || x.bind, x.component + ' is interactive but has no action key (or bind)');
-    }));
-  }],
   ['conditions and bindings address policy-declared page fields, known derived values and known env keys', f => {
     const m = f.mk(dev.any(f)), page0 = m.query.underPage(S(m));
     const conds = c => !c ? [] : 'not' in c ? conds(c.not) : 'all' in c ? c.all.flatMap(conds) : 'any' in c ? c.any.flatMap(conds) : [c];
@@ -691,20 +673,6 @@ export const INVARIANTS = [
       });
     }));
   }],
-  ['resolveRef evaluates when / if against page state and environment', f => {
-    const D = need(f.config.decks.find(d => d.page.kind === 'backdrop'), 'no backdrop deck');
-    const EX = { path: 'back.expanded', equals: true };
-    const ref = { component: 'probe', props: { a: { if: EX, then: 'open', else: 'closed' }, b: { if: { env: 'layout', equals: 'compact' }, then: 1, else: 2 } }, when: { not: EX } };
-    f.devices.forEach(dv => {
-      const m = f.mk(dv); m.dispatch({ type: 'switchDeck', deck: D.id });
-      [false, true].forEach(ex => {
-        m.dispatch({ type: 'setExpanded', expanded: ex });
-        const r = m.query.resolveRef(S(m), m.config, ref, m.query.underPage(S(m)));
-        assert(r.props.a === (ex ? 'open' : 'closed') && r.visible === !ex, 'if/when vs back.expanded=' + ex);
-        assert(r.props.b === (m.query.layoutClass(S(m), m.config) === 'compact' ? 1 : 2), 'env condition @' + dv.width);
-      });
-    });
-  }],
   ['toggleExpanded flips its field; up without a target pops the focused stack', f => {
     const m = f.mk(dev.any(f)), start = f.config.startDeck;
     const ex0 = m.query.underPage(S(m)).back.expanded;
@@ -723,16 +691,6 @@ export const INVARIANTS = [
     }
   }],
 
-  ['slot paths: distinct places differ, the same place keeps its path, resolveRef returns it as key', f => {
-    const m = f.mk(dev.any(f)), q = m.query, a = q.slotPath('deck:X', 'P', 'header.left', 0);
-    assert(a !== q.slotPath('deck:X', 'P', 'header.right', 0), 'left[0] and right[0] share a path');
-    assert(a === q.slotPath('deck:X', 'P', 'header.left', 0), 'path not stable');
-    assert(a !== q.slotPath('deck:X', 'P/child', 'header.left', 0), 'two pages share a path');
-    assert(a !== q.slotPath('layer:X', 'P', 'header.left', 0), 'two surfaces share a path');
-    assert(q.slotPath('deck:X', 'P', 'item', undefined, 'a/b') !== q.slotPath('deck:X', 'P', 'item', undefined, 'a'), 'two items share a path');
-    assert(q.slotPath('deck:X', 'P/x', 'h') !== q.slotPath('deck:X', 'P', 'x/h'), 'ids are not escaped');
-    assert(q.resolveRef(S(m), m.config, { component: 'probe' }, q.underPage(S(m)), a).key === a, 'resolveRef does not return the path');
-  }],
 
   // ── 7.0: launch, texts, placeholders
   ['launch: starts on the splash when configured, launched goes to ready exactly once', f => {
@@ -809,8 +767,8 @@ export const INVARIANTS = [
     const D = need(f.config.decks.find(d => d.page.back.regions.header && d.page.back.regions.header.hideOnScroll), 'no hideOnScroll back header');
     const m = f.mk(dev.any(f)); m.dispatch({ type: 'switchDeck', deck: D.id });
     if (m.query.underPage(S(m)).back.expanded) m.dispatch({ type: 'setExpanded', expanded: false });
-    const g = P.geometry(S(m), m.config, m.query, sp), H = D.page.back.regions.header.height;
-    const snap = () => { const u = m.query.underPage(S(m)); return { r: P.regions(u).map(x => x.top), t: P.frontLayer(u, g, sp).top }; };
+    const g = P.geometry(S(m), m.config, m.query, LOOK(m)), H = P.barView(m.query.underPage(S(m)), LOOK(m)).height;
+    const snap = () => { const u = m.query.underPage(S(m)); return { r: P.regions(u, LOOK(m)).map(x => x.top), t: P.frontLayer(u, g, LOOK(m)).top }; };
     const a = snap(); m.dispatch({ type: 'scroll', top: 200 }); const b = snap();
     a.r.forEach((t, i) => assert(b.r[i] === t - H, 'region ' + i + ' not lifted'));
     assert(b.t === Math.max(0, a.t - H), 'front layer not lifted');
@@ -820,19 +778,12 @@ export const INVARIANTS = [
     const D = need(f.config.decks.find(d => Object.values(d.page.back.regions).some(r => r.height === 'content')), 'no content-sized region');
     const id = Object.keys(D.page.back.regions).find(k => D.page.back.regions[k].height === 'content');
     const m = f.mk(dev.any(f)); m.dispatch({ type: 'switchDeck', deck: D.id }); m.dispatch({ type: 'setExpanded', expanded: true });
-    const u = m.query.underPage(S(m)), g = P.geometry(S(m), m.config, m.query, sp);
+    const u = m.query.underPage(S(m)), g = P.geometry(S(m), m.config, m.query, LOOK(m));
     if (!D.page.back.layouts.expanded.includes(id) || D.page.front.collapse === 'full') skip('content region not stacked above a partial front layer');
-    const t0 = P.frontLayer(u, g, sp, { measured: {} }).top, t1 = P.frontLayer(u, g, sp, { measured: { [id]: 37 } }).top;
+    const t0 = P.frontLayer(u, g, LOOK(m), { measured: {} }).top, t1 = P.frontLayer(u, g, LOOK(m), { measured: { [id]: 37 } }).top;
     assert(t1 - t0 === 37, 'measured height not used (' + t0 + ' → ' + t1 + ')');
     const hh = +P.resolveVisuals(sp, 'frontLayer', 'partlyCollapsed').headerHeight || 0;
-    assert(P.frontLayer(u, g, sp, { measured: { [id]: 99999 } }).top === g.contentHeight - hh, 'front layer not capped');
-  }],
-  ['the disclosure role mirrors back.expanded and toggles it', f => {
-    const m = f.mk(dev.any(f)), slot = () => ({ role: 'disclosure', page: m.query.underPage(S(m)) });
-    const ex = m.query.underPage(S(m)).back.expanded;
-    assert(m.query.roleProps(S(m), m.config, slot()).expanded === ex, 'expanded prop');
-    m.dispatch(m.query.roleIntent(S(m), m.config, slot(), 'toggle'));
-    assert(m.query.roleProps(S(m), m.config, slot()).expanded === !ex, 'toggle');
+    assert(P.frontLayer(u, g, LOOK(m), { measured: { [id]: 99999 } }).top === g.contentHeight - hh, 'front layer not capped');
   }],
   ['includes conditions follow list state (panel content reacts to a choices param)', f => {
     const X = need(paramDeck(f, P => P.type === 'choices' && optVals(P).length), 'no choices param'), t = optVals(X.P)[0];
@@ -897,22 +848,11 @@ export const INVARIANTS = [
         assert(S.provides && r in S.provides, ref.component + ' uses role ' + r + ' but ' + surface + ' does not provide it (' + where + ')')));
     });
   }],
-  ['placement variants are declared by the component and pick a declared option', f => {
-    const reg = need(f.specs && f.specs.components, 'no specs'), m = f.mk(dev.any(f));
-    Object.entries(reg).forEach(([id, C]) => Object.entries(C.variants || {}).forEach(([ax, d]) => assert(d.options.includes(d.default), id + '.' + ax + ' default not an option')));
-    const vs = placementsOf(f, m).filter(p => p.ref.variant);
-    need(vs.length, 'no placement uses a variant');
-    vs.forEach(({ ref, where }) => Object.entries(ref.variant).forEach(([ax, v]) => {
-      const d = ((reg[ref.component] || {}).variants || {})[ax];
-      assert(d, ref.component + ' has no variant axis ' + ax + ' (' + where + ')');
-      assert(d.options.includes(v), ref.component + '.' + ax + ' has no option ' + v + ' (' + where + ')');
-    }));
-  }],
   ['layout shows the configured navigation component for the layout class; selecting a deck switches or reselects', f => {
     const P = need(f.layout, 'no layout'), sp = need(f.specs, 'no specs'), nav = need(f.config.navigation, 'no navigation config');
     f.devices.forEach(d => {
       const m = f.mk(d), cls = m.query.layoutClass(S(m), m.config);
-      assert(P.geometry(S(m), m.config, m.query, sp).navigation === nav[cls].component, 'wrong navigation @' + d.width);
+      assert(P.geometry(S(m), m.config, m.query, LOOK(m)).navigation === nav[cls].component, 'wrong navigation @' + d.width);
     });
     const m = f.mk(dev.any(f)), o = need(otherDeck(f, S(m).activeDeck), 'only one deck').id, slot = { role: 'navigation', page: m.query.underPage(S(m)) };
     assert(m.query.roleProps(S(m), m.config, slot).destinations.length === f.config.decks.length, 'destinations');
@@ -925,22 +865,14 @@ export const INVARIANTS = [
     const S0 = need(f.config.layers.find(L => L.presentation.kind === 'sheet'), 'no sheet layer');
     f.devices.forEach(d => [false, true].forEach(open => {
       const m = f.mk(d); if (open) m.dispatch({ type: 'openLayer', layer: S0.id });
-      const e = P.env(S(m), m.config, m.query), g = P.geometry(S(m), m.config, m.query, sp);
-      const fl = P.frontLayer(m.query.underPage(S(m)), g, sp, { env: e });
+      const e = P.env(S(m), m.config, m.query), g = P.geometry(S(m), m.config, m.query, LOOK(m));
+      const fl = P.frontLayer(m.query.underPage(S(m)), g, LOOK(m), { env: e });
       const beside = open && m.query.layoutClass(S(m), m.config) === 'wide' && m.query.sideMode(S(m), m.config, S0.id) === 'beside';
       assert((fl.visual.cornerTR === 0) === beside, 'cornerTR ' + fl.visual.cornerTR + ' @' + d.width + (d.touch ? 't' : 'p') + ' open=' + open);
     }));
   }],
 
   // ── roles
-  ['every role slot is filled by a registered component that implements the role', f => {
-    const reg = need(f.specs && f.specs.components, 'no specs'), m = f.mk(dev.any(f));
-    roleSlotsOf(f, m).forEach(({ ref, role, where }) => {
-      assert(ref && ref.component, where + ': no component for role ' + role);
-      const C = reg[ref.component]; assert(C, ref.component + ' not registered (' + where + ')');
-      assert((C.implements || []).includes(role), ref.component + ' does not implement ' + role + ' (' + where + ')');
-    });
-  }],
   ['role components declare every supplied prop; the config never sets a supplied prop', f => {
     const roles = need(f.roles, 'no roles'), reg = need(f.specs && f.specs.components, 'no specs');
     Object.entries(reg).forEach(([id, C]) => (C.implements || []).forEach(r => {
@@ -949,29 +881,6 @@ export const INVARIANTS = [
     }));
     const m = f.mk(dev.any(f));
     roleSlotsOf(f, m).forEach(({ ref, role, where }) => ref && Object.keys(ref.props || {}).forEach(k => assert(!(k in roles[role].supplies), where + ': config sets supplied prop ' + k)));
-  }],
-  ['role props mirror page state, and role events produce the matching intent', f => {
-    const at = D => { const m = f.mk(dev.any(f)); m.dispatch({ type: 'switchDeck', deck: D.id }); return m; };
-    const slot = (m, role, extra) => ({ role, page: m.query.underPage(S(m)), ...extra });
-    let tested = 0;
-    f.config.decks.forEach(D => Object.values(D.page.back.regions).forEach(R => R.kind === 'slots' && slotRefs(R.content).filter(r => r.bind).forEach(r => {
-      const m = at(D), name = typeof r.bind === 'string' ? r.bind : r.bind.change, P = D.page.params[name], sl = () => slot(m, 'input', { bind: r.bind });
-      const rp = m.query.roleProps(S(m), m.config, sl());
-      assert(JSON.stringify(rp.value) === JSON.stringify(pval(m, name)), D.id + ': input value ≠ params.' + name);
-      if (P.options) assert((!Array.isArray(P.options) || rp.options.length === optVals(P).length) && rp.options.every(o => typeof o.label === 'string'), D.id + ': options');
-      const v = otherValue({ ...P, options: P.options ? rp.options : P.options }, rp.value);
-      m.dispatch(m.query.roleIntent(S(m), m.config, sl(), 'change', v));
-      assert(JSON.stringify(m.query.roleProps(S(m), m.config, sl()).value) === JSON.stringify(v), D.id + ': change → ' + JSON.stringify(v));
-      tested++;
-    })));
-    const m = f.mk(dev.any(f)), start = f.config.startDeck, it = f.item(m, 'backdrop');
-    if (it) {
-      const d = depth(m, start), i = m.query.roleIntent(S(m), m.config, slot(m, 'item', { item: it }), 'open');
-      assert(i && i.type === 'open', 'item open intent'); m.dispatch(i);
-      assert(depth(m, start) === d + 1, 'item open did not push');
-      tested++;
-    }
-    need(tested, 'no role slots to test');
   }],
 
   // ── params (§1)
@@ -1003,18 +912,6 @@ export const INVARIANTS = [
       });
     });
     need(n, 'no params');
-  }],
-  ['the deck back layer is strict: a header bar, the front header starting with the disclosure, a basicAction region with exactly one bound control, concealed starts with the header', f => {
-    const reg = need(f.specs && f.specs.components, 'no specs'), m = f.mk(dev.any(f));
-    pagesOf(f, m).filter(p => p.kind === 'backdrop').forEach(p => {
-      const B = p.back, H = B.regions.header, A = B.regions.basicAction;
-      assert(H && H.kind === 'bar', p.id + ': no header bar');
-      const st0 = slotRefs(((p.front.header || {}).slots || {}).start)[0];
-      assert(st0 && ((reg[st0.component] || {}).implements || []).includes('disclosure'), p.id + ': front header does not start with a disclosure');
-      assert(A && A.kind === 'slots' && slotRefs(A.content).filter(r => r.bind).length === 1, p.id + ': basicAction must hold exactly one bound control');
-      assert(B.layouts.concealed[0] === 'header', p.id + ': concealed does not start with the header');
-      Object.values(B.layouts).forEach(L => L.forEach(id => assert(B.regions[id], p.id + ': layout lists unknown region ' + id)));
-    });
   }],
   ['the URL codec round-trips every param type; invalid values are ignored', f => {
     need(f.config.routes, 'no routes');
@@ -1071,19 +968,6 @@ export const INVARIANTS = [
     if (!viewData) assert(JSON.stringify(m.query.contentParams(u1)) === cp0, 'changing a data: false view changed the data params (reload)');
   }],
 
-  ['presentation items bind only item fields ($item.*) or page fields; items that open nothing use the ref\'s action', f => {
-    const m = f.mk(dev.any(f)); let n = 0;
-    const binds = v => !v || typeof v !== 'object' ? [] : Array.isArray(v) ? v.flatMap(binds) : 'bind' in v ? [v.bind] : Object.values(v).flatMap(binds);
-    pagesOf(f, m).forEach(p => { const cc = contentOf(p); if (!cc) return; Object.entries(cc.presentations || {}).forEach(([k, P]) => {
-      n++; binds({ props: P.item.props, action: P.item.action, when: P.item.when }).forEach(b => assert(b[0] !== '$' || b === '$item' || b.startsWith('$item.'), p.id + ' ' + k + ': item binds ' + b));
-    }); });
-    need(n, 'no presentations');
-    const D = f.config.decks[0], s = f.mk(dev.any(f)); s.dispatch({ type: 'switchDeck', deck: D.id });
-    const u = s.query.underPage(S(s)), it = { id: 'x', opens: null, title: 'T' };
-    assert(s.query.roleIntent(S(s), s.config, { role: 'item', page: u, item: it }, 'open') === null, 'an item that opens nothing produced an intent');
-    const rr = s.query.resolveRef(S(s), s.config, { component: 'listRow', props: { title: { bind: '$item.title' } } }, u, undefined, { item: it });
-    assert(rr.props.title === 'T', '$item binds do not resolve');
-  }],
 
   ['items name page templates: every page link names a template, the opened page sees its opener, its id is parent id + / + item id', f => {
     const P = need(f.config.pages, 'no page templates'), m = f.mk(dev.any(f)), start = f.config.startDeck;
@@ -1291,7 +1175,7 @@ export const INVARIANTS = [
     const P = need(f.layout, 'no layout'), sp = need(f.specs, 'no specs'), pages = collapsingPages(f, P, sp);
     need(pages.length, 'no page with a collapsing bar');
     pages.forEach(({ m, kind }) => {
-      const pg = () => m.query.currentPage(S(m)), bv = () => P.barView(pg(), sp), d = bv().distance, full = bv().height;
+      const pg = () => m.query.currentPage(S(m)), bv = () => P.barView(pg(), LOOK(m)), d = bv().distance, full = bv().height;
       assert(bv().progress === 0, kind + ': not expanded at 0');
       m.dispatch({ type: 'scroll', top: d / 2 }); assert(Math.abs(bv().progress - 0.5) < 1e-6, kind + ': half distance → progress ' + bv().progress);
       m.dispatch({ type: 'scroll', top: d }); assert(bv().progress === 1 && Math.abs(full - bv().height - d) < 1e-6, kind + ': not collapsed by exactly distance at scroll = distance');
@@ -1301,23 +1185,12 @@ export const INVARIANTS = [
     const P = need(f.layout, 'no layout'), sp = need(f.specs, 'no specs'); need(P.contentOffset, 'no contentOffset');
     const pages = collapsingPages(f, P, sp); need(pages.length, 'no page with a collapsing bar');
     pages.forEach(({ m, kind }) => {
-      const pg = () => m.query.currentPage(S(m)), d = P.barView(pg(), sp).distance;
-      [0, d / 3, d].forEach(t => { m.dispatch({ type: 'scroll', top: t }); assert(P.contentOffset(pg(), sp) === 0, kind + ': content moved at ' + t); });
-      m.dispatch({ type: 'scroll', top: d + 30 }); assert(Math.abs(P.contentOffset(pg(), sp) - 30) < 1e-6, kind + ': content offset ' + P.contentOffset(pg(), sp));
+      const pg = () => m.query.currentPage(S(m)), d = P.barView(pg(), LOOK(m)).distance;
+      [0, d / 3, d].forEach(t => { m.dispatch({ type: 'scroll', top: t }); assert(P.contentOffset(pg(), LOOK(m)) === 0, kind + ': content moved at ' + t); });
+      m.dispatch({ type: 'scroll', top: d + 30 }); assert(Math.abs(P.contentOffset(pg(), LOOK(m)) - 30) < 1e-6, kind + ': content offset ' + P.contentOffset(pg(), LOOK(m)));
     });
     const m = f.mk(dev.any(f)), u = () => m.query.underPage(S(m));
-    if (!P.barView(u(), sp).distance) { m.dispatch({ type: 'scroll', top: 40 }); assert(P.contentOffset(u(), sp) === 40, 'a page without a collapsing bar: offset = scroll'); }
-  }],
-  ['items inside a repeat open their element (carousel entries)', f => {
-    const m = f.mk(dev.any(f)), u = m.query.underPage(S(m)), cc = u.config.front.content;
-    const P = Object.values(cc.presentations).find(P => Object.values(P.item.slots || {}).some(l => l.some(x => x.repeat)));
-    need(P, 'no repeated items in a presentation');
-    const outer = f.data.get(cc.dataSource, m.query.contentParams(u)).items.find(i => (i.entries || []).some(e => e.opens));
-    const slotsOf = m.query.expandSlots(S(m), m.config, Object.values(P.item.slots)[0], u, { item: outer });
-    const x = slotsOf.find(e => Object.values(e.scope).some(v => v && v.opens && v.opens.template)); need(x, 'no navigable entry');
-    const el = Object.values(x.scope).find(v => v && v.opens && v.opens.template);
-    const i = m.query.roleIntent(S(m), m.config, { role: 'item', page: u, item: el }, 'open');
-    assert(i && i.type === 'open' && i.item.id === el.id, 'entry did not open itself');
+    if (!P.barView(u(), LOOK(m)).distance) { m.dispatch({ type: 'scroll', top: 40 }); assert(P.contentOffset(u(), LOOK(m)) === 40, 'a page without a collapsing bar: offset = scroll'); }
   }],
   ['a drawer in rail form (wide) joins the focus order instead of trapping it, and back closes it', f => {
     const L = need(f.config.layers.find(l => l.presentation.kind === 'drawer' && l.presentation.wide === 'rail'), 'no rail-form drawer');
@@ -1372,15 +1245,6 @@ export const INVARIANTS = [
     }));
     need(n, 'no role events');
   }],
-  ['page / surface role props mirror state', f => {
-    const m = f.mk(dev.any(f)), q = m.query, u = () => q.underPage(S(m)), p = (role, extra) => q.roleProps(S(m), m.config, { role, page: u(), ...extra });
-    const ex = u().back.expanded;
-    assert(p('backLayer').expanded === ex && p('frontLayer').position === q.frontPosition(S(m)), 'backLayer / frontLayer before toggle');
-    m.dispatch({ type: 'toggleExpanded' });
-    assert(p('backLayer').expanded === !ex && p('frontLayer').position === q.frontPosition(S(m)), 'backLayer / frontLayer after toggle');
-    const L = f.config.layers.find(l => l.presentation.kind === 'sheet');
-    if (L) { assert(p('sheetLayer', { layer: L.id }).open === false, 'sheet open before'); m.dispatch({ type: 'openLayer', layer: L.id }); assert(p('sheetLayer', { layer: L.id }).open === true, 'sheet open after'); }
-  }],
   // ── 17.0: motion as steps
   ['motion steps: every piece a step names is declared (role slot / part, component part, source / target, a step of the rule); every anchor names a step of the rule; every use names a sequence and gives its params', f => {
     const sp = need(f.specs, 'no specs'), roles = need(f.roles, 'no roles'), reg = sp.components;
@@ -1433,8 +1297,14 @@ export const INVARIANTS = [
   }]
 ];
 
-export function runInvariants(createModel, fixtures) {
-  const f = { ...fixtures, createModel, mk: d => createModel(fixtures.config, d, fixtures.data) };   // fixtures may add: createPlayer, layout, interaction, roles, specs, platforms (PlatformManifest[]), tracks, sampleDialog, sampleSnackbar
+// 18.0: Layout reads sizes through composition — fixtures.compose (core/compose.js) + fixtures.composition give each model's look
+let LOOK = () => { throw new Skip('no composition'); };
+export function runInvariants(createModel0, fixtures) {
+  const C = fixtures.compose, K = fixtures.composition, Ly = fixtures.layout;
+  if (C && K && Ly) LOOK = m => C.lookAt(fixtures.specs, K, Ly.env(m.getState(), m.config, m.query));
+  const sizes = C && K && Ly ? Ly.sizes(C.lookAt(fixtures.specs, K, { layout: 'wide' })) : undefined;
+  const createModel = (c, d, data, pl) => createModel0(c, d, data, pl, sizes);
+  const f = { ...fixtures, createModel, sizes, mk: d => createModel(fixtures.config, d, fixtures.data) };   // fixtures may add: createPlayer, layout, interaction, roles, specs, platforms (PlatformManifest[]), tracks, sampleDialog, sampleSnackbar
   return INVARIANTS.map(([name, fn]) => {
     try { fn(f); return { name, ok: true }; }
     catch (e) { return e instanceof Skip ? { name, ok: true, skipped: true, error: 'skipped: ' + e.message } : { name, ok: false, error: e.message }; }
