@@ -1,7 +1,4 @@
 {
-  "implements": [
-    "appBarPage"
-  ],
   "props": {
     "header": "slot",
     "content": "slot",

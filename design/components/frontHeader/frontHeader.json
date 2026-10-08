@@ -1,7 +1,4 @@
 {
-  "implements": [
-    "frontHeader"
-  ],
   "props": {
     "start": "slot",
     "title": "slot",

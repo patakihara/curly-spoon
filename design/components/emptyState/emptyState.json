@@ -2,9 +2,6 @@
   "props": {
     "text": "string"
   },
-  "implements": [
-    "emptyState"
-  ],
   "visuals": {
     "ink": {
       "default": {

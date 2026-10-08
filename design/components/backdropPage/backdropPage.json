@@ -1,7 +1,4 @@
 {
-  "implements": [
-    "backdropPage"
-  ],
   "props": {
     "back": "slot",
     "front": "slot"

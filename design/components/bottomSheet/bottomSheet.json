@@ -60,9 +60,6 @@
       "default": 2
     }
   },
-  "implements": [
-    "pageSheet"
-  ],
   "props": {
     "expanded": "boolean",
     "control": "slot",

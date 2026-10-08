@@ -177,17 +177,18 @@ const br = { isBreak: true };
 const frame = (items, o = {}) => ({ items, h: o.h || 48, dir: o.dir || 'row', align: o.align || 'center', justify: o.justify || 'flex-start', wrap: o.wrap || 'nowrap', gap: o.gap ?? 8, pad: o.pad || '0 12px', r: o.r || '8px', bg: o.bg || '#fafaf8', fg: o.fg || '#1c1c1c', border: o.border || '1px solid #e3e2de', caption: o.caption || '', overflow: o.overflow || 'hidden', mb: o.mb || 0 });
 
 class Component extends DCLogic {
-  state = { specs: null, notes: {}, error: '' };
+  state = { specs: null, notes: {}, hired: {}, error: '' };
   async componentDidMount() {
     try {
       const get = p => fetch(new URL(p, location.href).href, { cache: 'no-store' }).then(r => r.text());
       const imp = async p => import(URL.createObjectURL(new Blob([await get(p)], { type: 'text/javascript' })));
-      const [DL, P] = await Promise.all([imp('./design/load.js'), imp('./core/layout.js')]);
+      const [DL, P, K] = await Promise.all([imp('./design/load.js'), imp('./core/layout.js'), get('./app/composition.json').then(JSON.parse)]);
       const read = p => get('./design/' + p);
       const raw = await DL.loadDesignRaw(read), specs = DL.resolveExtends(raw);
       const notes = await DL.loadNotes(read, Object.keys(specs.components));
       this.P = P;
-      this.setState({ specs, raw, notes });
+      const hired = {}; K.hires.forEach(h => { (hired[h.hires] = hired[h.hires] || new Set()).add(h.contract); });   // composition: which contracts each component is hired for
+      this.setState({ specs, raw, notes, hired });
     } catch (e) { this.setState({ error: e.message }); }
   }
   forced(id, st, o = {}) {
@@ -336,15 +337,15 @@ class Component extends DCLogic {
         return { id, roles: [], note: cid + '.placeholder.visuals — drawn while content loads (pulse: motion.placeholder)', propsText: '', values: Object.entries(vis).map(([k, v]) => k + ': ' + v), hasIx: false, hasDc: true, hasPv: false, dcs: [{ pad: '12px', bg: T['color.surface'], fg: 'inherit', caption: 'form ' + form, isPlaceholder: true, form, vis, h: form === 'list' ? 77 : 200 }], states: [], frames: [] }; }
       const C = sp.components[id]; if (!C) return null;
       const own = raw.components[id] || {}, kids = Object.keys(sp.components).filter(k => sp.components[k].extends === id);
-      const ownKeys = [...Object.keys(own.props || {}).map(k => 'prop ' + k), ...Object.keys(own.visuals || {}), ...(own.implements || []).map(r => 'role ' + r), ...Object.keys(own.motion || {}).map(m => 'motion ' + m)];
+      const ownKeys = [...Object.keys(own.props || {}).map(k => 'prop ' + k), ...Object.keys(own.visuals || {}), ...Object.keys(own.motion || {}).map(m => 'motion ' + m)];
       const dcs = this.dcPreview(id), hasIx = !dcs && !!DC[id] && (C.states || []).length > 0, frames = dcs || (hasIx && id !== 'carousel') ? null : this.preview(id, C);
       const values = Object.entries(C.visuals || {}).flatMap(([v, byState]) => Object.entries(byState).map(([st, x]) => v + (st === 'default' ? '' : ' · ' + st) + ': ' + show(x)));
       return {
-        id, roles: C.implements || [], note: this.state.notes[id] || '',
+        id, roles: [...(this.state.hired[id] || [])], note: this.state.notes[id] || '',
         propsText: Object.keys(C.props || {}).length ? Object.entries(C.props).map(([k, t]) => k + ': ' + t + (own.props && k in own.props ? '' : C.extends ? ' ↑' : '')).join(' · ') : 'no props',
         hasLineage: !!C.extends || kids.length > 0,
         lineage: C.extends ? (C.variant ? 'Variant of ' : 'Extends ') + C.extends : '',
-        lineageNote: C.extends ? (C.variant ? 'Drawn by ' + C.extends + '\'s implementation; no code of its own.' : 'Own implementation; inherits roles, props, states and visuals.') + ' Own: ' + (ownKeys.length ? ownKeys.join(', ') : 'nothing') + '.' : '',
+        lineageNote: C.extends ? (C.variant ? 'Drawn by ' + C.extends + '\'s implementation; no code of its own.' : 'Own implementation; inherits props, states and visuals.') + ' Own: ' + (ownKeys.length ? ownKeys.join(', ') : 'nothing') + '.' : '',
         kidsText: kids.length ? 'Extended by ' + kids.map(k => k + (sp.components[k].variant ? ' (variant)' : '')).join(', ') : '',
         hasIx, states: hasIx ? this.ixStates(id, C) : [], ixBg: ON_BACK[id] ? T['color.backLayer'] : '#fafaf8', ixFg: ON_BACK[id] ? T['color.onBackLayer'] : '#1c1c1c',
         hasPv: !!frames, frames: frames || [], hasDc: !!dcs, dcs: dcs || [],

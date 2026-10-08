@@ -16,9 +16,6 @@
       "token": "color.focusRing"
     }
   },
-  "implements": [
-    "overlay"
-  ],
   "visuals": {
     "scrim": {
       "default": {

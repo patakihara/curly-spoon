@@ -1,7 +1,7 @@
 // Design system build: Specs (from load.js) → per-platform outputs. Pure; the caller writes the files.
 //   buildCss(specs)            → generated/web/tokens.css
 //   buildKotlin(specs)         → generated/android/DesignTokens.kt
-//   buildDts(id, raw, resolved, roles, note) → design/components/<id>/<id>.d.ts   (own props from <id>.json; extends → interface extends)
+//   buildDts(id, raw, resolved, note) → design/components/<id>/<id>.d.ts   (own props from <id>.json; extends → interface extends)
 
 const kebab = s => s.replace(/\./g, '-');
 const pascal = s => s.split(/[.\-_]/).map(p => p[0].toUpperCase() + p.slice(1)).join('');
@@ -57,17 +57,15 @@ export function buildKotlin(specs) {
 }
 
 const TS = { string: 'string', number: 'number', boolean: 'boolean', token: 'string', slot: 'Slot', 'string[]': 'string[]', value: 'ParamValue', options: '{ value: string; label: string }[]' };
-export function buildDts(id, raw, C, roles = {}, note = '') {
-  const supplied = {};
-  (C.implements || []).forEach(r => Object.keys((roles[r] || {}).supplies || {}).forEach(k => { supplied[k] = r; }));
+export function buildDts(id, raw, C, note = '') {
   const own = raw.props || {}, parent = raw.extends;
   const L = [`// Generated from ${id}.json by design/build.js — edit the .json, not this file.`];
   if (parent) L.push(`import type { ${pascal(parent)}Props } from '../${parent}/${parent}';`);
   if (Object.values(own).includes('slot')) L.push(`export type Slot = unknown;   // a ComponentRef list (api.d.ts §1)`);
-  if (Object.values({ ...own, ...Object.fromEntries(Object.keys(supplied).map(k => [k, (C.props || {})[k]])) }).includes('value')) L.push(`export type ParamValue = string | string[] | boolean | number | [number, number] | [string, string] | null;   // api.d.ts §1`);
-  const tags = [C.implements && C.implements.length ? 'Implements: ' + C.implements.join(', ') + '.' : '', parent ? (raw.variant ? 'Variant of ' + parent + ': drawn by its implementation.' : 'Extends ' + parent + '.') : ''].filter(Boolean);
+  if (Object.values(own).includes('value')) L.push(`export type ParamValue = string | string[] | boolean | number | [number, number] | [string, string] | null;   // api.d.ts §1`);
+  const tags = [parent ? (raw.variant ? 'Variant of ' + parent + ': drawn by its implementation.' : 'Extends ' + parent + '.') : ''].filter(Boolean);
   L.push('', `/** ${note || id}${tags.map(t => '\n *  ' + t).join('')} */`, `export interface ${pascal(id)}Props${parent ? ' extends ' + pascal(parent) + 'Props' : ''} {`);
-  for (const [k, t] of Object.entries(own)) L.push(`  ${supplied[k] ? `/** supplied by the engine (role ${supplied[k]}) */\n  ` : ''}${k}: ${TS[t] || 'unknown'};`);
+  for (const [k, t] of Object.entries(own)) L.push(`  ${k}: ${TS[t] || 'unknown'};`);
   L.push('}');
   if (C.states) L.push(`export type ${pascal(id)}State = ${C.states.map(s => `'${s}'`).join(' | ')};`);
   return L.join('\n') + '\n';

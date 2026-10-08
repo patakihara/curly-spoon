@@ -1,7 +1,4 @@
 {
   "extends": "filterChips",
-  "variant": true,
-  "accepts": [
-    "choice"
-  ]
+  "variant": true
 }

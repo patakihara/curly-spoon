@@ -46,9 +46,6 @@
       "default": 300
     }
   },
-  "implements": [
-    "drawerLayer"
-  ],
   "props": {
     "open": "boolean",
     "form": "string",

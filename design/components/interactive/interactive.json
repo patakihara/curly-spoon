@@ -7,9 +7,6 @@
     "focus",
     "keyboardFocus"
   ],
-  "implements": [
-    "interactive"
-  ],
   "statuses": [
     "busy",
     "error"

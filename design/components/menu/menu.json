@@ -13,9 +13,6 @@
       "token": "color.focusRing"
     }
   },
-  "implements": [
-    "overlay"
-  ],
   "visuals": {
     "fill": {
       "default": {

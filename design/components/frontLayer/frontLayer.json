@@ -81,9 +81,6 @@
       "token": "color.focusRing"
     }
   },
-  "implements": [
-    "frontLayer"
-  ],
   "props": {
     "position": "string",
     "header": "slot",

@@ -49,9 +49,6 @@
       "default": 56
     }
   },
-  "implements": [
-    "backLayer"
-  ],
   "events": [
     {
       "name": "tap",

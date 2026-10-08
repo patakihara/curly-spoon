@@ -19,9 +19,6 @@
       "default": 20
     }
   },
-  "implements": [
-    "layout"
-  ],
   "props": {
     "groups": "list",
     "items": "slot",

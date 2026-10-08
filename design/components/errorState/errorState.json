@@ -3,9 +3,6 @@
     "text": "string",
     "retry": "string"
   },
-  "implements": [
-    "errorState"
-  ],
   "extends": "emptyState",
   "variant": true,
   "visuals": {

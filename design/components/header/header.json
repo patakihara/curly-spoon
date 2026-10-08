@@ -6,10 +6,6 @@
     "expanded": "slot",
     "progress": "number"
   },
-  "implements": [
-    "bar",
-    "peek"
-  ],
   "visuals": {
     "height": {
       "default": 64

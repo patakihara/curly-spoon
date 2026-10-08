@@ -22,7 +22,7 @@ export async function loadDesignRaw(read) {
   return { contractVersion: man.contractVersion, tokens: flattenTokens(tokens), components: Object.fromEntries(man.components.map((id, i) => [id, comps[i]])), choreography, motions: Object.fromEntries(mids.map((id, i) => [id, mots[i]])) };
 }
 
-// extends: a child inherits its parent's roles, optional props and statuses (union), props and variants (merged), states (unless it lists its own)
+// extends: a child inherits its parent's optional props and statuses (union), props and variants (merged), states (unless it lists its own)
 // and visuals (merged per visual and state); the child's own values win. `extends` / `variant` stay on the result.
 export function resolveExtends(raw) {
   const done = {}, J = v => JSON.parse(JSON.stringify(v));
@@ -33,8 +33,6 @@ export function resolveExtends(raw) {
     if (chain.includes(id)) throw new Error('extends cycle: ' + [...chain, id].join(' → '));
     if (!C.extends) return (done[id] = J(C));
     const P = res(C.extends, [...chain, id]), m = J(C);
-    const roles = [...new Set([...(P.implements || []), ...(C.implements || [])])];
-    if (roles.length) m.implements = roles;
     const props = { ...(P.props || {}), ...(C.props || {}) };
     if (Object.keys(props).length) m.props = props;
     if (!C.states && P.states) m.states = J(P.states);

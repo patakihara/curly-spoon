@@ -14,9 +14,6 @@
       "token": "color.onBackLayer"
     }
   },
-  "implements": [
-    "overlay"
-  ],
   "visuals": {
     "fill": {
       "default": {

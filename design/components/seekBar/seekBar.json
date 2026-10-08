@@ -1,10 +1,4 @@
 {
-  "implements": [
-    "input"
-  ],
-  "accepts": [
-    "number"
-  ],
   "props": {
     "value": "value",
     "options": "options",

@@ -1,7 +1,4 @@
 {
-  "implements": [
-    "input"
-  ],
   "props": {
     "value": "value",
     "options": "options"
@@ -48,9 +45,6 @@
       }
     }
   },
-  "accepts": [
-    "choice"
-  ],
   "visuals": {
     "height": {
       "default": 48

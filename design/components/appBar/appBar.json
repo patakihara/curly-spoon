@@ -19,9 +19,6 @@
       "token": "color.focusRing"
     }
   },
-  "implements": [
-    "appBar"
-  ],
   "visuals": {
     "height": {
       "default": {

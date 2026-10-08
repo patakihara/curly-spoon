@@ -57,9 +57,6 @@
       }
     ]
   },
-  "implements": [
-    "splash"
-  ],
   "parts": [
     "logo"
   ]

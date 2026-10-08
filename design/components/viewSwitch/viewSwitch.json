@@ -1,12 +1,6 @@
 {
   "extends": "iconButton",
   "variant": true,
-  "implements": [
-    "input"
-  ],
-  "accepts": [
-    "choice"
-  ],
   "props": {
     "value": "value",
     "options": "options"

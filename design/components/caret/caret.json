@@ -1,9 +1,6 @@
 {
   "extends": "iconButton",
   "variant": true,
-  "implements": [
-    "disclosure"
-  ],
   "props": {
     "expanded": "boolean"
   },

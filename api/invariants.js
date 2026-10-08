@@ -536,7 +536,7 @@ export const INVARIANTS = [
     const built = (P, id) => P.implements.includes(id) || (!!reg[id] && !!reg[id].variant && !!reg[id].extends && built(P, reg[id].extends));
     plats.forEach(P => used.forEach(id => assert(built(P, id), id + ' is hired by composition but not implemented on ' + P.platform)));
   }],
-  ['component inheritance: parents exist, chains end, children keep their parent\'s roles, props and visuals', f => {
+  ['component inheritance: parents exist, chains end, children keep their parent\'s props and visuals', f => {
     const reg = need(f.specs && f.specs.components, 'no specs');
     const kids = Object.entries(reg).filter(([, C]) => C.extends);
     need(kids.length, 'no component extends another');
@@ -545,7 +545,6 @@ export const INVARIANTS = [
       const seen = new Set([id]); let p = C.extends;
       while (p) { assert(reg[p], id + ' extends unknown ' + p); assert(!seen.has(p), 'extends cycle at ' + p); seen.add(p); p = reg[p].extends; }
       const P = reg[C.extends];
-      (P.implements || []).forEach(r => assert((C.implements || []).includes(r), id + ' lost role ' + r));
       Object.keys(P.props || {}).forEach(k => assert(C.props && k in C.props, id + ' lost prop ' + k));
       Object.keys(P.visuals || {}).forEach(v => assert(C.visuals && v in C.visuals, id + ' lost visual ' + v));
     });
@@ -605,10 +604,6 @@ export const INVARIANTS = [
     const Oe = v({ status: 'error', items: [] }, true);
     assert(Oe.state === 'error' && !Oe.retry, 'offline without items must not offer retry');
     assert(v({ status: 'ready', items }).state === 'ready', 'ready');
-  }],
-  ['content state components are registered', f => {
-    const sp = need(f.specs, 'no specs'), cs = need(f.config.contentStates, 'no contentStates');
-    Object.values(cs).forEach(c => assert(sp.components[c], c + ' not registered'));
   }],
   ['retry emits retryRequested for the current content', f => {
     const m = f.mk(dev.any(f));
@@ -720,11 +715,12 @@ export const INVARIANTS = [
     const rtl = Lc.supported.find(l => l.dir === 'rtl');
     if (rtl) { m.dispatch({ type: 'setPrefs', prefs: { locale: rtl.id } }); assert(q.condition(S(m), m.config, { env: 'dir', equals: 'rtl' }, null), 'env dir condition'); }
   }],
-  ['components that show data declare a placeholder form', f => {
-    const reg = need(f.specs && f.specs.components, 'no specs');
-    const subj = Object.entries(reg).filter(([, C]) => (C.implements || []).includes('item') || ((C.implements || []).includes('input') && (C.accepts || []).some(t => t === 'choice' || t === 'choices')));
+  ['components that show data declare a placeholder form (hired for item or switch contracts, or placed for a choice / choices param)', f => {
+    const reg = need(f.specs && f.specs.components, 'no specs'), K = need(f.composition, 'no composition');
+    const choice = new Set(K.placements.filter(p => p.contract === 'input' && p.param && (p.param.type === 'choice' || p.param.type === 'choices')).map(p => p.hire));
+    const subj = [...new Set(K.hires.filter(h => h.contract === 'item' || h.contract === 'switch' || choice.has(h.name)).map(h => h.hires))];
     need(subj.length, 'no data components');
-    subj.forEach(([id, C]) => assert(C.placeholder && C.placeholder.visuals, id + ' has no placeholder'));
+    subj.forEach(id => assert(reg[id] && reg[id].placeholder && reg[id].placeholder.visuals, id + ' has no placeholder'));
   }],
 
   // ── 4.0: input in the URL, search history, header hiding, disclosure, panels
@@ -864,18 +860,9 @@ export const INVARIANTS = [
   }],
 
   // ── roles
-  ['role components declare every supplied prop; the config never sets a supplied prop', f => {
-    const roles = need(f.roles, 'no roles'), reg = need(f.specs && f.specs.components, 'no specs');
-    Object.entries(reg).forEach(([id, C]) => (C.implements || []).forEach(r => {
-      assert(roles[r], id + ' implements unknown role ' + r);
-      Object.entries(roles[r].supplies).forEach(([k, t]) => assert((C.props || {})[k] === t, id + ' must declare ' + k + ': ' + t));
-    }));
-    const m = f.mk(dev.any(f));
-    roleSlotsOf(f, m).forEach(({ ref, role, where }) => ref && Object.keys(ref.props || {}).forEach(k => assert(!(k in roles[role].supplies), where + ': config sets supplied prop ' + k)));
-  }],
 
   // ── params (§1)
-  ['params: every bind names a page param, its control implements input and accepts the type; every param has a policy, options when it picks, and a valid default', f => {
+  ['params: every bind names a page param; every param has a policy, options when it picks, and a valid default', f => {
     const reg = need(f.specs && f.specs.components, 'no specs'), m = f.mk(dev.any(f)), T = ['choice', 'choices', 'text', 'flag', 'number', 'date'];
     const valid = (P, v) => v === null || (P.type === 'choice' ? typeof v === 'string' && (!Array.isArray(P.options) || optVals(P).includes(v))
       : P.type === 'choices' ? Array.isArray(v) && v.every(x => !Array.isArray(P.options) || optVals(P).includes(x))
@@ -984,7 +971,7 @@ export const INVARIANTS = [
   // ── interactive components (§20)
   ['interactive components declare all six interaction states', f => {
     const reg = need(f.specs && f.specs.components, 'no specs');
-    const ids = Object.keys(reg).filter(k => (reg[k].implements || []).includes('interactive'));
+    const ext = (id, b) => { for (let c = id; c; c = (reg[c] || {}).extends) if (c === b) return true; return false; }, ids = Object.keys(reg).filter(k => ext(k, 'interactive'));
     need(ids.length, 'no interactive components');
     const all = ['enabled', 'disabled', 'hover', 'pressed', 'focus', 'keyboardFocus'];
     ids.forEach(id => all.forEach(st => assert((reg[id].states || []).includes(st), id + ' missing state ' + st)));
@@ -1070,24 +1057,6 @@ export const INVARIANTS = [
     if (t) assert(X.resolveInteraction(a, { hovered: true }, { model: f.mk(t) }).state === 'enabled', 'hover on touch');
   }],
   // ── 13.0: roles as component interfaces
-  ['role slot contracts: every role-typed ref declares the role\'s slots; refs in a slot implement its roles; max counts refs shown at once; first / last name the opening / closing role', f => {
-    const reg = need(f.specs && f.specs.components, 'no specs'), roles = need(f.roles, 'no roles'), m = f.mk(dev.any(f));
-    let n = 0;
-    roleSlotsOf(f, m).forEach(({ ref, role, where }) => {
-      const Ro = roles[role]; if (!ref || !Ro || !Ro.slots) return; n++;
-      const C = reg[ref.component] || {};
-      Object.entries(Ro.slots).forEach(([slot, K]) => {
-        assert((C.props || {})[slot] === 'slot', ref.component + ' (' + where + ') does not declare slot ' + slot);
-        const list = slotRefs((ref.slots || {})[slot]);
-        if (K.roles) list.forEach(r => assert(K.roles.some(x => ((reg[r.component] || {}).implements || []).includes(x)), where + '.' + slot + ': ' + r.component + ' is not ' + K.roles.join(' / ')));
-        if (K.max != null) { const shown = list.filter(r => !r.when); assert(shown.length <= K.max, where + '.' + slot + ': more than ' + K.max + ' unconditional refs'); }
-        if (K.first) { const f0 = list[0]; assert(f0 && ((reg[f0.component] || {}).implements || []).includes(K.first), where + '.' + slot + ' must start with ' + K.first); }
-        if (K.last) { const l = list[list.length - 1]; assert(l && ((reg[l.component] || {}).implements || []).includes(K.last), where + '.' + slot + ' must end in ' + K.last); }
-      });
-      Object.keys(ref.slots || {}).forEach(k => assert(k in Ro.slots || (C.props || {})[k] === 'slot', where + ': slot ' + k + ' is neither part of role ' + role + ' nor declared by ' + ref.component));
-    });
-    assert(n > 0, 'no role-typed refs with slots');
-  }],
   ['toggle reactions flip a boolean field; reselecting the active tab twice expands then conceals', f => {
     const cfg = JSON.parse(JSON.stringify(f.config)), D = cfg.decks.find(d => d.id === cfg.startDeck), P = D.page;
     P.params = { ...(P.params || {}), tg: { type: 'choice', options: [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }] } };
@@ -1195,47 +1164,10 @@ export const INVARIANTS = [
     m.dispatch({ type: 'openLayer', layer: L.id }); assert(c(true) && !c(false), 'open layer');
   }],
 
-  // ── 16.0: page / surface contracts
-  ['every page / surface role the config uses is implemented by exactly one design component', f => {
-    const reg = need(f.specs && f.specs.components, 'no specs'), m = f.mk(dev.any(f)), used = surfaceRolesOf(f, m);
-    need(used.size, 'no pages or layers');
-    used.forEach(r => { const ids = Object.keys(reg).filter(id => (reg[id].implements || []).includes(r)); assert(ids.length === 1, r + ': implemented by ' + (ids.join(', ') || 'no component') + ' (want exactly one)'); });
-  }],
-  ['page / surface parts: every part a role names is in the config (unless optional); a part that is a ref implements its role', f => {
-    const reg = need(f.specs && f.specs.components, 'no specs'), roles = need(f.roles, 'no roles'), m = f.mk(dev.any(f));
-    const subjects = [];
-    pagesOf(f, m).forEach(p => {
-      if (p.kind === 'backdrop') subjects.push(['backdropPage', p, p.id], ['backLayer', p.back, p.id + ' back'], ['frontLayer', p.front, p.id + ' front']);
-      else { subjects.push(['appBarPage', p, p.id]); if (p.sheet) subjects.push(['pageSheet', p.sheet, p.id + ' sheet']); }
-    });
-    f.config.layers.forEach(L => { const r = { sheet: 'sheetLayer', drawer: 'drawerLayer', fullscreen: 'fullscreenLayer' }[L.presentation.kind]; if (r) subjects.push([r, L, L.id]); });
-    need(subjects.length, 'no pages or layers');
-    subjects.forEach(([r, obj, where]) => Object.entries((roles[r] || {}).parts || {}).forEach(([name, P]) => {
-      const v = rp(obj, P.field);
-      if (v === undefined) { assert(P.optional, where + ': ' + r + ' part ' + name + ' (' + P.field + ') missing'); return; }
-      if (P.role && v && v.component) assert(((reg[v.component] || {}).implements || []).includes(P.role), where + ': ' + r + ' part ' + name + ' is ' + v.component + ', which does not implement ' + P.role);
-    }));
-  }],
-  ['every role event maps to an intent (activate runs the ref\'s action instead)', f => {
-    const roles = need(f.roles, 'no roles'), m = f.mk(dev.any(f)), u = m.query.underPage(S(m)), D = f.config.decks.find(d => d.id === S(m).activeDeck);
-    const bound = slotRefs(((D.page.back.regions.basicAction || {}).content)).find(r => r.bind);
-    const layerOf = r => (f.config.layers.find(L => ({ sheetLayer: 'sheet', drawerLayer: 'drawer', fullscreenLayer: 'fullscreen' })[r] === L.presentation.kind) || {}).id;
-    const other = (otherDeck(f, S(m).activeDeck) || {}).id, it = f.item(m, 'backdrop');
-    let n = 0;
-    Object.entries(roles).forEach(([r, R]) => Object.keys(R.emits).forEach(ev => {
-      if (ev === 'activate') return;
-      if (r === 'item' && !it) return; if (r === 'input' && !bound) return; if (r === 'navigation' && !other) return;
-      if (/Layer$/.test(r) && r !== 'backLayer' && r !== 'frontLayer' && !layerOf(r)) return;
-      const slot = { role: r, page: u, layer: layerOf(r), bind: r === 'input' ? bound.bind : undefined, item: r === 'item' ? it : undefined };
-      const payload = ev === 'select' ? other : ev === 'scroll' ? 10 : ev === 'change' || ev === 'submit' ? 'x' : undefined;
-      assert(m.query.roleIntent(S(m), m.config, slot, ev, payload), r + '.' + ev + ' has no intent'); n++;
-    }));
-    need(n, 'no role events');
-  }],
   // ── 17.0: motion as steps
-  ['motion steps: every piece a step names is declared (role slot / part, component part, source / target, a step of the rule); every anchor names a step of the rule; every use names a sequence and gives its params', f => {
-    const sp = need(f.specs, 'no specs'), roles = need(f.roles, 'no roles'), reg = sp.components;
-    const roleOk = (r, x) => { const R = roles[r]; return !!R && (!x || (R.slots && x in R.slots) || (R.parts && x in R.parts)); };
+  ['motion steps: every piece a step names is declared (contract child / value, component part, source / target, a step of the rule); every anchor names a step of the rule; every use names a sequence and gives its params', f => {
+    const sp = need(f.specs, 'no specs'), roles = need(f.contractDefs, 'no contracts'), reg = sp.components;   // 18.0: pieces name contracts (their children / values) or components (their parts)
+    const roleOk = (r, x) => { const R = roles[r]; return !!R && (!x || x in (R.children || {}) || x in (R.values || {})); };
     const pieceOk = (p, ids) => { const b = String(p).replace(/@(before|after)$/, '').replace(/\[(\]|first\]|last\]|\d+\])$/, ''), [h, x] = b.split('.'); if (h === 'source' || h === 'target' || h === 'origin') return true; if (ids.has(h) && !x) return true;
       if (roles[h]) return roleOk(h, x); const C = reg[h]; return !!C && (!x || (C.parts || []).includes(x)); };
     const checkList = (steps, where) => {
@@ -1267,21 +1199,6 @@ export const INVARIANTS = [
     qs.forEach(r => { const got = P.stepsFor({ type: 'queued', position: r.on.position, count: 1, from: null }, sp, { reducedMotion: false }); assert(JSON.stringify(got) === JSON.stringify(P.stepsFor({ type: 'queued', position: r.on.position, count: 1, from: null }, sp, {})) && got.length, 'queued ' + r.on.position + ' resolves no steps');
       const first = sp.choreography.rules.find(x => Object.keys(x.on).every(k => k === 'event' ? x.on.event === 'queued' : x.on[k] === ({ position: r.on.position })[k])); assert(first === r, 'queued ' + r.on.position + ' resolves another rule'); });
   }],
-  ['roleProps supplies exactly the props each role declares (roles: one source)', f => {
-    const roles = need(f.roles, 'no roles'), m = f.mk(dev.any(f)), u = m.query.underPage(S(m)), D = f.config.decks.find(d => d.id === S(m).activeDeck);
-    const bound = slotRefs(((D.page.back.regions.basicAction || {}).content)).find(r => r.bind), it = f.item(m, 'backdrop');
-    const layerOf = r => (f.config.layers.find(L => ({ sheetLayer: 'sheet', drawerLayer: 'drawer', fullscreenLayer: 'fullscreen' })[r] === L.presentation.kind) || {}).id;
-    const fromLayout = ['bar', 'appBar', 'layout'];   // progress (Layout.barView), groups (Queries.groups)
-    let n = 0;
-    Object.entries(roles).forEach(([r, R]) => {
-      if (fromLayout.includes(r)) return;
-      if (/Layer$/.test(r) && r !== 'backLayer' && r !== 'frontLayer' && !layerOf(r)) return;
-      const got = Object.keys(m.query.roleProps(S(m), m.config, { role: r, page: u, layer: layerOf(r), bind: r === 'input' && bound ? bound.bind : undefined, item: r === 'item' ? it : undefined })).sort();
-      assert(JSON.stringify(got) === JSON.stringify(Object.keys(R.supplies).sort()), r + ': roleProps gives ' + got.join(',') + ', role supplies ' + Object.keys(R.supplies).join(','));
-      n++;
-    });
-    need(n, 'no roles');
-  }]
 ];
 
 // 18.0: Layout reads sizes through composition — fixtures.compose (core/compose.js) + fixtures.composition give each model's look

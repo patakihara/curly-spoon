@@ -1,7 +1,4 @@
 {
-  "implements": [
-    "fullscreenLayer"
-  ],
   "props": {
     "open": "boolean",
     "page": "slot"

@@ -1,9 +1,6 @@
 {
   "extends": "searchField",
   "variant": true,
-  "accepts": [
-    "text"
-  ],
   "visuals": {
     "radius": {
       "default": 6

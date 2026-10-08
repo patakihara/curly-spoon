@@ -639,6 +639,7 @@ class Component extends DCLogic {
 
   // ── §20 interactive components: props for one placed instance (state lives in the instance, keyed by id = node key)
   // which surface a node sits on (resolves the component's colour roles): from its key (core/contracts.js)
+  extendsOf(id, base) { for (let c = id; c; c = (this.specs.components[c] || {}).extends) if (c === base) return true; return false; }   // design inheritance (interactive: state layer, ripple, focus)
   surfaceOf(id) {
     const k = String(id);
     if (k.startsWith('deck:') || k.startsWith('page:')) return k.includes('.back.') || k.endsWith('.back') ? 'backLayer' : k.includes('.front.') ? 'frontLayer' : k.includes('.header.bottom') ? 'frontLayer' : k.includes('.header') ? 'backLayer' : 'frontLayer';
@@ -730,7 +731,7 @@ class Component extends DCLogic {
         v.maxW = (v.find.open ? v.find.w : v.find.bs) + 2 * (+v.find.vis.padX || 0) + (+fv.slotPad || 0);
       } else v.find = {};
       v.isControl = v.isLogo || v.isButton;
-      const interactive = ((this.specs.components[n.component] || {}).implements || []).includes('interactive');
+      const interactive = this.extendsOf(n.component, 'interactive');
       v.ix = interactive ? this.nix(n, { surface: this.surfaceOfTheme(theme) }) : INERT;
       const on = n.shown !== false;
       return { ...v, maxW: on ? v.maxW : 0, op: on ? 1 : 0, ev: on ? 'auto' : 'none' };

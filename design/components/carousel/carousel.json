@@ -1,8 +1,5 @@
 {
   "extends": "listItem",
-  "implements": [
-    "item"
-  ],
   "props": {
     "title": "string",
     "subtitle": "string",

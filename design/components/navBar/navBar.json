@@ -10,9 +10,6 @@
       "token": "color.onBackLayer"
     }
   },
-  "implements": [
-    "navigation"
-  ],
   "props": {
     "destinations": "slot",
     "selected": "string"
