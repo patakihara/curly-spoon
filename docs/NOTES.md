@@ -475,14 +475,28 @@ Each was my call; say if you disagree and I redo it.
     shelf of episodes (Sofia asked for this mid-night). Inside a show's page, tapping an episode now opens its page
     instead of playing it.
 26. The 12 old invariants that tested refs, roles, slot paths and repeats are deleted, not ported; the composition rules
-    and the contract tree replace them.
+    and the contract tree replace them. Later the same night six more went for the same reason (supplied props, role
+    slots, surface parts, role events, roleProps, one component per surface role) and "content state components are
+    registered" (config no longer names them).
+27. An app-bar page may have neither content nor body (api.d.ts comment amended in 18.0.0: "at most one"). The episode
+    page is only its header; the alternative was an empty `body: []`, but the shell reads a body as "player-like page"
+    (transparent header, no title), which would have changed how it looks.
+28. platforms/web.json lists backdropPage, appBarPage, sheetLayer and fullscreenLayer, since composition hires them and
+    the web platform draws them. Only appBarPage has a DC of its own (AppBarPage); the other three are drawn by the
+    shell's arrangement (BackLayer + FrontLayer, NowPlayingSheet, DededeLayer / AccountLayer) until the one-renderer step.
+29. Design `implements` / `accepts` keys are removed: composition alone says what fills a contract. "Interactive" is
+    design inheritance (extends interactive), not a role. The Components page's chips now show the contracts composition
+    hires each component for.
+30. "Every surface a component is placed on provides every colour role" is skipped, not ported: surfaces per contract
+    node are not derived yet (the shell reads them from node keys).
 
 ### Switchover (2026-10-09): done, with what is still open
 The mockup runs on 18.0 (config + composition + design → contract tree → shell). Checked in headless Chrome against the
 pre-switch mockup, same clicks, PNG hashes: 13 of 14 screens pixel-identical (browse, expanded, artist, search,
 collection, Now playing, drawer, account, collection ⋮ menu, library panel, desktop browse / rail / Now playing). Library
 grid: a 1px text shift with identical DOM and no scroll offsets — cause not found. Motion was not sampled frame by frame.
-Layout numbers old vs new: 169 / 169 cases equal. Rules: 95 pass · 7 skipped · 11 fail (composition 13 / 13).
+Layout numbers old vs new: 169 / 169 cases equal. Rules (01:30): 103 pass · 3 skipped · 0 fail (90 invariants + 13
+composition). The dev panel's stack readout no longer lists the searching / searchClosed params (find is engine state).
 Steps: 1 sizes ✓ · 2 core ✓ (navigation, compose, contracts, layout) · 3 API ✓ (api.d.ts 18.0.0; roles / refs / draft
 deleted) · 4 config ✓ · 5 shell ✓ (view code reads nodes) — the DCs are unchanged and still take the shell's flattened
 fields, not nodes · 6 verify ✓ (screens above).
@@ -504,13 +518,13 @@ fields, not nodes · 6 verify ✓ (screens above).
   (651–658), which the contract tree's path keys replace.
 
 ## Open (current)
-- 18.0: 11 old invariants still read 17.0 shapes (regions, navigation refs, contentStates, refs in conditions / binds,
-  presentation layouts, the player rule); port them to the contract tree.
+- 18.0: three rules skip: the two hideOnScroll back-header rules (no deck sets back.hideHeaderOnScroll) and surface
+  colour roles (decision 30).
 - 18.0: the shell still chooses per component id in places (the item-kind table in hItems, panel-row branches, Now
   playing's artwork / trackInfo visuals, the app-bar form); the planned one-renderer step (node → hire → DC, DCs taking
   props and slots) is not done.
-- 18.0: design json still has `implements` keys (load.js / build.js / the shell's interactive check read them); remove
-  with the renderer step.
+- design/components/*/*.d.ts are stale since the baseline export (empty prop interfaces) and nothing in the repo writes
+  them; design/build.js buildDts can, but nobody calls it.
 - 18.0: docs/API.md and docs/RUST.md still describe roles and refs.
 - 18.0: the free-component merge tree is proposed, not applied (69 design components).
 - 18.0: Library grid 1px text shift vs the pre-switch mockup.
