@@ -46,10 +46,14 @@ object DesignTokens {
     val MotionEasingDecelerate = CubicBezierEasing(0f, 0f, .2f, 1f)
     val MotionEasingStandard = CubicBezierEasing(.4f, 0f, .2f, 1f)
     val MotionEasingEmphasized = CubicBezierEasing(.2f, 0f, 0f, 1f)
-    val MotionEasingInOutSoftEnd = CubicBezierEasing(0.45f, 0f, 0.1f, 1f)
+    val MotionEasingInOutSoftEnd = CubicBezierEasing(.45f, 0f, .1f, 1f)
     val MotionEasingEmphasizedDecelerate = CubicBezierEasing(.05f, .7f, .1f, 1f)
     val MotionEasingSmooth = CubicBezierEasing(.37f, 0f, .63f, 1f)
     val MotionFadeThroughSplit = 0.3f
+    val MotionFadeThroughMs = 300f
+    val MotionFadeThroughEasingOut = CubicBezierEasing(.4f, 0f, 1f, 1f)
+    val MotionFadeThroughEasingIn = CubicBezierEasing(0f, 0f, .2f, 1f)
+    val MotionFadeThroughScaleIn = 1f
     val MotionRippleDuration = 450
     val MotionSharedAxisDistance = 30f
     val RadiusFrontLayer = 16.dp
@@ -108,6 +112,33 @@ object DesignTokens {
     val GridMarginWide = 24f
     val FontSubtitleFamily = "ui-monospace, Menlo, monospace"
     val FontSubtitleSize = 11f
+    val IconMenu = "menu"
+    val IconMenuClose = "menu_open"
+    val IconAccount = "account_circle"
+    val IconUp = "arrow_back"
+    val IconClose = "close"
+    val IconMore = "more_vert"
+    val IconCollapse = "expand_more"
+    val IconExpand = "expand_more"
+    val IconFind = "search"
+    val IconPlayNow = "play_arrow"
+    val IconPause = "pause"
+    val IconPlayNext = "playlist_play"
+    val IconPlayLast = "queue_music"
+    val IconNext = "skip_next"
+    val IconPrevious = "skip_previous"
+    val IconShuffle = "shuffle"
+    val IconRepeat = "repeat"
+    val IconRepeatOne = "repeat_one"
+    val IconListenNow = "graphic_eq"
+    val IconSettings = "settings"
+    val IconRecent = "history"
+    val IconSaved = "bookmark"
+    val IconViewGrid = "grid_view"
+    val IconViewList = "view_list"
+    val IconBrowse = "explore"
+    val IconLibrary = "library_music"
+    val IconSearch = "search"
 }
 
 object InteractiveTokens {
@@ -152,7 +183,7 @@ object BackLayerTokens {
 }
 
 object HeaderTokens {
-    val Height = 56f
+    val Height = 64f
     val Padding = "0 4px"
     val Fill = "transparent"
     val Ink = {"role":"content"}
