@@ -84,6 +84,7 @@ export interface BackLayerConfig {
   basicAction?: BasicActionConfig;
   panel?: PanelRow[];
   toggleOnTap?: boolean;                 // default true
+  hideHeaderOnScroll?: boolean;          // was BarRegion.hideOnScroll: scrolling down hides the header region (BackState.headerHidden)
 }
 export interface FrontHeaderConfig { title: PropValue; items: HeaderItem[] }   // the disclosure is built in: every front header has one
 export interface FrontLayerConfig { header: FrontHeaderConfig; collapse: 'partial' | 'full'; content: ContentConfig }

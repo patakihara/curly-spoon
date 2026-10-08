@@ -5,39 +5,14 @@
 // runDraftRules(f) → [{ name, ok, skipped?, error? }]
 // f = { contracts, unions, config, composition, components: { <id>: raw design json }, tokens: design tokens.json }
 
+import { placementFor, hireOf as findHire, freeComponent } from '../core/compose.js';
+
 const assert = (c, msg) => { if (!c) throw new Error(msg); };
 class Skip extends Error {}
 const skip = msg => { throw new Skip(msg); };
 
-// ── free components: own + inherited props, slots, events, variants (design json: props of type 'slot' are slots)
-export function freeComponent(components, id, depth = 0) {
-  const d = components[id]; if (!d || depth > 8) return null;
-  const parent = d.extends ? freeComponent(components, d.extends, depth + 1) : null;
-  const own = d.props || {};
-  const props = { ...(parent ? parent.props : {}), ...Object.fromEntries(Object.entries(own).filter(([, t]) => t !== 'slot')) };
-  const slots = [...(parent ? parent.slots : []), ...Object.keys(own).filter(k => own[k] === 'slot')];
-  const events = [...(parent ? parent.events : []), ...(d.events || []).map(e => e.name)];
-  const variants = { ...(parent ? parent.variants : {}), ...(d.variants || {}) };
-  return { props, slots, events, variants };
-}
 const tokenExists = (tokens, name) => { let n = tokens; for (const k of name.split('.')) { if (!n || typeof n !== 'object' || !(k in n)) return false; n = n[k]; } return !!n && typeof n === 'object' && '$value' in n; };
-const hireOf = (f, name) => f.composition.hires.find(h => h.name === name);
-
-// ── placement resolution: page exceptions first, then defaults; the first placement whose given fields all match wins
-const fits = (p, at) => p.contract === at.contract
-  && (!p.within || (at.within || []).includes(p.within))
-  && (!p.overlay || p.overlay === at.overlay)
-  && (!p.match || ((!p.match.kind || p.match.kind === at.kind) && (!p.match.name || p.match.name === at.name)))
-  && (!p.param || Object.entries(p.param).every(([k, v]) => at.param && at.param[k] === v))
-  && (p.presentation == null || p.presentation === at.presentation)
-  && (p.entry == null || !!p.entry === !!at.entry)
-  && (p.state == null || p.state === at.state)
-  && (!p.env || (at.env && at.env[p.env.env] === p.env.equals));
-export function placementFor(composition, at) {
-  const page = (composition.pages || []).find(x => x.page === at.page);
-  const p = [...(page ? page.placements : []), ...composition.placements].find(x => fits(x, at));
-  return p ? p.hire : undefined;                 // undefined: no placement · null: deliberately not drawn
-}
+const hireOf = (f, name) => findHire(f.composition, name);
 
 // ── the drawn objects of the draft config: one 'place' per contract instance, with what placement may match on
 export function placesOf(config) {
