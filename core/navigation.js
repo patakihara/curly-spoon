@@ -100,7 +100,7 @@ function queueRelation(player, of) {
   return ids.length && ids.every(id => q.some(t => t.id === id)) ? 'contains' : 'absent';
 }
 
-export function createModel(config, device, data, player, sizes = {}) {   // sizes: { railWidth, sideSheetWidth } from Layout.sizes (design through composition)
+export function createModel(config, device, data, player, sizes = {}) {   // sizes: { railWidth, sideSheetWidth } = Layout.sizes(the wide look) (design through composition)
   if (!compatible(config.contractVersion)) throw new Error('incompatible config contractVersion ' + config.contractVersion + ' (model ' + CONTRACT_VERSION + ')');
   const deckCfg = id => config.decks.find(d => d.id === id);
   const layerCfg = id => config.layers.find(l => l.id === id);
@@ -506,7 +506,7 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
     const t = T.title && T.title.from === 'item' ? String(item[T.title.field || 'title'] ?? item.id) : T.title;
     return { ...T, id: parentCfg.id + '/' + item.id, title: t };
   };
-  const pageFor = (cfg, item) => ({ ...newPageState(cfg), opener: item });
+  const pageFor = (cfg, item) => ({ ...newPageState(cfg), opener: item, template: item.opens.template });   // template: composition's page exceptions name it
   const isOver = (s, L) => query.layoutClass(s, config) === 'compact' || query.sideMode(s, config, L.id) !== 'beside';
 
   function closeLayerState(s, id, fromHistory) {

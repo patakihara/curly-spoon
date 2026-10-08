@@ -9,8 +9,8 @@ const pascal = s => s[0].toUpperCase() + s.slice(1);
 const fields = o => Object.entries(o).map(([k, t]) => k + ': ' + t).join('; ');
 
 export function contractsDts(CONTRACTS, UNIONS, INTENT_TS) {
-  const L = [BEGIN], done = new Set(), unionsDone = new Set();
-  const childType = (c, self) => (UNIONS[c.contract] ? pascal(c.contract) : pascal(c.contract)) + 'Contract' + (c.list ? '[]' : '');
+  const L = [BEGIN], unionsDone = new Set();
+  const childType = c => pascal(c.contract) + 'Contract' + (c.list ? '[]' : '');   // a union's name is built the same way
   const needUnions = C => {
     for (const c of Object.values(C.children || {})) {
       const u = UNIONS[c.contract];
@@ -30,7 +30,6 @@ export function contractsDts(CONTRACTS, UNIONS, INTENT_TS) {
     if (vals !== 'NoValues') L.push(`export interface ${P}Values { ${fields(C.values)} }`);
     if (kids) L.push(`export interface ${P}Children { ${Object.entries(kids).map(([k, c]) => k + (c.optional ? '?' : '') + ': ' + childType(c)).join('; ')} }`);
     L.push(`export interface ${P}Contract extends Contract<${C.config}, ${vals}, ${intents}> {${kids ? ` children: ${P}Children ` : ''}}`);
-    done.add(id);
   }
   L.push(`export type ContractName = ${Object.keys(CONTRACTS).map(k => `'${k}'`).join(' | ')};`);
   L.push(END);

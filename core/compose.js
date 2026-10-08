@@ -38,10 +38,19 @@ export function freeComponent(components, id, depth = 0) {
 // a size the hire drawing a place gives: its own token named after the size ('<hire>.<name>', aliasing a design token),
 // else its free component's visual of that name (with the hire's variant picks). specs: loaded design (tokens flattened).
 import { resolveVisuals } from './layout.js';
-export function sizeOf(specs, composition, at, name) {
-  const hn = placementFor(composition, at), h = hn ? hireOf(composition, hn) : null; if (!h) return undefined;
-  const t = (h.tokens || []).find(x => x.name === h.name + '.' + name);
-  if (t) return specs.tokens[t.alias];
+// a hire's visuals at a place, for a state: the free component's (with the hire's variant picks), its own tokens winning
+export function visualsAt(specs, composition, at, state = 'enabled', ctx = {}) {
+  const hn = placementFor(composition, at), h = hn ? hireOf(composition, hn) : null; if (!h) return null;
   const variant = Object.fromEntries((h.variants || []).map(v => [v.axis, v.option]));
-  return resolveVisuals(specs, h.hires, 'enabled', { variant })[name];
+  const out = resolveVisuals(specs, h.hires, state, { ...ctx, env: at.env, variant });
+  for (const t of h.tokens || []) out[t.name.slice(h.name.length + 1)] = specs.tokens[t.alias];
+  return out;
 }
+export function sizeOf(specs, composition, at, name, state = 'enabled') { const v = visualsAt(specs, composition, at, state); return v ? v[name] : undefined; }
+// the look at the current env: what Layout reads instead of config sizes (design through composition)
+//   size(at, name, state?) → number (0 where nothing is drawn) · visuals(at, state?, ctx?) → the hire's visuals | null
+export const lookAt = (specs, composition, env) => ({
+  size: (at, name, state) => +(sizeOf(specs, composition, { ...at, env }, name, state) || 0),
+  visuals: (at, state, ctx) => visualsAt(specs, composition, { ...at, env }, state, ctx),
+  hire: at => placementFor(composition, { ...at, env }) || null,
+});

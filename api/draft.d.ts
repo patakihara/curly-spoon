@@ -14,10 +14,10 @@
 import type {
   ComponentId, PageId, DeckId, LayerId, ParamName, Title, Params, PropValue, Condition, EnvEquals, Actions, DraftBind, Source,
   SourceRef, FieldPolicy, BackPolicy, SheetPolicy, DeckPolicy, LayerPolicy, LinkTarget, HistoryMode, HistoryByLayout, CoversNav,
-  DrawerWideForm, SideMode, SheetForm, Intent, Scoped, FrontPosition, ToggleExpandedIntent, ScrollIntent, RetryIntent,
-  SetParamsIntent, OpenIntent, OpenLayerIntent, CloseLayerIntent, CloseOverlayIntent, SwitchDeckIntent, ReselectDeckIntent, Seek,
-  ParamValue, ParamOption, ParamType, ContentView, ContentViewState, ItemData, ItemGroup, GroupKey, StatePath, InteractionView,
-  PropType, Visuals, VariantAxis, StatusState, Step, PlaceholderForm, Rect, ItemId, TextId, LocaleConfig, LocaleId, Breakpoints,
+  DrawerWideForm, SideMode, SheetForm, Intent, PlayerIntent, Scoped, FrontPosition, ToggleExpandedIntent, ScrollIntent, RetryIntent,
+  SetParamsIntent, OpenLayerIntent, CloseLayerIntent, CloseOverlayIntent, SwitchDeckIntent, ReselectDeckIntent, Seek,
+  ParamValue, ParamOption, ParamType, ContentViewState, ItemId, ItemLink, ItemGroup, GroupKey, StatePath, InteractionView,
+  PropType, StatusState, Step, PlaceholderForm, Rect, TextId, LocaleConfig, LocaleId,
   RouteTable, PersistPolicy, Shortcut, Wire, SemVer, SessionPredicate, GateId, SessionState,
 } from './api';
 
@@ -54,7 +54,7 @@ export type PanelRow = ParamRow | SuggestionsRow;
 
 // ── Content. A shelf is an item holding entries (Browse's "Artists to know"). Data decides which shelves and entries exist;
 //   activating a shelf or an entry opens it (ItemData.opens; a shelf opens the template shelfPage).
-export interface ShelfData { entries?: ItemData[] }                     // joins api.d.ts ItemData: the engine reads id, opens, entries
+export interface ItemData { id: ItemId; opens: ItemLink | null; entries?: ItemData[]; [field: string]: unknown }   // replaces api.d.ts ItemData (+ entries: a shelf's) · OPEN: the other fields are the backend's
 export type PresentationKey = string;
 export interface ContentParam { name: string; value: PropValue }
 export interface GroupConfig { by: StatePath; key: GroupKey; when?: Condition; index?: boolean }   // index: a fast-scroll index over the keys
@@ -74,6 +74,7 @@ export interface OpenFindIntent { type: 'openFind' }                     // open
 export interface CloseFindIntent { type: 'closeFind' }                   // the find text = '', opened = false, closed = true
 export type DraftIntent = Intent | OpenFindIntent | CloseFindIntent;
 export type IntentType = DraftIntent['type'];
+export type PlayerIntentType = PlayerIntent['type'];
 export type ParamPolicies = Record<ParamName, FieldPolicy<ParamValue>>; // OPEN: still a Record (as in api.d.ts)
 
 // ── Backdrop page. The back layer has named regions with fixed meanings (replaces regions + layouts + heights):
@@ -87,7 +88,8 @@ export interface BackLayerConfig {
   hideHeaderOnScroll?: boolean;          // was BarRegion.hideOnScroll: scrolling down hides the header region (BackState.headerHidden)
 }
 export interface FrontHeaderConfig { title: PropValue; items: HeaderItem[] }   // the disclosure is built in: every front header has one
-export interface FrontLayerConfig { header: FrontHeaderConfig; collapse: 'partial' | 'full'; content: ContentConfig }
+export type FrontCollapse = 'partial' | 'full';
+export interface FrontLayerConfig { header: FrontHeaderConfig; collapse: FrontCollapse; content: ContentConfig }
 export interface FrontState { scroll: Scoped<number>; find?: FindState }    // replaces api.d.ts FrontState (scroll unchanged)
 export interface FrontPolicy { scroll: FieldPolicy<number>; find?: FindPolicy }   // find: required when the front header holds a find item
 export interface BackdropPagePolicy { params: ParamPolicies; back: BackPolicy; front: FrontPolicy }
@@ -104,7 +106,6 @@ export interface BackdropPageConfig {
 // ── App-bar page: a header over content or a body, with an optional inner sheet (Now playing: Up next / Lyrics / Related)
 export interface PageSheetConfig { control?: BasicActionConfig; content: ContentConfig }   // control: the tabs in its header
 export interface AppBarPagePolicy { params?: ParamPolicies; scroll: FieldPolicy<number>; sheet?: SheetPolicy; find?: FindPolicy }
-export interface AppBarPageState { config: AppBarPageConfig; opener?: ItemData; params: Record<ParamName, Scoped<ParamValue>>; scroll: Scoped<number>; sheet?: { expanded: boolean }; find?: FindState }   // OPEN: replaces api.d.ts AppBarPageState (+ find); inline types to name
 export interface AppBarPageConfig {
   id: PageId;
   kind: 'appBar';
@@ -116,6 +117,9 @@ export interface AppBarPageConfig {
   sheet?: PageSheetConfig;               // requires policy.sheet
   policy: AppBarPagePolicy;
 }
+export interface PageSheetState { expanded: boolean }
+export type ParamStates = Record<ParamName, Scoped<ParamValue>>;     // OPEN: still a Record (as in api.d.ts)
+export interface AppBarPageState { config: AppBarPageConfig; opener?: ItemData; params: ParamStates; scroll: Scoped<number>; sheet?: PageSheetState; find?: FindState }   // replaces api.d.ts AppBarPageState (+ find)
 export type PageConfig = BackdropPageConfig | AppBarPageConfig;
 
 // ── Decks and layers (unchanged but for the drawing values that moved to design: peek heights, widths, max widths)
@@ -126,7 +130,8 @@ export interface FloatingCardPeek extends PeekConfig { form: 'floatingCard'; per
 export interface SideSheetForm { form: 'sideSheet'; peek: FloatingCardPeek }
 export interface SheetPresentation { kind: 'sheet'; compact: BottomSheetForm; wide: SideSheetForm }
 export interface FullscreenPresentation { kind: 'fullscreen'; coversNav: CoversNav }
-export interface DrawerPresentation { kind: 'drawer'; side: 'start'; scrim: boolean; wide?: DrawerWideForm }
+export interface DrawerPresentation { kind: 'drawer'; scrim: boolean; wide?: DrawerWideForm }   // its side: design (the drawer's edge)
+export type DrawerForm = DrawerWideForm | 'modal';
 export type LayerPresentation = SheetPresentation | FullscreenPresentation | DrawerPresentation;
 export interface LayerPages { base: PageId; set: Record<PageId, PageConfig> }   // OPEN: still a Record (as in api.d.ts)
 export interface LayerConfig { id: LayerId; name: string; pages: LayerPages; linkTarget?: LinkTarget; presentation: LayerPresentation; history: HistoryMode | HistoryByLayout; policy: LayerPolicy }
@@ -135,9 +140,13 @@ export interface LayerConfig { id: LayerId; name: string; pages: LayerPages; lin
 export interface NavigationConfig { items: ButtonItem[] }
 export interface LaunchConfig { minMs?: number }                        // the splash: composition
 export interface OverlayText { name: string; value: PropValue }         // 'title', 'body', 'confirm', 'cancel', 'text', 'action'
-export interface OverlaySpec { id: string; kind: 'dialog' | 'menu' | 'actionSheet' | 'snackbar'; texts: OverlayText[]; items?: ButtonItem[]; blocking: boolean; timeoutMs?: number; history?: 'transient' | 'ignore' }   // the component: composition, by kind
+export type OverlayKind = 'dialog' | 'menu' | 'actionSheet' | 'snackbar';
+export type OverlayHistory = 'transient' | 'ignore';
+export interface OverlaySpec { id: string; kind: OverlayKind; texts: OverlayText[]; items?: ButtonItem[]; blocking: boolean; timeoutMs?: number; history?: OverlayHistory }   // the component: composition, by kind
 export interface Gate { id: GateId; when: SessionPredicate; page: PageConfig }
-export interface SessionConfig { initial?: Partial<SessionState>; gates: Gate[] }
+export type SessionInitial = Partial<SessionState>;
+export interface SessionConfig { initial?: SessionInitial; gates: Gate[] }
+export interface Breakpoints { compactMax: number; minContent: number }   // replaces api.d.ts Breakpoints (railWidth: design, the rail's width)
 export interface AppConfig {
   contractVersion: SemVer;
   decks: DeckConfig[];
@@ -156,7 +165,7 @@ export interface AppConfig {
   pages?: Record<string, PageConfig>;   // OPEN: still a Record (as in api.d.ts)
 }
 // Removed from config: contentStates (composition), NavigationConfig refs, LaunchConfig.splash, OverlaySpec.component / props,
-// DeckConfig.icon, every height / width / maxWidth, slots and sides.
+// DeckConfig.icon, Breakpoints.railWidth, DrawerPresentation.side, every height / width / maxWidth, slots and sides.
 
 // ═════════════════════════════════════════════════════════════
 // 2. CONTRACTS — what a drawn config object offers whatever draws it.
@@ -172,6 +181,7 @@ export type NoIntents = never;
 export type BackRegionName = 'header' | 'actions' | 'basicAction' | 'panel';
 export interface BackRegionView { region: BackRegionName; top: number; height: number; opacity: number; interactive: boolean }   // Layout
 export interface OverlayValueText { name: string; text: string }
+export interface ContentView { state: ContentViewState; showItems: boolean; placeholders: number; banner: boolean; retry: boolean }   // replaces api.d.ts ContentView: no component ids (composition picks them)
 // <contracts:generated> — from api/contracts.js by api/gen-contracts.js; do not edit
 // button
 export interface ButtonValues { label: string; checked: boolean | null; state: string | null; interaction: InteractionView }
@@ -190,7 +200,7 @@ export interface FindValues { open: boolean; value: string; placeholder: string;
 export interface FindContract extends Contract<FindItem, FindValues, OpenFindIntent | CloseFindIntent | SetParamsIntent> {}
 // detail
 export interface DetailValues { title: string; subtitle: string | null; image: string | null; meta: string | null }
-export interface DetailContract extends Contract<DetailConfig, DetailValues, NoIntents> {}
+export interface DetailContract extends Contract<DetailConfig | DetailItem, DetailValues, NoIntents> {}
 // seek
 export interface SeekValues { label: string; positionMs: number; durationMs: number | null }
 export interface SeekContract extends Contract<SeekItem, SeekValues, Seek> {}
@@ -217,8 +227,8 @@ export interface SuggestionsContract extends Contract<SuggestionsRow, Suggestion
 export interface ItemValues { item: ItemData; navigable: boolean }
 export interface ItemChildren { entries?: ItemContract[] }
 export interface ItemContract extends Contract<PresentationConfig, ItemValues, Actions> { children: ItemChildren }
-// contentState: empty · error · offlineStale (the banner)
-export interface ContentStateValues { state: ContentViewState; text: string; retry: boolean }
+// contentState: empty · error · offlineStale (the banner) · its words are design texts of the free component
+export interface ContentStateValues { state: ContentViewState; retry: boolean }
 export interface ContentStateContract extends Contract<ContentConfig, ContentStateValues, RetryIntent> {}
 // content
 export interface ContentValues { view: ContentView; presentation: PresentationKey; groups: ItemGroup[]; placeholders: number }
@@ -255,7 +265,7 @@ export interface SheetLayerValues { open: boolean; form: SheetForm; side: SideMo
 export interface SheetLayerChildren { peek: HeaderContract; page: PageContract }
 export interface SheetLayerContract extends Contract<LayerConfig, SheetLayerValues, OpenLayerIntent | CloseLayerIntent> { children: SheetLayerChildren }
 // drawerLayer: close: the scrim was tapped
-export interface DrawerLayerValues { open: boolean; form: DrawerWideForm | 'modal' }
+export interface DrawerLayerValues { open: boolean; form: DrawerForm }
 export interface DrawerLayerChildren { page: PageContract }
 export interface DrawerLayerContract extends Contract<LayerConfig, DrawerLayerValues, CloseLayerIntent> { children: DrawerLayerChildren }
 // fullscreenLayer
@@ -288,21 +298,27 @@ export type PropName = string;
 export type EventName = string;
 export type SlotName = string;
 export type PartName = string;           // a piece the component draws itself, named so motion can address it (cf. ::part)
-export interface PropSpec { name: PropName; type: PropType }
+// As design/components/<id>/<id>.json holds them (core/compose.js freeComponent reads this shape).
+export type FreePropType = PropType | 'slot';    // a prop of type slot is a slot: a hole filled from outside
+export interface FreeProps { [prop: PropName]: FreePropType }          // OPEN: keyed by name, as the json is
 export interface EventSpec { name: EventName; payload: PropType | null }   // null: no payload
-export interface SlotSpec { name: SlotName; min?: number; max?: number }   // a hole filled from outside
-export interface VariantSpec { axis: string; values: VariantAxis }
+export type VariantAxisName = string;
+export type VariantOption = string;
+export interface VariantSpec { options: VariantOption[]; default: VariantOption }
+export interface FreeVariants { [axis: VariantAxisName]: VariantSpec }   // OPEN: keyed by axis, as the json is
+export interface FreeVisualCases { [stateOrStatus: string]: unknown }    // OPEN: 'default', a state or a status → a value (token, role, number …)
+export interface FreeVisuals { [visual: string]: FreeVisualCases }      // OPEN: keyed by visual name
+export interface FreeMotion { [trigger: string]: Step[] }                // OPEN: keyed by trigger (change · press · release · loop)
 export interface FreeComponentDef {
-  props: PropSpec[];
-  events: EventSpec[];
-  slots: SlotSpec[];
-  parts: PartName[];
-  uses?: ComponentId[];                  // free components it is built from, inside design (iconButton uses symbol)
+  extends?: ComponentId;                 // inherits props, events, parts, variants and visuals; its own win
+  props?: FreeProps;
+  events?: EventSpec[];
+  parts?: PartName[];
   states?: string[];
-  variants?: VariantSpec[];
+  variants?: FreeVariants;
   statuses?: StatusState[];
-  visuals?: Visuals;                     // OPEN: still a Record (api.d.ts); name it when design's types are redone
-  motion?: Step[];                       // OPEN: today keyed by trigger / visual
+  visuals?: FreeVisuals;
+  motion?: FreeMotion;
   placeholder?: PlaceholderForm;
 }
 
@@ -320,7 +336,7 @@ export interface PropFrom { prop: PropName; value: ValueName }      // prop ← 
 export interface PropFixed { prop: PropName; token: TokenName }     // prop ← one of the hire's tokens
 export interface TokenCase { equals: string; token: TokenName }
 export interface PropByValue { prop: PropName; value: ValueName; cases: TokenCase[] }   // prop ← a hire token picked by a value (view switch icon)
-export interface EventTo { event: EventName; send: IntentType | 'action' }   // an intent the contract accepts · action: the item's config action
+export interface EventTo { event: EventName; send: IntentType | PlayerIntentType | 'action' }   // an intent the contract accepts · action: the item's config action
 export interface ItemSelector { kind?: ItemKind; name?: ItemName; rest?: true }   // rest: every item not picked by another slot
 export interface FromChild { child: ChildName; pick?: ItemSelector[] }   // a child, or the picked items of a list child, in order
 export interface FromHire { hire: HireName }                             // a hire on this same contract (a header's title, the built-in disclosure)
@@ -342,11 +358,10 @@ export interface ParamMatch { name?: ParamName; type?: ParamType; axis?: boolean
 export interface Placement {
   contract: ContractName;
   within?: ContractName | ContractName[];   // the nearest ancestor contract, or the nearest few in order (['appBarPage', 'sheetLayer']: a layer page's header)
-  overlay?: OverlaySpec['kind'];         // overlays: by kind
+  overlay?: OverlayKind;         // overlays: by kind
   match?: ItemSelector;                  // items: a kind or a name (destinations: the deck id; overlays: the kind)
   param?: ParamMatch;                    // basic actions and panel rows
   presentation?: PresentationKey;        // content items
-  entry?: boolean;                       // content items: an entry on a shelf (true) or a top-level item
   state?: ContentViewState;              // content states: empty · error · offlineStale
   env?: EnvEquals;                       // e.g. layout compact only
   hire: HireName | null;                 // null: not drawn here (e.g. the menu button on wide, where the rail has it)
@@ -354,7 +369,4 @@ export interface Placement {
 export interface PageExceptions { page: PageId; placements: Placement[] }   // checked first, then the defaults
 export interface Composition { hires: Hire[]; placements: Placement[]; pages: PageExceptions[] }
 
-// Rules (to write in invariants.js): every placement names a hire whose contract matches; every clause names a prop /
-// event / slot the free component declares and a value / child the contract offers; a hire meets every value its free
-// component's required props need; every hire token aliases an existing design token; composition holds no literals;
-// two hires never wrap the same free component for the same contract with identical clauses (duplicate).
+// Rules (api/draft-rules.js): see DRAFT_RULES there.

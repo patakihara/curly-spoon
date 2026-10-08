@@ -22,7 +22,7 @@ export const CONTRACTS = {
   text: { config: 'TextItem', values: { text: 'string' }, intents: [] },
   switch: { config: 'SwitchItem', values: { label: 'string', value: 'ParamValue | null', next: 'ParamValue | null' }, intents: ['setParams'], note: 'steps its param to the next option' },
   find: { config: 'FindItem', values: { open: 'boolean', value: 'string', placeholder: 'string', closeLabel: 'string' }, intents: ['openFind', 'closeFind', 'setParams'], note: 'closeLabel: text find.close' },
-  detail: { config: 'DetailConfig', values: { title: 'string', subtitle: 'string | null', image: 'string | null', meta: 'string | null' }, intents: [] },
+  detail: { config: 'DetailConfig | DetailItem', values: { title: 'string', subtitle: 'string | null', image: 'string | null', meta: 'string | null' }, intents: [] },
   seek: { config: 'SeekItem', values: { label: 'string', positionMs: 'number', durationMs: 'number | null' }, intents: ['seek'] },
   // headers: the back layer's, an app-bar page's, the peek's (composition tells them apart by the contract they sit in)
   header: { config: 'HeaderConfig', values: { title: 'string | null', progress: 'number' }, intents: [], children: { items: list('headerItem'), detail: one('detail', true) }, note: 'progress: collapse 0 … 1 (Layout.barView)' },
@@ -33,7 +33,7 @@ export const CONTRACTS = {
   suggestions: { config: 'SuggestionsRow', values: { label: 'string' }, intents: [], children: { items: list('suggestion') } },
   // content
   item: { config: 'PresentationConfig', values: { item: 'ItemData', navigable: 'boolean' }, intents: ['action'], children: { entries: list('item', true) }, note: "action: open it (ItemData.opens), else the presentation's itemAction · entries: a shelf's (absent on other items)" },
-  contentState: { config: 'ContentConfig', values: { state: 'ContentViewState', text: 'string', retry: 'boolean' }, intents: ['retry'], note: 'empty · error · offlineStale (the banner)' },
+  contentState: { config: 'ContentConfig', values: { state: 'ContentViewState', retry: 'boolean' }, intents: ['retry'], note: 'empty · error · offlineStale (the banner) · its words are design texts of the free component' },
   content: { config: 'ContentConfig', values: { view: 'ContentView', presentation: 'PresentationKey', groups: 'ItemGroup[]', placeholders: 'number' }, intents: [], children: { items: list('item'), state: one('contentState', true), banner: one('contentState', true) } },
   // backdrop page
   backLayer: { config: 'BackLayerConfig', values: { expanded: 'boolean', headerHidden: 'boolean', regions: 'BackRegionView[]' }, intents: ['toggleExpanded'], children: { header: one('header'), actions: list('button'), basicAction: one('input', true), panel: list('panelRow') }, note: 'toggle only while toggleOnTap' },
@@ -45,7 +45,7 @@ export const CONTRACTS = {
   appBarPage: { config: 'AppBarPageConfig', values: { contentOffset: 'number' }, intents: ['scroll'], children: { header: one('header'), content: one('content', true), body: list('bodyItem'), sheet: one('pageSheet', true) } },
   // layers: each draws its open page; stacks and policy are engine-only
   sheetLayer: { config: 'LayerConfig', values: { open: 'boolean', form: 'SheetForm', side: 'SideMode | null', peek: 'Rect | null' }, intents: ['openLayer', 'closeLayer'], children: { peek: one('header'), page: one('page') }, note: 'open: the peek was tapped · peek: Layout.peekPlacement' },
-  drawerLayer: { config: 'LayerConfig', values: { open: 'boolean', form: "DrawerWideForm | 'modal'" }, intents: ['closeLayer'], children: { page: one('page') }, note: 'close: the scrim was tapped' },
+  drawerLayer: { config: 'LayerConfig', values: { open: 'boolean', form: 'DrawerForm' }, intents: ['closeLayer'], children: { page: one('page') }, note: 'close: the scrim was tapped' },
   fullscreenLayer: { config: 'LayerConfig', values: { open: 'boolean' }, intents: [], children: { page: one('page') } },
   // app
   destination: { config: 'DeckConfig', values: { deck: 'DeckId', label: 'string', selected: 'boolean' }, intents: ['switchDeck', 'reselectDeck'] },
@@ -56,7 +56,7 @@ export const CONTRACTS = {
 
 // intent types → their TS names ('action' is the item's own Actions)
 export const INTENT_TS = {
-  action: 'Actions', open: 'OpenIntent', setParams: 'SetParamsIntent', toggleExpanded: 'ToggleExpandedIntent', scroll: 'ScrollIntent',
+  action: 'Actions', setParams: 'SetParamsIntent', toggleExpanded: 'ToggleExpandedIntent', scroll: 'ScrollIntent',
   retry: 'RetryIntent', openLayer: 'OpenLayerIntent', closeLayer: 'CloseLayerIntent', closeOverlay: 'CloseOverlayIntent',
   switchDeck: 'SwitchDeckIntent', reselectDeck: 'ReselectDeckIntent', seek: 'Seek', openFind: 'OpenFindIntent', closeFind: 'CloseFindIntent',
 };

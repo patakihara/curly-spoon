@@ -3,8 +3,7 @@
  "startDeck": "browse",
  "breakpoints": {
   "compactMax": 600,
-  "minContent": 600,
-  "railWidth": 80
+  "minContent": 600
  },
  "routes": {
   "base": "/",
@@ -2648,7 +2647,6 @@
    },
    "presentation": {
     "kind": "drawer",
-    "side": "start",
     "scrim": true,
     "wide": "rail"
    },
