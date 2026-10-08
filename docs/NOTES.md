@@ -497,6 +497,10 @@ collection, Now playing, drawer, account, collection ⋮ menu, library panel, de
 grid: a 1px text shift with identical DOM and no scroll offsets — cause not found. Motion was not sampled frame by frame.
 Layout numbers old vs new: 169 / 169 cases equal. Rules (01:30): 103 pass · 3 skipped · 0 fail (90 invariants + 13
 composition). The dev panel's stack readout no longer lists the searching / searchClosed params (find is engine state).
+Motion (01:50): Play on an album, sampled at 16 … 1100 ms under Chrome's virtual time (Emulation.setVirtualTimePolicy),
+old vs new mockup. Every frame shows the same pieces (the art's square drops toward the peek, rows dim, the header
+button becomes Last), but two runs of the same code put the square at different places at the same virtual
+millisecond: virtual time does not pin the WAAPI animations here, so frames can't be compared by hash. Still unmeasured.
 Steps: 1 sizes ✓ · 2 core ✓ (navigation, compose, contracts, layout) · 3 API ✓ (api.d.ts 18.0.0; roles / refs / draft
 deleted) · 4 config ✓ · 5 shell ✓ (view code reads nodes) — the DCs are unchanged and still take the shell's flattened
 fields, not nodes · 6 verify ✓ (screens above).
