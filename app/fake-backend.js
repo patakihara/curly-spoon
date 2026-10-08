@@ -92,9 +92,10 @@ const whenOf = (x, d) => d === 'music' ? decade(x.year) : d === 'audiobooks' ? a
 
 // an item of the catalog as the engine sees it (tag = its subtitle line)
 function toItem(x) {
-  const isP = C.people.includes(x), isC = C.collections.includes(x), isT = C.tracks.includes(x);
-  const o = { id: x.id, title: x.title, subtitle: x.sub + (isT ? ' · ' + fmtMs(x.ms) : ''), image: 'mock:' + x.id, domain: x.domain, year: x.year, shape: isP ? 'circle' : 'square', opens: isP ? { template: 'person' } : isC ? { template: 'collection' } : null };
+  const isP = C.people.includes(x), isC = C.collections.includes(x), isT = C.tracks.includes(x), isE = isT && x.domain === 'podcasts';
+  const o = { id: x.id, title: x.title, subtitle: x.sub + (isT ? ' · ' + fmtMs(x.ms) : ''), image: 'mock:' + x.id, domain: x.domain, year: x.year, shape: isP ? 'circle' : 'square', opens: isP ? { template: 'person' } : isC ? { template: 'collection' } : isE ? { template: 'episode' } : null };
   if (isT) o.track = track(x);
+  if (isE) o.tracks = [track(x)];   // the episode page plays / queues its opener's tracks, like an album's
   if (isC) o.tracks = tracksOf(x).map(track);
   if (isP) { o.tracks = C.tracks.filter(t => t.by === x.id).map(track); o.collectionCount = C.collections.filter(c => c.by === x.id).length; o.trackCount = C.tracks.filter(t => t.by === x.id).length; }
   return o;
@@ -112,7 +113,7 @@ const SHELVES = [
 const sorted = (xs, sort) => sort === 'new' ? [...xs].sort((a, b) => (b.year || 0) - (a.year || 0)) : xs;
 // subtitle: what the shelf holds, as the backend would send it (localized content), e.g. '8 artists'
 const bucketOf = x => C.people.includes(x) ? 'people' : C.collections.includes(x) ? 'collections' : 'tracks';
-const shelfItem = (s, sort) => { const xs = sorted(s.pick(), sort); return { id: s.id, title: s.id, subtitle: xs.length + ' ' + (xs.length ? DOMAIN[s.domain][bucketOf(xs[0])] : '').toLowerCase(), domain: s.domain, entries: xs.slice(0, 10).map(toItem), opens: { template: 'shelf' } }; };
+const shelfItem = (s, sort) => { const xs = sorted(s.pick(), sort); return { id: s.id, title: s.id, subtitle: xs.length + ' ' + (xs.length ? DOMAIN[s.domain][bucketOf(xs[0])] : '').toLowerCase(), domain: s.domain, entries: xs.slice(0, 10).map(toItem), opens: { template: 'shelfPage' } }; };
 
 // ── data sources ──────────────────────────────────────────
 const featured = () => { const c = C.collections.filter((x, k) => k % 3 === 0), p = C.people.filter((x, k) => k % 3 === 0), out = []; for (let k = 0; out.length < 24 && (k < c.length || k < p.length); k++) { if (p[k]) out.push(p[k]); if (c[k]) out.push(c[k]); } return out; };

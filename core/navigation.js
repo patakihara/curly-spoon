@@ -2,7 +2,7 @@
 // Pure: no DOM, no animation state. createModel(config, device, data) → Model
 // `data` = { get(dataSource, params) → ContentData } (only needed by queries that resolve items)
 
-export const CONTRACT_VERSION = '17.0.0';
+export const CONTRACT_VERSION = '18.0.0';
 // ICU MessageFormat subset: {name}, {name, plural, =0 {…} one {…} other {…}} with #, {name, select, a {…} other {…}}
 export function formatMessage(msg, args = {}, locale = 'en') {
   let out = '', i = 0;
@@ -27,10 +27,9 @@ export function formatMessage(msg, args = {}, locale = 'en') {
   }
   return out;
 }
-export { ROLES } from '../api/roles.js';   // 16.0: single source
 export const DERIVED_IDS = ['deckName', 'pageTitle', 'contentSummary', 'total', 'count', 'summary', 'scrolled'];
 export const PARAM_TYPES = ['choice', 'choices', 'text', 'flag', 'number', 'date'];
-export const INTENT_TYPES = ['open', 'openLayerPage', 'back', 'up', 'switchDeck', 'reselectDeck', 'setParams', 'toggleParam', 'resetParams', 'setExpanded', 'toggleExpanded', 'scroll', 'openLayer', 'closeLayer', 'focus', 'setDevice', 'retry', 'setPrefs', 'openOverlay', 'closeOverlay', 'session', 'navigateUrl', 'restore', 'launched'];
+export const INTENT_TYPES = ['open', 'openLayerPage', 'back', 'up', 'switchDeck', 'reselectDeck', 'setParams', 'toggleParam', 'resetParams', 'setExpanded', 'toggleExpanded', 'scroll', 'openLayer', 'closeLayer', 'focus', 'setDevice', 'retry', 'setPrefs', 'openOverlay', 'closeOverlay', 'session', 'navigateUrl', 'restore', 'launched', 'openFind', 'closeFind'];
 const major = v => parseInt(String(v || '0').split('.')[0], 10);
 export function compatible(v) { return major(v) === major(CONTRACT_VERSION); }
 
@@ -47,9 +46,10 @@ const readPath = (o, path) => path.split('.').reduce((x, k) => x == null ? x : x
 
 // ── page state from policy ─────────────────────────────────
 export function newPageState(cfg) {
-  const P = cfg.policy, init = p => p.scope ? {} : clone(p.default), params = {};
+  // a field policy → its initial value; a group of policies (front.find) → a group of values
+  const P = cfg.policy, init = p => 'resetOn' in p ? (p.scope ? {} : clone(p.default)) : Object.fromEntries(Object.entries(p).map(([k, x]) => [k, init(x)])), params = {};
   for (const k in P.params || {}) params[k] = init(P.params[k]);
-  if (cfg.kind === 'appBar') return { config: cfg, params, scroll: init(P.scroll), ...(cfg.sheet && P.sheet ? { sheet: { expanded: !!P.sheet.expanded.default } } : {}) };
+  if (cfg.kind === 'appBar') return { config: cfg, params, scroll: init(P.scroll), ...(cfg.sheet && P.sheet ? { sheet: { expanded: !!P.sheet.expanded.default } } : {}), ...(P.find ? { find: init(P.find) } : {}) };
   const st = { config: cfg, params, back: {}, front: {} };
   for (const L of ['back', 'front']) for (const f in P[L]) st[L][f] = init(P[L][f]);
   return st;
@@ -100,7 +100,7 @@ function queueRelation(player, of) {
   return ids.length && ids.every(id => q.some(t => t.id === id)) ? 'contains' : 'absent';
 }
 
-export function createModel(config, device, data, player) {
+export function createModel(config, device, data, player, sizes = {}) {   // sizes: { railWidth, sideSheetWidth } from Layout.sizes (design through composition)
   if (!compatible(config.contractVersion)) throw new Error('incompatible config contractVersion ' + config.contractVersion + ' (model ' + CONTRACT_VERSION + ')');
   const deckCfg = id => config.decks.find(d => d.id === id);
   const layerCfg = id => config.layers.find(l => l.id === id);
@@ -155,7 +155,7 @@ export function createModel(config, device, data, player) {
     sideMode(s, c, layer) {
       const L = c.layers.find(l => l.id === layer);
       if (query.layoutClass(s, c) === 'compact' || !L || L.presentation.kind !== 'sheet') return null;
-      if (s.device.width - c.breakpoints.railWidth - L.presentation.wide.width >= c.breakpoints.minContent) return 'beside';
+      if (s.device.width - (sizes.railWidth || 0) - (sizes.sideSheetWidth || 0) >= c.breakpoints.minContent) return 'beside';
       return s.device.touch ? 'modal' : 'auto';
     },
     currentPage(s) {
@@ -171,15 +171,13 @@ export function createModel(config, device, data, player) {
     },
     visibleItems(page, content) { return (content && content.items) || []; },   // the data source applies the params
     presentation(page) {
-      const cc = contentOf(page.config), P = (cc && cc.presentations) || {};
-      const key = cc.view ? paramValue(page, cc.view) : 'default';
-      const k = key in P ? key : Object.keys(P)[0];
-      if (!cc) return { key: 'default' };
-      return { key: k, ...P[k] };
+      const cc = contentOf(page.config); if (!cc) return { key: 'default' };
+      const P = cc.presentations || [], key = cc.view ? paramValue(page, cc.view) : 'default';
+      return P.find(p => p.key === key) || P[0] || { key: 'default' };
     },
     contentParams(page) {
       const out = {}, P = page.config.params || {}, cc = contentOf(page.config);
-      for (const k in (cc && cc.params) || {}) out[k] = resolveValue(cc.params[k], page);   // e.g. { id: { bind: '$opener.id' } }
+      for (const x of (cc && cc.params) || []) out[x.name] = resolveValue(x.value, page);   // e.g. { name: 'id', value: { bind: '$opener.id' } }
       for (const k in P) if (P[k].data !== false) out[k] = paramValue(page, k);
       return out;
     },
@@ -344,30 +342,6 @@ export function createModel(config, device, data, player) {
       if ('path' in k) return same(pageValue(page, k.path, scope), deepResolve(k.equals, page, scope));
       return false;
     },
-    slotPath(surface, pageId, slot, index, itemId) {
-      return surface + '/' + (pageId == null ? '-' : encodeURIComponent(pageId)) + '/' + slot + (index == null ? '' : '[' + index + ']') + (itemId == null ? '' : '#' + encodeURIComponent(itemId));
-    },
-    resolveRef(s, c, ref, page, path, scope) {
-      const val = v => resolveValue(v, page, scope, s, c);
-      const props = {}; for (const k in ref.props || {}) props[k] = val(ref.props[k]);
-      const slots = {}; for (const k in ref.slots || {}) slots[k] = query.expandSlots(s, c, ref.slots[k], page, scope).map(x => query.resolveRef(s, c, x.ref, page, undefined, x.scope));
-      const out = { component: ref.component, props, action: deepResolve(ref.action, page, scope), visible: !ref.when || query.condition(s, c, ref.when, page, scope), slots, variant: ref.variant || {} };
-      if ('checked' in ref) out.checked = val(ref.checked);
-      if (ref.bind) out.bind = ref.bind;
-      if (path != null) out.key = path;
-      return out;
-    },
-    // a Slot list → one { ref, scope } per component (repeats expanded over their elements)
-    expandSlots(s, c, list, page, scope) {
-      const out = [];
-      for (const x of list || []) {
-        if (!x || !('repeat' in x)) { out.push({ ref: x, scope: scope || null }); continue; }
-        const r = x.repeat;
-        const els = r && r.options ? query.paramOptions(s, c, page, r.options) : r && typeof r === 'object' && !Array.isArray(r) && 'bind' in r ? (pageValue(page, r.bind, scope) || []) : sourceList(r, page);
-        els.forEach((e, i) => out.push({ ref: x.ref, scope: { ...(scope || {}), [x.as]: e, index: i } }));
-      }
-      return out;
-    },
     paramOptions(s, c, page, name) {
       const S = page && page.config.params && page.config.params[name]; if (!S || !S.options) return [];
       return sourceList(S.options, page).map(o => ({ value: o.value, label: typeof o.label === 'object' && o.label ? query.text(s, c, o.label) : o.label == null ? o.value : o.label }));
@@ -386,56 +360,17 @@ export function createModel(config, device, data, player) {
       return msg == null ? id : formatMessage(msg, args, loc);
     },
     dir(s, c) { const L = c.locales && c.locales.supported.find(l => l.id === s.prefs.locale); return (L && L.dir) || 'ltr'; },
-    roleProps(s, c, slot) {
-      const p = slot.page;
-      switch (slot.role) {
-        case 'input': { const b = slot.bind; if (b && b.player) { const v = playerView(); return { value: v ? v[b.player] : null, options: [] }; } const name = typeof b === 'string' ? b : b && b.change; return { value: name ? paramValue(p, name) ?? null : null, options: name ? query.paramOptions(s, c, p, name) : [] }; }
-        case 'item': return { navigable: !!(slot.item && slot.item.opens) };
-        case 'navigation': return { destinations: c.decks.map(d => d.id), selected: s.activeDeck };
-        case 'disclosure': return { expanded: !!(p && (p.sheet ? p.sheet.expanded : p.back && p.back.expanded)) };
-        case 'backLayer': return { expanded: !!(p && p.back && p.back.expanded), headerHidden: !!(p && p.back && p.back.headerHidden) };
-        case 'frontLayer': return { position: p && p.back ? (p.back.expanded ? p.config.front.collapse : 'expanded') : 'expanded' };
-        case 'pageSheet': return { expanded: !!(p && p.sheet && p.sheet.expanded) };
-        case 'sheetLayer': case 'drawerLayer': case 'fullscreenLayer': {
-          const L = slot.layer && c.layers.find(l => l.id === slot.layer); if (!L) return {};
-          const open = !!s.layers[L.id].open, wide = query.layoutClass(s, c) === 'wide';
-          if (slot.role === 'sheetLayer') return { open, form: wide ? 'sideSheet' : 'bottomSheet', side: query.sideMode(s, c, L.id) };
-          if (slot.role === 'drawerLayer') return { open, form: wide ? (L.presentation.wide || 'modal') : 'modal' };
-          return { open };
-        }
-      }
-      return {};
-    },
-    roleIntent(s, c, slot, event, payload) {
-      const b = slot.bind, page = slot.page && slot.page.config.id;
-      switch (slot.role + ':' + event) {
-        case 'input:change': if (b && b.player) return b.player === 'positionMs' ? { type: 'seek', positionMs: +payload || 0 } : null; { const name = typeof b === 'string' ? b : b && b.change; return name ? { type: 'setParams', values: { [name]: payload }, page } : null; }
-        case 'input:submit': { if (!b) return null; const vals = typeof b === 'string' ? { [b]: payload } : { [b.change]: payload, [b.submit]: payload }; return { type: 'setParams', values: vals, page }; }
-        case 'disclosure:toggle': return { type: 'toggleExpanded' };
-        case 'navigation:select': return deckCfg(payload) ? { type: payload === s.activeDeck ? 'reselectDeck' : 'switchDeck', deck: payload } : null;
-        case 'item:open': return slot.item && slot.item.opens ? { type: 'open', item: slot.item, origin: slot.origin || { deck: s.activeDeck } } : null;
-        case 'overlay:close': return { type: 'closeOverlay', result: payload };
-        case 'emptyState:retry': case 'errorState:retry': case 'staleBanner:retry': case 'frontLayer:retry': case 'appBarPage:retry': return { type: 'retry' };
-        case 'backLayer:toggle': return slot.page && slot.page.config.back && slot.page.config.back.toggleOnTap === false ? null : { type: 'toggleExpanded' };
-        case 'pageSheet:toggle': return { type: 'toggleExpanded' };
-        case 'frontLayer:scroll': case 'appBarPage:scroll': return { type: 'scroll', top: +payload || 0 };
-        case 'sheetLayer:open': return slot.layer ? { type: 'openLayer', layer: slot.layer } : null;
-        case 'sheetLayer:close': case 'drawerLayer:close': return slot.layer ? { type: 'closeLayer', layer: slot.layer } : null;
-      }
-      return null;
-    },
     contentView(page, d, c, offline) {
       const pc = page.config, cc = pc.kind === 'backdrop' ? pc.front.content : pc.content;
-      const comps = { ...(c.contentStates || {}), ...((cc && cc.states) || {}) };
       const items = d && d.items ? query.visibleItems(page, d) : [];
-      if (!d || d.status === 'loading') return { state: 'loading', showItems: false, component: null, placeholders: 6, banner: null, retry: false };
+      if (!d || d.status === 'loading') return { state: 'loading', showItems: false, placeholders: 6, banner: false, retry: false };
       if (d.status === 'error') {
-        if (offline && items.length) return { state: 'offlineStale', showItems: true, component: null, placeholders: 0, banner: comps.staleBanner || null, retry: true };
-        return { state: 'error', showItems: false, component: comps.error || null, placeholders: 0, banner: null, retry: !offline && (d.error ? d.error.retryable : true) };
+        if (offline && items.length) return { state: 'offlineStale', showItems: true, placeholders: 0, banner: true, retry: true };
+        return { state: 'error', showItems: false, placeholders: 0, banner: false, retry: !offline && (d.error ? d.error.retryable : true) };
       }
-      if (offline && d.stale) return { state: 'offlineStale', showItems: items.length > 0, component: items.length ? null : comps.empty || null, placeholders: 0, banner: comps.staleBanner || null, retry: true };
-      if (!items.length) return { state: 'empty', showItems: false, component: comps.empty || null, placeholders: 0, banner: null, retry: false };
-      return { state: 'ready', showItems: true, component: null, placeholders: 0, banner: null, retry: false };
+      if (offline && d.stale) return { state: 'offlineStale', showItems: items.length > 0, placeholders: 0, banner: true, retry: true };
+      if (!items.length) return { state: 'empty', showItems: false, placeholders: 0, banner: false, retry: false };
+      return { state: 'ready', showItems: true, placeholders: 0, banner: false, retry: false };
     },
     focusOrder(s, c) {
       const top = s.overlays.length ? s.overlays[s.overlays.length - 1] : null;
@@ -760,14 +695,21 @@ export function createModel(config, device, data, player) {
         break;
       }
       case 'toggleExpanded': { const cp = query.currentPage(s); return reduce(s, { type: 'setExpanded', expanded: cp.sheet ? !cp.sheet.expanded : !query.underPage(s).back.expanded }); }
+      case 'openFind': case 'closeFind': {   // 18.0: the local search's open / closed state (FindState) on the page part that scrolls
+        const cur = query.currentPage(s), app = cur.config.kind === 'appBar', base = app ? 'find' : 'front.find';
+        const pol = app ? cur.config.policy.find : cur.config.policy.front.find; if (!pol) break;
+        const item = (app ? cur.config.header.items : cur.config.front.header.items).find(x => x.kind === 'find');
+        const patch = p => { let q = setField(setField(p, base + '.opened', intent.type === 'openFind'), base + '.closed', intent.type === 'closeFind'); if (intent.type === 'closeFind' && item) q = setField(q, 'params.' + item.param, ''); return q; };
+        s = app ? patchTop(s, patch) : patchUnder(s, patch);
+        break;
+      }
       case 'scroll': {
         const cur = query.currentPage(s);
         const atTop = (prev, p) => prev > 0 && intent.top <= 0 ? applyEvent(p, 'scrollTop') : p;
         if (cur.config.kind === 'appBar') { const prev = getField(cur, 'scroll') || 0; s = patchTop(s, p => atTop(prev, setField(p, 'scroll', intent.top))); break; }
         const u0 = query.underPage(s), prevTop = getField(u0, 'front.scroll') || 0, wasHidden = !!u0.back.headerHidden;
         s = patchUnder(s, p => atTop(prevTop, setField(p, 'front.scroll', intent.top)));
-        const HR = u0.config.back.regions.header;
-        if (HR && HR.hideOnScroll && !u0.back.expanded) {
+        if (u0.config.back.hideHeaderOnScroll && !u0.back.expanded) {
           const d = intent.top - prevTop, hide = intent.top <= 0 ? false : d > 4 ? true : d < -4 ? false : wasHidden;
           if (hide !== wasHidden) { s = patchUnder(s, p => ({ ...p, back: { ...p.back, headerHidden: hide } })); ev.push({ type: 'headerVisibilityChanged', hidden: hide }); }
         }

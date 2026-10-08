@@ -2970,6 +2970,41 @@
    ]
   },
   {
+   "page": "episode",
+   "placements": [
+    {
+     "contract": "detail",
+     "hire": "collectionDetail"
+    },
+    {
+     "contract": "header",
+     "within": "appBarPage",
+     "hire": "collectionHeader"
+    },
+    {
+     "contract": "button",
+     "match": {
+      "name": "playNow"
+     },
+     "hire": "playNowFilled"
+    },
+    {
+     "contract": "button",
+     "match": {
+      "name": "playNext"
+     },
+     "hire": "playNextFilled"
+    },
+    {
+     "contract": "button",
+     "match": {
+      "name": "playLast"
+     },
+     "hire": "playLastFilled"
+    }
+   ]
+  },
+  {
    "page": "library",
    "placements": [
     {

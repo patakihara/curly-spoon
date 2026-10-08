@@ -1,6 +1,6 @@
 {
   "$description": "Design system manifest. load.js assembles these files into the Specs object (api.d.ts §15).",
-  "contractVersion": "17.0.0",
+  "contractVersion": "18.0.0",
   "tokens": "tokens.json",
   "choreography": "choreography.json",
   "components": [
