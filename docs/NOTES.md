@@ -525,7 +525,7 @@ fields, not nodes · 6 verify ✓ (screens above).
   props and slots) is not done.
 - design/components/*/*.d.ts are stale since the baseline export (empty prop interfaces) and nothing in the repo writes
   them; design/build.js buildDts can, but nobody calls it.
-- 18.0: docs/API.md and docs/RUST.md still describe roles and refs.
+- 18.0: api/api.rs is still the 11.0.1 snapshot (docs/API.md and RUST.md describe 18.0).
 - 18.0: the free-component merge tree is proposed, not applied (69 design components).
 - 18.0: Library grid 1px text shift vs the pre-switch mockup.
 - Design checks are not shown on the Invariants page yet (needs Invariants.dc.html).
@@ -535,6 +535,5 @@ fields, not nodes · 6 verify ✓ (screens above).
 - Components page: no AppBarPage preview yet.
 - Backdrop detail: header parts that differ still cross-fade (old ghosts fade out after the commit) instead of fading through.
 - Non-uniform scale when source and target aspect differ (wide ContentBlock → square header) stretches the art slightly during the flight.
-- api.rs: still 11.0.1 — regenerate for 15.0.0.
 - Local search ✕ uses the field's text colour (could go back to the button grey).
 - Layer pages' local searches don't draw the ✕ yet if their header isn't drawn by Bar (Now playing / Settings pages) — check.
