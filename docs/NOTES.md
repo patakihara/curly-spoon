@@ -399,9 +399,12 @@ roleProps / roleIntent and Role.parts once built. Starting point: the backdrop p
 - Decided (Sofia): the engine owns the local search's open / closed state: FrontState.find { opened, closed } with a
   mirroring FrontPolicy.find; intents openFind / closeFind; open = (scrolled and not closed) or opened or text not empty.
   The params searching / searchClosed and the morph condition leave config. Content params: a named list (ContentParam).
-- Walls (need Sofia): (2) Browse carousel entries play instead of open: an item with entries that
-  have their own action; how does config say it? (3) contracts as data for the rules (roles.js pattern: data generates
-  the TS) or hand-written TS. Also: frontHeader vs header (one free component, as Sofia said, or two).
+- Decided (Sofia): items always open a detail page; bare songs do not belong in carousels (sample data to change). An
+  item may hold entries (ItemData.entries, from data); data decides which shelves exist. The front header and the back
+  header become one free component (`header`), the front-header hire picking a variant. Contracts as data generate the
+  TS (roles.js pattern); the contract list doubles as the marker of which config types are drawn.
+- Walls (need Sofia): "shelf" instead of "presentation": which thing is renamed (the content arrangement type, or the
+  section items holding entries)?
   (a second place to look, no home for per-job looks).
 
 ## Open (current)

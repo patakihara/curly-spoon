@@ -708,6 +708,23 @@
    ]
   },
   {
+   "name": "carouselEntry",
+   "hires": "gridCard",
+   "contract": "item",
+   "clauses": [
+    {
+     "event": "press",
+     "send": "open"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "size",
+     "option": "carousel"
+    }
+   ]
+  },
+  {
    "name": "gridCard",
    "hires": "gridCard",
    "contract": "item",
@@ -901,6 +918,12 @@
    "contract": "content",
    "presentation": "related",
    "hire": "grid"
+  },
+  {
+   "contract": "item",
+   "presentation": "default",
+   "entry": true,
+   "hire": "carouselEntry"
   },
   {
    "contract": "item",

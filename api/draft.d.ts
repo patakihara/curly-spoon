@@ -131,8 +131,12 @@ export interface BackLayerChildren { header: BackHeaderContract; actions: Button
 export interface BackLayerContract extends Contract<BackLayerConfig, BackLayerValues, ToggleExpandedIntent> { children: BackLayerChildren }   // toggle only while toggleOnTap
 
 // ── Front layer
+// An item may hold entries (a shelf of items, e.g. Browse's "Artists to know"). Data decides which items and entries exist;
+// activating any of them opens it (ItemData.opens). The engine reads ItemData.id, .opens and .entries (see EntriesData).
+export interface EntriesData { entries?: ItemData[] }                   // OPEN: joins api.d.ts ItemData
 export interface ItemValues { item: ItemData; navigable: boolean }
-export interface ItemContract extends Contract<PresentationConfig, ItemValues, OpenIntent> {}   // OPEN: items that play instead of open (Browse carousels)
+export interface ItemChildren { entries: ItemContract[] }              // recursive: entries are items
+export interface ItemContract extends Contract<PresentationConfig, ItemValues, OpenIntent> { children: ItemChildren }
 export interface ContentValues { view: ContentView; presentation: PresentationKey; groups: ItemGroup[] }
 export interface ContentChildren { items: ItemContract[] }
 export interface ContentContract extends Contract<ContentConfig, ContentValues, RetryIntent> { children: ContentChildren }
@@ -217,6 +221,7 @@ export interface Placement {
   match?: ItemSelector;                  // header items: a kind or a name
   param?: ParamMatch;                    // basic actions and panel rows
   presentation?: PresentationKey;        // content items
+  entry?: boolean;                       // content items: an entry inside another item (true) or a top-level item
   env?: EnvEquals;                       // e.g. layout compact only
   hire: HireName | null;                 // null: not drawn here (e.g. the menu button on wide, where the rail has it)
 }
