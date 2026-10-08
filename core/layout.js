@@ -58,13 +58,14 @@ function regionHeights(page, look, measured) {
     panel: (B.panel || []).length ? +((measured || {}).panel || 0) : 0,
   };
 }
+const has = (B, region) => region === 'header' || (region === 'basicAction' ? !!B.basicAction : (B[region] || []).length > 0);   // the regions this back layer's config fills
 // a hidden back-layer header lifts everything below it by its height
 const headerLift = (page, H) => page.back.headerHidden ? H.header : 0;
 export function regions(page, look, measured) {
   const ex = page.back.expanded, H = regionHeights(page, look, measured), lift = headerLift(page, H), out = [];
   let top = -lift;
   for (const region of BACK_REGIONS) {
-    if (!H[region] && region !== 'header') continue;
+    if (!has(page.config.back, region)) continue;
     const panel = region === 'panel';
     out.push({ region, top, height: H[region], opacity: panel && !ex ? 0 : 1, interactive: !panel || ex });
     top += H[region];

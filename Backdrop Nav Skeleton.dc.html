@@ -179,8 +179,9 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;palette&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Grey&quot;,&quot;M2 purple&quot;],&quot;default&quot;:&quot;Grey&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;peek&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0,&quot;max&quot;:120,&quot;step&quot;:4,&quot;unit&quot;:&quot;px&quot;,&quot;default&quot;:0,&quot;tsType&quot;:&quot;number&quot;}}">
 // ═══ VIEW + MOTION layer ═══
-// Core:    core/navigation.js · core/layout.js · core/interaction.js (implement api/api.d.ts — pure)
-// Config:  app/app.json · design: design/ · fake backend: app/fake-backend.js
+// Core:    core/navigation.js · core/layout.js · core/compose.js · core/contracts.js · core/interaction.js (implement api/api.d.ts — pure)
+// Config:  app/app.json · composition: app/composition.json · design: design/ · fake backend: app/fake-backend.js
+// Draws the contract tree (core/contracts.js): each node is drawn by the free component composition hired for it.
 // This class only: dispatches intents, reads model state + queries, owns animation state.
 
 let E = 'ease';   // replaced by the design's motion.easing.standard once design/ is loaded
@@ -197,19 +198,6 @@ const G = { layout: 'compact', PW: DEVICES.phone.width, CW: DEVICES.phone.width,
 const FF = () => ({ top: 0, left: 0, w: G.CW, h: G.H, r: 0, op: 1 });
 const CF = () => ({ top: G.AH || 0, left: 0, w: G.CW, h: G.H - (G.AH || 0), r: 0, op: 1 });
 const underIndex = st => { for (let i = st.length - 1; i >= 0; i--) if (st[i].page.config.kind === 'backdrop') return i; return 0; };
-const layoutHeight = (B, L) => L.reduce((s, id) => s + B.regions[id].height, 0);
-const topIn = (B, L, id) => layoutHeight(B, L.slice(0, L.indexOf(id)));
-const staysPut = (B, id) => { const C = B.layouts.concealed, X = B.layouts.expanded; return C.slice(0, C.indexOf(id)).join('|') === X.slice(0, X.indexOf(id)).join('|'); };
-function regionInstances(B, ex) {
-  const C = B.layouts.concealed, X = B.layouts.expanded, out = {};
-  for (const id in B.regions) {
-    const inC = C.includes(id), inX = X.includes(id); out[id] = [];
-    if (inC && inX && staysPut(B, id)) { out[id].push({ top: topIn(B, C, id), op: 1, ev: 'auto' }); continue; }
-    if (inC) out[id].push({ top: topIn(B, C, id), op: ex ? 0 : 1, ev: ex ? 'none' : 'auto' });
-    if (inX) out[id].push({ top: topIn(B, X, id), op: ex ? 1 : 0, ev: ex ? 'auto' : 'none' });
-  }
-  return out;
-}
 const BACK_KEYS = ['rActions', 'actBtns', 'actH', 'bhX', 'bhTitleOp', 'panelItems', 'panelH', 'panelRef', 'rHeader', 'rBasic', 'rPanel', 'bhLeft', 'bhRight', 'bhTitle', 'bhTitlePad', 'isFilters', 'isTabs', 'isSearch', 'filters', 'tabs', 'tabInd', 'query', 'hasQuery', 'onQuery', 'clearIx', 'searchHint', 'canBack', 'basicH', 'panelRows'];
 const SHELL_ACTIONS = ['copyLink'];   // shell actions this mockup implements (§20)
 // artwork for mock content: two colours from the item id (the backend has no images)
@@ -224,12 +212,12 @@ async function loadModules() {
   // plain ES modules via blob URLs; relative imports inside them are loaded the same way and rewritten
   const blobs = {}, blobOf = url => blobs[url] || (blobs[url] = (async () => { let src = await (await fetch(url, { cache: 'no-store' })).text(); for (const m of [...src.matchAll(/(from\s*|import\s*\(\s*)(['"])(\.\.?\/[^'"]+)\2/g)]) src = src.split(m[2] + m[3] + m[2]).join(m[2] + await blobOf(new URL(m[3], url).href) + m[2]); return URL.createObjectURL(new Blob([src], { type: 'text/javascript' })); })());
   const load = async p => import(await blobOf(new URL(p, location.href).href));
-  const [M, SM, Pl, P, IX, O, DL, MO, appCfg] = await Promise.all([load('./core/navigation.js'), load('./app/fake-backend.js'), load('./core/player.js'), load('./core/layout.js'), load('./core/interaction.js'), load('./design/overrides.js'), load('./design/load.js'), load('./platforms/web/motions.js'), import(URL.createObjectURL(new Blob([await (await fetch(new URL('./app/load-app.js', location.href).href, { cache: 'no-store' })).text()], { type: 'text/javascript' }))).then(m => m.loadApp(p => fetch(new URL('./' + p, location.href).href, { cache: 'no-store' }).then(r => r.text())))]);
+  const [M, SM, Pl, P, IX, O, DL, MO, CP, K, comp, appCfg] = await Promise.all([load('./core/navigation.js'), load('./app/fake-backend.js'), load('./core/player.js'), load('./core/layout.js'), load('./core/interaction.js'), load('./design/overrides.js'), load('./design/load.js'), load('./platforms/web/motions.js'), load('./core/compose.js'), load('./core/contracts.js'), fetch(new URL('./app/composition.json', location.href).href, { cache: 'no-store' }).then(r => r.json()), import(URL.createObjectURL(new Blob([await (await fetch(new URL('./app/load-app.js', location.href).href, { cache: 'no-store' })).text()], { type: 'text/javascript' }))).then(m => m.loadApp(p => fetch(new URL('./' + p, location.href).href, { cache: 'no-store' }).then(r => r.text())))]);
   const S = { ...SM, ...SM.bind(appCfg) };
   const fileSpecs = await DL.loadDesignRaw(p => fetch(new URL('./design/' + p, location.href).href, { cache: 'no-store' }).then(r => r.text()));   // raw design; edits patch it, then extends is resolved
   let specs = DL.resolveExtends(fileSpecs);
   try { specs = DL.resolveExtends(O.applySpecs(fileSpecs, JSON.parse(localStorage.getItem(O.PATCH_KEY) || 'null'))); } catch (e) {}
-  return { M, S, Pl, P, IX, O, DL, MO, specs, fileSpecs };
+  return { M, S, Pl, P, IX, O, DL, MO, CP, K, comp, specs, fileSpecs };
 }
 
 class Component extends DCLogic {
@@ -269,9 +257,9 @@ class Component extends DCLogic {
   // the front layer's shape in screen coordinates (clip-path): where an app-bar page's clip starts / ends
   // an app-bar page's sheet in screen coordinates (page form with a sheet, 14.2): below its top row, sheet corners
   sheetShape(page) {
-    const H = page && page.config.kind === 'appBar' && page.config.header, S = (H && H.slots) || {};
-    if (!H || !((S.bottom || []).length || (S.expanded || []).length)) return null;
-    const V = this.P.resolveVisuals(this.specs, H.component, 'enabled', { surface: 'appBar' }), r = (+V.sheetRadius || 0) + 'px';
+    const H = page && page.config.kind === 'appBar' ? this.pageNode(page).children.header : null;
+    if (!H || !(this.sl(H, 'bottom').length || this.sl(H, 'expanded').length)) return null;
+    const V = this.vis(H, { surface: 'appBar' }), r = (+V.sheetRadius || 0) + 'px';
     return this.mo.clipShape(+V.topHeight || 0, r + ' ' + r, 0);
   }
   frontShape() {
@@ -309,12 +297,13 @@ class Component extends DCLogic {
   get reduced() { return !!(this.model && this.ms.prefs.reducedMotion); }
 
   async componentDidMount() {
-    const { M, S, Pl, P, IX, O, DL, MO, specs, fileSpecs } = await loadModules();
+    const { M, S, Pl, P, IX, O, DL, MO, CP, K, comp, specs, fileSpecs } = await loadModules();
+    this.CP = CP; this.K = K; this.comp = comp; 
     this.mo = MO.createMotions({ fallbackEasing: () => this.specs && this.specs.tokens['motion.easing.standard'] });
     this.M = M; this.S = S; this.P = P; this.IX = IX; this.O = O; this.DL = DL; this.specs = specs; this.fileSpecs = fileSpecs; E = specs.tokens['motion.easing.standard'] || E;
     this.dataSrc = { get: (r, p) => this.getData(r, p) };
     this.player = Pl.createPlayer();
-    this.model = M.createModel(S.config, DEVICES.phone, this.dataSrc, this.player);
+    this.model = this.newModel(DEVICES.phone);
     this.sim = { offline: false, slow: false, fail: false };
     this.loaded = new Set(); this.cache = {};
     this.tick = setInterval(() => this.playerTick(), 1000);
@@ -388,7 +377,7 @@ class Component extends DCLogic {
   }
   restart() {
     const snap = this.model.query.snapshot(this.ms, this.model.config), d = DEVICES[this.state.layout];
-    this.model = this.M.createModel(this.S.config, { width: d.width, touch: d.touch }, this.dataSrc, this.player);
+    this.model = this.newModel(d);
     this.model.dispatch({ type: 'restore', snapshot: JSON.parse(JSON.stringify(snap)) });
     this.setState({ ovRect: null, ovInset: null, backOverride: null, frontTopOverride: null, ft: null, cf: null, entry: null });
     this.cancelEntry();
@@ -412,17 +401,23 @@ class Component extends DCLogic {
     }
     if (!this.model) return;
     { const ov = this.ovScrollRef.current, ap = this.model.query.currentPage(this.ms);
-      if (ov && ap && ap.config.kind === 'appBar') { this.bindCollapse(ov, 'ov'); this.mo.restoreScroll(ov, Math.min(this.P.contentOffset(ap, this.specs), Math.max(0, ov.scrollHeight - ov.clientHeight))); } }
+      if (ov && ap && ap.config.kind === 'appBar') { this.bindCollapse(ov, 'ov'); this.mo.restoreScroll(ov, Math.min(this.P.contentOffset(ap, this.look()), Math.max(0, ov.scrollHeight - ov.clientHeight))); } }
     const el = this.scrollRef.current;
     if (!el) return;
     this.bindCollapse(el, 'front');
-    const want = Math.min(this.P.contentOffset(this.cur().ps, this.specs), Math.max(0, el.scrollHeight - el.clientHeight));   // 15.0: scroll is collapse-first; the content holds only what is past the collapse
+    const want = Math.min(this.P.contentOffset(this.cur().ps, this.look()), Math.max(0, el.scrollHeight - el.clientHeight));   // 15.0: scroll is collapse-first; the content holds only what is past the collapse
     if (this.smoothScroll) { this.smoothScroll = false; if (Math.abs(el.scrollTop - want) > 1) el.scrollTo({ top: want, behavior: this.reduced ? 'auto' : 'smooth' }); }
     else if (this.mo.restoreScroll(el, want)) this.quietScroll = true;
     this.track(el);
   }
 
   // ── model access ───────────────────────────────────────
+  // 18.0: sizes come from design through composition (a look per env); what to draw comes from the contract tree
+  newModel(d) { return this.M.createModel(this.S.config, { width: d.width, touch: d.touch }, this.dataSrc, this.player, this.P.sizes(this.CP.lookAt(this.specs, this.comp, { layout: 'wide' }))); }
+  look() { return this.CP.lookAt(this.specs, this.comp, this.lenv()); }
+  tree() { return this.K.contractTree(this.model, this.specs, this.comp, { look: this.look(), measured: this.measured, peek: this.props.peek ?? 0, data: this.dataSrc }); }
+  // a page's own node (the deck's under page, a popped page still drawn, a layer's page)
+  pageNode(page, within = [], origin) { return this.K.contractTree(this.model, this.specs, this.comp, { look: this.look(), measured: this.measured, peek: this.props.peek ?? 0, data: this.dataSrc, page, within, origin, key: origin && origin.layer ? 'layer:' + origin.layer + '.page' : 'deck:' + this.ms.activeDeck + '.page:' + page.config.id }).page; }
   get ms() { return this.model.getState(); }
   cur() {
     const s = this.ms, stack = s.decks[s.activeDeck].stack, ui = underIndex(stack);
@@ -438,12 +433,12 @@ class Component extends DCLogic {
     const S = c.layers.find(L => L.presentation.kind === 'sheet');
     G.PW = D.width; G.touch = D.touch; G.layout = q.layoutClass(s, c); G.side = g.side;
     G.RAIL = g.railWidth; G.CW = g.contentWidth; G.H = g.contentHeight; G.NAV = g.navigation;
-    G.SW = S ? S.presentation.wide.width : 0;
+    G.SW = S ? this.look().size(this.P.SHEET_LAYER, 'sideWidth') : 0;
     G.NH = +(this.P.resolveVisuals(this.specs, 'navBar', 'enabled').height || 0);
   }
-  pgeom() { return this.P.geometry(this.ms, this.model.config, this.model.query, this.specs); }
+  pgeom() { return this.P.geometry(this.ms, this.model.config, this.model.query, this.look()); }
   lenv() { return this.P.env(this.ms, this.model.config, this.model.query); }
-  frontLayerView(ps) { return this.P.frontLayer(ps, this.pgeom(), this.specs, { env: this.lenv(), measured: this.measuredFor(ps) }, this.props.peek ?? 0); }
+  frontLayerView(ps) { return this.P.frontLayer(ps, this.pgeom(), this.look(), { measured: this.measuredFor(ps) }, this.props.peek ?? 0); }
   frontTopFor(ps) { return this.frontLayerView(ps).top; }
   rectIn(el, base) { return this.mo.rectIn(el, base); }
   findItem(id) {
@@ -466,7 +461,7 @@ class Component extends DCLogic {
     const take = (dy, e) => {
       if (!this.model || !dy) return false;
       const pg = page(); if (!pg || (kind === 'ov' && pg.config.kind !== 'appBar')) return false;
-      const d = this.P.barView(pg, this.specs).distance; if (!d) return false;
+      const d = this.P.barView(pg, this.look()).distance; if (!d) return false;
       const S = +this.M.getField(pg, kind === 'front' ? 'front.scroll' : 'scroll') || 0, c = Math.min(S, d);
       let top;
       if (dy > 0 && c < d) top = Math.min(d, c + dy);
@@ -489,7 +484,7 @@ class Component extends DCLogic {
     cancelAnimationFrame(this.cfRaf); this.cfRaf = requestAnimationFrame(() => { this.lastMove = 'scroll'; this.forceUpdate(() => { if (this.lastMove === 'scroll') this.lastMove = null; }); });
   }
   // the page's scroll from a native content scroll: whatever has collapsed + the content offset
-  pageScroll(pg, el, field) { const d = this.P.barView(pg, this.specs).distance; return (d ? Math.min(+this.M.getField(pg, field) || 0, d) : 0) + el.scrollTop; }
+  pageScroll(pg, el, field) { const d = this.P.barView(pg, this.look()).distance; return (d ? Math.min(+this.M.getField(pg, field) || 0, d) : 0) + el.scrollTop; }
   track(el) {
     const top = el.scrollTop; let t = '';
     el.querySelectorAll('[data-title]').forEach(n => { if (n.offsetTop <= top + 48) t = n.getAttribute('data-title'); });
@@ -642,18 +637,14 @@ class Component extends DCLogic {
   closeLayer(id) { this.dispatch({ type: 'closeLayer', layer: id }, 'closeLayer · ' + id); }
   focus(target) { if (this.ms.focus !== target) this.dispatch({ type: 'focus', target }); }
 
-  sp(...a) { return this.model.query.slotPath(...a); }   // placement identity (api §1)
-
-  // ── §20 interactive components: props for one placed instance (state lives in the instance, keyed by id = slot path)
-  // which surface a slot path sits on (resolves the component's colour roles)
+  // ── §20 interactive components: props for one placed instance (state lives in the instance, keyed by id = node key)
+  // which surface a node sits on (resolves the component's colour roles): from its key (core/contracts.js)
   surfaceOf(id) {
-    const [surface, , slot = ''] = id.split('/'), [kind, name] = surface.split(':');
-    if (kind === 'deck') return slot.startsWith('back.') ? 'backLayer' : slot.startsWith('front.') ? 'frontLayer' : this.surfaceOfTheme(slot.startsWith('header.bottom') ? 'appbottom' : slot.startsWith('header.') ? 'appbar' : '');
-    if (kind === 'layer') { const L = this.model.config.layers.find(l => l.id === name); return L && L.presentation.kind === 'sheet' ? (G.layout === 'wide' ? 'sideSheet' : 'bottomSheet') : 'appBar'; }
-    if (kind === 'peek') return slot.startsWith('card') ? 'peekCard' : 'bottomSheet';
-    if (kind === 'nav') return slot.startsWith('rail') ? 'navRail' : 'navBar';
-    if (kind === 'overlay') { const o = this.ms.overlays.find(x => x.spec.id === name); return o && o.spec.kind === 'snackbar' ? 'snackbar' : 'dialog'; }
-    if (kind === 'gate') return 'signInPage';
+    const k = String(id);
+    if (k.startsWith('deck:') || k.startsWith('page:')) return k.includes('.back.') || k.endsWith('.back') ? 'backLayer' : k.includes('.front.') ? 'frontLayer' : k.includes('.header.bottom') ? 'frontLayer' : k.includes('.header') ? 'backLayer' : 'frontLayer';
+    if (k.startsWith('layer:')) { const L = this.model.config.layers.find(l => k.startsWith('layer:' + l.id)); if (k.includes('.peek')) return G.layout === 'wide' ? 'peekCard' : 'bottomSheet'; return L && L.presentation.kind === 'sheet' ? (G.layout === 'wide' ? 'sideSheet' : 'bottomSheet') : 'appBar'; }
+    if (k.startsWith('nav')) return G.NAV === 'navRail' ? 'navRail' : 'navBar';
+    if (k.startsWith('overlay:')) { const o = this.ms.overlays.find(x => k.startsWith('overlay:' + x.spec.id)); return o && o.spec.kind === 'snackbar' ? 'snackbar' : 'dialog'; }
     return 'appBar';
   }
   ix(id, action, run, o = {}) {
@@ -667,34 +658,38 @@ class Component extends DCLogic {
       motions: Object.fromEntries(['stateLayer', 'rotation', 'levels'].map(k => [k, this.P.motionFor(this.specs, comp, k, this.model ? this.ms.prefs : {})]))
     };
   }
-  // a bar ref (roles bar / frontHeader / appBar / peek) → its slots
-  bp(b) { const S = (b && b.slots) || {}; return { start: S.start || [], title: (S.title || [])[0] || null, end: S.end || [], expanded: S.expanded || [], fab: S.fab || [] }; }
-  // the FAB of a bar's fab slot: the first ref whose when holds (several share one place; the icon morphs between them)
-  fabFor(bar, page, surface, top) {
-    const q = this.model.query, s = this.ms, c = this.model.config, list = q.expandSlots(s, c, this.bp(bar).fab, page);
-    for (let k = 0; k < list.length; k++) { const r = q.resolveRef(s, c, list[k].ref, page, this.sp(surface, page.config.id, 'header.fab', 0), list[k].scope); if (!r.visible) continue;
-      return { show: true, top, icon: r.props.icon || '', vis: this.P.resolveVisuals(this.specs, 'fab', 'enabled', { variant: r.variant || {} }), ix: this.ix(r.key, r.action || null, e => this.runAction(r.action, e), { component: 'fab', label: r.props.label || '' }) }; }
-    return { show: false, top: 0, icon: '', vis: {}, ix: INERT };
+  // ── contract nodes (core/contracts.js): a node's slot, the action its event sends, its interactive props
+  key(...a) { return a.filter(x => x != null).join('/'); }   // a shell-made instance id (instances the tree has no node for)
+  sl(n, slot) { return (n && n.slots && n.slots[slot]) || []; }
+  actOf(n, ev = 'press', payload) { const f = n && n.events && n.events[ev], i = f ? f(payload) : null; return !i ? null : i.action ? i.action : { nav: i }; }
+  nix(n, o = {}) {
+    if (!n || !n.component) return INERT;
+    const a = o.action !== undefined ? o.action : this.actOf(n, o.event || 'press', o.payload);
+    return this.ix(n.key, a, o.run || (e => this.runAction(a, e)), { component: o.component || n.component, variant: n.variants, facts: { checked: n.values.checked }, label: o.label ?? (n.props.label || n.props.text || n.values.label || ''), surface: o.surface, page: n.page });
   }
-  barSpan(theme, page, self) {
+  vis(n, extra = {}) { return n && n.component ? this.P.resolveVisuals(this.specs, n.component, 'enabled', { variant: n.variants || {}, env: this.lenv(), ...extra }) : {}; }
+  // the FAB of a header's fab slot: its first node (several share one place; the icon morphs between them)
+  fabFor(nodes, top) {
+    const n = nodes[0]; if (!n) return { show: false, top: 0, icon: '', vis: {}, ix: INERT };
+    return { show: true, top, icon: n.props.icon || '', vis: this.vis(n), ix: this.nix(n, { component: 'fab' }) };
+  }
+  barSpan(theme, start) {
     if (theme === 'appbottom') {   // the app bar's bottom row: the field spans the row except its buttons
       const V = this.P.resolveVisuals(this.specs, 'appBar', 'enabled', {});
       const bw = this.abBtnW || 0;   // the row's buttons, measured after layout
       return G.CW - 2 * (+V.bottomRowPadX || 0) - (bw ? bw + (+V.bottomRowGap || 0) : 0) - 2 * (+this.P.resolveVisuals(this.specs, 'localSearch', 'enabled', {}).padX || 0);
     }
-    const q = this.model.query, cfg = this.model.config, bar = theme === 'front' ? page.config.front.header : theme === 'back' ? page.config.back.regions.header.bar : page.config.header;
-    const B = this.bp(bar), RVc = (id, variant) => this.P.resolveVisuals(this.specs, id, 'enabled', { variant: variant || {} }), vis = r => !r.when || q.condition(this.ms, cfg, r.when, page);
+    const RVc = (id, variant) => this.P.resolveVisuals(this.specs, id, 'enabled', { variant: variant || {} });
     const inset = +RVc(theme === 'front' ? 'frontHeader' : theme === 'back' ? 'header' : 'appBar').spanInset || 0;
-    const others = [...B.start].filter(r => r && !r.repeat && r.component !== 'morph' && r.component !== 'localSearch' && vis(r)).reduce((w, r) => { const V = RVc(r.component, r.variant); return w + (+(V.slotWidth ?? V.size) || 0); }, 0);
+    const others = (start || []).filter(n => n.contract !== 'find').reduce((w, n) => { const V = this.vis(n); return w + (+(V.slotWidth ?? V.size) || 0); }, 0);
     return G.CW - inset - others;
   }
-  // FAB inset from the end edge: centred under the bar's last visible end item
-  fabEnd(list, page, pad) {
-    const q = this.model.query, refs = q.expandSlots(this.ms, this.model.config, list || [], page).map(x => x.ref).filter(r => !r.when || q.condition(this.ms, this.model.config, r.when, page)), r = refs[refs.length - 1];
-    if (!r) return pad;
+  // FAB inset from the end edge: centred under the bar's last end item
+  fabEnd(nodes, pad) {
+    const r = nodes[nodes.length - 1]; if (!r) return pad;
     const RVc = (id, variant) => this.P.resolveVisuals(this.specs, id, 'enabled', { variant: variant || {} }), fab = +RVc('fab', { size: 'md' }).size || 0;
-    if (r.component === 'morph' || r.component === 'localSearch') { const fr = ((r.slots || {}).from || [])[0], b = fr ? +RVc(fr.component, fr.variant).size || 0 : fab; return pad + (+RVc('localSearch').padX || 0) + (b - fab) / 2; }   // the closed morph: its button inside the field's padding
-    return pad + ((+RVc(r.component, r.variant).size || fab) - fab) / 2;
+    if (r.contract === 'find') { const fr = this.sl(r, 'from')[0], b = fr ? +this.vis(fr).size || 0 : fab; return pad + (+RVc('localSearch').padX || 0) + (b - fab) / 2; }   // the closed morph: its button inside the field's padding
+    return pad + ((+this.vis(r).size || fab) - fab) / 2;
   }
   // ── header items ───────────────────────────────────────
   // the sheet's peek shows what is playing (shell: the player state isn't reachable from config refs)
@@ -710,39 +705,34 @@ class Component extends DCLogic {
   // the surface a header row's items sit on (design providers give their colours): the app bar page form's top row is on
   // back-layer colours, its bottom row on the front-layer-coloured sheet (14.2)
   surfaceOfTheme(theme) { return theme === 'back' || theme === 'appbar' ? 'backLayer' : theme === 'front' || theme === 'appbottom' ? 'frontLayer' : 'appBar'; }
-  hItems(list, theme, page, side) {
-    const q = this.model.query, s = this.ms, c = this.model.config, dur = this.dur;
+  hItems(nodes, theme, page, start = []) {   // start: the bar's start slot (a spanning find field leaves room for it)
+    const dur = this.dur;
     const KIND = { logo: 'isLogo', iconButton: 'isButton', viewSwitch: 'isButton', caret: 'isButton', symbol: 'isIcon', label: 'isText', localSearch: 'isFind', morph: 'isFind' };
-    return q.expandSlots(s, c, list || [], page).map(({ ref, scope }, idx) => {
-      const path = this.sp(page ? 'deck:' + s.activeDeck : 'peek', page ? page.config.id : null, (theme === 'back' ? 'back.header.' : theme === 'front' ? 'front.header.' : 'header.') + side, idx);   // appbottom: header.bottom
-      const r = q.resolveRef(s, c, ref, page, path, scope);
-      const v = { isLogo: false, isButton: false, isIcon: false, isText: false, dur, icon: r.props.icon || '', text: r.props.text || '',
-        ...(() => { const RV = this.P.resolveVisuals(this.specs, r.component, 'enabled', { variant: r.variant || {} }), off = +(RV.offsetStart || 0); return { maxW: +RV.slotMaxWidth || 0, ...(off ? { pos: 'absolute', absX: off + 'px', absY: (+RV.offsetTop || 0) + 'px' } : { pos: 'relative', absX: 'auto', absY: 'auto' }) }; })() };
-      if (KIND[r.component]) v[KIND[r.component]] = true;
-      v.vis = this.P.resolveVisuals(this.specs, r.component, 'enabled', { surface: this.surfaceOfTheme(theme), variant: r.variant || {}, env: this.lenv() });
-      v.isFind = r.component === 'localSearch' || r.component === 'morph';
-      if (v.isFind && page) {   // morph (config): 'from' (an icon) until morphed, then 'to' (the field) spanning the bar except its caret
-        const M = r.component === 'morph', fr = M ? (r.slots.from || [])[0] : null, to = M ? (r.slots.to || [])[0] || r : r, bind = to.bind;
-        const val = String(q.roleProps(s, c, { role: 'input', page, bind }).value || ''), fv = this.P.resolveVisuals(this.specs, 'localSearch', 'enabled', { env: this.lenv() });
-        const open = M ? !!r.props.morphed : !!val, span = M && ['header', 'row'].includes((r.variant || {}).span);
-        const mo = this.P.motionFor(this.specs, 'morph', 'morphed', this.ms.prefs), mms = mo.kind === 'instant' ? 0 : mo.ms || 0, split = mo.fadeSplit;
-        const bs = +this.P.resolveVisuals(this.specs, fr ? fr.component : 'iconButton', 'enabled', { variant: (fr && fr.variant) || {} }).size || 0;
-        const fw = span ? Math.max(+fv.minWidth || 0, this.barSpan(theme, page, r)) : +fv.width || 0;
-        v.find = { bs, vis: fv, mo, light: theme === 'back' ? undefined : '1', span, open, closed: !open, value: val, hint: to.props.placeholder || '', w: open ? fw : 0,
-          onInput: e => { const i = q.roleIntent(this.ms, this.model.config, { role: 'input', page, bind }, 'change', e.target.value); if (i) this.dispatch(i, 'find · ' + e.target.value); },
-          onOpen: e => { if (!open && fr) this.runAction(fr.action); const inp = e.currentTarget.querySelector('input'); if (inp) setTimeout(() => inp.focus(), mms); }, clearIx: INERT,
-          ...(() => { const E = ((to.slots || {}).end || [])[0]; if (!E || !open) return { hasEnd: false, endIx: INERT, endIcon: '' };   // the field's end slot (config): e.g. ✕ clears and closes it
-            const er = q.resolveRef(this.ms, this.model.config, E, page, this.sp('deck:' + this.ms.activeDeck, page.config.id, 'find.end', idx));
-            return { hasEnd: er.visible, endIcon: er.props.icon || '', endIx: this.ix(er.key, er.action || null, ev => { ev && ev.stopPropagation && ev.stopPropagation(); this.runAction(er.action, ev); }, { component: er.component, variant: er.variant, label: er.props.label || '', surface: 'localSearch' }) }; })() };   // on the field itself (design: localSearch provides its text colour)
-        v.maxW = (v.find.open ? v.find.w : v.find.bs) + 2 * (+v.find.vis.padX || 0) + (+fv.slotPad || 0); v.isControl = false;
+    return (nodes || []).map(n => {
+      const v = { isLogo: false, isButton: false, isIcon: false, isText: false, dur, icon: n.props.icon || '', text: n.props.text || '',
+        ...(() => { const RV = this.vis(n), off = +(RV.offsetStart || 0); return { maxW: +RV.slotMaxWidth || 0, ...(off ? { pos: 'absolute', absX: off + 'px', absY: (+RV.offsetTop || 0) + 'px' } : { pos: 'relative', absX: 'auto', absY: 'auto' }) }; })() };
+      if (KIND[n.component]) v[KIND[n.component]] = true;
+      v.vis = this.vis(n, { surface: this.surfaceOfTheme(theme) });
+      v.isFind = n.contract === 'find';
+      if (v.isFind && page) {   // morph (composition): 'from' (an icon) until open, then 'to' (the field) spanning the bar except its caret
+        const M = n.component === 'morph', fr = M ? this.sl(n, 'from')[0] : null, to = M ? this.sl(n, 'to')[0] || n : n;
+        const val = n.values.value, fv = this.P.resolveVisuals(this.specs, 'localSearch', 'enabled', { env: this.lenv() });
+        const open = n.values.open, span = M && ['header', 'row'].includes(n.variants.span);
+        const mo = this.P.motionFor(this.specs, 'morph', 'morphed', this.ms.prefs), mms = mo.kind === 'instant' ? 0 : mo.ms || 0;
+        const bs = fr ? +this.vis(fr).size || 0 : +this.P.resolveVisuals(this.specs, 'iconButton', 'enabled', {}).size || 0;
+        const fw = span ? Math.max(+fv.minWidth || 0, this.barSpan(theme, start)) : +fv.width || 0;
+        v.find = { bs, vis: fv, mo, light: theme === 'back' ? undefined : '1', span, open, closed: !open, value: val, hint: n.values.placeholder || '', w: open ? fw : 0,
+          onInput: e => { const a = this.actOf(to, 'change', e.target.value); if (a && a.nav) this.dispatch(a.nav, 'find · ' + e.target.value); },
+          onOpen: e => { if (!open && fr) this.runAction(this.actOf(fr)); const inp = e.currentTarget.querySelector('input'); if (inp) setTimeout(() => inp.focus(), mms); }, clearIx: INERT,
+          ...(() => { const E = this.sl(to, 'end')[0]; if (!E || !open) return { hasEnd: false, endIx: INERT, endIcon: '' };   // the field's end slot: ✕ clears and closes it
+            const a = this.actOf(E);
+            return { hasEnd: true, endIcon: E.props.icon || '', endIx: this.nix(E, { action: a, run: ev => { ev && ev.stopPropagation && ev.stopPropagation(); this.runAction(a, ev); }, surface: 'localSearch' }) }; })() };   // on the field itself (design: localSearch provides its text colour)
+        v.maxW = (v.find.open ? v.find.w : v.find.bs) + 2 * (+v.find.vis.padX || 0) + (+fv.slotPad || 0);
       } else v.find = {};
       v.isControl = v.isLogo || v.isButton;
-      const interactive = ((this.specs.components[r.component] || {}).implements || []).includes('interactive');
-      // a bound control (role input): its action is the role's change — a switch steps to the next option
-      let act = r.action ?? null;
-      if (r.bind && page) { const sl = { role: 'input', page, bind: r.bind }, rp = q.roleProps(s, c, sl), o = rp.options.map(x => x.value), nx = o[(o.indexOf(rp.value) + 1) % Math.max(1, o.length)], i = o.length ? q.roleIntent(s, c, sl, 'change', nx) : null; act = i ? { nav: i } : null; }
-      v.ix = interactive ? this.ix(r.key, act, e => this.runAction(act, e), { variant: r.variant, facts: { checked: r.checked }, page, component: r.component, label: r.props.label || '' }) : INERT;
-      return { ...v, maxW: r.visible ? v.maxW : 0, op: r.visible ? 1 : 0, ev: r.visible ? 'auto' : 'none' };
+      const interactive = ((this.specs.components[n.component] || {}).implements || []).includes('interactive');
+      v.ix = interactive ? this.nix(n, { surface: this.surfaceOfTheme(theme) }) : INERT;
+      return { ...v, op: 1, ev: 'auto' };
     });
   }
   // config actions → the motion-aware paths (anything else dispatches as is)
@@ -761,7 +751,7 @@ class Component extends DCLogic {
       const u = location.origin + this.model.query.url(this.ms, this.model.config);
       try { navigator.clipboard && navigator.clipboard.writeText(u); } catch (x) {}
       this.closeMenu();
-      return this.dispatch({ type: 'openOverlay', overlay: { id: 'toast', kind: 'snackbar', component: 'snackbar', blocking: false, timeoutMs: 3000, props: { text: { text: 'menu.copied' } } } }, 'shell · copyLink');
+      return this.dispatch({ type: 'openOverlay', overlay: { id: 'toast', kind: 'snackbar', texts: { text: { text: 'menu.copied' } }, blocking: false, timeoutMs: 3000 } }, 'shell · copyLink');
     }
     const i = a.nav; if (!i) return;
     if (i.type === 'up' && !i.target && !(this.ms.layers[this.ms.focus] && this.ms.layers[this.ms.focus].open)) return this.up();
@@ -773,10 +763,16 @@ class Component extends DCLogic {
     this.dispatch(i, i.type);
   }
   closeMenu() { if (this.ms.overlays.some(o => o.spec.kind === 'menu')) this.dispatch({ type: 'closeOverlay', id: this.ms.overlays.find(o => o.spec.kind === 'menu').spec.id }, 'menu · close'); }
-  titleText(ref, page) {
-    if (!ref) return '';
-    if (ref.component === 'trackedTitle') return this.state.gKey === page.config.id ? this.state.gTitle : '';
-    return this.model.query.resolveRef(this.ms, this.model.config, ref, page).props.text || '';
+  titleText(nodes, page) {
+    const n = (nodes || [])[0]; if (!n) return '';
+    if (n.component === 'trackedTitle') return this.state.gKey === page.config.id ? this.state.gTitle : '';
+    return n.props.text || n.values.title || '';
+  }
+  // the free component composition hires for a content node's items (also while none are loaded: placeholders)
+  itemComponent(CN) {
+    const n = CN.children.items[0]; if (n) return n.component;
+    const h = this.CP.placementFor(this.comp, { contract: 'item', page: CN.at.page, within: ['content', ...CN.at.within], presentation: CN.values.presentation, env: this.lenv() });
+    const H = h && this.CP.hireOf(this.comp, h); return H ? H.hires : null;
   }
   ctxFor(ps, isBase) {
     const F = ps.config.front, q = this.model.query;
@@ -785,83 +781,80 @@ class Component extends DCLogic {
     return { isBase, ex: ps.back.expanded, items, content };
   }
 
-  // chips for a bound choice / choices param: one selected (setParams) or each toggling (toggleParam)
-  chipsFor(ps, bind, path) {
-    const q = this.model.query, s = this.ms, cfg = this.model.config, name = typeof bind === 'string' ? bind : bind.change, P = (ps.config.params || {})[name] || {};
-    const slot = { role: 'input', page: ps, bind }, rp = q.roleProps(s, cfg, slot), val = rp.value;
-    return (rp.options || []).map(o => {
-      const many = P.type === 'choices', on = many ? Array.isArray(val) && val.includes(o.value) : val === o.value;
-      const i = many ? { type: 'toggleParam', name, option: o.value, page: ps.config.id } : q.roleIntent(s, cfg, slot, 'change', o.value);
-      return { label: o.label, on, ix: this.ix(path(undefined, o.value), i && { nav: i }, () => this.paramChange(ps, i, 'params · ' + name + ' ' + o.value), { component: 'chip', label: o.label }) };
+  // chips for an input node bound to a choice / choices param: one selected (setParams) or each toggling (toggleParam)
+  chipsFor(ps, n) {
+    if (!n) return [];
+    const name = n.at.param && n.at.param.name, many = n.at.param && n.at.param.type === 'choices', val = n.values.value;
+    return (n.values.options || []).map(o => {
+      const on = many ? Array.isArray(val) && val.includes(o.value) : val === o.value;
+      const i = many ? { type: 'toggleParam', name, option: o.value, page: ps.config.id } : (this.actOf(n, 'change', o.value) || {}).nav;
+      return { label: o.label, on, ix: this.ix(n.key + '/' + o.value, i && { nav: i }, () => this.paramChange(ps, i, 'params · ' + name + ' ' + o.value), { component: 'chip', label: o.label }) };
     });
   }
   // ── view values ────────────────────────────────────────
   backVals(ps, isBase) {
-    const c = ps.config, B = c.back, ctx = this.ctxFor(ps, isBase);
-    const RI = {}; this.P.regions(ps, this.measuredFor(ps)).forEach(r => { (RI[r.region] = RI[r.region] || []).push({ top: r.top, op: r.opacity, ev: r.interactive ? 'auto' : 'none' }); });
-    const BH = this.bp(B.regions.header.bar);
-    const bhLeft = this.hItems(BH.start, 'back', ps, 'left');
-    // basic action = the control bound in the basicAction region (role input): the core supplies value + options and maps change to setParams
-    const q = this.model.query, s = this.ms, cfg = this.model.config;
-    const ctl = ((B.regions.basicAction && B.regions.basicAction.content) || []).find(r => r && r.bind) || {};
-    const baComp = ctl.component, bind = ctl.bind, name = typeof bind === 'string' ? bind : bind && bind.change, PS = (c.params || {})[name] || {};
-    const slot = { role: 'input', page: ps, bind }, rp = q.roleProps(s, cfg, slot), opts = rp.options || [], val = rp.value, ri = (ev, p) => q.roleIntent(s, cfg, slot, ev, p);
-    const setP = intent => this.paramChange(ps, intent, 'params · ' + name);
-    const path = (k, id) => this.sp('deck:' + s.activeDeck, c.id, 'back.basicAction', k, id), iClr = ri('change', '');
+    const c = ps.config, look = this.look(), page = this.pageNode(ps), back = page.children.back, H = back.children.header;
+    const RI = {}; back.values.regions.forEach(r => { (RI[r.region] = RI[r.region] || []).push({ top: r.top, op: r.opacity, ev: r.interactive ? 'auto' : 'none' }); });
+    const RH = Object.fromEntries(back.values.regions.map(r => [r.region, r.height]));
+    const bhLeft = this.hItems(this.sl(H, 'start'), 'back', ps);
+    // basic action: the input node in the basicAction region — core supplies value + options and maps change / submit to setParams
+    const ctl = back.children.basicAction || null, baComp = ctl ? ctl.component : null, name = ctl && ctl.at.param ? ctl.at.param.name : null;
+    const opts = ctl ? ctl.values.options || [] : [], val = ctl ? ctl.values.value : null, ri = (ev, p) => (ctl && this.actOf(ctl, ev, p) || {}).nav || null;
+    const setP = intent => this.paramChange(ps, intent, 'params · ' + (name || (ctl && ctl.config.bind && ctl.config.bind.change)));
+    const iClr = ri('change', '');
     const sel = Math.max(0, opts.findIndex(o => o.value === val));
     const BV = id => this.P.resolveVisuals(this.specs, id, 'enabled', { surface: 'backLayer' });   // design visuals of back-layer controls
     return {
       rHeader: RI.header || [], rBasic: RI.basicAction || [], rPanel: RI.panel || [], rActions: RI.actions || [],
-      // a plain slots region of buttons (config: e.g. the artist page's play buttons below its details)
-      ...(() => { const R = B.regions.actions; if (!R || R.kind !== 'slots') return { actBtns: [], actH: 0 };
-        const btns = q.expandSlots(s, cfg, R.content, ps).map(({ ref, scope }, k) => q.resolveRef(s, cfg, ref, ps, this.sp('deck:' + s.activeDeck, c.id, 'back.actions', k), scope)).filter(r => r.visible);
-        return { actH: R.height === 'content' ? 0 : R.height, actBtns: btns.map(r => ({ text: r.props.text || '', icon: r.props.icon || '', ix: this.ix(r.key, r.action || null, e => this.runAction(r.action, e), { component: r.component, variant: r.variant, label: r.props.text || '' }) })) }; })(),
-      bhLeft, bhRight: this.hItems(BH.end, 'back', ps, 'right'), bhTitle: this.titleText(BH.title, ps),
-      ...(() => {   // the bar's expanded slot (detail info), shrinking with barView progress (core layout)
-        const X = BH.expanded[0], bv = this.P.barView(ps, this.specs), hr = B.regions.header;
-        if (!X || !hr.expandedHeight) return { bhX: { show: false, vis: {}, fg: 'inherit', h: 0, op: 0, sc: 1, art: 0, rad: '0', img: 'none', title: '', sub: '', meta: '' }, bhTitleOp: 1 };
-        const r = q.resolveRef(s, cfg, X, ps), p = bv.progress, DV = this.P.resolveVisuals(this.specs, 'detailHeader', 'enabled', { surface: 'backLayer', variant: r.variant || {} }), HV = this.P.resolveVisuals(this.specs, 'header', 'enabled', { surface: 'backLayer' }), from = +HV.titleFadeFrom || 0;
-        return { bhX: { show: true, vis: DV, fg: this.P.resolveValue(this.specs, 'backLayer', { role: 'content' }, { surface: 'backLayer' }), h: Math.max(0, bv.height - hr.height), op: Math.max(0, 1 - p * (+HV.detailFade || 1)), sc: 1 - (+HV.detailShrink || 0) * p, art: +DV.artSize || 0, rad: (+DV.artRadius || 0) + 'px', img: artCss(r.props.image), title: r.props.title || '', sub: r.props.subtitle || '', meta: r.props.meta || '' }, bhTitleOp: Math.min(1, Math.max(0, (p - from) / (1 - from || 1))) };
+      // the actions region's buttons (config back.actions: e.g. the artist page's play buttons below its details)
+      actH: RH.actions || 0, actBtns: back.children.actions.map(n => ({ text: n.props.text || '', icon: n.props.icon || '', ix: this.nix(n, { surface: 'backLayer' }) })),
+      bhLeft, bhRight: this.hItems(this.sl(H, 'end'), 'back', ps, this.sl(H, 'start')), bhTitle: this.titleText(this.sl(H, 'title'), ps),
+      ...(() => {   // the header's expanded slot (detail info), shrinking with barView progress (core layout)
+        const X = this.sl(H, 'expanded')[0], bv = this.P.barView(ps, look), base = bv.height - bv.distance * (1 - bv.progress);
+        if (!X || !bv.distance) return { bhX: { show: false, vis: {}, fg: 'inherit', h: 0, op: 0, sc: 1, art: 0, rad: '0', img: 'none', title: '', sub: '', meta: '' }, bhTitleOp: 1 };
+        const p = bv.progress, DV = this.vis(X, { surface: 'backLayer' }), HV = this.vis(H, { surface: 'backLayer' }), from = +HV.titleFadeFrom || 0;
+        return { bhX: { show: true, vis: DV, fg: this.P.resolveValue(this.specs, 'backLayer', { role: 'content' }, { surface: 'backLayer' }), h: Math.max(0, bv.height - base), op: Math.max(0, 1 - p * (+HV.detailFade || 1)), sc: 1 - (+HV.detailShrink || 0) * p, art: +DV.artSize || 0, rad: (+DV.artRadius || 0) + 'px', img: artCss(X.props.image), title: X.props.title || '', sub: X.props.subtitle || '', meta: X.props.meta || '' }, bhTitleOp: Math.min(1, Math.max(0, (p - from) / (1 - from || 1))) };
       })(),
       isFilters: baComp === 'filterChips' || baComp === 'choiceChips', isTabs: baComp === 'tabBar', isSearch: baComp === 'searchField',
-      filters: this.chipsFor(ps, bind, path),
-      tabs: opts.map((o, k) => { const i = ri('change', o.value); return { label: o.label, ix: this.ix(path(k), i && { nav: i }, () => setP(i), { component: 'tab', label: o.label }) }; }),
+      filters: this.chipsFor(ps, ctl),
+      tabs: opts.map((o, k) => { const i = ri('change', o.value); return { label: o.label, ix: this.ix((ctl ? ctl.key : 'tabs') + '/' + k, i && { nav: i }, () => setP(i), { component: 'tab', label: o.label }) }; }),
       tabSel: sel, tabMo: (() => { const d = this.P.motionFor(this.specs, 'tabBar', 'indicator', this.ms.prefs); return { ms: this.msOf(d), ease: this.easeOf(d) }; })(),
       fcVis: BV(baComp === 'choiceChips' ? 'choiceChips' : 'filterChips'), tbVis: BV('tabBar'), sfVis: BV('searchField'),
       query: typeof val === 'string' && baComp === 'searchField' ? val : '', hasQuery: baComp === 'searchField' && !!val,
       onQuery: e => { const i = ri('change', e.target.value); if (i) setP(i); },
       onQueryKey: e => { if (e.key !== 'Enter') return; const i = ri('submit', e.target.value); if (i) setP(i); },
-      clearIx: this.ix(this.sp('deck:' + s.activeDeck, c.id, 'back.basicAction.clear'), iClr && { nav: iClr }, () => setP(iClr), { component: 'iconButton', variant: { size: 'xs' }, label: this.model.query.text(this.ms, this.model.config, 'search.clear') }),
-      searchHint: ctl.component ? (q.resolveRef(s, cfg, ctl, ps).props.placeholder || '') : '',
-      canBack: !isBase, basicH: B.regions.basicAction.height, panelRef: this.panelRef,
-      panelH: B.regions.panel && B.regions.panel.height !== 'content' ? B.regions.panel.height + 'px' : 'auto',
-      // panel slots: text rows, bound chip groups (choice / choices) and suggestion rows (repeats)
-      panelItems: q.expandSlots(s, cfg, (B.regions.panel && B.regions.panel.content) || [], ps).map((x, k) => ({ x, r: q.resolveRef(s, cfg, x.ref, ps, this.sp('deck:' + s.activeDeck, c.id, 'back.panel', k), x.scope), k })).filter(({ r }) => r.visible).map(({ r, k }) => {
-        if (r.bind && (r.component === 'filterChips' || r.component === 'choiceChips')) return { isText: false, isChips: true, isSuggest: false, chips: this.chipsFor(ps, r.bind, (i, id) => this.sp('deck:' + s.activeDeck, c.id, 'back.panel.' + k, i, id)), vis: BV(r.component), ix: INERT };
-        if (r.bind && r.component === 'dropdown') { const sl = { role: 'input', page: ps, bind: r.bind }, rp2 = q.roleProps(s, cfg, sl);
-          return { isText: false, isChips: false, isSuggest: false, isDropdown: true, text: r.props.label || '', options: (rp2.options || []).map(o => ({ value: o.value, label: o.label, on: o.value === rp2.value })), onPick: e => { const i = q.roleIntent(s, cfg, sl, 'change', e.target.value); if (i) this.paramChange(ps, i, 'params · ' + r.bind); }, vis: BV('dropdown'), chips: [], ix: INERT }; }
-        if (r.bind && r.component === 'rangeField') { const sl = { role: 'input', page: ps, bind: r.bind }, v0 = q.roleProps(s, cfg, sl).value || [0, 0], PS = (c.params || {})[r.bind] || {};
-          const put = (k, x) => { const nv = v0.slice(); nv[k] = Math.max(PS.min ?? -Infinity, Math.min(PS.max ?? Infinity, +x)); if (nv[0] > nv[1]) nv[1 - k] = nv[k]; const i = q.roleIntent(s, cfg, sl, 'change', nv); if (i) this.paramChange(ps, i, 'params · ' + r.bind); };
-          return { isText: false, isChips: false, isSuggest: false, isRange: true, from: v0[0], to: v0[1], min: PS.min, max: PS.max, fromLabel: r.props.fromLabel || '', toLabel: r.props.toLabel || '', onFrom: e => put(0, e.target.value), onTo: e => put(1, e.target.value), vis: BV('rangeField'), chips: [], ix: INERT }; }
-        if (r.component === 'suggestionRow') return { isText: false, isChips: false, isSuggest: true, text: r.props.text || '', vis: BV('suggestionRow'), ix: this.ix(r.key, r.action || null, e => this.runAction(r.action, e), { component: 'suggestionRow', label: r.props.text || '' }), chips: [] };
+      clearIx: this.ix((ctl ? ctl.key : 'basic') + '/clear', iClr && { nav: iClr }, () => setP(iClr), { component: 'iconButton', variant: { size: 'xs' }, label: this.model.query.text(this.ms, this.model.config, 'search.clear') }),
+      searchHint: ctl ? ctl.values.placeholder || '' : '',
+      canBack: !isBase, basicH: RH.basicAction || 0, panelRef: this.panelRef,
+      panelH: 'auto',
+      // panel rows: a param row (its label, then its control) or a suggestions row (its label, then each suggestion)
+      panelItems: back.children.panel.flatMap(row => {
         const PV = this.P.resolveVisuals(this.specs, 'panelRow', 'enabled', {});   // design: panelRow visuals
-        return { isText: true, isChips: false, isSuggest: false, text: r.props.text || '', vis: PV, chips: [], ix: INERT };
+        const label = row.values.label ? [{ isText: true, isChips: false, isSuggest: false, text: row.values.label, vis: PV, chips: [], ix: INERT }] : [];
+        if (row.contract === 'suggestions') return [...label, ...row.children.items.map(n => ({ isText: false, isChips: false, isSuggest: true, text: n.values.text, vis: BV('suggestionRow'), ix: this.nix(n, { run: () => { const a = this.actOf(n); if (a) this.paramChange(ps, a.nav, 'suggestion · ' + n.values.text); }, label: n.values.text }), chips: [] }))];
+        const r = row.children.control, comp = r.component;
+        if (comp === 'filterChips' || comp === 'choiceChips') return [...label, { isText: false, isChips: true, isSuggest: false, chips: this.chipsFor(ps, r), vis: BV(comp), ix: INERT }];
+        if (comp === 'dropdown') return [{ isText: false, isChips: false, isSuggest: false, isDropdown: true, text: row.values.label || '', options: (r.values.options || []).map(o => ({ value: o.value, label: o.label, on: o.value === r.values.value })), onPick: e => { const a = this.actOf(r, 'change', e.target.value); if (a) this.paramChange(ps, a.nav, 'params · ' + r.at.param.name); }, vis: BV('dropdown'), chips: [], ix: INERT }];
+        if (comp === 'rangeField') { const v0 = r.values.value || [0, 0];
+          const put = (k, x) => { const nv = v0.slice(); nv[k] = Math.max(r.values.min ?? -Infinity, Math.min(r.values.max ?? Infinity, +x)); if (nv[0] > nv[1]) nv[1 - k] = nv[k]; const a = this.actOf(r, 'change', nv); if (a) this.paramChange(ps, a.nav, 'params · ' + r.at.param.name); };
+          return [...label, { isText: false, isChips: false, isSuggest: false, isRange: true, from: v0[0], to: v0[1], min: r.values.min, max: r.values.max, fromLabel: r.props.fromLabel || '', toLabel: r.props.toLabel || '', onFrom: e => put(0, e.target.value), onTo: e => put(1, e.target.value), vis: BV('rangeField'), chips: [], ix: INERT }]; }
+        return label;
       })
     };
   }
   frontVals(ps, isBase) {
-    const c = ps.config, F = c.front, FH = this.bp(F.header), ctx = this.ctxFor(ps, isBase), items = ctx.items;
+    const c = ps.config, F = c.front, ctx = this.ctxFor(ps, isBase), items = ctx.items;
     const q = this.model.query, s = this.ms, cfg = this.model.config;
-    // presentation (core) → this shell's drawing per layout component; grid columns from the design's gridLayout visuals
-    const pres = q.presentation(ps), layout = pres.layout.component, itemComp = pres.item.component;
+    const front = this.pageNode(ps).children.front, FHN = front.children.header, CN = front.children.content;
+    // content node (core) → this shell's drawing per layout component (composition's hire); grid columns from the design's gridLayout visuals
+    const pres = q.presentation(ps), layout = CN.component, itemComp = this.itemComponent(CN);
     const generic = layout === 'scrollerLayout', full = F.collapse === 'full', fullC = ctx.ex && full;
-    // each item: the presentation's item ref with '$item' in scope; opens → open intent, else the ref's action (e.g. play)
-    const itemView = it => { const r = q.resolveRef(s, cfg, pres.item, ps, undefined, { item: it }), i = q.roleIntent(s, cfg, { role: 'item', page: ps, item: it }, 'open'), act = i ? { nav: i } : (r.action || null);
-      return { id: it.id, label: r.props.title || '', sub: r.props.subtitle || '', art: artCss(r.props.image), entries: (pres.item.slots && pres.item.slots.entries ? q.expandSlots(s, cfg, pres.item.slots.entries, ps, { item: it }) : []).map(x => {   // items inside a repeat open their element
-        const el = x.scope && Object.values(x.scope).find(v => v && typeof v === 'object' && v.id && v !== it) || {}, er = q.resolveRef(s, cfg, x.ref, ps, undefined, x.scope), oi = q.roleIntent(s, cfg, { role: 'item', page: ps, item: el }, 'open'), ea = oi ? { nav: oi } : (er.action || null);
-        return { id: el.id, title: er.props.title || el.id, art: artCss(er.props.image), shape: er.props.shape || '',
-          ix: this.ix(this.sp('deck:' + s.activeDeck, c.id, 'front.item.entry', undefined, it.id + '/' + el.id), ea, e2 => { if (ctx.ex) return; oi ? this.openItem(el, e2) : this.runAction(ea, e2); }, { component: 'gridCard', label: er.props.title || el.id }) }; }),
-      shape: r.props.shape || '', ix: this.ix(this.sp('deck:' + s.activeDeck, c.id, 'front.item', undefined, it.id), act, e => { if (ctx.ex) return; i ? this.openItem(it, e) : this.runAction(act, e); }, { component: itemComp, variant: pres.item.variant, label: r.props.title || it.id }) }; };
+    // each item node: opens → open (with motion), else its action (e.g. play); a shelf's entries the same
+    const press = n => e => { if (ctx.ex) return; const a = this.actOf(n); if (a && a.nav && a.nav.type === 'open') return this.openItem(a.nav.item, e); this.runAction(a, e); };
+    const byId = new Map(CN.children.items.map(n => [n.config.item.id, n]));
+    const itemView = it => { const n = byId.get(it.id); if (!n) return { id: it.id, label: '', sub: '', art: 'transparent', entries: [], shape: '', ix: INERT };
+      return { id: it.id, label: n.props.title || '', sub: n.props.subtitle || '', art: artCss(n.props.image), entries: this.sl(n, 'entries').map(e => ({ id: e.config.item.id, title: e.props.title || e.config.item.id, art: artCss(e.props.image), shape: e.props.shape || '', ix: this.nix(e, { run: press(e), component: 'gridCard' }) })),
+      shape: n.props.shape || '', ix: this.nix(n, { run: press(n) }) }; };
     const typeIcon = it => (this.tplOf(it) || {}).kind === 'appBar' ? 'open_in_full' : 'layers';
     const kindOf = it => { const T = this.tplOf(it); return !T ? '' : T.kind === 'appBar' ? 'app bar page' : 'in-backdrop · ' + it.opens.template; };
     const gOn = this.state.gScrolled && this.state.gKey === c.id;
@@ -884,18 +877,18 @@ class Component extends DCLogic {
       placeholders: Array.from({ length: view.placeholders || 0 }, (_, k) => ({ w: [70, 55, 80, 60, 75][k % 5] }))
     };
     return {
-      cv, retryText: t('common.retry'), retryIx: this.ix(this.sp('deck:' + s.activeDeck, c.id, 'front.content.retry'), { nav: { type: 'retry' } }, () => this.dispatch({ type: 'retry' }, 'retry'), { component: 'button', variant: { emphasis: 'outlined' }, label: t('common.retry') }),
+      cv, retryText: t('common.retry'), retryIx: this.ix(this.key('deck:' + s.activeDeck, c.id, 'front.content.retry'), { nav: { type: 'retry' } }, () => this.dispatch({ type: 'retry' }, 'retry'), { component: 'button', variant: { emphasis: 'outlined' }, label: t('common.retry') }),
       frontTR: fl.visual.cornerTR ?? 0, frontTL: fl.visual.cornerTL ?? 0,
       frontTop: this.state.frontTopOverride ?? this.frontTopFor(ps),
-      subIx: this.ix(this.sp('deck:' + s.activeDeck, c.id, 'front.header'), { nav: { type: 'setExpanded', expanded: !ctx.ex } }, () => this.setExpanded(!ctx.ex, 'header'), { component: 'listItem', label: ctx.ex ? 'Conceal back layer' : 'Reveal back layer' }),
+      subIx: this.ix(FHN.key, { nav: { type: 'setExpanded', expanded: !ctx.ex } }, () => this.setExpanded(!ctx.ex, 'header'), { component: 'listItem', label: FHN.values.disclosureLabel }),
       onScrim: () => this.setExpanded(false, 'scrim'),
       scrimOpacity: ctx.ex && !full ? 1 : 0, scrimEvents: ctx.ex && !full ? 'auto' : 'none',
-      ...(() => { const left = this.hItems(FH.start, 'front', ps, 'left'), right = this.hItems(FH.end, 'front', ps, 'right'), open = right.some(x => x.isFind && x.find.open && x.find.span);
-        return { fhLeft: left, fhRight: open ? right.map(x => x.isFind ? x : { ...x, maxW: 0, op: 0, ev: 'none' }) : right, fhTitle: this.titleText(FH.title, ps), fhTitleW: open ? '0px' : '100%', fhTitleOp: open ? 0 : 1 }; })(),
+      ...(() => { const left = this.hItems(this.sl(FHN, 'start'), 'front', ps), right = this.hItems(this.sl(FHN, 'end'), 'front', ps, this.sl(FHN, 'start')), open = right.some(x => x.isFind && x.find.open && x.find.span);
+        return { fhLeft: left, fhRight: open ? right.map(x => x.isFind ? x : { ...x, maxW: 0, op: 0, ev: 'none' }) : right, fhTitle: this.titleText(this.sl(FHN, 'title'), ps), fhTitleW: open ? '0px' : '100%', fhTitleOp: open ? 0 : 1 }; })(),
       fhBorder: fl.visual.divider || 'transparent',
       headerStatic: true, headerTracking: false,
-      ...(() => { const hh = +fl.visual.headerHeight || 0, fab = this.fabFor(F.header, ps, 'deck:' + s.activeDeck, hh), edge = fab.show ? +fab.vis.headerExtra || 0 : 0;
-        fab.end = this.fabEnd(this.bp(F.header).end, ps, +fl.visual.fabEndPad || 0); return { fhH: hh + edge, fhRow: hh, fab }; })(),
+      ...(() => { const hh = +fl.visual.headerHeight || 0, fab = this.fabFor(this.sl(FHN, 'fab'), hh), edge = fab.show ? +fab.vis.headerExtra || 0 : 0;
+        fab.end = this.fabEnd(this.sl(FHN, 'end'), +fl.visual.fabEndPad || 0); return { fhH: hh + edge, fhRow: hh, fab }; })(),
       ...(() => {   // groups (core) → sticky headers + an alphabetical index
         const vis = generic || !show ? [] : items, gs = vis.length ? q.groups(s, cfg, ps, vis) : [], G0 = (pres.groups || []).find(g => !g.when || q.condition(s, cfg, g.when, ps));
         const anchor = k => 'grp-' + c.id.replace(/[^a-z0-9]/gi, '') + '-' + encodeURIComponent(k).replace(/%/g, '');
@@ -913,36 +906,29 @@ class Component extends DCLogic {
         const g = this.P.resolveVisuals(this.specs, 'gridLayout', 'enabled', { env: this.lenv() }), gap = +g.gap || 0, mx = +g.maxColumnWidth || +this.specs.tokens['grid.column.max'], pad = +g.margin || 0;
         const W = G.CW - 2 * pad, n = Math.max(1, Math.ceil((W + gap) / (mx + gap)));
         return { cols: 'repeat(' + n + ', minmax(0, 1fr))', gap: gap + 'px', pad, padEnd: pad + (+g.scrollbarGutter || 0), aspect: String(+g.itemAspect || 1) }; })(),
-      onFrontScroll: e => { const restored = !this.mo.userScrolled(e.currentTarget); const before = q.derived(this.ms, cfg, 'scrolled', this.model.query.underPage(this.ms)), hx = ps.config.back.regions.header.expandedHeight, top = this.pageScroll(this.cur().ps, e.currentTarget, 'front.scroll'), ev = this.model.dispatch({ type: 'scroll', top });
+      onFrontScroll: e => { const restored = !this.mo.userScrolled(e.currentTarget); const before = q.derived(this.ms, cfg, 'scrolled', this.model.query.underPage(this.ms)), hx = (bv => bv.distance ? bv.height + bv.distance * bv.progress : 0)(this.P.barView(ps, this.look())), top = this.pageScroll(this.cur().ps, e.currentTarget, 'front.scroll'), ev = this.model.dispatch({ type: 'scroll', top });
         if (before !== q.derived(this.ms, cfg, 'scrolled', this.model.query.underPage(this.ms)) || (hx && top < hx + 40)) { if (restored) return this.track(e.currentTarget);   // a page change restoring its scroll: keep that change's motion (front layer slide)
           cancelAnimationFrame(this.scrRaf); this.scrRaf = requestAnimationFrame(() => { this.lastMove = 'scroll'; this.forceUpdate(() => { if (this.lastMove === 'scroll') this.lastMove = null; }); }); } this.track(e.currentTarget); this.showThumb(e.currentTarget); if (ev.some(x => x.type === 'headerVisibilityChanged')) { this.lastMove = 'header'; this.forceUpdate(); } }
     };
   }
   layerVals(id) {
-    const L = this.model.config.layers.find(l => l.id === id), ls = this.ms.layers[id];
-    const top = ls.stack[ls.stack.length - 1].page.config, deep = ls.stack.length > 1;
-    const items = top.content ? this.S.data.get(top.content.dataSource, this.model.query.contentParams(ls.stack[ls.stack.length - 1].page)).items : [];
-    const target = L.linkTarget && L.linkTarget.deck ? L.linkTarget.deck : 'active deck';
+    const L = this.model.config.layers.find(l => l.id === id), ls = this.ms.layers[id], pg = ls.stack[ls.stack.length - 1].page;
+    const top = pg.config, deep = ls.stack.length > 1, kind = { sheet: 'sheetLayer', drawer: 'drawerLayer', fullscreen: 'fullscreenLayer' }[L.presentation.kind];
+    const PN = this.pageNode(pg, [kind], { layer: id }), CN = PN.children.content, H = PN.children.header;
     return {
-      title: top.body ? '' : top.title && typeof top.title === 'object' ? this.model.query.text(this.ms, this.model.config, top.title) : top.title,
-      isList: !!top.content, isPlayer: !!top.body, hb: top.body ? 'transparent' : '', hh: top.body && ls.stack[ls.stack.length - 1].page.sheet && ls.stack[ls.stack.length - 1].page.sheet.expanded ? 0 : 56, hop: top.body && ls.stack[ls.stack.length - 1].page.sheet && ls.stack[ls.stack.length - 1].page.sheet.expanded ? 0 : 1,
-      rows: items.map(it => ({ it, r: this.model.query.resolveRef(this.ms, this.model.config, this.model.query.presentation(ls.stack[ls.stack.length - 1].page).item, ls.stack[ls.stack.length - 1].page, undefined, { item: it }) })).map(({ it, r }) => ({
-        id: it.id, label: r.props.title || it.id,
-        sub: r.props.subtitle || '', art: artCss(r.props.image),
-        icon: !it.opens ? '' : it.opens.kind === 'layerPage' ? 'chevron_right' : 'arrow_outward',
-        ix: (() => {
-          const slot = { role: 'item', page: ls.stack[ls.stack.length - 1].page, item: it, origin: { layer: id } };
-          const open = this.model.query.roleIntent(this.ms, this.model.config, slot, 'open'), act = open ? { nav: open } : (r.action || null);
-          return this.ix(this.sp('layer:' + id, top.id, 'content.item', undefined, it.id), act, e => {
-            if (!open) return this.runAction(act, e);
-            const ev = this.dispatch(open, id + (it.opens.kind === 'layerPage' ? ' → ' : ' link → ') + (r.props.title || it.id));
+      title: top.body ? '' : this.model.query.derived(this.ms, this.model.config, 'pageTitle', pg),
+      isList: !!top.content, isPlayer: !!top.body, hb: top.body ? 'transparent' : '', hh: top.body && pg.sheet && pg.sheet.expanded ? 0 : 56, hop: top.body && pg.sheet && pg.sheet.expanded ? 0 : 1,
+      rows: (CN ? CN.children.items : []).map(n => { const it = n.config.item, a = this.actOf(n);
+        return { id: it.id, label: n.props.title || it.id, sub: n.props.subtitle || '', art: artCss(n.props.image),
+          icon: !it.opens ? '' : it.opens.kind === 'layerPage' ? 'chevron_right' : 'arrow_outward',
+          ix: this.nix(n, { action: a, run: e => {
+            if (!a || !a.nav) return this.runAction(a, e);
+            const ev = this.dispatch(a.nav, id + (it.opens.kind === 'layerPage' ? ' → ' : ' link → ') + (n.props.title || it.id));
             if (ev.some(x => x.type === 'deckSwitched')) this.setState({ ovRect: null, ovInset: null, backOverride: null });
-          }, { component: this.model.query.presentation(ls.stack[ls.stack.length - 1].page).item.component, label: r.props.title || it.id });
-        })()
-      })),
+          } }) }; }),
       leftIcon: deep ? 'arrow_back' : L.presentation.kind === 'sheet' && G.layout === 'compact' ? 'expand_more' : 'close',
-      leftIx: this.ix(this.sp('layer:' + id, top.id, 'header.left', 0), { nav: deep ? { type: 'up', target: { layer: id } } : { type: 'closeLayer', layer: id } }, () => deep ? this.dispatch({ type: 'up', target: { layer: id } }, id + ' up') : this.closeLayer(id), { component: 'iconButton', label: this.model.query.text(this.ms, this.model.config, deep ? 'action.back' : 'action.close') }),
-      ...(() => { const m = this.bp(top.header).end.find(x => x.component === 'iconButton'), a = m ? m.action : null; return { hasMore: !!a, moreIx: a ? this.ix(this.sp('layer:' + id, top.id, 'header.right', 0), a, e => this.runAction(a, e), { component: 'iconButton', label: this.model.query.text(this.ms, this.model.config, 'action.more') }) : INERT }; })()
+      leftIx: this.ix('layer:' + id + '.header.left', { nav: deep ? { type: 'up', target: { layer: id } } : { type: 'closeLayer', layer: id } }, () => deep ? this.dispatch({ type: 'up', target: { layer: id } }, id + ' up') : this.closeLayer(id), { component: 'iconButton', label: this.model.query.text(this.ms, this.model.config, deep ? 'action.back' : 'action.close') }),
+      ...(() => { const m = this.sl(H, 'end').find(x => x.config.name === 'more'), a = m ? this.actOf(m) : null; return { hasMore: !!a, moreIx: a ? this.nix(m, { action: a }) : INERT }; })()
     };
   }
 
@@ -1000,24 +986,23 @@ class Component extends DCLogic {
     if (v.showOverlay) G.AH = +barVisApp.topHeight || +barVisApp.height || 0;   // before CF(): the page's content box starts below its top row on the very first render too
     const ovr = this.state.ovRect || CF(); v.ov = { ...ovr, top: ovr.top };
     // the app-bar page's own content (its data source, its presentation's item component)
-    { const ap = v.showOverlay ? apage : null, items = ap ? (this.S.data.get(ap.config.content.dataSource, q.contentParams(ap)).items || []) : [];
-      const pi = ap ? q.presentation(ap).item : null, rv = it => q.resolveRef(ms, cfg, pi, ap, undefined, { item: it });
-      v.ovRows = items.map(it => { const r = rv(it), act = it.opens ? null : (r.action || null); return { id: it.id, label: r.props.title || it.id, sub: r.props.subtitle || '', art: artCss(r.props.image), ix: this.ix(this.sp('deck:' + ms.activeDeck, ap.config.id, 'content.item', undefined, it.id), act, e => this.runAction(act, e), { component: pi.component, label: r.props.title || it.id }) }; });
-      v.ovHead = ap ? { title: typeof ap.config.title === 'string' ? ap.config.title : '', sub: items.length ? String(rv(items[0]).props.subtitle || '').split(' · ')[0] + ' · ' + items.length : '', art: artOf(String(ap.config.id).split('/').pop()) } : { title: '', sub: '', art: '' }; }
-    const AH = this.bp(ac && ac.header), ahBase = +barVisApp.height || 0, ahH = +barVisApp.topHeight || ahBase;   // page form: the top row; the sheet below it holds expanded + bottom (14.2)
-    G.AH = ahH; v.ahLeft = v.showOverlay ? this.hItems(AH.start, 'appbar', apage, 'left') : []; v.ahRight = v.showOverlay ? this.hItems(AH.end, 'appbar', apage, 'right') : [];
-    v.ahTitle = v.showOverlay ? this.titleText(AH.title, apage) : ''; v.ahH = ahH;
+    const APN = v.showOverlay ? this.pageNode(apage) : null, AHN = APN ? APN.children.header : null;
+    { const ns = APN && APN.children.content ? APN.children.content.children.items : [];
+      v.ovRows = ns.map(n => { const it = n.config.item; return { id: it.id, label: n.props.title || it.id, sub: n.props.subtitle || '', art: artCss(n.props.image), ix: this.nix(n, { run: e => { const a = this.actOf(n); if (a && a.nav && a.nav.type === 'open') return this.openItem(a.nav.item, e); this.runAction(a, e); } }) }; });
+      v.ovHead = APN ? { title: typeof ac.title === 'string' ? ac.title : '', sub: ns.length ? String(ns[0].props.subtitle || '').split(' · ')[0] + ' · ' + ns.length : '', art: artOf(String(ac.id).split('/').pop()) } : { title: '', sub: '', art: '' }; }
+    const ahBase = +barVisApp.height || 0, ahH = +barVisApp.topHeight || ahBase;   // page form: the top row; the sheet below it holds expanded + bottom (14.2)
+    G.AH = ahH; v.ahLeft = AHN ? this.hItems(this.sl(AHN, 'start'), 'appbar', apage) : []; v.ahRight = AHN ? this.hItems(this.sl(AHN, 'end'), 'appbar', apage, this.sl(AHN, 'start')) : [];
+    v.ahTitle = AHN ? this.titleText(this.sl(AHN, 'title'), apage) : ''; v.ahH = ahH;
     v.ahSpan = v.ahRight.some(x => x.isFind && x.find.open && x.find.span); if (v.ahSpan) v.ahRight = v.ahRight.map(x => x.isFind ? x : { ...x, maxW: 0, op: 0, ev: 'none' });
-    const bvA = apage ? this.P.barView(apage, this.specs) : { height: ahBase, progress: 1 }, Xr = AH.expanded[0];
-    { const BOT = (ac && ac.header && ac.header.slots && ac.header.slots.bottom) || [], RV = this.P.resolveVisuals(this.specs, 'appBar', 'enabled', { surface: 'appBar' });
-      const ex = v.showOverlay ? q.expandSlots(ms, cfg, BOT, apage).map((x, k) => ({ ...x, k })) : [], isFind = r => r.component === 'morph' || r.component === 'localSearch';
-      const btns = ex.filter(x => !isFind(x.ref)).map(({ ref, scope, k }) => q.resolveRef(ms, cfg, ref, apage, this.sp('deck:' + ms.activeDeck, ac.id, 'header.bottom', k), scope)).filter(r => r.visible);
-      const hasSheet = !!(BOT.length || (AH.expanded && AH.expanded.length));   // a page form header with nothing below its top row has no sheet
+    const bvA = apage ? this.P.barView(apage, this.look()) : { height: ahBase, progress: 1 }, Xr = this.sl(AHN, 'expanded')[0];
+    { const BOT = this.sl(AHN, 'bottom');
+      const btns = BOT.filter(n => n.contract !== 'find');
+      const hasSheet = !!(BOT.length || Xr);   // a page form header with nothing below its top row has no sheet
       v.ab = { full: hasSheet ? (+barVisApp.expandedHeight || ahBase) - ahH : 0, sheetH: hasSheet ? Math.max(0, bvA.height - ahH) : 0, range: hasSheet ? Math.max(0, (+barVisApp.expandedHeight || 0) - ahBase) : 0,
-        find: v.showOverlay ? this.hItems(ex.filter(x => isFind(x.ref)).map(x => x.ref), 'appbottom', apage, 'bottom') : [],
-        buttons: btns.map(r => ({ text: r.props.text || '', icon: r.props.icon || '', ix: this.ix(r.key, r.action || null, e => this.runAction(r.action, e), { component: r.component, variant: r.variant, label: r.props.text || '' }) })) }; }
+        find: v.showOverlay ? this.hItems(BOT.filter(n => n.contract === 'find'), 'appbottom', apage) : [],
+        buttons: btns.map(n => ({ text: n.props.text || '', icon: n.props.icon || '', ix: this.nix(n) })) }; }
     v.ab = v.ab || { full: 0, sheetH: 0, none: [], rowVis: {}, find: [], buttons: [] }; v.ovX = { show: false, vis: {}, h: 0, op: 1, art: 0, rad: '0', img: 'none', title: '', sub: '' }; v.ahTitleOp = 1;
-    if (v.showOverlay && apage && Xr) { const xr = q.resolveRef(ms, cfg, Xr, apage), XV = this.P.resolveVisuals(this.specs, 'detailHeader', 'enabled', { surface: 'appBar', variant: xr.variant || {} });
+    if (v.showOverlay && apage && Xr) { const xr = Xr, XV = this.vis(Xr, { surface: 'appBar' });
       const infoH = Math.max(0, v.ab.sheetH - (+barVisApp.sheetPadTop || 0) - (+barVisApp.bottomRowHeight || 0)), padB = +barVisApp.infoPadBottom || 0;
       const art = Math.max(+barVisApp.infoArtMin || 0, Math.min(+XV.artSize || 0, infoH - (+XV.padTop || 0) - padB));   // the info stays: its artwork shrinks with the sheet
       v.ovX = { show: true, vis: { ...XV, artSize: art, padBottom: padB }, h: infoH, op: 1, art, rad: (+XV.artRadius || 0) + 'px', img: artCss(xr.props.image), title: xr.props.title || '', sub: xr.props.subtitle || '' };
@@ -1029,8 +1014,8 @@ class Component extends DCLogic {
     if (!this.warmRefs) this.warmRefs = [React.createRef(), React.createRef(), React.createRef()];
     Object.assign(v.warm, { ref: this.warmRefs[0], ref2: this.warmRefs[1], ref3: this.warmRefs[2], box: { top: 0, h: 0, rad: '0', left: 0, w: 0, r: 0, op: 0 }, ab: { sheetH: 0, find: [], buttons: [] } });
     v.ahShadow = 'none';
-    v.onOvScroll = e => { if (!apage) return; this.showThumb(e.currentTarget, this.ovThumbRef, v.ab.sheetH); if (!this.mo.userScrolled(e.currentTarget)) return; const before = this.P.barView(apage, this.specs).progress; this.model.dispatch({ type: 'scroll', top: this.pageScroll(apage, e.currentTarget, 'scroll') }); const ap2 = this.model.query.currentPage(this.ms); if (ap2.config.kind === 'appBar' && this.P.barView(ap2, this.specs).progress !== before) { cancelAnimationFrame(this.ovRaf); this.ovRaf = requestAnimationFrame(() => { this.lastMove = 'scroll'; this.forceUpdate(() => { if (this.lastMove === 'scroll') this.lastMove = null; }); }); } };
-    v.ahFab = v.showOverlay && apage ? this.fabFor(ac.header, apage, 'deck:' + ms.activeDeck, v.ovX.show ? Math.max(ahBase, ahBase + v.ovX.h - (+this.M.getField(apage, 'scroll') || 0) - 20) : ahBase) : { show: false, ix: INERT }; v.ahFab.end = apage ? this.fabEnd(AH.end, apage, 4) : 4; v.ahOp = this.state.ahOp; v.ahTrans = this.state.ahTrans; v.ahEv = this.state.ahOp > 0 ? 'auto' : 'none';
+    v.onOvScroll = e => { if (!apage) return; this.showThumb(e.currentTarget, this.ovThumbRef, v.ab.sheetH); if (!this.mo.userScrolled(e.currentTarget)) return; const before = this.P.barView(apage, this.look()).progress; this.model.dispatch({ type: 'scroll', top: this.pageScroll(apage, e.currentTarget, 'scroll') }); const ap2 = this.model.query.currentPage(this.ms); if (ap2.config.kind === 'appBar' && this.P.barView(ap2, this.look()).progress !== before) { cancelAnimationFrame(this.ovRaf); this.ovRaf = requestAnimationFrame(() => { this.lastMove = 'scroll'; this.forceUpdate(() => { if (this.lastMove === 'scroll') this.lastMove = null; }); }); } };
+    v.ahFab = AHN ? this.fabFor(this.sl(AHN, 'fab'), v.ovX.show ? Math.max(ahBase, ahBase + v.ovX.h - (+this.M.getField(apage, 'scroll') || 0) - 20) : ahBase) : { show: false, ix: INERT }; v.ahFab.end = AHN ? this.fabEnd(this.sl(AHN, 'end'), 4) : 4; v.ahOp = this.state.ahOp; v.ahTrans = this.state.ahTrans; v.ahEv = this.state.ahOp > 0 ? 'auto' : 'none';
     const ins = this.state.ovInset || { t: 0, r: 0, b: 0, l: 0 };
     v.ovInsetCss = 'inset(' + ins.t + 'px ' + ins.r + 'px ' + ins.b + 'px ' + ins.l + 'px)';
     v.cw = G.CW; v.contentH = G.H - (G.AH || 0);
@@ -1044,8 +1029,8 @@ class Component extends DCLogic {
         ? { left: G.PW - G.SW, w: G.SW, top: 0, h: 720, tx: nOpen ? 0 : G.SW + 16, rad: '0px', shadow: (G.side === 'beside' ? SSV.shadowBeside : SSV.shadowOver) || 'none', peekOp: 0, peekEv: 'none', sheetOp: 1, sheetEv: nOpen ? 'auto' : 'none' }
         : { left: 0, w: G.PW, top: nOpen ? 0 : G.H, h: 720, tx: 0, rad: nOpen ? '0px' : BSV.closedRadius || '0px', shadow: BSV.shadow || 'none', peekOp: nOpen ? 0 : 1, peekEv: nOpen ? 'none' : 'auto', sheetOp: nOpen ? 1 : 0, sheetEv: nOpen ? 'auto' : 'none' }),
       peekSub: this.peekSub(), peekTitle: this.peekTitle(), peekArt: this.player.current() ? artCss(this.player.current().image) : '',
-      peekIx: this.ix(this.sp('peek:nowPlaying', null, 'peek'), { nav: { type: 'openLayer', layer: 'nowPlaying' } }, () => this.openLayer('nowPlaying'), { component: 'listItem', label: q.text(ms, cfg, 'nowPlaying.open') }),
-      titleIx: wide ? INERT : this.ix(this.sp('layer:nowPlaying', null, 'header.title'), { nav: { type: 'closeLayer', layer: 'nowPlaying' } }, () => this.closeLayer('nowPlaying'), { component: 'listItem', label: q.text(ms, cfg, 'nowPlaying.collapse') }) };
+      peekIx: this.ix(this.key('peek:nowPlaying', null, 'peek'), { nav: { type: 'openLayer', layer: 'nowPlaying' } }, () => this.openLayer('nowPlaying'), { component: 'listItem', label: q.text(ms, cfg, 'nowPlaying.open') }),
+      titleIx: wide ? INERT : this.ix(this.key('layer:nowPlaying', null, 'header.title'), { nav: { type: 'closeLayer', layer: 'nowPlaying' } }, () => this.closeLayer('nowPlaying'), { component: 'listItem', label: q.text(ms, cfg, 'nowPlaying.collapse') }) };
     { const tv = (surface, size) => this.P.resolveVisuals(this.specs, 'title', 'enabled', { surface, variant: { size } });
       v.titleVisBack = tv('backLayer', 'lg'); v.titleVisFront = tv('frontLayer', 'sm'); v.titleVisBar = tv('appBar', 'lg');
       v.groupVis = this.P.resolveVisuals(this.specs, 'groupHeader', 'enabled', { surface: 'frontLayer' }); v.alphaVis = this.P.resolveVisuals(this.specs, 'alphaIndex', 'enabled', { surface: 'frontLayer' }); }
@@ -1057,65 +1042,59 @@ class Component extends DCLogic {
     const dx = ddo.x - ddLeft, dW = G.PW - ddRight - ddLeft;
     v.ddLeft = ddLeft; v.ddRight = ddRight; v.ddBottom = ddBottom;
     v.dd = { ...this.layerVals('Dedede'), clip: 'circle(' + (dOpen ? this.maxR(dx, ddo.y, dW, 720) : 0) + 'px at ' + dx + 'px ' + ddo.y + 'px)', ev: dOpen ? 'auto' : 'none' };
-    // Now playing page (config: body refs + inner sheet), drawer and account layers — all drawn from their config refs
+    // Now playing page (body items + inner sheet), drawer and account layers — all drawn from their contract nodes
     {
-      const t = id => q.text(ms, cfg, id), npL = ms.layers.nowPlaying, npPage = npL.stack[npL.stack.length - 1].page, npc = npPage.config, R2 = (ref, k, sc) => q.resolveRef(ms, cfg, ref, npPage, this.sp('layer:nowPlaying', npc.id, 'body', k), sc);
+      const t = id => q.text(ms, cfg, id), npL = ms.layers.nowPlaying, npPage = npL.stack[npL.stack.length - 1].page, npc = npPage.config;
+      const NP = this.pageNode(npPage, ['sheetLayer'], { layer: 'nowPlaying' });
       const mm = x => Math.floor((x || 0) / 60000) + ':' + String(Math.floor((x || 0) / 1000) % 60).padStart(2, '0');
       const np = { mini: [], miniOp: 0, miniEv: 'none', bodyOp: 1, empty: false, emptyText: '', ctrls: [], tabs: [], rows: [], art: '', title: t('player.nothing'), sub: '', dur: 1, pos: 0, posText: '0:00', durText: '0:00', onSeek: () => {}, seekLabel: '', peekH: 56, sheetTop: 0, handleIx: INERT, artVis: {}, infoVis: {}, seekVis: {}, rowVis: {}, tabVis: {}, tabMo: {}, tabSel: 0, emptyVis: {} };
       if (npc.body) {
         const nnW = wide ? G.SW : G.PW, RV = (id, variant) => this.P.resolveVisuals(this.specs, id, 'enabled', { surface: 'bottomSheet', variant });
         np.artVis = RV('artwork', { size: 'lg' }); np.infoVis = RV('trackInfo', { size: 'lg' }); np.seekVis = RV('seekBar'); np.rowVis = RV('row', { justify: 'spread' });
         np.artW = Math.max(+np.artVis.minSize || 0, Math.min(nnW - (+np.artVis.inset || 0), +np.artVis.maxSize || nnW));
-        (npc.body || []).forEach((ref, k) => {
-          const r = R2(ref, k);
-          if (r.component === 'artwork') { np.art = r.props.image ? artCss(r.props.image) : ''; np.artVis = RV('artwork', r.variant || { size: 'lg' }); }
-          if (r.component === 'trackInfo') np.infoVis = RV('trackInfo', r.variant || { size: 'lg' });
-          if (r.component === 'row') np.rowVis = RV('row', r.variant || {});
-          if (r.component === 'trackInfo') { if (r.props.title) np.title = r.props.title; np.sub = r.props.subtitle || ''; }
-          if (r.component === 'seekBar') { const sl = { role: 'input', page: npPage, bind: r.bind }, val = +q.roleProps(ms, cfg, sl).value || 0; np.dur = +r.props.durationMs || 1; np.pos = val; np.posText = mm(val); np.durText = mm(r.props.durationMs); np.seekLabel = r.props.label || '';
-            np.onSeek = e => { const i = q.roleIntent(this.ms, cfg, sl, 'change', +e.target.value); if (i) this.playerCmd(i); }; }
-          if (r.component === 'row') np.ctrls = (r.slots.children || []).map((c2, j) => { const big = c2.component === 'fab';
-            return { icon: c2.props.icon || '', isFab: big, vis: big ? RV('fab', c2.variant || {}) : {}, ix: this.ix(this.sp('layer:nowPlaying', npc.id, 'body.controls', j), c2.action || null, e => this.runAction(c2.action, e), { component: big ? 'fab' : 'iconButton', variant: c2.variant, facts: { checked: c2.checked }, label: c2.props.label || '' }) }; });
+        NP.children.body.forEach(n => {
+          if (n.contract === 'detail') { np.art = n.props.image ? artCss(n.props.image) : ''; if (n.props.title) np.title = n.props.title; np.sub = n.props.subtitle || ''; }
+          if (n.contract === 'seek') { const val = +n.values.positionMs || 0; np.dur = +n.values.durationMs || 1; np.pos = val; np.posText = mm(val); np.durText = mm(n.values.durationMs); np.seekLabel = n.values.label || '';
+            np.onSeek = e => { const a = this.actOf(n, 'change', +e.target.value); if (a && a.nav) this.playerCmd(a.nav); }; }
         });
-        const sh = npc.sheet, ex = !!(npPage.sheet && npPage.sheet.expanded); np.peekH = sh ? sh.peekHeight : 0; np.sheetTop = ex ? (+this.P.resolveVisuals(this.specs, 'nowPlaying', 'enabled', {}).height || 0) + 'px' : 'calc(100% - ' + np.peekH + 'px)'; np.miniOp = ex ? 1 : 0; np.miniEv = ex ? 'auto' : 'none'; np.bodyOp = ex ? 0 : 1;
-
-        np.handleIx = this.ix(this.sp('layer:nowPlaying', npc.id, 'sheet.handle'), { nav: { type: 'toggleExpanded' } }, () => this.dispatch({ type: 'toggleExpanded' }, 'sheet · toggle'), { component: 'listItem', label: t('player.upNext') });
-        if (sh) {
-          const tb = (this.bp(sh.header).title), sl = tb && { role: 'input', page: npPage, bind: tb.bind }, rp = sl ? q.roleProps(ms, cfg, sl) : { options: [] };
-          np.tabs = rp.options.map((o, j) => { const i = q.roleIntent(ms, cfg, sl, 'change', o.value); return { label: o.label, on: o.value === rp.value, ix: this.ix(this.sp('layer:nowPlaying', npc.id, 'sheet.tabs', j), i && { nav: i }, () => this.dispatch(i, 'sheet tab · ' + o.value), { component: 'tab', label: o.label }) }; });
-          const params = { ...q.resolveRef(ms, cfg, { component: '-', props: sh.content.params || {} }, npPage).props, ...q.contentParams(npPage) }, data = this.getData(sh.content.dataSource, params);
-          const pres = sh.content.presentations[q.contentParams(npPage)[sh.content.view] || 'default'] || Object.values(sh.content.presentations)[0];
-          const QV = this.P.resolveVisuals(this.specs, pres.item.component, 'enabled', {});
-          np.rows = (data.items || []).map(it => { const r = q.resolveRef(ms, cfg, pres.item, npPage, undefined, { item: it }), oi = q.roleIntent(ms, cfg, { role: 'item', page: npPage, item: it, origin: { layer: 'nowPlaying' } }, 'open'), act = oi ? { nav: oi } : (r.action || null);
-            return { id: it.id, label: r.props.title || r.props.text || '', sub: r.props.subtitle || '', art: r.props.image ? artCss(r.props.image) : 'transparent', trailing: pres.item.component === 'queueRow' ? (QV.handle || '') : '', bg: r.props.current ? (QV.currentFill || 'transparent') : 'transparent',
-              ix: this.ix(this.sp('layer:nowPlaying', npc.id, 'sheet.item', undefined, it.id), act, e => this.runAction(act, e), { component: pres.item.component === 'queueRow' ? 'listRow' : pres.item.component, label: r.props.title || '' }) }; });
+        np.ctrls = NP.children.body.filter(n => n.contract === 'button').map(n => { const big = n.component === 'fab';
+          return { icon: n.props.icon || '', isFab: big, vis: big ? this.vis(n, { surface: 'bottomSheet' }) : {}, ix: this.nix(n, { component: big ? 'fab' : 'iconButton' }) }; });
+        const SN = NP.children.sheet, ex = !!(npPage.sheet && npPage.sheet.expanded);
+        np.peekH = SN ? this.look().size({ contract: 'pageSheet', page: SN.at.page, within: SN.at.within }, 'peekHeight') : 0; np.sheetTop = ex ? (+this.P.resolveVisuals(this.specs, 'nowPlaying', 'enabled', {}).height || 0) + 'px' : 'calc(100% - ' + np.peekH + 'px)'; np.miniOp = ex ? 1 : 0; np.miniEv = ex ? 'auto' : 'none'; np.bodyOp = ex ? 0 : 1;
+        np.handleIx = this.ix('layer:nowPlaying.sheet.handle', { nav: { type: 'toggleExpanded' } }, () => this.dispatch({ type: 'toggleExpanded' }, 'sheet · toggle'), { component: 'listItem', label: t('player.upNext') });
+        if (SN) {
+          const TB = SN.children.control;
+          np.tabs = TB ? (TB.values.options || []).map((o, j) => { const a = this.actOf(TB, 'change', o.value), i = a && a.nav; return { label: o.label, on: o.value === TB.values.value, ix: this.ix(TB.key + '/' + j, i && { nav: i }, () => this.dispatch(i, 'sheet tab · ' + o.value), { component: 'tab', label: o.label }) }; }) : [];
+          const RN = SN.children.content.children.items, comp = this.itemComponent(SN.children.content), QV = this.P.resolveVisuals(this.specs, comp, 'enabled', {});
+          np.rows = RN.map(n => ({ id: n.config.item.id, label: n.props.title || '', sub: n.props.subtitle || '', art: n.props.image ? artCss(n.props.image) : 'transparent', trailing: comp === 'queueRow' ? (QV.handle || '') : '', bg: n.props.current ? (QV.currentFill || 'transparent') : 'transparent',
+            ix: this.nix(n, { component: comp === 'queueRow' ? 'listRow' : comp }) }));
         }
       }
       np.empty = !np.rows.length; np.emptyText = t('player.nothing'); np.emptyVis = this.P.resolveVisuals(this.specs, 'emptyState', 'enabled', { variant: { size: 'sm' } });
       np.tabSel = Math.max(0, np.tabs.findIndex(x => x.on)); np.tabVis = this.P.resolveVisuals(this.specs, 'tabBar', 'enabled', { surface: 'bottomSheet', variant: { tone: 'surface' } }); np.tabMo = (() => { const d = this.P.motionFor(this.specs, 'tabBar', 'indicator', ms.prefs); return { ms: this.msOf(d), ease: this.easeOf(d) }; })(); v.np = np;
       const ML = cfg.layers.find(l => l.id === 'menu'), mOpen = !!(ms.layers.menu && ms.layers.menu.open) && !(ML && ML.presentation.wide === 'rail' && G.layout === 'wide');
       v.drawerItemVis = this.P.resolveVisuals(this.specs, 'drawerItem', 'enabled', { variant: { size: 'drawer' } });
-      v.dr = { items: [], w: ML ? ML.presentation.width : 300, tx: mOpen ? 0 : -110, op: mOpen ? 1 : 0, ev: mOpen ? 'auto' : 'none', title: '', scrim: () => this.closeLayer('menu') };
-      if (ML) { const mp = ms.layers.menu.stack[0].page; v.dr.title = this.titleText(this.bp(mp.config.header).title, mp);
-        v.dr.items = (mp.config.body || []).map((ref, k) => { const r = q.resolveRef(ms, cfg, ref, mp, this.sp('layer:menu', mp.config.id, 'body', k)); return { icon: r.props.icon || '', text: r.props.text || '', fill: r.checked ? 1 : 0, bg: r.checked ? this.specs.tokens['color.navIndicator'] : 'transparent', ix: this.ix(r.key, r.action || null, e => this.runAction(r.action, e), { component: 'listItem', label: r.props.text || '' }) }; }); }
+      v.dr = { items: [], w: ML ? this.look().size({ contract: 'drawerLayer', page: null, at: { name: 'menu' } }, 'width') : 0, tx: mOpen ? 0 : -110, op: mOpen ? 1 : 0, ev: mOpen ? 'auto' : 'none', title: '', scrim: () => this.closeLayer('menu') };
+      if (ML) { const mp = ms.layers.menu.stack[0].page, MN = this.pageNode(mp, ['drawerLayer'], { layer: 'menu' }); v.dr.title = this.titleText(this.sl(MN.children.header, 'title'), mp);
+        v.dr.items = MN.children.body.filter(n => n.contract === 'button').map(n => ({ icon: n.props.icon || '', text: n.props.text || '', fill: n.values.checked ? 1 : 0, bg: n.values.checked ? this.specs.tokens['color.navIndicator'] : 'transparent', ix: this.nix(n, { component: 'listItem' }) })); }
       const AL = cfg.layers.find(l => l.id === 'account'), aOpen = !!(ms.layers.account && ms.layers.account.open);
       v.acc = { ty: aOpen ? 0 : 100, ev: aOpen ? 'auto' : 'none', title: '', name: '', email: '', plan: '', art: '', signText: '', signIx: INERT, closeIx: INERT, headVis: {}, planVis: {} };
-      if (AL) { const ap2 = ms.layers.account.stack[0].page, H2 = this.bp(ap2.config.header); v.acc.title = this.titleText(H2.title, ap2);
-        const cl = H2.start[0]; if (cl) v.acc.closeIx = this.ix(this.sp('layer:account', ap2.config.id, 'header.start', 0), cl.action, e => this.runAction(cl.action, e), { component: 'iconButton', label: t('action.close') });
-        (ap2.config.body || []).forEach((ref, k) => { const r = q.resolveRef(ms, cfg, ref, ap2, this.sp('layer:account', ap2.config.id, 'body', k));
-          if (r.component === 'detailHeader') Object.assign(v.acc, { name: r.props.title || '', email: r.props.subtitle || '', art: artCss(r.props.image), headVis: this.P.resolveVisuals(this.specs, 'detailHeader', 'enabled', { surface: 'appBar', variant: r.variant || { shape: 'circle' } }) });
-          if (r.component === 'panelRow') { v.acc.plan = r.props.text || ''; v.acc.planVis = this.P.resolveVisuals(this.specs, 'panelRow', 'enabled', { surface: 'appBar' }); }
-          if (r.component === 'button') { v.acc.signText = r.props.text || ''; v.acc.signIx = this.ix(r.key, r.action, e => this.runAction(r.action, e), { component: 'button', variant: r.variant, label: r.props.text || '' }); } }); }
+      if (AL) { const ap2 = ms.layers.account.stack[0].page, AN = this.pageNode(ap2, ['fullscreenLayer'], { layer: 'account' }), H2 = AN.children.header; v.acc.title = this.titleText(this.sl(H2, 'title'), ap2);
+        const cl = this.sl(H2, 'start')[0]; if (cl) v.acc.closeIx = this.nix(cl, { component: 'iconButton', label: t('action.close') });
+        AN.children.body.forEach(n => {
+          if (n.contract === 'detail') Object.assign(v.acc, { name: n.props.title || '', email: n.props.subtitle || '', art: artCss(n.props.image), headVis: this.vis(n, { surface: 'appBar' }) });
+          if (n.contract === 'text') { v.acc.plan = n.values.text || ''; v.acc.planVis = this.P.resolveVisuals(this.specs, 'panelRow', 'enabled', { surface: 'appBar' }); }
+          if (n.contract === 'button') { v.acc.signText = n.props.text || ''; v.acc.signIx = this.nix(n); } }); }
     }
     const modal = wide && G.side === 'modal' && nOpen, auto = wide && G.side === 'auto';
     v.nnScrimOp = modal ? 1 : 0; v.nnScrimEv = modal ? 'auto' : 'none'; v.nnScrimClick = () => this.closeLayer('nowPlaying');
     v.showNnEdge = auto && !nOpen && !dOpen; v.edgeVis = this.P.resolveVisuals(this.specs, 'sideSheet', 'enabled', {}); v.nnEdgeEnter = () => this.openLayer('nowPlaying');
     v.nnLeave = () => { if (auto && this.ms.layers.nowPlaying.open) this.closeLayer('nowPlaying'); };
     v.showNnCard = wide;
-    const place = this.P.peekPlacement(ms, cfg, this.pgeom(), top.page.config.kind === 'appBar' ? 0 : v.frontTop, top.page.config.kind === 'backdrop' ? ps : null);
+    const place = this.P.peekPlacement(ms, cfg, this.pgeom(), top.page.config.kind === 'appBar' ? 0 : v.frontTop, top.page.config.kind === 'backdrop' ? ps : null, this.look());
     v.nnCard = place ? { w: place.w, left: place.left, top: place.top } : { w: 0, left: 0, top: 0 };
-    v.nnCard.ix = this.ix(this.sp('peek:nowPlaying', null, 'card'), { nav: nOpen ? { type: 'closeLayer', layer: 'nowPlaying' } : { type: 'openLayer', layer: 'nowPlaying' } }, () => nOpen ? this.closeLayer('nowPlaying') : this.openLayer('nowPlaying'), { component: 'listItem', label: nOpen ? 'Close nowPlaying' : 'Open nowPlaying' });
-    v.ddCircleIx = this.ix(this.sp('nav', null, 'rail.dedede'), { nav: { type: 'openLayer', layer: 'Dedede' } }, e => this.openLayer('Dedede', e), { component: 'iconButton', variant: { size: 'xl' }, label: q.text(ms, cfg, 'layer.settings') });
+    v.nnCard.ix = this.ix(this.key('peek:nowPlaying', null, 'card'), { nav: nOpen ? { type: 'closeLayer', layer: 'nowPlaying' } : { type: 'openLayer', layer: 'nowPlaying' } }, () => nOpen ? this.closeLayer('nowPlaying') : this.openLayer('nowPlaying'), { component: 'listItem', label: nOpen ? 'Close nowPlaying' : 'Open nowPlaying' });
+    v.ddCircleIx = this.ix(this.key('nav', null, 'rail.dedede'), { nav: { type: 'openLayer', layer: 'Dedede' } }, e => this.openLayer('Dedede', e), { component: 'iconButton', variant: { size: 'xl' }, label: q.text(ms, cfg, 'layer.settings') });
     v.focusDeck = () => { if (auto && this.ms.layers.nowPlaying.open) this.closeLayer('nowPlaying'); this.focus(this.ms.activeDeck); };
     v.focusnowPlaying = () => this.focus('nowPlaying'); v.focusDedede = () => this.focus('Dedede');
 
@@ -1124,11 +1103,10 @@ class Component extends DCLogic {
     v.screenLeft = G.RAIL; v.screenRight = G.PW - G.RAIL - G.CW; v.screenBottom = 720 - G.H;
     v.navShift = G.NAV !== 'navBar' || !q.navVisible(ms, cfg) ? G.NH : 0;
     v.showRail = G.NAV === 'navRail';
-    const navSlot = { role: 'navigation', page: ps }, navP = q.roleProps(ms, cfg, navSlot);
-    const navItems = form => navP.destinations.map(id => { const d = cfg.decks.find(x => x.id === id), i = q.roleIntent(ms, cfg, navSlot, 'select', id); return { label: q.text(ms, cfg, d.name), icon: d.icon, selected: id === navP.selected, ix: this.ix(this.sp('nav', null, form, undefined, id), i && { nav: i }, () => this.switchDeck(id), { component: 'navItem', variant: { form }, label: q.text(ms, cfg, d.name) }) }; });
+    const TR = this.tree(), NAVN = TR.navigation;
+    const navItems = form => this.sl(NAVN, 'destinations').map(n => ({ label: n.props.text || n.values.label, icon: n.props.icon || '', selected: n.values.selected, ix: this.nix(n, { run: () => this.switchDeck(n.values.deck), component: 'navItem', label: n.values.label }) }));
     v.nav = navItems('bar'); v.railNav = navItems('rail');
-    { const NW = cfg.navigation.wide, slot = k => q.expandSlots(ms, cfg, (NW.slots || {})[k] || [], ps).map(({ ref, scope }, i) => { const r = q.resolveRef(ms, cfg, ref, ps, this.sp('nav', null, 'rail.' + k, i), scope); return r; }).filter(r => r.visible)
-        .map(r => ({ icon: r.props.icon || '', text: r.props.text || r.props.label || '', mark: r.component === 'logo', ix: r.component === 'logo' ? { ...this.ix(r.key, null, null, { component: 'logo', label: r.props.label || '', surface: 'navRail' }), resolve: () => ({ state: 'enabled', enabled: true, flags: {}, status: [], activatable: false }) } : this.ix(r.key, r.action || null, e => this.runAction(r.action, e), { component: r.component === 'drawerItem' ? 'listItem' : 'iconButton', label: r.props.text || r.props.label || '', surface: 'navRail' }) }));
+    { const slot = k => this.sl(NAVN, k).map(n => ({ icon: n.props.icon || '', text: n.props.text || n.values.label || '', mark: n.component === 'logo', ix: n.component === 'logo' ? { ...this.nix(n, { action: null, run: null, surface: 'navRail' }), resolve: () => ({ state: 'enabled', enabled: true, flags: {}, status: [], activatable: false }) } : this.nix(n, { component: n.component === 'drawerItem' ? 'listItem' : 'iconButton', surface: 'navRail' }) }));
       const ML = cfg.layers.find(l => l.presentation.kind === 'drawer' && l.presentation.wide === 'rail'), ex = !!(ML && ms.layers[ML.id].open && G.NAV === 'navRail'), V = this.P.resolveVisuals(this.specs, 'navRail', 'enabled', {}), mo = this.P.motionFor(this.specs, 'navRail', 'width', ms.prefs);
       v.railNav = v.railNav.map(n => ({ ...n, pill: n.selected ? this.specs.tokens['color.navIndicator'] : 'transparent', fill: n.selected ? 1 : 0 }));
       v.rail = { tr: this.mo.css(mo), collapsed: !ex, w: ex ? +V.expandedWidth || 0 : +V.width || 0, align: ex ? 'stretch' : 'center', padX: ex ? +V.itemInset || 0 : 0, shadow: ex ? V.expandedShadow || 'none' : 'none', ms: this.msOf(mo), ease: this.easeOf(mo), ex, padY: +V.padY || 0, gap: +V.gap || 0, groupGap: +V.groupGap || 0 };
@@ -1165,15 +1143,14 @@ class Component extends DCLogic {
     const pst = this.player.getState(), cur = this.player.current();
     const playAct = cur ? { type: 'toggle' } : { type: 'playQueue', tracks: this.S.fixtures.tracks(4).map(t => ({ ...t, durationMs: 20000 })) };
     const plIx = k => ({
-      ['t' + k]: this.ix(this.sp('peek:nowPlaying', null, (k ? 'peek' : 'card') + '.player.toggle'), { player: playAct }, () => this.playerCmd(playAct), { component: 'iconButton', variant: { size: 'sm' }, label: q.text(ms, cfg, pst.status === 'playing' || pst.status === 'loading' ? 'player.pause' : 'player.play') }),
-      ['n' + k]: this.ix(this.sp('peek:nowPlaying', null, (k ? 'peek' : 'card') + '.player.next'), { player: { type: 'next' } }, () => this.playerCmd({ type: 'next' }), { component: 'iconButton', variant: { size: 'sm' }, label: q.text(ms, cfg, 'player.next') })
+      ['t' + k]: this.ix(this.key('peek:nowPlaying', null, (k ? 'peek' : 'card') + '.player.toggle'), { player: playAct }, () => this.playerCmd(playAct), { component: 'iconButton', variant: { size: 'sm' }, label: q.text(ms, cfg, pst.status === 'playing' || pst.status === 'loading' ? 'player.pause' : 'player.play') }),
+      ['n' + k]: this.ix(this.key('peek:nowPlaying', null, (k ? 'peek' : 'card') + '.player.next'), { player: { type: 'next' } }, () => this.playerCmd({ type: 'next' }), { component: 'iconButton', variant: { size: 'sm' }, label: q.text(ms, cfg, 'player.next') })
     });
     v.pl = { icon: pst.status === 'playing' || pst.status === 'loading' ? 'pause' : 'play_arrow', ...plIx(''), ...plIx('2') };
     // peek controls: the layer presentation's peek header end slots (config), per form
-    const peekCtrls = (form, tag) => { const NL = cfg.layers.find(l => l.id === 'nowPlaying'), H = NL && NL.presentation[form] && NL.presentation[form].peek && NL.presentation[form].peek.header;
-      return q.expandSlots(ms, cfg, (H && H.slots && H.slots.end) || [], null).map(({ ref, scope }, k) => q.resolveRef(ms, cfg, ref, null, this.sp('peek:nowPlaying', null, tag + '.end', k), scope)).filter(r => r.visible)
-        .map(r => ({ icon: r.props.icon || '', ix: this.ix(r.key, r.action || null, e => this.runAction(r.action, e), { component: r.component, variant: r.variant, label: r.props.label || '' }) })); };
-    v.pl.peek = peekCtrls('compact', 'peek'); v.pl.card = peekCtrls('wide', 'card'); v.pl.mini = peekCtrls('compact', 'mini');
+    const PK = (TR.layers.find(n => n.contract === 'sheetLayer') || { children: {} }).children.peek;
+    const peekCtrls = () => this.sl(PK, 'end').map(n => ({ icon: n.props.icon || '', ix: this.nix(n) }));
+    v.pl.peek = peekCtrls(); v.pl.card = peekCtrls(); v.pl.mini = peekCtrls();
     // texts + direction (current locale)
     const t = id => q.text(ms, cfg, id);
     v.dir = q.dir(ms, cfg);
@@ -1195,18 +1172,19 @@ class Component extends DCLogic {
       v.gate = gid ? { show: true, ev: entry ? 'none' : 'auto', title: t('gate.' + gid + '.title'), text: t('gate.' + gid + '.text'), button: t('gate.' + gid + '.button'), ...look }
         : entry && entry.cover === 'gate' && entry.gate ? { ...entry.gate, show: true, ev: 'none' } : { show: false, ...look };
       this.gateSnap = gid ? { title: v.gate.title, text: v.gate.text, button: v.gate.button, ...look } : null; }
-    v.gate.ix = gateEv && !entry ? this.ix(this.sp('gate:' + gid, null, 'action'), { nav: { type: 'session', event: gateEv } }, () => this.enterApp({ type: 'sessionChanged', session: { signedIn: true } }, 'gate', () => this.dispatch({ type: 'session', event: gateEv }, 'session · ' + gateEv.type)), { component: 'button', variant: { emphasis: 'filled', size: 'lg' }, label: v.gate.button }) : INERT;
+    v.gate.ix = gateEv && !entry ? this.ix(this.key('gate:' + gid, null, 'action'), { nav: { type: 'session', event: gateEv } }, () => this.enterApp({ type: 'sessionChanged', session: { signedIn: true } }, 'gate', () => this.dispatch({ type: 'session', event: gateEv }, 'session · ' + gateEv.type)), { component: 'button', variant: { emphasis: 'filled', size: 'lg' }, label: v.gate.button }) : INERT;
     // overlays
     const dlg = ms.overlays.find(o => o.spec.kind === 'dialog'), sn = ms.overlays.find(o => o.spec.kind === 'snackbar');
     const mn = ms.overlays.find(o => o.spec.kind === 'menu');
     const mWide = G.layout === 'wide', ma = this.menuAnchor || { top: 0, end: 0 };
     v.menu = mn ? { show: true, sheet: !mWide, anchor: ma, vis: this.P.resolveVisuals(this.specs, 'menu', 'enabled', { env: this.lenv() }), close: () => this.dispatch({ type: 'closeOverlay', id: mn.spec.id }, 'menu · close'), stop: e => e.stopPropagation(),
-      items: ((mn.spec.props && mn.spec.props.items) || []).map((it, k) => ({ label: t(it.label.text || it.label), icon: it.icon || '', ix: this.ix(this.sp('overlay:' + mn.spec.id, null, 'items', k), it.action, e => this.runAction(it.action, e), { component: 'listItem', label: t(it.label.text || it.label) }) })) } : { show: false, items: [] };
-    v.dialog = dlg ? { show: true, vis: this.P.resolveVisuals(this.specs, 'dialog', 'enabled', {}), title: dlg.spec.props && dlg.spec.props.title ? t(dlg.spec.props.title.text || dlg.spec.props.title) : '', body: dlg.spec.props && dlg.spec.props.body ? t(dlg.spec.props.body.text || dlg.spec.props.body) : '', cancelText: t('common.cancel'), okText: t('common.ok'), stop: e => e.stopPropagation(),
+      items: this.sl(TR.overlays.find(n => n.config === mn.spec), 'items').map(n => ({ label: n.props.text || n.values.label, icon: n.props.icon || '', ix: this.nix(n, { component: 'listItem' }) })) } : { show: false, items: [] };
+    const OV = o => (TR.overlays.find(n => n.config === o.spec) || { values: {} }).values;
+    v.dialog = dlg ? { show: true, vis: this.P.resolveVisuals(this.specs, 'dialog', 'enabled', {}), title: OV(dlg).title || '', body: OV(dlg).body || '', cancelText: t('common.cancel'), okText: t('common.ok'), stop: e => e.stopPropagation(),
       cancel: () => this.dispatch({ type: 'closeOverlay', id: dlg.spec.id, result: 'cancel' }, 'dialog · cancel'),
-      cancelIx: this.ix(this.sp('overlay:' + dlg.spec.id, null, 'actions', 0), { nav: { type: 'closeOverlay', id: dlg.spec.id, result: 'cancel' } }, () => this.dispatch({ type: 'closeOverlay', id: dlg.spec.id, result: 'cancel' }, 'dialog · cancel'), { component: 'button', variant: { emphasis: 'text' }, label: t('common.cancel') }),
-      okIx: this.ix(this.sp('overlay:' + dlg.spec.id, null, 'actions', 1), { nav: { type: 'closeOverlay', id: dlg.spec.id, result: 'ok' } }, () => this.dispatch({ type: 'closeOverlay', id: dlg.spec.id, result: 'ok' }, 'dialog · ok'), { component: 'button', variant: { emphasis: 'filled' }, label: t('common.ok') }) } : { show: false, cancelIx: INERT, okIx: INERT };
-    v.snack = sn ? { show: true, text: t('common.dismiss'), message: sn.spec.props && sn.spec.props.text ? t(sn.spec.props.text.text || sn.spec.props.text) : '', ...(() => { const SV = this.P.resolveVisuals(this.specs, 'snackbar', 'enabled', {}), m = +SV.margin || 0; return { vis: SV, left: G.RAIL + m, w: Math.min(G.CW - 2 * m, +SV.maxWidth || G.CW), bottom: PHONE_H - G.H + (wide ? +SV.bottomWide || 0 : +SV.bottomCompact || 0) }; })(), ix: this.ix(this.sp('overlay:' + sn.spec.id, null, 'action'), { nav: { type: 'closeOverlay', id: sn.spec.id } }, () => this.dispatch({ type: 'closeOverlay', id: sn.spec.id }, 'snackbar · dismiss'), { component: 'button', variant: { emphasis: 'text', size: 'sm' }, label: t('common.dismiss') }) } : { show: false, ix: INERT };
+      cancelIx: this.ix(this.key('overlay:' + dlg.spec.id, null, 'actions', 0), { nav: { type: 'closeOverlay', id: dlg.spec.id, result: 'cancel' } }, () => this.dispatch({ type: 'closeOverlay', id: dlg.spec.id, result: 'cancel' }, 'dialog · cancel'), { component: 'button', variant: { emphasis: 'text' }, label: t('common.cancel') }),
+      okIx: this.ix(this.key('overlay:' + dlg.spec.id, null, 'actions', 1), { nav: { type: 'closeOverlay', id: dlg.spec.id, result: 'ok' } }, () => this.dispatch({ type: 'closeOverlay', id: dlg.spec.id, result: 'ok' }, 'dialog · ok'), { component: 'button', variant: { emphasis: 'filled' }, label: t('common.ok') }) } : { show: false, cancelIx: INERT, okIx: INERT };
+    v.snack = sn ? { show: true, text: t('common.dismiss'), message: OV(sn).text || '', ...(() => { const SV = this.P.resolveVisuals(this.specs, 'snackbar', 'enabled', {}), m = +SV.margin || 0; return { vis: SV, left: G.RAIL + m, w: Math.min(G.CW - 2 * m, +SV.maxWidth || G.CW), bottom: PHONE_H - G.H + (wide ? +SV.bottomWide || 0 : +SV.bottomCompact || 0) }; })(), ix: this.ix(this.key('overlay:' + sn.spec.id, null, 'action'), { nav: { type: 'closeOverlay', id: sn.spec.id } }, () => this.dispatch({ type: 'closeOverlay', id: sn.spec.id }, 'snackbar · dismiss'), { component: 'button', variant: { emphasis: 'text', size: 'sm' }, label: t('common.dismiss') }) } : { show: false, ix: INERT };
     /* lint:off harness — simulate toggles, address bar */
     // simulate toggles
     const tog = (label, on, fn) => ({ label, bg: on ? '#1c1c1c' : 'transparent', fg: on ? '#fff' : '#1c1c1c', toggle: fn });
@@ -1227,7 +1205,7 @@ class Component extends DCLogic {
       if (e.key === 'Enter') { const u = this.state.urlDraft || ''; this.setState({ urlEditing: false, ovRect: null, ovInset: null, backOverride: null }); this.dispatch({ type: 'navigateUrl', url: u }, 'navigateUrl · ' + u); }
       if (e.key === 'Escape') this.setState({ urlEditing: false });
     };
-    v.reset = () => { const d = DEVICES[this.state.layout]; this.model = this.M.createModel(this.S.config, { width: d.width, touch: d.touch }, this.dataSrc); this.setState({ log: ['reset'], ovRect: null, ovInset: null, backOverride: null, frontTopOverride: null, ft: null, cf: null, entry: null }); this.cancelEntry(); this.scheduleLaunch(); };
+    v.reset = () => { const d = DEVICES[this.state.layout]; this.model = this.newModel(d); this.setState({ log: ['reset'], ovRect: null, ovInset: null, backOverride: null, frontTopOverride: null, ft: null, cf: null, entry: null }); this.cancelEntry(); this.scheduleLaunch(); };
     /* lint:on */
     // bars (design: header / frontHeader / appBar); layer headers as slot items
     { const ctl = (ix, icon) => ({ isControl: true, ix, icon }), RVb = (id, ctx) => this.P.resolveVisuals(this.specs, id, 'enabled', ctx);

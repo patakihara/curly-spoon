@@ -196,8 +196,8 @@ export function bind(config) {
     return undefined;
   },
   tracks(n = 4) { return C.tracks.slice(0, n).map(track); },
-  sampleDialog: { id: 'confirm', kind: 'dialog', component: 'dialog', blocking: true, props: { title: 'Sure?' } },
-  sampleSnackbar: { id: 'toast', kind: 'snackbar', component: 'snackbar', blocking: false, timeoutMs: 4000 },
+  sampleDialog: { id: 'confirm', kind: 'dialog', texts: { title: 'Sure?' }, blocking: true },
+  sampleSnackbar: { id: 'toast', kind: 'snackbar', texts: {}, blocking: false, timeoutMs: 4000 },
   link(m, layerId) {
     const L = config.layers.find(l => l.id === layerId);
     for (const pg of Object.values(L.pages.set)) { if (!pg.content) continue; const it = data.get(pg.content.dataSource).items.find(i => i.opens && i.opens.kind !== 'layerPage'); if (it) return it; }

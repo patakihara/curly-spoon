@@ -107,6 +107,7 @@ object DesignTokens {
     val SizePeekMaxWidth = 500f
     val SizeSideSheetWidth = 320f
     val SizeHeaderExpandedDetail = 272f
+    val SizePageSheetPeek = 69f
     val GridColumnMax = 140f
     val GridColumnsCompact = 4f
     val GridColumnsWide = 12f
@@ -908,23 +909,27 @@ object SeekBarTokens {
 }
 
 object DetailHeaderTokens {
-    val ArtSize = {"variant":"layout","cases":{"column":96,"row":120}}
-    val ArtRadius = {"variant":"shape","cases":{"square":8,"circle":999}}
-    val Gap = {"variant":"layout","cases":{"column":8,"row":16}}
+    val ArtSize = {"variant":"layout","cases":{"column":96,"row":120,"peek":40,"player":"100%"}}
+    val ArtRadius = {"variant":"layout","cases":{"column":{"variant":"shape","cases":{"square":8,"circle":999}},"row":{"variant":"shape","cases":{"square":8,"circle":999}},"peek":4,"player":8}}
+    val Gap = {"variant":"layout","cases":{"column":8,"row":16,"peek":12,"player":24}}
     val TextGap = 4f
-    val PadX = {"variant":"layout","cases":{"column":24,"row":16}}
-    val PadTop = {"variant":"layout","cases":{"column":0,"row":8}}
-    val PadBottom = 24f
-    val TitleSize = {"variant":"layout","cases":{"column":22,"row":20}}
-    val TitleWeight = 600f
+    val PadX = {"variant":"layout","cases":{"column":24,"row":16,"peek":0,"player":0}}
+    val PadTop = {"variant":"layout","cases":{"column":0,"row":8,"peek":0,"player":0}}
+    val PadBottom = {"variant":"layout","cases":{"column":24,"row":24,"peek":0,"player":24}}
+    val TitleSize = {"variant":"layout","cases":{"column":22,"row":20,"peek":15,"player":22}}
+    val TitleWeight = {"variant":"layout","cases":{"column":600,"row":600,"peek":500,"player":600}}
     val TitleLineHeight = 1.2f
     val SubFamily = DesignTokens.FontSubtitleFamily
-    val SubSize = 12f
-    val SubOpacity = {"variant":"layout","cases":{"column":0.8,"row":1}}
+    val SubSize = {"variant":"layout","cases":{"column":12,"row":12,"peek":11,"player":13}}
+    val SubOpacity = {"variant":"layout","cases":{"column":0.8,"row":1,"peek":1,"player":1}}
     val SubColor = {"role":"contentVariant"}
     val MetaSize = DesignTokens.FontSubtitleSize
     val MetaOpacity = 0.7f
-    val Align = {"variant":"layout","cases":{"column":"center","row":"start"}}
+    val Align = {"variant":"layout","cases":{"column":"center","row":"start","peek":"start","player":"center"}}
+    val ArtShadow = {"variant":"layout","cases":{"column":"none","row":"none","peek":"none","player":"0 8px 24px rgba(0,0,0,.18)"}}
+    val ArtMin = {"variant":"layout","cases":{"column":null,"row":null,"peek":null,"player":120}}
+    val ArtMax = {"variant":"layout","cases":{"column":null,"row":null,"peek":null,"player":300}}
+    val ArtInset = {"variant":"layout","cases":{"column":null,"row":null,"peek":null,"player":56}}
 }
 
 object GroupHeaderTokens {

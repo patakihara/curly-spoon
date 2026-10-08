@@ -59,6 +59,12 @@
      "event": "tap",
      "send": "toggleExpanded"
     }
+   ],
+   "tokens": [
+    {
+     "name": "pageSheet.peekHeight",
+     "alias": "size.pageSheet.peek"
+    }
    ]
   },
   {

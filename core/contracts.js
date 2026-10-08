@@ -5,7 +5,8 @@
 // (each an intent, or the config's own action). The platform walks the tree and draws node.component with node.props.
 //
 //   contractTree(model, specs, composition, opts) → Node (the app)
-//   opts = { look (compose.js lookAt), measured: { <pageId>: { panel } }, peek: number, data: DataSource }
+//   opts = { look (compose.js lookAt), measured: { <pageId>: { panel } }, peek: number, data: DataSource, page?, within?, origin?, key? }
+//   with opts.page: { page: Node } — that page alone
 //   Node = { key, contract, at, page, config, values, hire, component, variants, props, slots, events, children }
 //   events: { <event>: payload → Intent | { action: Actions } | null }
 
@@ -224,6 +225,8 @@ export function contractTree(model, specs, composition, opts = {}) {
     return node('overlay', 'overlay:' + (o.id || j), { within: [], page: null }, o, { title: t('title'), body: t('body'), confirm: t('confirm'), cancel: t('cancel'), text: t('text'), action: t('action') }, { items: items(o.items, 'overlay:' + (o.id || j) + '.items', ctx) }, { at: { overlay: o.kind, name: o.id } });
   }
 
+  // one page only (opts.page: a page state, opts.within: where it sits, opts.origin: what its items open from)
+  if (opts.page) return { page: pageNode(opts.page, opts.key || 'page:' + opts.page.config.id, { within: opts.within || [], page: null }, opts.origin || { deck: s.activeDeck }) };
   const deckPage = top(s.decks[s.activeDeck].stack);
   return {
     key: 'app', contract: null,
