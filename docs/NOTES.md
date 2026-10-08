@@ -364,6 +364,28 @@
 - Done (step 1): types, core (stepsFor / componentSteps, pattern matching on every field), design data as KindSteps, rules +2, checks / overrides / Specs Editor follow. Nothing moves differently yet (same kinds, same values; queued now picks its own rule — the three rules had identical values).
 - Next: generic web player; port dropIntoPeek first (component parts trackInfo title / subtitle, image on listItem / detailHeader / artwork; peek = config's header + artwork + trackInfo, so the queue drop stops reading NowPlaying's data-peek), then shared image, detail push / pop, app-bar push (its fadeParts / slideParts named workaround pieces — needs a redesign in real pieces), the rest; measure each; remove KindStep.
 
+## Component contracts, from scratch (agreed 2026-10-08, with Sofia)
+Restart of the component model from the v1.1 design (docs/v1-recollection.md); replaces roles, refs, supplies / emits,
+roleProps / roleIntent and Role.parts once built. Starting point: the backdrop page (back layer, front layer, their headers).
+- **Config** (app/app.json) says what exists, as plain data. No slots, no look values (no region heights, no sides).
+- **Contracts** (API) say what each drawn config object offers: its config, its values (from State, queries and Layout
+  outputs alike), the intents it accepts, and its children (config fields that hold other drawn objects). Engine-only
+  config (policies, routes, layouts …) is never a contract's subject.
+- **Free components** (design): props, events, slots, parts, visuals. They know nothing of the API. A free component may
+  be built from other free components inside design (iconButton draws a symbol).
+- **Hired components** (composition): one free component hired for one contract, with clauses and variant picks. One
+  hire wraps exactly one free component and meets exactly one contract. Look changes for a job are variant picks only,
+  never values.
+- **Clauses** connect the two sides: prop ← a contract path, event → an intent type, slot ← a child. A clause is implied
+  where the names already match; only mismatches are written. Tools list which clauses were implied.
+- **composition.json** (new file, after config) places only hired components, by config kind, with per-page exceptions.
+  It also decides arrangement (which side of a header an item sits on).
+- Slot vs part: a slot is a hole filled from outside (by the hire composition picks for a child); a part is a piece a
+  component draws itself, named so motion can address it (web components' ::part). Role.parts (16.0) was slot-like.
+- Style: every type named; no `Record<string, X>` in API sketches (use a named spec type with a named key type).
+- Rejected: clause sets on the component (design would hold API names and grow a set per job); separate adapter files
+  (a second place to look, no home for per-job looks).
+
 ## Open (current)
 - Design checks are not shown on the Invariants page yet (needs Invariants.dc.html).
 - Still in the player (ordering, not yet params): detail transition order (out → swap → front move + in → header parts), flight cut sources (top: header / bars above the middle; bottom: peek / nav bar), app-bar sheet start (front layer top), the reveal band shape.
