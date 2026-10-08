@@ -304,14 +304,6 @@
     "step": 1,
     "url": true,
     "motion": "swap"
-   },
-   "searching": {
-    "type": "flag",
-    "data": false
-   },
-   "searchClosed": {
-    "type": "flag",
-    "data": false
    }
   },
   "back": {
@@ -571,26 +563,6 @@
      ],
      "resetOn": [],
      "scope": "params.tab"
-    },
-    "searching": {
-     "default": false,
-     "resetOn": [
-      "scrollTop",
-      {
-       "paramChange": "tab"
-      }
-     ],
-     "scope": null
-    },
-    "searchClosed": {
-     "default": false,
-     "resetOn": [
-      "scrollTop",
-      {
-       "paramChange": "tab"
-      }
-     ],
-     "scope": null
     }
    },
    "back": {
@@ -633,6 +605,28 @@
       "reselect"
      ],
      "scope": null
+    },
+    "find": {
+     "opened": {
+      "default": false,
+      "resetOn": [
+       "scrollTop",
+       {
+        "paramChange": "tab"
+       }
+      ],
+      "scope": null
+     },
+     "closed": {
+      "default": false,
+      "resetOn": [
+       "scrollTop",
+       {
+        "paramChange": "tab"
+       }
+      ],
+      "scope": null
+     }
     }
    }
   }
@@ -900,10 +894,6 @@
    "find": {
     "type": "text"
    },
-   "searching": {
-    "type": "flag",
-    "data": false
-   },
    "genre": {
     "type": "choices",
     "options": {
@@ -915,10 +905,6 @@
      }
     },
     "motion": "swap"
-   },
-   "searchClosed": {
-    "type": "flag",
-    "data": false
    }
   },
   "back": {
@@ -980,11 +966,14 @@
       "key": "default"
      }
     ],
-    "params": {
-     "id": {
-      "bind": "$opener.id"
+    "params": [
+     {
+      "name": "id",
+      "value": {
+       "bind": "$opener.id"
+      }
      }
-    }
+    ]
    }
   },
   "policy": {
@@ -999,23 +988,9 @@
      "resetOn": [],
      "scope": null
     },
-    "searching": {
-     "default": false,
-     "resetOn": [
-      "scrollTop"
-     ],
-     "scope": null
-    },
     "genre": {
      "default": [],
      "resetOn": [],
-     "scope": null
-    },
-    "searchClosed": {
-     "default": false,
-     "resetOn": [
-      "scrollTop"
-     ],
      "scope": null
     }
    },
@@ -1045,6 +1020,22 @@
       "reselect"
      ],
      "scope": null
+    },
+    "find": {
+     "opened": {
+      "default": false,
+      "resetOn": [
+       "scrollTop"
+      ],
+      "scope": null
+     },
+     "closed": {
+      "default": false,
+      "resetOn": [
+       "scrollTop"
+      ],
+      "scope": null
+     }
     }
    }
   }
@@ -1071,10 +1062,6 @@
    },
    "find": {
     "type": "text"
-   },
-   "searching": {
-    "type": "flag",
-    "data": false
    },
    "sort": {
     "type": "choice",
@@ -1105,10 +1092,6 @@
      }
     },
     "motion": "swap"
-   },
-   "searchClosed": {
-    "type": "flag",
-    "data": false
    }
   },
   "back": {
@@ -1279,11 +1262,14 @@
      }
     ],
     "view": "section",
-    "params": {
-     "id": {
-      "bind": "$opener.id"
+    "params": [
+     {
+      "name": "id",
+      "value": {
+       "bind": "$opener.id"
+      }
      }
-    }
+    ]
    }
   },
   "policy": {
@@ -1302,16 +1288,6 @@
      ],
      "scope": null
     },
-    "searching": {
-     "default": false,
-     "resetOn": [
-      "scrollTop",
-      {
-       "paramChange": "section"
-      }
-     ],
-     "scope": null
-    },
     "sort": {
      "default": "year",
      "resetOn": [],
@@ -1320,16 +1296,6 @@
     "when": {
      "default": "any",
      "resetOn": [],
-     "scope": null
-    },
-    "searchClosed": {
-     "default": false,
-     "resetOn": [
-      "scrollTop",
-      {
-       "paramChange": "section"
-      }
-     ],
      "scope": null
     }
    },
@@ -1367,6 +1333,28 @@
       "reselect"
      ],
      "scope": "params.section"
+    },
+    "find": {
+     "opened": {
+      "default": false,
+      "resetOn": [
+       "scrollTop",
+       {
+        "paramChange": "section"
+       }
+      ],
+      "scope": null
+     },
+     "closed": {
+      "default": false,
+      "resetOn": [
+       "scrollTop",
+       {
+        "paramChange": "section"
+       }
+      ],
+      "scope": null
+     }
     }
    }
   }

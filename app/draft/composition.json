@@ -1,136 +1,959 @@
 {
-  "$description": "DRAFT (api/draft.d.ts section 4): hires free design components for contracts and places them by config kind. Covers the backdrop page. Clauses are written only where names differ; every fixed value is a hire token aliasing a design token.",
-  "hires": [
-    { "name": "backdropPage", "hires": "backdropPage", "contract": "backdropPage", "clauses": [] },
-
-    { "name": "backLayer", "hires": "backLayer", "contract": "backLayer",
-      "clauses": [ { "event": "tap", "send": "intent" } ] },
-    { "name": "backHeader", "hires": "header", "contract": "backHeader",
-      "clauses": [
-        { "slot": "start", "fill": [ { "child": "items", "pick": [ { "name": "menu" }, { "name": "up" }, { "kind": "logo" } ] } ] },
-        { "slot": "title", "fill": [ { "hire": "backTitle" } ] },
-        { "slot": "end", "fill": [ { "child": "items", "pick": [ { "rest": true } ] } ] },
-        { "slot": "expanded", "fill": [ { "child": "detail" } ] }
-      ] },
-    { "name": "backTitle", "hires": "title", "contract": "backHeader",
-      "clauses": [ { "prop": "text", "value": "title" } ] },
-    { "name": "detail", "hires": "detailHeader", "contract": "detail", "clauses": [] },
-    { "name": "personDetail", "hires": "detailHeader", "contract": "detail", "clauses": [],
-      "variants": [ { "axis": "shape", "option": "circle" }, { "axis": "layout", "option": "column" } ] },
-
-    { "name": "menuButton", "hires": "iconButton", "contract": "button",
-      "clauses": [ { "prop": "icon", "token": "menuButton.icon" }, { "event": "press", "send": "action" } ],
-      "variants": [ { "axis": "edge", "option": "start" } ],
-      "tokens": [ { "name": "menuButton.icon", "alias": "icon.menu" } ] },
-    { "name": "accountButton", "hires": "iconButton", "contract": "button",
-      "clauses": [ { "prop": "icon", "token": "accountButton.icon" }, { "event": "press", "send": "action" } ],
-      "tokens": [ { "name": "accountButton.icon", "alias": "icon.account" } ] },
-    { "name": "upButton", "hires": "iconButton", "contract": "button",
-      "clauses": [ { "prop": "icon", "token": "upButton.icon" }, { "event": "press", "send": "action" } ],
-      "tokens": [ { "name": "upButton.icon", "alias": "icon.up" } ] },
-    { "name": "logo", "hires": "logo", "contract": "logo", "clauses": [] },
-    { "name": "playNowButton", "hires": "button", "contract": "button",
-      "clauses": [ { "prop": "text", "value": "label" }, { "prop": "icon", "token": "playNowButton.icon" }, { "event": "press", "send": "action" } ],
-      "variants": [ { "axis": "emphasis", "option": "filled" }, { "axis": "tone", "option": "inverse" } ],
-      "tokens": [ { "name": "playNowButton.icon", "alias": "icon.playNow" } ] },
-    { "name": "playNextButton", "hires": "button", "contract": "button",
-      "clauses": [ { "prop": "text", "value": "label" }, { "prop": "icon", "token": "playNextButton.icon" }, { "event": "press", "send": "action" } ],
-      "variants": [ { "axis": "emphasis", "option": "filled" }, { "axis": "tone", "option": "inverse" } ],
-      "tokens": [ { "name": "playNextButton.icon", "alias": "icon.playNext" } ] },
-    { "name": "playLastButton", "hires": "button", "contract": "button",
-      "clauses": [ { "prop": "text", "value": "label" }, { "prop": "icon", "token": "playLastButton.icon" }, { "event": "press", "send": "action" } ],
-      "variants": [ { "axis": "emphasis", "option": "filled" }, { "axis": "tone", "option": "inverse" } ],
-      "tokens": [ { "name": "playLastButton.icon", "alias": "icon.playLast" } ] },
-
-    { "name": "chips", "hires": "choiceChips", "contract": "input", "clauses": [ { "event": "change", "send": "intent" } ] },
-    { "name": "filterChips", "hires": "filterChips", "contract": "input", "clauses": [ { "event": "change", "send": "intent" } ] },
-    { "name": "tabs", "hires": "tabBar", "contract": "input", "clauses": [ { "event": "change", "send": "intent" } ] },
-    { "name": "dropdown", "hires": "dropdown", "contract": "input", "clauses": [ { "event": "change", "send": "intent" } ] },
-    { "name": "rangeField", "hires": "rangeField", "contract": "input", "clauses": [ { "event": "change", "send": "intent" } ] },
-    { "name": "searchField", "hires": "searchField", "contract": "input",
-      "clauses": [ { "event": "change", "send": "intent" }, { "event": "submit", "send": "intent" } ] },
-    { "name": "paramRow", "hires": "panelRow", "contract": "paramRow",
-      "clauses": [ { "prop": "text", "value": "label" }, { "slot": "content", "fill": [ { "child": "control" } ] } ] },
-    { "name": "suggestions", "hires": "panelRow", "contract": "suggestions",
-      "clauses": [ { "prop": "text", "value": "label" }, { "slot": "content", "fill": [ { "child": "items" } ] } ] },
-    { "name": "suggestion", "hires": "suggestionRow", "contract": "suggestion",
-      "clauses": [ { "event": "press", "send": "intent" } ] },
-
-    { "name": "frontLayer", "hires": "frontLayer", "contract": "frontLayer",
-      "clauses": [ { "event": "scroll", "send": "intent" } ] },
-    { "name": "frontHeader", "hires": "frontHeader", "contract": "frontHeader",
-      "clauses": [
-        { "slot": "start", "fill": [ { "hire": "disclosure" } ] },
-        { "slot": "title", "fill": [ { "hire": "frontTitle" } ] },
-        { "slot": "end", "fill": [ { "child": "items", "pick": [ { "rest": true } ] } ] }
-      ] },
-    { "name": "disclosure", "hires": "caret", "contract": "frontHeader",
-      "clauses": [ { "prop": "label", "value": "disclosureLabel" }, { "prop": "icon", "token": "disclosure.icon" }, { "event": "press", "send": "intent" } ],
-      "variants": [ { "axis": "size", "option": "md" } ],
-      "tokens": [ { "name": "disclosure.icon", "alias": "icon.expand" } ] },
-    { "name": "frontTitle", "hires": "title", "contract": "frontHeader",
-      "clauses": [ { "prop": "text", "value": "title" } ] },
-    { "name": "summary", "hires": "label", "contract": "text", "clauses": [] },
-    { "name": "viewSwitch", "hires": "viewSwitch", "contract": "switch",
-      "clauses": [
-        { "prop": "icon", "value": "next", "cases": [ { "equals": "grid", "token": "viewSwitch.grid" }, { "equals": "list", "token": "viewSwitch.list" } ] },
-        { "event": "press", "send": "intent" }
-      ],
-      "variants": [ { "axis": "size", "option": "md" } ],
-      "tokens": [ { "name": "viewSwitch.grid", "alias": "icon.viewGrid" }, { "name": "viewSwitch.list", "alias": "icon.viewList" } ] },
-    { "name": "find", "hires": "localSearch", "contract": "find", "clauses": [ { "event": "change", "send": "intent" } ] },
-
-    { "name": "scroller", "hires": "scrollerLayout", "contract": "content",
-      "clauses": [ { "slot": "items", "fill": [ { "child": "items" } ] } ] },
-    { "name": "grid", "hires": "gridLayout", "contract": "content",
-      "clauses": [ { "slot": "items", "fill": [ { "child": "items" } ] } ] },
-    { "name": "list", "hires": "listLayout", "contract": "content",
-      "clauses": [ { "slot": "items", "fill": [ { "child": "items" } ] } ] },
-    { "name": "carousel", "hires": "carousel", "contract": "item", "clauses": [ { "event": "press", "send": "intent" } ] },
-    { "name": "gridCard", "hires": "gridCard", "contract": "item", "clauses": [ { "event": "press", "send": "intent" } ] },
-    { "name": "listRow", "hires": "listRow", "contract": "item", "clauses": [ { "event": "press", "send": "intent" } ] }
-  ],
-  "placements": [
-    { "contract": "backdropPage", "hire": "backdropPage" },
-    { "contract": "backLayer", "hire": "backLayer" },
-    { "contract": "backHeader", "hire": "backHeader" },
-    { "contract": "detail", "hire": "detail" },
-    { "contract": "button", "match": { "name": "menu" }, "env": { "env": "layout", "equals": "compact" }, "hire": "menuButton" },
-    { "contract": "button", "match": { "name": "menu" }, "hire": null },
-    { "contract": "button", "match": { "name": "account" }, "hire": "accountButton" },
-    { "contract": "button", "match": { "name": "up" }, "hire": "upButton" },
-    { "contract": "button", "match": { "name": "playNow" }, "hire": "playNowButton" },
-    { "contract": "button", "match": { "name": "playNext" }, "hire": "playNextButton" },
-    { "contract": "button", "match": { "name": "playLast" }, "hire": "playLastButton" },
-    { "contract": "logo", "hire": "logo" },
-    { "contract": "input", "param": { "draft": true }, "hire": "searchField" },
-    { "contract": "input", "param": { "type": "choice", "axis": true }, "hire": "tabs" },
-    { "contract": "input", "param": { "type": "choice" }, "hire": "chips" },
-    { "contract": "input", "param": { "type": "choices" }, "hire": "filterChips" },
-    { "contract": "input", "param": { "type": "number" }, "hire": "rangeField" },
-    { "contract": "paramRow", "hire": "paramRow" },
-    { "contract": "suggestions", "hire": "suggestions" },
-    { "contract": "suggestion", "hire": "suggestion" },
-    { "contract": "frontLayer", "hire": "frontLayer" },
-    { "contract": "frontHeader", "hire": "frontHeader" },
-    { "contract": "text", "hire": "summary" },
-    { "contract": "switch", "hire": "viewSwitch" },
-    { "contract": "find", "hire": "find" },
-    { "contract": "content", "presentation": "default", "hire": "scroller" },
-    { "contract": "content", "presentation": "grid", "hire": "grid" },
-    { "contract": "content", "presentation": "list", "hire": "list" },
-    { "contract": "content", "presentation": "collections", "hire": "grid" },
-    { "contract": "content", "presentation": "tracks", "hire": "list" },
-    { "contract": "content", "presentation": "related", "hire": "grid" },
-    { "contract": "item", "presentation": "default", "hire": "carousel" },
-    { "contract": "item", "presentation": "grid", "hire": "gridCard" },
-    { "contract": "item", "presentation": "list", "hire": "listRow" },
-    { "contract": "item", "presentation": "collections", "hire": "gridCard" },
-    { "contract": "item", "presentation": "tracks", "hire": "listRow" },
-    { "contract": "item", "presentation": "related", "hire": "gridCard" }
-  ],
-  "pages": [
-    { "page": "person", "placements": [ { "contract": "detail", "hire": "personDetail" } ] },
-    { "page": "library", "placements": [ { "contract": "input", "param": { "name": "sort" }, "hire": "dropdown" } ] }
-  ]
+ "$description": "DRAFT (api/draft.d.ts section 4): hires free design components for contracts and places them by config kind. Covers the backdrop page. Clauses are written only where names differ; every fixed value is a hire token aliasing a design token.",
+ "hires": [
+  {
+   "name": "backdropPage",
+   "hires": "backdropPage",
+   "contract": "backdropPage",
+   "clauses": []
+  },
+  {
+   "name": "backLayer",
+   "hires": "backLayer",
+   "contract": "backLayer",
+   "clauses": [
+    {
+     "event": "tap",
+     "send": "toggleExpanded"
+    }
+   ]
+  },
+  {
+   "name": "backHeader",
+   "hires": "header",
+   "contract": "backHeader",
+   "clauses": [
+    {
+     "slot": "start",
+     "fill": [
+      {
+       "child": "items",
+       "pick": [
+        {
+         "name": "menu"
+        },
+        {
+         "name": "up"
+        },
+        {
+         "kind": "logo"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "slot": "title",
+     "fill": [
+      {
+       "hire": "backTitle"
+      }
+     ]
+    },
+    {
+     "slot": "end",
+     "fill": [
+      {
+       "child": "items",
+       "pick": [
+        {
+         "rest": true
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "slot": "expanded",
+     "fill": [
+      {
+       "child": "detail"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "backTitle",
+   "hires": "title",
+   "contract": "backHeader",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "title"
+    }
+   ]
+  },
+  {
+   "name": "detail",
+   "hires": "detailHeader",
+   "contract": "detail",
+   "clauses": []
+  },
+  {
+   "name": "personDetail",
+   "hires": "detailHeader",
+   "contract": "detail",
+   "clauses": [],
+   "variants": [
+    {
+     "axis": "shape",
+     "option": "circle"
+    },
+    {
+     "axis": "layout",
+     "option": "column"
+    }
+   ]
+  },
+  {
+   "name": "menuButton",
+   "hires": "iconButton",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "icon",
+     "token": "menuButton.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "edge",
+     "option": "start"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "menuButton.icon",
+     "alias": "icon.menu"
+    }
+   ]
+  },
+  {
+   "name": "accountButton",
+   "hires": "iconButton",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "icon",
+     "token": "accountButton.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "accountButton.icon",
+     "alias": "icon.account"
+    }
+   ]
+  },
+  {
+   "name": "upButton",
+   "hires": "iconButton",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "icon",
+     "token": "upButton.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "upButton.icon",
+     "alias": "icon.up"
+    }
+   ]
+  },
+  {
+   "name": "logo",
+   "hires": "logo",
+   "contract": "logo",
+   "clauses": []
+  },
+  {
+   "name": "playNowButton",
+   "hires": "button",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "prop": "icon",
+     "token": "playNowButton.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "emphasis",
+     "option": "filled"
+    },
+    {
+     "axis": "tone",
+     "option": "inverse"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "playNowButton.icon",
+     "alias": "icon.playNow"
+    }
+   ]
+  },
+  {
+   "name": "playNextButton",
+   "hires": "button",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "prop": "icon",
+     "token": "playNextButton.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "emphasis",
+     "option": "filled"
+    },
+    {
+     "axis": "tone",
+     "option": "inverse"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "playNextButton.icon",
+     "alias": "icon.playNext"
+    }
+   ]
+  },
+  {
+   "name": "playLastButton",
+   "hires": "button",
+   "contract": "button",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "prop": "icon",
+     "token": "playLastButton.icon"
+    },
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "emphasis",
+     "option": "filled"
+    },
+    {
+     "axis": "tone",
+     "option": "inverse"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "playLastButton.icon",
+     "alias": "icon.playLast"
+    }
+   ]
+  },
+  {
+   "name": "chips",
+   "hires": "choiceChips",
+   "contract": "input",
+   "clauses": [
+    {
+     "event": "change",
+     "send": "setParams"
+    }
+   ]
+  },
+  {
+   "name": "filterChips",
+   "hires": "filterChips",
+   "contract": "input",
+   "clauses": [
+    {
+     "event": "change",
+     "send": "setParams"
+    }
+   ]
+  },
+  {
+   "name": "tabs",
+   "hires": "tabBar",
+   "contract": "input",
+   "clauses": [
+    {
+     "event": "change",
+     "send": "setParams"
+    }
+   ]
+  },
+  {
+   "name": "dropdown",
+   "hires": "dropdown",
+   "contract": "input",
+   "clauses": [
+    {
+     "event": "change",
+     "send": "setParams"
+    }
+   ]
+  },
+  {
+   "name": "rangeField",
+   "hires": "rangeField",
+   "contract": "input",
+   "clauses": [
+    {
+     "event": "change",
+     "send": "setParams"
+    }
+   ]
+  },
+  {
+   "name": "searchField",
+   "hires": "searchField",
+   "contract": "input",
+   "clauses": [
+    {
+     "event": "change",
+     "send": "setParams"
+    },
+    {
+     "event": "submit",
+     "send": "setParams"
+    }
+   ]
+  },
+  {
+   "name": "paramRow",
+   "hires": "panelRow",
+   "contract": "paramRow",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "slot": "content",
+     "fill": [
+      {
+       "child": "control"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "suggestions",
+   "hires": "panelRow",
+   "contract": "suggestions",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "label"
+    },
+    {
+     "slot": "content",
+     "fill": [
+      {
+       "child": "items"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "suggestion",
+   "hires": "suggestionRow",
+   "contract": "suggestion",
+   "clauses": [
+    {
+     "event": "press",
+     "send": "setParams"
+    }
+   ]
+  },
+  {
+   "name": "frontLayer",
+   "hires": "frontLayer",
+   "contract": "frontLayer",
+   "clauses": [
+    {
+     "event": "scroll",
+     "send": "scroll"
+    }
+   ]
+  },
+  {
+   "name": "frontHeader",
+   "hires": "frontHeader",
+   "contract": "frontHeader",
+   "clauses": [
+    {
+     "slot": "start",
+     "fill": [
+      {
+       "hire": "disclosure"
+      }
+     ]
+    },
+    {
+     "slot": "title",
+     "fill": [
+      {
+       "hire": "frontTitle"
+      }
+     ]
+    },
+    {
+     "slot": "end",
+     "fill": [
+      {
+       "child": "items",
+       "pick": [
+        {
+         "rest": true
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "disclosure",
+   "hires": "caret",
+   "contract": "frontHeader",
+   "clauses": [
+    {
+     "prop": "label",
+     "value": "disclosureLabel"
+    },
+    {
+     "prop": "icon",
+     "token": "disclosure.icon"
+    },
+    {
+     "event": "press",
+     "send": "toggleExpanded"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "size",
+     "option": "md"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "disclosure.icon",
+     "alias": "icon.expand"
+    }
+   ]
+  },
+  {
+   "name": "frontTitle",
+   "hires": "title",
+   "contract": "frontHeader",
+   "clauses": [
+    {
+     "prop": "text",
+     "value": "title"
+    }
+   ]
+  },
+  {
+   "name": "summary",
+   "hires": "label",
+   "contract": "text",
+   "clauses": []
+  },
+  {
+   "name": "viewSwitch",
+   "hires": "viewSwitch",
+   "contract": "switch",
+   "clauses": [
+    {
+     "prop": "icon",
+     "value": "next",
+     "cases": [
+      {
+       "equals": "grid",
+       "token": "viewSwitch.grid"
+      },
+      {
+       "equals": "list",
+       "token": "viewSwitch.list"
+      }
+     ]
+    },
+    {
+     "event": "press",
+     "send": "setParams"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "size",
+     "option": "md"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "viewSwitch.grid",
+     "alias": "icon.viewGrid"
+    },
+    {
+     "name": "viewSwitch.list",
+     "alias": "icon.viewList"
+    }
+   ]
+  },
+  {
+   "name": "find",
+   "hires": "morph",
+   "contract": "find",
+   "clauses": [
+    {
+     "prop": "morphed",
+     "value": "open"
+    },
+    {
+     "slot": "from",
+     "fill": [
+      {
+       "hire": "findButton"
+      }
+     ]
+    },
+    {
+     "slot": "to",
+     "fill": [
+      {
+       "hire": "findField"
+      }
+     ]
+    }
+   ],
+   "variants": [
+    {
+     "axis": "span",
+     "option": "header"
+    }
+   ]
+  },
+  {
+   "name": "findButton",
+   "hires": "iconButton",
+   "contract": "find",
+   "clauses": [
+    {
+     "prop": "label",
+     "value": "placeholder"
+    },
+    {
+     "prop": "icon",
+     "token": "findButton.icon"
+    },
+    {
+     "event": "press",
+     "send": "openFind"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "size",
+     "option": "md"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "findButton.icon",
+     "alias": "icon.find"
+    }
+   ]
+  },
+  {
+   "name": "findField",
+   "hires": "localSearch",
+   "contract": "find",
+   "clauses": [
+    {
+     "event": "change",
+     "send": "setParams"
+    },
+    {
+     "slot": "end",
+     "fill": [
+      {
+       "hire": "findClose"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "findClose",
+   "hires": "iconButton",
+   "contract": "find",
+   "clauses": [
+    {
+     "prop": "icon",
+     "token": "findClose.icon"
+    },
+    {
+     "event": "press",
+     "send": "closeFind"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "size",
+     "option": "xs"
+    }
+   ],
+   "tokens": [
+    {
+     "name": "findClose.icon",
+     "alias": "icon.close"
+    }
+   ]
+  },
+  {
+   "name": "scroller",
+   "hires": "scrollerLayout",
+   "contract": "content",
+   "clauses": [
+    {
+     "slot": "items",
+     "fill": [
+      {
+       "child": "items"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "grid",
+   "hires": "gridLayout",
+   "contract": "content",
+   "clauses": [
+    {
+     "slot": "items",
+     "fill": [
+      {
+       "child": "items"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "list",
+   "hires": "listLayout",
+   "contract": "content",
+   "clauses": [
+    {
+     "slot": "items",
+     "fill": [
+      {
+       "child": "items"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "carousel",
+   "hires": "carousel",
+   "contract": "item",
+   "clauses": [
+    {
+     "event": "press",
+     "send": "open"
+    }
+   ]
+  },
+  {
+   "name": "gridCard",
+   "hires": "gridCard",
+   "contract": "item",
+   "clauses": [
+    {
+     "event": "press",
+     "send": "open"
+    }
+   ]
+  },
+  {
+   "name": "listRow",
+   "hires": "listRow",
+   "contract": "item",
+   "clauses": [
+    {
+     "event": "press",
+     "send": "open"
+    }
+   ]
+  }
+ ],
+ "placements": [
+  {
+   "contract": "backdropPage",
+   "hire": "backdropPage"
+  },
+  {
+   "contract": "backLayer",
+   "hire": "backLayer"
+  },
+  {
+   "contract": "backHeader",
+   "hire": "backHeader"
+  },
+  {
+   "contract": "detail",
+   "hire": "detail"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "menu"
+   },
+   "env": {
+    "env": "layout",
+    "equals": "compact"
+   },
+   "hire": "menuButton"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "menu"
+   },
+   "hire": null
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "account"
+   },
+   "hire": "accountButton"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "up"
+   },
+   "hire": "upButton"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "playNow"
+   },
+   "hire": "playNowButton"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "playNext"
+   },
+   "hire": "playNextButton"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "playLast"
+   },
+   "hire": "playLastButton"
+  },
+  {
+   "contract": "logo",
+   "hire": "logo"
+  },
+  {
+   "contract": "input",
+   "param": {
+    "draft": true
+   },
+   "hire": "searchField"
+  },
+  {
+   "contract": "input",
+   "param": {
+    "type": "choice",
+    "axis": true
+   },
+   "hire": "tabs"
+  },
+  {
+   "contract": "input",
+   "param": {
+    "type": "choice"
+   },
+   "hire": "chips"
+  },
+  {
+   "contract": "input",
+   "param": {
+    "type": "choices"
+   },
+   "hire": "filterChips"
+  },
+  {
+   "contract": "input",
+   "param": {
+    "type": "number"
+   },
+   "hire": "rangeField"
+  },
+  {
+   "contract": "paramRow",
+   "hire": "paramRow"
+  },
+  {
+   "contract": "suggestions",
+   "hire": "suggestions"
+  },
+  {
+   "contract": "suggestion",
+   "hire": "suggestion"
+  },
+  {
+   "contract": "frontLayer",
+   "hire": "frontLayer"
+  },
+  {
+   "contract": "frontHeader",
+   "hire": "frontHeader"
+  },
+  {
+   "contract": "text",
+   "hire": "summary"
+  },
+  {
+   "contract": "switch",
+   "hire": "viewSwitch"
+  },
+  {
+   "contract": "find",
+   "hire": "find"
+  },
+  {
+   "contract": "content",
+   "presentation": "default",
+   "hire": "scroller"
+  },
+  {
+   "contract": "content",
+   "presentation": "grid",
+   "hire": "grid"
+  },
+  {
+   "contract": "content",
+   "presentation": "list",
+   "hire": "list"
+  },
+  {
+   "contract": "content",
+   "presentation": "collections",
+   "hire": "grid"
+  },
+  {
+   "contract": "content",
+   "presentation": "tracks",
+   "hire": "list"
+  },
+  {
+   "contract": "content",
+   "presentation": "related",
+   "hire": "grid"
+  },
+  {
+   "contract": "item",
+   "presentation": "default",
+   "hire": "carousel"
+  },
+  {
+   "contract": "item",
+   "presentation": "grid",
+   "hire": "gridCard"
+  },
+  {
+   "contract": "item",
+   "presentation": "list",
+   "hire": "listRow"
+  },
+  {
+   "contract": "item",
+   "presentation": "collections",
+   "hire": "gridCard"
+  },
+  {
+   "contract": "item",
+   "presentation": "tracks",
+   "hire": "listRow"
+  },
+  {
+   "contract": "item",
+   "presentation": "related",
+   "hire": "gridCard"
+  }
+ ],
+ "pages": [
+  {
+   "page": "person",
+   "placements": [
+    {
+     "contract": "detail",
+     "hire": "personDetail"
+    }
+   ]
+  },
+  {
+   "page": "library",
+   "placements": [
+    {
+     "contract": "input",
+     "param": {
+      "name": "sort"
+     },
+     "hire": "dropdown"
+    }
+   ]
+  }
+ ]
 }

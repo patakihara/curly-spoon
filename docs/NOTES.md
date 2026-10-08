@@ -396,8 +396,10 @@ roleProps / roleIntent and Role.parts once built. Starting point: the backdrop p
   icon tokens.
 - Motion: no step names a piece yet (all 48 are kind steps), so nothing breaks. Pieces become `<contract>.<child>` and
   `<free component>.<slot|part>`; hires are never named by motion.
-- Walls (need Sofia): (1) local search: config emulates its open / closed state with params searching / searchClosed and
-  a long condition; who owns that state? (2) Browse carousel entries play instead of open: an item with entries that
+- Decided (Sofia): the engine owns the local search's open / closed state: FrontState.find { opened, closed } with a
+  mirroring FrontPolicy.find; intents openFind / closeFind; open = (scrolled and not closed) or opened or text not empty.
+  The params searching / searchClosed and the morph condition leave config. Content params: a named list (ContentParam).
+- Walls (need Sofia): (2) Browse carousel entries play instead of open: an item with entries that
   have their own action; how does config say it? (3) contracts as data for the rules (roles.js pattern: data generates
   the TS) or hand-written TS. Also: frontHeader vs header (one free component, as Sofia said, or two).
   (a second place to look, no home for per-job looks).

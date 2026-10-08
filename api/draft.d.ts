@@ -13,7 +13,7 @@
  */
 import type {
   ComponentId, PageId, ParamName, Title, Params, PropValue, Condition, EnvEquals, Actions, DraftBind, Source, SourceRef,
-  BackdropPagePolicy, FrontPosition, ToggleExpandedIntent, ScrollIntent, RetryIntent, SetParamsIntent, OpenIntent,
+  FieldPolicy, BackPolicy, Intent, Scoped, FrontPosition, ToggleExpandedIntent, ScrollIntent, RetryIntent, SetParamsIntent, OpenIntent,
   ParamValue, ParamOption, ParamType, ContentView, ItemData, ItemGroup, GroupKey, StatePath, InteractionView, PropType, Visuals,
   VariantAxis, StatusState, Step, PlaceholderForm,
 } from './api';
@@ -29,7 +29,7 @@ export interface ButtonItem { kind: 'button'; name: ItemName; label: PropValue; 
 export interface LogoItem { kind: 'logo'; name: ItemName; label: PropValue }                 // the brand; reacts to the player
 export interface TextItem { kind: 'text'; name: ItemName; text: PropValue; when?: Condition }
 export interface SwitchItem { kind: 'switch'; name: ItemName; param: ParamName; label: PropValue; when?: Condition }   // steps a choice param to its next option
-export interface FindItem { kind: 'find'; name: ItemName; param: ParamName; placeholder: PropValue }   // OPEN: who holds open / closed (see NOTES)
+export interface FindItem { kind: 'find'; name: ItemName; param: ParamName; placeholder: PropValue }   // a local search over the content; open / closed is engine state (FindState)
 export type HeaderItem = ButtonItem | LogoItem | TextItem | SwitchItem | FindItem;
 
 // ── Back layer: named regions with fixed meanings (replaces regions + layouts + heights).
@@ -51,15 +51,28 @@ export interface BackLayerConfig {
 // ── Front layer
 export interface FrontHeaderConfig { title: PropValue; items: HeaderItem[] }   // the disclosure is built in: every front header has one
 export type PresentationKey = string;
+export interface ContentParam { name: string; value: PropValue }
 export interface GroupConfig { by: StatePath; key: GroupKey; when?: Condition; index?: boolean }   // index: a fast-scroll index over the keys
 export interface PresentationConfig { key: PresentationKey; groups?: GroupConfig[] }   // how items are laid out is composition's choice
 export interface ContentConfig {
   dataSource: SourceRef;
-  params?: PropValue[];                  // OPEN: today Record<string, PropValue>; needs a named shape
+  params?: ContentParam[];               // extra dataSource params ({ name: 'id', value: { bind: '$opener.id' } })
   view?: ParamName;                      // the param that picks the presentation
   presentations: PresentationConfig[];
 }
 export interface FrontLayerConfig { header: FrontHeaderConfig; collapse: 'partial' | 'full'; content: ContentConfig }
+
+// ── Find (local search): the engine owns whether it is open.
+//   open = (content scrolled and not closed) or opened or its text is not empty
+export interface FindState { opened: boolean; closed: boolean }          // opened: the find button was pressed · closed: ✕ was pressed
+export interface FindPolicy { opened: FieldPolicy<boolean>; closed: FieldPolicy<boolean> }   // mirrors FindState (e.g. both reset on scrollTop)
+export interface FrontState { scroll: Scoped<number>; find?: FindState }                      // replaces api.d.ts FrontState (scroll unchanged)
+export interface FrontPolicy { scroll: FieldPolicy<number>; find?: FindPolicy }               // find: required when the front header holds a find item
+export interface BackdropPagePolicy { params: Record<ParamName, FieldPolicy<ParamValue>>; back: BackPolicy; front: FrontPolicy }   // OPEN: params still a Record
+export interface OpenFindIntent { type: 'openFind' }                     // opened = true, closed = false
+export interface CloseFindIntent { type: 'closeFind' }                   // the find text = '', opened = false, closed = true
+export type DraftIntent = Intent | OpenFindIntent | CloseFindIntent;
+export type IntentType = DraftIntent['type'];
 
 export interface BackdropPageConfig {
   id: PageId;
@@ -90,8 +103,8 @@ export interface TextValues { text: string }
 export interface TextContract extends Contract<TextItem, TextValues, NoIntents> {}
 export interface SwitchValues { label: string; value: ParamValue | null; next: ParamValue | null }
 export interface SwitchContract extends Contract<SwitchItem, SwitchValues, SetParamsIntent> {}
-export interface FindValues { value: string; placeholder: string }                               // OPEN: open / closed
-export interface FindContract extends Contract<FindItem, FindValues, SetParamsIntent> {}
+export interface FindValues { open: boolean; value: string; placeholder: string; closeLabel: string }   // closeLabel: text find.close
+export interface FindContract extends Contract<FindItem, FindValues, OpenFindIntent | CloseFindIntent | SetParamsIntent> {}
 export type HeaderItemContract = ButtonContract | LogoContract | TextContract | SwitchContract | FindContract;
 
 // ── Back layer
@@ -180,7 +193,7 @@ export interface PropFrom { prop: PropName; value: ValueName }      // prop ← 
 export interface PropFixed { prop: PropName; token: TokenName }     // prop ← one of the hire's tokens
 export interface TokenCase { equals: string; token: TokenName }
 export interface PropByValue { prop: PropName; value: ValueName; cases: TokenCase[] }   // prop ← a hire token picked by a value (view switch icon)
-export interface EventTo { event: EventName; send: 'intent' | 'action' }   // intent: the contract's intent · action: the item's config action
+export interface EventTo { event: EventName; send: IntentType | 'action' }   // an intent the contract accepts · action: the item's config action
 export interface ItemSelector { kind?: ItemKind; name?: ItemName; rest?: true }   // rest: every item not picked by another slot
 export interface FromChild { child: ChildName; pick?: ItemSelector[] }   // a child, or the picked items of a list child, in order
 export interface FromHire { hire: HireName }                             // a hire on this same contract (a header's title, the built-in disclosure)
