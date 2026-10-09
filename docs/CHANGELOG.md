@@ -44,6 +44,7 @@ _Unreleased (no contract change):_ web: the shell draws no UI itself — FrontLa
 - Policies are state policies (renamed): FieldPolicy → StatePolicy, ParamPolicies → ParamStatePolicies, every XPolicy →
   XStatePolicy (Find, BackLayer, FrontLayer, PageSheet, BackdropPage, AppBarPage, Deck, Layer); the config field `policy` →
   `statePolicy` (pages, decks, layers). PersistPolicy is unchanged (it is about storage, not one state field).
+- BackRegionName → BackLayerRegionName, BackRegionView → BackLayerRegionView (renamed).
 - Platform manifest: web lists backdropPage, appBarPage, sheetLayer, fullscreenLayer (composition hires them).
 - Rules: api/composition-rules.js (13, all pass) runs on the Invariants page; 19 ref / role invariants deleted, the rest
   ported to 18.0 shapes: 103 pass · 3 skipped · 0 fail.

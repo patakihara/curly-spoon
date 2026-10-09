@@ -606,8 +606,8 @@ export interface Contract<C, V, I> { config: C; values: V; intents: I }
 export interface NoValues {}
 export type NoIntents = never;
 
-export type BackRegionName = 'header' | 'actions' | 'basicAction' | 'panel';
-export interface BackRegionView { region: BackRegionName; top: number; height: number; opacity: number; interactive: boolean }   // Layout
+export type BackLayerRegionName = 'header' | 'actions' | 'basicAction' | 'panel';
+export interface BackLayerRegionView { region: BackLayerRegionName; top: number; height: number; opacity: number; interactive: boolean }   // Layout
 export interface ContentView { state: ContentViewState; showItems: boolean; placeholders: number; banner: boolean; retry: boolean }   // replaces api.d.ts ContentView: no component ids (composition picks them)
 // <contracts:generated> — from api/contracts.js by api/gen-contracts.js; do not edit
 // button
@@ -663,7 +663,7 @@ export interface ContentChildren { items: ItemContract[]; state?: ContentStateCo
 export interface ContentContract extends Contract<ContentConfig, ContentValues, NoIntents> { children: ContentChildren }
 export type PanelRowContract = ParamRowContract | SuggestionsContract;
 // backLayer: toggle only while toggleOnTap
-export interface BackLayerValues { expanded: boolean; headerHidden: boolean; regions: BackRegionView[] }
+export interface BackLayerValues { expanded: boolean; headerHidden: boolean; regions: BackLayerRegionView[] }
 export interface BackLayerChildren { header: HeaderContract; actions: ButtonContract[]; basicAction?: InputContract; panel: PanelRowContract[] }
 export interface BackLayerContract extends Contract<BackLayerConfig, BackLayerValues, ToggleExpandedIntent> { children: BackLayerChildren }
 // frontHeader: the built-in disclosure: the back layer's expanded + its label (texts backLayer.reveal / backLayer.conceal)
