@@ -325,11 +325,11 @@ export type ParamPolicies = Record<ParamName, FieldPolicy<ParamValue>>;   // OPE
 //   open = (content scrolled and not closed) or opened or its text is not empty
 export interface FindState { opened: boolean; closed: boolean }          // opened: the find button was pressed · closed: ✕ was pressed
 export interface FindPolicy { opened: FieldPolicy<boolean>; closed: FieldPolicy<boolean> }   // mirrors FindState (e.g. both reset on scrollTop)
-export interface BackPolicy { expanded: FieldPolicy<boolean>; headerHidden?: FieldPolicy<boolean> }
-export interface FrontPolicy { scroll: FieldPolicy<number>; find?: FindPolicy }   // find: required when the front header holds a find item
-export interface BackdropPagePolicy { params: ParamPolicies; back: BackPolicy; front: FrontPolicy }
-export interface SheetPolicy { expanded: FieldPolicy<boolean> }
-export interface AppBarPagePolicy { params?: ParamPolicies; scroll: FieldPolicy<number>; sheet?: SheetPolicy; find?: FindPolicy }   // sheet mirrors SheetState
+export interface BackLayerPolicy { expanded: FieldPolicy<boolean>; headerHidden?: FieldPolicy<boolean> }
+export interface FrontLayerPolicy { scroll: FieldPolicy<number>; find?: FindPolicy }   // find: required when the front header holds a find item
+export interface BackdropPagePolicy { params: ParamPolicies; back: BackLayerPolicy; front: FrontLayerPolicy }
+export interface PageSheetPolicy { expanded: FieldPolicy<boolean> }
+export interface AppBarPagePolicy { params?: ParamPolicies; scroll: FieldPolicy<number>; sheet?: PageSheetPolicy; find?: FindPolicy }   // sheet mirrors PageSheetState
 
 // ── Backdrop page. The back layer has named regions with fixed meanings:
 //   header, actions and basicAction show concealed and expanded; panel shows only expanded.
@@ -339,7 +339,7 @@ export interface BackLayerConfig {
   basicAction?: BasicActionConfig;
   panel?: PanelRow[];
   toggleOnTap?: boolean;                 // default true
-  hideHeaderOnScroll?: boolean;          // scrolling down hides the header region (BackState.headerHidden)
+  hideHeaderOnScroll?: boolean;          // scrolling down hides the header region (BackLayerState.headerHidden)
 }
 export interface FrontHeaderConfig { title: PropValue; items: HeaderItem[] }   // the disclosure is built in: every front header has one
 export type FrontCollapse = 'partial' | 'full';
@@ -442,24 +442,19 @@ export interface AppConfig {
 // I. STATE (runtime, user-driven)
 // ═════════════════════════════════════════════════════════════
 export type Scoped<T> = T | Record<string, T>;   // a field with a policy scope is stored per scope key
-export interface BackState { expanded: boolean; headerHidden?: boolean }
-export interface FrontState { scroll: Scoped<number>; find?: FindState }   // collapse-first scroll offset (15.0): see PageScroll below
-export interface SheetState { expanded: boolean }
-export interface BackdropPageState {
-  config: BackdropPageConfig;
-  opener?: ItemData;
+export interface BackLayerState { expanded: boolean; headerHidden?: boolean }
+export interface FrontLayerState { scroll: Scoped<number>; find?: FindState }   // collapse-first scroll offset (15.0): see PageScroll below
+export interface PageSheetState { expanded: boolean }
+export interface PageStateBase<C> {     // what every page's state holds
+  config: C;
+  opener?: ItemData;                     // an opened page: the item that opened it ($opener)
   template?: PageTemplateId;             // an opened page: its template (composition's page exceptions name it)
   params: Record<ParamName, Scoped<ParamValue>>;
-  back: BackState;
-  front: FrontState;
 }
-export interface AppBarPageState {
-  config: AppBarPageConfig;
-  opener?: ItemData;
-  params: Record<ParamName, Scoped<ParamValue>>;
-  template?: PageTemplateId;
+export interface BackdropPageState extends PageStateBase<BackdropPageConfig> { back: BackLayerState; front: FrontLayerState }
+export interface AppBarPageState extends PageStateBase<AppBarPageConfig> {
   scroll: Scoped<number>;                // collapse-first scroll offset (15.0): see PageScroll below
-  sheet?: SheetState;
+  sheet?: PageSheetState;
   find?: FindState;
 }
 export type PageState = BackdropPageState | AppBarPageState;
@@ -588,7 +583,7 @@ export interface Geometry { width: number; height: number; railWidth: number; na
 export interface LayoutGeometry extends Geometry { side: SideMode | null; wide: boolean; navigation: HireName | null }
 export interface RegionInstance { region: string; top: number; height: number; opacity: number; interactive: boolean }
 export interface FrontLayerView { top: number; state: 'expanded' | 'partlyCollapsed' | 'fullyCollapsed'; visual: Record<string, unknown> }
-// PageScroll (15.0): a page's scroll (FrontState.scroll / AppBarPageState.scroll) is collapse-first — 0 … distance
+// PageScroll (15.0): a page's scroll (FrontLayerState.scroll / AppBarPageState.scroll) is collapse-first — 0 … distance
 //   (expandedHeight − height) collapses the bar while the content stays put (the page grows); beyond it the content scrolls by
 //   (scroll − distance). Scrolling back: the content returns to its top first, then the bar expands. No expanded slot: distance 0.
 export interface BarView { height: number; progress: number; distance: number }   // a bar with an expanded slot: current height + collapse progress (0 … 1) + collapse distance

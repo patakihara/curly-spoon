@@ -133,8 +133,9 @@ LayerState { open: bool, stack: StackEntry[] }                                  
 StackEntry { page: PageState, openedFrom: ItemRef | null }   ✅
 
 PageState = BackdropPageState | AppBarPageState
-BackdropPageState { config, back: BackLayerState, front: FrontLayerState }   ✅
-AppBarPageState   { config, params, scroll }                                ✅
+PageStateBase<C>  { config: C, opener?, template?, params }                 (18.0: shared by both)
+BackdropPageState extends PageStateBase { back: BackLayerState, front: FrontLayerState }   ✅
+AppBarPageState   extends PageStateBase { scroll, sheet?: PageSheetState, find? }        ✅
 
 BackLayerState  { expanded: bool, headerHidden? }          ✅
 FrontLayerState { scroll }                                ✅  (scoped fields are maps by scope key; scroll written without re-render)

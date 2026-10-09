@@ -83,4 +83,5 @@ Rules of thumb
 ## 18.0 to port
 - Config items are tagged enums by `kind` (button · logo · text · switch · find · detail · seek); BackLayerConfig has fixed regions. No roles, refs or slot paths.
 - `CONTRACTS` (api/contracts.js) and app/composition.json are data (serde). `compose::placement_for`, `hire_of`, `look_at` (size / visuals per place); `contracts::contract_tree(model, specs, composition, ctx) -> ContractTree`, whose node events return an Intent, an action or nothing.
-- `create_model(config, sizes)`: Layout.sizes(look) gives rail and side-sheet widths. FrontState / AppBarPageState gain `find`; intents OpenFind / CloseFind.
+- `create_model(config, sizes)`: Layout.sizes(look) gives rail and side-sheet widths. FrontLayerState / AppBarPageState gain `find`; intents OpenFind / CloseFind.
+- Page state: `PageStateBase` (config · opener · template · params) is one struct each page state embeds (`#[serde(flatten)]`). State and policy types carry their config's full name: BackLayerState / FrontLayerState / PageSheetState, BackLayerPolicy / FrontLayerPolicy / PageSheetPolicy.
