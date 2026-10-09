@@ -21,7 +21,7 @@ class Component extends DCLogic {
     const v = this.props.visuals || {};
     const icon = this.props.icon ?? v.icon ?? '';
     return { text: this.props.text || '', icon, hasIcon: !!icon, hasRetry: !!this.props.retry, retry: this.props.retry || '', retryIx: this.props.retryIx || {},
-      ink: v.ink || 'inherit', iconVis: { size: +v.iconSize || 36, color: v.iconColor }, fs: +v.fontSize || 14, py: +v.padY || 0, px: +v.padX || 0, gap: +v.gap || 0 };
+      ink: v.ink || 'inherit', iconVis: { ...(this.props.symbolVisuals || {}), size: +v.iconSize || 36, color: v.iconColor, padEnd: 0 }, fs: +v.fontSize || 14, py: +v.padY || 0, px: +v.padX || 0, gap: +v.gap || 0 };
   }
 }
 </script>

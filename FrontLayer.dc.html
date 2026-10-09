@@ -15,7 +15,7 @@
   <dc-import name="Bar" height="{{ fhH }}" row="{{ fhRow }}" start="{{ fhLeft }}" end="{{ fhRight }}" title="{{ fhTitle }}" title-vis="{{ titleVisFront }}" title-op="{{ fhTitleOp }}" title-max-w="{{ fhTitleW }}" surface-ix="{{ subIx }}" divider="{{ fhBorder }}" ease="{{ ease }}" motion="{{ fhMo }}" visuals="{{ barVisFront }}" hint-size="100%,48px"></dc-import>
   </sc-if>
   <div ref="{{ scrollRef }}" data-scroller="1" onScroll="{{ onFrontScroll }}" style="flex:1;overflow:auto;position:relative"><div style="min-height:100%;box-sizing:border-box;padding-bottom:{{ screenBottom }}px">
-    <sc-if value="{{ cv.banner }}" hint-placeholder-val="{{ false }}"><dc-import name="StaleBanner" text="{{ cv.staleText }}" retry="{{ retryText }}" retry-ix="{{ retryIx }}" visuals="{{ cv.bannerVis }}" hint-size="100%,44px"></dc-import></sc-if>
+    <sc-if value="{{ cv.banner }}" hint-placeholder-val="{{ false }}"><dc-import name="StaleBanner" symbol-visuals="{{ symbolVisuals }}" text="{{ cv.staleText }}" retry="{{ retryText }}" retry-ix="{{ retryIx }}" visuals="{{ cv.bannerVis }}" hint-size="100%,44px"></dc-import></sc-if>
     <sc-if value="{{ cv.phList }}" hint-placeholder-val="{{ false }}">
       <div aria-busy="true" style="display:flex;flex-direction:column"><sc-for list="{{ cv.placeholders }}" as="ph" hint-placeholder-count="5"><dc-import name="Placeholder" form="list" width="{{ ph.w }}" visuals="{{ cv.phVis }}" hint-size="100%,77px"></dc-import></sc-for></div>
     </sc-if>
@@ -25,10 +25,10 @@
     <sc-if value="{{ cv.phGeneric }}" hint-placeholder-val="{{ false }}">
       <div aria-busy="true" style="padding:{{ scroller.padding }}px;display:flex;flex-direction:column;gap:{{ scroller.gap }}px"><sc-for list="{{ cv.placeholders }}" as="ph" hint-placeholder-count="3"><dc-import name="Placeholder" form="block" width="{{ ph.w }}" visuals="{{ cv.phVis }}" hint-size="100%,200px"></dc-import></sc-for></div>
     </sc-if>
-    <sc-if value="{{ cv.message }}" hint-placeholder-val="{{ false }}"><dc-import name="EmptyState" text="{{ cv.text }}" icon="{{ cv.icon }}" retry="{{ cv.retryLabel }}" retry-ix="{{ retryIx }}" visuals="{{ cv.msgVis }}" hint-size="100%,180px"></dc-import></sc-if>
+    <sc-if value="{{ cv.message }}" hint-placeholder-val="{{ false }}"><dc-import name="EmptyState" symbol-visuals="{{ symbolVisuals }}" text="{{ cv.text }}" icon="{{ cv.icon }}" retry="{{ cv.retryLabel }}" retry-ix="{{ retryIx }}" visuals="{{ cv.msgVis }}" hint-size="100%,180px"></dc-import></sc-if>
     <sc-if value="{{ isCarousels }}" hint-placeholder-val="{{ false }}">
       <div style="padding:{{ scroller.carouselPadTop }}px 0 {{ scroller.carouselPadBottom }}px;display:flex;flex-direction:column;gap:{{ scroller.carouselGap }}px">
-        <sc-for list="{{ carousels }}" as="cr" hint-placeholder-count="3"><dc-import name="Carousel" id="{{ cr.id }}" title="{{ cr.label }}" sub="{{ cr.sub }}" ix="{{ cr.ix }}" entries="{{ cr.entries }}" visuals="{{ carouselVis }}" hint-size="100%,230px"></dc-import></sc-for>
+        <sc-for list="{{ carousels }}" as="cr" hint-placeholder-count="3"><dc-import name="Carousel" symbol-visuals="{{ symbolVisuals }}" id="{{ cr.id }}" title="{{ cr.label }}" sub="{{ cr.sub }}" ix="{{ cr.ix }}" entries="{{ cr.entries }}" visuals="{{ carouselVis }}" hint-size="100%,230px"></dc-import></sc-for>
       </div>
     </sc-if>
     <sc-if value="{{ isGeneric }}" hint-placeholder-val="{{ false }}">

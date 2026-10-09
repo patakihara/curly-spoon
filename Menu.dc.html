@@ -23,7 +23,7 @@ class Component extends DCLogic {
   renderVals() {
     const v = this.props.visuals || {}, sheet = !!this.props.sheet, a = this.props.anchor || {};
     return { v, sheet, items: this.props.items || [], onClose: this.props.onClose || (() => {}), stop: e => e.stopPropagation(),
-      pos: sheet ? 'relative' : 'absolute', top: sheet ? 0 : a.top || 0, end: sheet ? 0 : a.end || 0, w: sheet ? '100%' : 'auto', iconVis: { size: +v.iconSize || 22, color: v.iconColor } };
+      pos: sheet ? 'relative' : 'absolute', top: sheet ? 0 : a.top || 0, end: sheet ? 0 : a.end || 0, w: sheet ? '100%' : 'auto', iconVis: { ...(this.props.symbolVisuals || {}), size: +v.iconSize || 22, color: v.iconColor, padEnd: 0 } };
   }
 }
 </script>

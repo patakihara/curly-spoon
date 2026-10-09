@@ -12,7 +12,7 @@
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:40,&quot;height&quot;:90},&quot;onEnter&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
 // Web drawing of the side sheet's edge handle (design: sideSheet handle* visuals) shown in auto mode; hovering it opens the sheet. Props: onEnter, visuals. No values of its own.
 class Component extends DCLogic {
-  renderVals() { const v = this.props.visuals || {}; return { v, onEnter: this.props.onEnter || (() => {}), iconVis: { size: +v.handleIconSize || 18 } }; }
+  renderVals() { const v = this.props.visuals || {}; return { v, onEnter: this.props.onEnter || (() => {}), iconVis: { ...(this.props.symbolVisuals || {}), size: +v.handleIconSize || 18, padEnd: 0 } }; }
 }
 </script>
 </body>

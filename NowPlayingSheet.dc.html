@@ -25,7 +25,7 @@
         <dc-import name="Row" children="{{ np.ctrls }}" visuals="{{ np.rowVis }}" hint-size="100%,64px"></dc-import>
       </div>
       <div style="position:absolute;left:0;right:0;top:0;opacity:{{ np.miniOp }};pointer-events:{{ np.miniEv }};transition:{{ mx.layer.nowPlaying.content }}"><dc-import name="NowPlaying" image="{{ np.art }}" title="{{ np.title }}" subtitle="{{ np.sub }}" controls="{{ pl.mini }}" visuals="{{ npVis }}" style="width:100%" hint-size="100%,48px"></dc-import></div>
-      <dc-import name="UpNextSheet" np="{{ np }}" sheet-vis="{{ sheetVis }}" mx="{{ mx }}" style="display:contents" hint-size="0px,0px"></dc-import>
+      <dc-import name="UpNextSheet" symbol-visuals="{{ symbolVisuals }}" np="{{ np }}" sheet-vis="{{ sheetVis }}" mx="{{ mx }}" style="display:contents" hint-size="0px,0px"></dc-import>
     </div></sc-if>
   </div>
 </div>

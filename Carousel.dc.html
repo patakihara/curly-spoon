@@ -24,7 +24,7 @@ class Component extends DCLogic {
     const v = this.props.visuals || {}, pad = +(v.itemPadding ?? 10), inset = +(v.inset ?? 16);
     return { id: this.props.id || '', title: this.props.title || '', sub: this.props.sub || '', ix: this.props.ix || {},
       gap: +v.gap || 0, hh: +v.headingHeight || 44, hg: +v.headingGap || 0, inset, ts: +v.titleSize || 17, tw: v.titleWeight || 500, sf: v.subFont || 'inherit', ss: +v.subSize || 11, sc: v.subColor || 'inherit',
-      chev: v.chevron || 'chevron_right', chevVis: { size: +v.chevronSize || 22, color: v.chevronColor },
+      chev: v.chevron || 'chevron_right', chevVis: { ...(this.props.symbolVisuals || {}), size: +v.chevronSize || 22, color: v.chevronColor, padEnd: 0 },
       rowPad: Math.max(0, inset - pad), w: +v.entrySize || 140, pad, ir: +(v.itemRadius ?? 12), eg: +v.entryGap || 0, efs: +v.entryFontSize || 13, snap: v.snap || 'start',
       entries: (this.props.entries || []).map(e => ({ ...e, rad: e.shape === 'circle' ? +(v.entryArtRadiusCircle ?? 999) : +(v.entryArtRadius ?? 6), align: e.shape === 'circle' ? 'center' : 'start' })) };
   }

@@ -12,7 +12,7 @@
     <div style="position:relative;z-index:1;align-self:stretch;padding:0 {{ sheetVis.tabInset }}px"><dc-import name="TabBar" tabs="{{ np.tabs }}" selected="{{ np.tabSel }}" motion="{{ np.tabMo }}" visuals="{{ np.tabVis }}" hint-size="100%,48px"></dc-import></div>
   </div>
   <div style="flex:1;min-height:0;overflow:auto;padding:{{ sheetVis.contentPadY }}px 0">
-    <sc-if value="{{ np.empty }}" hint-placeholder-val="{{ false }}"><dc-import name="EmptyState" text="{{ np.emptyText }}" icon="" visuals="{{ np.emptyVis }}" hint-size="100%,100px"></dc-import></sc-if>
+    <sc-if value="{{ np.empty }}" hint-placeholder-val="{{ false }}"><dc-import name="EmptyState" symbol-visuals="{{ symbolVisuals }}" text="{{ np.emptyText }}" icon="" visuals="{{ np.emptyVis }}" hint-size="100%,100px"></dc-import></sc-if>
     <sc-for list="{{ np.rows }}" as="qr" hint-placeholder-count="4"><div style="background:{{ qr.bg }}"><dc-import name="ListRow" dc-props="{{ qr.ix }}" item-id="{{ qr.id }}" text="{{ qr.label }}" sub="{{ qr.sub }}" art="{{ qr.art }}" trailing="{{ qr.trailing }}" thumb="40" pad-y="4" divider="none" hint-size="100%,48px"></dc-import></div></sc-for>
   </div>
 </div>

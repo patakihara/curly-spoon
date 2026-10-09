@@ -517,7 +517,8 @@ Each was my call; say if you disagree and I redo it.
     look, and drawing them as drawerItem would have inherited navItem's 0.97 press shrink. Today's feel kept.
 39. Decision 35 corrected: the platform passes Symbol's visuals resolved without a surface (no colour, so the glyph
     inherits its parent's ink, as before) and the parent sets padEnd 0 (it spaces its own children). The first version
-    passed back-layer visuals: white and 8px after the glyph. Fixed in the same day's work (search, drawer, rail).
+    passed back-layer visuals: white and 8px after the glyph. Fixed in the same day's work (search, drawer, rail); the same
+    bug, fixed the same way, in Carousel (shelf chevrons), Menu, EmptyState, StaleBanner and EdgeHandle.
 
 ### Switchover (2026-10-09): done, with what is still open
 The mockup runs on 18.0 (config + composition + design → contract tree → shell). Checked in headless Chrome against the

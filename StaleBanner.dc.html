@@ -14,7 +14,7 @@
 class Component extends DCLogic {
   renderVals() {
     const v = this.props.visuals || {};
-    return { text: this.props.text || '', retry: this.props.retry || '', retryIx: this.props.retryIx || {}, fill: v.fill || 'transparent', ink: v.ink || 'inherit', fs: +v.fontSize || 12, py: +v.padY || 0, px: +v.padX || 0, gap: +v.gap || 0, icon: v.icon || 'cloud_off', iconVis: { size: +v.iconSize || 18 } };
+    return { text: this.props.text || '', retry: this.props.retry || '', retryIx: this.props.retryIx || {}, fill: v.fill || 'transparent', ink: v.ink || 'inherit', fs: +v.fontSize || 12, py: +v.padY || 0, px: +v.padX || 0, gap: +v.gap || 0, icon: v.icon || 'cloud_off', iconVis: { ...(this.props.symbolVisuals || {}), size: +v.iconSize || 18, padEnd: 0 } };
   }
 }
 </script>
