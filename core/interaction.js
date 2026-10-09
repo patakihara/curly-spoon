@@ -14,7 +14,7 @@ export function statusOf(actions, env, facts = {}) {
     const m = env.model, s = m.getState(), q = m.query, i = action.nav;
     if ((i.type === 'switchDeck' || i.type === 'reselectDeck') && i.deck === s.activeDeck) out.push('selected');
     if (i.type === 'setParams' || i.type === 'toggleParam') {
-      const p = q.paramTarget(s, i), cur = k => p && p.config.statePolicy.params && p.config.statePolicy.params[k] ? q.contentParams(p)[k] ?? readParam(p, k) : undefined;
+      const p = q.paramTarget(s, i), cur = k => p && p.pending && k in p.pending ? p.pending[k] : p && p.config.statePolicy.params && p.config.statePolicy.params[k] ? q.contentParams(p)[k] ?? readParam(p, k) : undefined;   // pending first ('onApply' params)
       if (p && i.type === 'setParams' && Object.keys(i.values || {}).every(k => JSON.stringify(cur(k)) === JSON.stringify(i.values[k]))) out.push('selected');
       if (p && i.type === 'toggleParam' && Array.isArray(cur(i.name)) && cur(i.name).includes(i.option)) out.push('selected');
     }

@@ -21,11 +21,11 @@
       </div></sc-for>
 
       <sc-for list="{{ rBasic }}" as="ri" hint-placeholder-count="1"><div data-enter="basic" style="position:absolute;left:0;right:0;top:{{ ri.top }}px;opacity:{{ ri.op }};pointer-events:{{ ri.ev }};transition:{{ mx.expand.both }}">
-      <div style="height:{{ basicH }}px;box-sizing:border-box;overflow:hidden;padding:{{ sv.back.basicPadding }};color:{{ sv.back.ink }}">
-        <sc-if value="{{ isFilters }}" hint-placeholder-val="{{ true }}"><dc-import name="FilterChips" chips="{{ filters }}" visuals="{{ fcVis }}" hint-size="100%,48px"></dc-import></sc-if>
-        <sc-if value="{{ isTabs }}" hint-placeholder-val="{{ false }}"><dc-import name="TabBar" tabs="{{ tabs }}" selected="{{ tabSel }}" motion="{{ tabMo }}" visuals="{{ tbVis }}" hint-size="100%,48px"></dc-import></sc-if>
-        <sc-if value="{{ isSearch }}" hint-placeholder-val="{{ false }}"><dc-import name="SearchField" value="{{ query }}" hint="{{ searchHint }}" on-input="{{ onQuery }}" on-key="{{ onQueryKey }}" clear-ix="{{ clearIx }}" visuals="{{ sfVis }}" symbol-visuals="{{ symVis }}" hint-size="100%,48px"></dc-import></sc-if>
-      </div>
+      <sc-for list="{{ basicRows }}" as="br" hint-placeholder-count="1"><div style="height:{{ basicH }}px;box-sizing:border-box;overflow:hidden;padding:{{ sv.back.basicPadding }};color:{{ sv.back.ink }};display:flex;gap:{{ sv.back.panelGap }}px"><sc-for list="{{ br.controls }}" as="bc" hint-placeholder-count="1"><div style="flex:1;min-width:0">
+        <sc-if value="{{ bc.isFilters }}" hint-placeholder-val="{{ true }}"><dc-import name="FilterChips" chips="{{ bc.chips }}" visuals="{{ bc.vis }}" hint-size="100%,48px"></dc-import></sc-if>
+        <sc-if value="{{ bc.isTabs }}" hint-placeholder-val="{{ false }}"><dc-import name="TabBar" tabs="{{ bc.tabs }}" selected="{{ bc.tabSel }}" motion="{{ tabMo }}" visuals="{{ bc.vis }}" hint-size="100%,48px"></dc-import></sc-if>
+        <sc-if value="{{ bc.isSearch }}" hint-placeholder-val="{{ false }}"><dc-import name="SearchField" value="{{ bc.query }}" hint="{{ bc.hint }}" on-input="{{ bc.onQuery }}" on-key="{{ bc.onQueryKey }}" clear-ix="{{ bc.clearIx }}" visuals="{{ bc.vis }}" symbol-visuals="{{ symVis }}" hint-size="100%,48px"></dc-import></sc-if>
+      </div></sc-for></div></sc-for>
       </div></sc-for>
 
       <sc-for list="{{ rActions }}" as="ri" hint-placeholder-count="0"><div data-enter="actions" style="position:absolute;left:0;right:0;top:{{ ri.top }}px;opacity:{{ ri.op }};pointer-events:{{ ri.ev }};transition:{{ mx.expand.both }}">
@@ -34,14 +34,16 @@
 
       <sc-for list="{{ rPanel }}" as="ri" hint-placeholder-count="1"><div style="position:absolute;left:0;right:0;top:{{ ri.top }}px;opacity:{{ ri.op }};pointer-events:{{ ri.ev }};transition:{{ mx.expand.both }}">
         <div ref="{{ panelRef }}" style="height:{{ panelH }};box-sizing:border-box;padding:{{ sv.back.panelPadding }};border-top:1px solid {{ sv.back.panelDivider }};color:{{ sv.back.ink }};display:flex;flex-direction:column;gap:{{ sv.back.panelGap }}px">
-          <sc-for list="{{ panelItems }}" as="pr" hint-placeholder-count="3">
-            <div style="display:flex;flex-direction:column">
-              <sc-if value="{{ pr.isText }}" hint-placeholder-val="{{ true }}"><dc-import name="PanelRow" text="{{ pr.text }}" visuals="{{ pr.vis }}" hint-size="100%,16px"></dc-import></sc-if>
-              <sc-if value="{{ pr.isChips }}" hint-placeholder-val="{{ false }}"><dc-import name="FilterChips" chips="{{ pr.chips }}" wrap="{{ true }}" visuals="{{ pr.vis }}" hint-size="100%,32px"></dc-import></sc-if>
-              <sc-if value="{{ pr.isDropdown }}" hint-placeholder-val="{{ false }}"><dc-import name="Dropdown" options="{{ pr.options }}" label="{{ pr.text }}" on-pick="{{ pr.onPick }}" visuals="{{ pr.vis }}" hint-size="120px,40px"></dc-import></sc-if>
-              <sc-if value="{{ pr.isRange }}" hint-placeholder-val="{{ false }}"><dc-import name="RangeField" from="{{ pr.from }}" to="{{ pr.to }}" min="{{ pr.min }}" max="{{ pr.max }}" on-from="{{ pr.onFrom }}" on-to="{{ pr.onTo }}" from-label="{{ pr.fromLabel }}" to-label="{{ pr.toLabel }}" visuals="{{ pr.vis }}" hint-size="200px,40px"></dc-import></sc-if>
-              <sc-if value="{{ pr.isSuggest }}" hint-placeholder-val="{{ false }}"><dc-import name="SuggestionRow" ix="{{ pr.ix }}" text="{{ pr.text }}" visuals="{{ pr.vis }}" symbol-visuals="{{ symVis }}" hint-size="100%,40px"></dc-import></sc-if>
-            </div>
+          <sc-for list="{{ panelRows }}" as="pr" hint-placeholder-count="3">
+            <sc-if value="{{ pr.hasLabel }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column"><dc-import name="PanelRow" text="{{ pr.label }}" visuals="{{ pr.vis }}" hint-size="100%,16px"></dc-import></div></sc-if>
+            <div style="display:flex;gap:{{ sv.back.panelGap }}px"><sc-for list="{{ pr.controls }}" as="pc" hint-placeholder-count="1"><div style="flex:1;min-width:0;display:flex;flex-direction:column">
+              <sc-if value="{{ pc.isChips }}" hint-placeholder-val="{{ false }}"><dc-import name="FilterChips" chips="{{ pc.chips }}" wrap="{{ true }}" visuals="{{ pc.vis }}" hint-size="100%,32px"></dc-import></sc-if>
+              <sc-if value="{{ pc.isDropdown }}" hint-placeholder-val="{{ false }}"><dc-import name="Dropdown" options="{{ pc.options }}" label="{{ pc.label }}" on-pick="{{ pc.onPick }}" visuals="{{ pc.vis }}" hint-size="120px,40px"></dc-import></sc-if>
+              <sc-if value="{{ pc.isRange }}" hint-placeholder-val="{{ false }}"><dc-import name="RangeField" from="{{ pc.from }}" to="{{ pc.to }}" min="{{ pc.min }}" max="{{ pc.max }}" on-from="{{ pc.onFrom }}" on-to="{{ pc.onTo }}" from-label="{{ pc.fromLabel }}" to-label="{{ pc.toLabel }}" visuals="{{ pc.vis }}" hint-size="200px,40px"></dc-import></sc-if>
+              <sc-if value="{{ pc.isSuggest }}" hint-placeholder-val="{{ false }}"><dc-import name="SuggestionList" rows="{{ pc.rows }}" row-vis="{{ pc.rowVis }}" visuals="{{ pc.vis }}" symbol-visuals="{{ symVis }}" hint-size="100%,160px"></dc-import></sc-if>
+              <sc-if value="{{ pc.isTabs }}" hint-placeholder-val="{{ false }}"><dc-import name="TabBar" tabs="{{ pc.tabs }}" selected="{{ pc.tabSel }}" motion="{{ tabMo }}" visuals="{{ pc.vis }}" hint-size="100%,48px"></dc-import></sc-if>
+              <sc-if value="{{ pc.isSearch }}" hint-placeholder-val="{{ false }}"><dc-import name="SearchField" value="{{ pc.query }}" hint="{{ pc.hint }}" on-input="{{ pc.onQuery }}" on-key="{{ pc.onQueryKey }}" clear-ix="{{ pc.clearIx }}" visuals="{{ pc.vis }}" symbol-visuals="{{ symVis }}" hint-size="100%,48px"></dc-import></sc-if>
+            </div></sc-for></div>
           </sc-for>
         </div>
       </div></sc-for>
@@ -198,7 +200,7 @@ const G = { layout: 'compact', PW: DEVICES.phone.width, CW: DEVICES.phone.width,
 const FF = () => ({ top: 0, left: 0, w: G.CW, h: G.H, r: 0, op: 1 });
 const CF = () => ({ top: G.AH || 0, left: 0, w: G.CW, h: G.H - (G.AH || 0), r: 0, op: 1 });
 const underIndex = st => { for (let i = st.length - 1; i >= 0; i--) if (st[i].page.config.kind === 'backdrop') return i; return 0; };
-const BACK_KEYS = ['rActions', 'actBtns', 'actH', 'bhX', 'bhTitleOp', 'panelItems', 'panelH', 'panelRef', 'rHeader', 'rBasic', 'rPanel', 'bhLeft', 'bhRight', 'bhTitle', 'bhTitlePad', 'isFilters', 'isTabs', 'isSearch', 'filters', 'tabs', 'tabInd', 'query', 'hasQuery', 'onQuery', 'clearIx', 'searchHint', 'canBack', 'basicH', 'panelRows'];
+const BACK_KEYS = ['rActions', 'actBtns', 'actH', 'bhX', 'bhTitleOp', 'panelRows', 'panelH', 'panelRef', 'rHeader', 'rBasic', 'rPanel', 'bhLeft', 'bhRight', 'bhTitle', 'bhTitlePad', 'basicRows', 'tabMo', 'canBack', 'basicH'];
 const SHELL_ACTIONS = ['copyLink'];   // shell actions this mockup implements (§20)
 // artwork for mock content: two colours from the item id (the backend has no images)
 /* lint:off fake backend artwork */
@@ -206,7 +208,7 @@ const artCss = x => !x ? 'transparent' : String(x).startsWith('mock:') ? artOf(S
 const artOf = id => { let x = 0; for (const ch of String(id || '')) x = (x * 31 + ch.charCodeAt(0)) >>> 0; const h1 = x % 360, h2 = (h1 + 40 + (x >> 9) % 80) % 360; return 'linear-gradient(135deg, oklch(0.62 0.13 ' + h1 + '), oklch(0.42 0.11 ' + h2 + '))'; };
 /* lint:on */
 const INERT = {};   // not a control: an instance without resolve renders disabled
-const STUB_LISTS = ['rActions', 'actBtns', 'railTop', 'railBottom', 'carousels', 'panelItems', 'simToggles', 'railNav', 'rHeader', 'rBasic', 'rPanel', 'cards', 'genericBlocks', 'nav', 'layouts', 'stackInfo', 'historyList', 'log', 'filters', 'tabs', 'panelRows', 'bhLeft', 'bhRight', 'fhLeft', 'fhRight', 'ahLeft', 'ahRight'];
+const STUB_LISTS = ['rActions', 'actBtns', 'railTop', 'railBottom', 'carousels', 'panelRows', 'basicRows', 'simToggles', 'railNav', 'rHeader', 'rBasic', 'rPanel', 'cards', 'genericBlocks', 'nav', 'layouts', 'stackInfo', 'historyList', 'log', 'bhLeft', 'bhRight', 'fhLeft', 'fhRight', 'ahLeft', 'ahRight'];
 
 async function loadModules() {
   // plain ES modules via blob URLs; relative imports inside them are loaded the same way and rewritten
@@ -508,7 +510,8 @@ class Component extends DCLogic {
   paramChange(ps, intent, label) {
     const go = () => this.dispatch(intent, label || 'params');
     if (!ps) return go();
-    const name = intent.name || Object.keys(intent.values || {})[0], S = (ps.config.params || {})[name] || {};
+    const name = intent.name || (intent.names || [])[0] || Object.keys(intent.values || {})[0], S = (ps.config.params || {})[name] || {};
+    if (S.apply === 'onApply' && intent.type !== 'applyParams' && !intent.apply) return go();   // a pending change: the content stays
     let dir = 0;
     if (S.axis && intent.type === 'setParams') { const o = this.model.query.paramOptions(this.ms, this.model.config, ps, name).map(x => x.value); dir = Math.sign(o.indexOf(intent.values[name]) - o.indexOf(this.M.getField(ps, 'params.' + name))); }
     const d = this.P.transitionFor({ type: 'paramChanged', name, motion: S.motion || 'default', direction: dir }, this.specs, this.ms.prefs, {});
@@ -749,7 +752,7 @@ class Component extends DCLogic {
     if (i.type === 'openLayer') return this.openLayer(i.layer, e);
     if (i.type === 'switchDeck' || i.type === 'reselectDeck') return this.switchDeck(i.deck);
     if (i.type === 'back') return this.back();
-    if (i.type === 'setParams' || i.type === 'toggleParam' || i.type === 'resetParams') return this.paramChange(this.model.query.paramTarget(this.ms, i), i, i.type);
+    if (['setParams', 'toggleParam', 'resetParams', 'applyParams'].includes(i.type)) return this.paramChange(this.model.query.paramTarget(this.ms, i), i, i.type);
     this.dispatch(i, i.type);
   }
   closeMenu() { if (this.ms.overlays.some(o => o.spec.kind === 'menu')) this.dispatch({ type: 'closeOverlay', id: this.ms.overlays.find(o => o.spec.kind === 'menu').spec.id }, 'menu · close'); }
@@ -771,15 +774,29 @@ class Component extends DCLogic {
     return { isBase, ex: ps.back.expanded, items, content };
   }
 
-  // chips for an input node bound to a choice / choices param: one selected (setParams) or each toggling (toggleParam)
-  chipsFor(ps, n) {
-    if (!n) return [];
-    const name = n.at.param && n.at.param.name, many = n.at.param && n.at.param.type === 'choices', val = n.values.value;
-    return (n.values.options || []).map(o => {
-      const on = many ? Array.isArray(val) && val.includes(o.value) : val === o.value;
-      const i = many ? { type: 'toggleParam', name, option: o.value, page: ps.config.id } : (this.actOf(n, 'change', o.value) || {}).nav;
-      return { label: o.label, on, ix: this.ix(n.key + '/' + o.value, i && { nav: i }, () => this.paramChange(ps, i, 'params · ' + name + ' ' + o.value), { component: 'chip', label: o.label }) };
-    });
+  // a param control node (core/contracts.js) → the props of the DC composition hired for it. Every option carries selected
+  // (core); a chip / tab / suggestion sends its own event with its option: change (setParams), toggle (toggleParam), pick (setParams + apply)
+  controlView(ps, n) {
+    const comp = n.component, name = n.config.bind, V = this.P.resolveVisuals(this.specs, comp, 'enabled', { surface: 'backLayer' });   // design visuals of back-layer controls
+    const go = (ev, payload, label) => { const a = this.actOf(n, ev, payload); return a && a.nav ? { nav: a.nav, run: () => this.paramChange(ps, a.nav, label) } : { nav: null, run: () => {} }; };
+    const opts = n.values.options, base = { comp, vis: V, isFilters: false, isChips: false, isTabs: false, isSearch: false, isDropdown: false, isRange: false, isSuggest: false, label: n.values.label || '' };
+    if (comp === 'filterChips' || comp === 'choiceChips') {
+      const ev = n.events.toggle && n.at.param.type === 'choices' ? 'toggle' : 'change';
+      return { ...base, isFilters: true, isChips: true, chips: opts.map(o => { const g = go(ev, o.value, 'params · ' + name + ' ' + o.value); return { label: o.label, on: o.selected, ix: this.ix(n.key + '/' + o.value, g.nav && { nav: g.nav }, g.run, { component: 'chip', label: o.label }) }; }) };
+    }
+    if (comp === 'tabBar') return { ...base, isTabs: true, tabSel: Math.max(0, opts.findIndex(o => o.selected)),
+      tabs: opts.map((o, k) => { const g = go('change', o.value, 'params · ' + name); return { label: o.label, ix: this.ix(n.key + '/' + k, g.nav && { nav: g.nav }, g.run, { component: 'tab', label: o.label }) }; }) };
+    if (comp === 'searchField') { const clr = go('change', '', 'params · ' + name);
+      return { ...base, isSearch: true, query: typeof n.values.value === 'string' ? n.values.value : '', hint: n.values.placeholder || '',
+        onQuery: e => go('change', e.target.value, 'params · ' + name).run(), onQueryKey: e => { if (e.key === 'Enter') go('submit', e.target.value, 'params · apply ' + name).run(); },
+        clearIx: this.ix(n.key + '/clear', clr.nav && { nav: clr.nav }, clr.run, { component: 'iconButton', variant: { size: 'xs' }, label: this.model.query.text(this.ms, this.model.config, 'search.clear') }) }; }
+    if (comp === 'suggestionList') return { ...base, isSuggest: true, rowVis: this.P.resolveVisuals(this.specs, 'suggestionRow', 'enabled', { surface: 'backLayer' }),
+      rows: opts.map(o => { const g = go('pick', o.value, 'suggestion · ' + o.label); return { text: o.label, ix: this.ix(n.key + '/' + o.value, g.nav && { nav: g.nav }, g.run, { component: 'suggestionRow', label: o.label }) }; }) };
+    if (comp === 'dropdown') return { ...base, isDropdown: true, options: opts.map(o => ({ value: o.value, label: o.label, on: o.selected })), onPick: e => go('change', e.target.value, 'params · ' + name).run() };
+    if (comp === 'rangeField') { const v0 = n.values.value || [0, 0];
+      const put = (k, x) => { const nv = v0.slice(); nv[k] = Math.max(n.values.min ?? -Infinity, Math.min(n.values.max ?? Infinity, +x)); if (nv[0] > nv[1]) nv[1 - k] = nv[k]; go('change', nv, 'params · ' + name).run(); };
+      return { ...base, isRange: true, from: v0[0], to: v0[1], min: n.values.min, max: n.values.max, fromLabel: n.props.fromLabel || '', toLabel: n.props.toLabel || '', onFrom: e => put(0, e.target.value), onTo: e => put(1, e.target.value) }; }
+    return base;
   }
   // ── view values ────────────────────────────────────────
   backVals(ps, isBase) {
@@ -787,15 +804,11 @@ class Component extends DCLogic {
     const RI = {}; back.values.regions.forEach(r => { (RI[r.region] = RI[r.region] || []).push({ top: r.top, op: r.opacity, ev: r.interactive ? 'auto' : 'none' }); });
     const RH = Object.fromEntries(back.values.regions.map(r => [r.region, r.height]));
     const bhLeft = this.hItems(this.sl(H, 'start'), 'back', ps);
-    // basic action: the input node in the basicAction region — core supplies value + options and maps change / submit to setParams
-    const ctl = back.children.basicAction || null, baComp = ctl ? ctl.component : null, name = ctl && ctl.at.param ? ctl.at.param.name : null;
-    const opts = ctl ? ctl.values.options || [] : [], val = ctl ? ctl.values.value : null, ri = (ev, p) => (ctl && this.actOf(ctl, ev, p) || {}).nav || null;
-    const setP = intent => this.paramChange(ps, intent, 'params · ' + (name || (ctl && ctl.config.bind && ctl.config.bind.change)));
-    const iClr = ri('change', '');
-    const sel = Math.max(0, opts.findIndex(o => o.value === val));
-    const BV = id => this.P.resolveVisuals(this.specs, id, 'enabled', { surface: 'backLayer' });   // design visuals of back-layer controls
+    // param-control rows (core): 'always' rows in the controls region (shown concealed too), 'expanded' rows in the panel
+    const rows = back.children.paramControls, shows = r => r.config.shows || 'expanded';
+    const basicRows = rows.filter(r => shows(r) === 'always').map(r => ({ controls: r.children.controls.map(n => this.controlView(ps, n)) }));
     return {
-      rHeader: RI.header || [], rBasic: RI.basicAction || [], rPanel: RI.panel || [], rActions: RI.actions || [],
+      rHeader: RI.header || [], rBasic: RI.controls || [], rPanel: RI.panel || [], rActions: RI.actions || [],
       // the actions region's buttons (config back.actions: e.g. the artist page's play buttons below its details)
       actH: RH.actions || 0, actBtns: back.children.actions.filter(n => n.shown !== false).map(n => ({ text: n.props.text || '', icon: n.props.icon || '', ix: this.nix(n, { surface: 'backLayer' }) })),
       bhLeft, bhRight: this.hItems(this.sl(H, 'end'), 'back', ps, this.sl(H, 'start')), bhTitle: this.titleText(this.sl(H, 'title'), ps),
@@ -805,31 +818,12 @@ class Component extends DCLogic {
         const p = bv.progress, DV = this.vis(X, { surface: 'backLayer' }), HV = this.vis(H, { surface: 'backLayer' }), from = +HV.titleFadeFrom || 0;
         return { bhX: { show: true, vis: DV, fg: this.P.resolveValue(this.specs, 'backLayer', { role: 'content' }, { surface: 'backLayer' }), h: Math.max(0, bv.height - base), op: Math.max(0, 1 - p * (+HV.detailFade || 1)), sc: 1 - (+HV.detailShrink || 0) * p, art: +DV.artSize || 0, rad: (+DV.artRadius || 0) + 'px', img: artCss(X.props.image), title: X.props.title || '', sub: X.props.subtitle || '', meta: X.props.meta || '' }, bhTitleOp: Math.min(1, Math.max(0, (p - from) / (1 - from || 1))) };
       })(),
-      isFilters: baComp === 'filterChips' || baComp === 'choiceChips', isTabs: baComp === 'tabBar', isSearch: baComp === 'searchField',
-      filters: this.chipsFor(ps, ctl),
-      tabs: opts.map((o, k) => { const i = ri('change', o.value); return { label: o.label, ix: this.ix((ctl ? ctl.key : 'tabs') + '/' + k, i && { nav: i }, () => setP(i), { component: 'tab', label: o.label }) }; }),
-      tabSel: sel, tabMo: (() => { const d = this.P.motionFor(this.specs, 'tabBar', 'indicator', this.ms.prefs); return { ms: this.msOf(d), ease: this.easeOf(d) }; })(),
-      fcVis: BV(baComp === 'choiceChips' ? 'choiceChips' : 'filterChips'), tbVis: BV('tabBar'), sfVis: BV('searchField'),
-      query: typeof val === 'string' && baComp === 'searchField' ? val : '', hasQuery: baComp === 'searchField' && !!val,
-      onQuery: e => { const i = ri('change', e.target.value); if (i) setP(i); },
-      onQueryKey: e => { if (e.key !== 'Enter') return; const i = ri('submit', e.target.value); if (i) setP(i); },
-      clearIx: this.ix((ctl ? ctl.key : 'basic') + '/clear', iClr && { nav: iClr }, () => setP(iClr), { component: 'iconButton', variant: { size: 'xs' }, label: this.model.query.text(this.ms, this.model.config, 'search.clear') }),
-      searchHint: ctl ? ctl.values.placeholder || '' : '',
-      canBack: !isBase, basicH: RH.basicAction || 0, panelRef: this.panelRef,
+      basicRows, tabMo: (() => { const d = this.P.motionFor(this.specs, 'tabBar', 'indicator', this.ms.prefs); return { ms: this.msOf(d), ease: this.easeOf(d) }; })(),
+      canBack: !isBase, basicH: basicRows.length ? (RH.controls || 0) / basicRows.length : 0, panelRef: this.panelRef,
       panelH: 'auto',
-      // panel rows: a param row (its label, then its control) or a suggestions row (its label, then each suggestion)
-      panelItems: back.children.panel.flatMap(row => {
-        const PV = this.P.resolveVisuals(this.specs, 'panelRow', 'enabled', {});   // design: panelRow visuals
-        const label = row.values.label ? [{ isText: true, isChips: false, isSuggest: false, text: row.values.label, vis: PV, chips: [], ix: INERT }] : [];
-        if (row.contract === 'suggestions') return [...label, ...row.children.items.map(n => ({ isText: false, isChips: false, isSuggest: true, text: n.values.text, vis: BV('suggestionRow'), ix: this.nix(n, { run: () => { const a = this.actOf(n); if (a) this.paramChange(ps, a.nav, 'suggestion · ' + n.values.text); }, label: n.values.text }), chips: [] }))];
-        const r = row.children.control, comp = r.component;
-        if (comp === 'filterChips' || comp === 'choiceChips') return [...label, { isText: false, isChips: true, isSuggest: false, chips: this.chipsFor(ps, r), vis: BV(comp), ix: INERT }];
-        if (comp === 'dropdown') return [...label, { isText: false, isChips: false, isSuggest: false, isDropdown: true, text: r.props.label || '', options: (r.values.options || []).map(o => ({ value: o.value, label: o.label, on: o.value === r.values.value })), onPick: e => { const a = this.actOf(r, 'change', e.target.value); if (a) this.paramChange(ps, a.nav, 'params · ' + r.at.param.name); }, vis: BV('dropdown'), chips: [], ix: INERT }];
-        if (comp === 'rangeField') { const v0 = r.values.value || [0, 0];
-          const put = (k, x) => { const nv = v0.slice(); nv[k] = Math.max(r.values.min ?? -Infinity, Math.min(r.values.max ?? Infinity, +x)); if (nv[0] > nv[1]) nv[1 - k] = nv[k]; const a = this.actOf(r, 'change', nv); if (a) this.paramChange(ps, a.nav, 'params · ' + r.at.param.name); };
-          return [...label, { isText: false, isChips: false, isSuggest: false, isRange: true, from: v0[0], to: v0[1], min: r.values.min, max: r.values.max, fromLabel: r.props.fromLabel || '', toLabel: r.props.toLabel || '', onFrom: e => put(0, e.target.value), onTo: e => put(1, e.target.value), vis: BV('rangeField'), chips: [], ix: INERT }]; }
-        return label;
-      })
+      // panel rows: the row's label (its first control's, drawn by panelRow), then its controls side by side
+      panelRows: rows.filter(r => shows(r) === 'expanded').map(r => ({ hasLabel: !!r.values.label, label: r.values.label || '', vis: this.P.resolveVisuals(this.specs, 'panelRow', 'enabled', {}),
+        controls: r.children.controls.map(n => this.controlView(ps, n)) }))
     };
   }
   frontVals(ps, isBase) {
@@ -928,7 +922,7 @@ class Component extends DCLogic {
       v.ftB = v.ftF = v.ftO = { op: 1, sc: 1, tr: 'none', tx: 0 }; v.ahShadow = 'none'; v.ahTitleOp = 1; v.barVisBack = v.barVisFront = v.barVisApp = v.barVisLayer = {}; v.sv = { front: {}, back: {}, sheet: {}, side: {}, drawer: {}, signIn: {}, splash: {}, navBar: {}, rail: {}, pageFill: 'transparent', frontScrim: 'transparent', frontScrimOn: false }; v.barMo = v.fhMo = v.ahMo = {}; v.ovX = { show: false }; v.railTop = []; v.railBottom = []; v.rail = { tr: 'none', collapsed: true, ex: false, w: 0, align: 'center', padX: 0, shadow: 'none', ms: 0, ease: E, mo: {}, padY: 0, gap: 0, groupGap: 0 }; v.railItemVis = v.drawerItemVis = {}; 
       v.blockRowPad = 9; v.fab = v.ahFab = { show: false, ix: INERT, end: 0, top: 0, vis: {}, icon: '' }; v.bhX = { show: false }; v.bhTitleOp = 1; v.fhH = 0; v.fhRow = 0; v.ahH = 0; v.alpha = { show: false, keys: [] }; v.groups = []; v.np = { ctrls: [], tabs: [], rows: [], mini: [], miniOp: 0, miniEv: 'none', bodyOp: 1, empty: false, emptyText: '', artVis: {}, infoVis: {}, seekVis: {}, rowVis: {}, tabVis: {}, tabMo: {}, tabSel: 0, emptyVis: {} }; v.dr = { items: [], ev: 'none', title: '', w: 0, tx: -110, op: 0 }; v.acc = { ev: 'none', start: [], rows: [], signIx: INERT, title: '', name: '', email: '', plan: '', art: '', signText: '', ty: 100 };
       v.cv = {}; v.gate = { ix: INERT }; v.dialog = { cancelIx: INERT, okIx: INERT }; v.snack = { ix: INERT }; v.menu = { show: false, items: [] }; v.ovRows = []; v.ovHead = { title: '', sub: '', art: '' }; v.pl = { icon: '', t: INERT, n: INERT, t2: INERT, n2: INERT, card: [], peek: [], mini: [] }; v.sheetVis = { overflow: 'hidden' }; v.npVis = {}; v.npH = 0; v.cardVis = {}; v.titleVisBack = v.titleVisFront = v.titleVisBar = v.groupVis = v.alphaVis = {}; v.urlDraft = '';
-      v.clearIx = v.subIx = v.retryIx = v.ddCircleIx = INERT; v.tabInd = { left: 0, w: 0, tr: 'none' }; v.onQuery = () => {};
+      v.subIx = v.retryIx = v.ddCircleIx = INERT; v.tabMo = {};
       Object.assign(v.nn, { peekSub: '', peekTitle: '', peekArt: '', title: '', peekIx: INERT, titleIx: INERT, start: [], end: [] }); Object.assign(v.dd, { title: '', start: [], end: [] });
       v.layoutInfo = 'loading model…'; v.backLabel = 'Back'; v.focusLabel = '—'; v.historyCaption = '';
       v.dir = 'ltr'; v.locales = []; v.appFx = v.gateFx = v.splashFx = { op: 1, sc: 1, tr: 'none' };
@@ -1051,8 +1045,8 @@ class Component extends DCLogic {
         np.peekH = SN ? this.look().size({ contract: 'pageSheet', page: SN.at.page, within: SN.at.within }, 'peekHeight') : 0; np.sheetTop = ex ? (+this.P.resolveVisuals(this.specs, 'nowPlaying', 'enabled', {}).height || 0) + 'px' : 'calc(100% - ' + np.peekH + 'px)'; np.miniOp = ex ? 1 : 0; np.miniEv = ex ? 'auto' : 'none'; np.bodyOp = ex ? 0 : 1;
         np.handleIx = this.ix('layer:nowPlaying.sheet.handle', { nav: { type: 'toggleExpanded' } }, () => this.dispatch({ type: 'toggleExpanded' }, 'sheet · toggle'), { component: 'listItem', label: t('player.upNext') });
         if (SN) {
-          const TB = SN.children.control;
-          np.tabs = TB ? (TB.values.options || []).map((o, j) => { const a = this.actOf(TB, 'change', o.value), i = a && a.nav; return { label: o.label, on: o.value === TB.values.value, ix: this.ix(TB.key + '/' + j, i && { nav: i }, () => this.dispatch(i, 'sheet tab · ' + o.value), { component: 'tab', label: o.label }) }; }) : [];
+          const TB = SN.children.paramControl;
+          np.tabs = TB ? TB.values.options.map((o, j) => { const a = this.actOf(TB, 'change', o.value), i = a && a.nav; return { label: o.label, on: o.selected, ix: this.ix(TB.key + '/' + j, i && { nav: i }, () => this.dispatch(i, 'sheet tab · ' + o.value), { component: 'tab', label: o.label }) }; }) : [];
           const RN = SN.children.content.children.items, comp = this.itemComponent(SN.children.content), QV = this.P.resolveVisuals(this.specs, comp, 'enabled', {});
           np.rows = RN.map(n => ({ id: n.config.item.id, label: n.props.title || '', sub: n.props.subtitle || '', art: n.props.image ? artCss(n.props.image) : 'transparent', trailing: comp === 'queueRow' ? (QV.handle || '') : '', bg: n.props.current ? (QV.currentFill || 'transparent') : 'transparent',
             ix: this.nix(n, { component: comp === 'queueRow' ? 'listRow' : comp }) }));

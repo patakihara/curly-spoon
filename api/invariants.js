@@ -644,19 +644,24 @@ export const INVARIANTS = [
   }],
 
   // ── component references (§1 Header)
-  ['conditions and bindings address policy-declared page fields, known derived values and known env keys', f => {
+  ['conditions and bindings address policy-declared page fields (or the pending value of a declared param), known derived values and known env keys', f => {
     const m = f.mk(dev.any(f)), page0 = m.query.underPage(S(m));
     const conds = c => !c ? [] : 'not' in c ? conds(c.not) : 'all' in c ? c.all.flatMap(conds) : 'any' in c ? c.any.flatMap(conds) : [c];
     const atoms = v => v && typeof v === 'object' ? ('if' in v ? [...conds(v.if), ...atoms(v.then), ...atoms(v.else)] : 'text' in v ? Object.values(v.args || {}).flatMap(atoms) : [v]) : [];
     const inPolicy = (policy, path) => path.split('.').some((_, k, a) => { const n = rp(policy, a.slice(0, k + 1).join('.')); return n && typeof n === 'object' && 'resetOn' in n; });
     // 18.0: every item of every page (header items, back actions, body), its when and its values
     const itemsOf = p => p.kind === 'backdrop' ? [...p.back.header.items, ...(p.back.actions || []), ...p.front.header.items] : [...p.header.items, ...(p.body || [])];
+    // param controls: rows and controls (their when, their own options' source params) and the params' words
+    const controlsOf = p => [...(p.kind === 'backdrop' ? (p.back.paramControls || []).flatMap(r => [{ name: 'row', when: r.when }, ...r.controls]) : p.sheet && p.sheet.paramControl ? [p.sheet.paramControl] : [])
+      .map(x => ({ name: x.name || x.bind, when: x.when, source: x.options && !Array.isArray(x.options) ? Object.values(x.options.params || {}) : [] })),
+      ...Object.entries(p.params || {}).map(([k, P]) => ({ name: k, label: P.label, placeholder: P.placeholder }))];
     let n = 0;
-    pagesOf(f, m).forEach(page => itemsOf(page).forEach(x => {
-      [...conds(x.when), ...['label', 'text', 'checked', 'state', 'placeholder'].flatMap(k => atoms(x[k]))].forEach(a => {
+    pagesOf(f, m).forEach(page => [...itemsOf(page), ...controlsOf(page)].forEach(x => {
+      [...conds(x.when), ...['label', 'text', 'checked', 'state', 'placeholder'].flatMap(k => atoms(x[k])), ...(x.source || []).flatMap(atoms)].forEach(a => {
         n++;
         const path = a.path || a.bind;
         if (path && path[0] === '$') return;   // $opener / $player / $content
+        if (path && path.startsWith('pending.')) return assert((page.params || {})[path.slice(8)], x.name + ': ' + path + ' names no param of ' + page.id);   // a param's pending value
         if (path) assert(inPolicy(page.statePolicy, path), x.name + ': ' + path + ' not in ' + page.id + "'s policy");
         else if ('env' in a) assert(a.env === 'layout' || a.env === 'touch', 'unknown env ' + a.env);
         else if ('layer' in a && 'open' in a) assert(f.config.layers.some(L => L.id === a.layer), 'unknown layer ' + a.layer);
@@ -736,10 +741,11 @@ export const INVARIANTS = [
     f.devices.forEach(d => {
       const m = f.mk(d); m.dispatch({ type: 'switchDeck', deck: X.D.id });
       const def = m.query.underPage(S(m)).params[X.k], v1 = otherValue(X.P, def);
-      const e1 = m.dispatch({ type: 'setParams', values: { [X.k]: v1 } }).find(e => e.type === 'urlChanged');
+      const now = X.P.apply === 'onApply' ? { apply: true } : {};   // an 'onApply' param: set and apply (a submitted search)
+      const e1 = m.dispatch({ type: 'setParams', values: { [X.k]: v1 }, ...now }).find(e => e.type === 'urlChanged');
       if (f.config.routes && (f.config.routes.params || 'none') !== 'none' && X.P.url) assert(e1 && e1.replace === false, 'leaving the default does not push');
       const v2 = X.P.type === 'text' ? v1 + 'z' : v1;
-      if (v2 !== v1) { const e2 = m.dispatch({ type: 'setParams', values: { [X.k]: v2 } }).find(e => e.type === 'urlChanged'); assert(!e2 || e2.replace, 'a later change pushed again'); }
+      if (v2 !== v1) { const e2 = m.dispatch({ type: 'setParams', values: { [X.k]: v2 }, ...now }).find(e => e.type === 'urlChanged'); assert(!e2 || e2.replace, 'a later change pushed again'); }
       if (d.touch) assert(m.query.backAction(S(m), m.config) === 'resetParam', 'touch back does not reset the param');
       m.dispatch({ type: 'back' });
       assert(JSON.stringify(m.query.underPage(S(m)).params[X.k]) === JSON.stringify(def) && S(m).activeDeck === X.D.id, 'param not reset first @' + d.width + (d.touch ? 't' : 'p'));
@@ -770,7 +776,7 @@ export const INVARIANTS = [
   }],
   ['content-sized regions use their measured height; the front layer never covers its own header', f => {
     const P = need(f.layout, 'no layout'), sp = need(f.specs, 'no specs');
-    const D = need(f.config.decks.find(d => (d.page.back.panel || []).length), 'no content-sized region'), id = 'panel';   // 18.0: the panel is the measured region
+    const D = need(f.config.decks.find(d => (d.page.back.paramControls || []).some(r => (r.shows || 'expanded') === 'expanded')), 'no content-sized region'), id = 'panel';   // 18.0: the panel (the 'expanded' rows) is the measured region
     const m = f.mk(dev.any(f)); m.dispatch({ type: 'switchDeck', deck: D.id }); m.dispatch({ type: 'setExpanded', expanded: true });
     const u = m.query.underPage(S(m)), g = P.geometry(S(m), m.config, m.query, LOOK(m));
     if (D.page.front.collapse === 'full') skip('content region not stacked above a partial front layer');
@@ -881,10 +887,10 @@ export const INVARIANTS = [
         assert(valid(P, pol[k].default), p.id + '.' + k + ': invalid default ' + JSON.stringify(pol[k].default));
       });
       Object.keys(pol).forEach(k => assert(D[k], p.id + ': policy for undeclared param ' + k));
-      // 18.0: binds are basic actions, panel param rows, a sheet's control, find and switch items
-      const binds = p.kind === 'backdrop' ? [p.back.basicAction && p.back.basicAction.bind, ...(p.back.panel || []).map(x => x.kind === 'param' ? x.bind : x.fills)] : [p.sheet && p.sheet.control && p.sheet.control.bind];
+      // 18.0: binds are param controls (the back layer's rows, a sheet's), find and switch items
+      const binds = p.kind === 'backdrop' ? (p.back.paramControls || []).flatMap(r => r.controls.map(x => x.bind)) : [p.sheet && p.sheet.paramControl && p.sheet.paramControl.bind];
       const items = p.kind === 'backdrop' ? [...p.back.header.items, ...p.front.header.items] : p.header.items;
-      [...binds.filter(Boolean), ...items.filter(x => x.param).map(x => x.param)].forEach(b => (typeof b === 'string' ? [b] : [b.change, b.submit]).forEach(k => assert(D[k], p.id + ': binds undeclared param ' + k)));
+      [...binds.filter(Boolean), ...items.filter(x => x.param).map(x => x.param)].forEach(k => assert(D[k], p.id + ': binds undeclared param ' + k));
     });
     need(n, 'no params');
   }],

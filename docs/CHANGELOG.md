@@ -46,9 +46,19 @@ _Unreleased (no contract change):_ web: the shell draws no UI itself — FrontLa
   `statePolicy` (pages, decks, layers). PersistPolicy is unchanged (it is about storage, not one state field).
 - BackRegionName → BackLayerRegionName, BackRegionView → BackLayerRegionView (renamed); RegionInstance removed (Layout.regions
   returns BackLayerRegionView[]; same fields).
+- Param controls replace basic actions and panel rows (breaking): BackLayerConfig.basicAction / panel → `paramControls:
+  ParamControlRowConfig[]` (rows: controls, shows 'always' | 'expanded', when); ParamControlConfig { bind, options?,
+  when? }; PageSheetConfig.control → paramControl. Removed: BasicActionConfig, ParamRow, SuggestionsRow, PanelRow,
+  DraftBind, ParamMatch.draft, contracts input / paramRow / suggestion / suggestions. Added: ParamSpec label /
+  placeholder / apply ('immediate' | 'onApply'), PageStateBase.pending, intents applyParams / discardParams,
+  SetParamsIntent.apply, EventTo.apply, ParamMatch.options, contracts paramControl (values: value, options with
+  selected, pending, label, placeholder, min, max; intents setParams · toggleParam · applyParams · discardParams) and
+  paramControlRow (label: its first control's). Back-layer regions: header · actions · controls · panel. Design:
+  suggestionList (new), filterChips event toggle, backLayer / bottomSheet slots renamed. Config: Search's draft param
+  `qd` removed (`q` is 'onApply').
 - Platform manifest: web lists backdropPage, appBarPage, sheetLayer, fullscreenLayer (composition hires them).
 - Rules: api/composition-rules.js (13, all pass) runs on the Invariants page; 19 ref / role invariants deleted, the rest
-  ported to 18.0 shapes: 103 pass · 3 skipped · 0 fail.
+  ported to 18.0 shapes: 103 pass · 3 skipped · 0 fail (still 103 after param controls).
 
 ## 17.0.0 — motion as steps (major, in progress)
 - API (§N): choreography says which piece does what, when. Four blocks every platform implements once: `TweenStep` (props of a piece: opacity, translate, scale, size, radius, colour, shadow, clip, scroll, visibility; keyframes, stagger, loop, hold), `TravelStep` (a copy flies to another piece / measure; path straight | arc; end vanish | join; from whole | visible with `cutBy`), `SwapStep` (fade through around the commit; match slot+content; enter stagger; axis), `RevealStep` (circle · rect → rect · follow an edge). `UseStep` + `Choreography.sequences` (named step lists with params). Pieces: `PieceRef` ('<role>.<slot|part>' · '<component>.<part>' · source / target · a step id; '[]' lists). Measures (`RectOf`, `EdgeOf`, `DistanceOf`, `CentreOn`, `PressPoint`, `ScrollInto`), `ByEvent` (an event field picks), clocks (`TimeClock` with `Anchor` on other steps · `ProgressClock` on bar / scroll / contentOffset — input-driven, applied directly), `MotionCondition` (+ `EventIs`). `ChoreoRule { on, steps, reduced? }`, `Choreography { rules, reduced, sequences? }` (was transition / reducedMotion). `ComponentDef.motion: Record<string, Step[]>`, `ComponentDef.parts`. `QueuedPattern` joins ChoreoPattern; a pattern matches only when every field it gives agrees (core ignored queued `position` before). Layout `stepsFor`, `componentSteps`. Also: `rotate` prop and component visuals as props (`PropTracks` keys); `FromValue` ('current' · 'previous'); `Wander` (roaming value, level meter); `Loop.period` (per item); `PieceShown` condition; `StepTrigger` on tween / reveal (component motion: change · press · release · loop); pieces `origin`, '<component>' (its visible instance), '@before' / '@after'. Removed: `MotionTemplate`, `TransitionTemplate`.

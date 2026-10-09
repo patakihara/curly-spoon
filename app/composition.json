@@ -1768,7 +1768,7 @@
   {
    "name": "chips",
    "hires": "choiceChips",
-   "contract": "input",
+   "contract": "paramControl",
    "clauses": [
     {
      "event": "change",
@@ -1779,18 +1779,18 @@
   {
    "name": "filterChips",
    "hires": "filterChips",
-   "contract": "input",
+   "contract": "paramControl",
    "clauses": [
     {
-     "event": "change",
-     "send": "setParams"
+     "event": "toggle",
+     "send": "toggleParam"
     }
    ]
   },
   {
    "name": "tabs",
    "hires": "tabBar",
-   "contract": "input",
+   "contract": "paramControl",
    "clauses": [
     {
      "event": "change",
@@ -1801,7 +1801,7 @@
   {
    "name": "dropdown",
    "hires": "dropdown",
-   "contract": "input",
+   "contract": "paramControl",
    "clauses": [
     {
      "event": "change",
@@ -1812,7 +1812,7 @@
   {
    "name": "rangeField",
    "hires": "rangeField",
-   "contract": "input",
+   "contract": "paramControl",
    "clauses": [
     {
      "prop": "fromLabel",
@@ -1831,7 +1831,7 @@
   {
    "name": "searchField",
    "hires": "searchField",
-   "contract": "input",
+   "contract": "paramControl",
    "clauses": [
     {
      "event": "change",
@@ -1839,14 +1839,26 @@
     },
     {
      "event": "submit",
-     "send": "setParams"
+     "send": "applyParams"
     }
    ]
   },
   {
-   "name": "paramRow",
+   "name": "suggestionList",
+   "hires": "suggestionList",
+   "contract": "paramControl",
+   "clauses": [
+    {
+     "event": "pick",
+     "send": "setParams",
+     "apply": true
+    }
+   ]
+  },
+  {
+   "name": "paramControlRow",
    "hires": "panelRow",
-   "contract": "paramRow",
+   "contract": "paramControlRow",
    "clauses": [
     {
      "prop": "text",
@@ -1856,39 +1868,9 @@
      "slot": "content",
      "fill": [
       {
-       "child": "control"
+       "child": "controls"
       }
      ]
-    }
-   ]
-  },
-  {
-   "name": "suggestions",
-   "hires": "panelRow",
-   "contract": "suggestions",
-   "clauses": [
-    {
-     "prop": "text",
-     "value": "label"
-    },
-    {
-     "slot": "content",
-     "fill": [
-      {
-       "child": "items"
-      }
-     ]
-    }
-   ]
-  },
-  {
-   "name": "suggestion",
-   "hires": "suggestionRow",
-   "contract": "suggestion",
-   "clauses": [
-    {
-     "event": "press",
-     "send": "setParams"
     }
    ]
   },
@@ -2504,16 +2486,8 @@
    "hire": "seek"
   },
   {
-   "contract": "paramRow",
-   "hire": "paramRow"
-  },
-  {
-   "contract": "suggestions",
-   "hire": "suggestions"
-  },
-  {
-   "contract": "suggestion",
-   "hire": "suggestion"
+   "contract": "paramControlRow",
+   "hire": "paramControlRow"
   },
   {
    "contract": "header",
@@ -2878,14 +2852,22 @@
    "hire": "find"
   },
   {
-   "contract": "input",
+   "contract": "paramControl",
    "param": {
-    "draft": true
+    "type": "text",
+    "options": true
+   },
+   "hire": "suggestionList"
+  },
+  {
+   "contract": "paramControl",
+   "param": {
+    "type": "text"
    },
    "hire": "searchField"
   },
   {
-   "contract": "input",
+   "contract": "paramControl",
    "param": {
     "type": "choice",
     "axis": true
@@ -2893,21 +2875,21 @@
    "hire": "tabs"
   },
   {
-   "contract": "input",
+   "contract": "paramControl",
    "param": {
     "type": "choice"
    },
    "hire": "chips"
   },
   {
-   "contract": "input",
+   "contract": "paramControl",
    "param": {
     "type": "choices"
    },
    "hire": "filterChips"
   },
   {
-   "contract": "input",
+   "contract": "paramControl",
    "param": {
     "type": "number"
    },
@@ -3167,7 +3149,7 @@
    "page": "library",
    "placements": [
     {
-     "contract": "input",
+     "contract": "paramControl",
      "param": {
       "name": "sort"
      },

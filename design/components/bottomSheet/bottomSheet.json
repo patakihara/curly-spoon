@@ -62,7 +62,7 @@
   },
   "props": {
     "expanded": "boolean",
-    "control": "slot",
+    "paramControl": "slot",
     "content": "slot"
   },
   "events": [

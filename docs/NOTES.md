@@ -519,6 +519,26 @@ Each was my call; say if you disagree and I redo it.
     inherits its parent's ink, as before) and the parent sets padEnd 0 (it spaces its own children). The first version
     passed back-layer visuals: white and 8px after the glyph. Fixed in the same day's work (search, drawer, rail); the same
     bug, fixed the same way, in Carousel (shelf chevrons), Menu, EmptyState, StaleBanner and EdgeHandle.
+40. Names (Sofia, 2026-10-09): a config type's state, policy and contract take its full name — BackLayerState,
+    FrontLayerState, PageSheetState; every policy is a state policy (StatePolicy<T>, XStatePolicy, config field
+    `statePolicy`; PersistPolicy unchanged, it is about storage); BackLayerRegionName / BackLayerRegionView, and
+    RegionInstance (same fields) removed. Page states share PageStateBase<C> (config · opener · template · params).
+41. Param controls (Sofia, 2026-10-10, discussed and approved): the back layer's basicAction + panel are one list of
+    rows, `back.paramControls`: a row is { controls, shows: 'always' | 'expanded', when? }, a control is { bind,
+    options?, when? }. The words are the param's (ParamSpec label / placeholder). A param may wait to apply
+    (ParamSpec.apply 'onApply'): its changes go to the page's `pending` (path `pending.<name>` reads pending, else
+    applied) until applyParams; discardParams drops them; setParams { apply: true } applies at once. A control's values
+    give every option with `selected`; a chip, tab or suggestion sends its own option (change → setParams, toggle →
+    toggleParam, pick → setParams + apply). Search: `qd` is gone; `q` is 'onApply'; the suggestions are a second control
+    on `q` with its own options (data source `suggest`, prefix `pending.q`), drawn by a new design component
+    suggestionList (one suggestionRow per option; SuggestionList.dc.html). Composition tells the two `q` controls apart
+    by ParamMatch.options (the control brings its own choices). A row's label is its first control's (my call: panelRow
+    needs the text "Sort by" from somewhere; a row has no words of its own).
+42. Pending changes are not param changes (my call): no paramChanged event, no policy reactions, no motion. So typing in
+    Search no longer resets the back header's hidden state or the front scroll on every key (both resetOn
+    paramChange); submitting does. Looks the same in all 16 screens.
+43. Layout counts the controls region as 'always' rows × backLayer's basicHeight (60); a row's `when` is not counted
+    (Layout has no conditions). Every page today has one 'always' row.
 
 ### Switchover (2026-10-09): done, with what is still open
 The mockup runs on 18.0 (config + composition + design → contract tree → shell). Checked in headless Chrome against the
@@ -568,9 +588,13 @@ fields, not nodes · 6 verify ✓ (screens above).
   buttons and the literal more_vert are gone. Sofia chose today's look except Dedede's first page gets back (decision
   36). Slice 3 done: navigation (nav bar, rail top / destinations / bottom) and the drawer's rows are drawn from their
   nodes; draw.js picks each node's DC as the nearest component up its extends chain that platforms/web.json implements
-  (drawerItem and suggestionRow added there, being their own DCs); IconButton's `mark` flag is gone. Still
+  (drawerItem and suggestionRow added there, being their own DCs; suggestionList since decision 41); IconButton's `mark` flag is gone. Still
   shell-chosen: panel rows, Now
   playing's body, the drawer, nav, peek, overlays, content items, the app-bar form.
+- 18.0: param controls (decision 41): the 'always' rows are drawn by the shell directly (no row label, the
+  paramControlRow hire unused there); controls in one row share its width equally; no page has two controls in a row yet.
+  "More" (a control's own view in the back layer, ✕ to close) and the design field for the component each option is
+  drawn as (tabBar → tab, filterChips → chip, suggestionList → suggestionRow) are the next two steps.
 - 18.0: the free-component merge tree is proposed, not applied (69 design components).
 - Design checks are not shown on the Invariants page yet (needs Invariants.dc.html).
 - Still in the player (ordering, not yet params): detail transition order (out → swap → front move + in → header parts), flight cut sources (top: header / bars above the middle; bottom: peek / nav bar), app-bar sheet start (front layer top), the reveal band shape.

@@ -11,7 +11,6 @@ const list = (contract, optional = false) => ({ contract, list: true, ...(option
 export const UNIONS = {
   headerItem: ['button', 'logo', 'text', 'switch', 'find'],
   bodyItem: ['button', 'text', 'detail', 'seek'],
-  panelRow: ['paramRow', 'suggestions'],
   page: ['backdropPage', 'appBarPage'],
 };
 
@@ -26,24 +25,22 @@ export const CONTRACTS = {
   seek: { config: 'SeekItem', values: { label: 'string', positionMs: 'number', durationMs: 'number | null' }, intents: ['seek'] },
   // headers: the back layer's, an app-bar page's, the peek's (composition tells them apart by the contract they sit in)
   header: { config: 'HeaderConfig', values: { title: 'string | null', progress: 'number' }, intents: [], children: { items: list('headerItem'), detail: one('detail', true) }, note: 'progress: collapse 0 … 1 (Layout.barView)' },
-  // controls and rows
-  input: { config: 'BasicActionConfig | ParamRow', values: { value: 'ParamValue | null', options: 'ParamOption[]', placeholder: 'string | null', label: 'string | null', min: 'number | null', max: 'number | null' }, intents: ['setParams'], note: 'one control for one param · label: its row\'s · min / max: a number param\'s (ParamSpec)' },
-  paramRow: { config: 'ParamRow', values: { label: 'string | null' }, intents: [], children: { control: one('input') } },
-  suggestion: { config: 'ItemData', values: { text: 'string' }, intents: ['setParams'], note: 'picking it fills the draft (SuggestionsRow.fills)' },
-  suggestions: { config: 'SuggestionsRow', values: { label: 'string' }, intents: [], children: { items: list('suggestion') } },
+  // param controls: one control for one page param, in rows
+  paramControl: { config: 'ParamControlConfig', values: { value: 'ParamValue | null', options: 'ParamControlOption[]', pending: 'boolean', label: 'string | null', placeholder: 'string | null', min: 'number | null', max: 'number | null' }, intents: ['setParams', 'toggleParam', 'applyParams', 'discardParams'], note: "value: the pending one if any, else applied · options: every choice, in config order (empty for plain text or a range) · label / placeholder: the param's, resolved · min / max: a number param's" },
+  paramControlRow: { config: 'ParamControlRowConfig', values: { label: 'string | null' }, intents: [], children: { controls: list('paramControl') }, note: "its controls whose when holds · label: its first control's (design decides whether the row draws it)" },
   // content
   item: { config: 'PresentationConfig', values: { title: 'string', subtitle: 'string | null', image: 'string | null', shape: 'ItemShape', current: 'boolean', navigable: 'boolean' }, intents: ['action'], children: { entries: list('item', true) }, note: "action: open it (ItemData.opens), else the presentation's itemAction · entries: a shelf's (absent on other items)" },
   contentState: { config: 'ContentConfig', values: { state: 'ContentViewState', retry: 'boolean' }, intents: ['retry'], note: 'empty · error · offlineStale (the banner) · its words are design texts of the free component' },
   content: { config: 'ContentConfig', values: { view: 'ContentView', presentation: 'PresentationKey', groups: 'ItemGroup[]', placeholders: 'number' }, intents: [], children: { items: list('item'), state: one('contentState', true), banner: one('contentState', true) } },
   // backdrop page
-  backLayer: { config: 'BackLayerConfig', values: { expanded: 'boolean', headerHidden: 'boolean', regions: 'BackLayerRegionView[]' }, intents: ['toggleExpanded'], children: { header: one('header'), actions: list('button'), basicAction: one('input', true), panel: list('panelRow') }, note: 'toggle only while toggleOnTap' },
+  backLayer: { config: 'BackLayerConfig', values: { expanded: 'boolean', headerHidden: 'boolean', regions: 'BackLayerRegionView[]' }, intents: ['toggleExpanded'], children: { header: one('header'), actions: list('button'), paramControls: list('paramControlRow') }, note: 'toggle only while toggleOnTap' },
   frontHeader: { config: 'FrontHeaderConfig', values: { title: 'string', expanded: 'boolean', disclosureLabel: 'string' }, intents: ['toggleExpanded'], children: { items: list('headerItem') }, note: 'the built-in disclosure: the back layer\'s expanded + its label (texts backLayer.reveal / backLayer.conceal)' },
   frontLayer: { config: 'FrontLayerConfig', values: { position: 'FrontPosition', top: 'number', contentOffset: 'number' }, intents: ['scroll'], children: { header: one('frontHeader'), content: one('content') }, note: 'top: Layout.frontLayer · contentOffset: Layout.contentOffset' },
   backdropPage: { config: 'BackdropPageConfig', values: {}, intents: [], children: { back: one('backLayer'), front: one('frontLayer') } },
   // app-bar page
-  pageSheet: { config: 'PageSheetConfig', values: { expanded: 'boolean' }, intents: ['toggleExpanded'], children: { control: one('input', true), content: one('content') } },
+  pageSheet: { config: 'PageSheetConfig', values: { expanded: 'boolean' }, intents: ['toggleExpanded'], children: { paramControl: one('paramControl', true), content: one('content') } },
   appBarPage: { config: 'AppBarPageConfig', values: { contentOffset: 'number' }, intents: ['scroll'], children: { header: one('header'), content: one('content', true), body: list('bodyItem'), sheet: one('pageSheet', true) } },
-  // layers: each draws its open page; stacks and policy are engine-only
+  // layers: each draws its open page; stacks and state policies are engine-only
   sheetLayer: { config: 'LayerConfig', values: { open: 'boolean', form: 'SheetForm', side: 'SideMode | null', peek: 'Rect | null' }, intents: ['openLayer', 'closeLayer'], children: { peek: one('header'), page: one('page') }, note: 'open: the peek was tapped · peek: Layout.peekPlacement' },
   drawerLayer: { config: 'LayerConfig', values: { open: 'boolean', form: 'DrawerForm' }, intents: ['closeLayer'], children: { page: one('page') }, note: 'close: the scrim was tapped' },
   fullscreenLayer: { config: 'LayerConfig', values: { open: 'boolean' }, intents: [], children: { page: one('page') } },
@@ -59,4 +56,5 @@ export const INTENT_TS = {
   action: 'Actions', setParams: 'SetParamsIntent', toggleExpanded: 'ToggleExpandedIntent', scroll: 'ScrollIntent',
   retry: 'RetryIntent', openLayer: 'OpenLayerIntent', closeLayer: 'CloseLayerIntent', closeOverlay: 'CloseOverlayIntent',
   switchDeck: 'SwitchDeckIntent', reselectDeck: 'ReselectDeckIntent', seek: 'Seek', openFind: 'OpenFindIntent', closeFind: 'CloseFindIntent',
+  toggleParam: 'ToggleParamIntent', applyParams: 'ApplyParamsIntent', discardParams: 'DiscardParamsIntent',
 };

@@ -29,7 +29,7 @@ export function formatMessage(msg, args = {}, locale = 'en') {
 }
 export const DERIVED_IDS = ['deckName', 'pageTitle', 'contentSummary', 'total', 'count', 'summary', 'scrolled'];
 export const PARAM_TYPES = ['choice', 'choices', 'text', 'flag', 'number', 'date'];
-export const INTENT_TYPES = ['open', 'openLayerPage', 'back', 'up', 'switchDeck', 'reselectDeck', 'setParams', 'toggleParam', 'resetParams', 'setExpanded', 'toggleExpanded', 'scroll', 'openLayer', 'closeLayer', 'focus', 'setDevice', 'retry', 'setPrefs', 'openOverlay', 'closeOverlay', 'session', 'navigateUrl', 'restore', 'launched', 'openFind', 'closeFind'];
+export const INTENT_TYPES = ['open', 'openLayerPage', 'back', 'up', 'switchDeck', 'reselectDeck', 'setParams', 'toggleParam', 'resetParams', 'applyParams', 'discardParams', 'setExpanded', 'toggleExpanded', 'scroll', 'openLayer', 'closeLayer', 'focus', 'setDevice', 'retry', 'setPrefs', 'openOverlay', 'closeOverlay', 'session', 'navigateUrl', 'restore', 'launched', 'openFind', 'closeFind'];
 const major = v => parseInt(String(v || '0').split('.')[0], 10);
 export function compatible(v) { return major(v) === major(CONTRACT_VERSION); }
 
@@ -126,6 +126,10 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
   // ── params ───────────────────────────────────────────────
   function paramValue(page, name) { return page && page.config.statePolicy.params && page.config.statePolicy.params[name] ? getField(page, 'params.' + name) : undefined; }
   const paramDefault = (page, name) => page.config.statePolicy.params[name].default;
+  // what a control shows: the pending value ('onApply' params), else the applied one
+  function shownValue(page, name) { return page && page.pending && name in page.pending ? page.pending[name] : paramValue(page, name); }
+  const waits = (page, name) => ((page.config.params || {})[name] || {}).apply === 'onApply';
+  const withPending = (pg, pending) => { const { pending: _, ...o } = pg; return Object.keys(pending).length ? { ...o, pending } : o; };
   function sourceList(src, page) {
     if (Array.isArray(src)) return src;
     if (src && src.dataSource && data) { const p = {}; for (const k in src.params || {}) p[k] = resolveValue(src.params[k], page); return (data.get(src.dataSource, p).items) || []; }
@@ -274,6 +278,7 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
   function pageValue(page, path, scope) {
     if (path && path[0] === '$') { const [h, ...rest] = path.slice(1).split('.'); const v = scope && h in scope ? scope[h] : h === 'opener' && page ? page.opener : h === 'player' ? playerView() : h === 'content' ? contentView(page) : undefined; return rest.length ? readPath(v, rest.join('.')) : v; }
     if (!page) return undefined;
+    if (path.startsWith('pending.')) return shownValue(page, path.slice(8));   // a param's pending value, else its applied one
     const p = readPath(page.config.statePolicy, path);
     return p && typeof p === 'object' && 'resetOn' in p ? getField(page, path) : readPath(page, path);
   }
@@ -685,9 +690,25 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
         const P = loc.page, D = P.config.params || {};
         let vals;
         if (intent.type === 'setParams') vals = intent.values;
-        else if (intent.type === 'toggleParam') { const cur = paramValue(P, intent.name) || []; vals = { [intent.name]: cur.includes(intent.option) ? cur.filter(x => x !== intent.option) : [...cur, intent.option] }; }
+        else if (intent.type === 'toggleParam') { const cur = shownValue(P, intent.name) || []; vals = { [intent.name]: cur.includes(intent.option) ? cur.filter(x => x !== intent.option) : [...cur, intent.option] }; }
         else vals = Object.fromEntries((intent.names || Object.keys(D)).filter(k => D[k]).map(k => [k, clone(paramDefault(P, k))]));
-        s = changeParams(s, loc, vals, ev, false);
+        // an 'onApply' param's new value waits in pending (unless the intent applies it, or it is a reset); an applied value
+        // replaces any pending one of the same param
+        const held = intent.type !== 'resetParams' && !intent.apply ? Object.keys(vals || {}).filter(k => D[k] && waits(P, k)) : [];
+        const pending = { ...(P.pending || {}) };
+        Object.keys(vals || {}).forEach(k => { if (held.includes(k)) pending[k] = clone(vals[k]); else delete pending[k]; });
+        if (JSON.stringify(pending) !== JSON.stringify(P.pending || {})) s = loc.patch(pg => withPending(pg, pending));
+        vals = Object.fromEntries(Object.entries(vals || {}).filter(([k]) => !held.includes(k)));
+        if (Object.keys(vals).length) s = changeParams(s, paramTargetLoc(s, intent), vals, ev, false);
+        break;
+      }
+      case 'applyParams': case 'discardParams': {
+        const loc = paramTargetLoc(s, intent); if (!loc.page || !loc.page.pending) break;
+        const P = loc.page, names = (intent.names || Object.keys(P.pending)).filter(k => k in P.pending);
+        if (!names.length) break;
+        const vals = Object.fromEntries(names.map(k => [k, P.pending[k]]));
+        s = loc.patch(pg => withPending(pg, Object.fromEntries(Object.entries(P.pending).filter(([k]) => !names.includes(k)))));
+        if (intent.type === 'applyParams') s = changeParams(s, paramTargetLoc(s, { ...intent, names }), vals, ev, false);
         break;
       }
       case 'setExpanded': {

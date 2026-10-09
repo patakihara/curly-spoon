@@ -231,7 +231,10 @@
        }
       ],
       "url": true,
-      "motion": "swap"
+      "motion": "swap",
+      "label": {
+       "text": "panel.sort"
+      }
      }
     },
     "back": {
@@ -277,16 +280,21 @@
        }
       ]
      },
-     "basicAction": {
-      "bind": "f"
-     },
-     "panel": [
+     "paramControls": [
       {
-       "kind": "param",
-       "bind": "sort",
-       "label": {
-        "text": "panel.sort"
-       }
+       "controls": [
+        {
+         "bind": "f"
+        }
+       ],
+       "shows": "always"
+      },
+      {
+       "controls": [
+        {
+         "bind": "sort"
+        }
+       ]
       }
      ]
     },
@@ -413,7 +421,10 @@
        }
       },
       "url": true,
-      "motion": "swap"
+      "motion": "swap",
+      "label": {
+       "text": "library.show"
+      }
      },
      "genre": {
       "type": "choices",
@@ -426,7 +437,10 @@
        }
       },
       "url": true,
-      "motion": "swap"
+      "motion": "swap",
+      "label": {
+       "text": "library.genre"
+      }
      },
      "year": {
       "type": "choice",
@@ -439,7 +453,19 @@
        }
       },
       "url": true,
-      "motion": "swap"
+      "motion": "swap",
+      "label": {
+       "if": {
+        "path": "params.tab",
+        "equals": "music"
+       },
+       "then": {
+        "text": "library.year"
+       },
+       "else": {
+        "text": "library.when"
+       }
+      }
      },
      "find": {
       "type": "text"
@@ -467,7 +493,10 @@
        }
       ],
       "url": true,
-      "motion": "swap"
+      "motion": "swap",
+      "label": {
+       "text": "panel.sort"
+      }
      },
      "view": {
       "type": "choice",
@@ -487,7 +516,10 @@
        }
       ],
       "url": true,
-      "motion": "swap"
+      "motion": "swap",
+      "label": {
+       "text": "library.layout"
+      }
      },
      "years": {
       "type": "number",
@@ -542,57 +574,56 @@
        }
       ]
      },
-     "basicAction": {
-      "bind": "tab"
-     },
-     "panel": [
+     "paramControls": [
       {
-       "kind": "param",
-       "bind": "kind",
-       "label": {
-        "text": "library.show"
-       }
-      },
-      {
-       "kind": "param",
-       "bind": "view",
-       "label": {
-        "text": "library.layout"
-       }
-      },
-      {
-       "kind": "param",
-       "bind": "sort",
-       "label": {
-        "text": "panel.sort"
-       }
-      },
-      {
-       "kind": "param",
-       "bind": "genre",
-       "label": {
-        "text": "library.genre"
-       }
-      },
-      {
-       "kind": "param",
-       "bind": "year",
-       "label": {
-        "if": {
-         "path": "params.tab",
-         "equals": "music"
-        },
-        "then": {
-         "text": "library.year"
-        },
-        "else": {
-         "text": "library.when"
+       "controls": [
+        {
+         "bind": "tab"
         }
-       }
+       ],
+       "shows": "always"
       },
       {
-       "kind": "param",
-       "bind": "years",
+       "controls": [
+        {
+         "bind": "kind"
+        }
+       ]
+      },
+      {
+       "controls": [
+        {
+         "bind": "view"
+        }
+       ]
+      },
+      {
+       "controls": [
+        {
+         "bind": "sort"
+        }
+       ]
+      },
+      {
+       "controls": [
+        {
+         "bind": "genre"
+        }
+       ]
+      },
+      {
+       "controls": [
+        {
+         "bind": "year"
+        }
+       ]
+      },
+      {
+       "controls": [
+        {
+         "bind": "years"
+        }
+       ],
        "when": {
         "path": "params.year",
         "equals": "range"
@@ -872,7 +903,23 @@
      "q": {
       "type": "text",
       "url": true,
-      "history": "pushFirst"
+      "history": "pushFirst",
+      "apply": "onApply",
+      "placeholder": {
+       "text": "search.anything"
+      },
+      "label": {
+       "if": {
+        "path": "pending.q",
+        "equals": ""
+       },
+       "then": {
+        "text": "search.popular"
+       },
+       "else": {
+        "text": "search.suggestions"
+       }
+      }
      },
      "view": {
       "type": "choice",
@@ -891,10 +938,6 @@
         }
        }
       ]
-     },
-     "qd": {
-      "type": "text",
-      "data": false
      }
     },
     "back": {
@@ -940,42 +983,29 @@
        }
       ]
      },
-     "basicAction": {
-      "bind": {
-       "change": "qd",
-       "submit": "q"
-      },
-      "placeholder": {
-       "text": "search.anything"
-      }
-     },
-     "panel": [
+     "paramControls": [
       {
-       "kind": "suggestions",
-       "label": {
-        "if": {
-         "path": "params.qd",
-         "equals": ""
-        },
-        "then": {
-         "text": "search.popular"
-        },
-        "else": {
-         "text": "search.suggestions"
+       "controls": [
+        {
+         "bind": "q"
         }
-       },
-       "source": {
-        "dataSource": "suggest",
-        "params": {
-         "prefix": {
-          "bind": "params.qd"
+       ],
+       "shows": "always"
+      },
+      {
+       "controls": [
+        {
+         "bind": "q",
+         "options": {
+          "dataSource": "suggest",
+          "params": {
+           "prefix": {
+            "bind": "pending.q"
+           }
+          }
          }
         }
-       },
-       "fills": {
-        "change": "qd",
-        "submit": "q"
-       }
+       ]
       }
      ]
     },
@@ -1066,11 +1096,6 @@
       },
       "view": {
        "default": "list",
-       "resetOn": [],
-       "scope": null
-      },
-      "qd": {
-       "default": "",
        "resetOn": [],
        "scope": null
       }
@@ -1553,7 +1578,7 @@
          }
         ]
        },
-       "control": {
+       "paramControl": {
         "bind": "tab"
        }
       },
@@ -2584,7 +2609,10 @@
        }
       }
      },
-     "motion": "swap"
+     "motion": "swap",
+     "label": {
+      "text": "library.genre"
+     }
     }
    },
    "back": {
@@ -2604,16 +2632,21 @@
       }
      ]
     },
-    "basicAction": {
-     "bind": "sort"
-    },
-    "panel": [
+    "paramControls": [
      {
-      "kind": "param",
-      "bind": "genre",
-      "label": {
-       "text": "library.genre"
-      }
+      "controls": [
+       {
+        "bind": "sort"
+       }
+      ],
+      "shows": "always"
+     },
+     {
+      "controls": [
+       {
+        "bind": "genre"
+       }
+      ]
      }
     ]
    },
@@ -2759,7 +2792,10 @@
        }
       }
      ],
-     "motion": "swap"
+     "motion": "swap",
+     "label": {
+      "text": "panel.sort"
+     }
     },
     "when": {
      "type": "choice",
@@ -2771,7 +2807,10 @@
        }
       }
      },
-     "motion": "swap"
+     "motion": "swap",
+     "label": {
+      "text": "library.when"
+     }
     }
    },
    "back": {
@@ -2876,23 +2915,28 @@
       }
      }
     ],
-    "basicAction": {
-     "bind": "section"
-    },
-    "panel": [
+    "paramControls": [
      {
-      "kind": "param",
-      "bind": "sort",
-      "label": {
-       "text": "panel.sort"
-      }
+      "controls": [
+       {
+        "bind": "section"
+       }
+      ],
+      "shows": "always"
      },
      {
-      "kind": "param",
-      "bind": "when",
-      "label": {
-       "text": "library.when"
-      }
+      "controls": [
+       {
+        "bind": "sort"
+       }
+      ]
+     },
+     {
+      "controls": [
+       {
+        "bind": "when"
+       }
+      ]
      }
     ]
    },

@@ -47,6 +47,10 @@
     {
       "name": "change",
       "payload": "value"
+    },
+    {
+      "name": "toggle",
+      "payload": "string"
     }
   ]
 }

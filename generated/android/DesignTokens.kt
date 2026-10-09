@@ -743,6 +743,10 @@ object SuggestionRowTokens {
     val IconOpacity = 0.75f
 }
 
+object SuggestionListTokens {
+    val Gap = 12f
+}
+
 object MenuTokens {
     val Fill = DesignTokens.ColorSurfaceRaised
     val Ink = DesignTokens.ColorOnSurface
@@ -1011,7 +1015,7 @@ object DrawerItemTokens {
     val ContentOpacityDisabled = DesignTokens.StateDisabledOpacity
     val ContentOpacityBusy = DesignTokens.StateBusyOpacity
     val Scale = 1f
-    val ScalePressed = 0.97f
+    val ScalePressed = 1f
     val Ink = {"role":"content"}
     val InkSelected = {"role":"content"}
     val Fill = {"variant":"emphasis","cases":{"text":"transparent","outlined":"transparent","filled":{"variant":"tone","cases":{"default":{"token":"color.backLayer"},"inverse":{"token":"color.onBackLayer"}}}}}

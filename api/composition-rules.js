@@ -120,6 +120,7 @@ export const COMPOSITION_RULES = [
       h.clauses.forEach(cl => {
         if ('value' in cl) assert(cl.value in C.values, h.name + ': contract ' + h.contract + ' has no value ' + cl.value);
         if ('send' in cl) assert(C.intents.includes(cl.send), h.name + ': contract ' + h.contract + ' does not send ' + cl.send);
+        if ('apply' in cl) assert(cl.send === 'setParams', h.name + ': apply on ' + cl.send + ' (only setParams applies)');
         if ('fill' in cl) cl.fill.forEach(s => {
           if ('child' in s) assert((C.children || {})[s.child], h.name + ': contract ' + h.contract + ' has no child ' + s.child);
           if ('hire' in s) { const o = hireOf(f, s.hire); assert(o, h.name + ': unknown hire ' + s.hire); assert(o.contract === h.contract, h.name + ': ' + s.hire + ' meets ' + o.contract + ', not ' + h.contract); }

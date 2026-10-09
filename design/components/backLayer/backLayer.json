@@ -5,8 +5,7 @@
     "headerHidden": "boolean",
     "header": "slot",
     "actions": "slot",
-    "basicAction": "slot",
-    "panel": "slot"
+    "paramControls": "slot"
   },
   "provides": {
     "content": {

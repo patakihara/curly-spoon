@@ -47,7 +47,7 @@ export function contractTree(model, specs, composition, opts = {}) {
     }
     for (const ev of fc.events) {
       const cl = h.clauses.find(x => x.event === ev); if (!cl) continue;
-      n.events[ev] = payload => intentFor(n, cl.send, ev, payload, ctx, extra);
+      n.events[ev] = payload => intentFor(n, cl.send, ev, payload, ctx, extra, cl);
     }
     // slots: written fills (children, picked items, other hires on this same node), else the child of the same name
     const picked = new Set();
@@ -67,7 +67,7 @@ export function contractTree(model, specs, composition, opts = {}) {
   }
 
   // ── intents: what a node's event sends ('action': the config's own action, or an item's open / itemAction)
-  function intentFor(n, send, ev, payload, ctx, extra) {
+  function intentFor(n, send, ev, payload, ctx, extra, cl = {}) {
     const page = ctx.page, pid = page ? page.config.id : undefined;
     switch (send) {
       case 'action': {
@@ -77,11 +77,12 @@ export function contractTree(model, specs, composition, opts = {}) {
       case 'setParams': {
         if (n.contract === 'switch') return n.values.next == null ? null : { type: 'setParams', values: { [n.config.param]: n.values.next }, page: pid };
         if (n.contract === 'find') return { type: 'setParams', values: { [n.config.param]: payload }, page: pid };
-        if (n.contract === 'suggestion') { const f = extra.fills; return { type: 'setParams', values: { [f.change]: n.values.text, [f.submit]: n.values.text }, page: pid }; }
-        const b = extra.bind; if (!b) return null;
-        if (typeof b === 'string') return { type: 'setParams', values: { [b]: payload }, page: pid };
-        return { type: 'setParams', values: ev === 'submit' ? { [b.change]: payload, [b.submit]: payload } : { [b.change]: payload }, page: pid };
+        const b = n.contract === 'paramControl' ? n.config.bind : null; if (!b) return null;
+        return { type: 'setParams', values: { [b]: payload }, page: pid, ...(cl.apply ? { apply: true } : {}) };
       }
+      case 'toggleParam': return n.contract === 'paramControl' ? { type: 'toggleParam', name: n.config.bind, option: String(payload), page: pid } : null;
+      case 'applyParams': return n.contract === 'paramControl' ? { type: 'applyParams', names: [n.config.bind], page: pid } : null;
+      case 'discardParams': return n.contract === 'paramControl' ? { type: 'discardParams', names: [n.config.bind], page: pid } : null;
       case 'seek': return { type: 'seek', positionMs: +payload || 0 };
       case 'toggleExpanded': return n.contract === 'backLayer' && n.config.toggleOnTap === false ? null : { type: 'toggleExpanded' };
       case 'scroll': return { type: 'scroll', top: +payload || 0 };
@@ -140,12 +141,22 @@ export function contractTree(model, specs, composition, opts = {}) {
     return node('header', key, ctx, H, { title, progress }, children);
   }
 
-  // ── controls
-  function inputNode(cfg, key, ctx) {
-    const page = ctx.page, b = cfg.bind, name = typeof b === 'string' ? b : b && b.change, spec = (page.config.params || {})[name] || {};
-    const values = { value: name ? paramOf(page, name) ?? null : null, options: name ? q.paramOptions(s, c, page, name) || [] : [], placeholder: cfg.placeholder ? String(val(cfg.placeholder, page) ?? '') : null, label: cfg.label ? String(val(cfg.label, page) ?? '') : null, min: spec.min ?? null, max: spec.max ?? null };
-    const param = typeof b === 'object' ? { draft: true } : { name, type: spec.type, axis: !!spec.axis, draft: false };
-    return node('input', key, ctx, cfg, values, {}, { at: { param }, bind: b });
+  // ── param controls: one control for one page param; rows of them (only those whose when holds)
+  const textOf = (l, fallback) => typeof l === 'object' && l ? text(l) : l == null ? fallback : String(l);
+  function paramControlNode(cfg, key, ctx) {
+    const page = ctx.page, name = cfg.bind, spec = (page.config.params || {})[name] || {};
+    const value = val({ bind: 'pending.' + name }, page) ?? null, many = spec.type === 'choices';
+    const raw = cfg.options ? sourceItems(cfg.options, page).map(o => ({ value: String(o.value), label: textOf(o.label, String(o.value)) })) : q.paramOptions(s, c, page, name) || [];
+    const options = raw.map(o => ({ value: o.value, label: o.label, selected: many ? Array.isArray(value) && value.includes(o.value) : value === o.value }));
+    const values = { value, options, pending: !!(page.pending && name in page.pending), label: spec.label != null ? String(val(spec.label, page) ?? '') : null, placeholder: spec.placeholder != null ? String(val(spec.placeholder, page) ?? '') : null, min: spec.min ?? null, max: spec.max ?? null };
+    return node('paramControl', key, ctx, cfg, values, {}, { at: { param: { name, type: spec.type, axis: !!spec.axis, options: !!cfg.options } } });
+  }
+  function paramControlRows(rows, key, ctx) {
+    const page = ctx.page, rw = inside(ctx, 'paramControlRow');
+    return (rows || []).map((r, j) => [r, j]).filter(([r]) => holds(r, page)).map(([r, j]) => {
+      const controls = r.controls.map((x, i) => [x, i]).filter(([x]) => holds(x, page)).map(([x, i]) => paramControlNode(x, key + ':' + j + '.controls:' + i, rw));
+      return node('paramControlRow', key + ':' + j, ctx, r, { label: controls.length ? controls[0].values.label : null }, { controls });
+    });
   }
 
   // ── content: the page's data under its params, by presentation
@@ -176,11 +187,7 @@ export function contractTree(model, specs, composition, opts = {}) {
       const back = node('backLayer', k, w, B, { expanded: !!page.back.expanded, headerHidden: !!page.back.headerHidden, regions: Layout.regions(page, look, measured) }, {
         header: headerNode(B.header, k + '.header', bw, bar.progress, title),
         actions: items(B.actions, k + '.actions', bw),
-        ...(B.basicAction ? { basicAction: inputNode(B.basicAction, k + '.basicAction', bw) } : {}),
-        panel: (B.panel || []).filter(r => holds(r, page)).map((r, j) => r.kind === 'param'
-          ? node('paramRow', k + '.panel:' + j, bw, r, { label: r.label ? String(val(r.label, page) ?? '') : null }, { control: inputNode(r, k + '.panel:' + j + '.control', inside(bw, 'paramRow')) })
-          : (() => { const sw = inside(bw, 'suggestions'), src = sourceItems(r.source, page);
-            return node('suggestions', k + '.panel:' + j, bw, r, { label: String(val(r.label, page) ?? '') }, { items: src.map((it, i) => node('suggestion', k + '.panel:' + j + '.items:' + i, sw, it, { text: String(it.title ?? '') }, {}, { fills: r.fills })) }); })()),
+        paramControls: paramControlRows(B.paramControls, k + '.paramControls', bw),
       });
       const fl = Layout.frontLayer(page, g, look, { measured }, opts.peek || 0), F = cfg.front, fk = key + '.front';
       const fh = node('frontHeader', fk + '.header', fw, F.header, { title: String(val(F.header.title, page) ?? ''), expanded: !!page.back.expanded, disclosureLabel: text(page.back.expanded ? 'backLayer.conceal' : 'backLayer.reveal') }, { items: items(F.header.items, fk + '.header.items', inside(fw, 'frontHeader')) });
@@ -196,7 +203,7 @@ export function contractTree(model, specs, composition, opts = {}) {
     };
     if (cfg.sheet) {
       const sw = inside(w, 'pageSheet'), S = cfg.sheet;
-      children.sheet = node('pageSheet', key + '.sheet', w, S, { expanded: !!(page.sheet && page.sheet.expanded) }, { ...(S.control ? { control: inputNode(S.control, key + '.sheet.control', sw) } : {}), content: contentNode(S.content, key + '.sheet.content', sw, origin) });
+      children.sheet = node('pageSheet', key + '.sheet', w, S, { expanded: !!(page.sheet && page.sheet.expanded) }, { ...(S.paramControl ? { paramControl: paramControlNode(S.paramControl, key + '.sheet.paramControl', sw) } : {}), content: contentNode(S.content, key + '.sheet.content', sw, origin) });
     }
     return node('appBarPage', key, ctx, cfg, { contentOffset: Layout.contentOffset(page, look, ctx.within) }, children);
   }

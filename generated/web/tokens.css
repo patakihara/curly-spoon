@@ -616,6 +616,7 @@
   --suggestionRow-icon: search;
   --suggestionRow-iconSize: 20;
   --suggestionRow-iconOpacity: 0.75;
+  --suggestionList-gap: 12;
   --menu-fill: var(--color-surfaceRaised);
   --menu-ink: var(--color-onSurface);
   --menu-radius: [object Object];
@@ -832,7 +833,7 @@
   --drawerItem-contentOpacity-disabled: var(--state-disabled-opacity);
   --drawerItem-contentOpacity-busy: var(--state-busy-opacity);
   --drawerItem-scale: 1;
-  --drawerItem-scale-pressed: 0.97;
+  --drawerItem-scale-pressed: 1;
   --drawerItem-ink: [object Object];
   --drawerItem-ink-selected: [object Object];
   --drawerItem-fill: [object Object];

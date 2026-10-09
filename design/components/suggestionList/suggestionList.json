@@ -1,0 +1,17 @@
+{
+  "props": {
+    "value": "value",
+    "options": "options"
+  },
+  "events": [
+    {
+      "name": "pick",
+      "payload": "string"
+    }
+  ],
+  "visuals": {
+    "gap": {
+      "default": 12
+    }
+  }
+}

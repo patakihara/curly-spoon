@@ -143,7 +143,7 @@ const SOURCES = {
   suggest: p => {
     const q = String(p.prefix || '').trim().toLowerCase();
     const pool = [...C.people, ...C.collections].map(x => x.title);
-    return (q ? pool.filter(t => t.toLowerCase().includes(q)) : ['Velvet Arcade', 'Blue Hours', 'The Glass Orchard', 'Curious Minds', 'Maren Holt']).slice(0, 5).map(t => ({ id: t, title: t, opens: null }));
+    return (q ? pool.filter(t => t.toLowerCase().includes(q)) : ['Velvet Arcade', 'Blue Hours', 'The Glass Orchard', 'Curious Minds', 'Maren Holt']).slice(0, 5).map(t => ({ value: t, label: t }));   // options for the query param
   },
   // Now playing sheet: the queue (from the player, passed as params), lyrics and related of the current track
   nowPlaying: p => {

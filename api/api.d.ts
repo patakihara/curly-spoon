@@ -107,8 +107,14 @@ export type NumberRange = [number, number];
 export type DateRange = [string, string];
 export type ParamValue = string | string[] | boolean | number | NumberRange | DateRange | null;
 export interface ParamOption { value: string; label: TextRef | string }
+export type ParamApply =
+  | 'immediate'                          // a change applies at once
+  | 'onApply';                           // a change waits in the page's pending values until applyParams (search while typing; an Apply button)
 export interface ParamSpec {
   type: ParamType;
+  label?: PropValue;                     // what the param is called ("Genre"); may switch by state · design decides whether a control draws it
+  placeholder?: PropValue;               // a hint while it is empty ("Search anything")
+  apply?: ParamApply;                    // default 'immediate'
   options?: Source<ParamOption[]>;       // choice / choices, in order
   axis?: boolean;                        // ordered siblings → paramChanged carries a direction
   motion?: ParamMotion;                  // default 'default'
@@ -121,7 +127,6 @@ export interface ParamSpec {
   data?: boolean;                        // passed to the content dataSource; default true
 }
 export type Params = Record<ParamName, ParamSpec>;
-export interface DraftBind { change: ParamName; submit: ParamName }   // typing updates change (a draft), submitting sets both
 
 // ═════════════════════════════════════════════════════════════
 // D. DOMAINS USED BY ACTIONS
@@ -221,9 +226,11 @@ export interface BackIntent { type: 'back' }
 export interface UpIntent { type: 'up'; target?: Origin }
 export interface SwitchDeckIntent { type: 'switchDeck'; deck: DeckId }
 export interface ReselectDeckIntent { type: 'reselectDeck'; deck: DeckId }
-export interface SetParamsIntent { type: 'setParams'; values: Record<ParamName, ParamValue>; page?: PageId }
+export interface SetParamsIntent { type: 'setParams'; values: Record<ParamName, ParamValue>; page?: PageId; apply?: true }   // an 'onApply' param's value goes to pending, unless apply (picking a suggestion)
 export interface ToggleParamIntent { type: 'toggleParam'; name: ParamName; option: string; page?: PageId }
 export interface ResetParamsIntent { type: 'resetParams'; names?: ParamName[]; page?: PageId }
+export interface ApplyParamsIntent { type: 'applyParams'; names?: ParamName[]; page?: PageId }       // pending → params (default: every pending one); the content refetches
+export interface DiscardParamsIntent { type: 'discardParams'; names?: ParamName[]; page?: PageId }   // drop pending values (default: all)
 export interface SetExpandedIntent { type: 'setExpanded'; expanded: boolean }   // the focused app-bar page's sheet if it has one, else the back layer under the focus
 export interface ToggleExpandedIntent { type: 'toggleExpanded' }
 export interface ScrollIntent { type: 'scroll'; top: number }
@@ -243,7 +250,7 @@ export interface OpenFindIntent { type: 'openFind' }                     // the 
 export interface CloseFindIntent { type: 'closeFind' }                   // its text = '', opened = false, closed = true
 export type Intent =
   | OpenIntent | OpenLayerPageIntent | BackIntent | UpIntent | SwitchDeckIntent | ReselectDeckIntent
-  | SetParamsIntent | ToggleParamIntent | ResetParamsIntent | SetExpandedIntent | ToggleExpandedIntent | ScrollIntent
+  | SetParamsIntent | ToggleParamIntent | ResetParamsIntent | ApplyParamsIntent | DiscardParamsIntent | SetExpandedIntent | ToggleExpandedIntent | ScrollIntent
   | OpenLayerIntent | CloseLayerIntent | FocusIntent | SetDeviceIntent | SetPrefsIntent
   | OpenOverlayIntent | RetryIntent | CloseOverlayIntent | SessionIntent | NavigateUrlIntent | RestoreIntent | LaunchedIntent
   | OpenFindIntent | CloseFindIntent;
@@ -283,11 +290,21 @@ export type BodyItem = ButtonItem | TextItem | DetailItem | SeekItem;
 // ── Headers: the back layer's, an app-bar page's and the peek's. Their title is the page's title (none on the peek).
 export interface HeaderConfig { items: HeaderItem[]; detail?: DetailConfig }
 
-// ── Controls and panel rows
-export interface BasicActionConfig { bind: ParamName | DraftBind; placeholder?: PropValue }   // one control for one param
-export interface ParamRow { kind: 'param'; label?: PropValue; bind: ParamName; when?: Condition }
-export interface SuggestionsRow { kind: 'suggestions'; label: PropValue; source: Source<ItemData[]>; fills: DraftBind; when?: Condition }   // picking one sets both params to its title
-export type PanelRow = ParamRow | SuggestionsRow;
+// ── Param controls: one control for one page param (a tab bar, a chip row, a dropdown, a search field, a range, a suggestion
+//   list). What draws it is composition's choice, by the param's spec. Its words (label, placeholder) are the param's.
+export interface ParamControlConfig {
+  bind: ParamName;                       // the page param it shows and changes
+  options?: Source<ParamOption[]>;       // the choices this control shows; default: the param's own (search suggestions, a popular subset)
+  when?: Condition;                      // shown only while this holds
+}
+export type ParamControlShows =
+  | 'always'                             // also while the back layer is concealed
+  | 'expanded';                          // only while it is revealed
+export interface ParamControlRowConfig {
+  controls: ParamControlConfig[];        // one or more on this line, in order
+  shows?: ParamControlShows;             // default 'expanded'
+  when?: Condition;                      // the whole line shows only while this holds
+}
 
 // ── Content. A shelf is an item holding entries (Browse's "Artists to know"). Data decides which shelves and entries exist;
 //   activating a shelf or an entry opens it (ItemData.opens; a shelf opens the template shelfPage).
@@ -336,8 +353,7 @@ export interface AppBarPageStatePolicy { params?: ParamStatePolicies; scroll: St
 export interface BackLayerConfig {
   header: HeaderConfig;
   actions?: ButtonItem[];
-  basicAction?: BasicActionConfig;
-  panel?: PanelRow[];
+  paramControls?: ParamControlRowConfig[];   // its controls, top to bottom: 'always' rows show concealed too, 'expanded' rows only revealed
   toggleOnTap?: boolean;                 // default true
   hideHeaderOnScroll?: boolean;          // scrolling down hides the header region (BackLayerState.headerHidden)
 }
@@ -354,7 +370,7 @@ export interface BackdropPageConfig {
   statePolicy: BackdropPageStatePolicy;            // engine only: no contract reads it
 }
 // ── App-bar page: a header over content or a body, with an optional inner sheet (Now playing: Up next / Lyrics / Related)
-export interface PageSheetConfig { control?: BasicActionConfig; content: ContentConfig }   // control: the tabs in its header
+export interface PageSheetConfig { paramControl?: ParamControlConfig; content: ContentConfig }   // paramControl: the tabs in its header
 export interface AppBarPageConfig {
   id: PageId;
   kind: 'appBar';
@@ -449,7 +465,8 @@ export interface PageStateBase<C> {     // what every page's state holds
   config: C;
   opener?: ItemData;                     // an opened page: the item that opened it ($opener)
   template?: PageTemplateId;             // an opened page: its template (composition's page exceptions name it)
-  params: Record<ParamName, Scoped<ParamValue>>;
+  params: Record<ParamName, Scoped<ParamValue>>;   // applied values: what the content fetches with
+  pending?: Record<ParamName, ParamValue>;         // set but not applied ('onApply' params); the path 'pending.<name>' reads it, else the applied value
 }
 export interface BackdropPageState extends PageStateBase<BackdropPageConfig> { back: BackLayerState; front: FrontLayerState }
 export interface AppBarPageState extends PageStateBase<AppBarPageConfig> {
@@ -605,7 +622,12 @@ export interface Contract<C, V, I> { config: C; values: V; intents: I }
 export interface NoValues {}
 export type NoIntents = never;
 
-export type BackLayerRegionName = 'header' | 'actions' | 'basicAction' | 'panel';
+export type BackLayerRegionName = 'header' | 'actions' | 'controls' | 'panel';   // controls: the 'always' rows · panel: the 'expanded' rows
+export interface ParamControlOption {   // one choice, as a param control's values give it
+  value: string;                         // 'jazz'
+  label: string;                         // "Jazz", resolved in the current locale
+  selected: boolean;                     // part of the control's current value (the pending one if any)
+}
 export interface BackLayerRegionView { region: BackLayerRegionName; top: number; height: number; opacity: number; interactive: boolean }   // Layout
 export interface ContentView { state: ContentViewState; showItems: boolean; placeholders: number; banner: boolean; retry: boolean }   // replaces api.d.ts ContentView: no component ids (composition picks them)
 // <contracts:generated> — from api/contracts.js by api/gen-contracts.js; do not edit
@@ -635,20 +657,13 @@ export type HeaderItemContract = ButtonContract | LogoContract | TextContract | 
 export interface HeaderValues { title: string | null; progress: number }
 export interface HeaderChildren { items: HeaderItemContract[]; detail?: DetailContract }
 export interface HeaderContract extends Contract<HeaderConfig, HeaderValues, NoIntents> { children: HeaderChildren }
-// input: one control for one param · label: its row's · min / max: a number param's (ParamSpec)
-export interface InputValues { value: ParamValue | null; options: ParamOption[]; placeholder: string | null; label: string | null; min: number | null; max: number | null }
-export interface InputContract extends Contract<BasicActionConfig | ParamRow, InputValues, SetParamsIntent> {}
-// paramRow
-export interface ParamRowValues { label: string | null }
-export interface ParamRowChildren { control: InputContract }
-export interface ParamRowContract extends Contract<ParamRow, ParamRowValues, NoIntents> { children: ParamRowChildren }
-// suggestion: picking it fills the draft (SuggestionsRow.fills)
-export interface SuggestionValues { text: string }
-export interface SuggestionContract extends Contract<ItemData, SuggestionValues, SetParamsIntent> {}
-// suggestions
-export interface SuggestionsValues { label: string }
-export interface SuggestionsChildren { items: SuggestionContract[] }
-export interface SuggestionsContract extends Contract<SuggestionsRow, SuggestionsValues, NoIntents> { children: SuggestionsChildren }
+// paramControl: value: the pending one if any, else applied · options: every choice, in config order (empty for plain text or a range) · label / placeholder: the param's, resolved · min / max: a number param's
+export interface ParamControlValues { value: ParamValue | null; options: ParamControlOption[]; pending: boolean; label: string | null; placeholder: string | null; min: number | null; max: number | null }
+export interface ParamControlContract extends Contract<ParamControlConfig, ParamControlValues, SetParamsIntent | ToggleParamIntent | ApplyParamsIntent | DiscardParamsIntent> {}
+// paramControlRow: its controls whose when holds · label: its first control's (design decides whether the row draws it)
+export interface ParamControlRowValues { label: string | null }
+export interface ParamControlRowChildren { controls: ParamControlContract[] }
+export interface ParamControlRowContract extends Contract<ParamControlRowConfig, ParamControlRowValues, NoIntents> { children: ParamControlRowChildren }
 // item: action: open it (ItemData.opens), else the presentation's itemAction · entries: a shelf's (absent on other items) (recursive: refers to itself)
 export interface ItemValues { title: string; subtitle: string | null; image: string | null; shape: ItemShape; current: boolean; navigable: boolean }
 export interface ItemChildren { entries?: ItemContract[] }
@@ -660,10 +675,9 @@ export interface ContentStateContract extends Contract<ContentConfig, ContentSta
 export interface ContentValues { view: ContentView; presentation: PresentationKey; groups: ItemGroup[]; placeholders: number }
 export interface ContentChildren { items: ItemContract[]; state?: ContentStateContract; banner?: ContentStateContract }
 export interface ContentContract extends Contract<ContentConfig, ContentValues, NoIntents> { children: ContentChildren }
-export type PanelRowContract = ParamRowContract | SuggestionsContract;
 // backLayer: toggle only while toggleOnTap
 export interface BackLayerValues { expanded: boolean; headerHidden: boolean; regions: BackLayerRegionView[] }
-export interface BackLayerChildren { header: HeaderContract; actions: ButtonContract[]; basicAction?: InputContract; panel: PanelRowContract[] }
+export interface BackLayerChildren { header: HeaderContract; actions: ButtonContract[]; paramControls: ParamControlRowContract[] }
 export interface BackLayerContract extends Contract<BackLayerConfig, BackLayerValues, ToggleExpandedIntent> { children: BackLayerChildren }
 // frontHeader: the built-in disclosure: the back layer's expanded + its label (texts backLayer.reveal / backLayer.conceal)
 export interface FrontHeaderValues { title: string; expanded: boolean; disclosureLabel: string }
@@ -678,7 +692,7 @@ export interface BackdropPageChildren { back: BackLayerContract; front: FrontLay
 export interface BackdropPageContract extends Contract<BackdropPageConfig, NoValues, NoIntents> { children: BackdropPageChildren }
 // pageSheet
 export interface PageSheetValues { expanded: boolean }
-export interface PageSheetChildren { control?: InputContract; content: ContentContract }
+export interface PageSheetChildren { paramControl?: ParamControlContract; content: ContentContract }
 export interface PageSheetContract extends Contract<PageSheetConfig, PageSheetValues, ToggleExpandedIntent> { children: PageSheetChildren }
 export type BodyItemContract = ButtonContract | TextContract | DetailContract | SeekContract;
 // appBarPage
@@ -712,7 +726,7 @@ export interface SplashContract extends Contract<LaunchConfig, SplashValues, NoI
 export interface OverlayValues { title: string | null; body: string | null; confirm: string | null; cancel: string | null; text: string | null; action: string | null }
 export interface OverlayChildren { items?: ButtonContract[] }
 export interface OverlayContract extends Contract<OverlaySpec, OverlayValues, CloseOverlayIntent> { children: OverlayChildren }
-export type ContractName = 'button' | 'logo' | 'text' | 'switch' | 'find' | 'detail' | 'seek' | 'header' | 'input' | 'paramRow' | 'suggestion' | 'suggestions' | 'item' | 'contentState' | 'content' | 'backLayer' | 'frontHeader' | 'frontLayer' | 'backdropPage' | 'pageSheet' | 'appBarPage' | 'sheetLayer' | 'drawerLayer' | 'fullscreenLayer' | 'destination' | 'navigation' | 'splash' | 'overlay';
+export type ContractName = 'button' | 'logo' | 'text' | 'switch' | 'find' | 'detail' | 'seek' | 'header' | 'paramControl' | 'paramControlRow' | 'item' | 'contentState' | 'content' | 'backLayer' | 'frontHeader' | 'frontLayer' | 'backdropPage' | 'pageSheet' | 'appBarPage' | 'sheetLayer' | 'drawerLayer' | 'fullscreenLayer' | 'destination' | 'navigation' | 'splash' | 'overlay';
 // </contracts:generated>
 
 // ── The contract tree (core/contracts.js): this moment's drawn config objects, each with what composition hired to draw it
@@ -869,7 +883,7 @@ export interface Layout {
   env(state: AppState, config: AppConfig, q: Queries): LayoutEnv;
   sizes(look: Look): ModelSizes;         // 18.0: createModel's sizes (the wide look)
   geometry(state: AppState, config: AppConfig, q: Queries, look: Look): LayoutGeometry;
-  regions(page: BackdropPageState, look: Look, measured?: Record<string, number>): BackLayerRegionView[];   // fixed regions: header · actions · basicAction · panel (expanded only)
+  regions(page: BackdropPageState, look: Look, measured?: Record<string, number>): BackLayerRegionView[];   // fixed regions: header · actions · controls · panel (revealed only)
   barView(page: PageState, look: Look, within?: ContractName[]): BarView;   // the header hire's height / expandedHeight (with a detail); progress = min(1, scroll / distance)
   contentOffset(page: PageState, look: Look, within?: ContractName[]): number;   // 15.0: the content's own offset = max(0, scroll − barView.distance)
   resolveVisuals(specs: Specs, component: ComponentId, state: string, ctx?: VisualContext): Record<string, unknown>;
@@ -945,7 +959,7 @@ export interface PropText { prop: PropName; text: DesignTextId }    // prop ← 
 export interface TokenCase { equals: string; token: TokenName }
 export interface PropByValue { prop: PropName; value: ValueName; cases: TokenCase[] }   // prop ← a hire token picked by a value (view switch icon)
 export type PlayerIntentType = PlayerIntent['type'];
-export interface EventTo { event: EventName; send: IntentType | PlayerIntentType | 'action' }   // an intent the contract accepts · action: the item's config action
+export interface EventTo { event: EventName; send: IntentType | PlayerIntentType | 'action'; apply?: true }   // an intent the contract accepts · action: the item's config action · apply: setParams applies at once (picking a suggestion)
 export interface ItemSelector { kind?: ItemKind; name?: ItemName; rest?: true }   // rest: every item not picked by another slot
 export interface FromChild { child: ChildName; pick?: ItemSelector[] }   // a child, or the picked items of a list child, in order
 export interface FromHire { hire: HireName }                             // a hire on this same contract (a header's title, the built-in disclosure)
@@ -963,13 +977,13 @@ export interface Hire {
 }
 
 // ── Placements: which hire draws each config object, by contract (and, for items, kind / name / presentation)
-export interface ParamMatch { name?: ParamName; type?: ParamType; axis?: boolean; draft?: boolean }   // controls: picked by the bound param (its name, or its spec)
+export interface ParamMatch { name?: ParamName; type?: ParamType; axis?: boolean; options?: boolean }   // param controls: picked by the bound param (its name, or its spec) · options: the control brings its own choices
 export interface Placement {
   contract: ContractName;
   within?: ContractName | ContractName[];   // the nearest ancestor contract, or the nearest few in order (['appBarPage', 'sheetLayer']: a layer page's header)
   overlay?: OverlayKind;         // overlays: by kind
   match?: ItemSelector;                  // items: a kind or a name (destinations: the deck id; overlays: the kind)
-  param?: ParamMatch;                    // basic actions and panel rows
+  param?: ParamMatch;                    // param controls
   presentation?: PresentationKey;        // content items
   state?: ContentViewState;              // content states: empty · error · offlineStale
   env?: EnvEquals;                       // e.g. layout compact only
