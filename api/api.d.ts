@@ -68,7 +68,7 @@ export declare const DERIVED_IDS: readonly DerivedId[];
 //   'count' (of: list length; other values 1 unless empty) · 'summary' (of a param: its option labels / its value) ·
 //   'scrolled' (the page's content is scrolled off the top; changes only when it crosses 0)
 export type QueueRelation = 'empty' | 'contains' | 'absent';   // the queue is empty · holds every track of `of` · lacks some of them
-export interface PathEquals { path: StatePath; equals: unknown }     // deep equality; page paths must lie in a policy-declared field
+export interface PathEquals { path: StatePath; equals: unknown }     // deep equality; page paths must lie in a field the state policy declares
 export interface PathIncludes { path: StatePath; includes: unknown } // the list at path contains the value
 export interface EnvEquals { env: 'layout' | 'touch' | 'sheet' | 'dir'; equals: unknown }   // 'compact' | 'wide' · boolean · 'none' | 'beside' | 'over' · Direction
 export interface DerivedEquals { derived: DerivedId; of?: StatePath; equals: unknown }
@@ -98,7 +98,7 @@ export interface LocaleConfig { default: LocaleId; supported: SupportedLocale[] 
 
 // ═════════════════════════════════════════════════════════════
 // C. PARAMS — the values a page holds for its controls
-// The engine knows only their type: state, URL codec, history, reset policy and data params.
+// The engine knows only their type: state, URL codec, history, state policy and data params.
 // ═════════════════════════════════════════════════════════════
 export type ParamName = string;
 export type ParamType = 'choice' | 'choices' | 'text' | 'flag' | 'number' | 'date';
@@ -314,22 +314,22 @@ export type LifecycleEvent =
   | 'baseSwitch' | 'deckSwitch' | 'layerOpen' | 'layerClose';
 //   baseSwitch ⊃ { deckSwitch, layerOpen, layerClose } · reselect: the active deck's nav item at base · scrollTop: the content scrolled back to 0
 export interface PolicyReaction<T> { event: LifecycleEvent; set: T | 'default' | 'toggle' }   // toggle: booleans only
-export interface FieldPolicy<T> {
+export interface StatePolicy<T> {
   default: T;
   resetOn: LifecycleEvent[];
   scope?: StatePath | null;
   on?: PolicyReaction<T>[];
 }
-export type ParamPolicies = Record<ParamName, FieldPolicy<ParamValue>>;   // OPEN: still a Record
+export type ParamStatePolicies = Record<ParamName, StatePolicy<ParamValue>>;   // OPEN: still a Record
 // ── Find (local search): the engine owns whether it is open, on the page part that scrolls (front layer, app-bar page).
 //   open = (content scrolled and not closed) or opened or its text is not empty
 export interface FindState { opened: boolean; closed: boolean }          // opened: the find button was pressed · closed: ✕ was pressed
-export interface FindPolicy { opened: FieldPolicy<boolean>; closed: FieldPolicy<boolean> }   // mirrors FindState (e.g. both reset on scrollTop)
-export interface BackLayerPolicy { expanded: FieldPolicy<boolean>; headerHidden?: FieldPolicy<boolean> }
-export interface FrontLayerPolicy { scroll: FieldPolicy<number>; find?: FindPolicy }   // find: required when the front header holds a find item
-export interface BackdropPagePolicy { params: ParamPolicies; back: BackLayerPolicy; front: FrontLayerPolicy }
-export interface PageSheetPolicy { expanded: FieldPolicy<boolean> }
-export interface AppBarPagePolicy { params?: ParamPolicies; scroll: FieldPolicy<number>; sheet?: PageSheetPolicy; find?: FindPolicy }   // sheet mirrors PageSheetState
+export interface FindStatePolicy { opened: StatePolicy<boolean>; closed: StatePolicy<boolean> }   // mirrors FindState (e.g. both reset on scrollTop)
+export interface BackLayerStatePolicy { expanded: StatePolicy<boolean>; headerHidden?: StatePolicy<boolean> }
+export interface FrontLayerStatePolicy { scroll: StatePolicy<number>; find?: FindStatePolicy }   // find: required when the front header holds a find item
+export interface BackdropPageStatePolicy { params: ParamStatePolicies; back: BackLayerStatePolicy; front: FrontLayerStatePolicy }
+export interface PageSheetStatePolicy { expanded: StatePolicy<boolean> }
+export interface AppBarPageStatePolicy { params?: ParamStatePolicies; scroll: StatePolicy<number>; sheet?: PageSheetStatePolicy; find?: FindStatePolicy }   // sheet mirrors PageSheetState
 
 // ── Backdrop page. The back layer has named regions with fixed meanings:
 //   header, actions and basicAction show concealed and expanded; panel shows only expanded.
@@ -351,7 +351,7 @@ export interface BackdropPageConfig {
   params: Params;
   back: BackLayerConfig;
   front: FrontLayerConfig;
-  policy: BackdropPagePolicy;            // engine only: no contract reads it
+  statePolicy: BackdropPageStatePolicy;            // engine only: no contract reads it
 }
 // ── App-bar page: a header over content or a body, with an optional inner sheet (Now playing: Up next / Lyrics / Related)
 export interface PageSheetConfig { control?: BasicActionConfig; content: ContentConfig }   // control: the tabs in its header
@@ -363,13 +363,13 @@ export interface AppBarPageConfig {
   params?: Params;
   content?: ContentConfig;               // scrolling content — or a fixed body; at most one (neither: the page is its header)
   body?: BodyItem[];
-  sheet?: PageSheetConfig;               // requires policy.sheet
-  policy: AppBarPagePolicy;
+  sheet?: PageSheetConfig;               // requires statePolicy.sheet
+  statePolicy: AppBarPageStatePolicy;
 }
 export type PageConfig = BackdropPageConfig | AppBarPageConfig;
 
-export interface DeckPolicy { stack: FieldPolicy<StackEntry[]> }   // StackEntry: §I (type-only reference)
-export interface DeckConfig { id: DeckId; name: string; page: BackdropPageConfig; linkTarget?: LinkTarget; policy: DeckPolicy }   // its icon: composition (a token per deck)
+export interface DeckStatePolicy { stack: StatePolicy<StackEntry[]> }   // StackEntry: §I (type-only reference)
+export interface DeckConfig { id: DeckId; name: string; page: BackdropPageConfig; linkTarget?: LinkTarget; statePolicy: DeckStatePolicy }   // its icon: composition (a token per deck)
 export type HistoryMode = 'record' | 'ignore';
 export interface HistoryByLayout { compact: HistoryMode; wide: HistoryMode }
 export interface PeekConfig { header: HeaderConfig }
@@ -386,7 +386,7 @@ export interface DrawerPresentation { kind: 'drawer'; scrim: boolean; wide?: Dra
 //   wide 'rail': the navigation rail expands in place (its items show labels); joins the focus order (no trap); back closes it.
 export type LayerPresentation = SheetPresentation | FullscreenPresentation | DrawerPresentation;
 export interface LayerPages { base: PageId; set: Record<PageId, PageConfig> }   // OPEN: still a Record
-export interface LayerPolicy { stack: FieldPolicy<StackEntry[]>; open: FieldPolicy<boolean> }
+export interface LayerStatePolicy { stack: StatePolicy<StackEntry[]>; open: StatePolicy<boolean> }
 export interface LayerConfig {
   id: LayerId;
   name: string;
@@ -394,7 +394,7 @@ export interface LayerConfig {
   linkTarget?: LinkTarget;
   presentation: LayerPresentation;
   history: HistoryMode | HistoryByLayout;
-  policy: LayerPolicy;
+  statePolicy: LayerStatePolicy;
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -416,7 +416,7 @@ export interface RouteTable {
 }
 //   /<deck>/<page>…?<name>=<value>&… · /<layer>/<page>… · /<gate>. Segments: slugs of item ids (lowercase; runs of anything
 //   but letters, digits and '.' → '-'). Values: choice(s) → option slugs · text lowercased, '+' for spaces · flag 1|0 ·
-//   range 'from..to'. Only values off the policy default. Invariant: navigateUrl(url(state)) reproduces the destination.
+//   range 'from..to'. Only values off the state policy default. Invariant: navigateUrl(url(state)) reproduces the destination.
 // ── Wire (§16): the data section is the wire format
 export interface WireEndpoint { ref: SourceRef; method: 'GET'; path: string; params?: Record<string, 'string' | 'number'> }
 export interface Wire { endpoints: WireEndpoint[] }
@@ -441,7 +441,7 @@ export interface AppConfig {
 // ═════════════════════════════════════════════════════════════
 // I. STATE (runtime, user-driven)
 // ═════════════════════════════════════════════════════════════
-export type Scoped<T> = T | Record<string, T>;   // a field with a policy scope is stored per scope key
+export type Scoped<T> = T | Record<string, T>;   // a field with a state policy scope is stored per scope key
 export interface BackLayerState { expanded: boolean; headerHidden?: boolean }
 export interface FrontLayerState { scroll: Scoped<number>; find?: FindState }   // collapse-first scroll offset (15.0): see PageScroll below
 export interface PageSheetState { expanded: boolean }
@@ -597,7 +597,7 @@ export interface Measurements { itemRect?: Rect; targetRect?: Rect; origin?: Poi
 // M2. CONTRACTS (18.0) — what each drawn config object offers whatever draws it (api/contracts.js, the single source)
 //   config: the object · values: current, computed by core from State, queries and Layout (never stored) ·
 //   intents: what it may send · children: config fields holding other drawn objects (each drawn by its own hire).
-//   Engine-only config (policy, collapse, routes …) is never offered as a value.
+//   Engine-only config (state policy, collapse, routes …) is never offered as a value.
 // ═════════════════════════════════════════════════════════════
 export type SheetForm = 'bottomSheet' | 'sideSheet';
 export type ItemShape = 'circle' | 'square';   // people draw circular, collections square (ItemData.shape)

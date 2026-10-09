@@ -39,7 +39,7 @@ export function geometry(state, config, q, look) {
 
 // back-layer regions (18.0: fixed) — header · actions · basicAction show concealed and expanded and stay put; panel shows only expanded
 // a header with a detail shrinks from expandedHeight to height over the first (expandedHeight − height) of scroll (progress 0 → 1; collapse-first, 15.0)
-const scrollOf = page => { const pol = page.config.kind === 'appBar' ? page.config.policy.scroll : page.config.policy.front.scroll, v = page.config.kind === 'appBar' ? page.scroll : page.front.scroll; if (!pol.scope) return +v || 0; const k = pol.scope.split('.').reduce((x, y) => x == null ? x : x[y], page); return v && k in v ? +v[k] || 0 : +pol.default || 0; };
+const scrollOf = page => { const pol = page.config.kind === 'appBar' ? page.config.statePolicy.scroll : page.config.statePolicy.front.scroll, v = page.config.kind === 'appBar' ? page.scroll : page.front.scroll; if (!pol.scope) return +v || 0; const k = pol.scope.split('.').reduce((x, y) => x == null ? x : x[y], page); return v && k in v ? +v[k] || 0 : +pol.default || 0; };
 const progressOf = (scroll, from, to) => from > to ? Math.max(0, Math.min(1, scroll / (from - to))) : 1;
 export function barView(page, look, within = []) {
   const header = page.config.kind === 'appBar' ? page.config.header : page.config.back.header, at = headerAt(page, within);

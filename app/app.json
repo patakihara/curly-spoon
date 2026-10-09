@@ -170,7 +170,7 @@
   {
    "id": "browse",
    "name": "deck.browse",
-   "policy": {
+   "statePolicy": {
     "stack": {
      "default": null,
      "resetOn": []
@@ -316,7 +316,7 @@
       ]
      }
     },
-    "policy": {
+    "statePolicy": {
      "params": {
       "f": {
        "default": "all",
@@ -363,7 +363,7 @@
   {
    "id": "library",
    "name": "deck.library",
-   "policy": {
+   "statePolicy": {
     "stack": {
      "default": null,
      "resetOn": []
@@ -734,7 +734,7 @@
       "view": "view"
      }
     },
-    "policy": {
+    "statePolicy": {
      "params": {
       "tab": {
        "default": "music",
@@ -854,7 +854,7 @@
   {
    "id": "search",
    "name": "deck.search",
-   "policy": {
+   "statePolicy": {
     "stack": {
      "default": null,
      "resetOn": [
@@ -1057,7 +1057,7 @@
       "view": "view"
      }
     },
-    "policy": {
+    "statePolicy": {
      "params": {
       "q": {
        "default": "",
@@ -1123,7 +1123,7 @@
     "deck": "browse"
    },
    "history": "ignore",
-   "policy": {
+   "statePolicy": {
     "stack": {
      "default": null,
      "resetOn": [
@@ -1584,7 +1584,7 @@
         ]
        }
       },
-      "policy": {
+      "statePolicy": {
        "params": {
         "tab": {
          "default": "queue",
@@ -1665,7 +1665,7 @@
         "type": "text"
        }
       },
-      "policy": {
+      "statePolicy": {
        "scroll": {
         "default": 0,
         "resetOn": [],
@@ -1741,7 +1741,7 @@
         "type": "text"
        }
       },
-      "policy": {
+      "statePolicy": {
        "scroll": {
         "default": 0,
         "resetOn": [],
@@ -1779,7 +1779,7 @@
    "id": "Dedede",
    "name": "layer.settings",
    "history": "record",
-   "policy": {
+   "statePolicy": {
     "stack": {
      "default": null,
      "resetOn": []
@@ -1845,7 +1845,7 @@
         "type": "text"
        }
       },
-      "policy": {
+      "statePolicy": {
        "scroll": {
         "default": 0,
         "resetOn": [],
@@ -1921,7 +1921,7 @@
         "type": "text"
        }
       },
-      "policy": {
+      "statePolicy": {
        "scroll": {
         "default": 0,
         "resetOn": [],
@@ -1997,7 +1997,7 @@
         "type": "text"
        }
       },
-      "policy": {
+      "statePolicy": {
        "scroll": {
         "default": 0,
         "resetOn": [],
@@ -2073,7 +2073,7 @@
         "type": "text"
        }
       },
-      "policy": {
+      "statePolicy": {
        "scroll": {
         "default": 0,
         "resetOn": [],
@@ -2149,7 +2149,7 @@
         "type": "text"
        }
       },
-      "policy": {
+      "statePolicy": {
        "scroll": {
         "default": 0,
         "resetOn": [],
@@ -2225,7 +2225,7 @@
         "type": "text"
        }
       },
-      "policy": {
+      "statePolicy": {
        "scroll": {
         "default": 0,
         "resetOn": [],
@@ -2301,7 +2301,7 @@
         "type": "text"
        }
       },
-      "policy": {
+      "statePolicy": {
        "scroll": {
         "default": 0,
         "resetOn": [],
@@ -2339,7 +2339,7 @@
    "id": "menu",
    "name": "layer.menu",
    "history": "ignore",
-   "policy": {
+   "statePolicy": {
     "stack": {
      "default": null,
      "resetOn": [
@@ -2436,7 +2436,7 @@
         ]
        }
       ],
-      "policy": {
+      "statePolicy": {
        "scroll": {
         "default": 0,
         "resetOn": [],
@@ -2451,7 +2451,7 @@
    "id": "account",
    "name": "layer.account",
    "history": "record",
-   "policy": {
+   "statePolicy": {
     "stack": {
      "default": null,
      "resetOn": [
@@ -2533,7 +2533,7 @@
         }
        }
       ],
-      "policy": {
+      "statePolicy": {
        "scroll": {
         "default": 0,
         "resetOn": [],
@@ -2656,7 +2656,7 @@
      ]
     }
    },
-   "policy": {
+   "statePolicy": {
     "params": {
      "sort": {
       "default": "popular",
@@ -2962,7 +2962,7 @@
      ]
     }
    },
-   "policy": {
+   "statePolicy": {
     "params": {
      "section": {
       "default": "collections",
@@ -3247,7 +3247,7 @@
      "type": "text"
     }
    },
-   "policy": {
+   "statePolicy": {
     "params": {
      "find": {
       "default": "",
@@ -3432,7 +3432,7 @@
      }
     }
    },
-   "policy": {
+   "statePolicy": {
     "scroll": {
      "default": 0,
      "resetOn": [],
@@ -3565,7 +3565,7 @@
        }
       ]
      },
-     "policy": {
+     "statePolicy": {
       "scroll": {
        "default": 0,
        "resetOn": [],
@@ -3625,7 +3625,7 @@
        }
       ]
      },
-     "policy": {
+     "statePolicy": {
       "scroll": {
        "default": 0,
        "resetOn": [],

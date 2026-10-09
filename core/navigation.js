@@ -47,7 +47,7 @@ const readPath = (o, path) => path.split('.').reduce((x, k) => x == null ? x : x
 // ── page state from policy ─────────────────────────────────
 export function newPageState(cfg) {
   // a field policy → its initial value; a group of policies (front.find) → a group of values
-  const P = cfg.policy, init = p => 'resetOn' in p ? (p.scope ? {} : clone(p.default)) : Object.fromEntries(Object.entries(p).map(([k, x]) => [k, init(x)])), params = {};
+  const P = cfg.statePolicy, init = p => 'resetOn' in p ? (p.scope ? {} : clone(p.default)) : Object.fromEntries(Object.entries(p).map(([k, x]) => [k, init(x)])), params = {};
   for (const k in P.params || {}) params[k] = init(P.params[k]);
   if (cfg.kind === 'appBar') return { config: cfg, params, scroll: init(P.scroll), ...(cfg.sheet && P.sheet ? { sheet: { expanded: !!P.sheet.expanded.default } } : {}), ...(P.find ? { find: init(P.find) } : {}) };
   const st = { config: cfg, params, back: {}, front: {} };
@@ -55,7 +55,7 @@ export function newPageState(cfg) {
   return st;
 }
 function policyOf(ps, path) {           // path: 'back.expanded' | 'scroll' …
-  return readPath(ps.config.policy, path);
+  return readPath(ps.config.statePolicy, path);
 }
 export function getField(ps, path) {
   const p = policyOf(ps, path), v = readPath(ps, path);
@@ -73,7 +73,7 @@ export function setField(ps, path, val) {
 }
 // resets, then reactions (policy.on); skip: paths that just changed (a param never reacts to its own change)
 function applyEvent(ps, ev, skip) {
-  const P = ps.config.policy, fields = [];
+  const P = ps.config.statePolicy, fields = [];
   const walk = (node, prefix) => { for (const k in node) { const p = node[k], path = prefix ? prefix + '.' + k : k; if (p && 'resetOn' in p) fields.push([path, p]); else if (p && typeof p === 'object') walk(p, path); } };
   walk(P, '');
   for (const [path, p] of fields) if (!(skip && skip.has(path)) && matches(p.resetOn, ev)) ps = setIn(ps, path, p.scope ? {} : clone(p.default));
@@ -124,8 +124,8 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
   };
 
   // ── params ───────────────────────────────────────────────
-  function paramValue(page, name) { return page && page.config.policy.params && page.config.policy.params[name] ? getField(page, 'params.' + name) : undefined; }
-  const paramDefault = (page, name) => page.config.policy.params[name].default;
+  function paramValue(page, name) { return page && page.config.statePolicy.params && page.config.statePolicy.params[name] ? getField(page, 'params.' + name) : undefined; }
+  const paramDefault = (page, name) => page.config.statePolicy.params[name].default;
   function sourceList(src, page) {
     if (Array.isArray(src)) return src;
     if (src && src.dataSource && data) { const p = {}; for (const k in src.params || {}) p[k] = resolveValue(src.params[k], page); return (data.get(src.dataSource, p).items) || []; }
@@ -194,7 +194,7 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
       if (s.layers[f] && s.layers[f].open) { const lt = topOf(s.layers[f].stack).page; return lt.sheet && lt.sheet.expanded ? 'collapseSheet' : s.layers[f].stack.length > 1 ? 'popLayer' : 'closeLayer'; }
       const st = s.decks[s.activeDeck].stack, top = topOf(st).page, u = query.underPage(s);
       if (top.sheet && top.sheet.expanded) return 'collapseSheet';
-      if (top.config.kind === 'backdrop' && u.back.expanded && !u.config.policy.back.expanded.default) return 'collapse';
+      if (top.config.kind === 'backdrop' && u.back.expanded && !u.config.statePolicy.back.expanded.default) return 'collapse';
       if (top.config.kind === 'backdrop' && pushedParam(u)) return 'resetParam';
       if (st.length > 1) return 'pop';
       if (s.activeDeck !== c.startDeck) return 'startDeck';
@@ -205,7 +205,7 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
       const out = [], st = s.decks[s.activeDeck].stack, u = query.underPage(s);
       if (s.activeDeck !== c.startDeck) out.push({ kind: 'deckSwitch', from: c.startDeck, to: s.activeDeck });
       st.slice(1).forEach(() => out.push({ kind: 'push', deck: s.activeDeck }));
-      if (topOf(st).page.config.kind === 'backdrop' && u.back.expanded && !u.config.policy.back.expanded.default) out.push({ kind: 'expand', deck: s.activeDeck });
+      if (topOf(st).page.config.kind === 'backdrop' && u.back.expanded && !u.config.statePolicy.back.expanded.default) out.push({ kind: 'expand', deck: s.activeDeck });
       if (topOf(st).page.config.kind === 'backdrop' && pushedParam(u)) out.push({ kind: 'param', deck: s.activeDeck, param: pushedParam(u), page: u.config.id });
       c.layers.forEach(L => { const ls = s.layers[L.id]; if (!ls.open) return; out.push({ kind: 'layerOpen', layer: L.id }); ls.stack.slice(1).forEach(() => out.push({ kind: 'layerPush', layer: L.id })); });
       s.overlays.filter(o => o.spec.blocking && o.spec.history !== 'ignore').forEach(o => out.push({ kind: 'overlay', id: o.spec.id }));
@@ -274,7 +274,7 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
   function pageValue(page, path, scope) {
     if (path && path[0] === '$') { const [h, ...rest] = path.slice(1).split('.'); const v = scope && h in scope ? scope[h] : h === 'opener' && page ? page.opener : h === 'player' ? playerView() : h === 'content' ? contentView(page) : undefined; return rest.length ? readPath(v, rest.join('.')) : v; }
     if (!page) return undefined;
-    const p = readPath(page.config.policy, path);
+    const p = readPath(page.config.statePolicy, path);
     return p && typeof p === 'object' && 'resetOn' in p ? getField(page, path) : readPath(page, path);
   }
   // a PropValue → a plain value (bind, derived, text, if); scope: repeat elements
@@ -501,7 +501,7 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
   });
   const enterDeck = (s, id) => {
     const D = deckCfg(id);
-    if (D.policy && D.policy.stack && matches(D.policy.stack.resetOn, 'deckSwitch')) return patchDeck(s, id, () => deckState(D));
+    if (D.statePolicy && D.statePolicy.stack && matches(D.statePolicy.stack.resetOn, 'deckSwitch')) return patchDeck(s, id, () => deckState(D));
     return patchUnder(s, p => applyEvent(p, 'deckSwitch'), id);
   };
   // a page template opened by an item: id = parent id + '/' + item id; { from: 'item' } titles read the item's field
@@ -659,7 +659,7 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
         const from = s.activeDeck, to = intent.deck;
         if (from === to) break;
         s = { ...enterDeck(s, to), activeDeck: to, focus: to };
-        config.layers.forEach(L => { const p = L.policy && L.policy.open; if (p && s.layers[L.id].open && matches(p.resetOn, 'deckSwitch')) { s = closeLayerWithFocus(s, L.id, false, ev); ev.push({ type: 'layerClosed', layer: L.id }); } });
+        config.layers.forEach(L => { const p = L.statePolicy && L.statePolicy.open; if (p && s.layers[L.id].open && matches(p.resetOn, 'deckSwitch')) { s = closeLayerWithFocus(s, L.id, false, ev); ev.push({ type: 'layerClosed', layer: L.id }); } });
         s = { ...s, focus: to };
         s = record(s, { kind: 'deckSwitch', from, to });
         ev.push({ type: 'deckSwitched', from, to });
@@ -701,7 +701,7 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
       case 'toggleExpanded': { const cp = query.currentPage(s); return reduce(s, { type: 'setExpanded', expanded: cp.sheet ? !cp.sheet.expanded : !query.underPage(s).back.expanded }); }
       case 'openFind': case 'closeFind': {   // 18.0: the local search's open / closed state (FindState) on the page part that scrolls
         const cur = query.currentPage(s), app = cur.config.kind === 'appBar', base = app ? 'find' : 'front.find';
-        const pol = app ? cur.config.policy.find : cur.config.policy.front.find; if (!pol) break;
+        const pol = app ? cur.config.statePolicy.find : cur.config.statePolicy.front.find; if (!pol) break;
         const item = (app ? cur.config.header.items : cur.config.front.header.items).find(x => x.kind === 'find');
         const patch = p => { let q = setField(setField(p, base + '.opened', intent.type === 'openFind'), base + '.closed', intent.type === 'closeFind'); if (intent.type === 'closeFind' && item) q = setField(q, 'params.' + item.param, ''); return q; };
         s = app ? patchTop(s, patch) : patchUnder(s, patch);
@@ -722,7 +722,7 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
       case 'openLayer': {
         const L = layerCfg(intent.layer);
         if (s.layers[L.id].open) break;
-        const reset = L.policy.stack && matches(L.policy.stack.resetOn, 'layerOpen');
+        const reset = L.statePolicy.stack && matches(L.statePolicy.stack.resetOn, 'layerOpen');
         const from = currentSurface(s);
         s = patchLayer(s, L.id, l => ({ open: true, stack: reset ? layerState(L).stack : l.stack }));
         s = { ...s, focus: L.id, focusReturns: [...s.focusReturns, { opened: { kind: 'layer', layer: L.id }, surface: from, element: intent.returnFocus || null }] };

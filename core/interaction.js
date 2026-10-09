@@ -2,7 +2,7 @@
 // Pure: action + raw input + env → InteractionView. No DOM.
 
 // a param's current value (scoped fields resolved)
-const readParam = (p, k) => { const pol = p.config.policy.params[k], v = p.params[k]; if (!pol.scope) return v; const key = pol.scope.split('.').reduce((x, y) => x == null ? x : x[y], p); return v && key in v ? v[key] : pol.default; };
+const readParam = (p, k) => { const pol = p.config.statePolicy.params[k], v = p.params[k]; if (!pol.scope) return v; const key = pol.scope.split('.').reduce((x, y) => x == null ? x : x[y], p); return v && key in v ? v[key] : pol.default; };
 export const INTERACTION_STATES = ['disabled', 'pressed', 'keyboardFocus', 'focus', 'hover', 'enabled'];
 export const STATUS_STATES = ['selected', 'checked', 'indeterminate', 'busy', 'error', 'dragged'];
 
@@ -14,7 +14,7 @@ export function statusOf(actions, env, facts = {}) {
     const m = env.model, s = m.getState(), q = m.query, i = action.nav;
     if ((i.type === 'switchDeck' || i.type === 'reselectDeck') && i.deck === s.activeDeck) out.push('selected');
     if (i.type === 'setParams' || i.type === 'toggleParam') {
-      const p = q.paramTarget(s, i), cur = k => p && p.config.policy.params && p.config.policy.params[k] ? q.contentParams(p)[k] ?? readParam(p, k) : undefined;
+      const p = q.paramTarget(s, i), cur = k => p && p.config.statePolicy.params && p.config.statePolicy.params[k] ? q.contentParams(p)[k] ?? readParam(p, k) : undefined;
       if (p && i.type === 'setParams' && Object.keys(i.values || {}).every(k => JSON.stringify(cur(k)) === JSON.stringify(i.values[k]))) out.push('selected');
       if (p && i.type === 'toggleParam' && Array.isArray(cur(i.name)) && cur(i.name).includes(i.option)) out.push('selected');
     }

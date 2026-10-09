@@ -100,7 +100,7 @@ const refsOfHeader = h => barRefs(h).flatMap(allRefs).filter(x => x.component !=
 const resolvedOptions = (f, D, k, P) => { if (!P.options || Array.isArray(P.options)) return P; const m = f.mk(dev.any(f)); m.dispatch({ type: 'switchDeck', deck: D.id }); return { ...P, options: m.query.paramOptions(S(m), m.config, m.query.underPage(S(m)), k) }; };
 const paramDeck = (f, pred) => { for (const D of f.config.decks) for (const [k, P0] of Object.entries(D.page.params || {})) { const P = resolvedOptions(f, D, k, P0); if (pred(P, k)) return { D, k, P }; } return null; };
 const optVals = P => Array.isArray(P.options) ? P.options.map(o => o.value) : [];
-const pval = (m, k) => { const u = m.query.underPage(S(m)), pol = u.config.policy.params[k], v = u.params[k]; if (!pol || !pol.scope) return v; const key = rp(u, pol.scope); return v && key in v ? v[key] : pol.default; };
+const pval = (m, k) => { const u = m.query.underPage(S(m)), pol = u.config.statePolicy.params[k], v = u.params[k]; if (!pol || !pol.scope) return v; const key = rp(u, pol.scope); return v && key in v ? v[key] : pol.default; };
 // a valid value of a param's type that differs from v
 const otherValue = (P, v) => P.type === 'choice' ? optVals(P).find(x => x !== v) : P.type === 'choices' ? [optVals(P)[0]] : P.type === 'text' ? 'a b/c' : P.type === 'flag' ? !v
   : P.type === 'number' ? (P.range ? [P.min ?? 1, P.max ?? 2] : (v === (P.min ?? 1) ? (P.min ?? 1) + 1 : P.min ?? 1)) : P.range ? ['2026-01-01', '2026-02-01'] : '2026-10-03';
@@ -133,7 +133,7 @@ export const INVARIANTS = [
   ['a new page state equals its policy defaults', f => {
     const m = f.mk(dev.any(f)), start = f.config.startDeck;
     openItem(m, f, 'backdrop', start);
-    const p = top(m, start).page, P = p.config.policy;
+    const p = top(m, start).page, P = p.config.statePolicy;
     assert(p.back.expanded === P.back.expanded.default, 'back.expanded ≠ default');
     Object.keys(p.config.params || {}).forEach(k => assert(P.params[k].scope || JSON.stringify(p.params[k]) === JSON.stringify(P.params[k].default), 'params.' + k + ' ≠ default'));
   }],
@@ -141,7 +141,7 @@ export const INVARIANTS = [
   // ── decks are independent
   ['switching decks leaves other stacks untouched (unless their policy resets them)', f => {
     const start = f.config.startDeck, D = f.config.decks.find(d => d.id === start);
-    if (resets(D.policy && D.policy.stack, 'deckSwitch')) skip('start deck resets on deckSwitch');
+    if (resets(D.statePolicy && D.statePolicy.stack, 'deckSwitch')) skip('start deck resets on deckSwitch');
     const o = need(otherDeck(f, start), 'only one deck');
     const m = f.mk(dev.any(f));
     openItem(m, f, 'backdrop', start);
@@ -151,7 +151,7 @@ export const INVARIANTS = [
     assert(depth(m, start) === before, 'stack changed');
   }],
   ['every deck whose stack policy resets on deckSwitch is at its base when entered', f => {
-    const subjects = f.config.decks.filter(d => resets(d.policy && d.policy.stack, 'deckSwitch'));
+    const subjects = f.config.decks.filter(d => resets(d.statePolicy && d.statePolicy.stack, 'deckSwitch'));
     need(subjects.length, 'no deck resets on deckSwitch');
     subjects.forEach(d => {
       const o = need(otherDeck(f, d.id), 'only one deck');
@@ -200,7 +200,7 @@ export const INVARIANTS = [
     const subjects = f.config.decks.filter(d => d.page.kind === 'backdrop');
     need(subjects.length, 'no backdrop deck');
     f.devices.forEach(dv => subjects.forEach(D => {
-      const m = f.mk(dv), P = D.page.policy, flipped = !P.back.expanded.default;
+      const m = f.mk(dv), P = D.page.statePolicy, flipped = !P.back.expanded.default;
       m.dispatch({ type: 'switchDeck', deck: D.id });
       m.dispatch({ type: 'setExpanded', expanded: flipped });
       openItem(m, f, 'backdrop', D.id);
@@ -213,7 +213,7 @@ export const INVARIANTS = [
     const subjects = f.config.decks.filter(d => d.page.kind === 'backdrop');
     need(subjects.length, 'no backdrop deck');
     subjects.forEach(D => {
-      const m = f.mk(dev.any(f)), P = D.page.policy;
+      const m = f.mk(dev.any(f)), P = D.page.statePolicy;
       m.dispatch({ type: 'switchDeck', deck: D.id });
       m.dispatch({ type: 'setExpanded', expanded: !P.back.expanded.default });
       m.dispatch({ type: 'scroll', top: 77 });
@@ -226,7 +226,7 @@ export const INVARIANTS = [
     });
   }],
   ['a layer whose open policy resets on deckSwitch closes when switching decks', f => {
-    const subjects = f.config.layers.filter(L => resets(L.policy.open, 'deckSwitch'));
+    const subjects = f.config.layers.filter(L => resets(L.statePolicy.open, 'deckSwitch'));
     need(subjects.length, 'no layer closes on deckSwitch');
     subjects.forEach(L => {
       const m = f.mk(dev.any(f)), o = need(otherDeck(f, S(m).activeDeck), 'only one deck');
@@ -287,7 +287,7 @@ export const INVARIANTS = [
 
   // ── layers
   ['every layer whose stack resets on layerOpen starts at its base page', f => {
-    const subjects = f.config.layers.filter(L => resets(L.policy.stack, 'layerOpen') && Object.keys(L.pages.set).length > 1);
+    const subjects = f.config.layers.filter(L => resets(L.statePolicy.stack, 'layerOpen') && Object.keys(L.pages.set).length > 1);
     need(subjects.length, 'no multi-page layer resets on layerOpen');
     subjects.forEach(L => {
       const m = f.mk(dev.any(f)), other = Object.keys(L.pages.set).find(p => p !== L.pages.base);
@@ -418,7 +418,7 @@ export const INVARIANTS = [
     assert(ids(S(m2)) === ids(S(m)), 'stack differs after round trip: ' + url);
     assert(tp(S(m2)) === tp(S(m)), 'top-page params differ after round trip: ' + url);
     assert(m2.query.url(S(m2), m2.config) === url, 'url not stable: ' + url);
-    if (baseUrl.includes('?')) { const b2 = S(m2).decks[S(m2).activeDeck].stack[0].page; Object.keys(b2.config.params || {}).forEach(k => assert(JSON.stringify(b2.params[k]) === JSON.stringify(b2.config.policy.params[k].default), 'a lower page\'s param ' + k + ' came through the URL')); }
+    if (baseUrl.includes('?')) { const b2 = S(m2).decks[S(m2).activeDeck].stack[0].page; Object.keys(b2.config.params || {}).forEach(k => assert(JSON.stringify(b2.params[k]) === JSON.stringify(b2.config.statePolicy.params[k].default), 'a lower page\'s param ' + k + ' came through the URL')); }
     const m3 = f.mk(dev.any(f)); m3.dispatch({ type: 'navigateUrl', url: url.toUpperCase() });
     assert(m3.query.url(S(m3), m3.config) === url, 'matching is case-sensitive: ' + url.toUpperCase());
     // layer: its own destination; closing it returns to the deck URL
@@ -657,7 +657,7 @@ export const INVARIANTS = [
         n++;
         const path = a.path || a.bind;
         if (path && path[0] === '$') return;   // $opener / $player / $content
-        if (path) assert(inPolicy(page.policy, path), x.name + ': ' + path + ' not in ' + page.id + "'s policy");
+        if (path) assert(inPolicy(page.statePolicy, path), x.name + ': ' + path + ' not in ' + page.id + "'s policy");
         else if ('env' in a) assert(a.env === 'layout' || a.env === 'touch', 'unknown env ' + a.env);
         else if ('layer' in a && 'open' in a) assert(f.config.layers.some(L => L.id === a.layer), 'unknown layer ' + a.layer);
         else if ('player' in a) assert(['status', 'queue', 'shuffle', 'repeat'].includes(a.player), 'unknown player field ' + a.player);
@@ -870,7 +870,7 @@ export const INVARIANTS = [
       : P.type === 'number' ? (P.range ? Array.isArray(v) && v.length === 2 && v.every(Number.isFinite) : Number.isFinite(v)) : (P.range ? Array.isArray(v) && v.length === 2 : /^\d{4}-\d{2}-\d{2}$/.test(v)));
     let n = 0;
     pagesOf(f, m).forEach(p => {
-      const D = p.params || {}, pol = (p.policy && p.policy.params) || {};
+      const D = p.params || {}, pol = (p.statePolicy && p.statePolicy.params) || {};
       Object.entries(D).forEach(([k, P]) => {
         n++;
         assert(T.includes(P.type), p.id + '.' + k + ': unknown type ' + P.type);
@@ -893,8 +893,8 @@ export const INVARIANTS = [
     const cfg = JSON.parse(JSON.stringify(f.config)), D = cfg.decks.find(d => d.id === cfg.startDeck), O = [{ value: 'a', label: 'A' }, { value: 'b c', label: 'B' }];
     const add = { pc: [{ type: 'choice', options: O, url: true }, 'a'], pm: [{ type: 'choices', options: O, url: true }, []], pt: [{ type: 'text', url: true }, ''], pf: [{ type: 'flag', url: true }, false],
       pn: [{ type: 'number', min: 0, max: 10, url: true }, 0], pr: [{ type: 'number', range: true, url: true }, null], pd: [{ type: 'date', url: true }, null], pdr: [{ type: 'date', range: true, url: true }, null] };
-    D.page.params = { ...(D.page.params || {}) }; D.page.policy.params = { ...(D.page.policy.params || {}) };
-    Object.entries(add).forEach(([k, [P, def]]) => { D.page.params[k] = P; D.page.policy.params[k] = { default: def, resetOn: [], scope: null }; });
+    D.page.params = { ...(D.page.params || {}) }; D.page.statePolicy.params = { ...(D.page.statePolicy.params || {}) };
+    Object.entries(add).forEach(([k, [P, def]]) => { D.page.params[k] = P; D.page.statePolicy.params[k] = { default: def, resetOn: [], scope: null }; });
     cfg.routes.params = 'top';
     const mk = () => f.createModel(cfg, dev.any(f), f.data), vals = { pc: 'b c', pm: ['b c', 'a'], pt: 'x/y z;w&q', pf: true, pn: 7, pr: [2, 5], pd: '2026-10-03', pdr: ['2026-01-01', '2026-02-01'] };
     const m = mk(); m.dispatch({ type: 'setParams', values: vals });
@@ -913,8 +913,8 @@ export const INVARIANTS = [
   ['policy reactions: on { paramChange } sets a field; resetOn { paramChange: name } resets another param; a param never reacts to its own change', f => {
     const cfg = JSON.parse(JSON.stringify(f.config)), D = cfg.decks.find(d => d.id === cfg.startDeck), P = D.page;
     P.params = { ...(P.params || {}), qa: { type: 'text' }, qb: { type: 'text' } };
-    P.policy.params = { ...(P.policy.params || {}), qa: { default: '', resetOn: ['paramChange'], scope: null }, qb: { default: '', resetOn: [{ paramChange: 'qa' }], scope: null } };
-    P.policy.back.expanded = { ...P.policy.back.expanded, default: false, on: [{ event: { paramChange: 'qa' }, set: true }] };
+    P.statePolicy.params = { ...(P.statePolicy.params || {}), qa: { default: '', resetOn: ['paramChange'], scope: null }, qb: { default: '', resetOn: [{ paramChange: 'qa' }], scope: null } };
+    P.statePolicy.back.expanded = { ...P.statePolicy.back.expanded, default: false, on: [{ event: { paramChange: 'qa' }, set: true }] };
     const m = f.createModel(cfg, dev.any(f), f.data), u = () => m.query.underPage(S(m));
     m.dispatch({ type: 'setParams', values: { qb: 'kept' } });
     const ev = m.dispatch({ type: 'setParams', values: { qa: 'x' } });
@@ -958,8 +958,8 @@ export const INVARIANTS = [
     Object.entries(cc.params || {}).forEach(([k, v]) => { if (v && v.bind === '$opener.id') assert(m.query.contentParams(p)[k] === it.id, 'content param ' + k + ' does not bind the opener'); });
   }],
   ['picking the current value again fires paramReselect reactions (e.g. the active tab expands the back layer)', f => {
-    const D = need(f.config.decks.find(d => (d.page.policy.back.expanded.on || []).some(o => o.event && o.event.paramReselect)), 'no paramReselect reaction');
-    const k = D.page.policy.back.expanded.on.find(o => o.event && o.event.paramReselect).event.paramReselect;
+    const D = need(f.config.decks.find(d => (d.page.statePolicy.back.expanded.on || []).some(o => o.event && o.event.paramReselect)), 'no paramReselect reaction');
+    const k = D.page.statePolicy.back.expanded.on.find(o => o.event && o.event.paramReselect).event.paramReselect;
     const m = f.mk(dev.any(f)); m.dispatch({ type: 'switchDeck', deck: D.id });
     if (m.query.underPage(S(m)).back.expanded) m.dispatch({ type: 'setExpanded', expanded: false });
     const cur = m.query.contentParams(m.query.underPage(S(m)))[k] ?? m.query.underPage(S(m)).params[k];
@@ -1060,15 +1060,15 @@ export const INVARIANTS = [
   ['toggle reactions flip a boolean field; reselecting the active tab twice expands then conceals', f => {
     const cfg = JSON.parse(JSON.stringify(f.config)), D = cfg.decks.find(d => d.id === cfg.startDeck), P = D.page;
     P.params = { ...(P.params || {}), tg: { type: 'choice', options: [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }] } };
-    P.policy.params = { ...(P.policy.params || {}), tg: { default: 'a', resetOn: [], scope: null } };
-    P.policy.back.expanded = { ...P.policy.back.expanded, on: [{ event: { paramReselect: 'tg' }, set: 'toggle' }] };
+    P.statePolicy.params = { ...(P.statePolicy.params || {}), tg: { default: 'a', resetOn: [], scope: null } };
+    P.statePolicy.back.expanded = { ...P.statePolicy.back.expanded, on: [{ event: { paramReselect: 'tg' }, set: 'toggle' }] };
     const m = f.createModel(cfg, dev.any(f), f.data), ex = () => m.query.underPage(S(m)).back.expanded, e0 = ex();
     m.dispatch({ type: 'setParams', values: { tg: 'a' } }); assert(ex() === !e0, 'first reselect did not toggle');
     m.dispatch({ type: 'setParams', values: { tg: 'a' } }); assert(ex() === e0, 'second reselect did not toggle back');
   }],
   ['scrollTop fires when the content returns to 0: fields resetting on it reset; derived scrolled follows the crossing', f => {
     const cfg = JSON.parse(JSON.stringify(f.config)), D = cfg.decks.find(d => d.id === cfg.startDeck), P = D.page;
-    P.params = { ...(P.params || {}), st: { type: 'flag', data: false } }; P.policy.params = { ...(P.policy.params || {}), st: { default: false, resetOn: ['scrollTop'], scope: null } };
+    P.params = { ...(P.params || {}), st: { type: 'flag', data: false } }; P.statePolicy.params = { ...(P.statePolicy.params || {}), st: { default: false, resetOn: ['scrollTop'], scope: null } };
     const m = f.createModel(cfg, dev.any(f), f.data), u = () => m.query.underPage(S(m)), sc = () => m.query.derived(S(m), m.config, 'scrolled', u());
     if (u().back.expanded) m.dispatch({ type: 'setExpanded', expanded: false });
     m.dispatch({ type: 'setParams', values: { st: true } }); assert(sc() === false, 'scrolled at 0');

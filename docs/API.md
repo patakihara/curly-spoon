@@ -41,10 +41,10 @@ AppConfig {
   layers: LayerConfig[]     // parallel layers: nowPlaying (sheet), Dedede (settings, circular reveal), menu (drawer), account
 }
 
-DeckConfig  { id, name, icon, page: BackdropPageConfig, policy: { stack: FieldPolicy<StackEntry[]> } }
+DeckConfig  { id, name, icon, page: BackdropPageConfig, policy: { stack: StatePolicy<StackEntry[]> } }
 // e.g. Serere: stack { default: [base page], resetOn: ['deckSwitch'] }   ✅ (implemented as rootSwitch)
 // events are delivered to the deck/layer being entered
-LayerConfig { id, name, page: PageConfig,              policy: { stack: FieldPolicy<StackEntry[]>, open: FieldPolicy<bool> }, history: 'record' | 'ignore' }
+LayerConfig { id, name, page: PageConfig,              policy: { stack: StatePolicy<StackEntry[]>, open: StatePolicy<bool> }, history: 'record' | 'ignore' }
 // nowPlaying: history 'ignore' (system back pops its screens; browser never navigates it)
 // Dedede (Settings): history 'record' (both system back and browser back pop its screens; opening it is recorded)
 // e.g. nowPlaying: stack { default: [base page], resetOn: ['layerOpen'] }
@@ -104,8 +104,8 @@ ContentConfig { dataSource, params?, view?: ParamName, presentations: Presentati
 
 ### Policy ✅ (metastate config — mirrors state shape)
 ```
-FieldPolicy<T> { default: T, resetOn: LifecycleEvent[], scope?: StatePath | null, on?: { event, set }[] }   // scope e.g. 'params.tab'
-BackdropPagePolicy { params: { [name]: FieldPolicy }, back: { expanded, headerHidden? }, front: { scroll } }
+StatePolicy<T> { default: T, resetOn: LifecycleEvent[], scope?: StatePath | null, on?: { event, set }[] }   // scope e.g. 'params.tab'
+BackdropPageStatePolicy { params: { [name]: StatePolicy }, back: { expanded, headerHidden? }, front: { scroll } }
 LifecycleEvent = enter · return · reselect · paramChange | { paramChange: name } · baseSwitch ⊃ { deckSwitch, layerOpen, layerClose }
 ```
 

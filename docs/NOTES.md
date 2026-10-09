@@ -398,7 +398,7 @@ roleProps / roleIntent and Role.parts once built. Starting point: the backdrop p
 - Motion: no step names a piece yet (all 48 are kind steps), so nothing breaks. Pieces become `<contract>.<child>` and
   `<free component>.<slot|part>`; hires are never named by motion.
 - Decided (Sofia): the engine owns the local search's open / closed state: FrontLayerState.find { opened, closed } with a
-  mirroring FrontLayerPolicy.find; intents openFind / closeFind; open = (scrolled and not closed) or opened or text not empty.
+  mirroring FrontLayerStatePolicy.find; intents openFind / closeFind; open = (scrolled and not closed) or opened or text not empty.
   The params searching / searchClosed and the morph condition leave config. Content params: a named list (ContentParam).
 - Decided (Sofia): items always open a detail page; bare songs do not belong in carousels (sample data to change). An
   item may hold entries (ItemData.entries, from data); data decides which shelves exist. The front header and the back

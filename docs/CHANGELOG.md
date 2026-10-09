@@ -20,7 +20,7 @@ _Unreleased (no contract change):_ web: the shell draws no UI itself — FrontLa
   go to design); the back layer has fixed regions (header · actions · basicAction · panel); one header config for back
   layer, app bar and peek; presentations and content params are named lists; overlays have named texts and button items;
   DeckConfig.icon, LaunchConfig.splash, contentStates and NavigationConfig refs leave config.
-- Local search state is engine state: FrontLayerState.find / AppBarPageState.find, FindPolicy, intents openFind / closeFind.
+- Local search state is engine state: FrontLayerState.find / AppBarPageState.find, FindStatePolicy, intents openFind / closeFind.
 - Contracts (api/contracts.js, single source; api/gen-contracts.js writes section M2): what each drawn config object
   offers — config, values (State, queries, Layout), intents, children. The contract tree (core/contracts.js) holds this
   moment's nodes with the hire composition picked: free component, props, slots, events.
@@ -39,8 +39,11 @@ _Unreleased (no contract change):_ web: the shell draws no UI itself — FrontLa
   drawer; composition maps the press only on compact (pressableLogo), so on wide the logo stays inert.
 - Design: `implements` / `accepts` keys removed from components; "interactive" is inheritance (extends interactive).
 - State and policy types take their config's full name (renamed): BackState → BackLayerState, FrontState → FrontLayerState,
-  SheetState → PageSheetState, BackPolicy → BackLayerPolicy, FrontPolicy → FrontLayerPolicy, SheetPolicy → PageSheetPolicy.
+  SheetState → PageSheetState, BackPolicy → BackLayerStatePolicy, FrontPolicy → FrontLayerStatePolicy, SheetPolicy → PageSheetStatePolicy.
   PageStateBase<C> (config · opener · template · params) is shared by BackdropPageState and AppBarPageState. Data unchanged.
+- Policies are state policies (renamed): FieldPolicy → StatePolicy, ParamPolicies → ParamStatePolicies, every XPolicy →
+  XStatePolicy (Find, BackLayer, FrontLayer, PageSheet, BackdropPage, AppBarPage, Deck, Layer); the config field `policy` →
+  `statePolicy` (pages, decks, layers). PersistPolicy is unchanged (it is about storage, not one state field).
 - Platform manifest: web lists backdropPage, appBarPage, sheetLayer, fullscreenLayer (composition hires them).
 - Rules: api/composition-rules.js (13, all pass) runs on the Invariants page; 19 ref / role invariants deleted, the rest
   ported to 18.0 shapes: 103 pass · 3 skipped · 0 fail.
