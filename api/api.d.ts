@@ -581,7 +581,6 @@ export interface Queries {
 export interface LayoutEnv { layout: LayoutClass; touch: boolean; sheet: 'none' | 'beside' | 'over'; dir: Direction }
 export interface Geometry { width: number; height: number; railWidth: number; navHeight: number; peekHeight: number; contentWidth: number; contentHeight: number }
 export interface LayoutGeometry extends Geometry { side: SideMode | null; wide: boolean; navigation: HireName | null }
-export interface RegionInstance { region: string; top: number; height: number; opacity: number; interactive: boolean }
 export interface FrontLayerView { top: number; state: 'expanded' | 'partlyCollapsed' | 'fullyCollapsed'; visual: Record<string, unknown> }
 // PageScroll (15.0): a page's scroll (FrontLayerState.scroll / AppBarPageState.scroll) is collapse-first — 0 … distance
 //   (expandedHeight − height) collapses the bar while the content stays put (the page grows); beyond it the content scrolls by
@@ -870,7 +869,7 @@ export interface Layout {
   env(state: AppState, config: AppConfig, q: Queries): LayoutEnv;
   sizes(look: Look): ModelSizes;         // 18.0: createModel's sizes (the wide look)
   geometry(state: AppState, config: AppConfig, q: Queries, look: Look): LayoutGeometry;
-  regions(page: BackdropPageState, look: Look, measured?: Record<string, number>): RegionInstance[];   // fixed regions: header · actions · basicAction · panel (expanded only)
+  regions(page: BackdropPageState, look: Look, measured?: Record<string, number>): BackLayerRegionView[];   // fixed regions: header · actions · basicAction · panel (expanded only)
   barView(page: PageState, look: Look, within?: ContractName[]): BarView;   // the header hire's height / expandedHeight (with a detail); progress = min(1, scroll / distance)
   contentOffset(page: PageState, look: Look, within?: ContractName[]): number;   // 15.0: the content's own offset = max(0, scroll − barView.distance)
   resolveVisuals(specs: Specs, component: ComponentId, state: string, ctx?: VisualContext): Record<string, unknown>;
