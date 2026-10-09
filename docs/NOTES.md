@@ -540,9 +540,15 @@ fields, not nodes · 6 verify ✓ (screens above).
 ## Open (current)
 - 18.0: three rules skip: the two hideOnScroll back-header rules (no deck sets back.hideHeaderOnScroll) and surface
   colour roles (decision 30).
-- 18.0: the shell still chooses per component id in places (the item-kind table in hItems, panel-row branches, Now
-  playing's artwork / trackInfo visuals, the app-bar form); the one-renderer step (node → hire → DC, DCs taking props
-  and slots) is not done; its open question is decided (decision 32).
+- 18.0: the one-renderer step (node → hire → DC, DCs taking props and slots) is under way. Slice 1 done: header items
+  (back, front and app-bar headers) are drawn from their nodes through platforms/web/draw.js — the DC comes from design
+  (own DC named after the component; a variant drawn by its parent's), fed the node's props, visuals, interaction,
+  events and slots; the item's surface is the nearest drawn ancestor that provides colour roles. The item-kind table
+  is gone; Morph draws from its from / to slots (its glyph is the from button's icon, no longer a literal). Still
+  shell-chosen: layer headers (Now playing / Dedede / Account build their buttons by hand, with a literal more_vert;
+  drawing their nodes changes icons and adds Dedede's find and the recent pages' play buttons), panel rows, Now
+  playing's body, the drawer, nav, peek, overlays, content items, the app-bar form; IconButton still accepts `mark`
+  for the nav's logo until the nav slice.
 - 18.0: the free-component merge tree is proposed, not applied (69 design components).
 - Design checks are not shown on the Invariants page yet (needs Invariants.dc.html).
 - Still in the player (ordering, not yet params): detail transition order (out → swap → front move + in → header parts), flight cut sources (top: header / bars above the middle; bottom: peek / nav bar), app-bar sheet start (front layer top), the reveal band shape.

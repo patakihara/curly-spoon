@@ -212,12 +212,12 @@ async function loadModules() {
   // plain ES modules via blob URLs; relative imports inside them are loaded the same way and rewritten
   const blobs = {}, blobOf = url => blobs[url] || (blobs[url] = (async () => { let src = await (await fetch(url, { cache: 'no-store' })).text(); for (const m of [...src.matchAll(/(from\s*|import\s*\(\s*)(['"])(\.\.?\/[^'"]+)\2/g)]) src = src.split(m[2] + m[3] + m[2]).join(m[2] + await blobOf(new URL(m[3], url).href) + m[2]); return URL.createObjectURL(new Blob([src], { type: 'text/javascript' })); })());
   const load = async p => import(await blobOf(new URL(p, location.href).href));
-  const [M, SM, Pl, P, IX, O, DL, MO, CP, K, comp, appCfg] = await Promise.all([load('./core/navigation.js'), load('./app/fake-backend.js'), load('./core/player.js'), load('./core/layout.js'), load('./core/interaction.js'), load('./design/overrides.js'), load('./design/load.js'), load('./platforms/web/motions.js'), load('./core/compose.js'), load('./core/contracts.js'), fetch(new URL('./app/composition.json', location.href).href, { cache: 'no-store' }).then(r => r.json()), import(URL.createObjectURL(new Blob([await (await fetch(new URL('./app/load-app.js', location.href).href, { cache: 'no-store' })).text()], { type: 'text/javascript' }))).then(m => m.loadApp(p => fetch(new URL('./' + p, location.href).href, { cache: 'no-store' }).then(r => r.text())))]);
+  const [M, SM, Pl, P, IX, O, DL, MO, CP, K, DR, comp, appCfg] = await Promise.all([load('./core/navigation.js'), load('./app/fake-backend.js'), load('./core/player.js'), load('./core/layout.js'), load('./core/interaction.js'), load('./design/overrides.js'), load('./design/load.js'), load('./platforms/web/motions.js'), load('./core/compose.js'), load('./core/contracts.js'), load('./platforms/web/draw.js'), fetch(new URL('./app/composition.json', location.href).href, { cache: 'no-store' }).then(r => r.json()), import(URL.createObjectURL(new Blob([await (await fetch(new URL('./app/load-app.js', location.href).href, { cache: 'no-store' })).text()], { type: 'text/javascript' }))).then(m => m.loadApp(p => fetch(new URL('./' + p, location.href).href, { cache: 'no-store' }).then(r => r.text())))]);
   const S = { ...SM, ...SM.bind(appCfg) };
   const fileSpecs = await DL.loadDesignRaw(p => fetch(new URL('./design/' + p, location.href).href, { cache: 'no-store' }).then(r => r.text()));   // raw design; edits patch it, then extends is resolved
   let specs = DL.resolveExtends(fileSpecs);
   try { specs = DL.resolveExtends(O.applySpecs(fileSpecs, JSON.parse(localStorage.getItem(O.PATCH_KEY) || 'null'))); } catch (e) {}
-  return { M, S, Pl, P, IX, O, DL, MO, CP, K, comp, specs, fileSpecs };
+  return { M, S, Pl, P, IX, O, DL, MO, CP, K, DR, comp, specs, fileSpecs };
 }
 
 class Component extends DCLogic {
@@ -297,8 +297,8 @@ class Component extends DCLogic {
   get reduced() { return !!(this.model && this.ms.prefs.reducedMotion); }
 
   async componentDidMount() {
-    const { M, S, Pl, P, IX, O, DL, MO, CP, K, comp, specs, fileSpecs } = await loadModules();
-    this.CP = CP; this.K = K; this.comp = comp; 
+    const { M, S, Pl, P, IX, O, DL, MO, CP, K, DR, comp, specs, fileSpecs } = await loadModules();
+    this.CP = CP; this.K = K; this.DR = DR; this.comp = comp; 
     this.mo = MO.createMotions({ fallbackEasing: () => this.specs && this.specs.tokens['motion.easing.standard'] });
     this.M = M; this.S = S; this.P = P; this.IX = IX; this.O = O; this.DL = DL; this.specs = specs; this.fileSpecs = fileSpecs; E = specs.tokens['motion.easing.standard'] || E;
     this.dataSrc = { get: (r, p) => this.getData(r, p) };
@@ -668,6 +668,8 @@ class Component extends DCLogic {
     const a = o.action !== undefined ? o.action : this.actOf(n, o.event || 'press', o.payload);
     return this.ix(n.key, a, o.run || (e => this.runAction(a, e)), { component: o.component || n.component, variant: n.variants, facts: { checked: n.values.checked }, label: o.label ?? (n.props.label || n.props.text || n.props.title || n.values.label || n.values.title || ''), surface: o.surface, page: n.page });
   }
+  // a node drawn by its DC (platforms/web/draw.js): props, visuals, interaction, events and slots, on the given surface
+  drawn(n, surface) { return this.DR.drawNode(n, { specs: this.specs, visuals: (x, sf) => this.vis(x, { surface: sf }), ix: (x, sf) => this.nix(x, { surface: sf }), emit: (x, ev, payload, e) => this.runAction(this.actOf(x, ev, payload), e) }, surface); }
   vis(n, extra = {}) { return n && n.component ? this.P.resolveVisuals(this.specs, n.component, 'enabled', { variant: n.variants || {}, env: this.lenv(), ...extra }) : {}; }
   // the FAB of a header's fab slot: its first node (several share one place; the icon morphs between them)
   fabFor(nodes, top) {
@@ -707,33 +709,19 @@ class Component extends DCLogic {
   // back-layer colours, its bottom row on the front-layer-coloured sheet (14.2)
   surfaceOfTheme(theme) { return theme === 'back' || theme === 'appbar' ? 'backLayer' : theme === 'front' || theme === 'appbottom' ? 'frontLayer' : 'appBar'; }
   hItems(nodes, theme, page, start = []) {   // start: the bar's start slot (a spanning find field leaves room for it)
-    const dur = this.dur;
-    const KIND = { logo: 'isLogo', iconButton: 'isButton', viewSwitch: 'isButton', caret: 'isButton', symbol: 'isIcon', label: 'isText', localSearch: 'isFind', morph: 'isFind' };
+    const dur = this.dur, surface = this.surfaceOfTheme(theme);
     return (nodes || []).map(n => {
-      const v = { isLogo: false, isButton: false, isIcon: false, isText: false, dur, icon: n.props.icon || '', text: n.props.text || '',
-        ...(() => { const RV = this.vis(n), off = +(RV.offsetStart || 0); return { maxW: +RV.slotMaxWidth || 0, ...(off ? { pos: 'absolute', absX: off + 'px', absY: (+RV.offsetTop || 0) + 'px' } : { pos: 'relative', absX: 'auto', absY: 'auto' }) }; })() };
-      if (KIND[n.component]) v[KIND[n.component]] = true;
-      v.vis = this.vis(n, { surface: this.surfaceOfTheme(theme) });
-      v.isFind = n.contract === 'find';
-      if (v.isFind && page) {   // morph (composition): 'from' (an icon) until open, then 'to' (the field) spanning the bar except its caret
-        const M = n.component === 'morph', fr = M ? this.sl(n, 'from')[0] : null, to = M ? this.sl(n, 'to')[0] || n : n;
-        const val = n.values.value, fv = this.P.resolveVisuals(this.specs, 'localSearch', 'enabled', { env: this.lenv() });
-        const open = n.values.open, span = M && ['header', 'row'].includes(n.variants.span);
-        const mo = this.P.motionFor(this.specs, 'morph', 'morphed', this.ms.prefs), mms = mo.kind === 'instant' ? 0 : mo.ms || 0;
-        const bs = fr ? +this.vis(fr).size || 0 : +this.P.resolveVisuals(this.specs, 'iconButton', 'enabled', {}).size || 0;
-        const fw = span ? Math.max(+fv.minWidth || 0, this.barSpan(theme, start)) : +fv.width || 0;
-        v.find = { bs, vis: fv, mo, light: theme === 'back' ? undefined : '1', span, open, closed: !open, value: val, hint: n.values.placeholder || '', w: open ? fw : 0,
-          onInput: e => { const a = this.actOf(to, 'change', e.target.value); if (a && a.nav) this.dispatch(a.nav, 'find · ' + e.target.value); },
-          onOpen: e => { if (!open && fr) this.runAction(this.actOf(fr)); const inp = e.currentTarget.querySelector('input'); if (inp) setTimeout(() => inp.focus(), mms); }, clearIx: INERT,
-          ...(() => { const E = this.sl(to, 'end')[0]; if (!E || !open) return { hasEnd: false, endIx: INERT, endIcon: '' };   // the field's end slot: ✕ clears and closes it
-            const a = this.actOf(E);
-            return { hasEnd: true, endIcon: E.props.icon || '', endIx: this.nix(E, { action: a, run: ev => { ev && ev.stopPropagation && ev.stopPropagation(); this.runAction(a, ev); }, surface: 'localSearch' }) }; })() };   // on the field itself (design: localSearch provides its text colour)
-        v.maxW = (v.find.open ? v.find.w : v.find.bs) + 2 * (+v.find.vis.padX || 0) + (+fv.slotPad || 0);
-      } else v.find = {};
-      v.isControl = v.isLogo || v.isButton;
-      const interactive = this.extendsOf(n.component, 'interactive');
-      v.ix = interactive ? this.nix(n, { surface: this.surfaceOfTheme(theme) }) : INERT;
-      const on = n.shown !== false;
+      const d = this.drawn(n, surface), RV = d.props.visuals, off = +(RV.offsetStart || 0), on = n.shown !== false;
+      const v = { ...d, dur, spans: false, maxW: +RV.slotMaxWidth || 0, ...(off ? { pos: 'absolute', absX: off + 'px', absY: (+RV.offsetTop || 0) + 'px' } : { pos: 'relative', absX: 'auto', absY: 'auto' }) };
+      if (n.contract === 'find' && page) {   // arrangement: the field's width when open (spanning the bar except its caret) and its slot's width
+        const F = d.props.slots.from && d.props.slots.from[0], T = (d.props.slots.to && d.props.slots.to[0]) || d, fv = T.props.visuals;
+        const open = n.values.open, span = d.dc === 'Morph' && ['header', 'row'].includes(n.variants.span);
+        const bs = F ? +F.props.visuals.size || 0 : +this.P.resolveVisuals(this.specs, 'iconButton', 'enabled', {}).size || 0;
+        const w = open ? (span ? Math.max(+fv.minWidth || 0, this.barSpan(theme, start)) : +fv.width || 0) : 0;
+        v.props = { ...d.props, width: w, motion: this.P.motionFor(this.specs, n.component, 'morphed', this.ms.prefs), light: theme === 'back' ? undefined : '1' };
+        v.spans = open && span;
+        v.maxW = (open ? w : bs) + 2 * (+fv.padX || 0) + (+fv.slotPad || 0);
+      }
       return { ...v, maxW: on ? v.maxW : 0, op: on ? 1 : 0, ev: on ? 'auto' : 'none' };
     });
   }
@@ -885,8 +873,8 @@ class Component extends DCLogic {
       subIx: this.ix(FHN.key, { nav: { type: 'setExpanded', expanded: !ctx.ex } }, () => this.setExpanded(!ctx.ex, 'header'), { component: 'listItem', label: FHN.values.disclosureLabel }),
       onScrim: () => this.setExpanded(false, 'scrim'),
       scrimOpacity: ctx.ex && !full ? 1 : 0, scrimEvents: ctx.ex && !full ? 'auto' : 'none',
-      ...(() => { const left = this.hItems(this.sl(FHN, 'start'), 'front', ps), right = this.hItems(this.sl(FHN, 'end'), 'front', ps, this.sl(FHN, 'start')), open = right.some(x => x.isFind && x.find.open && x.find.span);
-        return { fhLeft: left, fhRight: open ? right.map(x => x.isFind ? x : { ...x, maxW: 0, op: 0, ev: 'none' }) : right, fhTitle: this.titleText(this.sl(FHN, 'title'), ps), fhTitleW: open ? '0px' : '100%', fhTitleOp: open ? 0 : 1 }; })(),
+      ...(() => { const left = this.hItems(this.sl(FHN, 'start'), 'front', ps), right = this.hItems(this.sl(FHN, 'end'), 'front', ps, this.sl(FHN, 'start')), open = right.some(x => x.spans);
+        return { fhLeft: left, fhRight: open ? right.map(x => x.spans ? x : { ...x, maxW: 0, op: 0, ev: 'none' }) : right, fhTitle: this.titleText(this.sl(FHN, 'title'), ps), fhTitleW: open ? '0px' : '100%', fhTitleOp: open ? 0 : 1 }; })(),
       fhBorder: fl.visual.divider || 'transparent',
       headerStatic: true, headerTracking: false,
       ...(() => { const hh = +fl.visual.headerHeight || 0, fab = this.fabFor(this.sl(FHN, 'fab'), hh), edge = fab.show ? +fab.vis.headerExtra || 0 : 0;
@@ -995,7 +983,7 @@ class Component extends DCLogic {
     const ahBase = +barVisApp.height || 0, ahH = +barVisApp.topHeight || ahBase;   // page form: the top row; the sheet below it holds expanded + bottom (14.2)
     G.AH = ahH; v.ahLeft = AHN ? this.hItems(this.sl(AHN, 'start'), 'appbar', apage) : []; v.ahRight = AHN ? this.hItems(this.sl(AHN, 'end'), 'appbar', apage, this.sl(AHN, 'start')) : [];
     v.ahTitle = AHN ? this.titleText(this.sl(AHN, 'title'), apage) : ''; v.ahH = ahH;
-    v.ahSpan = v.ahRight.some(x => x.isFind && x.find.open && x.find.span); if (v.ahSpan) v.ahRight = v.ahRight.map(x => x.isFind ? x : { ...x, maxW: 0, op: 0, ev: 'none' });
+    v.ahSpan = v.ahRight.some(x => x.spans); if (v.ahSpan) v.ahRight = v.ahRight.map(x => x.spans ? x : { ...x, maxW: 0, op: 0, ev: 'none' });
     const bvA = apage ? this.P.barView(apage, this.look()) : { height: ahBase, progress: 1 }, Xr = this.sl(AHN, 'expanded')[0];
     { const BOT = this.sl(AHN, 'bottom');
       const btns = BOT.filter(n => n.contract !== 'find' && n.shown !== false);
@@ -1211,7 +1199,8 @@ class Component extends DCLogic {
     v.reset = () => { const d = DEVICES[this.state.layout]; this.model = this.newModel(d); this.setState({ log: ['reset'], ovRect: null, ovInset: null, backOverride: null, frontTopOverride: null, ft: null, cf: null, entry: null }); this.cancelEntry(); this.scheduleLaunch(); };
     /* lint:on */
     // bars (design: header / frontHeader / appBar); layer headers as slot items
-    { const ctl = (ix, icon) => ({ isControl: true, ix, icon }), RVb = (id, ctx) => this.P.resolveVisuals(this.specs, id, 'enabled', ctx);
+    { const ctl = (ix, icon) => ({ is: { IconButton: true }, props: { ...ix, icon, component: 'iconButton' } }),   // layer headers: not yet drawn from their nodes (next slice)
+       RVb = (id, ctx) => this.P.resolveVisuals(this.specs, id, 'enabled', ctx);
       v.barVisBack = RVb('header', { surface: 'backLayer' }); v.barVisFront = RVb('frontHeader', { surface: 'frontLayer' });
       v.barVisLayer = RVb('appBar', { surface: 'appBar', variant: { form: 'layer' } });
       v.barMo = { ms: this.dur }; v.fhMo = { ms: this.dur, titleMs: +v.barVisFront.titleMs || 0 }; v.ahMo = { ms: +v.barVisApp.shadowMs || 0 };
