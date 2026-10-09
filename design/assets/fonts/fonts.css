@@ -1,0 +1,10 @@
+/* The icon font, served from the repo (no request to Google Fonts; works offline and in headless checks).
+ * Icons are ligatures: the text "play_arrow" in this family draws one glyph. `block`, not `swap`: a swap would show
+ * each icon's name in letters until the font arrives. */
+@font-face {
+  font-family: 'Material Symbols Rounded';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: block;
+  src: url('./material-symbols-rounded.woff2') format('woff2');
+}

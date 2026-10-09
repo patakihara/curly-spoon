@@ -7,7 +7,7 @@
 </head>
 <body>
 <x-dc>
-<helmet><script src="./interactive.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"><style>.ms{font-family:'Material Symbols Rounded';font-size:24px;line-height:1;font-feature-settings:'liga'}</style></helmet>
+<helmet><script src="./interactive.js"></script><link rel="stylesheet" href="./design/assets/fonts/fonts.css"><style>.ms{font-family:'Material Symbols Rounded';font-size:24px;line-height:1;font-feature-settings:'liga'}</style></helmet>
 <div ref="{{ rootRef }}" onClick="{{ onClick }}" onKeyDown="{{ onKeyDown }}" onPointerEnter="{{ onPointerEnter }}" onPointerLeave="{{ onPointerLeave }}" onPointerDown="{{ onPointerDown }}" onFocus="{{ onFocus }}" onBlur="{{ onBlur }}" tabIndex="{{ tab }}" aria-label="{{ label }}" aria-busy="{{ busy }}" data-status="{{ status }}" role="button" aria-disabled="{{ disabled }}" data-item-id="{{ itemId }}" data-title="{{ text }}" style="position:relative;overflow:hidden;display:flex;flex-direction:column;gap:10px;padding:{{ pad }}px;background-color:#fafaf8;color:{{ ink }};border-radius:{{ radius }};box-shadow:{{ layerShadow }};transition:{{ ixTrans }};transform:scale({{ pressScale }});outline:{{ outline }};outline-offset:-2px;cursor:{{ cur }};opacity:{{ op }}">
   <div data-shared="image" style="height:160px;border-radius:{{ vis.artRadius }}px;background:{{ art }};display:flex;align-items:flex-start;justify-content:flex-end;padding:8px;box-sizing:border-box"><span class="ms" style="font-size:18px;color:rgba(255,255,255,.85)">{{ icon }}</span></div>
   <div style="display:flex;flex-direction:column;gap:2px;padding:0 2px 4px">

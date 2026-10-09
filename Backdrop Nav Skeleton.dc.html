@@ -7,7 +7,7 @@
 </head>
 <body>
 <x-dc>
-<helmet><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"><style>body{margin:0;background:#ecebe8;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c}a{color:#1c1c1c}a:hover{color:#555}.ms{font-family:'Material Symbols Rounded';font-size:24px;line-height:1;font-feature-settings:'liga'}input::placeholder{color:rgba(255,255,255,.55)}input[data-light]::placeholder{color:rgba(0,0,0,.45)}*{scrollbar-width:none}*::-webkit-scrollbar{display:none}.sc-placeholder:not(:has(.sc-placeholder-error)){visibility:hidden}</style></helmet>
+<helmet><link rel="stylesheet" href="./design/assets/fonts/fonts.css"><style>body{margin:0;background:#ecebe8;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c}a{color:#1c1c1c}a:hover{color:#555}.ms{font-family:'Material Symbols Rounded';font-size:24px;line-height:1;font-feature-settings:'liga'}input::placeholder{color:rgba(255,255,255,.55)}input[data-light]::placeholder{color:rgba(0,0,0,.45)}*{scrollbar-width:none}*::-webkit-scrollbar{display:none}.sc-placeholder:not(:has(.sc-placeholder-error)){visibility:hidden}</style></helmet>
 <div data-harness="frame" style="min-height:100vh;display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start;justify-content:safe center;padding:40px 24px;box-sizing:border-box">
 
   <div ref="{{ phoneRef }}" data-harness="frame" style="width:{{ pw }}px;height:{{ phoneH }}px;flex:none;position:relative;overflow:hidden;background:{{ backBg }}">
@@ -24,7 +24,7 @@
       <div style="height:{{ basicH }}px;box-sizing:border-box;overflow:hidden;padding:{{ sv.back.basicPadding }};color:{{ sv.back.ink }}">
         <sc-if value="{{ isFilters }}" hint-placeholder-val="{{ true }}"><dc-import name="FilterChips" chips="{{ filters }}" visuals="{{ fcVis }}" hint-size="100%,48px"></dc-import></sc-if>
         <sc-if value="{{ isTabs }}" hint-placeholder-val="{{ false }}"><dc-import name="TabBar" tabs="{{ tabs }}" selected="{{ tabSel }}" motion="{{ tabMo }}" visuals="{{ tbVis }}" hint-size="100%,48px"></dc-import></sc-if>
-        <sc-if value="{{ isSearch }}" hint-placeholder-val="{{ false }}"><dc-import name="SearchField" value="{{ query }}" hint="{{ searchHint }}" on-input="{{ onQuery }}" on-key="{{ onQueryKey }}" clear-ix="{{ clearIx }}" visuals="{{ sfVis }}" hint-size="100%,48px"></dc-import></sc-if>
+        <sc-if value="{{ isSearch }}" hint-placeholder-val="{{ false }}"><dc-import name="SearchField" value="{{ query }}" hint="{{ searchHint }}" on-input="{{ onQuery }}" on-key="{{ onQueryKey }}" clear-ix="{{ clearIx }}" visuals="{{ sfVis }}" symbol-visuals="{{ symVis }}" hint-size="100%,48px"></dc-import></sc-if>
       </div>
       </div></sc-for>
 
@@ -40,7 +40,7 @@
               <sc-if value="{{ pr.isChips }}" hint-placeholder-val="{{ false }}"><dc-import name="FilterChips" chips="{{ pr.chips }}" wrap="{{ true }}" visuals="{{ pr.vis }}" hint-size="100%,32px"></dc-import></sc-if>
               <sc-if value="{{ pr.isDropdown }}" hint-placeholder-val="{{ false }}"><dc-import name="Dropdown" options="{{ pr.options }}" label="{{ pr.text }}" on-pick="{{ pr.onPick }}" visuals="{{ pr.vis }}" hint-size="120px,40px"></dc-import></sc-if>
               <sc-if value="{{ pr.isRange }}" hint-placeholder-val="{{ false }}"><dc-import name="RangeField" from="{{ pr.from }}" to="{{ pr.to }}" min="{{ pr.min }}" max="{{ pr.max }}" on-from="{{ pr.onFrom }}" on-to="{{ pr.onTo }}" from-label="{{ pr.fromLabel }}" to-label="{{ pr.toLabel }}" visuals="{{ pr.vis }}" hint-size="200px,40px"></dc-import></sc-if>
-              <sc-if value="{{ pr.isSuggest }}" hint-placeholder-val="{{ false }}"><dc-import name="SuggestionRow" ix="{{ pr.ix }}" text="{{ pr.text }}" visuals="{{ pr.vis }}" hint-size="100%,40px"></dc-import></sc-if>
+              <sc-if value="{{ pr.isSuggest }}" hint-placeholder-val="{{ false }}"><dc-import name="SuggestionRow" ix="{{ pr.ix }}" text="{{ pr.text }}" visuals="{{ pr.vis }}" symbol-visuals="{{ symVis }}" hint-size="100%,40px"></dc-import></sc-if>
             </div>
           </sc-for>
         </div>
@@ -809,7 +809,8 @@ class Component extends DCLogic {
       filters: this.chipsFor(ps, ctl),
       tabs: opts.map((o, k) => { const i = ri('change', o.value); return { label: o.label, ix: this.ix((ctl ? ctl.key : 'tabs') + '/' + k, i && { nav: i }, () => setP(i), { component: 'tab', label: o.label }) }; }),
       tabSel: sel, tabMo: (() => { const d = this.P.motionFor(this.specs, 'tabBar', 'indicator', this.ms.prefs); return { ms: this.msOf(d), ease: this.easeOf(d) }; })(),
-      fcVis: BV(baComp === 'choiceChips' ? 'choiceChips' : 'filterChips'), tbVis: BV('tabBar'), sfVis: BV('searchField'),
+      fcVis: BV(baComp === 'choiceChips' ? 'choiceChips' : 'filterChips'), tbVis: BV('tabBar'), sfVis: BV('searchField'), symVis: BV('symbol'),   // the symbol SearchField / SuggestionRow draw inside themselves
+     
       query: typeof val === 'string' && baComp === 'searchField' ? val : '', hasQuery: baComp === 'searchField' && !!val,
       onQuery: e => { const i = ri('change', e.target.value); if (i) setP(i); },
       onQueryKey: e => { if (e.key !== 'Enter') return; const i = ri('submit', e.target.value); if (i) setP(i); },

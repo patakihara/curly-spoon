@@ -500,6 +500,11 @@ Each was my call; say if you disagree and I redo it.
 33. api/api.rs (an unused 11.0.1 Rust snapshot) is deleted as superseded; RUST.md says to generate it when the Rust core
     starts. CLAUDE.md's "How it works" and file layout now describe 18.0 (contracts, composition, the contract tree)
     instead of roles and refs — a CLAUDE.md edit made without asking; revert if unwanted.
+34. The icon font is served from the repo (design/assets/fonts: Material Symbols Rounded, the same Google Fonts query
+    the DCs linked, all four axes, Apache 2.0) — Sofia asked; it works offline and in headless checks.
+35. A DC that draws a design component inside itself gets that component's resolved visuals from the platform as
+    `<component>Visuals` (SearchField and SuggestionRow: symbolVisuals). Before, they passed Symbol only a size, so its
+    font family resolved to 'undefined' and the glyph showed as the word "search" (old mockup too).
 
 ### Switchover (2026-10-09): done, with what is still open
 The mockup runs on 18.0 (config + composition + design → contract tree → shell). Checked in headless Chrome against the
