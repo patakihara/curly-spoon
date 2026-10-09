@@ -607,7 +607,8 @@
       {
        "controls": [
         {
-         "bind": "genre"
+         "bind": "genre",
+         "more": {}
         }
        ]
       },

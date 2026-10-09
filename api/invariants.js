@@ -19,6 +19,8 @@ const assert = (c, msg) => { if (!c) throw new Error(msg); };
 class Skip extends Error {}
 const skip = msg => { throw new Skip(msg); };
 const need = (v, msg) => v || skip(msg);
+// a back layer's param-control rows, and the rows of every More inside them
+const rowsDeep = (rows, k = 0) => k > 8 ? [] : (rows || []).flatMap(r => [r, ...r.controls.filter(x => x.more).flatMap(x => rowsDeep(x.more.paramControls, k + 1))]);
 
 const BASE_SWITCH = ['deckSwitch', 'layerOpen', 'layerClose'];
 const resets = (policy, ev) => !!policy && (policy.resetOn.includes(ev) || (policy.resetOn.includes('baseSwitch') && BASE_SWITCH.includes(ev)));
@@ -527,7 +529,7 @@ export const INVARIANTS = [
   // ── design + layout (§14–15)
   ['every model event type has a choreography rule', f => {
     const sp = need(f.specs, 'no specs');
-    const types = ['launched', 'pushed', 'popped', 'deckSwitched', 'expandedChanged', 'headerVisibilityChanged', 'paramChanged', 'layerOpened', 'layerClosed', 'overlayOpened', 'overlayClosed', 'sessionChanged', 'urlChanged', 'retryRequested', 'focusRestore', 'exit', 'queued'];
+    const types = ['launched', 'pushed', 'popped', 'deckSwitched', 'expandedChanged', 'headerVisibilityChanged', 'moreChanged', 'paramChanged', 'layerOpened', 'layerClosed', 'overlayOpened', 'overlayClosed', 'sessionChanged', 'urlChanged', 'retryRequested', 'focusRestore', 'exit', 'queued'];
     types.forEach(t => assert(sp.choreography.rules.some(r => r.on.event === t), 'no rule for ' + t));
   }],
   ['every free component composition hires is implemented by every platform (variants via their parent)', f => {
@@ -652,7 +654,7 @@ export const INVARIANTS = [
     // 18.0: every item of every page (header items, back actions, body), its when and its values
     const itemsOf = p => p.kind === 'backdrop' ? [...p.back.header.items, ...(p.back.actions || []), ...p.front.header.items] : [...p.header.items, ...(p.body || [])];
     // param controls: rows and controls (their when, their own options' source params) and the params' words
-    const controlsOf = p => [...(p.kind === 'backdrop' ? (p.back.paramControls || []).flatMap(r => [{ name: 'row', when: r.when }, ...r.controls]) : p.sheet && p.sheet.paramControl ? [p.sheet.paramControl] : [])
+    const controlsOf = p => [...(p.kind === 'backdrop' ? rowsDeep(p.back.paramControls).flatMap(r => [{ name: 'row', when: r.when }, ...r.controls]) : p.sheet && p.sheet.paramControl ? [p.sheet.paramControl] : [])
       .map(x => ({ name: x.name || x.bind, when: x.when, source: x.options && !Array.isArray(x.options) ? Object.values(x.options.params || {}) : [] })),
       ...Object.entries(p.params || {}).map(([k, P]) => ({ name: k, label: P.label, placeholder: P.placeholder }))];
     let n = 0;
@@ -749,6 +751,36 @@ export const INVARIANTS = [
       if (d.touch) assert(m.query.backAction(S(m), m.config) === 'resetParam', 'touch back does not reset the param');
       m.dispatch({ type: 'back' });
       assert(JSON.stringify(m.query.underPage(S(m)).params[X.k]) === JSON.stringify(def) && S(m).activeDeck === X.D.id, 'param not reset first @' + d.width + (d.touch ? 't' : 'p'));
+    });
+  }],
+  ['a page param has at most one control with a More', f => {
+    let n = 0;
+    pagesOf(f, f.mk(dev.any(f))).filter(p => p.kind === 'backdrop').forEach(p => {
+      const seen = new Set();
+      rowsDeep(p.back.paramControls).flatMap(r => r.controls).filter(x => x.more).forEach(x => { n++; assert(!seen.has(x.bind), p.id + ': two controls of ' + x.bind + ' have a More'); seen.add(x.bind); });
+    });
+    need(n, 'no More');
+  }],
+  ['More: opening reveals the back layer and shows it; back and up close it first; concealing closes every More', f => {
+    const D = need(f.config.decks.find(d => rowsDeep(d.page.back.paramControls).some(r => r.controls.some(x => x.more))), 'no More');
+    const name = rowsDeep(D.page.back.paramControls).flatMap(r => r.controls).find(x => x.more).bind;
+    f.devices.forEach(d => {
+      const m = f.mk(d), u = () => m.query.underPage(S(m)), open = () => u().back.more || [];
+      m.dispatch({ type: 'switchDeck', deck: D.id });
+      if (u().back.expanded) m.dispatch({ type: 'setExpanded', expanded: false });
+      const e = m.dispatch({ type: 'openMore', name });
+      assert(u().back.expanded && open().join() === name, 'not open and revealed');
+      assert(e.some(x => x.type === 'moreChanged' && x.opened && x.name === name) && e.some(x => x.type === 'expandedChanged' && x.expanded), 'events missing');
+      assert(m.query.backAction(S(m), m.config) === 'closeMore', 'back does not close the More first @' + d.width);
+      const st = S(m).decks[D.id].stack.length;
+      m.dispatch({ type: 'back' });
+      assert(!open().length && u().back.expanded && S(m).decks[D.id].stack.length === st, 'back did more than close the More');
+      m.dispatch({ type: 'openMore', name }); m.dispatch({ type: 'up' });
+      assert(!open().length && S(m).decks[D.id].stack.length === st, 'up did more than close the More');
+      m.dispatch({ type: 'openMore', name }); m.dispatch({ type: 'setExpanded', expanded: false });
+      assert(!open().length, 'concealing left the More open');
+      m.dispatch({ type: 'openMore', name: name + '?' });
+      assert(!open().length, 'opened a More no control has');
     });
   }],
   ['hideOnScroll back header: hides scrolling down, shows scrolling up / at the top / on expand; front headers never hide', f => {
@@ -888,7 +920,7 @@ export const INVARIANTS = [
       });
       Object.keys(pol).forEach(k => assert(D[k], p.id + ': policy for undeclared param ' + k));
       // 18.0: binds are param controls (the back layer's rows, a sheet's), find and switch items
-      const binds = p.kind === 'backdrop' ? (p.back.paramControls || []).flatMap(r => r.controls.map(x => x.bind)) : [p.sheet && p.sheet.paramControl && p.sheet.paramControl.bind];
+      const binds = p.kind === 'backdrop' ? rowsDeep(p.back.paramControls).flatMap(r => r.controls.map(x => x.bind)) : [p.sheet && p.sheet.paramControl && p.sheet.paramControl.bind];
       const items = p.kind === 'backdrop' ? [...p.back.header.items, ...p.front.header.items] : p.header.items;
       [...binds.filter(Boolean), ...items.filter(x => x.param).map(x => x.param)].forEach(k => assert(D[k], p.id + ': binds undeclared param ' + k));
     });

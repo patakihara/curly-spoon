@@ -1,0 +1,21 @@
+{
+  "props": {
+    "value": "value",
+    "options": "options"
+  },
+  "events": [
+    {
+      "name": "change",
+      "payload": "value"
+    },
+    {
+      "name": "toggle",
+      "payload": "string"
+    }
+  ],
+  "visuals": {
+    "gap": {
+      "default": 0
+    }
+  }
+}

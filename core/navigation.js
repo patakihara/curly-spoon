@@ -29,7 +29,7 @@ export function formatMessage(msg, args = {}, locale = 'en') {
 }
 export const DERIVED_IDS = ['deckName', 'pageTitle', 'contentSummary', 'total', 'count', 'summary', 'scrolled'];
 export const PARAM_TYPES = ['choice', 'choices', 'text', 'flag', 'number', 'date'];
-export const INTENT_TYPES = ['open', 'openLayerPage', 'back', 'up', 'switchDeck', 'reselectDeck', 'setParams', 'toggleParam', 'resetParams', 'applyParams', 'discardParams', 'setExpanded', 'toggleExpanded', 'scroll', 'openLayer', 'closeLayer', 'focus', 'setDevice', 'retry', 'setPrefs', 'openOverlay', 'closeOverlay', 'session', 'navigateUrl', 'restore', 'launched', 'openFind', 'closeFind'];
+export const INTENT_TYPES = ['open', 'openLayerPage', 'back', 'up', 'switchDeck', 'reselectDeck', 'setParams', 'toggleParam', 'resetParams', 'applyParams', 'discardParams', 'setExpanded', 'toggleExpanded', 'scroll', 'openLayer', 'closeLayer', 'focus', 'setDevice', 'retry', 'setPrefs', 'openOverlay', 'closeOverlay', 'session', 'navigateUrl', 'restore', 'launched', 'openFind', 'closeFind', 'openMore', 'closeMore'];
 const major = v => parseInt(String(v || '0').split('.')[0], 10);
 export function compatible(v) { return major(v) === major(CONTRACT_VERSION); }
 
@@ -86,6 +86,12 @@ const underIndex = stack => { for (let i = stack.length - 1; i >= 0; i--) if (st
 const topOf = stack => stack[stack.length - 1];
 const contentOf = cfg => cfg.kind === 'backdrop' ? cfg.front.content : cfg.content || null;
 // group key of a value (§F GroupSpec)
+// every control with a More in these rows, and in their Mores (a More may hold controls with their own)
+export function moreControls(rows, depth = 0) {
+  if (depth > 8) return [];
+  return (rows || []).flatMap(r => r.controls || []).filter(x => x.more).flatMap(x => [x, ...moreControls(x.more.paramControls, depth + 1)]);
+}
+
 export function groupKey(v, key) {
   if (v == null || v === '') return '#';
   if (key === 'decade') { const y = parseInt(v, 10); return Number.isFinite(y) ? Math.floor(y / 10) * 10 + 's' : '#'; }
@@ -193,6 +199,7 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
     backAction(s, c) {
       if (s.overlays.some(o => o.spec.blocking)) return 'closeOverlay';
       if (c.layers.some(L => L.presentation.kind === 'drawer' && s.layers[L.id].open)) return 'closeDrawer';   // drawers are transient: back closes them first (also on pointer)
+      if (!(s.layers[s.focus] && s.layers[s.focus].open) && topOf(s.decks[s.activeDeck].stack).page.config.kind === 'backdrop' && (query.underPage(s).back.more || []).length) return 'closeMore';   // so is an open More
       if (!s.device.touch) return lastValidRecord(s) >= 0 ? 'undoRecord' : 'exit';
       const f = s.focus;
       if (s.layers[f] && s.layers[f].open) { const lt = topOf(s.layers[f].stack).page; return lt.sheet && lt.sheet.expanded ? 'collapseSheet' : s.layers[f].stack.length > 1 ? 'popLayer' : 'closeLayer'; }
@@ -638,6 +645,7 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
         if (a === 'closeLayer') { const id = s.focus; s = closeLayerWithFocus(s, id, false, ev); ev.push({ type: 'layerClosed', layer: id }); break; }
         if (a === 'resetParam') { const u = query.underPage(s), k = pushedParam(u); s = changeParams(s, { page: u, patch: fn => patchUnder(s, fn) }, { [k]: clone(paramDefault(u, k)) }, ev, true); s = dropLast(s, r => r.kind === 'param' && r.param === k); break; }
         if (a === 'collapseSheet') { s = patchTop(s, p => ({ ...p, sheet: { expanded: false } })); ev.push({ type: 'expandedChanged', expanded: false, sheet: true }); break; }
+        if (a === 'closeMore') return reduce(s, { type: 'closeMore' });
         if (a === 'collapse') { s = patchUnder(s, p => ({ ...p, back: { ...p.back, expanded: false } })); ev.push({ type: 'expandedChanged', expanded: false }); break; }
         if (a === 'pop') { const entry = topOf(s.decks[s.activeDeck].stack); s = popDeck(s, s.activeDeck); ev.push({ type: 'popped', target: { deck: s.activeDeck }, openedFrom: entry.openedFrom, kind: entry.page.config.kind }); break; }
         if (a === 'startDeck') { const from = s.activeDeck; s = { ...enterDeck(s, config.startDeck), activeDeck: config.startDeck, focus: config.startDeck }; ev.push({ type: 'deckSwitched', from, to: config.startDeck }); break; }
@@ -652,7 +660,8 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
           s = dropLast(s, r => r.kind === 'layerPush' && r.layer === t.layer);
           ev.push({ type: 'popped', target: { layer: t.layer }, openedFrom: null, kind });
         } else {
-          const d = t.deck;
+          const d = t.deck, tp = topOf(s.decks[d].stack).page;
+          if (tp.config.kind === 'backdrop' && (tp.back.more || []).length) return reduce(s, { type: 'closeMore', page: tp.config.id });   // an open More closes before the page
           if (s.decks[d].stack.length < 2) break;
           const entry = topOf(s.decks[d].stack);
           s = dropLast(popDeck(s, d), r => r.kind === 'push' && r.deck === d);
@@ -717,6 +726,22 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
         if (intent.expanded && query.underPage(s).back.headerHidden) { s = patchUnder(s, p => ({ ...p, back: { ...p.back, headerHidden: false } })); ev.push({ type: 'headerVisibilityChanged', hidden: false }); }
         s = patchUnder(s, p => ({ ...p, back: { ...p.back, expanded: intent.expanded } }));
         ev.push({ type: 'expandedChanged', expanded: intent.expanded });
+        break;
+      }
+      case 'openMore': case 'closeMore': {   // a control's More (BackLayerState.more): opening reveals the back layer
+        const loc = intent.page ? findPage(s, intent.page) : { page: query.underPage(s), patch: fn => patchUnder(s, fn) };
+        const P = loc.page; if (!P || P.config.kind !== 'backdrop') break;
+        const open = P.back.more || [];
+        if (intent.type === 'closeMore') {
+          if (!open.length) break;
+          s = loc.patch(p => ({ ...p, back: { ...p.back, more: open.slice(0, -1) } }));
+          ev.push({ type: 'moreChanged', name: open[open.length - 1], opened: false });
+          break;
+        }
+        if (!moreControls(P.config.back.paramControls).some(x => x.bind === intent.name) || open[open.length - 1] === intent.name) break;
+        if (!P.back.expanded) ev.push({ type: 'expandedChanged', expanded: true });
+        s = loc.patch(p => ({ ...p, back: { ...p.back, expanded: true, more: [...open.filter(k => k !== intent.name), intent.name] } }));
+        ev.push({ type: 'moreChanged', name: intent.name, opened: true });
         break;
       }
       case 'toggleExpanded': { const cp = query.currentPage(s); return reduce(s, { type: 'setExpanded', expanded: cp.sheet ? !cp.sheet.expanded : !query.underPage(s).back.expanded }); }
@@ -848,7 +873,16 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
         break;
       }
     }
-    return { state: s, events: ev };
+    return { state: closeConcealedMores(s), events: ev };
+  }
+  // concealing a back layer closes its open Mores (however it was concealed: back, the disclosure, a policy reset)
+  function closeConcealedMores(s) {
+    const fix = st => st.some(e => e.page.config.kind === 'backdrop' && !e.page.back.expanded && (e.page.back.more || []).length)
+      ? st.map(e => e.page.config.kind === 'backdrop' && !e.page.back.expanded && (e.page.back.more || []).length ? { ...e, page: { ...e.page, back: { ...e.page.back, more: [] } } } : e) : st;
+    let out = s;
+    Object.keys(s.decks).forEach(id => { const st = fix(s.decks[id].stack); if (st !== s.decks[id].stack) out = patchDeck(out, id, d => ({ ...d, stack: st })); });
+    Object.keys(s.layers).forEach(id => { const st = fix(s.layers[id].stack); if (st !== s.layers[id].stack) out = patchLayer(out, id, l => ({ ...l, stack: st })); });
+    return out;
   }
 
   return {

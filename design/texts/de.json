@@ -17,5 +17,7 @@
   "player.nothing": "Keine Wiedergabe",
   "splash.loading": "Wird geladen…",
   "range.from": "Von",
-  "range.to": "Bis"
+  "range.to": "Bis",
+  "more.open": "Mehr",
+  "more.close": "Schließen"
 }

@@ -122,6 +122,7 @@ object DesignTokens {
     val IconAccount = "account_circle"
     val IconUp = "arrow_back"
     val IconClose = "close"
+    val IconCheck = "check"
     val IconMore = "more_vert"
     val IconCollapse = "expand_more"
     val IconExpand = "expand_more"
@@ -495,6 +496,7 @@ object FilterChipsTokens {
     val Height = 48f
     val Gap = 8f
     val Inset = 16f
+    val MoreAfter = 4f
 }
 
 object TabBarTokens {
@@ -719,6 +721,7 @@ object ChoiceChipsTokens {
     val Height = 48f
     val Gap = 8f
     val Inset = 16f
+    val MoreAfter = 4f
 }
 
 object SuggestionRowTokens {
@@ -745,6 +748,43 @@ object SuggestionRowTokens {
 
 object SuggestionListTokens {
     val Gap = 12f
+}
+
+object MorePanelTokens {
+    val Height = 48f
+    val Gap = 8f
+    val CloseIcon = DesignTokens.IconClose
+    val FontFamily = "inherit"
+    val FontSize = 16f
+    val FontWeight = 500f
+    val CloseOffset = -12f
+}
+
+object ChecklistTokens {
+    val Gap = 0f
+}
+
+object CheckRowTokens {
+    val StateLayerHover = DesignTokens.StateHoverOpacityDefault
+    val StateLayerPressed = DesignTokens.StatePressedOpacityDefault
+    val StateLayerKeyboardFocus = DesignTokens.StateFocusOpacity
+    val Ripple = DesignTokens.StateRippleOpacityDefault
+    val Radius = DesignTokens.RadiusSm
+    val FocusRingKeyboardFocus = {"role":"focusRing"}
+    val ContentOpacity = 1f
+    val ContentOpacityDisabled = DesignTokens.StateDisabledOpacity
+    val ContentOpacityBusy = DesignTokens.StateBusyOpacity
+    val Scale = 1f
+    val ScalePressed = 1f
+    val Color = {"role":"content"}
+    val Height = 44f
+    val Gap = 12f
+    val FontSize = 15f
+    val PadX = 8f
+    val Icon = DesignTokens.IconCheck
+    val IconSize = 20f
+    val IconOpacity = 0f
+    val IconOpacitySelected = 1f
 }
 
 object MenuTokens {

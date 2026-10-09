@@ -9,4 +9,5 @@ export interface BackLayerProps {
   header: Slot;
   actions: Slot;
   paramControls: Slot;
+  more: Slot;
 }

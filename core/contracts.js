@@ -13,6 +13,7 @@
 
 import { placementFor, hireOf, freeComponent } from './compose.js';
 import * as Layout from './layout.js';
+import { moreControls } from './navigation.js';
 
 const ITEM_CONTRACT = { button: 'button', logo: 'logo', text: 'text', switch: 'switch', find: 'find', detail: 'detail', seek: 'seek' };
 
@@ -83,6 +84,8 @@ export function contractTree(model, specs, composition, opts = {}) {
       case 'toggleParam': return n.contract === 'paramControl' ? { type: 'toggleParam', name: n.config.bind, option: String(payload), page: pid } : null;
       case 'applyParams': return n.contract === 'paramControl' ? { type: 'applyParams', names: [n.config.bind], page: pid } : null;
       case 'discardParams': return n.contract === 'paramControl' ? { type: 'discardParams', names: [n.config.bind], page: pid } : null;
+      case 'openMore': return n.contract === 'paramControl' && n.config.more ? { type: 'openMore', name: n.config.bind, page: pid } : null;
+      case 'closeMore': return n.contract === 'paramControlMore' ? { type: 'closeMore', page: pid } : null;
       case 'seek': return { type: 'seek', positionMs: +payload || 0 };
       case 'toggleExpanded': return n.contract === 'backLayer' && n.config.toggleOnTap === false ? null : { type: 'toggleExpanded' };
       case 'scroll': return { type: 'scroll', top: +payload || 0 };
@@ -148,8 +151,14 @@ export function contractTree(model, specs, composition, opts = {}) {
     const value = val({ bind: 'pending.' + name }, page) ?? null, many = spec.type === 'choices';
     const raw = cfg.options ? sourceItems(cfg.options, page).map(o => ({ value: String(o.value), label: textOf(o.label, String(o.value)) })) : q.paramOptions(s, c, page, name) || [];
     const options = raw.map(o => ({ value: o.value, label: o.label, selected: many ? Array.isArray(value) && value.includes(o.value) : value === o.value }));
-    const values = { value, options, pending: !!(page.pending && name in page.pending), label: spec.label != null ? String(val(spec.label, page) ?? '') : null, placeholder: spec.placeholder != null ? String(val(spec.placeholder, page) ?? '') : null, min: spec.min ?? null, max: spec.max ?? null };
+    const values = { value, options, pending: !!(page.pending && name in page.pending), label: spec.label != null ? String(val(spec.label, page) ?? '') : null, placeholder: spec.placeholder != null ? String(val(spec.placeholder, page) ?? '') : null, min: spec.min ?? null, max: spec.max ?? null, more: !!cfg.more };
     return node('paramControl', key, ctx, cfg, values, {}, { at: { param: { name, type: spec.type, axis: !!spec.axis, options: !!cfg.options } } });
+  }
+  // the open More (the newest in BackLayerState.more): its rows, or one row with a control for the same param (all its options)
+  function moreNode(B, page, key, ctx) {
+    const name = (page.back.more || []).slice(-1)[0], x = name && moreControls(B.paramControls).find(m => m.bind === name); if (!x) return null;
+    const spec = (page.config.params || {})[name] || {}, rows = x.more.paramControls || [{ controls: [{ bind: name }] }];
+    return node('paramControlMore', key, ctx, x.more, { title: spec.label != null ? String(val(spec.label, page) ?? '') : null }, { paramControls: paramControlRows(rows, key + '.paramControls', inside(ctx, 'paramControlMore')) });
   }
   function paramControlRows(rows, key, ctx) {
     const page = ctx.page, rw = inside(ctx, 'paramControlRow');
@@ -188,6 +197,7 @@ export function contractTree(model, specs, composition, opts = {}) {
         header: headerNode(B.header, k + '.header', bw, bar.progress, title),
         actions: items(B.actions, k + '.actions', bw),
         paramControls: paramControlRows(B.paramControls, k + '.paramControls', bw),
+        ...(() => { const m = moreNode(B, page, k + '.more', bw); return m ? { more: m } : {}; })(),
       });
       const fl = Layout.frontLayer(page, g, look, { measured }, opts.peek || 0), F = cfg.front, fk = key + '.front';
       const fh = node('frontHeader', fk + '.header', fw, F.header, { title: String(val(F.header.title, page) ?? ''), expanded: !!page.back.expanded, disclosureLabel: text(page.back.expanded ? 'backLayer.conceal' : 'backLayer.reveal') }, { items: items(F.header.items, fk + '.header.items', inside(fw, 'frontHeader')) });

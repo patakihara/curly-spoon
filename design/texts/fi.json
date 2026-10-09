@@ -17,5 +17,7 @@
   "player.nothing": "Ei toistoa",
   "splash.loading": "Ladataan…",
   "range.from": "Alkaen",
-  "range.to": "Asti"
+  "range.to": "Asti",
+  "more.open": "Lisää",
+  "more.close": "Sulje"
 }

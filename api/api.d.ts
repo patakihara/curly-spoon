@@ -248,12 +248,14 @@ export interface RestoreIntent { type: 'restore'; snapshot: Snapshot }
 export interface LaunchedIntent { type: 'launched' }
 export interface OpenFindIntent { type: 'openFind' }                     // the current page's find: opened = true, closed = false
 export interface CloseFindIntent { type: 'closeFind' }                   // its text = '', opened = false, closed = true
+export interface OpenMoreIntent { type: 'openMore'; name: ParamName; page?: PageId }   // opens the More of the control bound to name (BackLayerState.more); reveals the back layer
+export interface CloseMoreIntent { type: 'closeMore'; page?: PageId }   // closes the newest open More
 export type Intent =
   | OpenIntent | OpenLayerPageIntent | BackIntent | UpIntent | SwitchDeckIntent | ReselectDeckIntent
   | SetParamsIntent | ToggleParamIntent | ResetParamsIntent | ApplyParamsIntent | DiscardParamsIntent | SetExpandedIntent | ToggleExpandedIntent | ScrollIntent
   | OpenLayerIntent | CloseLayerIntent | FocusIntent | SetDeviceIntent | SetPrefsIntent
   | OpenOverlayIntent | RetryIntent | CloseOverlayIntent | SessionIntent | NavigateUrlIntent | RestoreIntent | LaunchedIntent
-  | OpenFindIntent | CloseFindIntent;
+  | OpenFindIntent | CloseFindIntent | OpenMoreIntent | CloseMoreIntent;
 export type IntentType = Intent['type'];
 export declare const INTENT_TYPES: readonly IntentType[];
 
@@ -292,10 +294,14 @@ export interface HeaderConfig { items: HeaderItem[]; detail?: DetailConfig }
 
 // ── Param controls: one control for one page param (a tab bar, a chip row, a dropdown, a search field, a range, a suggestion
 //   list). What draws it is composition's choice, by the param's spec. Its words (label, placeholder) are the param's.
+//   A control with `more` offers "More": opening it turns the back layer's panel into the More's controls (BackLayerState.more).
+//   How many options a control shows before "More" is design's choice; their order is config's.
+// recursive: refers to ParamControlMoreConfig (defined below)
 export interface ParamControlConfig {
   bind: ParamName;                       // the page param it shows and changes
   options?: Source<ParamOption[]>;       // the choices this control shows; default: the param's own (search suggestions, a popular subset)
   when?: Condition;                      // shown only while this holds
+  more?: ParamControlMoreConfig;         // offers "More"; at most one control per page param has one
 }
 export type ParamControlShows =
   | 'always'                             // also while the back layer is concealed
@@ -304,6 +310,9 @@ export interface ParamControlRowConfig {
   controls: ParamControlConfig[];        // one or more on this line, in order
   shows?: ParamControlShows;             // default 'expanded'
   when?: Condition;                      // the whole line shows only while this holds
+}
+export interface ParamControlMoreConfig {
+  paramControls?: ParamControlRowConfig[];   // what the More shows; default: one row, a control for the same param with all its options
 }
 
 // ── Content. A shelf is an item holding entries (Browse's "Artists to know"). Data decides which shelves and entries exist;
@@ -458,7 +467,11 @@ export interface AppConfig {
 // I. STATE (runtime, user-driven)
 // ═════════════════════════════════════════════════════════════
 export type Scoped<T> = T | Record<string, T>;   // a field with a state policy scope is stored per scope key
-export interface BackLayerState { expanded: boolean; headerHidden?: boolean }
+export interface BackLayerState {
+  expanded: boolean;
+  headerHidden?: boolean;
+  more?: ParamName[];                    // whose More is open, newest last (the panel shows the newest); concealing closes them all
+}
 export interface FrontLayerState { scroll: Scoped<number>; find?: FindState }   // collapse-first scroll offset (15.0): see PageScroll below
 export interface PageSheetState { expanded: boolean }
 export interface PageStateBase<C> {     // what every page's state holds
@@ -519,6 +532,7 @@ export interface PoppedEvent { type: 'popped'; target: Origin; openedFrom: ItemI
 export interface DeckSwitchedEvent { type: 'deckSwitched'; from: DeckId; to: DeckId }
 export interface ExpandedChangedEvent { type: 'expandedChanged'; expanded: boolean; sheet?: boolean }   // sheet: an app-bar page's inner sheet
 export interface HeaderVisibilityChangedEvent { type: 'headerVisibilityChanged'; hidden: boolean }
+export interface MoreChangedEvent { type: 'moreChanged'; name: ParamName; opened: boolean }   // a More opened or closed (name: its param)
 export interface ParamChangedEvent { type: 'paramChanged'; name: ParamName; motion: ParamMotion; direction: -1 | 0 | 1 }
 export interface LayerEvent { type: 'layerOpened' | 'layerClosed'; layer: LayerId }
 export interface OverlayEvent { type: 'overlayOpened' | 'overlayClosed'; id: string; result?: unknown }
@@ -531,7 +545,7 @@ export type QueuePosition = 'now' | 'next' | 'last';
 export interface QueuedEvent { type: 'queued'; position: QueuePosition; count: number; from: ItemId | null }   // 14.3: a playQueue (now) / enqueue (next | last) took effect
 export interface ExitEvent { type: 'exit' }
 export type ModelEvent =
-  | PushedEvent | PoppedEvent | DeckSwitchedEvent | ExpandedChangedEvent | HeaderVisibilityChangedEvent | ParamChangedEvent
+  | PushedEvent | PoppedEvent | DeckSwitchedEvent | ExpandedChangedEvent | HeaderVisibilityChangedEvent | MoreChangedEvent | ParamChangedEvent
   | LayerEvent | OverlayEvent | SessionChangedEvent | UrlChangedEvent | RetryRequestedEvent | FocusRestoreEvent | LaunchedEvent | ExitEvent | QueuedEvent;
 
 // ═════════════════════════════════════════════════════════════
@@ -554,7 +568,7 @@ export interface ContentView { state: ContentViewState; showItems: boolean; plac
 // ═════════════════════════════════════════════════════════════
 // L. QUERIES (derived — never stored)
 // ═════════════════════════════════════════════════════════════
-export type BackAction = 'closeOverlay' | 'closeDrawer' | 'collapse' | 'collapseSheet' | 'resetParam' | 'pop' | 'popLayer' | 'closeLayer' | 'startDeck' | 'undoRecord' | 'exit';
+export type BackAction = 'closeOverlay' | 'closeDrawer' | 'closeMore' | 'collapse' | 'collapseSheet' | 'resetParam' | 'pop' | 'popLayer' | 'closeLayer' | 'startDeck' | 'undoRecord' | 'exit';
 export type SideMode = 'beside' | 'modal' | 'auto';
 export type FrontPosition = 'expanded' | 'partial' | 'full';
 export interface ItemGroup { key: string; items: ItemData[] }
@@ -622,7 +636,7 @@ export interface Contract<C, V, I> { config: C; values: V; intents: I }
 export interface NoValues {}
 export type NoIntents = never;
 
-export type BackLayerRegionName = 'header' | 'actions' | 'controls' | 'panel';   // controls: the 'always' rows · panel: the 'expanded' rows
+export type BackLayerRegionName = 'header' | 'actions' | 'controls' | 'panel';   // controls: the 'always' rows · panel: the 'expanded' rows, or the open More
 export interface ParamControlOption {   // one choice, as a param control's values give it
   value: string;                         // 'jazz'
   label: string;                         // "Jazz", resolved in the current locale
@@ -657,13 +671,17 @@ export type HeaderItemContract = ButtonContract | LogoContract | TextContract | 
 export interface HeaderValues { title: string | null; progress: number }
 export interface HeaderChildren { items: HeaderItemContract[]; detail?: DetailContract }
 export interface HeaderContract extends Contract<HeaderConfig, HeaderValues, NoIntents> { children: HeaderChildren }
-// paramControl: value: the pending one if any, else applied · options: every choice, in config order (empty for plain text or a range) · label / placeholder: the param's, resolved · min / max: a number param's
-export interface ParamControlValues { value: ParamValue | null; options: ParamControlOption[]; pending: boolean; label: string | null; placeholder: string | null; min: number | null; max: number | null }
-export interface ParamControlContract extends Contract<ParamControlConfig, ParamControlValues, SetParamsIntent | ToggleParamIntent | ApplyParamsIntent | DiscardParamsIntent> {}
+// paramControl: value: the pending one if any, else applied · options: every choice, in config order (empty for plain text or a range) · label / placeholder: the param's, resolved · min / max: a number param's · more: it offers More (config more)
+export interface ParamControlValues { value: ParamValue | null; options: ParamControlOption[]; pending: boolean; label: string | null; placeholder: string | null; min: number | null; max: number | null; more: boolean }
+export interface ParamControlContract extends Contract<ParamControlConfig, ParamControlValues, SetParamsIntent | ToggleParamIntent | ApplyParamsIntent | DiscardParamsIntent | OpenMoreIntent> {}
 // paramControlRow: its controls whose when holds · label: its first control's (design decides whether the row draws it)
 export interface ParamControlRowValues { label: string | null }
 export interface ParamControlRowChildren { controls: ParamControlContract[] }
 export interface ParamControlRowContract extends Contract<ParamControlRowConfig, ParamControlRowValues, NoIntents> { children: ParamControlRowChildren }
+// paramControlMore: the open More: title: its param's label · paramControls: its rows (default: one row, a control for the same param)
+export interface ParamControlMoreValues { title: string | null }
+export interface ParamControlMoreChildren { paramControls: ParamControlRowContract[] }
+export interface ParamControlMoreContract extends Contract<ParamControlMoreConfig, ParamControlMoreValues, CloseMoreIntent> { children: ParamControlMoreChildren }
 // item: action: open it (ItemData.opens), else the presentation's itemAction · entries: a shelf's (absent on other items) (recursive: refers to itself)
 export interface ItemValues { title: string; subtitle: string | null; image: string | null; shape: ItemShape; current: boolean; navigable: boolean }
 export interface ItemChildren { entries?: ItemContract[] }
@@ -675,9 +693,9 @@ export interface ContentStateContract extends Contract<ContentConfig, ContentSta
 export interface ContentValues { view: ContentView; presentation: PresentationKey; groups: ItemGroup[]; placeholders: number }
 export interface ContentChildren { items: ItemContract[]; state?: ContentStateContract; banner?: ContentStateContract }
 export interface ContentContract extends Contract<ContentConfig, ContentValues, NoIntents> { children: ContentChildren }
-// backLayer: toggle only while toggleOnTap
+// backLayer: toggle only while toggleOnTap · more: the newest open More (BackLayerState.more)
 export interface BackLayerValues { expanded: boolean; headerHidden: boolean; regions: BackLayerRegionView[] }
-export interface BackLayerChildren { header: HeaderContract; actions: ButtonContract[]; paramControls: ParamControlRowContract[] }
+export interface BackLayerChildren { header: HeaderContract; actions: ButtonContract[]; paramControls: ParamControlRowContract[]; more?: ParamControlMoreContract }
 export interface BackLayerContract extends Contract<BackLayerConfig, BackLayerValues, ToggleExpandedIntent> { children: BackLayerChildren }
 // frontHeader: the built-in disclosure: the back layer's expanded + its label (texts backLayer.reveal / backLayer.conceal)
 export interface FrontHeaderValues { title: string; expanded: boolean; disclosureLabel: string }
@@ -726,7 +744,7 @@ export interface SplashContract extends Contract<LaunchConfig, SplashValues, NoI
 export interface OverlayValues { title: string | null; body: string | null; confirm: string | null; cancel: string | null; text: string | null; action: string | null }
 export interface OverlayChildren { items?: ButtonContract[] }
 export interface OverlayContract extends Contract<OverlaySpec, OverlayValues, CloseOverlayIntent> { children: OverlayChildren }
-export type ContractName = 'button' | 'logo' | 'text' | 'switch' | 'find' | 'detail' | 'seek' | 'header' | 'paramControl' | 'paramControlRow' | 'item' | 'contentState' | 'content' | 'backLayer' | 'frontHeader' | 'frontLayer' | 'backdropPage' | 'pageSheet' | 'appBarPage' | 'sheetLayer' | 'drawerLayer' | 'fullscreenLayer' | 'destination' | 'navigation' | 'splash' | 'overlay';
+export type ContractName = 'button' | 'logo' | 'text' | 'switch' | 'find' | 'detail' | 'seek' | 'header' | 'paramControl' | 'paramControlRow' | 'paramControlMore' | 'item' | 'contentState' | 'content' | 'backLayer' | 'frontHeader' | 'frontLayer' | 'backdropPage' | 'pageSheet' | 'appBarPage' | 'sheetLayer' | 'drawerLayer' | 'fullscreenLayer' | 'destination' | 'navigation' | 'splash' | 'overlay';
 // </contracts:generated>
 
 // ── The contract tree (core/contracts.js): this moment's drawn config objects, each with what composition hired to draw it
@@ -796,10 +814,11 @@ export type ComponentRegistry = Record<ComponentId, ComponentDef>;
 export interface StackPattern { event: 'pushed' | 'popped'; kind?: PageConfig['kind'] | 'layerPage' }
 export interface SurfacePattern { event: 'deckSwitched' | 'expandedChanged' | 'layerOpened' | 'layerClosed' | 'overlayOpened' | 'overlayClosed'; layer?: LayerId }
 export interface ParamPattern { event: 'paramChanged'; motion?: ParamMotion }
+export interface MorePattern { event: 'moreChanged'; opened?: boolean }
 export interface SessionPattern { event: 'sessionChanged'; signedIn?: boolean }
 export interface QueuedPattern { event: 'queued'; position?: QueuePosition }
 export interface PlainPattern { event: 'headerVisibilityChanged' | 'launched' | 'urlChanged' | 'retryRequested' | 'focusRestore' | 'exit' }
-export type ChoreoPattern = StackPattern | SurfacePattern | ParamPattern | SessionPattern | QueuedPattern | PlainPattern;   // every field given must match the event
+export type ChoreoPattern = StackPattern | SurfacePattern | ParamPattern | MorePattern | SessionPattern | QueuedPattern | PlainPattern;   // every field given must match the event
 
 // ── 17.0 MOTION AS STEPS: choreography says which piece does what, when. Platforms implement the four blocks (tween, travel, swap,
 // reveal) once and play any rule. Measures resolve on the platform, after the commit, at rest. Directions are logical (RTL mirrors).

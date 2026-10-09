@@ -1773,6 +1773,14 @@
     {
      "event": "change",
      "send": "setParams"
+    },
+    {
+     "prop": "moreLabel",
+     "text": "more.open"
+    },
+    {
+     "event": "more",
+     "send": "openMore"
     }
    ]
   },
@@ -1784,6 +1792,14 @@
     {
      "event": "toggle",
      "send": "toggleParam"
+    },
+    {
+     "prop": "moreLabel",
+     "text": "more.open"
+    },
+    {
+     "event": "more",
+     "send": "openMore"
     }
    ]
   },
@@ -1871,6 +1887,51 @@
        "child": "controls"
       }
      ]
+    }
+   ]
+  },
+  {
+   "name": "more",
+   "hires": "morePanel",
+   "contract": "paramControlMore",
+   "clauses": [
+    {
+     "prop": "closeLabel",
+     "text": "more.close"
+    },
+    {
+     "event": "close",
+     "send": "closeMore"
+    },
+    {
+     "slot": "content",
+     "fill": [
+      {
+       "child": "paramControls"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "checklist",
+   "hires": "checklist",
+   "contract": "paramControl",
+   "clauses": [
+    {
+     "event": "toggle",
+     "send": "toggleParam"
+    }
+   ]
+  },
+  {
+   "name": "checklistOne",
+   "hires": "checklist",
+   "contract": "paramControl",
+   "clauses": [
+    {
+     "event": "change",
+     "send": "setParams"
     }
    ]
   },
@@ -2488,6 +2549,32 @@
   {
    "contract": "paramControlRow",
    "hire": "paramControlRow"
+  },
+  {
+   "contract": "paramControlMore",
+   "hire": "more"
+  },
+  {
+   "contract": "paramControl",
+   "within": [
+    "paramControlRow",
+    "paramControlMore"
+   ],
+   "param": {
+    "type": "choices"
+   },
+   "hire": "checklist"
+  },
+  {
+   "contract": "paramControl",
+   "within": [
+    "paramControlRow",
+    "paramControlMore"
+   ],
+   "param": {
+    "type": "choice"
+   },
+   "hire": "checklistOne"
   },
   {
    "contract": "header",

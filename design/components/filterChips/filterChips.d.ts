@@ -5,4 +5,6 @@ export type ParamValue = string | string[] | boolean | number | [number, number]
 export interface FilterChipsProps {
   value: ParamValue;
   options: { value: string; label: string }[];
+  more: boolean;
+  moreLabel: string;
 }

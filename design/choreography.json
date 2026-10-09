@@ -239,6 +239,24 @@
     },
     {
       "on": {
+        "event": "moreChanged"
+      },
+      "steps": [
+        {
+          "do": "kind",
+          "kind": "move",
+          "property": "frontLayer.top",
+          "ms": {
+            "token": "motion.duration.medium"
+          },
+          "easing": {
+            "token": "motion.easing.standard"
+          }
+        }
+      ]
+    },
+    {
+      "on": {
         "event": "paramChanged",
         "motion": "slide"
       },

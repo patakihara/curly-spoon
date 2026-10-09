@@ -1,0 +1,42 @@
+{
+  "extends": "listItem",
+  "variant": true,
+  "props": {
+    "text": "string",
+    "selected": "boolean"
+  },
+  "visuals": {
+    "height": {
+      "default": 44
+    },
+    "gap": {
+      "default": 12
+    },
+    "fontSize": {
+      "default": 15
+    },
+    "padX": {
+      "default": 8
+    },
+    "radius": {
+      "default": {
+        "token": "radius.sm"
+      }
+    },
+    "icon": {
+      "default": {
+        "token": "icon.check"
+      }
+    },
+    "iconSize": {
+      "default": 20
+    },
+    "iconOpacity": {
+      "default": 0,
+      "selected": 1
+    }
+  },
+  "statuses": [
+    "selected"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "props": {
+    "title": "string",
+    "closeLabel": "string",
+    "content": "slot"
+  },
+  "events": [
+    {
+      "name": "close",
+      "payload": null
+    }
+  ],
+  "visuals": {
+    "height": {
+      "default": 48
+    },
+    "gap": {
+      "default": 8
+    },
+    "closeIcon": {
+      "default": {
+        "token": "icon.close"
+      }
+    },
+    "fontFamily": {
+      "default": "inherit"
+    },
+    "fontSize": {
+      "default": 16
+    },
+    "fontWeight": {
+      "default": 500
+    },
+    "closeOffset": {
+      "default": -12
+    }
+  }
+}

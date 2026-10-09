@@ -539,6 +539,18 @@ Each was my call; say if you disagree and I redo it.
     paramChange); submitting does. Looks the same in all 16 screens.
 43. Layout counts the controls region as 'always' rows × backLayer's basicHeight (60); a row's `when` is not counted
     (Layout has no conditions). Every page today has one 'always' row.
+44. More (Sofia, 2026-10-10, approved as discussed): a control may offer "More" (`ParamControlConfig.more:
+    { paramControls? }`; default: one row, a control for the same param with all its options). Which More is open is
+    back-layer state (`BackLayerState.more`: params, newest last); intents openMore { name } / closeMore; event
+    moreChanged { name, opened } (choreography: the same front-layer move as expandedChanged). Opening reveals the back
+    layer; back and up close the newest More before anything else; concealing closes every More (however it is
+    concealed). The open More fills the panel region in place of the 'expanded' rows (my call: header, actions and the
+    'always' rows stay; the More's own bar says what it is). Its contract `paramControlMore` (title: the param's label;
+    closeMore; children: its rows) is drawn by a new design component morePanel (✕ + title; its rows follow it, like a
+    panelRow's); inside a More, choice / choices params are drawn by a new checklist (one checkRow per option, a check
+    on the selected). How many options a chip row shows before its More chip is design (filterChips `moreAfter`, 4);
+    their order is config's; the chip's word is the design text `more.open`. Rule: at most one control per page param
+    has a More. Sample: Library's genre.
 
 ### Switchover (2026-10-09): done, with what is still open
 The mockup runs on 18.0 (config + composition + design → contract tree → shell). Checked in headless Chrome against the
@@ -593,8 +605,10 @@ fields, not nodes · 6 verify ✓ (screens above).
   playing's body, the drawer, nav, peek, overlays, content items, the app-bar form.
 - 18.0: param controls (decision 41): the 'always' rows are drawn by the shell directly (no row label, the
   paramControlRow hire unused there); controls in one row share its width equally; no page has two controls in a row yet.
-  "More" (a control's own view in the back layer, ✕ to close) and the design field for the component each option is
-  drawn as (tabBar → tab, filterChips → chip, suggestionList → suggestionRow) are the next two steps.
+  The design field for the component each option is drawn as (tabBar → tab, filterChips → chip, suggestionList →
+  suggestionRow, checklist → checkRow) is the next step.
+- 18.0: More (decision 44): only chip rows show a More chip (tab bars, dropdowns and the rest have no More event); a
+  More chip shows even when every option already fits. No URL or snapshot keeps which More is open.
 - 18.0: the free-component merge tree is proposed, not applied (69 design components).
 - Design checks are not shown on the Invariants page yet (needs Invariants.dc.html).
 - Still in the player (ordering, not yet params): detail transition order (out → swap → front move + in → header parts), flight cut sources (top: header / bars above the middle; bottom: peek / nav bar), app-bar sheet start (front layer top), the reveal band shape.

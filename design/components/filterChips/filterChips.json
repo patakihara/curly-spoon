@@ -1,7 +1,9 @@
 {
   "props": {
     "value": "value",
-    "options": "options"
+    "options": "options",
+    "more": "boolean",
+    "moreLabel": "string"
   },
   "placeholder": {
     "visuals": {
@@ -41,6 +43,9 @@
     },
     "inset": {
       "default": 16
+    },
+    "moreAfter": {
+      "default": 4
     }
   },
   "events": [
@@ -51,6 +56,14 @@
     {
       "name": "toggle",
       "payload": "string"
+    },
+    {
+      "name": "more",
+      "payload": null
     }
+  ],
+  "optional": [
+    "more",
+    "moreLabel"
   ]
 }

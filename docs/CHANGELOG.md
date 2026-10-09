@@ -56,9 +56,15 @@ _Unreleased (no contract change):_ web: the shell draws no UI itself — FrontLa
   paramControlRow (label: its first control's). Back-layer regions: header · actions · controls · panel. Design:
   suggestionList (new), filterChips event toggle, backLayer / bottomSheet slots renamed. Config: Search's draft param
   `qd` removed (`q` is 'onApply').
+- More (additive): ParamControlConfig.more (ParamControlMoreConfig { paramControls? }), BackLayerState.more (open Mores,
+  newest last), intents openMore / closeMore, event moreChanged (MorePattern), BackAction 'closeMore', contract
+  paramControlMore (title; closeMore; children paramControls), paramControl values `more` and intent openMore,
+  backLayer child `more`. Design: morePanel, checklist, checkRow (new), filterChips prop more / moreLabel, event more,
+  visual moreAfter, backLayer slot more, token icon.check, texts more.open / more.close, choreography rule moreChanged.
+  Config: Library's genre has a More. Also: bottomSheet.d.ts regenerated (its slot rename had been missed).
 - Platform manifest: web lists backdropPage, appBarPage, sheetLayer, fullscreenLayer (composition hires them).
 - Rules: api/composition-rules.js (13, all pass) runs on the Invariants page; 19 ref / role invariants deleted, the rest
-  ported to 18.0 shapes: 103 pass · 3 skipped · 0 fail (still 103 after param controls).
+  ported to 18.0 shapes: 103 pass · 3 skipped · 0 fail (still 103 after param controls; 105 after More, its two rules added).
 
 ## 17.0.0 — motion as steps (major, in progress)
 - API (§N): choreography says which piece does what, when. Four blocks every platform implements once: `TweenStep` (props of a piece: opacity, translate, scale, size, radius, colour, shadow, clip, scroll, visibility; keyframes, stagger, loop, hold), `TravelStep` (a copy flies to another piece / measure; path straight | arc; end vanish | join; from whole | visible with `cutBy`), `SwapStep` (fade through around the commit; match slot+content; enter stagger; axis), `RevealStep` (circle · rect → rect · follow an edge). `UseStep` + `Choreography.sequences` (named step lists with params). Pieces: `PieceRef` ('<role>.<slot|part>' · '<component>.<part>' · source / target · a step id; '[]' lists). Measures (`RectOf`, `EdgeOf`, `DistanceOf`, `CentreOn`, `PressPoint`, `ScrollInto`), `ByEvent` (an event field picks), clocks (`TimeClock` with `Anchor` on other steps · `ProgressClock` on bar / scroll / contentOffset — input-driven, applied directly), `MotionCondition` (+ `EventIs`). `ChoreoRule { on, steps, reduced? }`, `Choreography { rules, reduced, sequences? }` (was transition / reducedMotion). `ComponentDef.motion: Record<string, Step[]>`, `ComponentDef.parts`. `QueuedPattern` joins ChoreoPattern; a pattern matches only when every field it gives agrees (core ignored queued `position` before). Layout `stepsFor`, `componentSteps`. Also: `rotate` prop and component visuals as props (`PropTracks` keys); `FromValue` ('current' · 'previous'); `Wander` (roaming value, level meter); `Loop.period` (per item); `PieceShown` condition; `StepTrigger` on tween / reveal (component motion: change · press · release · loop); pieces `origin`, '<component>' (its visible instance), '@before' / '@after'. Removed: `MotionTemplate`, `TransitionTemplate`.

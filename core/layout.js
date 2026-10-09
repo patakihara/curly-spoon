@@ -38,7 +38,7 @@ export function geometry(state, config, q, look) {
 }
 
 // back-layer regions (18.0: fixed) — header · actions · controls (the 'always' param-control rows) show concealed and expanded and
-// stay put; panel (the 'expanded' rows) shows only expanded
+// stay put; panel (the 'expanded' rows, or the open More in their place) shows only expanded
 // a header with a detail shrinks from expandedHeight to height over the first (expandedHeight − height) of scroll (progress 0 → 1; collapse-first, 15.0)
 const scrollOf = page => { const pol = page.config.kind === 'appBar' ? page.config.statePolicy.scroll : page.config.statePolicy.front.scroll, v = page.config.kind === 'appBar' ? page.scroll : page.front.scroll; if (!pol.scope) return +v || 0; const k = pol.scope.split('.').reduce((x, y) => x == null ? x : x[y], page); return v && k in v ? +v[k] || 0 : +pol.default || 0; };
 const progressOf = (scroll, from, to) => from > to ? Math.max(0, Math.min(1, scroll / (from - to))) : 1;
@@ -57,18 +57,18 @@ function regionHeights(page, look, measured) {
     header: barView(page, look).height,
     actions: (B.actions || []).length ? look.size(at, 'actionsHeight') : 0,
     controls: rowsShown(B, 'always').length * look.size(at, 'basicHeight'),   // each 'always' row: the design's row height
-    panel: rowsShown(B, 'expanded').length ? +((measured || {}).panel || 0) : 0,
+    panel: has(page, 'panel') ? +((measured || {}).panel || 0) : 0,
   };
 }
-// the regions this back layer's config fills
-const has = (B, region) => region === 'header' || (region === 'actions' ? (B.actions || []).length > 0 : rowsShown(B, region === 'controls' ? 'always' : 'expanded').length > 0);
+// the regions this back layer fills: from its config (an open More fills the panel)
+const has = (page, region) => { const B = page.config.back; return region === 'header' || (region === 'actions' ? (B.actions || []).length > 0 : region === 'controls' ? rowsShown(B, 'always').length > 0 : rowsShown(B, 'expanded').length > 0 || (page.back.more || []).length > 0); };
 // a hidden back-layer header lifts everything below it by its height
 const headerLift = (page, H) => page.back.headerHidden ? H.header : 0;
 export function regions(page, look, measured) {
   const ex = page.back.expanded, H = regionHeights(page, look, measured), lift = headerLift(page, H), out = [];
   let top = -lift;
   for (const region of BACK_REGIONS) {
-    if (!has(page.config.back, region)) continue;
+    if (!has(page, region)) continue;
     const panel = region === 'panel';
     out.push({ region, top, height: H[region], opacity: panel && !ex ? 0 : 1, interactive: !panel || ex });
     top += H[region];

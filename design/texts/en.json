@@ -17,5 +17,7 @@
   "player.nothing": "Nothing playing",
   "splash.loading": "Loading…",
   "range.from": "From",
-  "range.to": "To"
+  "range.to": "To",
+  "more.open": "More",
+  "more.close": "Close"
 }
