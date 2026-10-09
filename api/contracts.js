@@ -18,7 +18,7 @@ export const UNIONS = {
 export const CONTRACTS = {
   // items
   button: { config: 'ButtonItem', values: { label: 'string', checked: 'boolean | null', state: 'string | null', interaction: 'InteractionView' }, intents: ['action'] },
-  logo: { config: 'LogoItem', values: { label: 'string', playing: 'boolean' }, intents: [] },
+  logo: { config: 'LogoItem', values: { label: 'string', playing: 'boolean' }, intents: ['action'] },
   text: { config: 'TextItem', values: { text: 'string' }, intents: [] },
   switch: { config: 'SwitchItem', values: { label: 'string', value: 'ParamValue | null', next: 'ParamValue | null', options: 'ParamOption[]' }, intents: ['setParams'], note: 'steps its param to the next option' },
   find: { config: 'FindItem', values: { open: 'boolean', value: 'string', placeholder: 'string', closeLabel: 'string' }, intents: ['openFind', 'closeFind', 'setParams'], note: 'closeLabel: text find.close' },

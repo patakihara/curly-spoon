@@ -259,6 +259,12 @@
         "name": "logo",
         "label": {
          "text": "app.name"
+        },
+        "action": {
+         "nav": {
+          "type": "openLayer",
+          "layer": "menu"
+         }
         }
        },
        {
@@ -518,6 +524,12 @@
         "name": "logo",
         "label": {
          "text": "app.name"
+        },
+        "action": {
+         "nav": {
+          "type": "openLayer",
+          "layer": "menu"
+         }
         }
        },
        {
@@ -910,6 +922,12 @@
         "name": "logo",
         "label": {
          "text": "app.name"
+        },
+        "action": {
+         "nav": {
+          "type": "openLayer",
+          "layer": "menu"
+         }
         }
        },
        {

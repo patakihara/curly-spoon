@@ -100,7 +100,7 @@ ContentConfig { dataSource, params?, view?: ParamName, presentations: Presentati
 ```
 
 ### Headers ✅ (18.0: one HeaderConfig, items as data)
-`HeaderConfig { items: HeaderItem[], detail? }` serves the back layer, app bars and the peek; the front header adds a title, and its disclosure is built in. Items are plain data — `button · logo · text · switch · find` in headers, `button · text · detail · seek` in bodies — each with a `name`, so composition can place a component by kind or name. Items whose `when` fails stay drawn, hidden (`shown: false`).
+`HeaderConfig { items: HeaderItem[], detail? }` serves the back layer, app bars and the peek; the front header adds a title, and its disclosure is built in. Items are plain data — `button · logo · text · switch · find` in headers, `button · text · detail · seek` in bodies — each with a `name`, so composition can place a component by kind or name. Items whose `when` fails stay drawn, hidden (`shown: false`). A logo may carry an `action`; whether its press sends it is composition's call (compact only in the sample app).
 
 ### Policy ✅ (metastate config — mirrors state shape)
 ```

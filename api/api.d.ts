@@ -269,7 +269,7 @@ export interface ButtonItem {
   checked?: PropValue;                   // a toggle's on / off (shuffle, repeat)
   state?: PropValue;                     // a name for what the button shows now ('pause' | 'playNow', 'repeat' | 'repeatOne'); composition picks tokens by it
 }
-export interface LogoItem { kind: 'logo'; name: ItemName; label: PropValue; when?: Condition }   // the brand; reacts to the player
+export interface LogoItem { kind: 'logo'; name: ItemName; label: PropValue; action?: Actions; when?: Condition }   // the brand; reacts to the player; an action makes it pressable (where composition maps its press)
 export interface TextItem { kind: 'text'; name: ItemName; text: PropValue; when?: Condition }
 export interface SwitchItem { kind: 'switch'; name: ItemName; param: ParamName; label: PropValue; when?: Condition }   // steps a choice param to its next option
 export interface FindItem { kind: 'find'; name: ItemName; param: ParamName; placeholder: PropValue; when?: Condition }   // a local search over the content; open / closed is engine state (FindState)
@@ -620,7 +620,7 @@ export interface ButtonValues { label: string; checked: boolean | null; state: s
 export interface ButtonContract extends Contract<ButtonItem, ButtonValues, Actions> {}
 // logo
 export interface LogoValues { label: string; playing: boolean }
-export interface LogoContract extends Contract<LogoItem, LogoValues, NoIntents> {}
+export interface LogoContract extends Contract<LogoItem, LogoValues, Actions> {}
 // text
 export interface TextValues { text: string }
 export interface TextContract extends Contract<TextItem, TextValues, NoIntents> {}

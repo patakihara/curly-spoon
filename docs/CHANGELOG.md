@@ -35,6 +35,8 @@ _Unreleased (no contract change):_ web: the shell draws no UI itself — FrontLa
   are slots; detailHeader gains peek / player layouts; size tokens and visuals that config held; range texts move to
   design texts.
 - AppBarPageConfig: content and body are "at most one" (the episode page has neither).
+- LogoItem gains optional `action`; the logo contract sends `action` (additive). Config: the decks' logos open the menu
+  drawer; composition maps the press only on compact (pressableLogo), so on wide the logo stays inert.
 - Design: `implements` / `accepts` keys removed from components; "interactive" is inheritance (extends interactive).
 - Platform manifest: web lists backdropPage, appBarPage, sheetLayer, fullscreenLayer (composition hires them).
 - Rules: api/composition-rules.js (13, all pass) runs on the Invariants page; 19 ref / role invariants deleted, the rest

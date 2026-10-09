@@ -509,6 +509,10 @@ Each was my call; say if you disagree and I redo it.
     ignored parts of it. Config now matches today's look: Dedede's and the Recent / Saved pages' search fields, play
     buttons and action-less ⋮ are removed; Dedede's first page keeps `up` (back arrow) with closeLayer, since up does
     nothing on a layer's first page; composition hires closeButton for Now playing's collapse on wide.
+37. The logo opens the drawer on compact (Sofia, 2026-10-09: the ≡ at the edge is hard to hit). API 18.0.0 amended:
+    LogoItem gains optional `action`, the logo contract sends `action`. Actions have no conditions, so config gives the
+    decks' logos the action and composition decides per layout: pressableLogo (press → action) on compact, the inert
+    logo elsewhere. The drawer's own logo has no action. The ≡ stays.
 
 ### Switchover (2026-10-09): done, with what is still open
 The mockup runs on 18.0 (config + composition + design → contract tree → shell). Checked in headless Chrome against the

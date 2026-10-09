@@ -813,6 +813,17 @@
    "clauses": []
   },
   {
+   "name": "pressableLogo",
+   "hires": "logo",
+   "contract": "logo",
+   "clauses": [
+    {
+     "event": "press",
+     "send": "action"
+    }
+   ]
+  },
+  {
    "name": "playNowButton",
    "hires": "button",
    "contract": "button",
@@ -2475,6 +2486,14 @@
   {
    "contract": "frontHeader",
    "hire": "frontHeader"
+  },
+  {
+   "contract": "logo",
+   "env": {
+    "env": "layout",
+    "equals": "compact"
+   },
+   "hire": "pressableLogo"
   },
   {
    "contract": "logo",
