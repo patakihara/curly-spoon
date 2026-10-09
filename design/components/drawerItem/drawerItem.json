@@ -70,6 +70,10 @@
       "default": {
         "role": "content"
       }
+    },
+    "scale": {
+      "default": 1,
+      "pressed": 1
     }
   },
   "variants": {

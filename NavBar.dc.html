@@ -7,10 +7,10 @@
 </head>
 <body>
 <x-dc>
-<div data-occluder="bottom" style="height:{{ h }}px;display:flex;background:{{ fill }}"><sc-for list="{{ items }}" as="n" hint-placeholder-count="3"><div style="flex:1;display:flex"><dc-import name="NavItem" dc-props="{{ n.ix }}" form="bar" text="{{ n.label }}" icon="{{ n.icon }}" style="width:100%;height:{{ h }}px" hint-size="100%,56px"></dc-import></div></sc-for></div>
+<div data-occluder="bottom" style="height:{{ h }}px;display:flex;background:{{ fill }}"><sc-for list="{{ items }}" as="n" hint-placeholder-count="3"><div style="flex:1;display:flex"><dc-import name="NavItem" dc-props="{{ n.props }}" form="bar" style="width:100%;height:{{ h }}px" hint-size="100%,56px"></dc-import></div></sc-for></div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:56},&quot;items&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ ix: object; label: string; icon: string }[]&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
-// Web implementation of design component navBar (role navigation, compact). Props: items [{ ix, label, icon }] (NavItem props from the shell), visuals (height, fill). Position / slide come from the shell. No values of its own.
+// Web implementation of design component navBar (role navigation, compact). Props: items [{ props }] (destination nodes drawn by platforms/web/draw.js), visuals (height, fill). Position / slide come from the shell. No values of its own.
 class Component extends DCLogic {
   renderVals() { const v = this.props.visuals || {}; return { items: this.props.items || [], h: +v.height || 56, fill: v.fill || 'transparent' }; }
 }

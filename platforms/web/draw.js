@@ -1,6 +1,7 @@
 // Backdrop Nav — web: contract nodes → the DCs that draw them (platform plumbing; NOTES decision 32).
-// Which DC draws a hired free component comes from design, not from a hand list: a component's own DC is named after it
-// (frontLayer → FrontLayer); a variant (design `variant: true`) is drawn by its parent's DC. Each DC is fed:
+// Which DC draws a hired free component comes from design and the platform manifest, not from a hand list: the nearest
+// component up its extends chain that platforms/web.json implements, its DC named after it (frontLayer → FrontLayer) —
+// so a variant the platform doesn't implement itself is drawn by its parent's DC. Each DC is fed:
 //   the node's props (design prop names, clauses resolved) · component (the hired id, so a parent's DC can draw its variants)
 //   · visuals (resolved for the node) · its interaction (only for components that extend interactive) · on (one handler per
 //   event the node maps) · slots (each slot's nodes, drawn the same way).
@@ -10,10 +11,9 @@
 
 const pascal = id => id[0].toUpperCase() + id.slice(1);
 
-export function dcOf(specs, id) {
-  let c = id;
-  while (c && specs.components[c] && specs.components[c].variant) c = specs.components[c].extends;
-  return c && specs.components[c] ? pascal(c) : null;
+export function dcOf(specs, id, implemented) {
+  for (let c = id; c; c = (specs.components[c] || {}).extends) if (implemented.includes(c)) return pascal(c);
+  return null;
 }
 
 export function extendsOf(specs, id, base) {
@@ -21,10 +21,10 @@ export function extendsOf(specs, id, base) {
   return false;
 }
 
-// ctx: { specs, visuals(node, surface) → resolved visuals, ix(node, surface) → interaction props, emit(node, event, payload, domEvent) }
+// ctx: { specs, implemented (the manifest's component ids), visuals(node, surface) → resolved visuals, ix(node, surface) → interaction props, emit(node, event, payload, domEvent) }
 export function drawNode(n, ctx, surface) {
   if (!n || !n.component) return null;
-  const dc = dcOf(ctx.specs, n.component), inner = (ctx.specs.components[n.component] || {}).provides ? n.component : surface;
+  const dc = dcOf(ctx.specs, n.component, ctx.implemented), inner = (ctx.specs.components[n.component] || {}).provides ? n.component : surface;
   const props = { ...n.props, component: n.component, visuals: ctx.visuals(n, surface) };
   if (extendsOf(ctx.specs, n.component, 'interactive')) Object.assign(props, ctx.ix(n, surface));
   props.on = Object.fromEntries(Object.keys(n.events || {}).map(ev => [ev, (payload, e) => ctx.emit(n, ev, payload, e)]));

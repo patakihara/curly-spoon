@@ -513,6 +513,11 @@ Each was my call; say if you disagree and I redo it.
     LogoItem gains optional `action`, the logo contract sends `action`. Actions have no conditions, so config gives the
     decks' logos the action and composition decides per layout: pressableLogo (press → action) on compact, the inert
     logo elsewhere. The drawer's own logo has no action. The ≡ stays.
+38. drawerItem's pressed scale is 1 in design (like listItem): the shell had given drawer rows listItem's interaction
+    look, and drawing them as drawerItem would have inherited navItem's 0.97 press shrink. Today's feel kept.
+39. Decision 35 corrected: the platform passes Symbol's visuals resolved without a surface (no colour, so the glyph
+    inherits its parent's ink, as before) and the parent sets padEnd 0 (it spaces its own children). The first version
+    passed back-layer visuals: white and 8px after the glyph. Fixed in the same day's work (search, drawer, rail).
 
 ### Switchover (2026-10-09): done, with what is still open
 The mockup runs on 18.0 (config + composition + design → contract tree → shell). Checked in headless Chrome against the
@@ -560,9 +565,11 @@ fields, not nodes · 6 verify ✓ (screens above).
   is gone; Morph draws from its from / to slots (its glyph is the from button's icon, no longer a literal). Slice 2
   done: layer headers (Now playing, Dedede, Account) are drawn from their nodes on their layer's surface; the hand-built
   buttons and the literal more_vert are gone. Sofia chose today's look except Dedede's first page gets back (decision
-  36). Still shell-chosen: panel rows, Now
-  playing's body, the drawer, nav, peek, overlays, content items, the app-bar form; IconButton still accepts `mark`
-  for the nav's logo until the nav slice.
+  36). Slice 3 done: navigation (nav bar, rail top / destinations / bottom) and the drawer's rows are drawn from their
+  nodes; draw.js picks each node's DC as the nearest component up its extends chain that platforms/web.json implements
+  (drawerItem and suggestionRow added there, being their own DCs); IconButton's `mark` flag is gone. Still
+  shell-chosen: panel rows, Now
+  playing's body, the drawer, nav, peek, overlays, content items, the app-bar form.
 - 18.0: the free-component merge tree is proposed, not applied (69 design components).
 - Design checks are not shown on the Invariants page yet (needs Invariants.dc.html).
 - Still in the player (ordering, not yet params): detail transition order (out → swap → front move + in → header parts), flight cut sources (top: header / bars above the middle; bottom: peek / nav bar), app-bar sheet start (front layer top), the reveal band shape.

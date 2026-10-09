@@ -8,22 +8,22 @@
 <body>
 <x-dc>
 <div ref="{{ rootRef }}" style="width:{{ rail.w }}px;height:100%;box-sizing:border-box;padding:{{ rail.padY }}px 0;background:{{ fill }};display:flex;flex-direction:column;align-items:{{ rail.align }};gap:{{ rail.gap }}px;overflow:hidden;box-shadow:{{ rail.shadow }};transition:width {{ rail.ms }}ms {{ rail.ease }}">
-  <sc-for list="{{ top }}" as="rt" hint-placeholder-count="2"><div style="flex:none;display:flex;color:{{ ink }};padding:0 {{ rail.padX }}px"><dc-import name="IconButton" dc-props="{{ rt.ix }}" icon="{{ rt.icon }}" mark="{{ rt.mark }}" hint-size="48px,48px"></dc-import></div></sc-for>
+  <sc-for list="{{ top }}" as="rt" hint-placeholder-count="2"><div style="flex:none;display:flex;color:{{ ink }};padding:0 {{ rail.padX }}px"><dc-import name="IconButton" dc-props="{{ rt.props }}" hint-size="48px,48px"></dc-import></div></sc-for>
   <div style="height:{{ rail.groupGap }}px;flex:none"></div>
   <sc-for list="{{ nav }}" as="n" hint-placeholder-count="3">
-    <sc-if value="{{ rail.collapsed }}" hint-placeholder-val="{{ true }}"><div style="flex:none;display:flex;justify-content:center"><dc-import name="NavItem" dc-props="{{ n.ix }}" form="rail" text="{{ n.label }}" icon="{{ n.icon }}" hint-size="64px,56px"></dc-import></div></sc-if>
-    <sc-if value="{{ rail.ex }}" hint-placeholder-val="{{ false }}"><div style="flex:none;display:flex;flex-direction:column;padding:0 {{ rail.padX }}px"><dc-import name="DrawerItem" ix="{{ n.ix }}" icon="{{ n.icon }}" text="{{ n.label }}" filled="{{ n.fill }}" bg="{{ n.pill }}" width="100%" visuals="{{ itemVis }}" hint-size="100%,48px"></dc-import></div></sc-if>
+    <sc-if value="{{ rail.collapsed }}" hint-placeholder-val="{{ true }}"><div style="flex:none;display:flex;justify-content:center"><dc-import name="NavItem" dc-props="{{ n.props }}" form="rail" hint-size="64px,56px"></dc-import></div></sc-if>
+    <sc-if value="{{ rail.ex }}" hint-placeholder-val="{{ false }}"><div style="flex:none;display:flex;flex-direction:column;padding:0 {{ rail.padX }}px"><dc-import name="DrawerItem" dc-props="{{ n.props }}" filled="{{ n.fill }}" bg="{{ n.pill }}" width="100%" visuals="{{ itemVis }}" symbol-visuals="{{ symbolVisuals }}" hint-size="100%,48px"></dc-import></div></sc-if>
   </sc-for>
   <div style="flex:1"></div>
-  <sc-for list="{{ bottom }}" as="rb" hint-placeholder-count="2"><div style="flex:none;display:flex;flex-direction:column;padding:0 {{ rail.padX }}px"><dc-import name="DrawerItem" ix="{{ rb.ix }}" icon="{{ rb.icon }}" text="{{ rb.text }}" collapsed="{{ rail.collapsed }}" width="100%" motion="{{ rail.mo }}" visuals="{{ itemVis }}" hint-size="48px,48px"></dc-import></div></sc-for>
+  <sc-for list="{{ bottom }}" as="rb" hint-placeholder-count="2"><div style="flex:none;display:flex;flex-direction:column;padding:0 {{ rail.padX }}px"><dc-import name="DrawerItem" dc-props="{{ rb.props }}" collapsed="{{ rail.collapsed }}" width="100%" width-motion="{{ rail.mo }}" visuals="{{ itemVis }}" symbol-visuals="{{ symbolVisuals }}" hint-size="48px,48px"></dc-import></div></sc-for>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:240,&quot;height&quot;:600},&quot;rail&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;top&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object[]&quot;},&quot;nav&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object[]&quot;},&quot;bottom&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object[]&quot;},&quot;itemVis&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;},&quot;rootRef&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;}}">
 // Web implementation of design component navRail (role navigation, wide; slots top / bottom; expanded by the rail-form menu layer).
-// Props: rail (resolved geometry: w, padY, gap, groupGap, padX, align, shadow, ms, ease, mo, collapsed, ex — from navRail visuals + motion), top / nav / bottom (item props from the shell),
+// Props: rail (resolved geometry: w, padY, gap, groupGap, padX, align, shadow, ms, ease, mo, collapsed, ex — from navRail visuals + motion), top / nav / bottom (nodes drawn by platforms/web/draw.js: { props }, plus nav's fill / pill), symbolVisuals,
 // itemVis (drawerItem visuals, size rail), visuals (navRail: fill, ink), rootRef. No values of its own.
 class Component extends DCLogic {
-  renderVals() { const p = this.props, v = p.visuals || {}; return { rootRef: p.rootRef || null, rail: p.rail || {}, top: p.top || [], nav: p.nav || [], bottom: p.bottom || [], itemVis: p.itemVis || {}, fill: v.fill || 'transparent', ink: v.ink || 'inherit' }; }
+  renderVals() { const p = this.props, v = p.visuals || {}; return { rootRef: p.rootRef || null, rail: p.rail || {}, top: p.top || [], nav: p.nav || [], bottom: p.bottom || [], itemVis: p.itemVis || {}, symbolVisuals: p.symbolVisuals || {}, fill: v.fill || 'transparent', ink: v.ink || 'inherit' }; }
 }
 </script>
 </body>

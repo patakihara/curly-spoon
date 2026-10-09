@@ -61,7 +61,7 @@
 
 
     <sc-if value="{{ showRail }}" hint-placeholder-val="{{ false }}">
-      <div style="position:absolute;left:0;top:0;bottom:0;display:flex"><dc-import name="NavRail" root-ref="{{ railRef }}" rail="{{ rail }}" top="{{ railTop }}" nav="{{ railNav }}" bottom="{{ railBottom }}" item-vis="{{ railItemVis }}" visuals="{{ sv.rail }}" style="height:100%" hint-size="80px,100%"></dc-import></div>
+      <div style="position:absolute;left:0;top:0;bottom:0;display:flex"><dc-import name="NavRail" root-ref="{{ railRef }}" rail="{{ rail }}" top="{{ railTop }}" nav="{{ railNav }}" bottom="{{ railBottom }}" item-vis="{{ railItemVis }}" symbol-visuals="{{ symVis }}" visuals="{{ sv.rail }}" style="height:100%" hint-size="80px,100%"></dc-import></div>
     </sc-if>
     <sc-if value="{{ showNnCard }}" hint-placeholder-val="{{ false }}">
       <dc-import name="PeekCard" nn-card-ref="{{ nnCardRef }}" nn-card="{{ nnCard }}" np-h="{{ npH }}" card-vis="{{ cardVis }}" mx="{{ mx }}" nn="{{ nn }}" pl="{{ pl }}" np-vis="{{ npVis }}" style="display:contents" hint-size="0px,0px"></dc-import>
@@ -74,7 +74,7 @@
     <div ref="{{ navBarRef }}" style="position:absolute;left:0;right:0;bottom:0;transform:translateY({{ navShift }}px);transition:{{ mx.expand.surface }}"><dc-import name="NavBar" items="{{ nav }}" visuals="{{ sv.navBar }}" hint-size="100%,56px"></dc-import></div>
     <dc-import name="DededeLayer" focus-dedede="{{ focusDedede }}" dd-left="{{ ddLeft }}" dd-bottom="{{ ddBottom }}" dd-right="{{ ddRight }}" sv="{{ sv }}" dd="{{ dd }}" mx="{{ mx }}" title-vis-bar="{{ titleVisBar }}" bar-vis-layer="{{ barVisLayer }}" style="display:contents" hint-size="0px,0px"></dc-import>
     <div style="position:absolute;inset:0;pointer-events:none"><dc-import name="Scrim" color="{{ sv.drawer.scrim }}" shown="{{ dr.op }}" on-click="{{ dr.scrim }}" ms="{{ mx.layer.menu.ms }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></div>
-    <div style="position:absolute;top:0;bottom:0;inset-inline-start:0;width:{{ dr.w }}px;max-width:{{ sv.drawer.maxWidth }};transform:translateX({{ dr.tx }}%);transition:{{ mx.layer.menu.surface }};pointer-events:{{ dr.ev }}"><dc-import name="Drawer" title="{{ dr.title }}" title-vis="{{ titleVisBar }}" items="{{ dr.items }}" item-vis="{{ drawerItemVis }}" visuals="{{ sv.drawer }}" style="height:100%" hint-size="100%,100%"></dc-import></div>
+    <div style="position:absolute;top:0;bottom:0;inset-inline-start:0;width:{{ dr.w }}px;max-width:{{ sv.drawer.maxWidth }};transform:translateX({{ dr.tx }}%);transition:{{ mx.layer.menu.surface }};pointer-events:{{ dr.ev }}"><dc-import name="Drawer" title="{{ dr.title }}" title-vis="{{ titleVisBar }}" items="{{ dr.items }}" item-vis="{{ drawerItemVis }}" symbol-visuals="{{ symVis }}" visuals="{{ sv.drawer }}" style="height:100%" hint-size="100%,100%"></dc-import></div>
     <dc-import name="AccountLayer" dd-left="{{ ddLeft }}" sv="{{ sv }}" acc="{{ acc }}" mx="{{ mx }}" title-vis-bar="{{ titleVisBar }}" bar-vis-layer="{{ barVisLayer }}" style="display:contents" hint-size="0px,0px"></dc-import>
     <sc-if value="{{ dialog.show }}" hint-placeholder-val="{{ false }}"><dc-import name="Dialog" title="{{ dialog.title }}" body="{{ dialog.body }}" cancel="{{ dialog.cancelText }}" ok="{{ dialog.okText }}" cancel-ix="{{ dialog.cancelIx }}" ok-ix="{{ dialog.okIx }}" on-cancel="{{ dialog.cancel }}" visuals="{{ dialog.vis }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
     <sc-if value="{{ menu.show }}" hint-placeholder-val="{{ false }}"><dc-import name="Menu" sheet="{{ menu.sheet }}" items="{{ menu.items }}" on-close="{{ menu.close }}" anchor="{{ menu.anchor }}" visuals="{{ menu.vis }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
@@ -212,12 +212,12 @@ async function loadModules() {
   // plain ES modules via blob URLs; relative imports inside them are loaded the same way and rewritten
   const blobs = {}, blobOf = url => blobs[url] || (blobs[url] = (async () => { let src = await (await fetch(url, { cache: 'no-store' })).text(); for (const m of [...src.matchAll(/(from\s*|import\s*\(\s*)(['"])(\.\.?\/[^'"]+)\2/g)]) src = src.split(m[2] + m[3] + m[2]).join(m[2] + await blobOf(new URL(m[3], url).href) + m[2]); return URL.createObjectURL(new Blob([src], { type: 'text/javascript' })); })());
   const load = async p => import(await blobOf(new URL(p, location.href).href));
-  const [M, SM, Pl, P, IX, O, DL, MO, CP, K, DR, comp, appCfg] = await Promise.all([load('./core/navigation.js'), load('./app/fake-backend.js'), load('./core/player.js'), load('./core/layout.js'), load('./core/interaction.js'), load('./design/overrides.js'), load('./design/load.js'), load('./platforms/web/motions.js'), load('./core/compose.js'), load('./core/contracts.js'), load('./platforms/web/draw.js'), fetch(new URL('./app/composition.json', location.href).href, { cache: 'no-store' }).then(r => r.json()), import(URL.createObjectURL(new Blob([await (await fetch(new URL('./app/load-app.js', location.href).href, { cache: 'no-store' })).text()], { type: 'text/javascript' }))).then(m => m.loadApp(p => fetch(new URL('./' + p, location.href).href, { cache: 'no-store' }).then(r => r.text())))]);
+  const [M, SM, Pl, P, IX, O, DL, MO, CP, K, DR, web, comp, appCfg] = await Promise.all([load('./core/navigation.js'), load('./app/fake-backend.js'), load('./core/player.js'), load('./core/layout.js'), load('./core/interaction.js'), load('./design/overrides.js'), load('./design/load.js'), load('./platforms/web/motions.js'), load('./core/compose.js'), load('./core/contracts.js'), load('./platforms/web/draw.js'), fetch(new URL('./platforms/web.json', location.href).href, { cache: 'no-store' }).then(r => r.json()), fetch(new URL('./app/composition.json', location.href).href, { cache: 'no-store' }).then(r => r.json()), import(URL.createObjectURL(new Blob([await (await fetch(new URL('./app/load-app.js', location.href).href, { cache: 'no-store' })).text()], { type: 'text/javascript' }))).then(m => m.loadApp(p => fetch(new URL('./' + p, location.href).href, { cache: 'no-store' }).then(r => r.text())))]);
   const S = { ...SM, ...SM.bind(appCfg) };
   const fileSpecs = await DL.loadDesignRaw(p => fetch(new URL('./design/' + p, location.href).href, { cache: 'no-store' }).then(r => r.text()));   // raw design; edits patch it, then extends is resolved
   let specs = DL.resolveExtends(fileSpecs);
   try { specs = DL.resolveExtends(O.applySpecs(fileSpecs, JSON.parse(localStorage.getItem(O.PATCH_KEY) || 'null'))); } catch (e) {}
-  return { M, S, Pl, P, IX, O, DL, MO, CP, K, DR, comp, specs, fileSpecs };
+  return { M, S, Pl, P, IX, O, DL, MO, CP, K, DR, web, comp, specs, fileSpecs };
 }
 
 class Component extends DCLogic {
@@ -297,8 +297,8 @@ class Component extends DCLogic {
   get reduced() { return !!(this.model && this.ms.prefs.reducedMotion); }
 
   async componentDidMount() {
-    const { M, S, Pl, P, IX, O, DL, MO, CP, K, DR, comp, specs, fileSpecs } = await loadModules();
-    this.CP = CP; this.K = K; this.DR = DR; this.comp = comp; 
+    const { M, S, Pl, P, IX, O, DL, MO, CP, K, DR, web, comp, specs, fileSpecs } = await loadModules();
+    this.CP = CP; this.K = K; this.DR = DR; this.web = web; this.comp = comp; 
     this.mo = MO.createMotions({ fallbackEasing: () => this.specs && this.specs.tokens['motion.easing.standard'] });
     this.M = M; this.S = S; this.P = P; this.IX = IX; this.O = O; this.DL = DL; this.specs = specs; this.fileSpecs = fileSpecs; E = specs.tokens['motion.easing.standard'] || E;
     this.dataSrc = { get: (r, p) => this.getData(r, p) };
@@ -669,7 +669,7 @@ class Component extends DCLogic {
     return this.ix(n.key, a, o.run || (e => this.runAction(a, e)), { component: o.component || n.component, variant: n.variants, facts: { checked: n.values.checked }, label: o.label ?? (n.props.label || n.props.text || n.props.title || n.values.label || n.values.title || ''), surface: o.surface, page: n.page });
   }
   // a node drawn by its DC (platforms/web/draw.js): props, visuals, interaction, events and slots, on the given surface
-  drawn(n, surface) { return this.DR.drawNode(n, { specs: this.specs, visuals: (x, sf) => this.vis(x, { surface: sf }), ix: (x, sf) => this.nix(x, { surface: sf }), emit: (x, ev, payload, e) => this.runAction(this.actOf(x, ev, payload), e) }, surface); }
+  drawn(n, surface) { return this.DR.drawNode(n, { specs: this.specs, implemented: this.web.implements, visuals: (x, sf) => this.vis(x, { surface: sf }), ix: (x, sf) => this.nix(x, { surface: sf }), emit: (x, ev, payload, e) => this.runAction(this.actOf(x, ev, payload), e) }, surface); }
   vis(n, extra = {}) { return n && n.component ? this.P.resolveVisuals(this.specs, n.component, 'enabled', { variant: n.variants || {}, env: this.lenv(), ...extra }) : {}; }
   // the FAB of a header's fab slot: its first node (several share one place; the icon morphs between them)
   fabFor(nodes, top) {
@@ -809,8 +809,7 @@ class Component extends DCLogic {
       filters: this.chipsFor(ps, ctl),
       tabs: opts.map((o, k) => { const i = ri('change', o.value); return { label: o.label, ix: this.ix((ctl ? ctl.key : 'tabs') + '/' + k, i && { nav: i }, () => setP(i), { component: 'tab', label: o.label }) }; }),
       tabSel: sel, tabMo: (() => { const d = this.P.motionFor(this.specs, 'tabBar', 'indicator', this.ms.prefs); return { ms: this.msOf(d), ease: this.easeOf(d) }; })(),
-      fcVis: BV(baComp === 'choiceChips' ? 'choiceChips' : 'filterChips'), tbVis: BV('tabBar'), sfVis: BV('searchField'), symVis: BV('symbol'),   // the symbol SearchField / SuggestionRow draw inside themselves
-     
+      fcVis: BV(baComp === 'choiceChips' ? 'choiceChips' : 'filterChips'), tbVis: BV('tabBar'), sfVis: BV('searchField'),
       query: typeof val === 'string' && baComp === 'searchField' ? val : '', hasQuery: baComp === 'searchField' && !!val,
       onQuery: e => { const i = ri('change', e.target.value); if (i) setP(i); },
       onQueryKey: e => { if (e.key !== 'Enter') return; const i = ri('submit', e.target.value); if (i) setP(i); },
@@ -1065,7 +1064,7 @@ class Component extends DCLogic {
       v.drawerItemVis = this.P.resolveVisuals(this.specs, 'drawerItem', 'enabled', { variant: { size: 'drawer' } });
       v.dr = { items: [], w: ML ? this.look().size({ contract: 'drawerLayer', page: null, at: { name: 'menu' } }, 'width') : 0, tx: mOpen ? 0 : -110, op: mOpen ? 1 : 0, ev: mOpen ? 'auto' : 'none', title: '', scrim: () => this.closeLayer('menu') };
       if (ML) { const mp = ms.layers.menu.stack[0].page, MN = this.pageNode(mp, ['drawerLayer'], { layer: 'menu' }); v.dr.title = this.titleText(this.sl(MN.children.header, 'title'), mp);
-        v.dr.items = MN.children.body.filter(n => n.contract === 'button').map(n => ({ icon: n.props.icon || '', text: n.props.text || '', fill: n.values.checked ? 1 : 0, bg: n.values.checked ? this.specs.tokens['color.navIndicator'] : 'transparent', ix: this.nix(n, { component: 'listItem' }) })); }
+        v.dr.items = MN.children.body.filter(n => n.contract === 'button').map(n => ({ props: this.drawn(n, this.surfaceOf(n.key)).props, fill: n.values.checked ? 1 : 0, bg: n.values.checked ? this.specs.tokens['color.navIndicator'] : 'transparent' })); }
       const AL = cfg.layers.find(l => l.id === 'account'), aOpen = !!(ms.layers.account && ms.layers.account.open);
       v.acc = { ty: aOpen ? 0 : 100, ev: aOpen ? 'auto' : 'none', title: '', name: '', email: '', plan: '', art: '', signText: '', signIx: INERT, start: [], headVis: {}, planVis: {} };
       if (AL) { const ap2 = ms.layers.account.stack[0].page, AN = this.pageNode(ap2, ['fullscreenLayer'], { layer: 'account' }), H2 = AN.children.header; v.acc.title = this.titleText(this.sl(H2, 'title'), ap2);
@@ -1094,9 +1093,10 @@ class Component extends DCLogic {
     v.showRail = G.NAV === 'navRail';
     const TR = this.tree(), NAVN = TR.navigation;
     const shown = ns => ns.filter(n => n.shown !== false);
-    const navItems = form => this.sl(NAVN, 'destinations').map(n => ({ label: n.props.text || n.values.label, icon: n.props.icon || '', selected: n.values.selected, ix: this.nix(n, { run: () => this.switchDeck(n.values.deck), component: 'navItem', label: n.values.label }) }));
-    v.nav = navItems('bar'); v.railNav = navItems('rail');
-    { const slot = k => shown(this.sl(NAVN, k)).map(n => ({ icon: n.props.icon || '', text: n.props.text || n.values.label || '', mark: n.component === 'logo', ix: n.component === 'logo' ? { ...this.nix(n, { action: null, run: null, surface: 'navRail' }), resolve: () => ({ state: 'enabled', enabled: true, flags: {}, status: [], activatable: false }) } : this.nix(n, { component: n.component === 'drawerItem' ? 'listItem' : 'iconButton', surface: 'navRail' }) }));
+    v.symVis = this.P.resolveVisuals(this.specs, 'symbol', 'enabled', {});   // the symbol a DC draws inside itself (no surface: it inherits that DC's ink)
+    const drawnAll = ns => ns.map(n => ({ ...this.drawn(n, this.surfaceOf(n.key)), selected: !!n.values.selected }));   // nodes drawn by their DCs (platforms/web/draw.js)
+    v.nav = v.railNav = drawnAll(this.sl(NAVN, 'destinations'));
+    { const slot = k => drawnAll(shown(this.sl(NAVN, k)));
       const ML = cfg.layers.find(l => l.presentation.kind === 'drawer' && l.presentation.wide === 'rail'), ex = !!(ML && ms.layers[ML.id].open && G.NAV === 'navRail'), V = this.P.resolveVisuals(this.specs, 'navRail', 'enabled', {}), mo = this.P.motionFor(this.specs, 'navRail', 'width', ms.prefs);
       v.railNav = v.railNav.map(n => ({ ...n, pill: n.selected ? this.specs.tokens['color.navIndicator'] : 'transparent', fill: n.selected ? 1 : 0 }));
       v.rail = { tr: this.mo.css(mo), collapsed: !ex, w: ex ? +V.expandedWidth || 0 : +V.width || 0, align: ex ? 'stretch' : 'center', padX: ex ? +V.itemInset || 0 : 0, shadow: ex ? V.expandedShadow || 'none' : 'none', ms: this.msOf(mo), ease: this.easeOf(mo), ex, padY: +V.padY || 0, gap: +V.gap || 0, groupGap: +V.groupGap || 0 };
