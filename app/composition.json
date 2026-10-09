@@ -2716,6 +2716,17 @@
    "match": {
     "name": "collapse"
    },
+   "env": {
+    "env": "layout",
+    "equals": "wide"
+   },
+   "hire": "closeButton"
+  },
+  {
+   "contract": "button",
+   "match": {
+    "name": "collapse"
+   },
    "hire": "collapseButton"
   },
   {

@@ -709,9 +709,9 @@ class Component extends DCLogic {
   // back-layer colours, its bottom row on the front-layer-coloured sheet (14.2)
   surfaceOfTheme(theme) { return theme === 'back' || theme === 'appbar' ? 'backLayer' : theme === 'front' || theme === 'appbottom' ? 'frontLayer' : 'appBar'; }
   hItems(nodes, theme, page, start = []) {   // start: the bar's start slot (a spanning find field leaves room for it)
-    const dur = this.dur, surface = this.surfaceOfTheme(theme);
+    const dur = this.dur, surface = theme === 'layer' ? null : this.surfaceOfTheme(theme);   // layer headers: their layer's surface
     return (nodes || []).map(n => {
-      const d = this.drawn(n, surface), RV = d.props.visuals, off = +(RV.offsetStart || 0), on = n.shown !== false;
+      const d = this.drawn(n, surface || this.surfaceOf(n.key)), RV = d.props.visuals, off = +(RV.offsetStart || 0), on = n.shown !== false;
       const v = { ...d, dur, spans: false, maxW: +RV.slotMaxWidth || 0, ...(off ? { pos: 'absolute', absX: off + 'px', absY: (+RV.offsetTop || 0) + 'px' } : { pos: 'relative', absX: 'auto', absY: 'auto' }) };
       if (n.contract === 'find' && page) {   // arrangement: the field's width when open (spanning the bar except its caret) and its slot's width
         const F = d.props.slots.from && d.props.slots.from[0], T = (d.props.slots.to && d.props.slots.to[0]) || d, fv = T.props.visuals;
@@ -917,9 +917,7 @@ class Component extends DCLogic {
             const ev = this.dispatch(a.nav, id + (it.opens.kind === 'layerPage' ? ' → ' : ' link → ') + (n.props.title || it.id));
             if (ev.some(x => x.type === 'deckSwitched')) this.setState({ ovRect: null, ovInset: null, backOverride: null });
           } }) }; }),
-      leftIcon: deep ? 'arrow_back' : L.presentation.kind === 'sheet' && G.layout === 'compact' ? 'expand_more' : 'close',
-      leftIx: this.ix('layer:' + id + '.header.left', { nav: deep ? { type: 'up', target: { layer: id } } : { type: 'closeLayer', layer: id } }, () => deep ? this.dispatch({ type: 'up', target: { layer: id } }, id + ' up') : this.closeLayer(id), { component: 'iconButton', label: this.model.query.text(this.ms, this.model.config, deep ? 'action.back' : 'action.close') }),
-      ...(() => { const m = this.sl(H, 'end').find(x => x.config.name === 'more'), a = m ? this.actOf(m) : null; return { hasMore: !!a, moreIx: a ? this.nix(m, { action: a }) : INERT }; })()
+      start: this.hItems(this.sl(H, 'start'), 'layer', pg), end: this.hItems(this.sl(H, 'end'), 'layer', pg, this.sl(H, 'start'))
     };
   }
 
@@ -929,10 +927,10 @@ class Component extends DCLogic {
       STUB_LISTS.forEach(k => { v[k] = []; });
       v.nn = { rows: [], top: PHONE_H, h: PHONE_H, w: DEVICES.phone.width, left: 0, tx: 0, peekOp: 0, sheetOp: 0, rad: '0' }; v.dd = { rows: [], clip: 'circle(0)', ev: 'none' };
       v.ftB = v.ftF = v.ftO = { op: 1, sc: 1, tr: 'none', tx: 0 }; v.ahShadow = 'none'; v.ahTitleOp = 1; v.barVisBack = v.barVisFront = v.barVisApp = v.barVisLayer = {}; v.sv = { front: {}, back: {}, sheet: {}, side: {}, drawer: {}, signIn: {}, splash: {}, navBar: {}, rail: {}, pageFill: 'transparent', frontScrim: 'transparent', frontScrimOn: false }; v.barMo = v.fhMo = v.ahMo = {}; v.ovX = { show: false }; v.railTop = []; v.railBottom = []; v.rail = { tr: 'none', collapsed: true, ex: false, w: 0, align: 'center', padX: 0, shadow: 'none', ms: 0, ease: E, mo: {}, padY: 0, gap: 0, groupGap: 0 }; v.railItemVis = v.drawerItemVis = {}; 
-      v.blockRowPad = 9; v.fab = v.ahFab = { show: false, ix: INERT, end: 0, top: 0, vis: {}, icon: '' }; v.bhX = { show: false }; v.bhTitleOp = 1; v.fhH = 0; v.fhRow = 0; v.ahH = 0; v.alpha = { show: false, keys: [] }; v.groups = []; v.np = { ctrls: [], tabs: [], rows: [], mini: [], miniOp: 0, miniEv: 'none', bodyOp: 1, empty: false, emptyText: '', artVis: {}, infoVis: {}, seekVis: {}, rowVis: {}, tabVis: {}, tabMo: {}, tabSel: 0, emptyVis: {} }; v.dr = { items: [], ev: 'none', title: '', w: 0, tx: -110, op: 0 }; v.acc = { ev: 'none', closeIx: INERT, rows: [], signIx: INERT, title: '', name: '', email: '', plan: '', art: '', signText: '', ty: 100 };
+      v.blockRowPad = 9; v.fab = v.ahFab = { show: false, ix: INERT, end: 0, top: 0, vis: {}, icon: '' }; v.bhX = { show: false }; v.bhTitleOp = 1; v.fhH = 0; v.fhRow = 0; v.ahH = 0; v.alpha = { show: false, keys: [] }; v.groups = []; v.np = { ctrls: [], tabs: [], rows: [], mini: [], miniOp: 0, miniEv: 'none', bodyOp: 1, empty: false, emptyText: '', artVis: {}, infoVis: {}, seekVis: {}, rowVis: {}, tabVis: {}, tabMo: {}, tabSel: 0, emptyVis: {} }; v.dr = { items: [], ev: 'none', title: '', w: 0, tx: -110, op: 0 }; v.acc = { ev: 'none', start: [], rows: [], signIx: INERT, title: '', name: '', email: '', plan: '', art: '', signText: '', ty: 100 };
       v.cv = {}; v.gate = { ix: INERT }; v.dialog = { cancelIx: INERT, okIx: INERT }; v.snack = { ix: INERT }; v.menu = { show: false, items: [] }; v.ovRows = []; v.ovHead = { title: '', sub: '', art: '' }; v.pl = { icon: '', t: INERT, n: INERT, t2: INERT, n2: INERT, card: [], peek: [], mini: [] }; v.sheetVis = { overflow: 'hidden' }; v.npVis = {}; v.npH = 0; v.cardVis = {}; v.titleVisBack = v.titleVisFront = v.titleVisBar = v.groupVis = v.alphaVis = {}; v.urlDraft = '';
       v.clearIx = v.subIx = v.retryIx = v.ddCircleIx = INERT; v.tabInd = { left: 0, w: 0, tr: 'none' }; v.onQuery = () => {};
-      Object.assign(v.nn, { peekSub: '', peekTitle: '', peekArt: '', leftIcon: '', title: '', peekIx: INERT, titleIx: INERT, leftIx: INERT, moreIx: INERT }); Object.assign(v.dd, { leftIcon: '', title: '', leftIx: INERT, moreIx: INERT });
+      Object.assign(v.nn, { peekSub: '', peekTitle: '', peekArt: '', title: '', peekIx: INERT, titleIx: INERT, start: [], end: [] }); Object.assign(v.dd, { title: '', start: [], end: [] });
       v.layoutInfo = 'loading model…'; v.backLabel = 'Back'; v.focusLabel = '—'; v.historyCaption = '';
       v.dir = 'ltr'; v.locales = []; v.appFx = v.gateFx = v.splashFx = { op: 1, sc: 1, tr: 'none' };
       v.splash = { show: true, logoOp: 0, logoSc: 1, logoTr: 'none', logo: 'transparent', logoSize: 0, playing: false, busy: true, ev: 'auto', label: '' }; v.logoVis = null; v.logoMotion = null; v.retryText = ''; v.cv = {};
@@ -1069,9 +1067,9 @@ class Component extends DCLogic {
       if (ML) { const mp = ms.layers.menu.stack[0].page, MN = this.pageNode(mp, ['drawerLayer'], { layer: 'menu' }); v.dr.title = this.titleText(this.sl(MN.children.header, 'title'), mp);
         v.dr.items = MN.children.body.filter(n => n.contract === 'button').map(n => ({ icon: n.props.icon || '', text: n.props.text || '', fill: n.values.checked ? 1 : 0, bg: n.values.checked ? this.specs.tokens['color.navIndicator'] : 'transparent', ix: this.nix(n, { component: 'listItem' }) })); }
       const AL = cfg.layers.find(l => l.id === 'account'), aOpen = !!(ms.layers.account && ms.layers.account.open);
-      v.acc = { ty: aOpen ? 0 : 100, ev: aOpen ? 'auto' : 'none', title: '', name: '', email: '', plan: '', art: '', signText: '', signIx: INERT, closeIx: INERT, headVis: {}, planVis: {} };
+      v.acc = { ty: aOpen ? 0 : 100, ev: aOpen ? 'auto' : 'none', title: '', name: '', email: '', plan: '', art: '', signText: '', signIx: INERT, start: [], headVis: {}, planVis: {} };
       if (AL) { const ap2 = ms.layers.account.stack[0].page, AN = this.pageNode(ap2, ['fullscreenLayer'], { layer: 'account' }), H2 = AN.children.header; v.acc.title = this.titleText(this.sl(H2, 'title'), ap2);
-        const cl = this.sl(H2, 'start')[0]; if (cl) v.acc.closeIx = this.nix(cl, { component: 'iconButton', label: t('action.close') });
+        v.acc.start = this.hItems(this.sl(H2, 'start'), 'layer', ap2);
         AN.children.body.forEach(n => {
           if (n.contract === 'detail') Object.assign(v.acc, { name: n.props.title || '', email: n.props.subtitle || '', art: artCss(n.props.image), headVis: this.vis(n, { surface: 'appBar' }) });
           if (n.contract === 'text') { v.acc.plan = n.values.text || ''; v.acc.planVis = this.P.resolveVisuals(this.specs, 'panelRow', 'enabled', { surface: 'appBar' }); }
@@ -1199,16 +1197,13 @@ class Component extends DCLogic {
     };
     v.reset = () => { const d = DEVICES[this.state.layout]; this.model = this.newModel(d); this.setState({ log: ['reset'], ovRect: null, ovInset: null, backOverride: null, frontTopOverride: null, ft: null, cf: null, entry: null }); this.cancelEntry(); this.scheduleLaunch(); };
     /* lint:on */
-    // bars (design: header / frontHeader / appBar); layer headers as slot items
-    { const ctl = (ix, icon) => ({ is: { IconButton: true }, props: { ...ix, icon, component: 'iconButton' } }),   // layer headers: not yet drawn from their nodes (next slice)
-       RVb = (id, ctx) => this.P.resolveVisuals(this.specs, id, 'enabled', ctx);
+    // bars (design: header / frontHeader / appBar)
+    { const RVb = (id, ctx) => this.P.resolveVisuals(this.specs, id, 'enabled', ctx);
       v.barVisBack = RVb('header', { surface: 'backLayer' }); v.barVisFront = RVb('frontHeader', { surface: 'frontLayer' });
       v.barVisLayer = RVb('appBar', { surface: 'appBar', variant: { form: 'layer' } });
       v.barMo = { ms: this.dur }; v.fhMo = { ms: this.dur, titleMs: +v.barVisFront.titleMs || 0 }; v.ahMo = { ms: +v.barVisApp.shadowMs || 0 };
       v.bhTitlePad = (v.bhLeft || []).some(x => x.op) ? +v.barVisBack.titlePadAfterStart || 0 : +v.barVisBack.titlePadAlone || 0;
-      if (v.nn) { v.nn.start = [ctl(v.nn.leftIx, v.nn.leftIcon)]; v.nn.end = v.nn.hasMore ? [ctl(v.nn.moreIx, 'more_vert')] : []; }
-      if (v.dd) { v.dd.start = [ctl(v.dd.leftIx, v.dd.leftIcon)]; v.dd.end = v.dd.hasMore ? [ctl(v.dd.moreIx, 'more_vert')] : []; }
-      if (v.acc) v.acc.start = [ctl(v.acc.closeIx, 'close')]; }
+    }
     { const RS = (id, st, ctx) => this.P.resolveVisuals(this.specs, id, st || 'enabled', ctx || {});
       v.sv = { front: RS('frontLayer'), back: RS('backLayer'), sheet: RS('bottomSheet', 0, { env: this.lenv() }), side: RS('sideSheet'), drawer: RS('drawer'), signIn: RS('signInPage', 0, { surface: 'signInPage' }), splash: RS('splash'), navBar: RS('navBar'), rail: RS('navRail', 0, { surface: 'navRail' }), pageFill: RS('appBar').pageFill };
       v.sv.frontScrim = RS('frontLayer', 'partlyCollapsed').scrim || 'transparent'; v.sv.frontScrimOn = +v.scrimOpacity > 0; }

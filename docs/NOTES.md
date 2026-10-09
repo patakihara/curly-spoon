@@ -505,6 +505,10 @@ Each was my call; say if you disagree and I redo it.
 35. A DC that draws a design component inside itself gets that component's resolved visuals from the platform as
     `<component>Visuals` (SearchField and SuggestionRow: symbolVisuals). Before, they passed Symbol only a size, so its
     font family resolved to 'undefined' and the glyph showed as the word "search" (old mockup too).
+36. Layer headers draw their config (Sofia, 2026-10-09: "today's look except dedede should get back"). The old shell
+    ignored parts of it. Config now matches today's look: Dedede's and the Recent / Saved pages' search fields, play
+    buttons and action-less ⋮ are removed; Dedede's first page keeps `up` (back arrow) with closeLayer, since up does
+    nothing on a layer's first page; composition hires closeButton for Now playing's collapse on wide.
 
 ### Switchover (2026-10-09): done, with what is still open
 The mockup runs on 18.0 (config + composition + design → contract tree → shell). Checked in headless Chrome against the
@@ -549,9 +553,10 @@ fields, not nodes · 6 verify ✓ (screens above).
   (back, front and app-bar headers) are drawn from their nodes through platforms/web/draw.js — the DC comes from design
   (own DC named after the component; a variant drawn by its parent's), fed the node's props, visuals, interaction,
   events and slots; the item's surface is the nearest drawn ancestor that provides colour roles. The item-kind table
-  is gone; Morph draws from its from / to slots (its glyph is the from button's icon, no longer a literal). Still
-  shell-chosen: layer headers (Now playing / Dedede / Account build their buttons by hand, with a literal more_vert;
-  drawing their nodes changes icons and adds Dedede's find and the recent pages' play buttons), panel rows, Now
+  is gone; Morph draws from its from / to slots (its glyph is the from button's icon, no longer a literal). Slice 2
+  done: layer headers (Now playing, Dedede, Account) are drawn from their nodes on their layer's surface; the hand-built
+  buttons and the literal more_vert are gone. Sofia chose today's look except Dedede's first page gets back (decision
+  36). Still shell-chosen: panel rows, Now
   playing's body, the drawer, nav, peek, overlays, content items, the app-bar form; IconButton still accepts `mark`
   for the nav's logo until the nav slice.
 - 18.0: the free-component merge tree is proposed, not applied (69 design components).

@@ -1621,88 +1621,6 @@
            "type": "up"
           }
          }
-        },
-        {
-         "kind": "find",
-         "name": "find",
-         "param": "find",
-         "placeholder": {
-          "text": "find.in",
-          "args": {
-           "what": {
-            "derived": "pageTitle"
-           }
-          }
-         }
-        },
-        {
-         "kind": "button",
-         "name": "playNow",
-         "label": {
-          "text": "fab.play"
-         },
-         "action": [
-          {
-           "player": {
-            "type": "playQueue",
-            "tracks": {
-             "bind": "$content.tracks"
-            }
-           }
-          },
-          {
-           "nav": {
-            "type": "openLayer",
-            "layer": "nowPlaying"
-           }
-          }
-         ],
-         "when": {
-          "player": "queue",
-          "of": "$content.tracks",
-          "equals": "empty"
-         }
-        },
-        {
-         "kind": "button",
-         "name": "playNext",
-         "label": {
-          "text": "fab.playNext"
-         },
-         "action": {
-          "player": {
-           "type": "enqueue",
-           "next": true,
-           "tracks": {
-            "bind": "$content.tracks"
-           }
-          }
-         },
-         "when": {
-          "player": "queue",
-          "of": "$content.tracks",
-          "equals": "absent"
-         }
-        },
-        {
-         "kind": "button",
-         "name": "playLast",
-         "label": {
-          "text": "fab.queue"
-         },
-         "action": {
-          "player": {
-           "type": "enqueue",
-           "tracks": {
-            "bind": "$content.tracks"
-           }
-          }
-         },
-         "when": {
-          "player": "queue",
-          "of": "$content.tracks",
-          "equals": "contains"
-         }
         }
        ]
       },
@@ -1778,88 +1696,6 @@
           "nav": {
            "type": "up"
           }
-         }
-        },
-        {
-         "kind": "find",
-         "name": "find",
-         "param": "find",
-         "placeholder": {
-          "text": "find.in",
-          "args": {
-           "what": {
-            "derived": "pageTitle"
-           }
-          }
-         }
-        },
-        {
-         "kind": "button",
-         "name": "playNow",
-         "label": {
-          "text": "fab.play"
-         },
-         "action": [
-          {
-           "player": {
-            "type": "playQueue",
-            "tracks": {
-             "bind": "$content.tracks"
-            }
-           }
-          },
-          {
-           "nav": {
-            "type": "openLayer",
-            "layer": "nowPlaying"
-           }
-          }
-         ],
-         "when": {
-          "player": "queue",
-          "of": "$content.tracks",
-          "equals": "empty"
-         }
-        },
-        {
-         "kind": "button",
-         "name": "playNext",
-         "label": {
-          "text": "fab.playNext"
-         },
-         "action": {
-          "player": {
-           "type": "enqueue",
-           "next": true,
-           "tracks": {
-            "bind": "$content.tracks"
-           }
-          }
-         },
-         "when": {
-          "player": "queue",
-          "of": "$content.tracks",
-          "equals": "absent"
-         }
-        },
-        {
-         "kind": "button",
-         "name": "playLast",
-         "label": {
-          "text": "fab.queue"
-         },
-         "action": {
-          "player": {
-           "type": "enqueue",
-           "tracks": {
-            "bind": "$content.tracks"
-           }
-          }
-         },
-         "when": {
-          "player": "queue",
-          "of": "$content.tracks",
-          "equals": "contains"
          }
         }
        ]
@@ -1961,30 +1797,10 @@
          },
          "action": {
           "nav": {
-           "type": "up"
+           "type": "closeLayer",
+           "layer": "Dedede"
           }
          }
-        },
-        {
-         "kind": "find",
-         "name": "find",
-         "param": "find",
-         "placeholder": {
-          "text": "find.in",
-          "args": {
-           "what": {
-            "derived": "pageTitle"
-           }
-          }
-         }
-        },
-        {
-         "kind": "button",
-         "name": "more",
-         "label": {
-          "text": "action.more"
-         },
-         "action": null
         }
        ]
       },
@@ -2061,27 +1877,6 @@
            "type": "up"
           }
          }
-        },
-        {
-         "kind": "find",
-         "name": "find",
-         "param": "find",
-         "placeholder": {
-          "text": "find.in",
-          "args": {
-           "what": {
-            "derived": "pageTitle"
-           }
-          }
-         }
-        },
-        {
-         "kind": "button",
-         "name": "more",
-         "label": {
-          "text": "action.more"
-         },
-         "action": null
         }
        ]
       },
@@ -2158,27 +1953,6 @@
            "type": "up"
           }
          }
-        },
-        {
-         "kind": "find",
-         "name": "find",
-         "param": "find",
-         "placeholder": {
-          "text": "find.in",
-          "args": {
-           "what": {
-            "derived": "pageTitle"
-           }
-          }
-         }
-        },
-        {
-         "kind": "button",
-         "name": "more",
-         "label": {
-          "text": "action.more"
-         },
-         "action": null
         }
        ]
       },
@@ -2255,27 +2029,6 @@
            "type": "up"
           }
          }
-        },
-        {
-         "kind": "find",
-         "name": "find",
-         "param": "find",
-         "placeholder": {
-          "text": "find.in",
-          "args": {
-           "what": {
-            "derived": "pageTitle"
-           }
-          }
-         }
-        },
-        {
-         "kind": "button",
-         "name": "more",
-         "label": {
-          "text": "action.more"
-         },
-         "action": null
         }
        ]
       },
@@ -2352,27 +2105,6 @@
            "type": "up"
           }
          }
-        },
-        {
-         "kind": "find",
-         "name": "find",
-         "param": "find",
-         "placeholder": {
-          "text": "find.in",
-          "args": {
-           "what": {
-            "derived": "pageTitle"
-           }
-          }
-         }
-        },
-        {
-         "kind": "button",
-         "name": "more",
-         "label": {
-          "text": "action.more"
-         },
-         "action": null
         }
        ]
       },
@@ -2449,27 +2181,6 @@
            "type": "up"
           }
          }
-        },
-        {
-         "kind": "find",
-         "name": "find",
-         "param": "find",
-         "placeholder": {
-          "text": "find.in",
-          "args": {
-           "what": {
-            "derived": "pageTitle"
-           }
-          }
-         }
-        },
-        {
-         "kind": "button",
-         "name": "more",
-         "label": {
-          "text": "action.more"
-         },
-         "action": null
         }
        ]
       },
@@ -2546,27 +2257,6 @@
            "type": "up"
           }
          }
-        },
-        {
-         "kind": "find",
-         "name": "find",
-         "param": "find",
-         "placeholder": {
-          "text": "find.in",
-          "args": {
-           "what": {
-            "derived": "pageTitle"
-           }
-          }
-         }
-        },
-        {
-         "kind": "button",
-         "name": "more",
-         "label": {
-          "text": "action.more"
-         },
-         "action": null
         }
        ]
       },
