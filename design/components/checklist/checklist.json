@@ -17,5 +17,6 @@
     "gap": {
       "default": 0
     }
-  }
+  },
+  "option": "checkRow"
 }

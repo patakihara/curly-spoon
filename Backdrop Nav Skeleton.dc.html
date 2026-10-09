@@ -788,29 +788,30 @@ class Component extends DCLogic {
   }
 
   // a param control node (core/contracts.js) → the props of the DC composition hired for it. Every option carries selected
-  // (core); a chip / tab / suggestion sends its own event with its option: change (setParams), toggle (toggleParam), pick (setParams + apply)
+  // (core) and is drawn as the control's option component (design: tabBar → tab, filterChips → chip …); it sends the control's
+  // event with its option: change (setParams), toggle (toggleParam), pick (setParams + apply)
   controlView(ps, n) {
-    const comp = n.component, name = n.config.bind, V = this.P.resolveVisuals(this.specs, comp, 'enabled', { surface: 'backLayer' });   // design visuals of back-layer controls
+    const comp = n.component, opt = (this.CP.freeComponent(this.specs.components, comp) || {}).option, name = n.config.bind, V = this.P.resolveVisuals(this.specs, comp, 'enabled', { surface: 'backLayer' });   // design visuals of back-layer controls
     const go = (ev, payload, label) => { const a = this.actOf(n, ev, payload); return a && a.nav ? { nav: a.nav, run: () => this.paramChange(ps, a.nav, label) } : { nav: null, run: () => {} }; };
     const opts = n.values.options, base = { comp, vis: V, isFilters: false, isChips: false, isTabs: false, isSearch: false, isDropdown: false, isRange: false, isSuggest: false, isChecklist: false, label: n.values.label || '' };
     const ev = n.events.toggle && n.at.param.type === 'choices' ? 'toggle' : 'change';
     if (comp === 'filterChips' || comp === 'choiceChips') {
       // a control with a More: the first moreAfter options (design), in config order, then the More chip (its event more → openMore)
       const more = n.values.more && n.events.more ? this.actOf(n, 'more') : null, shown = more ? opts.slice(0, Math.max(0, +V.moreAfter || 0)) : opts;
-      const chips = shown.map(o => { const g = go(ev, o.value, 'params · ' + name + ' ' + o.value); return { label: o.label, on: o.selected, ix: this.ix(n.key + '/' + o.value, g.nav && { nav: g.nav }, g.run, { component: 'chip', label: o.label }) }; });
-      if (more) chips.push({ label: n.props.moreLabel || '', on: false, ix: this.ix(n.key + '/more', more, () => this.runAction(more), { component: 'chip', label: n.props.moreLabel || '' }) });
+      const chips = shown.map(o => { const g = go(ev, o.value, 'params · ' + name + ' ' + o.value); return { label: o.label, on: o.selected, ix: this.ix(n.key + '/' + o.value, g.nav && { nav: g.nav }, g.run, { component: opt, label: o.label }) }; });
+      if (more) chips.push({ label: n.props.moreLabel || '', on: false, ix: this.ix(n.key + '/more', more, () => this.runAction(more), { component: opt, label: n.props.moreLabel || '' }) });
       return { ...base, isFilters: true, isChips: true, chips };
     }
     if (comp === 'checklist') return { ...base, isChecklist: true,
-      rows: opts.map(o => { const g = go(ev, o.value, 'params · ' + name + ' ' + o.value); return { text: o.label, vis: this.P.resolveVisuals(this.specs, 'checkRow', 'enabled', { surface: 'backLayer', status: o.selected ? ['selected'] : [] }), ix: this.ix(n.key + '/' + o.value, g.nav && { nav: g.nav }, g.run, { component: 'checkRow', label: o.label }) }; }) };
+      rows: opts.map(o => { const g = go(ev, o.value, 'params · ' + name + ' ' + o.value); return { text: o.label, vis: this.P.resolveVisuals(this.specs, opt, 'enabled', { surface: 'backLayer', status: o.selected ? ['selected'] : [] }), ix: this.ix(n.key + '/' + o.value, g.nav && { nav: g.nav }, g.run, { component: opt, label: o.label }) }; }) };
     if (comp === 'tabBar') return { ...base, isTabs: true, tabSel: Math.max(0, opts.findIndex(o => o.selected)),
-      tabs: opts.map((o, k) => { const g = go('change', o.value, 'params · ' + name); return { label: o.label, ix: this.ix(n.key + '/' + k, g.nav && { nav: g.nav }, g.run, { component: 'tab', label: o.label }) }; }) };
+      tabs: opts.map((o, k) => { const g = go('change', o.value, 'params · ' + name); return { label: o.label, ix: this.ix(n.key + '/' + k, g.nav && { nav: g.nav }, g.run, { component: opt, label: o.label }) }; }) };
     if (comp === 'searchField') { const clr = go('change', '', 'params · ' + name);
       return { ...base, isSearch: true, query: typeof n.values.value === 'string' ? n.values.value : '', hint: n.values.placeholder || '',
         onQuery: e => go('change', e.target.value, 'params · ' + name).run(), onQueryKey: e => { if (e.key === 'Enter') go('submit', e.target.value, 'params · apply ' + name).run(); },
         clearIx: this.ix(n.key + '/clear', clr.nav && { nav: clr.nav }, clr.run, { component: 'iconButton', variant: { size: 'xs' }, label: this.model.query.text(this.ms, this.model.config, 'search.clear') }) }; }
-    if (comp === 'suggestionList') return { ...base, isSuggest: true, rowVis: this.P.resolveVisuals(this.specs, 'suggestionRow', 'enabled', { surface: 'backLayer' }),
-      rows: opts.map(o => { const g = go('pick', o.value, 'suggestion · ' + o.label); return { text: o.label, ix: this.ix(n.key + '/' + o.value, g.nav && { nav: g.nav }, g.run, { component: 'suggestionRow', label: o.label }) }; }) };
+    if (comp === 'suggestionList') return { ...base, isSuggest: true, rowVis: this.P.resolveVisuals(this.specs, opt, 'enabled', { surface: 'backLayer' }),
+      rows: opts.map(o => { const g = go('pick', o.value, 'suggestion · ' + o.label); return { text: o.label, ix: this.ix(n.key + '/' + o.value, g.nav && { nav: g.nav }, g.run, { component: opt, label: o.label }) }; }) };
     if (comp === 'dropdown') return { ...base, isDropdown: true, options: opts.map(o => ({ value: o.value, label: o.label, on: o.selected })), onPick: e => go('change', e.target.value, 'params · ' + name).run() };
     if (comp === 'rangeField') { const v0 = n.values.value || [0, 0];
       const put = (k, x) => { const nv = v0.slice(); nv[k] = Math.max(n.values.min ?? -Infinity, Math.min(n.values.max ?? Infinity, +x)); if (nv[0] > nv[1]) nv[1 - k] = nv[k]; go('change', nv, 'params · ' + name).run(); };
@@ -1067,7 +1068,7 @@ class Component extends DCLogic {
         np.handleIx = this.ix('layer:nowPlaying.sheet.handle', { nav: { type: 'toggleExpanded' } }, () => this.dispatch({ type: 'toggleExpanded' }, 'sheet · toggle'), { component: 'listItem', label: t('player.upNext') });
         if (SN) {
           const TB = SN.children.paramControl;
-          np.tabs = TB ? TB.values.options.map((o, j) => { const a = this.actOf(TB, 'change', o.value), i = a && a.nav; return { label: o.label, on: o.selected, ix: this.ix(TB.key + '/' + j, i && { nav: i }, () => this.dispatch(i, 'sheet tab · ' + o.value), { component: 'tab', label: o.label }) }; }) : [];
+          np.tabs = TB ? TB.values.options.map((o, j) => { const a = this.actOf(TB, 'change', o.value), i = a && a.nav; return { label: o.label, on: o.selected, ix: this.ix(TB.key + '/' + j, i && { nav: i }, () => this.dispatch(i, 'sheet tab · ' + o.value), { component: (this.CP.freeComponent(this.specs.components, TB.component) || {}).option, label: o.label }) }; }) : [];
           const RN = SN.children.content.children.items, comp = this.itemComponent(SN.children.content), QV = this.P.resolveVisuals(this.specs, comp, 'enabled', {});
           np.rows = RN.map(n => ({ id: n.config.item.id, label: n.props.title || '', sub: n.props.subtitle || '', art: n.props.image ? artCss(n.props.image) : 'transparent', trailing: comp === 'queueRow' ? (QV.handle || '') : '', bg: n.props.current ? (QV.currentFill || 'transparent') : 'transparent',
             ix: this.nix(n, { component: comp === 'queueRow' ? 'listRow' : comp }) }));

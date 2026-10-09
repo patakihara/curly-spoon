@@ -551,6 +551,11 @@ Each was my call; say if you disagree and I redo it.
     on the selected). How many options a chip row shows before its More chip is design (filterChips `moreAfter`, 4);
     their order is config's; the chip's word is the design text `more.open`. Rule: at most one control per page param
     has a More. Sample: Library's genre.
+45. Option components (Sofia, 2026-10-10: "the tab bar component declares that its children must be tabs"): design
+    says which component draws each option of a control, `ComponentDef.option` (tabBar → tab, filterChips → chip, and
+    choiceChips through extends, suggestionList → suggestionRow, checklist → checkRow). A design check (design/checks.js)
+    requires it to be registered and interactive. The shell reads it (also for the Now playing sheet's tabs) instead of
+    naming tab / chip / suggestionRow / checkRow itself; the More chip is drawn as the chips' option too.
 
 ### Switchover (2026-10-09): done, with what is still open
 The mockup runs on 18.0 (config + composition + design → contract tree → shell). Checked in headless Chrome against the
@@ -605,8 +610,9 @@ fields, not nodes · 6 verify ✓ (screens above).
   playing's body, the drawer, nav, peek, overlays, content items, the app-bar form.
 - 18.0: param controls (decision 41): the 'always' rows are drawn by the shell directly (no row label, the
   paramControlRow hire unused there); controls in one row share its width equally; no page has two controls in a row yet.
-  The design field for the component each option is drawn as (tabBar → tab, filterChips → chip, suggestionList →
-  suggestionRow, checklist → checkRow) is the next step.
+- 18.0: option components (decision 45): the DCs still import their option's DC by name (TabBar → Tab, FilterChips →
+  Chip, SuggestionList → SuggestionRow, Checklist → CheckRow); a different design option would need the platform to map
+  it. design/checks.js runs only from the rules harness, not on the Invariants page (as before).
 - 18.0: More (decision 44): only chip rows show a More chip (tab bars, dropdowns and the rest have no More event); a
   More chip shows even when every option already fits. No URL or snapshot keeps which More is open.
 - 18.0: the free-component merge tree is proposed, not applied (69 design components).

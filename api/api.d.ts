@@ -808,6 +808,7 @@ export interface ComponentDef {
   visuals?: Visuals;
   optional?: string[];                   // props a hire may leave unfed (a button's icon); inherited (union)
   events?: FreeEventSpec[];              // 18.0: what it emits (composition maps each to an intent)
+  option?: ComponentId;                  // 18.0: the component each of its options is drawn as (tabBar → tab); inherited; registered, interactive
 }
 export interface FreeEventSpec { name: string; payload: PropType | null }
 export type ComponentRegistry = Record<ComponentId, ComponentDef>;

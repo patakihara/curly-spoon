@@ -62,6 +62,9 @@ _Unreleased (no contract change):_ web: the shell draws no UI itself — FrontLa
   backLayer child `more`. Design: morePanel, checklist, checkRow (new), filterChips prop more / moreLabel, event more,
   visual moreAfter, backLayer slot more, token icon.check, texts more.open / more.close, choreography rule moreChanged.
   Config: Library's genre has a More. Also: bottomSheet.d.ts regenerated (its slot rename had been missed).
+- ComponentDef.option (additive): the component each of a control's options is drawn as (tabBar → tab, filterChips →
+  chip, suggestionList → suggestionRow, checklist → checkRow); inherited through extends (compose.js freeComponent).
+  Design check: registered and interactive.
 - Platform manifest: web lists backdropPage, appBarPage, sheetLayer, fullscreenLayer (composition hires them).
 - Rules: api/composition-rules.js (13, all pass) runs on the Invariants page; 19 ref / role invariants deleted, the rest
   ported to 18.0 shapes: 103 pass · 3 skipped · 0 fail (still 103 after param controls; 105 after More, its two rules added).

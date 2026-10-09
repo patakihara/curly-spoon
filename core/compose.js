@@ -22,7 +22,8 @@ export function placementFor(composition, at) {
 }
 export const hireOf = (composition, name) => composition.hires.find(h => h.name === name) || null;
 
-// a free component's own + inherited props, slots, events, variants and optional props (design json: props of type 'slot' are slots)
+// a free component's own + inherited props, slots, events, variants, optional props and option component (design json: props of type
+// 'slot' are slots; option: the component each of its options is drawn as, the nearest up the extends chain)
 export function freeComponent(components, id, depth = 0) {
   const d = components[id]; if (!d || depth > 8) return null;
   const parent = d.extends ? freeComponent(components, d.extends, depth + 1) : null;
@@ -32,7 +33,7 @@ export function freeComponent(components, id, depth = 0) {
   const events = [...(parent ? parent.events : []), ...(d.events || []).map(e => e.name)];
   const variants = { ...(parent ? parent.variants : {}), ...(d.variants || {}) };
   const optional = [...new Set([...(parent ? parent.optional : []), ...(d.optional || [])])];
-  return { props, slots, events, variants, optional };
+  return { props, slots, events, variants, optional, option: d.option || (parent ? parent.option : null) };
 }
 
 // a size the hire drawing a place gives: its own token named after the size ('<hire>.<name>', aliasing a design token),

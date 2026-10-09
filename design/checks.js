@@ -1,6 +1,7 @@
 // Design checks: the design data checked on its own (not engine behaviour, so not api/invariants.js).
 //   checkDesign(specs) → [{ rule, ok, msg }]
 //   1. every param a (temporary, 17.0) motion kind declares gets a value: from the KindStep that uses it, or the param's default.
+//   2. a component's option (the component each of its options is drawn as) is registered and interactive.
 //   Pieces named by steps are checked by the rules (api/invariants.js, 17.0).
 
 const kindSteps = (list, where) => (list || []).filter(s => s.do === 'kind').map(t => ({ where, t, kind: t.kind }));
@@ -19,5 +20,8 @@ export function checkDesign(specs) {
     for (const [p, def] of Object.entries(M.params || {})) if (!(p in u.t) && def.default === undefined) missing.push(u.where + ': ' + u.kind + '.' + p + ' has no value and no default');
   }
   add('every declared motion param has a value (KindStep or default)', missing);
+  const C = specs.components, interactive = (id, k = 0) => k < 9 && !!C[id] && (id === 'interactive' || interactive(C[id].extends, k + 1));
+  add('every option component is registered and interactive', Object.entries(C).filter(([, c]) => c.option)
+    .filter(([, c]) => !interactive(c.option)).map(([id, c]) => id + '.option ' + c.option + (C[c.option] ? ' is not interactive' : ' is not registered')));
   return out;
 }

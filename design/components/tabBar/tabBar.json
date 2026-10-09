@@ -85,5 +85,6 @@
       "name": "change",
       "payload": "value"
     }
-  ]
+  ],
+  "option": "tab"
 }

@@ -13,5 +13,6 @@
     "gap": {
       "default": 12
     }
-  }
+  },
+  "option": "suggestionRow"
 }

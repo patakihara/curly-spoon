@@ -222,7 +222,7 @@ Config never names a component. Each drawn config object meets a **contract** (a
 - Platforms draw nodes. Each publishes `{ platform, implements: [...] }`; the rules check that every component composition hires is implemented on every platform (a variant counts where its parent does).
 
 ## Component inheritance
-A component can `extends` another: it inherits props, optional props, states and visuals, and stores only what differs. A `variant` has no code of its own — its parent's implementation draws it with the child's values. "Interactive" components (state layer, ripple, focus) are those that extend `interactive`.
+A component can `extends` another: it inherits props, optional props, states, visuals and its `option` (the component each of its options is drawn as: tabBar → tab), and stores only what differs. A `variant` has no code of its own — its parent's implementation draws it with the child's values. "Interactive" components (state layer, ripple, focus) are those that extend `interactive`.
 
 ## 3.0.0 — surfaces, variants, layout from data
 - **Surfaces** (`backLayer`, `frontLayer`, `appBar`, sheets, nav, dialog, snackbar) declare `provides`: colour roles such as `content`, `contentVariant`, `focusRing`. Components ask for a role (`{ "role": "contentVariant" }`), never a hex — the same icon button is white on the back layer and dark on an app bar. A rule checks every surface provides the roles of what is placed on it.
