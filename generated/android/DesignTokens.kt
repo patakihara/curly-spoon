@@ -186,6 +186,8 @@ object BackLayerTokens {
     val BasicPadding = "0 16px 12px"
     val PanelPadding = "12px 16px 16px"
     val PanelDivider = Color(255, 255, 255, 38)
+    val MorePadding = "8px 16px 16px"
+    val MoreDivider = "transparent"
     val PanelGap = 12f
     val BasicHeight = 60f
     val ActionsHeight = 56f
@@ -751,7 +753,7 @@ object SuggestionListTokens {
 }
 
 object MorePanelTokens {
-    val Height = 48f
+    val Height = 56f
     val Gap = 8f
     val CloseIcon = DesignTokens.IconClose
     val FontFamily = "inherit"

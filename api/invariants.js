@@ -761,7 +761,7 @@ export const INVARIANTS = [
     });
     need(n, 'no More');
   }],
-  ['More: opening reveals the back layer and shows it; back and up close it first; concealing closes every More', f => {
+  ['More: opening reveals the back layer and makes it the whole back layer; back and up close it first; concealing closes every More', f => {
     const D = need(f.config.decks.find(d => rowsDeep(d.page.back.paramControls).some(r => r.controls.some(x => x.more))), 'no More');
     const name = rowsDeep(D.page.back.paramControls).flatMap(r => r.controls).find(x => x.more).bind;
     f.devices.forEach(d => {
@@ -772,6 +772,8 @@ export const INVARIANTS = [
       assert(u().back.expanded && open().join() === name, 'not open and revealed');
       assert(e.some(x => x.type === 'moreChanged' && x.opened && x.name === name) && e.some(x => x.type === 'expandedChanged' && x.expanded), 'events missing');
       assert(m.query.backAction(S(m), m.config) === 'closeMore', 'back does not close the More first @' + d.width);
+      const L = need(f.layout, 'no layout'), R = L.regions(u(), LOOK(m), { panel: 120 });   // the More is the whole back layer: the panel alone, at the top
+      assert(R.every(r => r.region === 'panel' ? r.top === 0 && r.opacity === 1 && r.interactive : r.opacity === 0 && !r.interactive), 'other regions still shown: ' + JSON.stringify(R));
       const st = S(m).decks[D.id].stack.length;
       m.dispatch({ type: 'back' });
       assert(!open().length && u().back.expanded && S(m).decks[D.id].stack.length === st, 'back did more than close the More');

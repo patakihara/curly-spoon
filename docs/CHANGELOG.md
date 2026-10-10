@@ -61,7 +61,7 @@ _Unreleased (no contract change):_ web: the shell draws no UI itself — FrontLa
   paramControlMore (title; closeMore; children paramControls), paramControl values `more` and intent openMore,
   backLayer child `more`. Design: morePanel, checklist, checkRow (new), filterChips prop more / moreLabel, event more,
   visual moreAfter, backLayer slot more, token icon.check, texts more.open / more.close, choreography rule moreChanged.
-  Config: Library's genre has a More. Also: bottomSheet.d.ts regenerated (its slot rename had been missed).
+  The open More is the whole back layer (Layout: the panel alone, at the top). Config: Library's genre has a More. Also: bottomSheet.d.ts regenerated (its slot rename had been missed).
 - ComponentDef.option (additive): the component each of a control's options is drawn as (tabBar → tab, filterChips →
   chip, suggestionList → suggestionRow, checklist → checkRow); inherited through extends (compose.js freeComponent).
   Design check: registered and interactive.

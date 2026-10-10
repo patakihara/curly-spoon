@@ -636,7 +636,7 @@ export interface Contract<C, V, I> { config: C; values: V; intents: I }
 export interface NoValues {}
 export type NoIntents = never;
 
-export type BackLayerRegionName = 'header' | 'actions' | 'controls' | 'panel';   // controls: the 'always' rows · panel: the 'expanded' rows, or the open More
+export type BackLayerRegionName = 'header' | 'actions' | 'controls' | 'panel';   // controls: the 'always' rows · panel: the 'expanded' rows, or the open More (then alone, at the top)
 export interface ParamControlOption {   // one choice, as a param control's values give it
   value: string;                         // 'jazz'
   label: string;                         // "Jazz", resolved in the current locale

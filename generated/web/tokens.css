@@ -172,6 +172,8 @@
   --backLayer-basicPadding: 0 16px 12px;
   --backLayer-panelPadding: 12px 16px 16px;
   --backLayer-panelDivider: rgba(255,255,255,.15);
+  --backLayer-morePadding: 8px 16px 16px;
+  --backLayer-moreDivider: transparent;
   --backLayer-panelGap: 12;
   --backLayer-basicHeight: 60;
   --backLayer-actionsHeight: 56;
@@ -620,7 +622,7 @@
   --suggestionRow-iconSize: 20;
   --suggestionRow-iconOpacity: 0.75;
   --suggestionList-gap: 12;
-  --morePanel-height: 48;
+  --morePanel-height: 56;
   --morePanel-gap: 8;
   --morePanel-closeIcon: var(--icon-close);
   --morePanel-fontFamily: inherit;

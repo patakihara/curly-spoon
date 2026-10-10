@@ -544,12 +544,13 @@ Each was my call; say if you disagree and I redo it.
     back-layer state (`BackLayerState.more`: params, newest last); intents openMore { name } / closeMore; event
     moreChanged { name, opened } (choreography: the same front-layer move as expandedChanged). Opening reveals the back
     layer; back and up close the newest More before anything else; concealing closes every More (however it is
-    concealed). The open More fills the panel region in place of the 'expanded' rows (my call: header, actions and the
-    'always' rows stay; the More's own bar says what it is). Its contract `paramControlMore` (title: the param's label;
+    concealed). The open More is the whole back layer (Sofia, same day, correcting my first take, which kept the header
+    and the 'always' rows): the panel region holds it at the top, every other region fades out and takes no input, and
+    the front layer sits below it (backLayer visuals morePadding / moreDivider for its panel). Its contract `paramControlMore` (title: the param's label;
     closeMore; children: its rows) is drawn by a new design component morePanel (✕ + title; its rows follow it, like a
     panelRow's); inside a More, choice / choices params are drawn by a new checklist (one checkRow per option, a check
     on the selected). How many options a chip row shows before its More chip is design (filterChips `moreAfter`, 4);
-    their order is config's; the chip's word is the design text `more.open`. Rule: at most one control per page param
+    the More chip shows only when some options don't fit (or the More has rows of its own); their order is config's; the chip's word is the design text `more.open`. Rule: at most one control per page param
     has a More. Sample: Library's genre.
 45. Option components (Sofia, 2026-10-10: "the tab bar component declares that its children must be tabs"): design
     says which component draws each option of a control, `ComponentDef.option` (tabBar → tab, filterChips → chip, and
@@ -613,8 +614,8 @@ fields, not nodes · 6 verify ✓ (screens above).
 - 18.0: option components (decision 45): the DCs still import their option's DC by name (TabBar → Tab, FilterChips →
   Chip, SuggestionList → SuggestionRow, Checklist → CheckRow); a different design option would need the platform to map
   it. design/checks.js runs only from the rules harness, not on the Invariants page (as before).
-- 18.0: More (decision 44): only chip rows show a More chip (tab bars, dropdowns and the rest have no More event); a
-  More chip shows even when every option already fits. No URL or snapshot keeps which More is open.
+- 18.0: More (decision 44): only chip rows show a More chip (tab bars, dropdowns and the rest have no More event). A
+  selected option past moreAfter is not shown in the row (only in the More). No URL or snapshot keeps which More is open.
 - 18.0: the free-component merge tree is proposed, not applied (69 design components).
 - Design checks are not shown on the Invariants page yet (needs Invariants.dc.html).
 - Still in the player (ordering, not yet params): detail transition order (out → swap → front move + in → header parts), flight cut sources (top: header / bars above the middle; bottom: peek / nav bar), app-bar sheet start (front layer top), the reveal band shape.

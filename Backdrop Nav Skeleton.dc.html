@@ -33,7 +33,7 @@
       </div></sc-for>
 
       <sc-for list="{{ rPanel }}" as="ri" hint-placeholder-count="1"><div style="position:absolute;left:0;right:0;top:{{ ri.top }}px;opacity:{{ ri.op }};pointer-events:{{ ri.ev }};transition:{{ mx.expand.both }}">
-        <div ref="{{ panelRef }}" style="height:{{ panelH }};box-sizing:border-box;padding:{{ sv.back.panelPadding }};border-top:1px solid {{ sv.back.panelDivider }};color:{{ sv.back.ink }};display:flex;flex-direction:column;gap:{{ sv.back.panelGap }}px">
+        <div ref="{{ panelRef }}" style="height:{{ panelH }};box-sizing:border-box;padding:{{ panelPad }};border-top:1px solid {{ panelLine }};color:{{ sv.back.ink }};display:flex;flex-direction:column;gap:{{ sv.back.panelGap }}px">
           <sc-if value="{{ moreOpen }}" hint-placeholder-val="{{ false }}"><dc-import name="MorePanel" title="{{ moreHead.title }}" close-ix="{{ moreHead.closeIx }}" visuals="{{ moreHead.vis }}" hint-size="100%,48px"></dc-import></sc-if>
           <sc-for list="{{ panelRows }}" as="pr" hint-placeholder-count="3">
             <sc-if value="{{ pr.hasLabel }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column"><dc-import name="PanelRow" text="{{ pr.label }}" visuals="{{ pr.vis }}" hint-size="100%,16px"></dc-import></div></sc-if>
@@ -202,7 +202,7 @@ const G = { layout: 'compact', PW: DEVICES.phone.width, CW: DEVICES.phone.width,
 const FF = () => ({ top: 0, left: 0, w: G.CW, h: G.H, r: 0, op: 1 });
 const CF = () => ({ top: G.AH || 0, left: 0, w: G.CW, h: G.H - (G.AH || 0), r: 0, op: 1 });
 const underIndex = st => { for (let i = st.length - 1; i >= 0; i--) if (st[i].page.config.kind === 'backdrop') return i; return 0; };
-const BACK_KEYS = ['rActions', 'actBtns', 'actH', 'bhX', 'bhTitleOp', 'panelRows', 'panelH', 'panelRef', 'rHeader', 'rBasic', 'rPanel', 'bhLeft', 'bhRight', 'bhTitle', 'bhTitlePad', 'basicRows', 'tabMo', 'canBack', 'basicH', 'moreOpen', 'moreHead'];
+const BACK_KEYS = ['rActions', 'actBtns', 'actH', 'bhX', 'bhTitleOp', 'panelRows', 'panelH', 'panelRef', 'rHeader', 'rBasic', 'rPanel', 'bhLeft', 'bhRight', 'bhTitle', 'bhTitlePad', 'basicRows', 'tabMo', 'canBack', 'basicH', 'moreOpen', 'moreHead', 'panelPad', 'panelLine'];
 const SHELL_ACTIONS = ['copyLink'];   // shell actions this mockup implements (§20)
 // artwork for mock content: two colours from the item id (the backend has no images)
 /* lint:off fake backend artwork */
@@ -796,8 +796,9 @@ class Component extends DCLogic {
     const opts = n.values.options, base = { comp, vis: V, isFilters: false, isChips: false, isTabs: false, isSearch: false, isDropdown: false, isRange: false, isSuggest: false, isChecklist: false, label: n.values.label || '' };
     const ev = n.events.toggle && n.at.param.type === 'choices' ? 'toggle' : 'change';
     if (comp === 'filterChips' || comp === 'choiceChips') {
-      // a control with a More: the first moreAfter options (design), in config order, then the More chip (its event more → openMore)
-      const more = n.values.more && n.events.more ? this.actOf(n, 'more') : null, shown = more ? opts.slice(0, Math.max(0, +V.moreAfter || 0)) : opts;
+      // a control with a More: the first moreAfter options (design), in config order, then the More chip (its event more → openMore),
+      // when some options don't fit (or the More shows rows of its own)
+      const after = Math.max(0, +V.moreAfter || 0), more = n.values.more && n.events.more && (opts.length > after || n.config.more.paramControls) ? this.actOf(n, 'more') : null, shown = more ? opts.slice(0, after) : opts;
       const chips = shown.map(o => { const g = go(ev, o.value, 'params · ' + name + ' ' + o.value); return { label: o.label, on: o.selected, ix: this.ix(n.key + '/' + o.value, g.nav && { nav: g.nav }, g.run, { component: opt, label: o.label }) }; });
       if (more) chips.push({ label: n.props.moreLabel || '', on: false, ix: this.ix(n.key + '/more', more, () => this.runAction(more), { component: opt, label: n.props.moreLabel || '' }) });
       return { ...base, isFilters: true, isChips: true, chips };
@@ -825,7 +826,7 @@ class Component extends DCLogic {
     const RH = Object.fromEntries(back.values.regions.map(r => [r.region, r.height]));
     const bhLeft = this.hItems(this.sl(H, 'start'), 'back', ps);
     // param-control rows (core): 'always' rows in the controls region (shown concealed too), 'expanded' rows in the panel
-    const rows = back.children.paramControls, shows = r => r.config.shows || 'expanded', MN = back.children.more || null;
+    const rows = back.children.paramControls, shows = r => r.config.shows || 'expanded', MN = back.children.more || null, BV = this.P.resolveVisuals(this.specs, 'backLayer', 'enabled', {});
     const basicRows = rows.filter(r => shows(r) === 'always').map(r => ({ controls: r.children.controls.map(n => this.controlView(ps, n)) }));
     return {
       rHeader: RI.header || [], rBasic: RI.controls || [], rPanel: RI.panel || [], rActions: RI.actions || [],
@@ -842,7 +843,7 @@ class Component extends DCLogic {
       canBack: !isBase, basicH: basicRows.length ? (RH.controls || 0) / basicRows.length : 0, panelRef: this.panelRef,
       panelH: 'auto',
       // an open More (core: the back layer's more child) takes the panel: its bar (morePanel: ✕ + title), then its rows in the panel's place
-      moreOpen: !!MN, moreHead: MN ? { title: MN.props.title || MN.values.title || '', vis: this.vis(MN, { surface: 'backLayer' }), closeIx: this.ix(MN.key + '/close', this.actOf(MN, 'close'), () => this.runAction(this.actOf(MN, 'close')), { component: 'iconButton', label: MN.props.closeLabel || '' }) } : { title: '', vis: {}, closeIx: INERT },
+      moreOpen: !!MN, panelPad: MN ? BV.morePadding : BV.panelPadding, panelLine: MN ? BV.moreDivider : BV.panelDivider, moreHead: MN ? { title: MN.props.title || MN.values.title || '', vis: this.vis(MN, { surface: 'backLayer' }), closeIx: this.ix(MN.key + '/close', this.actOf(MN, 'close'), () => this.runAction(this.actOf(MN, 'close')), { component: 'iconButton', label: MN.props.closeLabel || '' }) } : { title: '', vis: {}, closeIx: INERT },
       // panel rows: the row's label (its first control's, drawn by panelRow), then its controls side by side
       panelRows: (MN ? MN.children.paramControls : rows.filter(r => shows(r) === 'expanded')).map(r => ({ hasLabel: !!r.values.label && !MN, label: r.values.label || '', vis: this.P.resolveVisuals(this.specs, 'panelRow', 'enabled', {}),
         controls: r.children.controls.map(n => this.controlView(ps, n)) }))
