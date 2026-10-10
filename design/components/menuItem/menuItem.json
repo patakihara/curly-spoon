@@ -8,10 +8,10 @@
   "optional": [
     "icon"
   ],
-  "parts": [
-    "icon",
-    "label"
-  ],
+  "parts": {
+    "icon": null,
+    "label": null
+  },
   "visuals": {
     "height": {
       "default": {

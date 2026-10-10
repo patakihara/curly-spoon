@@ -557,11 +557,31 @@ export const INVARIANTS = [
   }],
   ['a child (variant) with its parent\'s slots and parts has no DC of its own: its parent\'s draws it (decision 52)', f => {
     const reg = need(f.specs && f.specs.components, 'no specs'), plats = need(f.platforms && f.platforms.length && f.platforms, 'no platform manifests');
-    const slots = c => Object.keys(c.props || {}).filter(k => c.props[k] === 'slot').sort().join(), parts = c => [...(c.parts || [])].sort().join();
+    const slots = c => Object.keys(c.props || {}).filter(k => c.props[k] === 'slot').sort().join(), parts = c => Object.keys(c.parts || {}).sort().join();
     const errs = [];
     plats.forEach(P => Object.entries(reg).filter(([id, c]) => c.variant && c.extends && P.implements.includes(id)).forEach(([id, c]) => {
       const p = reg[c.extends]; if (p && slots(c) === slots(p) && parts(c) === parts(p)) errs.push(id + ' (' + P.platform + ': same slots and parts as ' + c.extends + ')');
     }));
+    assert(!errs.length, errs.length + ': ' + errs.join(' · '));
+  }],
+  ['a component that is not interactive says where each event comes from: a part (or the option) whose component is interactive; scroll events are exempt', f => {
+    const reg = need(f.specs && f.specs.components, 'no specs'), EXEMPT = ['scroll'];
+    const chain = id => { const out = []; for (let c = id; c && reg[c] && !out.includes(c); c = reg[c].extends) out.push(c); return out; };
+    const ext = (id, b) => chain(id).includes(b);
+    const errs = [];
+    Object.keys(reg).filter(id => !ext(id, 'interactive')).forEach(id => {
+      const ev = {}; chain(id).reverse().forEach(c => (reg[c].events || []).forEach(e => { ev[e.name] = e; }));   // events are inherited (core/compose.js), the nearest wins
+      const parts = reg[id].parts || {}, option = chain(id).map(c => reg[c].option).find(Boolean);
+      Object.values(ev).filter(e => !EXEMPT.includes(e.name)).forEach(e => {
+        if (e.from === undefined) return errs.push(id + '.' + e.name + ': no from');
+        [].concat(e.from).forEach(src => {
+          if (src === 'option') { if (!option) errs.push(id + '.' + e.name + ': from option, but ' + id + ' has no option'); else if (!ext(option, 'interactive')) errs.push(id + '.' + e.name + ': option ' + option + ' is not interactive'); }
+          else if (!(src in parts)) errs.push(id + '.' + e.name + ': from ' + src + ', which is not a part of ' + id);
+          else if (!parts[src] || !reg[parts[src]]) errs.push(id + '.' + e.name + ': part ' + src + ' has no drawing component');
+          else if (!ext(parts[src], 'interactive')) errs.push(id + '.' + e.name + ': part ' + src + ' (' + parts[src] + ') is not interactive');
+        });
+      });
+    });
     assert(!errs.length, errs.length + ': ' + errs.join(' · '));
   }],
   ['component inheritance: parents exist, chains end, children keep their parent\'s props and visuals', f => {
@@ -1255,7 +1275,7 @@ export const INVARIANTS = [
     const sp = need(f.specs, 'no specs'), roles = resolvedContracts(need(f.contractDefs, 'no contracts')), reg = sp.components;   // 18.0: pieces name contracts (their children / values) or components (their parts)
     const roleOk = (r, x) => { const R = roles[r]; return !!R && (!x || x in (R.children || {}) || x in (R.values || {})); };
     const pieceOk = (p, ids) => { const b = String(p).replace(/@(before|after)$/, '').replace(/\[(\]|first\]|last\]|\d+\])$/, ''), [h, x] = b.split('.'); if (h === 'source' || h === 'target' || h === 'origin') return true; if (ids.has(h) && !x) return true;
-      if (roles[h]) return roleOk(h, x); const C = reg[h]; return !!C && (!x || (C.parts || []).includes(x)); };
+      if (roles[h]) return roleOk(h, x); const C = reg[h]; return !!C && (!x || x in (C.parts || {})); };
     const checkList = (steps, where) => {
       const ids = new Set((steps || []).map(s => s.id).filter(Boolean)), pieces = [], anchors = [];
       const walk = v => { if (Array.isArray(v)) return v.forEach(walk); if (!v || typeof v !== 'object') return;

@@ -54,7 +54,7 @@
       "default": 260
     }
   },
-  "parts": [
-    "logo"
-  ]
+  "parts": {
+    "logo": "logo"
+  }
 }

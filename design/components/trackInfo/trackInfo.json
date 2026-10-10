@@ -63,8 +63,8 @@
       }
     }
   },
-  "parts": [
-    "title",
-    "subtitle"
-  ]
+  "parts": {
+    "title": null,
+    "subtitle": null
+  }
 }

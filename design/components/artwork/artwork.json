@@ -55,7 +55,7 @@
       }
     }
   },
-  "parts": [
-    "image"
-  ]
+  "parts": {
+    "image": null
+  }
 }

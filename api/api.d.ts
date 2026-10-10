@@ -818,7 +818,7 @@ export interface ComponentDef {
   variants?: Record<string, VariantAxis>;
   statuses?: StatusState[];
   motion?: Record<string, Step[]>;       // 17.0: component motion as steps (key: a visual or a trigger name)
-  parts?: string[];                      // 17.0: pieces the component draws itself that motion may name ('<component>.<part>')
+  parts?: PartMap;                       // 17.0: pieces the component draws that motion may name ('<component>.<part>'); 18.0: each maps to the component that draws it (null: a plain piece)
   placeholder?: PlaceholderForm;
   provides?: Record<string, VisualValue>;
   visuals?: Visuals;
@@ -826,7 +826,12 @@ export interface ComponentDef {
   events?: FreeEventSpec[];              // 18.0: what it emits (composition maps each to an intent)
   option?: ComponentName;                  // 18.0: the component each of its options is drawn as (tabBar → tab); inherited; registered, interactive
 }
-export interface FreeEventSpec { name: string; payload: PropType | null }
+export type PartName = string;
+export type PartDrawer = ComponentName | null;            // the component that draws a part; null: a plain piece the component draws itself (text, image, glyph)
+export interface PartMap { [part: string]: PartDrawer }   // OPEN: keyed by part name
+export type EventSource = PartName | 'option';            // 'option': the repeated children drawn as the component's `option`
+export type EventFrom = EventSource | EventSource[];      // one source, or several (a dialog's confirm and cancel)
+export interface FreeEventSpec { name: string; payload: PropType | null; from?: EventFrom }   // 18.0: the part (or option) the event comes from; required unless the component is interactive (scroll events excepted)
 export type ComponentRegistry = Record<ComponentName, ComponentDef>;
 export interface StackPattern { event: 'pushed' | 'popped'; kind?: PageConfig['kind'] | 'layerPage' }
 export interface SurfacePattern { event: 'deckSwitched' | 'expandedChanged' | 'layerOpened' | 'layerClosed' | 'overlayOpened' | 'overlayClosed'; layer?: LayerId }

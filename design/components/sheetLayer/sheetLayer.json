@@ -12,11 +12,16 @@
   "events": [
     {
       "name": "open",
-      "payload": null
+      "payload": null,
+      "from": "peek"
     },
     {
       "name": "close",
-      "payload": null
+      "payload": null,
+      "from": [
+        "peek",
+        "scrim"
+      ]
     }
   ],
   "visuals": {
@@ -25,5 +30,9 @@
         "token": "size.sideSheet.width"
       }
     }
+  },
+  "parts": {
+    "peek": "peekCard",
+    "scrim": "scrim"
   }
 }

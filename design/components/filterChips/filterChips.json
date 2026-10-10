@@ -51,20 +51,26 @@
   "events": [
     {
       "name": "change",
-      "payload": "value"
+      "payload": "value",
+      "from": "option"
     },
     {
       "name": "toggle",
-      "payload": "string"
+      "payload": "string",
+      "from": "option"
     },
     {
       "name": "more",
-      "payload": null
+      "payload": null,
+      "from": "more"
     }
   ],
   "optional": [
     "more",
     "moreLabel"
   ],
-  "option": "chip"
+  "option": "chip",
+  "parts": {
+    "more": "chip"
+  }
 }

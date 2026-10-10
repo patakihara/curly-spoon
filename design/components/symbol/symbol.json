@@ -97,7 +97,7 @@
       }
     ]
   },
-  "parts": [
-    "glyph"
-  ]
+  "parts": {
+    "glyph": null
+  }
 }

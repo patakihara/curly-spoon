@@ -46,8 +46,8 @@ export function resolveExtends(raw) {
     const mo = { ...J(P.motion || {}), ...J(C.motion || {}) };
     if (Object.keys(mo).length) m.motion = mo;
     if (!C.placeholder && P.placeholder) m.placeholder = J(P.placeholder);
-    const parts = [...new Set([...(P.parts || []), ...(C.parts || [])])];   // 17.0: inherited
-    if (parts.length) m.parts = parts;
+    const parts = { ...(P.parts || {}), ...(C.parts || {}) };   // 17.0: inherited; 18.0: a map part → drawer
+    if (Object.keys(parts).length) m.parts = parts;
     const va = { ...J(P.variants || {}), ...J(C.variants || {}) };
     if (Object.keys(va).length) m.variants = va;   // every axis (cases resolve by them); a picked one is not offered (core/compose.js freeComponent)
     const pk = { ...(P.picks || {}), ...(C.picks || {}) };

@@ -4,10 +4,10 @@
   "props": {
     "text": "string"
   },
-  "parts": [
-    "icon",
-    "text"
-  ],
+  "parts": {
+    "icon": null,
+    "text": null
+  },
   "visuals": {
     "height": {
       "default": 40

@@ -7,7 +7,8 @@
   "events": [
     {
       "name": "close",
-      "payload": null
+      "payload": null,
+      "from": "close"
     }
   ],
   "visuals": {
@@ -45,5 +46,8 @@
     "rowGap": {
       "default": 12
     }
+  },
+  "parts": {
+    "close": "iconButton"
   }
 }

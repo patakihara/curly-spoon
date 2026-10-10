@@ -83,7 +83,8 @@
   "events": [
     {
       "name": "change",
-      "payload": "value"
+      "payload": "value",
+      "from": "option"
     }
   ],
   "option": "tab"

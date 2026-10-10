@@ -670,8 +670,7 @@ fields, not nodes · 6 verify ✓ (screens above).
     The system tokens are also in a Design System artifact of their own (https://claude.ai/artifact/JR2cQU3KYQCzkYgrYR4LqD),
     the same type as Sonora's; that type caps non-colour families at 60, so the component and hire levels stay here.
     InteractiveComponent removed from the API (Sofia: components handle their own state transitions through interactive).
-    Open idea (not yet proposed): containers declare their pieces' interactive components (morePanel close: iconButton),
-    as `option` does, and a rule checks every event a non-interactive component sends comes from one.
+    Containers naming the interactive piece each event comes from: done in decision 61.
 
 55. Surfaces are interactive (Sofia, 2026-10-10: option 1, "make all surfaces tappable by default, this way we can decide
     later what happens on tap"; name `surface`). design/components/surface extends interactive and turns the look off
@@ -680,8 +679,7 @@ fields, not nodes · 6 verify ✓ (screens above).
     on. Inputs (searchField, rangeField, dropdown, seekBar) extend interactive. interactive.cursor (per state) replaces
     interactive.js deciding the cursor. frontLayer lists the six interaction states plus its three position states.
     Open: the surfaces' DCs don't use interactive.js yet (no press, no peek hover drawn): part of shell step 3. Containers
-    naming the interactive piece each event comes from (morePanel.close: iconButton) needs an API proposal (ComponentDef
-    field + rule); not proposed yet.
+    naming the interactive piece each event comes from: done in decision 61.
 56. Components page (Sofia, 2026-10-10): chips show contracts it is hired for (black), contracts those extend (black,
     italic) and components it extends (grey); each card lists its component-level tokens (as the Tokens page). Its notes
     showed "not found": 66 component .md files were never published, and the page showed the server's 404 page; pages now
@@ -775,6 +773,19 @@ fields, not nodes · 6 verify ✓ (screens above).
     funnel every press passes (nix, drawn emit, press): it now puts the tap element's rectangle on the openOverlay intent
     instead of into menuAnchor (moved, not added; the element is only there, no design or config value can stand in). The
     Components page previews the popup with an openedAt at the frame's end edge (left 10000) so it sits 8 from the end.
+61. Parts name their drawer, events name their source (Sofia approved 2026-10-10; 18.0.0 amended, breaking, no bump).
+    `ComponentDef.parts` is `PartMap` (part -> `PartDrawer` = component name or null); `FreeEventSpec.from?: EventFrom`
+    (a part, a list of parts, or 'option'). Existing parts map to null, except logo in signInPage and splash (Logo.dc is
+    imported there); the Symbol wrappers (checkRow check, suggestionRow icon) are plain pieces, null. New parts: dialog
+    confirm / cancel (button), morePanel close (iconButton), emptyState / staleBanner retry (button), filterChips more
+    (chip), sheetLayer peek (peekCard) and scrim (scrim). Sources: dialog close from [confirm, cancel]; morePanel close
+    from close; emptyState (errorState) and staleBanner retry from retry; suggestionList pick, checklist change / toggle,
+    tabBar change and filterChips (choiceChips) change / toggle from option; filterChips more from more; sheetLayer open
+    from peek, close from [peek, scrim]. Rule (96 pass): every event of a non-interactive component, scroll excepted, has a
+    source that is an interactive part or option. Surfaces (drawer, menu, snackbar) extend interactive through surface, so
+    they are exempt and not filled. The side sheet's edge handle also sends open but is a plain piece of sideSheet, not
+    an interactive component, so it is not a source (open: make it a component or leave it). DCs still hard-code the
+    component in their ixFor calls; they do not read the part map yet.
 ## Hires, picks and tokens: work list (decisions 52–54; tick as done)
 API 18.0.0 amended (breaking: renames and removals). Then back to the shell conversion list, step 3.
 - [x] 1. Rename ComponentId → ComponentName (api.d.ts, docs).

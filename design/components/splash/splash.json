@@ -57,7 +57,7 @@
       }
     ]
   },
-  "parts": [
-    "logo"
-  ]
+  "parts": {
+    "logo": "logo"
+  }
 }

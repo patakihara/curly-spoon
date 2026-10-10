@@ -6,7 +6,8 @@
   "events": [
     {
       "name": "pick",
-      "payload": "string"
+      "payload": "string",
+      "from": "option"
     }
   ],
   "visuals": {

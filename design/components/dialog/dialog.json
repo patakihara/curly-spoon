@@ -75,7 +75,15 @@
   "events": [
     {
       "name": "close",
-      "payload": "value"
+      "payload": "value",
+      "from": [
+        "confirm",
+        "cancel"
+      ]
     }
-  ]
+  ],
+  "parts": {
+    "confirm": "button",
+    "cancel": "button"
+  }
 }

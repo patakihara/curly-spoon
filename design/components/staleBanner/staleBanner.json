@@ -35,7 +35,11 @@
   "events": [
     {
       "name": "retry",
-      "payload": null
+      "payload": null,
+      "from": "retry"
     }
-  ]
+  ],
+  "parts": {
+    "retry": "button"
+  }
 }

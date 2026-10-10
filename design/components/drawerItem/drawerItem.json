@@ -5,10 +5,10 @@
     "text": "string",
     "icon": "string"
   },
-  "parts": [
-    "icon",
-    "label"
-  ],
+  "parts": {
+    "icon": null,
+    "label": null
+  },
   "statuses": [
     "selected",
     "checked"
