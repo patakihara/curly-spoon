@@ -93,7 +93,9 @@ ParamSpec { type: 'choice'|'choices'|'text'|'flag'|'number'|'date', options?: So
 ```
 BackLayerConfig { header: HeaderConfig, actions?: ButtonItem[], controls?: ParamControlRowConfig[], panel?: ParamControlRowConfig[], toggleOnTap?, hideHeaderOnScroll? }
 // regions are fixed: header · actions · controls · panel (or the open More). Heights are design (through composition); the panel is measured,
-// held to the room above the front layer's header, and scrolls when taller (BackLayerRegionView.scrolls).
+// held to the room above the front layer's header, and scrolls when taller (BackLayerRegionView.scrolls), collapse-first:
+// back.scroll first collapses the header (as the content's scroll does), then moves the panel (Layout.panelOffset).
+// A header's detail is a scroll surface: its scroll event scrolls the panel while revealed, else the content.
 ```
 
 ### Front layer ✅

@@ -63,6 +63,9 @@ _Unreleased (no contract change):_ web: the shell draws no UI itself — FrontLa
   backLayer child `more`. Design: morePanel, checklist, checkRow (new), filterChips prop more / moreLabel, event more,
   visual moreAfter, backLayer slot more, token icon.check, texts more.open / more.close, choreography rule moreChanged.
   The open More is the whole back layer (Layout: the panel alone, at the top). Config: Library's genre has a More. Also: bottomSheet.d.ts regenerated (its slot rename had been missed).
+- Panel scroll and header detail as a scroll surface (additive): BackLayerState.scroll, ScrollSurface ('content' |
+  'panel'), ScrollIntent.surface, the header contract's intent scroll, Layout.panelOffset; the header's collapse uses
+  the larger of the content's and the panel's scroll. Design: header / appBar event scroll; composition maps it.
 - ComponentDef.option (additive): the component each of a control's options is drawn as (tabBar → tab, filterChips →
   chip, suggestionList → suggestionRow, checklist → checkRow); inherited through extends (compose.js freeComponent).
   Design check: registered and interactive.

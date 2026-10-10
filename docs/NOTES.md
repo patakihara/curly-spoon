@@ -603,6 +603,12 @@ fields, not nodes · 6 verify ✓ (screens above).
   its own that belong in composition: app-bar form page / layer (965, 1235), the component per item kind (KIND table
   715, branches 840–846, 1071–1078, 1105–1108); events go through runAction (749–772) and surfaceOf parses slot paths
   (651–658), which the contract tree's path keys replace.
+47. Collapsible headers scroll from every surface (Sofia, 2026-10-10, approved): a back layer's panel scrolls
+    collapse-first like the content (BackLayerState.scroll; the header collapses by the larger of the two; concealing
+    resets it), and a header's detail is a scroll surface: dragging or wheeling on it scrolls the panel while the back
+    layer is revealed, else the content (header contract intent scroll; ScrollIntent.surface). My change to the
+    approved shape: no relative `by` — the platform turns a drag into an absolute offset, since only it knows how far
+    the content can scroll. The scroll offset of the panel is state because the header's collapse depends on it.
 
 ## Shell conversion list (kept current with every change)
 Goal: the shell (Backdrop Nav Skeleton.dc.html) draws nothing and decides nothing itself. It places the root's
