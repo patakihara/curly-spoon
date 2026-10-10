@@ -36,7 +36,6 @@
     <sc-if value="{{ showNnCard }}" hint-placeholder-val="{{ false }}">
       <dc-import name="PeekCard" layer="{{ sheetLayer.props }}" nn-card-ref="{{ nnCardRef }}" mx="{{ mx }}" nn="{{ nn }}" pl="{{ pl }}" np-vis="{{ npVis }}" style="display:contents" hint-size="0px,0px"></dc-import>
     </sc-if>
-    <div style="position:absolute;inset:0;pointer-events:none"><dc-import name="Scrim" color="{{ sv.side.scrim }}" shown="{{ nnScrimOp }}" on-click="{{ nnScrimClick }}" ms="{{ mx.layer.nowPlaying.ms }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></div>
     <sc-if value="{{ showNnEdge }}" hint-placeholder-val="{{ false }}">
       <div style="position:absolute;right:0;top:50%;transform:translateY(-50%)"><dc-import name="EdgeHandle" symbol-visuals="{{ symVis }}" on-enter="{{ nnEdgeEnter }}" visuals="{{ edgeVis }}" hint-size="18px,72px"></dc-import></div>
     </sc-if>
@@ -972,8 +971,7 @@ class Component extends DCLogic {
           if (n.contract === 'text') { v.acc.plan = n.values.text || ''; v.acc.planVis = this.P.resolveVisuals(this.specs, 'panelRow', 'enabled', { surface: 'appBar' }); }
           if (n.contract === 'button') { v.acc.signText = n.props.text || ''; v.acc.signIx = this.nix(n); } }); }
     }
-    const modal = wide && G.side === 'modal' && nOpen, auto = wide && G.side === 'auto';
-    v.nnScrimOp = modal ? 1 : 0; v.nnScrimEv = modal ? 'auto' : 'none'; v.nnScrimClick = () => this.closeLayer('nowPlaying');
+    const auto = wide && G.side === 'auto';
     v.showNnEdge = auto && !nOpen && !dOpen; v.edgeVis = this.P.resolveVisuals(this.specs, 'sideSheet', 'enabled', {}); v.nnEdgeEnter = () => this.openLayer('nowPlaying');
     v.nnLeave = () => { if (auto && this.ms.layers.nowPlaying.open) this.closeLayer('nowPlaying'); };
     v.showNnCard = wide;

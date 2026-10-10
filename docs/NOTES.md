@@ -718,6 +718,10 @@ fields, not nodes · 6 verify ✓ (screens above).
     shell draws them as listItem rows with menu's own row visuals (rowHeight, rowPadX, iconSize ...). Drawing them from
     their nodes means either drawing them as DrawerItem (a look change) or a design child for a menu row (a new design
     component, to propose). Its popup anchor is also the shell's measurement (menuAnchor).
+    Side-sheet scrim: NowPlayingSheet draws it from the sheetLayer node (shown while open with side modal; design
+    sideSheet.scrim through the shell's sv bundle) and it sends the node's close. The shell's Scrim instance and its
+    modal decision are gone. Scrim.dc.html stays for FrontLayer's scrim; it has no design component of its own (see the
+    EdgeHandle / Scrim proposal below).
 ## Hires, picks and tokens: work list (decisions 52–54; tick as done)
 API 18.0.0 amended (breaking: renames and removals). Then back to the shell conversion list, step 3.
 - [x] 1. Rename ComponentId → ComponentName (api.d.ts, docs).
@@ -769,7 +773,7 @@ Done (drawn from contract nodes through draw.js):
 - [x] Panel: the More bar's sticky wrapper: MorePanel (design pinned).
 - [ ] App-bar page: the overlay box (bottom offset, fade, scale, pointer events) around AppBarPage.
 - [ ] Rail: the wrapper box around NavRail.
-- [ ] Side-sheet scrim: a Scrim instance placed and coloured by the shell.
+- [x] Side-sheet scrim: NowPlayingSheet draws it from the sheetLayer node and sends close (decision 58).
 - [x] Drawer scrim: Drawer draws it (design drawer.scrim) and sends close.
 - [ ] Edge handle: placed by the shell (end edge, vertically centred).
 - [ ] Nav bar: the wrapper box that slides it down (navShift) with the expand transition.
