@@ -7,23 +7,29 @@
 </head>
 <body>
 <x-dc>
-<div onClick="{{ onCancel }}" style="position:absolute;inset:0;background:{{ v.scrim }};display:flex;align-items:center;justify-content:center;padding:24px">
+<div onClick="{{ onCancel }}" style="position:absolute;inset:0;cursor:{{ cur }};background:{{ v.scrim }};display:flex;align-items:center;justify-content:center;padding:24px">
   <div onClick="{{ stop }}" role="dialog" style="width:100%;max-width:{{ v.maxWidth }}px;background:{{ v.fill }};border-radius:{{ v.radius }}px;padding:{{ v.padding }}px;display:flex;flex-direction:column;gap:{{ v.gap }}px;box-shadow:{{ v.shadow }}">
     <div style="font-size:{{ v.titleSize }}px;font-weight:{{ v.titleWeight }}">{{ title }}</div>
     <sc-if value="{{ hasBody }}" hint-placeholder-val="{{ false }}"><div style="font-size:{{ v.bodySize }}px;color:{{ v.bodyInk }}">{{ body }}</div></sc-if>
     <div style="display:flex;justify-content:flex-end;gap:{{ v.actionsGap }}px;margin-top:{{ v.actionsTop }}px">
-      <dc-import name="Button" dc-props="{{ cancelIx }}" text="{{ cancel }}" hint-size="80px,36px"></dc-import>
-      <dc-import name="Button" dc-props="{{ okIx }}" text="{{ ok }}" hint-size="60px,36px"></dc-import>
+      <dc-import name="Button" dc-props="{{ cancelIx }}" text="{{ cancel }}" symbol-visuals="{{ symbolVisuals }}" hint-size="80px,36px"></dc-import>
+      <dc-import name="Button" dc-props="{{ okIx }}" text="{{ ok }}" symbol-visuals="{{ symbolVisuals }}" hint-size="60px,36px"></dc-import>
     </div>
   </div>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:300},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Dialog&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;body&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;cancel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Cancel&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;ok&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;OK&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;cancelIx&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;okIx&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;onCancel&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
-// Web implementation of design component dialog (overlay). Props: title, body, cancel / ok (labels), cancelIx / okIx (Button props), onCancel (scrim), visuals (resolved). No values of its own.
+// Web implementation of design component dialog (overlay contract), drawn from its node (platforms/web/draw.js): props title, body,
+// confirm / cancel (the overlay's own texts) falling back to confirmLabel / cancelLabel (design texts); its event close (payload
+// ok | cancel) from either button or the scrim; look from its visuals (button emphases confirmEmphasis / cancelEmphasis).
 class Component extends DCLogic {
   renderVals() {
-    const p = this.props;
-    return { v: p.visuals || {}, title: p.title || '', body: p.body || '', hasBody: !!p.body, cancel: p.cancel || '', ok: p.ok || '', cancelIx: p.cancelIx || {}, okIx: p.okIx || {}, onCancel: p.onCancel || (() => {}), stop: e => e.stopPropagation() };
+    const p = this.props, v = p.visuals || {}, close = (p.on || {}).close || (() => {});
+    const ok = p.confirm || p.confirmLabel || '', cancel = p.cancel || p.cancelLabel || '';
+    const btn = (key, payload, emphasis, label) => p.ixFor ? p.ixFor({ key, event: 'close', payload, component: 'button', variant: { emphasis }, label }) : {};
+    return { v, title: p.title || '', body: p.body || '', hasBody: !!p.body, ok, cancel, symbolVisuals: p.symbolVisuals || {},
+      okIx: btn('ok', 'ok', v.confirmEmphasis, ok), cancelIx: btn('cancel', 'cancel', v.cancelEmphasis, cancel),
+      cur: v.cursor || 'default', onCancel: e => close('cancel', e), stop: e => e.stopPropagation() };
   }
 }
 </script>

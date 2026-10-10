@@ -698,6 +698,12 @@ fields, not nodes · 6 verify ✓ (screens above).
     layer name and "Nothing playing", and while playing a status line (status mark, position / duration, the id's tail).
     Drawing the detail from its node needs config for that: an if / else around the binds (nothing playing → the layer
     name, player.nothing), and the status line as config or a derived value.
+58. Overlays from their nodes (shell step 3, 2026-10-10). Dialog: the shell hands Dialog its overlay node (draw.js);
+    its OK / Cancel buttons (ixFor) and the scrim send the node's close with ok / cancel. core: a node's closeOverlay
+    names its own overlay (n.config.id), not whichever is on top. design dialog: props confirmLabel / cancelLabel (the
+    hire feeds design texts common.ok / common.cancel; config's confirm / cancel texts win) and visuals confirmEmphasis
+    (filled) / cancelEmphasis (text) for its buttons, which the shell used to pick. The scrim's cursor is now design's
+    (surface: the arrow); it was the browser's default.
 ## Hires, picks and tokens: work list (decisions 52–54; tick as done)
 API 18.0.0 amended (breaking: renames and removals). Then back to the shell conversion list, step 3.
 - [x] 1. Rename ComponentId → ComponentName (api.d.ts, docs).
@@ -768,7 +774,8 @@ Done (drawn from contract nodes through draw.js):
 - [ ] DededeLayer: 10 props; no design component exists for it.
 - [ ] AccountLayer: 6 props; no design component exists for it.
 - [ ] EdgeHandle and Scrim: no design component exists for either.
-- [ ] NavRail, Drawer, Menu, Dialog, Snackbar, SignIn, Splash: props built by the shell, not from a node.
+- [ ] NavRail, Drawer, Menu, Snackbar, SignIn, Splash: props built by the shell, not from a node.
+- [x] Dialog: drawn from its overlay node (decision 58).
 - [x] Back-layer DCs placed by the shell: now one BackLayer instance fed its node (it draws Header, PanelRow, MorePanel,
       Button and the controls from their nodes).
 

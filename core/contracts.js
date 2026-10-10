@@ -98,7 +98,7 @@ export function contractTree(model, specs, composition, opts = {}) {
       case 'closeFind': return { type: 'closeFind' };
       case 'openLayer': return { type: 'openLayer', layer: extra.layer };
       case 'closeLayer': return { type: 'closeLayer', layer: extra.layer };
-      case 'closeOverlay': return { type: 'closeOverlay', result: payload };
+      case 'closeOverlay': return { type: 'closeOverlay', id: n.config && n.config.id, result: payload };   // this overlay, not whichever is on top
       case 'switchDeck': return { type: n.values.selected ? 'reselectDeck' : 'switchDeck', deck: n.values.deck };
       case 'reselectDeck': return { type: 'reselectDeck', deck: n.values.deck };
     }

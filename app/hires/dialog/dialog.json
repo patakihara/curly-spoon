@@ -3,6 +3,14 @@
   "contract": "overlay",
   "clauses": [
     {
+      "prop": "confirmLabel",
+      "text": "common.ok"
+    },
+    {
+      "prop": "cancelLabel",
+      "text": "common.cancel"
+    },
+    {
       "event": "close",
       "send": "closeOverlay"
     }

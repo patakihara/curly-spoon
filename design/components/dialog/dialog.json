@@ -4,7 +4,9 @@
     "title": "string",
     "body": "string",
     "confirm": "string",
-    "cancel": "string"
+    "cancel": "string",
+    "confirmLabel": "string",
+    "cancelLabel": "string"
   },
   "provides": {
     "content": {
@@ -62,6 +64,12 @@
     },
     "actionsTop": {
       "default": 8
+    },
+    "confirmEmphasis": {
+      "default": "filled"
+    },
+    "cancelEmphasis": {
+      "default": "text"
     }
   },
   "events": [

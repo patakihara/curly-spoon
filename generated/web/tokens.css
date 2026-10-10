@@ -348,6 +348,8 @@
   --dialog-bodyInk: var(--color-onSurfaceSubtle);
   --dialog-actionsGap: 8;
   --dialog-actionsTop: 8;
+  --dialog-confirmEmphasis: filled;
+  --dialog-cancelEmphasis: text;
   --snackbar-radius: var(--radius-sm);
   --snackbar-focusRing-keyboardFocus: [object Object];
   --snackbar-contentOpacity: 1;

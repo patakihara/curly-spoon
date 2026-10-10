@@ -389,6 +389,8 @@ object DialogTokens {
     val BodyInk = DesignTokens.ColorOnSurfaceSubtle
     val ActionsGap = 8f
     val ActionsTop = 8f
+    val ConfirmEmphasis = "filled"
+    val CancelEmphasis = "text"
 }
 
 object SnackbarTokens {

@@ -8,5 +8,7 @@ export interface DialogProps extends SurfaceProps {
   body: string;
   confirm: string;
   cancel: string;
+  confirmLabel: string;
+  cancelLabel: string;
 }
 export type DialogState = 'enabled' | 'disabled' | 'hover' | 'pressed' | 'focus' | 'keyboardFocus';
