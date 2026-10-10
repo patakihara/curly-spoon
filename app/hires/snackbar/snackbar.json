@@ -1,0 +1,10 @@
+{
+  "hires": "snackbar",
+  "contract": "overlay",
+  "clauses": [
+    {
+      "event": "close",
+      "send": "closeOverlay"
+    }
+  ]
+}

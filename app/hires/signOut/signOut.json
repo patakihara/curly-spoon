@@ -1,0 +1,17 @@
+{
+  "hires": "button",
+  "contract": "button",
+  "picks": {
+    "emphasis": "outlined"
+  },
+  "clauses": [
+    {
+      "prop": "text",
+      "value": "label"
+    },
+    {
+      "event": "press",
+      "send": "action"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "hires": "morePanel",
+  "contract": "paramControlMore",
+  "clauses": [
+    {
+      "prop": "closeLabel",
+      "text": "more.close"
+    },
+    {
+      "event": "close",
+      "send": "closeMore"
+    },
+    {
+      "slot": "content",
+      "fill": [
+        {
+          "child": "paramControls"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "hires": "iconButton",
+  "contract": "button",
+  "picks": {
+    "size": "md"
+  },
+  "clauses": [
+    {
+      "prop": "icon",
+      "value": "state",
+      "cases": [
+        {
+          "equals": "repeat",
+          "token": "icon.repeat"
+        },
+        {
+          "equals": "repeatOne",
+          "token": "icon.repeatOne"
+        }
+      ]
+    },
+    {
+      "event": "press",
+      "send": "action"
+    }
+  ]
+}

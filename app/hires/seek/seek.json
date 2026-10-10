@@ -1,0 +1,14 @@
+{
+  "hires": "seekBar",
+  "contract": "seek",
+  "clauses": [
+    {
+      "prop": "value",
+      "value": "positionMs"
+    },
+    {
+      "event": "change",
+      "send": "seek"
+    }
+  ]
+}

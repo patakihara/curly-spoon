@@ -189,6 +189,8 @@
   --header-detailFade: 1.6;
   --header-detailShrink: 0.15;
   --header-titleFadeFrom: 0.5;
+  --header-expandedHeight: 0;
+  --header-maxWidth: 0;
   --navBar-height: var(--size-navBar-height);
   --navBar-fill: var(--color-backLayer);
   --navRail-width: 80;
@@ -215,6 +217,7 @@
   --bottomSheet-listFill: var(--color-surface);
   --bottomSheet-closedRadius: 12px 12px 0 0;
   --bottomSheet-handleRadius: 2;
+  --bottomSheet-peekHeight: 0;
   --sideSheet-handleWidth: 18;
   --sideSheet-handleHeight: 72;
   --sideSheet-handleRadius: 10px 0 0 10px;
@@ -909,4 +912,5 @@
   --drawer-scrim: var(--color-scrim);
   --drawer-maxWidth: 85%;
   --drawer-width: 300;
+  --sheetLayer-sideWidth: var(--size-sideSheet-width);
 }

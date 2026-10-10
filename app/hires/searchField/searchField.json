@@ -1,0 +1,18 @@
+{
+  "hires": "searchField",
+  "contract": "paramControl",
+  "clauses": [
+    {
+      "prop": "clearLabel",
+      "text": "search.clear"
+    },
+    {
+      "event": "change",
+      "send": "setParams"
+    },
+    {
+      "event": "submit",
+      "send": "applyParams"
+    }
+  ]
+}

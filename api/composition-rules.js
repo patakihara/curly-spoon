@@ -86,7 +86,7 @@ const covers = (q, p) => q.contract === p.contract
   && (!q.param || (!!p.param && Object.entries(q.param).every(([k, v]) => p.param[k] === v)))
   && (!q.env || (!!p.env && q.env.env === p.env.env && q.env.equals === p.env.equals));
 const sameHire = (a, b) => a.hires === b.hires && a.contract === b.contract && JSON.stringify(a.clauses) === JSON.stringify(b.clauses)
-  && JSON.stringify(a.variants || []) === JSON.stringify(b.variants || []) && JSON.stringify((a.tokens || []).map(t => [t.name.slice(a.name.length), t.alias])) === JSON.stringify((b.tokens || []).map(t => [t.name.slice(b.name.length), t.alias]));
+  && JSON.stringify(a.picks || {}) === JSON.stringify(b.picks || {}) && JSON.stringify(a.visuals || {}) === JSON.stringify(b.visuals || {});
 
 export const COMPOSITION_RULES = [
   ['every hire wraps a registered free component and meets a declared contract', f => {
@@ -142,17 +142,15 @@ export const COMPOSITION_RULES = [
     }));
     assert(!errs.length, errs.length + ': ' + errs.join(' · '));
   }],
-  ['every token a clause uses is minted by its hire, and every hire token aliases a design token', f => {
-    const errs = [];
+  ['every token a clause or a hire\'s visuals name is a design token, and a hire\'s visuals name visuals its component has', f => {
+    const errs = [], toks = v => !v || typeof v !== 'object' ? [] : Array.isArray(v) ? v.flatMap(toks) : 'token' in v ? [v.token] : Object.values(v).flatMap(toks);
+    const visualsOf = (id, k = 0) => { const d = f.components[id]; return !d || k > 8 ? [] : [...Object.keys(d.visuals || {}), ...visualsOf(d.extends, k + 1)]; };
     f.composition.hires.forEach(h => {
-      const mine = new Set((h.tokens || []).map(t => t.name));
-      h.clauses.forEach(cl => {
-        if ('token' in cl && !mine.has(cl.token)) errs.push(h.name + ': token ' + cl.token + ' is not minted by the hire');
-        (cl.cases || []).forEach(k => { if (!mine.has(k.token)) errs.push(h.name + ': token ' + k.token + ' is not minted by the hire'); });
-      });
-      (h.tokens || []).forEach(t => {
-        if (!t.name.startsWith(h.name + '.')) errs.push(h.name + ': token ' + t.name + ' is not named after the hire');
-        if (!tokenExists(f.tokens, t.alias)) errs.push(h.name + ': ' + t.alias + ' is not a design token');
+      h.clauses.forEach(cl => toks(cl.token ? { token: cl.token } : {}).concat(toks(cl.cases || [])).forEach(t => { if (!tokenExists(f.tokens, t)) errs.push(h.name + ': ' + t + ' is not a design token'); }));
+      const has = new Set(visualsOf(h.hires));
+      Object.entries(h.visuals || {}).forEach(([v, row]) => {
+        if (!has.has(v)) errs.push(h.name + ': ' + h.hires + ' has no visual ' + v);
+        toks(row).forEach(t => { if (!tokenExists(f.tokens, t)) errs.push(h.name + '.' + v + ': ' + t + ' is not a design token'); });
       });
     });
     assert(!errs.length, errs.length + ': ' + errs.join(' · '));
@@ -162,13 +160,13 @@ export const COMPOSITION_RULES = [
     f.composition.hires.forEach(h => h.clauses.forEach(cl => { if ('text' in cl) Object.entries(f.designTexts || {}).forEach(([loc, T]) => { if (!(cl.text in T)) errs.push(h.name + ': ' + cl.text + ' (' + loc + ')'); }); }));
     assert(!errs.length, errs.length + ': ' + errs.join(' · '));
   }],
-  ['variant picks name a declared axis and option of the free component', f => {
+  ['a hire\'s picks name a setting its component still offers (not picked by a child) and one of its options', f => {
     f.composition.hires.forEach(h => {
       const c = freeComponent(f.components, h.hires); if (!c) return;
-      (h.variants || []).forEach(v => { const ax = c.variants[v.axis]; assert(ax && ax.options.includes(v.option), h.name + ': ' + h.hires + ' has no variant ' + v.axis + ' = ' + v.option); });
+      Object.entries(h.picks || {}).forEach(([axis, option]) => { const ax = c.variants[axis]; assert(ax && ax.options.includes(option), h.name + ': ' + h.hires + ' offers no setting ' + axis + ' = ' + option); });
     });
   }],
-  ['two hires are never the same (same free component, contract, clauses, variants and token aliases)', f => {
+  ['two hires are never the same (same free component, contract, clauses, picks and visuals)', f => {
     const errs = [];
     f.composition.hires.forEach((h, i) => f.composition.hires.slice(i + 1).forEach(o => { if (sameHire(h, o)) errs.push(h.name + ' = ' + o.name); }));
     assert(!errs.length, errs.length + ': ' + errs.join(' · '));

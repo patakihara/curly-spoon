@@ -24,7 +24,7 @@ export function placementFor(composition, at) {
 }
 export const hireOf = (composition, name) => composition.hires.find(h => h.name === name) || null;
 
-// a free component's own + inherited props, slots, events, variants, optional props and option component (design json: props of type
+// a free component's own + inherited props, slots, events, variants (offered: less the picked ones), picks, optional props and option component (design json: props of type
 // 'slot' are slots; option: the component each of its options is drawn as, the nearest up the extends chain)
 export function freeComponent(components, id, depth = 0) {
   const d = components[id]; if (!d || depth > 8) return null;
@@ -33,21 +33,20 @@ export function freeComponent(components, id, depth = 0) {
   const props = { ...(parent ? parent.props : {}), ...Object.fromEntries(Object.entries(own).filter(([, t]) => t !== 'slot')) };
   const slots = [...(parent ? parent.slots : []), ...Object.keys(own).filter(k => own[k] === 'slot')];
   const events = [...(parent ? parent.events : []), ...(d.events || []).map(e => e.name)];
-  const variants = { ...(parent ? parent.variants : {}), ...(d.variants || {}) };
+  const picks = { ...(parent ? parent.picks : {}), ...(d.picks || {}) };
+  const variants = Object.fromEntries(Object.entries({ ...(parent ? parent.allVariants : {}), ...(d.variants || {}) }).filter(([k]) => !(k in picks)));   // offered: a picked axis is not
+  const allVariants = { ...(parent ? parent.allVariants : {}), ...(d.variants || {}) };
   const optional = [...new Set([...(parent ? parent.optional : []), ...(d.optional || [])])];
-  return { props, slots, events, variants, optional, option: d.option || (parent ? parent.option : null) };
+  return { props, slots, events, variants, allVariants, picks, optional, option: d.option || (parent ? parent.option : null) };
 }
 
-// a size the hire drawing a place gives: its own token named after the size ('<hire>.<name>', aliasing a design token),
-// else its free component's visual of that name (with the hire's variant picks). specs: loaded design (tokens flattened).
+// a size the hire drawing a place gives: its visual of that name (its own visuals over its component's, with its picks).
+// specs: loaded design (tokens flattened).
 import { resolveVisuals } from './layout.js';
-// a hire's visuals at a place, for a state: the free component's (with the hire's variant picks), its own tokens winning
+// a hire's visuals at a place, for a state: its component's, with the hire's picks, and its own visuals over them (per visual and state)
 export function visualsAt(specs, composition, at, state = 'enabled', ctx = {}) {
   const hn = placementFor(composition, at), h = hn ? hireOf(composition, hn) : null; if (!h) return null;
-  const variant = Object.fromEntries((h.variants || []).map(v => [v.axis, v.option]));
-  const out = resolveVisuals(specs, h.hires, state, { ...ctx, env: at.env, variant });
-  for (const t of h.tokens || []) out[t.name.slice(h.name.length + 1)] = specs.tokens[t.alias];
-  return out;
+  return resolveVisuals(specs, h.hires, state, { ...ctx, env: at.env, variant: h.picks || {}, over: h.visuals });
 }
 export function sizeOf(specs, composition, at, name, state = 'enabled') { const v = visualsAt(specs, composition, at, state); return v ? v[name] : undefined; }
 // the look at the current env: what Layout reads instead of config sizes (design through composition)

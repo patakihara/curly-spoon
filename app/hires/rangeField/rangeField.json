@@ -1,0 +1,18 @@
+{
+  "hires": "rangeField",
+  "contract": "paramControl",
+  "clauses": [
+    {
+      "prop": "fromLabel",
+      "text": "range.from"
+    },
+    {
+      "prop": "toLabel",
+      "text": "range.to"
+    },
+    {
+      "event": "change",
+      "send": "setParams"
+    }
+  ]
+}

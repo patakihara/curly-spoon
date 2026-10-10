@@ -541,6 +541,15 @@ export const INVARIANTS = [
     const built = (P, id) => P.implements.includes(id) || (!!reg[id] && !!reg[id].variant && !!reg[id].extends && built(P, reg[id].extends));
     plats.forEach(P => used.forEach(id => assert(built(P, id), id + ' is hired by composition but not implemented on ' + P.platform)));
   }],
+  ['a child (variant) with its parent\'s slots and parts has no DC of its own: its parent\'s draws it (decision 52)', f => {
+    const reg = need(f.specs && f.specs.components, 'no specs'), plats = need(f.platforms && f.platforms.length && f.platforms, 'no platform manifests');
+    const slots = c => Object.keys(c.props || {}).filter(k => c.props[k] === 'slot').sort().join(), parts = c => [...(c.parts || [])].sort().join();
+    const errs = [];
+    plats.forEach(P => Object.entries(reg).filter(([id, c]) => c.variant && c.extends && P.implements.includes(id)).forEach(([id, c]) => {
+      const p = reg[c.extends]; if (p && slots(c) === slots(p) && parts(c) === parts(p)) errs.push(id + ' (' + P.platform + ': same slots and parts as ' + c.extends + ')');
+    }));
+    assert(!errs.length, errs.length + ': ' + errs.join(' · '));
+  }],
   ['component inheritance: parents exist, chains end, children keep their parent\'s props and visuals', f => {
     const reg = need(f.specs && f.specs.components, 'no specs');
     const kids = Object.entries(reg).filter(([, C]) => C.extends);

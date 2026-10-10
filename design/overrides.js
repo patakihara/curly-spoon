@@ -2,6 +2,7 @@
 // Anything not in the patch always comes from the file, so file updates are never masked by old saves.
 // Patches apply to the raw design (before extends is resolved), so a change to a parent reaches its children.
 // patch = { tokens?: {name: value}, components?: {id: {visuals?: {visual: {state: value | '$unset'}}}},
+//           hires?: {name: {visuals?: {visual: {state: value | '$unset'}}}} (a hire's visuals: app/hires; applyHires),
 //           choreography?: { rules?: {JSON(on): steps}, reduced?: steps } }
 
 export const PATCH_KEY = 'backdrop-nav-specs-patch';
@@ -58,4 +59,19 @@ export function applySpecs(file, p) {
   s.choreography.rules.forEach(r => { const t = (ch.rules || {})[ruleKey(r)]; if (Array.isArray(t)) r.steps = clone(t); });   // pre-17.0 patches (single transitions) are ignored
   if (Array.isArray(ch.reduced)) s.choreography.reduced = clone(ch.reduced);
   return s;
+}
+
+// a hire's visuals from the patch over its file's (the Tokens page edits them): hires as loaded (app/load-app.js loadComposition)
+export function applyHires(hires, p) {
+  const P = (p && p.hires) || {};
+  return hires.map(h => {
+    if (!P[h.name]) return h;
+    const visuals = clone(h.visuals || {});
+    for (const v in P[h.name].visuals || {}) {
+      const row = visuals[v] = { ...(visuals[v] || {}) };
+      for (const st in P[h.name].visuals[v]) { if (P[h.name].visuals[v][st] === '$unset') delete row[st]; else row[st] = P[h.name].visuals[v][st]; }
+      if (!Object.keys(row).length) delete visuals[v];
+    }
+    return { ...h, visuals };
+  });
 }

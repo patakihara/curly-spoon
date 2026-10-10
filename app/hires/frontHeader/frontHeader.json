@@ -1,0 +1,35 @@
+{
+  "hires": "frontHeader",
+  "contract": "frontHeader",
+  "clauses": [
+    {
+      "slot": "start",
+      "fill": [
+        {
+          "hire": "disclosure"
+        }
+      ]
+    },
+    {
+      "slot": "title",
+      "fill": [
+        {
+          "hire": "frontTitle"
+        }
+      ]
+    },
+    {
+      "slot": "end",
+      "fill": [
+        {
+          "child": "items",
+          "pick": [
+            {
+              "rest": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

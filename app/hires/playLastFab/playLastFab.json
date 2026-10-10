@@ -1,0 +1,14 @@
+{
+  "hires": "fab",
+  "contract": "button",
+  "clauses": [
+    {
+      "prop": "icon",
+      "token": "icon.playLast"
+    },
+    {
+      "event": "press",
+      "send": "action"
+    }
+  ]
+}

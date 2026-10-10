@@ -1,0 +1,22 @@
+{
+  "hires": "localSearch",
+  "contract": "find",
+  "clauses": [
+    {
+      "prop": "clearLabel",
+      "value": "closeLabel"
+    },
+    {
+      "event": "change",
+      "send": "setParams"
+    },
+    {
+      "slot": "end",
+      "fill": [
+        {
+          "hire": "findClose"
+        }
+      ]
+    }
+  ]
+}

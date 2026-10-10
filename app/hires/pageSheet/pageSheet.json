@@ -1,0 +1,17 @@
+{
+  "hires": "bottomSheet",
+  "contract": "pageSheet",
+  "visuals": {
+    "peekHeight": {
+      "default": {
+        "token": "size.pageSheet.peek"
+      }
+    }
+  },
+  "clauses": [
+    {
+      "event": "tap",
+      "send": "toggleExpanded"
+    }
+  ]
+}

@@ -58,6 +58,9 @@
     },
     "handleRadius": {
       "default": 2
+    },
+    "peekHeight": {
+      "default": 0
     }
   },
   "props": {

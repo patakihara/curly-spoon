@@ -1,0 +1,10 @@
+{
+  "hires": "checklist",
+  "contract": "paramControl",
+  "clauses": [
+    {
+      "event": "toggle",
+      "send": "toggleParam"
+    }
+  ]
+}

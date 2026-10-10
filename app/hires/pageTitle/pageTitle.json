@@ -1,0 +1,10 @@
+{
+  "hires": "title",
+  "contract": "header",
+  "clauses": [
+    {
+      "prop": "text",
+      "value": "title"
+    }
+  ]
+}

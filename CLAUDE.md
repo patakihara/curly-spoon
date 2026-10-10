@@ -12,7 +12,7 @@
 - Type style (api.d.ts): every object shape is a named type; unions list named members (`type A = B | C`); no anonymous `{ }` in fields; every type is defined before it is used (recursive cycles: one marked forward reference). A config type's state, policy and contract types take its full name: `XConfig` · `XState` · `XStatePolicy` · `XContract` (BackLayerConfig → BackLayerState, not BackState).
 
 ## Before claiming or building anything
-- Look it up first, in this order: api/api.d.ts + api/contracts.js (shapes, contracts and their children) → app/app.json + app/composition.json (which pages and items exist, which component each contract hires) → design/components/<id>/ + design/design.json (what is registered, its visuals and .md) → docs/NOTES.md + CHANGELOG.md (why it is so). Quote what you found; if it isn't there, say "not defined" — never fill the gap from the DOM or from memory.
+- Look it up first, in this order: api/api.d.ts + api/contracts.js (shapes, contracts and their children) → app/app.json + app/composition.json + app/hires/ (which pages and items exist, which component each contract hires) → design/components/<id>/ + design/design.json (what is registered, its visuals and .md) → docs/NOTES.md + CHANGELOG.md (why it is so). Quote what you found; if it isn't there, say "not defined" — never fill the gap from the DOM or from memory.
 - What a thing is, which parts it has and what uses it come from those files, never from how a .dc.html happens to be nested.
 - Before converting or refactoring anything, take stock first: read all of it and list everything it does itself (draws, lays out, decides, picks components, reads design for others, writes texts, fakes data, runs motion). Record the list (the shell's is docs/NOTES.md, "Shell conversion list"), then convert in the order it gives, ticking items as they go.
 
@@ -38,7 +38,7 @@
 
 ## Division of powers (test before adding anything to the API)
 - API = contracts + state + behaviour. Something is in the API only if the engine's behaviour depends on it.
-- App config (`app/`) = which pages and items, arrangement, policies, texts (app.json); which component fills each contract (composition.json).
+- App config (`app/`) = which pages and items, arrangement, policies, texts (app.json); which component fills each contract (composition.json lists the hires and places them; each hire is app/hires/<name>/).
 - Design (`design/`) = what components look like and how things move (tokens, components, motions, choreography, design texts).
 - Core (`core/`) = one implementation of the API: navigation, layout, interaction, player (optional).
 - Platform = draws; publishes a manifest (`platforms/<name>.json`) of components and motions it implements.
@@ -47,7 +47,7 @@
 ## How it works (as of 18.0.0)
 - **State + config.** The engine (core) holds state; config (app/app.json) says what exists as plain data: pages, decks, layers, policies, params and items (button · logo · text · switch · find · detail · seek). Config names no components, slots, sides or sizes. Intents change state; queries and Layout read state + config + design and give the platform what to draw.
 - **Contracts.** A contract (api/contracts.js, the single source; api/gen-contracts.js writes its TS block into api.d.ts) is what a drawn config object offers: its config, the values the engine gives it, the intents it can send, its children.
-- **Composition** (app/composition.json) hires one free design component per contract: clauses feed its props (from values, fixed tokens, design texts), send its events as intents or the item's action, and fill its slots from children. Placements pick the hire by contract, nearest ancestor, kind / name, param, presentation, state, overlay and layout class; page exceptions (by template) come first. core/contracts.js builds the contract tree: one node per drawn object with its hire, props, slots and events; its keys identify instances. Items whose `when` fails stay in the tree, hidden.
+- **Composition** (app/composition.json + app/hires/<name>/<name>.json) hires one component (free, or a child) per contract; a hire is shaped like a child (`picks`, `visuals` over its component's): clauses feed its props (from values, design tokens, design texts), send its events as intents or the item's action, and fill its slots from children. Placements pick the hire by contract, nearest ancestor, kind / name, param, presentation, state, overlay and layout class; page exceptions (by template) come first. core/contracts.js builds the contract tree: one node per drawn object with its hire, props, slots and events; its keys identify instances. Items whose `when` fails stay in the tree, hidden.
 - **Config vs state naming.** Config says how far something may go (`front.collapse`); state says where it is now (`frontPosition`).
 - **Design** = what components look like (tokens, component visuals per state, `props`, `optional`, `parts`) and how things move (choreography). Sizes Layout needs come from design through composition (a Look, core/compose.js). Parts are pieces a component draws itself that motion may name (`<component>.<part>`); they are declared in design, never invented by a platform. Components inherit with `extends`; interactive ones extend `interactive`.
 - **Motion as steps.** A choreography rule (`on` an event pattern; every field it gives must match) is a list of steps: `tween` (a piece's props), `travel` (a copy flies to another piece / measure), `swap` (fade through around the state change), `reveal` (shown through a moving shape); `use` runs a named sequence. Steps name pieces (`<contract>.<child>`, `<component>.<part>`, `<component>`, `source` / `target` / `origin`, step ids; `[]` lists, `@before` / `@after`), measure geometry after the commit, pick values by event fields (`ByEvent`), and run on time (anchored to other steps) or on progress (bar collapse, scroll). Component motions are steps too (`ComponentDef.motion`, triggers change · press · release · loop). `KindStep` (a hand-built motion kind) is temporary until every motion is ported, then removed with `Specs.motions`, `transitionFor` / `motionFor`.
@@ -59,12 +59,13 @@
 ```
 api/        api.d.ts (contract) · contracts.js (contracts as data, single source) · gen-contracts.js (contracts.js → api.d.ts block) · invariants.js (rules) · composition-rules.js (composition against contracts + design)
 core/       navigation.js · layout.js · interaction.js · player.js · compose.js (placements, hires, the look) · contracts.js (the contract tree)
-app/        app.json · composition.json · texts/<locale>.json · load-app.js · fake-backend.js
+app/        app.json · composition.json (hire names, placements) · hires/<name>/{.json,.md,.d.ts} · texts/<locale>.json · load-app.js (loadApp, loadComposition) · fake-backend.js
 design/     design.json · tokens.json · choreography.json (rules → steps, sequences) · motions/ (temporary kinds) · components/<id>/{.json,.md,.d.ts} · texts/ · load.js · build.js · write-generated.mjs (writes generated/ + component .d.ts) · overrides.js · checks.js
 platforms/  web.json (manifest) · web/motions.js (player) · lint-web.js (shell lint: no look-and-feel literals or motion code in the shell)
-generated/  per-platform tokens (build.js output)
+generated/  per-platform tokens (build.js output) · tokens.json (every token of every level)
 docs/       API.md · CHANGELOG.md · NOTES.md · RUST.md
-*.dc.html   Backdrop Nav Skeleton (mockup) · component DCs (IconButton … ContentBlock) · Specs Editor · Components · Invariants
+*.dc.html   Backdrop Nav Skeleton (mockup) · component DCs (IconButton … ContentBlock) · Specs Editor · Components · Tokens · Invariants
+Backdrop Nav.html   the artifact's front page: a side table of contents of the pages above
 ```
 
 ## How to answer

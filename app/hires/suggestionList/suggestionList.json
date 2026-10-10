@@ -1,0 +1,11 @@
+{
+  "hires": "suggestionList",
+  "contract": "paramControl",
+  "clauses": [
+    {
+      "event": "pick",
+      "send": "setParams",
+      "apply": true
+    }
+  ]
+}

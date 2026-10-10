@@ -1,0 +1,21 @@
+{
+  "hires": "caret",
+  "contract": "frontHeader",
+  "picks": {
+    "size": "md"
+  },
+  "clauses": [
+    {
+      "prop": "label",
+      "value": "disclosureLabel"
+    },
+    {
+      "prop": "icon",
+      "token": "icon.expand"
+    },
+    {
+      "event": "press",
+      "send": "toggleExpanded"
+    }
+  ]
+}

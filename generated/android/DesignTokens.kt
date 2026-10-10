@@ -206,6 +206,8 @@ object HeaderTokens {
     val DetailFade = 1.6f
     val DetailShrink = 0.15f
     val TitleFadeFrom = 0.5f
+    val ExpandedHeight = 0f
+    val MaxWidth = 0f
 }
 
 object NavBarTokens {
@@ -241,6 +243,7 @@ object BottomSheetTokens {
     val ListFill = DesignTokens.ColorSurface
     val ClosedRadius = "12px 12px 0 0"
     val HandleRadius = 2f
+    val PeekHeight = 0f
 }
 
 object SideSheetTokens {
@@ -1106,4 +1109,8 @@ object DrawerTokens {
     val Scrim = DesignTokens.ColorScrim
     val MaxWidth = "85%"
     val Width = 300f
+}
+
+object SheetLayerTokens {
+    val SideWidth = DesignTokens.SizeSideSheetWidth
 }

@@ -1,0 +1,30 @@
+{
+  "hires": "scrollerLayout",
+  "contract": "content",
+  "clauses": [
+    {
+      "slot": "items",
+      "fill": [
+        {
+          "child": "items"
+        }
+      ]
+    },
+    {
+      "slot": "state",
+      "fill": [
+        {
+          "child": "state"
+        }
+      ]
+    },
+    {
+      "slot": "banner",
+      "fill": [
+        {
+          "child": "banner"
+        }
+      ]
+    }
+  ]
+}

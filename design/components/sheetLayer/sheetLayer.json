@@ -15,5 +15,12 @@
       "name": "close",
       "payload": null
     }
-  ]
+  ],
+  "visuals": {
+    "sideWidth": {
+      "default": {
+        "token": "size.sideSheet.width"
+      }
+    }
+  }
 }

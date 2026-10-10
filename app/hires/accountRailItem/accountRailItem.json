@@ -1,0 +1,21 @@
+{
+  "hires": "drawerItem",
+  "contract": "button",
+  "picks": {
+    "form": "rail"
+  },
+  "clauses": [
+    {
+      "prop": "text",
+      "value": "label"
+    },
+    {
+      "prop": "icon",
+      "token": "icon.account"
+    },
+    {
+      "event": "press",
+      "send": "action"
+    }
+  ]
+}

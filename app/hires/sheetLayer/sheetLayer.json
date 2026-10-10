@@ -1,0 +1,21 @@
+{
+  "hires": "sheetLayer",
+  "contract": "sheetLayer",
+  "visuals": {
+    "sideWidth": {
+      "default": {
+        "token": "size.sideSheet.width"
+      }
+    }
+  },
+  "clauses": [
+    {
+      "event": "open",
+      "send": "openLayer"
+    },
+    {
+      "event": "close",
+      "send": "closeLayer"
+    }
+  ]
+}

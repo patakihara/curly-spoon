@@ -1,0 +1,14 @@
+{
+  "hires": "errorState",
+  "contract": "contentState",
+  "clauses": [
+    {
+      "prop": "text",
+      "text": "content.error"
+    },
+    {
+      "event": "retry",
+      "send": "retry"
+    }
+  ]
+}

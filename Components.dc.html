@@ -187,7 +187,7 @@ class Component extends DCLogic {
     try {
       const get = p => fetch(new URL(p, location.href).href, { cache: 'no-store' }).then(r => r.text());
       const imp = async p => import(URL.createObjectURL(new Blob([await get(p)], { type: 'text/javascript' })));
-      const [DL, P, K] = await Promise.all([imp('./design/load.js'), imp('./core/layout.js'), get('./app/composition.json').then(JSON.parse)]);
+      const [DL, P, K] = await Promise.all([imp('./design/load.js'), imp('./core/layout.js'), imp('./app/load-app.js').then(m => m.loadComposition(p => get('./' + p)))]);
       const read = p => get('./design/' + p);
       const raw = await DL.loadDesignRaw(read), specs = DL.resolveExtends(raw);
       const notes = await DL.loadNotes(read, Object.keys(specs.components));

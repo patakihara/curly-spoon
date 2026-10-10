@@ -36,8 +36,9 @@ export function contractTree(model, specs, composition, opts = {}) {
   }
   function dress(n, h, ctx, extra) {
     const fc = freeComponent(specs.components, h.hires) || { props: {}, slots: [], events: [] };
-    n.variants = Object.fromEntries((h.variants || []).map(v => [v.axis, v.option]));
-    const tok = name => { const t = (h.tokens || []).find(x => x.name === name); return t ? specs.tokens[t.alias] : undefined; };
+    n.variants = { ...(fc.picks || {}), ...(h.picks || {}) };   // the settings in force: its component's picks and the hire's
+    n.hireVisuals = h.visuals || null;                           // the hire's own visuals (over its component's)
+    const tok = name => specs.tokens[name];
     for (const prop of Object.keys(fc.props)) {
       const cl = h.clauses.find(x => x.prop === prop);
       n.props[prop] = !cl ? n.values[prop]

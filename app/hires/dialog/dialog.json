@@ -1,0 +1,10 @@
+{
+  "hires": "dialog",
+  "contract": "overlay",
+  "clauses": [
+    {
+      "event": "close",
+      "send": "closeOverlay"
+    }
+  ]
+}

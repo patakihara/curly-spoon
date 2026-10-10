@@ -659,24 +659,34 @@ fields, not nodes · 6 verify ✓ (screens above).
     generated/tokens.json: a new page in the same artifact (not its own), with a side table of contents of all the
     artifact's pages, as Sonora's design-system artifact has. Edits on the page write back to the owner's file (look at
     Sonora's docs/edit_writeback.mjs first). Sonora itself lists only system tokens (aliases token to token).
+    Built: Sonora's write-back needs a local server, so edits use the Specs Editor's patch instead (design/overrides.js,
+    extended with hires: applyHires), applied live to the mockup in the same browser and exported with Copy changes.
+    The Tokens page builds the tree live with buildTokenTree (the same function writing generated/tokens.json) so edits
+    show at once. The artifact's front page is Backdrop Nav.html (side table of contents; the pages stay their own files).
+    InteractiveComponent removed from the API (Sofia: components handle their own state transitions through interactive).
+    Open idea (not yet proposed): containers declare their pieces' interactive components (morePanel close: iconButton),
+    as `option` does, and a rule checks every event a non-interactive component sends comes from one.
 
 ## Hires, picks and tokens: work list (decisions 52–54; tick as done)
 API 18.0.0 amended (breaking: renames and removals). Then back to the shell conversion list, step 3.
-- [ ] 1. Rename ComponentId → ComponentName (api.d.ts, docs).
-- [ ] 2. ComponentDef.picks: design/load.js (a picked axis leaves the child's offered variants), visuals resolve with
+- [x] 1. Rename ComponentId → ComponentName (api.d.ts, docs).
+- [x] 2. ComponentDef.picks: design/load.js (a picked axis leaves the child's offered variants), visuals resolve with
       it (core/layout.js resolveVisuals), node variants include it; rules: a pick names an axis the component still
       offers and one of its options.
-- [ ] 3. Hire shape: HireDef { hires, contract, picks?, visuals?, clauses } and Hire extends HireDef { name }; remove
+- [x] 3. Hire shape: HireDef { hires, contract, picks?, visuals?, clauses } and Hire extends HireDef { name }; remove
       VariantPick, HireToken; clause tokens name design tokens; hire visuals merge over the component's per visual and
       state (core/compose.js visualsAt, core/contracts.js dress); composition rules (token, picks, visuals, sameHire).
-- [ ] 4. Files: app/hires/<name>/{json, md, d.ts}; app/composition.json = placements + pages; one loader for both
+- [x] 4. Files: app/hires/<name>/{json, md, d.ts}; app/composition.json = placements + pages; one loader for both
       (app/load-app.js or a composition loader) used by the shell, Invariants, Components and the rules scripts;
       write-generated writes the hire .d.ts; publish list.
-- [ ] 5. Rule: a child with its parent's slots and parts has no DC of its own (platforms/web.json); check drawerItem.
-- [ ] 6. generated/tokens.json (every level, grouped, marks, resolved values) from design/write-generated.mjs.
-- [ ] 7. Tokens page in the artifact, plus a side table of contents across the artifact's pages (mockup, Components,
+- [~] 5. Rule: a child with its parent's slots and parts has no DC of its own (platforms/web.json). Added (api/invariants.js);
+      it fails for 4, waiting on Sofia: suggestionRow, checkRow, drawerItem have their own DC but declare no parts or slots
+      of their own (their DCs draw a label / check, a text row, a rail form: declare those as parts, or let the parent's DC
+      draw them); errorState is listed in platforms/web.json but has no ErrorState.dc.html (remove it from the manifest).
+- [x] 6. generated/tokens.json (every level, grouped, marks, resolved values) from design/write-generated.mjs.
+- [x] 7. Tokens page in the artifact, plus a side table of contents across the artifact's pages (mockup, Components,
       Invariants, Specs Editor, Tokens); write-back of edits (study Sonora's first).
-- [ ] 8. Docs: API.md, CHANGELOG (18.0.0), RUST.md, CLAUDE.md file layout and composition line; screens identical;
+- [x] 8. Docs: API.md, CHANGELOG (18.0.0), RUST.md, CLAUDE.md file layout and composition line; screens identical;
       rules count; commit; republish.
 
 ## Shell conversion list (kept current with every change)

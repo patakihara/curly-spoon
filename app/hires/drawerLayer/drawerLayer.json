@@ -1,0 +1,10 @@
+{
+  "hires": "drawer",
+  "contract": "drawerLayer",
+  "clauses": [
+    {
+      "event": "close",
+      "send": "closeLayer"
+    }
+  ]
+}

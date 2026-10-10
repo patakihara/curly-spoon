@@ -1,0 +1,14 @@
+{
+  "hires": "navBar",
+  "contract": "navigation",
+  "clauses": [
+    {
+      "slot": "destinations",
+      "fill": [
+        {
+          "child": "destinations"
+        }
+      ]
+    }
+  ]
+}

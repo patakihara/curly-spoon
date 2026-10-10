@@ -1,0 +1,21 @@
+{
+  "hires": "iconButton",
+  "contract": "find",
+  "picks": {
+    "size": "xs"
+  },
+  "clauses": [
+    {
+      "prop": "label",
+      "value": "closeLabel"
+    },
+    {
+      "prop": "icon",
+      "token": "icon.close"
+    },
+    {
+      "event": "press",
+      "send": "closeFind"
+    }
+  ]
+}

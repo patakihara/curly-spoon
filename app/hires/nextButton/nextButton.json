@@ -1,0 +1,17 @@
+{
+  "hires": "iconButton",
+  "contract": "button",
+  "picks": {
+    "size": "lg"
+  },
+  "clauses": [
+    {
+      "prop": "icon",
+      "token": "icon.next"
+    },
+    {
+      "event": "press",
+      "send": "action"
+    }
+  ]
+}

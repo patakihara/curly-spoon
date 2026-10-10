@@ -1,0 +1,10 @@
+{
+  "hires": "playerPage",
+  "contract": "playerPage",
+  "clauses": [
+    {
+      "event": "scroll",
+      "send": "scroll"
+    }
+  ]
+}

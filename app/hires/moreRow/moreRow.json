@@ -1,0 +1,14 @@
+{
+  "hires": "panelRow",
+  "contract": "paramControlRow",
+  "clauses": [
+    {
+      "slot": "content",
+      "fill": [
+        {
+          "child": "controls"
+        }
+      ]
+    }
+  ]
+}

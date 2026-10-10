@@ -1,0 +1,18 @@
+{
+  "hires": "choiceChips",
+  "contract": "paramControl",
+  "clauses": [
+    {
+      "event": "change",
+      "send": "setParams"
+    },
+    {
+      "prop": "moreLabel",
+      "text": "more.open"
+    },
+    {
+      "event": "more",
+      "send": "openMore"
+    }
+  ]
+}

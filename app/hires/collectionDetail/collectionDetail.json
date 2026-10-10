@@ -1,0 +1,9 @@
+{
+  "hires": "detailHeader",
+  "contract": "detail",
+  "picks": {
+    "shape": "square",
+    "layout": "row"
+  },
+  "clauses": []
+}

@@ -1,0 +1,10 @@
+{
+  "hires": "appBarPage",
+  "contract": "appBarPage",
+  "clauses": [
+    {
+      "event": "scroll",
+      "send": "scroll"
+    }
+  ]
+}

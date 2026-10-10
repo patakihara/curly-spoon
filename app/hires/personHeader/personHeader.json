@@ -1,0 +1,65 @@
+{
+  "hires": "header",
+  "contract": "header",
+  "visuals": {
+    "expandedHeight": {
+      "default": {
+        "token": "size.header.expandedDetail"
+      }
+    }
+  },
+  "clauses": [
+    {
+      "slot": "start",
+      "fill": [
+        {
+          "child": "items",
+          "pick": [
+            {
+              "name": "menu"
+            },
+            {
+              "name": "up"
+            },
+            {
+              "kind": "logo"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slot": "title",
+      "fill": [
+        {
+          "hire": "pageTitle"
+        }
+      ]
+    },
+    {
+      "slot": "end",
+      "fill": [
+        {
+          "child": "items",
+          "pick": [
+            {
+              "rest": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slot": "expanded",
+      "fill": [
+        {
+          "child": "detail"
+        }
+      ]
+    },
+    {
+      "event": "scroll",
+      "send": "scroll"
+    }
+  ]
+}

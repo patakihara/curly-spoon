@@ -1,0 +1,18 @@
+{
+  "hires": "drawerItem",
+  "contract": "button",
+  "clauses": [
+    {
+      "prop": "text",
+      "value": "label"
+    },
+    {
+      "prop": "icon",
+      "token": "icon.listenNow"
+    },
+    {
+      "event": "press",
+      "send": "action"
+    }
+  ]
+}

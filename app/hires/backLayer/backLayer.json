@@ -1,0 +1,18 @@
+{
+  "hires": "backLayer",
+  "contract": "backLayer",
+  "clauses": [
+    {
+      "prop": "palette",
+      "token": "color.backLayer"
+    },
+    {
+      "event": "tap",
+      "send": "toggleExpanded"
+    },
+    {
+      "event": "scroll",
+      "send": "scroll"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "hires": "frontLayer",
+  "contract": "frontLayer",
+  "clauses": [
+    {
+      "event": "scroll",
+      "send": "scroll"
+    }
+  ]
+}

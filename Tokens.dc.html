@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tokens</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><style>
+:root{--ground:#FAF9F5;--surface:#FFFFFF;--ink:#141413;--muted:#87867F;--line:#D1CFC5;--accent:#D97757;--done:#788C5D;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--serif:ui-serif,Georgia,"Times New Roman",serif;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){color-scheme:dark;--ground:#141413;--surface:#1F1F1D;--ink:#FAF9F5;--muted:#A8A69D;--line:#3D3D3A;--accent:#E08A6D;--done:#9DB07F}}
+:root[data-theme="dark"]{color-scheme:dark;--ground:#141413;--surface:#1F1F1D;--ink:#FAF9F5;--muted:#A8A69D;--line:#3D3D3A;--accent:#E08A6D;--done:#9DB07F}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans)}
+input,button{font:inherit;color:inherit}
+.tk-row:hover{background:color-mix(in srgb,var(--ink) 4%,transparent)}
+</style></helmet>
+<div style="max-width:980px;margin:0 auto;padding:32px 16px 64px;display:flex;flex-direction:column;gap:16px">
+  <div style="display:flex;flex-direction:column;gap:6px">
+    <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Design · every level</div>
+    <div style="font-family:var(--serif);font-size:28px">Tokens</div>
+    <div style="font-size:14px;color:var(--muted);max-width:680px">System tokens, then every component with its children nested under it and the hires that use it. Each token points at what it inherits unless it is set there. Edit a row to repoint it: the change applies live to the mockup in this browser; Copy changes exports it.</div>
+    <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">{{ summary }}</div>
+  </div>
+  <div style="position:sticky;top:0;z-index:2;background:var(--ground);padding:8px 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-bottom:1px solid var(--line)">
+    <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Filter by name" style="flex:1;min-width:180px;height:34px;padding:0 12px;border:1px solid var(--line);border-radius:17px;background:var(--surface)"></input>
+    <label style="display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer"><input type="checkbox" checked="{{ onlySet }}" onChange="{{ onOnlySet }}"></input>Only what's set here</label>
+    <button onClick="{{ copy }}" style="height:34px;padding:0 14px;border-radius:17px;border:0;background:var(--ink);color:var(--ground);cursor:pointer">Copy changes</button>
+    <button onClick="{{ reset }}" style="height:34px;padding:0 14px;border-radius:17px;border:1px solid var(--line);background:transparent;cursor:pointer">Reset</button>
+    <div style="font-size:12px;color:{{ statusColor }}">{{ status }}</div>
+  </div>
+  <div style="display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden">
+    <sc-for list="{{ rows }}" as="r" hint-placeholder-count="12">
+      <sc-if value="{{ r.isSection }}" hint-placeholder-val="{{ false }}"><div style="padding:18px 14px 8px;font-family:var(--serif);font-size:20px;border-bottom:1px solid var(--line)">{{ r.label }}</div></sc-if>
+      <sc-if value="{{ r.isOwner }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:10px;align-items:baseline;padding:12px 14px 6px;padding-inline-start:{{ r.pad }}px;border-top:1px solid var(--line)">
+        <div style="font-family:var(--mono);font-size:14px;font-weight:600">{{ r.label }}</div>
+        <div style="font-size:12px;color:var(--muted)">{{ r.note }}</div>
+      </div></sc-if>
+      <sc-if value="{{ r.isGroup }}" hint-placeholder-val="{{ false }}"><div style="padding:6px 14px 2px;padding-inline-start:{{ r.pad }}px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">{{ r.label }}</div></sc-if>
+      <sc-if value="{{ r.isToken }}" hint-placeholder-val="{{ true }}"><div class="tk-row" onClick="{{ r.onEdit }}" style="display:flex;gap:10px;align-items:center;min-height:28px;padding:2px 14px;padding-inline-start:{{ r.pad }}px;cursor:{{ r.cursor }};font-family:var(--mono);font-size:12px">
+        <div style="flex:none;width:14px;height:14px;border-radius:3px;border:1px solid var(--line);background:{{ r.swatch }};opacity:{{ r.swatchOp }}"></div>
+        <div style="flex:2;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ r.name }}">{{ r.name }}</div>
+        <div style="flex:2;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)" title="{{ r.alias }}">{{ r.alias }}</div>
+        <div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ r.value }}">{{ r.value }}</div>
+        <div style="flex:none;width:72px;text-align:end;color:{{ r.markColor }}">{{ r.mark }}</div>
+      </div></sc-if>
+      <sc-if value="{{ r.isEditor }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:6px 14px 10px;padding-inline-start:{{ r.pad }}px;font-size:12px">
+        <input value="{{ draft }}" onChange="{{ onDraft }}" placeholder="a system token (color.surface) or a value (12, #fff)" style="flex:1;min-width:220px;height:30px;padding:0 10px;border:1px solid var(--accent);border-radius:6px;background:var(--surface);font-family:var(--mono)"></input>
+        <button onClick="{{ save }}" style="height:30px;padding:0 12px;border-radius:15px;border:0;background:var(--accent);color:#fff;cursor:pointer">Set</button>
+        <sc-if value="{{ r.canUnset }}" hint-placeholder-val="{{ false }}"><button onClick="{{ unset }}" style="height:30px;padding:0 12px;border-radius:15px;border:1px solid var(--line);background:transparent;cursor:pointer">Inherit again</button></sc-if>
+        <button onClick="{{ cancel }}" style="height:30px;padding:0 12px;border-radius:15px;border:1px solid var(--line);background:transparent;cursor:pointer">Cancel</button>
+      </div></sc-if>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+// The Tokens page (NOTES decision 54): every token of every level, built live by design/build.js buildTokenTree from the design
+// files, the hires (app/hires) and this browser's unsaved edits (design/overrides.js patch, shared with the Specs Editor and the
+// mockup). generated/tokens.json is the same tree, written by design/write-generated.mjs from the files alone.
+// Editing a row repoints it at a system token or a value: a component's or child's visual (patch components), a hire's
+// (patch hires), a system token's value (patch tokens). "Inherit again" removes what the row's owner set. Prop tokens (a
+// hire's clauses) and conditional values are shown, not edited here.
+class Component extends DCLogic {
+  state = { tree: null, query: '', onlySet: false, editing: null, draft: '', status: '', statusColor: 'var(--muted)', open: {} };
+  componentDidMount() {
+    this.load();
+    this.onStorage = e => { if (this.O && e.key === this.O.PATCH_KEY) this.rebuild(); };
+    window.addEventListener('storage', this.onStorage);
+  }
+  componentWillUnmount() { window.removeEventListener('storage', this.onStorage); }
+  async load() {
+    const get = p => fetch(new URL(p, location.href).href, { cache: 'no-store' }).then(r => r.text());
+    const imp = async p => import(URL.createObjectURL(new Blob([await get(p)], { type: 'text/javascript' })));
+    try {
+      const [DL, B, O, A] = await Promise.all([imp('./design/load.js'), imp('./design/build.js'), imp('./design/overrides.js'), imp('./app/load-app.js')]);
+      this.DL = DL; this.B = B; this.O = O;
+      this.fileDesign = await DL.loadDesignRaw(p => get('./design/' + p));
+      this.rawTokens = JSON.parse(await get('./design/tokens.json'));
+      this.fileComp = await A.loadComposition(p => get('./' + p));
+      this.rebuild();
+    } catch (e) { this.setState({ status: 'could not load: ' + e.message, statusColor: 'var(--accent)' }); }
+  }
+  patch() { try { return JSON.parse(localStorage.getItem(this.O.PATCH_KEY) || 'null') || {}; } catch (e) { return {}; } }
+  writePatch(p) { try { if (Object.keys(p).length) localStorage.setItem(this.O.PATCH_KEY, JSON.stringify(p)); else localStorage.removeItem(this.O.PATCH_KEY); } catch (e) {} this.rebuild(); }
+  rebuild() {
+    const p = this.patch(), raw = this.O.applySpecs(this.fileDesign, p), specs = this.DL.resolveExtends(raw);
+    this.specs = specs; this.raw = raw; this.hires = this.O.applyHires(this.fileComp.hires, p);
+    this.setState({ tree: this.B.buildTokenTree(this.rawTokens, raw, specs, this.hires) });
+  }
+  // a row → where its value lives: { kind: 'tokens' | 'components' | 'hires', owner, visual, state, option? }
+  target(r, owner) {
+    const m = r.name.slice(owner.name.length + 1).match(/^([^\[:]+)(?:\[([^\]]+)\])?(?::(.+))?$/);
+    if (!m) return null;
+    return { kind: owner.is === 'hire' ? 'hires' : 'components', owner: owner.name, visual: m[1], option: m[2] || null, state: m[3] || 'default' };
+  }
+  // the value a target holds now in its owner's (patched) visuals, else what it inherits
+  current(t) {
+    const own = t.kind === 'hires' ? ((this.hires.find(h => h.name === t.owner) || {}).visuals || {}) : ((this.raw.components[t.owner] || {}).visuals || {});
+    if (own[t.visual] && own[t.visual][t.state] !== undefined) return own[t.visual][t.state];
+    const comp = t.kind === 'hires' ? (this.hires.find(h => h.name === t.owner) || {}).hires : t.owner;
+    const row = ((this.specs.components[comp] || {}).visuals || {})[t.visual] || {};
+    return row[t.state] !== undefined ? row[t.state] : row.default;
+  }
+  parse(text) {
+    const x = text.trim();
+    if (x in this.specs.tokens) return { token: x };
+    if (x !== '' && !isNaN(+x)) return +x;
+    if (x === 'null') return null;
+    return x;
+  }
+  apply(t, value) {
+    const p = this.patch();
+    if (t.kind === 'tokens') { p.tokens = { ...(p.tokens || {}), [t.owner]: value }; return this.writePatch(p); }
+    if (t.option && value !== '$unset') {   // one option of a setting: change that case, keep the others
+      const cur = this.current(t);
+      value = cur && typeof cur === 'object' && 'cases' in cur ? { ...cur, cases: { ...cur.cases, [t.option]: value } } : value;
+    }
+    const sect = p[t.kind] = { ...(p[t.kind] || {}) }, o = sect[t.owner] = { ...(sect[t.owner] || {}) }, vis = o.visuals = { ...(o.visuals || {}) };
+    vis[t.visual] = { ...(vis[t.visual] || {}), [t.state]: value };
+    this.writePatch(p);
+  }
+  renderVals() {
+    const S = this.state, T = S.tree, q = S.query.trim().toLowerCase(), rows = [];
+    const show = r => (!q || r.name.toLowerCase().includes(q)) && (!S.onlySet || r.mark !== 'inherited');
+    const color = v => typeof v === 'string' && /^(#|rgb|hsl)/.test(v) ? v : 'transparent';
+    const tokenRow = (r, pad, edit) => {
+      rows.push({ isToken: true, name: r.name, alias: r.alias ? '→ ' + r.alias : r.condition ? 'if …' : '', value: r.value === null || r.value === undefined ? '' : String(r.value),
+        mark: r.mark || '', markColor: r.mark === 'set' ? 'var(--accent)' : r.mark === 'new' ? 'var(--done)' : 'var(--muted)', swatch: color(r.value), swatchOp: color(r.value) === 'transparent' ? 0.25 : 1,
+        pad, cursor: edit ? 'pointer' : 'default', onEdit: edit ? () => this.setState({ editing: edit, draft: r.alias && !r.alias.startsWith('role:') && r.mark !== 'inherited' ? r.alias : r.mark === 'inherited' ? '' : String(r.value ?? '') }) : () => {} });
+      if (edit && S.editing && S.editing.name === r.name) rows.push({ isEditor: true, pad, canUnset: edit.kind !== 'tokens' && r.mark !== 'inherited' });
+    };
+    let count = 0;
+    if (T) {
+      rows.push({ isSection: true, label: 'System' });
+      for (const g of T.system) {
+        const list = g.tokens.filter(r => show({ ...r, mark: 'set' })); if (!list.length) continue;
+        rows.push({ isGroup: true, label: g.group, pad: 14 });
+        list.forEach(r => { count++; tokenRow(r, 14, { kind: 'tokens', owner: r.name, name: r.name }); });
+      }
+      rows.push({ isSection: true, label: 'Components' });
+      const walk = (o, depth) => {
+        const at = rows.length, pad = 14 + depth * 20;
+        rows.push({ isOwner: true, label: o.name, pad, note: o.is === 'hire' ? 'hire · contract ' + o.contract + ' · uses ' + o.uses + (o.picks ? ' · picks ' + Object.entries(o.picks).map(([k, v]) => k + ' ' + v).join(', ') : '') : o.is === 'child' ? 'child of ' + o.extends : o.extends ? 'free · extends ' + o.extends : 'free' });
+        let any = false;
+        for (const g of o.groups) {
+          const list = g.tokens.filter(show); if (!list.length) continue;
+          any = true; rows.push({ isGroup: true, label: g.group, pad: pad + 10 });
+          list.forEach(r => { count++; const t = r.prop || r.condition ? null : this.target(r, o); tokenRow(r, pad + 10, t ? { ...t, name: r.name } : null); });
+        }
+        const kids = [...(o.children || []).map(c => walk(c, depth + 1)), ...(o.hires || []).map(h => walk(h, depth + 1))].some(Boolean);
+        if (!any && !kids) { rows.length = at; return false; }
+        return true;
+      };
+      T.components.forEach(c => walk(c, 0));
+    }
+    const p = this.O ? this.patch() : {}, edits = ['tokens', 'components', 'hires'].reduce((s, k) => s + Object.keys(p[k] || {}).length, 0);
+    return { rows, query: S.query, onlySet: S.onlySet, draft: S.draft, status: S.status, statusColor: S.statusColor,
+      summary: T ? count + ' tokens shown' + (edits ? ' · unsaved edits in ' + edits + ' place' + (edits === 1 ? '' : 's') : '') : 'loading…',
+      onQuery: e => this.setState({ query: e.target.value }), onOnlySet: e => this.setState({ onlySet: e.target.checked }), onDraft: e => this.setState({ draft: e.target.value }),
+      save: () => { const t = S.editing; if (!t) return; this.apply(t, this.parse(S.draft)); this.setState({ editing: null, status: t.name + ' set', statusColor: 'var(--done)' }); },
+      unset: () => { const t = S.editing; if (!t) return; this.apply(t, '$unset'); this.setState({ editing: null, status: t.name + ' inherits again', statusColor: 'var(--done)' }); },
+      cancel: () => this.setState({ editing: null }),
+      copy: async () => { try { await navigator.clipboard.writeText(JSON.stringify(this.patch(), null, 2)); this.setState({ status: 'changes copied: paste them to Claude to write them into the files', statusColor: 'var(--done)' }); } catch (e) { this.setState({ status: 'copy failed: ' + e.message, statusColor: 'var(--accent)' }); } },
+      reset: () => { try { localStorage.removeItem(this.O.PATCH_KEY); } catch (e) {} this.rebuild(); this.setState({ status: 'reset to the files', statusColor: 'var(--muted)' }); } };
+  }
+}
+</script>
+</body>
+</html>

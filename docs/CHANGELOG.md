@@ -71,6 +71,19 @@ _Unreleased (no contract change):_ web: the shell draws no UI itself — FrontLa
   chip, suggestionList → suggestionRow, checklist → checkRow); inherited through extends (compose.js freeComponent).
   Design check: registered and interactive.
 - Platform manifest: web lists backdropPage, appBarPage, sheetLayer, fullscreenLayer (composition hires them).
+- Hires shaped like children (breaking): each hire is its own file, app/hires/<name>/<name>.json (HireDef: hires ·
+  contract · picks? · visuals? · clauses; the folder names it), with a note (.md) and a generated type (.d.ts);
+  app/composition.json becomes the CompositionManifest (hire names, placements, page exceptions); app/load-app.js
+  loadComposition assembles the Composition (Hire = HireDef + name). Hire.variants → picks (an object), Hire.tokens →
+  visuals (over its component's, per visual and state); clause tokens name design tokens. Removed: VariantPick,
+  HireToken. ComponentDef.picks (additive): a child fixes options of settings it inherits; those are no longer offered.
+  ComponentId → ComponentName (renamed). InteractiveComponent removed (unused: components get states and their
+  transitions from design's interactive; nodes carry key, component, events and label). Design: header gains
+  expandedHeight and maxWidth, bottomSheet peekHeight, sheetLayer sideWidth (sizes Layout reads; hires set them).
+  Rules: clause and hire-visual tokens are design tokens and hire visuals exist on the component; hire picks name an
+  offered setting; design check: picks name a declared setting and option; a child with its parent's slots and parts
+  has no DC of its own (fails today for errorState, suggestionRow, checkRow, drawerItem: open). generated/tokens.json:
+  every token of every level (NOTES decision 54); the artifact gets a Tokens page and a front page listing its pages.
 - Player page (breaking): an app-bar page with an inner sheet is its own type, PlayerPageConfig extends AppBarPageConfig
   (sheet required; kind stays 'appBar'); AppBarPageConfig, AppBarPageState and AppBarPageStatePolicy lose `sheet`;
   PlayerPageState / PlayerPageStatePolicy extend theirs with it. Contract playerPage (extends appBarPage: its values,

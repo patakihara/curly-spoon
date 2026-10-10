@@ -106,17 +106,18 @@ export function resolveValue(specs, comp, v, ctx = {}, depth = 0) {
   const again = x => resolveValue(specs, comp, x, ctx, depth + 1);
   if ('token' in v) return specs.tokens[v.token];
   if ('role' in v) { const S = ctx.surface && specs.components[ctx.surface]; return S && S.provides && v.role in S.provides ? resolveValue(specs, ctx.surface, S.provides[v.role], {}, depth + 1) : undefined; }
-  if ('variant' in v) { const C = specs.components[comp] || {}, ax = (C.variants || {})[v.variant]; const pick = (ctx.variant && ctx.variant[v.variant]) || (ax && ax.default); return again(v.cases[pick]); }
+  if ('variant' in v) { const C = specs.components[comp] || {}, ax = (C.variants || {})[v.variant]; const pick = (C.picks && C.picks[v.variant]) || (ctx.variant && ctx.variant[v.variant]) || (ax && ax.default); return again(v.cases[pick]); }   // a child's pick, else the hire's, else the default
   if ('if' in v) return again(holds(v.if, ctx) ? v.then : v.else);
   return v;
 }
 
-// a component's visuals for a state from the registry (§15)
+// a component's visuals for a state from the registry (§15); ctx.over: a hire's own visuals over them
 export function resolveVisuals(specs, componentId, stateName, ctx = {}) {
   const C = componentId && specs.components[componentId]; if (!C || !C.visuals) return {};
-  const out = {};
-  for (const v in C.visuals) {
-    const row = C.visuals[v], st = (ctx.status || []).find(x => row[x] !== undefined);
+  const out = {}, over = ctx.over || {}, V = { ...C.visuals };
+  for (const v in over) V[v] = { ...(V[v] || {}), ...over[v] };   // a hire's own visuals win, per visual and state
+  for (const v in V) {
+    const row = V[v], st = (ctx.status || []).find(x => row[x] !== undefined);
     const val = row[stateName] !== undefined ? row[stateName] : st !== undefined ? row[st] : row.default;
     out[v] = resolveValue(specs, componentId, val, ctx);
   }

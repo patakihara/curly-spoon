@@ -2,6 +2,7 @@
 //   checkDesign(specs) → [{ rule, ok, msg }]
 //   1. every param a (temporary, 17.0) motion kind declares gets a value: from the KindStep that uses it, or the param's default.
 //   2. a component's option (the component each of its options is drawn as) is registered and interactive.
+//   3. a pick (a child fixing an inherited setting) names a declared axis and one of its options.
 //   Pieces named by steps are checked by the rules (api/invariants.js, 17.0).
 
 const kindSteps = (list, where) => (list || []).filter(s => s.do === 'kind').map(t => ({ where, t, kind: t.kind }));
@@ -23,5 +24,7 @@ export function checkDesign(specs) {
   const C = specs.components, interactive = (id, k = 0) => k < 9 && !!C[id] && (id === 'interactive' || interactive(C[id].extends, k + 1));
   add('every option component is registered and interactive', Object.entries(C).filter(([, c]) => c.option)
     .filter(([, c]) => !interactive(c.option)).map(([id, c]) => id + '.option ' + c.option + (C[c.option] ? ' is not interactive' : ' is not registered')));
+  add('every pick names a setting (variant axis) the component has, and one of its options', Object.entries(C).flatMap(([id, c]) => Object.entries(c.picks || {})
+    .filter(([ax, o]) => !(c.variants && c.variants[ax] && c.variants[ax].options.includes(o))).map(([ax, o]) => id + '.picks.' + ax + ' = ' + o)));
   return out;
 }

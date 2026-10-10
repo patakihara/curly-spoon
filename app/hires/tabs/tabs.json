@@ -1,0 +1,10 @@
+{
+  "hires": "tabBar",
+  "contract": "paramControl",
+  "clauses": [
+    {
+      "event": "change",
+      "send": "setParams"
+    }
+  ]
+}

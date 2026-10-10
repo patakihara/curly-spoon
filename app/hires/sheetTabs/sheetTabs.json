@@ -1,0 +1,13 @@
+{
+  "hires": "tabBar",
+  "contract": "paramControl",
+  "picks": {
+    "tone": "surface"
+  },
+  "clauses": [
+    {
+      "event": "change",
+      "send": "setParams"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "hires": "fab",
+  "contract": "button",
+  "picks": {
+    "size": "lg",
+    "tone": "ink"
+  },
+  "clauses": [
+    {
+      "prop": "icon",
+      "value": "state",
+      "cases": [
+        {
+          "equals": "pause",
+          "token": "icon.pause"
+        },
+        {
+          "equals": "playNow",
+          "token": "icon.playNow"
+        }
+      ]
+    },
+    {
+      "event": "press",
+      "send": "action"
+    }
+  ]
+}

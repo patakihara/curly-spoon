@@ -1,0 +1,13 @@
+{
+  "hires": "gridCard",
+  "contract": "item",
+  "picks": {
+    "size": "carousel"
+  },
+  "clauses": [
+    {
+      "event": "press",
+      "send": "action"
+    }
+  ]
+}

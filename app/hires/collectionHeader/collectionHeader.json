@@ -1,0 +1,77 @@
+{
+  "hires": "appBar",
+  "contract": "header",
+  "clauses": [
+    {
+      "slot": "start",
+      "fill": [
+        {
+          "child": "items",
+          "pick": [
+            {
+              "name": "close"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slot": "title",
+      "fill": [
+        {
+          "hire": "pageTitle"
+        }
+      ]
+    },
+    {
+      "slot": "end",
+      "fill": [
+        {
+          "child": "items",
+          "pick": [
+            {
+              "name": "more"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slot": "bottom",
+      "fill": [
+        {
+          "child": "items",
+          "pick": [
+            {
+              "kind": "find"
+            },
+            {
+              "name": "playNow"
+            },
+            {
+              "name": "playNext"
+            },
+            {
+              "name": "playLast"
+            },
+            {
+              "rest": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slot": "expanded",
+      "fill": [
+        {
+          "child": "detail"
+        }
+      ]
+    },
+    {
+      "event": "scroll",
+      "send": "scroll"
+    }
+  ]
+}

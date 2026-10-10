@@ -131,7 +131,7 @@
       <div style="display:flex;flex-direction:column;gap:4px;color:#444">
         <div>Bottom nav switches Browse / Library / Search; each keeps its own stack, params and backdrop state</div>
         <div>Re-tap active destination → pop to root; at root → reset by policy (scroll to top, conceal)</div>
-        <div>Every app control is an InteractiveComponent (§20): unavailable actions render disabled</div>
+        <div>Every app control extends design's interactive (§20): unavailable actions render disabled</div>
         <div>Back layer: Browse one-of filters · Library tabs + per-tab options · Search with suggestions</div>
         <div><span class="ms" style="font-size:14px;vertical-align:-2px">layers</span> in-backdrop child: replaces front layer, back arrow in app bar</div>
         <div><span class="ms" style="font-size:14px;vertical-align:-2px">open_in_full</span> app bar child: expands from its card into a full page with its own app bar</div>
@@ -150,7 +150,7 @@
 <script type="text/x-dc" data-dc-script data-props="{&quot;palette&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Grey&quot;,&quot;M2 purple&quot;],&quot;default&quot;:&quot;Grey&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;peek&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0,&quot;max&quot;:120,&quot;step&quot;:4,&quot;unit&quot;:&quot;px&quot;,&quot;default&quot;:0,&quot;tsType&quot;:&quot;number&quot;}}">
 // ═══ VIEW + MOTION layer ═══
 // Core:    core/navigation.js · core/layout.js · core/compose.js · core/contracts.js · core/interaction.js (implement api/api.d.ts — pure)
-// Config:  app/app.json · composition: app/composition.json · design: design/ · fake backend: app/fake-backend.js
+// Config:  app/app.json · composition: app/composition.json + app/hires/ · design: design/ · fake backend: app/fake-backend.js
 // Draws the contract tree (core/contracts.js): each node is drawn by the free component composition hired for it.
 // This class only: dispatches intents, reads model state + queries, owns animation state.
 
@@ -176,7 +176,7 @@ async function loadModules() {
   // plain ES modules via blob URLs; relative imports inside them are loaded the same way and rewritten
   const blobs = {}, blobOf = url => blobs[url] || (blobs[url] = (async () => { let src = await (await fetch(url, { cache: 'no-store' })).text(); for (const m of [...src.matchAll(/(from\s*|import\s*\(\s*)(['"])(\.\.?\/[^'"]+)\2/g)]) src = src.split(m[2] + m[3] + m[2]).join(m[2] + await blobOf(new URL(m[3], url).href) + m[2]); return URL.createObjectURL(new Blob([src], { type: 'text/javascript' })); })());
   const load = async p => import(await blobOf(new URL(p, location.href).href));
-  const [M, SM, Pl, P, IX, O, DL, MO, CP, K, DR, SC, web, comp, appCfg] = await Promise.all([load('./core/navigation.js'), load('./app/fake-backend.js'), load('./core/player.js'), load('./core/layout.js'), load('./core/interaction.js'), load('./design/overrides.js'), load('./design/load.js'), load('./platforms/web/motions.js'), load('./core/compose.js'), load('./core/contracts.js'), load('./platforms/web/draw.js'), load('./platforms/web/scroll.js'), fetch(new URL('./platforms/web.json', location.href).href, { cache: 'no-store' }).then(r => r.json()), fetch(new URL('./app/composition.json', location.href).href, { cache: 'no-store' }).then(r => r.json()), import(URL.createObjectURL(new Blob([await (await fetch(new URL('./app/load-app.js', location.href).href, { cache: 'no-store' })).text()], { type: 'text/javascript' }))).then(m => m.loadApp(p => fetch(new URL('./' + p, location.href).href, { cache: 'no-store' }).then(r => r.text())))]);
+  const [M, SM, Pl, P, IX, O, DL, MO, CP, K, DR, SC, web, comp, appCfg] = await Promise.all([load('./core/navigation.js'), load('./app/fake-backend.js'), load('./core/player.js'), load('./core/layout.js'), load('./core/interaction.js'), load('./design/overrides.js'), load('./design/load.js'), load('./platforms/web/motions.js'), load('./core/compose.js'), load('./core/contracts.js'), load('./platforms/web/draw.js'), load('./platforms/web/scroll.js'), fetch(new URL('./platforms/web.json', location.href).href, { cache: 'no-store' }).then(r => r.json()), load('./app/load-app.js').then(m => m.loadComposition(p => fetch(new URL('./' + p, location.href).href, { cache: 'no-store' }).then(r => r.text()))), import(URL.createObjectURL(new Blob([await (await fetch(new URL('./app/load-app.js', location.href).href, { cache: 'no-store' })).text()], { type: 'text/javascript' }))).then(m => m.loadApp(p => fetch(new URL('./' + p, location.href).href, { cache: 'no-store' }).then(r => r.text())))]);
   const S = { ...SM, ...SM.bind(appCfg) };
   const fileSpecs = await DL.loadDesignRaw(p => fetch(new URL('./design/' + p, location.href).href, { cache: 'no-store' }).then(r => r.text()));   // raw design; edits patch it, then extends is resolved
   let specs = DL.resolveExtends(fileSpecs);
@@ -262,7 +262,7 @@ class Component extends DCLogic {
 
   async componentDidMount() {
     const { M, S, Pl, P, IX, O, DL, MO, CP, K, DR, SC, web, comp, specs, fileSpecs } = await loadModules();
-    this.CP = CP; this.K = K; this.DR = DR; this.SC = SC; this.web = web; this.comp = comp; 
+    this.CP = CP; this.K = K; this.DR = DR; this.SC = SC; this.web = web; this.O = O; this.fileComp = comp; this.comp = this.patchedComp(); 
     this.mo = MO.createMotions({ fallbackEasing: () => this.specs && this.specs.tokens['motion.easing.standard'] });
     this.M = M; this.S = S; this.P = P; this.IX = IX; this.O = O; this.DL = DL; this.specs = specs; this.fileSpecs = fileSpecs; E = specs.tokens['motion.easing.standard'] || E;
     this.dataSrc = { get: (r, p) => this.getData(r, p) };
@@ -273,7 +273,7 @@ class Component extends DCLogic {
     this.tick = setInterval(() => this.playerTick(), 1000);
     this.onKey = e => this.handleKey(e);
     window.addEventListener('keydown', this.onKey);
-    this.onStorage = e => { if (e.key === this.O.PATCH_KEY) { try { this.specs = this.DL.resolveExtends(this.O.applySpecs(this.fileSpecs, e.newValue ? JSON.parse(e.newValue) : null)); } catch (x) {} this.forceUpdate(); } };
+    this.onStorage = e => { if (e.key === this.O.PATCH_KEY) { try { this.specs = this.DL.resolveExtends(this.O.applySpecs(this.fileSpecs, e.newValue ? JSON.parse(e.newValue) : null)); this.comp = this.patchedComp(); } catch (x) {} this.forceUpdate(); } };
     window.addEventListener('storage', this.onStorage);
     this.setState({ ready: true });
     this.scheduleLaunch();
@@ -373,6 +373,8 @@ class Component extends DCLogic {
   // ── model access ───────────────────────────────────────
   // 18.0: sizes come from design through composition (a look per env); what to draw comes from the contract tree
   newModel(d) { return this.M.createModel(this.S.config, { width: d.width, touch: d.touch }, this.dataSrc, this.player, this.P.sizes(this.CP.lookAt(this.specs, this.comp, { layout: 'wide' }))); }
+  // the composition with the Tokens page's unsaved hire edits over it (design/overrides.js applyHires)
+  patchedComp() { let p = null; try { p = JSON.parse(localStorage.getItem(this.O.PATCH_KEY) || 'null'); } catch (e) {} return { ...this.fileComp, hires: this.O.applyHires(this.fileComp.hires, p) }; }
   look() { return this.CP.lookAt(this.specs, this.comp, this.lenv()); }
   tree() { return this.K.contractTree(this.model, this.specs, this.comp, { look: this.look(), measured: this.measured, peek: this.props.peek ?? 0, data: this.dataSrc }); }
   // a page's own node (the deck's under page, a popped page still drawn, a layer's page)
@@ -609,7 +611,7 @@ class Component extends DCLogic {
     return {
       id, label: o.label || '', dim: o.op ?? 1,
       resolve: input => this.IX.resolveInteraction(action, input, { model: this.model, player: this.player, shellActions: SHELL_ACTIONS }, o.facts),
-      look: (st, status) => { const v = this.P.resolveVisuals(this.specs, comp, st, { surface, variant, env: this.lenv(), status, page: o.page || null }); if (this.reduced) v.ripple = null; return v; },
+      look: (st, status) => { const v = this.P.resolveVisuals(this.specs, comp, st, { surface, variant, over: o.over, env: this.lenv(), status, page: o.page || null }); if (this.reduced) v.ripple = null; return v; },
       activate: run || undefined,
       motion: this.P.motionFor(this.specs, comp, 'press', this.model ? this.ms.prefs : {}),
       motions: Object.fromEntries(['stateLayer', 'rotation', 'levels'].map(k => [k, this.P.motionFor(this.specs, comp, k, this.model ? this.ms.prefs : {})]))
@@ -622,7 +624,7 @@ class Component extends DCLogic {
   nix(n, o = {}) {
     if (!n || !n.component) return INERT;
     const a = o.action !== undefined ? o.action : this.actOf(n, o.event || 'press', o.payload);
-    return this.ix(o.key || n.key, a, o.run || (e => this.runAction(a, e)), { component: o.component || n.component, variant: o.variant || n.variants, facts: { checked: n.values.checked }, label: o.label ?? (n.props.label || n.props.text || n.props.title || n.values.label || n.values.title || ''), surface: o.surface, page: n.page });
+    return this.ix(o.key || n.key, a, o.run || (e => this.runAction(a, e)), { component: o.component || n.component, variant: o.variant || n.variants, over: o.component && o.component !== n.component ? null : n.hireVisuals, facts: { checked: n.values.checked }, label: o.label ?? (n.props.label || n.props.text || n.props.title || n.values.label || n.values.title || ''), surface: o.surface, page: n.page });
   }
   // a node drawn by its DC (platforms/web/draw.js): props, visuals, interaction, events and slots, on the given surface
   drawn(n, surface) { return this.DR.drawNode(n, { specs: this.specs, implemented: this.web.implements, visuals: (x, sf, extra) => this.vis(x, { surface: sf, ...(extra || {}) }), ix: (x, sf, piece) => this.nix(x, { surface: sf, ...(piece || {}) }),
@@ -630,7 +632,7 @@ class Component extends DCLogic {
     transition: () => this.mxExpand, measure: (x, name, px) => this.measure(x, name, px), image: this.S.imageCss, scroller: x => this.scrollerFor(x) }, surface); }
   // a size a DC reports that the engine's layout needs (the back layer's panel height): kept per page, drawn again when it changes
   measure(n, name, px) { const id = n.page && n.page.config.id; if (!id) return; const m = this.measured[id] || {}; if (m[name] === px) return; this.measured = { ...this.measured, [id]: { ...m, [name]: px } }; this.forceUpdate(); }
-  vis(n, extra = {}) { return n && n.component ? this.P.resolveVisuals(this.specs, n.component, 'enabled', { variant: n.variants || {}, env: this.lenv(), ...extra }) : {}; }
+  vis(n, extra = {}) { return n && n.component ? this.P.resolveVisuals(this.specs, n.component, 'enabled', { variant: n.variants || {}, over: n.hireVisuals, env: this.lenv(), ...extra }) : {}; }
   // the FAB of a header's fab slot: its first node (several share one place; the icon morphs between them)
   fabFor(nodes, top) {
     const n = nodes.find(x => x.shown !== false); if (!n) return { show: false, top: 0, icon: '', vis: {}, ix: INERT };

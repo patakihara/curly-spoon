@@ -1,0 +1,21 @@
+{
+  "hires": "iconButton",
+  "contract": "find",
+  "picks": {
+    "size": "md"
+  },
+  "clauses": [
+    {
+      "prop": "label",
+      "value": "placeholder"
+    },
+    {
+      "prop": "icon",
+      "token": "icon.find"
+    },
+    {
+      "event": "press",
+      "send": "openFind"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "hires": "emptyState",
+  "contract": "contentState",
+  "clauses": [
+    {
+      "prop": "text",
+      "text": "content.empty"
+    },
+    {
+      "event": "retry",
+      "send": "retry"
+    }
+  ]
+}

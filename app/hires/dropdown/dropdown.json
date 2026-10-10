@@ -1,0 +1,10 @@
+{
+  "hires": "dropdown",
+  "contract": "paramControl",
+  "clauses": [
+    {
+      "event": "change",
+      "send": "setParams"
+    }
+  ]
+}

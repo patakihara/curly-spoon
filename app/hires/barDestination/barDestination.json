@@ -1,0 +1,36 @@
+{
+  "hires": "navItem",
+  "contract": "destination",
+  "clauses": [
+    {
+      "prop": "text",
+      "value": "label"
+    },
+    {
+      "prop": "icon",
+      "value": "deck",
+      "cases": [
+        {
+          "equals": "browse",
+          "token": "icon.browse"
+        },
+        {
+          "equals": "library",
+          "token": "icon.library"
+        },
+        {
+          "equals": "search",
+          "token": "icon.search"
+        }
+      ]
+    },
+    {
+      "event": "press",
+      "send": "switchDeck"
+    },
+    {
+      "event": "reselect",
+      "send": "reselectDeck"
+    }
+  ]
+}

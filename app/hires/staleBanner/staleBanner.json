@@ -1,0 +1,14 @@
+{
+  "hires": "staleBanner",
+  "contract": "contentState",
+  "clauses": [
+    {
+      "prop": "text",
+      "text": "content.stale"
+    },
+    {
+      "event": "retry",
+      "send": "retry"
+    }
+  ]
+}

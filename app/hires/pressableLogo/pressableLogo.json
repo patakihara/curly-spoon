@@ -1,0 +1,10 @@
+{
+  "hires": "logo",
+  "contract": "logo",
+  "clauses": [
+    {
+      "event": "press",
+      "send": "action"
+    }
+  ]
+}

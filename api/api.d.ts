@@ -40,7 +40,7 @@ export type PageId = string;
 export type PageTemplateId = string;
 export type ItemId = string;
 export type SourceRef = string;
-export type ComponentId = string;
+export type ComponentName = string;
 export type MotionId = string;
 export type GateId = string;
 export type LocaleId = string;           // BCP 47, e.g. 'en', 'fi', 'he'
@@ -775,7 +775,7 @@ export interface ContractNode {
   values: unknown;                       // the contract's values type
   children: unknown;                     // the contract's children type, as nodes
   hire: HireName | null | undefined;     // null: not drawn here · undefined: no placement (a rule fails)
-  component: ComponentId | null;         // the hire's free component
+  component: ComponentName | null;         // the hire's free component
   variants: VariantPicks;
   props: NodeProps;                      // the free component's props, clauses resolved
   slots: NodeSlots;                      // the free component's slots, filled with nodes
@@ -810,8 +810,9 @@ export interface PlaceholderForm { visuals?: Visuals }
 export type StatusState = 'selected' | 'checked' | 'indeterminate' | 'busy' | 'error' | 'dragged';
 export declare const STATUS_STATES: readonly StatusState[];
 export interface ComponentDef {
-  extends?: ComponentId;
+  extends?: ComponentName;
   variant?: true;
+  picks?: VariantPicks;                  // 18.0: fixes options of settings it inherits (a child); those are no longer offered to hires or children
   states?: string[];
   props?: Record<string, PropType>;
   variants?: Record<string, VariantAxis>;
@@ -823,10 +824,10 @@ export interface ComponentDef {
   visuals?: Visuals;
   optional?: string[];                   // props a hire may leave unfed (a button's icon); inherited (union)
   events?: FreeEventSpec[];              // 18.0: what it emits (composition maps each to an intent)
-  option?: ComponentId;                  // 18.0: the component each of its options is drawn as (tabBar → tab); inherited; registered, interactive
+  option?: ComponentName;                  // 18.0: the component each of its options is drawn as (tabBar → tab); inherited; registered, interactive
 }
 export interface FreeEventSpec { name: string; payload: PropType | null }
-export type ComponentRegistry = Record<ComponentId, ComponentDef>;
+export type ComponentRegistry = Record<ComponentName, ComponentDef>;
 export interface StackPattern { event: 'pushed' | 'popped'; kind?: PageConfig['kind'] | 'layerPage' }
 export interface SurfacePattern { event: 'deckSwitched' | 'expandedChanged' | 'layerOpened' | 'layerClosed' | 'overlayOpened' | 'overlayClosed'; layer?: LayerId }
 export interface ParamPattern { event: 'paramChanged'; motion?: ParamMotion }
@@ -907,8 +908,8 @@ export interface Specs {
   choreography: Choreography;
   motions: MotionRegistry;              // TEMPORARY (KindStep)
 }
-export interface VisualContext { surface?: ComponentId; variant?: Record<string, string>; env?: LayoutEnv; page?: PageState | null; status?: StatusState[] }
-export interface PlatformManifest { platform: string; implements: ComponentId[]; motions?: MotionId[] }   // motions: TEMPORARY (kinds still hand-built)
+export interface VisualContext { surface?: ComponentName; variant?: Record<string, string>; env?: LayoutEnv; page?: PageState | null; status?: StatusState[] }
+export interface PlatformManifest { platform: string; implements: ComponentName[]; motions?: MotionId[] }   // motions: TEMPORARY (kinds still hand-built)
 // Rules: every component composition hires is registered and implemented by every platform (variants count where their parent is);
 // composition rules (api/composition-rules.js) check hires, clauses, placements and tokens against the contracts and design;
 // texts exist in every locale and parse; data components declare placeholders; every piece a step names is declared; anchors name steps;
@@ -922,12 +923,12 @@ export interface Layout {
   barView(page: PageState, look: Look, within?: ContractName[]): BarView;   // the header hire's height / expandedHeight (with a detail); progress = min(1, scroll / distance)
   contentOffset(page: PageState, look: Look, within?: ContractName[]): number;   // 15.0: the content's own offset = max(0, scroll − barView.distance)
   panelOffset(page: BackdropPageState, look: Look): number;   // 18.0: the back layer panel's own offset = max(0, back.scroll − barView.distance)
-  resolveVisuals(specs: Specs, component: ComponentId, state: string, ctx?: VisualContext): Record<string, unknown>;
+  resolveVisuals(specs: Specs, component: ComponentName, state: string, ctx?: VisualContext): Record<string, unknown>;
   frontLayer(page: BackdropPageState, g: LayoutGeometry, look: Look, ctx?: FrontLayerContext, peek?: number): FrontLayerView;
   stepsFor(event: ModelEvent, specs: Specs, prefs: Prefs): Step[];                         // 17.0: the rule's steps, tokens / ByEvent / sequences resolved
-  componentSteps(specs: Specs, component: ComponentId, key: string, prefs: Prefs): Step[];   // 17.0
+  componentSteps(specs: Specs, component: ComponentName, key: string, prefs: Prefs): Step[];   // 17.0
   transitionFor(event: ModelEvent, specs: Specs, prefs: Prefs, measure?: Measurements): TransitionDescriptor;   // TEMPORARY: the rule's first KindStep
-  motionFor(specs: Specs, component: ComponentId, key: string, prefs: Prefs): TransitionDescriptor;            // TEMPORARY
+  motionFor(specs: Specs, component: ComponentName, key: string, prefs: Prefs): TransitionDescriptor;            // TEMPORARY
   peekPlacement(state: AppState, config: AppConfig, g: LayoutGeometry, frontTop: number, page: BackdropPageState | null, look: Look): Rect | null;
 }
 
@@ -939,7 +940,6 @@ export type InteractionState = 'enabled' | 'disabled' | 'hover' | 'pressed' | 'f
 export declare const INTERACTION_STATES: readonly InteractionState[];
 export interface InteractionFacts { checked?: boolean | 'mixed' }
 export interface InteractionInput { hovered: boolean; pressed: boolean; focused: boolean; focusVisible: boolean; dragging?: boolean }
-export interface InteractiveComponent { id: NodeKey; component: ComponentId; action: Actions; label: string }
 export interface InteractionFlags { hover: boolean; pressed: boolean; focus: boolean; keyboardFocus: boolean }
 export interface InteractionView {
   state: InteractionState;               // disabled > pressed > keyboardFocus > focus > hover > enabled
@@ -974,12 +974,11 @@ export interface PlayerActionResult { commands: PlayerCommand[]; events: QueuedE
 export declare function playerAction(player: PlayerModel, intent: PlayerIntent, from?: ItemId | null): PlayerActionResult;
 
 // ═════════════════════════════════════════════════════════════
-// Q. COMPOSITION (app/composition.json) — hires free components for contracts and places them by config kind.
-//   Holds no look values: a fixed value is one of the hire's own tokens, which aliases a design token.
+// Q. COMPOSITION (app/composition.json + app/hires/<name>/<name>.json) — hires components for contracts and places them by config kind.
+//   A hire is shaped like a child component (ComponentDef): `picks` and `visuals` mean the same in both. Its look values
+//   are design tokens or literals in its visuals; every visual at every level is listed as a token (generated/tokens.json).
 // ═════════════════════════════════════════════════════════════
 export type TokenName = string;          // a design token: 'size.iconButton.md', 'icon.menu'
-export interface HireToken { name: TokenName; alias: TokenName }   // minted for this hire ('<hire>.<name>'); must alias a design token
-export interface VariantPick { axis: string; option: string }
 
 export type PropName = string;
 export type EventName = string;
@@ -989,11 +988,11 @@ export type ValueName = string;          // a field of a contract's values: 'exp
 
 // ── Clauses: one component name ↔ one contract name. Implied where the names match; written only where they differ.
 export interface PropFrom { prop: PropName; value: ValueName }      // prop ← a contract value
-export interface PropFixed { prop: PropName; token: TokenName }     // prop ← one of the hire's tokens
+export interface PropFixed { prop: PropName; token: TokenName }     // prop ← a design token
 export type DesignTextId = string;       // a design text: words a free component needs whatever it draws ('content.empty', 'range.from')
 export interface PropText { prop: PropName; text: DesignTextId }    // prop ← a design text (design/texts/<locale>.json)
 export interface TokenCase { equals: string; token: TokenName }
-export interface PropByValue { prop: PropName; value: ValueName; cases: TokenCase[] }   // prop ← a hire token picked by a value (view switch icon)
+export interface PropByValue { prop: PropName; value: ValueName; cases: TokenCase[] }   // prop ← a design token picked by a value (view switch icon)
 export type PlayerIntentType = PlayerIntent['type'];
 export interface EventTo { event: EventName; send: IntentType | PlayerIntentType | 'action'; apply?: true }   // an intent the contract accepts · action: the item's config action · apply: setParams applies at once (picking a suggestion)
 export interface ItemSelector { kind?: ItemKind; name?: ItemName; rest?: true }   // rest: every item not picked by another slot
@@ -1003,14 +1002,14 @@ export type SlotSource = FromChild | FromHire;
 export interface SlotFrom { slot: SlotName; fill: SlotSource[] }
 export type Clause = PropFrom | PropFixed | PropText | PropByValue | EventTo | SlotFrom;
 
-export interface Hire {
-  name: HireName;
-  hires: ComponentId;                    // exactly one free component
+export interface HireDef {               // a hire's file: app/hires/<name>/<name>.json (its name is its folder's)
+  hires: ComponentName;                  // exactly one component: a free component or a child
   contract: ContractName;                // exactly one contract
+  picks?: VariantPicks;                  // fixes options of its component's settings (as a child's picks)
+  visuals?: Visuals;                     // over its component's, per visual and state (as a child's visuals)
   clauses: Clause[];
-  variants?: VariantPick[];
-  tokens?: HireToken[];
 }
+export interface Hire extends HireDef { name: HireName }   // as loaded (app/load-app.js loadComposition)
 
 // ── Placements: which hire draws each config object, by contract (and, for items, kind / name / presentation)
 export interface ParamMatch { name?: ParamName; type?: ParamType; axis?: boolean; options?: boolean }   // param controls: picked by the bound param (its name, or its spec) · options: the control brings its own choices
@@ -1026,13 +1025,14 @@ export interface Placement {
   hire: HireName | null;                 // null: not drawn here (e.g. the menu button on wide, where the rail has it)
 }
 export interface PageExceptions { page: PageId; placements: Placement[] }   // checked first, then the defaults
-export interface Composition { hires: Hire[]; placements: Placement[]; pages: PageExceptions[] }
+export interface CompositionManifest { hires: HireName[]; placements: Placement[]; pages: PageExceptions[] }   // app/composition.json: hire names, like design.json's components
+export interface Composition { hires: Hire[]; placements: Placement[]; pages: PageExceptions[] }   // as loaded
 
 // ── A place: what placement matches on (core/contracts.js builds one per node)
 export interface Place { contract: ContractName; page: PageId | null; within: ContractName[]; kind?: ItemKind; name?: ItemName; param?: ParamMatch; presentation?: PresentationKey; state?: ContentViewState; overlay?: OverlayKind; env?: LayoutEnv }
 // ── Look: sizes and visuals at the current env, read through placements (core/compose.js lookAt)
 export interface Look {
-  size(at: Place, name: string, state?: string): number;       // the hire's own token '<hire>.<name>', else its free component's visual; 0 where nothing is drawn
+  size(at: Place, name: string, state?: string): number;       // the hire's visual of that name (its own over its component's); 0 where nothing is drawn
   visuals(at: Place, state?: string, ctx?: VisualContext): Record<string, unknown> | null;
   hire(at: Place): HireName | null;
 }

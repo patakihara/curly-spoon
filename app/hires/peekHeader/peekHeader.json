@@ -1,0 +1,39 @@
+{
+  "hires": "header",
+  "contract": "header",
+  "visuals": {
+    "height": {
+      "default": {
+        "token": "size.peek.height"
+      }
+    },
+    "maxWidth": {
+      "default": {
+        "token": "size.peek.maxWidth"
+      }
+    }
+  },
+  "clauses": [
+    {
+      "slot": "title",
+      "fill": [
+        {
+          "child": "detail"
+        }
+      ]
+    },
+    {
+      "slot": "end",
+      "fill": [
+        {
+          "child": "items",
+          "pick": [
+            {
+              "rest": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

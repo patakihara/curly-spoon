@@ -1,0 +1,18 @@
+{
+  "hires": "menu",
+  "contract": "overlay",
+  "clauses": [
+    {
+      "slot": "items",
+      "fill": [
+        {
+          "child": "items"
+        }
+      ]
+    },
+    {
+      "event": "close",
+      "send": "closeOverlay"
+    }
+  ]
+}

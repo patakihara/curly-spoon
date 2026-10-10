@@ -1,0 +1,43 @@
+{
+  "hires": "navRail",
+  "contract": "navigation",
+  "clauses": [
+    {
+      "slot": "destinations",
+      "fill": [
+        {
+          "child": "destinations"
+        }
+      ]
+    },
+    {
+      "slot": "top",
+      "fill": [
+        {
+          "child": "items",
+          "pick": [
+            {
+              "name": "menu"
+            },
+            {
+              "name": "menuClose"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slot": "bottom",
+      "fill": [
+        {
+          "child": "items",
+          "pick": [
+            {
+              "rest": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

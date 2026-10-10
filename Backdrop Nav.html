@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backdrop Nav</title>
+<style>
+:root{--ground:#FAF9F5;--surface:#FFFFFF;--ink:#141413;--muted:#87867F;--line:#D1CFC5;--accent:#D97757;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--serif:ui-serif,Georgia,"Times New Roman",serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){color-scheme:dark;--ground:#141413;--surface:#1F1F1D;--ink:#FAF9F5;--muted:#A8A69D;--line:#3D3D3A;--accent:#E08A6D}}
+:root[data-theme="dark"]{color-scheme:dark;--ground:#141413;--surface:#1F1F1D;--ink:#FAF9F5;--muted:#A8A69D;--line:#3D3D3A;--accent:#E08A6D}
+html,body{margin:0;height:100%;background:var(--ground);color:var(--ink);font-family:var(--sans)}
+.shell{display:flex;height:100%}
+nav{flex:none;width:200px;border-inline-end:1px solid var(--line);padding:20px 12px;box-sizing:border-box;display:flex;flex-direction:column;gap:4px;overflow:auto}
+nav .title{font-family:var(--serif);font-size:18px;padding:0 10px 12px}
+nav a{display:block;padding:7px 10px;border-radius:8px;color:var(--ink);text-decoration:none;font-size:14px}
+nav a:hover{background:color-mix(in srgb,var(--ink) 6%,transparent)}
+nav a[aria-current="page"]{background:color-mix(in srgb,var(--accent) 16%,transparent);font-weight:600}
+nav .hint{font-size:12px;color:var(--muted);padding:0 10px}
+main{flex:1;min-width:0}
+iframe{border:0;width:100%;height:100%;display:block;background:var(--ground)}
+@media (max-width:700px){.shell{flex-direction:column}nav{width:auto;flex-direction:row;flex-wrap:wrap;padding:8px 16px;border-inline-end:0;border-bottom:1px solid var(--line)}nav .title,nav .hint{display:none}main{flex:1}}
+</style>
+</head>
+<body>
+<!-- The artifact's front page: a side table of contents of its pages (as Sonora's design-system artifact has), showing the
+     chosen one beside it. Each page stays its own file; this page only lists and frames them. -->
+<div class="shell">
+  <nav aria-label="Pages">
+    <div class="title">Backdrop Nav</div>
+    <a href="#mockup" data-page="Backdrop Nav Skeleton.dc.html">Mockup</a>
+    <a href="#components" data-page="Components.dc.html">Components</a>
+    <a href="#tokens" data-page="Tokens.dc.html">Tokens</a>
+    <a href="#specs" data-page="Specs Editor.dc.html">Specs editor</a>
+    <a href="#invariants" data-page="Invariants.dc.html">Rules</a>
+    <div class="hint" style="margin-top:auto">Edits in Tokens and the Specs editor apply live to the mockup in this browser.</div>
+  </nav>
+  <main><iframe title="Page" id="page"></iframe></main>
+</div>
+<script>
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav a')), frame = document.getElementById('page');
+  function show() {
+    var id = (location.hash || '#mockup').slice(1), a = links.filter(function (l) { return l.getAttribute('href') === '#' + id; })[0] || links[0];
+    links.forEach(function (l) { if (l === a) l.setAttribute('aria-current', 'page'); else l.removeAttribute('aria-current'); });
+    var src = encodeURI(a.getAttribute('data-page'));
+    if (frame.getAttribute('src') !== src) frame.setAttribute('src', src);
+    document.title = a.textContent + ' · Backdrop Nav';
+  }
+  window.addEventListener('hashchange', show); show();
+})();
+</script>
+</body>
+</html>

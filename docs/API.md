@@ -12,7 +12,7 @@ Contract version: 18.0.0 · rules: 90 invariants (api/invariants.js) + 13 compos
 > - `CHANGELOG.md` — versions + compatibility policy
 > - `api/invariants.js` — 90 rules (property-based; skip when a config lacks a subject)
 > - `core/navigation.js` · `core/player.js` · `core/layout.js` · `core/compose.js` (placements, hires, the look) · `core/contracts.js` (the contract tree) — reference core (pure JS)
-> - `app/app.json` — the app (AppConfig, plain JSON) · `app/composition.json` — which free component fills each contract (hires, placements)
+> - `app/app.json` — the app (AppConfig, plain JSON) · `app/composition.json` — the hire names and placements · `app/hires/<name>/` — each hire (which component fills a contract, wired how)
 > - `design/` — the design system (tokens, choreography, one folder per component); `design/load.js` assembles the Specs object (§15); `generated/` — per-platform tokens · `Components.dc.html` — generated preview
 > - `platforms/web.json` — what the web shell implements (each platform publishes one; checked by the rules)
 > - `app/fake-backend.js` — fake backend data + test fixtures (`bind(config)`)
@@ -208,8 +208,8 @@ Note: Chrome skips history entries created without user activation, so the trick
 
 
 ## §20 Interactive components
-Every actionable component (one that extends `interactive` in design) implements `InteractiveComponent { id, component, action, label }`.
-`action` is `{ nav: Intent } | { player: PlayerIntent } | { shell: ShellActionId } | null`.
+Every actionable component extends `interactive` in design: its states, their visuals and the motions between them come from there, by inheritance. Its node (the contract tree) carries what it acts on: key, component, events (each an intent or the item's action), label.
+An action is `{ nav: Intent } | { player: PlayerIntent } | { shell: ShellActionId } | null`.
 State is never set by the component — `resolveInteraction(action, input, env)` (core/interaction.js) derives it:
 - available iff nav → `model.query.supports`, player → `player.supports` (transport needs a current track), shell → listed in `env.shellActions`; `null` = not built.
 - unavailable ⇒ `disabled` (flags off, not focusable, activation ignored). Idempotent actions stay enabled.
@@ -223,12 +223,15 @@ Tapping the active deck's nav item: deeper than base → pop to base (`return` f
 A choice param with `axis: true` (tabs) emits `paramChanged { axis: true, direction }` (sign of the option index change). Specs map `paramChanged · axis` to `sharedAxis`; other param changes are instant.
 
 ## What fills a contract (18.0)
-Config never names a component. Each drawn config object meets a **contract** (api/contracts.js: its config, the values the engine gives it, the intents it can send, its children). **Composition** (app/composition.json) hires one free design component per contract: a hire's clauses feed the component's props from contract values, fixed tokens or design texts, send its events as intents or the item's action, and fill its slots from children. Placements pick the hire by contract, nearest ancestor (`within`), kind / name, param, presentation, state, overlay kind and layout class; page exceptions, keyed by template, come first.
+Config never names a component. Each drawn config object meets a **contract** (api/contracts.js: its config, the values the engine gives it, the intents it can send, its children). **Composition** (app/composition.json lists the hires and holds the placements; each hire is its own file, app/hires/<name>/<name>.json, with a note and a generated type beside it) hires one component (free, or a child) per contract. A hire is shaped like a child: `picks` fixes options of its component's settings and `visuals` sets its own look over its component's. Its clauses feed the component's props from contract values, design tokens or design texts, send its events as intents or the item's action, and fill its slots from children. Placements pick the hire by contract, nearest ancestor (`within`), kind / name, param, presentation, state, overlay kind and layout class; page exceptions, keyed by template, come first.
 - The contract tree (core/contracts.js `contractTree`) holds this moment's nodes: `{ key, contract, at, values, children, hire, component, props, slots, events, shown? }`. Its keys identify instances, so hover, press and focus never travel between pages.
 - Platforms draw nodes. Each publishes `{ platform, implements: [...] }`; the rules check that every component composition hires is implemented on every platform (a variant counts where its parent does).
 
 ## Component inheritance
-A component can `extends` another: it inherits props, optional props, states, visuals and its `option` (the component each of its options is drawn as: tabBar → tab), and stores only what differs. A `variant` has no code of its own — its parent's implementation draws it with the child's values. "Interactive" components (state layer, ripple, focus) are those that extend `interactive`.
+A component can `extends` another: it inherits props, optional props, states, visuals and its `option` (the component each of its options is drawn as: tabBar → tab), and stores only what differs. A `variant` (a child) has no code of its own — its parent's implementation draws it with the child's values; one with its parent's slots and parts never has a DC of its own (a rule checks it). A child's `picks` fixes options of the settings it inherits (`{ "shape": "square" }`); those are no longer offered to hires or its own children.
+
+## Tokens at every level
+Every visual of every component, child and hire is a token named after its owner (`listRow.fill`, `queueRow.fill:pressed`, `upNext.fill`, `iconButton.size[md]`), pointing at what it inherits unless set there. design/write-generated.mjs writes them all to generated/tokens.json, grouped by inheritance; the artifact's Tokens page lists them and lets you repoint one (a patch, applied live to the mockup, exported with Copy changes). "Interactive" components (state layer, ripple, focus) are those that extend `interactive`.
 
 ## 3.0.0 — surfaces, variants, layout from data
 - **Surfaces** (`backLayer`, `frontLayer`, `appBar`, sheets, nav, dialog, snackbar) declare `provides`: colour roles such as `content`, `contentVariant`, `focusRing`. Components ask for a role (`{ "role": "contentVariant" }`), never a hex — the same icon button is white on the back layer and dark on an app bar. A rule checks every surface provides the roles of what is placed on it.

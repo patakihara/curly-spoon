@@ -1,0 +1,27 @@
+{
+  "hires": "viewSwitch",
+  "contract": "switch",
+  "picks": {
+    "size": "md"
+  },
+  "clauses": [
+    {
+      "prop": "icon",
+      "value": "next",
+      "cases": [
+        {
+          "equals": "grid",
+          "token": "icon.viewGrid"
+        },
+        {
+          "equals": "list",
+          "token": "icon.viewList"
+        }
+      ]
+    },
+    {
+      "event": "press",
+      "send": "setParams"
+    }
+  ]
+}

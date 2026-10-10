@@ -1,0 +1,17 @@
+{
+  "hires": "iconButton",
+  "contract": "button",
+  "picks": {
+    "edge": "start"
+  },
+  "clauses": [
+    {
+      "prop": "icon",
+      "token": "icon.menu"
+    },
+    {
+      "event": "press",
+      "send": "action"
+    }
+  ]
+}

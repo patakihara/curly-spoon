@@ -22,7 +22,7 @@ export async function loadDesignRaw(read) {
   return { contractVersion: man.contractVersion, tokens: flattenTokens(tokens), components: Object.fromEntries(man.components.map((id, i) => [id, comps[i]])), choreography, motions: Object.fromEntries(mids.map((id, i) => [id, mots[i]])) };
 }
 
-// extends: a child inherits its parent's optional props and statuses (union), props and variants (merged), states (unless it lists its own)
+// extends: a child inherits its parent's optional props and statuses (union), props, variants and picks (merged), states (unless it lists its own)
 // and visuals (merged per visual and state); the child's own values win. `extends` / `variant` stay on the result.
 export function resolveExtends(raw) {
   const done = {}, J = v => JSON.parse(JSON.stringify(v));
@@ -49,7 +49,9 @@ export function resolveExtends(raw) {
     const parts = [...new Set([...(P.parts || []), ...(C.parts || [])])];   // 17.0: inherited
     if (parts.length) m.parts = parts;
     const va = { ...J(P.variants || {}), ...J(C.variants || {}) };
-    if (Object.keys(va).length) m.variants = va;
+    if (Object.keys(va).length) m.variants = va;   // every axis (cases resolve by them); a picked one is not offered (core/compose.js freeComponent)
+    const pk = { ...(P.picks || {}), ...(C.picks || {}) };
+    if (Object.keys(pk).length) m.picks = pk;
     return (done[id] = m);
   };
   return { ...raw, components: Object.fromEntries(Object.keys(raw.components).map(id => [id, res(id, [])])) };

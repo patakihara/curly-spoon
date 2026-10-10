@@ -1,0 +1,14 @@
+{
+  "hires": "iconButton",
+  "contract": "button",
+  "clauses": [
+    {
+      "prop": "icon",
+      "token": "icon.collapse"
+    },
+    {
+      "event": "press",
+      "send": "action"
+    }
+  ]
+}

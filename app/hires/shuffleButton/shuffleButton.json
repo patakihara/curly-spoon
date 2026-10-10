@@ -1,0 +1,17 @@
+{
+  "hires": "iconButton",
+  "contract": "button",
+  "picks": {
+    "size": "md"
+  },
+  "clauses": [
+    {
+      "prop": "icon",
+      "token": "icon.shuffle"
+    },
+    {
+      "event": "press",
+      "send": "action"
+    }
+  ]
+}

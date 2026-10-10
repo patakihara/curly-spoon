@@ -1,0 +1,29 @@
+{
+  "hires": "morph",
+  "contract": "find",
+  "picks": {
+    "span": "header"
+  },
+  "clauses": [
+    {
+      "prop": "morphed",
+      "value": "open"
+    },
+    {
+      "slot": "from",
+      "fill": [
+        {
+          "hire": "findButton"
+        }
+      ]
+    },
+    {
+      "slot": "to",
+      "fill": [
+        {
+          "hire": "findField"
+        }
+      ]
+    }
+  ]
+}

@@ -44,6 +44,12 @@
     },
     "titleFadeFrom": {
       "default": 0.5
+    },
+    "expandedHeight": {
+      "default": 0
+    },
+    "maxWidth": {
+      "default": 0
     }
   },
   "events": [

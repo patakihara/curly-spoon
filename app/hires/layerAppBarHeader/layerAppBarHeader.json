@@ -1,0 +1,89 @@
+{
+  "hires": "appBar",
+  "contract": "header",
+  "picks": {
+    "form": "layer"
+  },
+  "clauses": [
+    {
+      "slot": "start",
+      "fill": [
+        {
+          "child": "items",
+          "pick": [
+            {
+              "name": "up"
+            },
+            {
+              "name": "close"
+            },
+            {
+              "name": "collapse"
+            },
+            {
+              "kind": "logo"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slot": "title",
+      "fill": [
+        {
+          "hire": "pageTitle"
+        }
+      ]
+    },
+    {
+      "slot": "end",
+      "fill": [
+        {
+          "child": "items",
+          "pick": [
+            {
+              "kind": "find"
+            },
+            {
+              "name": "more"
+            },
+            {
+              "rest": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slot": "fab",
+      "fill": [
+        {
+          "child": "items",
+          "pick": [
+            {
+              "name": "playNow"
+            },
+            {
+              "name": "playNext"
+            },
+            {
+              "name": "playLast"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slot": "expanded",
+      "fill": [
+        {
+          "child": "detail"
+        }
+      ]
+    },
+    {
+      "event": "scroll",
+      "send": "scroll"
+    }
+  ]
+}
