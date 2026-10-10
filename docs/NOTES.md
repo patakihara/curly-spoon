@@ -609,6 +609,11 @@ fields, not nodes · 6 verify ✓ (screens above).
     layer is revealed, else the content (header contract intent scroll; ScrollIntent.surface). My change to the
     approved shape: no relative `by` — the platform turns a drag into an absolute offset, since only it knows how far
     the content can scroll. The scroll offset of the panel is state because the header's collapse depends on it.
+48. Who times the back layer's moves (Sofia, 2026-10-10): for now the platform passes it. The engine already reports
+    each change (expandedChanged, moreChanged, headerVisibilityChanged); draw.js hands each component the timing of the
+    latest one, from its choreography rule, and the shell's lastMove flags go. No API change. Later (Sofia: "later it
+    will be 2"): the motion player (platforms/web/motions.js) moves the regions as choreography steps on named pieces,
+    and BackLayer draws only where things end up; the passed timing goes then.
 
 ## Shell conversion list (kept current with every change)
 Goal: the shell (Backdrop Nav Skeleton.dc.html) draws nothing and decides nothing itself. It places the root's
@@ -752,7 +757,7 @@ Done (drawn from contract nodes through draw.js):
 2. BackLayer.dc.html (approved): regions, header with its detail as a scroll surface, controls, actions, panel, More.
    Panel rows done. Gaps before the back layer can be drawn from its node alone:
    - regions: the node has them as a value, but design backLayer declares no prop for them, so draw.js doesn't pass them.
-   - region timing: the shell picks the choreography rule (expand, more, header, scroll) from lastMove; a DC can't.
+   - region timing: decision 48: draw.js passes the timing of the engine's latest change (later: the motion player).
    - panel height: the shell measures it after render and feeds it to Layout (measured.panel).
    - controls rows: drawn as shell rows (basicPadding, no heading), not by the paramControlRow hire.
    - header: no Header.dc.html; Bar draws it from shell-built props; the detail's shrink math is in the shell.
