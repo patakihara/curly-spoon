@@ -722,6 +722,16 @@ fields, not nodes · 6 verify ✓ (screens above).
     sideSheet.scrim through the shell's sv bundle) and it sends the node's close. The shell's Scrim instance and its
     modal decision are gone. Scrim.dc.html stays for FrontLayer's scrim; it has no design component of its own (see the
     EdgeHandle / Scrim proposal below).
+    EdgeHandle / Scrim proposal (needs Sofia; not done). Neither has a design component, but both draw what design
+    already declares on a surface, so neither needs one:
+    - EdgeHandle draws design sideSheet's handle* visuals (handleWidth … handleIcon). Proposal: declare `handle` a part
+      of sideSheet; NowPlayingSheet draws it from the sheetLayer node (side auto, not open) and sends the node's open on
+      pointer enter; EdgeHandle.dc.html goes. Open question: the shell also hides it while the Dedede layer is open
+      (dOpen), which the sheetLayer node doesn't know. Either a sheetLayer value for it (an API change: contracts.js
+      values) or drop that condition (the Dedede layer covers the screen once revealed; during its reveal the handle
+      would show until the circle reaches it).
+    - Scrim.dc.html is left only for FrontLayer's scrim (design frontLayer.scrim). Proposal: FrontLayer draws it as a
+      part `scrim` (as dialog, menu, drawer and now the side sheet do), and Scrim.dc.html goes.
 ## Hires, picks and tokens: work list (decisions 52–54; tick as done)
 API 18.0.0 amended (breaking: renames and removals). Then back to the shell conversion list, step 3.
 - [x] 1. Rename ComponentId → ComponentName (api.d.ts, docs).
@@ -775,7 +785,7 @@ Done (drawn from contract nodes through draw.js):
 - [ ] Rail: the wrapper box around NavRail.
 - [x] Side-sheet scrim: NowPlayingSheet draws it from the sheetLayer node and sends close (decision 58).
 - [x] Drawer scrim: Drawer draws it (design drawer.scrim) and sends close.
-- [ ] Edge handle: placed by the shell (end edge, vertically centred).
+- [ ] Edge handle: placed by the shell (end edge, vertically centred). Proposal in decision 58 (needs Sofia).
 - [ ] Nav bar: the wrapper box that slides it down (navShift) with the expand transition.
 - [x] Drawer: the wrapper box: Drawer slides itself in from its node (width, max width from design; motion still the shell's).
 - [ ] Snackbar: the wrapper box (left, bottom, width).
@@ -792,7 +802,7 @@ Done (drawn from contract nodes through draw.js):
       the shell: nn.peekTitle / peekSub / peekArt (need config, Sofia's OK), pl.card (peek controls), npVis, mx.
 - [ ] DededeLayer: 10 props; no design component exists for it.
 - [ ] AccountLayer: 6 props; no design component exists for it.
-- [ ] EdgeHandle and Scrim: no design component exists for either.
+- [ ] EdgeHandle and Scrim: no design component exists for either; proposal (parts of sideSheet and frontLayer) in decision 58, needs Sofia.
 - [ ] NavRail, Menu, SignIn, Splash: props built by the shell, not from a node (Menu: needs Sofia, decision 58).
 - [x] Dialog, Snackbar: drawn from their overlay nodes; Drawer from its drawerLayer node (decision 58).
 - [x] Back-layer DCs placed by the shell: now one BackLayer instance fed its node (it draws Header, PanelRow, MorePanel,
