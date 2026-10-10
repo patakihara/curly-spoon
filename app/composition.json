@@ -1741,6 +1741,10 @@
    "contract": "find",
    "clauses": [
     {
+     "prop": "clearLabel",
+     "value": "closeLabel"
+    },
+    {
      "event": "change",
      "send": "setParams"
     },
@@ -1835,6 +1839,23 @@
    ]
   },
   {
+   "name": "sheetTabs",
+   "hires": "tabBar",
+   "contract": "paramControl",
+   "clauses": [
+    {
+     "event": "change",
+     "send": "setParams"
+    }
+   ],
+   "variants": [
+    {
+     "axis": "tone",
+     "option": "surface"
+    }
+   ]
+  },
+  {
    "name": "dropdown",
    "hires": "dropdown",
    "contract": "paramControl",
@@ -1869,6 +1890,10 @@
    "hires": "searchField",
    "contract": "paramControl",
    "clauses": [
+    {
+     "prop": "clearLabel",
+     "text": "search.clear"
+    },
     {
      "event": "change",
      "send": "setParams"
@@ -2972,6 +2997,15 @@
     "type": "text"
    },
    "hire": "searchField"
+  },
+  {
+   "contract": "paramControl",
+   "within": "pageSheet",
+   "param": {
+    "type": "choice",
+    "axis": true
+   },
+   "hire": "sheetTabs"
   },
   {
    "contract": "paramControl",

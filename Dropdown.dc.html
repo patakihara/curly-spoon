@@ -10,11 +10,12 @@
 <select onChange="{{ onPick }}" aria-label="{{ label }}" style="height:{{ h }}px;border-radius:{{ rad }}px;border:1px solid {{ border }};background:transparent;color:{{ ink }};font:inherit;font-size:{{ fs }}px;padding:0 {{ px }}px;align-self:flex-start"><sc-for list="{{ options }}" as="op" hint-placeholder-count="3"><option value="{{ op.value }}" selected="{{ op.on }}" style="color:{{ optInk }}">{{ op.label }}</option></sc-for></select>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:200,&quot;height&quot;:60},&quot;options&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ value: string; label: string; on: boolean }[]&quot;},&quot;label&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Sort&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;onPick&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(e: Event) =&gt; void&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
-// Web implementation of design component dropdown (role input, accepts choice). Props: options [{ value, label, on }], label, onPick(e), visuals (resolved). No values of its own.
+// Web implementation of design component dropdown, drawn from its node (platforms/web/draw.js). Props: options [{ value, label,
+// selected }], label, on.change (picking an option sends its value), visuals (resolved). No values of its own.
 class Component extends DCLogic {
   renderVals() {
-    const v = this.props.visuals || {};
-    return { options: this.props.options || [], label: this.props.label || '', onPick: this.props.onPick || (() => {}),
+    const p = this.props, v = p.visuals || {}, on = p.on || {};
+    return { options: (p.options || []).map(o => ({ value: o.value, label: o.label, on: !!o.selected })), label: p.label || '', onPick: e => on.change && on.change(e.target.value, e),
       h: +v.height || 40, rad: +v.radius || 0, border: v.border || 'currentColor', ink: v.ink || 'inherit', optInk: v.optionInk || 'inherit', fs: +v.fontSize || 14, px: +v.padX || 0 };
   }
 }

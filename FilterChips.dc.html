@@ -11,12 +11,18 @@
 <sc-if value="{{ wrap }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-wrap:wrap;gap:{{ gap }}px"><sc-for list="{{ chips }}" as="f" hint-placeholder-count="3"><dc-import name="Chip" dc-props="{{ f.ix }}" text="{{ f.label }}" hint-size="72px,32px"></dc-import></sc-for></div></sc-if>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:60},&quot;chips&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ ix: object; label: string }[]&quot;},&quot;wrap&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
-// Web implementation of design component filterChips (and its variant choiceChips). Props: chips [{ ix, label }] (Chip props from the shell),
-// wrap (true in panels: chips wrap; else one scrolling row bleeding by `inset`), visuals (resolved: height, gap, inset). No values of its own.
+// Web implementation of design component filterChips (and its variant choiceChips), drawn from its node (platforms/web/draw.js).
+// Props: options [{ value, label, selected }] (the node's), optionProps (each option drawn as its option component, chip: interaction
+// + visuals), more / moreLabel / moreProps (its More chip), wrap (true in panels: chips wrap; else one scrolling row bleeding by
+// `inset`), visuals (resolved: height, gap, inset, moreAfter). With a More, it shows the first moreAfter options (config order),
+// then the More chip, when they don't all fit. No values of its own.
 class Component extends DCLogic {
   renderVals() {
-    const v = this.props.visuals || {}, wrap = !!this.props.wrap;
-    return { chips: this.props.chips || [], wrap, row: !wrap, h: +v.height || 48, gap: +v.gap || 8, inset: +v.inset || 0 };
+    const p = this.props, v = p.visuals || {}, wrap = !!p.wrap, opts = p.options || [], ox = p.optionProps || [];
+    const after = Math.max(0, +v.moreAfter || 0), more = !!(p.more && p.moreProps && opts.length > after);
+    const chips = (more ? opts.slice(0, after) : opts).map((o, i) => ({ label: o.label, ix: ox[i] || {} }));
+    if (more) chips.push({ label: p.moreLabel || '', ix: p.moreProps });
+    return { chips, wrap, row: !wrap, h: +v.height || 48, gap: +v.gap || 8, inset: +v.inset || 0 };
   }
 }
 </script>

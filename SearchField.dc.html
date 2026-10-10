@@ -10,18 +10,20 @@
 <div style="height:{{ h }}px;box-sizing:border-box;display:flex;align-items:center;gap:{{ gap }}px;padding:0 {{ px }}px;border-radius:{{ rad }}px;background:{{ fill }};color:{{ ink }}">
   <div style="display:flex;opacity:{{ iop }}"><dc-import name="Symbol" icon="{{ icon }}" visuals="{{ iconVis }}" hint-size="20px,20px"></dc-import></div>
   <input value="{{ value }}" onChange="{{ onInput }}" onKeyDown="{{ onKey }}" placeholder="{{ hint }}" style="flex:1;min-width:0;border:0;outline:0;background:transparent;color:inherit;font:inherit;font-size:{{ fs }}px">
-  <sc-if value="{{ hasValue }}" hint-placeholder-val="{{ false }}"><dc-import name="IconButton" dc-props="{{ clearIx }}" icon="close" hint-size="32px,32px"></dc-import></sc-if>
+  <sc-if value="{{ hasValue }}" hint-placeholder-val="{{ false }}"><dc-import name="IconButton" dc-props="{{ clearIx }}" icon="{{ clearIcon }}" hint-size="32px,32px"></dc-import></sc-if>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:60},&quot;value&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;hint&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Search&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;onInput&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(e: Event) =&gt; void&quot;},&quot;onKey&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(e: KeyboardEvent) =&gt; void&quot;},&quot;clearIx&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
-// Web implementation of design component searchField (role input, accepts text). Props: value, hint, onInput(e), onKey(e),
-// clearIx (IconButton props from the shell for the clear control), visuals (resolved). No values of its own.
+// Web implementation of design component searchField, drawn from its node (platforms/web/draw.js). Props: value, placeholder,
+// clearLabel, on.change (typing; the clear button sends ''), on.submit (Enter), ixFor (the clear button's interaction), symbolVisuals,
+// visuals (resolved: … clearIcon, clearSize). No values of its own.
 class Component extends DCLogic {
   renderVals() {
-    const v = this.props.visuals || {}, no = () => {};
-    return { value: this.props.value || '', hasValue: !!this.props.value, hint: this.props.hint || '', onInput: this.props.onInput || no, onKey: this.props.onKey || no, clearIx: this.props.clearIx || {},
+    const p = this.props, v = p.visuals || {}, on = p.on || {};
+    const clearIx = p.ixFor ? p.ixFor({ key: 'clear', event: 'change', payload: '', component: 'iconButton', variant: { size: v.clearSize }, label: p.clearLabel || '' }) : {};
+    return { value: p.value || '', hasValue: !!p.value, hint: p.placeholder || '', onInput: e => on.change && on.change(e.target.value, e), onKey: e => { if (e.key === 'Enter' && on.submit) on.submit(e.target.value, e); }, clearIx, clearIcon: v.clearIcon || '',
       h: +v.height || 48, gap: +v.gap || 0, px: +v.padX || 0, rad: +v.radius || 0, fill: v.fill || 'transparent', ink: v.ink || 'inherit', fs: +v.fontSize || 15,
-      icon: v.icon || 'search', iconVis: { ...(this.props.symbolVisuals || {}), size: +v.iconSize || 20, padEnd: 0 }, iop: v.iconOpacity ?? 1 };
+      icon: v.icon || 'search', iconVis: { ...(p.symbolVisuals || {}), size: +v.iconSize || 20, padEnd: 0 }, iop: v.iconOpacity ?? 1 };
   }
 }
 </script>

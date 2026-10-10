@@ -10,12 +10,13 @@
 <div style="display:flex;flex-direction:column;gap:{{ gap }}px"><sc-for list="{{ rows }}" as="r" hint-placeholder-count="4"><dc-import name="CheckRow" ix="{{ r.ix }}" text="{{ r.text }}" visuals="{{ r.vis }}" symbol-visuals="{{ symbolVisuals }}" hint-size="100%,44px"></dc-import></sc-for></div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:320,&quot;height&quot;:200},&quot;rows&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ ix: object; text: string; vis: Record&lt;string, unknown&gt; }[]&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
-// Web implementation of design component checklist: one CheckRow per option, top to bottom. Props: rows [{ ix, text, vis }] (each option's
-// interaction and its checkRow visuals, resolved with its selected status, from the shell), symbolVisuals, visuals (resolved: gap).
+// Web implementation of design component checklist, drawn from its node (platforms/web/draw.js): one option per row, top to bottom,
+// each drawn as its option component (checkRow; its visuals carry the option's selected status). Props: options [{ value, label,
+// selected }], optionProps (each option's interaction + visuals), symbolVisuals, visuals (resolved: gap). No values of its own.
 class Component extends DCLogic {
   renderVals() {
-    const v = this.props.visuals || {};
-    return { rows: this.props.rows || [], symbolVisuals: this.props.symbolVisuals || {}, gap: +v.gap || 0 };
+    const p = this.props, v = p.visuals || {}, ox = p.optionProps || [];
+    return { rows: (p.options || []).map((o, i) => ({ text: o.label, ix: ox[i] || {}, vis: (ox[i] || {}).visuals || {} })), symbolVisuals: p.symbolVisuals || {}, gap: +v.gap || 0 };
   }
 }
 </script>

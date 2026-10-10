@@ -2,7 +2,8 @@
   "props": {
     "value": "value",
     "options": "options",
-    "placeholder": "string"
+    "placeholder": "string",
+    "clearLabel": "string"
   },
   "optional": [
     "options"
@@ -43,6 +44,14 @@
     },
     "iconOpacity": {
       "default": 0.7
+    },
+    "clearIcon": {
+      "default": {
+        "token": "icon.close"
+      }
+    },
+    "clearSize": {
+      "default": "xs"
     }
   },
   "events": [

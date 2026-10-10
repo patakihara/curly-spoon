@@ -623,13 +623,15 @@ Done (drawn from contract nodes through draw.js):
 - [x] Header items: back, front and app-bar headers' buttons, logo, text, switch, find (slice 1).
 - [x] Layer headers: Now playing, Dedede, Account (slice 2).
 - [x] Navigation: nav bar, rail top / destinations / bottom; the drawer's rows (slice 3).
+- [x] Param controls: each control is drawn from its node through draw.js (options, optionProps, moreProps, ixFor,
+      motions, symbolVisuals); the shell's controlView is gone; the inner Now playing sheet's tabs too (hire sheetTabs).
 
 ### Template: markup the shell draws itself
 - [ ] Page CSS in the helmet: input placeholder colours (rgba white .55 / black .45), the `.ms` icon font at 24px.
 - [ ] Phone fill: backBg picks token color.backLayer or color.backLayerAlt from the mockup's palette prop.
 - [ ] Back layer: four region boxes (header, controls, actions, panel), each placed, faded and timed by the shell.
 - [ ] Back layer header region: the detail box under the bar (top, height, ink, opacity, scale) around DetailHeader.
-- [ ] Controls rows: row box (height, padding, ink, gap), each control flex 1, the DC chosen by eight sc-if flags.
+- [ ] Controls rows: row box (height, padding, ink, gap), each control flex 1 (the DC now comes from draw.js).
 - [ ] Actions row: centred flex row of Buttons.
 - [ ] Panel: the scroll box (height, overflow), the inner box (padding, divider line, gap).
 - [ ] Panel: the More bar's sticky wrapper; the row label wrapper; the controls row inside each panel row.
@@ -692,10 +694,10 @@ Done (drawn from contract nodes through draw.js):
 - [ ] Panel height measured after render (ResizeObserver) into measured.panel; the app bar's button width measured.
 
 ### Decisions the shell makes itself
-- [ ] Which DC draws a param control: controlView switches on the component id.
-- [ ] The More chip rule (moreAfter, which options show, when the chip appears).
-- [ ] Range field: clamping to min / max and swapping from / to.
-- [ ] Search field: Enter submits.
+- [x] Which DC draws a param control: controlView switches on the component id.
+- [x] The More chip rule (moreAfter, which options show, when the chip appears): now in FilterChips.
+- [x] Range field: clamping to min / max and swapping from / to: now in RangeField.
+- [x] Search field: Enter submits: now in SearchField.
 - [ ] Which content layout and item DC to draw (listLayout, gridLayout, scrollerLayout, carousel).
 - [ ] Content blocks' type icon: open_in_full or layers by the template's kind.
 - [ ] Empty / error / offline state: icon fallbacks cloud_off and inbox; which text id shows.
@@ -705,7 +707,7 @@ Done (drawn from contract nodes through draw.js):
 - [ ] Peek title and subtitle: formatted by the shell (play / pause glyphs, mm:ss, splitting the track id).
 - [ ] Now playing body: per contract (detail, seek, button), fab vs iconButton, queueRow drawn as listRow,
       the current row's fill.
-- [ ] The inner sheet's tabs built by the shell.
+- [x] The inner sheet's tabs built by the shell.
 - [ ] Layer rows: chevron_right or arrow_outward by what the row opens; header height 56 written in the shell.
 - [ ] Rail expanded or not (the rail-form menu layer); the menu drawer hidden on wide when it is the rail.
 - [ ] Side sheet: modal scrim, auto-collapse on pointer leave, edge handle shown when auto and closed.
@@ -744,7 +746,7 @@ Done (drawn from contract nodes through draw.js):
   focus / history, stacks, flow rules, log, reset).
 
 ### Order (each step removes its lines above)
-1. Param controls drawn from their nodes through draw.js (the stashed step 1).
+1. Param controls drawn from their nodes through draw.js. Done.
 2. BackLayer.dc.html (approved): regions, header with its detail as a scroll surface, controls, actions, panel, More.
 3. Surfaces from the tree instead of key parsing; instances without nodes get nodes (may need API: propose first).
 4. Front layer and content items.
@@ -772,6 +774,8 @@ Done (drawn from contract nodes through draw.js):
 - 18.0: option components (decision 45): the DCs still import their option's DC by name (TabBar → Tab, FilterChips →
   Chip, SuggestionList → SuggestionRow, Checklist → CheckRow); a different design option would need the platform to map
   it. design/checks.js runs only from the rules harness, not on the Invariants page (as before).
+- 18.0: More (decision 44): the More chip no longer shows when every option fits but the More has rows of its own
+  (more.paramControls): the node's `more` value is only a flag, so FilterChips can't see it. No config has such a More.
 - 18.0: More (decision 44): only chip rows show a More chip (tab bars, dropdowns and the rest have no More event). A
   selected option past moreAfter is not shown in the row (only in the More). No URL or snapshot keeps which More is open.
 - 18.0: the free-component merge tree is proposed, not applied (69 design components).

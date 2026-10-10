@@ -7,15 +7,16 @@
 </head>
 <body>
 <x-dc>
-<div style="display:flex;flex-direction:column;gap:{{ gap }}px"><sc-for list="{{ rows }}" as="r" hint-placeholder-count="3"><dc-import name="SuggestionRow" ix="{{ r.ix }}" text="{{ r.text }}" visuals="{{ rowVis }}" symbol-visuals="{{ symbolVisuals }}" hint-size="100%,40px"></dc-import></sc-for></div>
+<div style="display:flex;flex-direction:column;gap:{{ gap }}px"><sc-for list="{{ rows }}" as="r" hint-placeholder-count="3"><dc-import name="SuggestionRow" ix="{{ r.ix }}" text="{{ r.text }}" visuals="{{ r.vis }}" symbol-visuals="{{ symbolVisuals }}" hint-size="100%,40px"></dc-import></sc-for></div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:320,&quot;height&quot;:160},&quot;rows&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ ix: object; text: string }[]&quot;},&quot;rowVis&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
-// Web implementation of design component suggestionList: one SuggestionRow per option, top to bottom. Props: rows [{ ix, text }]
-// (each option's interaction, from the shell), rowVis (suggestionRow visuals), symbolVisuals, visuals (resolved: gap). No values of its own.
+// Web implementation of design component suggestionList, drawn from its node (platforms/web/draw.js): one option per row, top to
+// bottom, each drawn as its option component (suggestionRow). Props: options [{ value, label, selected }], optionProps (each
+// option's interaction + visuals), symbolVisuals, visuals (resolved: gap). No values of its own.
 class Component extends DCLogic {
   renderVals() {
-    const v = this.props.visuals || {};
-    return { rows: this.props.rows || [], rowVis: this.props.rowVis || {}, symbolVisuals: this.props.symbolVisuals || {}, gap: +v.gap || 0 };
+    const p = this.props, v = p.visuals || {}, ox = p.optionProps || [];
+    return { rows: (p.options || []).map((o, i) => ({ text: o.label, ix: ox[i] || {}, vis: (ox[i] || {}).visuals || {} })), symbolVisuals: p.symbolVisuals || {}, gap: +v.gap || 0 };
   }
 }
 </script>

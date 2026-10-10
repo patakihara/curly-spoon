@@ -9,7 +9,7 @@
 <x-dc>
 <div style="position:absolute;left:0;right:0;bottom:0;top:{{ np.sheetTop }};background:{{ sheetVis.fill }};border-radius:{{ sheetVis.cornerTop }}px {{ sheetVis.cornerTop }}px 0 0;overflow:{{ sheetVis.overflow }};display:flex;flex-direction:column;transition:{{ mx.layer.nowPlaying.surface }};box-shadow:{{ sheetVis.shadow }}">
   <div style="position:relative;flex:none;display:flex;flex-direction:column;align-items:center;gap:{{ sheetVis.handleGap }}px;padding-top:{{ sheetVis.handleTop }}px"><dc-import name="ListItem" dc-props="{{ np.handleIx }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import><div style="width:{{ sheetVis.handleWidth }}px;height:{{ sheetVis.handleHeight }}px;border-radius:{{ sheetVis.handleRadius }}px;background:{{ sheetVis.handle }}"></div>
-    <div style="position:relative;z-index:1;align-self:stretch;padding:0 {{ sheetVis.tabInset }}px"><dc-import name="TabBar" tabs="{{ np.tabs }}" selected="{{ np.tabSel }}" motion="{{ np.tabMo }}" visuals="{{ np.tabVis }}" hint-size="100%,48px"></dc-import></div>
+    <div style="position:relative;z-index:1;align-self:stretch;padding:0 {{ sheetVis.tabInset }}px"><dc-import name="TabBar" dc-props="{{ np.tabBar.props }}" hint-size="100%,48px"></dc-import></div>
   </div>
   <div style="flex:1;min-height:0;overflow:auto;padding:{{ sheetVis.contentPadY }}px 0">
     <sc-if value="{{ np.empty }}" hint-placeholder-val="{{ false }}"><dc-import name="EmptyState" symbol-visuals="{{ symbolVisuals }}" text="{{ np.emptyText }}" icon="" visuals="{{ np.emptyVis }}" hint-size="100%,100px"></dc-import></sc-if>

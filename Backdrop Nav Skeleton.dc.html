@@ -22,9 +22,9 @@
 
       <sc-for list="{{ rBasic }}" as="ri" hint-placeholder-count="1"><div data-enter="basic" style="position:absolute;left:0;right:0;top:{{ ri.top }}px;opacity:{{ ri.op }};pointer-events:{{ ri.ev }};transition:{{ mx.expand.both }}">
       <sc-for list="{{ basicRows }}" as="br" hint-placeholder-count="1"><div style="height:{{ basicH }}px;box-sizing:border-box;overflow:hidden;padding:{{ sv.back.basicPadding }};color:{{ sv.back.ink }};display:flex;gap:{{ sv.back.panelGap }}px"><sc-for list="{{ br.controls }}" as="bc" hint-placeholder-count="1"><div style="flex:1;min-width:0">
-        <sc-if value="{{ bc.isFilters }}" hint-placeholder-val="{{ true }}"><dc-import name="FilterChips" chips="{{ bc.chips }}" visuals="{{ bc.vis }}" hint-size="100%,48px"></dc-import></sc-if>
-        <sc-if value="{{ bc.isTabs }}" hint-placeholder-val="{{ false }}"><dc-import name="TabBar" tabs="{{ bc.tabs }}" selected="{{ bc.tabSel }}" motion="{{ tabMo }}" visuals="{{ bc.vis }}" hint-size="100%,48px"></dc-import></sc-if>
-        <sc-if value="{{ bc.isSearch }}" hint-placeholder-val="{{ false }}"><dc-import name="SearchField" value="{{ bc.query }}" hint="{{ bc.hint }}" on-input="{{ bc.onQuery }}" on-key="{{ bc.onQueryKey }}" clear-ix="{{ bc.clearIx }}" visuals="{{ bc.vis }}" symbol-visuals="{{ symVis }}" hint-size="100%,48px"></dc-import></sc-if>
+        <sc-if value="{{ bc.is.FilterChips }}" hint-placeholder-val="{{ true }}"><dc-import name="FilterChips" dc-props="{{ bc.props }}" hint-size="100%,48px"></dc-import></sc-if>
+        <sc-if value="{{ bc.is.TabBar }}" hint-placeholder-val="{{ false }}"><dc-import name="TabBar" dc-props="{{ bc.props }}" hint-size="100%,48px"></dc-import></sc-if>
+        <sc-if value="{{ bc.is.SearchField }}" hint-placeholder-val="{{ false }}"><dc-import name="SearchField" dc-props="{{ bc.props }}" hint-size="100%,48px"></dc-import></sc-if>
       </div></sc-for></div></sc-for>
       </div></sc-for>
 
@@ -38,13 +38,13 @@
           <sc-for list="{{ panelRows }}" as="pr" hint-placeholder-count="3">
             <sc-if value="{{ pr.hasLabel }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column"><dc-import name="PanelRow" text="{{ pr.label }}" visuals="{{ pr.vis }}" hint-size="100%,16px"></dc-import></div></sc-if>
             <div style="display:flex;gap:{{ sv.back.panelGap }}px"><sc-for list="{{ pr.controls }}" as="pc" hint-placeholder-count="1"><div style="flex:1;min-width:0;display:flex;flex-direction:column">
-              <sc-if value="{{ pc.isChips }}" hint-placeholder-val="{{ false }}"><dc-import name="FilterChips" chips="{{ pc.chips }}" wrap="{{ true }}" visuals="{{ pc.vis }}" hint-size="100%,32px"></dc-import></sc-if>
-              <sc-if value="{{ pc.isDropdown }}" hint-placeholder-val="{{ false }}"><dc-import name="Dropdown" options="{{ pc.options }}" label="{{ pc.label }}" on-pick="{{ pc.onPick }}" visuals="{{ pc.vis }}" hint-size="120px,40px"></dc-import></sc-if>
-              <sc-if value="{{ pc.isRange }}" hint-placeholder-val="{{ false }}"><dc-import name="RangeField" from="{{ pc.from }}" to="{{ pc.to }}" min="{{ pc.min }}" max="{{ pc.max }}" on-from="{{ pc.onFrom }}" on-to="{{ pc.onTo }}" from-label="{{ pc.fromLabel }}" to-label="{{ pc.toLabel }}" visuals="{{ pc.vis }}" hint-size="200px,40px"></dc-import></sc-if>
-              <sc-if value="{{ pc.isChecklist }}" hint-placeholder-val="{{ false }}"><dc-import name="Checklist" rows="{{ pc.rows }}" visuals="{{ pc.vis }}" symbol-visuals="{{ symVis }}" hint-size="100%,176px"></dc-import></sc-if>
-              <sc-if value="{{ pc.isSuggest }}" hint-placeholder-val="{{ false }}"><dc-import name="SuggestionList" rows="{{ pc.rows }}" row-vis="{{ pc.rowVis }}" visuals="{{ pc.vis }}" symbol-visuals="{{ symVis }}" hint-size="100%,160px"></dc-import></sc-if>
-              <sc-if value="{{ pc.isTabs }}" hint-placeholder-val="{{ false }}"><dc-import name="TabBar" tabs="{{ pc.tabs }}" selected="{{ pc.tabSel }}" motion="{{ tabMo }}" visuals="{{ pc.vis }}" hint-size="100%,48px"></dc-import></sc-if>
-              <sc-if value="{{ pc.isSearch }}" hint-placeholder-val="{{ false }}"><dc-import name="SearchField" value="{{ pc.query }}" hint="{{ pc.hint }}" on-input="{{ pc.onQuery }}" on-key="{{ pc.onQueryKey }}" clear-ix="{{ pc.clearIx }}" visuals="{{ pc.vis }}" symbol-visuals="{{ symVis }}" hint-size="100%,48px"></dc-import></sc-if>
+              <sc-if value="{{ pc.is.FilterChips }}" hint-placeholder-val="{{ false }}"><dc-import name="FilterChips" dc-props="{{ pc.props }}" wrap="{{ true }}" hint-size="100%,32px"></dc-import></sc-if>
+              <sc-if value="{{ pc.is.Dropdown }}" hint-placeholder-val="{{ false }}"><dc-import name="Dropdown" dc-props="{{ pc.props }}" hint-size="120px,40px"></dc-import></sc-if>
+              <sc-if value="{{ pc.is.RangeField }}" hint-placeholder-val="{{ false }}"><dc-import name="RangeField" dc-props="{{ pc.props }}" hint-size="200px,40px"></dc-import></sc-if>
+              <sc-if value="{{ pc.is.Checklist }}" hint-placeholder-val="{{ false }}"><dc-import name="Checklist" dc-props="{{ pc.props }}" hint-size="100%,176px"></dc-import></sc-if>
+              <sc-if value="{{ pc.is.SuggestionList }}" hint-placeholder-val="{{ false }}"><dc-import name="SuggestionList" dc-props="{{ pc.props }}" hint-size="100%,160px"></dc-import></sc-if>
+              <sc-if value="{{ pc.is.TabBar }}" hint-placeholder-val="{{ false }}"><dc-import name="TabBar" dc-props="{{ pc.props }}" hint-size="100%,48px"></dc-import></sc-if>
+              <sc-if value="{{ pc.is.SearchField }}" hint-placeholder-val="{{ false }}"><dc-import name="SearchField" dc-props="{{ pc.props }}" hint-size="100%,48px"></dc-import></sc-if>
             </div></sc-for></div>
           </sc-for>
         </div>
@@ -52,10 +52,10 @@
 
       </div>
 
-      <div aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;visibility:hidden"><dc-import name="AppBarSheet" height="0" visuals="{{ barVisApp }}" info="{{ warm.info }}" find="{{ warm.none }}" buttons="{{ warm.buttons }}" hint-size="0px,0px"></dc-import><dc-import name="SearchField" value="" hint="" on-input="{{ warm.noop }}" on-key="{{ warm.noop }}" clear-ix="{{ warm.ix }}" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="SuggestionRow" ix="{{ warm.ix }}" text="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="MorePanel" title="" close-ix="{{ warm.ix }}" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="Checklist" rows="{{ warm.none }}" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="CheckRow" ix="{{ warm.ix }}" text="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import></div>
+      <div aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;visibility:hidden"><dc-import name="AppBarSheet" height="0" visuals="{{ barVisApp }}" info="{{ warm.info }}" find="{{ warm.none }}" buttons="{{ warm.buttons }}" hint-size="0px,0px"></dc-import><dc-import name="SearchField" value="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="SuggestionRow" ix="{{ warm.ix }}" text="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="MorePanel" title="" close-ix="{{ warm.ix }}" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="Checklist" options="{{ warm.none }}" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="CheckRow" ix="{{ warm.ix }}" text="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import></div>
       <dc-import name="FrontLayer" symbol-visuals="{{ symVis }}" show-overlay="{{ showOverlay }}" surf-ref="{{ surfRef }}" sv="{{ sv }}" front-ref="{{ frontRef }}" front-top="{{ frontTop }}" screen-bottom="{{ screenBottom }}" front-t-l="{{ frontTL }}" front-t-r="{{ frontTR }}" front-tr="{{ frontTr }}" fc-ref="{{ fcRef }}" ft-f="{{ ftF }}" fab="{{ fab }}" header-static="{{ headerStatic }}" fh-h="{{ fhH }}" fh-row="{{ fhRow }}" fh-left="{{ fhLeft }}" fh-right="{{ fhRight }}" fh-title="{{ fhTitle }}" title-vis-front="{{ titleVisFront }}" fh-title-op="{{ fhTitleOp }}" fh-title-w="{{ fhTitleW }}" sub-ix="{{ subIx }}" fh-border="{{ fhBorder }}" ease="{{ ease }}" fh-mo="{{ fhMo }}" bar-vis-front="{{ barVisFront }}" scroll-ref="{{ scrollRef }}" on-front-scroll="{{ onFrontScroll }}" cv="{{ cv }}" retry-text="{{ retryText }}" retry-ix="{{ retryIx }}" grid="{{ grid }}" scroller="{{ scroller }}" is-carousels="{{ isCarousels }}" carousels="{{ carousels }}" carousel-vis="{{ carouselVis }}" is-generic="{{ isGeneric }}" block-row-pad="{{ blockRowPad }}" generic-blocks="{{ genericBlocks }}" is-grid="{{ isGrid }}" groups="{{ groups }}" group-vis="{{ groupVis }}" is-list="{{ isList }}" alpha="{{ alpha }}" alpha-vis="{{ alphaVis }}" thumb-ref="{{ thumbRef }}" on-scrim="{{ onScrim }}" mx="{{ mx }}" style="display:contents" hint-size="0px,0px"></dc-import>
 
-      <div aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;visibility:hidden"><dc-import name="AppBarSheet" height="0" visuals="{{ barVisApp }}" info="{{ warm.info }}" find="{{ warm.none }}" buttons="{{ warm.buttons }}" hint-size="0px,0px"></dc-import><dc-import name="AppBarPage" oc="{{ warm.box }}" ov-inset-css="none" mx="{{ mx }}" ov="{{ warm.box }}" sv="{{ sv }}" cw="0" content-h="0" bar-vis-app="{{ barVisApp }}" ov-scroll-ref="{{ warm.ref }}" on-ov-scroll="{{ warm.noop }}" ab="{{ warm.ab }}" ov-rows="{{ warm.none }}" ov-thumb-ref="{{ warm.ref2 }}" ov-x="{{ warm.info }}" ab-btn-ref="{{ warm.ref3 }}" ease="{{ ease }}" ah-op="0" ah-trans="none" ah-ev="none" ah-h="0" ah-left="{{ warm.none }}" ah-right="{{ warm.none }}" ah-title="" title-vis-bar="{{ titleVisBar }}" ah-title-op="0" ah-title-w="0px" ah-shadow="none" ah-mo="{{ ahMo }}" hint-size="0px,0px"></dc-import><dc-import name="SearchField" value="" hint="" on-input="{{ warm.noop }}" on-key="{{ warm.noop }}" clear-ix="{{ warm.ix }}" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="SuggestionRow" ix="{{ warm.ix }}" text="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="MorePanel" title="" close-ix="{{ warm.ix }}" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="Checklist" rows="{{ warm.none }}" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="CheckRow" ix="{{ warm.ix }}" text="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import></div>
+      <div aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;visibility:hidden"><dc-import name="AppBarSheet" height="0" visuals="{{ barVisApp }}" info="{{ warm.info }}" find="{{ warm.none }}" buttons="{{ warm.buttons }}" hint-size="0px,0px"></dc-import><dc-import name="AppBarPage" oc="{{ warm.box }}" ov-inset-css="none" mx="{{ mx }}" ov="{{ warm.box }}" sv="{{ sv }}" cw="0" content-h="0" bar-vis-app="{{ barVisApp }}" ov-scroll-ref="{{ warm.ref }}" on-ov-scroll="{{ warm.noop }}" ab="{{ warm.ab }}" ov-rows="{{ warm.none }}" ov-thumb-ref="{{ warm.ref2 }}" ov-x="{{ warm.info }}" ab-btn-ref="{{ warm.ref3 }}" ease="{{ ease }}" ah-op="0" ah-trans="none" ah-ev="none" ah-h="0" ah-left="{{ warm.none }}" ah-right="{{ warm.none }}" ah-title="" title-vis-bar="{{ titleVisBar }}" ah-title-op="0" ah-title-w="0px" ah-shadow="none" ah-mo="{{ ahMo }}" hint-size="0px,0px"></dc-import><dc-import name="SearchField" value="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="SuggestionRow" ix="{{ warm.ix }}" text="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="MorePanel" title="" close-ix="{{ warm.ix }}" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="Checklist" options="{{ warm.none }}" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="CheckRow" ix="{{ warm.ix }}" text="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import></div>
       <sc-if value="{{ showOverlay }}" hint-placeholder-val="{{ false }}">
       <div ref="{{ ovRef }}" style="position:absolute;top:0;left:0;right:0;bottom:{{ screenBottom }}px;pointer-events:none;opacity:{{ ftO.op }};transform:scale({{ ftO.sc }});transition:{{ ftO.tr }}"><div style="position:absolute;inset:0;transform-origin:50% 0;pointer-events:{{ ovEv }}">
         <dc-import name="AppBarPage" oc="{{ oc }}" ov-inset-css="{{ ovInsetCss }}" mx="{{ mx }}" ov="{{ ov }}" sv="{{ sv }}" cw="{{ cw }}" content-h="{{ contentH }}" bar-vis-app="{{ barVisApp }}" ov-scroll-ref="{{ ovScrollRef }}" on-ov-scroll="{{ onOvScroll }}" ab="{{ ab }}" ov-rows="{{ ovRows }}" ov-thumb-ref="{{ ovThumbRef }}" ov-x="{{ ovX }}" ab-btn-ref="{{ abBtnRef }}" ease="{{ ease }}" ah-op="{{ ahOp }}" ah-trans="{{ ahTrans }}" ah-ev="{{ ahEv }}" ah-h="{{ ahH }}" ah-left="{{ ahLeft }}" ah-right="{{ ahRight }}" ah-title="{{ ahTitle }}" title-vis-bar="{{ titleVisBar }}" ah-title-op="{{ ahTitleOp }}" ah-title-w="{{ ahTitleW }}" ah-shadow="{{ ahShadow }}" ah-mo="{{ ahMo }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import>
@@ -202,7 +202,7 @@ const G = { layout: 'compact', PW: DEVICES.phone.width, CW: DEVICES.phone.width,
 const FF = () => ({ top: 0, left: 0, w: G.CW, h: G.H, r: 0, op: 1 });
 const CF = () => ({ top: G.AH || 0, left: 0, w: G.CW, h: G.H - (G.AH || 0), r: 0, op: 1 });
 const underIndex = st => { for (let i = st.length - 1; i >= 0; i--) if (st[i].page.config.kind === 'backdrop') return i; return 0; };
-const BACK_KEYS = ['rActions', 'actBtns', 'actH', 'bhX', 'bhTitleOp', 'panelRows', 'panelH', 'panelRef', 'rHeader', 'rBasic', 'rPanel', 'bhLeft', 'bhRight', 'bhTitle', 'bhTitlePad', 'basicRows', 'tabMo', 'canBack', 'basicH', 'moreOpen', 'moreHead', 'panelPad', 'panelLine'];
+const BACK_KEYS = ['rActions', 'actBtns', 'actH', 'bhX', 'bhTitleOp', 'panelRows', 'panelH', 'panelRef', 'rHeader', 'rBasic', 'rPanel', 'bhLeft', 'bhRight', 'bhTitle', 'bhTitlePad', 'basicRows', 'canBack', 'basicH', 'moreOpen', 'moreHead', 'panelPad', 'panelLine'];
 const SHELL_ACTIONS = ['copyLink'];   // shell actions this mockup implements (§20)
 // artwork for mock content: two colours from the item id (the backend has no images)
 /* lint:off fake backend artwork */
@@ -681,10 +681,11 @@ class Component extends DCLogic {
   nix(n, o = {}) {
     if (!n || !n.component) return INERT;
     const a = o.action !== undefined ? o.action : this.actOf(n, o.event || 'press', o.payload);
-    return this.ix(n.key, a, o.run || (e => this.runAction(a, e)), { component: o.component || n.component, variant: n.variants, facts: { checked: n.values.checked }, label: o.label ?? (n.props.label || n.props.text || n.props.title || n.values.label || n.values.title || ''), surface: o.surface, page: n.page });
+    return this.ix(o.key || n.key, a, o.run || (e => this.runAction(a, e)), { component: o.component || n.component, variant: o.variant || n.variants, facts: { checked: n.values.checked }, label: o.label ?? (n.props.label || n.props.text || n.props.title || n.values.label || n.values.title || ''), surface: o.surface, page: n.page });
   }
   // a node drawn by its DC (platforms/web/draw.js): props, visuals, interaction, events and slots, on the given surface
-  drawn(n, surface) { return this.DR.drawNode(n, { specs: this.specs, implemented: this.web.implements, visuals: (x, sf) => this.vis(x, { surface: sf }), ix: (x, sf) => this.nix(x, { surface: sf }), emit: (x, ev, payload, e) => this.runAction(this.actOf(x, ev, payload), e) }, surface); }
+  drawn(n, surface) { return this.DR.drawNode(n, { specs: this.specs, implemented: this.web.implements, visuals: (x, sf, extra) => this.vis(x, { surface: sf, ...(extra || {}) }), ix: (x, sf, piece) => this.nix(x, { surface: sf, ...(piece || {}) }),
+    motions: x => Object.fromEntries(Object.keys((this.specs.components[x.component] || {}).motion || {}).map(k => [k, this.P.motionFor(this.specs, x.component, k, this.ms.prefs)])), emit: (x, ev, payload, e) => this.runAction(this.actOf(x, ev, payload), e) }, surface); }
   vis(n, extra = {}) { return n && n.component ? this.P.resolveVisuals(this.specs, n.component, 'enabled', { variant: n.variants || {}, env: this.lenv(), ...extra }) : {}; }
   // the FAB of a header's fab slot: its first node (several share one place; the icon morphs between them)
   fabFor(nodes, top) {
@@ -787,38 +788,6 @@ class Component extends DCLogic {
     return { isBase, ex: ps.back.expanded, items, content };
   }
 
-  // a param control node (core/contracts.js) → the props of the DC composition hired for it. Every option carries selected
-  // (core) and is drawn as the control's option component (design: tabBar → tab, filterChips → chip …); it sends the control's
-  // event with its option: change (setParams), toggle (toggleParam), pick (setParams + apply)
-  controlView(ps, n) {
-    const comp = n.component, opt = (this.CP.freeComponent(this.specs.components, comp) || {}).option, name = n.config.bind, V = this.P.resolveVisuals(this.specs, comp, 'enabled', { surface: 'backLayer' });   // design visuals of back-layer controls
-    const go = (ev, payload, label) => { const a = this.actOf(n, ev, payload); return a && a.nav ? { nav: a.nav, run: () => this.paramChange(ps, a.nav, label) } : { nav: null, run: () => {} }; };
-    const opts = n.values.options, base = { comp, vis: V, isFilters: false, isChips: false, isTabs: false, isSearch: false, isDropdown: false, isRange: false, isSuggest: false, isChecklist: false, label: n.values.label || '' };
-    const ev = n.events.toggle && n.at.param.type === 'choices' ? 'toggle' : 'change';
-    if (comp === 'filterChips' || comp === 'choiceChips') {
-      // a control with a More: the first moreAfter options (design), in config order, then the More chip (its event more → openMore),
-      // when some options don't fit (or the More shows rows of its own)
-      const after = Math.max(0, +V.moreAfter || 0), more = n.values.more && n.events.more && (opts.length > after || n.config.more.paramControls) ? this.actOf(n, 'more') : null, shown = more ? opts.slice(0, after) : opts;
-      const chips = shown.map(o => { const g = go(ev, o.value, 'params · ' + name + ' ' + o.value); return { label: o.label, on: o.selected, ix: this.ix(n.key + '/' + o.value, g.nav && { nav: g.nav }, g.run, { component: opt, label: o.label }) }; });
-      if (more) chips.push({ label: n.props.moreLabel || '', on: false, ix: this.ix(n.key + '/more', more, () => this.runAction(more), { component: opt, label: n.props.moreLabel || '' }) });
-      return { ...base, isFilters: true, isChips: true, chips };
-    }
-    if (comp === 'checklist') return { ...base, isChecklist: true,
-      rows: opts.map(o => { const g = go(ev, o.value, 'params · ' + name + ' ' + o.value); return { text: o.label, vis: this.P.resolveVisuals(this.specs, opt, 'enabled', { surface: 'backLayer', status: o.selected ? ['selected'] : [] }), ix: this.ix(n.key + '/' + o.value, g.nav && { nav: g.nav }, g.run, { component: opt, label: o.label }) }; }) };
-    if (comp === 'tabBar') return { ...base, isTabs: true, tabSel: Math.max(0, opts.findIndex(o => o.selected)),
-      tabs: opts.map((o, k) => { const g = go('change', o.value, 'params · ' + name); return { label: o.label, ix: this.ix(n.key + '/' + k, g.nav && { nav: g.nav }, g.run, { component: opt, label: o.label }) }; }) };
-    if (comp === 'searchField') { const clr = go('change', '', 'params · ' + name);
-      return { ...base, isSearch: true, query: typeof n.values.value === 'string' ? n.values.value : '', hint: n.values.placeholder || '',
-        onQuery: e => go('change', e.target.value, 'params · ' + name).run(), onQueryKey: e => { if (e.key === 'Enter') go('submit', e.target.value, 'params · apply ' + name).run(); },
-        clearIx: this.ix(n.key + '/clear', clr.nav && { nav: clr.nav }, clr.run, { component: 'iconButton', variant: { size: 'xs' }, label: this.model.query.text(this.ms, this.model.config, 'search.clear') }) }; }
-    if (comp === 'suggestionList') return { ...base, isSuggest: true, rowVis: this.P.resolveVisuals(this.specs, opt, 'enabled', { surface: 'backLayer' }),
-      rows: opts.map(o => { const g = go('pick', o.value, 'suggestion · ' + o.label); return { text: o.label, ix: this.ix(n.key + '/' + o.value, g.nav && { nav: g.nav }, g.run, { component: opt, label: o.label }) }; }) };
-    if (comp === 'dropdown') return { ...base, isDropdown: true, options: opts.map(o => ({ value: o.value, label: o.label, on: o.selected })), onPick: e => go('change', e.target.value, 'params · ' + name).run() };
-    if (comp === 'rangeField') { const v0 = n.values.value || [0, 0];
-      const put = (k, x) => { const nv = v0.slice(); nv[k] = Math.max(n.values.min ?? -Infinity, Math.min(n.values.max ?? Infinity, +x)); if (nv[0] > nv[1]) nv[1 - k] = nv[k]; go('change', nv, 'params · ' + name).run(); };
-      return { ...base, isRange: true, from: v0[0], to: v0[1], min: n.values.min, max: n.values.max, fromLabel: n.props.fromLabel || '', toLabel: n.props.toLabel || '', onFrom: e => put(0, e.target.value), onTo: e => put(1, e.target.value) }; }
-    return base;
-  }
   // ── view values ────────────────────────────────────────
   backVals(ps, isBase) {
     const c = ps.config, look = this.look(), page = this.pageNode(ps), back = page.children.back, H = back.children.header;
@@ -828,7 +797,7 @@ class Component extends DCLogic {
     const bhLeft = this.hItems(this.sl(H, 'start'), 'back', ps);
     // param-control rows (core): the back layer's controls rows in the controls region (shown concealed too), its panel rows in the panel
     const MN = back.children.more || null, BV = this.P.resolveVisuals(this.specs, 'backLayer', 'enabled', {});
-    const basicRows = back.children.controls.map(r => ({ controls: r.children.controls.map(n => this.controlView(ps, n)) }));
+    const basicRows = back.children.controls.map(r => ({ controls: r.children.controls.map(n => this.drawn(n, 'backLayer')) }));   // each control drawn from its node (platforms/web/draw.js)
     return {
       rHeader: RI.header || [], rBasic: RI.controls || [], rPanel: RI.panel || [], rActions: RI.actions || [],
       // the actions region's buttons (config back.actions: e.g. the artist page's play buttons below its details)
@@ -840,14 +809,14 @@ class Component extends DCLogic {
         const p = bv.progress, DV = this.vis(X, { surface: 'backLayer' }), HV = this.vis(H, { surface: 'backLayer' }), from = +HV.titleFadeFrom || 0;
         return { bhX: { show: true, vis: DV, fg: this.P.resolveValue(this.specs, 'backLayer', { role: 'content' }, { surface: 'backLayer' }), h: Math.max(0, bv.height - base), op: Math.max(0, 1 - p * (+HV.detailFade || 1)), sc: 1 - (+HV.detailShrink || 0) * p, art: +DV.artSize || 0, rad: (+DV.artRadius || 0) + 'px', img: artCss(X.props.image), title: X.props.title || '', sub: X.props.subtitle || '', meta: X.props.meta || '' }, bhTitleOp: Math.min(1, Math.max(0, (p - from) / (1 - from || 1))) };
       })(),
-      basicRows, tabMo: (() => { const d = this.P.motionFor(this.specs, 'tabBar', 'indicator', this.ms.prefs); return { ms: this.msOf(d), ease: this.easeOf(d) }; })(),
+      basicRows,
       canBack: !isBase, basicH: basicRows.length ? (RH.controls || 0) / basicRows.length : 0, panelRef: this.panelRef,
       panelH: 'auto',
       // an open More (core: the back layer's more child) takes the panel: its bar (morePanel: ✕ + title), then its rows in the panel's place
       moreOpen: !!MN, panelPad: MN ? BV.morePadding : BV.panelPadding, panelLine: MN ? BV.moreDivider : BV.panelDivider, moreHead: MN ? { title: MN.props.title || MN.values.title || '', vis: this.vis(MN, { surface: 'backLayer' }), pos: this.vis(MN).pinned ? 'sticky' : 'relative', closeIx: this.ix(MN.key + '/close', this.actOf(MN, 'close'), () => this.runAction(this.actOf(MN, 'close')), { component: 'iconButton', label: MN.props.closeLabel || '' }) } : { title: '', vis: {}, pos: 'relative', closeIx: INERT },
       // panel rows: the row's label (its first control's, drawn by panelRow), then its controls side by side
       panelRows: (MN ? MN.children.paramControls : back.children.panel).map(r => ({ hasLabel: !!r.values.label && !MN, label: r.values.label || '', vis: this.P.resolveVisuals(this.specs, 'panelRow', 'enabled', {}),
-        controls: r.children.controls.map(n => this.controlView(ps, n)) }))
+        controls: r.children.controls.map(n => this.drawn(n, 'backLayer')) }))
     };
   }
   frontVals(ps, isBase) {
@@ -944,9 +913,9 @@ class Component extends DCLogic {
       STUB_LISTS.forEach(k => { v[k] = []; });
       v.nn = { rows: [], top: PHONE_H, h: PHONE_H, w: DEVICES.phone.width, left: 0, tx: 0, peekOp: 0, sheetOp: 0, rad: '0' }; v.dd = { rows: [], clip: 'circle(0)', ev: 'none' };
       v.ftB = v.ftF = v.ftO = { op: 1, sc: 1, tr: 'none', tx: 0 }; v.ahShadow = 'none'; v.ahTitleOp = 1; v.barVisBack = v.barVisFront = v.barVisApp = v.barVisLayer = {}; v.sv = { front: {}, back: {}, sheet: {}, side: {}, drawer: {}, signIn: {}, splash: {}, navBar: {}, rail: {}, pageFill: 'transparent', frontScrim: 'transparent', frontScrimOn: false }; v.barMo = v.fhMo = v.ahMo = {}; v.ovX = { show: false }; v.railTop = []; v.railBottom = []; v.rail = { tr: 'none', collapsed: true, ex: false, w: 0, align: 'center', padX: 0, shadow: 'none', ms: 0, ease: E, mo: {}, padY: 0, gap: 0, groupGap: 0 }; v.railItemVis = v.drawerItemVis = {}; 
-      v.blockRowPad = 9; v.fab = v.ahFab = { show: false, ix: INERT, end: 0, top: 0, vis: {}, icon: '' }; v.bhX = { show: false }; v.bhTitleOp = 1; v.fhH = 0; v.fhRow = 0; v.ahH = 0; v.alpha = { show: false, keys: [] }; v.groups = []; v.np = { ctrls: [], tabs: [], rows: [], mini: [], miniOp: 0, miniEv: 'none', bodyOp: 1, empty: false, emptyText: '', artVis: {}, infoVis: {}, seekVis: {}, rowVis: {}, tabVis: {}, tabMo: {}, tabSel: 0, emptyVis: {} }; v.dr = { items: [], ev: 'none', title: '', w: 0, tx: -110, op: 0 }; v.acc = { ev: 'none', start: [], rows: [], signIx: INERT, title: '', name: '', email: '', plan: '', art: '', signText: '', ty: 100 };
+      v.blockRowPad = 9; v.fab = v.ahFab = { show: false, ix: INERT, end: 0, top: 0, vis: {}, icon: '' }; v.bhX = { show: false }; v.bhTitleOp = 1; v.fhH = 0; v.fhRow = 0; v.ahH = 0; v.alpha = { show: false, keys: [] }; v.groups = []; v.np = { ctrls: [], tabBar: { props: {} }, rows: [], mini: [], miniOp: 0, miniEv: 'none', bodyOp: 1, empty: false, emptyText: '', artVis: {}, infoVis: {}, seekVis: {}, rowVis: {}, tabBar: { props: {} }, emptyVis: {} }; v.dr = { items: [], ev: 'none', title: '', w: 0, tx: -110, op: 0 }; v.acc = { ev: 'none', start: [], rows: [], signIx: INERT, title: '', name: '', email: '', plan: '', art: '', signText: '', ty: 100 };
       v.cv = {}; v.gate = { ix: INERT }; v.dialog = { cancelIx: INERT, okIx: INERT }; v.snack = { ix: INERT }; v.menu = { show: false, items: [] }; v.ovRows = []; v.ovHead = { title: '', sub: '', art: '' }; v.pl = { icon: '', t: INERT, n: INERT, t2: INERT, n2: INERT, card: [], peek: [], mini: [] }; v.sheetVis = { overflow: 'hidden' }; v.npVis = {}; v.npH = 0; v.cardVis = {}; v.titleVisBack = v.titleVisFront = v.titleVisBar = v.groupVis = v.alphaVis = {}; v.urlDraft = '';
-      v.subIx = v.retryIx = v.ddCircleIx = INERT; v.tabMo = {};
+      v.subIx = v.retryIx = v.ddCircleIx = INERT;
       Object.assign(v.nn, { peekSub: '', peekTitle: '', peekArt: '', title: '', peekIx: INERT, titleIx: INERT, start: [], end: [] }); Object.assign(v.dd, { title: '', start: [], end: [] });
       v.layoutInfo = 'loading model…'; v.backLabel = 'Back'; v.focusLabel = '—'; v.historyCaption = '';
       v.dir = 'ltr'; v.locales = []; v.appFx = v.gateFx = v.splashFx = { op: 1, sc: 1, tr: 'none' };
@@ -1053,7 +1022,7 @@ class Component extends DCLogic {
       const t = id => q.text(ms, cfg, id), npL = ms.layers.nowPlaying, npPage = npL.stack[npL.stack.length - 1].page, npc = npPage.config;
       const NP = this.pageNode(npPage, ['sheetLayer'], { layer: 'nowPlaying' });
       const mm = x => Math.floor((x || 0) / 60000) + ':' + String(Math.floor((x || 0) / 1000) % 60).padStart(2, '0');
-      const np = { mini: [], miniOp: 0, miniEv: 'none', bodyOp: 1, empty: false, emptyText: '', ctrls: [], tabs: [], rows: [], art: '', title: t('player.nothing'), sub: '', dur: 1, pos: 0, posText: '0:00', durText: '0:00', onSeek: () => {}, seekLabel: '', peekH: 56, sheetTop: 0, handleIx: INERT, artVis: {}, infoVis: {}, seekVis: {}, rowVis: {}, tabVis: {}, tabMo: {}, tabSel: 0, emptyVis: {} };
+      const np = { mini: [], miniOp: 0, miniEv: 'none', bodyOp: 1, empty: false, emptyText: '', ctrls: [], tabBar: { props: {} }, rows: [], art: '', title: t('player.nothing'), sub: '', dur: 1, pos: 0, posText: '0:00', durText: '0:00', onSeek: () => {}, seekLabel: '', peekH: 56, sheetTop: 0, handleIx: INERT, artVis: {}, infoVis: {}, seekVis: {}, rowVis: {}, tabBar: { props: {} }, emptyVis: {} };
       if (npc.body) {
         const nnW = wide ? G.SW : G.PW, RV = (id, variant) => this.P.resolveVisuals(this.specs, id, 'enabled', { surface: 'bottomSheet', variant });
         np.artVis = RV('artwork', { size: 'lg' }); np.infoVis = RV('trackInfo', { size: 'lg' }); np.seekVis = RV('seekBar'); np.rowVis = RV('row', { justify: 'spread' });
@@ -1070,14 +1039,14 @@ class Component extends DCLogic {
         np.handleIx = this.ix('layer:nowPlaying.sheet.handle', { nav: { type: 'toggleExpanded' } }, () => this.dispatch({ type: 'toggleExpanded' }, 'sheet · toggle'), { component: 'listItem', label: t('player.upNext') });
         if (SN) {
           const TB = SN.children.paramControl;
-          np.tabs = TB ? TB.values.options.map((o, j) => { const a = this.actOf(TB, 'change', o.value), i = a && a.nav; return { label: o.label, on: o.selected, ix: this.ix(TB.key + '/' + j, i && { nav: i }, () => this.dispatch(i, 'sheet tab · ' + o.value), { component: (this.CP.freeComponent(this.specs.components, TB.component) || {}).option, label: o.label }) }; }) : [];
+          np.tabBar = TB ? this.drawn(TB, 'bottomSheet') : { props: {} };   // the inner sheet's tabs, drawn from their node (platforms/web/draw.js)
           const RN = SN.children.content.children.items, comp = this.itemComponent(SN.children.content), QV = this.P.resolveVisuals(this.specs, comp, 'enabled', {});
           np.rows = RN.map(n => ({ id: n.config.item.id, label: n.props.title || '', sub: n.props.subtitle || '', art: n.props.image ? artCss(n.props.image) : 'transparent', trailing: comp === 'queueRow' ? (QV.handle || '') : '', bg: n.props.current ? (QV.currentFill || 'transparent') : 'transparent',
             ix: this.nix(n, { component: comp === 'queueRow' ? 'listRow' : comp }) }));
         }
       }
       np.empty = !np.rows.length; np.emptyText = t('player.nothing'); np.emptyVis = this.P.resolveVisuals(this.specs, 'emptyState', 'enabled', { variant: { size: 'sm' } });
-      np.tabSel = Math.max(0, np.tabs.findIndex(x => x.on)); np.tabVis = this.P.resolveVisuals(this.specs, 'tabBar', 'enabled', { surface: 'bottomSheet', variant: { tone: 'surface' } }); np.tabMo = (() => { const d = this.P.motionFor(this.specs, 'tabBar', 'indicator', ms.prefs); return { ms: this.msOf(d), ease: this.easeOf(d) }; })(); v.np = np;
+      v.np = np;
       const ML = cfg.layers.find(l => l.id === 'menu'), mOpen = !!(ms.layers.menu && ms.layers.menu.open) && !(ML && ML.presentation.wide === 'rail' && G.layout === 'wide');
       v.drawerItemVis = this.P.resolveVisuals(this.specs, 'drawerItem', 'enabled', { variant: { size: 'drawer' } });
       v.dr = { items: [], w: ML ? this.look().size({ contract: 'drawerLayer', page: null, at: { name: 'menu' } }, 'width') : 0, tx: mOpen ? 0 : -110, op: mOpen ? 1 : 0, ev: mOpen ? 'auto' : 'none', title: '', scrim: () => this.closeLayer('menu') };
