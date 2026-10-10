@@ -685,11 +685,10 @@ API 18.0.0 amended (breaking: renames and removals). Then back to the shell conv
 - [x] 4. Files: app/hires/<name>/{json, md, d.ts}; app/composition.json = placements + pages; one loader for both
       (app/load-app.js or a composition loader) used by the shell, Invariants, Components and the rules scripts;
       write-generated writes the hire .d.ts; publish list.
-- [~] 5. Rule: a child with its parent's slots and parts has no DC of its own (platforms/web.json). Added (api/invariants.js).
+- [x] 5. Rule: a child with its parent's slots and parts has no DC of its own (platforms/web.json). Added (api/invariants.js).
       suggestionRow (icon, text), checkRow (text, check) and drawerItem (icon, label) draw pieces their parents' DCs don't:
-      declared as their parts in design and marked data-piece in their DCs. Still failing, waiting on Sofia: errorState is
-      listed in platforms/web.json implements but has no ErrorState.dc.html (draw.js would look for one; the manifest's own
-      description says EmptyState draws it): remove it from implements.
+      declared as their parts in design and marked data-piece in their DCs. errorState removed from platforms/web.json
+      implements (Sofia, 2026-10-10): it had no DC; EmptyState draws it.
 - [x] 6. generated/tokens.json (every level, grouped, marks, resolved values) from design/write-generated.mjs.
 - [x] 7. Tokens page in the artifact, plus a side table of contents across the artifact's pages (mockup, Components,
       Invariants, Specs Editor, Tokens); write-back of edits (study Sonora's first).
