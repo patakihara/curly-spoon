@@ -14,6 +14,7 @@
 ## Before claiming or building anything
 - Look it up first, in this order: api/api.d.ts + api/contracts.js (shapes, contracts and their children) → app/app.json + app/composition.json (which pages and items exist, which component each contract hires) → design/components/<id>/ + design/design.json (what is registered, its visuals and .md) → docs/NOTES.md + CHANGELOG.md (why it is so). Quote what you found; if it isn't there, say "not defined" — never fill the gap from the DOM or from memory.
 - What a thing is, which parts it has and what uses it come from those files, never from how a .dc.html happens to be nested.
+- Before converting or refactoring anything, take stock first: read all of it and list everything it does itself (draws, lays out, decides, picks components, reads design for others, writes texts, fakes data, runs motion). Record the list (the shell's is docs/NOTES.md, "Shell conversion list"), then convert in the order it gives, ticking items as they go.
 
 ## Components
 - A component DC exists only for a component registered in design (design/components/<id>/). No DC without a design component; no design component drawn by two DCs or by the shell. Name the DC after it (frontLayer → FrontLayer.dc.html).
@@ -28,6 +29,7 @@
 - The motion player (platforms/web/motions.js) defines nothing of its own: every value, keyframe position, ordering and choice of which pieces move / fade / stay comes from the choreography steps (and, while temporary kinds remain, their params in design/motions/<id>.json, valued in choreography.json / tokens). Only mechanics stay in the player: layering, keyframe sampling resolution, waiting for a render. A missing param is an error, never a silent 0 / linear.
 - Design never refers to names that exist only in platform files. Names the design uses (e.g. a component's parts) are declared in design; platform components use those names.
 - Everything the mockup draws is a component: one `.dc.html` per design component (like IconButton, PanelRow), fed its resolved visuals / props by the shell. The shell (Backdrop Nav Skeleton) only arranges component instances — no inline-drawn UI. The Components page previews those same DCs.
+- Never add feature or drawing code to the shell, not even temporarily to get something on screen. New behaviour goes into config, design, composition or a component DC; a shell edit is only for removing what it still does itself, and needs my OK first (say which lines and why).
 
 ## Division of powers (test before adding anything to the API)
 - API = contracts + state + behaviour. Something is in the API only if the engine's behaviour depends on it.
