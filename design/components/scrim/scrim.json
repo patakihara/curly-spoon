@@ -1,0 +1,31 @@
+{
+  "extends": "surface",
+  "variants": {
+    "tone": {
+      "options": [
+        "dark",
+        "wash"
+      ],
+      "default": "dark"
+    }
+  },
+  "visuals": {
+    "fill": {
+      "default": {
+        "variant": "tone",
+        "cases": {
+          "dark": {
+            "token": "color.scrim"
+          },
+          "wash": {
+            "token": "color.scrimWash"
+          }
+        }
+      }
+    },
+    "cursor": {
+      "default": "pointer",
+      "disabled": "default"
+    }
+  }
+}

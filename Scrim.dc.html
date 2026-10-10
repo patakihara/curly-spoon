@@ -7,12 +7,13 @@
 </head>
 <body>
 <x-dc>
-<div onClick="{{ onClick }}" style="position:absolute;inset:0;background:{{ color }};opacity:{{ op }};pointer-events:{{ ev }};transition:{{ tr }};cursor:{{ cur }}"></div>
+<div data-piece="scrim" onClick="{{ onClick }}" style="position:absolute;inset:0;background:{{ color }};opacity:{{ op }};pointer-events:{{ ev }};transition:{{ tr }};cursor:{{ cur }}"></div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:200,&quot;height&quot;:120},&quot;color&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;shown&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;onClick&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;ms&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;}}">
-// Web drawing of a surface's scrim (colour from the surface's design visuals: frontLayer / sideSheet / drawer `scrim`). Props: color, shown, onClick, ms. No values of its own.
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:200,&quot;height&quot;:120},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;},&quot;shown&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;onClick&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;ms&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;}}">
+// Web implementation of design component scrim (extends surface; variant tone dark | wash): the veil over what a layer covers.
+// Props: visuals (resolved: fill, cursor), shown, onClick (the layer's tap), ms (the fade: the engine's latest change, from the platform's transition). No values of its own.
 class Component extends DCLogic {
-  renderVals() { const p = this.props, on = !!p.shown; return { color: p.color || 'transparent', op: on ? 1 : 0, ev: on ? 'auto' : 'none', onClick: p.onClick || (() => {}), tr: p.ms ? 'opacity ' + p.ms + 'ms' : 'none', cur: p.onClick ? 'pointer' : 'default' }; }
+  renderVals() { const p = this.props, v = p.visuals || {}, on = !!p.shown; return { color: v.fill || 'transparent', op: on ? 1 : 0, ev: on ? 'auto' : 'none', onClick: p.onClick || (() => {}), tr: p.ms ? 'opacity ' + p.ms + 'ms' : 'none', cur: v.cursor || 'default' }; }
 }
 </script>
 </body>

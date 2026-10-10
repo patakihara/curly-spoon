@@ -35,10 +35,6 @@
         }
       }
     },
-    "scrim": {
-      "default": null,
-      "partlyCollapsed": "rgba(250,250,248,.6)"
-    },
     "headerHeight": {
       "default": {
         "token": "size.frontHeader.height"

@@ -28,6 +28,7 @@ object DesignTokens {
     val ColorHandle = Color(0xFFD6D5D0)
     val ColorScrim = Color(0, 0, 0, 82)
     val ColorScrimLight = Color(0, 0, 0, 61)
+    val ColorScrimWash = Color(250, 250, 248, 153)
     val ColorInverseSurface = Color(0xFF323232)
     val ColorOnInverseSurface = Color(0xFFFFFFFF)
     val ColorPlaceholder = Color(0xFFE6E5E1)
@@ -176,6 +177,19 @@ object SurfaceTokens {
     val CursorDisabled = "default"
 }
 
+object ScrimTokens {
+    val Radius = DesignTokens.RadiusFull
+    val FocusRingKeyboardFocus = {"role":"focusRing"}
+    val ContentOpacity = 1f
+    val ContentOpacityDisabled = 1f
+    val ContentOpacityBusy = DesignTokens.StateBusyOpacity
+    val Scale = 1f
+    val ScalePressed = 1f
+    val Cursor = "pointer"
+    val CursorDisabled = "default"
+    val Fill = {"variant":"tone","cases":{"dark":{"token":"color.scrim"},"wash":{"token":"color.scrimWash"}}}
+}
+
 object FrontLayerTokens {
     val Radius = DesignTokens.RadiusFull
     val FocusRingKeyboardFocus = {"role":"focusRing"}
@@ -189,7 +203,6 @@ object FrontLayerTokens {
     val Divider = DesignTokens.ColorDivider
     val CornerTL = DesignTokens.RadiusFrontLayer
     val CornerTR = {"if":{"env":"sheet","equals":"beside"},"then":0,"else":{"token":"radius.frontLayer"}}
-    val ScrimPartlyCollapsed = Color(250, 250, 248, 153)
     val HeaderHeight = DesignTokens.SizeFrontHeaderHeight
     val Fill = DesignTokens.ColorSurface
     val ScrollThumb = Color(0, 0, 0, 89)

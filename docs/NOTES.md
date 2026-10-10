@@ -757,6 +757,14 @@ fields, not nodes · 6 verify ✓ (screens above).
        enter (as before) and on tap. EdgeHandle.dc.html, the shell's placement (showNnEdge, edgeVis, nnEdgeEnter) and its
        Dedede hiding are gone. Sofia accepted that the handle now shows during the Dedede reveal until the circle covers it.
        The Components page previews the part through NowPlayingSheet fed a minimal closed auto node.
+    4. Scrim stays its own DC (Sofia: reused in the app-bar page for album pages). New design component design/components/scrim
+       (extends surface; variant `tone` dark | wash; visuals fill and cursor), registered in design.json and in
+       platforms/web.json implements; Scrim.dc.html names it in its header and reads its resolved visuals. Colours: dark is
+       color.scrim; wash is the new token color.scrimWash (rgba(250,250,248,.6)), the literal frontLayer's own `scrim`
+       visual held, which is gone from frontLayer; FrontLayer's scrim uses tone wash (the shell resolves scrim with it, the line
+       that resolved frontLayer's scrim). The cursor is design's pointer (the DC wrote it by whether a tap handler existed). The
+       fade timing stays the engine's latest change (ms from the platform transition, like the other scrims), not a design
+       visual. Screenshots with the scrim shown and after tapping it are identical to before.
 ## Hires, picks and tokens: work list (decisions 52–54; tick as done)
 API 18.0.0 amended (breaking: renames and removals). Then back to the shell conversion list, step 3.
 - [x] 1. Rename ComponentId → ComponentName (api.d.ts, docs).
@@ -827,7 +835,7 @@ Done (drawn from contract nodes through draw.js):
       59); still fed by the shell: pl.card (peek controls), npVis, mx.
 - [ ] DededeLayer: 10 props; no design component exists for it.
 - [ ] AccountLayer: 6 props; no design component exists for it.
-- [ ] Scrim: no design component exists for it; Sofia wants it kept as its own DC (decision 59). EdgeHandle is gone (decision 59).
+- [x] Scrim: its own design component and DC (decision 59); EdgeHandle is gone (decision 59).
 - [ ] NavRail, SignIn, Splash: props built by the shell, not from a node. (Menu: drawn from its overlay node, decision 59.)
 - [x] Dialog, Snackbar: drawn from their overlay nodes; Drawer from its drawerLayer node (decision 58).
 - [x] Back-layer DCs placed by the shell: now one BackLayer instance fed its node (it draws Header, PanelRow, MorePanel,
@@ -835,7 +843,7 @@ Done (drawn from contract nodes through draw.js):
 
 ### Visuals the shell resolves for other components
 - [ ] sv bundle: frontLayer, backLayer, bottomSheet, sideSheet, drawer, signInPage, splash, navBar, navRail,
-      appBar pageFill, frontLayer scrim; handed to wrapper DCs.
+      appBar pageFill, scrim (tone wash); handed to wrapper DCs.
 - [ ] Bars: frontHeader, appBar page form, appBar layer form (the back header's come from its node now).
 - [ ] Titles: the shell picks each title's size per surface (front sm, app bar lg; the back title's comes from its node).
 - [ ] groupHeader, alphaIndex, carousel, scrollerLayout, contentBlock, gridLayout, staleBanner, empty / error state.

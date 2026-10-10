@@ -22,6 +22,7 @@
   --color-handle: #d6d5d0;
   --color-scrim: rgba(0,0,0,.32);
   --color-scrimLight: rgba(0,0,0,.24);
+  --color-scrimWash: rgba(250,250,248,.6);
   --color-inverseSurface: #323232;
   --color-onInverseSurface: #ffffff;
   --color-placeholder: #e6e5e1;
@@ -163,6 +164,16 @@
   --surface-scale-pressed: 1;
   --surface-cursor: default;
   --surface-cursor-disabled: default;
+  --scrim-radius: var(--radius-full);
+  --scrim-focusRing-keyboardFocus: [object Object];
+  --scrim-contentOpacity: 1;
+  --scrim-contentOpacity-disabled: 1;
+  --scrim-contentOpacity-busy: var(--state-busy-opacity);
+  --scrim-scale: 1;
+  --scrim-scale-pressed: 1;
+  --scrim-cursor: pointer;
+  --scrim-cursor-disabled: default;
+  --scrim-fill: [object Object];
   --frontLayer-radius: var(--radius-full);
   --frontLayer-focusRing-keyboardFocus: [object Object];
   --frontLayer-contentOpacity: 1;
@@ -175,7 +186,6 @@
   --frontLayer-divider: var(--color-divider);
   --frontLayer-cornerTL: var(--radius-frontLayer);
   --frontLayer-cornerTR: [object Object];
-  --frontLayer-scrim-partlyCollapsed: rgba(250,250,248,.6);
   --frontLayer-headerHeight: var(--size-frontHeader-height);
   --frontLayer-fill: var(--color-surface);
   --frontLayer-scrollThumb: rgba(0,0,0,.35);
