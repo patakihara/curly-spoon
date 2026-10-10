@@ -756,6 +756,11 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
         break;
       }
       case 'scroll': {
+        if (intent.surface === 'panel') {   // the back layer's panel: only while revealed
+          const u = query.underPage(s); if (!u.back.expanded) break;
+          s = patchUnder(s, p => ({ ...p, back: { ...p.back, scroll: Math.max(0, +intent.top || 0) } }));
+          break;
+        }
         const cur = query.currentPage(s);
         const atTop = (prev, p) => prev > 0 && intent.top <= 0 ? applyEvent(p, 'scrollTop') : p;
         if (cur.config.kind === 'appBar') { const prev = getField(cur, 'scroll') || 0; s = patchTop(s, p => atTop(prev, setField(p, 'scroll', intent.top))); break; }
@@ -877,10 +882,11 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
     }
     return { state: closeConcealedMores(s), events: ev };
   }
-  // concealing a back layer closes its open Mores (however it was concealed: back, the disclosure, a policy reset)
+  // concealing a back layer closes its open Mores and resets its panel's scroll (however it was concealed: back, the disclosure,
+  // a policy reset)
   function closeConcealedMores(s) {
-    const fix = st => st.some(e => e.page.config.kind === 'backdrop' && !e.page.back.expanded && (e.page.back.more || []).length)
-      ? st.map(e => e.page.config.kind === 'backdrop' && !e.page.back.expanded && (e.page.back.more || []).length ? { ...e, page: { ...e.page, back: { ...e.page.back, more: [] } } } : e) : st;
+    const stale = e => e.page.config.kind === 'backdrop' && !e.page.back.expanded && ((e.page.back.more || []).length || e.page.back.scroll);
+    const fix = st => st.some(stale) ? st.map(e => stale(e) ? { ...e, page: { ...e.page, back: { ...e.page.back, more: [], scroll: 0 } } } : e) : st;
     let out = s;
     Object.keys(s.decks).forEach(id => { const st = fix(s.decks[id].stack); if (st !== s.decks[id].stack) out = patchDeck(out, id, d => ({ ...d, stack: st })); });
     Object.keys(s.layers).forEach(id => { const st = fix(s.layers[id].stack); if (st !== s.layers[id].stack) out = patchLayer(out, id, l => ({ ...l, stack: st })); });

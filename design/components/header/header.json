@@ -45,5 +45,11 @@
     "titleFadeFrom": {
       "default": 0.5
     }
-  }
+  },
+  "events": [
+    {
+      "name": "scroll",
+      "payload": "number"
+    }
+  ]
 }

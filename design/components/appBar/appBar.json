@@ -173,5 +173,11 @@
       ],
       "default": "page"
     }
-  }
+  },
+  "events": [
+    {
+      "name": "scroll",
+      "payload": "number"
+    }
+  ]
 }

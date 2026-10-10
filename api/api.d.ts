@@ -233,7 +233,10 @@ export interface ApplyParamsIntent { type: 'applyParams'; names?: ParamName[]; p
 export interface DiscardParamsIntent { type: 'discardParams'; names?: ParamName[]; page?: PageId }   // drop pending values (default: all)
 export interface SetExpandedIntent { type: 'setExpanded'; expanded: boolean }   // the focused app-bar page's sheet if it has one, else the back layer under the focus
 export interface ToggleExpandedIntent { type: 'toggleExpanded' }
-export interface ScrollIntent { type: 'scroll'; top: number }
+export type ScrollSurface =
+  | 'content'                            // the front layer's content, or an app-bar page
+  | 'panel';                             // the back layer's panel (BackLayerState.scroll)
+export interface ScrollIntent { type: 'scroll'; top: number; surface?: ScrollSurface }   // top: the collapse-first offset; surface default 'content'
 export interface OpenLayerIntent { type: 'openLayer'; layer: LayerId; returnFocus?: string }
 export interface CloseLayerIntent { type: 'closeLayer'; layer: LayerId }
 export interface FocusIntent { type: 'focus'; target: DeckId | LayerId }
@@ -468,6 +471,7 @@ export interface BackLayerState {
   expanded: boolean;
   headerHidden?: boolean;
   more?: ParamName[];                    // whose More is open, newest last (the panel shows the newest); concealing closes them all
+  scroll?: number;                       // the panel's collapse-first scroll (0 … the header's distance collapses it, then the panel scrolls); concealing resets it
 }
 export interface FrontLayerState { scroll: Scoped<number>; find?: FindState }   // collapse-first scroll offset (15.0): see PageScroll below
 export interface PageSheetState { expanded: boolean }
@@ -671,10 +675,10 @@ export interface DetailContract extends Contract<DetailConfig | DetailItem, Deta
 export interface SeekValues { label: string; positionMs: number; durationMs: number | null }
 export interface SeekContract extends Contract<SeekItem, SeekValues, Seek> {}
 export type HeaderItemContract = ButtonContract | LogoContract | TextContract | SwitchContract | FindContract;
-// header: progress: collapse 0 … 1 (Layout.barView)
+// header: progress: collapse 0 … 1 (Layout.barView) · scroll: dragging its detail scrolls the surface below it (the panel while revealed, else the content)
 export interface HeaderValues { title: string | null; progress: number }
 export interface HeaderChildren { items: HeaderItemContract[]; detail?: DetailContract }
-export interface HeaderContract extends Contract<HeaderConfig, HeaderValues, NoIntents> { children: HeaderChildren }
+export interface HeaderContract extends Contract<HeaderConfig, HeaderValues, ScrollIntent> { children: HeaderChildren }
 // paramControl: value: the pending one if any, else applied · options: every choice, in config order (empty for plain text or a range) · label / placeholder: the param's, resolved · min / max: a number param's · more: it offers More (config more)
 export interface ParamControlValues { value: ParamValue | null; options: ParamControlOption[]; pending: boolean; label: string | null; placeholder: string | null; min: number | null; max: number | null; more: boolean }
 export interface ParamControlContract extends Contract<ParamControlConfig, ParamControlValues, SetParamsIntent | ToggleParamIntent | ApplyParamsIntent | DiscardParamsIntent | OpenMoreIntent> {}
@@ -910,6 +914,7 @@ export interface Layout {
   regions(page: BackdropPageState, look: Look, measured?: Record<string, number>, geometry?: Geometry): BackLayerRegionView[];   // fixed regions: header · actions · controls · panel (revealed only; with geometry, held to the room above the front layer's header)
   barView(page: PageState, look: Look, within?: ContractName[]): BarView;   // the header hire's height / expandedHeight (with a detail); progress = min(1, scroll / distance)
   contentOffset(page: PageState, look: Look, within?: ContractName[]): number;   // 15.0: the content's own offset = max(0, scroll − barView.distance)
+  panelOffset(page: BackdropPageState, look: Look): number;   // 18.0: the back layer panel's own offset = max(0, back.scroll − barView.distance)
   resolveVisuals(specs: Specs, component: ComponentId, state: string, ctx?: VisualContext): Record<string, unknown>;
   frontLayer(page: BackdropPageState, g: LayoutGeometry, look: Look, ctx?: FrontLayerContext, peek?: number): FrontLayerView;
   stepsFor(event: ModelEvent, specs: Specs, prefs: Prefs): Step[];                         // 17.0: the rule's steps, tokens / ByEvent / sequences resolved

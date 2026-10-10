@@ -604,6 +604,42 @@ fields, not nodes · 6 verify ✓ (screens above).
   715, branches 840–846, 1071–1078, 1105–1108); events go through runAction (749–772) and surfaceOf parses slot paths
   (651–658), which the contract tree's path keys replace.
 
+## Shell conversion list (kept current with every change)
+Goal: the shell (Backdrop Nav Skeleton.dc.html) draws nothing and decides nothing itself. It places the root's
+component; every node is drawn by the DC of the component composition hired for it (platforms/web/draw.js), from its
+node's props, slots and events; all values come from config, design and composition. Each line: what the shell still
+draws or decides there.
+
+Done (drawn from contract nodes through draw.js):
+- [x] Header items: back, front and app-bar headers' buttons, logo, text, switch, find (slice 1).
+- [x] Layer headers: Now playing, Dedede, Account (slice 2).
+- [x] Navigation: nav bar, rail top / destinations / bottom; the drawer's rows (slice 3).
+
+To do:
+- [ ] Back layer (next: BackLayer.dc.html, approved 2026-10-10). The shell lays out its regions itself (header,
+      controls, actions, panel) and draws inside them: the header's detail (DetailHeader) and bar (Bar), the controls
+      rows, the actions row, the panel rows (PanelRow labels), an open More (MorePanel), the panel's scrolling. Code I
+      added there on 2026-10-10 that moves with it: the More view and the More chip rule, the controls / panel groups,
+      the scrolling panel. Not yet drawn at all: the header's detail as a scroll surface (core, design and composition
+      are done; the shell part was reverted).
+- [ ] Param controls: the shell's controlView picks the DC by component id and builds each one's props (chips, tabs,
+      suggestion rows, checklist rows, dropdown, range, search field) instead of draw.js drawing the node.
+- [ ] Front layer: FrontLayer.dc.html is fed shell-computed props (frontVals: header, find, scroll thumb, layout).
+- [ ] Content items: grid cards, list rows, content blocks, carousels, group headers, placeholders are chosen and fed
+      by the shell.
+- [ ] App-bar page form: AppBarPage / AppBarSheet are fed shell-computed props (sheet height, info, buttons, rows);
+      the album page's detail is not yet a scroll surface.
+- [ ] Now playing: the sheet's body, the peek card, the edge handle and the scrim are arranged and fed by the shell.
+- [ ] Dedede and Account layers: their bodies are fed by the shell.
+- [ ] Drawer: the drawer itself and its scrim (its rows are done).
+- [ ] Overlays: dialog, menu, snackbar props are built by the shell.
+- [ ] Gate (SignIn) and splash: fed by the shell.
+- [ ] Hidden warm-up instances (DCs loaded before first use): platform mechanics; move into draw.js.
+- [ ] Motion-aware intent paths in the shell (openItem, popDeck, paramChange, axisSwitch, fadeThrough, collapse-first
+      scroll input): belong to the player (platforms/web/motions.js) and the DCs.
+Not app UI (stays): the harness panel beside the phone (layout width, slow motion, language, address bar, simulate,
+back buttons, focus / history, stacks, flow rules, log, reset).
+
 ## Open (current)
 - 18.0: three rules skip: the two hideOnScroll back-header rules (no deck sets back.hideHeaderOnScroll) and surface
   colour roles (decision 30).
@@ -616,9 +652,8 @@ fields, not nodes · 6 verify ✓ (screens above).
   buttons and the literal more_vert are gone. Sofia chose today's look except Dedede's first page gets back (decision
   36). Slice 3 done: navigation (nav bar, rail top / destinations / bottom) and the drawer's rows are drawn from their
   nodes; draw.js picks each node's DC as the nearest component up its extends chain that platforms/web.json implements
-  (drawerItem and suggestionRow added there, being their own DCs; suggestionList since decision 41); IconButton's `mark` flag is gone. Still
-  shell-chosen: panel rows, Now
-  playing's body, the drawer, nav, peek, overlays, content items, the app-bar form.
+  (drawerItem and suggestionRow added there, being their own DCs; suggestionList since decision 41); IconButton's `mark` flag is gone. What
+  the shell still draws itself: the shell conversion list above.
 - 18.0: param controls (decision 41): the controls rows are drawn by the shell directly (no row label, the
   paramControlRow hire unused there); controls in one row share its width equally; no page has two controls in a row yet.
 - 18.0: option components (decision 45): the DCs still import their option's DC by name (TabBar → Tab, FilterChips →

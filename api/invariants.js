@@ -786,6 +786,22 @@ export const INVARIANTS = [
       assert(!open().length, 'opened a More no control has');
     });
   }],
+  ['a revealed panel scrolls collapse-first: the header collapses before the panel moves; concealing resets the panel scroll', f => {
+    const P = need(f.layout, 'no layout');
+    const X = need(collapsingPages(f, P).find(x => { const pg = x.m.query.currentPage(S(x.m)); return pg.config.kind === 'backdrop' && (pg.config.back.panel || []).length; }), 'no collapsing back header with a panel');
+    const m = X.m, pg = () => m.query.underPage(S(m)), bv = () => P.barView(pg(), LOOK(m));
+    if (!pg().back.expanded) m.dispatch({ type: 'setExpanded', expanded: true });
+    const d = bv().distance, front = pg().front.scroll;
+    m.dispatch({ type: 'scroll', top: d / 2, surface: 'panel' });
+    assert(Math.abs(bv().progress - 0.5) < 1e-9 && P.panelOffset(pg(), LOOK(m)) === 0, 'half the distance does not half-collapse the header first (' + bv().progress + ')');
+    m.dispatch({ type: 'scroll', top: d + 30, surface: 'panel' });
+    assert(bv().progress === 1 && P.panelOffset(pg(), LOOK(m)) === 30, 'past the distance the panel does not move by the rest');
+    assert(JSON.stringify(pg().front.scroll) === JSON.stringify(front), 'panel scroll changed the content scroll');
+    m.dispatch({ type: 'setExpanded', expanded: false });
+    assert(!pg().back.scroll && P.panelOffset(pg(), LOOK(m)) === 0, 'concealing kept the panel scroll');
+    m.dispatch({ type: 'scroll', top: 50, surface: 'panel' });
+    assert(!pg().back.scroll, 'a concealed panel scrolled');
+  }],
   ['hideOnScroll back header: hides scrolling down, shows scrolling up / at the top / on expand; front headers never hide', f => {
     const D = need(f.config.decks.find(d => d.page.back.hideHeaderOnScroll), 'no hideOnScroll back header');
     const m = f.mk(dev.any(f)); m.dispatch({ type: 'switchDeck', deck: D.id });

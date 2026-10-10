@@ -163,6 +163,10 @@
        "child": "detail"
       }
      ]
+    },
+    {
+     "event": "scroll",
+     "send": "scroll"
     }
    ]
   },
@@ -229,6 +233,10 @@
        "child": "detail"
       }
      ]
+    },
+    {
+     "event": "scroll",
+     "send": "scroll"
     }
    ],
    "tokens": [
@@ -318,6 +326,10 @@
        "child": "detail"
       }
      ]
+    },
+    {
+     "event": "scroll",
+     "send": "scroll"
     }
    ]
   },
@@ -401,6 +413,10 @@
        "child": "detail"
       }
      ]
+    },
+    {
+     "event": "scroll",
+     "send": "scroll"
     }
    ],
    "variants": [
@@ -481,6 +497,10 @@
        "child": "detail"
       }
      ]
+    },
+    {
+     "event": "scroll",
+     "send": "scroll"
     }
    ]
   },

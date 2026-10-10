@@ -88,7 +88,10 @@ export function contractTree(model, specs, composition, opts = {}) {
       case 'closeMore': return n.contract === 'paramControlMore' ? { type: 'closeMore', page: pid } : null;
       case 'seek': return { type: 'seek', positionMs: +payload || 0 };
       case 'toggleExpanded': return n.contract === 'backLayer' && n.config.toggleOnTap === false ? null : { type: 'toggleExpanded' };
-      case 'scroll': return { type: 'scroll', top: +payload || 0 };
+      case 'scroll': {   // a header's detail scrolls the surface below it: the back layer's panel while revealed, else the content
+        const panel = n.contract === 'header' && page && page.config.kind === 'backdrop' && page.back.expanded && ((page.config.back.panel || []).length || (page.back.more || []).length);
+        return { type: 'scroll', top: Math.max(0, +payload || 0), ...(panel ? { surface: 'panel' } : {}) };
+      }
       case 'retry': return { type: 'retry' };
       case 'openFind': return { type: 'openFind' };
       case 'closeFind': return { type: 'closeFind' };

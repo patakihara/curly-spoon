@@ -43,13 +43,17 @@ export function geometry(state, config, q, look) {
 // a header with a detail shrinks from expandedHeight to height over the first (expandedHeight − height) of scroll (progress 0 → 1; collapse-first, 15.0)
 const scrollOf = page => { const pol = page.config.kind === 'appBar' ? page.config.statePolicy.scroll : page.config.statePolicy.front.scroll, v = page.config.kind === 'appBar' ? page.scroll : page.front.scroll; if (!pol.scope) return +v || 0; const k = pol.scope.split('.').reduce((x, y) => x == null ? x : x[y], page); return v && k in v ? +v[k] || 0 : +pol.default || 0; };
 const progressOf = (scroll, from, to) => from > to ? Math.max(0, Math.min(1, scroll / (from - to))) : 1;
+// a back layer's panel scroll (collapse-first too): the header collapses by the larger of the two
+const panelScroll = page => page.config.kind === 'backdrop' && page.back.expanded ? +page.back.scroll || 0 : 0;
 export function barView(page, look, within = []) {
   const header = page.config.kind === 'appBar' ? page.config.header : page.config.back.header, at = headerAt(page, within);
-  const h = look.size(at, 'height'), x = header.detail ? look.size(at, 'expandedHeight') || h : h, p = progressOf(scrollOf(page), x, h);   // from the scroll only: expanding the back layer keeps the detail
+  const h = look.size(at, 'height'), x = header.detail ? look.size(at, 'expandedHeight') || h : h, p = progressOf(Math.max(scrollOf(page), panelScroll(page)), x, h);   // from the scrolls only: expanding the back layer keeps the detail
   return { height: x - (x - h) * p, progress: p, distance: Math.max(0, x - h) };
 }
 // 15.0: scroll is collapse-first — 0 … distance collapses the bar (content still), beyond it the content scrolls
 export function contentOffset(page, look, within = []) { return Math.max(0, scrollOf(page) - barView(page, look, within).distance); }
+// the panel's own offset: its scroll past the collapse
+export function panelOffset(page, look) { return Math.max(0, panelScroll(page) - barView(page, look).distance); }
 export const BACK_REGIONS = ['header', 'actions', 'controls', 'panel'];
 function regionHeights(page, look, measured) {
   const B = page.config.back, at = backAt(page);
