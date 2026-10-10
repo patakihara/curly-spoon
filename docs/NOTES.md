@@ -634,6 +634,50 @@ fields, not nodes · 6 verify ✓ (screens above).
     apart), so no engine change. Contract playerPage extends appBarPage; contracts may extend (placements within the base
     hold within the extension; rules see the merged contract). Design playerPage is a variant of appBarPage (slot sheet),
     drawn by AppBarPage.
+52. Children, hires and their DCs (Sofia, 2026-10-10).
+    - Words: a system token (design/tokens.json); a free component (design/components/<name>/); a child (a design
+      component that `extends` another and is marked `variant`); a hire (composition: one free component or child
+      drawing one contract, wired by clauses). "Variant" alone is ambiguous: a setting a component declares is a
+      variant axis (`variants`), a child is a variant component.
+    - DCs: one per free component; hires never get one. A child whose slots and parts are its parent's is drawn by its
+      parent's DC (agreed rule); only a child with pieces or an arrangement of its own gets its own DC.
+    - A child inherits everything through `extends` and re-declares nothing. It cannot drop a parent's slot ("fills"
+      considered and left out: a fixed piece is a part, an interactive one is a config item).
+    - `picks` (name chosen by Sofia): a child or a hire fixes options of the settings it inherits, as an object
+      `{ "shape": "circle" }`; optional for both. `variants` stays the field that declares settings.
+    - Hires and children take the same shapes: `picks` and `visuals` mean the same in both. A hire keeps `hires`.
+    - Rename ComponentId → ComponentName.
+53. Hire files (Sofia, 2026-10-10): one folder per hire, like a component's: app/hires/<name>/<name>.json (HireDef:
+    hires · contract · picks? · visuals? · clauses; its name is its folder's), <name>.md (a short note), <name>.d.ts
+    (generated: its props type and the note). app/composition.json keeps the placements and page exceptions.
+54. Tokens at every level (Sofia, 2026-10-10: option B). Every visual of every free component, child and hire is a
+    named token (`listRow.fill`, `queueRow.fill:pressed`, `upNext.fill`, `iconButton.size[md]`) aliasing what it
+    inherits unless set there; marks set · new · inherited. Sources stay each owner's file; design/write-generated.mjs
+    writes one generated/tokens.json grouped by inheritance (system by group; each free component with its children
+    nested, hires under what they use; inside each, tokens by kind: colour, size, radius, type, motion). Clause prop
+    tokens name design tokens directly; the hire's `<hire>.<prop>` token is generated from them. A tokens page reads
+    generated/tokens.json: a new page in the same artifact (not its own), with a side table of contents of all the
+    artifact's pages, as Sonora's design-system artifact has. Edits on the page write back to the owner's file (look at
+    Sonora's docs/edit_writeback.mjs first). Sonora itself lists only system tokens (aliases token to token).
+
+## Hires, picks and tokens: work list (decisions 52–54; tick as done)
+API 18.0.0 amended (breaking: renames and removals). Then back to the shell conversion list, step 3.
+- [ ] 1. Rename ComponentId → ComponentName (api.d.ts, docs).
+- [ ] 2. ComponentDef.picks: design/load.js (a picked axis leaves the child's offered variants), visuals resolve with
+      it (core/layout.js resolveVisuals), node variants include it; rules: a pick names an axis the component still
+      offers and one of its options.
+- [ ] 3. Hire shape: HireDef { hires, contract, picks?, visuals?, clauses } and Hire extends HireDef { name }; remove
+      VariantPick, HireToken; clause tokens name design tokens; hire visuals merge over the component's per visual and
+      state (core/compose.js visualsAt, core/contracts.js dress); composition rules (token, picks, visuals, sameHire).
+- [ ] 4. Files: app/hires/<name>/{json, md, d.ts}; app/composition.json = placements + pages; one loader for both
+      (app/load-app.js or a composition loader) used by the shell, Invariants, Components and the rules scripts;
+      write-generated writes the hire .d.ts; publish list.
+- [ ] 5. Rule: a child with its parent's slots and parts has no DC of its own (platforms/web.json); check drawerItem.
+- [ ] 6. generated/tokens.json (every level, grouped, marks, resolved values) from design/write-generated.mjs.
+- [ ] 7. Tokens page in the artifact, plus a side table of contents across the artifact's pages (mockup, Components,
+      Invariants, Specs Editor, Tokens); write-back of edits (study Sonora's first).
+- [ ] 8. Docs: API.md, CHANGELOG (18.0.0), RUST.md, CLAUDE.md file layout and composition line; screens identical;
+      rules count; commit; republish.
 
 ## Shell conversion list (kept current with every change)
 Goal: the shell (Backdrop Nav Skeleton.dc.html) draws nothing and decides nothing itself. It places the root's
