@@ -741,6 +741,17 @@ fields, not nodes · 6 verify ✓ (screens above).
        methods and nn.peekTitle / peekSub / peekArt are gone. The status line the shell wrote while playing (glyph,
        mm:ss / mm:ss, id tail) is gone: it showed only for a track without a subtitle, and every catalog track has one.
        Still the shell's: the peek controls (pl.peek / pl.card), npVis, mx.
+    2. menuItem. New design component design/components/menuItem (extends listItem, variant, parts icon and label, props
+       text and icon, icon optional): the menu row visuals the shell drew moved here from menu (rowHeight, fontSize, rowPadX,
+       rowGap, iconSize, iconColor became height, fontSize, padX, gap, iconSize, iconColor; ink is the content role, iconColor
+       the contentVariant role, both the same colours as before). All six menu hires (menuItem, recent / saved / playNow /
+       playLast / link MenuItem) hire menuItem instead of drawerItem (the hire named menuItem keeps its name; write-generated
+       aliases the clash). Registered in design.json and in platforms/web.json implements (own DC: it declares parts its
+       parent listItem doesn't draw). MenuItem.dc.html draws a row; Menu.dc.html draws its rows from its slot items and
+       its scrim sends the node's close; the shell hands Menu its overlay node (draw.js). menu gets a visual `form` (popup
+       on wide, sheet on compact) instead of the shell deciding. Screens identical, the open menu's screenshot identical
+       compact and wide. Still the shell's: the popup anchor (menuAnchor, measured from the tap's element: needs an API
+       change to carry the tap's rect to the overlay node).
 ## Hires, picks and tokens: work list (decisions 52–54; tick as done)
 API 18.0.0 amended (breaking: renames and removals). Then back to the shell conversion list, step 3.
 - [x] 1. Rename ComponentId → ComponentName (api.d.ts, docs).
@@ -812,7 +823,7 @@ Done (drawn from contract nodes through draw.js):
 - [ ] DededeLayer: 10 props; no design component exists for it.
 - [ ] AccountLayer: 6 props; no design component exists for it.
 - [ ] EdgeHandle and Scrim: no design component exists for either; proposal (parts of sideSheet and frontLayer) in decision 58, needs Sofia.
-- [ ] NavRail, Menu, SignIn, Splash: props built by the shell, not from a node (Menu: needs Sofia, decision 58).
+- [ ] NavRail, SignIn, Splash: props built by the shell, not from a node. (Menu: drawn from its overlay node, decision 59.)
 - [x] Dialog, Snackbar: drawn from their overlay nodes; Drawer from its drawerLayer node (decision 58).
 - [x] Back-layer DCs placed by the shell: now one BackLayer instance fed its node (it draws Header, PanelRow, MorePanel,
       Button and the controls from their nodes).
@@ -825,7 +836,7 @@ Done (drawn from contract nodes through draw.js):
 - [ ] groupHeader, alphaIndex, carousel, scrollerLayout, contentBlock, gridLayout, staleBanner, empty / error state.
 - [ ] Now playing: artwork lg, trackInfo lg, seekBar, row spread, nowPlaying, tabBar on bottomSheet,
       emptyState sm, queueRow. (peekCard: PeekCard resolves its own now, decision 57.)
-- [ ] drawerItem (drawer size and rail size), symbol, logo, splash per state, signInPage, menu, dialog, snackbar.
+- [ ] drawerItem (drawer size and rail size), symbol, logo, splash per state, signInPage.
 - [ ] Tokens read directly: color.navIndicator (rail pill, drawer row fill), grid.column.max (carousel entries).
 - [ ] Motions read directly: tabBar indicator, navRail width, logo levels, splash logo, placeholder pulse.
 - [x] The back header's detail ink: resolveValue of backLayer's content role (Header's ink now).

@@ -11,19 +11,21 @@
   <div onClick="{{ stop }}" role="menu" style="position:{{ pos }};top:{{ top }}px;inset-inline-end:{{ end }}px;width:{{ w }};max-width:{{ v.maxWidth }}px;box-sizing:border-box;background:{{ v.fill }};color:{{ v.ink }};border-radius:{{ v.radius }};padding:{{ v.padding }};box-shadow:{{ v.shadow }};display:flex;flex-direction:column;transform-origin:top right">
     <sc-if value="{{ sheet }}" hint-placeholder-val="{{ true }}"><div style="width:{{ v.handleWidth }}px;height:{{ v.handleHeight }}px;border-radius:{{ v.handleRadius }}px;background:{{ v.handle }};align-self:center;margin:4px 0 8px"></div></sc-if>
     <sc-for list="{{ items }}" as="mi" hint-placeholder-count="3">
-      <div style="position:relative;height:{{ v.rowHeight }}px;display:flex;align-items:center;gap:{{ v.rowGap }}px;padding:0 {{ v.rowPadX }}px;font-size:{{ v.fontSize }}px;white-space:nowrap"><dc-import name="ListItem" dc-props="{{ mi.ix }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import><dc-import name="Symbol" icon="{{ mi.icon }}" visuals="{{ iconVis }}" hint-size="22px,22px"></dc-import><span>{{ mi.label }}</span></div>
+      <dc-import name="MenuItem" dc-props="{{ mi.props }}" hint-size="100%,52px"></dc-import>
     </sc-for>
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:300},&quot;sheet&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;items&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ ix: object; icon: string; label: string }[]&quot;},&quot;onClose&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;anchor&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ top: number; end: number }&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
-// Web implementation of design component menu (overlay): bottom sheet on compact, anchored popup on wide (visuals condition on env layout).
-// Props: sheet, items [{ ix, icon, label }], onClose, anchor { top, end } (popup position, from the shell's measurement), visuals (resolved with env). No values of its own.
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:300},&quot;slots&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ items: object[] }&quot;},&quot;on&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ close: () =&gt; void }&quot;},&quot;anchor&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ top: number; end: number }&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
+// Web implementation of design component menu (overlay), drawn from its overlay node (platforms/web/draw.js): a bottom sheet or an
+// anchored popup by its `form` visual (design: layout), its rows (slot items, drawn as menuItem by MenuItem) and its scrim, which
+// sends the node's close. Props: the node's visuals, on (close), slots (items), anchor { top, end } (the popup's position: still the
+// shell's measurement of the tap). No values of its own.
 class Component extends DCLogic {
   renderVals() {
-    const v = this.props.visuals || {}, sheet = !!this.props.sheet, a = this.props.anchor || {};
-    return { v, sheet, items: this.props.items || [], onClose: this.props.onClose || (() => {}), stop: e => e.stopPropagation(),
-      pos: sheet ? 'relative' : 'absolute', top: sheet ? 0 : a.top || 0, end: sheet ? 0 : a.end || 0, w: sheet ? '100%' : 'auto', iconVis: { ...(this.props.symbolVisuals || {}), size: +v.iconSize || 22, color: v.iconColor, padEnd: 0 } };
+    const p = this.props, v = p.visuals || {}, sheet = v.form !== 'popup', a = p.anchor || {}, close = (p.on || {}).close || (() => {});
+    return { v, sheet, items: ((p.slots || {}).items || []).filter(n => n.shown), onClose: e => close(undefined, e), stop: e => e.stopPropagation(),
+      pos: sheet ? 'relative' : 'absolute', top: sheet ? 0 : a.top || 0, end: sheet ? 0 : a.end || 0, w: sheet ? '100%' : 'auto' };
   }
 }
 </script>

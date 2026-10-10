@@ -51,6 +51,7 @@
     "checklist",
     "checkRow",
     "menu",
+    "menuItem",
     "nowPlaying",
     "localSearch",
     "carousel",

@@ -973,16 +973,35 @@ object MenuTokens {
     val Shadow = {"if":{"env":"layout","equals":"wide"},"then":"0 4px 16px rgba(0,0,0,.18)","else":"0 -8px 24px rgba(0,0,0,.16)"}
     val Scrim = {"if":{"env":"layout","equals":"wide"},"then":"transparent","else":{"token":"color.scrimLight"}}
     val MaxWidth = 400f
-    val RowHeight = {"if":{"env":"layout","equals":"wide"},"then":44,"else":52}
-    val FontSize = {"if":{"env":"layout","equals":"wide"},"then":14,"else":15}
-    val RowPadX = 20f
-    val RowGap = 16f
-    val IconSize = 22f
-    val IconColor = DesignTokens.ColorOnSurfaceVariant
+    val Form = {"if":{"env":"layout","equals":"wide"},"then":"popup","else":"sheet"}
     val HandleWidth = 32f
     val HandleHeight = 4f
     val Handle = DesignTokens.ColorHandle
     val HandleRadius = 2f
+}
+
+object MenuItemTokens {
+    val StateLayerHover = DesignTokens.StateHoverOpacityDefault
+    val StateLayerPressed = DesignTokens.StatePressedOpacityDefault
+    val StateLayerKeyboardFocus = DesignTokens.StateFocusOpacity
+    val Ripple = DesignTokens.StateRippleOpacityDefault
+    val Radius = DesignTokens.RadiusNone
+    val FocusRingKeyboardFocus = {"role":"focusRing"}
+    val ContentOpacity = 1f
+    val ContentOpacityDisabled = DesignTokens.StateDisabledOpacity
+    val ContentOpacityBusy = DesignTokens.StateBusyOpacity
+    val Scale = 1f
+    val ScalePressed = 1f
+    val Cursor = "pointer"
+    val CursorDisabled = "default"
+    val Color = {"role":"content"}
+    val Height = {"if":{"env":"layout","equals":"wide"},"then":44,"else":52}
+    val FontSize = {"if":{"env":"layout","equals":"wide"},"then":14,"else":15}
+    val PadX = 20f
+    val Gap = 16f
+    val IconSize = 22f
+    val Ink = {"role":"content"}
+    val IconColor = {"role":"contentVariant"}
 }
 
 object NowPlayingTokens {

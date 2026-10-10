@@ -1,0 +1,56 @@
+{
+  "extends": "listItem",
+  "variant": true,
+  "props": {
+    "text": "string",
+    "icon": "string"
+  },
+  "optional": [
+    "icon"
+  ],
+  "parts": [
+    "icon",
+    "label"
+  ],
+  "visuals": {
+    "height": {
+      "default": {
+        "if": {
+          "env": "layout",
+          "equals": "wide"
+        },
+        "then": 44,
+        "else": 52
+      }
+    },
+    "fontSize": {
+      "default": {
+        "if": {
+          "env": "layout",
+          "equals": "wide"
+        },
+        "then": 14,
+        "else": 15
+      }
+    },
+    "padX": {
+      "default": 20
+    },
+    "gap": {
+      "default": 16
+    },
+    "iconSize": {
+      "default": 22
+    },
+    "ink": {
+      "default": {
+        "role": "content"
+      }
+    },
+    "iconColor": {
+      "default": {
+        "role": "contentVariant"
+      }
+    }
+  }
+}

@@ -70,38 +70,14 @@
     "maxWidth": {
       "default": 400
     },
-    "rowHeight": {
+    "form": {
       "default": {
         "if": {
           "env": "layout",
           "equals": "wide"
         },
-        "then": 44,
-        "else": 52
-      }
-    },
-    "fontSize": {
-      "default": {
-        "if": {
-          "env": "layout",
-          "equals": "wide"
-        },
-        "then": 14,
-        "else": 15
-      }
-    },
-    "rowPadX": {
-      "default": 20
-    },
-    "rowGap": {
-      "default": 16
-    },
-    "iconSize": {
-      "default": 22
-    },
-    "iconColor": {
-      "default": {
-        "token": "color.onSurfaceVariant"
+        "then": "popup",
+        "else": "sheet"
       }
     },
     "handleWidth": {
