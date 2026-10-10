@@ -28,7 +28,22 @@
     "stateLayer": {
       "hover": {
         "token": "state.hover.opacity.default"
+      },
+      "pressed": {
+        "token": "state.pressed.opacity.default"
+      },
+      "keyboardFocus": {
+        "token": "state.focus.opacity"
       }
+    },
+    "ripple": {
+      "default": {
+        "token": "state.ripple.opacity.default"
+      }
+    },
+    "cursor": {
+      "default": "pointer",
+      "disabled": "default"
     }
   }
 }

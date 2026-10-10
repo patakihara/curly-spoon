@@ -3,3 +3,7 @@
 A sheet layer (role `sheetLayer`, `SheetPresentation`): compact as a bottom sheet (surface `bottomSheet`), wide as a side sheet (surface `sideSheet`); collapsed it shows its peek (compact: above the nav bar; wide: a floating card, surface `peekCard`). Supplied: open, form (bottomSheet | sideSheet), side (beside | modal | auto). Emits open (peek tap) and close.
 
 `sideWidth`: the side sheet's width on wide (Layout and createModel sizes read it).
+
+`openLabel` / `closeLabel`: what tapping its peek says it does (open the layer, or close it when the peek persists while open); its hire feeds them from design texts.
+
+`peekRect`: where its peek floats in the wide form (the engine's `peek` value: top, left, w, h; none in the compact form, where the peek is the collapsed sheet).

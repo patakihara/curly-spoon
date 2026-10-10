@@ -331,6 +331,9 @@ object SideSheetTokens {
 
 object PeekCardTokens {
     val StateLayerHover = DesignTokens.StateHoverOpacityDefault
+    val StateLayerPressed = DesignTokens.StatePressedOpacityDefault
+    val StateLayerKeyboardFocus = DesignTokens.StateFocusOpacity
+    val Ripple = DesignTokens.StateRippleOpacityDefault
     val Radius = 12.dp
     val FocusRingKeyboardFocus = {"role":"focusRing"}
     val ContentOpacity = 1f
@@ -338,7 +341,7 @@ object PeekCardTokens {
     val ContentOpacityBusy = DesignTokens.StateBusyOpacity
     val Scale = 1f
     val ScalePressed = 1f
-    val Cursor = "default"
+    val Cursor = "pointer"
     val CursorDisabled = "default"
     val Fill = "#fff"
     val Shadow = "0 2px 6px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.10)"

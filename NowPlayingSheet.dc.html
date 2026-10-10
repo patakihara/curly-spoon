@@ -8,7 +8,7 @@
 <body>
 <x-dc>
 <div ref="{{ nnRef }}" onMouseLeave="{{ nnLeave }}" onPointerDownCapture="{{ focusnowPlaying }}" style="position:absolute;left:{{ nn.left }}px;width:{{ nn.w }}px;top:{{ nn.top }}px;height:{{ nn.h }}px;transform:translateX({{ nn.tx }}px);background:{{ sv.sheet.fill }};border-radius:{{ nn.rad }};box-shadow:{{ nn.shadow }};overflow:hidden;transition:{{ mx.layer.nowPlaying.surface }}">
-  <div style="position:absolute;left:0;right:0;top:0;height:{{ npH }}px;display:flex;opacity:{{ nn.peekOp }};pointer-events:{{ nn.peekEv }};transition:{{ mx.layer.nowPlaying.content }};overflow:hidden"><dc-import name="NowPlaying" image="{{ nn.peekArt }}" title="{{ nn.peekTitle }}" subtitle="{{ nn.peekSub }}" controls="{{ pl.peek }}" row-ix="{{ nn.peekIx }}" visuals="{{ npVis }}" style="width:100%" hint-size="100%,48px"></dc-import>
+  <div style="position:absolute;left:0;right:0;top:0;height:{{ npH }}px;display:flex;opacity:{{ nn.peekOp }};pointer-events:{{ nn.peekEv }};transition:{{ mx.layer.nowPlaying.content }};overflow:hidden"><dc-import name="NowPlaying" image="{{ nn.peekArt }}" title="{{ nn.peekTitle }}" subtitle="{{ nn.peekSub }}" controls="{{ pl.peek }}" row-ix="{{ peekIx }}" visuals="{{ npVis }}" style="width:100%" hint-size="100%,48px"></dc-import>
   </div>
   <div style="position:absolute;inset:0;display:flex;flex-direction:column;opacity:{{ nn.sheetOp }};pointer-events:{{ nn.sheetEv }};transition:{{ mx.layer.nowPlaying.content }}">
     <div style="flex:none;opacity:{{ nn.hop }};transition:{{ mx.layer.nowPlaying.content }}"><dc-import name="Bar" height="{{ nn.hh }}" start="{{ nn.start }}" end="{{ nn.end }}" title="{{ nn.title }}" title-ix="{{ nn.titleIx }}" title-vis="{{ titleVisBar }}" divider="{{ nn.hb }}" ease="{{ ease }}" motion="{{ barMo }}" visuals="{{ barVisLayer }}" hint-size="100%,56px"></dc-import></div>
@@ -33,7 +33,14 @@
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:640},&quot;nnRef&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;nnLeave&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;focusnowPlaying&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;nn&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;sv&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;mx&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;npH&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;pl&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;npVis&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;titleVisBar&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;ease&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;barMo&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;barVisLayer&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;np&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;sheetVis&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;}}">
 // Web implementation of the Now playing layer's sheet (design components bottomSheet / sideSheet by layout): surface,
 // corners, shadow, its peek, header and pages (list / player with UpNextSheet). The shell places it and feeds it values.
-class Component extends DCLogic {}
+// layer: the sheetLayer node, drawn (platforms/web/draw.js): tapping the peek sends its open event, with the peek's look
+// (design peekCard: the peek answers the pointer in both forms).
+class Component extends DCLogic {
+  renderVals() {
+    const L = this.props.layer;
+    return { ...this.props, peekIx: L ? L.ixFor({ key: 'peek', event: 'open', component: 'peekCard', variant: {}, label: L.openLabel || '' }) : {} };
+  }
+}
 </script>
 </body>
 </html>

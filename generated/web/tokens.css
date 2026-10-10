@@ -296,6 +296,9 @@
   --sideSheet-shadowBeside: -1px 0 0 #e3e2de;
   --sideSheet-shadowOver: -8px 0 24px rgba(0,0,0,.12);
   --peekCard-stateLayer-hover: var(--state-hover-opacity-default);
+  --peekCard-stateLayer-pressed: var(--state-pressed-opacity-default);
+  --peekCard-stateLayer-keyboardFocus: var(--state-focus-opacity);
+  --peekCard-ripple: var(--state-ripple-opacity-default);
   --peekCard-radius: 12px;
   --peekCard-focusRing-keyboardFocus: [object Object];
   --peekCard-contentOpacity: 1;
@@ -303,7 +306,7 @@
   --peekCard-contentOpacity-busy: var(--state-busy-opacity);
   --peekCard-scale: 1;
   --peekCard-scale-pressed: 1;
-  --peekCard-cursor: default;
+  --peekCard-cursor: pointer;
   --peekCard-cursor-disabled: default;
   --peekCard-fill: #fff;
   --peekCard-shadow: 0 2px 6px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.10);

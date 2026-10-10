@@ -10,6 +10,18 @@
   },
   "clauses": [
     {
+      "prop": "openLabel",
+      "text": "nowPlaying.open"
+    },
+    {
+      "prop": "closeLabel",
+      "text": "nowPlaying.close"
+    },
+    {
+      "prop": "peekRect",
+      "value": "peek"
+    },
+    {
       "event": "open",
       "send": "openLayer"
     },

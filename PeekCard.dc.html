@@ -7,13 +7,22 @@
 </head>
 <body>
 <x-dc>
-<div ref="{{ nnCardRef }}" style="position:absolute;isolation:isolate;top:{{ nnCard.top }}px;left:{{ nnCard.left }}px;width:{{ nnCard.w }}px;height:{{ npH }}px;display:flex;background-color:{{ cardVis.fill }};border-radius:{{ cardVis.radius }}px;box-shadow:{{ cardVis.shadow }};transition:{{ mx.layer.nowPlaying.surface }};overflow:hidden"><dc-import name="NowPlaying" image="{{ nn.peekArt }}" title="{{ nn.peekTitle }}" subtitle="{{ nn.peekSub }}" controls="{{ pl.card }}" row-ix="{{ nnCard.ix }}" visuals="{{ npVis }}" style="width:100%" hint-size="100%,48px"></dc-import>
+<div ref="{{ nnCardRef }}" style="position:absolute;isolation:isolate;top:{{ rect.top }}px;left:{{ rect.left }}px;width:{{ rect.w }}px;height:{{ rect.h }}px;display:flex;background-color:{{ cardVis.fill }};border-radius:{{ cardVis.radius }}px;box-shadow:{{ cardVis.shadow }};transition:{{ mx.layer.nowPlaying.surface }};overflow:hidden"><dc-import name="NowPlaying" image="{{ nn.peekArt }}" title="{{ nn.peekTitle }}" subtitle="{{ nn.peekSub }}" controls="{{ pl.card }}" row-ix="{{ cardIx }}" visuals="{{ npVis }}" style="width:100%" hint-size="100%,48px"></dc-import>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:640},&quot;nnCardRef&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;nnCard&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;npH&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;cardVis&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;mx&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;nn&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;pl&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;},&quot;npVis&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;unknown&quot;}}">
 // Web implementation of design component peekCard (wide: the floating Now playing card): surface, corners, shadow and its
 // NowPlaying peek. The shell places it and feeds it values.
-class Component extends DCLogic {}
+// layer: the sheetLayer node, drawn (platforms/web/draw.js): tapping the card sends its open event, or close while the
+// layer is open (the wide peek persists while open).
+class Component extends DCLogic {
+  renderVals() {
+    const L = this.props.layer, open = !!(L && L.open);
+    const cardIx = L ? L.ixFor({ key: 'card', event: open ? 'close' : 'open', component: 'peekCard', variant: {}, label: (open ? L.closeLabel : L.openLabel) || '' }) : null;
+    // where it floats: the engine's peek placement (peekRect); its look: design peekCard (fill, radius, shadow)
+    return { ...this.props, cardIx: cardIx || {}, rect: (L && L.peekRect) || { top: 0, left: 0, w: 0, h: 0 }, cardVis: cardIx && cardIx.look ? cardIx.look('enabled', []) : {} };
+  }
+}
 </script>
 </body>
 </html>

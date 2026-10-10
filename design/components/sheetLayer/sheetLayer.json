@@ -4,7 +4,10 @@
     "form": "string",
     "side": "string",
     "peek": "slot",
-    "page": "slot"
+    "page": "slot",
+    "openLabel": "string",
+    "closeLabel": "string",
+    "peekRect": "value"
   },
   "events": [
     {

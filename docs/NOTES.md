@@ -686,6 +686,18 @@ fields, not nodes · 6 verify ✓ (screens above).
     italic) and components it extends (grey); each card lists its component-level tokens (as the Tokens page). Its notes
     showed "not found": 66 component .md files were never published, and the page showed the server's 404 page; pages now
     treat a failed fetch as missing. Icons inside preview DCs showed as words: the page didn't pass symbol visuals.
+57. The peek from its node (shell step 3, 2026-10-10). The shell hands NowPlayingSheet and PeekCard the sheetLayer node,
+    drawn (draw.js); tapping the peek / the card sends the node's open (close while the wide peek persists open) through
+    ixFor, instead of shell-built handlers. The peek's look is design peekCard in both forms: hover and pressed state
+    layer, ripple, hand cursor (what it had as a listItem row). sheetLayer props openLabel / closeLabel (hire: design
+    texts nowPlaying.open / .close; the card had a shell-written "Open nowPlaying") and peekRect (hire: value peek, the
+    engine's placement; core now gives it the under page's measured panel, as the shell did). PeekCard takes its place
+    from peekRect and its fill / radius / shadow from its interaction's look (peekCard visuals).
+    Needs Sofia's OK (app/app.json): the peek's title, subtitle and art are still the shell's (peekTitle / peekSub /
+    peekArt). Config binds the peek detail to $player.current.*, which is empty while nothing plays; the shell shows the
+    layer name and "Nothing playing", and while playing a status line (status mark, position / duration, the id's tail).
+    Drawing the detail from its node needs config for that: an if / else around the binds (nothing playing → the layer
+    name, player.nothing), and the status line as config or a derived value.
 ## Hires, picks and tokens: work list (decisions 52–54; tick as done)
 API 18.0.0 amended (breaking: renames and removals). Then back to the shell conversion list, step 3.
 - [x] 1. Rename ComponentId → ComponentName (api.d.ts, docs).
@@ -749,8 +761,10 @@ Done (drawn from contract nodes through draw.js):
 ### Wrapper DCs fed shell-built props (they carry shell layout inside them)
 - [ ] FrontLayer: 45 shell-built props (frontVals).
 - [ ] AppBarPage: 30 shell-built props (ov, ab, ah*, ovRows, ovX).
-- [ ] NowPlayingSheet: 16 props (nn, np, pl, sheet and bar visuals).
-- [ ] PeekCard: 8 props (nnCard, nn, pl, visuals).
+- [ ] NowPlayingSheet: 16 props (nn, np, pl, sheet and bar visuals). Its peek's tap comes from the sheetLayer node now
+      (decision 57); the rest is still the shell's.
+- [~] PeekCard: its tap, place (peekRect) and look (peekCard) come from the sheetLayer node now (decision 57); still fed by
+      the shell: nn.peekTitle / peekSub / peekArt (need config, Sofia's OK), pl.card (peek controls), npVis, mx.
 - [ ] DededeLayer: 10 props; no design component exists for it.
 - [ ] AccountLayer: 6 props; no design component exists for it.
 - [ ] EdgeHandle and Scrim: no design component exists for either.
@@ -764,8 +778,8 @@ Done (drawn from contract nodes through draw.js):
 - [ ] Bars: frontHeader, appBar page form, appBar layer form (the back header's come from its node now).
 - [ ] Titles: the shell picks each title's size per surface (front sm, app bar lg; the back title's comes from its node).
 - [ ] groupHeader, alphaIndex, carousel, scrollerLayout, contentBlock, gridLayout, staleBanner, empty / error state.
-- [ ] Now playing: artwork lg, trackInfo lg, seekBar, row spread, nowPlaying, peekCard, tabBar on bottomSheet,
-      emptyState sm, queueRow.
+- [ ] Now playing: artwork lg, trackInfo lg, seekBar, row spread, nowPlaying, tabBar on bottomSheet,
+      emptyState sm, queueRow. (peekCard: PeekCard resolves its own now, decision 57.)
 - [ ] drawerItem (drawer size and rail size), symbol, logo, splash per state, signInPage, menu, dialog, snackbar.
 - [ ] Tokens read directly: color.navIndicator (rail pill, drawer row fill), grid.column.max (carousel entries).
 - [ ] Motions read directly: tabBar indicator, navRail width, logo levels, splash logo, placeholder pulse.

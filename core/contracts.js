@@ -233,7 +233,7 @@ export function contractTree(model, specs, composition, opts = {}) {
     let values = { open };
     if (kind === 'sheetLayer') {
       const form = wide ? 'sideSheet' : 'bottomSheet', P = L.presentation[wide ? 'wide' : 'compact'].peek;
-      const under = q.underPage(s), fl = under && under.config.kind === 'backdrop' ? Layout.frontLayer(under, g, look, {}, opts.peek || 0).top : 0;
+      const under = q.underPage(s), fl = wide && under && under.config.kind === 'backdrop' ? Layout.frontLayer(under, g, look, { measured: (opts.measured || {})[under.config.id] || {} }, opts.peek || 0).top : 0;   // the peek floats only in the wide form
       values = { open, form, side: wide ? q.sideMode(s, c, L.id) : null, peek: Layout.peekPlacement(s, c, g, fl, under && under.config.kind === 'backdrop' ? under : null, look) };
       children.peek = headerNode(P.header, key + '.peek', { within: [kind], page: top(LS.stack) }, 0, null);
     }

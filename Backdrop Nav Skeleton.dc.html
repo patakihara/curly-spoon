@@ -34,13 +34,13 @@
       <div style="position:absolute;left:0;top:0;bottom:0;display:flex"><dc-import name="NavRail" root-ref="{{ railRef }}" rail="{{ rail }}" top="{{ railTop }}" nav="{{ railNav }}" bottom="{{ railBottom }}" item-vis="{{ railItemVis }}" symbol-visuals="{{ symVis }}" visuals="{{ sv.rail }}" style="height:100%" hint-size="80px,100%"></dc-import></div>
     </sc-if>
     <sc-if value="{{ showNnCard }}" hint-placeholder-val="{{ false }}">
-      <dc-import name="PeekCard" nn-card-ref="{{ nnCardRef }}" nn-card="{{ nnCard }}" np-h="{{ npH }}" card-vis="{{ cardVis }}" mx="{{ mx }}" nn="{{ nn }}" pl="{{ pl }}" np-vis="{{ npVis }}" style="display:contents" hint-size="0px,0px"></dc-import>
+      <dc-import name="PeekCard" layer="{{ sheetLayer.props }}" nn-card-ref="{{ nnCardRef }}" mx="{{ mx }}" nn="{{ nn }}" pl="{{ pl }}" np-vis="{{ npVis }}" style="display:contents" hint-size="0px,0px"></dc-import>
     </sc-if>
     <div style="position:absolute;inset:0;pointer-events:none"><dc-import name="Scrim" color="{{ sv.side.scrim }}" shown="{{ nnScrimOp }}" on-click="{{ nnScrimClick }}" ms="{{ mx.layer.nowPlaying.ms }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></div>
     <sc-if value="{{ showNnEdge }}" hint-placeholder-val="{{ false }}">
       <div style="position:absolute;right:0;top:50%;transform:translateY(-50%)"><dc-import name="EdgeHandle" symbol-visuals="{{ symVis }}" on-enter="{{ nnEdgeEnter }}" visuals="{{ edgeVis }}" hint-size="18px,72px"></dc-import></div>
     </sc-if>
-    <dc-import name="NowPlayingSheet" symbol-visuals="{{ symVis }}" nn-ref="{{ nnRef }}" nn-leave="{{ nnLeave }}" focusnow-playing="{{ focusnowPlaying }}" nn="{{ nn }}" sv="{{ sv }}" mx="{{ mx }}" np-h="{{ npH }}" pl="{{ pl }}" np-vis="{{ npVis }}" title-vis-bar="{{ titleVisBar }}" ease="{{ ease }}" bar-mo="{{ barMo }}" bar-vis-layer="{{ barVisLayer }}" np="{{ np }}" sheet-vis="{{ sheetVis }}" style="display:contents" hint-size="0px,0px"></dc-import>
+    <dc-import name="NowPlayingSheet" layer="{{ sheetLayer.props }}" symbol-visuals="{{ symVis }}" nn-ref="{{ nnRef }}" nn-leave="{{ nnLeave }}" focusnow-playing="{{ focusnowPlaying }}" nn="{{ nn }}" sv="{{ sv }}" mx="{{ mx }}" np-h="{{ npH }}" pl="{{ pl }}" np-vis="{{ npVis }}" title-vis-bar="{{ titleVisBar }}" ease="{{ ease }}" bar-mo="{{ barMo }}" bar-vis-layer="{{ barVisLayer }}" np="{{ np }}" sheet-vis="{{ sheetVis }}" style="display:contents" hint-size="0px,0px"></dc-import>
     <div ref="{{ navBarRef }}" style="position:absolute;left:0;right:0;bottom:0;transform:translateY({{ navShift }}px);transition:{{ mx.expand.surface }}"><dc-import name="NavBar" items="{{ nav }}" visuals="{{ sv.navBar }}" hint-size="100%,56px"></dc-import></div>
     <dc-import name="DededeLayer" focus-dedede="{{ focusDedede }}" dd-left="{{ ddLeft }}" dd-bottom="{{ ddBottom }}" dd-right="{{ ddRight }}" sv="{{ sv }}" dd="{{ dd }}" mx="{{ mx }}" title-vis-bar="{{ titleVisBar }}" bar-vis-layer="{{ barVisLayer }}" style="display:contents" hint-size="0px,0px"></dc-import>
     <div style="position:absolute;inset:0;pointer-events:none"><dc-import name="Scrim" color="{{ sv.drawer.scrim }}" shown="{{ dr.op }}" on-click="{{ dr.scrim }}" ms="{{ mx.layer.menu.ms }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></div>
@@ -833,9 +833,9 @@ class Component extends DCLogic {
       v.nn = { rows: [], top: PHONE_H, h: PHONE_H, w: DEVICES.phone.width, left: 0, tx: 0, peekOp: 0, sheetOp: 0, rad: '0' }; v.dd = { rows: [], clip: 'circle(0)', ev: 'none' };
       v.ftB = v.ftF = v.ftO = { op: 1, sc: 1, tr: 'none', tx: 0 }; v.ahShadow = 'none'; v.ahTitleOp = 1; v.barVisFront = v.barVisApp = v.barVisLayer = {}; v.backLayer = { props: {} }; v.sv = { front: {}, back: {}, sheet: {}, side: {}, drawer: {}, signIn: {}, splash: {}, navBar: {}, rail: {}, pageFill: 'transparent', frontScrim: 'transparent', frontScrimOn: false }; v.barMo = v.fhMo = v.ahMo = {}; v.ovX = { show: false }; v.railTop = []; v.railBottom = []; v.rail = { tr: 'none', collapsed: true, ex: false, w: 0, align: 'center', padX: 0, shadow: 'none', ms: 0, ease: E, mo: {}, padY: 0, gap: 0, groupGap: 0 }; v.railItemVis = v.drawerItemVis = {}; 
       v.blockRowPad = 9; v.fab = v.ahFab = { show: false, ix: INERT, end: 0, top: 0, vis: {}, icon: '' }; v.fhH = 0; v.fhRow = 0; v.ahH = 0; v.alpha = { show: false, keys: [] }; v.groups = []; v.np = { ctrls: [], tabBar: { props: {} }, rows: [], mini: [], miniOp: 0, miniEv: 'none', bodyOp: 1, empty: false, emptyText: '', artVis: {}, infoVis: {}, seekVis: {}, rowVis: {}, tabBar: { props: {} }, emptyVis: {} }; v.dr = { items: [], ev: 'none', title: '', w: 0, tx: -110, op: 0 }; v.acc = { ev: 'none', start: [], rows: [], signIx: INERT, title: '', name: '', email: '', plan: '', art: '', signText: '', ty: 100 };
-      v.cv = {}; v.gate = { ix: INERT }; v.dialog = { cancelIx: INERT, okIx: INERT }; v.snack = { ix: INERT }; v.menu = { show: false, items: [] }; v.ovRows = []; v.ovHead = { title: '', sub: '', art: '' }; v.pl = { icon: '', t: INERT, n: INERT, t2: INERT, n2: INERT, card: [], peek: [], mini: [] }; v.sheetVis = { overflow: 'hidden' }; v.npVis = {}; v.npH = 0; v.cardVis = {}; v.titleVisFront = v.titleVisBar = v.groupVis = v.alphaVis = {}; v.urlDraft = '';
+      v.cv = {}; v.gate = { ix: INERT }; v.dialog = { cancelIx: INERT, okIx: INERT }; v.snack = { ix: INERT }; v.menu = { show: false, items: [] }; v.ovRows = []; v.ovHead = { title: '', sub: '', art: '' }; v.pl = { icon: '', t: INERT, n: INERT, t2: INERT, n2: INERT, card: [], peek: [], mini: [] }; v.sheetVis = { overflow: 'hidden' }; v.npVis = {}; v.npH = 0; v.titleVisFront = v.titleVisBar = v.groupVis = v.alphaVis = {}; v.urlDraft = '';
       v.subIx = v.retryIx = v.ddCircleIx = INERT;
-      Object.assign(v.nn, { peekSub: '', peekTitle: '', peekArt: '', title: '', peekIx: INERT, titleIx: INERT, start: [], end: [] }); Object.assign(v.dd, { title: '', start: [], end: [] });
+      Object.assign(v.nn, { peekSub: '', peekTitle: '', peekArt: '', title: '', titleIx: INERT, start: [], end: [] }); Object.assign(v.dd, { title: '', start: [], end: [] });
       v.layoutInfo = 'loading model…'; v.backLabel = 'Back'; v.focusLabel = '—'; v.historyCaption = '';
       v.dir = 'ltr'; v.locales = []; v.appFx = v.gateFx = v.splashFx = { op: 1, sc: 1, tr: 'none' };
       v.splash = { show: true, logoOp: 0, logoSc: 1, logoTr: 'none', logo: 'transparent', logoSize: 0, playing: false, busy: true, ev: 'auto', label: '' }; v.logoVis = null; v.logoMotion = null; v.retryText = ''; v.cv = {};
@@ -918,14 +918,12 @@ class Component extends DCLogic {
         ? { left: G.PW - G.SW, w: G.SW, top: 0, h: 720, tx: nOpen ? 0 : G.SW + 16, rad: '0px', shadow: (G.side === 'beside' ? SSV.shadowBeside : SSV.shadowOver) || 'none', peekOp: 0, peekEv: 'none', sheetOp: 1, sheetEv: nOpen ? 'auto' : 'none' }
         : { left: 0, w: G.PW, top: nOpen ? 0 : G.H, h: 720, tx: 0, rad: nOpen ? '0px' : BSV.closedRadius || '0px', shadow: BSV.shadow || 'none', peekOp: nOpen ? 0 : 1, peekEv: nOpen ? 'none' : 'auto', sheetOp: nOpen ? 1 : 0, sheetEv: nOpen ? 'auto' : 'none' }),
       peekSub: this.peekSub(), peekTitle: this.peekTitle(), peekArt: this.player.current() ? this.S.imageCss(this.player.current().image) : '',
-      peekIx: this.ix(this.key('peek:nowPlaying', null, 'peek'), { nav: { type: 'openLayer', layer: 'nowPlaying' } }, () => this.openLayer('nowPlaying'), { component: 'listItem', label: q.text(ms, cfg, 'nowPlaying.open') }),
       titleIx: wide ? INERT : this.ix(this.key('layer:nowPlaying', null, 'header.title'), { nav: { type: 'closeLayer', layer: 'nowPlaying' } }, () => this.closeLayer('nowPlaying'), { component: 'listItem', label: q.text(ms, cfg, 'nowPlaying.collapse') }) };
     { const tv = (surface, size) => this.P.resolveVisuals(this.specs, 'title', 'enabled', { surface, variant: { size } });
       v.titleVisFront = tv('frontLayer', 'sm'); v.titleVisBar = tv('appBar', 'lg');
       v.groupVis = this.P.resolveVisuals(this.specs, 'groupHeader', 'enabled', { surface: 'frontLayer' }); v.alphaVis = this.P.resolveVisuals(this.specs, 'alphaIndex', 'enabled', { surface: 'frontLayer' }); }
     { const sv = this.P.resolveVisuals(this.specs, 'bottomSheet', 'enabled', {}); v.sheetVis = { ...sv, overflow: sv.clip ? 'hidden' : 'visible' }; }
     v.npVis = this.P.resolveVisuals(this.specs, 'nowPlaying', 'enabled', { surface: 'bottomSheet' }); v.npH = +v.npVis.height || 0;
-    v.cardVis = this.P.resolveVisuals(this.specs, 'peekCard', 'enabled', {});
     const ddo = this.state.ddOrigin || { x: 28, y: 28 };
     const ddRight = wide && G.side === 'beside' && nOpen ? G.SW : 0, ddLeft = G.RAIL, ddBottom = 0;
     const dx = ddo.x - ddLeft, dW = G.PW - ddRight - ddLeft;
@@ -980,9 +978,6 @@ class Component extends DCLogic {
     v.showNnEdge = auto && !nOpen && !dOpen; v.edgeVis = this.P.resolveVisuals(this.specs, 'sideSheet', 'enabled', {}); v.nnEdgeEnter = () => this.openLayer('nowPlaying');
     v.nnLeave = () => { if (auto && this.ms.layers.nowPlaying.open) this.closeLayer('nowPlaying'); };
     v.showNnCard = wide;
-    const place = this.P.peekPlacement(ms, cfg, this.pgeom(), top.page.config.kind === 'appBar' ? 0 : v.frontTop, top.page.config.kind === 'backdrop' ? ps : null, this.look());
-    v.nnCard = place ? { w: place.w, left: place.left, top: place.top } : { w: 0, left: 0, top: 0 };
-    v.nnCard.ix = this.ix(this.key('peek:nowPlaying', null, 'card'), { nav: nOpen ? { type: 'closeLayer', layer: 'nowPlaying' } : { type: 'openLayer', layer: 'nowPlaying' } }, () => nOpen ? this.closeLayer('nowPlaying') : this.openLayer('nowPlaying'), { component: 'listItem', label: nOpen ? 'Close nowPlaying' : 'Open nowPlaying' });
     v.ddCircleIx = this.ix(this.key('nav', null, 'rail.dedede'), { nav: { type: 'openLayer', layer: 'Dedede' } }, e => this.openLayer('Dedede', e), { component: 'iconButton', variant: { size: 'xl' }, label: q.text(ms, cfg, 'layer.settings') });
     v.focusDeck = () => { if (auto && this.ms.layers.nowPlaying.open) this.closeLayer('nowPlaying'); this.focus(this.ms.activeDeck); };
     v.focusnowPlaying = () => this.focus('nowPlaying'); v.focusDedede = () => this.focus('Dedede');
@@ -1039,7 +1034,8 @@ class Component extends DCLogic {
     });
     v.pl = { icon: pst.status === 'playing' || pst.status === 'loading' ? 'pause' : 'play_arrow', ...plIx(''), ...plIx('2') };
     // peek controls: the layer presentation's peek header end slots (config), per form
-    const PK = (TR.layers.find(n => n.contract === 'sheetLayer') || { children: {} }).children.peek;
+    const SLN = TR.layers.find(n => n.contract === 'sheetLayer'), PK = (SLN || { children: {} }).children.peek;
+    v.sheetLayer = SLN ? this.drawn(SLN, wide ? 'peekCard' : 'bottomSheet') : { props: null };   // its DCs send its open / close (the peek's tap)
     const peekCtrls = () => this.sl(PK, 'end').filter(n => n.shown !== false).map(n => ({ icon: n.props.icon || '', ix: this.nix(n) }));
     v.pl.peek = peekCtrls(); v.pl.card = peekCtrls(); v.pl.mini = peekCtrls();
     // texts + direction (current locale)
