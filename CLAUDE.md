@@ -29,12 +29,12 @@
 - The motion player (platforms/web/motions.js) defines nothing of its own: every value, keyframe position, ordering and choice of which pieces move / fade / stay comes from the choreography steps (and, while temporary kinds remain, their params in design/motions/<id>.json, valued in choreography.json / tokens). Only mechanics stay in the player: layering, keyframe sampling resolution, waiting for a render. A missing param is an error, never a silent 0 / linear.
 - Design never refers to names that exist only in platform files. Names the design uses (e.g. a component's parts) are declared in design; platform components use those names.
 - Everything the mockup draws is a component: one `.dc.html` per design component (like IconButton, PanelRow), fed its resolved visuals / props by the shell. The shell (Backdrop Nav Skeleton) only arranges component instances — no inline-drawn UI. The Components page previews those same DCs.
-- Never add feature or drawing code to the shell, not even temporarily to get something on screen. New behaviour goes into config, design, composition or a component DC; a shell edit is only for removing what it still does itself, and needs my OK first (say which lines and why).
+- Never add feature or drawing code to the shell, not even temporarily to get something on screen. New behaviour goes into config, design, composition or a component DC; a shell edit is only for removing what it still does itself. Removing bits to move them elsewhere needs no OK first, as long as the new place is one I would agree with (config, design, composition, a component DC, core); anything else in the shell, ask first (say which lines and why).
 
 ## Current work: emptying the shell
 - Under way (Sofia, 2026-10-10): removing everything the shell (Backdrop Nav Skeleton) still draws, lays out, decides or runs itself, so every drawn object comes from its contract node through draw.js and its hired component. Sofia asked for all such limitations to be fixed.
 - The list and its order live in docs/NOTES.md, "Shell conversion list". Keep it current with every change: tick an item when it is gone from the shell, add any new one found, and keep the gaps under each step accurate.
-- These shell edits are approved as part of this work (removing what the shell does itself). Adding to the shell still is not. API changes it needs still go through a proposal first.
+- Moving what the shell does itself to its right place needs no OK first (see "No mockup-only changes"). Adding to the shell still is not allowed. API changes it needs still go through a proposal first.
 
 ## Division of powers (test before adding anything to the API)
 - API = contracts + state + behaviour. Something is in the API only if the engine's behaviour depends on it.
