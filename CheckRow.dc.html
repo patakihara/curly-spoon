@@ -9,8 +9,8 @@
 <x-dc>
 <div style="position:relative;height:{{ h }}px;display:flex;align-items:center;gap:{{ gap }}px;font-size:{{ fs }}px;border-radius:{{ rad }}px;padding:0 {{ px }}px;margin:0 -{{ px }}px">
   <dc-import name="ListItem" dc-props="{{ ix }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import>
-  <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ text }}</span>
-  <div style="display:flex;opacity:{{ iop }}"><dc-import name="Symbol" icon="{{ icon }}" visuals="{{ iconVis }}" hint-size="20px,20px"></dc-import></div>
+  <span data-piece="text" style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ text }}</span>
+  <div data-piece="check" style="display:flex;opacity:{{ iop }}"><dc-import name="Symbol" icon="{{ icon }}" visuals="{{ iconVis }}" hint-size="20px,20px"></dc-import></div>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:320,&quot;height&quot;:48},&quot;ix&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;text&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Jazz&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">

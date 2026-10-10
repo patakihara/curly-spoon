@@ -685,10 +685,11 @@ API 18.0.0 amended (breaking: renames and removals). Then back to the shell conv
 - [x] 4. Files: app/hires/<name>/{json, md, d.ts}; app/composition.json = placements + pages; one loader for both
       (app/load-app.js or a composition loader) used by the shell, Invariants, Components and the rules scripts;
       write-generated writes the hire .d.ts; publish list.
-- [~] 5. Rule: a child with its parent's slots and parts has no DC of its own (platforms/web.json). Added (api/invariants.js);
-      it fails for 4, waiting on Sofia: suggestionRow, checkRow, drawerItem have their own DC but declare no parts or slots
-      of their own (their DCs draw a label / check, a text row, a rail form: declare those as parts, or let the parent's DC
-      draw them); errorState is listed in platforms/web.json but has no ErrorState.dc.html (remove it from the manifest).
+- [~] 5. Rule: a child with its parent's slots and parts has no DC of its own (platforms/web.json). Added (api/invariants.js).
+      suggestionRow (icon, text), checkRow (text, check) and drawerItem (icon, label) draw pieces their parents' DCs don't:
+      declared as their parts in design and marked data-piece in their DCs. Still failing, waiting on Sofia: errorState is
+      listed in platforms/web.json implements but has no ErrorState.dc.html (draw.js would look for one; the manifest's own
+      description says EmptyState draws it): remove it from implements.
 - [x] 6. generated/tokens.json (every level, grouped, marks, resolved values) from design/write-generated.mjs.
 - [x] 7. Tokens page in the artifact, plus a side table of contents across the artifact's pages (mockup, Components,
       Invariants, Specs Editor, Tokens); write-back of edits (study Sonora's first).

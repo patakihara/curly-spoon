@@ -5,6 +5,10 @@
     "text": "string",
     "selected": "boolean"
   },
+  "parts": [
+    "text",
+    "check"
+  ],
   "visuals": {
     "height": {
       "default": 44
