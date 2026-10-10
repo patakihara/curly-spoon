@@ -613,38 +613,145 @@ fields, not nodes · 6 verify ✓ (screens above).
 ## Shell conversion list (kept current with every change)
 Goal: the shell (Backdrop Nav Skeleton.dc.html) draws nothing and decides nothing itself. It places the root's
 component; every node is drawn by the DC of the component composition hired for it (platforms/web/draw.js), from its
-node's props, slots and events; all values come from config, design and composition. Each line: what the shell still
-draws or decides there.
+node's props, slots and events; all values come from config, design and composition.
+
+Inventory taken 2026-10-10 by reading the whole shell (template, every method, renderVals): every place where the
+shell itself draws, lays out, decides, picks a component, reads design for another component, writes a text, makes
+fake data or runs a motion. One item per line; tick it when it is gone from the shell.
 
 Done (drawn from contract nodes through draw.js):
 - [x] Header items: back, front and app-bar headers' buttons, logo, text, switch, find (slice 1).
 - [x] Layer headers: Now playing, Dedede, Account (slice 2).
 - [x] Navigation: nav bar, rail top / destinations / bottom; the drawer's rows (slice 3).
 
-To do:
-- [ ] Back layer (next: BackLayer.dc.html, approved 2026-10-10). The shell lays out its regions itself (header,
-      controls, actions, panel) and draws inside them: the header's detail (DetailHeader) and bar (Bar), the controls
-      rows, the actions row, the panel rows (PanelRow labels), an open More (MorePanel), the panel's scrolling. Code I
-      added there on 2026-10-10 that moves with it: the More view and the More chip rule, the controls / panel groups,
-      the scrolling panel. Not yet drawn at all: the header's detail as a scroll surface (core, design and composition
-      are done; the shell part was reverted).
-- [ ] Param controls: the shell's controlView picks the DC by component id and builds each one's props (chips, tabs,
-      suggestion rows, checklist rows, dropdown, range, search field) instead of draw.js drawing the node.
-- [ ] Front layer: FrontLayer.dc.html is fed shell-computed props (frontVals: header, find, scroll thumb, layout).
-- [ ] Content items: grid cards, list rows, content blocks, carousels, group headers, placeholders are chosen and fed
-      by the shell.
-- [ ] App-bar page form: AppBarPage / AppBarSheet are fed shell-computed props (sheet height, info, buttons, rows);
-      the album page's detail is not yet a scroll surface.
-- [ ] Now playing: the sheet's body, the peek card, the edge handle and the scrim are arranged and fed by the shell.
-- [ ] Dedede and Account layers: their bodies are fed by the shell.
-- [ ] Drawer: the drawer itself and its scrim (its rows are done).
-- [ ] Overlays: dialog, menu, snackbar props are built by the shell.
-- [ ] Gate (SignIn) and splash: fed by the shell.
-- [ ] Hidden warm-up instances (DCs loaded before first use): platform mechanics; move into draw.js.
-- [ ] Motion-aware intent paths in the shell (openItem, popDeck, paramChange, axisSwitch, fadeThrough, collapse-first
-      scroll input): belong to the player (platforms/web/motions.js) and the DCs.
-Not app UI (stays): the harness panel beside the phone (layout width, slow motion, language, address bar, simulate,
-back buttons, focus / history, stacks, flow rules, log, reset).
+### Template: markup the shell draws itself
+- [ ] Page CSS in the helmet: input placeholder colours (rgba white .55 / black .45), the `.ms` icon font at 24px.
+- [ ] Phone fill: backBg picks token color.backLayer or color.backLayerAlt from the mockup's palette prop.
+- [ ] Back layer: four region boxes (header, controls, actions, panel), each placed, faded and timed by the shell.
+- [ ] Back layer header region: the detail box under the bar (top, height, ink, opacity, scale) around DetailHeader.
+- [ ] Controls rows: row box (height, padding, ink, gap), each control flex 1, the DC chosen by eight sc-if flags.
+- [ ] Actions row: centred flex row of Buttons.
+- [ ] Panel: the scroll box (height, overflow), the inner box (padding, divider line, gap).
+- [ ] Panel: the More bar's sticky wrapper; the row label wrapper; the controls row inside each panel row.
+- [ ] App-bar page: the overlay box (bottom offset, fade, scale, pointer events) around AppBarPage.
+- [ ] Rail: the wrapper box around NavRail.
+- [ ] Side-sheet scrim and drawer scrim: Scrim instances placed and coloured by the shell.
+- [ ] Edge handle: placed by the shell (end edge, vertically centred).
+- [ ] Nav bar: the wrapper box that slides it down (navShift) with the expand transition.
+- [ ] Drawer: the wrapper box (width, max width, translateX -110%, transition, pointer events).
+- [ ] Snackbar: the wrapper box (left, bottom, width).
+- [ ] Gate and splash: wrapper boxes with z-index 4 / 5, fades, the splash's role=status and aria-busy.
+- [ ] Warm-up instances: two hidden rows of real DCs (AppBarSheet, AppBarPage, SearchField, SuggestionRow,
+      MorePanel, Checklist, CheckRow) and a preload row (IconButton … ContentBlock).
+
+### Wrapper DCs fed shell-built props (they carry shell layout inside them)
+- [ ] FrontLayer: 45 shell-built props (frontVals).
+- [ ] AppBarPage: 30 shell-built props (ov, ab, ah*, ovRows, ovX).
+- [ ] NowPlayingSheet: 16 props (nn, np, pl, sheet and bar visuals).
+- [ ] PeekCard: 8 props (nnCard, nn, pl, visuals).
+- [ ] DededeLayer: 10 props; no design component exists for it.
+- [ ] AccountLayer: 6 props; no design component exists for it.
+- [ ] EdgeHandle and Scrim: no design component exists for either.
+- [ ] NavRail, Drawer, Menu, Dialog, Snackbar, SignIn, Splash: props built by the shell, not from a node.
+- [ ] Back-layer DCs used directly by the shell: Bar, DetailHeader, PanelRow, MorePanel, Button, and the
+      param-control DCs (FilterChips, TabBar, SearchField, Dropdown, RangeField, Checklist, SuggestionList).
+
+### Visuals the shell resolves for other components
+- [ ] sv bundle: frontLayer, backLayer, bottomSheet, sideSheet, drawer, signInPage, splash, navBar, navRail,
+      appBar pageFill, frontLayer scrim; handed to wrapper DCs.
+- [ ] Bars: header (back), frontHeader, appBar page form, appBar layer form.
+- [ ] Titles: the shell picks each title's size per surface (back lg, front sm, app bar lg).
+- [ ] groupHeader, alphaIndex, carousel, scrollerLayout, contentBlock, gridLayout, staleBanner, empty / error state.
+- [ ] Now playing: artwork lg, trackInfo lg, seekBar, row spread, nowPlaying, peekCard, tabBar on bottomSheet,
+      emptyState sm, queueRow.
+- [ ] drawerItem (drawer size and rail size), symbol, logo, splash per state, signInPage, menu, dialog, snackbar.
+- [ ] Tokens read directly: color.navIndicator (rail pill, drawer row fill), grid.column.max (carousel entries).
+- [ ] Motions read directly: tabBar indicator, navRail width, logo levels, splash logo, placeholder pulse.
+- [ ] The back header's detail ink: resolveValue of backLayer's content role.
+
+### Layout the shell computes itself
+- [ ] Geometry kept in a global G; G.NH reads navBar's height; G.AH reads the app bar's top height.
+- [ ] Literal 720 for the phone height in several places (screenBottom, sheet height, the Dedede reveal radius).
+- [ ] Frame corner radius 16 / 28 by layout.
+- [ ] Screen offsets beside the rail; the expanded rail pushes the content aside.
+- [ ] Back header detail: height, fade, shrink and the title's fade from barView progress and header visuals.
+- [ ] Controls row height: the controls region's height divided by its rows.
+- [ ] Find field width: barSpan (the bar's width minus its other items; the bottom row minus measured buttons).
+- [ ] Header items: absolute offsets (offsetStart / offsetTop), slot max widths, hiding the others when find spans.
+- [ ] FAB: its top under the header and its end inset centred under the bar's last end item (fabFor, fabEnd).
+- [ ] Grid: column count from gridLayout visuals and content width; carousel entry size; block row padding.
+- [ ] Alphabetical index top; group anchors and the scroll-to-group walk up the DOM.
+- [ ] Loading placeholders: widths 70 / 55 / 80 / 60 / 75 written in the shell.
+- [ ] Scroll thumb: position, height and flash timing from frontLayer visuals (showThumb).
+- [ ] Tracked title: the title whose [data-title] row is within 48 px of the top (track).
+- [ ] App-bar page: sheet heights, info height, shrinking artwork, FAB top, the clip inset, content height.
+- [ ] Now playing: bottom sheet vs side sheet placement, radius, shadow, peek and sheet opacity, artwork width,
+      the inner sheet's top and peek height, mini player and body opacity.
+- [ ] Dedede: the circular reveal's centre (tap point, default 28 / 28) and radius.
+- [ ] Drawer width and slide; Account's slide; snackbar left / width / bottom; the menu's anchor from the tap.
+- [ ] Panel height measured after render (ResizeObserver) into measured.panel; the app bar's button width measured.
+
+### Decisions the shell makes itself
+- [ ] Which DC draws a param control: controlView switches on the component id.
+- [ ] The More chip rule (moreAfter, which options show, when the chip appears).
+- [ ] Range field: clamping to min / max and swapping from / to.
+- [ ] Search field: Enter submits.
+- [ ] Which content layout and item DC to draw (listLayout, gridLayout, scrollerLayout, carousel).
+- [ ] Content blocks' type icon: open_in_full or layers by the template's kind.
+- [ ] Empty / error / offline state: icon fallbacks cloud_off and inbox; which text id shows.
+- [ ] Item press while expanded is ignored; open goes through openItem.
+- [ ] A node's surface parsed from its key string (surfaceOf); a header row's surface by theme (surfaceOfTheme).
+- [ ] trackedTitle: the title comes from the shell's scroll tracking.
+- [ ] Peek title and subtitle: formatted by the shell (play / pause glyphs, mm:ss, splitting the track id).
+- [ ] Now playing body: per contract (detail, seek, button), fab vs iconButton, queueRow drawn as listRow,
+      the current row's fill.
+- [ ] The inner sheet's tabs built by the shell.
+- [ ] Layer rows: chevron_right or arrow_outward by what the row opens; header height 56 written in the shell.
+- [ ] Rail expanded or not (the rail-form menu layer); the menu drawer hidden on wide when it is the rail.
+- [ ] Side sheet: modal scrim, auto-collapse on pointer leave, edge handle shown when auto and closed.
+- [ ] Tapping the deck closes an auto side sheet; tapping the back layer toggles it (skips interactive tags).
+- [ ] Peek card's label: English literals "Open nowPlaying" / "Close nowPlaying".
+- [ ] Player toggle icon pause / play_arrow; play with nothing loaded plays four fixture tracks of 20 s.
+- [ ] Gate: event per gate (signIn → signedIn, onboarding → onboarded); its button's variant.
+- [ ] Dialog and snackbar: their buttons, texts and variants.
+- [ ] Shell actions: copyLink, and the toast it opens (id, text, 3000 ms) built in the shell.
+- [ ] back(): reads history to choose the motion; up(): checks an open More itself.
+- [ ] openLayer: Dedede special-cased by id for the reveal origin.
+- [ ] Retry button, front header disclosure, scrim tap: instances made by the shell (ix without a node).
+- [ ] Instances with no contract node: peek, card, sheet handle, rail Dedede button, gate action, dialog actions,
+      snackbar action, retry, More close, search clear, sheet tabs, player toggle / next, param options.
+
+### Fake data in the shell
+- [ ] Mock artwork gradients from item ids (artCss, artOf); the album page's art and subtitle built from ids.
+- [ ] Simulated data layer (offline, slow, failing) and the fake player's 200 ms load and 1 s tick.
+
+### Motion the shell runs itself
+- [ ] lastMove flags pick which choreography rule times the CSS transitions (expand, header, more, scroll).
+- [ ] Per-layer CSS transition strings (mx) built in the shell.
+- [ ] Cover → app entry: picks the target logo via [role="img"], hands elements to the player.
+- [ ] Clip shapes for the front layer and the app-bar sheet (frontShape, sheetShape).
+- [ ] openItem / expandTo / collapseFrom / popDeck / detailMove: choose the motion, find shared images through
+      [data-item-id] and [data-enter], keep a ghost page, run timers.
+- [ ] fadeThrough, paramChange (direction from option order), axisSwitch (mirrored in RTL).
+- [ ] Collapse-first scrolling: wheel and touch handling (bindCollapse), scroll dispatch, header visibility.
+- [ ] queuedMotion: finds the peek through data-peek; placeholder pulse through data-ph.
+- [ ] backOverride / BACK_KEYS: the old page's back layer kept drawn during a detail move.
+
+### Stays (platform mechanics or harness, not app UI)
+- Module loading, design overrides from the Specs Editor, keyboard shortcut input, launch and snackbar timers,
+  scroll restore after render.
+- The harness panel beside the phone (layout width, slow motion, language, address bar, simulate, back buttons,
+  focus / history, stacks, flow rules, log, reset).
+
+### Order (each step removes its lines above)
+1. Param controls drawn from their nodes through draw.js (the stashed step 1).
+2. BackLayer.dc.html (approved): regions, header with its detail as a scroll surface, controls, actions, panel, More.
+3. Surfaces from the tree instead of key parsing; instances without nodes get nodes (may need API: propose first).
+4. Front layer and content items.
+5. App-bar page form.
+6. Now playing, Dedede, Account, drawer, scrims, edge handle (design components first where none exist).
+7. Overlays, gate, splash.
+8. Fake data into app/fake-backend.js; motion paths into platforms/web/motions.js; warm-ups into draw.js.
 
 ## Open (current)
 - 18.0: three rules skip: the two hideOnScroll back-header rules (no deck sets back.hideHeaderOnScroll) and surface
