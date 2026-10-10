@@ -8,6 +8,7 @@
 <body>
 <x-dc>
 <div style="display:contents">
+<sc-if value="{{ showHandle }}" hint-placeholder-val="{{ false }}"><div data-piece="handle" onMouseEnter="{{ onHandle }}" onClick="{{ onHandle }}" style="position:absolute;right:0;top:50%;transform:translateY(-50%);width:{{ hv.handleWidth }}px;height:{{ hv.handleHeight }}px;border-radius:{{ hv.handleRadius }};background:{{ hv.handleFill }};color:{{ hv.handleInk }};display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:{{ hv.handleShadow }}"><dc-import name="Symbol" icon="{{ hv.handleIcon }}" visuals="{{ handleIconVis }}" hint-size="18px,18px"></dc-import></div></sc-if>
 <div data-piece="scrim" onClick="{{ onScrim }}" style="position:absolute;inset:0;background:{{ sv.side.scrim }};opacity:{{ scrimOp }};pointer-events:{{ scrimEv }};cursor:{{ scrimCur }};transition:{{ scrimTr }}"></div>
 <div ref="{{ nnRef }}" onMouseLeave="{{ nnLeave }}" onPointerDownCapture="{{ focusnowPlaying }}" style="position:absolute;left:{{ nn.left }}px;width:{{ nn.w }}px;top:{{ nn.top }}px;height:{{ nn.h }}px;transform:translateX({{ nn.tx }}px);background:{{ sv.sheet.fill }};border-radius:{{ nn.rad }};box-shadow:{{ nn.shadow }};overflow:hidden;transition:{{ mx.layer.nowPlaying.surface }}">
   <div style="position:absolute;left:0;right:0;top:0;height:{{ npH }}px;display:flex;opacity:{{ nn.peekOp }};pointer-events:{{ nn.peekEv }};transition:{{ mx.layer.nowPlaying.content }};overflow:hidden"><dc-import name="NowPlaying" image="{{ peek.image }}" title="{{ peek.title }}" subtitle="{{ peek.subtitle }}" controls="{{ pl.peek }}" row-ix="{{ peekIx }}" visuals="{{ npVis }}" style="width:100%" hint-size="100%,48px"></dc-import>
@@ -38,16 +39,20 @@
 // corners, shadow, its peek, header and pages (list / player with UpNextSheet). The shell places it and feeds it values.
 // layer: the sheetLayer node, drawn (platforms/web/draw.js); its peek slot (header > title slot > detail) gives the peek text and art; tapping the peek sends its open event, with the peek's look
 // (design peekCard: the peek answers the pointer in both forms). As a modal side sheet it draws its scrim (design
-// sideSheet.scrim), which sends the node's close.
+// sideSheet.scrim), which sends the node's close; as an auto-collapsing one, closed, its handle (design sideSheet part
+// handle, visuals handle*), which sends the node's open when pointed at or tapped.
 class Component extends DCLogic {
   renderVals() {
     const L = this.props.layer, p = this.props, modal = !!(L && L.open && L.side === 'modal'), mx = p.mx || {}, ms = ((mx.layer || {}).nowPlaying || {}).ms;
-    // the side sheet's scrim (design sideSheet.scrim): shown while the layer is open as a modal side sheet; tapping it sends the node's close
     // the peek's art, title and subtitle: the detail in the title slot of the node's peek header (config: the track, or the layer name / "nothing playing")
     const pk = (((L && L.slots && L.slots.peek) || [])[0] || { props: { slots: {} } }).props.slots.title, d = ((pk || [])[0] || { props: {} }).props;
     return { ...p, peek: { title: d.title || '', subtitle: d.subtitle || '', image: d.image ? L.imageCss(d.image) : '' }, peekIx: L ? L.ixFor({ key: 'peek', event: 'open', component: 'peekCard', variant: {}, label: L.openLabel || '' }) : {},
       scrimOp: modal ? 1 : 0, scrimEv: modal ? 'auto' : 'none', scrimCur: ((p.sv || {}).side || {}).cursor || 'default', scrimTr: ms ? 'opacity ' + ms + 'ms' : 'none',
-      onScrim: e => { if (L && L.on && L.on.close) L.on.close(undefined, e); } };
+      // the side sheet's scrim (design sideSheet.scrim): shown while the layer is open as a modal side sheet; tapping it sends the node's close
+      onScrim: e => { if (L && L.on && L.on.close) L.on.close(undefined, e); },
+      // the side sheet's handle (design sideSheet part handle): shown while it is auto-collapsing and closed; sends the node's open
+      showHandle: !!(L && L.side === 'auto' && !L.open), hv: (p.sv || {}).side || {}, onHandle: e => { if (L && L.on && L.on.open) L.on.open(undefined, e); },
+      handleIconVis: { ...(p.symbolVisuals || {}), size: +((p.sv || {}).side || {}).handleIconSize || 18, padEnd: 0 } };
   }
 }
 </script>

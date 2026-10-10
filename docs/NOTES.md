@@ -7,7 +7,7 @@
 - `design/` — `design.json` (manifest), `tokens.json`, `choreography.json`, `motions/<kind>.{json,md}`, `components/<id>/{.json,.md,.d.ts}`, `load.js`, `build.js` (→ `generated/web/tokens.css`, `generated/android/DesignTokens.kt`, each `.d.ts`), `overrides.js` (Specs Editor patches)
 - `platforms/web.json` — components + motion kinds the web shell implements · `platforms/web/motions.js` — every motion player (fade through, shared element, expand surface, enter app, drop into peek, state-driven CSS transitions, scroll-driven rule) · `platforms/lint-web.js` — flags look-and-feel literals and motion code in the shell
 - `Backdrop Nav Skeleton.dc.html` — the web shell: only arranges component instances and says when motions run; no values of its own
-- Component DCs (one per design component): FrontLayer, AppBarPage, NowPlayingSheet, UpNextSheet, PeekCard, DededeLayer, AccountLayer, IconButton, Button, Chip, Tab, NavItem, ListItem, ListRow, GridCard, ContentBlock, Symbol, Label, Logo, Title, PanelRow, Morph, Fab, DetailHeader, NowPlaying, TabBar, FilterChips, SearchField, Dropdown, RangeField, SuggestionRow, Placeholder, StaleBanner, EmptyState, Carousel, Menu, Dialog, Snackbar, DrawerItem, Artwork, TrackInfo, SeekBar, Row, Bar, EdgeHandle, NavBar, NavRail, Drawer, Scrim, SignIn, Splash, AppBarSheet. Interactive ones share `interactive.js`.
+- Component DCs (one per design component): FrontLayer, AppBarPage, NowPlayingSheet, UpNextSheet, PeekCard, DededeLayer, AccountLayer, IconButton, Button, Chip, Tab, NavItem, ListItem, ListRow, GridCard, ContentBlock, Symbol, Label, Logo, Title, PanelRow, Morph, Fab, DetailHeader, NowPlaying, TabBar, FilterChips, SearchField, Dropdown, RangeField, SuggestionRow, Placeholder, StaleBanner, EmptyState, Carousel, Menu, Dialog, Snackbar, DrawerItem, Artwork, TrackInfo, SeekBar, Row, Bar, NavBar, NavRail, Drawer, Scrim, SignIn, Splash, AppBarSheet. Interactive ones share `interactive.js`.
 - `Components.dc.html` (every component × state, from design) · `Specs Editor.dc.html` (edit design values live) · `Backdrop Nav Skeleton v1.dc.html` (frozen pre-model version)
 
 ## Vocabulary
@@ -72,7 +72,7 @@
 - 14.1.0 (approved): the rail hamburger expands the rail (menu layer, wide 'rail'): one-line pills (icon + label), not modal (content pushed aside), back / hamburger collapse it. Logo stays in the back header on wide too.
 - Sweep fixes: local search field spans the bar (title and other end items give way; placeholder readable on light bars); app-bar search spans too; front header ink fills the header (no press scale on listItem); front layer is its own stacking context (its overlays never show through app-bar pages); text-id leaks in aria labels fixed (nav items, clear search, next track); search Enter submits and conceals the back layer (verified).
 - Rail review (tablet): collapsed bottom items are centred 48px circles (were left-clipped pills); expanded = pills with labels; floating peek: its controls painted above the Now playing sheet (z-index escaped the card) — fixed by isolating the card; it stays visible as configured (persistsWhenOpen). Filter panel headers mono, uppercase.
-- NEXT (user, top priority): nothing in the mockup may be drawn inline — every piece becomes a component DC (rule in CLAUDE.md). Done: IconButton, Button, Chip, Tab, NavItem, ListItem, ListRow, GridCard, ContentBlock, Logo, PanelRow, Symbol, Label, Morph, Fab, DetailHeader (variants shape + layout), Title (variant size sm / lg), GroupHeader, AlphaIndex, NowPlaying (peek, floating card and the bar above an expanded queue are one 48px component; peekCard visuals for the card surface), TabBar, FilterChips (+ choiceChips; `wrap` in panels), SearchField, Dropdown, RangeField, SuggestionRow (shell switched; their sizes / colours moved to design visuals, new tokens color.backLayerDivider / backLayerFill; dropdown / rangeField border now color.chipOutline as drawn). Then (shell switched, values moved to design visuals / tokens): Placeholder, StaleBanner, EmptyState (+ errorState variant), Carousel, Menu, Dialog, Snackbar, DrawerItem, Artwork, TrackInfo, SeekBar, Row, Bar (header / frontHeader / appBar page | layer), EdgeHandle, NavBar, NavRail, Drawer (new design component `drawer`), Scrim, SignIn (signInPage), Splash. Surfaces (front / back layer, sheets, fullscreen layers) take fills, scrims and shadows from their design visuals; mini-player and peek controls come from the layer presentation's peek header slots (config) instead of shell code. The never-shown tracking header was removed. Components page previews every one of them (plus the item placeholder forms). generated/ rebuilt; rules 102 / 102. Fix: full-size Scrim mounts swallowed every click (the mount box covers the screen even while the scrim is off) — each Scrim now sits in a pointer-events:none wrapper; the scrim turns events back on only when shown. Left in the shell by design: the side panel (debug harness, not app UI) and mock artwork colours (fake backend).
+- NEXT (user, top priority): nothing in the mockup may be drawn inline — every piece becomes a component DC (rule in CLAUDE.md). Done: IconButton, Button, Chip, Tab, NavItem, ListItem, ListRow, GridCard, ContentBlock, Logo, PanelRow, Symbol, Label, Morph, Fab, DetailHeader (variants shape + layout), Title (variant size sm / lg), GroupHeader, AlphaIndex, NowPlaying (peek, floating card and the bar above an expanded queue are one 48px component; peekCard visuals for the card surface), TabBar, FilterChips (+ choiceChips; `wrap` in panels), SearchField, Dropdown, RangeField, SuggestionRow (shell switched; their sizes / colours moved to design visuals, new tokens color.backLayerDivider / backLayerFill; dropdown / rangeField border now color.chipOutline as drawn). Then (shell switched, values moved to design visuals / tokens): Placeholder, StaleBanner, EmptyState (+ errorState variant), Carousel, Menu, Dialog, Snackbar, DrawerItem, Artwork, TrackInfo, SeekBar, Row, Bar (header / frontHeader / appBar page | layer), NavBar, NavRail, Drawer (new design component `drawer`), Scrim, SignIn (signInPage), Splash. Surfaces (front / back layer, sheets, fullscreen layers) take fills, scrims and shadows from their design visuals; mini-player and peek controls come from the layer presentation's peek header slots (config) instead of shell code. The never-shown tracking header was removed. Components page previews every one of them (plus the item placeholder forms). generated/ rebuilt; rules 102 / 102. Fix: full-size Scrim mounts swallowed every click (the mount box covers the screen even while the scrim is off) — each Scrim now sits in a pointer-events:none wrapper; the scrim turns events back on only when shown. Left in the shell by design: the side panel (debug harness, not app UI) and mock artwork colours (fake backend).
 - RULE (user): no mockup-only changes. (Done in this pass — the list below is kept for history.) Values that were hard-coded in the web shell:
   - Now playing sheet: white fill, shadow, handle padding 10 / gap 6, tab inset 16, tab height 48, queue row 48 (thumb 40, pad 4), queue current-row fill, mini player (64 high, art 44) → design components (bottomSheet / tabBar / queueRow / nowPlaying) + config (mini-player controls as refs).
   - Rail: collapsed item 48 circle, expanded pill 48 / padding 12 / gap 12, label size → navRail / drawerItem visuals.
@@ -752,6 +752,11 @@ fields, not nodes · 6 verify ✓ (screens above).
        on wide, sheet on compact) instead of the shell deciding. Screens identical, the open menu's screenshot identical
        compact and wide. Still the shell's: the popup anchor (menuAnchor, measured from the tap's element: needs an API
        change to carry the tap's rect to the overlay node).
+    3. Edge handle as a part of sideSheet. design sideSheet declares part `handle` (its handle* visuals); NowPlayingSheet draws it
+       from the sheetLayer node (shown while side is auto and the layer is closed) and sends the node's open on pointer
+       enter (as before) and on tap. EdgeHandle.dc.html, the shell's placement (showNnEdge, edgeVis, nnEdgeEnter) and its
+       Dedede hiding are gone. Sofia accepted that the handle now shows during the Dedede reveal until the circle covers it.
+       The Components page previews the part through NowPlayingSheet fed a minimal closed auto node.
 ## Hires, picks and tokens: work list (decisions 52–54; tick as done)
 API 18.0.0 amended (breaking: renames and removals). Then back to the shell conversion list, step 3.
 - [x] 1. Rename ComponentId → ComponentName (api.d.ts, docs).
@@ -805,7 +810,7 @@ Done (drawn from contract nodes through draw.js):
 - [ ] Rail: the wrapper box around NavRail.
 - [x] Side-sheet scrim: NowPlayingSheet draws it from the sheetLayer node and sends close (decision 58).
 - [x] Drawer scrim: Drawer draws it (design drawer.scrim) and sends close.
-- [ ] Edge handle: placed by the shell (end edge, vertically centred). Proposal in decision 58 (needs Sofia).
+- [x] Edge handle: NowPlayingSheet draws it as part `handle` of sideSheet from the sheetLayer node (decision 59).
 - [ ] Nav bar: the wrapper box that slides it down (navShift) with the expand transition.
 - [x] Drawer: the wrapper box: Drawer slides itself in from its node (width, max width from design; motion still the shell's).
 - [ ] Snackbar: the wrapper box (left, bottom, width).
@@ -822,7 +827,7 @@ Done (drawn from contract nodes through draw.js):
       59); still fed by the shell: pl.card (peek controls), npVis, mx.
 - [ ] DededeLayer: 10 props; no design component exists for it.
 - [ ] AccountLayer: 6 props; no design component exists for it.
-- [ ] EdgeHandle and Scrim: no design component exists for either; proposal (parts of sideSheet and frontLayer) in decision 58, needs Sofia.
+- [ ] Scrim: no design component exists for it; Sofia wants it kept as its own DC (decision 59). EdgeHandle is gone (decision 59).
 - [ ] NavRail, SignIn, Splash: props built by the shell, not from a node. (Menu: drawn from its overlay node, decision 59.)
 - [x] Dialog, Snackbar: drawn from their overlay nodes; Drawer from its drawerLayer node (decision 58).
 - [x] Back-layer DCs placed by the shell: now one BackLayer instance fed its node (it draws Header, PanelRow, MorePanel,
@@ -882,7 +887,7 @@ Done (drawn from contract nodes through draw.js):
 - [x] The inner sheet's tabs built by the shell.
 - [ ] Layer rows: chevron_right or arrow_outward by what the row opens; header height 56 written in the shell.
 - [ ] Rail expanded or not (the rail-form menu layer); the menu drawer hidden on wide when it is the rail.
-- [ ] Side sheet: modal scrim, auto-collapse on pointer leave, edge handle shown when auto and closed.
+- [ ] Side sheet: auto-collapse on pointer leave. (Its modal scrim and edge handle are drawn by NowPlayingSheet from the node.)
 - [ ] Tapping the deck closes an auto side sheet.
 - [x] Tapping the back layer toggles it: BackLayer sends its tap (core: only while toggleOnTap).
 - [ ] Peek card's label: English literals "Open nowPlaying" / "Close nowPlaying".

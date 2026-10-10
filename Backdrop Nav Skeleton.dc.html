@@ -36,9 +36,6 @@
     <sc-if value="{{ showNnCard }}" hint-placeholder-val="{{ false }}">
       <dc-import name="PeekCard" layer="{{ sheetLayer.props }}" nn-card-ref="{{ nnCardRef }}" mx="{{ mx }}" nn="{{ nn }}" pl="{{ pl }}" np-vis="{{ npVis }}" style="display:contents" hint-size="0px,0px"></dc-import>
     </sc-if>
-    <sc-if value="{{ showNnEdge }}" hint-placeholder-val="{{ false }}">
-      <div style="position:absolute;right:0;top:50%;transform:translateY(-50%)"><dc-import name="EdgeHandle" symbol-visuals="{{ symVis }}" on-enter="{{ nnEdgeEnter }}" visuals="{{ edgeVis }}" hint-size="18px,72px"></dc-import></div>
-    </sc-if>
     <dc-import name="NowPlayingSheet" layer="{{ sheetLayer.props }}" symbol-visuals="{{ symVis }}" nn-ref="{{ nnRef }}" nn-leave="{{ nnLeave }}" focusnow-playing="{{ focusnowPlaying }}" nn="{{ nn }}" sv="{{ sv }}" mx="{{ mx }}" np-h="{{ npH }}" pl="{{ pl }}" np-vis="{{ npVis }}" title-vis-bar="{{ titleVisBar }}" ease="{{ ease }}" bar-mo="{{ barMo }}" bar-vis-layer="{{ barVisLayer }}" np="{{ np }}" sheet-vis="{{ sheetVis }}" style="display:contents" hint-size="0px,0px"></dc-import>
     <div ref="{{ navBarRef }}" style="position:absolute;left:0;right:0;bottom:0;transform:translateY({{ navShift }}px);transition:{{ mx.expand.surface }}"><dc-import name="NavBar" items="{{ nav }}" visuals="{{ sv.navBar }}" hint-size="100%,56px"></dc-import></div>
     <dc-import name="DededeLayer" focus-dedede="{{ focusDedede }}" dd-left="{{ ddLeft }}" dd-bottom="{{ ddBottom }}" dd-right="{{ ddRight }}" sv="{{ sv }}" dd="{{ dd }}" mx="{{ mx }}" title-vis-bar="{{ titleVisBar }}" bar-vis-layer="{{ barVisLayer }}" style="display:contents" hint-size="0px,0px"></dc-import>
@@ -962,7 +959,6 @@ class Component extends DCLogic {
           if (n.contract === 'button') { v.acc.signText = n.props.text || ''; v.acc.signIx = this.nix(n); } }); }
     }
     const auto = wide && G.side === 'auto';
-    v.showNnEdge = auto && !nOpen && !dOpen; v.edgeVis = this.P.resolveVisuals(this.specs, 'sideSheet', 'enabled', {}); v.nnEdgeEnter = () => this.openLayer('nowPlaying');
     v.nnLeave = () => { if (auto && this.ms.layers.nowPlaying.open) this.closeLayer('nowPlaying'); };
     v.showNnCard = wide;
     v.ddCircleIx = this.ix(this.key('nav', null, 'rail.dedede'), { nav: { type: 'openLayer', layer: 'Dedede' } }, e => this.openLayer('Dedede', e), { component: 'iconButton', variant: { size: 'xl' }, label: q.text(ms, cfg, 'layer.settings') });
