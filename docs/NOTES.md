@@ -663,6 +663,12 @@ fields, not nodes · 6 verify ✓ (screens above).
     extended with hires: applyHires), applied live to the mockup in the same browser and exported with Copy changes.
     The Tokens page builds the tree live with buildTokenTree (the same function writing generated/tokens.json) so edits
     show at once. The artifact's front page is Backdrop Nav.html (side table of contents; the pages stay their own files).
+    Look (Sofia, 2026-10-10: "doesn't look enough like sonora's"): the Tokens page and the front page take Sonora's
+    design-system page look, measured from its render (ground, cards, serif titles, 52px table rows, mono names). Like
+    Sonora's page, the side list picks one section (a system family, or one free component with its children and hires
+    nested as sub-headings); a search shows matches across all. All 3,725 rows as one page did not paint.
+    The system tokens are also in a Design System artifact of their own (https://claude.ai/artifact/JR2cQU3KYQCzkYgrYR4LqD),
+    the same type as Sonora's; that type caps non-colour families at 60, so the component and hire levels stay here.
     InteractiveComponent removed from the API (Sofia: components handle their own state transitions through interactive).
     Open idea (not yet proposed): containers declare their pieces' interactive components (morePanel close: iconButton),
     as `option` does, and a rule checks every event a non-interactive component sends comes from one.

@@ -5,17 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Backdrop Nav</title>
 <style>
-:root{--ground:#FAF9F5;--surface:#FFFFFF;--ink:#141413;--muted:#87867F;--line:#D1CFC5;--accent:#D97757;
-  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--serif:ui-serif,Georgia,"Times New Roman",serif}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){color-scheme:dark;--ground:#141413;--surface:#1F1F1D;--ink:#FAF9F5;--muted:#A8A69D;--line:#3D3D3A;--accent:#E08A6D}}
-:root[data-theme="dark"]{color-scheme:dark;--ground:#141413;--surface:#1F1F1D;--ink:#FAF9F5;--muted:#A8A69D;--line:#3D3D3A;--accent:#E08A6D}
+:root{--ground:#F9F9F7;--ink:#0B0B0B;--muted:#898781;--line:rgba(11,11,11,.1);--hover:rgba(11,11,11,.04);--pick:rgba(11,11,11,.06);
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--serif:ui-serif,Georgia,"Times New Roman",serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){color-scheme:dark;--ground:#141413;--ink:#F3F2EE;--muted:#9C9A93;--line:rgba(243,242,238,.12);--hover:rgba(243,242,238,.05);--pick:rgba(243,242,238,.08)}}
+:root[data-theme="dark"]{color-scheme:dark;--ground:#141413;--ink:#F3F2EE;--muted:#9C9A93;--line:rgba(243,242,238,.12);--hover:rgba(243,242,238,.05);--pick:rgba(243,242,238,.08)}
 html,body{margin:0;height:100%;background:var(--ground);color:var(--ink);font-family:var(--sans)}
 .shell{display:flex;height:100%}
-nav{flex:none;width:200px;border-inline-end:1px solid var(--line);padding:20px 12px;box-sizing:border-box;display:flex;flex-direction:column;gap:4px;overflow:auto}
-nav .title{font-family:var(--serif);font-size:18px;padding:0 10px 12px}
-nav a{display:block;padding:7px 10px;border-radius:8px;color:var(--ink);text-decoration:none;font-size:14px}
-nav a:hover{background:color-mix(in srgb,var(--ink) 6%,transparent)}
-nav a[aria-current="page"]{background:color-mix(in srgb,var(--accent) 16%,transparent);font-weight:600}
+nav{flex:none;width:180px;border-inline-end:1px solid var(--line);padding:14px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:4px;overflow:auto}
+nav .title{font-family:var(--serif);font-size:20px;padding:0 10px 10px}
+nav a{display:block;padding:4px 10px;border-radius:8px;color:var(--ink);text-decoration:none;font-size:13px;line-height:19px}
+nav a:hover{background:var(--hover)}
+nav a[aria-current="page"]{background:var(--pick)}
 nav .hint{font-size:12px;color:var(--muted);padding:0 10px}
 main{flex:1;min-width:0}
 iframe{border:0;width:100%;height:100%;display:block;background:var(--ground)}
@@ -23,7 +23,7 @@ iframe{border:0;width:100%;height:100%;display:block;background:var(--ground)}
 </style>
 </head>
 <body>
-<!-- The artifact's front page: a side table of contents of its pages (as Sonora's design-system artifact has), showing the
+<!-- The artifact's front page: a side table of contents of its pages (as Sonora's design-system artifact has, in its look), showing the
      chosen one beside it. Each page stays its own file; this page only lists and frames them. -->
 <div class="shell">
   <nav aria-label="Pages">

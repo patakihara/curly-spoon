@@ -9,51 +9,89 @@
 <body>
 <x-dc>
 <helmet><style>
-:root{--ground:#FAF9F5;--surface:#FFFFFF;--ink:#141413;--muted:#87867F;--line:#D1CFC5;--accent:#D97757;--done:#788C5D;
-  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--serif:ui-serif,Georgia,"Times New Roman",serif;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){color-scheme:dark;--ground:#141413;--surface:#1F1F1D;--ink:#FAF9F5;--muted:#A8A69D;--line:#3D3D3A;--accent:#E08A6D;--done:#9DB07F}}
-:root[data-theme="dark"]{color-scheme:dark;--ground:#141413;--surface:#1F1F1D;--ink:#FAF9F5;--muted:#A8A69D;--line:#3D3D3A;--accent:#E08A6D;--done:#9DB07F}
-body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans)}
+/* Sonora's design-system page (the Design System artifact type), measured from its render: ground, card, title, table */
+:root{--ground:#F9F9F7;--card:#FCFCFB;--ink:#0B0B0B;--muted:#898781;--line:rgba(11,11,11,.1);--hover:rgba(11,11,11,.04);--pick:rgba(11,11,11,.06);--accent:#D97757;--done:#788C5D;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--serif:ui-serif,Georgia,"Times New Roman",serif;--mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){color-scheme:dark;--ground:#141413;--card:#1B1B1A;--ink:#F3F2EE;--muted:#9C9A93;--line:rgba(243,242,238,.12);--hover:rgba(243,242,238,.05);--pick:rgba(243,242,238,.08);--accent:#E08A6D;--done:#9DB07F}}
+:root[data-theme="dark"]{color-scheme:dark;--ground:#141413;--card:#1B1B1A;--ink:#F3F2EE;--muted:#9C9A93;--line:rgba(243,242,238,.12);--hover:rgba(243,242,238,.05);--pick:rgba(243,242,238,.08);--accent:#E08A6D;--done:#9DB07F}
+body{margin:0;background:var(--ground);color:var(--ink);font:13px/19px var(--sans)}
 input,button{font:inherit;color:inherit}
-.tk-row:hover{background:color-mix(in srgb,var(--ink) 4%,transparent)}
+.tk{display:flex;min-height:100vh}
+.tk-aside{flex:none;width:220px;box-sizing:border-box;position:sticky;top:0;height:100vh;overflow:auto;border-inline-end:1px solid var(--line);padding:8px;display:flex;flex-direction:column;gap:2px}
+.tk-search{flex:none;display:flex;align-items:center;gap:6px;height:24px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--card);margin-bottom:6px}
+.tk-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;height:22px}
+.tk-nav{flex:none;display:block;padding:4px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tk-nav:hover{background:var(--hover)}
+.tk-navhead{flex:none;padding:12px 10px 4px;color:var(--muted)}
+.tk-tools{flex:none;margin-top:auto;padding:10px 2px 2px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.tk-btn{height:28px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);cursor:pointer}
+.tk-btn.primary{border:0;background:var(--ink);color:var(--ground)}
+.tk-main{flex:1;min-width:0;padding:20px 20px 64px}
+.tk-col{max-width:960px;margin:0 auto}
+.c{background:var(--card);border-inline:1px solid var(--line)}
+.c-top{border-top:1px solid var(--line);border-radius:24px 24px 0 0;padding:32px 32px 8px}
+.c-top h2{margin:0;font:400 36px/40px var(--serif);letter-spacing:-.36px}
+.c-top .note{margin-top:6px;color:var(--muted)}
+.c-bot{border-bottom:1px solid var(--line);border-radius:0 0 24px 24px;height:40px;margin-bottom:22px}
+.c-sub{padding:28px 32px 12px;font-size:14px;font-weight:500}
+.c-sub .who{font-family:var(--mono);font-weight:500}
+.c-sub .note{font-size:13px;font-weight:400;color:var(--muted);margin-inline-start:8px}
+.tr{display:flex;border-top:1px solid var(--line)}
+.tr>div{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr .n{flex:0 0 34%;box-sizing:border-box;padding:16px 20px 16px 32px}
+.tr .i{flex:0 0 30%;box-sizing:border-box;padding:16px 20px;border-inline-start:1px solid var(--line)}
+.tr .v{flex:1;padding:16px 20px;border-inline-start:1px solid var(--line);display:flex;gap:8px;align-items:center}
+.tr .m{flex:none;width:64px;padding:16px 20px 16px 0;text-align:end}
+.th{color:var(--muted)}
+.th>div{padding-top:10px!important;padding-bottom:10px!important}
+.tok .n,.tok .i,.tok .v{font-family:var(--mono)}
+.tok .i,.tok .v{color:var(--muted)}
+.tok.edit{cursor:pointer}
+.tok.edit:hover{background:var(--hover)}
+.tok.on{background:var(--pick)}
+.kind{padding:14px 32px 6px;color:var(--muted);border-top:1px solid var(--line)}
+.sw{flex:none;width:20px;height:20px;border-radius:4px;box-shadow:inset 0 0 0 1px var(--line);background-image:linear-gradient(45deg,#ddd 25%,transparent 25%,transparent 75%,#ddd 75%),linear-gradient(45deg,#ddd 25%,transparent 25%,transparent 75%,#ddd 75%);background-size:8px 8px;background-position:0 0,4px 4px;position:relative;overflow:hidden}
+.sw>i{position:absolute;inset:0}
+.ed{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 32px 14px;border-top:1px solid var(--line)}
+.ed input{flex:1;min-width:220px;height:30px;padding:0 10px;border:1px solid var(--accent);border-radius:8px;background:var(--card);font-family:var(--mono);outline:0}
+@media (max-width:760px){.tk-aside{display:none}.tk-main{padding:16px}.tr .i{display:none}.tr .n{flex-basis:50%}.c-top{padding:24px 16px 8px}.c-sub,.kind,.ed{padding-inline:16px}.tr .n{padding-inline-start:16px}}
 </style></helmet>
-<div style="max-width:980px;margin:0 auto;padding:32px 16px 64px;display:flex;flex-direction:column;gap:16px">
-  <div style="display:flex;flex-direction:column;gap:6px">
-    <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Design · every level</div>
-    <div style="font-family:var(--serif);font-size:28px">Tokens</div>
-    <div style="font-size:14px;color:var(--muted);max-width:680px">System tokens, then every component with its children nested under it and the hires that use it. Each token points at what it inherits unless it is set there. Edit a row to repoint it: the change applies live to the mockup in this browser; Copy changes exports it.</div>
-    <div style="font-family:var(--mono);font-size:12px;color:var(--muted)">{{ summary }}</div>
-  </div>
-  <div style="position:sticky;top:0;z-index:2;background:var(--ground);padding:8px 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-bottom:1px solid var(--line)">
-    <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Filter by name" style="flex:1;min-width:180px;height:34px;padding:0 12px;border:1px solid var(--line);border-radius:17px;background:var(--surface)"></input>
-    <label style="display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer"><input type="checkbox" checked="{{ onlySet }}" onChange="{{ onOnlySet }}"></input>Only what's set here</label>
-    <button onClick="{{ copy }}" style="height:34px;padding:0 14px;border-radius:17px;border:0;background:var(--ink);color:var(--ground);cursor:pointer">Copy changes</button>
-    <button onClick="{{ reset }}" style="height:34px;padding:0 14px;border-radius:17px;border:1px solid var(--line);background:transparent;cursor:pointer">Reset</button>
-    <div style="font-size:12px;color:{{ statusColor }}">{{ status }}</div>
-  </div>
-  <div style="display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden">
-    <sc-for list="{{ rows }}" as="r" hint-placeholder-count="12">
-      <sc-if value="{{ r.isSection }}" hint-placeholder-val="{{ false }}"><div style="padding:18px 14px 8px;font-family:var(--serif);font-size:20px;border-bottom:1px solid var(--line)">{{ r.label }}</div></sc-if>
-      <sc-if value="{{ r.isOwner }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:10px;align-items:baseline;padding:12px 14px 6px;padding-inline-start:{{ r.pad }}px;border-top:1px solid var(--line)">
-        <div style="font-family:var(--mono);font-size:14px;font-weight:600">{{ r.label }}</div>
-        <div style="font-size:12px;color:var(--muted)">{{ r.note }}</div>
-      </div></sc-if>
-      <sc-if value="{{ r.isGroup }}" hint-placeholder-val="{{ false }}"><div style="padding:6px 14px 2px;padding-inline-start:{{ r.pad }}px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">{{ r.label }}</div></sc-if>
-      <sc-if value="{{ r.isToken }}" hint-placeholder-val="{{ true }}"><div class="tk-row" onClick="{{ r.onEdit }}" style="display:flex;gap:10px;align-items:center;min-height:28px;padding:2px 14px;padding-inline-start:{{ r.pad }}px;cursor:{{ r.cursor }};font-family:var(--mono);font-size:12px">
-        <div style="flex:none;width:14px;height:14px;border-radius:3px;border:1px solid var(--line);background:{{ r.swatch }};opacity:{{ r.swatchOp }}"></div>
-        <div style="flex:2;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ r.name }}">{{ r.name }}</div>
-        <div style="flex:2;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)" title="{{ r.alias }}">{{ r.alias }}</div>
-        <div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ r.value }}">{{ r.value }}</div>
-        <div style="flex:none;width:72px;text-align:end;color:{{ r.markColor }}">{{ r.mark }}</div>
-      </div></sc-if>
-      <sc-if value="{{ r.isEditor }}" hint-placeholder-val="{{ false }}"><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:6px 14px 10px;padding-inline-start:{{ r.pad }}px;font-size:12px">
-        <input value="{{ draft }}" onChange="{{ onDraft }}" placeholder="a system token (color.surface) or a value (12, #fff)" style="flex:1;min-width:220px;height:30px;padding:0 10px;border:1px solid var(--accent);border-radius:6px;background:var(--surface);font-family:var(--mono)"></input>
-        <button onClick="{{ save }}" style="height:30px;padding:0 12px;border-radius:15px;border:0;background:var(--accent);color:#fff;cursor:pointer">Set</button>
-        <sc-if value="{{ r.canUnset }}" hint-placeholder-val="{{ false }}"><button onClick="{{ unset }}" style="height:30px;padding:0 12px;border-radius:15px;border:1px solid var(--line);background:transparent;cursor:pointer">Inherit again</button></sc-if>
-        <button onClick="{{ cancel }}" style="height:30px;padding:0 12px;border-radius:15px;border:1px solid var(--line);background:transparent;cursor:pointer">Cancel</button>
-      </div></sc-if>
+<div class="tk">
+  <div class="tk-aside">
+    <div class="tk-search"><span style="color:var(--muted)">⌕</span><input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Search"></input></div>
+    <sc-for list="{{ nav }}" as="n" hint-placeholder-count="10">
+      <sc-if value="{{ n.isHead }}" hint-placeholder-val="{{ false }}"><div class="tk-navhead">{{ n.label }}</div></sc-if>
+      <sc-if value="{{ n.isLink }}" hint-placeholder-val="{{ true }}"><div class="tk-nav" onClick="{{ n.go }}" style="padding-inline-start:{{ n.pad }}px;color:{{ n.color }};background:{{ n.bg }}" title="{{ n.label }}">{{ n.label }}</div></sc-if>
     </sc-for>
+    <div class="tk-tools">
+      <label style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" checked="{{ onlySet }}" onChange="{{ onOnlySet }}"></input>Only what's set here</label>
+      <button class="tk-btn primary" onClick="{{ copy }}">Copy changes</button>
+      <button class="tk-btn" onClick="{{ reset }}">Reset</button>
+      <div style="font-size:12px;color:var(--muted)">{{ summary }}</div>
+      <div style="font-size:12px;color:{{ statusColor }}">{{ status }}</div>
+    </div>
   </div>
+  <div class="tk-main"><div class="tk-col">
+    <sc-for list="{{ rows }}" as="r" hint-placeholder-count="12">
+      <sc-if value="{{ r.isTop }}" hint-placeholder-val="{{ false }}"><div class="c c-top" id="{{ r.id }}"><h2>{{ r.label }}</h2><sc-if value="{{ r.note }}" hint-placeholder-val="{{ false }}"><div class="note">{{ r.note }}</div></sc-if></div></sc-if>
+      <sc-if value="{{ r.isSub }}" hint-placeholder-val="{{ false }}"><div class="c c-sub" id="{{ r.id }}" style="padding-inline-start:{{ r.pad }}px"><span class="who">{{ r.label }}</span><span class="note">{{ r.note }}</span></div></sc-if>
+      <sc-if value="{{ r.isHead }}" hint-placeholder-val="{{ false }}"><div class="c tr th"><div class="n">Name</div><div class="i">Inherits from</div><div class="v">Value</div><div class="m"></div></div></sc-if>
+      <sc-if value="{{ r.isKind }}" hint-placeholder-val="{{ false }}"><div class="c kind">{{ r.label }}</div></sc-if>
+      <sc-if value="{{ r.isToken }}" hint-placeholder-val="{{ true }}"><div class="c tr tok {{ r.cls }}" onClick="{{ r.onEdit }}">
+        <div class="n" title="{{ r.name }}">{{ r.name }}</div>
+        <div class="i" title="{{ r.alias }}">{{ r.alias }}</div>
+        <div class="v" title="{{ r.value }}"><sc-if value="{{ r.isColor }}" hint-placeholder-val="{{ false }}"><span class="sw"><i style="background:{{ r.swatch }}"></i></span></sc-if><span style="overflow:hidden;text-overflow:ellipsis">{{ r.value }}</span></div>
+        <div class="m" style="color:{{ r.markColor }}">{{ r.mark }}</div>
+      </div></sc-if>
+      <sc-if value="{{ r.isEditor }}" hint-placeholder-val="{{ false }}"><div class="c ed">
+        <input value="{{ draft }}" onChange="{{ onDraft }}" placeholder="a system token (color.surface) or a value (12, #fff)"></input>
+        <button class="tk-btn primary" onClick="{{ save }}">Set</button>
+        <sc-if value="{{ r.canUnset }}" hint-placeholder-val="{{ false }}"><button class="tk-btn" onClick="{{ unset }}">Inherit again</button></sc-if>
+        <button class="tk-btn" onClick="{{ cancel }}">Cancel</button>
+      </div></sc-if>
+      <sc-if value="{{ r.isBot }}" hint-placeholder-val="{{ false }}"><div class="c c-bot"></div></sc-if>
+    </sc-for>
+  </div></div>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script>
@@ -64,7 +102,7 @@ input,button{font:inherit;color:inherit}
 // (patch hires), a system token's value (patch tokens). "Inherit again" removes what the row's owner set. Prop tokens (a
 // hire's clauses) and conditional values are shown, not edited here.
 class Component extends DCLogic {
-  state = { tree: null, query: '', onlySet: false, editing: null, draft: '', status: '', statusColor: 'var(--muted)', open: {} };
+  state = { tree: null, query: '', onlySet: false, editing: null, draft: '', status: '', statusColor: 'var(--muted)', open: {}, sel: 'tk-sys-color' };
   componentDidMount() {
     this.load();
     this.onStorage = e => { if (this.O && e.key === this.O.PATCH_KEY) this.rebuild(); };
@@ -123,41 +161,53 @@ class Component extends DCLogic {
     this.writePatch(p);
   }
   renderVals() {
-    const S = this.state, T = S.tree, q = S.query.trim().toLowerCase(), rows = [];
+    const S = this.state, T = S.tree, q = S.query.trim().toLowerCase(), rows = [], nav = [];
     const show = r => (!q || r.name.toLowerCase().includes(q)) && (!S.onlySet || r.mark !== 'inherited');
-    const color = v => typeof v === 'string' && /^(#|rgb|hsl)/.test(v) ? v : 'transparent';
-    const tokenRow = (r, pad, edit) => {
-      rows.push({ isToken: true, name: r.name, alias: r.alias ? '→ ' + r.alias : r.condition ? 'if …' : '', value: r.value === null || r.value === undefined ? '' : String(r.value),
-        mark: r.mark || '', markColor: r.mark === 'set' ? 'var(--accent)' : r.mark === 'new' ? 'var(--done)' : 'var(--muted)', swatch: color(r.value), swatchOp: color(r.value) === 'transparent' ? 0.25 : 1,
-        pad, cursor: edit ? 'pointer' : 'default', onEdit: edit ? () => this.setState({ editing: edit, draft: r.alias && !r.alias.startsWith('role:') && r.mark !== 'inherited' ? r.alias : r.mark === 'inherited' ? '' : String(r.value ?? '') }) : () => {} });
-      if (edit && S.editing && S.editing.name === r.name) rows.push({ isEditor: true, pad, canUnset: edit.kind !== 'tokens' && r.mark !== 'inherited' });
+    const isColor = v => typeof v === 'string' && /^(#|rgb|hsl)/.test(v);
+    // like Sonora's page: the side list picks one section; a search shows every match across them
+    const go = id => () => { this.setState({ sel: id, query: '', editing: null }); window.scrollTo(0, 0); };
+    const shown = id => !!q || S.sel === id;
+    const tokenRow = (r, edit) => {
+      const on = !!(edit && S.editing && S.editing.name === r.name);
+      rows.push({ isToken: true, name: r.name, alias: r.alias || (r.condition ? 'if …' : ''), value: r.value === null || r.value === undefined ? '' : String(r.value),
+        mark: r.mark === 'inherited' ? '' : r.mark || '', markColor: r.mark === 'set' ? 'var(--accent)' : r.mark === 'new' ? 'var(--done)' : 'var(--muted)',
+        isColor: isColor(r.value), swatch: isColor(r.value) ? r.value : 'transparent', cls: (edit ? 'edit' : '') + (on ? ' on' : ''),
+        onEdit: edit ? () => this.setState({ editing: edit, draft: r.alias && !r.alias.startsWith('role:') && r.mark !== 'inherited' ? r.alias : r.mark === 'inherited' ? '' : String(r.value ?? '') }) : () => {} });
+      if (on) rows.push({ isEditor: true, canUnset: edit.kind !== 'tokens' && r.mark !== 'inherited' });
     };
+    const groups = (gs, onRow) => { let any = false; for (const g of gs) { const list = g.tokens.filter(onRow.filter); if (!list.length) continue; any = true; rows.push({ isKind: true, label: g.group }); list.forEach(onRow.each); } return any; };
     let count = 0;
     if (T) {
-      rows.push({ isSection: true, label: 'System' });
+      nav.push({ isHead: true, label: 'System' });
       for (const g of T.system) {
         const list = g.tokens.filter(r => show({ ...r, mark: 'set' })); if (!list.length) continue;
-        rows.push({ isGroup: true, label: g.group, pad: 14 });
-        list.forEach(r => { count++; tokenRow(r, 14, { kind: 'tokens', owner: r.name, name: r.name }); });
+        const id = 'tk-sys-' + g.group;
+        nav.push({ isLink: true, label: g.group[0].toUpperCase() + g.group.slice(1), pad: 10, color: 'var(--ink)', bg: S.sel === id ? 'var(--pick)' : 'transparent', go: go(id) });
+        if (!shown(id)) continue;
+        rows.push({ isTop: true, id, label: g.group[0].toUpperCase() + g.group.slice(1), note: 'System tokens · design/tokens.json' }, { isHead: true });
+        list.forEach(r => { count++; tokenRow(r, { kind: 'tokens', owner: r.name, name: r.name }); });
+        rows.push({ isBot: true });
       }
-      rows.push({ isSection: true, label: 'Components' });
-      const walk = (o, depth) => {
-        const at = rows.length, pad = 14 + depth * 20;
-        rows.push({ isOwner: true, label: o.name, pad, note: o.is === 'hire' ? 'hire · contract ' + o.contract + ' · uses ' + o.uses + (o.picks ? ' · picks ' + Object.entries(o.picks).map(([k, v]) => k + ' ' + v).join(', ') : '') : o.is === 'child' ? 'child of ' + o.extends : o.extends ? 'free · extends ' + o.extends : 'free' });
-        let any = false;
-        for (const g of o.groups) {
-          const list = g.tokens.filter(show); if (!list.length) continue;
-          any = true; rows.push({ isGroup: true, label: g.group, pad: pad + 10 });
-          list.forEach(r => { count++; const t = r.prop || r.condition ? null : this.target(r, o); tokenRow(r, pad + 10, t ? { ...t, name: r.name } : null); });
-        }
-        const kids = [...(o.children || []).map(c => walk(c, depth + 1)), ...(o.hires || []).map(h => walk(h, depth + 1))].some(Boolean);
-        if (!any && !kids) { rows.length = at; return false; }
+      nav.push({ isHead: true, label: 'Components' });
+      const describe = o => o.is === 'hire' ? 'hire · contract ' + o.contract + ' · uses ' + o.uses + (o.picks ? ' · picks ' + Object.entries(o.picks).map(([k, v]) => k + ' ' + v).join(', ') : '') : o.is === 'child' ? 'child of ' + o.extends : o.extends ? 'free · extends ' + o.extends : 'free';
+      // one card per free component; its own tokens first, then each child and hire under it as a sub-heading, nested by inheritance
+      const block = (o, depth, top, cardId) => {
+        const at = rows.length, navAt = nav.length, id = 'tk-' + o.name + (o.is === 'hire' ? '-hire' : ''), card = cardId || id;
+        if (top) rows.push({ isTop: true, id, label: o.name, note: describe(o) });
+        else rows.push({ isSub: true, id, label: o.name, note: describe(o), pad: 32 + (depth - 1) * 16 });
+        if (top) nav.push({ isLink: true, label: o.name, pad: 10, color: 'var(--ink)', bg: S.sel === id ? 'var(--pick)' : 'transparent', go: go(id) });
+        if (!shown(card)) { rows.length = at; return top; }
+        rows.push({ isHead: true });
+        const own = groups(o.groups, { filter: show, each: r => { count++; const t = r.prop || r.condition ? null : this.target(r, o); tokenRow(r, t ? { ...t, name: r.name } : null); } });
+        if (!own) rows.pop();
+        const kids = [...(o.children || []).map(c => block(c, depth + 1, false, card)), ...(o.hires || []).map(h => block(h, depth + 1, false, card))].some(Boolean);
+        if (!own && !kids) { rows.length = at; if (q) nav.length = navAt; return false; }
         return true;
       };
-      T.components.forEach(c => walk(c, 0));
+      for (const c of T.components) { const at = rows.length; if (block(c, 0, true) && rows.length > at) rows.push({ isBot: true }); }
     }
     const p = this.O ? this.patch() : {}, edits = ['tokens', 'components', 'hires'].reduce((s, k) => s + Object.keys(p[k] || {}).length, 0);
-    return { rows, query: S.query, onlySet: S.onlySet, draft: S.draft, status: S.status, statusColor: S.statusColor,
+    return { rows, nav, query: S.query, onlySet: S.onlySet, draft: S.draft, status: S.status, statusColor: S.statusColor,
       summary: T ? count + ' tokens shown' + (edits ? ' · unsaved edits in ' + edits + ' place' + (edits === 1 ? '' : 's') : '') : 'loading…',
       onQuery: e => this.setState({ query: e.target.value }), onOnlySet: e => this.setState({ onlySet: e.target.checked }), onDraft: e => this.setState({ draft: e.target.value }),
       save: () => { const t = S.editing; if (!t) return; this.apply(t, this.parse(S.draft)); this.setState({ editing: null, status: t.name + ' set', statusColor: 'var(--done)' }); },
