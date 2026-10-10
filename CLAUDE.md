@@ -31,6 +31,11 @@
 - Everything the mockup draws is a component: one `.dc.html` per design component (like IconButton, PanelRow), fed its resolved visuals / props by the shell. The shell (Backdrop Nav Skeleton) only arranges component instances — no inline-drawn UI. The Components page previews those same DCs.
 - Never add feature or drawing code to the shell, not even temporarily to get something on screen. New behaviour goes into config, design, composition or a component DC; a shell edit is only for removing what it still does itself, and needs my OK first (say which lines and why).
 
+## Current work: emptying the shell
+- Under way (Sofia, 2026-10-10): removing everything the shell (Backdrop Nav Skeleton) still draws, lays out, decides or runs itself, so every drawn object comes from its contract node through draw.js and its hired component. Sofia asked for all such limitations to be fixed.
+- The list and its order live in docs/NOTES.md, "Shell conversion list". Keep it current with every change: tick an item when it is gone from the shell, add any new one found, and keep the gaps under each step accurate.
+- These shell edits are approved as part of this work (removing what the shell does itself). Adding to the shell still is not. API changes it needs still go through a proposal first.
+
 ## Division of powers (test before adding anything to the API)
 - API = contracts + state + behaviour. Something is in the API only if the engine's behaviour depends on it.
 - App config (`app/`) = which pages and items, arrangement, policies, texts (app.json); which component fills each contract (composition.json).
