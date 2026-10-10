@@ -6,6 +6,15 @@
   "optional": [
     "text"
   ],
+  "variants": {
+    "place": {
+      "options": [
+        "panel",
+        "controls"
+      ],
+      "default": "panel"
+    }
+  },
   "visuals": {
     "fontFamily": {
       "default": {
@@ -30,7 +39,13 @@
       "default": 12
     },
     "wrapOptions": {
-      "default": true
+      "default": {
+        "variant": "place",
+        "cases": {
+          "panel": true,
+          "controls": false
+        }
+      }
     }
   }
 }

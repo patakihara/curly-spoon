@@ -561,7 +561,7 @@
   --panelRow-textTransform: none;
   --panelRow-opacity: 0.8;
   --panelRow-gap: 12;
-  --panelRow-wrapOptions: true;
+  --panelRow-wrapOptions: [object Object];
   --splash-logo: var(--color-accent);
   --splash-logoSize: 112;
   --splash-logoOpacity-entering: 0;
@@ -635,6 +635,7 @@
   --morePanel-closeOffset: -12;
   --morePanel-pinned: true;
   --morePanel-fill: var(--color-backLayer);
+  --morePanel-rowGap: 12;
   --checklist-gap: 0;
   --checkRow-stateLayer-hover: var(--state-hover-opacity-default);
   --checkRow-stateLayer-pressed: var(--state-pressed-opacity-default);

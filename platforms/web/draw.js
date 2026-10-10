@@ -10,6 +10,11 @@
 // one per option, the option component's interaction (pressing it sends the node's option event — toggle, change or pick,
 // whichever the node maps — with the option's value) and its visuals for the option's status; and moreProps, the same
 // for its More (event more), when the node maps one.
+// Platform context every DC gets too: transition (the timing of the engine's latest change: { surface, content, both, ms,
+// ease }; NOTES decision 48 — later the motion player moves things itself), measure(name, px) (reports a size the engine's
+// layout needs, e.g. the back layer's panel height), imageCss(ref) (an image reference as a CSS background), scroller
+// (collapse-first scrolling for the node's scroll event: bind(el) makes el a scroll surface, forward(el) passes wheel /
+// touch on el to the surface the node scrolls, offset() the native offset el should hold; platforms/web/scroll.js).
 // Surface: a node sits on the nearest drawn ancestor whose component provides colour roles (design `provides`); the shell
 // names the surface the top node is placed on.
 // The shell supplies the context: how to resolve visuals, interaction and events. Nothing here has values of its own.
@@ -33,7 +38,8 @@ export function extendsOf(specs, id, base) {
 
 // ctx: { specs, implemented (the manifest's component ids), visuals(node, surface, extra?) → resolved visuals,
 //   ix(node, surface, piece?) → interaction props (piece: { key, event, payload, component, variant, label } for a piece of the node),
-//   motions(node) → its design motions by name, emit(node, event, payload, domEvent) }
+//   motions(node) → its design motions by name, emit(node, event, payload, domEvent), transition() → the latest change's timing,
+//   measure(node, name, px), image(ref) → CSS background, scroller(node) → { bind(el), forward(el), offset() } }
 const OPTION_EVENTS = ['toggle', 'change', 'pick'];
 export function drawNode(n, ctx, surface) {
   if (!n || !n.component) return null;
@@ -45,11 +51,15 @@ export function drawNode(n, ctx, surface) {
   props.motions = ctx.motions(n);
   props.symbolVisuals = ctx.visuals({ component: 'symbol', variants: {} }, inner);   // the symbol component's look on this surface, for glyphs a DC draws
   props.ixFor = piece => ctx.ix(n, inner, { key: n.key + '/' + piece.key, ...piece });
+  props.transition = ctx.transition ? ctx.transition() : null;
+  props.measure = (name, px) => { if (ctx.measure) ctx.measure(n, name, px); };
+  props.imageCss = ctx.image || (x => x || 'transparent');
+  props.scroller = n.events && n.events.scroll && ctx.scroller ? ctx.scroller(n) : null;
   const opt = optionOf(ctx.specs, n.component), ev = OPTION_EVENTS.find(e => n.events && n.events[e]);
   if (opt && Array.isArray(n.props.options)) {
     props.optionProps = n.props.options.map(o => ({ ...ctx.ix(n, inner, { key: n.key + '/' + o.value, event: ev, payload: o.value, component: opt, variant: {}, label: o.label }),
       visuals: ctx.visuals({ component: opt, variants: {} }, inner, { status: o.selected ? ['selected'] : [] }) }));
     if (n.events && n.events.more) props.moreProps = ctx.ix(n, inner, { key: n.key + '/more', event: 'more', component: opt, variant: {}, label: n.props.moreLabel || '' });
   }
-  return { key: n.key, dc, is: { [dc]: true }, shown: n.shown !== false, surface, props };
+  return { key: n.key, contract: n.contract, variants: n.variants || {}, dc, is: { [dc]: true }, shown: n.shown !== false, surface, props };
 }

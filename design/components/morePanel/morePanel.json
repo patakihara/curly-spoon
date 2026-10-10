@@ -41,6 +41,9 @@
       "default": {
         "token": "color.backLayer"
       }
+    },
+    "rowGap": {
+      "default": 12
     }
   }
 }

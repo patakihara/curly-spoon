@@ -665,7 +665,7 @@ object PanelRowTokens {
     val TextTransform = "none"
     val Opacity = 0.8f
     val Gap = 12f
-    val WrapOptions = true
+    val WrapOptions = {"variant":"place","cases":{"panel":true,"controls":false}}
 }
 
 object SplashTokens {
@@ -766,6 +766,7 @@ object MorePanelTokens {
     val CloseOffset = -12f
     val Pinned = true
     val Fill = DesignTokens.ColorBackLayer
+    val RowGap = 12f
 }
 
 object ChecklistTokens {

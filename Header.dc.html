@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div ref="{{ rootRef }}" style="height:100%;display:flex;flex-direction:column;color:{{ v.ink }}">
+<div data-occluder="1" style="position:relative;height:{{ h }}px;flex:none;box-sizing:border-box;display:flex;align-items:{{ v.align }};padding:{{ v.padding }};background:{{ v.fill }};border-bottom:1px solid {{ divider }};transition:{{ tr }};overflow:hidden">
+  <div style="height:{{ h }}px;display:flex;align-items:center"><sc-for list="{{ start }}" as="hi" hint-placeholder-count="1"><div data-fixed="{{ hi.fixed }}" style="position:{{ hi.pos }};inset-inline-start:{{ hi.absX }};top:{{ hi.absY }};z-index:1;flex:none;display:flex;align-items:center;overflow:hidden;max-width:{{ hi.maxW }}px;opacity:{{ hi.op }};pointer-events:{{ hi.ev }};transition:max-width {{ ms }}ms {{ ease }}, opacity {{ ms }}ms">
+    <sc-if value="{{ hi.is.IconButton }}" hint-placeholder-val="{{ true }}"><dc-import name="IconButton" dc-props="{{ hi.props }}" hint-size="48px,48px"></dc-import></sc-if>
+    <sc-if value="{{ hi.is.Symbol }}" hint-placeholder-val="{{ false }}"><dc-import name="Symbol" dc-props="{{ hi.props }}" hint-size="30px,24px"></dc-import></sc-if>
+    <sc-if value="{{ hi.is.Label }}" hint-placeholder-val="{{ false }}"><dc-import name="Label" dc-props="{{ hi.props }}" hint-size="72px,16px"></dc-import></sc-if>
+    <sc-if value="{{ hi.is.Morph }}" hint-placeholder-val="{{ false }}"><dc-import name="Morph" dc-props="{{ hi.props }}" hint-size="48px,40px"></dc-import></sc-if>
+  </div></sc-for></div>
+  <div data-fixed="{{ titleKey }}" style="position:relative;flex:1;min-width:0;align-self:stretch;max-height:{{ h }}px;display:flex;align-items:center;max-width:{{ titleMaxW }};padding-inline-start:{{ titlePad }}px;opacity:{{ titleOp }}"><div style="flex:1;min-width:0"><sc-if value="{{ hasTitle }}" hint-placeholder-val="{{ true }}"><dc-import name="Title" dc-props="{{ titleProps }}" height="{{ h }}" hint-size="100%,24px"></dc-import></sc-if></div></div>
+  <div style="height:{{ h }}px;display:flex;align-items:center"><sc-for list="{{ end }}" as="hi" hint-placeholder-count="1"><div data-fixed="{{ hi.fixed }}" style="position:{{ hi.pos }};inset-inline-start:{{ hi.absX }};top:{{ hi.absY }};z-index:1;flex:none;display:flex;align-items:center;overflow:hidden;max-width:{{ hi.maxW }}px;opacity:{{ hi.op }};pointer-events:{{ hi.ev }};transition:max-width {{ ms }}ms {{ ease }}, opacity {{ ms }}ms">
+    <sc-if value="{{ hi.is.IconButton }}" hint-placeholder-val="{{ true }}"><dc-import name="IconButton" dc-props="{{ hi.props }}" hint-size="48px,48px"></dc-import></sc-if>
+    <sc-if value="{{ hi.is.Symbol }}" hint-placeholder-val="{{ false }}"><dc-import name="Symbol" dc-props="{{ hi.props }}" hint-size="30px,24px"></dc-import></sc-if>
+    <sc-if value="{{ hi.is.Label }}" hint-placeholder-val="{{ false }}"><dc-import name="Label" dc-props="{{ hi.props }}" hint-size="72px,16px"></dc-import></sc-if>
+    <sc-if value="{{ hi.is.Morph }}" hint-placeholder-val="{{ false }}"><dc-import name="Morph" dc-props="{{ hi.props }}" hint-size="48px,40px"></dc-import></sc-if>
+  </div></sc-for></div>
+</div>
+<sc-if value="{{ hasDetail }}" hint-placeholder-val="{{ false }}"><div ref="{{ detailRef }}" style="flex:1;min-height:0;overflow:hidden;opacity:{{ detailOp }};transform:scale({{ detailSc }});transform-origin:50% 0"><dc-import name="DetailHeader" dc-props="{{ detailProps }}" style="width:100%;height:100%" hint-size="100%,100%"></dc-import></div></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:64},&quot;progress&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1,&quot;min&quot;:0,&quot;max&quot;:1,&quot;step&quot;:0.05,&quot;tsType&quot;:&quot;number&quot;},&quot;slots&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
+// Web implementation of design component header (the back layer's bar), drawn from its node (platforms/web/draw.js): its start
+// items, title and end items in one row, and below the row its expanded slot (a detail page's info), which takes the rest of
+// the height the back layer gives it (the bar's height: Layout.barView) and fades and shrinks as the bar collapses (progress 1 →
+// collapsed; visuals detailFade, detailShrink; the title fades in from titleFadeFrom). The detail is a scroll surface (NOTES
+// decision 47): wheel / touch on it scroll what the header's scroll event scrolls (the panel while revealed, else the content).
+// Items: each drawn by its node's DC; one placed by an offset (visuals offsetStart / offsetTop) sits there; a hidden one (when
+// fails) takes no room; a find field spanning the bar (variant span header | row) takes its width less the inset and the other
+// start items, and hides the rest and the title. Each item and the title carry data-fixed (slot + content): the detail
+// transition keeps parts found in both headers. Props: progress, slots { start, title, end, expanded }, visuals, transition,
+// scroller. No values of its own.
+class Component extends DCLogic {
+  state = { w: 0 };
+  rootRef = React.createRef();
+  detailRef = React.createRef();
+  componentDidMount() { this.sync(); }
+  componentDidUpdate() { this.sync(); }
+  sync() {
+    const r = this.rootRef.current, w = r ? r.offsetWidth : 0;
+    if (w !== this.state.w) this.setState({ w });
+    if (this.detailRef.current && this.props.scroller) this.props.scroller.forward(this.detailRef.current);
+  }
+  renderVals() {
+    const p = this.props, v = p.visuals || {}, sl = p.slots || {}, t = p.transition || {}, h = +v.height || 56, prog = +(p.progress ?? 1);
+    const startNodes = sl.start || [], X = (sl.expanded || [])[0], T = (sl.title || [])[0];
+    // the room a spanning find field takes: the bar less its inset and the other start items
+    const others = startNodes.filter(d => d.contract !== 'find' && d.shown).reduce((s, d) => { const V = d.props.visuals || {}; return s + (+(V.slotWidth ?? V.size) || 0); }, 0);
+    const span = Math.max(0, this.state.w - (+v.spanInset || 0) - others);
+    let spans = false;
+    const arrange = slot => (sl[slot] || []).map(d => {
+      const V = d.props.visuals || {}, off = +(V.offsetStart || 0);
+      const x = { is: d.is, props: d.props, maxW: +V.slotMaxWidth || 0, fixed: slot + ':' + String(d.props.icon || d.props.text || d.props.component || ''),
+        ...(off ? { pos: 'absolute', absX: off + 'px', absY: (+V.offsetTop || 0) + 'px' } : { pos: 'relative', absX: 'auto', absY: 'auto' }) };
+      if (d.contract === 'find' && d.dc === 'Morph') {
+        const F = ((d.props.slots || {}).from || [])[0], To = ((d.props.slots || {}).to || [])[0] || d, fv = To.props.visuals || {};
+        const open = !!d.props.morphed, wide = ['header', 'row'].includes((d.variants || {}).span);
+        const w = open ? (wide ? Math.max(+fv.minWidth || 0, span) : +fv.width || 0) : 0, bs = F ? +(F.props.visuals || {}).size || 0 : 0;
+        x.props = { ...d.props, width: w };
+        x.spans = open && wide; if (x.spans) spans = true;
+        x.maxW = (open ? w : bs) + 2 * (+fv.padX || 0) + (+fv.slotPad || 0);
+      }
+      return d.shown ? { ...x, op: 1, ev: 'auto' } : { ...x, maxW: 0, op: 0, ev: 'none' };
+    });
+    let start = arrange('start'), end = arrange('end');
+    const hideRest = a => a.map(x => x.spans ? x : { ...x, maxW: 0, op: 0, ev: 'none' });
+    if (spans) { start = hideRest(start); end = hideRest(end); }
+    const from = +v.titleFadeFrom || 0, titleOp = spans ? 0 : X ? Math.min(1, Math.max(0, (prog - from) / (1 - from || 1))) : 1;
+    return { rootRef: this.rootRef, detailRef: this.detailRef, v, h, start, end, ms: +t.ms || 0, ease: t.ease || 'ease',
+      divider: v.divider || 'transparent', tr: t.ms ? 'border-color ' + t.ms + 'ms' : 'none',
+      hasTitle: !!T, titleProps: T ? T.props : {}, titleKey: 'title:' + (T ? T.props.text || '' : ''), titleOp, titleMaxW: spans ? '0px' : '100%',
+      titlePad: start.some(x => x.op) ? +v.titlePadAfterStart || 0 : +v.titlePadAlone || 0,
+      hasDetail: !!X, detailProps: X ? X.props : {}, detailOp: Math.max(0, 1 - prog * (+v.detailFade || 1)), detailSc: 1 - (+v.detailShrink || 0) * prog };
+  }
+}
+</script>
+</body>
+</html>

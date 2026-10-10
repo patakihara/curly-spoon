@@ -13,11 +13,11 @@
 // Web implementation of design component morph: one control that morphs between its `from` slot (closed) and its `to` slot
 // (morphed). Props: morphed, slots { from: [drawn node], to: [drawn node] } (platforms/web/draw.js) — the glyph and the
 // open action come from `from`, the field (value, placeholder, change, its end slot) and its visuals from `to` — plus the
-// shell's arrangement: width (the open field's width), light (placeholder ink on light surfaces); motion (morph · morphed).
+// arrangement of the bar it sits in: width (the open field's width), light (placeholder ink on light surfaces); motions.morphed (draw.js).
 class Component extends DCLogic {
   renderVals() {
     const p = this.props, sl = p.slots || {}, F = (sl.from || [])[0], T = (sl.to || [])[0], E = T && ((T.props.slots || {}).end || [])[0];
-    const v = (T && T.props.visuals) || {}, m = p.motion || {}, open = !!p.morphed, bs = (F && +F.props.visuals.size) || 40;
+    const v = (T && T.props.visuals) || {}, m = (p.motions || {}).morphed || {}, open = !!p.morphed, bs = (F && +F.props.visuals.size) || 40;
     const ms = m.kind === 'instant' ? 0 : +m.ms || 0, split = m.fadeSplit ?? 0.35, on = k => (T && T.props.on[k]) || (() => {});
     const onOpen = e => { if (open) return; if (F && F.props.on.press) F.props.on.press(undefined, e); const inp = e.currentTarget.querySelector('input'); if (inp) setTimeout(() => inp.focus(), ms); };
     return { hasEnd: open && !!E, endProps: E ? E.props : {}, endGap: +v.endGap || 0, stop: e => e.stopPropagation(), open, glyph: (F && F.props.icon) || '', value: (T && T.props.value) || '', hint: (T && T.props.placeholder) || '', onOpen, onInput: e => on('change')(e.target.value), light: p.light, padX: +v.padX || 0,

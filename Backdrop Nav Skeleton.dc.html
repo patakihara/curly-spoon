@@ -14,37 +14,14 @@
     <div dir="{{ dir }}" style="position:absolute;inset:0;opacity:{{ appFx.op }};transform:scale({{ appFx.sc }});transition:{{ appFx.tr }}">
     <div ref="{{ screenRef }}" onPointerDownCapture="{{ focusDeck }}" style="position:absolute;transition:{{ rail.tr }};left:{{ screenLeft }}px;right:{{ screenRight }}px;top:0;bottom:0;overflow:hidden;background:{{ backBg }}">
 
-      <div ref="{{ backRef }}" onClick="{{ onBackTap }}" style="position:absolute;left:0;right:0;top:0;bottom:0;transform-origin:50% 0;opacity:{{ ftB.op }};transform:scale({{ ftB.sc }});transition:{{ ftB.tr }}">
-      <sc-for list="{{ rHeader }}" as="ri" hint-placeholder-count="1"><div data-enter="header" style="position:absolute;left:0;right:0;top:{{ ri.top }}px;opacity:{{ ri.op }};pointer-events:{{ ri.ev }};transition:{{ mx.expand.both }}">
-      <sc-if value="{{ bhX.show }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:0;right:0;top:{{ barVisBack.height }}px;height:{{ bhX.h }}px;overflow:hidden;color:{{ bhX.fg }};opacity:{{ bhX.op }};transform:scale({{ bhX.sc }});transform-origin:50% 0"><dc-import name="DetailHeader" title="{{ bhX.title }}" subtitle="{{ bhX.sub }}" meta="{{ bhX.meta }}" image="{{ bhX.img }}" visuals="{{ bhX.vis }}" style="width:100%;height:100%" hint-size="100%,100%"></dc-import></div></sc-if>
-      <dc-import name="Bar" start="{{ bhLeft }}" end="{{ bhRight }}" title="{{ bhTitle }}" title-vis="{{ titleVisBack }}" title-op="{{ bhTitleOp }}" title-pad="{{ bhTitlePad }}" ease="{{ ease }}" visuals="{{ barVisBack }}" hint-size="100%,56px"></dc-import>
-      </div></sc-for>
-
-      <sc-for list="{{ rBasic }}" as="ri" hint-placeholder-count="1"><div data-enter="basic" style="position:absolute;left:0;right:0;top:{{ ri.top }}px;opacity:{{ ri.op }};pointer-events:{{ ri.ev }};transition:{{ mx.expand.both }}">
-      <sc-for list="{{ basicRows }}" as="br" hint-placeholder-count="1"><div style="height:{{ basicH }}px;box-sizing:border-box;overflow:hidden;padding:{{ sv.back.basicPadding }};color:{{ sv.back.ink }};display:flex;gap:{{ sv.back.panelGap }}px"><sc-for list="{{ br.controls }}" as="bc" hint-placeholder-count="1"><div style="flex:1;min-width:0">
-        <sc-if value="{{ bc.is.FilterChips }}" hint-placeholder-val="{{ true }}"><dc-import name="FilterChips" dc-props="{{ bc.props }}" hint-size="100%,48px"></dc-import></sc-if>
-        <sc-if value="{{ bc.is.TabBar }}" hint-placeholder-val="{{ false }}"><dc-import name="TabBar" dc-props="{{ bc.props }}" hint-size="100%,48px"></dc-import></sc-if>
-        <sc-if value="{{ bc.is.SearchField }}" hint-placeholder-val="{{ false }}"><dc-import name="SearchField" dc-props="{{ bc.props }}" hint-size="100%,48px"></dc-import></sc-if>
-      </div></sc-for></div></sc-for>
-      </div></sc-for>
-
-      <sc-for list="{{ rActions }}" as="ri" hint-placeholder-count="0"><div data-enter="actions" style="position:absolute;left:0;right:0;top:{{ ri.top }}px;opacity:{{ ri.op }};pointer-events:{{ ri.ev }};transition:{{ mx.expand.both }}">
-        <div style="height:{{ actH }}px;box-sizing:border-box;padding:{{ sv.back.basicPadding }};display:flex;align-items:center;justify-content:center;gap:{{ sv.back.panelGap }}px"><sc-for list="{{ actBtns }}" as="ab" hint-placeholder-count="1"><dc-import name="Button" dc-props="{{ ab.ix }}" text="{{ ab.text }}" icon="{{ ab.icon }}" hint-size="88px,40px"></dc-import></sc-for></div>
-      </div></sc-for>
-
-      <sc-for list="{{ rPanel }}" as="ri" hint-placeholder-count="1"><div style="position:absolute;left:0;right:0;top:{{ ri.top }}px;height:{{ ri.h }};overflow-y:{{ ri.ov }};overscroll-behavior:contain;opacity:{{ ri.op }};pointer-events:{{ ri.ev }};transition:{{ mx.expand.both }}">
-        <div ref="{{ panelRef }}" style="height:{{ panelH }};box-sizing:border-box;padding:{{ panelPad }};border-top:1px solid {{ panelLine }};color:{{ sv.back.ink }};display:flex;flex-direction:column;gap:{{ sv.back.panelGap }}px">
-          <sc-if value="{{ moreOpen }}" hint-placeholder-val="{{ false }}"><div style="position:{{ moreHead.pos }};top:0;z-index:1"><dc-import name="MorePanel" title="{{ moreHead.title }}" close-ix="{{ moreHead.closeIx }}" visuals="{{ moreHead.vis }}" hint-size="100%,48px"></dc-import></div></sc-if>
-          <sc-for list="{{ panelRows }}" as="pr" hint-placeholder-count="3"><dc-import name="PanelRow" dc-props="{{ pr.props }}" hint-size="100%,48px"></dc-import></sc-for>
-        </div>
-      </div></sc-for>
-
+      <div ref="{{ backRef }}" style="position:absolute;left:0;right:0;top:0;bottom:0;transform-origin:50% 0;opacity:{{ ftB.op }};transform:scale({{ ftB.sc }});transition:{{ ftB.tr }}">
+      <dc-import name="BackLayer" dc-props="{{ backLayer.props }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import>
       </div>
 
-      <div aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;visibility:hidden"><dc-import name="AppBarSheet" height="0" visuals="{{ barVisApp }}" info="{{ warm.info }}" find="{{ warm.none }}" buttons="{{ warm.buttons }}" hint-size="0px,0px"></dc-import><dc-import name="SearchField" value="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="SuggestionRow" ix="{{ warm.ix }}" text="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="MorePanel" title="" close-ix="{{ warm.ix }}" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="Checklist" options="{{ warm.none }}" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="CheckRow" ix="{{ warm.ix }}" text="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import></div>
+      <div aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;visibility:hidden"><dc-import name="AppBarSheet" height="0" visuals="{{ barVisApp }}" info="{{ warm.info }}" find="{{ warm.none }}" buttons="{{ warm.buttons }}" hint-size="0px,0px"></dc-import><dc-import name="SearchField" value="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="SuggestionRow" ix="{{ warm.ix }}" text="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="MorePanel" title="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="Checklist" options="{{ warm.none }}" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="CheckRow" ix="{{ warm.ix }}" text="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import></div>
       <dc-import name="FrontLayer" symbol-visuals="{{ symVis }}" show-overlay="{{ showOverlay }}" surf-ref="{{ surfRef }}" sv="{{ sv }}" front-ref="{{ frontRef }}" front-top="{{ frontTop }}" screen-bottom="{{ screenBottom }}" front-t-l="{{ frontTL }}" front-t-r="{{ frontTR }}" front-tr="{{ frontTr }}" fc-ref="{{ fcRef }}" ft-f="{{ ftF }}" fab="{{ fab }}" header-static="{{ headerStatic }}" fh-h="{{ fhH }}" fh-row="{{ fhRow }}" fh-left="{{ fhLeft }}" fh-right="{{ fhRight }}" fh-title="{{ fhTitle }}" title-vis-front="{{ titleVisFront }}" fh-title-op="{{ fhTitleOp }}" fh-title-w="{{ fhTitleW }}" sub-ix="{{ subIx }}" fh-border="{{ fhBorder }}" ease="{{ ease }}" fh-mo="{{ fhMo }}" bar-vis-front="{{ barVisFront }}" scroll-ref="{{ scrollRef }}" on-front-scroll="{{ onFrontScroll }}" cv="{{ cv }}" retry-text="{{ retryText }}" retry-ix="{{ retryIx }}" grid="{{ grid }}" scroller="{{ scroller }}" is-carousels="{{ isCarousels }}" carousels="{{ carousels }}" carousel-vis="{{ carouselVis }}" is-generic="{{ isGeneric }}" block-row-pad="{{ blockRowPad }}" generic-blocks="{{ genericBlocks }}" is-grid="{{ isGrid }}" groups="{{ groups }}" group-vis="{{ groupVis }}" is-list="{{ isList }}" alpha="{{ alpha }}" alpha-vis="{{ alphaVis }}" thumb-ref="{{ thumbRef }}" on-scrim="{{ onScrim }}" mx="{{ mx }}" style="display:contents" hint-size="0px,0px"></dc-import>
 
-      <div aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;visibility:hidden"><dc-import name="AppBarSheet" height="0" visuals="{{ barVisApp }}" info="{{ warm.info }}" find="{{ warm.none }}" buttons="{{ warm.buttons }}" hint-size="0px,0px"></dc-import><dc-import name="AppBarPage" oc="{{ warm.box }}" ov-inset-css="none" mx="{{ mx }}" ov="{{ warm.box }}" sv="{{ sv }}" cw="0" content-h="0" bar-vis-app="{{ barVisApp }}" ov-scroll-ref="{{ warm.ref }}" on-ov-scroll="{{ warm.noop }}" ab="{{ warm.ab }}" ov-rows="{{ warm.none }}" ov-thumb-ref="{{ warm.ref2 }}" ov-x="{{ warm.info }}" ab-btn-ref="{{ warm.ref3 }}" ease="{{ ease }}" ah-op="0" ah-trans="none" ah-ev="none" ah-h="0" ah-left="{{ warm.none }}" ah-right="{{ warm.none }}" ah-title="" title-vis-bar="{{ titleVisBar }}" ah-title-op="0" ah-title-w="0px" ah-shadow="none" ah-mo="{{ ahMo }}" hint-size="0px,0px"></dc-import><dc-import name="SearchField" value="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="SuggestionRow" ix="{{ warm.ix }}" text="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="MorePanel" title="" close-ix="{{ warm.ix }}" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="Checklist" options="{{ warm.none }}" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="CheckRow" ix="{{ warm.ix }}" text="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import></div>
+      <div aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden;visibility:hidden"><dc-import name="AppBarSheet" height="0" visuals="{{ barVisApp }}" info="{{ warm.info }}" find="{{ warm.none }}" buttons="{{ warm.buttons }}" hint-size="0px,0px"></dc-import><dc-import name="AppBarPage" oc="{{ warm.box }}" ov-inset-css="none" mx="{{ mx }}" ov="{{ warm.box }}" sv="{{ sv }}" cw="0" content-h="0" bar-vis-app="{{ barVisApp }}" ov-scroll-ref="{{ warm.ref }}" on-ov-scroll="{{ warm.noop }}" ab="{{ warm.ab }}" ov-rows="{{ warm.none }}" ov-thumb-ref="{{ warm.ref2 }}" ov-x="{{ warm.info }}" ab-btn-ref="{{ warm.ref3 }}" ease="{{ ease }}" ah-op="0" ah-trans="none" ah-ev="none" ah-h="0" ah-left="{{ warm.none }}" ah-right="{{ warm.none }}" ah-title="" title-vis-bar="{{ titleVisBar }}" ah-title-op="0" ah-title-w="0px" ah-shadow="none" ah-mo="{{ ahMo }}" hint-size="0px,0px"></dc-import><dc-import name="SearchField" value="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="SuggestionRow" ix="{{ warm.ix }}" text="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="MorePanel" title="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="Checklist" options="{{ warm.none }}" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import><dc-import name="CheckRow" ix="{{ warm.ix }}" text="" visuals="{{ sv.back }}" hint-size="0px,0px"></dc-import></div>
       <sc-if value="{{ showOverlay }}" hint-placeholder-val="{{ false }}">
       <div ref="{{ ovRef }}" style="position:absolute;top:0;left:0;right:0;bottom:{{ screenBottom }}px;pointer-events:none;opacity:{{ ftO.op }};transform:scale({{ ftO.sc }});transition:{{ ftO.tr }}"><div style="position:absolute;inset:0;transform-origin:50% 0;pointer-events:{{ ovEv }}">
         <dc-import name="AppBarPage" oc="{{ oc }}" ov-inset-css="{{ ovInsetCss }}" mx="{{ mx }}" ov="{{ ov }}" sv="{{ sv }}" cw="{{ cw }}" content-h="{{ contentH }}" bar-vis-app="{{ barVisApp }}" ov-scroll-ref="{{ ovScrollRef }}" on-ov-scroll="{{ onOvScroll }}" ab="{{ ab }}" ov-rows="{{ ovRows }}" ov-thumb-ref="{{ ovThumbRef }}" ov-x="{{ ovX }}" ab-btn-ref="{{ abBtnRef }}" ease="{{ ease }}" ah-op="{{ ahOp }}" ah-trans="{{ ahTrans }}" ah-ev="{{ ahEv }}" ah-h="{{ ahH }}" ah-left="{{ ahLeft }}" ah-right="{{ ahRight }}" ah-title="{{ ahTitle }}" title-vis-bar="{{ titleVisBar }}" ah-title-op="{{ ahTitleOp }}" ah-title-w="{{ ahTitleW }}" ah-shadow="{{ ahShadow }}" ah-mo="{{ ahMo }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import>
@@ -191,32 +168,26 @@ const G = { layout: 'compact', PW: DEVICES.phone.width, CW: DEVICES.phone.width,
 const FF = () => ({ top: 0, left: 0, w: G.CW, h: G.H, r: 0, op: 1 });
 const CF = () => ({ top: G.AH || 0, left: 0, w: G.CW, h: G.H - (G.AH || 0), r: 0, op: 1 });
 const underIndex = st => { for (let i = st.length - 1; i >= 0; i--) if (st[i].page.config.kind === 'backdrop') return i; return 0; };
-const BACK_KEYS = ['rActions', 'actBtns', 'actH', 'bhX', 'bhTitleOp', 'panelRows', 'panelH', 'panelRef', 'rHeader', 'rBasic', 'rPanel', 'bhLeft', 'bhRight', 'bhTitle', 'bhTitlePad', 'basicRows', 'canBack', 'basicH', 'moreOpen', 'moreHead', 'panelPad', 'panelLine'];
 const SHELL_ACTIONS = ['copyLink'];   // shell actions this mockup implements (§20)
-// artwork for mock content: two colours from the item id (the backend has no images)
-/* lint:off fake backend artwork */
-const artCss = x => !x ? 'transparent' : String(x).startsWith('mock:') ? artOf(String(x).slice(5)) : 'center / cover no-repeat url("' + x + '")';
-const artOf = id => { let x = 0; for (const ch of String(id || '')) x = (x * 31 + ch.charCodeAt(0)) >>> 0; const h1 = x % 360, h2 = (h1 + 40 + (x >> 9) % 80) % 360; return 'linear-gradient(135deg, oklch(0.62 0.13 ' + h1 + '), oklch(0.42 0.11 ' + h2 + '))'; };
-/* lint:on */
 const INERT = {};   // not a control: an instance without resolve renders disabled
-const STUB_LISTS = ['rActions', 'actBtns', 'railTop', 'railBottom', 'carousels', 'panelRows', 'basicRows', 'simToggles', 'railNav', 'rHeader', 'rBasic', 'rPanel', 'cards', 'genericBlocks', 'nav', 'layouts', 'stackInfo', 'historyList', 'log', 'bhLeft', 'bhRight', 'fhLeft', 'fhRight', 'ahLeft', 'ahRight'];
+const STUB_LISTS = ['railTop', 'railBottom', 'carousels', 'simToggles', 'railNav', 'cards', 'genericBlocks', 'nav', 'layouts', 'stackInfo', 'historyList', 'log', 'fhLeft', 'fhRight', 'ahLeft', 'ahRight'];
 
 async function loadModules() {
   // plain ES modules via blob URLs; relative imports inside them are loaded the same way and rewritten
   const blobs = {}, blobOf = url => blobs[url] || (blobs[url] = (async () => { let src = await (await fetch(url, { cache: 'no-store' })).text(); for (const m of [...src.matchAll(/(from\s*|import\s*\(\s*)(['"])(\.\.?\/[^'"]+)\2/g)]) src = src.split(m[2] + m[3] + m[2]).join(m[2] + await blobOf(new URL(m[3], url).href) + m[2]); return URL.createObjectURL(new Blob([src], { type: 'text/javascript' })); })());
   const load = async p => import(await blobOf(new URL(p, location.href).href));
-  const [M, SM, Pl, P, IX, O, DL, MO, CP, K, DR, web, comp, appCfg] = await Promise.all([load('./core/navigation.js'), load('./app/fake-backend.js'), load('./core/player.js'), load('./core/layout.js'), load('./core/interaction.js'), load('./design/overrides.js'), load('./design/load.js'), load('./platforms/web/motions.js'), load('./core/compose.js'), load('./core/contracts.js'), load('./platforms/web/draw.js'), fetch(new URL('./platforms/web.json', location.href).href, { cache: 'no-store' }).then(r => r.json()), fetch(new URL('./app/composition.json', location.href).href, { cache: 'no-store' }).then(r => r.json()), import(URL.createObjectURL(new Blob([await (await fetch(new URL('./app/load-app.js', location.href).href, { cache: 'no-store' })).text()], { type: 'text/javascript' }))).then(m => m.loadApp(p => fetch(new URL('./' + p, location.href).href, { cache: 'no-store' }).then(r => r.text())))]);
+  const [M, SM, Pl, P, IX, O, DL, MO, CP, K, DR, SC, web, comp, appCfg] = await Promise.all([load('./core/navigation.js'), load('./app/fake-backend.js'), load('./core/player.js'), load('./core/layout.js'), load('./core/interaction.js'), load('./design/overrides.js'), load('./design/load.js'), load('./platforms/web/motions.js'), load('./core/compose.js'), load('./core/contracts.js'), load('./platforms/web/draw.js'), load('./platforms/web/scroll.js'), fetch(new URL('./platforms/web.json', location.href).href, { cache: 'no-store' }).then(r => r.json()), fetch(new URL('./app/composition.json', location.href).href, { cache: 'no-store' }).then(r => r.json()), import(URL.createObjectURL(new Blob([await (await fetch(new URL('./app/load-app.js', location.href).href, { cache: 'no-store' })).text()], { type: 'text/javascript' }))).then(m => m.loadApp(p => fetch(new URL('./' + p, location.href).href, { cache: 'no-store' }).then(r => r.text())))]);
   const S = { ...SM, ...SM.bind(appCfg) };
   const fileSpecs = await DL.loadDesignRaw(p => fetch(new URL('./design/' + p, location.href).href, { cache: 'no-store' }).then(r => r.text()));   // raw design; edits patch it, then extends is resolved
   let specs = DL.resolveExtends(fileSpecs);
   try { specs = DL.resolveExtends(O.applySpecs(fileSpecs, JSON.parse(localStorage.getItem(O.PATCH_KEY) || 'null'))); } catch (e) {}
-  return { M, S, Pl, P, IX, O, DL, MO, CP, K, DR, web, comp, specs, fileSpecs };
+  return { M, S, Pl, P, IX, O, DL, MO, CP, K, DR, SC, web, comp, specs, fileSpecs };
 }
 
 class Component extends DCLogic {
-  state = { ready: false, layout: 'phone', log: ['start'], frontTopOverride: null, backOverride: null,
+  state = { ready: false, layout: 'phone', log: ['start'], frontTopOverride: null,
             ovRect: null, ovInset: null, ahOp: 1, ahTrans: 'none', ft: null, ghost: null, frontTr: null, ax: null, ddOrigin: null, gScrolled: false, gTitle: '', gKey: null };
-  panelRef = React.createRef(); abBtnRef = React.createRef(); ovThumbRef = React.createRef(); ovScrollRef = React.createRef(); ovRef = React.createRef(); fcRef = React.createRef(); surfRef = React.createRef(); measured = {};
+  abBtnRef = React.createRef(); ovThumbRef = React.createRef(); ovScrollRef = React.createRef(); ovRef = React.createRef(); fcRef = React.createRef(); surfRef = React.createRef(); measured = {};
   backRef = React.createRef(); railRef = React.createRef(); navBarRef = React.createRef(); nnRef = React.createRef(); nnCardRef = React.createRef();
   splashBgRef = React.createRef(); splashLogoRef = React.createRef(); gateBgRef = React.createRef(); gateLogoRef = React.createRef(); gateTextRef = React.createRef();
   // cover (splash / sign-in page) → app, choreography enterApp. The state changes at once; the cover stays drawn
@@ -290,8 +261,8 @@ class Component extends DCLogic {
   get reduced() { return !!(this.model && this.ms.prefs.reducedMotion); }
 
   async componentDidMount() {
-    const { M, S, Pl, P, IX, O, DL, MO, CP, K, DR, web, comp, specs, fileSpecs } = await loadModules();
-    this.CP = CP; this.K = K; this.DR = DR; this.web = web; this.comp = comp; 
+    const { M, S, Pl, P, IX, O, DL, MO, CP, K, DR, SC, web, comp, specs, fileSpecs } = await loadModules();
+    this.CP = CP; this.K = K; this.DR = DR; this.SC = SC; this.web = web; this.comp = comp; 
     this.mo = MO.createMotions({ fallbackEasing: () => this.specs && this.specs.tokens['motion.easing.standard'] });
     this.M = M; this.S = S; this.P = P; this.IX = IX; this.O = O; this.DL = DL; this.specs = specs; this.fileSpecs = fileSpecs; E = specs.tokens['motion.easing.standard'] || E;
     this.dataSrc = { get: (r, p) => this.getData(r, p) };
@@ -307,7 +278,7 @@ class Component extends DCLogic {
     this.setState({ ready: true });
     this.scheduleLaunch();
   }
-  componentWillUnmount() { clearTimeout(this.launchT); this.cancelEntry(); clearInterval(this.tick); window.removeEventListener('keydown', this.onKey); window.removeEventListener('storage', this.onStorage); if (this.panelRO) this.panelRO.disconnect(); }
+  componentWillUnmount() { clearTimeout(this.launchT); this.cancelEntry(); clearInterval(this.tick); window.removeEventListener('keydown', this.onKey); window.removeEventListener('storage', this.onStorage); }
 
   // ── simulated data layer (offline / slow / failing) ────
   getData(ref, params = {}) {
@@ -372,7 +343,7 @@ class Component extends DCLogic {
     const snap = this.model.query.snapshot(this.ms, this.model.config), d = DEVICES[this.state.layout];
     this.model = this.newModel(d);
     this.model.dispatch({ type: 'restore', snapshot: JSON.parse(JSON.stringify(snap)) });
-    this.setState({ ovRect: null, ovInset: null, backOverride: null, frontTopOverride: null, ft: null, cf: null, entry: null });
+    this.setState({ ovRect: null, ovInset: null, frontTopOverride: null, ft: null, cf: null, entry: null });
     this.cancelEntry();
     this.log('restart · restored snapshot');
     this.scheduleLaunch();
@@ -387,22 +358,12 @@ class Component extends DCLogic {
     this.syncPulse();
     { const bw = this.abBtnRef.current ? this.abBtnRef.current.offsetWidth : 0; if (bw !== (this.abBtnW || 0)) { this.abBtnW = bw; this.forceUpdate(); } }
     if (this.pendingAnim && this.pendingAnim.ready()) { const p = this.pendingAnim; this.pendingAnim = null; p.run(); }
-    const pe = this.panelRef.current;
-    if (pe !== this.panelSeen) {   // the panel's content can grow after a render (a DC loading late): measure again when it resizes
-      if (this.panelRO) this.panelRO.disconnect();
-      this.panelSeen = pe; this.panelRO = pe && window.ResizeObserver ? new ResizeObserver(() => this.forceUpdate()) : null;
-      if (this.panelRO) this.panelRO.observe(pe);
-    }
-    if (pe && this.model && !this.state.backOverride) {
-      const id = this.cur().ps.config.id, hgt = pe.offsetHeight, m = this.measured[id] || {};
-      if (m.panel !== hgt) { this.measured = { ...this.measured, [id]: { ...m, panel: hgt } }; this.forceUpdate(); }
-    }
     if (!this.model) return;
     { const ov = this.ovScrollRef.current, ap = this.model.query.currentPage(this.ms);
-      if (ov && ap && ap.config.kind === 'appBar') { this.bindCollapse(ov, 'ov'); this.mo.restoreScroll(ov, Math.min(this.P.contentOffset(ap, this.look()), Math.max(0, ov.scrollHeight - ov.clientHeight))); } }
+      if (ov && ap && ap.config.kind === 'appBar') { this.SC.bind(ov, { state: () => this.surfaceState('scroll'), send: top => this.collapseScroll({ type: 'scroll', top }) }); this.mo.restoreScroll(ov, Math.min(this.P.contentOffset(ap, this.look()), Math.max(0, ov.scrollHeight - ov.clientHeight))); } }
     const el = this.scrollRef.current;
     if (!el) return;
-    this.bindCollapse(el, 'front');
+    this.SC.bind(el, { state: () => this.surfaceState('front.scroll'), send: top => this.collapseScroll({ type: 'scroll', top }) });
     const want = Math.min(this.P.contentOffset(this.cur().ps, this.look()), Math.max(0, el.scrollHeight - el.clientHeight));   // 15.0: scroll is collapse-first; the content holds only what is past the collapse
     if (this.smoothScroll) { this.smoothScroll = false; if (Math.abs(el.scrollTop - want) > 1) el.scrollTo({ top: want, behavior: this.reduced ? 'auto' : 'smooth' }); }
     else if (this.mo.restoreScroll(el, want)) this.quietScroll = true;
@@ -452,39 +413,29 @@ class Component extends DCLogic {
   }
   insetFrom(r) { return { t: Math.max(0, r.top), l: Math.max(0, r.left), r: Math.max(0, G.CW - r.left - r.w), b: Math.max(0, G.H - r.top - r.h) }; }
   maxR(x, y, w, h) { return Math.ceil(Math.max(Math.hypot(x, y), Math.hypot(w - x, y), Math.hypot(x, h - y), Math.hypot(w - x, h - y))); }
-  // collapse-first scroll (15.0): while the page's bar is (partly) expanded, wheel / touch input collapses or expands it instead
-  // of scrolling the content (the page grows); native scrolling takes over once the bar has collapsed. kind: 'front' | 'ov'
-  bindCollapse(el, kind) {
-    if (!el || el._cf) return; el._cf = true;
-    const page = () => kind === 'front' ? this.cur().ps : this.model.query.currentPage(this.ms);
-    let y = null, manual = false;
-    const take = (dy, e) => {
-      if (!this.model || !dy) return false;
-      const pg = page(); if (!pg || (kind === 'ov' && pg.config.kind !== 'appBar')) return false;
-      const d = this.P.barView(pg, this.look()).distance; if (!d) return false;
-      const S = +this.M.getField(pg, kind === 'front' ? 'front.scroll' : 'scroll') || 0, c = Math.min(S, d);
-      let top;
-      if (dy > 0 && c < d) top = Math.min(d, c + dy);
-      else if (dy < 0 && el.scrollTop <= 0 && c > 0) top = Math.max(0, c + dy);
-      else return false;
-      if (e.cancelable) e.preventDefault();
-      this.collapseScroll(top); return true;
-    };
-    el.addEventListener('wheel', e => take(e.deltaY * (e.deltaMode === 1 ? el.clientHeight / 20 : e.deltaMode === 2 ? el.clientHeight : 1), e), { passive: false });
-    el.addEventListener('touchstart', e => { y = e.touches[0].clientY; manual = false; }, { passive: true });
-    el.addEventListener('touchmove', e => {
-      if (y == null) return; const ny = e.touches[0].clientY, dy = y - ny; y = ny;
-      if (take(dy, e)) { manual = true; return; }
-      if (manual && e.cancelable) { e.preventDefault(); el.scrollTop += dy; }   // a gesture that began collapsing the bar keeps scrolling by hand
-    }, { passive: false });
-    el.addEventListener('touchend', () => { y = null; manual = false; }, { passive: true });
+  // a scroll surface's state for collapse-first scrolling (platforms/web/scroll.js): its page's bar distance and offset.
+  // field: 'front.scroll' (the deck's content) · 'back.scroll' (its back layer's panel) · 'scroll' (an app-bar page)
+  surfaceState(field) {
+    const pg = field === 'scroll' ? this.model.query.currentPage(this.ms) : this.cur().ps;
+    if (!pg || (field === 'scroll') !== (pg.config.kind === 'appBar')) return { distance: 0, top: 0 };
+    return { distance: this.P.barView(pg, this.look()).distance, top: +(field === 'back.scroll' ? pg.back.scroll : this.M.getField(pg, field)) || 0 };   // the panel's offset has no state policy
   }
-  collapseScroll(top) {
-    this.model.dispatch({ type: 'scroll', top });
+  // a node's scroll surface (draw.js scroller): a back layer's panel, or a header's detail passing input to what it scrolls
+  scrollerFor(n) {
+    const send = top => this.runAction(this.actOf(n, 'scroll', top));
+    return {
+      bind: el => {
+        this.panelEl = el;
+        this.SC.bind(el, { state: () => this.surfaceState('back.scroll'), send, native: top => { if (this.mo.userScrolled(el)) send(top); } });
+        this.mo.restoreScroll(el, Math.min(this.SC.offsetOf(this.surfaceState('back.scroll')), Math.max(0, el.scrollHeight - el.clientHeight)));
+      },
+      forward: el => this.SC.forward(el, () => { const a = this.actOf(n, 'scroll', 0); return a && a.nav && a.nav.surface === 'panel' ? this.panelEl : this.scrollRef.current; })
+    };
+  }
+  collapseScroll(intent) {
+    this.model.dispatch(intent);
     cancelAnimationFrame(this.cfRaf); this.cfRaf = requestAnimationFrame(() => { this.scrolling = true; this.forceUpdate(() => { this.scrolling = false; }); });
   }
-  // the page's scroll from a native content scroll: whatever has collapsed + the content offset
-  pageScroll(pg, el, field) { const d = this.P.barView(pg, this.look()).distance; return (d ? Math.min(+this.M.getField(pg, field) || 0, d) : 0) + el.scrollTop; }
   track(el) {
     const top = el.scrollTop; let t = '';
     el.querySelectorAll('[data-title]').forEach(n => { if (n.offsetTop <= top + 48) t = n.getAttribute('data-title'); });
@@ -536,7 +487,7 @@ class Component extends DCLogic {
       const src = this.mo.sharedIn(e && e.currentTarget && e.currentTarget.closest('[data-item-id]'));
       this.detailMove({ type: 'pushed', kind: 'backdrop' }, intent, 'open [backdrop] → ' + (item.title || item.id), src,
         () => this.mo.sharedIn(this.backRef.current, 'image', 'detail'),
-        () => { const B = this.backRef.current; return ['header', 'actions', 'basic'].map(k => B && B.querySelector('[data-enter="' + k + '"]')); });
+        () => { const B = this.backRef.current; return ['header', 'actions', 'controls'].map(k => B && B.querySelector('[data-enter="' + k + '"]')); });
       return;
     }
     const ev = { type: 'pushed', kind: 'appBar' }; let committed = false;
@@ -568,7 +519,7 @@ class Component extends DCLogic {
     const from = this.cur().top.openedFrom; let committed = false;   // the detail image flies back into the item it was opened from (choreography shared)
     this.mo.sharedFlight(d, this.mo.sharedIn(this.ovRef.current, 'image', 'detail'), this.phoneRef.current, () => committed && from && this.scrollRef.current ? this.mo.sharedIn(this.scrollRef.current.querySelector('[data-item-id="' + CSS.escape(from) + '"]')) : null);
     this.afterCommit(() => this.mo.expandSurface('surface', d, { surface: this.surfRef.current, page: this.ovRef.current, content: this.fcRef.current, from: this.frontShape(), to, surfaceTo: this.sheetShape(ghost), reverse: true }), () => !!this.state.ghost && !!this.ovRef.current && this.cur().top.page !== ghost);
-    this.setState({ ghost, ovRect: null, ovInset: null, ahOp: 1, ahTrans: 'none', ...(cross ? { frontTr: 'none', backOverride: null } : {}) });
+    this.setState({ ghost, ovRect: null, ovInset: null, ahOp: 1, ahTrans: 'none', ...(cross ? { frontTr: 'none' } : {}) });
     this.dispatch(intent, label); committed = true;
     this.exT = setTimeout(() => this.setState({ ghost: null, ...(cross ? { frontTr: null } : {}) }, () => this.cancelEx()), total);
   }
@@ -612,10 +563,10 @@ class Component extends DCLogic {
       if (r && r.kind === 'push' && r.deck === s.activeDeck && r.prevDeck === r.deck) return this.popDeck({ type: 'back' }, label + ' · pop');
       if (r && (r.kind === 'deckSwitch' || (r.kind === 'push' && r.prevDeck !== r.deck)) && fromAppBar) return this.collapseFrom({ type: 'back' }, label + ' · ' + r.kind, true);
       if (r && (r.kind === 'deckSwitch' || (r.kind === 'push' && r.prevDeck !== r.deck)))
-        return this.fadeThrough('all', () => { this.dispatch({ type: 'back' }, label + ' · ' + r.kind); this.setState({ ovRect: null, ovInset: null, backOverride: null }); });
+        return this.fadeThrough('all', () => { this.dispatch({ type: 'back' }, label + ' · ' + r.kind); this.setState({ ovRect: null, ovInset: null }); });
     }
     const ev = this.dispatch({ type: 'back' }, label);
-    if (ev.some(x => x.type === 'deckSwitched')) this.setState({ ovRect: null, ovInset: null, backOverride: null });
+    if (ev.some(x => x.type === 'deckSwitched')) this.setState({ ovRect: null, ovInset: null });
   }
   up() {
     const deck = this.ms.activeDeck, tp = this.ms.decks[deck].stack.slice(-1)[0].page;
@@ -629,7 +580,7 @@ class Component extends DCLogic {
       return this.dispatch({ type: 'reselectDeck', deck: id }, 'reselect · ' + id + ' (at base → policy)');
     }
     if (!this.reduced && this.cur().top.page.config.kind === 'appBar') return this.collapseFrom({ type: 'switchDeck', deck: id }, 'switchDeck → ' + id, true);
-    this.fadeThrough('all', () => { this.dispatch({ type: 'switchDeck', deck: id }, 'switchDeck → ' + id); this.setState({ ovRect: null, ovInset: null, backOverride: null }); });
+    this.fadeThrough('all', () => { this.dispatch({ type: 'switchDeck', deck: id }, 'switchDeck → ' + id); this.setState({ ovRect: null, ovInset: null }); });
   }
   setExpanded(v, via) { this.dispatch({ type: 'setExpanded', expanded: v }, (v ? 'expand' : 'conceal') + ' · ' + via); }
   openLayer(id, e) {
@@ -675,7 +626,10 @@ class Component extends DCLogic {
   }
   // a node drawn by its DC (platforms/web/draw.js): props, visuals, interaction, events and slots, on the given surface
   drawn(n, surface) { return this.DR.drawNode(n, { specs: this.specs, implemented: this.web.implements, visuals: (x, sf, extra) => this.vis(x, { surface: sf, ...(extra || {}) }), ix: (x, sf, piece) => this.nix(x, { surface: sf, ...(piece || {}) }),
-    motions: x => Object.fromEntries(Object.keys((this.specs.components[x.component] || {}).motion || {}).map(k => [k, this.P.motionFor(this.specs, x.component, k, this.ms.prefs)])), emit: (x, ev, payload, e) => this.runAction(this.actOf(x, ev, payload), e) }, surface); }
+    motions: x => Object.fromEntries(Object.keys((this.specs.components[x.component] || {}).motion || {}).map(k => [k, this.P.motionFor(this.specs, x.component, k, this.ms.prefs)])), emit: (x, ev, payload, e) => this.runAction(this.actOf(x, ev, payload), e),
+    transition: () => this.mxExpand, measure: (x, name, px) => this.measure(x, name, px), image: this.S.imageCss, scroller: x => this.scrollerFor(x) }, surface); }
+  // a size a DC reports that the engine's layout needs (the back layer's panel height): kept per page, drawn again when it changes
+  measure(n, name, px) { const id = n.page && n.page.config.id; if (!id) return; const m = this.measured[id] || {}; if (m[name] === px) return; this.measured = { ...this.measured, [id]: { ...m, [name]: px } }; this.forceUpdate(); }
   vis(n, extra = {}) { return n && n.component ? this.P.resolveVisuals(this.specs, n.component, 'enabled', { variant: n.variants || {}, env: this.lenv(), ...extra }) : {}; }
   // the FAB of a header's fab slot: its first node (several share one place; the icon morphs between them)
   fabFor(nodes, top) {
@@ -689,7 +643,7 @@ class Component extends DCLogic {
       return G.CW - 2 * (+V.bottomRowPadX || 0) - (bw ? bw + (+V.bottomRowGap || 0) : 0) - 2 * (+this.P.resolveVisuals(this.specs, 'localSearch', 'enabled', {}).padX || 0);
     }
     const RVc = (id, variant) => this.P.resolveVisuals(this.specs, id, 'enabled', { variant: variant || {} });
-    const inset = +RVc(theme === 'front' ? 'frontHeader' : theme === 'back' ? 'header' : 'appBar').spanInset || 0;
+    const inset = +RVc(theme === 'front' ? 'frontHeader' : 'appBar').spanInset || 0;
     const others = (start || []).filter(n => n.contract !== 'find' && n.shown !== false).reduce((w, n) => { const V = this.vis(n); return w + (+(V.slotWidth ?? V.size) || 0); }, 0);
     return G.CW - inset - others;
   }
@@ -713,7 +667,7 @@ class Component extends DCLogic {
   // header slots: config ComponentRefs resolved by the core; this shell maps component ids to its own drawing
   // the surface a header row's items sit on (design providers give their colours): the app bar page form's top row is on
   // back-layer colours, its bottom row on the front-layer-coloured sheet (14.2)
-  surfaceOfTheme(theme) { return theme === 'back' || theme === 'appbar' ? 'backLayer' : theme === 'front' || theme === 'appbottom' ? 'frontLayer' : 'appBar'; }
+  surfaceOfTheme(theme) { return theme === 'appbar' ? 'backLayer' : theme === 'front' || theme === 'appbottom' ? 'frontLayer' : 'appBar'; }
   hItems(nodes, theme, page, start = []) {   // start: the bar's start slot (a spanning find field leaves room for it)
     const dur = this.dur, surface = theme === 'layer' ? null : this.surfaceOfTheme(theme);   // layer headers: their layer's surface
     return (nodes || []).map(n => {
@@ -724,7 +678,7 @@ class Component extends DCLogic {
         const open = n.values.open, span = d.dc === 'Morph' && ['header', 'row'].includes(n.variants.span);
         const bs = F ? +F.props.visuals.size || 0 : +this.P.resolveVisuals(this.specs, 'iconButton', 'enabled', {}).size || 0;
         const w = open ? (span ? Math.max(+fv.minWidth || 0, this.barSpan(theme, start)) : +fv.width || 0) : 0;
-        v.props = { ...d.props, width: w, motion: this.P.motionFor(this.specs, n.component, 'morphed', this.ms.prefs), light: theme === 'back' ? undefined : '1' };
+        v.props = { ...d.props, width: w, light: '1' };
         v.spans = open && span;
         v.maxW = (open ? w : bs) + 2 * (+fv.padX || 0) + (+fv.slotPad || 0);
       }
@@ -751,6 +705,7 @@ class Component extends DCLogic {
     }
     const i = a.nav; if (!i) return;
     if (i.type === 'up' && !i.target && !(this.ms.layers[this.ms.focus] && this.ms.layers[this.ms.focus].open)) return this.up();
+    if (i.type === 'scroll') return this.collapseScroll(i);
     if (i.type === 'toggleExpanded') return this.setExpanded(!this.cur().ps.back.expanded, 'header button');
     if (i.type === 'openLayer') return this.openLayer(i.layer, e);
     if (i.type === 'switchDeck' || i.type === 'reselectDeck') return this.switchDeck(i.deck);
@@ -779,35 +734,8 @@ class Component extends DCLogic {
   }
 
   // ── view values ────────────────────────────────────────
-  backVals(ps, isBase) {
-    const c = ps.config, look = this.look(), page = this.pageNode(ps), back = page.children.back, H = back.children.header;
-    // a region view (core Layout): a panel taller than its room is held to it and scrolls (its content keeps its own height, measured)
-    const RI = {}; back.values.regions.forEach(r => { (RI[r.region] = RI[r.region] || []).push({ top: r.top, op: r.opacity, ev: r.interactive ? 'auto' : 'none', h: r.scrolls ? r.height + 'px' : 'auto', ov: r.scrolls ? 'auto' : 'visible' }); });
-    const RH = Object.fromEntries(back.values.regions.map(r => [r.region, r.height]));
-    const bhLeft = this.hItems(this.sl(H, 'start'), 'back', ps);
-    // param-control rows (core): the back layer's controls rows in the controls region (shown concealed too), its panel rows in the panel
-    const MN = back.children.more || null, BV = this.P.resolveVisuals(this.specs, 'backLayer', 'enabled', {});
-    const basicRows = back.children.controls.map(r => ({ controls: r.children.controls.map(n => this.drawn(n, 'backLayer')) }));   // each control drawn from its node (platforms/web/draw.js)
-    return {
-      rHeader: RI.header || [], rBasic: RI.controls || [], rPanel: RI.panel || [], rActions: RI.actions || [],
-      // the actions region's buttons (config back.actions: e.g. the artist page's play buttons below its details)
-      actH: RH.actions || 0, actBtns: back.children.actions.filter(n => n.shown !== false).map(n => ({ text: n.props.text || '', icon: n.props.icon || '', ix: this.nix(n, { surface: 'backLayer' }) })),
-      bhLeft, bhRight: this.hItems(this.sl(H, 'end'), 'back', ps, this.sl(H, 'start')), bhTitle: this.titleText(this.sl(H, 'title'), ps),
-      ...(() => {   // the header's expanded slot (detail info), shrinking with barView progress (core layout)
-        const X = this.sl(H, 'expanded')[0], bv = this.P.barView(ps, look), base = bv.height - bv.distance * (1 - bv.progress);
-        if (!X || !bv.distance) return { bhX: { show: false, vis: {}, fg: 'inherit', h: 0, op: 0, sc: 1, art: 0, rad: '0', img: 'none', title: '', sub: '', meta: '' }, bhTitleOp: 1 };
-        const p = bv.progress, DV = this.vis(X, { surface: 'backLayer' }), HV = this.vis(H, { surface: 'backLayer' }), from = +HV.titleFadeFrom || 0;
-        return { bhX: { show: true, vis: DV, fg: this.P.resolveValue(this.specs, 'backLayer', { role: 'content' }, { surface: 'backLayer' }), h: Math.max(0, bv.height - base), op: Math.max(0, 1 - p * (+HV.detailFade || 1)), sc: 1 - (+HV.detailShrink || 0) * p, art: +DV.artSize || 0, rad: (+DV.artRadius || 0) + 'px', img: artCss(X.props.image), title: X.props.title || '', sub: X.props.subtitle || '', meta: X.props.meta || '' }, bhTitleOp: Math.min(1, Math.max(0, (p - from) / (1 - from || 1))) };
-      })(),
-      basicRows,
-      canBack: !isBase, basicH: basicRows.length ? (RH.controls || 0) / basicRows.length : 0, panelRef: this.panelRef,
-      panelH: 'auto',
-      // an open More (core: the back layer's more child) takes the panel: its bar (morePanel: ✕ + title), then its rows in the panel's place
-      moreOpen: !!MN, panelPad: MN ? BV.morePadding : BV.panelPadding, panelLine: MN ? BV.moreDivider : BV.panelDivider, moreHead: MN ? { title: MN.props.title || MN.values.title || '', vis: this.vis(MN, { surface: 'backLayer' }), pos: this.vis(MN).pinned ? 'sticky' : 'relative', closeIx: this.ix(MN.key + '/close', this.actOf(MN, 'close'), () => this.runAction(this.actOf(MN, 'close')), { component: 'iconButton', label: MN.props.closeLabel || '' }) } : { title: '', vis: {}, pos: 'relative', closeIx: INERT },
-      // panel rows: each drawn by the component composition hires for it (panelRow: its label, then its controls; in a More, no label)
-      panelRows: (MN ? MN.children.paramControls : back.children.panel).map(r => this.drawn(r, 'backLayer'))
-    };
-  }
+  // the back layer: its node, drawn by the component composition hires for it (BackLayer)
+  backVals(ps) { const back = this.pageNode(ps).children.back; return back ? this.drawn(back, 'backLayer') : { props: {} }; }
   frontVals(ps, isBase) {
     const c = ps.config, F = c.front, ctx = this.ctxFor(ps, isBase), items = ctx.items;
     const q = this.model.query, s = this.ms, cfg = this.model.config;
@@ -819,7 +747,7 @@ class Component extends DCLogic {
     const press = n => e => { if (ctx.ex) return; const a = this.actOf(n); if (a && a.nav && a.nav.type === 'open') return this.openItem(a.nav.item, e); this.runAction(a, e); };
     const byId = new Map(CN.children.items.map(n => [n.config.item.id, n]));
     const itemView = it => { const n = byId.get(it.id); if (!n) return { id: it.id, label: '', sub: '', art: 'transparent', entries: [], shape: '', ix: INERT };
-      return { id: it.id, label: n.props.title || '', sub: n.props.subtitle || '', art: artCss(n.props.image), entries: this.sl(n, 'entries').map(e => ({ id: e.config.item.id, title: e.props.title || e.config.item.id, art: artCss(e.props.image), shape: e.props.shape || '', ix: this.nix(e, { run: press(e), component: 'gridCard' }) })),
+      return { id: it.id, label: n.props.title || '', sub: n.props.subtitle || '', art: this.S.imageCss(n.props.image), entries: this.sl(n, 'entries').map(e => ({ id: e.config.item.id, title: e.props.title || e.config.item.id, art: this.S.imageCss(e.props.image), shape: e.props.shape || '', ix: this.nix(e, { run: press(e), component: 'gridCard' }) })),
       shape: n.props.shape || '', ix: this.nix(n, { run: press(n) }) }; };
     const typeIcon = it => (this.tplOf(it) || {}).kind === 'appBar' ? 'open_in_full' : 'layers';
     const kindOf = it => { const T = this.tplOf(it); return !T ? '' : T.kind === 'appBar' ? 'app bar page' : 'in-backdrop · ' + it.opens.template; };
@@ -872,7 +800,7 @@ class Component extends DCLogic {
         const g = this.P.resolveVisuals(this.specs, 'gridLayout', 'enabled', { env: this.lenv() }), gap = +g.gap || 0, mx = +g.maxColumnWidth || +this.specs.tokens['grid.column.max'], pad = +g.margin || 0;
         const W = G.CW - 2 * pad, n = Math.max(1, Math.ceil((W + gap) / (mx + gap)));
         return { cols: 'repeat(' + n + ', minmax(0, 1fr))', gap: gap + 'px', pad, padEnd: pad + (+g.scrollbarGutter || 0), aspect: String(+g.itemAspect || 1) }; })(),
-      onFrontScroll: e => { const restored = !this.mo.userScrolled(e.currentTarget); const before = q.derived(this.ms, cfg, 'scrolled', this.model.query.underPage(this.ms)), hx = (bv => bv.distance ? bv.height + bv.distance * bv.progress : 0)(this.P.barView(ps, this.look())), top = this.pageScroll(this.cur().ps, e.currentTarget, 'front.scroll'), ev = this.model.dispatch({ type: 'scroll', top });
+      onFrontScroll: e => { const restored = !this.mo.userScrolled(e.currentTarget); const before = q.derived(this.ms, cfg, 'scrolled', this.model.query.underPage(this.ms)), hx = (bv => bv.distance ? bv.height + bv.distance * bv.progress : 0)(this.P.barView(ps, this.look())), top = (s => (s.distance ? Math.min(s.top, s.distance) : 0) + e.currentTarget.scrollTop)(this.surfaceState('front.scroll')), ev = this.model.dispatch({ type: 'scroll', top });
         if (before !== q.derived(this.ms, cfg, 'scrolled', this.model.query.underPage(this.ms)) || (hx && top < hx + 40)) { if (restored) return this.track(e.currentTarget);   // a page change restoring its scroll: keep that change's motion (front layer slide)
           cancelAnimationFrame(this.scrRaf); this.scrRaf = requestAnimationFrame(() => { this.scrolling = true; this.forceUpdate(() => { this.scrolling = false; }); }); } this.track(e.currentTarget); this.showThumb(e.currentTarget); if (ev.some(x => x.type === 'headerVisibilityChanged')) { this.scrolling = false; this.noteChange(ev); this.forceUpdate(); } }
     };
@@ -885,12 +813,12 @@ class Component extends DCLogic {
       title: top.body ? '' : this.model.query.derived(this.ms, this.model.config, 'pageTitle', pg),
       isList: !!top.content, isPlayer: !!top.body, hb: top.body ? 'transparent' : '', hh: top.body && pg.sheet && pg.sheet.expanded ? 0 : 56, hop: top.body && pg.sheet && pg.sheet.expanded ? 0 : 1,
       rows: (CN ? CN.children.items : []).map(n => { const it = n.config.item, a = this.actOf(n);
-        return { id: it.id, label: n.props.title || it.id, sub: n.props.subtitle || '', art: artCss(n.props.image),
+        return { id: it.id, label: n.props.title || it.id, sub: n.props.subtitle || '', art: this.S.imageCss(n.props.image),
           icon: !it.opens ? '' : it.opens.kind === 'layerPage' ? 'chevron_right' : 'arrow_outward',
           ix: this.nix(n, { action: a, run: e => {
             if (!a || !a.nav) return this.runAction(a, e);
             const ev = this.dispatch(a.nav, id + (it.opens.kind === 'layerPage' ? ' → ' : ' link → ') + (n.props.title || it.id));
-            if (ev.some(x => x.type === 'deckSwitched')) this.setState({ ovRect: null, ovInset: null, backOverride: null });
+            if (ev.some(x => x.type === 'deckSwitched')) this.setState({ ovRect: null, ovInset: null });
           } }) }; }),
       start: this.hItems(this.sl(H, 'start'), 'layer', pg), end: this.hItems(this.sl(H, 'end'), 'layer', pg, this.sl(H, 'start'))
     };
@@ -901,9 +829,9 @@ class Component extends DCLogic {
       const v = { panelH: 'auto', dur: 0, ovDur: 0, ease: E, ddDur: 0, ddEase: E, frontTL: 0, pw: DEVICES.phone.width, frameRad: 0, screenBottom: 0, screenLeft: 0, screenRight: 0, frontTop: 0, navShift: 0, backBg: 'transparent', phoneH: PHONE_H, scrollRoom: 0, warm: { noop: () => {}, none: [], info: { show: false }, buttons: [], ix: {} }, ab: { range: 0, full: 0, sheetH: 0, none: [], rowVis: {}, find: [], buttons: [] }, mx: { expand: {}, page: {}, layer: { nowPlaying: {}, Dedede: {}, menu: {}, account: {} } } };
       STUB_LISTS.forEach(k => { v[k] = []; });
       v.nn = { rows: [], top: PHONE_H, h: PHONE_H, w: DEVICES.phone.width, left: 0, tx: 0, peekOp: 0, sheetOp: 0, rad: '0' }; v.dd = { rows: [], clip: 'circle(0)', ev: 'none' };
-      v.ftB = v.ftF = v.ftO = { op: 1, sc: 1, tr: 'none', tx: 0 }; v.ahShadow = 'none'; v.ahTitleOp = 1; v.barVisBack = v.barVisFront = v.barVisApp = v.barVisLayer = {}; v.sv = { front: {}, back: {}, sheet: {}, side: {}, drawer: {}, signIn: {}, splash: {}, navBar: {}, rail: {}, pageFill: 'transparent', frontScrim: 'transparent', frontScrimOn: false }; v.barMo = v.fhMo = v.ahMo = {}; v.ovX = { show: false }; v.railTop = []; v.railBottom = []; v.rail = { tr: 'none', collapsed: true, ex: false, w: 0, align: 'center', padX: 0, shadow: 'none', ms: 0, ease: E, mo: {}, padY: 0, gap: 0, groupGap: 0 }; v.railItemVis = v.drawerItemVis = {}; 
-      v.blockRowPad = 9; v.fab = v.ahFab = { show: false, ix: INERT, end: 0, top: 0, vis: {}, icon: '' }; v.bhX = { show: false }; v.bhTitleOp = 1; v.fhH = 0; v.fhRow = 0; v.ahH = 0; v.alpha = { show: false, keys: [] }; v.groups = []; v.np = { ctrls: [], tabBar: { props: {} }, rows: [], mini: [], miniOp: 0, miniEv: 'none', bodyOp: 1, empty: false, emptyText: '', artVis: {}, infoVis: {}, seekVis: {}, rowVis: {}, tabBar: { props: {} }, emptyVis: {} }; v.dr = { items: [], ev: 'none', title: '', w: 0, tx: -110, op: 0 }; v.acc = { ev: 'none', start: [], rows: [], signIx: INERT, title: '', name: '', email: '', plan: '', art: '', signText: '', ty: 100 };
-      v.cv = {}; v.gate = { ix: INERT }; v.dialog = { cancelIx: INERT, okIx: INERT }; v.snack = { ix: INERT }; v.menu = { show: false, items: [] }; v.ovRows = []; v.ovHead = { title: '', sub: '', art: '' }; v.pl = { icon: '', t: INERT, n: INERT, t2: INERT, n2: INERT, card: [], peek: [], mini: [] }; v.sheetVis = { overflow: 'hidden' }; v.npVis = {}; v.npH = 0; v.cardVis = {}; v.titleVisBack = v.titleVisFront = v.titleVisBar = v.groupVis = v.alphaVis = {}; v.urlDraft = '';
+      v.ftB = v.ftF = v.ftO = { op: 1, sc: 1, tr: 'none', tx: 0 }; v.ahShadow = 'none'; v.ahTitleOp = 1; v.barVisFront = v.barVisApp = v.barVisLayer = {}; v.backLayer = { props: {} }; v.sv = { front: {}, back: {}, sheet: {}, side: {}, drawer: {}, signIn: {}, splash: {}, navBar: {}, rail: {}, pageFill: 'transparent', frontScrim: 'transparent', frontScrimOn: false }; v.barMo = v.fhMo = v.ahMo = {}; v.ovX = { show: false }; v.railTop = []; v.railBottom = []; v.rail = { tr: 'none', collapsed: true, ex: false, w: 0, align: 'center', padX: 0, shadow: 'none', ms: 0, ease: E, mo: {}, padY: 0, gap: 0, groupGap: 0 }; v.railItemVis = v.drawerItemVis = {}; 
+      v.blockRowPad = 9; v.fab = v.ahFab = { show: false, ix: INERT, end: 0, top: 0, vis: {}, icon: '' }; v.fhH = 0; v.fhRow = 0; v.ahH = 0; v.alpha = { show: false, keys: [] }; v.groups = []; v.np = { ctrls: [], tabBar: { props: {} }, rows: [], mini: [], miniOp: 0, miniEv: 'none', bodyOp: 1, empty: false, emptyText: '', artVis: {}, infoVis: {}, seekVis: {}, rowVis: {}, tabBar: { props: {} }, emptyVis: {} }; v.dr = { items: [], ev: 'none', title: '', w: 0, tx: -110, op: 0 }; v.acc = { ev: 'none', start: [], rows: [], signIx: INERT, title: '', name: '', email: '', plan: '', art: '', signText: '', ty: 100 };
+      v.cv = {}; v.gate = { ix: INERT }; v.dialog = { cancelIx: INERT, okIx: INERT }; v.snack = { ix: INERT }; v.menu = { show: false, items: [] }; v.ovRows = []; v.ovHead = { title: '', sub: '', art: '' }; v.pl = { icon: '', t: INERT, n: INERT, t2: INERT, n2: INERT, card: [], peek: [], mini: [] }; v.sheetVis = { overflow: 'hidden' }; v.npVis = {}; v.npH = 0; v.cardVis = {}; v.titleVisFront = v.titleVisBar = v.groupVis = v.alphaVis = {}; v.urlDraft = '';
       v.subIx = v.retryIx = v.ddCircleIx = INERT;
       Object.assign(v.nn, { peekSub: '', peekTitle: '', peekArt: '', title: '', peekIx: INERT, titleIx: INERT, start: [], end: [] }); Object.assign(v.dd, { title: '', start: [], end: [] });
       v.layoutInfo = 'loading model…'; v.backLabel = 'Back'; v.focusLabel = '—'; v.historyCaption = '';
@@ -921,8 +849,7 @@ class Component extends DCLogic {
     v.backBg = this.specs.tokens[(this.props.palette ?? 'Grey') === 'Grey' ? 'color.backLayer' : 'color.backLayerAlt'];
     v.dur = this.dur; v.ovDur = this.T; v.ease = this.ease;
     { const dd = this.tr({ type: ms.layers.Dedede.open ? 'layerOpened' : 'layerClosed', layer: 'Dedede' }); v.ddDur = this.msOf(dd); v.ddEase = this.easeOf(dd); }
-    Object.assign(v, this.backVals(ps, ui === 0), this.frontVals(ps, ui === 0));
-    if (this.state.backOverride) { const o = this.backVals(this.state.backOverride, false); BACK_KEYS.forEach(k => { v[k] = o[k]; }); }
+    Object.assign(v, this.frontVals(ps, ui === 0));
 
     // fade through
     const ft = this.state.ft, NONE = { op: 1, sc: 1, tr: 'none' };
@@ -936,12 +863,8 @@ class Component extends DCLogic {
       v.mx = { expand: this.mo.forMove(d, this.scrolling ? 'scroll' : null), page: MX({ type: 'pushed', kind: 'appBar' }),
         layer: Object.fromEntries(Object.keys(ms.layers).map(id => [id, MX({ type: ms.layers[id].open ? 'layerOpened' : 'layerClosed', layer: id })])) }; }
     v.frontTr = this.state.frontTr || v.mx.expand.surface;
-    // tapping the back layer outside any interactive element toggles it (config back.toggleOnTap, default on)
-    v.onBackTap = e => {
-      if (e.target.closest && e.target.closest('button,input,textarea,select,a,[role="button"]')) return;
-      const u = this.cur().ps;
-      if (u.config.back.toggleOnTap !== false) this.setExpanded(!u.back.expanded, 'back layer tap');
-    };
+    this.mxExpand = v.mx.expand;   // the timing draw.js hands every DC (decision 48)
+    v.backLayer = this.backVals(ps);
 
     // in-backdrop expansion + app bar page reveal
     const apage = this.state.ghost || top.page, ac = apage.config;   // ghost: a popped page still fading out
@@ -952,8 +875,8 @@ class Component extends DCLogic {
     // the app-bar page's own content (its data source, its presentation's item component)
     const APN = v.showOverlay ? this.pageNode(apage) : null, AHN = APN ? APN.children.header : null;
     { const ns = APN && APN.children.content ? APN.children.content.children.items : [];
-      v.ovRows = ns.map(n => { const it = n.config.item; return { id: it.id, label: n.props.title || it.id, sub: n.props.subtitle || '', art: artCss(n.props.image), ix: this.nix(n, { run: e => { const a = this.actOf(n); if (a && a.nav && a.nav.type === 'open') return this.openItem(a.nav.item, e); this.runAction(a, e); } }) }; });
-      v.ovHead = APN ? { title: typeof ac.title === 'string' ? ac.title : '', sub: ns.length ? String(ns[0].props.subtitle || '').split(' · ')[0] + ' · ' + ns.length : '', art: artOf(String(ac.id).split('/').pop()) } : { title: '', sub: '', art: '' }; }
+      v.ovRows = ns.map(n => { const it = n.config.item; return { id: it.id, label: n.props.title || it.id, sub: n.props.subtitle || '', art: this.S.imageCss(n.props.image), ix: this.nix(n, { run: e => { const a = this.actOf(n); if (a && a.nav && a.nav.type === 'open') return this.openItem(a.nav.item, e); this.runAction(a, e); } }) }; });
+      v.ovHead = APN ? { title: typeof ac.title === 'string' ? ac.title : '', sub: ns.length ? String(ns[0].props.subtitle || '').split(' · ')[0] + ' · ' + ns.length : '', art: this.S.mockArt(String(ac.id).split('/').pop()) } : { title: '', sub: '', art: '' }; }
     const ahBase = +barVisApp.height || 0, ahH = +barVisApp.topHeight || ahBase;   // page form: the top row; the sheet below it holds expanded + bottom (14.2)
     G.AH = ahH; v.ahLeft = AHN ? this.hItems(this.sl(AHN, 'start'), 'appbar', apage) : []; v.ahRight = AHN ? this.hItems(this.sl(AHN, 'end'), 'appbar', apage, this.sl(AHN, 'start')) : [];
     v.ahTitle = AHN ? this.titleText(this.sl(AHN, 'title'), apage) : ''; v.ahH = ahH;
@@ -969,7 +892,7 @@ class Component extends DCLogic {
     if (v.showOverlay && apage && Xr) { const xr = Xr, XV = this.vis(Xr, { surface: 'appBar' });
       const infoH = Math.max(0, v.ab.sheetH - (+barVisApp.sheetPadTop || 0) - (+barVisApp.bottomRowHeight || 0)), padB = +barVisApp.infoPadBottom || 0;
       const art = Math.max(+barVisApp.infoArtMin || 0, Math.min(+XV.artSize || 0, infoH - (+XV.padTop || 0) - padB));   // the info stays: its artwork shrinks with the sheet
-      v.ovX = { show: true, vis: { ...XV, artSize: art, padBottom: padB }, h: infoH, op: 1, art, rad: (+XV.artRadius || 0) + 'px', img: artCss(xr.props.image), title: xr.props.title || '', sub: xr.props.subtitle || '' };
+      v.ovX = { show: true, vis: { ...XV, artSize: art, padBottom: padB }, h: infoH, op: 1, art, rad: (+XV.artRadius || 0) + 'px', img: this.S.imageCss(xr.props.image), title: xr.props.title || '', sub: xr.props.subtitle || '' };
       v.ahTitleOp = 0; }
     if (v.ahSpan) v.ahTitleOp = 0; v.ahTitleW = v.ahSpan ? '0px' : '100%';
     v.barVisApp = barVisApp; v.abBtnRef = this.abBtnRef; v.ovThumbRef = this.ovThumbRef; v.ovScrollRef = this.ovScrollRef;
@@ -978,7 +901,7 @@ class Component extends DCLogic {
     if (!this.warmRefs) this.warmRefs = [React.createRef(), React.createRef(), React.createRef()];
     Object.assign(v.warm, { ref: this.warmRefs[0], ref2: this.warmRefs[1], ref3: this.warmRefs[2], box: { top: 0, h: 0, rad: '0', left: 0, w: 0, r: 0, op: 0 }, ab: { sheetH: 0, find: [], buttons: [] } });
     v.ahShadow = 'none';
-    v.onOvScroll = e => { if (!apage) return; this.showThumb(e.currentTarget, this.ovThumbRef, v.ab.sheetH); if (!this.mo.userScrolled(e.currentTarget)) return; const before = this.P.barView(apage, this.look()).progress; this.model.dispatch({ type: 'scroll', top: this.pageScroll(apage, e.currentTarget, 'scroll') }); const ap2 = this.model.query.currentPage(this.ms); if (ap2.config.kind === 'appBar' && this.P.barView(ap2, this.look()).progress !== before) { cancelAnimationFrame(this.ovRaf); this.ovRaf = requestAnimationFrame(() => { this.scrolling = true; this.forceUpdate(() => { this.scrolling = false; }); }); } };
+    v.onOvScroll = e => { if (!apage) return; this.showThumb(e.currentTarget, this.ovThumbRef, v.ab.sheetH); if (!this.mo.userScrolled(e.currentTarget)) return; const before = this.P.barView(apage, this.look()).progress; this.model.dispatch({ type: 'scroll', top: (s => (s.distance ? Math.min(s.top, s.distance) : 0) + e.currentTarget.scrollTop)(this.surfaceState('scroll')) }); const ap2 = this.model.query.currentPage(this.ms); if (ap2.config.kind === 'appBar' && this.P.barView(ap2, this.look()).progress !== before) { cancelAnimationFrame(this.ovRaf); this.ovRaf = requestAnimationFrame(() => { this.scrolling = true; this.forceUpdate(() => { this.scrolling = false; }); }); } };
     v.ahFab = AHN ? this.fabFor(this.sl(AHN, 'fab'), v.ovX.show ? Math.max(ahBase, ahBase + v.ovX.h - (+this.M.getField(apage, 'scroll') || 0) - 20) : ahBase) : { show: false, ix: INERT }; v.ahFab.end = AHN ? this.fabEnd(this.sl(AHN, 'end'), 4) : 4; v.ahOp = this.state.ahOp; v.ahTrans = this.state.ahTrans; v.ahEv = this.state.ahOp > 0 ? 'auto' : 'none';
     const ins = this.state.ovInset || { t: 0, r: 0, b: 0, l: 0 };
     v.ovInsetCss = 'inset(' + ins.t + 'px ' + ins.r + 'px ' + ins.b + 'px ' + ins.l + 'px)';
@@ -992,11 +915,11 @@ class Component extends DCLogic {
       ...(wide
         ? { left: G.PW - G.SW, w: G.SW, top: 0, h: 720, tx: nOpen ? 0 : G.SW + 16, rad: '0px', shadow: (G.side === 'beside' ? SSV.shadowBeside : SSV.shadowOver) || 'none', peekOp: 0, peekEv: 'none', sheetOp: 1, sheetEv: nOpen ? 'auto' : 'none' }
         : { left: 0, w: G.PW, top: nOpen ? 0 : G.H, h: 720, tx: 0, rad: nOpen ? '0px' : BSV.closedRadius || '0px', shadow: BSV.shadow || 'none', peekOp: nOpen ? 0 : 1, peekEv: nOpen ? 'none' : 'auto', sheetOp: nOpen ? 1 : 0, sheetEv: nOpen ? 'auto' : 'none' }),
-      peekSub: this.peekSub(), peekTitle: this.peekTitle(), peekArt: this.player.current() ? artCss(this.player.current().image) : '',
+      peekSub: this.peekSub(), peekTitle: this.peekTitle(), peekArt: this.player.current() ? this.S.imageCss(this.player.current().image) : '',
       peekIx: this.ix(this.key('peek:nowPlaying', null, 'peek'), { nav: { type: 'openLayer', layer: 'nowPlaying' } }, () => this.openLayer('nowPlaying'), { component: 'listItem', label: q.text(ms, cfg, 'nowPlaying.open') }),
       titleIx: wide ? INERT : this.ix(this.key('layer:nowPlaying', null, 'header.title'), { nav: { type: 'closeLayer', layer: 'nowPlaying' } }, () => this.closeLayer('nowPlaying'), { component: 'listItem', label: q.text(ms, cfg, 'nowPlaying.collapse') }) };
     { const tv = (surface, size) => this.P.resolveVisuals(this.specs, 'title', 'enabled', { surface, variant: { size } });
-      v.titleVisBack = tv('backLayer', 'lg'); v.titleVisFront = tv('frontLayer', 'sm'); v.titleVisBar = tv('appBar', 'lg');
+      v.titleVisFront = tv('frontLayer', 'sm'); v.titleVisBar = tv('appBar', 'lg');
       v.groupVis = this.P.resolveVisuals(this.specs, 'groupHeader', 'enabled', { surface: 'frontLayer' }); v.alphaVis = this.P.resolveVisuals(this.specs, 'alphaIndex', 'enabled', { surface: 'frontLayer' }); }
     { const sv = this.P.resolveVisuals(this.specs, 'bottomSheet', 'enabled', {}); v.sheetVis = { ...sv, overflow: sv.clip ? 'hidden' : 'visible' }; }
     v.npVis = this.P.resolveVisuals(this.specs, 'nowPlaying', 'enabled', { surface: 'bottomSheet' }); v.npH = +v.npVis.height || 0;
@@ -1017,7 +940,7 @@ class Component extends DCLogic {
         np.artVis = RV('artwork', { size: 'lg' }); np.infoVis = RV('trackInfo', { size: 'lg' }); np.seekVis = RV('seekBar'); np.rowVis = RV('row', { justify: 'spread' });
         np.artW = Math.max(+np.artVis.minSize || 0, Math.min(nnW - (+np.artVis.inset || 0), +np.artVis.maxSize || nnW));
         NP.children.body.forEach(n => {
-          if (n.contract === 'detail') { np.art = n.props.image ? artCss(n.props.image) : ''; if (n.props.title) np.title = n.props.title; np.sub = n.props.subtitle || ''; }
+          if (n.contract === 'detail') { np.art = n.props.image ? this.S.imageCss(n.props.image) : ''; if (n.props.title) np.title = n.props.title; np.sub = n.props.subtitle || ''; }
           if (n.contract === 'seek') { const val = +n.values.positionMs || 0; np.dur = +n.values.durationMs || 1; np.pos = val; np.posText = mm(val); np.durText = mm(n.values.durationMs); np.seekLabel = n.values.label || '';
             np.onSeek = e => { const a = this.actOf(n, 'change', +e.target.value); if (a && a.nav) this.playerCmd(a.nav); }; }
         });
@@ -1030,7 +953,7 @@ class Component extends DCLogic {
           const TB = SN.children.paramControl;
           np.tabBar = TB ? this.drawn(TB, 'bottomSheet') : { props: {} };   // the inner sheet's tabs, drawn from their node (platforms/web/draw.js)
           const RN = SN.children.content.children.items, comp = this.itemComponent(SN.children.content), QV = this.P.resolveVisuals(this.specs, comp, 'enabled', {});
-          np.rows = RN.map(n => ({ id: n.config.item.id, label: n.props.title || '', sub: n.props.subtitle || '', art: n.props.image ? artCss(n.props.image) : 'transparent', trailing: comp === 'queueRow' ? (QV.handle || '') : '', bg: n.props.current ? (QV.currentFill || 'transparent') : 'transparent',
+          np.rows = RN.map(n => ({ id: n.config.item.id, label: n.props.title || '', sub: n.props.subtitle || '', art: n.props.image ? this.S.imageCss(n.props.image) : 'transparent', trailing: comp === 'queueRow' ? (QV.handle || '') : '', bg: n.props.current ? (QV.currentFill || 'transparent') : 'transparent',
             ix: this.nix(n, { component: comp === 'queueRow' ? 'listRow' : comp }) }));
         }
       }
@@ -1046,7 +969,7 @@ class Component extends DCLogic {
       if (AL) { const ap2 = ms.layers.account.stack[0].page, AN = this.pageNode(ap2, ['fullscreenLayer'], { layer: 'account' }), H2 = AN.children.header; v.acc.title = this.titleText(this.sl(H2, 'title'), ap2);
         v.acc.start = this.hItems(this.sl(H2, 'start'), 'layer', ap2);
         AN.children.body.forEach(n => {
-          if (n.contract === 'detail') Object.assign(v.acc, { name: n.props.title || '', email: n.props.subtitle || '', art: artCss(n.props.image), headVis: this.vis(n, { surface: 'appBar' }) });
+          if (n.contract === 'detail') Object.assign(v.acc, { name: n.props.title || '', email: n.props.subtitle || '', art: this.S.imageCss(n.props.image), headVis: this.vis(n, { surface: 'appBar' }) });
           if (n.contract === 'text') { v.acc.plan = n.values.text || ''; v.acc.planVis = this.P.resolveVisuals(this.specs, 'panelRow', 'enabled', { surface: 'appBar' }); }
           if (n.contract === 'button') { v.acc.signText = n.props.text || ''; v.acc.signIx = this.nix(n); } }); }
     }
@@ -1086,7 +1009,7 @@ class Component extends DCLogic {
     { const SK = 'backdrop-nav-slow-motion'; let st = 0; try { st = Math.max(0, Math.min(4, +localStorage.getItem(SK) || 0)); } catch (e) {}
       v.slowStep = st; v.slowLabel = Math.pow(2, st) + '×';
       v.onSlow = e => { try { localStorage.setItem(SK, String(+e.target.value)); } catch (x) {} this.forceUpdate(); }; }   // motions.js scales every duration × 2^step
-    v.layouts = Object.entries(DEVICES).map(([k, d]) => { const on = this.state.layout === k; return { label: d.label, bg: on ? '#1c1c1c' : 'transparent', fg: on ? '#fff' : '#1c1c1c', pick: () => { this.setState({ layout: k, ovRect: null, ovInset: null, backOverride: null }); this.dispatch({ type: 'setDevice', device: { width: d.width, touch: d.touch } }, 'device · ' + d.label); } }; });
+    v.layouts = Object.entries(DEVICES).map(([k, d]) => { const on = this.state.layout === k; return { label: d.label, bg: on ? '#1c1c1c' : 'transparent', fg: on ? '#fff' : '#1c1c1c', pick: () => { this.setState({ layout: k, ovRect: null, ovInset: null }); this.dispatch({ type: 'setDevice', device: { width: d.width, touch: d.touch } }, 'device · ' + d.label); } }; });
     v.layoutInfo = (G.touch ? 'touch' : 'pointer') + ' · ' + G.layout + ' · nowPlaying ' + (wide ? { beside: 'side sheet beside content', modal: 'modal side sheet', auto: 'auto-collapsing sidebar' }[G.side] : 'bottom sheet') + ' · back: ' + (G.touch ? 'Android = browser' : 'browser history');
     v.backBtn = () => this.back();
     v.backLabel = G.touch ? 'Back · Android = browser' : 'Browser back';
@@ -1168,17 +1091,16 @@ class Component extends DCLogic {
     v.urlDraft = this.state.urlEditing ? this.state.urlDraft : q.url(ms, cfg);
     v.onUrlChange = e => this.setState({ urlDraft: e.target.value, urlEditing: true });
     v.onUrlKey = e => {
-      if (e.key === 'Enter') { const u = this.state.urlDraft || ''; this.setState({ urlEditing: false, ovRect: null, ovInset: null, backOverride: null }); this.dispatch({ type: 'navigateUrl', url: u }, 'navigateUrl · ' + u); }
+      if (e.key === 'Enter') { const u = this.state.urlDraft || ''; this.setState({ urlEditing: false, ovRect: null, ovInset: null }); this.dispatch({ type: 'navigateUrl', url: u }, 'navigateUrl · ' + u); }
       if (e.key === 'Escape') this.setState({ urlEditing: false });
     };
-    v.reset = () => { const d = DEVICES[this.state.layout]; this.model = this.newModel(d); this.setState({ log: ['reset'], ovRect: null, ovInset: null, backOverride: null, frontTopOverride: null, ft: null, cf: null, entry: null }); this.cancelEntry(); this.scheduleLaunch(); };
+    v.reset = () => { const d = DEVICES[this.state.layout]; this.model = this.newModel(d); this.setState({ log: ['reset'], ovRect: null, ovInset: null, frontTopOverride: null, ft: null, cf: null, entry: null }); this.cancelEntry(); this.scheduleLaunch(); };
     /* lint:on */
     // bars (design: header / frontHeader / appBar)
     { const RVb = (id, ctx) => this.P.resolveVisuals(this.specs, id, 'enabled', ctx);
-      v.barVisBack = RVb('header', { surface: 'backLayer' }); v.barVisFront = RVb('frontHeader', { surface: 'frontLayer' });
+      v.barVisFront = RVb('frontHeader', { surface: 'frontLayer' });
       v.barVisLayer = RVb('appBar', { surface: 'appBar', variant: { form: 'layer' } });
       v.barMo = { ms: this.dur }; v.fhMo = { ms: this.dur, titleMs: +v.barVisFront.titleMs || 0 }; v.ahMo = { ms: +v.barVisApp.shadowMs || 0 };
-      v.bhTitlePad = (v.bhLeft || []).some(x => x.op) ? +v.barVisBack.titlePadAfterStart || 0 : +v.barVisBack.titlePadAlone || 0;
     }
     { const RS = (id, st, ctx) => this.P.resolveVisuals(this.specs, id, st || 'enabled', ctx || {});
       v.sv = { front: RS('frontLayer'), back: RS('backLayer'), sheet: RS('bottomSheet', 0, { env: this.lenv() }), side: RS('sideSheet'), drawer: RS('drawer'), signIn: RS('signInPage', 0, { surface: 'signInPage' }), splash: RS('splash'), navBar: RS('navBar'), rail: RS('navRail', 0, { surface: 'navRail' }), pageFill: RS('appBar').pageFill };

@@ -7,17 +7,24 @@
 </head>
 <body>
 <x-dc>
-<div style="height:{{ h }}px;background:{{ fill }};display:flex;align-items:center;gap:{{ gap }}px;font-family:{{ ff }};font-size:{{ fs }}px;font-weight:{{ fw }};color:inherit"><div style="display:flex;margin-inline-start:{{ off }}px"><dc-import name="IconButton" dc-props="{{ closeIx }}" icon="{{ icon }}" hint-size="40px,40px"></dc-import></div><span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ title }}</span></div>
+<div style="display:flex;flex-direction:column;gap:{{ rowGap }}px">
+  <div style="position:{{ pos }};top:0;z-index:1"><div style="height:{{ h }}px;background:{{ fill }};display:flex;align-items:center;gap:{{ gap }}px;font-family:{{ ff }};font-size:{{ fs }}px;font-weight:{{ fw }};color:inherit"><div style="display:flex;margin-inline-start:{{ off }}px"><dc-import name="IconButton" dc-props="{{ closeIx }}" icon="{{ icon }}" hint-size="40px,40px"></dc-import></div><span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ title }}</span></div></div>
+  <sc-for list="{{ rows }}" as="r" hint-placeholder-count="1"><dc-import name="PanelRow" dc-props="{{ r.props }}" hint-size="100%,48px"></dc-import></sc-for>
+</div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:320,&quot;height&quot;:56},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Genre&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;closeIx&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
-// Web implementation of design component morePanel: the bar of an open More — a close button (✕) and the title (its param's label).
-// Its content slot (the More's control rows) is drawn below it by the shell, like a panelRow's. Props: title, closeIx (IconButton props
-// from the shell: label = closeLabel, activate = close), visuals (resolved: height, gap, closeIcon, closeOffset, fontFamily, fontSize, fontWeight, fill; pinned is the shell's: it keeps the bar at the top while the rows scroll).
+// Web implementation of design component morePanel (an open More), drawn from its node (platforms/web/draw.js): its bar — a close
+// button (✕, sends close) and the title (its param's label) — then its content slot (the More's rows, each drawn by its hire,
+// panelRow). The bar stays at the top while the rows scroll when the design pins it. Props: title, closeLabel, slots.content,
+// ixFor, visuals (resolved: height, gap, closeIcon, closeOffset, fontFamily, fontSize, fontWeight, fill, pinned, rowGap).
+// No values of its own.
 class Component extends DCLogic {
   renderVals() {
-    const v = this.props.visuals || {};
-    return { title: this.props.title || '', closeIx: this.props.closeIx || {}, icon: v.closeIcon || '', h: +v.height || 48, fill: v.fill || 'transparent', gap: +v.gap || 0, off: +v.closeOffset || 0,
-      ff: v.fontFamily || 'inherit', fs: +v.fontSize || 14, fw: v.fontWeight || 'normal' };
+    const p = this.props, v = p.visuals || {};
+    const closeIx = p.ixFor ? p.ixFor({ key: 'close', event: 'close', component: 'iconButton', variant: {}, label: p.closeLabel || '' }) : {};
+    return { title: p.title || '', closeIx, icon: v.closeIcon || '', h: +v.height || 48, fill: v.fill || 'transparent', gap: +v.gap || 0, off: +v.closeOffset || 0,
+      ff: v.fontFamily || 'inherit', fs: +v.fontSize || 14, fw: v.fontWeight || 'normal', pos: v.pinned ? 'sticky' : 'relative', rowGap: +v.rowGap || 0,
+      rows: (p.slots && p.slots.content) || [] };
   }
 }
 </script>

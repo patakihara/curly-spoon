@@ -19,6 +19,10 @@
     {
      "event": "tap",
      "send": "toggleExpanded"
+    },
+    {
+     "event": "scroll",
+     "send": "scroll"
     }
    ],
    "tokens": [
@@ -1936,6 +1940,27 @@
    ]
   },
   {
+   "name": "controlsRow",
+   "hires": "panelRow",
+   "contract": "paramControlRow",
+   "clauses": [
+    {
+     "slot": "content",
+     "fill": [
+      {
+       "child": "controls"
+      }
+     ]
+    }
+   ],
+   "variants": [
+    {
+     "axis": "place",
+     "option": "controls"
+    }
+   ]
+  },
+  {
    "name": "moreRow",
    "hires": "panelRow",
    "contract": "paramControlRow",
@@ -2610,6 +2635,13 @@
    "contract": "paramControlRow",
    "within": "paramControlMore",
    "hire": "moreRow"
+  },
+  {
+   "contract": "paramControlRow",
+   "match": {
+    "name": "controls"
+   },
+   "hire": "controlsRow"
   },
   {
    "contract": "paramControlRow",

@@ -32,8 +32,9 @@ export function placesOf(config) {
   };
   const control = (page, within, x) => out.push({ contract: 'paramControl', page: page.id, within, param: paramOf(page, x) });
   // param-control rows and their controls, and each control's More (its rows, or the default one row for the same param)
-  const rows = (page, within, list, depth = 0) => (list || []).forEach(r => {
-    out.push({ contract: 'paramControlRow', page: page.id, within });
+  // group: the back layer's group ('controls' · 'panel'), the row's name for placements; a More's rows have none
+  const rows = (page, within, list, depth = 0, group) => (list || []).forEach(r => {
+    out.push({ contract: 'paramControlRow', page: page.id, within, ...(group ? { name: group } : {}) });
     r.controls.forEach(x => {
       control(page, ['paramControlRow', ...within], x);
       if (x.more && depth < 8) { const m = ['paramControlMore', ...within.slice(within.indexOf('backLayer'))]; out.push({ contract: 'paramControlMore', page: page.id, within: m.slice(1) }); rows(page, m, x.more.paramControls || [{ controls: [{ bind: x.bind }] }], depth + 1); }
@@ -48,7 +49,7 @@ export function placesOf(config) {
       out.push({ contract: 'backLayer', page: p.id, within: w }, { contract: 'frontLayer', page: p.id, within: w }, { contract: 'frontHeader', page: p.id, within: fr });
       header(p, b, p.back.header);
       (p.back.actions || []).forEach(i => item(p, b, i));
-      rows(p, b, p.back.controls); rows(p, b, p.back.panel);
+      rows(p, b, p.back.controls, 0, 'controls'); rows(p, b, p.back.panel, 0, 'panel');
       p.front.header.items.forEach(i => item(p, ['frontHeader', ...fr], i));
       content(p, fr, p.front.content);
     } else {

@@ -18,11 +18,12 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:220},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Maren Holt&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;subtitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Artist · Pop&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;meta&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;2 collections · 9 tracks&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;image&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;linear-gradient(135deg,#1aa,#155)&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
 // Web implementation of design component detailHeader (a detail page's info in a bar's expanded slot).
-// Props: title, subtitle, meta, image (CSS background), visuals (detailHeader, resolved with the placement's variants: shape, layout). No values of its own.
+// Props: title, subtitle, meta, image (a reference turned into a CSS background by imageCss, when drawn from its node; else
+// already a CSS background), visuals (detailHeader, resolved with the placement's variants: shape, layout). No values of its own.
 class Component extends DCLogic {
   renderVals() {
     const p = this.props, v = p.visuals || {}, row = v.align === 'start';
-    return { title: p.title || '', subtitle: p.subtitle || '', hasSub: !!p.subtitle, meta: p.meta || '', hasMeta: !!p.meta, image: p.image || 'transparent',
+    return { title: p.title || '', subtitle: p.subtitle || '', hasSub: !!p.subtitle, meta: p.meta || '', hasMeta: !!p.meta, image: p.imageCss ? p.imageCss(p.image) : p.image || 'transparent',
       dir: row ? 'row' : 'column', align: v.align || 'center', itemsAlign: row ? 'flex-start' : 'center', textFlex: row ? '1' : 'none',
       art: +v.artSize || 96, rad: (v.artRadius ?? 8) + 'px', gap: +v.gap || 8, textGap: +v.textGap || 4, padX: +v.padX || 0, padTop: +v.padTop || 0, padBottom: +v.padBottom || 0,
       titleSize: +v.titleSize || 20, titleWeight: v.titleWeight || 600, titleLh: v.titleLineHeight || 1.2,

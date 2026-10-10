@@ -88,8 +88,8 @@ export function contractTree(model, specs, composition, opts = {}) {
       case 'closeMore': return n.contract === 'paramControlMore' ? { type: 'closeMore', page: pid } : null;
       case 'seek': return { type: 'seek', positionMs: +payload || 0 };
       case 'toggleExpanded': return n.contract === 'backLayer' && n.config.toggleOnTap === false ? null : { type: 'toggleExpanded' };
-      case 'scroll': {   // a header's detail scrolls the surface below it: the back layer's panel while revealed, else the content
-        const panel = n.contract === 'header' && page && page.config.kind === 'backdrop' && page.back.expanded && ((page.config.back.panel || []).length || (page.back.more || []).length);
+      case 'scroll': {   // a header's detail scrolls the surface below it: the back layer's panel while revealed, else the content; a back layer's own scroll is its panel's
+        const panel = n.contract === 'backLayer' || n.contract === 'header' && page && page.config.kind === 'backdrop' && page.back.expanded && ((page.config.back.panel || []).length || (page.back.more || []).length);
         return { type: 'scroll', top: Math.max(0, +payload || 0), ...(panel ? { surface: 'panel' } : {}) };
       }
       case 'retry': return { type: 'retry' };
@@ -163,11 +163,12 @@ export function contractTree(model, specs, composition, opts = {}) {
     const spec = (page.config.params || {})[name] || {}, rows = x.more.paramControls || [{ controls: [{ bind: name }] }];
     return node('paramControlMore', key, ctx, x.more, { title: spec.label != null ? String(val(spec.label, page) ?? '') : null }, { paramControls: paramControlRows(rows, key + '.paramControls', inside(ctx, 'paramControlMore')) });
   }
-  function paramControlRows(rows, key, ctx) {
+  // group: the back layer's group the rows sit in ('controls' · 'panel'; a More's rows have none) — placements match it as the row's name
+  function paramControlRows(rows, key, ctx, group) {
     const page = ctx.page, rw = inside(ctx, 'paramControlRow');
     return (rows || []).map((r, j) => [r, j]).filter(([r]) => holds(r, page)).map(([r, j]) => {
       const controls = r.controls.map((x, i) => [x, i]).filter(([x]) => holds(x, page)).map(([x, i]) => paramControlNode(x, key + ':' + j + '.controls:' + i, rw));
-      return node('paramControlRow', key + ':' + j, ctx, r, { label: controls.length ? controls[0].values.label : null }, { controls });
+      return node('paramControlRow', key + ':' + j, ctx, r, { label: controls.length ? controls[0].values.label : null }, { controls }, group ? { at: { name: group } } : {});
     });
   }
 
@@ -199,8 +200,8 @@ export function contractTree(model, specs, composition, opts = {}) {
       const back = node('backLayer', k, w, B, { expanded: !!page.back.expanded, headerHidden: !!page.back.headerHidden, regions: Layout.regions(page, look, measured, g) }, {
         header: headerNode(B.header, k + '.header', bw, bar.progress, title),
         actions: items(B.actions, k + '.actions', bw),
-        controls: paramControlRows(B.controls, k + '.controls', bw),
-        panel: paramControlRows(B.panel, k + '.panel', bw),
+        controls: paramControlRows(B.controls, k + '.controls', bw, 'controls'),
+        panel: paramControlRows(B.panel, k + '.panel', bw, 'panel'),
         ...(() => { const m = moreNode(B, page, k + '.more', bw); return m ? { more: m } : {}; })(),
       });
       const fl = Layout.frontLayer(page, g, look, { measured }, opts.peek || 0), F = cfg.front, fk = key + '.front';

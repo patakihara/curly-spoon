@@ -701,10 +701,10 @@ export interface ContentStateContract extends Contract<ContentConfig, ContentSta
 export interface ContentValues { view: ContentView; presentation: PresentationKey; groups: ItemGroup[]; placeholders: number }
 export interface ContentChildren { items: ItemContract[]; state?: ContentStateContract; banner?: ContentStateContract }
 export interface ContentContract extends Contract<ContentConfig, ContentValues, NoIntents> { children: ContentChildren }
-// backLayer: toggle only while toggleOnTap · more: the newest open More (BackLayerState.more)
+// backLayer: toggle only while toggleOnTap · scroll: its panel scrolled (always the panel surface) · more: the newest open More (BackLayerState.more)
 export interface BackLayerValues { expanded: boolean; headerHidden: boolean; regions: BackLayerRegionView[] }
 export interface BackLayerChildren { header: HeaderContract; actions: ButtonContract[]; controls: ParamControlRowContract[]; panel: ParamControlRowContract[]; more?: ParamControlMoreContract }
-export interface BackLayerContract extends Contract<BackLayerConfig, BackLayerValues, ToggleExpandedIntent> { children: BackLayerChildren }
+export interface BackLayerContract extends Contract<BackLayerConfig, BackLayerValues, ToggleExpandedIntent | ScrollIntent> { children: BackLayerChildren }
 // frontHeader: the built-in disclosure: the back layer's expanded + its label (texts backLayer.reveal / backLayer.conceal)
 export interface FrontHeaderValues { title: string; expanded: boolean; disclosureLabel: string }
 export interface FrontHeaderChildren { items: HeaderItemContract[] }

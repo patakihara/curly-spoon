@@ -3,6 +3,7 @@
     "palette": "token",
     "expanded": "boolean",
     "headerHidden": "boolean",
+    "regions": "list",
     "header": "slot",
     "actions": "slot",
     "controls": "slot",
@@ -60,6 +61,10 @@
     {
       "name": "tap",
       "payload": null
+    },
+    {
+      "name": "scroll",
+      "payload": "number"
     }
   ]
 }

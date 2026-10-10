@@ -6,6 +6,7 @@ export interface BackLayerProps {
   palette: string;
   expanded: boolean;
   headerHidden: boolean;
+  regions: unknown;
   header: Slot;
   actions: Slot;
   controls: Slot;

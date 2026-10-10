@@ -78,6 +78,10 @@ SHOWS.forEach(([name, genre, shows], k) => {
   });
 });
 const byId = id => C.people.find(x => x.id === id) || C.collections.find(x => x.id === id) || C.tracks.find(x => x.id === id);
+// artwork for mock content (the fake backend has no images): an image reference 'mock:<id>' is two colours from the id.
+// imageCss(ref) → a CSS background for any image reference (the web platform draws it); mockArt(id) → the gradient itself
+export const mockArt = id => { let x = 0; for (const ch of String(id || '')) x = (x * 31 + ch.charCodeAt(0)) >>> 0; const h1 = x % 360, h2 = (h1 + 40 + (x >> 9) % 80) % 360; return 'linear-gradient(135deg, oklch(0.62 0.13 ' + h1 + '), oklch(0.42 0.11 ' + h2 + '))'; };
+export const imageCss = x => !x ? 'transparent' : String(x).startsWith('mock:') ? mockArt(String(x).slice(5)) : 'center / cover no-repeat url("' + x + '")';
 export const track = t => ({ id: t.id, title: t.title, subtitle: t.sub, image: 'mock:' + (t.of || t.id), durationMs: t.ms, source: 'audio:' + encodeURIComponent(t.id) });
 const tracksOf = c => C.tracks.filter(t => t.of === c.id);
 const fmtMs = ms => Math.floor(ms / 60000) + ':' + pad(Math.round(ms / 1000) % 60);

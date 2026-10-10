@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div onClick="{{ onTap }}" style="position:absolute;inset:0;color:{{ ink }}">
+  <sc-for list="{{ header }}" as="r" hint-placeholder-count="1"><div data-enter="header" style="position:absolute;left:0;right:0;top:{{ r.top }}px;height:{{ r.height }}px;opacity:{{ r.op }};pointer-events:{{ r.ev }};transition:{{ both }}">
+    <sc-for list="{{ headerNodes }}" as="n" hint-placeholder-count="1"><dc-import name="Header" dc-props="{{ n.props }}" style="height:100%" hint-size="100%,64px"></dc-import></sc-for>
+  </div></sc-for>
+  <sc-for list="{{ controls }}" as="r" hint-placeholder-count="1"><div data-enter="controls" style="position:absolute;left:0;right:0;top:{{ r.top }}px;opacity:{{ r.op }};pointer-events:{{ r.ev }};transition:{{ both }}">
+    <sc-for list="{{ controlRows }}" as="row" hint-placeholder-count="1"><div style="height:{{ rowH }}px;box-sizing:border-box;overflow:hidden;padding:{{ v.basicPadding }}"><dc-import name="PanelRow" dc-props="{{ row.props }}" hint-size="100%,48px"></dc-import></div></sc-for>
+  </div></sc-for>
+  <sc-for list="{{ actions }}" as="r" hint-placeholder-count="0"><div data-enter="actions" style="position:absolute;left:0;right:0;top:{{ r.top }}px;opacity:{{ r.op }};pointer-events:{{ r.ev }};transition:{{ both }}">
+    <div style="height:{{ r.height }}px;box-sizing:border-box;padding:{{ v.basicPadding }};display:flex;align-items:center;justify-content:center;gap:{{ gap }}px"><sc-for list="{{ buttons }}" as="b" hint-placeholder-count="1"><dc-import name="Button" dc-props="{{ b.props }}" hint-size="88px,40px"></dc-import></sc-for></div>
+  </div></sc-for>
+  <sc-for list="{{ panel }}" as="r" hint-placeholder-count="1"><div ref="{{ scrollRef }}" style="position:absolute;left:0;right:0;top:{{ r.top }}px;height:{{ r.h }};overflow-y:{{ r.ov }};overscroll-behavior:contain;opacity:{{ r.op }};pointer-events:{{ r.ev }};transition:{{ both }}">
+    <div ref="{{ panelRef }}" style="box-sizing:border-box;padding:{{ panelPad }};border-top:1px solid {{ panelLine }};display:flex;flex-direction:column;gap:{{ gap }}px">
+      <sc-for list="{{ more }}" as="m" hint-placeholder-count="0"><dc-import name="MorePanel" dc-props="{{ m.props }}" hint-size="100%,240px"></dc-import></sc-for>
+      <sc-for list="{{ panelRows }}" as="row" hint-placeholder-count="3"><dc-import name="PanelRow" dc-props="{{ row.props }}" hint-size="100%,48px"></dc-import></sc-for>
+    </div>
+  </div></sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:400},&quot;regions&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object[]&quot;},&quot;slots&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
+// Web implementation of design component backLayer, drawn from its node (platforms/web/draw.js). Its regions (the node's regions:
+// Layout.regions — where each sits, how tall, whether it shows, takes input or scrolls) in the order header · controls · actions ·
+// panel, each moving with the platform's transition (the latest change's timing, NOTES decision 48). The header region holds its
+// header slot (Header); the controls region its controls rows, each the region's height over the rows, padded by basicPadding;
+// the actions region its buttons, centred; the panel its panel rows, or an open More in their place (morePanel; its padding and
+// divider then). The panel is a scroll surface (collapse-first, its scroll event: the engine's panel scroll) and reports its
+// content's height (measure 'panel': Layout needs it). Tapping the layer outside any control sends tap. Each region carries
+// data-enter (header · controls · actions): the detail transition finds them. Props: regions, slots { header, actions, controls,
+// panel, more }, visuals, on, transition, measure, scroller. No values of its own.
+class Component extends DCLogic {
+  scrollRef = React.createRef();
+  panelRef = React.createRef();
+  componentDidMount() { this.sync(); }
+  componentDidUpdate() { this.sync(); }
+  componentWillUnmount() { if (this.ro) this.ro.disconnect(); }
+  sync() {
+    const p = this.props, el = this.scrollRef.current, pe = this.panelRef.current;
+    if (el && p.scroller) p.scroller.bind(el);
+    if (pe !== this.seen) {   // the panel's content can grow after a render (a DC loading late): measure again when it resizes
+      if (this.ro) this.ro.disconnect();
+      this.seen = pe; this.ro = pe && window.ResizeObserver ? new ResizeObserver(() => this.report()) : null;
+      if (this.ro) this.ro.observe(pe);
+    }
+    this.report();
+  }
+  report() { const pe = this.panelRef.current; if (pe && this.props.measure) this.props.measure('panel', pe.offsetHeight); }
+  renderVals() {
+    const p = this.props, v = p.visuals || {}, sl = p.slots || {}, t = p.transition || {}, on = p.on || {};
+    const box = r => ({ top: r.top, height: r.height, op: r.opacity, ev: r.interactive ? 'auto' : 'none', h: r.scrolls ? r.height + 'px' : 'auto', ov: r.scrolls ? 'auto' : 'visible' });
+    const of = name => (p.regions || []).filter(r => r.region === name).map(box);
+    const controls = of('controls'), rows = sl.controls || [], more = (sl.more || []).filter(Boolean);
+    return { scrollRef: this.scrollRef, panelRef: this.panelRef, v, ink: v.ink || 'inherit', both: t.both || 'none', gap: +v.panelGap || 0,
+      header: of('header'), headerNodes: sl.header || [],
+      controls, controlRows: rows, rowH: rows.length && controls.length ? controls[0].height / rows.length : 0,
+      actions: of('actions'), buttons: (sl.actions || []).filter(b => b.shown),
+      panel: of('panel'), more, panelRows: more.length ? [] : sl.panel || [],
+      panelPad: more.length ? v.morePadding : v.panelPadding, panelLine: more.length ? v.moreDivider : v.panelDivider,
+      onTap: e => { if (e.target.closest && e.target.closest('button,input,textarea,select,a,[role="button"]')) return; if (on.tap) on.tap(undefined, e); } };
+  }
+}
+</script>
+</body>
+</html>

@@ -614,6 +614,17 @@ fields, not nodes · 6 verify ✓ (screens above).
     latest one, from its choreography rule, and the shell's lastMove flags go. No API change. Later (Sofia: "later it
     will be 2"): the motion player (platforms/web/motions.js) moves the regions as choreography steps on named pieces,
     and BackLayer draws only where things end up; the passed timing goes then.
+49. The back layer is drawn from its node (Sofia, 2026-10-10: "fix these limitations and all other such limitations").
+    BackLayer.dc.html (design backLayer) places its regions from the node's `regions` (now a design prop, type list) and
+    draws its slots: the header (Header.dc.html, design header, which had no DC: Bar drew it from shell props), the
+    controls rows (hire controlsRow: panelRow variant place controls, no heading, chips scroll; core names a back layer's
+    rows by their group, `controls` · `panel`, and placements match it as match.name), the actions, and the panel's rows
+    or the open More (MorePanel draws its bar and its rows). The header's detail fades and shrinks with progress and is a
+    scroll surface (decision 47, now drawn: Sofia's "swipe on the back layer to collapse" = collapse the header). The
+    panel reports its height through draw.js (measure) and scrolls collapse-first; its scroll reaches the engine through
+    the back layer's own scroll intent (API 18.0.0 amended, approved: "Back layer sends scroll"). Collapse-first input
+    moved out of the shell into platforms/web/scroll.js (the content and app-bar page use it too); mock artwork into
+    app/fake-backend.js (imageCss, mockArt). The shell's back-layer code is gone, with backOverride / BACK_KEYS (never set).
 
 ## Shell conversion list (kept current with every change)
 Goal: the shell (Backdrop Nav Skeleton.dc.html) draws nothing and decides nothing itself. It places the root's
@@ -636,12 +647,12 @@ Done (drawn from contract nodes through draw.js):
 ### Template: markup the shell draws itself
 - [ ] Page CSS in the helmet: input placeholder colours (rgba white .55 / black .45), the `.ms` icon font at 24px.
 - [ ] Phone fill: backBg picks token color.backLayer or color.backLayerAlt from the mockup's palette prop.
-- [ ] Back layer: four region boxes (header, controls, actions, panel), each placed, faded and timed by the shell.
-- [ ] Back layer header region: the detail box under the bar (top, height, ink, opacity, scale) around DetailHeader.
-- [ ] Controls rows: row box (height, padding, ink, gap), each control flex 1 (the DC now comes from draw.js).
-- [ ] Actions row: centred flex row of Buttons.
-- [ ] Panel: the scroll box (height, overflow), the inner box (padding, divider line, gap).
-- [ ] Panel: the More bar's sticky wrapper (the row label wrapper and the controls row are gone: PanelRow draws them).
+- [x] Back layer: four region boxes (header, controls, actions, panel): BackLayer draws them from the node's regions.
+- [x] Back layer header region: the detail box under the bar: Header draws its expanded slot.
+- [x] Controls rows: BackLayer's row boxes (design basicPadding) around controlsRow (PanelRow).
+- [x] Actions row: BackLayer draws its actions slot.
+- [x] Panel: the scroll box and the inner box: BackLayer (design panelPadding / morePadding, dividers, panelGap).
+- [x] Panel: the More bar's sticky wrapper: MorePanel (design pinned).
 - [ ] App-bar page: the overlay box (bottom offset, fade, scale, pointer events) around AppBarPage.
 - [ ] Rail: the wrapper box around NavRail.
 - [ ] Side-sheet scrim and drawer scrim: Scrim instances placed and coloured by the shell.
@@ -662,31 +673,32 @@ Done (drawn from contract nodes through draw.js):
 - [ ] AccountLayer: 6 props; no design component exists for it.
 - [ ] EdgeHandle and Scrim: no design component exists for either.
 - [ ] NavRail, Drawer, Menu, Dialog, Snackbar, SignIn, Splash: props built by the shell, not from a node.
-- [ ] Back-layer DCs placed by the shell: Bar, DetailHeader, MorePanel, Button with shell-built props; PanelRow and the
-      controls rows' DCs (FilterChips, TabBar, SearchField) with their node's props.
+- [x] Back-layer DCs placed by the shell: now one BackLayer instance fed its node (it draws Header, PanelRow, MorePanel,
+      Button and the controls from their nodes).
 
 ### Visuals the shell resolves for other components
 - [ ] sv bundle: frontLayer, backLayer, bottomSheet, sideSheet, drawer, signInPage, splash, navBar, navRail,
       appBar pageFill, frontLayer scrim; handed to wrapper DCs.
-- [ ] Bars: header (back), frontHeader, appBar page form, appBar layer form.
-- [ ] Titles: the shell picks each title's size per surface (back lg, front sm, app bar lg).
+- [ ] Bars: frontHeader, appBar page form, appBar layer form (the back header's come from its node now).
+- [ ] Titles: the shell picks each title's size per surface (front sm, app bar lg; the back title's comes from its node).
 - [ ] groupHeader, alphaIndex, carousel, scrollerLayout, contentBlock, gridLayout, staleBanner, empty / error state.
 - [ ] Now playing: artwork lg, trackInfo lg, seekBar, row spread, nowPlaying, peekCard, tabBar on bottomSheet,
       emptyState sm, queueRow.
 - [ ] drawerItem (drawer size and rail size), symbol, logo, splash per state, signInPage, menu, dialog, snackbar.
 - [ ] Tokens read directly: color.navIndicator (rail pill, drawer row fill), grid.column.max (carousel entries).
 - [ ] Motions read directly: tabBar indicator, navRail width, logo levels, splash logo, placeholder pulse.
-- [ ] The back header's detail ink: resolveValue of backLayer's content role.
+- [x] The back header's detail ink: resolveValue of backLayer's content role (Header's ink now).
 
 ### Layout the shell computes itself
 - [ ] Geometry kept in a global G; G.NH reads navBar's height; G.AH reads the app bar's top height.
 - [ ] Literal 720 for the phone height in several places (screenBottom, sheet height, the Dedede reveal radius).
 - [ ] Frame corner radius 16 / 28 by layout.
 - [ ] Screen offsets beside the rail; the expanded rail pushes the content aside.
-- [ ] Back header detail: height, fade, shrink and the title's fade from barView progress and header visuals.
-- [ ] Controls row height: the controls region's height divided by its rows.
-- [ ] Find field width: barSpan (the bar's width minus its other items; the bottom row minus measured buttons).
-- [ ] Header items: absolute offsets (offsetStart / offsetTop), slot max widths, hiding the others when find spans.
+- [x] Back header detail: height, fade, shrink and the title's fade: Header, from progress and its visuals.
+- [x] Controls row height: BackLayer, the controls region's height over its rows.
+- [ ] Find field width: barSpan for the front and app-bar headers (Header does its own from its measured width).
+- [ ] Header items: offsets, slot max widths, hiding the others when find spans: front and app-bar headers (hItems);
+      the back header's are Header's.
 - [ ] FAB: its top under the header and its end inset centred under the bar's last end item (fabFor, fabEnd).
 - [ ] Grid: column count from gridLayout visuals and content width; carousel entry size; block row padding.
 - [ ] Alphabetical index top; group anchors and the scroll-to-group walk up the DOM.
@@ -698,7 +710,8 @@ Done (drawn from contract nodes through draw.js):
       the inner sheet's top and peek height, mini player and body opacity.
 - [ ] Dedede: the circular reveal's centre (tap point, default 28 / 28) and radius.
 - [ ] Drawer width and slide; Account's slide; snackbar left / width / bottom; the menu's anchor from the tap.
-- [ ] Panel height measured after render (ResizeObserver) into measured.panel; the app bar's button width measured.
+- [x] Panel height: BackLayer measures it and reports it through draw.js (measure).
+- [ ] The app bar's bottom-row button width measured by the shell (abBtnW).
 
 ### Decisions the shell makes itself
 - [x] Which DC draws a param control: controlView switches on the component id.
@@ -718,7 +731,8 @@ Done (drawn from contract nodes through draw.js):
 - [ ] Layer rows: chevron_right or arrow_outward by what the row opens; header height 56 written in the shell.
 - [ ] Rail expanded or not (the rail-form menu layer); the menu drawer hidden on wide when it is the rail.
 - [ ] Side sheet: modal scrim, auto-collapse on pointer leave, edge handle shown when auto and closed.
-- [ ] Tapping the deck closes an auto side sheet; tapping the back layer toggles it (skips interactive tags).
+- [ ] Tapping the deck closes an auto side sheet.
+- [x] Tapping the back layer toggles it: BackLayer sends its tap (core: only while toggleOnTap).
 - [ ] Peek card's label: English literals "Open nowPlaying" / "Close nowPlaying".
 - [ ] Player toggle icon pause / play_arrow; play with nothing loaded plays four fixture tracks of 20 s.
 - [ ] Gate: event per gate (signIn → signedIn, onboarding → onboarded); its button's variant.
@@ -731,22 +745,26 @@ Done (drawn from contract nodes through draw.js):
       snackbar action, retry, More close, search clear, sheet tabs, player toggle / next, param options.
 
 ### Fake data in the shell
-- [ ] Mock artwork gradients from item ids (artCss, artOf); the album page's art and subtitle built from ids.
+- [x] Mock artwork gradients from item ids: app/fake-backend.js (imageCss, mockArt); draw.js hands DCs imageCss.
+- [ ] The album page's art and subtitle built from ids by the shell (ovHead).
 - [ ] Simulated data layer (offline, slow, failing) and the fake player's 200 ms load and 1 s tick.
 
 ### Motion the shell runs itself
 - [x] lastMove flags pick which choreography rule times the CSS transitions (expand, header, more, scroll): now the
       engine's latest change event picks it (decision 48); only "a scroll is driving this render: transitions off" stays.
-- [ ] Hand that timing to components through draw.js: comes with BackLayer.dc.html (until then the shell applies it).
+- [x] Hand that timing to components through draw.js (transition): BackLayer and Header use it.
 - [ ] Per-layer CSS transition strings (mx) built in the shell.
 - [ ] Cover → app entry: picks the target logo via [role="img"], hands elements to the player.
 - [ ] Clip shapes for the front layer and the app-bar sheet (frontShape, sheetShape).
 - [ ] openItem / expandTo / collapseFrom / popDeck / detailMove: choose the motion, find shared images through
       [data-item-id] and [data-enter], keep a ghost page, run timers.
 - [ ] fadeThrough, paramChange (direction from option order), axisSwitch (mirrored in RTL).
-- [ ] Collapse-first scrolling: wheel and touch handling (bindCollapse), scroll dispatch, header visibility.
+- [x] Collapse-first scrolling: wheel and touch handling: platforms/web/scroll.js (content, app-bar page, the panel,
+      the header's detail).
+- [ ] The content's and the app-bar page's native scroll handlers (onFrontScroll, onOvScroll): scroll dispatch, header
+      visibility, the tracked title, the thumb.
 - [ ] queuedMotion: finds the peek through data-peek; placeholder pulse through data-ph.
-- [ ] backOverride / BACK_KEYS: the old page's back layer kept drawn during a detail move.
+- [x] backOverride / BACK_KEYS: removed (never set).
 
 ### Stays (platform mechanics or harness, not app UI)
 - Module loading, design overrides from the Specs Editor, keyboard shortcut input, launch and snackbar timers,
@@ -756,14 +774,7 @@ Done (drawn from contract nodes through draw.js):
 
 ### Order (each step removes its lines above)
 1. Param controls drawn from their nodes through draw.js. Done.
-2. BackLayer.dc.html (approved): regions, header with its detail as a scroll surface, controls, actions, panel, More.
-   Panel rows done. Gaps before the back layer can be drawn from its node alone:
-   - regions: the node has them as a value, but design backLayer declares no prop for them, so draw.js doesn't pass them.
-   - region timing: decision 48: draw.js passes the timing of the engine's latest change (later: the motion player).
-   - panel height: the shell measures it after render and feeds it to Layout (measured.panel).
-   - controls rows: drawn as shell rows (basicPadding, no heading), not by the paramControlRow hire.
-   - header: no Header.dc.html; Bar draws it from shell-built props; the detail's shrink math is in the shell.
-   - More bar: MorePanel gets shell-built props, not its node's.
+2. BackLayer.dc.html: done (decision 49).
 3. Surfaces from the tree instead of key parsing; instances without nodes get nodes (may need API: propose first).
 4. Front layer and content items.
 5. App-bar page form.
