@@ -735,7 +735,9 @@ Done (drawn from contract nodes through draw.js):
 - [ ] Simulated data layer (offline, slow, failing) and the fake player's 200 ms load and 1 s tick.
 
 ### Motion the shell runs itself
-- [ ] lastMove flags pick which choreography rule times the CSS transitions (expand, header, more, scroll).
+- [x] lastMove flags pick which choreography rule times the CSS transitions (expand, header, more, scroll): now the
+      engine's latest change event picks it (decision 48); only "a scroll is driving this render: transitions off" stays.
+- [ ] Hand that timing to components through draw.js: comes with BackLayer.dc.html (until then the shell applies it).
 - [ ] Per-layer CSS transition strings (mx) built in the shell.
 - [ ] Cover → app entry: picks the target logo via [role="img"], hands elements to the player.
 - [ ] Clip shapes for the front layer and the app-bar sheet (frontShape, sheetShape).

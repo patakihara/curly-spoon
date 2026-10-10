@@ -422,7 +422,9 @@ class Component extends DCLogic {
     return { s, stack, ui, ps: stack[ui].page, top: stack[stack.length - 1] };
   }
   log(msg) { this.setState(st => ({ log: [msg, ...st.log].slice(0, 12) })); }
-  dispatch(intent, msg) { if (this.lastMove === 'scroll') this.lastMove = null; const ev = this.model.dispatch(intent); if (msg) this.log(msg); this.handleEvents(ev); this.forceUpdate(); return ev; }
+  // the back layer's moves are timed by the choreography rule of the engine's latest change (decision 48; later: the motion player)
+  noteChange(ev) { const c = [...ev].reverse().find(e => ['expandedChanged', 'moreChanged', 'headerVisibilityChanged'].includes(e.type)); if (c) this.lastChange = c; }
+  dispatch(intent, msg) { this.scrolling = false; const ev = this.model.dispatch(intent); this.noteChange(ev); if (msg) this.log(msg); this.handleEvents(ev); this.forceUpdate(); return ev; }
 
   // ── geometry (view) ────────────────────────────────────
   // sizes come from layout (config + design tokens); the shell keeps none of its own
@@ -479,7 +481,7 @@ class Component extends DCLogic {
   }
   collapseScroll(top) {
     this.model.dispatch({ type: 'scroll', top });
-    cancelAnimationFrame(this.cfRaf); this.cfRaf = requestAnimationFrame(() => { this.lastMove = 'scroll'; this.forceUpdate(() => { if (this.lastMove === 'scroll') this.lastMove = null; }); });
+    cancelAnimationFrame(this.cfRaf); this.cfRaf = requestAnimationFrame(() => { this.scrolling = true; this.forceUpdate(() => { this.scrolling = false; }); });
   }
   // the page's scroll from a native content scroll: whatever has collapsed + the content offset
   pageScroll(pg, el, field) { const d = this.P.barView(pg, this.look()).distance; return (d ? Math.min(+this.M.getField(pg, field) || 0, d) : 0) + el.scrollTop; }
@@ -525,7 +527,7 @@ class Component extends DCLogic {
   tplOf(it) { return it && it.opens && it.opens.template ? (this.model.config.pages || {})[it.opens.template] || null : null; }
   // ── intents with motion ────────────────────────────────
   openItem(item, e) {
-    this.lastMove = null;   // a scroll-driven render must not leave the motion transitions off
+    this.scrolling = false;   // a scroll-driven render must not leave the motion transitions off
     const { ps } = this.cur(), deck = this.ms.activeDeck, T = this.T;
     const intent = { type: 'open', item, origin: { deck } };
     if (this.reduced) return this.dispatch(intent, 'open (reduced motion) → ' + (item.title || item.id));
@@ -594,7 +596,6 @@ class Component extends DCLogic {
     const a = this.model.query.backAction(this.ms, this.model.config);
     const label = 'back · ' + a, fromAppBar = !this.reduced && this.cur().top.page.config.kind === 'appBar';
     if (a === 'pop') return this.popDeck({ type: 'back' }, label);
-    if (a === 'closeMore') this.lastMove = 'more';
     if (a === 'startDeck' && fromAppBar) return this.collapseFrom({ type: 'back' }, label, true);
     if (a === 'startDeck') return this.fadeThrough('all', () => { this.dispatch({ type: 'back' }, label); this.setState({ ovRect: null, ovInset: null }); });
     if (a === 'undoRecord') {
@@ -618,7 +619,7 @@ class Component extends DCLogic {
   }
   up() {
     const deck = this.ms.activeDeck, tp = this.ms.decks[deck].stack.slice(-1)[0].page;
-    if (tp.config.kind === 'backdrop' && (tp.back.more || []).length) { this.lastMove = 'more'; return this.dispatch({ type: 'up', target: { deck } }, 'up · close More'); }   // core: an open More closes before the page
+    if (tp.config.kind === 'backdrop' && (tp.back.more || []).length) { return this.dispatch({ type: 'up', target: { deck } }, 'up · close More'); }   // core: an open More closes before the page
     this.popDeck({ type: 'up', target: { deck } }, 'up · ' + deck);
   }
   switchDeck(id) {
@@ -630,7 +631,7 @@ class Component extends DCLogic {
     if (!this.reduced && this.cur().top.page.config.kind === 'appBar') return this.collapseFrom({ type: 'switchDeck', deck: id }, 'switchDeck → ' + id, true);
     this.fadeThrough('all', () => { this.dispatch({ type: 'switchDeck', deck: id }, 'switchDeck → ' + id); this.setState({ ovRect: null, ovInset: null, backOverride: null }); });
   }
-  setExpanded(v, via) { this.lastMove = 'expanded'; this.dispatch({ type: 'setExpanded', expanded: v }, (v ? 'expand' : 'conceal') + ' · ' + via); }
+  setExpanded(v, via) { this.dispatch({ type: 'setExpanded', expanded: v }, (v ? 'expand' : 'conceal') + ' · ' + via); }
   openLayer(id, e) {
     if (id === 'Dedede' && e && e.currentTarget && this.phoneRef.current) {
       const r = this.rectIn(e.currentTarget, this.phoneRef.current);
@@ -754,7 +755,7 @@ class Component extends DCLogic {
     if (i.type === 'openLayer') return this.openLayer(i.layer, e);
     if (i.type === 'switchDeck' || i.type === 'reselectDeck') return this.switchDeck(i.deck);
     if (i.type === 'back') return this.back();
-    if (i.type === 'openMore' || i.type === 'closeMore') { this.lastMove = 'more'; return this.dispatch(i, i.type + (i.name ? ' · ' + i.name : '')); }
+    if (i.type === 'openMore' || i.type === 'closeMore') { return this.dispatch(i, i.type + (i.name ? ' · ' + i.name : '')); }
     if (['setParams', 'toggleParam', 'resetParams', 'applyParams'].includes(i.type)) return this.paramChange(this.model.query.paramTarget(this.ms, i), i, i.type);
     this.dispatch(i, i.type);
   }
@@ -873,7 +874,7 @@ class Component extends DCLogic {
         return { cols: 'repeat(' + n + ', minmax(0, 1fr))', gap: gap + 'px', pad, padEnd: pad + (+g.scrollbarGutter || 0), aspect: String(+g.itemAspect || 1) }; })(),
       onFrontScroll: e => { const restored = !this.mo.userScrolled(e.currentTarget); const before = q.derived(this.ms, cfg, 'scrolled', this.model.query.underPage(this.ms)), hx = (bv => bv.distance ? bv.height + bv.distance * bv.progress : 0)(this.P.barView(ps, this.look())), top = this.pageScroll(this.cur().ps, e.currentTarget, 'front.scroll'), ev = this.model.dispatch({ type: 'scroll', top });
         if (before !== q.derived(this.ms, cfg, 'scrolled', this.model.query.underPage(this.ms)) || (hx && top < hx + 40)) { if (restored) return this.track(e.currentTarget);   // a page change restoring its scroll: keep that change's motion (front layer slide)
-          cancelAnimationFrame(this.scrRaf); this.scrRaf = requestAnimationFrame(() => { this.lastMove = 'scroll'; this.forceUpdate(() => { if (this.lastMove === 'scroll') this.lastMove = null; }); }); } this.track(e.currentTarget); this.showThumb(e.currentTarget); if (ev.some(x => x.type === 'headerVisibilityChanged')) { this.lastMove = 'header'; this.forceUpdate(); } }
+          cancelAnimationFrame(this.scrRaf); this.scrRaf = requestAnimationFrame(() => { this.scrolling = true; this.forceUpdate(() => { this.scrolling = false; }); }); } this.track(e.currentTarget); this.showThumb(e.currentTarget); if (ev.some(x => x.type === 'headerVisibilityChanged')) { this.scrolling = false; this.noteChange(ev); this.forceUpdate(); } }
     };
   }
   layerVals(id) {
@@ -929,10 +930,10 @@ class Component extends DCLogic {
     v.ftB = ph || NONE; v.ftF = ph && ft.scope === 'all' ? ph : NONE; v.ftO = { ...v.ftF, sc: 1 };
     v.ftF = this.state.ax ? { sc: 1, ...this.state.ax } : { tx: 0, ...v.ftF };
     if (top.page.config.kind === 'appBar') v.ftF = { ...v.ftF, op: 0, tr: 'none' };
-    { const d = this.tr(this.lastMove === 'header' ? { type: 'headerVisibilityChanged' } : this.lastMove === 'more' ? { type: 'moreChanged' } : { type: 'expandedChanged' });
+    { const d = this.tr(this.lastChange || { type: 'expandedChanged' });
       // state-driven transitions (platforms/web/motions.js): expand / header moves, each layer's open / close, app-bar page
       const MX = ev => this.mo.cssAll(this.tr(ev));
-      v.mx = { expand: this.mo.forMove(d, this.lastMove), page: MX({ type: 'pushed', kind: 'appBar' }),
+      v.mx = { expand: this.mo.forMove(d, this.scrolling ? 'scroll' : null), page: MX({ type: 'pushed', kind: 'appBar' }),
         layer: Object.fromEntries(Object.keys(ms.layers).map(id => [id, MX({ type: ms.layers[id].open ? 'layerOpened' : 'layerClosed', layer: id })])) }; }
     v.frontTr = this.state.frontTr || v.mx.expand.surface;
     // tapping the back layer outside any interactive element toggles it (config back.toggleOnTap, default on)
@@ -977,7 +978,7 @@ class Component extends DCLogic {
     if (!this.warmRefs) this.warmRefs = [React.createRef(), React.createRef(), React.createRef()];
     Object.assign(v.warm, { ref: this.warmRefs[0], ref2: this.warmRefs[1], ref3: this.warmRefs[2], box: { top: 0, h: 0, rad: '0', left: 0, w: 0, r: 0, op: 0 }, ab: { sheetH: 0, find: [], buttons: [] } });
     v.ahShadow = 'none';
-    v.onOvScroll = e => { if (!apage) return; this.showThumb(e.currentTarget, this.ovThumbRef, v.ab.sheetH); if (!this.mo.userScrolled(e.currentTarget)) return; const before = this.P.barView(apage, this.look()).progress; this.model.dispatch({ type: 'scroll', top: this.pageScroll(apage, e.currentTarget, 'scroll') }); const ap2 = this.model.query.currentPage(this.ms); if (ap2.config.kind === 'appBar' && this.P.barView(ap2, this.look()).progress !== before) { cancelAnimationFrame(this.ovRaf); this.ovRaf = requestAnimationFrame(() => { this.lastMove = 'scroll'; this.forceUpdate(() => { if (this.lastMove === 'scroll') this.lastMove = null; }); }); } };
+    v.onOvScroll = e => { if (!apage) return; this.showThumb(e.currentTarget, this.ovThumbRef, v.ab.sheetH); if (!this.mo.userScrolled(e.currentTarget)) return; const before = this.P.barView(apage, this.look()).progress; this.model.dispatch({ type: 'scroll', top: this.pageScroll(apage, e.currentTarget, 'scroll') }); const ap2 = this.model.query.currentPage(this.ms); if (ap2.config.kind === 'appBar' && this.P.barView(ap2, this.look()).progress !== before) { cancelAnimationFrame(this.ovRaf); this.ovRaf = requestAnimationFrame(() => { this.scrolling = true; this.forceUpdate(() => { this.scrolling = false; }); }); } };
     v.ahFab = AHN ? this.fabFor(this.sl(AHN, 'fab'), v.ovX.show ? Math.max(ahBase, ahBase + v.ovX.h - (+this.M.getField(apage, 'scroll') || 0) - 20) : ahBase) : { show: false, ix: INERT }; v.ahFab.end = AHN ? this.fabEnd(this.sl(AHN, 'end'), 4) : 4; v.ahOp = this.state.ahOp; v.ahTrans = this.state.ahTrans; v.ahEv = this.state.ahOp > 0 ? 'auto' : 'none';
     const ins = this.state.ovInset || { t: 0, r: 0, b: 0, l: 0 };
     v.ovInsetCss = 'inset(' + ins.t + 'px ' + ins.r + 'px ' + ins.b + 'px ' + ins.l + 'px)';
