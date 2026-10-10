@@ -17,11 +17,8 @@ const hireOf = (f, name) => findHire(f.composition, name);
 // ── the drawn objects of the config: one 'place' per contract instance, with what placement may match on
 export function placesOf(config) {
   const out = [];
-  const paramSpec = (page, bind) => {
-    if (bind && typeof bind === 'object') return { draft: true };
-    const s = (page.params || {})[bind] || {};
-    return { name: bind, type: s.type, axis: !!s.axis, draft: false };
-  };
+  // a param control's place: matched by its param (name, type, axis) and whether it brings its own options (core/contracts.js at.param)
+  const paramOf = (page, x) => { const sp = (page.params || {})[x.bind] || {}; return { name: x.bind, type: sp.type, axis: !!sp.axis, options: !!x.options }; };
   // within: the ancestor contracts, nearest first · items whose when does not hold are still drawn (hidden), so they count
   const item = (page, within, it) => out.push({ contract: it.kind, page: page.id, within, kind: it.kind, name: it.name });
   const header = (page, within, h) => { const w = ['header', ...within]; out.push({ contract: 'header', page: page.id, within }); h.items.forEach(i => item(page, w, i)); if (h.detail) out.push({ contract: 'detail', page: page.id, within: w }); };
@@ -33,7 +30,15 @@ export function placesOf(config) {
     });
     ['empty', 'error', 'offlineStale'].forEach(state => out.push({ contract: 'contentState', page: page.id, within: w, state }));
   };
-  const input = (page, within, bind) => out.push({ contract: 'input', page: page.id, within, param: paramSpec(page, bind) });
+  const control = (page, within, x) => out.push({ contract: 'paramControl', page: page.id, within, param: paramOf(page, x) });
+  // param-control rows and their controls, and each control's More (its rows, or the default one row for the same param)
+  const rows = (page, within, list, depth = 0) => (list || []).forEach(r => {
+    out.push({ contract: 'paramControlRow', page: page.id, within });
+    r.controls.forEach(x => {
+      control(page, ['paramControlRow', ...within], x);
+      if (x.more && depth < 8) { const m = ['paramControlMore', ...within.slice(within.indexOf('backLayer'))]; out.push({ contract: 'paramControlMore', page: page.id, within: m.slice(1) }); rows(page, m, x.more.paramControls || [{ controls: [{ bind: x.bind }] }], depth + 1); }
+    });
+  });
   const pageOf = (p, within = []) => {
     const kind = p.kind === 'backdrop' ? 'backdropPage' : 'appBarPage';
     out.push({ contract: kind, page: p.id, within });
@@ -43,18 +48,14 @@ export function placesOf(config) {
       out.push({ contract: 'backLayer', page: p.id, within: w }, { contract: 'frontLayer', page: p.id, within: w }, { contract: 'frontHeader', page: p.id, within: fr });
       header(p, b, p.back.header);
       (p.back.actions || []).forEach(i => item(p, b, i));
-      if (p.back.basicAction) input(p, b, p.back.basicAction.bind);
-      (p.back.panel || []).forEach(r => {
-        if (r.kind === 'param') { out.push({ contract: 'paramRow', page: p.id, within: b }); input(p, ['paramRow', ...b], r.bind); }
-        else out.push({ contract: 'suggestions', page: p.id, within: b }, { contract: 'suggestion', page: p.id, within: ['suggestions', ...b] });
-      });
+      rows(p, b, p.back.controls); rows(p, b, p.back.panel);
       p.front.header.items.forEach(i => item(p, ['frontHeader', ...fr], i));
       content(p, fr, p.front.content);
     } else {
       header(p, w, p.header);
       (p.body || []).forEach(i => item(p, w, i));
       if (p.content) content(p, w, p.content);
-      if (p.sheet) { const s = ['pageSheet', ...w]; out.push({ contract: 'pageSheet', page: p.id, within: w }); if (p.sheet.control) input(p, s, p.sheet.control.bind); content(p, s, p.sheet.content); }
+      if (p.sheet) { const s = ['pageSheet', ...w]; out.push({ contract: 'pageSheet', page: p.id, within: w }); if (p.sheet.paramControl) control(p, s, p.sheet.paramControl); content(p, s, p.sheet.content); }
     }
   };
   config.decks.forEach(d => { pageOf(d.page); out.push({ contract: 'destination', page: null, within: ['navigation'], name: d.id }); });

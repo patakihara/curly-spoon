@@ -524,7 +524,8 @@ Each was my call; say if you disagree and I redo it.
     `statePolicy`; PersistPolicy unchanged, it is about storage); BackLayerRegionName / BackLayerRegionView, and
     RegionInstance (same fields) removed. Page states share PageStateBase<C> (config · opener · template · params).
 41. Param controls (Sofia, 2026-10-10, discussed and approved): the back layer's basicAction + panel are one list of
-    rows, `back.paramControls`: a row is { controls, shows: 'always' | 'expanded', when? }, a control is { bind,
+    rows, `back.paramControls`: a row is { controls, shows: 'always' | 'expanded', when? } (split into two lists by
+    decision 46), a control is { bind,
     options?, when? }. The words are the param's (ParamSpec label / placeholder). A param may wait to apply
     (ParamSpec.apply 'onApply'): its changes go to the page's `pending` (path `pending.<name>` reads pending, else
     applied) until applyParams; discardParams drops them; setParams { apply: true } applies at once. A control's values
@@ -557,6 +558,15 @@ Each was my call; say if you disagree and I redo it.
     choiceChips through extends, suggestionList → suggestionRow, checklist → checkRow). A design check (design/checks.js)
     requires it to be registered and interactive. The shell reads it (also for the Now playing sheet's tabs) instead of
     naming tab / chip / suggestionRow / checkRow itself; the More chip is drawn as the chips' option too.
+46. Two groups and a scrolling panel (Sofia, 2026-10-10, approved; names hers): a row no longer says when it shows
+    (`shows` removed); the back layer has two lists, `controls` (shown concealed and revealed) and `panel` (shown only
+    revealed). The panel is the part that scrolls: Layout holds it to the room above the front layer's header
+    (BackLayerRegionView.height) and says `scrolls` when its content is taller; the header, actions and controls rows
+    stay put. Before this nothing scrolled: a tall panel's bottom (Library's year range) hid under the front layer.
+    An open More scrolls the same way; its ✕ bar stays at the top (morePanel `pinned`, on its own `fill`). The scroll
+    offset is not engine state (nothing in the engine depends on it). Also found: the composition rules' list of drawn
+    places still used the pre-param-control shapes (basicAction, old panel rows, `input`), so since decision 41 they
+    had not checked any param control; they now walk controls, panel, each More and the sheet's paramControl.
 
 ### Switchover (2026-10-09): done, with what is still open
 The mockup runs on 18.0 (config + composition + design → contract tree → shell). Checked in headless Chrome against the
@@ -609,7 +619,7 @@ fields, not nodes · 6 verify ✓ (screens above).
   (drawerItem and suggestionRow added there, being their own DCs; suggestionList since decision 41); IconButton's `mark` flag is gone. Still
   shell-chosen: panel rows, Now
   playing's body, the drawer, nav, peek, overlays, content items, the app-bar form.
-- 18.0: param controls (decision 41): the 'always' rows are drawn by the shell directly (no row label, the
+- 18.0: param controls (decision 41): the controls rows are drawn by the shell directly (no row label, the
   paramControlRow hire unused there); controls in one row share its width equally; no page has two controls in a row yet.
 - 18.0: option components (decision 45): the DCs still import their option's DC by name (TabBar → Tab, FilterChips →
   Chip, SuggestionList → SuggestionRow, Checklist → CheckRow); a different design option would need the platform to map

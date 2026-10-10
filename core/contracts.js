@@ -13,7 +13,7 @@
 
 import { placementFor, hireOf, freeComponent } from './compose.js';
 import * as Layout from './layout.js';
-import { moreControls } from './navigation.js';
+import { moreControls, backRows } from './navigation.js';
 
 const ITEM_CONTRACT = { button: 'button', logo: 'logo', text: 'text', switch: 'switch', find: 'find', detail: 'detail', seek: 'seek' };
 
@@ -156,7 +156,7 @@ export function contractTree(model, specs, composition, opts = {}) {
   }
   // the open More (the newest in BackLayerState.more): its rows, or one row with a control for the same param (all its options)
   function moreNode(B, page, key, ctx) {
-    const name = (page.back.more || []).slice(-1)[0], x = name && moreControls(B.paramControls).find(m => m.bind === name); if (!x) return null;
+    const name = (page.back.more || []).slice(-1)[0], x = name && moreControls(backRows(B)).find(m => m.bind === name); if (!x) return null;
     const spec = (page.config.params || {})[name] || {}, rows = x.more.paramControls || [{ controls: [{ bind: name }] }];
     return node('paramControlMore', key, ctx, x.more, { title: spec.label != null ? String(val(spec.label, page) ?? '') : null }, { paramControls: paramControlRows(rows, key + '.paramControls', inside(ctx, 'paramControlMore')) });
   }
@@ -193,10 +193,11 @@ export function contractTree(model, specs, composition, opts = {}) {
     if (cfg.kind === 'backdrop') {
       const w = { ...inside(ctx, 'backdropPage'), page }, bw = inside(w, 'backLayer'), fw = inside(w, 'frontLayer'), B = cfg.back, k = key + '.back';
       const bar = Layout.barView(page, look), measured = (opts.measured || {})[cfg.id] || {};
-      const back = node('backLayer', k, w, B, { expanded: !!page.back.expanded, headerHidden: !!page.back.headerHidden, regions: Layout.regions(page, look, measured) }, {
+      const back = node('backLayer', k, w, B, { expanded: !!page.back.expanded, headerHidden: !!page.back.headerHidden, regions: Layout.regions(page, look, measured, g) }, {
         header: headerNode(B.header, k + '.header', bw, bar.progress, title),
         actions: items(B.actions, k + '.actions', bw),
-        paramControls: paramControlRows(B.paramControls, k + '.paramControls', bw),
+        controls: paramControlRows(B.controls, k + '.controls', bw),
+        panel: paramControlRows(B.panel, k + '.panel', bw),
         ...(() => { const m = moreNode(B, page, k + '.more', bw); return m ? { more: m } : {}; })(),
       });
       const fl = Layout.frontLayer(page, g, look, { measured }, opts.peek || 0), F = cfg.front, fk = key + '.front';

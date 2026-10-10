@@ -20,6 +20,7 @@ class Skip extends Error {}
 const skip = msg => { throw new Skip(msg); };
 const need = (v, msg) => v || skip(msg);
 // a back layer's param-control rows, and the rows of every More inside them
+const backRowsOf = B => [...(B.controls || []), ...(B.panel || [])];   // a back layer's rows: controls, then panel
 const rowsDeep = (rows, k = 0) => k > 8 ? [] : (rows || []).flatMap(r => [r, ...r.controls.filter(x => x.more).flatMap(x => rowsDeep(x.more.paramControls, k + 1))]);
 
 const BASE_SWITCH = ['deckSwitch', 'layerOpen', 'layerClose'];
@@ -654,7 +655,7 @@ export const INVARIANTS = [
     // 18.0: every item of every page (header items, back actions, body), its when and its values
     const itemsOf = p => p.kind === 'backdrop' ? [...p.back.header.items, ...(p.back.actions || []), ...p.front.header.items] : [...p.header.items, ...(p.body || [])];
     // param controls: rows and controls (their when, their own options' source params) and the params' words
-    const controlsOf = p => [...(p.kind === 'backdrop' ? rowsDeep(p.back.paramControls).flatMap(r => [{ name: 'row', when: r.when }, ...r.controls]) : p.sheet && p.sheet.paramControl ? [p.sheet.paramControl] : [])
+    const controlsOf = p => [...(p.kind === 'backdrop' ? rowsDeep(backRowsOf(p.back)).flatMap(r => [{ name: 'row', when: r.when }, ...r.controls]) : p.sheet && p.sheet.paramControl ? [p.sheet.paramControl] : [])
       .map(x => ({ name: x.name || x.bind, when: x.when, source: x.options && !Array.isArray(x.options) ? Object.values(x.options.params || {}) : [] })),
       ...Object.entries(p.params || {}).map(([k, P]) => ({ name: k, label: P.label, placeholder: P.placeholder }))];
     let n = 0;
@@ -757,13 +758,13 @@ export const INVARIANTS = [
     let n = 0;
     pagesOf(f, f.mk(dev.any(f))).filter(p => p.kind === 'backdrop').forEach(p => {
       const seen = new Set();
-      rowsDeep(p.back.paramControls).flatMap(r => r.controls).filter(x => x.more).forEach(x => { n++; assert(!seen.has(x.bind), p.id + ': two controls of ' + x.bind + ' have a More'); seen.add(x.bind); });
+      rowsDeep(backRowsOf(p.back)).flatMap(r => r.controls).filter(x => x.more).forEach(x => { n++; assert(!seen.has(x.bind), p.id + ': two controls of ' + x.bind + ' have a More'); seen.add(x.bind); });
     });
     need(n, 'no More');
   }],
   ['More: opening reveals the back layer and makes it the whole back layer; back and up close it first; concealing closes every More', f => {
-    const D = need(f.config.decks.find(d => rowsDeep(d.page.back.paramControls).some(r => r.controls.some(x => x.more))), 'no More');
-    const name = rowsDeep(D.page.back.paramControls).flatMap(r => r.controls).find(x => x.more).bind;
+    const D = need(f.config.decks.find(d => rowsDeep(backRowsOf(d.page.back)).some(r => r.controls.some(x => x.more))), 'no More');
+    const name = rowsDeep(backRowsOf(D.page.back)).flatMap(r => r.controls).find(x => x.more).bind;
     f.devices.forEach(d => {
       const m = f.mk(d), u = () => m.query.underPage(S(m)), open = () => u().back.more || [];
       m.dispatch({ type: 'switchDeck', deck: D.id });
@@ -808,9 +809,9 @@ export const INVARIANTS = [
     a.r.forEach((t, i) => assert(b.r[i] === t - H, 'region ' + i + ' not lifted'));
     assert(b.t === Math.max(0, a.t - H), 'front layer not lifted');
   }],
-  ['content-sized regions use their measured height; the front layer never covers its own header', f => {
+  ['content-sized regions use their measured height; the front layer never covers its own header; a panel taller than the room scrolls', f => {
     const P = need(f.layout, 'no layout'), sp = need(f.specs, 'no specs');
-    const D = need(f.config.decks.find(d => (d.page.back.paramControls || []).some(r => (r.shows || 'expanded') === 'expanded')), 'no content-sized region'), id = 'panel';   // 18.0: the panel (the 'expanded' rows) is the measured region
+    const D = need(f.config.decks.find(d => (d.page.back.panel || []).length), 'no content-sized region'), id = 'panel';   // 18.0: the panel (BackLayerConfig.panel) is the measured region
     const m = f.mk(dev.any(f)); m.dispatch({ type: 'switchDeck', deck: D.id }); m.dispatch({ type: 'setExpanded', expanded: true });
     const u = m.query.underPage(S(m)), g = P.geometry(S(m), m.config, m.query, LOOK(m));
     if (D.page.front.collapse === 'full') skip('content region not stacked above a partial front layer');
@@ -818,6 +819,10 @@ export const INVARIANTS = [
     assert(t1 - t0 === 37, 'measured height not used (' + t0 + ' → ' + t1 + ')');
     const hh = +P.resolveVisuals(sp, 'frontLayer', 'partlyCollapsed').headerHeight || 0;
     assert(P.frontLayer(u, g, LOOK(m), { measured: { [id]: 99999 } }).top === g.contentHeight - hh, 'front layer not capped');
+    // a panel taller than the room above the front layer's header is held to it and scrolls; a short one does neither
+    const pan = M => P.regions(u, LOOK(m), { [id]: M }, g).find(r => r.region === 'panel'), big = pan(99999), small = pan(37);
+    assert(big.scrolls && big.top + big.height === g.contentHeight - hh, 'tall panel not held to the room (' + JSON.stringify(big) + ')');
+    assert(!small.scrolls && small.height === 37, 'short panel scrolls or shrinks (' + JSON.stringify(small) + ')');
   }],
   ['includes conditions follow list state (panel content reacts to a choices param)', f => {
     const X = need(paramDeck(f, P => P.type === 'choices' && optVals(P).length), 'no choices param'), t = optVals(X.P)[0];
@@ -922,7 +927,7 @@ export const INVARIANTS = [
       });
       Object.keys(pol).forEach(k => assert(D[k], p.id + ': policy for undeclared param ' + k));
       // 18.0: binds are param controls (the back layer's rows, a sheet's), find and switch items
-      const binds = p.kind === 'backdrop' ? rowsDeep(p.back.paramControls).flatMap(r => r.controls.map(x => x.bind)) : [p.sheet && p.sheet.paramControl && p.sheet.paramControl.bind];
+      const binds = p.kind === 'backdrop' ? rowsDeep(backRowsOf(p.back)).flatMap(r => r.controls.map(x => x.bind)) : [p.sheet && p.sheet.paramControl && p.sheet.paramControl.bind];
       const items = p.kind === 'backdrop' ? [...p.back.header.items, ...p.front.header.items] : p.header.items;
       [...binds.filter(Boolean), ...items.filter(x => x.param).map(x => x.param)].forEach(k => assert(D[k], p.id + ': binds undeclared param ' + k));
     });

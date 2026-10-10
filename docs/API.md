@@ -82,7 +82,7 @@ ParamSpec { type: 'choice'|'choices'|'text'|'flag'|'number'|'date', options?: So
 // default + reactions live in statePolicy.params.<name>: { default, resetOn, scope?, on? }
 // state: page.params.<name> (applied), page.pending.<name> · paths: 'params.<name>', 'pending.<name>' · data: contentParams(page) = params with data ≠ false
 ```
-- **Param controls** (18.0): a control binds a page param (`{ bind: 'genre', options?, when? }`); rows hold one or more (`{ controls, shows: 'always' | 'expanded', when? }`). Its `paramControl` contract gives value, options (each with `selected`), pending, label / placeholder (the param's) and min / max, and sends setParams / toggleParam / applyParams / discardParams; composition places a component by the param's spec (and `options: true` when the control brings its own choices: search suggestions). `apply: 'onApply'` keeps changes in the page's `pending` until applyParams.
+- **Param controls** (18.0): a control binds a page param (`{ bind: 'genre', options?, when? }`); rows hold one or more (`{ controls, when? }`); the back layer has two lists of rows, `controls` (concealed and revealed) and `panel` (revealed only; it scrolls when taller than the room above the front layer's header). Its `paramControl` contract gives value, options (each with `selected`), pending, label / placeholder (the param's) and min / max, and sends setParams / toggleParam / applyParams / discardParams; composition places a component by the param's spec (and `options: true` when the control brings its own choices: search suggestions). `apply: 'onApply'` keeps changes in the page's `pending` until applyParams.
 - **More**: a control may offer More (`{ bind: 'genre', more: {} }`; `more.paramControls` shows other rows instead of the default: a control for the same param with all its options). `openMore { name }` opens it (and reveals the back layer), `closeMore` closes the newest; back and up close it first; concealing closes them all. State `back.more` (params, newest last); event `moreChanged { name, opened }`. The open More is the whole back layer: Layout shows the panel alone, at the top, holding it (contract `paramControlMore`: title, its rows); every other region fades out. How many options show before "More" is design's choice. At most one control per page param has a More.
 - **Repeats**: `{ repeat: Source<unknown[]> | { options: 'f' }, as: 's', ref }` — one ref per element, `$s` usable in its props / action.
 - **Intents**: `setParams { values, page?, apply? }` · `toggleParam { name, option }` · `resetParams { names? }` · `applyParams { names? }` · `discardParams { names? }`. Event `paramChanged { name, axis, direction }` (applied changes only).
@@ -91,8 +91,9 @@ ParamSpec { type: 'choice'|'choices'|'text'|'flag'|'number'|'date', options?: So
 
 ### Back layer ✅ (18.0: fixed regions)
 ```
-BackLayerConfig { header: HeaderConfig, actions?: ButtonItem[], paramControls?: ParamControlRowConfig[], toggleOnTap?, hideHeaderOnScroll? }
-// regions are fixed: header · actions · controls ('always' rows) · panel ('expanded' rows, or the open More). Heights are design (through composition); the panel is measured.
+BackLayerConfig { header: HeaderConfig, actions?: ButtonItem[], controls?: ParamControlRowConfig[], panel?: ParamControlRowConfig[], toggleOnTap?, hideHeaderOnScroll? }
+// regions are fixed: header · actions · controls · panel (or the open More). Heights are design (through composition); the panel is measured,
+// held to the room above the front layer's header, and scrolls when taller (BackLayerRegionView.scrolls).
 ```
 
 ### Front layer ✅

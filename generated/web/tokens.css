@@ -629,6 +629,8 @@
   --morePanel-fontSize: 16;
   --morePanel-fontWeight: 500;
   --morePanel-closeOffset: -12;
+  --morePanel-pinned: true;
+  --morePanel-fill: var(--color-backLayer);
   --checklist-gap: 0;
   --checkRow-stateLayer-hover: var(--state-hover-opacity-default);
   --checkRow-stateLayer-pressed: var(--state-pressed-opacity-default);

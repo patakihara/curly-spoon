@@ -51,28 +51,30 @@ export function barView(page, look, within = []) {
 // 15.0: scroll is collapse-first — 0 … distance collapses the bar (content still), beyond it the content scrolls
 export function contentOffset(page, look, within = []) { return Math.max(0, scrollOf(page) - barView(page, look, within).distance); }
 export const BACK_REGIONS = ['header', 'actions', 'controls', 'panel'];
-const rowsShown = (B, shows) => (B.paramControls || []).filter(r => (r.shows || 'expanded') === shows);
 function regionHeights(page, look, measured) {
   const B = page.config.back, at = backAt(page);
   return {
     header: barView(page, look).height,
     actions: (B.actions || []).length ? look.size(at, 'actionsHeight') : 0,
-    controls: rowsShown(B, 'always').length * look.size(at, 'basicHeight'),   // each 'always' row: the design's row height
+    controls: (B.controls || []).length * look.size(at, 'basicHeight'),   // each controls row: the design's row height
     panel: has(page, 'panel') ? +((measured || {}).panel || 0) : 0,
   };
 }
 // the regions this back layer fills: from its config (an open More fills the panel)
-const has = (page, region) => { const B = page.config.back; return region === 'header' || (region === 'actions' ? (B.actions || []).length > 0 : region === 'controls' ? rowsShown(B, 'always').length > 0 : rowsShown(B, 'expanded').length > 0 || (page.back.more || []).length > 0); };
+const has = (page, region) => { const B = page.config.back; return region === 'header' || (region === 'actions' ? (B.actions || []).length > 0 : region === 'controls' ? (B.controls || []).length > 0 : (B.panel || []).length > 0 || (page.back.more || []).length > 0); };
 // a hidden back-layer header lifts everything below it by its height
 const headerLift = (page, H) => page.back.headerHidden ? H.header : 0;
 const moreOpen = page => (page.back.more || []).length > 0;
-export function regions(page, look, measured) {
+// with geometry, a revealed panel is held to the room above the front layer's header (its top, capped); taller content scrolls
+export function regions(page, look, measured, g) {
   const ex = page.back.expanded, more = moreOpen(page), H = regionHeights(page, look, measured), lift = headerLift(page, H), out = [];
+  const front = g && ex ? frontLayer(page, g, look, { measured }).top : Infinity;
   let top = -lift;
   for (const region of BACK_REGIONS) {
     if (!has(page, region)) continue;
-    const panel = region === 'panel', shown = more ? panel : !panel || ex;
-    out.push({ region, top: more && panel ? 0 : top, height: H[region], opacity: shown ? 1 : 0, interactive: shown });
+    const panel = region === 'panel', shown = more ? panel : !panel || ex, at = more && panel ? 0 : top;
+    const height = panel ? Math.min(H.panel, Math.max(0, front - at)) : H[region];
+    out.push({ region, top: at, height, opacity: shown ? 1 : 0, interactive: shown, scrolls: panel && H.panel > height });
     top += H[region];
   }
   return out;

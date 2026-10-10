@@ -32,9 +32,9 @@
         <div style="height:{{ actH }}px;box-sizing:border-box;padding:{{ sv.back.basicPadding }};display:flex;align-items:center;justify-content:center;gap:{{ sv.back.panelGap }}px"><sc-for list="{{ actBtns }}" as="ab" hint-placeholder-count="1"><dc-import name="Button" dc-props="{{ ab.ix }}" text="{{ ab.text }}" icon="{{ ab.icon }}" hint-size="88px,40px"></dc-import></sc-for></div>
       </div></sc-for>
 
-      <sc-for list="{{ rPanel }}" as="ri" hint-placeholder-count="1"><div style="position:absolute;left:0;right:0;top:{{ ri.top }}px;opacity:{{ ri.op }};pointer-events:{{ ri.ev }};transition:{{ mx.expand.both }}">
+      <sc-for list="{{ rPanel }}" as="ri" hint-placeholder-count="1"><div style="position:absolute;left:0;right:0;top:{{ ri.top }}px;height:{{ ri.h }};overflow-y:{{ ri.ov }};overscroll-behavior:contain;opacity:{{ ri.op }};pointer-events:{{ ri.ev }};transition:{{ mx.expand.both }}">
         <div ref="{{ panelRef }}" style="height:{{ panelH }};box-sizing:border-box;padding:{{ panelPad }};border-top:1px solid {{ panelLine }};color:{{ sv.back.ink }};display:flex;flex-direction:column;gap:{{ sv.back.panelGap }}px">
-          <sc-if value="{{ moreOpen }}" hint-placeholder-val="{{ false }}"><dc-import name="MorePanel" title="{{ moreHead.title }}" close-ix="{{ moreHead.closeIx }}" visuals="{{ moreHead.vis }}" hint-size="100%,48px"></dc-import></sc-if>
+          <sc-if value="{{ moreOpen }}" hint-placeholder-val="{{ false }}"><div style="position:{{ moreHead.pos }};top:0;z-index:1"><dc-import name="MorePanel" title="{{ moreHead.title }}" close-ix="{{ moreHead.closeIx }}" visuals="{{ moreHead.vis }}" hint-size="100%,48px"></dc-import></div></sc-if>
           <sc-for list="{{ panelRows }}" as="pr" hint-placeholder-count="3">
             <sc-if value="{{ pr.hasLabel }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column"><dc-import name="PanelRow" text="{{ pr.label }}" visuals="{{ pr.vis }}" hint-size="100%,16px"></dc-import></div></sc-if>
             <div style="display:flex;gap:{{ sv.back.panelGap }}px"><sc-for list="{{ pr.controls }}" as="pc" hint-placeholder-count="1"><div style="flex:1;min-width:0;display:flex;flex-direction:column">
@@ -822,12 +822,13 @@ class Component extends DCLogic {
   // ── view values ────────────────────────────────────────
   backVals(ps, isBase) {
     const c = ps.config, look = this.look(), page = this.pageNode(ps), back = page.children.back, H = back.children.header;
-    const RI = {}; back.values.regions.forEach(r => { (RI[r.region] = RI[r.region] || []).push({ top: r.top, op: r.opacity, ev: r.interactive ? 'auto' : 'none' }); });
+    // a region view (core Layout): a panel taller than its room is held to it and scrolls (its content keeps its own height, measured)
+    const RI = {}; back.values.regions.forEach(r => { (RI[r.region] = RI[r.region] || []).push({ top: r.top, op: r.opacity, ev: r.interactive ? 'auto' : 'none', h: r.scrolls ? r.height + 'px' : 'auto', ov: r.scrolls ? 'auto' : 'visible' }); });
     const RH = Object.fromEntries(back.values.regions.map(r => [r.region, r.height]));
     const bhLeft = this.hItems(this.sl(H, 'start'), 'back', ps);
-    // param-control rows (core): 'always' rows in the controls region (shown concealed too), 'expanded' rows in the panel
-    const rows = back.children.paramControls, shows = r => r.config.shows || 'expanded', MN = back.children.more || null, BV = this.P.resolveVisuals(this.specs, 'backLayer', 'enabled', {});
-    const basicRows = rows.filter(r => shows(r) === 'always').map(r => ({ controls: r.children.controls.map(n => this.controlView(ps, n)) }));
+    // param-control rows (core): the back layer's controls rows in the controls region (shown concealed too), its panel rows in the panel
+    const MN = back.children.more || null, BV = this.P.resolveVisuals(this.specs, 'backLayer', 'enabled', {});
+    const basicRows = back.children.controls.map(r => ({ controls: r.children.controls.map(n => this.controlView(ps, n)) }));
     return {
       rHeader: RI.header || [], rBasic: RI.controls || [], rPanel: RI.panel || [], rActions: RI.actions || [],
       // the actions region's buttons (config back.actions: e.g. the artist page's play buttons below its details)
@@ -843,9 +844,9 @@ class Component extends DCLogic {
       canBack: !isBase, basicH: basicRows.length ? (RH.controls || 0) / basicRows.length : 0, panelRef: this.panelRef,
       panelH: 'auto',
       // an open More (core: the back layer's more child) takes the panel: its bar (morePanel: ✕ + title), then its rows in the panel's place
-      moreOpen: !!MN, panelPad: MN ? BV.morePadding : BV.panelPadding, panelLine: MN ? BV.moreDivider : BV.panelDivider, moreHead: MN ? { title: MN.props.title || MN.values.title || '', vis: this.vis(MN, { surface: 'backLayer' }), closeIx: this.ix(MN.key + '/close', this.actOf(MN, 'close'), () => this.runAction(this.actOf(MN, 'close')), { component: 'iconButton', label: MN.props.closeLabel || '' }) } : { title: '', vis: {}, closeIx: INERT },
+      moreOpen: !!MN, panelPad: MN ? BV.morePadding : BV.panelPadding, panelLine: MN ? BV.moreDivider : BV.panelDivider, moreHead: MN ? { title: MN.props.title || MN.values.title || '', vis: this.vis(MN, { surface: 'backLayer' }), pos: this.vis(MN).pinned ? 'sticky' : 'relative', closeIx: this.ix(MN.key + '/close', this.actOf(MN, 'close'), () => this.runAction(this.actOf(MN, 'close')), { component: 'iconButton', label: MN.props.closeLabel || '' }) } : { title: '', vis: {}, pos: 'relative', closeIx: INERT },
       // panel rows: the row's label (its first control's, drawn by panelRow), then its controls side by side
-      panelRows: (MN ? MN.children.paramControls : rows.filter(r => shows(r) === 'expanded')).map(r => ({ hasLabel: !!r.values.label && !MN, label: r.values.label || '', vis: this.P.resolveVisuals(this.specs, 'panelRow', 'enabled', {}),
+      panelRows: (MN ? MN.children.paramControls : back.children.panel).map(r => ({ hasLabel: !!r.values.label && !MN, label: r.values.label || '', vis: this.P.resolveVisuals(this.specs, 'panelRow', 'enabled', {}),
         controls: r.children.controls.map(n => this.controlView(ps, n)) }))
     };
   }

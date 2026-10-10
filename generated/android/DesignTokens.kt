@@ -760,6 +760,8 @@ object MorePanelTokens {
     val FontSize = 16f
     val FontWeight = 500f
     val CloseOffset = -12f
+    val Pinned = true
+    val Fill = DesignTokens.ColorBackLayer
 }
 
 object ChecklistTokens {

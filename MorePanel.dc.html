@@ -7,16 +7,16 @@
 </head>
 <body>
 <x-dc>
-<div style="height:{{ h }}px;display:flex;align-items:center;gap:{{ gap }}px;font-family:{{ ff }};font-size:{{ fs }}px;font-weight:{{ fw }};color:inherit"><div style="display:flex;margin-inline-start:{{ off }}px"><dc-import name="IconButton" dc-props="{{ closeIx }}" icon="{{ icon }}" hint-size="40px,40px"></dc-import></div><span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ title }}</span></div>
+<div style="height:{{ h }}px;background:{{ fill }};display:flex;align-items:center;gap:{{ gap }}px;font-family:{{ ff }};font-size:{{ fs }}px;font-weight:{{ fw }};color:inherit"><div style="display:flex;margin-inline-start:{{ off }}px"><dc-import name="IconButton" dc-props="{{ closeIx }}" icon="{{ icon }}" hint-size="40px,40px"></dc-import></div><span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ title }}</span></div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:320,&quot;height&quot;:56},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Genre&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;closeIx&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
 // Web implementation of design component morePanel: the bar of an open More — a close button (✕) and the title (its param's label).
 // Its content slot (the More's control rows) is drawn below it by the shell, like a panelRow's. Props: title, closeIx (IconButton props
-// from the shell: label = closeLabel, activate = close), visuals (resolved: height, gap, closeIcon, closeOffset, fontFamily, fontSize, fontWeight).
+// from the shell: label = closeLabel, activate = close), visuals (resolved: height, gap, closeIcon, closeOffset, fontFamily, fontSize, fontWeight, fill; pinned is the shell's: it keeps the bar at the top while the rows scroll).
 class Component extends DCLogic {
   renderVals() {
     const v = this.props.visuals || {};
-    return { title: this.props.title || '', closeIx: this.props.closeIx || {}, icon: v.closeIcon || '', h: +v.height || 48, gap: +v.gap || 0, off: +v.closeOffset || 0,
+    return { title: this.props.title || '', closeIx: this.props.closeIx || {}, icon: v.closeIcon || '', h: +v.height || 48, fill: v.fill || 'transparent', gap: +v.gap || 0, off: +v.closeOffset || 0,
       ff: v.fontFamily || 'inherit', fs: +v.fontSize || 14, fw: v.fontWeight || 'normal' };
   }
 }

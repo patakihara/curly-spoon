@@ -46,14 +46,15 @@ _Unreleased (no contract change):_ web: the shell draws no UI itself — FrontLa
   `statePolicy` (pages, decks, layers). PersistPolicy is unchanged (it is about storage, not one state field).
 - BackRegionName → BackLayerRegionName, BackRegionView → BackLayerRegionView (renamed); RegionInstance removed (Layout.regions
   returns BackLayerRegionView[]; same fields).
-- Param controls replace basic actions and panel rows (breaking): BackLayerConfig.basicAction / panel → `paramControls:
-  ParamControlRowConfig[]` (rows: controls, shows 'always' | 'expanded', when); ParamControlConfig { bind, options?,
+- Param controls replace basic actions and panel rows (breaking): BackLayerConfig.basicAction / panel → two lists of
+  rows, `controls` (concealed and revealed) and `panel` (revealed only), each ParamControlRowConfig[] (rows: controls,
+  when); the panel scrolls when taller than the room (BackLayerRegionView.height held to it, `scrolls`); ParamControlConfig { bind, options?,
   when? }; PageSheetConfig.control → paramControl. Removed: BasicActionConfig, ParamRow, SuggestionsRow, PanelRow,
   DraftBind, ParamMatch.draft, contracts input / paramRow / suggestion / suggestions. Added: ParamSpec label /
   placeholder / apply ('immediate' | 'onApply'), PageStateBase.pending, intents applyParams / discardParams,
   SetParamsIntent.apply, EventTo.apply, ParamMatch.options, contracts paramControl (values: value, options with
   selected, pending, label, placeholder, min, max; intents setParams · toggleParam · applyParams · discardParams) and
-  paramControlRow (label: its first control's). Back-layer regions: header · actions · controls · panel. Design:
+  paramControlRow (label: its first control's). Back-layer regions: header · actions · controls · panel; backLayer children controls · panel. Composition rules walk every param control, More and the sheet's control (they had missed them). Design:
   suggestionList (new), filterChips event toggle, backLayer / bottomSheet slots renamed. Config: Search's draft param
   `qd` removed (`q` is 'onApply').
 - More (additive): ParamControlConfig.more (ParamControlMoreConfig { paramControls? }), BackLayerState.more (open Mores,

@@ -33,6 +33,14 @@
     },
     "closeOffset": {
       "default": -12
+    },
+    "pinned": {
+      "default": true
+    },
+    "fill": {
+      "default": {
+        "token": "color.backLayer"
+      }
     }
   }
 }

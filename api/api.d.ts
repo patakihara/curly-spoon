@@ -303,12 +303,8 @@ export interface ParamControlConfig {
   when?: Condition;                      // shown only while this holds
   more?: ParamControlMoreConfig;         // offers "More"; at most one control per page param has one
 }
-export type ParamControlShows =
-  | 'always'                             // also while the back layer is concealed
-  | 'expanded';                          // only while it is revealed
 export interface ParamControlRowConfig {
   controls: ParamControlConfig[];        // one or more on this line, in order
-  shows?: ParamControlShows;             // default 'expanded'
   when?: Condition;                      // the whole line shows only while this holds
 }
 export interface ParamControlMoreConfig {
@@ -358,11 +354,12 @@ export interface PageSheetStatePolicy { expanded: StatePolicy<boolean> }
 export interface AppBarPageStatePolicy { params?: ParamStatePolicies; scroll: StatePolicy<number>; sheet?: PageSheetStatePolicy; find?: FindStatePolicy }   // sheet mirrors PageSheetState
 
 // ── Backdrop page. The back layer has named regions with fixed meanings:
-//   header, actions and basicAction show concealed and expanded; panel shows only expanded.
+//   header, actions and controls show concealed and revealed; panel shows only revealed, and scrolls when it doesn't fit.
 export interface BackLayerConfig {
   header: HeaderConfig;
   actions?: ButtonItem[];
-  paramControls?: ParamControlRowConfig[];   // its controls, top to bottom: 'always' rows show concealed too, 'expanded' rows only revealed
+  controls?: ParamControlRowConfig[];    // param-control rows shown concealed and revealed, top to bottom
+  panel?: ParamControlRowConfig[];       // param-control rows shown only revealed, top to bottom; they scroll when taller than the room
   toggleOnTap?: boolean;                 // default true
   hideHeaderOnScroll?: boolean;          // scrolling down hides the header region (BackLayerState.headerHidden)
 }
@@ -636,13 +633,20 @@ export interface Contract<C, V, I> { config: C; values: V; intents: I }
 export interface NoValues {}
 export type NoIntents = never;
 
-export type BackLayerRegionName = 'header' | 'actions' | 'controls' | 'panel';   // controls: the 'always' rows · panel: the 'expanded' rows, or the open More (then alone, at the top)
+export type BackLayerRegionName = 'header' | 'actions' | 'controls' | 'panel';   // controls: BackLayerConfig.controls · panel: BackLayerConfig.panel, or the open More (then alone, at the top)
 export interface ParamControlOption {   // one choice, as a param control's values give it
   value: string;                         // 'jazz'
   label: string;                         // "Jazz", resolved in the current locale
   selected: boolean;                     // part of the control's current value (the pending one if any)
 }
-export interface BackLayerRegionView { region: BackLayerRegionName; top: number; height: number; opacity: number; interactive: boolean }   // Layout
+export interface BackLayerRegionView {   // Layout
+  region: BackLayerRegionName;
+  top: number;
+  height: number;                        // visible height: the panel's is at most the room above the front layer's header
+  opacity: number;
+  interactive: boolean;
+  scrolls: boolean;                      // its content is taller than its height (the panel only)
+}
 export interface ContentView { state: ContentViewState; showItems: boolean; placeholders: number; banner: boolean; retry: boolean }   // replaces api.d.ts ContentView: no component ids (composition picks them)
 // <contracts:generated> — from api/contracts.js by api/gen-contracts.js; do not edit
 // button
@@ -695,7 +699,7 @@ export interface ContentChildren { items: ItemContract[]; state?: ContentStateCo
 export interface ContentContract extends Contract<ContentConfig, ContentValues, NoIntents> { children: ContentChildren }
 // backLayer: toggle only while toggleOnTap · more: the newest open More (BackLayerState.more)
 export interface BackLayerValues { expanded: boolean; headerHidden: boolean; regions: BackLayerRegionView[] }
-export interface BackLayerChildren { header: HeaderContract; actions: ButtonContract[]; paramControls: ParamControlRowContract[]; more?: ParamControlMoreContract }
+export interface BackLayerChildren { header: HeaderContract; actions: ButtonContract[]; controls: ParamControlRowContract[]; panel: ParamControlRowContract[]; more?: ParamControlMoreContract }
 export interface BackLayerContract extends Contract<BackLayerConfig, BackLayerValues, ToggleExpandedIntent> { children: BackLayerChildren }
 // frontHeader: the built-in disclosure: the back layer's expanded + its label (texts backLayer.reveal / backLayer.conceal)
 export interface FrontHeaderValues { title: string; expanded: boolean; disclosureLabel: string }
@@ -903,7 +907,7 @@ export interface Layout {
   env(state: AppState, config: AppConfig, q: Queries): LayoutEnv;
   sizes(look: Look): ModelSizes;         // 18.0: createModel's sizes (the wide look)
   geometry(state: AppState, config: AppConfig, q: Queries, look: Look): LayoutGeometry;
-  regions(page: BackdropPageState, look: Look, measured?: Record<string, number>): BackLayerRegionView[];   // fixed regions: header · actions · controls · panel (revealed only)
+  regions(page: BackdropPageState, look: Look, measured?: Record<string, number>, geometry?: Geometry): BackLayerRegionView[];   // fixed regions: header · actions · controls · panel (revealed only; with geometry, held to the room above the front layer's header)
   barView(page: PageState, look: Look, within?: ContractName[]): BarView;   // the header hire's height / expandedHeight (with a detail); progress = min(1, scroll / distance)
   contentOffset(page: PageState, look: Look, within?: ContractName[]): number;   // 15.0: the content's own offset = max(0, scroll − barView.distance)
   resolveVisuals(specs: Specs, component: ComponentId, state: string, ctx?: VisualContext): Record<string, unknown>;

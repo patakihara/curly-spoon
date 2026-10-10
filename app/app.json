@@ -280,15 +280,16 @@
        }
       ]
      },
-     "paramControls": [
+     "controls": [
       {
        "controls": [
         {
          "bind": "f"
         }
-       ],
-       "shows": "always"
-      },
+       ]
+      }
+     ],
+     "panel": [
       {
        "controls": [
         {
@@ -574,15 +575,16 @@
        }
       ]
      },
-     "paramControls": [
+     "controls": [
       {
        "controls": [
         {
          "bind": "tab"
         }
-       ],
-       "shows": "always"
-      },
+       ]
+      }
+     ],
+     "panel": [
       {
        "controls": [
         {
@@ -984,15 +986,16 @@
        }
       ]
      },
-     "paramControls": [
+     "controls": [
       {
        "controls": [
         {
          "bind": "q"
         }
-       ],
-       "shows": "always"
-      },
+       ]
+      }
+     ],
+     "panel": [
       {
        "controls": [
         {
@@ -2633,15 +2636,16 @@
       }
      ]
     },
-    "paramControls": [
+    "controls": [
      {
       "controls": [
        {
         "bind": "sort"
        }
-      ],
-      "shows": "always"
-     },
+      ]
+     }
+    ],
+    "panel": [
      {
       "controls": [
        {
@@ -2916,15 +2920,16 @@
       }
      }
     ],
-    "paramControls": [
+    "controls": [
      {
       "controls": [
        {
         "bind": "section"
        }
-      ],
-      "shows": "always"
-     },
+      ]
+     }
+    ],
+    "panel": [
      {
       "controls": [
        {

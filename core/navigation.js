@@ -86,6 +86,8 @@ const underIndex = stack => { for (let i = stack.length - 1; i >= 0; i--) if (st
 const topOf = stack => stack[stack.length - 1];
 const contentOf = cfg => cfg.kind === 'backdrop' ? cfg.front.content : cfg.content || null;
 // group key of a value (§F GroupSpec)
+// a back layer's param-control rows: controls, then panel
+export const backRows = B => [...(B.controls || []), ...(B.panel || [])];
 // every control with a More in these rows, and in their Mores (a More may hold controls with their own)
 export function moreControls(rows, depth = 0) {
   if (depth > 8) return [];
@@ -738,7 +740,7 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
           ev.push({ type: 'moreChanged', name: open[open.length - 1], opened: false });
           break;
         }
-        if (!moreControls(P.config.back.paramControls).some(x => x.bind === intent.name) || open[open.length - 1] === intent.name) break;
+        if (!moreControls(backRows(P.config.back)).some(x => x.bind === intent.name) || open[open.length - 1] === intent.name) break;
         if (!P.back.expanded) ev.push({ type: 'expandedChanged', expanded: true });
         s = loc.patch(p => ({ ...p, back: { ...p.back, expanded: true, more: [...open.filter(k => k !== intent.name), intent.name] } }));
         ev.push({ type: 'moreChanged', name: intent.name, opened: true });
