@@ -708,6 +708,16 @@ fields, not nodes · 6 verify ✓ (screens above).
     (the hire feeds design text common.dismiss; config's action text wins) and visuals actionEmphasis (text) / actionSize
     (sm), which the shell used to pick. Its box (left, bottom, width from margin / maxWidth / bottom*) is still placed by
     the shell: the "Snackbar: the wrapper box" item.
+    Drawer: the shell hands Drawer its drawerLayer node; Drawer is shown while the node is open in its modal form (form
+    rail: the expanded rail instead, which the shell decided before), draws its own scrim (design drawer.scrim, as dialog
+    and menu do) and sliding panel (drawer width / maxWidth; the shell measured the hire's width through the look), and its
+    scrim sends the node's close. The shell's drawer Scrim instance and wrapper box are gone; the drawer scrim's cursor is
+    design's arrow (it was a hand). Still from the shell: the title and rows (its page's header and body; the rows' fill /
+    navIndicator bg) and the layer's motion (mx.layer.menu).
+    Menu: not converted, needs Sofia: composition hires its items as drawerItem (menuItem, playNowMenuItem ...), but the
+    shell draws them as listItem rows with menu's own row visuals (rowHeight, rowPadX, iconSize ...). Drawing them from
+    their nodes means either drawing them as DrawerItem (a look change) or a design child for a menu row (a new design
+    component, to propose). Its popup anchor is also the shell's measurement (menuAnchor).
 ## Hires, picks and tokens: work list (decisions 52–54; tick as done)
 API 18.0.0 amended (breaking: renames and removals). Then back to the shell conversion list, step 3.
 - [x] 1. Rename ComponentId → ComponentName (api.d.ts, docs).
@@ -759,10 +769,11 @@ Done (drawn from contract nodes through draw.js):
 - [x] Panel: the More bar's sticky wrapper: MorePanel (design pinned).
 - [ ] App-bar page: the overlay box (bottom offset, fade, scale, pointer events) around AppBarPage.
 - [ ] Rail: the wrapper box around NavRail.
-- [ ] Side-sheet scrim and drawer scrim: Scrim instances placed and coloured by the shell.
+- [ ] Side-sheet scrim: a Scrim instance placed and coloured by the shell.
+- [x] Drawer scrim: Drawer draws it (design drawer.scrim) and sends close.
 - [ ] Edge handle: placed by the shell (end edge, vertically centred).
 - [ ] Nav bar: the wrapper box that slides it down (navShift) with the expand transition.
-- [ ] Drawer: the wrapper box (width, max width, translateX -110%, transition, pointer events).
+- [x] Drawer: the wrapper box: Drawer slides itself in from its node (width, max width from design; motion still the shell's).
 - [ ] Snackbar: the wrapper box (left, bottom, width).
 - [ ] Gate and splash: wrapper boxes with z-index 4 / 5, fades, the splash's role=status and aria-busy.
 - [ ] Warm-up instances: two hidden rows of real DCs (AppBarSheet, AppBarPage, SearchField, SuggestionRow,
@@ -778,8 +789,8 @@ Done (drawn from contract nodes through draw.js):
 - [ ] DededeLayer: 10 props; no design component exists for it.
 - [ ] AccountLayer: 6 props; no design component exists for it.
 - [ ] EdgeHandle and Scrim: no design component exists for either.
-- [ ] NavRail, Drawer, Menu, SignIn, Splash: props built by the shell, not from a node.
-- [x] Dialog, Snackbar: drawn from their overlay nodes (decision 58).
+- [ ] NavRail, Menu, SignIn, Splash: props built by the shell, not from a node (Menu: needs Sofia, decision 58).
+- [x] Dialog, Snackbar: drawn from their overlay nodes; Drawer from its drawerLayer node (decision 58).
 - [x] Back-layer DCs placed by the shell: now one BackLayer instance fed its node (it draws Header, PanelRow, MorePanel,
       Button and the controls from their nodes).
 
