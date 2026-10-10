@@ -704,6 +704,10 @@ fields, not nodes · 6 verify ✓ (screens above).
     hire feeds design texts common.ok / common.cancel; config's confirm / cancel texts win) and visuals confirmEmphasis
     (filled) / cancelEmphasis (text) for its buttons, which the shell used to pick. The scrim's cursor is now design's
     (surface: the arrow); it was the browser's default.
+    Snackbar: drawn from its overlay node; its button (ixFor) sends the node's close. design snackbar: prop actionLabel
+    (the hire feeds design text common.dismiss; config's action text wins) and visuals actionEmphasis (text) / actionSize
+    (sm), which the shell used to pick. Its box (left, bottom, width from margin / maxWidth / bottom*) is still placed by
+    the shell: the "Snackbar: the wrapper box" item.
 ## Hires, picks and tokens: work list (decisions 52–54; tick as done)
 API 18.0.0 amended (breaking: renames and removals). Then back to the shell conversion list, step 3.
 - [x] 1. Rename ComponentId → ComponentName (api.d.ts, docs).
@@ -774,8 +778,8 @@ Done (drawn from contract nodes through draw.js):
 - [ ] DededeLayer: 10 props; no design component exists for it.
 - [ ] AccountLayer: 6 props; no design component exists for it.
 - [ ] EdgeHandle and Scrim: no design component exists for either.
-- [ ] NavRail, Drawer, Menu, Snackbar, SignIn, Splash: props built by the shell, not from a node.
-- [x] Dialog: drawn from its overlay node (decision 58).
+- [ ] NavRail, Drawer, Menu, SignIn, Splash: props built by the shell, not from a node.
+- [x] Dialog, Snackbar: drawn from their overlay nodes (decision 58).
 - [x] Back-layer DCs placed by the shell: now one BackLayer instance fed its node (it draws Header, PanelRow, MorePanel,
       Button and the controls from their nodes).
 

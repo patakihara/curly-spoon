@@ -370,6 +370,8 @@
   --snackbar-margin: 16;
   --snackbar-bottomCompact: 8;
   --snackbar-bottomWide: 16;
+  --snackbar-actionEmphasis: text;
+  --snackbar-actionSize: sm;
   --signInPage-radius: var(--radius-full);
   --signInPage-focusRing-keyboardFocus: [object Object];
   --signInPage-contentOpacity: 1;

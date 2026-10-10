@@ -414,6 +414,8 @@ object SnackbarTokens {
     val Margin = 16f
     val BottomCompact = 8f
     val BottomWide = 16f
+    val ActionEmphasis = "text"
+    val ActionSize = "sm"
 }
 
 object SignInPageTokens {

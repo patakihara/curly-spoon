@@ -3,6 +3,10 @@
   "contract": "overlay",
   "clauses": [
     {
+      "prop": "actionLabel",
+      "text": "common.dismiss"
+    },
+    {
       "event": "close",
       "send": "closeOverlay"
     }

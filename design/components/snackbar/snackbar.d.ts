@@ -6,5 +6,6 @@ import type { SurfaceProps } from '../surface/surface';
 export interface SnackbarProps extends SurfaceProps {
   text: string;
   action: string;
+  actionLabel: string;
 }
 export type SnackbarState = 'enabled' | 'disabled' | 'hover' | 'pressed' | 'focus' | 'keyboardFocus';

@@ -2,7 +2,8 @@
   "extends": "surface",
   "props": {
     "text": "string",
-    "action": "string"
+    "action": "string",
+    "actionLabel": "string"
   },
   "provides": {
     "content": {
@@ -57,6 +58,12 @@
     },
     "bottomWide": {
       "default": 16
+    },
+    "actionEmphasis": {
+      "default": "text"
+    },
+    "actionSize": {
+      "default": "sm"
     }
   },
   "events": [

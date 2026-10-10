@@ -9,13 +9,19 @@
 <x-dc>
 <div role="status" style="width:100%;min-height:{{ v.minHeight }}px;box-sizing:border-box;display:flex;align-items:center;gap:{{ v.gap }}px;padding:{{ v.padding }};background:{{ v.fill }};color:{{ v.ink }};border-radius:{{ v.radius }}px;font-size:{{ v.fontSize }}px;box-shadow:{{ v.shadow }}">
   <div style="flex:1">{{ text }}</div>
-  <dc-import name="Button" dc-props="{{ ix }}" text="{{ action }}" hint-size="88px,32px"></dc-import>
+  <dc-import name="Button" dc-props="{{ ix }}" text="{{ action }}" symbol-visuals="{{ symbolVisuals }}" hint-size="88px,32px"></dc-import>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:72},&quot;text&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Link copied&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;action&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Dismiss&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;ix&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
-// Web implementation of design component snackbar (overlay). Props: text, action (label), ix (Button props), visuals (resolved). Position comes from the shell (visuals margin / maxWidth / bottom*). No values of its own.
+// Web implementation of design component snackbar (overlay contract), drawn from its node (platforms/web/draw.js): props text,
+// action (the overlay's own texts) falling back to actionLabel (design text); its button sends the node's close; look from its
+// visuals (button actionEmphasis / actionSize). Its place on screen still comes from the shell (visuals margin / maxWidth / bottom*).
 class Component extends DCLogic {
-  renderVals() { const p = this.props; return { v: p.visuals || {}, text: p.text || '', action: p.action || '', ix: p.ix || {} }; }
+  renderVals() {
+    const p = this.props, v = p.visuals || {}, action = p.action || p.actionLabel || '';
+    const ix = p.ixFor ? p.ixFor({ key: 'action', event: 'close', component: 'button', variant: { emphasis: v.actionEmphasis, size: v.actionSize }, label: action }) : {};
+    return { v, text: p.text || '', action, ix, symbolVisuals: p.symbolVisuals || {} };
+  }
 }
 </script>
 </body>
