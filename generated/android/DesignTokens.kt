@@ -991,6 +991,8 @@ object MenuTokens {
     val HandleHeight = 4f
     val Handle = DesignTokens.ColorHandle
     val HandleRadius = 2f
+    val PopupGap = 0f
+    val PopupMinEdge = 8f
 }
 
 object MenuItemTokens {

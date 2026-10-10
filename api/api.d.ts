@@ -242,7 +242,7 @@ export interface CloseLayerIntent { type: 'closeLayer'; layer: LayerId }
 export interface FocusIntent { type: 'focus'; target: DeckId | LayerId }
 export interface SetDeviceIntent { type: 'setDevice'; device: Device }
 export interface SetPrefsIntent { type: 'setPrefs'; prefs: Partial<Prefs> }
-export interface OpenOverlayIntent { type: 'openOverlay'; overlay: OverlaySpec; returnFocus?: string }
+export interface OpenOverlayIntent { type: 'openOverlay'; overlay: OverlaySpec; returnFocus?: string; openedAt?: Rect }   // openedAt: the tapped control's rectangle, in the app frame
 export interface CloseOverlayIntent { type: 'closeOverlay'; id?: string; result?: unknown }
 export interface RetryIntent { type: 'retry'; dataSource?: SourceRef }
 export interface SessionIntent { type: 'session'; event: SessionEvent }
@@ -496,7 +496,7 @@ export type PageState = BackdropPageState | AppBarPageState | PlayerPageState;
 export interface StackEntry { page: PageState; openedFrom: ItemId | null }
 export interface DeckState { stack: StackEntry[] }
 export interface LayerState { open: boolean; stack: StackEntry[] }
-export interface OverlayEntry { spec: OverlaySpec; openedFrom: Origin | null }
+export interface OverlayEntry { spec: OverlaySpec; openedFrom: Origin | null; openedAt: Rect | null }   // openedAt: null when opened without one
 export interface NavSurface { kind: 'nav' }
 export interface DeckSurface { kind: 'backLayer' | 'frontLayer' | 'appBarPage'; deck: DeckId }
 export interface LayerSurface { kind: 'layer'; layer: LayerId }
@@ -756,7 +756,7 @@ export interface NavigationContract extends Contract<NavigationConfig, Navigatio
 export interface SplashValues { label: string }
 export interface SplashContract extends Contract<LaunchConfig, SplashValues, NoIntents> {}
 // overlay: items: a menu's
-export interface OverlayValues { title: string | null; body: string | null; confirm: string | null; cancel: string | null; text: string | null; action: string | null }
+export interface OverlayValues { title: string | null; body: string | null; confirm: string | null; cancel: string | null; text: string | null; action: string | null; openedAt: Rect | null }
 export interface OverlayChildren { items?: ButtonContract[] }
 export interface OverlayContract extends Contract<OverlaySpec, OverlayValues, CloseOverlayIntent> { children: OverlayChildren }
 export type ContractName = 'button' | 'logo' | 'text' | 'switch' | 'find' | 'detail' | 'seek' | 'header' | 'paramControl' | 'paramControlRow' | 'paramControlMore' | 'item' | 'contentState' | 'content' | 'backLayer' | 'frontHeader' | 'frontLayer' | 'backdropPage' | 'pageSheet' | 'appBarPage' | 'playerPage' | 'sheetLayer' | 'drawerLayer' | 'fullscreenLayer' | 'destination' | 'navigation' | 'splash' | 'overlay';

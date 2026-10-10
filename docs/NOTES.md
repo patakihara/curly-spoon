@@ -717,7 +717,7 @@ fields, not nodes · 6 verify ✓ (screens above).
     Menu: not converted, needs Sofia: composition hires its items as drawerItem (menuItem, playNowMenuItem ...), but the
     shell draws them as listItem rows with menu's own row visuals (rowHeight, rowPadX, iconSize ...). Drawing them from
     their nodes means either drawing them as DrawerItem (a look change) or a design child for a menu row (a new design
-    component, to propose). Its popup anchor is also the shell's measurement (menuAnchor).
+    component, to propose). Its popup anchor was the shell's measurement (menuAnchor; decision 60).
     Side-sheet scrim: NowPlayingSheet draws it from the sheetLayer node (shown while open with side modal; design
     sideSheet.scrim through the shell's sv bundle) and it sends the node's close. The shell's Scrim instance and its
     modal decision are gone. Scrim.dc.html stays for FrontLayer's scrim; it has no design component of its own (see the
@@ -750,8 +750,7 @@ fields, not nodes · 6 verify ✓ (screens above).
        parent listItem doesn't draw). MenuItem.dc.html draws a row; Menu.dc.html draws its rows from its slot items and
        its scrim sends the node's close; the shell hands Menu its overlay node (draw.js). menu gets a visual `form` (popup
        on wide, sheet on compact) instead of the shell deciding. Screens identical, the open menu's screenshot identical
-       compact and wide. Still the shell's: the popup anchor (menuAnchor, measured from the tap's element: needs an API
-       change to carry the tap's rect to the overlay node).
+       compact and wide. The popup anchor (menuAnchor) went in decision 60.
     3. Edge handle as a part of sideSheet. design sideSheet declares part `handle` (its handle* visuals); NowPlayingSheet draws it
        from the sheetLayer node (shown while side is auto and the layer is closed) and sends the node's open on pointer
        enter (as before) and on tap. EdgeHandle.dc.html, the shell's placement (showNnEdge, edgeVis, nnEdgeEnter) and its
@@ -765,6 +764,17 @@ fields, not nodes · 6 verify ✓ (screens above).
        that resolved frontLayer's scrim). The cursor is design's pointer (the DC wrote it by whether a tap handler existed). The
        fade timing stays the engine's latest change (ms from the platform transition, like the other scrims), not a design
        visual. Screenshots with the scrim shown and after tapping it are identical to before.
+60. Menu popup place from the overlay's `openedAt` (Sofia approved the API change and chose the name, 2026-10-10; 18.0.0
+    amended, not bumped). `OpenOverlayIntent.openedAt?: Rect`, `OverlayEntry.openedAt: Rect | null`, overlay contract
+    value `openedAt`. core/navigation.js stores it on the entry (null when absent) and drops it with the entry (overlays
+    are not in a snapshot, so restore never sees one); core/contracts.js puts it in the overlay node's values; the menu hire
+    feeds Menu's new optional prop `openedAt` from it. Design menu gets visuals popupGap (0) and popupMinEdge (8), the two
+    literals the shell's placement held. Menu.dc.html places the popup: top = openedAt.top + h + popupGap, end =
+    max(popupMinEdge, its own width - (left + w)); the `anchor` prop is gone. Rule added: openedAt is non-null only when
+    the overlay was opened with one, and closing drops it (95 pass). The measuring stays in the shell's runAction, the one
+    funnel every press passes (nix, drawn emit, press): it now puts the tap element's rectangle on the openOverlay intent
+    instead of into menuAnchor (moved, not added; the element is only there, no design or config value can stand in). The
+    Components page previews the popup with an openedAt at the frame's end edge (left 10000) so it sits 8 from the end.
 ## Hires, picks and tokens: work list (decisions 52–54; tick as done)
 API 18.0.0 amended (breaking: renames and removals). Then back to the shell conversion list, step 3.
 - [x] 1. Rename ComponentId → ComponentName (api.d.ts, docs).
@@ -836,8 +846,11 @@ Done (drawn from contract nodes through draw.js):
 - [ ] DededeLayer: 10 props; no design component exists for it.
 - [ ] AccountLayer: 6 props; no design component exists for it.
 - [x] Scrim: its own design component and DC (decision 59); EdgeHandle is gone (decision 59).
-- [ ] NavRail, SignIn, Splash: props built by the shell, not from a node. (Menu: drawn from its overlay node, decision 59.)
+- [ ] NavRail, SignIn, Splash: props built by the shell, not from a node. (Menu: drawn from its overlay node, decision 59; its popup place from the node's openedAt, decision 60.)
 - [x] Dialog, Snackbar: drawn from their overlay nodes; Drawer from its drawerLayer node (decision 58).
+- [x] Menu popup anchor: Menu places itself from the overlay node's openedAt (decision 60); menuAnchor is gone.
+- [ ] Tap rectangles measured in the shell: runAction puts the tapped element's rectangle on openOverlay (openedAt); openLayer
+      measures the Dedede origin (ddOrigin). Both want a platform-side pointer helper that adds the rect to the intent.
 - [x] Back-layer DCs placed by the shell: now one BackLayer instance fed its node (it draws Header, PanelRow, MorePanel,
       Button and the controls from their nodes).
 

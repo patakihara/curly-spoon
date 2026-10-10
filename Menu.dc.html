@@ -7,7 +7,7 @@
 </head>
 <body>
 <x-dc>
-<div onClick="{{ onClose }}" style="position:absolute;inset:0;background:{{ v.scrim }};display:flex;align-items:flex-end;justify-content:center">
+<div ref="{{ rootRef }}" onClick="{{ onClose }}" style="position:absolute;inset:0;background:{{ v.scrim }};display:flex;align-items:flex-end;justify-content:center">
   <div onClick="{{ stop }}" role="menu" style="position:{{ pos }};top:{{ top }}px;inset-inline-end:{{ end }}px;width:{{ w }};max-width:{{ v.maxWidth }}px;box-sizing:border-box;background:{{ v.fill }};color:{{ v.ink }};border-radius:{{ v.radius }};padding:{{ v.padding }};box-shadow:{{ v.shadow }};display:flex;flex-direction:column;transform-origin:top right">
     <sc-if value="{{ sheet }}" hint-placeholder-val="{{ true }}"><div style="width:{{ v.handleWidth }}px;height:{{ v.handleHeight }}px;border-radius:{{ v.handleRadius }}px;background:{{ v.handle }};align-self:center;margin:4px 0 8px"></div></sc-if>
     <sc-for list="{{ items }}" as="mi" hint-placeholder-count="3">
@@ -16,16 +16,23 @@
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:300},&quot;slots&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ items: object[] }&quot;},&quot;on&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ close: () =&gt; void }&quot;},&quot;anchor&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ top: number; end: number }&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:300},&quot;slots&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ items: object[] }&quot;},&quot;on&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ close: () =&gt; void }&quot;},&quot;openedAt&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{ top: number; left: number; w: number; h: number } | null&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
 // Web implementation of design component menu (overlay), drawn from its overlay node (platforms/web/draw.js): a bottom sheet or an
 // anchored popup by its `form` visual (design: layout), its rows (slot items, drawn as menuItem by MenuItem) and its scrim, which
-// sends the node's close. Props: the node's visuals, on (close), slots (items), anchor { top, end } (the popup's position: still the
-// shell's measurement of the tap). No values of its own.
+// sends the node's close. Props: the node's visuals, on (close), slots (items), openedAt (the tapped control's rectangle in the app
+// frame: the popup hangs below it, its end edge on the control's end edge, popupGap under it and at least popupMinEdge from the
+// frame's end; the frame's width is this component's own width). No values of its own.
 class Component extends DCLogic {
+  state = { w: 0 };
+  rootRef = React.createRef();
+  componentDidMount() { this.sync(); }
+  componentDidUpdate() { this.sync(); }
+  sync() { const r = this.rootRef.current, w = r ? r.offsetWidth : 0; if (w !== this.state.w) this.setState({ w }); }
   renderVals() {
-    const p = this.props, v = p.visuals || {}, sheet = v.form !== 'popup', a = p.anchor || {}, close = (p.on || {}).close || (() => {});
+    const p = this.props, v = p.visuals || {}, sheet = v.form !== 'popup', at = p.openedAt, close = (p.on || {}).close || (() => {});
+    const top = at ? at.top + at.h + (+v.popupGap || 0) : 0, end = at ? Math.max(+v.popupMinEdge || 0, this.state.w - (at.left + at.w)) : 0;
     return { v, sheet, items: ((p.slots || {}).items || []).filter(n => n.shown), onClose: e => close(undefined, e), stop: e => e.stopPropagation(),
-      pos: sheet ? 'relative' : 'absolute', top: sheet ? 0 : a.top || 0, end: sheet ? 0 : a.end || 0, w: sheet ? '100%' : 'auto' };
+      pos: sheet ? 'relative' : 'absolute', top: sheet ? 0 : top, end: sheet ? 0 : end, w: sheet ? '100%' : 'auto' };
   }
 }
 </script>

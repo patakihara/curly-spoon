@@ -11,6 +11,10 @@
       ]
     },
     {
+      "prop": "openedAt",
+      "value": "openedAt"
+    },
+    {
       "event": "close",
       "send": "closeOverlay"
     }

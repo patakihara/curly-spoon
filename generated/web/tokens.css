@@ -845,6 +845,8 @@
   --menu-handleHeight: 4;
   --menu-handle: var(--color-handle);
   --menu-handleRadius: 2;
+  --menu-popupGap: 0;
+  --menu-popupMinEdge: 8;
   --menuItem-stateLayer-hover: var(--state-hover-opacity-default);
   --menuItem-stateLayer-pressed: var(--state-pressed-opacity-default);
   --menuItem-stateLayer-keyboardFocus: var(--state-focus-opacity);

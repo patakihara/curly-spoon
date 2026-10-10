@@ -52,7 +52,7 @@ export const CONTRACTS = {
   destination: { config: 'DeckConfig', values: { deck: 'DeckId', label: 'string', selected: 'boolean' }, intents: ['switchDeck', 'reselectDeck'] },
   navigation: { config: 'NavigationConfig', values: { selected: 'DeckId', expanded: 'boolean' }, intents: [], children: { destinations: list('destination'), items: list('button', true) }, note: 'selected: the active deck · expanded: a rail-form drawer is open · items: drawn where a form has room (the rail)' },
   splash: { config: 'LaunchConfig', values: { label: 'string' }, intents: [] },
-  overlay: { config: 'OverlaySpec', values: { title: 'string | null', body: 'string | null', confirm: 'string | null', cancel: 'string | null', text: 'string | null', action: 'string | null' }, intents: ['closeOverlay'], children: { items: list('button', true) }, note: 'items: a menu\'s' },
+  overlay: { config: 'OverlaySpec', values: { title: 'string | null', body: 'string | null', confirm: 'string | null', cancel: 'string | null', text: 'string | null', action: 'string | null', openedAt: 'Rect | null' }, intents: ['closeOverlay'], children: { items: list('button', true) }, note: 'items: a menu\'s' },
 };
 
 // id is base, or extends it (directly or further up)

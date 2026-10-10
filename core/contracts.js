@@ -245,9 +245,9 @@ export function contractTree(model, specs, composition, opts = {}) {
     const destinations = c.decks.map(d => node('destination', 'nav.destinations:' + d.id, ctx, d, { deck: d.id, label: text(d.name), selected: d.id === s.activeDeck }, {}, { at: { name: d.id } }));
     return node('navigation', 'nav', { within: [], page: null }, c.navigation, { selected: s.activeDeck, expanded: !!(rail && s.layers[rail.id].open && g.wide) }, { destinations, items: items(c.navigation.items, 'nav.items', { ...ctx, page: model.query.currentPage(s) }) });
   }
-  function overlayNode(o, j) {
+  function overlayNode(o, j, openedAt) {
     const ctx = { within: ['overlay'], page: model.query.currentPage(s) }, T = o.texts || {}, t = k => T[k] == null ? null : String(val(T[k], ctx.page) ?? '');
-    return node('overlay', 'overlay:' + (o.id || j), { within: [], page: null }, o, { title: t('title'), body: t('body'), confirm: t('confirm'), cancel: t('cancel'), text: t('text'), action: t('action') }, { items: items(o.items, 'overlay:' + (o.id || j) + '.items', ctx) }, { at: { overlay: o.kind, name: o.id } });
+    return node('overlay', 'overlay:' + (o.id || j), { within: [], page: null }, o, { title: t('title'), body: t('body'), confirm: t('confirm'), cancel: t('cancel'), text: t('text'), action: t('action'), openedAt }, { items: items(o.items, 'overlay:' + (o.id || j) + '.items', ctx) }, { at: { overlay: o.kind, name: o.id } });
   }
 
   // one page only (opts.page: a page state, opts.within: where it sits, opts.origin: what its items open from)
@@ -258,7 +258,7 @@ export function contractTree(model, specs, composition, opts = {}) {
     navigation: navigationNode(),
     deck: pageNode(deckPage, 'deck:' + s.activeDeck, { within: [], page: null }, { deck: s.activeDeck }),
     layers: c.layers.map(layerNode),
-    overlays: (s.overlays || []).map((o, j) => overlayNode(o.spec || o, j)),
+    overlays: (s.overlays || []).map((o, j) => overlayNode(o.spec || o, j, o.openedAt || null)),
     splash: s.launch === 'starting' && c.launch ? node('splash', 'splash', { within: [], page: null }, c.launch, { label: text('splash.loading') }, {}) : null,
   };
 }

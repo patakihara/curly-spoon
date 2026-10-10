@@ -42,7 +42,7 @@
     <dc-import name="Drawer" dc-props="{{ dr.props }}" title="{{ dr.title }}" title-vis="{{ titleVisBar }}" items="{{ dr.items }}" item-vis="{{ drawerItemVis }}" symbol-visuals="{{ symVis }}" ms="{{ mx.layer.menu.ms }}" surface-tr="{{ mx.layer.menu.surface }}" style="display:contents" hint-size="0px,0px"></dc-import>
     <dc-import name="AccountLayer" dd-left="{{ ddLeft }}" sv="{{ sv }}" acc="{{ acc }}" mx="{{ mx }}" title-vis-bar="{{ titleVisBar }}" bar-vis-layer="{{ barVisLayer }}" style="display:contents" hint-size="0px,0px"></dc-import>
     <sc-if value="{{ dialog.show }}" hint-placeholder-val="{{ false }}"><dc-import name="Dialog" dc-props="{{ dialog.props }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
-    <sc-if value="{{ menu.show }}" hint-placeholder-val="{{ false }}"><dc-import name="Menu" dc-props="{{ menu.props }}" anchor="{{ menu.anchor }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
+    <sc-if value="{{ menu.show }}" hint-placeholder-val="{{ false }}"><dc-import name="Menu" dc-props="{{ menu.props }}" style="position:absolute;inset:0" hint-size="100%,100%"></dc-import></sc-if>
     <sc-if value="{{ snack.show }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:{{ snack.left }}px;bottom:{{ snack.bottom }}px;width:{{ snack.w }}px"><dc-import name="Snackbar" dc-props="{{ snack.props }}" hint-size="100%,48px"></dc-import></div></sc-if>
     </div>
     <sc-if value="{{ gate.show }}" hint-placeholder-val="{{ false }}">
@@ -677,7 +677,7 @@ class Component extends DCLogic {
   runAction(a, e) {
     if (Array.isArray(a)) return a.forEach(x => this.runAction(x, e));
     if (!a) return;
-    if (a.nav && a.nav.type === 'openOverlay' && e && e.currentTarget && this.phoneRef.current) { const r = this.rectIn(e.currentTarget, this.phoneRef.current); this.menuAnchor = { top: r.top + r.h, end: Math.max(8, G.PW - (r.left + r.w)) }; }
+    if (a.nav && a.nav.type === 'openOverlay' && e && e.currentTarget && this.phoneRef.current) a = { ...a, nav: { ...a.nav, openedAt: this.rectIn(e.currentTarget, this.phoneRef.current) } };   // the tapped control's rectangle goes on the intent
     if (a.player) {   // core runs it (14.3): commands for the player, a queued event for the choreography
       const card = e && e.currentTarget && e.currentTarget.closest && e.currentTarget.closest('[data-item-id]'), from = card ? card.getAttribute('data-item-id') : null;
       const src = (card && this.mo.sharedIn(card)) || this.mo.sharedIn(this.ovRef.current, 'image', 'detail') || this.mo.sharedIn(this.backRef.current, 'image', 'detail');
@@ -1049,7 +1049,7 @@ class Component extends DCLogic {
     const dlg = ms.overlays.find(o => o.spec.kind === 'dialog'), sn = ms.overlays.find(o => o.spec.kind === 'snackbar');
     const mn = ms.overlays.find(o => o.spec.kind === 'menu');
     const MNN = mn && TR.overlays.find(n => n.config === mn.spec);
-    v.menu = MNN ? { show: true, ...this.drawn(MNN, 'menu'), anchor: this.menuAnchor || { top: 0, end: 0 } } : { show: false, props: null };   // drawn from its node: its rows and scrim send its events; the popup's anchor is still measured here
+    v.menu = MNN ? { show: true, ...this.drawn(MNN, 'menu') } : { show: false, props: null };   // drawn from its node: its rows, scrim and popup place (openedAt) come from the node
     const OV = o => (TR.overlays.find(n => n.config === o.spec) || { values: {} }).values;
     const DLN = dlg && TR.overlays.find(n => n.config === dlg.spec);
     v.dialog = DLN ? { show: true, ...this.drawn(DLN, 'dialog') } : { show: false, props: null };   // drawn from its node: its buttons and scrim send its close

@@ -801,7 +801,7 @@ export function createModel(config, device, data, player, sizes = {}) {   // siz
       case 'openOverlay': {
         if (s.overlays.some(o => o.spec.id === intent.overlay.id)) break;
         const from = currentSurface(s);
-        s = { ...s, overlays: [...s.overlays, { spec: intent.overlay, openedFrom: null }] };
+        s = { ...s, overlays: [...s.overlays, { spec: intent.overlay, openedFrom: null, openedAt: intent.openedAt || null }] };
         if (intent.overlay.blocking) s = { ...s, focusReturns: [...s.focusReturns, { opened: { kind: 'overlay', id: intent.overlay.id }, surface: from, element: intent.returnFocus || null }] };
         ev.push({ type: 'overlayOpened', id: intent.overlay.id });
         break;

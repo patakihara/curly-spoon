@@ -391,6 +391,20 @@ export const INVARIANTS = [
     m.dispatch({ type: 'openOverlay', overlay: sn });
     assert(m.query.backAction(S(m), m.config) !== 'closeOverlay', 'snackbar captured back');
   }],
+  ['an overlay opened with openedAt carries it as its value; without one it is null; closing drops it', f => {
+    const dlg = need(f.sampleDialog, 'no sample dialog'), sn = need(f.sampleSnackbar, 'no sample snackbar');
+    const Kt = need(f.contracts, 'no contract tree'), K = need(f.composition, 'no composition'), rect = { top: 40, left: 20, w: 24, h: 24 };
+    const m = f.mk(dev.any(f)), at = id => { const n = Kt.contractTree(m, f.specs, K, { look: LOOK(m), data: f.data }).overlays.find(x => x.key === 'overlay:' + id); return n ? n.values.openedAt : undefined; };
+    m.dispatch({ type: 'openOverlay', overlay: sn });
+    assert(at(sn.id) === null, 'an overlay opened without openedAt reads ' + JSON.stringify(at(sn.id)));
+    m.dispatch({ type: 'openOverlay', overlay: dlg, openedAt: rect });
+    assert(JSON.stringify(at(dlg.id)) === JSON.stringify(rect), 'openedAt not carried to the overlay value');
+    assert(S(m).overlays.find(o => o.spec.id === dlg.id).openedAt.top === 40, 'openedAt not on the entry');
+    m.dispatch({ type: 'closeOverlay', id: dlg.id });
+    assert(at(dlg.id) === undefined && !S(m).overlays.some(o => o.spec.id === dlg.id), 'closing did not drop the entry and its openedAt');
+    m.dispatch({ type: 'openOverlay', overlay: dlg });
+    assert(at(dlg.id) === null, 'a reopened overlay kept an old openedAt');
+  }],
 
   // ── session (§10)
   ['signing out resets every stack and shows the first matching gate', f => {

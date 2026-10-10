@@ -1,8 +1,12 @@
 {
   "extends": "surface",
   "props": {
-    "items": "slot"
+    "items": "slot",
+    "openedAt": "value"
   },
+  "optional": [
+    "openedAt"
+  ],
   "provides": {
     "content": {
       "token": "color.onSurface"
@@ -93,6 +97,12 @@
     },
     "handleRadius": {
       "default": 2
+    },
+    "popupGap": {
+      "default": 0
+    },
+    "popupMinEdge": {
+      "default": 8
     }
   },
   "events": [
