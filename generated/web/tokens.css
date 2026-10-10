@@ -436,6 +436,8 @@
   --searchField-icon: search;
   --searchField-iconSize: 20;
   --searchField-iconOpacity: 0.7;
+  --searchField-clearIcon: var(--icon-close);
+  --searchField-clearSize: xs;
   --gridCard-stateLayer-hover: var(--state-hover-opacity-default);
   --gridCard-stateLayer-pressed: var(--state-pressed-opacity-default);
   --gridCard-stateLayer-keyboardFocus: var(--state-focus-opacity);
@@ -558,6 +560,8 @@
   --panelRow-letterSpacing: .4px;
   --panelRow-textTransform: none;
   --panelRow-opacity: 0.8;
+  --panelRow-gap: 12;
+  --panelRow-wrapOptions: true;
   --splash-logo: var(--color-accent);
   --splash-logoSize: 112;
   --splash-logoOpacity-entering: 0;
@@ -694,6 +698,8 @@
   --localSearch-icon: search;
   --localSearch-iconSize: 20;
   --localSearch-iconOpacity: 0.7;
+  --localSearch-clearIcon: var(--icon-close);
+  --localSearch-clearSize: xs;
   --localSearch-fillClosed: rgba(0,0,0,0);
   --localSearch-iconBoxOpen: 30;
   --localSearch-iconSizeOpen: 18;

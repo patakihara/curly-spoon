@@ -6,4 +6,5 @@ export interface SearchFieldProps {
   value: ParamValue;
   options: { value: string; label: string }[];
   placeholder: string;
+  clearLabel: string;
 }

@@ -3,6 +3,9 @@
     "text": "string",
     "content": "slot"
   },
+  "optional": [
+    "text"
+  ],
   "visuals": {
     "fontFamily": {
       "default": {
@@ -22,6 +25,12 @@
     },
     "opacity": {
       "default": 0.8
+    },
+    "gap": {
+      "default": 12
+    },
+    "wrapOptions": {
+      "default": true
     }
   }
 }

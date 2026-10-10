@@ -7,15 +7,28 @@
 </head>
 <body>
 <x-dc>
-<div style="font-family:{{ ff }};font-size:{{ fs }}px;letter-spacing:{{ ls }};text-transform:{{ tt }};opacity:{{ op }};color:inherit">{{ text }}</div>
+<div style="display:flex;flex-direction:column;gap:{{ gap }}px;color:inherit">
+  <sc-if value="{{ hasText }}" hint-placeholder-val="{{ true }}"><div style="font-family:{{ ff }};font-size:{{ fs }}px;letter-spacing:{{ ls }};text-transform:{{ tt }};opacity:{{ op }};color:inherit">{{ text }}</div></sc-if>
+  <sc-if value="{{ hasContent }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:{{ gap }}px"><sc-for list="{{ content }}" as="c" hint-placeholder-count="1"><div style="flex:1;min-width:0;display:flex;flex-direction:column">
+    <sc-if value="{{ c.is.FilterChips }}" hint-placeholder-val="{{ false }}"><dc-import name="FilterChips" dc-props="{{ c.props }}" wrap="{{ wrap }}" hint-size="100%,32px"></dc-import></sc-if>
+    <sc-if value="{{ c.is.Dropdown }}" hint-placeholder-val="{{ false }}"><dc-import name="Dropdown" dc-props="{{ c.props }}" hint-size="120px,40px"></dc-import></sc-if>
+    <sc-if value="{{ c.is.RangeField }}" hint-placeholder-val="{{ false }}"><dc-import name="RangeField" dc-props="{{ c.props }}" hint-size="200px,40px"></dc-import></sc-if>
+    <sc-if value="{{ c.is.Checklist }}" hint-placeholder-val="{{ false }}"><dc-import name="Checklist" dc-props="{{ c.props }}" hint-size="100%,176px"></dc-import></sc-if>
+    <sc-if value="{{ c.is.SuggestionList }}" hint-placeholder-val="{{ false }}"><dc-import name="SuggestionList" dc-props="{{ c.props }}" hint-size="100%,160px"></dc-import></sc-if>
+    <sc-if value="{{ c.is.TabBar }}" hint-placeholder-val="{{ false }}"><dc-import name="TabBar" dc-props="{{ c.props }}" hint-size="100%,48px"></dc-import></sc-if>
+    <sc-if value="{{ c.is.SearchField }}" hint-placeholder-val="{{ false }}"><dc-import name="SearchField" dc-props="{{ c.props }}" hint-size="100%,48px"></dc-import></sc-if>
+  </div></sc-for></div></sc-if>
+</div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:240,&quot;height&quot;:40},&quot;text&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Sort by&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;visuals&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, unknown&gt;&quot;}}">
-// Web implementation of design component panelRow (a heading line in a back-layer panel).
-// Props: text, visuals (resolved by the shell: Layout.resolveVisuals(specs, 'panelRow', state, ctx)). No values of its own.
+// Web implementation of design component panelRow (a row in a back-layer panel), drawn from its node (platforms/web/draw.js):
+// its text as a heading line (when it has one), then its content slot (the row's controls) side by side, sharing the width.
+// Props: text, slots.content (drawn nodes), visuals (resolved: font, gap, wrapOptions — chip rows wrap in a panel). No values of its own.
 class Component extends DCLogic {
   renderVals() {
-    const v = this.props.visuals || {};
-    return { text: this.props.text || '', ff: v.fontFamily || 'inherit', fs: +v.fontSize || 12, ls: v.letterSpacing || 'normal', tt: v.textTransform || 'none', op: v.opacity ?? 1 };
+    const p = this.props, v = p.visuals || {}, content = (p.slots && p.slots.content) || [];
+    return { text: p.text || '', hasText: !!p.text, content, hasContent: content.length > 0, gap: +v.gap || 0, wrap: !!v.wrapOptions,
+      ff: v.fontFamily || 'inherit', fs: +v.fontSize || 12, ls: v.letterSpacing || 'normal', tt: v.textTransform || 'none', op: v.opacity ?? 1 };
   }
 }
 </script>

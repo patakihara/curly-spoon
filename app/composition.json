@@ -1936,6 +1936,21 @@
    ]
   },
   {
+   "name": "moreRow",
+   "hires": "panelRow",
+   "contract": "paramControlRow",
+   "clauses": [
+    {
+     "slot": "content",
+     "fill": [
+      {
+       "child": "controls"
+      }
+     ]
+    }
+   ]
+  },
+  {
    "name": "more",
    "hires": "morePanel",
    "contract": "paramControlMore",
@@ -2590,6 +2605,11 @@
   {
    "contract": "seek",
    "hire": "seek"
+  },
+  {
+   "contract": "paramControlRow",
+   "within": "paramControlMore",
+   "hire": "moreRow"
   },
   {
    "contract": "paramControlRow",

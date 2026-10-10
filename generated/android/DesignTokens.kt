@@ -519,6 +519,8 @@ object SearchFieldTokens {
     val Icon = "search"
     val IconSize = 20f
     val IconOpacity = 0.7f
+    val ClearIcon = DesignTokens.IconClose
+    val ClearSize = "xs"
 }
 
 object GridCardTokens {
@@ -662,6 +664,8 @@ object PanelRowTokens {
     val LetterSpacing = ".4px"
     val TextTransform = "none"
     val Opacity = 0.8f
+    val Gap = 12f
+    val WrapOptions = true
 }
 
 object SplashTokens {
@@ -840,6 +844,8 @@ object LocalSearchTokens {
     val Icon = "search"
     val IconSize = 20f
     val IconOpacity = 0.7f
+    val ClearIcon = DesignTokens.IconClose
+    val ClearSize = "xs"
     val FillClosed = Color(0, 0, 0, 0)
     val IconBoxOpen = 30f
     val IconSizeOpen = 18f

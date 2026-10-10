@@ -625,6 +625,8 @@ Done (drawn from contract nodes through draw.js):
 - [x] Navigation: nav bar, rail top / destinations / bottom; the drawer's rows (slice 3).
 - [x] Param controls: each control is drawn from its node through draw.js (options, optionProps, moreProps, ixFor,
       motions, symbolVisuals); the shell's controlView is gone; the inner Now playing sheet's tabs too (hire sheetTabs).
+- [x] Panel rows: each drawn by PanelRow from its node (its heading, then its content slot: the row's controls); a More's
+      rows by hire moreRow (no heading). Design panelRow: gap, wrapOptions; text optional.
 
 ### Template: markup the shell draws itself
 - [ ] Page CSS in the helmet: input placeholder colours (rgba white .55 / black .45), the `.ms` icon font at 24px.
@@ -634,7 +636,7 @@ Done (drawn from contract nodes through draw.js):
 - [ ] Controls rows: row box (height, padding, ink, gap), each control flex 1 (the DC now comes from draw.js).
 - [ ] Actions row: centred flex row of Buttons.
 - [ ] Panel: the scroll box (height, overflow), the inner box (padding, divider line, gap).
-- [ ] Panel: the More bar's sticky wrapper; the row label wrapper; the controls row inside each panel row.
+- [ ] Panel: the More bar's sticky wrapper (the row label wrapper and the controls row are gone: PanelRow draws them).
 - [ ] App-bar page: the overlay box (bottom offset, fade, scale, pointer events) around AppBarPage.
 - [ ] Rail: the wrapper box around NavRail.
 - [ ] Side-sheet scrim and drawer scrim: Scrim instances placed and coloured by the shell.
@@ -655,8 +657,8 @@ Done (drawn from contract nodes through draw.js):
 - [ ] AccountLayer: 6 props; no design component exists for it.
 - [ ] EdgeHandle and Scrim: no design component exists for either.
 - [ ] NavRail, Drawer, Menu, Dialog, Snackbar, SignIn, Splash: props built by the shell, not from a node.
-- [ ] Back-layer DCs used directly by the shell: Bar, DetailHeader, PanelRow, MorePanel, Button, and the
-      param-control DCs (FilterChips, TabBar, SearchField, Dropdown, RangeField, Checklist, SuggestionList).
+- [ ] Back-layer DCs placed by the shell: Bar, DetailHeader, MorePanel, Button with shell-built props; PanelRow and the
+      controls rows' DCs (FilterChips, TabBar, SearchField) with their node's props.
 
 ### Visuals the shell resolves for other components
 - [ ] sv bundle: frontLayer, backLayer, bottomSheet, sideSheet, drawer, signInPage, splash, navBar, navRail,
@@ -748,6 +750,13 @@ Done (drawn from contract nodes through draw.js):
 ### Order (each step removes its lines above)
 1. Param controls drawn from their nodes through draw.js. Done.
 2. BackLayer.dc.html (approved): regions, header with its detail as a scroll surface, controls, actions, panel, More.
+   Panel rows done. Gaps before the back layer can be drawn from its node alone:
+   - regions: the node has them as a value, but design backLayer declares no prop for them, so draw.js doesn't pass them.
+   - region timing: the shell picks the choreography rule (expand, more, header, scroll) from lastMove; a DC can't.
+   - panel height: the shell measures it after render and feeds it to Layout (measured.panel).
+   - controls rows: drawn as shell rows (basicPadding, no heading), not by the paramControlRow hire.
+   - header: no Header.dc.html; Bar draws it from shell-built props; the detail's shrink math is in the shell.
+   - More bar: MorePanel gets shell-built props, not its node's.
 3. Surfaces from the tree instead of key parsing; instances without nodes get nodes (may need API: propose first).
 4. Front layer and content items.
 5. App-bar page form.
