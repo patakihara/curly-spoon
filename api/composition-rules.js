@@ -6,6 +6,7 @@
 // f = { contracts, unions, config, composition, components: { <id>: raw design json }, tokens: design tokens.json, designTexts: { <locale>: design/texts/<locale>.json } }
 
 import { placementFor, hireOf as findHire, freeComponent } from '../core/compose.js';
+import { resolvedContracts } from './contracts.js';
 
 const assert = (c, msg) => { if (!c) throw new Error(msg); };
 class Skip extends Error {}
@@ -41,7 +42,7 @@ export function placesOf(config) {
     });
   });
   const pageOf = (p, within = []) => {
-    const kind = p.kind === 'backdrop' ? 'backdropPage' : 'appBarPage';
+    const kind = p.kind === 'backdrop' ? 'backdropPage' : p.sheet ? 'playerPage' : 'appBarPage';   // core/layout.js pageContract
     out.push({ contract: kind, page: p.id, within });
     const w = [kind, ...within];
     if (p.kind === 'backdrop') {
@@ -197,6 +198,7 @@ export const COMPOSITION_RULES = [
 ];
 
 export function runCompositionRules(f) {
+  f = { ...f, contracts: resolvedContracts(f.contracts) };   // a contract that extends another offers the other's values, intents and children too
   return COMPOSITION_RULES.map(([name, fn]) => {
     try { fn(f); return { name, ok: true }; }
     catch (e) { return e instanceof Skip ? { name, ok: true, skipped: true, error: e.message } : { name, ok: false, error: e.message }; }

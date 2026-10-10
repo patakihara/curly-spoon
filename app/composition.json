@@ -55,6 +55,17 @@
    ]
   },
   {
+   "name": "playerPage",
+   "hires": "playerPage",
+   "contract": "playerPage",
+   "clauses": [
+    {
+     "event": "scroll",
+     "send": "scroll"
+    }
+   ]
+  },
+  {
    "name": "pageSheet",
    "hires": "bottomSheet",
    "contract": "pageSheet",
@@ -2590,6 +2601,10 @@
   {
    "contract": "appBarPage",
    "hire": "appBarPage"
+  },
+  {
+   "contract": "playerPage",
+   "hire": "playerPage"
   },
   {
    "contract": "pageSheet",

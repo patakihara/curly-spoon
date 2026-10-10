@@ -3,8 +3,10 @@
 
 // a place: { contract, page, within: ancestor contracts nearest first, kind?, name?, param?, presentation?, state?, overlay?, env? }
 // page exceptions first, then the defaults; the first placement whose given fields all match wins
-// within: the nearest ancestor contract, or the nearest few in order (['appBarPage', 'sheetLayer']: a layer page's)
-const nearest = (want, have) => want.every((w, i) => (have || [])[i] === w);
+// within: the nearest ancestor contract, or the nearest few in order (['appBarPage', 'sheetLayer']: a layer page's); an
+// ancestor whose contract extends the one named counts as it (a playerPage is an appBarPage: api/contracts.js)
+import { contractIs } from '../api/contracts.js';
+const nearest = (want, have) => want.every((w, i) => contractIs((have || [])[i], w));
 const fits = (p, at) => p.contract === at.contract
   && (!p.within || nearest([].concat(p.within), at.within))
   && (!p.overlay || p.overlay === at.overlay)

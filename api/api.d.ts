@@ -354,7 +354,8 @@ export interface BackLayerStatePolicy { expanded: StatePolicy<boolean>; headerHi
 export interface FrontLayerStatePolicy { scroll: StatePolicy<number>; find?: FindStatePolicy }   // find: required when the front header holds a find item
 export interface BackdropPageStatePolicy { params: ParamStatePolicies; back: BackLayerStatePolicy; front: FrontLayerStatePolicy }
 export interface PageSheetStatePolicy { expanded: StatePolicy<boolean> }
-export interface AppBarPageStatePolicy { params?: ParamStatePolicies; scroll: StatePolicy<number>; sheet?: PageSheetStatePolicy; find?: FindStatePolicy }   // sheet mirrors PageSheetState
+export interface AppBarPageStatePolicy { params?: ParamStatePolicies; scroll: StatePolicy<number>; find?: FindStatePolicy }
+export interface PlayerPageStatePolicy extends AppBarPageStatePolicy { sheet: PageSheetStatePolicy }   // sheet mirrors PageSheetState
 
 // ── Backdrop page. The back layer has named regions with fixed meanings:
 //   header, actions and controls show concealed and revealed; panel shows only revealed, and scrolls when it doesn't fit.
@@ -378,7 +379,7 @@ export interface BackdropPageConfig {
   front: FrontLayerConfig;
   statePolicy: BackdropPageStatePolicy;            // engine only: no contract reads it
 }
-// ── App-bar page: a header over content or a body, with an optional inner sheet (Now playing: Up next / Lyrics / Related)
+// ── App-bar page: a header over content or a body. A player page is one with an inner sheet too (Now playing: Up next / Lyrics / Related)
 export interface PageSheetConfig { paramControl?: ParamControlConfig; content: ContentConfig }   // paramControl: the tabs in its header
 export interface AppBarPageConfig {
   id: PageId;
@@ -388,10 +389,13 @@ export interface AppBarPageConfig {
   params?: Params;
   content?: ContentConfig;               // scrolling content — or a fixed body; at most one (neither: the page is its header)
   body?: BodyItem[];
-  sheet?: PageSheetConfig;               // requires statePolicy.sheet
   statePolicy: AppBarPageStatePolicy;
 }
-export type PageConfig = BackdropPageConfig | AppBarPageConfig;
+export interface PlayerPageConfig extends AppBarPageConfig {   // kind 'appBar' too: the engine treats it as an app-bar page; its sheet tells it apart
+  sheet: PageSheetConfig;
+  statePolicy: PlayerPageStatePolicy;
+}
+export type PageConfig = BackdropPageConfig | AppBarPageConfig | PlayerPageConfig;
 
 export interface DeckStatePolicy { stack: StatePolicy<StackEntry[]> }   // StackEntry: §I (type-only reference)
 export interface DeckConfig { id: DeckId; name: string; page: BackdropPageConfig; linkTarget?: LinkTarget; statePolicy: DeckStatePolicy }   // its icon: composition (a token per deck)
@@ -485,10 +489,10 @@ export interface PageStateBase<C> {     // what every page's state holds
 export interface BackdropPageState extends PageStateBase<BackdropPageConfig> { back: BackLayerState; front: FrontLayerState }
 export interface AppBarPageState extends PageStateBase<AppBarPageConfig> {
   scroll: Scoped<number>;                // collapse-first scroll offset (15.0): see PageScroll below
-  sheet?: PageSheetState;
   find?: FindState;
 }
-export type PageState = BackdropPageState | AppBarPageState;
+export interface PlayerPageState extends AppBarPageState { config: PlayerPageConfig; sheet: PageSheetState }
+export type PageState = BackdropPageState | AppBarPageState | PlayerPageState;
 export interface StackEntry { page: PageState; openedFrom: ItemId | null }
 export interface DeckState { stack: StackEntry[] }
 export interface LayerState { open: boolean; stack: StackEntry[] }
@@ -723,9 +727,12 @@ export interface PageSheetContract extends Contract<PageSheetConfig, PageSheetVa
 export type BodyItemContract = ButtonContract | TextContract | DetailContract | SeekContract;
 // appBarPage
 export interface AppBarPageValues { contentOffset: number }
-export interface AppBarPageChildren { header: HeaderContract; content?: ContentContract; body: BodyItemContract[]; sheet?: PageSheetContract }
+export interface AppBarPageChildren { header: HeaderContract; content?: ContentContract; body: BodyItemContract[] }
 export interface AppBarPageContract extends Contract<AppBarPageConfig, AppBarPageValues, ScrollIntent> { children: AppBarPageChildren }
-export type PageContract = BackdropPageContract | AppBarPageContract;
+// playerPage (extends appBarPage): an app-bar page with an inner sheet (Now playing: Up next / Lyrics / Related)
+export interface PlayerPageChildren extends AppBarPageChildren { sheet: PageSheetContract }
+export interface PlayerPageContract extends Contract<PlayerPageConfig, AppBarPageValues, ScrollIntent> { children: PlayerPageChildren }
+export type PageContract = BackdropPageContract | AppBarPageContract | PlayerPageContract;
 // sheetLayer: open: the peek was tapped · peek: Layout.peekPlacement
 export interface SheetLayerValues { open: boolean; form: SheetForm; side: SideMode | null; peek: Rect | null }
 export interface SheetLayerChildren { peek: HeaderContract; page: PageContract }
@@ -752,7 +759,7 @@ export interface SplashContract extends Contract<LaunchConfig, SplashValues, NoI
 export interface OverlayValues { title: string | null; body: string | null; confirm: string | null; cancel: string | null; text: string | null; action: string | null }
 export interface OverlayChildren { items?: ButtonContract[] }
 export interface OverlayContract extends Contract<OverlaySpec, OverlayValues, CloseOverlayIntent> { children: OverlayChildren }
-export type ContractName = 'button' | 'logo' | 'text' | 'switch' | 'find' | 'detail' | 'seek' | 'header' | 'paramControl' | 'paramControlRow' | 'paramControlMore' | 'item' | 'contentState' | 'content' | 'backLayer' | 'frontHeader' | 'frontLayer' | 'backdropPage' | 'pageSheet' | 'appBarPage' | 'sheetLayer' | 'drawerLayer' | 'fullscreenLayer' | 'destination' | 'navigation' | 'splash' | 'overlay';
+export type ContractName = 'button' | 'logo' | 'text' | 'switch' | 'find' | 'detail' | 'seek' | 'header' | 'paramControl' | 'paramControlRow' | 'paramControlMore' | 'item' | 'contentState' | 'content' | 'backLayer' | 'frontHeader' | 'frontLayer' | 'backdropPage' | 'pageSheet' | 'appBarPage' | 'playerPage' | 'sheetLayer' | 'drawerLayer' | 'fullscreenLayer' | 'destination' | 'navigation' | 'splash' | 'overlay';
 // </contracts:generated>
 
 // ── The contract tree (core/contracts.js): this moment's drawn config objects, each with what composition hired to draw it

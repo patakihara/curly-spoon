@@ -11,6 +11,8 @@
 //   link(model, layerId): ItemData | undefined   // an item in a layer's base page that opens deck content
 // }
 
+import { resolvedContracts } from './contracts.js';
+
 const S = m => m.getState();
 const top = (m, deck) => { const st = S(m).decks[deck].stack; return st[st.length - 1]; };
 const depth = (m, deck) => S(m).decks[deck].stack.length;
@@ -1227,7 +1229,7 @@ export const INVARIANTS = [
 
   // ── 17.0: motion as steps
   ['motion steps: every piece a step names is declared (contract child / value, component part, source / target, a step of the rule); every anchor names a step of the rule; every use names a sequence and gives its params', f => {
-    const sp = need(f.specs, 'no specs'), roles = need(f.contractDefs, 'no contracts'), reg = sp.components;   // 18.0: pieces name contracts (their children / values) or components (their parts)
+    const sp = need(f.specs, 'no specs'), roles = resolvedContracts(need(f.contractDefs, 'no contracts')), reg = sp.components;   // 18.0: pieces name contracts (their children / values) or components (their parts)
     const roleOk = (r, x) => { const R = roles[r]; return !!R && (!x || x in (R.children || {}) || x in (R.values || {})); };
     const pieceOk = (p, ids) => { const b = String(p).replace(/@(before|after)$/, '').replace(/\[(\]|first\]|last\]|\d+\])$/, ''), [h, x] = b.split('.'); if (h === 'source' || h === 'target' || h === 'origin') return true; if (ids.has(h) && !x) return true;
       if (roles[h]) return roleOk(h, x); const C = reg[h]; return !!C && (!x || (C.parts || []).includes(x)); };

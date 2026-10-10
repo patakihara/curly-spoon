@@ -625,6 +625,15 @@ fields, not nodes · 6 verify ✓ (screens above).
     the back layer's own scroll intent (API 18.0.0 amended, approved: "Back layer sends scroll"). Collapse-first input
     moved out of the shell into platforms/web/scroll.js (the content and app-bar page use it too); mock artwork into
     app/fake-backend.js (imageCss, mockArt). The shell's back-layer code is gone, with backOverride / BACK_KEYS (never set).
+50. The album header keeps its two-part look (Sofia, 2026-10-10: "yes that design is correct"): the dark top row and
+    the light rounded part below it holding the album info and the bottom row (design appBar page form "sheet",
+    AppBarSheet). That design "sheet" is only a look; it has nothing to do with the API's page sheet.
+51. Player page (Sofia, 2026-10-10: "the app bar page with a sheet should be its own interface, one that extends
+    appbarpage"; name chosen: PlayerPage; no proposal needed). PlayerPageConfig extends AppBarPageConfig with a required
+    `sheet`; plain app-bar pages have no sheet. kind stays 'appBar' (the engine treats both alike; `sheet` tells them
+    apart), so no engine change. Contract playerPage extends appBarPage; contracts may extend (placements within the base
+    hold within the extension; rules see the merged contract). Design playerPage is a variant of appBarPage (slot sheet),
+    drawn by AppBarPage.
 
 ## Shell conversion list (kept current with every change)
 Goal: the shell (Backdrop Nav Skeleton.dc.html) draws nothing and decides nothing itself. It places the root's

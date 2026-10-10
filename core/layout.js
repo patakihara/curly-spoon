@@ -19,8 +19,10 @@ export const SHEET_LAYER = { contract: 'sheetLayer', page: null };
 export const sizes = look => ({ railWidth: look.size(NAVIGATION, 'width'), sideSheetWidth: look.size(SHEET_LAYER, 'sideWidth') });   // core navigation's createModel sizes (wide look)
 export const pageId = page => page.template || page.config.id;   // an opened page: its template (composition's page exceptions name it)
 const backAt = page => ({ contract: 'backLayer', page: pageId(page), within: ['backdropPage'] });
+// the contract a page is drawn as (api/contracts.js): an app-bar page with a sheet is a player page
+export const pageContract = cfg => cfg.kind === 'backdrop' ? 'backdropPage' : cfg.sheet ? 'playerPage' : 'appBarPage';
 const headerAt = (page, within = []) => page.config.kind === 'appBar'
-  ? { contract: 'header', page: pageId(page), within: ['appBarPage', ...within] }
+  ? { contract: 'header', page: pageId(page), within: [pageContract(page.config), ...within] }
   : { contract: 'header', page: pageId(page), within: ['backLayer', 'backdropPage', ...within] };
 
 export function geometry(state, config, q, look) {

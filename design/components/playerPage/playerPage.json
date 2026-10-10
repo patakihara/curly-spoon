@@ -1,0 +1,7 @@
+{
+  "extends": "appBarPage",
+  "variant": true,
+  "props": {
+    "sheet": "slot"
+  }
+}

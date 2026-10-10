@@ -2,8 +2,7 @@
   "props": {
     "header": "slot",
     "content": "slot",
-    "body": "slot",
-    "sheet": "slot"
+    "body": "slot"
   },
   "events": [
     {

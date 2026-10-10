@@ -71,6 +71,13 @@ _Unreleased (no contract change):_ web: the shell draws no UI itself — FrontLa
   chip, suggestionList → suggestionRow, checklist → checkRow); inherited through extends (compose.js freeComponent).
   Design check: registered and interactive.
 - Platform manifest: web lists backdropPage, appBarPage, sheetLayer, fullscreenLayer (composition hires them).
+- Player page (breaking): an app-bar page with an inner sheet is its own type, PlayerPageConfig extends AppBarPageConfig
+  (sheet required; kind stays 'appBar'); AppBarPageConfig, AppBarPageState and AppBarPageStatePolicy lose `sheet`;
+  PlayerPageState / PlayerPageStatePolicy extend theirs with it. Contract playerPage (extends appBarPage: its values,
+  intents and children plus `sheet`), in the page union; appBarPage loses child `sheet`. Contracts may `extend` one
+  another: placements `within` the base hold within the extension (core/compose.js), the rules see the merged contract
+  (resolvedContracts). Design: playerPage (variant of appBarPage, slot sheet; drawn by AppBarPage); appBarPage loses slot
+  sheet. Composition: hire and placement playerPage. Layout.pageContract names a page's contract.
 - Rules: api/composition-rules.js (13, all pass) runs on the Invariants page; 19 ref / role invariants deleted, the rest
   ported to 18.0 shapes: 103 pass · 3 skipped · 0 fail (still 103 after param controls; 105 after More, its two rules added).
 

@@ -71,6 +71,7 @@
     "drawer",
     "backdropPage",
     "appBarPage",
+    "playerPage",
     "sheetLayer",
     "fullscreenLayer"
   ],

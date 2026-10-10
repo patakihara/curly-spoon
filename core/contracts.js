@@ -209,7 +209,7 @@ export function contractTree(model, specs, composition, opts = {}) {
       const front = node('frontLayer', fk, w, F, { position: page.back.expanded ? F.collapse : 'expanded', top: fl.top, contentOffset: Layout.contentOffset(page, look) }, { header: fh, content: contentNode(F.content, fk + '.content', fw, origin) });
       return node('backdropPage', key, ctx, cfg, {}, { back, front }, {});
     }
-    const w = { ...inside(ctx, 'appBarPage'), page };
+    const pc = Layout.pageContract(cfg), w = { ...inside(ctx, pc), page };
     const bar = Layout.barView(page, look, ctx.within);
     const children = {
       header: headerNode(cfg.header, key + '.header', w, bar.progress, title),
@@ -220,7 +220,7 @@ export function contractTree(model, specs, composition, opts = {}) {
       const sw = inside(w, 'pageSheet'), S = cfg.sheet;
       children.sheet = node('pageSheet', key + '.sheet', w, S, { expanded: !!(page.sheet && page.sheet.expanded) }, { ...(S.paramControl ? { paramControl: paramControlNode(S.paramControl, key + '.sheet.paramControl', sw) } : {}), content: contentNode(S.content, key + '.sheet.content', sw, origin) });
     }
-    return node('appBarPage', key, ctx, cfg, { contentOffset: Layout.contentOffset(page, look, ctx.within) }, children);
+    return node(pc, key, ctx, cfg, { contentOffset: Layout.contentOffset(page, look, ctx.within) }, children);
   }
   const top = stack => stack[stack.length - 1].page;
 

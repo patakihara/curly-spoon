@@ -7,11 +7,13 @@
 // a child: one contract, or a named union of contracts (UNIONS); list: an array; optional: may be absent
 const one = (contract, optional = false) => ({ contract, ...(optional ? { optional } : {}) });
 const list = (contract, optional = false) => ({ contract, list: true, ...(optional ? { optional } : {}) });
+// extends: a contract that is another plus more (its values, intents and children added to the other's); placements
+// within the other also hold within it (core/compose.js)
 
 export const UNIONS = {
   headerItem: ['button', 'logo', 'text', 'switch', 'find'],
   bodyItem: ['button', 'text', 'detail', 'seek'],
-  page: ['backdropPage', 'appBarPage'],
+  page: ['backdropPage', 'appBarPage', 'playerPage'],
 };
 
 export const CONTRACTS = {
@@ -40,7 +42,8 @@ export const CONTRACTS = {
   backdropPage: { config: 'BackdropPageConfig', values: {}, intents: [], children: { back: one('backLayer'), front: one('frontLayer') } },
   // app-bar page
   pageSheet: { config: 'PageSheetConfig', values: { expanded: 'boolean' }, intents: ['toggleExpanded'], children: { paramControl: one('paramControl', true), content: one('content') } },
-  appBarPage: { config: 'AppBarPageConfig', values: { contentOffset: 'number' }, intents: ['scroll'], children: { header: one('header'), content: one('content', true), body: list('bodyItem'), sheet: one('pageSheet', true) } },
+  appBarPage: { config: 'AppBarPageConfig', values: { contentOffset: 'number' }, intents: ['scroll'], children: { header: one('header'), content: one('content', true), body: list('bodyItem') } },
+  playerPage: { extends: 'appBarPage', config: 'PlayerPageConfig', values: {}, intents: [], children: { sheet: one('pageSheet') }, note: 'an app-bar page with an inner sheet (Now playing: Up next / Lyrics / Related)' },
   // layers: each draws its open page; stacks and state policies are engine-only
   sheetLayer: { config: 'LayerConfig', values: { open: 'boolean', form: 'SheetForm', side: 'SideMode | null', peek: 'Rect | null' }, intents: ['openLayer', 'closeLayer'], children: { peek: one('header'), page: one('page') }, note: 'open: the peek was tapped · peek: Layout.peekPlacement' },
   drawerLayer: { config: 'LayerConfig', values: { open: 'boolean', form: 'DrawerForm' }, intents: ['closeLayer'], children: { page: one('page') }, note: 'close: the scrim was tapped' },
@@ -51,6 +54,14 @@ export const CONTRACTS = {
   splash: { config: 'LaunchConfig', values: { label: 'string' }, intents: [] },
   overlay: { config: 'OverlaySpec', values: { title: 'string | null', body: 'string | null', confirm: 'string | null', cancel: 'string | null', text: 'string | null', action: 'string | null' }, intents: ['closeOverlay'], children: { items: list('button', true) }, note: 'items: a menu\'s' },
 };
+
+// id is base, or extends it (directly or further up)
+// every contract with what it extends merged in (values, intents, children): what a hire of it may use
+export const resolvedContracts = (defs = CONTRACTS) => Object.fromEntries(Object.entries(defs).map(([id, C]) => {
+  const B = C.extends ? defs[C.extends] : null; if (!B) return [id, C];
+  return [id, { ...C, values: { ...B.values, ...C.values }, intents: [...B.intents, ...C.intents], children: { ...(B.children || {}), ...(C.children || {}) } }];
+}));
+export const contractIs = (id, base) => { for (let c = id; c; c = (CONTRACTS[c] || {}).extends) if (c === base) return true; return false; };
 
 // intent types → their TS names ('action' is the item's own Actions)
 export const INTENT_TS = {

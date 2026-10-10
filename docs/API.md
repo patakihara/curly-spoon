@@ -68,9 +68,10 @@ Only Bororo's root filter options are fixed; everything else in the mockup comes
 
 ### Pages ✅
 ```
-PageConfig = BackdropPageConfig | AppBarPageConfig
+PageConfig = BackdropPageConfig | AppBarPageConfig | PlayerPageConfig
 BackdropPageConfig { id, kind: 'backdrop', title, params: Params, back: BackLayerConfig, front: FrontLayerConfig, policy }
-AppBarPageConfig   { id, kind: 'appBar',   title, header: AppBarRef, params?: Params, content?: ContentConfig, body?: Slot[], sheet?: PageSheetConfig, policy }
+AppBarPageConfig   { id, kind: 'appBar',   title, header: AppBarRef, params?: Params, content?: ContentConfig, body?: Slot[], policy }
+PlayerPageConfig   extends AppBarPageConfig { sheet: PageSheetConfig, statePolicy: PlayerPageStatePolicy }   (18.0: an app-bar page with an inner sheet; kind 'appBar')
 ```
 
 ### Params ✅ (8.0)
@@ -138,10 +139,11 @@ DeckState  { stack: StackEntry[] }
 LayerState { open: bool, stack: StackEntry[] }                                         ⏳
 StackEntry { page: PageState, openedFrom: ItemRef | null }   ✅
 
-PageState = BackdropPageState | AppBarPageState
+PageState = BackdropPageState | AppBarPageState | PlayerPageState
 PageStateBase<C>  { config: C, opener?, template?, params }                 (18.0: shared by both)
 BackdropPageState extends PageStateBase { back: BackLayerState, front: FrontLayerState }   ✅
-AppBarPageState   extends PageStateBase { scroll, sheet?: PageSheetState, find? }        ✅
+AppBarPageState   extends PageStateBase { scroll, find? }        ✅
+PlayerPageState   extends AppBarPageState { sheet: PageSheetState }   (18.0)
 
 BackLayerState  { expanded: bool, headerHidden? }          ✅
 FrontLayerState { scroll }                                ✅  (scoped fields are maps by scope key; scroll written without re-render)
@@ -290,7 +292,7 @@ A control has an interaction state (enabled … keyboardFocus) **and** a set of 
 - **Player state**: `$player.current.title`, `{ player: 'queue', of: '$opener.tracks', equals: 'contains' }`, `bind: { player: 'positionMs' }` (seek). FAB: three refs in one `fab` slot with exclusive `when`s (play → `[playQueue, openLayer nowPlaying]`, play next, add to queue).
 - **Local search** = `morph` (from: icon, to: field). `morphed` = scrolled ∨ `params.searching` ∨ find ≠ ''. `searching` resets on `scrollTop`.
 - **Groups**: `presentations.grid.groups = [{ by: '$item.title', key: 'initial', when: sort = name, header, index }, { by: '$item.year', key: 'decade', when: sort = year }]`.
-- **Inner sheet** (app-bar page): `sheet { peekHeight, header, content }`; state `page.sheet.expanded`; back collapses it first.
+- **Inner sheet** (a player page, 18.0: PlayerPageConfig): `sheet { paramControl?, content }`; state `page.sheet.expanded`; back collapses it first.
 - **Drawer** layers: `{ kind: 'drawer', side: 'start', width, scrim }`.
 
 ## 14.0 / 14.1 — caret first, rail drawer ✅
