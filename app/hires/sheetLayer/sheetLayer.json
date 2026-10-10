@@ -10,6 +10,14 @@
   },
   "clauses": [
     {
+      "slot": "peek",
+      "fill": [
+        {
+          "child": "peek"
+        }
+      ]
+    },
+    {
       "prop": "openLabel",
       "text": "nowPlaying.open"
     },

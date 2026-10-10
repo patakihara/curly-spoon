@@ -1231,10 +1231,28 @@
        ],
        "detail": {
         "title": {
-         "bind": "$player.current.title"
+         "if": {
+          "player": "status",
+          "equals": "idle"
+         },
+         "then": {
+          "text": "layer.nowPlaying"
+         },
+         "else": {
+          "bind": "$player.current.title"
+         }
         },
         "subtitle": {
-         "bind": "$player.current.subtitle"
+         "if": {
+          "player": "status",
+          "equals": "idle"
+         },
+         "then": {
+          "text": "player.nothing"
+         },
+         "else": {
+          "bind": "$player.current.subtitle"
+         }
         },
         "image": {
          "bind": "$player.current.image"
@@ -1311,10 +1329,28 @@
        ],
        "detail": {
         "title": {
-         "bind": "$player.current.title"
+         "if": {
+          "player": "status",
+          "equals": "idle"
+         },
+         "then": {
+          "text": "layer.nowPlaying"
+         },
+         "else": {
+          "bind": "$player.current.title"
+         }
         },
         "subtitle": {
-         "bind": "$player.current.subtitle"
+         "if": {
+          "player": "status",
+          "equals": "idle"
+         },
+         "then": {
+          "text": "player.nothing"
+         },
+         "else": {
+          "bind": "$player.current.subtitle"
+         }
         },
         "image": {
          "bind": "$player.current.image"

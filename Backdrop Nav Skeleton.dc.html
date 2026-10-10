@@ -655,15 +655,6 @@ class Component extends DCLogic {
     return pad + ((+this.vis(r).size || fab) - fab) / 2;
   }
   // ── header items ───────────────────────────────────────
-  // the sheet's peek shows what is playing (shell: the player state isn't reachable from config refs)
-  peekTitle() { const t = this.player && this.player.current(); return t ? t.title : this.model.query.text(this.ms, this.model.config, this.model.config.layers.find(l => l.id === 'nowPlaying').name); }
-  peekSub() {
-    const t = this.player && this.player.current(), s = this.player && this.player.getState();
-    if (!t) return this.model.query.text(this.ms, this.model.config, 'player.nothing');
-    if (t.subtitle) return t.subtitle;
-    const mm = ms => Math.floor(ms / 60000) + ':' + String(Math.floor(ms / 1000) % 60).padStart(2, '0');
-    return (s.status === 'playing' ? '▶ ' : s.status === 'loading' ? '… ' : '❚❚ ') + mm(s.positionMs) + ' / ' + mm(t.durationMs || 0) + (t.id.includes(' · ') ? ' · ' + t.id.split(' · ').slice(1).join(' · ') : '');
-  }
   // header slots: config ComponentRefs resolved by the core; this shell maps component ids to its own drawing
   // the surface a header row's items sit on (design providers give their colours): the app bar page form's top row is on
   // back-layer colours, its bottom row on the front-layer-coloured sheet (14.2)
@@ -833,7 +824,7 @@ class Component extends DCLogic {
       v.blockRowPad = 9; v.fab = v.ahFab = { show: false, ix: INERT, end: 0, top: 0, vis: {}, icon: '' }; v.fhH = 0; v.fhRow = 0; v.ahH = 0; v.alpha = { show: false, keys: [] }; v.groups = []; v.np = { ctrls: [], tabBar: { props: {} }, rows: [], mini: [], miniOp: 0, miniEv: 'none', bodyOp: 1, empty: false, emptyText: '', artVis: {}, infoVis: {}, seekVis: {}, rowVis: {}, tabBar: { props: {} }, emptyVis: {} }; v.dr = { items: [], title: '', props: null }; v.acc = { ev: 'none', start: [], rows: [], signIx: INERT, title: '', name: '', email: '', plan: '', art: '', signText: '', ty: 100 };
       v.cv = {}; v.gate = { ix: INERT }; v.dialog = { show: false, props: null }; v.snack = { show: false, props: null }; v.menu = { show: false, items: [] }; v.ovRows = []; v.ovHead = { title: '', sub: '', art: '' }; v.pl = { icon: '', t: INERT, n: INERT, t2: INERT, n2: INERT, card: [], peek: [], mini: [] }; v.sheetVis = { overflow: 'hidden' }; v.npVis = {}; v.npH = 0; v.titleVisFront = v.titleVisBar = v.groupVis = v.alphaVis = {}; v.urlDraft = '';
       v.subIx = v.retryIx = v.ddCircleIx = INERT;
-      Object.assign(v.nn, { peekSub: '', peekTitle: '', peekArt: '', title: '', titleIx: INERT, start: [], end: [] }); Object.assign(v.dd, { title: '', start: [], end: [] });
+      Object.assign(v.nn, { title: '', titleIx: INERT, start: [], end: [] }); Object.assign(v.dd, { title: '', start: [], end: [] });
       v.layoutInfo = 'loading model…'; v.backLabel = 'Back'; v.focusLabel = '—'; v.historyCaption = '';
       v.dir = 'ltr'; v.locales = []; v.appFx = v.gateFx = v.splashFx = { op: 1, sc: 1, tr: 'none' };
       v.splash = { show: true, logoOp: 0, logoSc: 1, logoTr: 'none', logo: 'transparent', logoSize: 0, playing: false, busy: true, ev: 'auto', label: '' }; v.logoVis = null; v.logoMotion = null; v.retryText = ''; v.cv = {};
@@ -915,7 +906,6 @@ class Component extends DCLogic {
       ...(wide
         ? { left: G.PW - G.SW, w: G.SW, top: 0, h: 720, tx: nOpen ? 0 : G.SW + 16, rad: '0px', shadow: (G.side === 'beside' ? SSV.shadowBeside : SSV.shadowOver) || 'none', peekOp: 0, peekEv: 'none', sheetOp: 1, sheetEv: nOpen ? 'auto' : 'none' }
         : { left: 0, w: G.PW, top: nOpen ? 0 : G.H, h: 720, tx: 0, rad: nOpen ? '0px' : BSV.closedRadius || '0px', shadow: BSV.shadow || 'none', peekOp: nOpen ? 0 : 1, peekEv: nOpen ? 'none' : 'auto', sheetOp: nOpen ? 1 : 0, sheetEv: nOpen ? 'auto' : 'none' }),
-      peekSub: this.peekSub(), peekTitle: this.peekTitle(), peekArt: this.player.current() ? this.S.imageCss(this.player.current().image) : '',
       titleIx: wide ? INERT : this.ix(this.key('layer:nowPlaying', null, 'header.title'), { nav: { type: 'closeLayer', layer: 'nowPlaying' } }, () => this.closeLayer('nowPlaying'), { component: 'listItem', label: q.text(ms, cfg, 'nowPlaying.collapse') }) };
     { const tv = (surface, size) => this.P.resolveVisuals(this.specs, 'title', 'enabled', { surface, variant: { size } });
       v.titleVisFront = tv('frontLayer', 'sm'); v.titleVisBar = tv('appBar', 'lg');

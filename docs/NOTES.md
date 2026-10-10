@@ -732,6 +732,15 @@ fields, not nodes · 6 verify ✓ (screens above).
       would show until the circle reaches it).
     - Scrim.dc.html is left only for FrontLayer's scrim (design frontLayer.scrim). Proposal: FrontLayer draws it as a
       part `scrim` (as dialog, menu, drawer and now the side sheet do), and Scrim.dc.html goes.
+59. Sofia approved four items (2026-10-10), done in this order:
+    1. The peek's text from its node. Config (app/app.json, both peeks) now says the fallback itself with an IfValue on
+       PlayerIs (no API change): title = if player status is idle then text layer.nowPlaying else $player.current.title;
+       subtitle = if idle then text player.nothing else $player.current.subtitle. The words already exist in all five
+       locales. The sheetLayer hire fills its `peek` slot from its peek child (header, whose title slot holds the detail);
+       NowPlayingSheet and PeekCard read art, title and subtitle from that detail node. The shell's peekTitle / peekSub
+       methods and nn.peekTitle / peekSub / peekArt are gone. The status line the shell wrote while playing (glyph,
+       mm:ss / mm:ss, id tail) is gone: it showed only for a track without a subtitle, and every catalog track has one.
+       Still the shell's: the peek controls (pl.peek / pl.card), npVis, mx.
 ## Hires, picks and tokens: work list (decisions 52–54; tick as done)
 API 18.0.0 amended (breaking: renames and removals). Then back to the shell conversion list, step 3.
 - [x] 1. Rename ComponentId → ComponentName (api.d.ts, docs).
@@ -798,8 +807,8 @@ Done (drawn from contract nodes through draw.js):
 - [ ] AppBarPage: 30 shell-built props (ov, ab, ah*, ovRows, ovX).
 - [ ] NowPlayingSheet: 16 props (nn, np, pl, sheet and bar visuals). Its peek's tap comes from the sheetLayer node now
       (decision 57); the rest is still the shell's.
-- [~] PeekCard: its tap, place (peekRect) and look (peekCard) come from the sheetLayer node now (decision 57); still fed by
-      the shell: nn.peekTitle / peekSub / peekArt (need config, Sofia's OK), pl.card (peek controls), npVis, mx.
+- [~] PeekCard: its tap, place (peekRect), look (peekCard) and text / art come from the sheetLayer node now (decisions 57,
+      59); still fed by the shell: pl.card (peek controls), npVis, mx.
 - [ ] DededeLayer: 10 props; no design component exists for it.
 - [ ] AccountLayer: 6 props; no design component exists for it.
 - [ ] EdgeHandle and Scrim: no design component exists for either; proposal (parts of sideSheet and frontLayer) in decision 58, needs Sofia.
@@ -856,7 +865,7 @@ Done (drawn from contract nodes through draw.js):
 - [ ] Item press while expanded is ignored; open goes through openItem.
 - [ ] A node's surface parsed from its key string (surfaceOf); a header row's surface by theme (surfaceOfTheme).
 - [ ] trackedTitle: the title comes from the shell's scroll tracking.
-- [ ] Peek title and subtitle: formatted by the shell (play / pause glyphs, mm:ss, splitting the track id).
+- [x] Peek title and subtitle: config's fallback (decision 59); the shell's formatting is gone.
 - [ ] Now playing body: per contract (detail, seek, button), fab vs iconButton, queueRow drawn as listRow,
       the current row's fill.
 - [x] The inner sheet's tabs built by the shell.
