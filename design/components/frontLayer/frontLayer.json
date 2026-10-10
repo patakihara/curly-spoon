@@ -1,5 +1,12 @@
 {
+  "extends": "surface",
   "states": [
+    "enabled",
+    "disabled",
+    "hover",
+    "pressed",
+    "focus",
+    "keyboardFocus",
     "expanded",
     "partlyCollapsed",
     "fullyCollapsed"

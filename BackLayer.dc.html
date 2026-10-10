@@ -63,7 +63,7 @@ class Component extends DCLogic {
       actions: of('actions'), buttons: (sl.actions || []).filter(b => b.shown),
       panel: of('panel'), more, panelRows: more.length ? [] : sl.panel || [],
       panelPad: more.length ? v.morePadding : v.panelPadding, panelLine: more.length ? v.moreDivider : v.panelDivider,
-      onTap: e => { if (e.target.closest && e.target.closest('button,input,textarea,select,a,[role="button"]')) return; if (on.tap) on.tap(undefined, e); } };
+      onTap: e => { if (e.target.closest && e.target.closest('button,input,textarea,select,a,[role="button"]')) return; if (on.press) on.press(undefined, e); } };
   }
 }
 </script>

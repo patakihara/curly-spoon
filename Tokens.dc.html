@@ -110,7 +110,7 @@ class Component extends DCLogic {
   }
   componentWillUnmount() { window.removeEventListener('storage', this.onStorage); }
   async load() {
-    const get = p => fetch(new URL(p, location.href).href, { cache: 'no-store' }).then(r => r.text());
+    const get = p => fetch(new URL(p, location.href).href, { cache: 'no-store' }).then(r => { if (!r.ok) throw new Error(p + ': HTTP ' + r.status); return r.text(); });
     const imp = async p => import(URL.createObjectURL(new Blob([await get(p)], { type: 'text/javascript' })));
     try {
       const [DL, B, O, A] = await Promise.all([imp('./design/load.js'), imp('./design/build.js'), imp('./design/overrides.js'), imp('./app/load-app.js')]);

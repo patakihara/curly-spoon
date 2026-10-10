@@ -1,4 +1,5 @@
 {
+  "extends": "surface",
   "props": {
     "start": "slot",
     "title": "slot",

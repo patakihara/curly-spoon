@@ -56,6 +56,10 @@
     "scale": {
       "default": 1,
       "pressed": 0.97
+    },
+    "cursor": {
+      "default": "pointer",
+      "disabled": "default"
     }
   },
   "motion": {

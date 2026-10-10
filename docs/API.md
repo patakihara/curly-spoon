@@ -208,7 +208,7 @@ Note: Chrome skips history entries created without user activation, so the trick
 
 
 ## §20 Interactive components
-Every actionable component extends `interactive` in design: its states, their visuals and the motions between them come from there, by inheritance. Its node (the contract tree) carries what it acts on: key, component, events (each an intent or the item's action), label.
+Every actionable component extends `interactive` in design: its states, their visuals and the motions between them come from there, by inheritance. Every surface (layers, sheets, bars, dialogs, menus, the peek) extends `surface`, which extends `interactive` and turns its look off: no state layer, ripple, press scale or dimming, the arrow cursor; so every surface can be tapped (`press`) and composition decides what a tap does (peekCard turns hover back on). Inputs (searchField, rangeField, dropdown, seekBar) extend `interactive` too. The mouse cursor is design (`interactive.cursor`, per state), not platform code. Its node (the contract tree) carries what it acts on: key, component, events (each an intent or the item's action), label.
 An action is `{ nav: Intent } | { player: PlayerIntent } | { shell: ShellActionId } | null`.
 State is never set by the component — `resolveInteraction(action, input, env)` (core/interaction.js) derives it:
 - available iff nav → `model.query.supports`, player → `player.supports` (transport needs a current track), shell → listed in `env.shellActions`; `null` = not built.

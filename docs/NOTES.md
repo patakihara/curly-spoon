@@ -673,6 +673,19 @@ fields, not nodes · 6 verify ✓ (screens above).
     Open idea (not yet proposed): containers declare their pieces' interactive components (morePanel close: iconButton),
     as `option` does, and a rule checks every event a non-interactive component sends comes from one.
 
+55. Surfaces are interactive (Sofia, 2026-10-10: option 1, "make all surfaces tappable by default, this way we can decide
+    later what happens on tap"; name `surface`). design/components/surface extends interactive and turns the look off
+    (state layer, ripple, press scale, disabled dimming; arrow cursor). The 14 surfaces with `provides` extend it; their
+    `press` replaces backLayer's and bottomSheet's own `tap` (hires backLayer, pageSheet send it). peekCard turns hover back
+    on. Inputs (searchField, rangeField, dropdown, seekBar) extend interactive. interactive.cursor (per state) replaces
+    interactive.js deciding the cursor. frontLayer lists the six interaction states plus its three position states.
+    Open: the surfaces' DCs don't use interactive.js yet (no press, no peek hover drawn): part of shell step 3. Containers
+    naming the interactive piece each event comes from (morePanel.close: iconButton) needs an API proposal (ComponentDef
+    field + rule); not proposed yet.
+56. Components page (Sofia, 2026-10-10): chips show contracts it is hired for (black), contracts those extend (black,
+    italic) and components it extends (grey); each card lists its component-level tokens (as the Tokens page). Its notes
+    showed "not found": 66 component .md files were never published, and the page showed the server's 404 page; pages now
+    treat a failed fetch as missing. Icons inside preview DCs showed as words: the page didn't pass symbol visuals.
 ## Hires, picks and tokens: work list (decisions 52–54; tick as done)
 API 18.0.0 amended (breaking: renames and removals). Then back to the shell conversion list, step 3.
 - [x] 1. Rename ComponentId → ComponentName (api.d.ts, docs).

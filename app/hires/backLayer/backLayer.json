@@ -7,7 +7,7 @@
       "token": "color.backLayer"
     },
     {
-      "event": "tap",
+      "event": "press",
       "send": "toggleExpanded"
     },
     {

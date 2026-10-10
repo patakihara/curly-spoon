@@ -1,4 +1,5 @@
 {
+  "extends": "surface",
   "props": {
     "items": "slot"
   },

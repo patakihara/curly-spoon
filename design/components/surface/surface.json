@@ -1,0 +1,27 @@
+{
+  "extends": "interactive",
+  "visuals": {
+    "stateLayer": {
+      "default": null,
+      "hover": null,
+      "pressed": null,
+      "focus": null,
+      "keyboardFocus": null
+    },
+    "ripple": {
+      "default": null
+    },
+    "scale": {
+      "default": 1,
+      "pressed": 1
+    },
+    "contentOpacity": {
+      "default": 1,
+      "disabled": 1
+    },
+    "cursor": {
+      "default": "default",
+      "disabled": "default"
+    }
+  }
+}

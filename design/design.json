@@ -5,6 +5,7 @@
   "choreography": "choreography.json",
   "components": [
     "interactive",
+    "surface",
     "frontLayer",
     "backLayer",
     "header",

@@ -1,3 +1,5 @@
 # interactive
 
 Abstract base of every interactive component: the six states, state layer, ripple, focus ring and disabled / busy opacity, plus the motions for every state transition (state layer and focus ring fade, press ripples, a slight press scale). Components extend it and store only what differs. Platforms draw it with one shared helper (web: `interactive.js`). Large surfaces (listItem and its children: rows, cards, header overlays) keep scale 1 when pressed, so the ink fills them edge to edge.
+
+Cursor (`cursor`): the mouse pointer over it, per state; a hand while it can be activated, the arrow while disabled. Platforms read it instead of deciding it.

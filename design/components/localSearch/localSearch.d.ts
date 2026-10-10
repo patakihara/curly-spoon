@@ -7,3 +7,4 @@ export type Slot = unknown;   // a ComponentRef list (api.d.ts §1)
 export interface LocalSearchProps extends SearchFieldProps {
   end: Slot;
 }
+export type LocalSearchState = 'enabled' | 'disabled' | 'hover' | 'pressed' | 'focus' | 'keyboardFocus';

@@ -63,7 +63,7 @@
       ixTrans: [tr('box-shadow', ml), tr('transform', msc), tr('outline-color', mf), tr('opacity', ml)].join(', '),
       pressScale: vis.scale ?? 1,
       outline: vis.focusRing ? '2px solid ' + vis.focusRing : '2px solid transparent',
-      radius: (vis.radius ?? 0) + 'px', op: (vis.contentOpacity ?? 1) * (+(c.props.dim ?? 1)), cur: v.enabled ? 'pointer' : 'default',
+      radius: (vis.radius ?? 0) + 'px', op: (vis.contentOpacity ?? 1) * (+(c.props.dim ?? 1)), cur: vis.cursor || 'default',
       onClick: e => { e.stopPropagation(); fire(e); },
       onKeyDown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); fire(e); } },
       onPointerEnter: () => set(c, { hovered: true }), onPointerLeave: () => set(c, { hovered: false }),
