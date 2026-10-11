@@ -415,7 +415,8 @@
         "required": [
           "tracks",
           "chapters",
-          "startAt"
+          "startAt",
+          "progressTarget"
         ]
       },
       "PlayBody": {
@@ -427,6 +428,53 @@
         },
         "required": [
           "ref"
+        ]
+      },
+      "ProgressBody": {
+        "type": "object",
+        "properties": {
+          "playId": {
+            "type": "string",
+            "pattern": "^[\\w-]{1,64}$"
+          },
+          "position": {
+            "type": "number",
+            "minimum": 0
+          },
+          "listened": {
+            "type": "number",
+            "minimum": 0
+          },
+          "paused": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "playId",
+          "position",
+          "listened",
+          "paused"
+        ]
+      },
+      "ProgressReport": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "number",
+            "minimum": 0
+          },
+          "listened": {
+            "type": "number",
+            "minimum": 0
+          },
+          "paused": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "position",
+          "listened",
+          "paused"
         ]
       }
     },
@@ -1126,9 +1174,74 @@
         }
       }
     },
+    "/api/progress": {
+      "post": {
+        "summary": "Report where the person is in a plan's item, and how long they listened, to its server",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "reportProgress",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgressBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The report reached the item's server.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/play/{playId}/close": {
       "post": {
-        "summary": "Close a plan's open playback session, ending its transcode",
+        "summary": "Close a plan's open playback session, with a last progress report when given",
         "security": [
           {
             "session": []
@@ -1149,6 +1262,15 @@
             "in": "path"
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgressReport"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "The session is closed.",

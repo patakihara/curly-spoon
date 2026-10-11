@@ -42,6 +42,8 @@ export {
   PlaybackTrack,
   PlayBody,
   PlayParams,
+  ProgressBody,
+  ProgressReport,
   ProgressTarget,
 } from './play.js';
 export {
@@ -61,6 +63,7 @@ export {
   play,
   postSetup,
   renameDevice,
+  reportProgress,
   routes,
   type Access,
   type Route,

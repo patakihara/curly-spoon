@@ -57,13 +57,13 @@ function inAlbumOrder(tracks: PlayableItem[]): PlayableItem[] {
 }
 
 /**
- * How to play a track or an album, or a refusal: 404 for what is not music or an album with no
- * tracks, 422 `unsupported_format` for a file the clients do not play.
+ * How to play a track or an album, short of the play it reports to, or a refusal: 404 for what is
+ * not music or an album with no tracks, 422 `unsupported_format` for a file the clients do not play.
  */
 export async function planJellyfin(
   jellyfin: JellyfinClient,
   item: PlayableItem,
-): Promise<PlaybackPlan> {
+): Promise<Omit<PlaybackPlan, 'progressTarget'>> {
   if (item.Type !== 'Audio' && item.Type !== 'MusicAlbum') throw new Refusal(404, 'not_found');
   const files =
     item.Type === 'Audio' ? [item] : inAlbumOrder(await jellyfin.getAlbumPlayables(item.Id));

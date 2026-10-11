@@ -151,6 +151,7 @@ test('[M0.staging/c] an open tab waiting on the player reloads once the player i
       tracks: [{ url: '/e2e/tone.mp3', mime: 'audio/mpeg', duration: 5, offset: 0 }],
       chapters: [],
       startAt: 0,
+      progressTarget: { playId: 'e2e-play' },
     };
     const player = create(plan);
     await player.play();

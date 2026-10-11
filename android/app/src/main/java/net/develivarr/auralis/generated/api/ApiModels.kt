@@ -122,7 +122,7 @@ data class PlaybackPlan(
     val tracks: List<PlaybackTrack>,
     val chapters: List<PlaybackChapter>,
     val startAt: Double,
-    val progressTarget: ProgressTarget? = null,
+    val progressTarget: ProgressTarget,
     val next: MediaRef? = null,
 )
 
@@ -132,6 +132,21 @@ data class PlaybackTrack(
     val mime: String,
     val duration: Double,
     val offset: Double,
+)
+
+@Serializable
+data class ProgressBody(
+    val playId: String,
+    val position: Double,
+    val listened: Double,
+    val paused: Boolean,
+)
+
+@Serializable
+data class ProgressReport(
+    val position: Double,
+    val listened: Double,
+    val paused: Boolean,
 )
 
 @Serializable

@@ -23,6 +23,8 @@ import {
   PlaybackPlan,
   PlayBody,
   PlayParams,
+  ProgressBody,
+  ProgressReport,
 } from './play.js';
 import { type z } from './zod.js';
 
@@ -216,15 +218,27 @@ export const mediaTrack = {
   stream: true,
 } as const satisfies Route;
 
+export const reportProgress = {
+  method: 'POST',
+  path: '/api/progress',
+  operationId: 'reportProgress',
+  summary: "Report where the person is in a plan's item, and how long they listened, to its server",
+  responseDescription: "The report reached the item's server.",
+  response: Ok,
+  access: 'member',
+  body: ProgressBody,
+} as const satisfies Route;
+
 export const closePlay = {
   method: 'POST',
   path: '/api/play/{playId}/close',
   operationId: 'closePlay',
-  summary: "Close a plan's open playback session, ending its transcode",
+  summary: "Close a plan's open playback session, with a last progress report when given",
   responseDescription: 'The session is closed.',
   response: Ok,
   access: 'member',
   params: PlayParams,
+  body: ProgressReport.optional(),
 } as const satisfies Route;
 
 export const mediaHls = {
@@ -254,6 +268,7 @@ export const routes: readonly Route[] = [
   deleteDevice,
   listUsers,
   play,
+  reportProgress,
   closePlay,
   mediaTrack,
   mediaHls,

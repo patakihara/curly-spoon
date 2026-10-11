@@ -4,8 +4,8 @@
  * little before the end, so the next file starts the moment the last one ends. The position it
  * reports is on the whole item's timeline (the file's offset plus its own time, no further than
  * its planned end), so chapters and progress work across files. A transcode's one HLS track plays
- * through hls.js, loaded only then, or through the browser's own HLS where it has one, and its
- * session is closed when the player is.
+ * through hls.js, loaded only then, or through the browser's own HLS where it has one. The plan's
+ * playback session is closed when the player is.
  */
 import { type ApiClient, createApiClient } from './api/client';
 import { type components } from './generated/api/schema';
@@ -238,8 +238,7 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
         unlisten.splice(0).forEach((stop) => stop());
         slots.forEach(release);
         slots.forEach((slot) => slot.audio.remove?.());
-        const playId = plan.progressTarget?.playId;
-        if (playId === undefined) return;
+        const { playId } = plan.progressTarget;
         const api = options.api ?? createApiClient();
         await api.POST('/api/play/{playId}/close', { params: { path: { playId } } });
       })();

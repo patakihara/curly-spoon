@@ -190,6 +190,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Report where the person is in a plan's item, and how long they listened, to its server */
+        post: operations["reportProgress"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/play/{playId}/close": {
         parameters: {
             query?: never;
@@ -199,7 +216,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Close a plan's open playback session, ending its transcode */
+        /** Close a plan's open playback session, with a last progress report when given */
         post: operations["closePlay"];
         delete?: never;
         options?: never;
@@ -347,11 +364,22 @@ export interface components {
             tracks: components["schemas"]["PlaybackTrack"][];
             chapters: components["schemas"]["PlaybackChapter"][];
             startAt: number;
-            progressTarget?: components["schemas"]["ProgressTarget"];
+            progressTarget: components["schemas"]["ProgressTarget"];
             next?: components["schemas"]["MediaRef"];
         };
         PlayBody: {
             ref: components["schemas"]["MediaRef"];
+        };
+        ProgressBody: {
+            playId: string;
+            position: number;
+            listened: number;
+            paused: boolean;
+        };
+        ProgressReport: {
+            position: number;
+            listened: number;
+            paused: boolean;
         };
     };
     responses: never;
@@ -884,6 +912,57 @@ export interface operations {
             };
         };
     };
+    reportProgress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ProgressBody"];
+            };
+        };
+        responses: {
+            /** @description The report reached the item's server. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     closePlay: {
         parameters: {
             query?: never;
@@ -893,7 +972,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ProgressReport"];
+            };
+        };
         responses: {
             /** @description The session is closed. */
             200: {

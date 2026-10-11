@@ -68,6 +68,7 @@ const book: PlaybackPlan = {
   ],
   chapters: [],
   startAt: 0,
+  progressTarget: { playId: 'p0' },
 };
 
 function rig(plan: PlaybackPlan, options: { native?: string; hlsArrives?: Promise<void> } = {}) {
@@ -285,14 +286,14 @@ describe('the web player', () => {
     expect(requests).toEqual(['POST /api/play/p1/close']);
   });
 
-  it('[M1.play/c] lets go of both files when destroyed, with no session left to close on direct play', async () => {
+  it('[M1.play/c] lets go of both files when destroyed, and closes a direct play’s session too', async () => {
     const { player, audios, playing, requests } = rig(book);
     await player.play();
     playing()!.loaded(21);
     playing()!.at(19);
     await player.destroy();
     expect(audios.every((a) => a.paused && a.src === '')).toBe(true);
-    expect(requests).toEqual([]);
+    expect(requests).toEqual(['POST /api/play/p0/close']);
   });
 
   it('[M1.play/c] does nothing with hls.js that arrives after the player is destroyed', async () => {

@@ -163,9 +163,9 @@ class Playback(
         }
     }
 
-    /** Closes [plan]'s open playback session, if it has one; a refusal is only logged. */
+    /** Closes [plan]'s open playback session; a refusal is only logged. */
     private fun close(plan: PlaybackPlan) {
-        val playId = plan.progressTarget?.playId ?: return
+        val playId = plan.progressTarget.playId
         background.launch {
             try {
                 api.post("api/play/$playId/close", Ok.serializer())

@@ -152,13 +152,27 @@ describe('[M1.music/a] playing a Jellyfin track', () => {
 });
 
 describe('playing a Jellyfin track', () => {
-  it('starts at the beginning, with no chapters, and nothing held open', async () => {
+  it('starts at the beginning, with no chapters, under a play of its own', async () => {
     const { plan } = await server();
-    expect(await plan(trackId)).toEqual({
+    const first = await plan(trackId);
+    expect(first).toEqual({
       tracks: [expect.objectContaining({ url: trackUrl(trackId) })],
       chapters: [],
       startAt: 0,
+      progressTarget: { playId: expect.stringMatching(/^[\w-]{1,64}$/) as unknown },
     });
+    const second = await plan(trackId);
+    expect(second.progressTarget.playId).not.toBe(first.progressTarget.playId);
+  });
+
+  it('closes its play on request, once, and only for the person who planned it', async () => {
+    const { app, as, plan } = await server();
+    const { playId } = (await plan(trackId)).progressTarget;
+    const close = (name: string) =>
+      app.inject({ method: 'POST', url: `/api/play/${playId}/close`, headers: as(name) });
+    expect((await close('otto')).statusCode).toBe(404);
+    expect((await close('kara')).statusCode).toBe(200);
+    expect((await close('kara')).statusCode).toBe(404);
   });
 
   it("looks the track up, then streams its own file untranscoded, with the person's own token", async () => {

@@ -3,15 +3,19 @@
  * `jellyfinPlay.ts` says. For an Audiobookshelf item, `POST /api/play` opens an
  * Audiobookshelf session offering the types the clients play, and ABS chooses:
  * - direct play: one track per file at `/api/media/{ref}/tracks/{n}`, chapters at their absolute
- *   positions across files, and the session closed at once, since nothing reports progress yet;
- * - a transcode: one HLS track at `/api/media/{ref}/hls/{playId}/output.m3u8`, the session kept
- *   open because the transcode lives in it, named as the progress target, and closed by
- *   `POST /api/play/{playId}/close`.
+ *   positions across files;
+ * - a transcode: one HLS track at `/api/media/{ref}/hls/{playId}/output.m3u8`, the transcode
+ *   living in the session.
  * Anything else ABS answers, such as a file in a type the clients do not play, is refused 422.
+ * Every plan names the session it holds open as its progress target. `POST /api/progress` reports
+ * to it: to ABS, a sync with the wall-clock time listened, as the person, never retried, since a
+ * repeat counts the listening twice. `POST /api/play/{playId}/close` closes it, with a last
+ * report when given; so does planning again on the same device, or its idle time running out.
  * The media routes pass a checked `Range` through with the person's own token and send the bytes
  * on as they come, never transcoded or buffered whole. Only the playlist is read whole, parsed,
  * and passed on with bare segment names that resolve under the same route.
  */
+import { randomUUID } from 'node:crypto';
 import {
   HLS_MIME,
   mediaHls,
@@ -20,8 +24,10 @@ import {
   parseMediaRefKey,
   closePlay,
   play,
+  reportProgress,
   type PlaybackChapter,
   type PlaybackPlan,
+  type ProgressReport,
   type PlaybackTrack,
 } from '@auralis/schema';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
@@ -55,10 +61,15 @@ export interface UpstreamAccess {
 
 const CLIENT_VERSION = '0.0.0';
 
-/** How the server holds transcodes open and waits for their segments. */
+/** How the server holds plays open and waits for a transcode's segments. */
 export interface PlaybackOptions {
   /** A transcode nothing has asked for in this long is closed. Default 10 minutes. */
   idleMs?: number;
+  /**
+   * A direct play or a Jellyfin play nothing has reported on in this long is closed. Default 60
+   * minutes, so a long pause keeps its place; past it the player plans again.
+   */
+  directIdleMs?: number;
   /**
    * ABS answers 404 for a segment its transcode has not cut yet (recorded), and players give up
    * on a 404. The proxy asks again, this many times this far apart, before passing the 404 on,
@@ -68,8 +79,9 @@ export interface PlaybackOptions {
 }
 
 const DEFAULT_IDLE_MS = 10 * 60_000;
+const DEFAULT_DIRECT_IDLE_MS = 60 * 60_000;
 const DEFAULT_SEGMENT_WAIT = { tries: 20, everyMs: 500 };
-/** How often held transcodes are checked for idleness, besides on every playback request. */
+/** How often held plays are checked for idleness, besides on every playback request. */
 const SWEEP_EVERY_MS = 60_000;
 
 /** Waits `ms`, or less if `signal` aborts first. */
@@ -103,8 +115,8 @@ export function planChapters(session: AbsSession, length: number): PlaybackChapt
 }
 
 /**
- * How to play what ABS answered, or null when the clients cannot play it: neither direct play of
- * files in types they play, nor one transcode.
+ * How to play what ABS answered, reporting to its session, or null when the clients cannot play
+ * it: neither direct play of files in types they play, nor one transcode.
  */
 function planFor(session: AbsSession, ref: string): PlaybackPlan | null {
   const startAt = session.currentTime ?? 0;
@@ -144,7 +156,13 @@ function planFor(session: AbsSession, ref: string): PlaybackPlan | null {
   }
   if (tracks.length === 0) return null;
   const last = tracks[tracks.length - 1]!;
-  return { tracks, chapters: planChapters(session, last.offset + last.duration), startAt };
+  const length = last.offset + last.duration;
+  return {
+    tracks,
+    chapters: planChapters(session, length),
+    startAt,
+    progressTarget: { playId: session.id },
+  };
 }
 
 /** An upstream answer as this route's: its status, its headers with values, and its body. */
@@ -187,10 +205,9 @@ export function playRoutes(
 ): void {
   const { db, upstreams } = options;
   const segmentWait = options.playback?.segmentWait ?? DEFAULT_SEGMENT_WAIT;
-  const open = new OpenPlays({
-    idleMs: options.playback?.idleMs ?? DEFAULT_IDLE_MS,
-    now: options.now ?? Date.now,
-  });
+  const transcodeIdleMs = options.playback?.idleMs ?? DEFAULT_IDLE_MS;
+  const directIdleMs = options.playback?.directIdleMs ?? DEFAULT_DIRECT_IDLE_MS;
+  const open = new OpenPlays({ now: options.now ?? Date.now });
   const sweeper = setInterval(() => void open.sweep(), SWEEP_EVERY_MS);
   sweeper.unref();
   app.addHook('onClose', async () => {
@@ -198,7 +215,7 @@ export function playRoutes(
     await open.closeAll();
   });
 
-  /** The caller's own upstream client for `source`, after closing any transcode gone idle. */
+  /** The caller's own upstream client for `source`, after closing any play gone idle. */
   const personFor = async <S extends keyof Upstreams>(
     request: FastifyRequest,
     source: S,
@@ -225,40 +242,67 @@ export function playRoutes(
       const { client, userId, deviceId } = await personFor(request, 'jellyfin');
       const item = await client.getPlayable(body.ref.id).catch(refusalFor);
       const plan = await planJellyfin(client, item).catch(refusalFor);
-      // Nothing is held open for music; planning it ends whatever this device held.
-      await open.closeDevice(userId, deviceId);
-      return plan;
+      const playId = randomUUID();
+      const last = plan.tracks[plan.tracks.length - 1]!;
+      // Jellyfin hears nothing of the play yet: its start, progress and stop reports come next.
+      await open.open({
+        playId,
+        userId,
+        deviceId,
+        ref,
+        duration: last.offset + last.duration,
+        idleMs: directIdleMs,
+        report: () => Promise.resolve(),
+        close: () => Promise.resolve(),
+      });
+      return { ...plan, progressTarget: { playId } };
     }
     const { abs, userId, deviceId } = await absFor(request);
     const session = await abs
       .play(body.ref.id, { deviceId, clientVersion: CLIENT_VERSION })
       .catch(refusalFor);
     const plan = planFor(session, ref);
-    const target = plan?.progressTarget;
-    if (target === undefined) {
-      // Only a transcode is held open; anything else is closed now, since nothing reports
-      // progress yet. A failed close loses nothing.
+    if (plan === null) {
+      // A failed close loses nothing.
       await abs.closeSession(session.id).catch(() => undefined);
       await open.closeDevice(userId, deviceId);
-    } else {
-      const playId = target.playId;
-      await open.open({
-        playId,
-        userId,
-        deviceId,
-        ref,
-        close: () => abs.closeSession(playId),
-      });
+      throw new Refusal(422, 'unsupported_format');
     }
-    if (plan === null) throw new Refusal(422, 'unsupported_format');
+    const playId = plan.progressTarget.playId;
+    const last = plan.tracks[plan.tracks.length - 1]!;
+    const duration = session.duration ?? last.offset + last.duration;
+    const sync = ({ position, listened }: ProgressReport) => ({
+      currentTime: position,
+      timeListened: listened,
+      duration,
+    });
+    await open.open({
+      playId,
+      userId,
+      deviceId,
+      ref,
+      duration,
+      idleMs: plan.tracks[0]?.mime === HLS_MIME ? transcodeIdleMs : directIdleMs,
+      report: (report) => abs.syncSession(playId, sync(report)),
+      close: (report) => abs.closeSession(playId, report && sync(report)),
+    });
     return plan;
   });
 
-  serve(app, closePlay, async (request, _reply, _body, { params }) => {
-    const { userId, deviceId } = await absFor(request);
-    const held = open.take(params.playId, { userId, deviceId });
-    if (held === null) throw new Refusal(404, 'not_found');
-    await held.close().catch(refusalFor);
+  serve(app, reportProgress, async (request, _reply, body) => {
+    await open.sweep();
+    const { id: userId, deviceId } = signedIn(request);
+    const { playId, ...report } = body;
+    const reported = await open.report(playId, { userId, deviceId }, report).catch(refusalFor);
+    if (!reported) throw new Refusal(404, 'not_found');
+    return { ok: true };
+  });
+
+  serve(app, closePlay, async (request, _reply, body, { params }) => {
+    await open.sweep();
+    const { id: userId, deviceId } = signedIn(request);
+    const closed = await open.finish(params.playId, { userId, deviceId }, body).catch(refusalFor);
+    if (!closed) throw new Refusal(404, 'not_found');
     return { ok: true };
   });
 
