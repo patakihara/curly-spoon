@@ -69,7 +69,7 @@ Anything you say about Auralis, in any session or artifact comment, takes one fi
 
    It also edits whatever else in the plan the change affects.
 3. **Applied in one commit**: the plan edit, the inbox file's deletion, and a commit message naming the plan item and the inbox file. Until that commit lands the idea stays in the inbox, so a crash loses none. The plan checks run on that commit.
-4. **Progress follows by itself.** The next session-start summary shows a new item as planned, and a changed item whose check fails, or a bug's new check, reopens its item.
+4. **Progress follows by itself.** The next session-start summary shows a new item as planned; a changed item whose check fails, or a bug's new check, reopens its item.
 5. **Closed the loop with you.** The plan page is republished, a comment thread gets a reply saying where the idea landed and is resolved, and the page and the session-start summary list recently sorted ideas and where each went.
 
 ### What needs you, without waiting on you
