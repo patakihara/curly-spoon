@@ -30,6 +30,7 @@ import {
   PlaybackPlan,
   PlayBody,
   PlayParams,
+  ProgressAnswer,
   ProgressBody,
   ProgressReport,
 } from './play.js';
@@ -230,8 +231,9 @@ export const reportProgress = {
   path: '/api/progress',
   operationId: 'reportProgress',
   summary: "Report where the person is in a plan's item, and how long they listened, to its server",
-  responseDescription: "The report reached the item's server.",
-  response: Ok,
+  responseDescription:
+    "Whether the report was taken, reaching the item's server, and the number of the last one taken.",
+  response: ProgressAnswer,
   access: 'member',
   body: ProgressBody,
 } as const satisfies Route;

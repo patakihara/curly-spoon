@@ -430,6 +430,22 @@
           "ref"
         ]
       },
+      "ProgressAnswer": {
+        "type": "object",
+        "properties": {
+          "taken": {
+            "type": "boolean"
+          },
+          "lastSeq": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "taken",
+          "lastSeq"
+        ]
+      },
       "ProgressBody": {
         "type": "object",
         "properties": {
@@ -1267,11 +1283,11 @@
         },
         "responses": {
           "200": {
-            "description": "The report reached the item's server.",
+            "description": "Whether the report was taken, reaching the item's server, and the number of the last one taken.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Ok"
+                  "$ref": "#/components/schemas/ProgressAnswer"
                 }
               }
             }

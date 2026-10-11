@@ -405,6 +405,10 @@ export interface components {
         PlayBody: {
             ref: components["schemas"]["MediaRef"];
         };
+        ProgressAnswer: {
+            taken: boolean;
+            lastSeq: number;
+        };
         ProgressBody: {
             playId: string;
             seq: number;
@@ -976,13 +980,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The report reached the item's server. */
+            /** @description Whether the report was taken, reaching the item's server, and the number of the last one taken. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Ok"];
+                    "application/json": components["schemas"]["ProgressAnswer"];
                 };
             };
             /** @description The request does not parse, or was refused. */

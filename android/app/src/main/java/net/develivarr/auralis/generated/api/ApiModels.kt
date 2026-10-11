@@ -155,6 +155,12 @@ data class PlaybackTrack(
 )
 
 @Serializable
+data class ProgressAnswer(
+    val taken: Boolean,
+    val lastSeq: Long,
+)
+
+@Serializable
 data class ProgressBody(
     val playId: String,
     val seq: Long,

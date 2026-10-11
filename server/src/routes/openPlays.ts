@@ -6,7 +6,7 @@
  * running on the server and an abandoned session never lingers upstream.
  * Held in memory: a restart forgets them, and a player then plans again.
  */
-import { type ProgressReport } from '@auralis/schema';
+import { type ProgressAnswer, type ProgressReport } from '@auralis/schema';
 
 /**
  * How far the listening time reported may run ahead of the server's own clock, in seconds, over
@@ -83,14 +83,21 @@ export class OpenPlays {
    * Passes a report on, if this person's device holds the play: the position kept within the
    * item, and the listening time within the time since the last report taken, so a bogus report
    * never counts more listening than there was time for. A report no newer than one already
-   * taken, late or repeated, is dropped. False when the device holds no such play.
+   * taken, late or repeated, is dropped. Says whether the report was taken, and the number of the
+   * last one taken; null when the device holds no such play.
    */
-  async report(playId: string, owner: Owner, report: ProgressReport): Promise<boolean> {
+  async report(
+    playId: string,
+    owner: Owner,
+    report: ProgressReport,
+  ): Promise<ProgressAnswer | null> {
     const held = this.owned(playId, owner);
-    if (held === null) return false;
+    if (held === null) return null;
     const now = this.options.now();
     held.lastSeen = now;
-    if (this.stale(held, report)) return true;
+    if (held.lastSeq !== undefined && report.seq <= held.lastSeq) {
+      return { taken: false, lastSeq: held.lastSeq };
+    }
     const before = { lastSeq: held.lastSeq, lastReportAt: held.lastReportAt, ahead: held.ahead };
     const bounded = this.bounded(held, report);
     // Taken before the upstream answers, so a report sent alongside counts only what is left.
@@ -107,7 +114,7 @@ export class OpenPlays {
     }
     // A newer report taken meanwhile keeps its own position.
     if (held.lastSeq === report.seq) held.lastPosition = bounded.report.position;
-    return true;
+    return { taken: true, lastSeq: report.seq };
   }
 
   /**

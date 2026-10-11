@@ -246,6 +246,8 @@ export function playRoutes(
       // Jellyfin's own play session ids are 32 hex digits (recorded).
       const playId = randomUUID().replace(/-/g, '');
       const reports = jellyfinReports(client, played, playId, app.log);
+      // The device's track before stops before Jellyfin hears this one started.
+      await open.closeDevice(userId, deviceId);
       await reports.start();
       const last = plan.tracks[plan.tracks.length - 1]!;
       await open.open({
@@ -296,9 +298,9 @@ export function playRoutes(
     await open.sweep();
     const { id: userId, deviceId } = signedIn(request);
     const { playId, ...report } = body;
-    const reported = await open.report(playId, { userId, deviceId }, report).catch(refusalFor);
-    if (!reported) throw new Refusal(404, 'not_found');
-    return { ok: true };
+    const answer = await open.report(playId, { userId, deviceId }, report).catch(refusalFor);
+    if (answer === null) throw new Refusal(404, 'not_found');
+    return answer;
   });
 
   serve(app, closePlay, async (request, _reply, body, { params }) => {

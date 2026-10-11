@@ -49,6 +49,7 @@ export {
   PlaybackTrack,
   PlayBody,
   PlayParams,
+  ProgressAnswer,
   ProgressBody,
   ProgressReport,
   ProgressTarget,

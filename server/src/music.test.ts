@@ -77,9 +77,17 @@ interface Sent {
   json: unknown;
 }
 
-/** Two people, kara and otto, each with an app's bearer token; otto can be left unlinked. */
+/**
+ * Two people, kara and otto, each with an app's bearer token; otto can be left unlinked. A slow
+ * Jellyfin answers each call only after a turn of the clock, so calls sent together overlap.
+ */
 async function server(
-  options: { ottoLinked?: boolean; recordings?: Recording[]; reports?: Recording[] } = {},
+  options: {
+    ottoLinked?: boolean;
+    recordings?: Recording[];
+    reports?: Recording[];
+    slow?: boolean;
+  } = {},
 ) {
   const db = openDatabase(':memory:');
   const sent: Sent[] = [];
@@ -99,6 +107,7 @@ async function server(
       range: headers.get('range'),
       json: typeof init?.body === 'string' ? (JSON.parse(init.body) as unknown) : undefined,
     });
+    if (options.slow) await new Promise((resolve) => setTimeout(resolve, 5));
     return replay(url, init);
   };
   const bearer: Record<string, string> = {};
@@ -435,6 +444,46 @@ describe("reporting an album's progress to Jellyfin", () => {
       `/Sessions/Playing ${first.Id} 0`,
       `/Sessions/Playing/Stopped ${first.Id} 0`,
       `/Sessions/Playing ${second.Id} 4`,
+    ]);
+  });
+  it('reaches Jellyfin in order when a report moves on to the next track and a close comes right behind it', async () => {
+    const { app, sent, as, plan } = await server({ slow: true });
+    const { tracks, progressTarget } = await plan(albumId);
+    const [first, second] = recordedTracks as [RecordedTrack, RecordedTrack];
+    const secondStart = tracks[1]!.offset;
+    const [moved, closed] = await Promise.all([
+      report(app, as('kara'), progressTarget.playId, 0, secondStart + 4),
+      app.inject({
+        method: 'POST',
+        url: `/api/play/${progressTarget.playId}/close`,
+        headers: as('kara'),
+        payload: { seq: 1, position: secondStart + 6, listened: 0, paused: true },
+      }),
+    ]);
+    expect([moved.statusCode, closed.statusCode]).toEqual([200, 200]);
+    expect(reported(sent)).toEqual([
+      `/Sessions/Playing ${first.Id} 0`,
+      `/Sessions/Playing/Stopped ${first.Id} 0`,
+      `/Sessions/Playing ${second.Id} 4`,
+      `/Sessions/Playing/Stopped ${second.Id} 6`,
+    ]);
+  });
+
+  it('moves on to the next track once when two reports sent together both fall in it', async () => {
+    const { app, sent, as, plan } = await server({ slow: true });
+    const { tracks, progressTarget } = await plan(albumId);
+    const [first, second] = recordedTracks as [RecordedTrack, RecordedTrack];
+    const secondStart = tracks[1]!.offset;
+    const answers = await Promise.all([
+      report(app, as('kara'), progressTarget.playId, 0, secondStart + 4),
+      report(app, as('kara'), progressTarget.playId, 1, secondStart + 5),
+    ]);
+    expect(answers.map((a) => a.statusCode)).toEqual([200, 200]);
+    expect(reported(sent)).toEqual([
+      `/Sessions/Playing ${first.Id} 0`,
+      `/Sessions/Playing/Stopped ${first.Id} 0`,
+      `/Sessions/Playing ${second.Id} 4`,
+      `/Sessions/Playing/Progress ${second.Id} 5`,
     ]);
   });
 });

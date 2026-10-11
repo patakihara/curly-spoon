@@ -159,7 +159,7 @@ describe("[M1.progress/a] progress to each item's own server", () => {
     // 15 s of listening, then a seek far past where that listening would have reached.
     const toAbs = await report({ playId: book, position: 120, listened: 15, paused: false });
     expect(toAbs.statusCode, toAbs.body).toBe(200);
-    expect(toAbs.json()).toEqual({ ok: true });
+    expect(toAbs.json()).toEqual({ taken: true, lastSeq: 0 });
     expect(sent.at(-1)).toEqual({
       method: 'POST',
       path: synced.request.path,
@@ -239,6 +239,21 @@ describe('reporting progress to Jellyfin', () => {
     expect(sent.at(-1)?.json).toMatchObject({ PositionTicks: 0 });
   });
 
+  it("stops the device's track before starting the one it plans next", async () => {
+    const { sent, planTrack } = await server();
+    const before = (await planTrack()).progressTarget.playId;
+    const next = (await planTrack()).progressTarget.playId;
+    expect(sent.map((s) => `${s.method} ${s.path}`)).toEqual([
+      `GET ${jfTrack.request.path}`,
+      `POST ${jfPlaying.request.path}`,
+      `GET ${jfTrack.request.path}`,
+      `POST ${jfStopped.request.path}`,
+      `POST ${jfPlaying.request.path}`,
+    ]);
+    expect(sent.at(-2)?.json).toMatchObject({ PlaySessionId: before });
+    expect(sent.at(-1)?.json).toMatchObject({ PlaySessionId: next });
+  });
+
   it("keeps a reported position within the track's length", async () => {
     const { sent, planTrack, report, pass } = await server();
     const { playId } = (await planTrack()).progressTarget;
@@ -273,7 +288,7 @@ describe('reporting progress to Jellyfin', () => {
     pass(15);
     const res = await report({ playId, position: 15, listened: 15, paused: false });
     expect(res.statusCode, res.body).toBe(200);
-    expect(res.json()).toEqual({ ok: true });
+    expect(res.json()).toEqual({ taken: true, lastSeq: 0 });
     expect(warnings()).toEqual([
       expect.objectContaining({ msg: 'Jellyfin did not take a progress report' }),
     ]);
@@ -305,8 +320,25 @@ describe('reports in order', () => {
     const asked = sent.length;
     const late = await report({ playId, seq: 1, position: 30, listened: 10, paused: false });
     expect(late.statusCode).toBe(200);
-    expect(late.json()).toEqual({ ok: true });
+    expect(late.json()).toEqual({ taken: false, lastSeq: 2 });
     expect(sent).toHaveLength(asked);
+  });
+
+  it('says a dropped report was not taken, and the number of the last one taken, so a player numbering from 0 again can carry on after it', async () => {
+    const { sent, plan, report, pass } = await server();
+    const { playId } = (await plan()).progressTarget;
+    pass(10);
+    const taken = await report({ playId, seq: 7, position: 10, listened: 10, paused: false });
+    expect(taken.json()).toEqual({ taken: true, lastSeq: 7 });
+    pass(10);
+    const asked = sent.length;
+    const dropped = await report({ playId, seq: 0, position: 20, listened: 10, paused: false });
+    expect(dropped.statusCode).toBe(200);
+    expect(dropped.json()).toEqual({ taken: false, lastSeq: 7 });
+    expect(sent).toHaveLength(asked);
+    const resynced = await report({ playId, seq: 8, position: 20, listened: 10, paused: false });
+    expect(resynced.json()).toEqual({ taken: true, lastSeq: 8 });
+    expect(sent.at(-1)?.json).toMatchObject({ currentTime: 20, timeListened: 10 });
   });
 
   it('drops a repeated report, so it adds no listening time', async () => {

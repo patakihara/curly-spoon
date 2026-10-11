@@ -118,6 +118,16 @@ export const ProgressBody = z
 export type ProgressBody = z.infer<typeof ProgressBody>;
 
 /**
+ * What became of a progress report: whether it was taken, and the number of the newest report
+ * taken on the play. One not taken was no newer than that one, so a player that numbered its
+ * reports from 0 again carries on from `lastSeq + 1`.
+ */
+export const ProgressAnswer = z
+  .object({ taken: z.boolean(), lastSeq: z.number().int().nonnegative() })
+  .openapi('ProgressAnswer');
+export type ProgressAnswer = z.infer<typeof ProgressAnswer>;
+
+/**
  * How to play an item: its tracks in order, its chapters, where in the item to start, where to
  * report progress, and what plays next. Nothing plays next until the queues do.
  */

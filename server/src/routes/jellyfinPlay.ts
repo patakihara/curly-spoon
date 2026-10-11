@@ -108,8 +108,10 @@ export async function planJellyfin(
 /**
  * A play's reports to Jellyfin, as the person whose client `jellyfin` is, under `playSessionId`.
  * A report whose position falls in another track than the one playing stops that one where the
- * last report left it and starts the new one. Reports on one play reach it one at a time. One
- * Jellyfin does not take goes to `log`, and the next goes ahead as if it had.
+ * last report left it and starts the new one. The start, the reports and the close reach Jellyfin
+ * strictly in the order they are given, each only once the one before it is answered, so each
+ * works from where the one before left the play. One Jellyfin does not take goes to `log`, and the
+ * next goes ahead as if it had.
  */
 export function jellyfinReports(
   jellyfin: JellyfinClient,
@@ -130,6 +132,13 @@ export function jellyfinReports(
     });
   let playing = first;
   let within = 0;
+  /** The last step given, settled once Jellyfin has answered it; the next waits for it. */
+  let queue: Promise<void> = Promise.resolve();
+  const inTurn = (step: () => Promise<void>): Promise<void> => {
+    const run = queue.then(step);
+    queue = run.catch(() => undefined);
+    return run;
+  };
   const start = (paused: boolean) =>
     tell('playing', () =>
       jellyfin.reportStart({ itemId: playing.id, position: within, paused, playSessionId }),
@@ -140,28 +149,30 @@ export function jellyfinReports(
     );
   return {
     /** Tells Jellyfin the first track started, at its start. */
-    start: () => start(false),
-    async report({ position, paused }: UpstreamReport) {
-      const now = at(position);
-      if (now.track !== playing) {
-        await stop();
-        playing = now.track;
+    start: () => inTurn(() => start(false)),
+    report: ({ position, paused }: UpstreamReport) =>
+      inTurn(async () => {
+        const now = at(position);
+        if (now.track !== playing) {
+          await stop();
+          playing = now.track;
+          within = now.within;
+          await start(paused);
+          return;
+        }
         within = now.within;
-        await start(paused);
-        return;
-      }
-      within = now.within;
-      await tell('progress', () =>
-        jellyfin.reportProgress({ itemId: playing.id, position: within, paused, playSessionId }),
-      );
-    },
+        await tell('progress', () =>
+          jellyfin.reportProgress({ itemId: playing.id, position: within, paused, playSessionId }),
+        );
+      }),
     /** Tells Jellyfin the track playing stopped: where `last` is, if it is in that track. */
-    async close(last?: UpstreamReport) {
-      if (last !== undefined) {
-        const now = at(last.position);
-        if (now.track === playing) within = now.within;
-      }
-      await stop();
-    },
+    close: (last?: UpstreamReport) =>
+      inTurn(async () => {
+        if (last !== undefined) {
+          const now = at(last.position);
+          if (now.track === playing) within = now.within;
+        }
+        await stop();
+      }),
   };
 }
