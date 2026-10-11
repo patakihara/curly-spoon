@@ -1,11 +1,12 @@
 /**
- * The Jellyfin client: the calls the recorder records and the index reads, and the lookups that
- * find their ids. Every request carries the
+ * The Jellyfin client: the calls the recorder records, the index reads and playing makes, and the
+ * lookups that find their ids. Every request carries the
  * `MediaBrowser` authorization header (see `auth.ts`) with the API key as `Token`, and never
  * reads the environment: `new JellyfinClient({ baseUrl, token, fetch })`.
  */
 import { type z, type ZodType } from 'zod';
 import { type FetchLike, requestJson } from '../http/fetch.js';
+import { fileHeadersSchema, openStream, type UpstreamFile } from '../stream.js';
 import { buildAuthorizationHeader, type JellyfinDeviceInfo } from './auth.js';
 import {
   baseItemDtoSchema,
@@ -13,6 +14,9 @@ import {
   type IndexItem,
   type IndexQueryResult,
   indexQueryResultSchema,
+  type PlayableItem,
+  playableItemSchema,
+  playableQueryResultSchema,
   publicSystemInfoSchema,
   userListSchema,
 } from './schemas.js';
@@ -127,5 +131,31 @@ export class JellyfinClient {
   getItem(itemId: string, userId?: string): Promise<BaseItemDto> {
     const query = userId === undefined ? undefined : { userId };
     return this.get(`Items/${encodeURIComponent(itemId)}`, baseItemDtoSchema, query);
+  }
+
+  /** A track or an album as the token's own user sees it: `GET /Items/{id}`. */
+  getPlayable(itemId: string): Promise<PlayableItem> {
+    return this.get(`Items/${encodeURIComponent(itemId)}`, playableItemSchema);
+  }
+
+  /** An album's tracks as the token's own user sees them, in Jellyfin's disc and track order. */
+  async getAlbumPlayables(albumId: string): Promise<PlayableItem[]> {
+    const query = {
+      ParentId: albumId,
+      IncludeItemTypes: 'Audio',
+      SortBy: 'ParentIndexNumber,IndexNumber,SortName',
+    };
+    return (await this.get('Items', playableQueryResultSchema, query)).Items;
+  }
+
+  /**
+   * A track's own file, untranscoded, passing `range` through: `GET /Audio/{id}/stream?static=true`.
+   * Jellyfin serves this route to anyone who has the id (checked live), so a caller first checks
+   * the person can see the track with `getPlayable`.
+   */
+  openAudio(itemId: string, range?: string): Promise<UpstreamFile> {
+    const url = this.url(`Audio/${encodeURIComponent(itemId)}/stream`, { static: 'true' });
+    const authorization = buildAuthorizationHeader(this.device, this.opts.token);
+    return openStream(this.opts.fetch, url, { authorization }, range, fileHeadersSchema);
   }
 }

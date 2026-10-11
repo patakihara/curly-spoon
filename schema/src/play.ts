@@ -1,12 +1,13 @@
 /**
  * Playback: what to play in, a plan to play it by out. An Audiobookshelf item plays by direct
  * play, one track per file, or, when a file is a type the clients do not play, as one HLS
- * transcode. M1.progress and the queues fill the progress target and what comes next in place.
+ * transcode. A Jellyfin track plays its own file, and an album its tracks in order, never
+ * transcoded. M1.progress and the queues fill the progress target and what comes next in place.
  */
 import { z } from './zod.js';
 
 /** Where an item lives upstream. */
-export const MediaSource = z.enum(['abs']).openapi('MediaSource');
+export const MediaSource = z.enum(['abs', 'jellyfin']).openapi('MediaSource');
 export type MediaSource = z.infer<typeof MediaSource>;
 
 /** An upstream id as it sits in a path: nothing that could change the path it is put in. */
@@ -20,10 +21,11 @@ export const PlayBody = z.object({ ref: MediaRef }).openapi('PlayBody');
 export type PlayBody = z.infer<typeof PlayBody>;
 
 /**
- * A ref as it sits in a path, `<source>:<id>`: `abs:6d9c…`. The server maps it back to the
- * upstream item; nothing a client puts here reaches an upstream path unchecked.
+ * A ref as it sits in a path, `<source>:<id>`: `abs:6d9c…`, or `jellyfin:` and Jellyfin's 32 hex
+ * digits. The server maps it back to the upstream item; nothing a client puts here reaches an
+ * upstream path unchecked.
  */
-export const MediaRefKey = z.string().regex(/^abs:[\w-]{1,64}$/);
+export const MediaRefKey = z.string().regex(/^(?:abs:[\w-]{1,64}|jellyfin:[0-9a-f]{32})$/);
 export type MediaRefKey = z.infer<typeof MediaRefKey>;
 
 export function mediaRefKey(ref: MediaRef): MediaRefKey {
@@ -50,7 +52,8 @@ export const PlaybackTrack = z
   .object({
     /**
      * `/api/media/{ref}/tracks/{n}`, or for a transcode `/api/media/{ref}/hls/{playId}/output.m3u8`,
-     * sent with the same session or bearer token.
+     * sent with the same session or bearer token. A Jellyfin track is its own ref's track 0, in an
+     * album's plan too.
      */
     url: z.string().startsWith('/api/'),
     /** The file's audio type, or `application/vnd.apple.mpegurl` for a transcode. */
@@ -87,9 +90,9 @@ export type ProgressTarget = z.infer<typeof ProgressTarget>;
 
 /**
  * How to play an item: its tracks in order, its chapters, where in the item to start, where to
- * report progress, and what plays next. Direct play closes its session at once, so it has no
- * progress target until M1.progress; a transcode keeps its session open and names it. Nothing
- * plays next until the queues do.
+ * report progress, and what plays next. Direct play closes its session at once and Jellyfin opens
+ * none, so neither has a progress target until M1.progress; a transcode keeps its session open
+ * and names it. Nothing plays next until the queues do.
  */
 export const PlaybackPlan = z
   .object({

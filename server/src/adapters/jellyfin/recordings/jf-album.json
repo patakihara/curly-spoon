@@ -1,0 +1,141 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "jf-album",
+  "request": {
+    "method": "GET",
+    "path": "/Items/65de8562c54b89ceef199f91bacd8709",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis\", DeviceId=\"auralis-recorder\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Name": "The Rise and Fall of a Midwest Princess",
+        "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+        "Id": "65de8562c54b89ceef199f91bacd8709",
+        "Etag": "582d8655b92bfa99213dc4abc1591c82",
+        "DateCreated": "2026-04-22T06:32:15.0000000Z",
+        "DateLastMediaAdded": "0001-01-01T00:00:00.0000000Z",
+        "CanDelete": false,
+        "CanDownload": false,
+        "SortName": "rise and fall of midwest princess",
+        "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+        "ExternalUrls": [
+          {
+            "Name": "MusicBrainz Album",
+            "Url": "https://musicbrainz.org/release/99b69971-5030-4ab2-bd2a-ba102ed6312d"
+          },
+          {
+            "Name": "MusicBrainz Album Artist",
+            "Url": "https://musicbrainz.org/artist/56a55378-f155-48de-80a5-d80104221267"
+          },
+          {
+            "Name": "MusicBrainz Release Group",
+            "Url": "https://musicbrainz.org/release-group/eda0f5d3-44eb-42cf-bcfd-5c9f93e05c7a"
+          },
+          {
+            "Name": "TheAudioDb Album",
+            "Url": "https://www.theaudiodb.com/album/2430737"
+          }
+        ],
+        "Path": "/data/media/Music/Chappell Roan",
+        "EnableMediaSourceDisplay": true,
+        "ChannelId": null,
+        "Overview": "",
+        "Taglines": [],
+        "Genres": [
+          "Indie Pop"
+        ],
+        "CumulativeRunTimeTicks": 29484592509,
+        "RunTimeTicks": 29484592509,
+        "PlayAccess": "Full",
+        "ProductionYear": 2023,
+        "RemoteTrailers": [],
+        "ProviderIds": {
+          "AudioDbAlbum": "2430737",
+          "AudioDbArtist": "179579",
+          "MusicBrainzAlbum": "99b69971-5030-4ab2-bd2a-ba102ed6312d",
+          "MusicBrainzAlbumArtist": "56a55378-f155-48de-80a5-d80104221267",
+          "MusicBrainzReleaseGroup": "eda0f5d3-44eb-42cf-bcfd-5c9f93e05c7a"
+        },
+        "IsFolder": true,
+        "ParentId": "80ac3a4d68822ea525eb93f9eccd6b4c",
+        "Type": "MusicAlbum",
+        "People": [],
+        "Studios": [],
+        "GenreItems": [
+          {
+            "Name": "Indie Pop",
+            "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+          }
+        ],
+        "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+        "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+        "ParentBackdropImageTags": [
+          "9855482c023325ef94625c10994d5dc5"
+        ],
+        "LocalTrailerCount": 0,
+        "UserData": {
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Played": false,
+          "Key": "<token>",
+          "ItemId": "65de8562c54b89ceef199f91bacd8709"
+        },
+        "RecursiveItemCount": 14,
+        "ChildCount": 14,
+        "SpecialFeatureCount": 0,
+        "DisplayPreferencesId": "f13d7f51d4f1f8b6fcd620855eb88c1e",
+        "Tags": [],
+        "PrimaryImageAspectRatio": 1,
+        "Artists": [
+          "Chappell Roan"
+        ],
+        "ArtistItems": [
+          {
+            "Name": "Chappell Roan",
+            "Id": "87179c1db4d100f90591e4f9b0e341c8"
+          }
+        ],
+        "AlbumArtist": "Chappell Roan",
+        "AlbumArtists": [
+          {
+            "Name": "Chappell Roan",
+            "Id": "87179c1db4d100f90591e4f9b0e341c8"
+          }
+        ],
+        "ImageTags": {
+          "Primary": "aff9ba9d3c57fbf1ac8074b7fc289d22"
+        },
+        "BackdropImageTags": [],
+        "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+        "ImageBlurHashes": {
+          "Primary": {
+            "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+          },
+          "Logo": {
+            "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+          },
+          "Backdrop": {
+            "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+          }
+        },
+        "LocationType": "FileSystem",
+        "MediaType": "Unknown",
+        "LockedFields": [],
+        "LockData": false,
+        "NormalizationGain": -9.9
+      }
+    }
+  }
+}

@@ -338,7 +338,7 @@ export interface components {
             playId: string;
         };
         /** @enum {string} */
-        MediaSource: "abs";
+        MediaSource: "abs" | "jellyfin";
         MediaRef: {
             source: components["schemas"]["MediaSource"];
             id: string;

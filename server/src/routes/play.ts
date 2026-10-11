@@ -1,5 +1,6 @@
 /**
- * Playing an Audiobookshelf item, as the signed-in person. `POST /api/play` opens an
+ * Playing an item, as the signed-in person. A Jellyfin track or album plans and streams as
+ * `jellyfinPlay.ts` says. For an Audiobookshelf item, `POST /api/play` opens an
  * Audiobookshelf session offering the types the clients play, and ABS chooses:
  * - direct play: one track per file at `/api/media/{ref}/tracks/{n}`, chapters at their absolute
  *   positions across files, and the session closed at once, since nothing reports progress yet;
@@ -23,18 +24,20 @@ import {
   type PlaybackTrack,
 } from '@auralis/schema';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import {
-  type AbsClient,
-  contentUrlParts,
-  hlsSessionOf,
-  type UpstreamFile,
-} from '../adapters/audiobookshelf/client.js';
+import { contentUrlParts, hlsSessionOf } from '../adapters/audiobookshelf/client.js';
 import { type playSessionSchema } from '../adapters/audiobookshelf/schemas.js';
 import { AdapterError, type FetchLike } from '../adapters/http/fetch.js';
+import { type UpstreamFile } from '../adapters/stream.js';
 import { Refusal, serve, serveStream, type StreamAnswer } from '../route.js';
 import type { Db } from '../store/connection.js';
-import { type Linker, type UpstreamConfig, upstreamFor } from '../upstream/links.js';
+import {
+  type Linker,
+  type UpstreamConfig,
+  upstreamFor,
+  type Upstreams,
+} from '../upstream/links.js';
 import { signedIn } from './auth.js';
+import { planJellyfin } from './jellyfinPlay.js';
 import { OpenPlays } from './openPlays.js';
 import { type z } from 'zod';
 
@@ -179,23 +182,41 @@ export function playRoutes(
     await open.closeAll();
   });
 
-  /** The caller's own Audiobookshelf, after closing any transcode gone idle. */
-  const absFor = async (
+  /** The caller's own upstream client for `source`, after closing any transcode gone idle. */
+  const personFor = async <S extends keyof Upstreams>(
     request: FastifyRequest,
-  ): Promise<{ abs: AbsClient; userId: string; deviceId: string }> => {
+    source: S,
+  ): Promise<{ client: NonNullable<Upstreams[S]>; userId: string; deviceId: string }> => {
     await open.sweep();
     const user = signedIn(request);
-    const abs = upstreams === null ? null : upstreamFor({ db, ...upstreams }, user).abs;
-    if (abs === null) throw new Refusal(409, 'not_linked');
-    return { abs, userId: user.id, deviceId: user.deviceId };
+    const client = upstreams === null ? null : upstreamFor({ db, ...upstreams }, user)[source];
+    if (client === null) throw new Refusal(409, 'not_linked');
+    return {
+      client: client as NonNullable<Upstreams[S]>,
+      userId: user.id,
+      deviceId: user.deviceId,
+    };
+  };
+  const absFor = async (request: FastifyRequest) => {
+    const { client, ...owner } = await personFor(request, 'abs');
+    return { abs: client, ...owner };
   };
 
   serve(app, play, async (request, _reply, body) => {
+    const ref = mediaRefKey(body.ref);
+    if (body.ref.source === 'jellyfin') {
+      if (parseMediaRefKey(ref) === null) throw new Refusal(400, 'bad_request');
+      const { client, userId, deviceId } = await personFor(request, 'jellyfin');
+      const item = await client.getPlayable(body.ref.id).catch(refusalFor);
+      const plan = await planJellyfin(client, item).catch(refusalFor);
+      // Nothing is held open for music; planning it ends whatever this device held.
+      await open.closeDevice(userId, deviceId);
+      return plan;
+    }
     const { abs, userId, deviceId } = await absFor(request);
     const session = await abs
       .play(body.ref.id, { deviceId, clientVersion: CLIENT_VERSION })
       .catch(refusalFor);
-    const ref = mediaRefKey(body.ref);
     const plan = planFor(session, ref);
     const target = plan?.progressTarget;
     if (target === undefined) {
@@ -228,6 +249,15 @@ export function playRoutes(
   serveStream(app, mediaTrack, async (request, { params, range }) => {
     const ref = parseMediaRefKey(params.ref);
     if (ref === null) throw new Refusal(400, 'bad_request');
+    if (ref.source === 'jellyfin') {
+      // A Jellyfin track is its own ref's only track. Jellyfin streams to anyone with the id, so
+      // the person's own lookup decides whether they may have it.
+      if (params.n !== '0') throw new Refusal(404, 'not_found');
+      const { client } = await personFor(request, 'jellyfin');
+      const item = await client.getPlayable(ref.id).catch(refusalFor);
+      if (item.Type !== 'Audio') throw new Refusal(404, 'not_found');
+      return passOn(await client.openAudio(ref.id, range).catch(refusalFor));
+    }
     const { abs } = await absFor(request);
     const item = await abs.getItem(ref.id).catch(refusalFor);
     const track = item.media.tracks?.[Number(params.n)];

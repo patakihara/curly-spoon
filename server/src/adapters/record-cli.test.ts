@@ -460,3 +460,110 @@ describe("record mode for the index's calls", () => {
     });
   });
 });
+
+const JF = 'http://upstream.invalid:8096';
+const ALBUM = 'a'.repeat(32);
+const TRACK = 'b'.repeat(32);
+
+/** A fake Jellyfin with the service identity, one album of one FLAC track; it keeps each call. */
+function fakeJellyfinPlay(options: { streamFails?: boolean } = {}) {
+  const asked: { call: string; authorization: string }[] = [];
+  const fetch: FetchLike = async (url, init) => {
+    const { pathname } = new URL(url);
+    const method = init?.method ?? 'GET';
+    const authorization = new Headers(init?.headers).get('authorization') ?? '';
+    asked.push({ call: `${method} ${pathname}`, authorization });
+    const json = (body: unknown) =>
+      new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    if (pathname === '/System/Info/Public') return json({ Version: '10.11.11' });
+    if (pathname === '/Users') {
+      return json([{ Id: 'u-auralis', Name: 'auralis', Policy: { IsDisabled: false } }]);
+    }
+    if (pathname === '/QuickConnect/Initiate') return json({ Secret: 'qc-secret', Code: '123' });
+    if (pathname === '/QuickConnect/Authorize') return json(true);
+    if (pathname === '/Users/AuthenticateWithQuickConnect') {
+      return json({ AccessToken: 'person-token-0000', User: { Id: 'u-auralis' } });
+    }
+    if (pathname === `/Items/${ALBUM}`) return json({ Id: ALBUM, Type: 'MusicAlbum' });
+    if (pathname === '/Items') {
+      return json({ Items: [{ Id: TRACK, Type: 'Audio', Container: 'flac', RunTimeTicks: 1e8 }] });
+    }
+    if (pathname === `/Items/${TRACK}`) {
+      return json({ Id: TRACK, Type: 'Audio', Container: 'flac', RunTimeTicks: 1e8 });
+    }
+    if (pathname === `/Audio/${TRACK}/stream` && options.streamFails !== true) {
+      return new Response('fL', {
+        status: 206,
+        headers: {
+          'content-type': 'audio/flac',
+          'accept-ranges': 'bytes',
+          'content-range': 'bytes 0-1/44117873',
+        },
+      });
+    }
+    if (pathname === '/Sessions/Logout') return new Response(null, { status: 204 });
+    return new Response('not found', { status: 404 });
+  };
+  return { fetch, asked };
+}
+
+function jfPlayIo(fetch: FetchLike, argv = ['--jellyfin', JF, '--jellyfin-item', ALBUM]) {
+  const out: string[] = [];
+  const err: string[] = [];
+  return {
+    io: {
+      argv: ['--only', 'jfplay', ...argv, '--dry-run'],
+      stdin: 'JELLYFIN_API_KEY=test-jellyfin-key-0000\n',
+      fetch,
+      out: (line: string) => out.push(line),
+      err: (line: string) => err.push(line),
+    },
+    out,
+    err,
+  };
+}
+
+describe("record mode for M1.music's calls", () => {
+  it("records the album, its tracks, its first track and two of that track's bytes as the service identity", async () => {
+    const jf = fakeJellyfinPlay();
+    const { io: recordIo, out, err } = jfPlayIo(jf.fetch);
+    expect(await runRecord(recordIo)).toBe(0);
+    expect(err).toEqual([]);
+    expect(out.filter((l) => l.startsWith('wrote')).map((l) => l.split('/').pop())).toEqual([
+      'jf-album.json',
+      'jf-album-tracks.json',
+      'jf-track.json',
+      'jf-stream.json',
+    ]);
+    const recorded = jf.asked.filter((a) => /^GET \/(Items|Audio)/.test(a.call));
+    expect(recorded.map((a) => a.call)).toEqual([
+      `GET /Items/${ALBUM}`,
+      'GET /Items',
+      `GET /Items/${TRACK}`,
+      `GET /Audio/${TRACK}/stream`,
+    ]);
+    for (const a of recorded) expect(a.authorization).toContain('Token="person-token-0000"');
+    const stream = JSON.parse(
+      readFileSync(out.find((l) => l.endsWith('jf-stream.json'))!.replace(/^wrote /, ''), 'utf8'),
+    ) as { response: { body: unknown } };
+    expect(stream.response.body).toMatchObject({ bytes: 'jf-stream.flac' });
+  });
+
+  it('logs the minted token out, last, even when a call fails', async () => {
+    const jf = fakeJellyfinPlay({ streamFails: true });
+    await expect(runRecord(jfPlayIo(jf.fetch).io)).rejects.toThrow();
+    expect(jf.asked.at(-1)?.call).toBe('POST /Sessions/Logout');
+    expect(jf.asked.at(-1)?.authorization).toContain('Token="person-token-0000"');
+  });
+
+  it('needs the album to record', async () => {
+    const jf = fakeJellyfinPlay();
+    const { io: recordIo, err } = jfPlayIo(jf.fetch, ['--jellyfin', JF]);
+    expect(await runRecord(recordIo)).toBe(2);
+    expect(err.join('\n')).toContain('--jellyfin-item');
+    expect(jf.asked).toEqual([]);
+  });
+});
