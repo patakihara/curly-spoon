@@ -8,6 +8,7 @@ import { openDatabase, type Db } from './connection.js';
 import { createDevice, deleteDevice } from './devices.js';
 import {
   HISTORY_KEPT,
+  HistoryRewritten,
   listSessions,
   openSession,
   saveSession,
@@ -62,7 +63,10 @@ describe('[M1.sessions/a] one listening session per device', () => {
     const queued = entry(song);
     saveSession(db, user.id, phone.id, onPhone.rev, {
       ...value(onPhone),
-      queues: { ...onPhone.queues, music: { current: null, user: [queued], context: null } },
+      queues: {
+        ...onPhone.queues,
+        music: { current: null, position: null, user: [queued], context: null },
+      },
     });
 
     expect(openSession(db, user.id, phone.id)!.queues.music.user).toEqual([queued]);
@@ -86,7 +90,10 @@ describe('[M1.sessions/a] one listening session per device', () => {
       const session = openSession(db, user.id, device.id)!;
       saveSession(db, user.id, device.id, session.rev, {
         ...value(session),
-        queues: { ...session.queues, spoken: { current: entry(book, 0), user: [], context: null } },
+        queues: {
+          ...session.queues,
+          spoken: { current: entry(book, 0), position: null, user: [], context: null },
+        },
         history: [{ seq: 0, queue: 'music', ref: song, playedAt: 1 }],
       });
     }
@@ -126,8 +133,8 @@ describe('a listening session in the store', () => {
       switchAfterCurrent: null,
       queueStyle: 'youtube',
       queues: {
-        music: { current: null, user: [], context: null },
-        spoken: { current: null, user: [], context: null },
+        music: { current: null, position: null, user: [], context: null },
+        spoken: { current: null, position: null, user: [], context: null },
       },
       history: [],
       rev: 0,
@@ -145,10 +152,16 @@ describe('a listening session in the store', () => {
       queues: {
         music: {
           current: entry(song),
+          position: null,
           user: [entry(song), entry(album)],
-          context: { from: album, items: [entry(song), entry(song)] },
+          context: { from: { kind: 'album', ref: album }, items: [entry(song), entry(song)] },
         },
-        spoken: { current: entry(book, 2), user: [entry(book, 3), entry(book, 4)], context: null },
+        spoken: {
+          current: entry(book, 2),
+          position: { ms: 61_000, takenAt: 1500 },
+          user: [entry(book, 3), entry(book, 4)],
+          context: null,
+        },
       },
       history: [
         { seq: 0, queue: 'music', ref: song, playedAt: 10 },
@@ -219,5 +232,106 @@ describe('a listening session in the store', () => {
     })!;
     expect(session.history.at(-1)?.seq).toBe(HISTORY_KEPT + 18);
     expect(session.history).toHaveLength(HISTORY_KEPT - 1);
+  });
+
+  it('refuses a save that edits a stored play or reuses its number, and keeps the stored one', () => {
+    const { user, phone } = twoDevices();
+    const start = openSession(db, user.id, phone.id)!;
+    const played = saveSession(db, user.id, phone.id, start.rev, {
+      ...value(start),
+      history: [
+        { seq: 0, queue: 'music', ref: song, playedAt: 10 },
+        { seq: 1, queue: 'music', ref: album, playedAt: 20 },
+      ],
+    })!;
+
+    const edited = [played.history[0]!, { ...played.history[1]!, ref: song }];
+    expect(() =>
+      saveSession(db, user.id, phone.id, played.rev, { ...value(played), history: edited }),
+    ).toThrow(HistoryRewritten);
+
+    const backThenAnotherPlay: HistoryEntry[] = [
+      played.history[0]!,
+      { seq: 1, queue: 'spoken', ref: book, chapter: 0, playedAt: 30 },
+    ];
+    expect(() =>
+      saveSession(db, user.id, phone.id, played.rev, {
+        ...value(played),
+        history: backThenAnotherPlay,
+      }),
+    ).toThrow(HistoryRewritten);
+
+    const olderThanNewest: HistoryEntry[] = [
+      { seq: 0, queue: 'music', ref: song, playedAt: 10 },
+      { seq: 2, queue: 'music', ref: song, playedAt: 30 },
+    ];
+    const gapped = saveSession(db, user.id, phone.id, played.rev, {
+      ...value(played),
+      history: olderThanNewest,
+    })!;
+    expect(() =>
+      saveSession(db, user.id, phone.id, gapped.rev, {
+        ...value(gapped),
+        history: [
+          gapped.history[0]!,
+          { seq: 1, queue: 'music', ref: album, playedAt: 40 },
+          gapped.history[1]!,
+        ],
+      }),
+    ).toThrow(HistoryRewritten);
+
+    expect(openSession(db, user.id, phone.id)).toEqual(gapped);
+  });
+
+  it('keeps what a queue is playing from after its list runs out', () => {
+    const { user, phone } = twoDevices();
+    const start = openSession(db, user.id, phone.id)!;
+    const from = { kind: 'album' as const, ref: album };
+    const playing = saveSession(db, user.id, phone.id, start.rev, {
+      ...value(start),
+      queueStyle: 'spotify',
+      queues: {
+        ...start.queues,
+        music: {
+          current: entry(song),
+          position: null,
+          user: [],
+          context: { from, items: [entry(song)] },
+        },
+      },
+    })!;
+
+    const ranOut = saveSession(db, user.id, phone.id, playing.rev, {
+      ...value(playing),
+      queues: {
+        ...playing.queues,
+        music: { ...playing.queues.music, context: { from, items: [] } },
+      },
+    })!;
+
+    expect(ranOut.queues.music.context).toEqual({ from, items: [] });
+    expect(openSession(db, user.id, phone.id)!.queues.music.context).toEqual({ from, items: [] });
+  });
+
+  it('keeps the device’s last position in its current item, and never one without an item', () => {
+    const { user, phone } = twoDevices();
+    const start = openSession(db, user.id, phone.id)!;
+    const position = { ms: 125_000, takenAt: 4000 };
+    const saved = saveSession(db, user.id, phone.id, start.rev, {
+      ...value(start),
+      queues: {
+        ...start.queues,
+        music: { current: entry(song), position, user: [], context: null },
+      },
+    })!;
+
+    expect(openSession(db, user.id, phone.id)!.queues.music.position).toEqual(position);
+    expect(() =>
+      saveSession(db, user.id, phone.id, saved.rev, {
+        ...value(saved),
+        queues: { ...saved.queues, spoken: { current: null, position, user: [], context: null } },
+      }),
+    ).toThrow();
+    expect(openSession(db, user.id, phone.id)).toEqual(saved);
   });
 });

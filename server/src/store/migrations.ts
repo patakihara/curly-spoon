@@ -265,8 +265,9 @@ export const migrations: readonly Migration[] = [
         CREATE INDEX idx_listening_sessions_user_id ON listening_sessions(user_id);
 
         -- Each queue's entries: its current item (at most one, kept while the queue is paused),
-        -- your queue, and Spotify style's playing-from list, which names its album or playlist.
-        -- chapter is where in a book an entry plays.
+        -- your queue, and what is left of Spotify style's playing-from. chapter says which
+        -- entry of a book this is. The current item carries the device's last position in it,
+        -- in ms, and when that was taken.
         CREATE TABLE queue_items (
           device_id   TEXT NOT NULL REFERENCES listening_sessions(device_id) ON DELETE CASCADE,
           queue       TEXT NOT NULL CHECK (queue IN ('music', 'spoken')),
@@ -276,12 +277,24 @@ export const migrations: readonly Migration[] = [
           source      TEXT NOT NULL CHECK (source IN ('abs', 'jellyfin')),
           upstream_id TEXT NOT NULL,
           chapter     INTEGER CHECK (chapter >= 0),
-          from_source TEXT CHECK (from_source IN ('abs', 'jellyfin')),
-          from_id     TEXT,
+          position_ms INTEGER CHECK (position_ms >= 0),
+          position_at INTEGER,
           PRIMARY KEY (device_id, queue, segment, ord),
           UNIQUE (device_id, item_id),
           CHECK (segment <> 'current' OR ord = 0),
-          CHECK ((segment = 'context') = (from_source IS NOT NULL AND from_id IS NOT NULL))
+          CHECK ((position_ms IS NULL) = (position_at IS NULL)),
+          CHECK (segment = 'current' OR position_ms IS NULL)
+        );
+
+        -- The album, playlist, show or book a queue plays from, kept on the session once its
+        -- list runs out: autoplay continues from it.
+        CREATE TABLE playing_from (
+          device_id   TEXT NOT NULL REFERENCES listening_sessions(device_id) ON DELETE CASCADE,
+          queue       TEXT NOT NULL CHECK (queue IN ('music', 'spoken')),
+          kind        TEXT NOT NULL CHECK (kind IN ('album', 'playlist', 'show', 'book')),
+          source      TEXT NOT NULL CHECK (source IN ('abs', 'jellyfin')),
+          upstream_id TEXT NOT NULL,
+          PRIMARY KEY (device_id, queue)
         );
 
         -- What each device played, for Back; only the newest plays are kept.

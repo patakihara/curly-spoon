@@ -9,20 +9,27 @@ import {
   type HistoryEntry,
   type ListeningSession,
   MediaSource,
+  PlayingFromKind,
   type QueueContext,
   type QueueItem,
+  type QueuePosition,
   QueueStyle,
   QueueType,
 } from '@auralis/schema';
+import { isDeepStrictEqual } from 'node:util';
 import { z } from 'zod';
 import type { Db } from './connection.js';
 
 /** Plays kept per device; older ones are forgotten. */
 export const HISTORY_KEPT = 500;
 
-/** One queue: its current item, your queue, and Spotify style's playing-from. */
+/**
+ * One queue: its current item and the device's last position in it, your queue, and Spotify
+ * style's playing-from, which outlives its items.
+ */
 export interface SessionQueue {
   current: QueueItem | null;
+  position: QueuePosition | null;
   user: QueueItem[];
   context: QueueContext | null;
 }
@@ -57,6 +64,17 @@ export class StaleRevision extends Error {
   }
 }
 
+/** A save that would change a stored play, or add one older than the newest stored. */
+export class HistoryRewritten extends Error {
+  constructor(
+    readonly deviceId: string,
+    readonly seq: number,
+  ) {
+    super(`listening session ${deviceId}: play ${seq} would rewrite its history`);
+    this.name = 'HistoryRewritten';
+  }
+}
+
 const SessionRow = z.object({
   device_id: z.string(),
   user_id: z.string(),
@@ -79,16 +97,16 @@ const ItemRow = z
     source: MediaSource,
     upstream_id: z.string(),
     chapter: z.number().int().nonnegative().nullable(),
-    from_source: MediaSource.nullable(),
-    from_id: z.string().nullable(),
+    position_ms: z.number().int().nonnegative().nullable(),
+    position_at: z.number().int().nullable(),
   })
   .transform((row) => ({
     queue: row.queue,
     segment: row.segment,
-    from:
-      row.from_source === null || row.from_id === null
+    position:
+      row.position_ms === null || row.position_at === null
         ? null
-        : { source: row.from_source, id: row.from_id },
+        : { ms: row.position_ms, takenAt: row.position_at },
     item: {
       itemId: row.item_id,
       ref: { source: row.source, id: row.upstream_id },
@@ -117,7 +135,14 @@ const SESSION_SELECT = `
   SELECT listening_sessions.*, devices.name AS device_name
   FROM listening_sessions JOIN devices ON devices.id = listening_sessions.device_id`;
 
-const emptyQueue = (): SessionQueue => ({ current: null, user: [], context: null });
+const PlayingFromRow = z
+  .object({ queue: QueueType, kind: PlayingFromKind, source: MediaSource, upstream_id: z.string() })
+  .transform((row) => ({
+    queue: row.queue,
+    from: { kind: row.kind, ref: { source: row.source, id: row.upstream_id } },
+  }));
+
+const emptyQueue = (): SessionQueue => ({ current: null, position: null, user: [], context: null });
 
 function readRow(db: Db, userId: string, deviceId: string): SessionRow | null {
   const raw = db
@@ -135,14 +160,17 @@ function readQueues(db: Db, deviceId: string): Record<QueueType, SessionQueue> {
         .prepare('SELECT * FROM queue_items WHERE device_id = ? ORDER BY queue, segment, ord')
         .all(deviceId),
     );
-  for (const { queue, segment, from, item } of rows) {
+  const froms = z
+    .array(PlayingFromRow)
+    .parse(db.prepare('SELECT * FROM playing_from WHERE device_id = ?').all(deviceId));
+  for (const { queue, from } of froms) queues[queue].context = { from, items: [] };
+  for (const { queue, segment, position, item } of rows) {
     const q = queues[queue];
-    if (segment === 'current') q.current = item;
-    else if (segment === 'user') q.user.push(item);
-    else if (from !== null) {
-      q.context ??= { from, items: [] };
-      q.context.items.push(item);
-    }
+    if (segment === 'current') {
+      q.current = item;
+      q.position = position;
+    } else if (segment === 'user') q.user.push(item);
+    else q.context?.items.push(item);
   }
   return queues;
 }
@@ -253,16 +281,20 @@ export function saveSession(
 
 function writeQueues(db: Db, deviceId: string, queues: Record<QueueType, SessionQueue>): void {
   db.prepare('DELETE FROM queue_items WHERE device_id = ?').run(deviceId);
+  db.prepare('DELETE FROM playing_from WHERE device_id = ?').run(deviceId);
   const insert = db.prepare(
     `INSERT INTO queue_items (device_id, queue, segment, ord, item_id, source, upstream_id,
-       chapter, from_source, from_id)
+       chapter, position_ms, position_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  );
+  const insertFrom = db.prepare(
+    `INSERT INTO playing_from (device_id, queue, kind, source, upstream_id) VALUES (?, ?, ?, ?, ?)`,
   );
   const put = (
     queue: QueueType,
     segment: 'current' | 'user' | 'context',
     items: readonly QueueItem[],
-    from: QueueContext['from'] | null = null,
+    position: QueuePosition | null = null,
   ) =>
     items.forEach((item, ord) =>
       insert.run(
@@ -274,27 +306,51 @@ function writeQueues(db: Db, deviceId: string, queues: Record<QueueType, Session
         item.ref.source,
         item.ref.id,
         item.chapter ?? null,
-        from?.source ?? null,
-        from?.id ?? null,
+        position?.ms ?? null,
+        position?.takenAt ?? null,
       ),
     );
   for (const type of QueueType.options) {
     const q = queues[type];
-    put(type, 'current', q.current === null ? [] : [q.current]);
+    if (q.current === null && q.position !== null) {
+      throw new Error(`listening session ${deviceId}: a ${type} position with no current item`);
+    }
+    put(type, 'current', q.current === null ? [] : [q.current], q.position);
     put(type, 'user', q.user);
-    if (q.context !== null) put(type, 'context', q.context.items, q.context.from);
+    if (q.context === null) continue;
+    const { from, items }: QueueContext = q.context;
+    insertFrom.run(deviceId, type, from.kind, from.ref.source, from.ref.id);
+    put(type, 'context', items);
   }
 }
 
-/** Writes only what changed: plays added after the newest kept, and plays Back took off. */
+/**
+ * History is append-only, and callers number the plays they append (the store does not): a save
+ * writes plays numbered past the newest stored one, and forgets the ones Back took off the end
+ * or the oldest past `HISTORY_KEPT`. A save that would change a stored play, reuse its number, or
+ * add one older than the newest stored is refused with `HistoryRewritten`, whole.
+ */
 function writeHistory(db: Db, deviceId: string, history: readonly HistoryEntry[]): void {
+  const before = z
+    .array(HistoryRow)
+    .parse(db.prepare('SELECT * FROM play_history WHERE device_id = ? ORDER BY seq').all(deviceId));
+  const had = new Map(before.map((h) => [h.seq, h]));
   const kept = new Set(history.map((h) => h.seq));
-  const before = db.prepare('SELECT seq FROM play_history WHERE device_id = ?').all(deviceId) as {
-    seq: number;
-  }[];
-  const had = new Set(before.map((r) => r.seq));
+  let newest = -1;
+  for (const h of history) {
+    const stored = had.get(h.seq);
+    if (stored === undefined ? h.seq <= newest : !isDeepStrictEqual(stored, h)) {
+      throw new HistoryRewritten(deviceId, h.seq);
+    }
+    newest = Math.max(newest, h.seq);
+  }
+  const newestStored = before.filter((h) => kept.has(h.seq)).at(-1)?.seq ?? -1;
+  const firstNew = history.find((h) => !had.has(h.seq));
+  if (firstNew !== undefined && firstNew.seq <= newestStored) {
+    throw new HistoryRewritten(deviceId, firstNew.seq);
+  }
   const remove = db.prepare('DELETE FROM play_history WHERE device_id = ? AND seq = ?');
-  for (const seq of had) if (!kept.has(seq)) remove.run(deviceId, seq);
+  for (const seq of had.keys()) if (!kept.has(seq)) remove.run(deviceId, seq);
   const insert = db.prepare(
     `INSERT INTO play_history (device_id, seq, queue, source, upstream_id, chapter, played_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,

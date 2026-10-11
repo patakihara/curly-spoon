@@ -25,8 +25,9 @@ export type Revision = z.infer<typeof Revision>;
 
 /**
  * One entry in a queue. `itemId` tells two entries of the same item apart, so a reorder or a
- * removal names exactly one. `chapter` is where in a book this entry plays, by the index of the
- * chapter in its plan; a book enters the spoken queue as one entry per chapter.
+ * removal names exactly one. `chapter` says which entry of a book this is, by the index of the
+ * chapter in its plan: a book enters the spoken queue as one entry per chapter. It is never a
+ * position; where playback is within the current entry is the queue's `position`.
  */
 export const QueueItem = z
   .object({
@@ -37,21 +38,48 @@ export const QueueItem = z
   .openapi('QueueItem');
 export type QueueItem = z.infer<typeof QueueItem>;
 
-/** Spotify style's "playing from": the album or playlist, and what is left of it. */
+/** What a queue can be playing from: an album or a playlist, a podcast show or a book. */
+export const PlayingFromKind = z
+  .enum(['album', 'playlist', 'show', 'book'])
+  .openapi('PlayingFromKind');
+export type PlayingFromKind = z.infer<typeof PlayingFromKind>;
+
+/** The album, playlist, show or book a queue is playing from. */
+export const PlayingFrom = z
+  .object({ kind: PlayingFromKind, ref: MediaRef })
+  .openapi('PlayingFrom');
+export type PlayingFrom = z.infer<typeof PlayingFrom>;
+
+/**
+ * Spotify style's "playing from": what the queue plays from, and what is left of it. `from` is
+ * kept once `items` runs out: autoplay continues from it.
+ */
 export const QueueContext = z
-  .object({ from: MediaRef, items: z.array(QueueItem) })
+  .object({ from: PlayingFrom, items: z.array(QueueItem) })
   .openapi('QueueContext');
 export type QueueContext = z.infer<typeof QueueContext>;
 
 /**
+ * Where this device last was in a queue's current item, in milliseconds from its start, and when
+ * it was there (milliseconds since the epoch). On resume, the newer of this and the item's
+ * upstream progress wins: upstream progress is shared across a user's devices.
+ */
+export const QueuePosition = z
+  .object({ ms: z.number().int().nonnegative(), takenAt: z.number().int() })
+  .openapi('QueuePosition');
+export type QueuePosition = z.infer<typeof QueuePosition>;
+
+/**
  * One queue of this device's session. `current` is what plays, or would play again once this
- * queue is active: switching away pauses a queue and keeps its current item. Then `user`, your
- * queue, in order, and `context`, playing-from, which only Spotify style fills.
+ * queue is active: switching away pauses a queue and keeps its current item, and `position`, the
+ * device's last position in it. Then `user`, your queue, in order, and `context`, playing-from,
+ * which only Spotify style fills.
  */
 export const Queue = z
   .object({
     type: QueueType,
     current: QueueItem.nullable(),
+    position: QueuePosition.nullable(),
     user: z.array(QueueItem),
     context: QueueContext.nullable(),
     rev: Revision,
