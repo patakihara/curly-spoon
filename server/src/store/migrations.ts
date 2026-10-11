@@ -243,6 +243,61 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 7,
+    name: 'listening_sessions',
+    up: (db) => {
+      db.exec(`
+        -- What plays on one device, made on its first use and gone with the device. ('sessions'
+        -- are sign-in sessions.) The queue the controls drive, the queue to land on once the
+        -- current item ends, and the queue style, set here until settings are kept per user.
+        -- rev goes up on every write; a write from an older rev is refused.
+        CREATE TABLE listening_sessions (
+          device_id            TEXT PRIMARY KEY REFERENCES devices(id) ON DELETE CASCADE,
+          user_id              TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          active               TEXT NOT NULL CHECK (active IN ('music', 'spoken')),
+          switch_after_current TEXT CHECK (switch_after_current IN ('music', 'spoken')),
+          queue_style          TEXT NOT NULL DEFAULT 'youtube'
+            CHECK (queue_style IN ('youtube', 'spotify')),
+          rev                  INTEGER NOT NULL CHECK (rev >= 0),
+          updated_at           INTEGER NOT NULL
+        );
+        CREATE INDEX idx_listening_sessions_user_id ON listening_sessions(user_id);
+
+        -- Each queue's entries: its current item (at most one, kept while the queue is paused),
+        -- your queue, and Spotify style's playing-from list, which names its album or playlist.
+        -- chapter is where in a book an entry plays.
+        CREATE TABLE queue_items (
+          device_id   TEXT NOT NULL REFERENCES listening_sessions(device_id) ON DELETE CASCADE,
+          queue       TEXT NOT NULL CHECK (queue IN ('music', 'spoken')),
+          segment     TEXT NOT NULL CHECK (segment IN ('current', 'user', 'context')),
+          ord         INTEGER NOT NULL CHECK (ord >= 0),
+          item_id     TEXT NOT NULL,
+          source      TEXT NOT NULL CHECK (source IN ('abs', 'jellyfin')),
+          upstream_id TEXT NOT NULL,
+          chapter     INTEGER CHECK (chapter >= 0),
+          from_source TEXT CHECK (from_source IN ('abs', 'jellyfin')),
+          from_id     TEXT,
+          PRIMARY KEY (device_id, queue, segment, ord),
+          UNIQUE (device_id, item_id),
+          CHECK (segment <> 'current' OR ord = 0),
+          CHECK ((segment = 'context') = (from_source IS NOT NULL AND from_id IS NOT NULL))
+        );
+
+        -- What each device played, for Back; only the newest plays are kept.
+        CREATE TABLE play_history (
+          device_id   TEXT NOT NULL REFERENCES listening_sessions(device_id) ON DELETE CASCADE,
+          seq         INTEGER NOT NULL CHECK (seq >= 0),
+          queue       TEXT NOT NULL CHECK (queue IN ('music', 'spoken')),
+          source      TEXT NOT NULL CHECK (source IN ('abs', 'jellyfin')),
+          upstream_id TEXT NOT NULL,
+          chapter     INTEGER CHECK (chapter >= 0),
+          played_at   INTEGER NOT NULL,
+          PRIMARY KEY (device_id, seq)
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

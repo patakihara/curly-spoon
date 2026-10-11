@@ -79,6 +79,17 @@ export {
   type Access,
   type Route,
 } from './routes.js';
+export {
+  HistoryEntry,
+  ListeningSession,
+  ListeningSessionList,
+  Queue,
+  QueueContext,
+  QueueItem,
+  QueueStyle,
+  QueueType,
+  Revision,
+} from './sessions.js';
 
 /** The values both generated clients name as constants (`pnpm gen`), by component name. */
 export { constants } from './constants.js';
