@@ -4,4 +4,4 @@
 
 > i just mean that it shouldn't have to wait for stubbing to be complete.
 
-(Sofia, chat on SofiaThinkPad about mediaserver's podcast stubs in `~/docker/arr/podcast-stubs`, 2026-10-08)
+(Sofia, chat about mediaserver's podcast stubs in `~/docker/arr/podcast-stubs`, 2026-10-08)

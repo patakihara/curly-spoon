@@ -15,7 +15,7 @@ Each carried-over part is taken from the tag `legacy` when its plan item starts.
 - `packages/jellyfin-client`, the most complete module; re-record its fixtures
 - Request building blocks: `requestStatus`, `torrentId`, `downloadPoller`, `prowlarr`, `qbittorrent`/`transmission` (check the cookie name live)
 - Recommendation core: `profile`, `score`, `shelves`, `ownership` (pure functions), `listenbrainz.ts`
-- Self-hosted Inter, Archivo and Sonora's Material Symbols Rounded icon font, as Sonora uses them; the legacy SVG icons and Roboto Flex stay behind (tokens come fresh from Sonora; the old copies drifted)
+- Self-hosted Inter, Archivo and Sonora's icon font; the legacy icons and Roboto Flex stay behind
 - Android: `ApiClient` cookie jar, DownloadManager wiring, Auto `BrowseTree`, the service skeleton
 - Release and F-Droid publishing (`release.yml`, `fdroid-repo.yml`, `docs/FDROID_REPO.md`), the app id and both signing keys
 - The e2e idea: the real server on recorded upstreams

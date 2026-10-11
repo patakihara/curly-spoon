@@ -104,19 +104,13 @@ test('[M0.plan/b] the page tells the comment auto-replier to defer to the main s
   );
 });
 
-test('the page is one self-contained document with the live skeleton and no scripts', () => {
+test("the page is one self-contained document in html-doc's look, following the device theme, with no scripts", () => {
   const { html } = rendered();
-  assert.ok(
-    html.startsWith(
-      '<!doctype html>\n<html lang="en" data-theme="dark">\n<head>\n<meta charset="utf-8">',
-    ),
-  );
+  assert.ok(html.startsWith('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">'));
   assert.match(html, /<title>Fixture plan<\/title>/);
-  assert.match(
-    html,
-    /<link href="https:\/\/fonts\.googleapis\.com\/css2\?family=Inter[^"]*" rel="stylesheet">/,
-  );
-  assert.match(html, /<style>\n\/\* Sonora tokens/);
+  assert.doesNotMatch(html, /<link|<html[^>]*data-theme|fonts\.googleapis/);
+  assert.match(html, /<style>\n\/\* html-doc's palette and type/);
+  assert.match(html, /@media \(prefers-color-scheme: dark\)/);
   assert.match(html, /footer\.stamp\{/);
   assert.doesNotMatch(html, /<script/);
   assert.doesNotMatch(html.slice(html.indexOf('<body>')), / style="/);

@@ -9,6 +9,8 @@ part: How it's built
 Everything in the app starts as a Sonora component, and every page starts on the canvas.
 :::
 
+This is M5's work; until then the frontend is M1.shell's minimal shell.
+
 ### How you work on the design
 
 - **Two artifacts, one repo.** The [Sonora Design System](https://claude.ai/artifact/CUW4CN7KpxgvjeWnbhTQBB) (the building blocks) and the [Auralis canvas](https://claude.ai/artifact/S3ob9VNh7LjZHBmEmE9ULq) (the app's pages and navigation), published from `design/sonora` and `design/app`, beside `server`, `web` and `android`.
@@ -38,13 +40,13 @@ Everything in the app starts as a Sonora component, and every page starts on the
 :::
 :::
 
-**Where the screens come from.** Sonora's UI kit renders, showcase cards and 43 Spotify reference screens, plus the screen list (artist, author, shelf, onboarding) of the "Auralis redesign kickoff" project old Auralis vendored (tag `legacy`, `docs/design/sonora`), whose 9 components are all in Sonora now. The canvas rebuilds their union from current Sonora components; where they disagree, Sonora wins. The UI kits survive only as renders, the canvas comparisons' sources, and the Claude Design projects as read-only references.
+**Where the screens come from.** Sonora's UI kit renders, showcase cards and 43 Spotify reference screens, plus the old "Auralis redesign kickoff" screen list. The canvas rebuilds their union from current Sonora components; where they disagree, Sonora wins.
 
 ### Sonora, pruned and ordered
 
 - **One hierarchy:** tokens → basic pieces (buttons, chips, inputs, cover art) → components (cards, rows, transport, headers) → page layouts (backdrop shell, sections, shelves, the player's pages). The artifact is organised the same way. Pages live only on the canvas.
 - **Pruned against the screens.** Each component lists the canvas pages that draw it, directly or inside a component they draw, and a test fails on one no page draws. A component a later milestone needs, such as the output device button for "Play on…", arrives with its page.
-- **No hard-coding, no copies.** Every size, colour, timing and layer is a token, and a component reuses another by composing it; a check refuses raw literals (M0.sonoraclean).
+- **No hard-coding, no copies.** Every size, colour, timing and layer is a token, and a component reuses another by composing it; a check refuses raw literals (M5.sonoraclean).
 - **Input hands its handler the text.** `Input`'s `onChange` gets the new string, like every other form component, so `FieldRow`'s handler does too.
 - **Controls show Material's states.** Every interactive component has enabled, disabled, hovered, focused (an outer ring) and pressed, a ripple spreading from the press point with no change of shape. One with no action attached is disabled, as is one set `disabled`.
 
@@ -54,7 +56,7 @@ Everything in the app starts as a Sonora component, and every page starts on the
 ::: card
 #### From Sonora
 
-- **Components with typed props** (`export/component-api.md`, generated from each `.d.ts`): shell (the backdrop's BackdropShell, BackLayer, FrontLayer and FrontLayerHeader, plus NavRail and BottomNav), media (MediaCard, FeatureCard, EpisodeRow, ResultRow, MediaHeader), player (NowPlaying, PlayerSheet, PlayerPanel, TransportBar with a _spoken_ variant, SeekBar, SpeedControl, QueuePage with edit mode, Lyrics with three sync modes), status (StatusBanner, DownloadButton, ProgressRing, Badge).
+- **Components with typed props** (`export/component-api.md`, generated from each `.d.ts`): shell, media, player and status, TransportBar with a _spoken_ variant, Lyrics with three sync modes.
 - **A token exporter**: `export/web/sonora-tokens.css`, `sonora-theme.css` and `export/android/SonoraTokens.kt`, all generated. Motion, scrim, tone and layout families included.
 - **43 Spotify reference screens**, each mapped to the components it motivated, kept as reference pictures, not components.
 :::
@@ -80,10 +82,10 @@ Your rule: Sonora artifact, then canvas artifact, then code, ported mechanically
    - web and Android must build the same route set;
    - each page's screenshot on both platforms is compared against the design's render of that page;
    - the "Published artifacts are current" job, and the Stop hook, fail while `design/sonora`, `design/app` and its art, or the code building either, differs from its recorded publish, has no record, or the canvas installs a Sonora other than the published one;
-   - the `auralis/no-hand-ui` lint refuses HTML elements, `style` and `className` in `web/src` outside `generated/`, and a test refuses `@Composable` functions outside Android's `generated` and `ui/sonora` packages, each with a documented allowlist.
+   - the `auralis/no-hand-ui` lint refuses HTML elements, `style` and `className` in `web/src` outside `generated/`, and a test refuses `@Composable` functions outside Android's `generated` and `ui/sonora` packages, each with a documented allowlist. The minimal shell's hand-written data code supplies data only and stays within this lint.
 
    Adding a screen in code alone fails the build.
-6. **The frontend build starts with navigation.** First, both apps navigate the full generated map with placeholder data, compared against the design and each other, before any screen gets real content.
+6. **The frontend build starts with navigation.** First, both apps navigate the full generated map with placeholder data, compared against the design and each other (M0.canvas), before any screen, the minimal shell's included, gets real content.
 
 - **Mantine** is optional, only inside a component needing a behaviour primitive (menus, focus traps), never as the visual layer.
 - **The app frame** is Sonora's backdrop shell (per `SPEC-backdrop.md`), a real Material 2 backdrop as Sonora Prime, the last mockups before the rebuild, draws it.

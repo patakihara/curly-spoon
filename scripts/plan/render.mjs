@@ -22,8 +22,6 @@ const REPO_URL = 'https://github.com/patakihara/curly-spoon';
 // The artifact comment auto-replier reads the page and its thread, never the repo.
 const REPLY_NOTE =
   'Comments on this page are answered by the main Auralis session. An automatic reply should say only: Main session will answer.';
-const FONTS =
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Roboto+Flex:opsz,wght@8..144,400..900&display=swap';
 
 // `**x**` and `_x_` render as <b> and <i>, the live page's own markup (page.css styles `.exit b`).
 const marked = new Marked({
@@ -290,13 +288,11 @@ export function renderPlan({ root, progress, stamp }) {
 
   return [
     '<!doctype html>',
-    '<html lang="en" data-theme="dark">',
+    '<html lang="en">',
     '<head>',
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
     `<title>${esc(header.title)}</title>`,
-    '<link rel="preconnect" href="https://fonts.googleapis.com">',
-    `<link href="${FONTS}" rel="stylesheet">`,
     '<style>',
     css,
     '</style>',
