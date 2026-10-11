@@ -143,6 +143,16 @@ export class JellyfinClient {
     return (await this.get('Items', indexQueryResultSchema, query)).Items;
   }
 
+  /**
+   * Jellyfin's Instant Mix for one track: up to `limit` similar tracks from the person's own
+   * library, `GET /Items/{id}/InstantMix`, with the index's fields.
+   */
+  async getInstantMix(itemId: string, limit: number): Promise<IndexItem[]> {
+    const query = { Limit: String(limit), Fields: INDEX_FIELDS };
+    const path = `Items/${encodeURIComponent(itemId)}/InstantMix`;
+    return (await this.get(path, indexQueryResultSchema, query)).Items;
+  }
+
   /** The first administrator's id: `GET /Users`, which only an admin token may call. */
   async findAdministratorId(): Promise<string | undefined> {
     const users = await this.get('Users', userListSchema);

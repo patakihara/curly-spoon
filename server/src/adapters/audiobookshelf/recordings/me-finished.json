@@ -1,0 +1,70 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.1",
+  "call": "me-finished",
+  "request": {
+    "method": "GET",
+    "path": "/api/me",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "id": "169161f6-18a9-4b97-804e-4870fe980143",
+        "username": "auralis",
+        "email": null,
+        "type": "user",
+        "token": "<token>",
+        "mediaProgress": [
+          {
+            "id": "5f127672-9bd8-4325-b1a1-fd03f10a9d92",
+            "userId": "169161f6-18a9-4b97-804e-4870fe980143",
+            "libraryItemId": "e6751961-22eb-4064-8987-b75bfe655929",
+            "episodeId": "3b93ba7a-33ef-417f-bb5d-637a272d6107",
+            "mediaItemId": "3b93ba7a-33ef-417f-bb5d-637a272d6107",
+            "mediaItemType": "podcastEpisode",
+            "duration": 0,
+            "progress": 1,
+            "currentTime": 0,
+            "isFinished": true,
+            "hideFromContinueListening": false,
+            "ebookLocation": null,
+            "ebookProgress": 0,
+            "lastUpdate": 1791749809909,
+            "startedAt": 1791749809909,
+            "finishedAt": 1791749809909
+          }
+        ],
+        "seriesHideFromContinueListening": [],
+        "bookmarks": [],
+        "isActive": true,
+        "isLocked": false,
+        "lastSeen": null,
+        "createdAt": 1790548724381,
+        "permissions": {
+          "download": false,
+          "update": false,
+          "delete": false,
+          "upload": false,
+          "createEreader": false,
+          "accessAllLibraries": true,
+          "accessAllTags": true,
+          "accessExplicitContent": true,
+          "selectedTagsNotAccessible": false
+        },
+        "librariesAccessible": [],
+        "itemTagsSelected": [],
+        "hasOpenIDLink": false
+      }
+    }
+  }
+}

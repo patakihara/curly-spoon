@@ -1,0 +1,792 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.1",
+  "call": "series-book-1",
+  "request": {
+    "method": "GET",
+    "path": "/api/items/3a1ddbf6-573b-4a6d-9391-fadf97e93ad4",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "id": "3a1ddbf6-573b-4a6d-9391-fadf97e93ad4",
+        "ino": "49818",
+        "oldLibraryItemId": null,
+        "libraryId": "e8aa253f-82d0-44ff-b87a-74671278ce9d",
+        "folderId": "46f3a6da-763c-4197-b197-d7519c832355",
+        "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]",
+        "relPath": "Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]",
+        "isFile": false,
+        "mtimeMs": 1778672214834,
+        "ctimeMs": 1778735998889,
+        "birthtimeMs": 1778670574729,
+        "addedAt": 1778672214738,
+        "updatedAt": 1778737031754,
+        "lastScan": 1778737030776,
+        "scanVersion": "2.34.0",
+        "isMissing": false,
+        "isInvalid": false,
+        "mediaType": "book",
+        "media": {
+          "id": "065822e3-baab-4489-a3e7-d31d5e91e852",
+          "libraryItemId": "3a1ddbf6-573b-4a6d-9391-fadf97e93ad4",
+          "metadata": {
+            "title": "A Wizard of Earthsea [Archer]",
+            "subtitle": null,
+            "authors": [
+              {
+                "id": "b47357e7-1131-415e-99cb-f40b0942ffcc",
+                "name": "Ursula K. Le Guin"
+              }
+            ],
+            "narrators": [
+              "Archer"
+            ],
+            "series": [
+              {
+                "id": "c7a852f5-4d69-4f5a-a482-fd5b5334e8c5",
+                "name": "Earthsea (Archer)",
+                "sequence": "1"
+              }
+            ],
+            "genres": [
+              "Audio Book"
+            ],
+            "publishedYear": "1968",
+            "publishedDate": null,
+            "publisher": null,
+            "description": "Read by Karen Archer",
+            "isbn": null,
+            "asin": null,
+            "language": null,
+            "explicit": false,
+            "abridged": false
+          },
+          "coverPath": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/cover.jpg",
+          "tags": [],
+          "audioFiles": [
+            {
+              "index": 1,
+              "ino": "48520",
+              "metadata": {
+                "filename": "A Wizard of Earthsea 01.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 01.mp3",
+                "relPath": "A Wizard of Earthsea 01.mp3",
+                "size": 20822937,
+                "mtimeMs": 1777797035796,
+                "ctimeMs": 1778670574729,
+                "birthtimeMs": 1777797004567
+              },
+              "addedAt": 1778672213324,
+              "updatedAt": 1778672213324,
+              "trackNumFromMeta": 1,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 1,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 1731.024,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "A Wizard of Earthsea",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "01: Warriors in the Mist",
+                "tagTrack": "1",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1968",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 2,
+              "ino": "48479",
+              "metadata": {
+                "filename": "A Wizard of Earthsea 02.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 02.mp3",
+                "relPath": "A Wizard of Earthsea 02.mp3",
+                "size": 22509897,
+                "mtimeMs": 1777797010531,
+                "ctimeMs": 1778670574729,
+                "birthtimeMs": 1777796957614
+              },
+              "addedAt": 1778672213699,
+              "updatedAt": 1778672213699,
+              "trackNumFromMeta": 2,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 2,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 1871.604,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "A Wizard of Earthsea",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "02: The Shadow",
+                "tagTrack": "2",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1968",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 3,
+              "ino": "48476",
+              "metadata": {
+                "filename": "A Wizard of Earthsea 03.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 03.mp3",
+                "relPath": "A Wizard of Earthsea 03.mp3",
+                "size": 28115529,
+                "mtimeMs": 1777796995587,
+                "ctimeMs": 1778670574729,
+                "birthtimeMs": 1777796957066
+              },
+              "addedAt": 1778672213705,
+              "updatedAt": 1778672213705,
+              "trackNumFromMeta": 3,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 3,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 2338.74,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "A Wizard of Earthsea",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "03: The School for Wizards",
+                "tagTrack": "3",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1968",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 4,
+              "ino": "48491",
+              "metadata": {
+                "filename": "A Wizard of Earthsea 04.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 04.mp3",
+                "relPath": "A Wizard of Earthsea 04.mp3",
+                "size": 32861913,
+                "mtimeMs": 1777797001675,
+                "ctimeMs": 1778670574729,
+                "birthtimeMs": 1777796961606
+              },
+              "addedAt": 1778672213710,
+              "updatedAt": 1778672213710,
+              "trackNumFromMeta": 4,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 4,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 2734.272,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "A Wizard of Earthsea",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "04: The Loosing of the Shadow",
+                "tagTrack": "4",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1968",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 5,
+              "ino": "48469",
+              "metadata": {
+                "filename": "A Wizard of Earthsea 05.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 05.mp3",
+                "relPath": "A Wizard of Earthsea 05.mp3",
+                "size": 26456649,
+                "mtimeMs": 1777796998243,
+                "ctimeMs": 1778670574729,
+                "birthtimeMs": 1777796952566
+              },
+              "addedAt": 1778672213888,
+              "updatedAt": 1778672213888,
+              "trackNumFromMeta": 5,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 5,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 2200.5,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "A Wizard of Earthsea",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "05: The Dragon of Pendor",
+                "tagTrack": "5",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1968",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 6,
+              "ino": "48477",
+              "metadata": {
+                "filename": "A Wizard of Earthsea 06.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 06.mp3",
+                "relPath": "A Wizard of Earthsea 06.mp3",
+                "size": 20859657,
+                "mtimeMs": 1777797007455,
+                "ctimeMs": 1778670574729,
+                "birthtimeMs": 1777796957498
+              },
+              "addedAt": 1778672213728,
+              "updatedAt": 1778672213728,
+              "trackNumFromMeta": 6,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 6,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 1734.084,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "A Wizard of Earthsea",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "06: Hunted",
+                "tagTrack": "6",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1968",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 7,
+              "ino": "48508",
+              "metadata": {
+                "filename": "A Wizard of Earthsea 07.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 07.mp3",
+                "relPath": "A Wizard of Earthsea 07.mp3",
+                "size": 31369353,
+                "mtimeMs": 1777797019287,
+                "ctimeMs": 1778670574729,
+                "birthtimeMs": 1777796969739
+              },
+              "addedAt": 1778672213736,
+              "updatedAt": 1778672213736,
+              "trackNumFromMeta": 7,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 7,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 2609.892,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "A Wizard of Earthsea",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "07: The Hawk's Flight",
+                "tagTrack": "7",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1968",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 8,
+              "ino": "48493",
+              "metadata": {
+                "filename": "A Wizard of Earthsea 08.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 08.mp3",
+                "relPath": "A Wizard of Earthsea 08.mp3",
+                "size": 27425193,
+                "mtimeMs": 1777797030683,
+                "ctimeMs": 1778670574729,
+                "birthtimeMs": 1777796961902
+              },
+              "addedAt": 1778672213714,
+              "updatedAt": 1778672213714,
+              "trackNumFromMeta": 8,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 8,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 2281.212,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "A Wizard of Earthsea",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "08: Hunting",
+                "tagTrack": "8",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1968",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 9,
+              "ino": "48496",
+              "metadata": {
+                "filename": "A Wizard of Earthsea 09.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 09.mp3",
+                "relPath": "A Wizard of Earthsea 09.mp3",
+                "size": 21988473,
+                "mtimeMs": 1777796983991,
+                "ctimeMs": 1778670574729,
+                "birthtimeMs": 1777796963342
+              },
+              "addedAt": 1778672213715,
+              "updatedAt": 1778672213715,
+              "trackNumFromMeta": 9,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 9,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 1828.152,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "A Wizard of Earthsea",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "09: Iffish",
+                "tagTrack": "9",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1968",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 10,
+              "ino": "48498",
+              "metadata": {
+                "filename": "A Wizard of Earthsea 10.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 10.mp3",
+                "relPath": "A Wizard of Earthsea 10.mp3",
+                "size": 25460025,
+                "mtimeMs": 1777797009571,
+                "ctimeMs": 1778670574729,
+                "birthtimeMs": 1777796963806
+              },
+              "addedAt": 1778672213746,
+              "updatedAt": 1778672213746,
+              "trackNumFromMeta": 10,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 10,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 2117.448,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "A Wizard of Earthsea",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "10: The Open Sea",
+                "tagTrack": "10",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1968",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            }
+          ],
+          "chapters": [
+            {
+              "id": 0,
+              "start": 0,
+              "end": 1731.024,
+              "title": "01: Warriors in the Mist"
+            },
+            {
+              "id": 1,
+              "start": 1731.024,
+              "end": 3602.6279999999997,
+              "title": "02: The Shadow"
+            },
+            {
+              "id": 2,
+              "start": 3602.6279999999997,
+              "end": 5941.3679999999995,
+              "title": "03: The School for Wizards"
+            },
+            {
+              "id": 3,
+              "start": 5941.3679999999995,
+              "end": 8675.64,
+              "title": "04: The Loosing of the Shadow"
+            },
+            {
+              "id": 4,
+              "start": 8675.64,
+              "end": 10876.14,
+              "title": "05: The Dragon of Pendor"
+            },
+            {
+              "id": 5,
+              "start": 10876.14,
+              "end": 12610.224,
+              "title": "06: Hunted"
+            },
+            {
+              "id": 6,
+              "start": 12610.224,
+              "end": 15220.116,
+              "title": "07: The Hawk's Flight"
+            },
+            {
+              "id": 7,
+              "start": 15220.116,
+              "end": 17501.328,
+              "title": "08: Hunting"
+            },
+            {
+              "id": 8,
+              "start": 17501.328,
+              "end": 19329.480000000003,
+              "title": "09: Iffish"
+            },
+            {
+              "id": 9,
+              "start": 19329.480000000003,
+              "end": 21446.928000000004,
+              "title": "10: The Open Sea"
+            }
+          ],
+          "ebookFile": null
+        },
+        "libraryFiles": [
+          {
+            "ino": "48520",
+            "metadata": {
+              "filename": "A Wizard of Earthsea 01.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 01.mp3",
+              "relPath": "A Wizard of Earthsea 01.mp3",
+              "size": 20822937,
+              "mtimeMs": 1777797035796,
+              "ctimeMs": 1778670574729,
+              "birthtimeMs": 1777797004567
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842531,
+            "updatedAt": 1778737030771,
+            "fileType": "audio"
+          },
+          {
+            "ino": "48479",
+            "metadata": {
+              "filename": "A Wizard of Earthsea 02.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 02.mp3",
+              "relPath": "A Wizard of Earthsea 02.mp3",
+              "size": 22509897,
+              "mtimeMs": 1777797010531,
+              "ctimeMs": 1778670574729,
+              "birthtimeMs": 1777796957614
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842531,
+            "updatedAt": 1778737030772,
+            "fileType": "audio"
+          },
+          {
+            "ino": "48476",
+            "metadata": {
+              "filename": "A Wizard of Earthsea 03.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 03.mp3",
+              "relPath": "A Wizard of Earthsea 03.mp3",
+              "size": 28115529,
+              "mtimeMs": 1777796995587,
+              "ctimeMs": 1778670574729,
+              "birthtimeMs": 1777796957066
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842531,
+            "updatedAt": 1778737030772,
+            "fileType": "audio"
+          },
+          {
+            "ino": "48491",
+            "metadata": {
+              "filename": "A Wizard of Earthsea 04.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 04.mp3",
+              "relPath": "A Wizard of Earthsea 04.mp3",
+              "size": 32861913,
+              "mtimeMs": 1777797001675,
+              "ctimeMs": 1778670574729,
+              "birthtimeMs": 1777796961606
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842531,
+            "updatedAt": 1778737030772,
+            "fileType": "audio"
+          },
+          {
+            "ino": "48469",
+            "metadata": {
+              "filename": "A Wizard of Earthsea 05.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 05.mp3",
+              "relPath": "A Wizard of Earthsea 05.mp3",
+              "size": 26456649,
+              "mtimeMs": 1777796998243,
+              "ctimeMs": 1778670574729,
+              "birthtimeMs": 1777796952566
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842531,
+            "updatedAt": 1778737030772,
+            "fileType": "audio"
+          },
+          {
+            "ino": "48477",
+            "metadata": {
+              "filename": "A Wizard of Earthsea 06.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 06.mp3",
+              "relPath": "A Wizard of Earthsea 06.mp3",
+              "size": 20859657,
+              "mtimeMs": 1777797007455,
+              "ctimeMs": 1778670574729,
+              "birthtimeMs": 1777796957498
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842531,
+            "updatedAt": 1778737030773,
+            "fileType": "audio"
+          },
+          {
+            "ino": "48508",
+            "metadata": {
+              "filename": "A Wizard of Earthsea 07.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 07.mp3",
+              "relPath": "A Wizard of Earthsea 07.mp3",
+              "size": 31369353,
+              "mtimeMs": 1777797019287,
+              "ctimeMs": 1778670574729,
+              "birthtimeMs": 1777796969739
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842531,
+            "updatedAt": 1778737030773,
+            "fileType": "audio"
+          },
+          {
+            "ino": "48493",
+            "metadata": {
+              "filename": "A Wizard of Earthsea 08.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 08.mp3",
+              "relPath": "A Wizard of Earthsea 08.mp3",
+              "size": 27425193,
+              "mtimeMs": 1777797030683,
+              "ctimeMs": 1778670574729,
+              "birthtimeMs": 1777796961902
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842531,
+            "updatedAt": 1778737030774,
+            "fileType": "audio"
+          },
+          {
+            "ino": "48496",
+            "metadata": {
+              "filename": "A Wizard of Earthsea 09.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 09.mp3",
+              "relPath": "A Wizard of Earthsea 09.mp3",
+              "size": 21988473,
+              "mtimeMs": 1777796983991,
+              "ctimeMs": 1778670574729,
+              "birthtimeMs": 1777796963342
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842531,
+            "updatedAt": 1778737030774,
+            "fileType": "audio"
+          },
+          {
+            "ino": "48498",
+            "metadata": {
+              "filename": "A Wizard of Earthsea 10.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/A Wizard of Earthsea 10.mp3",
+              "relPath": "A Wizard of Earthsea 10.mp3",
+              "size": 25460025,
+              "mtimeMs": 1777797009571,
+              "ctimeMs": 1778670574729,
+              "birthtimeMs": 1777796963806
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842531,
+            "updatedAt": 1778737030774,
+            "fileType": "audio"
+          },
+          {
+            "ino": "51547",
+            "metadata": {
+              "filename": "metadata.json",
+              "ext": ".json",
+              "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/metadata.json",
+              "relPath": "metadata.json",
+              "size": 1661,
+              "mtimeMs": 1778737031749,
+              "ctimeMs": 1778737031749,
+              "birthtimeMs": 1778672214834
+            },
+            "isSupplementary": null,
+            "addedAt": 1778672214837,
+            "updatedAt": 1778737030775,
+            "fileType": "metadata"
+          },
+          {
+            "ino": "51546",
+            "metadata": {
+              "filename": "cover.jpg",
+              "ext": ".jpg",
+              "path": "/data/Books/Ursula K. Le Guin/1968 - A Wizard of Earthsea (Archer) 96k 05.57.27 {245mb} [Archer]/cover.jpg",
+              "relPath": "cover.jpg",
+              "size": 31956,
+              "mtimeMs": 1778672213950,
+              "ctimeMs": 1778672213950,
+              "birthtimeMs": 1778672213946
+            },
+            "isSupplementary": null,
+            "addedAt": 1778672257030,
+            "updatedAt": 1778737030775,
+            "fileType": "image"
+          }
+        ]
+      }
+    }
+  }
+}

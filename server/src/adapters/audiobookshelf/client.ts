@@ -187,6 +187,17 @@ export class AbsClient {
     }
   }
 
+  /** The person's progress on one episode of a show, or null when they have none. */
+  async findMyEpisodeProgress(itemId: string, episodeId: string): Promise<MediaProgress | null> {
+    const path = `api/me/progress/${encodeURIComponent(itemId)}/${encodeURIComponent(episodeId)}`;
+    try {
+      return await this.call(path, mediaProgressSchema);
+    } catch (error) {
+      if (error instanceof AdapterError && error.status === 404) return null;
+      throw error;
+    }
+  }
+
   /** Makes a bookmark on a library item, at whole seconds `time`. */
   createBookmark(itemId: string, bookmark: { time: number; title: string }): Promise<AbsBookmark> {
     return this.call(`api/me/item/${encodeURIComponent(itemId)}/bookmark`, bookmarkSchema, {

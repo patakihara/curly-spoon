@@ -1,0 +1,993 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.1",
+  "call": "series-book-2",
+  "request": {
+    "method": "GET",
+    "path": "/api/items/0250cde7-13a3-4c72-9160-c1d35b4c8ae9",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "id": "0250cde7-13a3-4c72-9160-c1d35b4c8ae9",
+        "ino": "49811",
+        "oldLibraryItemId": null,
+        "libraryId": "e8aa253f-82d0-44ff-b87a-74671278ce9d",
+        "folderId": "46f3a6da-763c-4197-b197-d7519c832355",
+        "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]",
+        "relPath": "Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]",
+        "isFile": false,
+        "mtimeMs": 1778672170621,
+        "ctimeMs": 1778735998953,
+        "birthtimeMs": 1778670574649,
+        "addedAt": 1778672170263,
+        "updatedAt": 1778737099524,
+        "lastScan": 1778737098889,
+        "scanVersion": "2.34.0",
+        "isMissing": false,
+        "isInvalid": false,
+        "mediaType": "book",
+        "media": {
+          "id": "6edd857c-46c3-419b-a977-5d7d10f82e70",
+          "libraryItemId": "0250cde7-13a3-4c72-9160-c1d35b4c8ae9",
+          "metadata": {
+            "title": "The Tombs of Atuan [Archer]",
+            "subtitle": null,
+            "authors": [
+              {
+                "id": "b47357e7-1131-415e-99cb-f40b0942ffcc",
+                "name": "Ursula K. Le Guin"
+              }
+            ],
+            "narrators": [
+              "Archer"
+            ],
+            "series": [
+              {
+                "id": "c7a852f5-4d69-4f5a-a482-fd5b5334e8c5",
+                "name": "Earthsea (Archer)",
+                "sequence": "2"
+              }
+            ],
+            "genres": [
+              "Audio Book"
+            ],
+            "publishedYear": "1971",
+            "publishedDate": null,
+            "publisher": null,
+            "description": "Read by Karen Archer",
+            "isbn": null,
+            "asin": null,
+            "language": null,
+            "explicit": false,
+            "abridged": false
+          },
+          "coverPath": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/cover.jpg",
+          "tags": [],
+          "audioFiles": [
+            {
+              "index": 1,
+              "ino": "47751",
+              "metadata": {
+                "filename": "Tombs of Atuan 00.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 00.mp3",
+                "relPath": "Tombs of Atuan 00.mp3",
+                "size": 2461828,
+                "mtimeMs": 1777796426998,
+                "ctimeMs": 1778670574653,
+                "birthtimeMs": 1777796424458
+              },
+              "addedAt": 1778672169919,
+              "updatedAt": 1778672169919,
+              "trackNumFromMeta": 1,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 0,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 198.18,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "The Tombs of Atuan",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "00: Prologue",
+                "tagTrack": "1",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1971",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 2,
+              "ino": "47756",
+              "metadata": {
+                "filename": "Tombs of Atuan 01.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 01.mp3",
+                "relPath": "Tombs of Atuan 01.mp3",
+                "size": 7913236,
+                "mtimeMs": 1777796795184,
+                "ctimeMs": 1778670574653,
+                "birthtimeMs": 1777796426998
+              },
+              "addedAt": 1778672169921,
+              "updatedAt": 1778672169921,
+              "trackNumFromMeta": 2,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 1,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 652.464,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "The Tombs of Atuan",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "01: The Eaten One",
+                "tagTrack": "2",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1971",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 3,
+              "ino": "47205",
+              "metadata": {
+                "filename": "Tombs of Atuan 02.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 02.mp3",
+                "relPath": "Tombs of Atuan 02.mp3",
+                "size": 21399412,
+                "mtimeMs": 1777796805040,
+                "ctimeMs": 1778670574653,
+                "birthtimeMs": 1777795997628
+              },
+              "addedAt": 1778672169815,
+              "updatedAt": 1778672169815,
+              "trackNumFromMeta": 3,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 2,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 1776.312,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "The Tombs of Atuan",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "02: The Wall Around the Place",
+                "tagTrack": "3",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1971",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 4,
+              "ino": "47309",
+              "metadata": {
+                "filename": "Tombs of Atuan 03.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 03.mp3",
+                "relPath": "Tombs of Atuan 03.mp3",
+                "size": 18463540,
+                "mtimeMs": 1777796807768,
+                "ctimeMs": 1778670574653,
+                "birthtimeMs": 1777796030557
+              },
+              "addedAt": 1778672169867,
+              "updatedAt": 1778672169867,
+              "trackNumFromMeta": 4,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 3,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 1531.656,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "The Tombs of Atuan",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "03: The Prisoners",
+                "tagTrack": "4",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1971",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 5,
+              "ino": "47096",
+              "metadata": {
+                "filename": "Tombs of Atuan 04.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 04.mp3",
+                "relPath": "Tombs of Atuan 04.mp3",
+                "size": 21894052,
+                "mtimeMs": 1777796619769,
+                "ctimeMs": 1778670574649,
+                "birthtimeMs": 1777795945163
+              },
+              "addedAt": 1778672169659,
+              "updatedAt": 1778672169659,
+              "trackNumFromMeta": 5,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 4,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 1817.532,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "The Tombs of Atuan",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "04: Dreams and Tales",
+                "tagTrack": "5",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1971",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 6,
+              "ino": "47097",
+              "metadata": {
+                "filename": "Tombs of Atuan 05.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 05.mp3",
+                "relPath": "Tombs of Atuan 05.mp3",
+                "size": 18564196,
+                "mtimeMs": 1777796608301,
+                "ctimeMs": 1778670574649,
+                "birthtimeMs": 1777795945187
+              },
+              "addedAt": 1778672169744,
+              "updatedAt": 1778672169744,
+              "trackNumFromMeta": 6,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 5,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 1540.044,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "The Tombs of Atuan",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "05: Light Under the Hill",
+                "tagTrack": "6",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1971",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 7,
+              "ino": "47201",
+              "metadata": {
+                "filename": "Tombs of Atuan 06.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 06.mp3",
+                "relPath": "Tombs of Atuan 06.mp3",
+                "size": 22072036,
+                "mtimeMs": 1777796755543,
+                "ctimeMs": 1778670574653,
+                "birthtimeMs": 1777795996232
+              },
+              "addedAt": 1778672169656,
+              "updatedAt": 1778672169656,
+              "trackNumFromMeta": 7,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 6,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 1832.364,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "The Tombs of Atuan",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "06: The Man Trap",
+                "tagTrack": "7",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1971",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 8,
+              "ino": "47481",
+              "metadata": {
+                "filename": "Tombs of Atuan 07.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 07.mp3",
+                "relPath": "Tombs of Atuan 07.mp3",
+                "size": 17415508,
+                "mtimeMs": 1777796776548,
+                "ctimeMs": 1778670574653,
+                "birthtimeMs": 1777796147114
+              },
+              "addedAt": 1778672169650,
+              "updatedAt": 1778672169650,
+              "trackNumFromMeta": 8,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 7,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 1444.32,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "The Tombs of Atuan",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "07: The Great Treasure",
+                "tagTrack": "8",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1971",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 9,
+              "ino": "47659",
+              "metadata": {
+                "filename": "Tombs of Atuan 08.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 08.mp3",
+                "relPath": "Tombs of Atuan 08.mp3",
+                "size": 9216148,
+                "mtimeMs": 1777796675734,
+                "ctimeMs": 1778670574653,
+                "birthtimeMs": 1777796320517
+              },
+              "addedAt": 1778672169751,
+              "updatedAt": 1778672169751,
+              "trackNumFromMeta": 9,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 8,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 761.04,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "The Tombs of Atuan",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "08: Names",
+                "tagTrack": "9",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1971",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 10,
+              "ino": "47416",
+              "metadata": {
+                "filename": "Tombs of Atuan 09.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 09.mp3",
+                "relPath": "Tombs of Atuan 09.mp3",
+                "size": 17835844,
+                "mtimeMs": 1777796544752,
+                "ctimeMs": 1778670574653,
+                "birthtimeMs": 1777796098046
+              },
+              "addedAt": 1778672169847,
+              "updatedAt": 1778672169847,
+              "trackNumFromMeta": 10,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 9,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 1479.348,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "The Tombs of Atuan",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "09: The Ring of Erreth-Akbe",
+                "tagTrack": "10",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1971",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 11,
+              "ino": "47181",
+              "metadata": {
+                "filename": "Tombs of Atuan 10.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 10.mp3",
+                "relPath": "Tombs of Atuan 10.mp3",
+                "size": 12725716,
+                "mtimeMs": 1777796751679,
+                "ctimeMs": 1778670574649,
+                "birthtimeMs": 1777795985564
+              },
+              "addedAt": 1778672169811,
+              "updatedAt": 1778672169811,
+              "trackNumFromMeta": 11,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 10,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 1053.504,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "The Tombs of Atuan",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "10: The Anger of the Dark",
+                "tagTrack": "11",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1971",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 12,
+              "ino": "47111",
+              "metadata": {
+                "filename": "Tombs of Atuan 11.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 11.mp3",
+                "relPath": "Tombs of Atuan 11.mp3",
+                "size": 15895732,
+                "mtimeMs": 1777796753819,
+                "ctimeMs": 1778670574649,
+                "birthtimeMs": 1777795951495
+              },
+              "addedAt": 1778672169832,
+              "updatedAt": 1778672169832,
+              "trackNumFromMeta": 12,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 11,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 1317.672,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "The Tombs of Atuan",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "11: The Western Mountains",
+                "tagTrack": "12",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1971",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 13,
+              "ino": "47112",
+              "metadata": {
+                "filename": "Tombs of Atuan 12.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 12.mp3",
+                "relPath": "Tombs of Atuan 12.mp3",
+                "size": 16306564,
+                "mtimeMs": 1777796866897,
+                "ctimeMs": 1778670574649,
+                "birthtimeMs": 1777795951571
+              },
+              "addedAt": 1778672169860,
+              "updatedAt": 1778672169860,
+              "trackNumFromMeta": 13,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 12,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 1351.908,
+              "bitRate": 96000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 2,
+              "channelLayout": "stereo",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "The Tombs of Atuan",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "12: Voyage",
+                "tagTrack": "13",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "1971",
+                "tagComment": "Read by Karen Archer"
+              },
+              "mimeType": "audio/mpeg"
+            }
+          ],
+          "chapters": [
+            {
+              "id": 0,
+              "start": 0,
+              "end": 198.18,
+              "title": "00: Prologue"
+            },
+            {
+              "id": 1,
+              "start": 198.18,
+              "end": 850.644,
+              "title": "01: The Eaten One"
+            },
+            {
+              "id": 2,
+              "start": 850.644,
+              "end": 2626.956,
+              "title": "02: The Wall Around the Place"
+            },
+            {
+              "id": 3,
+              "start": 2626.956,
+              "end": 4158.612,
+              "title": "03: The Prisoners"
+            },
+            {
+              "id": 4,
+              "start": 4158.612,
+              "end": 5976.144,
+              "title": "04: Dreams and Tales"
+            },
+            {
+              "id": 5,
+              "start": 5976.144,
+              "end": 7516.188,
+              "title": "05: Light Under the Hill"
+            },
+            {
+              "id": 6,
+              "start": 7516.188,
+              "end": 9348.552,
+              "title": "06: The Man Trap"
+            },
+            {
+              "id": 7,
+              "start": 9348.552,
+              "end": 10792.872,
+              "title": "07: The Great Treasure"
+            },
+            {
+              "id": 8,
+              "start": 10792.872,
+              "end": 11553.912,
+              "title": "08: Names"
+            },
+            {
+              "id": 9,
+              "start": 11553.912,
+              "end": 13033.26,
+              "title": "09: The Ring of Erreth-Akbe"
+            },
+            {
+              "id": 10,
+              "start": 13033.26,
+              "end": 14086.764,
+              "title": "10: The Anger of the Dark"
+            },
+            {
+              "id": 11,
+              "start": 14086.764,
+              "end": 15404.436,
+              "title": "11: The Western Mountains"
+            },
+            {
+              "id": 12,
+              "start": 15404.436,
+              "end": 16756.344,
+              "title": "12: Voyage"
+            }
+          ],
+          "ebookFile": null
+        },
+        "libraryFiles": [
+          {
+            "ino": "47751",
+            "metadata": {
+              "filename": "Tombs of Atuan 00.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 00.mp3",
+              "relPath": "Tombs of Atuan 00.mp3",
+              "size": 2461828,
+              "mtimeMs": 1777796426998,
+              "ctimeMs": 1778670574653,
+              "birthtimeMs": 1777796424458
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842524,
+            "updatedAt": 1778737098885,
+            "fileType": "audio"
+          },
+          {
+            "ino": "47756",
+            "metadata": {
+              "filename": "Tombs of Atuan 01.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 01.mp3",
+              "relPath": "Tombs of Atuan 01.mp3",
+              "size": 7913236,
+              "mtimeMs": 1777796795184,
+              "ctimeMs": 1778670574653,
+              "birthtimeMs": 1777796426998
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842524,
+            "updatedAt": 1778737098885,
+            "fileType": "audio"
+          },
+          {
+            "ino": "47205",
+            "metadata": {
+              "filename": "Tombs of Atuan 02.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 02.mp3",
+              "relPath": "Tombs of Atuan 02.mp3",
+              "size": 21399412,
+              "mtimeMs": 1777796805040,
+              "ctimeMs": 1778670574653,
+              "birthtimeMs": 1777795997628
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842524,
+            "updatedAt": 1778737098885,
+            "fileType": "audio"
+          },
+          {
+            "ino": "47309",
+            "metadata": {
+              "filename": "Tombs of Atuan 03.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 03.mp3",
+              "relPath": "Tombs of Atuan 03.mp3",
+              "size": 18463540,
+              "mtimeMs": 1777796807768,
+              "ctimeMs": 1778670574653,
+              "birthtimeMs": 1777796030557
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842524,
+            "updatedAt": 1778737098885,
+            "fileType": "audio"
+          },
+          {
+            "ino": "47096",
+            "metadata": {
+              "filename": "Tombs of Atuan 04.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 04.mp3",
+              "relPath": "Tombs of Atuan 04.mp3",
+              "size": 21894052,
+              "mtimeMs": 1777796619769,
+              "ctimeMs": 1778670574649,
+              "birthtimeMs": 1777795945163
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842524,
+            "updatedAt": 1778737098885,
+            "fileType": "audio"
+          },
+          {
+            "ino": "47097",
+            "metadata": {
+              "filename": "Tombs of Atuan 05.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 05.mp3",
+              "relPath": "Tombs of Atuan 05.mp3",
+              "size": 18564196,
+              "mtimeMs": 1777796608301,
+              "ctimeMs": 1778670574649,
+              "birthtimeMs": 1777795945187
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842524,
+            "updatedAt": 1778737098885,
+            "fileType": "audio"
+          },
+          {
+            "ino": "47201",
+            "metadata": {
+              "filename": "Tombs of Atuan 06.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 06.mp3",
+              "relPath": "Tombs of Atuan 06.mp3",
+              "size": 22072036,
+              "mtimeMs": 1777796755543,
+              "ctimeMs": 1778670574653,
+              "birthtimeMs": 1777795996232
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842524,
+            "updatedAt": 1778737098886,
+            "fileType": "audio"
+          },
+          {
+            "ino": "47481",
+            "metadata": {
+              "filename": "Tombs of Atuan 07.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 07.mp3",
+              "relPath": "Tombs of Atuan 07.mp3",
+              "size": 17415508,
+              "mtimeMs": 1777796776548,
+              "ctimeMs": 1778670574653,
+              "birthtimeMs": 1777796147114
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842524,
+            "updatedAt": 1778737098886,
+            "fileType": "audio"
+          },
+          {
+            "ino": "47659",
+            "metadata": {
+              "filename": "Tombs of Atuan 08.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 08.mp3",
+              "relPath": "Tombs of Atuan 08.mp3",
+              "size": 9216148,
+              "mtimeMs": 1777796675734,
+              "ctimeMs": 1778670574653,
+              "birthtimeMs": 1777796320517
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842524,
+            "updatedAt": 1778737098887,
+            "fileType": "audio"
+          },
+          {
+            "ino": "47416",
+            "metadata": {
+              "filename": "Tombs of Atuan 09.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 09.mp3",
+              "relPath": "Tombs of Atuan 09.mp3",
+              "size": 17835844,
+              "mtimeMs": 1777796544752,
+              "ctimeMs": 1778670574653,
+              "birthtimeMs": 1777796098046
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842524,
+            "updatedAt": 1778737098887,
+            "fileType": "audio"
+          },
+          {
+            "ino": "47181",
+            "metadata": {
+              "filename": "Tombs of Atuan 10.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 10.mp3",
+              "relPath": "Tombs of Atuan 10.mp3",
+              "size": 12725716,
+              "mtimeMs": 1777796751679,
+              "ctimeMs": 1778670574649,
+              "birthtimeMs": 1777795985564
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842524,
+            "updatedAt": 1778737098887,
+            "fileType": "audio"
+          },
+          {
+            "ino": "47111",
+            "metadata": {
+              "filename": "Tombs of Atuan 11.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 11.mp3",
+              "relPath": "Tombs of Atuan 11.mp3",
+              "size": 15895732,
+              "mtimeMs": 1777796753819,
+              "ctimeMs": 1778670574649,
+              "birthtimeMs": 1777795951495
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842524,
+            "updatedAt": 1778737098888,
+            "fileType": "audio"
+          },
+          {
+            "ino": "47112",
+            "metadata": {
+              "filename": "Tombs of Atuan 12.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/Tombs of Atuan 12.mp3",
+              "relPath": "Tombs of Atuan 12.mp3",
+              "size": 16306564,
+              "mtimeMs": 1777796866897,
+              "ctimeMs": 1778670574649,
+              "birthtimeMs": 1777795951571
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842524,
+            "updatedAt": 1778737098888,
+            "fileType": "audio"
+          },
+          {
+            "ino": "51492",
+            "metadata": {
+              "filename": "metadata.json",
+              "ext": ".json",
+              "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/metadata.json",
+              "relPath": "metadata.json",
+              "size": 1941,
+              "mtimeMs": 1778737099518,
+              "ctimeMs": 1778737099518,
+              "birthtimeMs": 1778672170469
+            },
+            "isSupplementary": null,
+            "addedAt": 1778672170624,
+            "updatedAt": 1778737098889,
+            "fileType": "metadata"
+          },
+          {
+            "ino": "51491",
+            "metadata": {
+              "filename": "cover.jpg",
+              "ext": ".jpg",
+              "path": "/data/Books/Ursula K. Le Guin/1971 - The Tombs of Atuan (Archer) 96k 04.39.17 {192mb} [Archer]/cover.jpg",
+              "relPath": "cover.jpg",
+              "size": 33394,
+              "mtimeMs": 1778672169985,
+              "ctimeMs": 1778672169985,
+              "birthtimeMs": 1778672169985
+            },
+            "isSupplementary": null,
+            "addedAt": 1778672255617,
+            "updatedAt": 1778737098889,
+            "fileType": "image"
+          }
+        ]
+      }
+    }
+  }
+}
