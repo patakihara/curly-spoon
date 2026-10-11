@@ -33,6 +33,8 @@ export interface MediaLike {
   canPlayType(type: string): string;
   addEventListener(type: string, listener: () => void): void;
   removeEventListener(type: string, listener: () => void): void;
+  /** Takes the element out of the document, where the default one lives. */
+  remove?(): void;
 }
 
 /** The part of hls.js the engine uses. */
@@ -45,7 +47,10 @@ export interface HlsLike {
 export interface PlayerOptions {
   /** The API, for closing a transcode's session; same origin by default. */
   api?: ApiClient;
-  /** Makes one audio element; `new Audio()` by default. */
+  /**
+   * Makes one audio element. By default a hidden `<audio>` in the document, so the page can tell
+   * audio plays (the update watch waits for it to stop).
+   */
   createAudio?: () => MediaLike;
   /** Loads hls.js; a lazy import by default. */
   loadHls?: () => Promise<new () => HlsLike>;
@@ -63,9 +68,19 @@ export interface Player {
   seek(position: number): Promise<void>;
   /** Seconds from the item's start. */
   readonly position: number;
-  /** Stops, lets go of both elements, and closes the plan's open playback session if it has one. */
+  /**
+   * Stops, lets go of both elements and takes them out of the document, and closes the plan's
+   * open playback session if it has one.
+   */
   destroy(): Promise<void>;
 }
+
+const audioInDocument = (): MediaLike => {
+  const audio = new Audio();
+  audio.hidden = true;
+  document.body.append(audio);
+  return audio;
+};
 
 const loadHlsJs = async () => {
   const { default: Hls } = await import('hls.js');
@@ -80,7 +95,7 @@ interface Slot {
 }
 
 export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): Player {
-  const createAudio = options.createAudio ?? (() => new Audio());
+  const createAudio = options.createAudio ?? audioInDocument;
   const loadHls = options.loadHls ?? loadHlsJs;
   const { tracks } = plan;
   const slots: [Slot, Slot] = [
@@ -222,6 +237,7 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
       destroyed ??= (async () => {
         unlisten.splice(0).forEach((stop) => stop());
         slots.forEach(release);
+        slots.forEach((slot) => slot.audio.remove?.());
         const playId = plan.progressTarget?.playId;
         if (playId === undefined) return;
         const api = options.api ?? createApiClient();

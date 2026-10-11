@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApiClient } from './api/client';
 import { type MediaLike, type PlaybackPlan, HLS_MIME, createPlayer } from './playback';
 
@@ -346,5 +346,33 @@ describe('the web player', () => {
     await player.destroy();
     await player.seek(100);
     expect(audios.every((a) => a.paused && a.src === '')).toBe(true);
+  });
+
+  describe('its own audio elements', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('[M0.staging/c] keeps its two elements in the document, hidden, so the page knows audio plays, and takes them out when destroyed', async () => {
+      const body: unknown[] = [];
+      class Audio extends FakeAudio {
+        hidden = false;
+        remove() {
+          body.splice(body.indexOf(this), 1);
+        }
+      }
+      vi.stubGlobal('Audio', Audio);
+      vi.stubGlobal('document', { body: { append: (el: unknown) => body.push(el) } });
+      const player = createPlayer(book, {
+        api: createApiClient({
+          baseUrl: 'http://auralis.test',
+          fetch: async () => Response.json({ ok: true }),
+        }),
+      });
+      expect(body).toHaveLength(2);
+      expect(body.every((el) => el instanceof Audio && el.hidden)).toBe(true);
+      await player.destroy();
+      expect(body).toEqual([]);
+    });
   });
 });
