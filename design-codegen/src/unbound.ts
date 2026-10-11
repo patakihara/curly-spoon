@@ -35,12 +35,12 @@ export const UNBOUND: Readonly<Record<string, string>> = {
   'shell/MiniPlayer.onVolume': 'M1.play',
   'show/EpisodeRow.onPlay': 'M1.play',
   // Seek, speed and the sleep timer.
-  'nowPlaying/NowPlayingPage.onSeek': 'M5.player',
-  'nowPlaying/NowPlayingPage.onSleep': 'M5.player',
-  'nowPlaying/NowPlayingPage.onSpeed': 'M5.player',
-  'shell/MiniPlayer.onSeek': 'M5.player',
-  'shell/MiniPlayer.onSleep': 'M5.player',
-  'shell/MiniPlayer.onSpeed': 'M5.player',
+  'nowPlaying/NowPlayingPage.onSeek': 'M1.shell',
+  'nowPlaying/NowPlayingPage.onSleep': 'M1.shell',
+  'nowPlaying/NowPlayingPage.onSpeed': 'M1.shell',
+  'shell/MiniPlayer.onSeek': 'M1.shell',
+  'shell/MiniPlayer.onSleep': 'M1.shell',
+  'shell/MiniPlayer.onSpeed': 'M1.shell',
   // The queue: play next or last, shuffle, repeat, switching, clearing and editing it.
   'album/MediaHeader.onPlayLast': 'M1.sessions',
   'book/MediaHeader.onPlayNext': 'M1.sessions',

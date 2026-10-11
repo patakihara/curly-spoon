@@ -9,7 +9,7 @@ part: How it's built
 Everything in the app starts as a Sonora component, and every page starts on the canvas.
 :::
 
-This is M5's work. Until then the frontend is the minimal shell (M1.shell): the generated shell and pages on hand-written data code, enough to exercise the backend.
+This is M5's work; until then the frontend is M1.shell's minimal shell.
 
 ### How you work on the design
 
@@ -82,10 +82,10 @@ Your rule: Sonora artifact, then canvas artifact, then code, ported mechanically
    - web and Android must build the same route set;
    - each page's screenshot on both platforms is compared against the design's render of that page;
    - the "Published artifacts are current" job, and the Stop hook, fail while `design/sonora`, `design/app` and its art, or the code building either, differs from its recorded publish, has no record, or the canvas installs a Sonora other than the published one;
-   - the `auralis/no-hand-ui` lint refuses HTML elements, `style` and `className` in `web/src` outside `generated/`, and a test refuses `@Composable` functions outside Android's `generated` and `ui/sonora` packages, each with a documented allowlist.
+   - the `auralis/no-hand-ui` lint refuses HTML elements, `style` and `className` in `web/src` outside `generated/`, and a test refuses `@Composable` functions outside Android's `generated` and `ui/sonora` packages, each with a documented allowlist. The minimal shell's hand-written data code supplies data only and stays within this lint.
 
    Adding a screen in code alone fails the build.
-6. **The frontend build starts with navigation.** First, both apps navigate the full generated map with placeholder data, compared against the design and each other, before any screen gets real content.
+6. **The frontend build starts with navigation.** First, both apps navigate the full generated map with placeholder data, compared against the design and each other (M0.canvas), before any screen, the minimal shell's included, gets real content.
 
 - **Mantine** is optional, only inside a component needing a behaviour primitive (menus, focus traps), never as the visual layer.
 - **The app frame** is Sonora's backdrop shell (per `SPEC-backdrop.md`), a real Material 2 backdrop as Sonora Prime, the last mockups before the rebuild, draws it.

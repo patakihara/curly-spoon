@@ -28,12 +28,12 @@ const offersToAddChannel = (text: string) =>
     .some((line) => /\bchannels?\b/i.test(line) && /\b(add\w*|past\w*|link)\b/i.test(line));
 
 describe('Adding a YouTube channel', () => {
-  it('[M3.ytshows/e] is offered by Search alone of the pages in nav.json', () => {
+  it('[M5.searchui/d] is offered by Search alone of the pages in nav.json', () => {
     const offering = nav.pages.map((p) => p.id).filter((id) => offersToAddChannel(pageText(id)));
     expect(offering).toEqual(['search']);
   });
 
-  it('[M3.ytshows/e] Search finds a channel by name among its podcasts or from its pasted link', () => {
+  it('[M5.searchui/d] Search finds a channel by name among its podcasts or from its pasted link', () => {
     const search = structureText('search');
     expect(search).toMatch(/YouTube channel/);
     expect(search).toMatch(/by name/);

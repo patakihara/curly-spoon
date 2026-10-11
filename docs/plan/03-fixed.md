@@ -20,8 +20,8 @@ From `USER_DECISIONS.md`, the spec addendum and the research notes. Where a deci
 - **Browse** (icon `explore`) is the one discovery screen. Home, For You and Discover are the same thing and are distinct from **Search**. The name lives only in UI strings.
 - Five destinations: Browse, Music, Books, Podcasts, Search, one button each (as Sonora draws it), not a single Library button with a sub-menu.
 - Web includes desktop, in one Docker container on one port, a PWA rather than Electron; native Compose + Media3 on Android.
-- Web and Android are developed together, with parity.
-- **Android installs through your own F-Droid repository**, added in Droid-ify (`https://patakihara.github.io/curly-spoon/repo`, live, serving 0.2.0), or through Obtainium from GitHub Releases. The rebuild keeps this path: same app id (`net.develivarr.auralis`), same signing key, same repository address, so the installed app updates in place.
+- Web and Android have parity, reached by M5; until then the web app is ahead.
+- **Android installs through your own F-Droid repository**, added in Droid-ify (`https://patakihara.github.io/curly-spoon/repo`, live, serving 0.2.0), or through Obtainium from GitHub Releases. The rebuild keeps the app id (`net.develivarr.auralis`), signing key and repository address, so the installed app updates in place.
 - Downloads are Android-only; web leaves the button out rather than faking it. Android Auto is a design constraint, not a toggle.
 - Android gets a Settings screen. Ebooks with read-along sync are wanted but lower priority. The launcher icon stays as it is for now.
 :::
@@ -41,7 +41,7 @@ From `USER_DECISIONS.md`, the spec addendum and the research notes. Where a deci
 - **Each person sees their own library** (what they added, requested, subscribed to or played). Files stay shared; "show everyone's library" is a setting, off by default, and search always covers the household.
 - Artist and author pages show the whole catalogue, unowned titles greyed out and requestable, **on by default**, with a setting to turn it off.
 - Books come through Prowlarr first, with the AudiobookBay scraper as fallback, via qBittorrent or Transmission. Approval is automatic by default.
-- **Music follows AbleMusicPlayer's approach** (researched from its source, at your request): YouTube Music is the catalogue and the audio source, reached through a NewPipe-style extractor, with Spotify used only to import playlists.
+- **Music follows AbleMusicPlayer's approach**: YouTube Music is the catalogue and the audio source, reached through a NewPipe-style extractor, with Spotify used only to import playlists.
 - **Torrents stay for music too**, above all for higher quality. YouTube Music gives instant play and single-song keeps; **adding an album to the library always goes the torrent route**, for lossless.
 - **A kept song is saved as the original stream** (YouTube Music's Opus, about 160 kbps), not re-encoded.
 :::
