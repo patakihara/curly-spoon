@@ -1,0 +1,24 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.1",
+  "call": "bookmark-delete",
+  "request": {
+    "method": "DELETE",
+    "path": "/api/me/item/7b3fa64c-f00c-4de6-8cd5-15d301b91f4b/bookmark/30",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "text/plain; charset=utf-8"
+    },
+    "body": {
+      "text": "OK"
+    }
+  }
+}

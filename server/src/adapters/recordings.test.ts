@@ -3,9 +3,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { AbsClient } from './audiobookshelf/client.js';
+import { AdapterError, type FetchLike } from './http/fetch.js';
 import { type Recording, recordingSchema } from './http/recording.js';
 import { replayFetch, standInsBeside } from './http/replay.js';
-import { JellyfinClient } from './jellyfin/client.js';
+import { JellyfinClient, TICKS_PER_SECOND } from './jellyfin/client.js';
+import { ABS_PROGRESS_CALLS, JELLYFIN_PROGRESS_CALLS, TEST_BOOKMARK } from './record-progress.js';
 
 const adapters = dirname(fileURLToPath(import.meta.url));
 
@@ -319,5 +321,176 @@ describe("Jellyfin's play calls on one album, recorded for M1.music", () => {
     expect(opened.status).toBe(206);
     const bytes = new Uint8Array(await new Response(opened.body).arrayBuffer());
     expect(new TextDecoder().decode(bytes)).toBe('fLaC');
+  });
+});
+
+/** Replays `recordings`, keeping each request's JSON body, which replay itself never compares. */
+function capturingReplay(recordings: Recording[]) {
+  const replay = replayFetch(recordings);
+  const sent: { call: string; json: unknown }[] = [];
+  const fetch: FetchLike = (url, init) => {
+    const body = typeof init?.body === 'string' ? (JSON.parse(init.body) as unknown) : undefined;
+    sent.push({ call: `${init?.method ?? 'GET'} ${new URL(url).pathname}`, json: body });
+    return replay(url, init);
+  };
+  return { fetch, sent };
+}
+
+/** M1.progress's recordings: a book played, synced and closed, and bookmarked, as `auralis`. */
+const absProgress = Object.fromEntries(
+  ABS_PROGRESS_CALLS.map((call) => [call, recording('audiobookshelf', call)]),
+) as Record<(typeof ABS_PROGRESS_CALLS)[number], Recording>;
+
+describe("Audiobookshelf's progress and bookmark calls, recorded for M1.progress", () => {
+  const book = itemId(absProgress['progress-play']);
+  const sessionId = String(json(absProgress['progress-play'].response.body).id);
+  const client = (recordings: Recording[]) => {
+    const replay = capturingReplay(recordings);
+    const abs = new AbsClient({ baseUrl: 'http://upstream.invalid', token: '<token>', ...replay });
+    return { abs, sent: replay.sent };
+  };
+
+  it('plays, syncs and closes one session, as the test user with its own key', () => {
+    expect(absProgress['progress-sync'].request.path).toBe(`/api/session/${sessionId}/sync`);
+    expect(absProgress['progress-close'].request.path).toBe(`/api/session/${sessionId}/close`);
+    for (const r of Object.values(absProgress)) {
+      expect(r.request.headers.authorization, r.call).toBe('Bearer <token>');
+    }
+    const me = json(absProgress.me.response.body);
+    expect(me.username).toBe('auralis');
+    expect(json(absProgress['progress-play'].response.body).userId).toBe(me.id);
+  });
+
+  it('reports wall-clock listening time apart from the position: 15 s synced, then 5 s at close', () => {
+    const duration = json(absProgress['progress-play'].response.body).duration;
+    expect(json(absProgress['progress-sync'].request.body)).toEqual({
+      currentTime: 15,
+      timeListened: 15,
+      duration,
+    });
+    expect(json(absProgress['progress-close'].request.body)).toEqual({
+      currentTime: 20,
+      timeListened: 5,
+      duration,
+    });
+    for (const call of ['progress-sync', 'progress-close'] as const) {
+      expect(absProgress[call].response).toMatchObject({ status: 200, body: { text: 'OK' } });
+    }
+  });
+
+  it("parses through the client, which sends the recorded bodies, and the close's report lands", async () => {
+    const { abs, sent } = client(
+      Object.values(absProgress).filter((r) => !r.call.includes('delete')),
+    );
+    const session = await abs.play(book, { deviceId: 'auralis-recorder', clientVersion: '0.0.0' });
+    expect(session.duration).toBeGreaterThan(20);
+    await abs.syncSession(session.id, {
+      currentTime: 15,
+      timeListened: 15,
+      duration: session.duration!,
+    });
+    await abs.closeSession(session.id, {
+      currentTime: 20,
+      timeListened: 5,
+      duration: session.duration!,
+    });
+    const progress = await abs.findMyProgress(book);
+    expect(progress).toMatchObject({ libraryItemId: book, currentTime: 20, isFinished: false });
+    for (const call of ['progress-sync', 'progress-close'] as const) {
+      const r = absProgress[call];
+      const mine = sent.find((s) => s.call === `POST ${r.request.path}`);
+      expect(mine?.json, call).toEqual(json(r.request.body));
+    }
+  });
+
+  it('makes a bookmark at whole seconds, lists it on GET /api/me, and deletes it', async () => {
+    const { abs, sent } = client([
+      absProgress['bookmark-create'],
+      absProgress.me,
+      absProgress['bookmark-delete'],
+    ]);
+    const made = await abs.createBookmark(book, TEST_BOOKMARK);
+    expect(made).toMatchObject({ libraryItemId: book, ...TEST_BOOKMARK });
+    expect(sent[0]?.json).toEqual(json(absProgress['bookmark-create'].request.body));
+    const me = await abs.getMe();
+    expect(me.bookmarks).toContainEqual(expect.objectContaining({ libraryItemId: book, time: 30 }));
+    expect(me.mediaProgress).toContainEqual(expect.objectContaining({ libraryItemId: book }));
+    await expect(abs.deleteBookmark(book, TEST_BOOKMARK.time)).resolves.toBeUndefined();
+    expect(absProgress['bookmark-delete'].request.path).toBe(
+      `/api/me/item/${book}/bookmark/${TEST_BOOKMARK.time}`,
+    );
+  });
+
+  it('answers a bare 404 for a bookmark that is not there', async () => {
+    const { abs } = client([absProgress['bookmark-delete-missing']]);
+    const error = await abs.deleteBookmark(book, TEST_BOOKMARK.time).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(AdapterError);
+    expect((error as AdapterError).status).toBe(404);
+    expect(absProgress['bookmark-delete-missing'].response.body).toEqual({ text: 'Not Found' });
+  });
+
+  it("never keeps the user's own token from GET /api/me", () => {
+    expect(json(absProgress.me.response.body).token).toBe('<token>');
+  });
+});
+
+/** M1.progress's Jellyfin recordings: one track started, reported and stopped, as `auralis`. */
+const jfProgress = Object.fromEntries(
+  JELLYFIN_PROGRESS_CALLS.map((call) => [call, recording('jellyfin', call)]),
+) as Record<(typeof JELLYFIN_PROGRESS_CALLS)[number], Recording>;
+
+describe("Jellyfin's playback reports, recorded for M1.progress", () => {
+  const body = (call: keyof typeof jfProgress) => json(jfProgress[call].request.body);
+  const track = String(body('jf-playing').ItemId);
+  const playSessionId = String(body('jf-playing').PlaySessionId);
+
+  it("reports as a person's own Auralis device, with the person's token", () => {
+    for (const r of Object.values(jfProgress)) {
+      expect(r.request.headers.authorization, r.call).toContain('DeviceId="auralis-recorder"');
+      expect(r.request.headers.authorization, r.call).toContain('Token="<token>"');
+    }
+  });
+
+  it('starts at 0, reports 15 s and stops at 20 s, in ticks, under one play session, each a bare 204', () => {
+    expect(body('jf-playing')).toMatchObject({ PositionTicks: 0, IsPaused: false });
+    expect(body('jf-progress')).toMatchObject({
+      ItemId: track,
+      PositionTicks: 15 * TICKS_PER_SECOND,
+      IsPaused: false,
+      PlayMethod: 'DirectPlay',
+      PlaySessionId: playSessionId,
+    });
+    expect(body('jf-stopped')).toEqual({
+      ItemId: track,
+      PositionTicks: 20 * TICKS_PER_SECOND,
+      PlaySessionId: playSessionId,
+    });
+    for (const call of ['jf-playing', 'jf-progress', 'jf-stopped'] as const) {
+      expect(jfProgress[call].response, call).toMatchObject({ status: 204, body: null });
+    }
+  });
+
+  it('parses through the client, which sends the recorded bodies', async () => {
+    const { fetch, sent } = capturingReplay(Object.values(jfProgress));
+    const jf = new JellyfinClient({ baseUrl: 'http://upstream.invalid', token: '<token>', fetch });
+    const at = (position: number) => ({ itemId: track, position, paused: false, playSessionId });
+    await jf.reportStart(at(0));
+    await jf.reportProgress(at(15));
+    await jf.reportStopped(at(20));
+    expect(sent.map((s) => s.json)).toEqual([
+      body('jf-playing'),
+      body('jf-progress'),
+      body('jf-stopped'),
+    ]);
+    const data = await jf.getUserData(track);
+    expect(data.ItemId).toBe(track);
+  });
+
+  it('counts a music track played at its start and keeps no resume point for it', () => {
+    expect(json(jfProgress['jf-userdata'].response.body)).toMatchObject({
+      PlaybackPositionTicks: 0,
+      PlayCount: 1,
+      Played: true,
+    });
   });
 });

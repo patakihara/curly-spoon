@@ -1,0 +1,31 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.1",
+  "call": "progress-sync",
+  "request": {
+    "method": "POST",
+    "path": "/api/session/19ac8fa9-7827-4c31-a0bb-269e3205957f/sync",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "currentTime": 15,
+        "timeListened": 15,
+        "duration": 167.581502
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "text/plain; charset=utf-8"
+    },
+    "body": {
+      "text": "OK"
+    }
+  }
+}

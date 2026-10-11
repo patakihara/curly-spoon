@@ -269,12 +269,20 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     clientId,
     redirectUri: config.oidc!.redirectUri,
   });
-  // The four-file book is recorded twice under one play call, directly and transcoded, and its
-  // first segment twice, before and after it was cut. The server replays direct play and the cut
-  // segment; the transcode's plan is exercised in server/src/play.test.ts.
+  // The four-file book is recorded three times under one play call: directly, transcoded, and
+  // directly again for M1.progress. Its first segment is recorded twice, before and after it was
+  // cut, and its bookmark's delete twice, present and gone. The server replays M1.play's direct
+  // play, the cut segment and the delete that finds the bookmark; the transcode's plan is
+  // exercised in server/src/play.test.ts.
   // Its files are all one 5 s stand-in tone, so the book is served timed by that tone.
+  const notReplayed = new Set([
+    'hls-play',
+    'hls-segment-pending',
+    'progress-play',
+    'bookmark-delete-missing',
+  ]);
   const abs = recordingsOf('audiobookshelf')
-    .filter((r) => r.call !== 'hls-play' && r.call !== 'hls-segment-pending')
+    .filter((r) => !notReplayed.has(r.call))
     .map((r) => (r.call === 'multi-play' ? timedByStandIns(r, 'multi-file.mp3') : r));
   const jellyfin = recordingsOf('jellyfin');
   const server = await assembleServer(config, {

@@ -1,0 +1,35 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.1",
+  "call": "bookmark-create",
+  "request": {
+    "method": "POST",
+    "path": "/api/me/item/7b3fa64c-f00c-4de6-8cd5-15d301b91f4b/bookmark",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "time": 30,
+        "title": "Auralis test"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "libraryItemId": "7b3fa64c-f00c-4de6-8cd5-15d301b91f4b",
+        "time": 30,
+        "title": "Auralis test",
+        "createdAt": 1791734510865
+      }
+    }
+  }
+}
