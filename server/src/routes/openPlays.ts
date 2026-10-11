@@ -1,7 +1,8 @@
 /**
  * The playback sessions Auralis holds open: one per plan, direct play, transcode or Jellyfin. Each
  * is held for the person and device that planned it, under the ref it plays, and only they reach
- * it. A device holds at most one; planning again closes the one before. One nothing has asked for
+ * it. A device holds at most one; planning again closes the one before, and a device's plans are
+ * taken one at a time, so two at once leave it holding the later. One nothing has asked for
  * or reported on within its idle time is closed, so an abandoned transcode never keeps ffmpeg
  * running on the server and an abandoned session never lingers upstream.
  * Held in memory: a restart forgets them, and a player then plans again.
@@ -53,8 +54,23 @@ interface Owner {
 
 export class OpenPlays {
   private readonly held = new Map<string, Held>();
+  /** Each device's newest plan being taken, by `userId deviceId`; the next waits for it. */
+  private readonly planning = new Map<string, Promise<unknown>>();
 
   constructor(private readonly options: { now: () => number }) {}
+
+  /** Takes `plan` for a device once every plan that device asked for before it is taken. */
+  async planOn<T>(owner: Owner, plan: () => Promise<T>): Promise<T> {
+    const key = `${owner.userId} ${owner.deviceId}`;
+    const before = this.planning.get(key) ?? Promise.resolve();
+    const taken = before.catch(() => undefined).then(plan);
+    this.planning.set(key, taken);
+    try {
+      return await taken;
+    } finally {
+      if (this.planning.get(key) === taken) this.planning.delete(key);
+    }
+  }
 
   /** Holds `play` for its device, closing whatever that device held before. */
   async open(play: OpenPlay): Promise<void> {

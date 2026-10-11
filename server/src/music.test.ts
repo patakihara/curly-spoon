@@ -9,7 +9,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type PlaybackPlan } from '@auralis/schema';
 import { type FastifyInstance } from 'fastify';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type FetchLike } from './adapters/http/fetch.js';
 import { type Recording, recordingSchema } from './adapters/http/recording.js';
 import { replayFetch, standInsBeside } from './adapters/http/replay.js';
@@ -425,13 +425,15 @@ describe("reporting an album's progress to Jellyfin", () => {
       payload: { seq: 2, position: secondStart + 6, listened: 0, paused: true },
     });
     expect(close.statusCode).toBe(200);
-    expect(reported(sent)).toEqual([
-      `/Sessions/Playing ${first.Id} 0`,
-      `/Sessions/Playing/Progress ${first.Id} 10`,
-      `/Sessions/Playing/Stopped ${first.Id} 10`,
-      `/Sessions/Playing ${second.Id} 4`,
-      `/Sessions/Playing/Stopped ${second.Id} 6`,
-    ]);
+    await vi.waitFor(() =>
+      expect(reported(sent)).toEqual([
+        `/Sessions/Playing ${first.Id} 0`,
+        `/Sessions/Playing/Progress ${first.Id} 10`,
+        `/Sessions/Playing/Stopped ${first.Id} 10`,
+        `/Sessions/Playing ${second.Id} 4`,
+        `/Sessions/Playing/Stopped ${second.Id} 6`,
+      ]),
+    );
   });
 
   it('moves on to the next track when Jellyfin does not take the stop of the one before', async () => {
@@ -440,11 +442,13 @@ describe("reporting an album's progress to Jellyfin", () => {
     const [first, second] = recordedTracks as [RecordedTrack, RecordedTrack];
     const moved = await report(app, as('kara'), progressTarget.playId, 0, tracks[1]!.offset + 4);
     expect(moved.statusCode, moved.body).toBe(200);
-    expect(reported(sent)).toEqual([
-      `/Sessions/Playing ${first.Id} 0`,
-      `/Sessions/Playing/Stopped ${first.Id} 0`,
-      `/Sessions/Playing ${second.Id} 4`,
-    ]);
+    await vi.waitFor(() =>
+      expect(reported(sent)).toEqual([
+        `/Sessions/Playing ${first.Id} 0`,
+        `/Sessions/Playing/Stopped ${first.Id} 0`,
+        `/Sessions/Playing ${second.Id} 4`,
+      ]),
+    );
   });
   it('reaches Jellyfin in order when a report moves on to the next track and a close comes right behind it', async () => {
     const { app, sent, as, plan } = await server({ slow: true });
@@ -461,12 +465,14 @@ describe("reporting an album's progress to Jellyfin", () => {
       }),
     ]);
     expect([moved.statusCode, closed.statusCode]).toEqual([200, 200]);
-    expect(reported(sent)).toEqual([
-      `/Sessions/Playing ${first.Id} 0`,
-      `/Sessions/Playing/Stopped ${first.Id} 0`,
-      `/Sessions/Playing ${second.Id} 4`,
-      `/Sessions/Playing/Stopped ${second.Id} 6`,
-    ]);
+    await vi.waitFor(() =>
+      expect(reported(sent)).toEqual([
+        `/Sessions/Playing ${first.Id} 0`,
+        `/Sessions/Playing/Stopped ${first.Id} 0`,
+        `/Sessions/Playing ${second.Id} 4`,
+        `/Sessions/Playing/Stopped ${second.Id} 6`,
+      ]),
+    );
   });
 
   it('moves on to the next track once when two reports sent together both fall in it', async () => {
@@ -479,11 +485,13 @@ describe("reporting an album's progress to Jellyfin", () => {
       report(app, as('kara'), progressTarget.playId, 1, secondStart + 5),
     ]);
     expect(answers.map((a) => a.statusCode)).toEqual([200, 200]);
-    expect(reported(sent)).toEqual([
-      `/Sessions/Playing ${first.Id} 0`,
-      `/Sessions/Playing/Stopped ${first.Id} 0`,
-      `/Sessions/Playing ${second.Id} 4`,
-      `/Sessions/Playing/Progress ${second.Id} 5`,
-    ]);
+    await vi.waitFor(() =>
+      expect(reported(sent)).toEqual([
+        `/Sessions/Playing ${first.Id} 0`,
+        `/Sessions/Playing/Stopped ${first.Id} 0`,
+        `/Sessions/Playing ${second.Id} 4`,
+        `/Sessions/Playing/Progress ${second.Id} 5`,
+      ]),
+    );
   });
 });

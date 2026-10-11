@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type PlaybackPlan } from '@auralis/schema';
 import { type FastifyInstance } from 'fastify';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type FetchLike } from './adapters/http/fetch.js';
 import { type Recording, recordingSchema } from './adapters/http/recording.js';
 import { replayFetch } from './adapters/http/replay.js';
@@ -48,7 +48,10 @@ const JELLYFIN_ORIGIN = 'http://jellyfin.upstream.invalid';
 const KEY = Buffer.alloc(32, 7);
 
 let apps: FastifyInstance[] = [];
+let answerJellyfin: (() => void)[] = [];
 afterEach(async () => {
+  for (const answer of answerJellyfin) answer();
+  answerJellyfin = [];
   await Promise.all(apps.map((app) => app.close()));
   apps = [];
 });
@@ -62,22 +65,47 @@ interface Sent {
 
 /**
  * kara and otto, each linked to Audiobookshelf and Jellyfin with tokens of their own; a clock to
- * move. Reports and closes carry the next number in order unless a test gives one.
+ * move. Reports and closes carry the next number in order unless a test gives one. With
+ * `jellyfinSlow`, Jellyfin answers no start, progress or stop report until `jellyfin.answer()`;
+ * with `jellyfinDelayMs`, it answers each that long after it is sent.
  */
-async function server(options: { playback?: PlaybackOptions; recordings?: Recording[] } = {}) {
+async function server(
+  options: {
+    playback?: PlaybackOptions;
+    recordings?: Recording[];
+    jellyfinSlow?: boolean;
+    jellyfinDelayMs?: number;
+  } = {},
+) {
   const db = openDatabase(':memory:');
   const sent: Sent[] = [];
   const replay = replayFetch(
     options.recordings ?? [played, synced, closed, jfTrack, jfPlaying, jfProgress, jfStopped],
   );
+  let slow = options.jellyfinSlow ?? false;
+  let unanswered: (() => void)[] = [];
+  const jellyfin = {
+    /** Answers every report Jellyfin holds, and every one after it at once. */
+    answer: () => {
+      slow = false;
+      for (const go of unanswered) go();
+      unanswered = [];
+    },
+  };
+  answerJellyfin.push(jellyfin.answer);
   const fetch: FetchLike = async (url, init) => {
     const body = typeof init?.body === 'string' ? (JSON.parse(init.body) as unknown) : undefined;
+    const path = new URL(url).pathname;
     sent.push({
       method: init?.method ?? 'GET',
-      path: new URL(url).pathname,
+      path,
       authorization: new Headers(init?.headers).get('authorization') ?? '',
       json: body,
     });
+    if (path.startsWith(jfPlaying.request.path)) {
+      if (slow) await new Promise<void>((go) => unanswered.push(go));
+      await new Promise((go) => setTimeout(go, options.jellyfinDelayMs ?? 0));
+    }
     return replay(url, init);
   };
   const bearer: Record<string, string> = {};
@@ -148,8 +176,30 @@ async function server(options: { playback?: PlaybackOptions; recordings?: Record
     logged
       .map((line) => JSON.parse(line) as { level: number; msg: string })
       .filter((line) => line.level >= 40 && line.msg.startsWith('Jellyfin'));
-  return { app, sent, as, plan, planTrack, report, close, pass, warnings };
+  /** The Jellyfin calls sent so far, as `METHOD path PlaySessionId`. */
+  const toJellyfin = () =>
+    sent
+      .filter((s) => s.path.startsWith(jfPlaying.request.path))
+      .map((s) => `${s.path} ${(s.json as { PlaySessionId: string }).PlaySessionId}`);
+  return { app, sent, as, plan, planTrack, report, close, pass, warnings, jellyfin, toJellyfin };
 }
+
+/** What `request` answered within half a second, or that it was still waiting. */
+const within = <T>(request: Promise<T>): Promise<T | 'still waiting'> =>
+  Promise.race([
+    request,
+    new Promise<'still waiting'>((done) => setTimeout(() => done('still waiting'), 500)),
+  ]);
+
+/** What `request` answered, failing if it was still waiting after half a second. */
+async function answered<T>(request: Promise<T>): Promise<T> {
+  const answer = await within(request);
+  if (answer === 'still waiting') throw new Error('the request was still waiting on Jellyfin');
+  return answer;
+}
+
+/** Lets every call already answered settle, and anything it sends next be sent. */
+const settle = () => new Promise((done) => setTimeout(done, 20));
 
 describe("[M1.progress/a] progress to each item's own server", () => {
   it("[M1.progress/a] one update for a book reaches Audiobookshelf's session sync, and one for a track reaches Jellyfin's progress, each as the person, with wall-clock listening time", async () => {
@@ -174,6 +224,7 @@ describe("[M1.progress/a] progress to each item's own server", () => {
     pass(15);
     const toJellyfin = await report({ playId: track, position: 15, listened: 15, paused: false });
     expect(toJellyfin.statusCode, toJellyfin.body).toBe(200);
+    await settle();
     const progress = sent.at(-1)!;
     expect(progress).toMatchObject({
       method: 'POST',
@@ -201,6 +252,7 @@ describe('reporting progress to Jellyfin', () => {
     const { playId } = (await planTrack()).progressTarget;
     pass(30);
     await report({ playId, position: 15, listened: 15, paused: true });
+    await settle();
     expect(sent.at(-1)?.json).toMatchObject({ PositionTicks: 15 * 1e7, IsPaused: true });
   });
 
@@ -209,6 +261,7 @@ describe('reporting progress to Jellyfin', () => {
     const { playId } = (await planTrack()).progressTarget;
     pass(20);
     expect((await close(playId, { position: 20, listened: 5, paused: true })).statusCode).toBe(200);
+    await settle();
     expect(sent.at(-1)).toMatchObject({ method: 'POST', path: jfStopped.request.path });
     expect(sent.at(-1)?.json).toEqual({ ...sentJson(jfStopped), PlaySessionId: playId });
     expect(sent.at(-1)?.authorization).toContain('Token="jellyfin-token-kara"');
@@ -222,6 +275,7 @@ describe('reporting progress to Jellyfin', () => {
     pass(61);
     const gone = await report({ playId, position: 20, listened: 0, paused: true });
     expect(gone.statusCode).toBe(404);
+    await settle();
     expect(sent.at(-1)).toMatchObject({ path: jfStopped.request.path });
     expect(sent.at(-1)?.json).toMatchObject({ PositionTicks: 20 * 1e7, PlaySessionId: playId });
   });
@@ -236,6 +290,7 @@ describe('reporting progress to Jellyfin', () => {
       `POST ${jfPlaying.request.path}`,
       `POST ${jfStopped.request.path}`,
     ]);
+    await settle();
     expect(sent.at(-1)?.json).toMatchObject({ PositionTicks: 0 });
   });
 
@@ -243,13 +298,15 @@ describe('reporting progress to Jellyfin', () => {
     const { sent, planTrack } = await server();
     const before = (await planTrack()).progressTarget.playId;
     const next = (await planTrack()).progressTarget.playId;
-    expect(sent.map((s) => `${s.method} ${s.path}`)).toEqual([
-      `GET ${jfTrack.request.path}`,
-      `POST ${jfPlaying.request.path}`,
-      `GET ${jfTrack.request.path}`,
-      `POST ${jfStopped.request.path}`,
-      `POST ${jfPlaying.request.path}`,
-    ]);
+    await vi.waitFor(() =>
+      expect(sent.map((s) => `${s.method} ${s.path}`)).toEqual([
+        `GET ${jfTrack.request.path}`,
+        `POST ${jfPlaying.request.path}`,
+        `GET ${jfTrack.request.path}`,
+        `POST ${jfStopped.request.path}`,
+        `POST ${jfPlaying.request.path}`,
+      ]),
+    );
     expect(sent.at(-2)?.json).toMatchObject({ PlaySessionId: before });
     expect(sent.at(-1)?.json).toMatchObject({ PlaySessionId: next });
   });
@@ -259,6 +316,7 @@ describe('reporting progress to Jellyfin', () => {
     const { playId } = (await planTrack()).progressTarget;
     pass(1);
     await report({ playId, position: 99_999, listened: 1, paused: false });
+    await settle();
     expect(sent.at(-1)?.json).toMatchObject({ PositionTicks: trackLength });
   });
 
@@ -275,9 +333,11 @@ describe('reporting progress to Jellyfin', () => {
     const { planTrack, warnings } = await server({ recordings: [jfTrack] });
     const plan = await planTrack();
     expect(plan.tracks).toHaveLength(1);
-    expect(warnings()).toEqual([
-      expect.objectContaining({ msg: 'Jellyfin did not take a playing report' }),
-    ]);
+    await vi.waitFor(() =>
+      expect(warnings()).toEqual([
+        expect.objectContaining({ msg: 'Jellyfin did not take a playing report' }),
+      ]),
+    );
   });
 
   it('answers a progress report when Jellyfin does not take it, and logs it', async () => {
@@ -289,9 +349,11 @@ describe('reporting progress to Jellyfin', () => {
     const res = await report({ playId, position: 15, listened: 15, paused: false });
     expect(res.statusCode, res.body).toBe(200);
     expect(res.json()).toEqual({ taken: true, lastSeq: 0 });
-    expect(warnings()).toEqual([
-      expect.objectContaining({ msg: 'Jellyfin did not take a progress report' }),
-    ]);
+    await vi.waitFor(() =>
+      expect(warnings()).toEqual([
+        expect.objectContaining({ msg: 'Jellyfin did not take a progress report' }),
+      ]),
+    );
   });
 
   it('closes the play when Jellyfin does not take the stop, and logs it', async () => {
@@ -302,10 +364,108 @@ describe('reporting progress to Jellyfin', () => {
     pass(20);
     const res = await close(playId, { position: 20, listened: 20, paused: true });
     expect(res.statusCode, res.body).toBe(200);
-    expect(warnings()).toEqual([
-      expect.objectContaining({ msg: 'Jellyfin did not take a stopped report' }),
-    ]);
+    await vi.waitFor(() =>
+      expect(warnings()).toEqual([
+        expect.objectContaining({ msg: 'Jellyfin did not take a stopped report' }),
+      ]),
+    );
     expect((await close(playId)).statusCode).toBe(404);
+  });
+});
+
+describe('a slow Jellyfin never slows the player', () => {
+  it('answers a plan, a progress report, a close, the next plan and an idle sweep while Jellyfin has answered no report', async () => {
+    const { planTrack, report, close, pass } = await server({
+      jellyfinSlow: true,
+      playback: { directIdleMs: 60_000 },
+    });
+    const first = (await answered(planTrack())).progressTarget.playId;
+    pass(5);
+    const progress = await answered(
+      report({ playId: first, position: 5, listened: 5, paused: false }),
+    );
+    expect(progress.statusCode, progress.body).toBe(200);
+    expect(progress.json()).toEqual({ taken: true, lastSeq: 0 });
+    const closing = await answered(close(first, { position: 6, listened: 1, paused: true }));
+    expect(closing.statusCode, closing.body).toBe(200);
+    const next = (await answered(planTrack())).progressTarget.playId;
+    // Planning again over a play still held closes it without waiting on Jellyfin either.
+    await answered(planTrack());
+    pass(61);
+    // The idle sweep this request starts with closes the held play; it waits on nothing.
+    const gone = await answered(report({ playId: next, position: 1, listened: 1, paused: false }));
+    expect(gone.statusCode).toBe(404);
+  });
+
+  it('keeps only the newest progress report waiting while Jellyfin is slow, and sends it once Jellyfin answers', async () => {
+    const { sent, planTrack, report, pass, jellyfin, toJellyfin } = await server({
+      jellyfinSlow: true,
+    });
+    const { playId } = (await answered(planTrack())).progressTarget;
+    for (let second = 1; second <= 30; second += 1) {
+      pass(1);
+      const res = await answered(report({ playId, position: second, listened: 1, paused: false }));
+      expect(res.json()).toEqual({ taken: true, lastSeq: second - 1 });
+    }
+    expect(toJellyfin()).toEqual([`${jfPlaying.request.path} ${playId}`]);
+    jellyfin.answer();
+    await vi.waitFor(() => expect(toJellyfin()).toHaveLength(2));
+    await settle();
+    expect(toJellyfin()).toEqual([
+      `${jfPlaying.request.path} ${playId}`,
+      `${jfProgress.request.path} ${playId}`,
+    ]);
+    expect(sent.at(-1)?.json).toMatchObject({ PositionTicks: 30 * 1e7 });
+  });
+
+  it("keeps a device's starts, reports and stops in order behind a slow Jellyfin, dropping none of the starts or stops", async () => {
+    const { planTrack, report, close, pass, jellyfin, toJellyfin } = await server({
+      jellyfinSlow: true,
+    });
+    const first = (await answered(planTrack())).progressTarget.playId;
+    pass(5);
+    await answered(report({ playId: first, position: 5, listened: 5, paused: false }));
+    const next = (await answered(planTrack())).progressTarget.playId;
+    pass(5);
+    await answered(close(next, { position: 5, listened: 5, paused: true }));
+    expect(toJellyfin()).toEqual([`${jfPlaying.request.path} ${first}`]);
+    jellyfin.answer();
+    await vi.waitFor(() => expect(toJellyfin()).toHaveLength(5));
+    await settle();
+    expect(toJellyfin()).toEqual([
+      `${jfPlaying.request.path} ${first}`,
+      `${jfProgress.request.path} ${first}`,
+      `${jfStopped.request.path} ${first}`,
+      `${jfPlaying.request.path} ${next}`,
+      `${jfStopped.request.path} ${next}`,
+    ]);
+  });
+
+  it('takes two plans made at once on one device one after the other: the first starts and stops before the second starts, and the device holds the second', async () => {
+    const { planTrack, report, pass, toJellyfin } = await server({ jellyfinDelayMs: 20 });
+    const plays = (await Promise.all([planTrack(), planTrack()])).map(
+      (p) => p.progressTarget.playId,
+    );
+    await vi.waitFor(() => expect(toJellyfin()).toHaveLength(3));
+    await settle();
+    const firstStarted = toJellyfin()[0]?.split(' ')[1];
+    const held = plays.find((p) => p !== firstStarted);
+    expect(plays).toContain(firstStarted);
+    expect(toJellyfin()).toEqual([
+      `${jfPlaying.request.path} ${firstStarted}`,
+      `${jfStopped.request.path} ${firstStarted}`,
+      `${jfPlaying.request.path} ${held}`,
+    ]);
+    pass(1);
+    const toHeld = await report({ playId: held, position: 1, listened: 1, paused: false });
+    expect(toHeld.statusCode).toBe(200);
+    const toClosed = await report({
+      playId: firstStarted,
+      position: 1,
+      listened: 1,
+      paused: false,
+    });
+    expect(toClosed.statusCode).toBe(404);
   });
 });
 

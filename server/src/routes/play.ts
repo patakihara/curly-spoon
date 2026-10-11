@@ -9,8 +9,8 @@
  * Anything else ABS answers, such as a file in a type the clients do not play, is refused 422.
  * Every plan names the session it holds open as its progress target. `POST /api/progress` reports
  * to it: to ABS, a sync with the wall-clock time listened, as the person, never retried, since a
- * repeat counts the listening twice; to Jellyfin, as `jellyfinPlay.ts` says, where a report
- * Jellyfin does not take is logged and never fails the call. `POST /api/play/{playId}/close`
+ * repeat counts the listening twice; to Jellyfin, as `jellyfinPlay.ts` says, through the device's
+ * line, never waiting for Jellyfin's answer. `POST /api/play/{playId}/close`
  * closes it, with a last report when given; so does planning again on the same device, or its
  * idle time running out.
  * The media routes pass a checked `Range` through with the person's own token and send the bytes
@@ -48,7 +48,7 @@ import {
   type Upstreams,
 } from '../upstream/links.js';
 import { signedIn } from './auth.js';
-import { jellyfinReports, planJellyfin } from './jellyfinPlay.js';
+import { type JellyfinLine, jellyfinLine, jellyfinReports, planJellyfin } from './jellyfinPlay.js';
 import { OpenPlays, type UpstreamReport } from './openPlays.js';
 import { type z } from 'zod';
 
@@ -209,6 +209,14 @@ export function playRoutes(
   const transcodeIdleMs = options.playback?.idleMs ?? DEFAULT_IDLE_MS;
   const directIdleMs = options.playback?.directIdleMs ?? DEFAULT_DIRECT_IDLE_MS;
   const open = new OpenPlays({ now: options.now ?? Date.now });
+  /** Each device's line to Jellyfin, by `userId deviceId`, kept for every play it makes. */
+  const lines = new Map<string, JellyfinLine>();
+  const lineFor = (userId: string, deviceId: string) => {
+    const key = `${userId} ${deviceId}`;
+    const line = lines.get(key) ?? jellyfinLine(app.log);
+    lines.set(key, line);
+    return line;
+  };
   const sweeper = setInterval(() => void open.sweep(), SWEEP_EVERY_MS);
   sweeper.unref();
   app.addHook('onClose', async () => {
@@ -245,20 +253,22 @@ export function playRoutes(
       const { plan, played } = await planJellyfin(client, item).catch(refusalFor);
       // Jellyfin's own play session ids are 32 hex digits (recorded).
       const playId = randomUUID().replace(/-/g, '');
-      const reports = jellyfinReports(client, played, playId, app.log);
-      // The device's track before stops before Jellyfin hears this one started.
-      await open.closeDevice(userId, deviceId);
-      await reports.start();
+      const reports = jellyfinReports(client, played, playId, lineFor(userId, deviceId));
       const last = plan.tracks[plan.tracks.length - 1]!;
-      await open.open({
-        playId,
-        userId,
-        deviceId,
-        ref,
-        duration: last.offset + last.duration,
-        idleMs: directIdleMs,
-        report: (report) => reports.report(report),
-        close: (report) => reports.close(report),
+      await open.planOn({ userId, deviceId }, async () => {
+        // The device's track before stops before Jellyfin hears this one started.
+        await open.closeDevice(userId, deviceId);
+        reports.start();
+        await open.open({
+          playId,
+          userId,
+          deviceId,
+          ref,
+          duration: last.offset + last.duration,
+          idleMs: directIdleMs,
+          report: async (report) => reports.report(report),
+          close: async (report) => reports.close(report),
+        });
       });
       return { ...plan, progressTarget: { playId } };
     }
@@ -270,7 +280,7 @@ export function playRoutes(
     if (plan === null) {
       // A failed close loses nothing.
       await abs.closeSession(session.id).catch(() => undefined);
-      await open.closeDevice(userId, deviceId);
+      await open.planOn({ userId, deviceId }, () => open.closeDevice(userId, deviceId));
       throw new Refusal(422, 'unsupported_format');
     }
     const playId = plan.progressTarget.playId;
@@ -281,16 +291,18 @@ export function playRoutes(
       timeListened: listened,
       duration,
     });
-    await open.open({
-      playId,
-      userId,
-      deviceId,
-      ref,
-      duration,
-      idleMs: plan.tracks[0]?.mime === HLS_MIME ? transcodeIdleMs : directIdleMs,
-      report: (report) => abs.syncSession(playId, sync(report)),
-      close: (report) => abs.closeSession(playId, report && sync(report)),
-    });
+    await open.planOn({ userId, deviceId }, () =>
+      open.open({
+        playId,
+        userId,
+        deviceId,
+        ref,
+        duration,
+        idleMs: plan.tracks[0]?.mime === HLS_MIME ? transcodeIdleMs : directIdleMs,
+        report: (report) => abs.syncSession(playId, sync(report)),
+        close: (report) => abs.closeSession(playId, report && sync(report)),
+      }),
+    );
     return plan;
   });
 
