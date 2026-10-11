@@ -355,6 +355,29 @@ export function standingRules(plan) {
   return null;
 }
 
+export const UNVERIFIED_ID = 'unverified';
+const ITEM_ID = /\b(M[0-6]\.[a-z][a-z0-9]{1,15})\b/g;
+
+/**
+ * The lines of the "What this plan hasn't verified" section (id `unverified`): each top-level
+ * list item as `{ file, line, text, items }`, `items` the item ids it names. Empty without one.
+ */
+export function unverifiedLines(plan) {
+  const section = (plan.sections ?? []).find((s) => s.id === UNVERIFIED_ID);
+  if (!section) return [];
+  const out = [];
+  for (const { text, index, fenced } of markdownLines(section.lines)) {
+    if (fenced || !text.startsWith('- ')) continue;
+    out.push({
+      file: section.file,
+      line: section.bodyLine + index,
+      text: text.slice(2),
+      items: [...new Set([...text.matchAll(ITEM_ID)].map((m) => m[1]))],
+    });
+  }
+  return out;
+}
+
 /**
  * Reads the plan, pushing every grammar error onto `errors` (strings `file:line: message`).
  * A folder with no `_header.md` and no section files is `{ empty: true }`.

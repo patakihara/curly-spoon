@@ -8,7 +8,15 @@ import assert from 'node:assert/strict';
 import { rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { lintPlan, WORD_LIMIT } from './lint.mjs';
-import { edit, fixtureTree, removeTree, REPO_ROOT, tag, write } from './testing.mjs';
+import {
+  edit,
+  fixtureTree,
+  removeTree,
+  REPO_ROOT,
+  tag,
+  unverifiedSection,
+  write,
+} from './testing.mjs';
 
 test('[M0.plan/a] the real plan passes every check', (t) => {
   const { errors, words, notices } = lintPlan(REPO_ROOT);
@@ -328,5 +336,19 @@ test('[M0.plan/f] standing rules: the plan fails without its standing-rules subs
   assertFails(
     lintAfter(replaceIn('01-flow.md', /### Standing rules for subagents[\s\S]*$/, `${heading}\n`)),
     /docs\/plan: the "### Standing rules for subagents" subsection is empty/,
+  );
+});
+
+test('[M0.unverified/a] each "What this plan hasn\'t verified" line names an existing item', () => {
+  const withLines = (...items) =>
+    lintAfter((root) => write(root, planFile('03-unverified.md'), unverifiedSection(...items)));
+  assert.deepEqual(withLines('Whether the first thing holds (M0.aa).').errors, []);
+  assertFails(
+    withLines('Whether the gap closes (M0.zz).'),
+    /docs\/plan\/03-unverified\.md:8: .*M0\.zz is no such item/,
+  );
+  assertFails(
+    withLines('Whether the first thing holds (M0.aa).', 'Whether anything checks this.'),
+    /docs\/plan\/03-unverified\.md:9: .*names no item/,
   );
 });

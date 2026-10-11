@@ -1,7 +1,8 @@
 /**
  * Plan progress, computed from the repo and never written to it: each criterion's status from
  * test results (results.mjs) or its sign-off tag, items in flight from plan/<ID> branches, the
- * outbox, recent Decision: lines and recently sorted inbox ideas.
+ * outbox, recent Decision: lines, recently sorted inbox ideas, and the "What this plan hasn't
+ * verified" lines whose item is done.
  *
  * CLI: node scripts/plan/progress.mjs [--summary] [--local|--no-results] [--json] [--root <dir>]
  *   [--gh-deadline <epoch ms>]
@@ -10,7 +11,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { readPlan } from './parse.mjs';
+import { readPlan, unverifiedLines } from './parse.mjs';
 import { defaultExec, git, loadResults } from './results.mjs';
 
 const tryGit = (exec, root, ...args) => {
@@ -206,6 +207,7 @@ export function computeProgress({ root, results = 'ci', exec = defaultExec, ghDe
   }
 
   const all = milestones.flatMap((m) => m.items);
+  const doneIds = new Set(all.filter((i) => i.status === 'done').map((i) => i.id));
   const outbox = readOutbox(root);
   return {
     commit: tryGit(exec, root, 'rev-parse', 'HEAD'),
@@ -227,6 +229,9 @@ export function computeProgress({ root, results = 'ci', exec = defaultExec, ghDe
     decisions: readDecisions(exec, root),
     sortedIdeas: readSortedIdeas(exec, root),
     waitingIdeas: readWaitingIdeas(root),
+    staleUnverified: unverifiedLines(plan)
+      .map((u) => ({ ...u, done: u.items.filter((id) => doneIds.has(id)) }))
+      .filter((u) => u.done.length),
   };
 }
 
@@ -279,6 +284,12 @@ export function formatSummary(p) {
   lines.push(
     `Recent decisions: ${p.decisions.map((d) => `${d.sha.slice(0, 7)} ${plain(d.text, 80)}`).join(' · ') || 'none'}`,
   );
+  if (p.staleUnverified.length)
+    lines.push(
+      `Stale "hasn't verified" lines (${p.staleUnverified.length}): ${p.staleUnverified
+        .map((u) => `${u.file}:${u.line}, ${u.done.join(', ')} done: ${plain(u.text, 80)}`)
+        .join(' · ')}`,
+    );
   return lines.slice(0, 25).join('\n');
 }
 

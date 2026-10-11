@@ -10,7 +10,15 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { computeProgress, criterionStatus, formatSummary, itemStatus } from './progress.mjs';
 import { collectResults } from './results.mjs';
-import { fakeExec, fixtureRepo, git, removeTree, tag, write } from './testing.mjs';
+import {
+  fakeExec,
+  fixtureRepo,
+  git,
+  removeTree,
+  tag,
+  unverifiedSection,
+  write,
+} from './testing.mjs';
 
 const check = (item, criterion, status) => ({
   item,
@@ -108,6 +116,38 @@ test('the progress CLI prints a summary without results, straight from a repo', 
   } finally {
     removeTree(root);
   }
+});
+
+test('[M0.unverified/b] progress.mjs --summary lists a "hasn\'t verified" line whose item is done as stale', () => {
+  const { root } = fixtureRepo();
+  try {
+    write(
+      root,
+      'docs/plan/03-unverified.md',
+      unverifiedSection(
+        'Whether signing in survives a restart (M0.exit).',
+        'Whether the third item holds (M0.cc).',
+      ),
+    );
+    const cli = join(dirname(fileURLToPath(import.meta.url)), 'progress.mjs');
+    const out = execFileSync('node', [cli, '--summary', '--no-results', '--root', root], {
+      encoding: 'utf8',
+    });
+    const stale = out.split('\n').filter((l) => l.startsWith('Stale'));
+    assert.deepEqual(stale, [
+      'Stale "hasn\'t verified" lines (1): 03-unverified.md:8, M0.exit done: Whether signing in survives a restart (M0.exit).',
+    ]);
+  } finally {
+    removeTree(root);
+  }
+});
+
+test('the summary has no stale line while every "hasn\'t verified" line names open items', () => {
+  const { progress } = progressOf(STANDARD, {}, (root) =>
+    write(root, 'docs/plan/03-unverified.md', unverifiedSection('Whether it holds (M0.cc).')),
+  );
+  assert.deepEqual(progress.staleUnverified, []);
+  assert.doesNotMatch(formatSummary(progress), /^Stale/m);
 });
 
 test('a criterion fails on any failed test, passes only when its tests all ran and one passed, else is missing', () => {

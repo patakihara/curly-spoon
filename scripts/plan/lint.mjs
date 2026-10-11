@@ -1,6 +1,7 @@
 /**
  * The plan checks: structure, directives, raw HTML, item grammar, orphan test tags, size,
- * no dated notes, the standing rules for subagents, and the outbox format. `pnpm test` runs them through lint.test.mjs.
+ * no dated notes, the standing rules for subagents, "What this plan hasn't verified" naming real
+ * items, and the outbox format. `pnpm test` runs them through lint.test.mjs.
  *
  * CLI: node scripts/plan/lint.mjs   (prints errors and the word count; exit 1 on errors)
  */
@@ -13,6 +14,7 @@ import {
   readPlan,
   STANDING_RULES_HEADING,
   standingRules,
+  unverifiedLines,
   wordCount,
 } from './parse.mjs';
 
@@ -207,6 +209,20 @@ function checkStandingRules(plan, errors) {
   }
 }
 
+/** Each "What this plan hasn't verified" line names the existing item whose work checks it. */
+function checkUnverified(plan, errors) {
+  const ids = new Set(plan.milestones.flatMap((m) => m.items.map((i) => i.id)));
+  for (const { file, line, items } of unverifiedLines(plan)) {
+    const where = `${PLAN}/${file}`;
+    if (!items.length) {
+      errors.push(at(where, line, 'names no item; each line names the item that checks it'));
+    }
+    for (const id of items.filter((i) => !ids.has(i))) {
+      errors.push(at(where, line, `${id} is no such item in ${PLAN}`));
+    }
+  }
+}
+
 function checkOutbox(root, errors) {
   const dir = join(root, 'docs', 'outbox');
   if (!existsSync(dir)) return;
@@ -264,6 +280,7 @@ export function lintPlan(root) {
     checkDirectives(plan, dir, errors);
     checkOrphanTags(root, plan, errors);
     checkStandingRules(plan, errors);
+    checkUnverified(plan, errors);
     if (words > WORD_LIMIT)
       errors.push(`${PLAN}: ${words} words, over the ${WORD_LIMIT}-word limit`);
   }
