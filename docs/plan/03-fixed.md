@@ -75,5 +75,5 @@ From `USER_DECISIONS.md`, the spec addendum and the research notes. Where a deci
 :::
 
 ::: small muted
-Also carried over: the escalation test _"would she have an opinion, and does the answer change what she gets?"_ Ordinary calls are made, not escalated. The extractor is still a poor _recommender_, as research found. ListenBrainz picks what to suggest, and YouTube Music makes it playable.
+Also carried over: the escalation test _"would she have an opinion, and does the answer change what she gets?"_ The extractor is still a poor _recommender_, as research found. ListenBrainz picks what to suggest, and YouTube Music makes it playable.
 :::
