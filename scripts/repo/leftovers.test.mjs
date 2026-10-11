@@ -109,35 +109,70 @@ const EXCEPTIONS = [
   { file: 'pnpm-lock.yaml', match: 'i@izs.me', why: "a package's deprecation notice, generated" },
 ];
 
-/** Every private-looking match in tracked text files, as `file: match (what)`. */
-function privateMatches() {
+/**
+ * Folders the check skips, each with why. scripts/hooks/ is Sofia's: never ours to edit, so a
+ * match there is reported to her through docs/outbox/usage-gate-home-path.md instead.
+ */
+const EXEMPT_DIRS = [
+  {
+    dir: 'scripts/hooks/',
+    why: "Sofia's files, not ours to edit; reported to her through the outbox",
+  },
+];
+
+const exemptDir = (file) => EXEMPT_DIRS.find(({ dir }) => file.startsWith(dir));
+
+/** Every private-looking match in the given text files, as `{ file, match, what }`. */
+function scan(files) {
+  return files.flatMap(({ file, text }) => {
+    if (text.includes('\0')) return [];
+    return PRIVATE.flatMap(({ what, re }) =>
+      [...text.matchAll(re)]
+        .map(([match]) => match)
+        .filter((match) => what !== 'an email' || !NOBODY.test(match))
+        .map((match) => ({ file, match, what })),
+    );
+  });
+}
+
+/** Tracked text files, as `{ file, text }`, without this file itself. */
+function trackedFiles() {
   return lines(git('ls-files'))
     .filter((file) => file !== SELF && existsSync(join(root, file)))
-    .flatMap((file) => {
-      const text = readFileSync(join(root, file), 'utf8');
-      if (text.includes('\0')) return [];
-      return PRIVATE.flatMap(({ what, re }) =>
-        [...text.matchAll(re)]
-          .map(([match]) => match)
-          .filter((match) => what !== 'an email' || !NOBODY.test(match))
-          .map((match) => ({ file, match, what })),
-      );
-    });
+    .map((file) => ({ file, text: readFileSync(join(root, file), 'utf8') }));
 }
+
+/** Private-looking matches the check reports: outside the exempt folders and the exceptions. */
+const reported = (hits) =>
+  hits
+    .filter((hit) => !exemptDir(hit.file) && !excepted(hit))
+    .map(({ file, match, what }) => `${file}: ${match} (${what})`);
 
 const excepted = (hit) => EXCEPTIONS.some((e) => e.file === hit.file && e.match === hit.match);
 
 test('no tracked file names a host, a user, a home folder or a personal email', () => {
-  const found = privateMatches()
-    .filter((hit) => !excepted(hit))
-    .map(({ file, match, what }) => `${file}: ${match} (${what})`);
-  assert.deepEqual([...new Set(found)], []);
+  assert.deepEqual([...new Set(reported(scan(trackedFiles())))], []);
+});
+
+test('a home folder planted outside the exempt folders is still reported', () => {
+  const planted = 'AUDIO="/home/sofiapata/music"\n';
+  const found = reported(
+    scan([
+      { file: 'scripts/hooks/planted.sh', text: planted },
+      { file: 'scripts/repo/planted.sh', text: planted },
+    ]),
+  );
+  assert.deepEqual(found, [
+    'scripts/repo/planted.sh: sofiapata (the user name)',
+    'scripts/repo/planted.sh: /home/sofiapata (a home folder)',
+  ]);
 });
 
 test('every exception to that still matches something', () => {
-  const hits = privateMatches();
-  const stale = EXCEPTIONS.filter(
-    (e) => !hits.some((h) => h.file === e.file && h.match === e.match),
-  );
+  const hits = scan(trackedFiles());
+  const stale = [
+    ...EXCEPTIONS.filter((e) => !hits.some((h) => h.file === e.file && h.match === e.match)),
+    ...EXEMPT_DIRS.filter(({ dir }) => !hits.some((h) => h.file.startsWith(dir))),
+  ];
   assert.deepEqual(stale, []);
 });
