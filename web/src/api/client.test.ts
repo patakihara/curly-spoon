@@ -24,4 +24,20 @@ describe('the API client', () => {
     const client = createApiClient({ baseUrl: 'http://auralis.test', fetch });
     await expect(fetchHealth(client)).rejects.toThrow('503');
   });
+
+  it.each([
+    ['a commit that is not a full commit id', '{"status":"ok","commit":"zz"}'],
+    ['no commit', '{"status":"ok"}'],
+    ['another status', `{"status":"starting","commit":"${COMMIT}"}`],
+  ])('refuses a health answer with %s', async (_, body) => {
+    const fetch = async () => new Response(body, { headers: json });
+    const client = createApiClient({ baseUrl: 'http://auralis.test', fetch });
+    await expect(fetchHealth(client)).rejects.toThrow();
+  });
+
+  it('reads a null commit, from a server not built into an image', async () => {
+    const fetch = async () => new Response('{"status":"ok","commit":null}', { headers: json });
+    const client = createApiClient({ baseUrl: 'http://auralis.test', fetch });
+    expect(await fetchHealth(client)).toEqual({ status: 'ok', commit: null });
+  });
 });

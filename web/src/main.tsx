@@ -8,6 +8,7 @@ import './base.css';
 import { App } from './App';
 import { routes } from './generated/nav/routes';
 import { withSignInData } from './sign-in';
+import { watchForUpdates } from './update-watch';
 
 const root = document.getElementById('root');
 if (root !== null) {
@@ -17,3 +18,6 @@ if (root !== null) {
     </StrictMode>,
   );
 }
+
+// The tab follows the app the server runs: it reloads onto a new commit once no audio plays.
+watchForUpdates();
