@@ -24,7 +24,7 @@ import net.develivarr.auralis.generated.nav.Route
  * browser back to `auralis://auth/callback`, which lands here and signs the app in. With a token
  * it opens Browse. A page's play control plays its key through the app's `Playback`; the canvas's
  * placeholder keys name nothing the server knows, so they play nothing, and say so in the log,
- * until M1.shell binds real items.
+ * until M5.player binds real items.
  */
 class MainActivity : ComponentActivity() {
     private val graph get() = (application as AuralisApp).graph
