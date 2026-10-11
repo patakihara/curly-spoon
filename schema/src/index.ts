@@ -24,6 +24,13 @@ export {
   UserList,
   Username,
 } from './auth.js';
+export {
+  Bookmark,
+  BookmarkList,
+  BookmarkParams,
+  BookmarksQuery,
+  CreateBookmarkBody,
+} from './bookmarks.js';
 export { CommitId, HealthResponse } from './health.js';
 export {
   AudioBytes,
@@ -49,10 +56,13 @@ export {
 export {
   appToken,
   closePlay,
+  createBookmark,
+  deleteBookmark,
   deleteDevice,
   getMe,
   getSetup,
   health,
+  listBookmarks,
   listDevices,
   listUsers,
   login,

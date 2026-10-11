@@ -9,9 +9,12 @@
  * report, and a stop when it closes or goes idle, each naming the track the position falls in and
  * the position within it. Jellyfin takes no listening time: it times the play itself, leaving out
  * the time it is told the track was paused. It counts a music track played at its start and keeps
- * no resume point for it (recorded), so a plan always starts at 0.
+ * no resume point for it (recorded), so a plan always starts at 0. The reports are a side effect of
+ * playing, never what plays it: one Jellyfin does not take is logged, and the play, the report or
+ * the close it came with goes ahead.
  */
 import { type PlaybackPlan, type PlaybackTrack } from '@auralis/schema';
+import { type FastifyBaseLogger } from 'fastify';
 import { type JellyfinClient } from '../adapters/jellyfin/client.js';
 import { type UpstreamReport } from './openPlays.js';
 import { type PlayableItem } from '../adapters/jellyfin/schemas.js';
@@ -105,12 +108,14 @@ export async function planJellyfin(
 /**
  * A play's reports to Jellyfin, as the person whose client `jellyfin` is, under `playSessionId`.
  * A report whose position falls in another track than the one playing stops that one where the
- * last report left it and starts the new one. Reports on one play reach it one at a time.
+ * last report left it and starts the new one. Reports on one play reach it one at a time. One
+ * Jellyfin does not take goes to `log`, and the next goes ahead as if it had.
  */
 export function jellyfinReports(
   jellyfin: JellyfinClient,
   played: readonly PlannedTrack[],
   playSessionId: string,
+  log: FastifyBaseLogger,
 ) {
   const first = played[0];
   if (first === undefined) throw new Error('a plan has at least one track');
@@ -119,30 +124,36 @@ export function jellyfinReports(
     const track = played.findLast((t) => t.offset <= position) ?? first;
     return { track, within: Math.min(position - track.offset, track.duration) };
   };
+  const tell = (kind: 'playing' | 'progress' | 'stopped', report: () => Promise<void>) =>
+    report().catch((error: unknown) => {
+      log.warn({ err: error, playSessionId }, `Jellyfin did not take a ${kind} report`);
+    });
   let playing = first;
   let within = 0;
+  const start = (paused: boolean) =>
+    tell('playing', () =>
+      jellyfin.reportStart({ itemId: playing.id, position: within, paused, playSessionId }),
+    );
   const stop = () =>
-    jellyfin.reportStopped({ itemId: playing.id, position: within, playSessionId });
+    tell('stopped', () =>
+      jellyfin.reportStopped({ itemId: playing.id, position: within, playSessionId }),
+    );
   return {
     /** Tells Jellyfin the first track started, at its start. */
-    start: () =>
-      jellyfin.reportStart({ itemId: first.id, position: 0, paused: false, playSessionId }),
+    start: () => start(false),
     async report({ position, paused }: UpstreamReport) {
       const now = at(position);
       if (now.track !== playing) {
         await stop();
         playing = now.track;
         within = now.within;
-        await jellyfin.reportStart({ itemId: playing.id, position: within, paused, playSessionId });
+        await start(paused);
         return;
       }
       within = now.within;
-      await jellyfin.reportProgress({
-        itemId: playing.id,
-        position: within,
-        paused,
-        playSessionId,
-      });
+      await tell('progress', () =>
+        jellyfin.reportProgress({ itemId: playing.id, position: within, paused, playSessionId }),
+      );
     },
     /** Tells Jellyfin the track playing stopped: where `last` is, if it is in that track. */
     async close(last?: UpstreamReport) {

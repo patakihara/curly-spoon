@@ -20,12 +20,32 @@ data class AppToken(
 )
 
 @Serializable
+data class Bookmark(
+    val ref: MediaRef,
+    val time: Double,
+    val title: String,
+    val createdAt: Long,
+)
+
+@Serializable
+data class BookmarkList(
+    val bookmarks: List<Bookmark>,
+)
+
+@Serializable
 enum class ClientKind {
     @SerialName("web")
     WEB,
     @SerialName("android")
     ANDROID,
 }
+
+@Serializable
+data class CreateBookmarkBody(
+    val ref: MediaRef,
+    val time: Long,
+    val title: String,
+)
 
 @Serializable
 data class Device(

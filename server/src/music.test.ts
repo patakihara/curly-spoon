@@ -78,11 +78,16 @@ interface Sent {
 }
 
 /** Two people, kara and otto, each with an app's bearer token; otto can be left unlinked. */
-async function server(options: { ottoLinked?: boolean; recordings?: Recording[] } = {}) {
+async function server(
+  options: { ottoLinked?: boolean; recordings?: Recording[]; reports?: Recording[] } = {},
+) {
   const db = openDatabase(':memory:');
   const sent: Sent[] = [];
   const replay = replayFetch(
-    [...(options.recordings ?? [album, albumTracks, track, stream]), playing, progress, stopped],
+    [
+      ...(options.recordings ?? [album, albumTracks, track, stream]),
+      ...(options.reports ?? [playing, progress, stopped]),
+    ],
     { readBytes: standInsBeside(adapters) },
   );
   const fetch: FetchLike = async (url, init) => {
@@ -417,6 +422,19 @@ describe("reporting an album's progress to Jellyfin", () => {
       `/Sessions/Playing/Stopped ${first.Id} 10`,
       `/Sessions/Playing ${second.Id} 4`,
       `/Sessions/Playing/Stopped ${second.Id} 6`,
+    ]);
+  });
+
+  it('moves on to the next track when Jellyfin does not take the stop of the one before', async () => {
+    const { app, sent, as, plan } = await server({ reports: [playing] });
+    const { tracks, progressTarget } = await plan(albumId);
+    const [first, second] = recordedTracks as [RecordedTrack, RecordedTrack];
+    const moved = await report(app, as('kara'), progressTarget.playId, 0, tracks[1]!.offset + 4);
+    expect(moved.statusCode, moved.body).toBe(200);
+    expect(reported(sent)).toEqual([
+      `/Sessions/Playing ${first.Id} 0`,
+      `/Sessions/Playing/Stopped ${first.Id} 0`,
+      `/Sessions/Playing ${second.Id} 4`,
     ]);
   });
 });

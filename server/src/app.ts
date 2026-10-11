@@ -12,6 +12,7 @@ import { retiredWorkerRoute } from './retiredWorker.js';
 import { serve } from './route.js';
 import { adminRoutes } from './routes/admin.js';
 import { authRoutes } from './routes/auth.js';
+import { bookmarkRoutes } from './routes/bookmarks.js';
 import { deviceRoutes } from './routes/devices.js';
 import { type PlaybackOptions, playRoutes, type UpstreamAccess } from './routes/play.js';
 import { setupRoutes } from './routes/setup.js';
@@ -111,6 +112,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     ...(options.playback ? { playback: options.playback } : {}),
     ...(options.now ? { now: options.now } : {}),
   });
+  bookmarkRoutes(app, { db, upstreams: options.upstreams ?? null });
 
   const distDir = options.webDistDir;
   if (distDir !== null && existsSync(distDir)) {

@@ -100,9 +100,11 @@ async function server(options: { playback?: PlaybackOptions; recordings?: Record
     }).token;
   }
   const clock = { now: 1_000_000 };
+  const logged: string[] = [];
   const app = await buildApp({
     webDistDir: null,
     db,
+    logger: { stream: { write: (line: string) => logged.push(line) } },
     upstreams: {
       key: KEY,
       config: { absUrl: PLACEHOLDER_ORIGIN, jellyfinUrl: JELLYFIN_ORIGIN },
@@ -141,7 +143,12 @@ async function server(options: { playback?: PlaybackOptions; recordings?: Record
     });
   /** Moves the clock on by `seconds`. */
   const pass = (seconds: number) => (clock.now += seconds * 1000);
-  return { app, sent, as, plan, planTrack, report, close, pass };
+  /** The log lines about Jellyfin at warning level or above. */
+  const warnings = () =>
+    logged
+      .map((line) => JSON.parse(line) as { level: number; msg: string })
+      .filter((line) => line.level >= 40 && line.msg.startsWith('Jellyfin'));
+  return { app, sent, as, plan, planTrack, report, close, pass, warnings };
 }
 
 describe("[M1.progress/a] progress to each item's own server", () => {
@@ -249,16 +256,41 @@ describe('reporting progress to Jellyfin', () => {
     expect(sent).toHaveLength(asked);
   });
 
-  it('refuses the plan with 502 when Jellyfin does not take the start', async () => {
-    const { app, as } = await server({ recordings: [jfTrack] });
-    const res = await app.inject({
-      method: 'POST',
-      url: '/api/play',
-      headers: as('kara'),
-      payload: { ref: { source: 'jellyfin', id: trackId } },
+  it('plays the track when Jellyfin does not take the start, and logs it: the report is not what plays it', async () => {
+    const { planTrack, warnings } = await server({ recordings: [jfTrack] });
+    const plan = await planTrack();
+    expect(plan.tracks).toHaveLength(1);
+    expect(warnings()).toEqual([
+      expect.objectContaining({ msg: 'Jellyfin did not take a playing report' }),
+    ]);
+  });
+
+  it('answers a progress report when Jellyfin does not take it, and logs it', async () => {
+    const { planTrack, report, pass, warnings } = await server({
+      recordings: [jfTrack, jfPlaying],
     });
-    expect(res.statusCode).toBe(502);
-    expect(res.json()).toEqual({ error: 'upstream_failed' });
+    const { playId } = (await planTrack()).progressTarget;
+    pass(15);
+    const res = await report({ playId, position: 15, listened: 15, paused: false });
+    expect(res.statusCode, res.body).toBe(200);
+    expect(res.json()).toEqual({ ok: true });
+    expect(warnings()).toEqual([
+      expect.objectContaining({ msg: 'Jellyfin did not take a progress report' }),
+    ]);
+  });
+
+  it('closes the play when Jellyfin does not take the stop, and logs it', async () => {
+    const { planTrack, close, pass, warnings } = await server({
+      recordings: [jfTrack, jfPlaying],
+    });
+    const { playId } = (await planTrack()).progressTarget;
+    pass(20);
+    const res = await close(playId, { position: 20, listened: 20, paused: true });
+    expect(res.statusCode, res.body).toBe(200);
+    expect(warnings()).toEqual([
+      expect.objectContaining({ msg: 'Jellyfin did not take a stopped report' }),
+    ]);
+    expect((await close(playId)).statusCode).toBe(404);
   });
 });
 

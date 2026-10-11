@@ -15,6 +15,13 @@ import {
   TokenBody,
   UserList,
 } from './auth.js';
+import {
+  Bookmark,
+  BookmarkList,
+  BookmarkParams,
+  BookmarksQuery,
+  CreateBookmarkBody,
+} from './bookmarks.js';
 import { HealthResponse } from './health.js';
 import {
   AudioBytes,
@@ -253,6 +260,39 @@ export const mediaHls = {
   stream: true,
 } as const satisfies Route;
 
+export const listBookmarks = {
+  method: 'GET',
+  path: '/api/bookmarks',
+  operationId: 'listBookmarks',
+  summary: "The signed-in person's bookmarks in one item, from its own server",
+  responseDescription: "The item's bookmarks, in the order they sit in it.",
+  response: BookmarkList,
+  access: 'member',
+  query: BookmarksQuery,
+} as const satisfies Route;
+
+export const createBookmark = {
+  method: 'POST',
+  path: '/api/bookmarks',
+  operationId: 'createBookmark',
+  summary: 'Bookmark a place in an item, on its own server, as the signed-in person',
+  responseDescription: 'The bookmark made.',
+  response: Bookmark,
+  access: 'member',
+  body: CreateBookmarkBody,
+} as const satisfies Route;
+
+export const deleteBookmark = {
+  method: 'DELETE',
+  path: '/api/bookmarks/{ref}/{time}',
+  operationId: 'deleteBookmark',
+  summary: "Delete one of the signed-in person's bookmarks, by its item and time",
+  responseDescription: 'The bookmark is gone.',
+  response: Ok,
+  access: 'member',
+  params: BookmarkParams,
+} as const satisfies Route;
+
 /** Every route the API has. The generator and the server's route test both read this list. */
 export const routes: readonly Route[] = [
   health,
@@ -272,4 +312,7 @@ export const routes: readonly Route[] = [
   closePlay,
   mediaTrack,
   mediaHls,
+  listBookmarks,
+  createBookmark,
+  deleteBookmark,
 ];

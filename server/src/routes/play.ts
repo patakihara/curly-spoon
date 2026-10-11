@@ -9,8 +9,10 @@
  * Anything else ABS answers, such as a file in a type the clients do not play, is refused 422.
  * Every plan names the session it holds open as its progress target. `POST /api/progress` reports
  * to it: to ABS, a sync with the wall-clock time listened, as the person, never retried, since a
- * repeat counts the listening twice; to Jellyfin, as `jellyfinPlay.ts` says. `POST /api/play/{playId}/close` closes it, with a last
- * report when given; so does planning again on the same device, or its idle time running out.
+ * repeat counts the listening twice; to Jellyfin, as `jellyfinPlay.ts` says, where a report
+ * Jellyfin does not take is logged and never fails the call. `POST /api/play/{playId}/close`
+ * closes it, with a last report when given; so does planning again on the same device, or its
+ * idle time running out.
  * The media routes pass a checked `Range` through with the person's own token and send the bytes
  * on as they come, never transcoded or buffered whole. Only the playlist is read whole, parsed,
  * and passed on with bare segment names that resolve under the same route.
@@ -179,7 +181,7 @@ function passOn(opened: UpstreamFile, contentType?: string): StreamAnswer {
  * An upstream failure as this server's answer: a missing item stays that, and a range past the
  * end stays that too, naming the file's size as the upstream did.
  */
-function refusalFor(error: unknown): never {
+export function refusalFor(error: unknown): never {
   if (error instanceof AdapterError) {
     if (error.status === 404) throw new Refusal(404, 'not_found');
     if (error.status === 416) {
@@ -243,8 +245,8 @@ export function playRoutes(
       const { plan, played } = await planJellyfin(client, item).catch(refusalFor);
       // Jellyfin's own play session ids are 32 hex digits (recorded).
       const playId = randomUUID().replace(/-/g, '');
-      const reports = jellyfinReports(client, played, playId);
-      await reports.start().catch(refusalFor);
+      const reports = jellyfinReports(client, played, playId, app.log);
+      await reports.start();
       const last = plan.tracks[plan.tracks.length - 1]!;
       await open.open({
         playId,
