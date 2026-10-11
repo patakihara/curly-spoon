@@ -73,6 +73,23 @@ describe('reading a show’s feed', () => {
     expect(feed.episodes).toEqual([{ guid: null, enclosureUrl: null, publishedAt: null }]);
   });
 
+  it('takes the first guid and the first enclosure of an item that has two', () => {
+    const feed = parseFeed(
+      rss(
+        '<item><guid>first</guid><guid>second</guid>' +
+          '<enclosure url="https://a.invalid/1.mp3"/><enclosure url="https://a.invalid/2.mp3"/>' +
+          '<pubDate>Fri, 08 Sep 2023 04:00:00 +0000</pubDate></item>',
+      ),
+    );
+    expect(feed.episodes).toEqual([
+      {
+        guid: 'first',
+        enclosureUrl: 'https://a.invalid/1.mp3',
+        publishedAt: Date.parse('2023-09-08T04:00:00Z'),
+      },
+    ]);
+  });
+
   it('skips an item it cannot read and keeps the rest', () => {
     const item = '<item><guid>g</guid><pubDate>Fri, 08 Sep 2023 04:00:00 +0000</pubDate></item>';
     for (const bad of ['<item>hello</item>', '<item></item>']) {

@@ -345,7 +345,8 @@ function ids(db: Db, rows: RawRow[]): StoredRow[] {
  * A show's episodes in its order: oldest first when serial, newest first when episodic or when the
  * order is unknown (no feed read has succeeded yet; Apple's default). Episodes of one date, and
  * undated ones, which come last, follow season and episode number in the same direction, with
- * unnumbered ones after the numbered.
+ * unnumbered ones after the numbered. An episode with no season is in the show's season when the
+ * show has only one; otherwise it follows those that have one.
  */
 export function episodesInOrder(db: Db, showId: string): StoredRow[] {
   const show = db
@@ -354,11 +355,18 @@ export function episodesInOrder(db: Db, showId: string): StoredRow[] {
   const direction = show?.episode_order === 'serial' ? 'ASC' : 'DESC';
   const rows = db
     .prepare(
-      `SELECT * FROM index_items WHERE source = 'abs' AND parent_id = ? AND kind = 'episode'
-       ORDER BY published_at IS NULL, published_at ${direction}, disc IS NULL, disc ${direction},
+      `WITH only_season AS (
+         SELECT CASE WHEN COUNT(DISTINCT disc) = 1 THEN MIN(disc) END AS disc
+         FROM index_items WHERE source = 'abs' AND parent_id = @show AND kind = 'episode'
+       )
+       SELECT index_items.* FROM index_items, only_season
+       WHERE source = 'abs' AND parent_id = @show AND kind = 'episode'
+       ORDER BY published_at IS NULL, published_at ${direction},
+         COALESCE(index_items.disc, only_season.disc) IS NULL,
+         COALESCE(index_items.disc, only_season.disc) ${direction},
          position IS NULL, position ${direction}, upstream_id`,
     )
-    .all(showId) as RawRow[];
+    .all({ show: showId }) as RawRow[];
   return ids(db, rows);
 }
 

@@ -37,9 +37,15 @@ const parser = new XMLParser({
   isArray: (_name, jpath) => jpath === 'rss.channel.item',
 });
 
+/** An element given twice or more parses as an array; the first one counts. */
+const firstOf = (v: unknown): unknown => (Array.isArray(v) ? v[0] : v);
+
 /** A text element, bare or carrying attributes (`<guid isPermaLink="false">…</guid>`). */
 const textOf = z
-  .union([z.string(), z.number(), z.object({ '#text': z.union([z.string(), z.number()]) })])
+  .preprocess(
+    firstOf,
+    z.union([z.string(), z.number(), z.object({ '#text': z.union([z.string(), z.number()]) })]),
+  )
   .transform((v) => String(typeof v === 'object' ? v['#text'] : v).trim())
   .optional()
   .catch(undefined);
@@ -50,7 +56,7 @@ const itemSchema = z
   .object({
     guid: textOf,
     pubDate: textOf,
-    enclosure: z.object({ '@_url': z.string() }).optional().catch(undefined),
+    enclosure: z.preprocess(firstOf, z.object({ '@_url': z.string() }).optional()).catch(undefined),
   })
   .transform((item): FeedEpisode => {
     const at = item.pubDate === undefined ? NaN : Date.parse(item.pubDate);
