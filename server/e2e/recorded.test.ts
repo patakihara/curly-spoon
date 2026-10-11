@@ -15,6 +15,9 @@ const tone = readFileSync(
     new URL('../src/adapters/audiobookshelf/recordings/item-file.m4a', import.meta.url),
   ),
 );
+const flacTone = readFileSync(
+  fileURLToPath(new URL('../src/adapters/jellyfin/recordings/jf-stream.flac', import.meta.url)),
+);
 
 let servers: RecordedServer[] = [];
 afterEach(async () => {
@@ -161,6 +164,31 @@ describe('the recorded-upstreams server', () => {
     });
     // The titles are the recording's own.
     expect(chapters[1]!.title).toBe('Ars Lunga');
+  });
+
+  it('plans the recorded Jellyfin track, and its track answers a range request with 206 FLAC', async () => {
+    const server = await boot();
+    expect(server.music.source).toBe('jellyfin');
+    const headers = { authorization: `Bearer ${await bearerFor(server)}` };
+    const planned = await server.app.inject({
+      method: 'POST',
+      url: '/api/play',
+      headers,
+      payload: { ref: server.music },
+    });
+    expect(planned.statusCode, planned.body).toBe(200);
+    const { tracks } = planned.json<PlaybackPlan>();
+    expect(tracks).toHaveLength(1);
+    expect(tracks[0]!.mime).toBe('audio/flac');
+
+    const res = await server.app.inject({
+      url: tracks[0]!.url,
+      headers: { ...headers, range: 'bytes=0-99' },
+    });
+    expect(res.statusCode, res.body).toBe(206);
+    expect(res.headers['content-type']).toBe('audio/flac');
+    expect(res.headers['content-range']).toBe(`bytes 0-99/${flacTone.byteLength}`);
+    expect(res.rawPayload).toEqual(flacTone.subarray(0, 100));
   });
 
   it('refuses a callback whose state is not the sign-in it started', async () => {

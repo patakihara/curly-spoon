@@ -76,6 +76,11 @@ export const playableItemSchema = z.object({
   Id: z.string(),
   Type: z.string(),
   Container: z.string().nullable().optional(),
+  /** The file's streams; the `Audio` one's `Codec` says what the container holds. */
+  MediaStreams: z
+    .array(z.object({ Type: z.string(), Codec: z.string().nullable().optional() }))
+    .nullable()
+    .optional(),
   RunTimeTicks: z.number().nonnegative().nullable().optional(),
   IndexNumber: z.number().int().nullable().optional(),
   ParentIndexNumber: z.number().int().nullable().optional(),

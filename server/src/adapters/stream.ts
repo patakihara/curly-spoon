@@ -21,6 +21,24 @@ export const fileHeadersSchema = z.object({
 });
 export type FileHeaders = z.infer<typeof fileHeadersSchema>;
 
+/** A 416's `Content-Range`, `bytes *` then a slash and the file's size, as that size. */
+const unsatisfiedRangeSchema = z.object({
+  'content-range': z
+    .string()
+    .regex(/^bytes \*\/\d+$/)
+    .transform((value) => Number(value.slice('bytes */'.length))),
+});
+
+/** The upstream's 416 to a range past the end: the file's size, when its answer names it. */
+export class RangeNotSatisfiable extends AdapterError {
+  constructor(
+    call: string,
+    readonly size: number | undefined,
+  ) {
+    super('status', call, 'answered 416', 416);
+  }
+}
+
 /** An audio file's answer: its status, its parsed headers and its body, still streaming. */
 export interface UpstreamFile {
   status: 200 | 206;
@@ -62,6 +80,12 @@ export async function openStream(
     await response.body?.cancel();
     throw error;
   };
+  if (response.status === 416) {
+    const range = unsatisfiedRangeSchema.safeParse(Object.fromEntries(response.headers.entries()));
+    return fail(
+      new RangeNotSatisfiable(call, range.success ? range.data['content-range'] : undefined),
+    );
+  }
   if (!response.ok) {
     return fail(new AdapterError('status', call, `answered ${response.status}`, response.status));
   }

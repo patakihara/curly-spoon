@@ -63,6 +63,8 @@ export interface RecordedServer {
   playable: MediaRef;
   /** The recorded book of four files, played directly, timed by its 5 s stand-in tones. */
   multiFile: MediaRef;
+  /** The recorded Jellyfin track that plays, its file the 5 s FLAC stand-in tone. */
+  music: MediaRef;
   listen(): Promise<void>;
   close(): Promise<void>;
 }
@@ -274,11 +276,12 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
   const abs = recordingsOf('audiobookshelf')
     .filter((r) => r.call !== 'hls-play' && r.call !== 'hls-segment-pending')
     .map((r) => (r.call === 'multi-play' ? timedByStandIns(r, 'multi-file.mp3') : r));
+  const jellyfin = recordingsOf('jellyfin');
   const server = await assembleServer(config, {
     fetch: byOrigin({
       [SIGN_ON_ISSUER]: signOn.fetch,
       [ABS_ORIGIN]: replayFetch(abs, { readBytes: standInsBeside(ADAPTERS) }),
-      [JELLYFIN_ORIGIN]: replayFetch(recordingsOf('jellyfin')),
+      [JELLYFIN_ORIGIN]: replayFetch(jellyfin, { readBytes: standInsBeside(ADAPTERS) }),
     }),
     logger: options.logger,
   });
@@ -288,6 +291,7 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
   );
   const itemId = call(abs, 'item-play').request.path.split('/')[3] ?? '';
   const multiId = call(abs, 'multi-play').request.path.split('/')[3] ?? '';
+  const trackId = call(jellyfin, 'jf-track').request.path.split('/')[2] ?? '';
   const signOnHttp = signOnListener(signOn.authorize, signOnOrigin);
 
   return {
@@ -297,6 +301,7 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     user: { username: userinfo.preferred_username, groups: userinfo.groups },
     playable: { source: 'abs', id: itemId },
     multiFile: { source: 'abs', id: multiId },
+    music: { source: 'jellyfin', id: trackId },
     async listen() {
       await new Promise<void>((resolve, reject) => {
         signOnHttp.once('error', reject).listen(signOnPort, LISTEN_HOST, resolve);

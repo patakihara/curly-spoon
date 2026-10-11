@@ -43,6 +43,13 @@ const recordedTracks = (albumTracks.response.body as { json: { Items: RecordedTr
   .Items;
 const trackUrl = (id: string) => `/api/media/jellyfin:${id}/tracks/0`;
 
+/** An item's media streams, as the codec check reads them. */
+interface AudioJson {
+  Container: string;
+  MediaStreams: { Type: string; Codec?: string }[];
+}
+const audioStreamOf = (json: AudioJson) => json.MediaStreams.find((s) => s.Type === 'Audio')!;
+
 /** A recording with its JSON answer changed by `edit`: the only change, named by each test. */
 function edited<T>(r: Recording, edit: (json: T) => void): Recording {
   const copy = structuredClone(r);
@@ -209,14 +216,57 @@ describe('playing a Jellyfin track', () => {
     expect(sent).toEqual([]);
   });
 
-  it('refuses a track in a format the clients do not play, since nothing is transcoded', async () => {
+  it('refuses a track in a container the clients do not play with 422, since nothing is transcoded', async () => {
     const ape = edited<{ Container: string }>(track, (json) => {
       json.Container = 'ape';
     });
     const { play } = await server({ recordings: [ape] });
     const res = await play(trackId);
-    expect(res.statusCode).toBe(502);
-    expect(res.json()).toEqual({ error: 'unplayable' });
+    expect(res.statusCode).toBe(422);
+    expect(res.json()).toEqual({ error: 'unsupported_format' });
+  });
+
+  it('refuses ALAC in an m4a with 422: the container plays, the codec does not', async () => {
+    const alac = edited<AudioJson>(track, (json) => {
+      json.Container = 'm4a';
+      audioStreamOf(json).Codec = 'alac';
+    });
+    const { play } = await server({ recordings: [alac] });
+    const res = await play(trackId);
+    expect(res.statusCode).toBe(422);
+    expect(res.json()).toEqual({ error: 'unsupported_format' });
+  });
+
+  it('plans AAC in an m4a as audio/mp4', async () => {
+    const aac = edited<AudioJson>(track, (json) => {
+      json.Container = 'm4a';
+      audioStreamOf(json).Codec = 'aac';
+    });
+    const { plan } = await server({ recordings: [aac] });
+    const { tracks } = await plan(trackId);
+    expect(tracks.map((t) => t.mime)).toEqual(['audio/mp4']);
+  });
+
+  it('refuses with 422 a track whose audio codec Jellyfin does not name', async () => {
+    const unnamed = edited<AudioJson>(track, (json) => {
+      json.MediaStreams = json.MediaStreams.filter((s) => s.Type !== 'Audio');
+    });
+    const { play } = await server({ recordings: [unnamed] });
+    const res = await play(trackId);
+    expect(res.statusCode).toBe(422);
+    expect(res.json()).toEqual({ error: 'unsupported_format' });
+  });
+
+  it('answers 416 to a range past the end, naming the file size in Content-Range', async () => {
+    const { app, as } = await server();
+    const res = await app.inject({
+      method: 'GET',
+      url: trackUrl(trackId),
+      headers: { ...as('kara'), range: `bytes=${flacTone.byteLength}-` },
+    });
+    expect(res.statusCode).toBe(416);
+    expect(res.headers['content-range']).toBe(`bytes */${flacTone.byteLength}`);
+    expect(res.json()).toEqual({ error: 'range_not_satisfiable' });
   });
 
   it('answers 409 to someone with no Jellyfin link, asking Jellyfin nothing', async () => {
@@ -266,6 +316,27 @@ describe('[M1.music/b] playing a Jellyfin album', () => {
       headers: { ...as('kara'), range: 'bytes=0-1' },
     });
     expect(res.statusCode).toBe(206);
+  });
+
+  it('refuses with 422 an album with any track in a format the clients do not play', async () => {
+    const oneAlac = edited<{ Items: AudioJson[] }>(albumTracks, (json) => {
+      json.Items[1]!.Container = 'm4a';
+      audioStreamOf(json.Items[1]!).Codec = 'alac';
+    });
+    const { play } = await server({ recordings: [album, oneAlac] });
+    const res = await play(albumId);
+    expect(res.statusCode).toBe(422);
+    expect(res.json()).toEqual({ error: 'unsupported_format' });
+  });
+
+  it('answers 404 to an album with no tracks', async () => {
+    const empty = edited<{ Items: unknown[] }>(albumTracks, (json) => {
+      json.Items = [];
+    });
+    const { play } = await server({ recordings: [album, empty] });
+    const res = await play(albumId);
+    expect(res.statusCode).toBe(404);
+    expect(res.json()).toEqual({ error: 'not_found' });
   });
 
   it("asks for the album and its tracks with the person's own token", async () => {

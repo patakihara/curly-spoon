@@ -11,27 +11,37 @@ import { type PlayableItem } from '../adapters/jellyfin/schemas.js';
 import type { SUPPORTED_MIME_TYPES } from '../adapters/audiobookshelf/schemas.js';
 import { Refusal } from '../route.js';
 
-/** Jellyfin's container names for the formats the clients play, by the mime type they play. */
-const MIME_OF_CONTAINER: Readonly<Record<string, (typeof SUPPORTED_MIME_TYPES)[number]>> = {
-  flac: 'audio/flac',
-  mp3: 'audio/mpeg',
-  m4a: 'audio/mp4',
-  m4b: 'audio/mp4',
-  mp4: 'audio/mp4',
-  mov: 'audio/mp4',
-  aac: 'audio/aac',
-  ogg: 'audio/ogg',
-  oga: 'audio/ogg',
-  opus: 'audio/ogg',
-  webm: 'audio/webm',
-  webma: 'audio/webm',
+type Mime = (typeof SUPPORTED_MIME_TYPES)[number];
+
+/**
+ * Jellyfin's container names for the formats the clients play: the mime type each plays as, and
+ * the audio codecs (Jellyfin's names) the clients play inside it. ALAC in an m4a, say, is not.
+ */
+const FORMAT_OF_CONTAINER: Readonly<Record<string, { mime: Mime; codecs: readonly string[] }>> = {
+  flac: { mime: 'audio/flac', codecs: ['flac'] },
+  mp3: { mime: 'audio/mpeg', codecs: ['mp3'] },
+  m4a: { mime: 'audio/mp4', codecs: ['aac'] },
+  m4b: { mime: 'audio/mp4', codecs: ['aac'] },
+  mp4: { mime: 'audio/mp4', codecs: ['aac'] },
+  mov: { mime: 'audio/mp4', codecs: ['aac'] },
+  aac: { mime: 'audio/aac', codecs: ['aac'] },
+  ogg: { mime: 'audio/ogg', codecs: ['vorbis', 'opus'] },
+  oga: { mime: 'audio/ogg', codecs: ['vorbis', 'opus'] },
+  opus: { mime: 'audio/ogg', codecs: ['opus'] },
+  webm: { mime: 'audio/webm', codecs: ['opus', 'vorbis'] },
+  webma: { mime: 'audio/webm', codecs: ['opus', 'vorbis'] },
 };
 
-/** The mime type a track's file plays as, or null when the clients do not play it. */
-export function mimeOf(container: string | null | undefined): string | null {
-  for (const name of (container ?? '').toLowerCase().split(',')) {
-    const mime = MIME_OF_CONTAINER[name.trim()];
-    if (mime !== undefined) return mime;
+/**
+ * The mime type a track's file plays as, or null when the clients do not play it: its container
+ * and its audio stream's codec must both be ones they play. An unnamed codec is not played.
+ */
+function mimeOf(item: Pick<PlayableItem, 'Container' | 'MediaStreams'>): Mime | null {
+  const codec = item.MediaStreams?.find((s) => s.Type === 'Audio')?.Codec?.toLowerCase();
+  if (codec === undefined) return null;
+  for (const name of (item.Container ?? '').toLowerCase().split(',')) {
+    const format = FORMAT_OF_CONTAINER[name.trim()];
+    if (format?.codecs.includes(codec)) return format.mime;
   }
   return null;
 }
@@ -46,7 +56,10 @@ function inAlbumOrder(tracks: PlayableItem[]): PlayableItem[] {
   return [...tracks].sort((a, b) => disc(a) - disc(b) || number(a) - number(b));
 }
 
-/** How to play a track or an album, or a refusal: not music, or a format nothing plays. */
+/**
+ * How to play a track or an album, or a refusal: 404 for what is not music or an album with no
+ * tracks, 422 `unsupported_format` for a file the clients do not play.
+ */
 export async function planJellyfin(
   jellyfin: JellyfinClient,
   item: PlayableItem,
@@ -58,15 +71,16 @@ export async function planJellyfin(
   const tracks: PlaybackTrack[] = [];
   let offset = 0;
   for (const file of files) {
-    const mime = mimeOf(file.Container);
     const ticks = file.RunTimeTicks;
-    if (file.Type !== 'Audio' || mime === null || ticks === null || ticks === undefined) {
-      throw new Refusal(502, 'unplayable');
+    if (file.Type !== 'Audio' || ticks === null || ticks === undefined) {
+      throw new Refusal(502, 'upstream_failed');
     }
+    const mime = mimeOf(file);
+    if (mime === null) throw new Refusal(422, 'unsupported_format');
     const duration = ticks / 1e7;
     tracks.push({ url: jellyfinTrackUrl(file.Id), mime, duration, offset });
     offset += duration;
   }
-  if (tracks.length === 0) throw new Refusal(502, 'unplayable');
+  if (tracks.length === 0) throw new Refusal(404, 'not_found');
   return { tracks, chapters: [], startAt: 0 };
 }

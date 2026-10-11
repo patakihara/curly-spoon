@@ -270,8 +270,27 @@ describe('playing one Audiobookshelf item by direct play', () => {
       headers: as('kara'),
       payload: { ref: { source: 'abs', id: itemId } },
     });
-    expect(res.statusCode).toBe(502);
-    expect(res.json()).toEqual({ error: 'unplayable' });
+    expect(res.statusCode).toBe(422);
+    expect(res.json()).toEqual({ error: 'unsupported_format' });
+    expect(sent.map((s) => `${s.method} ${s.path}`)).toEqual([
+      `POST ${itemPlay.request.path}`,
+      `POST ${sessionClose.request.path}`,
+    ]);
+  });
+
+  it('refuses with 422 a direct-play track whose type the clients do not play, still closing the session', async () => {
+    const wma = structuredClone(itemPlay);
+    const json = (wma.response.body as { json: { audioTracks: { mimeType: string }[] } }).json;
+    for (const track of json.audioTracks) track.mimeType = 'audio/x-ms-wma';
+    const { app, sent, as } = await server({ play: wma });
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/play',
+      headers: as('kara'),
+      payload: { ref: { source: 'abs', id: itemId } },
+    });
+    expect(res.statusCode).toBe(422);
+    expect(res.json()).toEqual({ error: 'unsupported_format' });
     expect(sent.map((s) => `${s.method} ${s.path}`)).toEqual([
       `POST ${itemPlay.request.path}`,
       `POST ${sessionClose.request.path}`,
@@ -315,6 +334,7 @@ describe('playing one Audiobookshelf item by direct play', () => {
       headers: { ...as('kara'), range: `bytes=${tone.byteLength}-` },
     });
     expect(res.statusCode).toBe(416);
+    expect(res.headers['content-range']).toBe(`bytes */${tone.byteLength}`);
     expect(res.json()).toEqual({ error: 'range_not_satisfiable' });
   });
 

@@ -7,6 +7,7 @@
  * - a transcode: one HLS track at `/api/media/{ref}/hls/{playId}/output.m3u8`, the session kept
  *   open because the transcode lives in it, named as the progress target, and closed by
  *   `POST /api/play/{playId}/close`.
+ * Anything else ABS answers, such as a file in a type the clients do not play, is refused 422.
  * The media routes pass a checked `Range` through with the person's own token and send the bytes
  * on as they come, never transcoded or buffered whole. Only the playlist is read whole, parsed,
  * and passed on with bare segment names that resolve under the same route.
@@ -25,9 +26,12 @@ import {
 } from '@auralis/schema';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { contentUrlParts, hlsSessionOf } from '../adapters/audiobookshelf/client.js';
-import { type playSessionSchema } from '../adapters/audiobookshelf/schemas.js';
+import {
+  type playSessionSchema,
+  SUPPORTED_MIME_TYPES,
+} from '../adapters/audiobookshelf/schemas.js';
 import { AdapterError, type FetchLike } from '../adapters/http/fetch.js';
-import { type UpstreamFile } from '../adapters/stream.js';
+import { RangeNotSatisfiable, type UpstreamFile } from '../adapters/stream.js';
 import { Refusal, serve, serveStream, type StreamAnswer } from '../route.js';
 import type { Db } from '../store/connection.js';
 import {
@@ -98,7 +102,10 @@ export function planChapters(session: AbsSession, length: number): PlaybackChapt
     .sort((a, b) => a.start - b.start);
 }
 
-/** How to play what ABS answered, or null when it is neither direct play nor one transcode. */
+/**
+ * How to play what ABS answered, or null when the clients cannot play it: neither direct play of
+ * files in types they play, nor one transcode.
+ */
 function planFor(session: AbsSession, ref: string): PlaybackPlan | null {
   const startAt = session.currentTime ?? 0;
   const [first, ...rest] = session.audioTracks;
@@ -123,6 +130,7 @@ function planFor(session: AbsSession, ref: string): PlaybackPlan | null {
     if (
       contentUrlParts(track.contentUrl) === null ||
       track.mimeType === undefined ||
+      !(SUPPORTED_MIME_TYPES as readonly string[]).includes(track.mimeType) ||
       track.duration === undefined
     ) {
       return null;
@@ -150,11 +158,19 @@ function passOn(opened: UpstreamFile, contentType?: string): StreamAnswer {
   return { status: opened.status, headers, body: opened.body };
 }
 
-/** An upstream failure as this server's answer: a missing item or range stays that. */
+/**
+ * An upstream failure as this server's answer: a missing item stays that, and a range past the
+ * end stays that too, naming the file's size as the upstream did.
+ */
 function refusalFor(error: unknown): never {
   if (error instanceof AdapterError) {
     if (error.status === 404) throw new Refusal(404, 'not_found');
-    if (error.status === 416) throw new Refusal(416, 'range_not_satisfiable');
+    if (error.status === 416) {
+      const size = error instanceof RangeNotSatisfiable ? error.size : undefined;
+      const headers: Record<string, string> =
+        size === undefined ? {} : { 'content-range': `bytes */${size}` };
+      throw new Refusal(416, 'range_not_satisfiable', headers);
+    }
     throw new Refusal(502, 'upstream_failed');
   }
   throw error;
@@ -234,7 +250,7 @@ export function playRoutes(
         close: () => abs.closeSession(playId),
       });
     }
-    if (plan === null) throw new Refusal(502, 'unplayable');
+    if (plan === null) throw new Refusal(422, 'unsupported_format');
     return plan;
   });
 

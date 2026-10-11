@@ -4,14 +4,23 @@ import { type Route } from '@auralis/schema';
 import { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import { type z } from 'zod';
 
-/** Thrown from a handler to answer `{ error }` with a status instead of the route's response. */
+/**
+ * Thrown from a handler to answer `{ error }` with a status, and any `headers` the status calls
+ * for, instead of the route's response.
+ */
 export class Refusal extends Error {
   constructor(
-    readonly status: 400 | 401 | 403 | 404 | 409 | 416 | 429 | 502,
+    readonly status: 400 | 401 | 403 | 404 | 409 | 416 | 422 | 429 | 502,
     readonly error: string,
+    readonly headers: Record<string, string> = {},
   ) {
     super(`${status} ${error}`);
   }
+}
+
+/** A refusal as its answer: the status, its headers and `{ error }`. */
+function refuse(reply: FastifyReply, refusal: Refusal) {
+  return reply.code(refusal.status).headers(refusal.headers).send({ error: refusal.error });
 }
 
 type Parsed<S> = S extends z.ZodTypeAny ? z.infer<S> : undefined;
@@ -74,7 +83,7 @@ export function serve<R extends Route>(
         if (route.redirect) return reply.redirect((answer as { location: string }).location, 302);
         return answer;
       } catch (err) {
-        if (err instanceof Refusal) return reply.code(err.status).send({ error: err.error });
+        if (err instanceof Refusal) return refuse(reply, err);
         throw err;
       }
     },
@@ -139,7 +148,7 @@ export function serveStream<R extends Route & { stream: true; method: 'GET' }>(
           signal: gone.signal,
         });
       } catch (err) {
-        if (err instanceof Refusal) return reply.code(err.status).send({ error: err.error });
+        if (err instanceof Refusal) return refuse(reply, err);
         throw err;
       }
       reply.code(answer.status).headers(answer.headers);

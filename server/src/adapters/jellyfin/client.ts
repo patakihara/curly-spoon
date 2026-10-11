@@ -144,6 +144,7 @@ export class JellyfinClient {
       ParentId: albumId,
       IncludeItemTypes: 'Audio',
       SortBy: 'ParentIndexNumber,IndexNumber,SortName',
+      Fields: 'MediaStreams',
     };
     return (await this.get('Items', playableQueryResultSchema, query)).Items;
   }
