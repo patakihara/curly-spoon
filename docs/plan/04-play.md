@@ -12,7 +12,7 @@ The rule: **the server works out how to play something; the clients just play th
 ### What each player does
 
 - **Gapless across files.** A multi-file book or an album is one plan. Web keeps two audio elements, preloading the next track about 20&nbsp;s before the end; Android hands ExoPlayer the whole plan as a playlist. Chapters are positions on one timeline, so they cross file boundaries.
-- **Dirty-streamed tracks** (YouTube Music) are resolved by the server when the plan is built and passed through the same range proxy, untranscoded, so seeking and the lock screen behave alike. The next queued track is resolved and fetched ahead, in ranged chunks (as AbleMusicPlayer does, which dodges throttling) into a small capped cache, so there's no gap. A streamed play feeds the taste profile like a Jellyfin play.
+- **Dirty-streamed tracks** (YouTube Music) are resolved by the server when the plan is built and passed through the same range proxy, untranscoded, so seeking and the lock screen behave alike. The next queued track is resolved and fetched ahead, in ranged chunks (dodging throttling, as AbleMusicPlayer does) into a small capped cache, so there's no gap. A streamed play feeds the taste profile like a Jellyfin play.
 - **Transcode, made to work.** When the server transcodes, the backend proxies Audiobookshelf's `/hls/` playlist and segments, played with `hls.js` on web and Media3's HLS module on Android. Offline downloads always use the original files.
 - **Controls on both platforms:** speed (pitch preserved), sleep timer (including "end of chapter"), bookmarks synced to Audiobookshelf, next/previous, shuffle and repeat for music; spoken: skip back/forward, next/previous only at episode/chapter start/end. Lock screen and notification controls use the same actions (`setPositionState` on web).
 - **SponsorBlock, live.** On a YouTube channel's episode, players also skip segments submitted after the cut.
@@ -42,7 +42,7 @@ Queues belong to a device's listening session (see "Library and accounts"), stor
 
 | Queue runs out | What autoplay does |
 |---|---|
-| Music | First version: YouTube Music's own radio for the last track (not personalised, as you noted), mixed with similar music you own. Then the recommendation algorithm under Discovery takes over. |
+| Music | The rest of the album, then similar music you own (Jellyfin's Instant Mix); from M3, YouTube Music's radio for the last track (not personalised, as you noted) joins it. Then the recommendation algorithm under Discovery takes over. |
 | Spoken | The next unplayed episode of the same show (oldest first for serial shows, newest first for episodic ones, from the feed's `itunes:type`), or the next chapter or book in the series. Later, the next entry of your listening list. |
 
 ### Lists that aren't queues

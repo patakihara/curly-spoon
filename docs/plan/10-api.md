@@ -38,7 +38,8 @@ Grouped by what they serve, all under `/api` so none clashes with a page address
 
 `POST /play` → PlaybackPlan\
 `POST /progress` · `POST /play/{id}/close`\
-`GET/PUT /queues/{type}`\
+`GET/PUT /queues/{type}` · `POST /queues/{type}/items` (now, next, end, default)\
+`POST /sessions/this/step` (next, back) · `PUT /sessions/this/active` (the meta-queue switch)\
 `GET/POST/DELETE /bookmarks`\
 `GET /lyrics/{ref}`
 :::
@@ -84,7 +85,7 @@ Grouped by what they serve, all under `/api` so none clashes with a page address
 ::: card
 #### Settings
 
-`GET/PUT /settings` (theme, autoplay rules, artist-page catalogue toggle on by default, show everyone's library off by default)\
+`GET/PUT /settings` (theme, autoplay rules, queue style (YouTube Music or Spotify), artist-page catalogue toggle on by default, show everyone's library off by default)\
 `PUT/DELETE /settings/youtube-account` (connect or disconnect watched-state and position sync for YouTube channels) · `GET /settings/youtube-account` (status, last sync, expired)\
 `GET/PUT /shows/{ref}/youtube` (SponsorBlock categories, Shorts and livestreams)
 :::

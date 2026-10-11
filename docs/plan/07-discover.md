@@ -27,16 +27,16 @@ The old code's taste profile, from your library and play history, is kept. New: 
 
 ### The recommendation algorithm
 
-**Your taste comes from what you've listened to, not what's in your library:** plays, progress and completions (Jellyfin, Audiobookshelf, Auralis), plus your Spotify and YouTube Music history. Owning something affects only how it's shown: a book you own but never started says nothing about your taste.
+**Your taste comes from what you've listened to, not what's in your library:** plays, progress and completions (Jellyfin, Audiobookshelf, Auralis), plus your Spotify and YouTube Music history. Owning something affects only how it's shown.
 
-Documented techniques from Spotify, YouTube and open-source recommenders, at small scale: no GPU, no model trained from scratch.
+Spotify, YouTube and open-source recommender techniques at small scale: no GPU, no model trained from scratch.
 
 | Phase | What it does | Why it fits |
 |---|---|---|
 | 1 · Seeded from your history | Import your Spotify export (and the older account's, if found) and your YouTube Music takeout into one play-history table per user, merged with Jellyfin and Audiobookshelf plays. From it: a **co-occurrence table** (what you play near what, within a listening session), weighted to damp popular items (PPMI), and a **next-item table** (what you tend to play after what). | Plain SQL, no training; solves cold start from years of real data. |
 | 2 · Candidates from outside | Each medium gets its own listener-overlap source, all checked live: <ul><li>**Music**: YouTube Music's radio and "related" for a track (per track, no account, instant), ListenBrainz similar artists (by MusicBrainz ID), and Deezer related artists as a no-key fallback.</li><li>**Books**: Audible's "listeners also enjoyed" for each book you've listened to, plus series order.</li><li>**Podcasts**: Apple Podcasts' "You Might Also Like" for each show you listen to, read from the show page, plus iTunes and PodcastIndex search by genre.</li></ul> Description similarity (a small text-embedding model on the server) covers items those sources miss. All candidates are scored against your taste profile, not taken in the provider's order. | Every shown item logs its source, so later phases learn which sources you like. |
 | 3 · Learning from you | Your reactions become the signal: completions, **graded skips** (instant, early, late), favourites, adds to library, requests. Every Browse shelf and autoplay pick keeps a small **share of exploration** (about 10–20%) so taste can move. Later this becomes a per-source bandit that shifts weight to the sources you respond to. Once your own history is big enough, a nightly **item2vec** job learns "sounds like it belongs next to" vectors from your sessions. | Tiny SQLite counters and one batch job: Spotify's BaRT pattern at household size. |
-| 4 · Maybe: audio similarity | Audio features from the files themselves (Essentia models), for "sounds like" radio. | Only if a benchmark on this box shows it fits in RAM overnight. Skipping it entirely is fine. |
+| 4 · Maybe: audio similarity | Audio features from the files themselves (Essentia models), for "sounds like" radio. | Only if a benchmark shows it fits in RAM overnight; skipping it is fine. |
 
 - **Autoplay**, when a queue runs out: music takes the last track's next-item and co-occurrence neighbours, mixed with ListenBrainz and YouTube Music radio candidates. Spoken continues the show or series, then close matches by author, narrator and description.
 - **"Are you feeling lucky?"** is the exploration share turned up: a strong candidate from outside your neighbourhood, one per medium.
@@ -44,12 +44,12 @@ Documented techniques from Spotify, YouTube and open-source recommenders, at sma
 - **Per user**: every table is keyed by user.
 - **Measured, not guessed**: hold out your latest months of history and check whether each version would have put what you actually played next in its top 10; that score must not drop between versions.
 
-**Checked live today.** Book and podcast seeds come from your library; the music seeds were picked for the test.
+**Checked live today.** Book and podcast seeds from your library; music seeds picked for the test.
 
 - **YouTube Music radio**: _Private Eye_ → blink-182, Green Day, Sum 41; _Motion Sickness_ → Big Thief, Mitski.
 - **ListenBrainz**: Alkaline Trio → Bad Religion, Yellowcard, Rise Against. **Deezer**: → The Ataris, New Found Glory, MxPx.
 - **Audible**: _If Anyone Builds It, Everyone Dies_ → _Life 3.0_, _The Alignment Problem_. Only 7 of your 233 books carry an Audible ID, but Audible's search finds them by title and author (3 of 3), so a job backfills them. Audnexus has no "similar" field; it stays for metadata.
-- **Apple Podcasts**: _If Books Could Kill_ → _Maintenance Phase_, _You're Wrong About_, _5-4_. Read from the page's HTML, it breaks when Apple changes the page.
+- **Apple Podcasts**: _If Books Could Kill_ → _Maintenance Phase_, _You're Wrong About_, _5-4_. Scraped, it breaks when Apple changes the page.
 
 ::: small muted
 **Not established:** that the old YouTube Music algorithm worked in some knowable way. Music-to-book taste transfer (no prior art; an experiment). How fast the embedding and audio models run on this box (benchmark first).
