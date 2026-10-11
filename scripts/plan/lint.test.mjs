@@ -14,6 +14,7 @@ import {
   removeTree,
   REPO_ROOT,
   tag,
+  unverifiedBody,
   unverifiedSection,
   write,
 } from './testing.mjs';
@@ -350,5 +351,59 @@ test('[M0.unverified/a] each "What this plan hasn\'t verified" line names an exi
   assertFails(
     withLines('Whether the first thing holds (M0.aa).', 'Whether anything checks this.'),
     /docs\/plan\/03-unverified\.md:9: .*names no item/,
+  );
+});
+
+test('[M0.unverified/a] a "hasn\'t verified" line is read whole, across a hard break or a continuation row', () => {
+  const withBody = (body) =>
+    lintAfter((root) => write(root, planFile('03-unverified.md'), unverifiedBody(body)));
+  assert.deepEqual(withBody('- Whether the first thing\\\n  holds (M0.aa).\n').errors, []);
+  assert.deepEqual(withBody('- Whether the first thing\n  holds (M0.aa).\n').errors, []);
+  assert.deepEqual(withBody('- Whether the first thing\nholds (M0.aa).\n').errors, []);
+  assert.deepEqual(
+    withBody('- Whether the first thing holds,\n\n  across a paragraph (M0.aa).\n').errors,
+    [],
+  );
+  assertFails(
+    withBody('- Whether the gap\\\n  closes (M0.zz).\n'),
+    /docs\/plan\/03-unverified\.md:8: .*M0\.zz is no such item/,
+  );
+  assertFails(
+    withBody('- Whether the first thing holds (M0.aa).\n- Whether the gap\n  closes (M0.zz).\n'),
+    /docs\/plan\/03-unverified\.md:9: .*M0\.zz is no such item/,
+  );
+});
+
+test('[M0.unverified/a] a nested "hasn\'t verified" line names its own item or inherits its parent\'s', () => {
+  const withBody = (body) =>
+    lintAfter((root) => write(root, planFile('03-unverified.md'), unverifiedBody(body)));
+  assert.deepEqual(
+    withBody('- Whether the first thing holds (M0.aa):\n  - in one way;\n  - in another.\n').errors,
+    [],
+  );
+  assertFails(
+    withBody('- Whether the first thing holds (M0.aa):\n  - and whether the gap closes (M0.zz).\n'),
+    /docs\/plan\/03-unverified\.md:9: .*M0\.zz is no such item/,
+  );
+  assertFails(
+    withBody('- Whether anything checks this:\n  - the first thing (M0.aa).\n'),
+    /docs\/plan\/03-unverified\.md:8: .*names no item/,
+  );
+});
+
+test('[M0.unverified/a] every bullet style is checked: -, * and +', () => {
+  const withBody = (body) =>
+    lintAfter((root) => write(root, planFile('03-unverified.md'), unverifiedBody(body)));
+  assertFails(
+    withBody('* Whether the gap closes (M0.zz).\n'),
+    /docs\/plan\/03-unverified\.md:8: .*M0\.zz is no such item/,
+  );
+  assertFails(
+    withBody('+ Whether the gap closes (M0.zz).\n'),
+    /docs\/plan\/03-unverified\.md:8: .*M0\.zz is no such item/,
+  );
+  assertFails(
+    withBody('* Whether anything checks this.\n'),
+    /03-unverified\.md:8: .*names no item/,
   );
 });

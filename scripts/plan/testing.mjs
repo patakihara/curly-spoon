@@ -32,9 +32,13 @@ export function fixtureTree() {
   return root;
 }
 
+/** A "What this plan hasn't verified" section file with `body` from line 8. */
+export const unverifiedBody = (body) =>
+  `---\nid: unverified\nnav: Not verified\npart: Delivery\n---\n## What this plan hasn't verified\n\n${body}`;
+
 /** A "What this plan hasn't verified" section file holding `items`, its first item on line 8. */
 export const unverifiedSection = (...items) =>
-  `---\nid: unverified\nnav: Not verified\npart: Delivery\n---\n## What this plan hasn't verified\n\n${items.map((i) => `- ${i}\n`).join('')}`;
+  unverifiedBody(items.map((i) => `- ${i}\n`).join(''));
 
 export const removeTree = (root) => rmSync(root, { recursive: true, force: true });
 

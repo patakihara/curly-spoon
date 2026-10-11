@@ -16,6 +16,7 @@ import {
   git,
   removeTree,
   tag,
+  unverifiedBody,
   unverifiedSection,
   write,
 } from './testing.mjs';
@@ -148,6 +149,50 @@ test('the summary has no stale line while every "hasn\'t verified" line names op
   );
   assert.deepEqual(progress.staleUnverified, []);
   assert.doesNotMatch(formatSummary(progress), /^Stale/m);
+});
+
+test('[M0.unverified/b] the summary prints at most 25 lines, and a long in-flight note never cuts the stale or failing lines', () => {
+  const { progress } = progressOf(STANDARD, {}, (root) =>
+    write(
+      root,
+      'docs/plan/03-unverified.md',
+      unverifiedSection('Whether signing in survives a restart (M0.exit).'),
+    ),
+  );
+  progress.inFlight = [
+    {
+      branch: 'plan/M0.aa',
+      note: Array.from({ length: 40 }, (_, i) => `step ${i + 1} done`).join('\n'),
+    },
+  ];
+  const lines = formatSummary(progress).split('\n');
+  assert.equal(lines.length, 25);
+  assert.equal(lines[3], 'In flight: plan/M0.aa: "step 1 done');
+  assert.ok(lines.some((l) => l.startsWith(`Failing: M0.dd (a)`)));
+  assert.ok(
+    lines.some((l) => l.startsWith('Stale "hasn\'t verified" lines (1): 03-unverified.md:8')),
+  );
+  assert.ok(lines.some((l) => l.startsWith('Recent decisions: ')));
+});
+
+test('[M0.unverified/b] a stale nested "hasn\'t verified" line that inherits its parent\'s item is listed once, under its parent', () => {
+  const { progress } = progressOf(STANDARD, {}, (root) =>
+    write(
+      root,
+      'docs/plan/03-unverified.md',
+      unverifiedBody(
+        '- Whether signing in survives a restart (M0.exit):\n  - on the phone;\n  - and whether it\n    survives a reinstall (M0.bb).\n',
+      ),
+    ),
+  );
+  assert.deepEqual(
+    progress.staleUnverified.map((u) => [u.line, u.done]),
+    [
+      [8, ['M0.exit']],
+      [10, ['M0.bb']],
+    ],
+  );
+  assert.equal(progress.staleUnverified[1].text, 'and whether it survives a reinstall (M0.bb).');
 });
 
 test('a criterion fails on any failed test, passes only when its tests all ran and one passed, else is missing', () => {

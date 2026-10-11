@@ -209,12 +209,15 @@ function checkStandingRules(plan, errors) {
   }
 }
 
-/** Each "What this plan hasn't verified" line names the existing item whose work checks it. */
+/**
+ * Each "What this plan hasn't verified" line, nested ones too, names the existing item whose work
+ * checks it, or sits under a line that does.
+ */
 function checkUnverified(plan, errors) {
   const ids = new Set(plan.milestones.flatMap((m) => m.items.map((i) => i.id)));
-  for (const { file, line, items } of unverifiedLines(plan)) {
+  for (const { file, line, items, inherited } of unverifiedLines(plan)) {
     const where = `${PLAN}/${file}`;
-    if (!items.length) {
+    if (!items.length && !inherited.length) {
       errors.push(at(where, line, 'names no item; each line names the item that checks it'));
     }
     for (const id of items.filter((i) => !ids.has(i))) {

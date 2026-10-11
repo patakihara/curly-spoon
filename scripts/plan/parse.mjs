@@ -358,24 +358,70 @@ export function standingRules(plan) {
 export const UNVERIFIED_ID = 'unverified';
 const ITEM_ID = /\b(M[0-6]\.[a-z][a-z0-9]{1,15})\b/g;
 
+const LIST_ITEM = /^( *)([-*+]|\d{1,9}[.)])( +|$)(.*)$/;
+const THEMATIC_BREAK = /^ {0,3}([-*_])( *\1){2,} *$/;
+const BLOCK_START = /^ {0,3}(#{1,6}( |$)|:::)/;
+
 /**
- * The lines of the "What this plan hasn't verified" section (id `unverified`): each top-level
- * list item as `{ file, line, text, items }`, `items` the item ids it names. Empty without one.
+ * The lines of the "What this plan hasn't verified" section (id `unverified`): every list item,
+ * nested ones included, as `{ file, line, text, items, inherited }`. `text` is the item's whole
+ * text, continuation rows and hard breaks joined; `items` the item ids it names itself;
+ * `inherited` its parent's ids when it names none, so a sub-line is checked by its parent's item.
+ * Empty without the section.
  */
 export function unverifiedLines(plan) {
   const section = (plan.sections ?? []).find((s) => s.id === UNVERIFIED_ID);
   if (!section) return [];
-  const out = [];
+  const entries = [];
+  let open = []; // the open list items, outermost first: { content, rows, parent, line }
+  let blank = false;
+  const closeAll = () => {
+    open = [];
+    blank = false;
+  };
   for (const { text, index, fenced } of markdownLines(section.lines)) {
-    if (fenced || !text.startsWith('- ')) continue;
-    out.push({
-      file: section.file,
-      line: section.bodyLine + index,
-      text: text.slice(2),
-      items: [...new Set([...text.matchAll(ITEM_ID)].map((m) => m[1]))],
-    });
+    if (fenced || BLOCK_START.test(text) || THEMATIC_BREAK.test(text)) {
+      closeAll();
+      continue;
+    }
+    if (text.trim() === '') {
+      blank = true;
+      continue;
+    }
+    const indent = text.length - text.trimStart().length;
+    const marker = LIST_ITEM.exec(text);
+    if (marker) {
+      const spaces = marker[3].length;
+      const content = indent + marker[2].length + (spaces === 0 || spaces > 4 ? 1 : spaces);
+      while (open.length && indent < open.at(-1).content) open.pop();
+      const entry = {
+        line: section.bodyLine + index,
+        rows: [marker[4]],
+        parent: open.at(-1) ?? null,
+        content,
+      };
+      entries.push(entry);
+      open.push(entry);
+    } else if (open.length) {
+      if (blank) while (open.length && indent < open.at(-1).content) open.pop();
+      open.at(-1)?.rows.push(text.trim());
+    }
+    blank = false;
   }
-  return out;
+  const ids = (text) => [...new Set([...text.matchAll(ITEM_ID)].map((m) => m[1]))];
+  const out = new Map();
+  for (const entry of entries) {
+    const text = entry.rows
+      .map((r) => r.replace(/\\$|\s+$/, '').trim())
+      .filter(Boolean)
+      .join(' ');
+    const items = ids(text);
+    const parent = entry.parent && out.get(entry.parent);
+    const inherited =
+      items.length || !parent ? [] : parent.items.length ? parent.items : parent.inherited;
+    out.set(entry, { file: section.file, line: entry.line, text, items, inherited });
+  }
+  return [...out.values()];
 }
 
 /**

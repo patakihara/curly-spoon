@@ -251,46 +251,59 @@ const plain = (text, max = 110) => {
   return t.length > max ? `${t.slice(0, max - 1)}…` : t;
 };
 
-/** The session-start summary: at most 25 lines. */
+export const SUMMARY_LINES = 25;
+
+/**
+ * The session-start summary: at most 25 printed lines. Only the in-flight branch notes run long,
+ * so they alone are cut to fit; every other line, stale "hasn't verified" lines included, stays.
+ */
 export function formatSummary(p) {
   const checks = p.results.error
     ? `checks unavailable: ${p.results.error}`
     : `checks from ${sourcesLine(p)}`;
   const current = p.milestones.find((m) => m.id === p.current);
-  const lines = [];
-  if (!p.milestones.length) lines.push(`Auralis plan · no milestones yet · ${checks}`);
-  else if (!current) lines.push(`Auralis plan · every milestone done · ${checks}`);
+  const head = [];
+  if (!p.milestones.length) head.push(`Auralis plan · no milestones yet · ${checks}`);
+  else if (!current) head.push(`Auralis plan · every milestone done · ${checks}`);
   else
-    lines.push(
+    head.push(
       `Auralis plan · current ${current.id} ${current.title} · ${current.done}/${current.total} done · ${checks}`,
     );
   const done = p.milestones.flatMap((m) => m.items).filter((i) => i.status === 'done');
-  lines.push(
+  head.push(
     done.length ? `Done (${done.length}): ${done.map((i) => i.id).join(', ')}` : 'Done: nothing',
   );
-  lines.push(`Next: ${p.next ? `${p.next.id}: ${plain(p.next.text)}` : 'nothing'}`);
-  lines.push(
-    `In flight: ${p.inFlight.map((f) => `${f.branch}: "${f.note}"`).join(' · ') || 'nothing'}`,
-  );
-  lines.push(
+  head.push(`Next: ${p.next ? `${p.next.id}: ${plain(p.next.text)}` : 'nothing'}`);
+  const inFlight = `In flight: ${p.inFlight.map((f) => `${f.branch}: "${f.note}"`).join(' · ') || 'nothing'}`;
+  const tail = [];
+  tail.push(
     `Failing: ${p.failing.map((f) => `${f.item} (${f.criterion}): ${f.tests.join(', ')}`).join(' · ') || 'nothing'}`,
   );
-  lines.push(
-    p.outbox.length
-      ? `Waiting on you (${p.outbox.length}): ${p.outbox.map((o) => `${o.title} (default: ${plain(o.default, 80)})`).join(' · ')}`
-      : 'Waiting on you: nothing',
-  );
-  if (p.overAsking) lines.push('More than five open outbox items: sessions are over-asking.');
-  lines.push(
-    `Recent decisions: ${p.decisions.map((d) => `${d.sha.slice(0, 7)} ${plain(d.text, 80)}`).join(' · ') || 'none'}`,
-  );
   if (p.staleUnverified.length)
-    lines.push(
+    tail.push(
       `Stale "hasn't verified" lines (${p.staleUnverified.length}): ${p.staleUnverified
         .map((u) => `${u.file}:${u.line}, ${u.done.join(', ')} done: ${plain(u.text, 80)}`)
         .join(' · ')}`,
     );
-  return lines.slice(0, 25).join('\n');
+  tail.push(
+    p.outbox.length
+      ? `Waiting on you (${p.outbox.length}): ${p.outbox.map((o) => `${o.title} (default: ${plain(o.default, 80)})`).join(' · ')}`
+      : 'Waiting on you: nothing',
+  );
+  if (p.overAsking) tail.push('More than five open outbox items: sessions are over-asking.');
+  tail.push(
+    `Recent decisions: ${p.decisions.map((d) => `${d.sha.slice(0, 7)} ${plain(d.text, 80)}`).join(' · ') || 'none'}`,
+  );
+  const printed = (lines) => lines.join('\n').split('\n');
+  const fixed = [...printed(head), ...printed(tail)];
+  const room = Math.max(SUMMARY_LINES - fixed.length, 2);
+  let flight = printed([inFlight]);
+  if (flight.length > room)
+    flight = [
+      ...flight.slice(0, room - 1),
+      `… ${flight.length - room + 1} more in-flight note lines`,
+    ];
+  return [...printed(head), ...flight, ...printed(tail)].slice(0, SUMMARY_LINES).join('\n');
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
