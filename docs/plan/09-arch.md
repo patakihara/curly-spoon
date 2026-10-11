@@ -5,7 +5,7 @@ part: How it's built
 ---
 ## Architecture
 
-The shape you chose stays: **one container, one port**, a TypeScript backend holding every secret and talking to every service, and two clients on one API. What changes is inside.
+The shape you chose stays: **one container, one port**, a TypeScript backend holding every secret and talking to every service, and two clients on one API.
 
 ::: diagram arch
 

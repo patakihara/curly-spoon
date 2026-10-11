@@ -272,3 +272,52 @@ describe("[M0.record/b] Jellyfin's recordings from mediaserver", () => {
     expect(album.Type).toBe('MusicAlbum');
   });
 });
+
+/** M1.music's recordings: one album played as the service identity, with its own token. */
+const JELLYFIN_PLAY_CALLS = ['jf-album', 'jf-album-tracks', 'jf-track', 'jf-stream'] as const;
+const jfPlay = Object.fromEntries(
+  JELLYFIN_PLAY_CALLS.map((call) => [call, recording('jellyfin', call)]),
+) as Record<(typeof JELLYFIN_PLAY_CALLS)[number], Recording>;
+
+describe("Jellyfin's play calls on one album, recorded for M1.music", () => {
+  const person = () =>
+    new JellyfinClient({
+      baseUrl: 'http://upstream.invalid',
+      token: '<token>',
+      fetch: replayFetch(Object.values(jfPlay), { readBytes: standInsBeside(adapters) }),
+    });
+
+  it("asks as a person's own Auralis device, never as the server or with a user id", () => {
+    for (const r of Object.values(jfPlay)) {
+      expect(r.request.headers.authorization, r.call).toContain('DeviceId="auralis-recorder"');
+      expect(r.request.headers.authorization, r.call).toContain('Token="<token>"');
+      expect(Object.keys(r.request.query), r.call).not.toContain('userId');
+    }
+  });
+
+  it('parses the album, its tracks and its first track through the client', async () => {
+    const albumId = jfPlay['jf-album'].request.path.split('/')[2] ?? '';
+    const client = person();
+    expect((await client.getPlayable(albumId)).Type).toBe('MusicAlbum');
+    const tracks = await client.getAlbumPlayables(albumId);
+    expect(tracks.length).toBeGreaterThan(1);
+    expect(tracks.every((t) => t.Type === 'Audio' && t.Container === 'flac')).toBe(true);
+    const track = await client.getPlayable(tracks[0]!.Id);
+    expect(track).toMatchObject({ Id: tracks[0]!.Id, Type: 'Audio', Container: 'flac' });
+  });
+
+  it("records the first track's static stream as a two-byte range, with a synthesized FLAC body", async () => {
+    const stream = jfPlay['jf-stream'];
+    const trackId = jfPlay['jf-track'].request.path.split('/')[2];
+    expect(stream.request.path).toBe(`/Audio/${trackId}/stream`);
+    expect(stream.request.query).toEqual({ static: 'true' });
+    expect(stream.request.headers.range).toBe('bytes=0-1');
+    expect(stream.response.status).toBe(206);
+    expect(stream.response.headers['content-type']).toBe('audio/flac');
+    expect(stream.response.body).toMatchObject({ bytes: 'jf-stream.flac' });
+    const opened = await person().openAudio(trackId ?? '', 'bytes=0-3');
+    expect(opened.status).toBe(206);
+    const bytes = new Uint8Array(await new Response(opened.body).arrayBuffer());
+    expect(new TextDecoder().decode(bytes)).toBe('fLaC');
+  });
+});

@@ -4,11 +4,10 @@
  * fetch })`.
  */
 import { AdapterError, type FetchLike, requestJson, type RequestInitJson } from '../http/fetch.js';
+import { type FileHeaders, fileHeadersSchema, openStream, type UpstreamFile } from '../stream.js';
 import { type ZodType, type z } from 'zod';
 import {
   closeSessionSchema,
-  type FileHeaders,
-  fileHeadersSchema,
   type FileRef,
   hlsPlaylistSchema,
   hlsSegmentHeadersSchema,
@@ -25,21 +24,12 @@ import {
   SUPPORTED_MIME_TYPES,
 } from './schemas.js';
 
-/** An audio file's answer: its status, its parsed headers and its body, still streaming. */
-export interface UpstreamFile {
-  status: 200 | 206;
-  headers: FileHeaders;
-  body: ReadableStream<Uint8Array>;
-}
-
 /** The session an HLS track's `contentUrl` names; null for anything else. */
 export function hlsSessionOf(contentUrl: string): string | null {
   const m = /^\/hls\/([^/]+)\/output\.m3u8$/.exec(contentUrl);
   const session = itemIdSchema.safeParse(m?.[1]);
   return session.success ? session.data : null;
 }
-
-const FILE_TIMEOUT_MS = 15_000;
 
 /** The item and file a direct-play track's `contentUrl` names; null for anything else (HLS). */
 export function contentUrlParts(contentUrl: string): FileRef | null {
@@ -181,54 +171,13 @@ export class AbsClient {
     return this.openStream(path, range, hlsSegmentHeadersSchema);
   }
 
-  /**
-   * Opens audio bytes, passing `range` through. Only the answer's headers are waited for
-   * (within the timeout) and parsed; the body streams on to the caller, who must read or cancel it.
-   */
-  private async openStream(
+  /** Opens audio bytes with this person's key, passing `range` through. */
+  private openStream(
     path: string,
     range: string | undefined,
     schema: ZodType<FileHeaders, z.ZodTypeDef, unknown>,
   ): Promise<UpstreamFile> {
-    const url = this.url(path);
-    const call = `GET ${new URL(url).pathname}`;
-    const headers: Record<string, string> = { authorization: `Bearer ${this.opts.token}` };
-    if (range !== undefined) headers.range = range;
-
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), FILE_TIMEOUT_MS);
-    let response: Response;
-    try {
-      response = await this.opts.fetch(url, { method: 'GET', headers, signal: controller.signal });
-    } catch (cause) {
-      if (controller.signal.aborted) {
-        throw new AdapterError('timeout', call, `no answer in ${FILE_TIMEOUT_MS} ms`, undefined, {
-          cause,
-        });
-      }
-      throw new AdapterError('network', call, 'the request failed', undefined, { cause });
-    } finally {
-      clearTimeout(timer);
-    }
-
-    const fail = async (error: AdapterError): Promise<never> => {
-      await response.body?.cancel();
-      throw error;
-    };
-    if (!response.ok) {
-      return fail(new AdapterError('status', call, `answered ${response.status}`, response.status));
-    }
-    if ((response.status !== 200 && response.status !== 206) || response.body === null) {
-      return fail(new AdapterError('parse', call, `answered ${response.status} with no file`));
-    }
-    const parsed = schema.safeParse(Object.fromEntries(response.headers.entries()));
-    if (!parsed.success) {
-      return fail(
-        new AdapterError('parse', call, parsed.error.message, response.status, {
-          cause: parsed.error,
-        }),
-      );
-    }
-    return { status: response.status, headers: parsed.data, body: response.body };
+    const headers = { authorization: `Bearer ${this.opts.token}` };
+    return openStream(this.opts.fetch, this.url(path), headers, range, schema);
   }
 }

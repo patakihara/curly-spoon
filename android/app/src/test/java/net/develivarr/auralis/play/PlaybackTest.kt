@@ -243,8 +243,11 @@ class PlaybackTest {
     }
 
     @Test
-    fun `only an Audiobookshelf key names a playable ref`() {
+    fun `only an Audiobookshelf or Jellyfin key names a playable ref`() {
         assertEquals(MediaRef(MediaSource.ABS, "item-1"), Playback.refOf("abs:item-1"))
+        val track = "7c8b8e35e6ec0f40736aadee1f8979bb"
+        assertEquals(MediaRef(MediaSource.JELLYFIN, track), Playback.refOf("jellyfin:$track"))
+        assertNull(Playback.refOf("jellyfin:item-1"))
         assertNull(Playback.refOf("salt-in-the-ledger"))
         assertNull(Playback.refOf("abs:../admin"))
     }

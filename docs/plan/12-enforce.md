@@ -6,12 +6,12 @@ part: How it's built
 ## Staying on track, enforced
 
 ::: lede
-The old project drifted from its design and its docs. Each rule here is a check that fails, not a habit to remember.
+Each rule here is a check that fails, not a habit to remember.
 :::
 
 ### Build through the design
 
-- **Generated code can't be edited by hand.** The web UI package, Android's component props, the routes and the page layouts are generated from `design/`. CI fails on any difference from a regeneration, and a repo hook refuses edits there, so UI changes only through the design.
+- **Generated code can't be edited by hand.** The web UI package, Android's component props, the routes and the page layouts are generated from `design/`. CI fails on any difference from a regeneration, and a repo hook refuses edits there.
 - **No component without a design.** CI fails if app code uses a component that doesn't exist in Sonora with its `.d.ts`, card and previews. Lint rejects styled elements, raw colours and one-off components outside the UI package, and a check refuses raw sizes, colours, timings and layers inside Sonora and Android's `ui/sonora`.
 - **No screen without a page, and looks match.** Routes, layouts and both platforms' screenshots are checked against the canvas, as "From design to both apps" lists.
 
@@ -37,9 +37,8 @@ The old project drifted from its design and its docs. Each rule here is a check 
 #### The progress: computed, never written
 
 - **Done**: each item's check (a test, a recording, a route that exists) is tagged with its id; done means it passes. Items that are done only when you say so ("you used it for a week") get your sign-off as a git tag.
-- **In progress**: unfinished work lives on a branch whose description is its "where I stopped, what's next" note, gone when the branch merges, so nothing piles up.
+- **In progress**: unfinished work lives on a branch whose description is its "where I stopped, what's next" note, gone when the branch merges.
 - **Next**: the first unfinished item of the current milestone.
-- No progress file exists to go stale.
 :::
 :::
 
@@ -70,7 +69,7 @@ Anything you say about Auralis, in any session or artifact comment, takes one fi
 
    It also edits whatever else in the plan the change affects.
 3. **Applied in one commit**: the plan edit, the inbox file's deletion, and a commit message naming the plan item and the inbox file. Until that commit lands the idea stays in the inbox, so a crash loses none. The plan checks run on that commit.
-4. **Progress follows by itself.** Nothing is written by hand: in the next session-start summary, a new item shows as planned, a changed item whose check no longer passes as not done, and a bug's new check reopens its item.
+4. **Progress follows by itself.** The next session-start summary shows a new item as planned; a changed item whose check fails, or a bug's new check, reopens its item.
 5. **Closed the loop with you.** The plan page is republished, a comment thread gets a reply saying where the idea landed and is resolved, and the page and the session-start summary list recently sorted ideas and where each went.
 
 ### What needs you, without waiting on you
@@ -80,5 +79,5 @@ Anything you say about Auralis, in any session or artifact comment, takes one fi
 - **Five kinds only:** a product call that passes your test ("would she have an opinion, and does the answer change what she gets?"); a name; anything published or shared beyond the machines; anything destructive or irreversible; something only you can physically do (try a milestone build, sign off, export YouTube cookies, test in the car).
 - **Every item carries its default**, and work goes ahead on it: a working name gets used until you rename it, a product call gets the session's best choice, yours to overturn. Only irreversible or outward-facing actions wait for your answer; other work continues around them.
 - **Kept small by checks.** An item without its kind and default is rejected. Over about five open items means sessions over-ask, and the session-start summary says so. Answered items are deleted.
-- **Decisions made for you are visible, not queued.** They're written into the plan in place, their commits carrying a `Decision:` line. The session-start summary and this page list recent ones to skim; overruling one is just saying so.
+- **Decisions made for you are visible, not queued.** They're written into the plan in place, their commits carrying a `Decision:` line. The session-start summary and this page list recent ones; overruling one is just saying so.
 - **Where you see it:** a "waiting on you" box at the top of this page, in every session's opening summary, and as a phone notification when an item is time-sensitive.

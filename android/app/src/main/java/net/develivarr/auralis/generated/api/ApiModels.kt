@@ -96,6 +96,8 @@ data class MediaRef(
 enum class MediaSource {
     @SerialName("abs")
     ABS,
+    @SerialName("jellyfin")
+    JELLYFIN,
 }
 
 @Serializable

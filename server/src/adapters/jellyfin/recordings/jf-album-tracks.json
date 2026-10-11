@@ -1,0 +1,1980 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "jf-album-tracks",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "Fields": "MediaStreams",
+      "IncludeItemTypes": "Audio",
+      "ParentId": "65de8562c54b89ceef199f91bacd8709",
+      "SortBy": "ParentIndexNumber,IndexNumber,SortName"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis\", DeviceId=\"auralis-recorder\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [
+          {
+            "Name": "Femininomenon",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "7c8b8e35e6ec0f40736aadee1f8979bb",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "RunTimeTicks": 2197107260,
+            "ProductionYear": 2023,
+            "IndexNumber": 1,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "7c8b8e35e6ec0f40736aadee1f8979bb"
+            },
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "MediaStreams": [
+              {
+                "Codec": "flac",
+                "TimeBase": "1/44100",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "LocalizedDefault": "Default",
+                "LocalizedExternal": "External",
+                "DisplayTitle": "FLAC - Stereo",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "ChannelLayout": "stereo",
+                "BitRate": 1606398,
+                "BitDepth": 24,
+                "Channels": 2,
+                "SampleRate": 44100,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Audio",
+                "Index": 0,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Level": 0
+              },
+              {
+                "Codec": "mjpeg",
+                "ColorSpace": "bt470bg",
+                "Comment": "Cover (front)",
+                "TimeBase": "1/90000",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "BitDepth": 8,
+                "RefFrames": 1,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Height": 500,
+                "Width": 500,
+                "RealFrameRate": 90000,
+                "ReferenceFrameRate": 90000,
+                "Profile": "Progressive",
+                "Type": "EmbeddedImage",
+                "AspectRatio": "1:1",
+                "Index": 1,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "PixelFormat": "yuvj420p",
+                "Level": -99,
+                "IsAnamorphic": false
+              },
+              {
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Lyric",
+                "Index": 2,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Path": "/data/media/.metadata/library/7c/7c8b8e35e6ec0f40736aadee1f8979bb/01. Femininomenon.lrc"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "436a49810142c4f856b033bae929874a"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "436a49810142c4f856b033bae929874a": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10
+          },
+          {
+            "Name": "Red Wine Supernova",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "5130cb0d529d7281f503eb95c427dd7b",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "RunTimeTicks": 1927209980,
+            "ProductionYear": 2023,
+            "IndexNumber": 2,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "5130cb0d529d7281f503eb95c427dd7b"
+            },
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "MediaStreams": [
+              {
+                "Codec": "flac",
+                "TimeBase": "1/44100",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "LocalizedDefault": "Default",
+                "LocalizedExternal": "External",
+                "DisplayTitle": "FLAC - Stereo",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "ChannelLayout": "stereo",
+                "BitRate": 1789202,
+                "BitDepth": 24,
+                "Channels": 2,
+                "SampleRate": 44100,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Audio",
+                "Index": 0,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Level": 0
+              },
+              {
+                "Codec": "mjpeg",
+                "ColorSpace": "bt470bg",
+                "Comment": "Cover (front)",
+                "TimeBase": "1/90000",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "BitDepth": 8,
+                "RefFrames": 1,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Height": 500,
+                "Width": 500,
+                "RealFrameRate": 90000,
+                "ReferenceFrameRate": 90000,
+                "Profile": "Progressive",
+                "Type": "EmbeddedImage",
+                "AspectRatio": "1:1",
+                "Index": 1,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "PixelFormat": "yuvj420p",
+                "Level": -99,
+                "IsAnamorphic": false
+              },
+              {
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Lyric",
+                "Index": 2,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Path": "/data/media/.metadata/library/51/5130cb0d529d7281f503eb95c427dd7b/02. Red Wine Supernova.lrc"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "37c0c9a7408df1b9efa552a80905a4a6"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "37c0c9a7408df1b9efa552a80905a4a6": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10.7
+          },
+          {
+            "Name": "After Midnight",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "a2978bfc8fdc396fc73070e889377ebf",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "RunTimeTicks": 2048570290,
+            "ProductionYear": 2023,
+            "IndexNumber": 3,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "a2978bfc8fdc396fc73070e889377ebf"
+            },
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "MediaStreams": [
+              {
+                "Codec": "flac",
+                "TimeBase": "1/44100",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "LocalizedDefault": "Default",
+                "LocalizedExternal": "External",
+                "DisplayTitle": "FLAC - Stereo",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "ChannelLayout": "stereo",
+                "BitRate": 1747290,
+                "BitDepth": 24,
+                "Channels": 2,
+                "SampleRate": 44100,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Audio",
+                "Index": 0,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Level": 0
+              },
+              {
+                "Codec": "mjpeg",
+                "ColorSpace": "bt470bg",
+                "Comment": "Cover (front)",
+                "TimeBase": "1/90000",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "BitDepth": 8,
+                "RefFrames": 1,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Height": 500,
+                "Width": 500,
+                "RealFrameRate": 90000,
+                "ReferenceFrameRate": 90000,
+                "Profile": "Progressive",
+                "Type": "EmbeddedImage",
+                "AspectRatio": "1:1",
+                "Index": 1,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "PixelFormat": "yuvj420p",
+                "Level": -99,
+                "IsAnamorphic": false
+              },
+              {
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Lyric",
+                "Index": 2,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Path": "/data/media/.metadata/library/a2/a2978bfc8fdc396fc73070e889377ebf/03. After Midnight.lrc"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "0eac121416bc6edbfc3616efcc8f4791"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "0eac121416bc6edbfc3616efcc8f4791": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -11
+          },
+          {
+            "Name": "Coffee",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "06312a70f4aecee8a36a067f911786ca",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "RunTimeTicks": 2055200680,
+            "ProductionYear": 2023,
+            "IndexNumber": 4,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "06312a70f4aecee8a36a067f911786ca"
+            },
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "MediaStreams": [
+              {
+                "Codec": "flac",
+                "TimeBase": "1/44100",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "LocalizedDefault": "Default",
+                "LocalizedExternal": "External",
+                "DisplayTitle": "FLAC - Stereo",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "ChannelLayout": "stereo",
+                "BitRate": 1473882,
+                "BitDepth": 24,
+                "Channels": 2,
+                "SampleRate": 44100,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Audio",
+                "Index": 0,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Level": 0
+              },
+              {
+                "Codec": "mjpeg",
+                "ColorSpace": "bt470bg",
+                "Comment": "Cover (front)",
+                "TimeBase": "1/90000",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "BitDepth": 8,
+                "RefFrames": 1,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Height": 500,
+                "Width": 500,
+                "RealFrameRate": 90000,
+                "ReferenceFrameRate": 90000,
+                "Profile": "Progressive",
+                "Type": "EmbeddedImage",
+                "AspectRatio": "1:1",
+                "Index": 1,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "PixelFormat": "yuvj420p",
+                "Level": -99,
+                "IsAnamorphic": false
+              },
+              {
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Lyric",
+                "Index": 2,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Path": "/data/media/.metadata/library/06/06312a70f4aecee8a36a067f911786ca/04. Coffee.lrc"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "875d5bcd6ad6c5333786306cb28dbe17"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "875d5bcd6ad6c5333786306cb28dbe17": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -8.7
+          },
+          {
+            "Name": "Casual",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "c7c085df530eb76f5a0c88aaa2cf5127",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "RunTimeTicks": 2327962130,
+            "ProductionYear": 2023,
+            "IndexNumber": 5,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "c7c085df530eb76f5a0c88aaa2cf5127"
+            },
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "MediaStreams": [
+              {
+                "Codec": "flac",
+                "TimeBase": "1/44100",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "LocalizedDefault": "Default",
+                "LocalizedExternal": "External",
+                "DisplayTitle": "FLAC - Stereo",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "ChannelLayout": "stereo",
+                "BitRate": 1631316,
+                "BitDepth": 24,
+                "Channels": 2,
+                "SampleRate": 44100,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Audio",
+                "Index": 0,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Level": 0
+              },
+              {
+                "Codec": "mjpeg",
+                "ColorSpace": "bt470bg",
+                "Comment": "Cover (front)",
+                "TimeBase": "1/90000",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "BitDepth": 8,
+                "RefFrames": 1,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Height": 500,
+                "Width": 500,
+                "RealFrameRate": 90000,
+                "ReferenceFrameRate": 90000,
+                "Profile": "Progressive",
+                "Type": "EmbeddedImage",
+                "AspectRatio": "1:1",
+                "Index": 1,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "PixelFormat": "yuvj420p",
+                "Level": -99,
+                "IsAnamorphic": false
+              },
+              {
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Lyric",
+                "Index": 2,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Path": "/data/media/.metadata/library/c7/c7c085df530eb76f5a0c88aaa2cf5127/05. Casual.lrc"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "b4951bd14f56695410c1db6ad8252f01"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "b4951bd14f56695410c1db6ad8252f01": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -8.6
+          },
+          {
+            "Name": "Super Graphic Ultra Modern Girl",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "3df20a2809be65eef5f1aff800df6f66",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "RunTimeTicks": 1838882769,
+            "ProductionYear": 2023,
+            "IndexNumber": 6,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "3df20a2809be65eef5f1aff800df6f66"
+            },
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "MediaStreams": [
+              {
+                "Codec": "flac",
+                "TimeBase": "1/44100",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "LocalizedDefault": "Default",
+                "LocalizedExternal": "External",
+                "DisplayTitle": "FLAC - Stereo",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "ChannelLayout": "stereo",
+                "BitRate": 1794661,
+                "BitDepth": 24,
+                "Channels": 2,
+                "SampleRate": 44100,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Audio",
+                "Index": 0,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Level": 0
+              },
+              {
+                "Codec": "mjpeg",
+                "ColorSpace": "bt470bg",
+                "Comment": "Cover (front)",
+                "TimeBase": "1/90000",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "BitDepth": 8,
+                "RefFrames": 1,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Height": 500,
+                "Width": 500,
+                "RealFrameRate": 90000,
+                "ReferenceFrameRate": 90000,
+                "Profile": "Progressive",
+                "Type": "EmbeddedImage",
+                "AspectRatio": "1:1",
+                "Index": 1,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "PixelFormat": "yuvj420p",
+                "Level": -99,
+                "IsAnamorphic": false
+              },
+              {
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Lyric",
+                "Index": 2,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Path": "/data/media/.metadata/library/3d/3df20a2809be65eef5f1aff800df6f66/06. Super Graphic Ultra Modern Girl.lrc"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "06a26077baa67333bf8908b97cd43d81"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "06a26077baa67333bf8908b97cd43d81": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10.6
+          },
+          {
+            "Name": "HOT TO GO!",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "8071c881e99edc4711ee077b24c5b71a",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "RunTimeTicks": 1848411110,
+            "ProductionYear": 2023,
+            "IndexNumber": 7,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "8071c881e99edc4711ee077b24c5b71a"
+            },
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "MediaStreams": [
+              {
+                "Codec": "flac",
+                "TimeBase": "1/44100",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "LocalizedDefault": "Default",
+                "LocalizedExternal": "External",
+                "DisplayTitle": "FLAC - Stereo",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "ChannelLayout": "stereo",
+                "BitRate": 1740566,
+                "BitDepth": 24,
+                "Channels": 2,
+                "SampleRate": 44100,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Audio",
+                "Index": 0,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Level": 0
+              },
+              {
+                "Codec": "mjpeg",
+                "ColorSpace": "bt470bg",
+                "Comment": "Cover (front)",
+                "TimeBase": "1/90000",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "BitDepth": 8,
+                "RefFrames": 1,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Height": 500,
+                "Width": 500,
+                "RealFrameRate": 90000,
+                "ReferenceFrameRate": 90000,
+                "Profile": "Progressive",
+                "Type": "EmbeddedImage",
+                "AspectRatio": "1:1",
+                "Index": 1,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "PixelFormat": "yuvj420p",
+                "Level": -99,
+                "IsAnamorphic": false
+              },
+              {
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Lyric",
+                "Index": 2,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Path": "/data/media/.metadata/library/80/8071c881e99edc4711ee077b24c5b71a/07. HOT TO GO!.lrc"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "8a13c19b35bd9c385baa96153fcf97cf"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "8a13c19b35bd9c385baa96153fcf97cf": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10
+          },
+          {
+            "Name": "My Kink Is Karma",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "db34896fff52eedede3094f36a4c76dd",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "RunTimeTicks": 2225780730,
+            "ProductionYear": 2023,
+            "IndexNumber": 8,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "db34896fff52eedede3094f36a4c76dd"
+            },
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "MediaStreams": [
+              {
+                "Codec": "flac",
+                "TimeBase": "1/44100",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "LocalizedDefault": "Default",
+                "LocalizedExternal": "External",
+                "DisplayTitle": "FLAC - Stereo",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "ChannelLayout": "stereo",
+                "BitRate": 1690583,
+                "BitDepth": 24,
+                "Channels": 2,
+                "SampleRate": 44100,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Audio",
+                "Index": 0,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Level": 0
+              },
+              {
+                "Codec": "mjpeg",
+                "ColorSpace": "bt470bg",
+                "Comment": "Cover (front)",
+                "TimeBase": "1/90000",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "BitDepth": 8,
+                "RefFrames": 1,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Height": 500,
+                "Width": 500,
+                "RealFrameRate": 90000,
+                "ReferenceFrameRate": 90000,
+                "Profile": "Progressive",
+                "Type": "EmbeddedImage",
+                "AspectRatio": "1:1",
+                "Index": 1,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "PixelFormat": "yuvj420p",
+                "Level": -99,
+                "IsAnamorphic": false
+              },
+              {
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Lyric",
+                "Index": 2,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Path": "/data/media/.metadata/library/db/db34896fff52eedede3094f36a4c76dd/08. My Kink Is Karma.lrc"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "ea604df8ac1c52330fe82dc2c31bb57b"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "ea604df8ac1c52330fe82dc2c31bb57b": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10.2
+          },
+          {
+            "Name": "Picture You",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "060a2b21d35755ef6665948709ae221f",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "RunTimeTicks": 1871300680,
+            "ProductionYear": 2023,
+            "IndexNumber": 9,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "060a2b21d35755ef6665948709ae221f"
+            },
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "MediaStreams": [
+              {
+                "Codec": "flac",
+                "TimeBase": "1/44100",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "LocalizedDefault": "Default",
+                "LocalizedExternal": "External",
+                "DisplayTitle": "FLAC - Stereo",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "ChannelLayout": "stereo",
+                "BitRate": 1566942,
+                "BitDepth": 24,
+                "Channels": 2,
+                "SampleRate": 44100,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Audio",
+                "Index": 0,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Level": 0
+              },
+              {
+                "Codec": "mjpeg",
+                "ColorSpace": "bt470bg",
+                "Comment": "Cover (front)",
+                "TimeBase": "1/90000",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "BitDepth": 8,
+                "RefFrames": 1,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Height": 500,
+                "Width": 500,
+                "RealFrameRate": 90000,
+                "ReferenceFrameRate": 90000,
+                "Profile": "Progressive",
+                "Type": "EmbeddedImage",
+                "AspectRatio": "1:1",
+                "Index": 1,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "PixelFormat": "yuvj420p",
+                "Level": -99,
+                "IsAnamorphic": false
+              },
+              {
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Lyric",
+                "Index": 2,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Path": "/data/media/.metadata/library/06/060a2b21d35755ef6665948709ae221f/09. Picture You.lrc"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "8b980d063da1319d48a5e04076ca85d5"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "8b980d063da1319d48a5e04076ca85d5": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10
+          },
+          {
+            "Name": "Kaleidoscope",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "fbe3731b93b760b0f612253d65f25c10",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "RunTimeTicks": 2226507480,
+            "ProductionYear": 2023,
+            "IndexNumber": 10,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "fbe3731b93b760b0f612253d65f25c10"
+            },
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "MediaStreams": [
+              {
+                "Codec": "flac",
+                "TimeBase": "1/44100",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "LocalizedDefault": "Default",
+                "LocalizedExternal": "External",
+                "DisplayTitle": "FLAC - Stereo",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "ChannelLayout": "stereo",
+                "BitRate": 1514340,
+                "BitDepth": 24,
+                "Channels": 2,
+                "SampleRate": 44100,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Audio",
+                "Index": 0,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Level": 0
+              },
+              {
+                "Codec": "mjpeg",
+                "ColorSpace": "bt470bg",
+                "Comment": "Cover (front)",
+                "TimeBase": "1/90000",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "BitDepth": 8,
+                "RefFrames": 1,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Height": 500,
+                "Width": 500,
+                "RealFrameRate": 90000,
+                "ReferenceFrameRate": 90000,
+                "Profile": "Progressive",
+                "Type": "EmbeddedImage",
+                "AspectRatio": "1:1",
+                "Index": 1,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "PixelFormat": "yuvj420p",
+                "Level": -99,
+                "IsAnamorphic": false
+              },
+              {
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Lyric",
+                "Index": 2,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Path": "/data/media/.metadata/library/fb/fbe3731b93b760b0f612253d65f25c10/10. Kaleidoscope.lrc"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "5ec7d94c606519594ead056fe2d0046d"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "5ec7d94c606519594ead056fe2d0046d": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -8.9
+          },
+          {
+            "Name": "Pink Pony Club",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "e567a2069096b784d1ff5ba6e890187e",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "RunTimeTicks": 2580347390,
+            "ProductionYear": 2023,
+            "IndexNumber": 11,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "e567a2069096b784d1ff5ba6e890187e"
+            },
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "MediaStreams": [
+              {
+                "Codec": "flac",
+                "TimeBase": "1/44100",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "LocalizedDefault": "Default",
+                "LocalizedExternal": "External",
+                "DisplayTitle": "FLAC - Stereo",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "ChannelLayout": "stereo",
+                "BitRate": 1589160,
+                "BitDepth": 24,
+                "Channels": 2,
+                "SampleRate": 44100,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Audio",
+                "Index": 0,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Level": 0
+              },
+              {
+                "Codec": "mjpeg",
+                "ColorSpace": "bt470bg",
+                "Comment": "Cover (front)",
+                "TimeBase": "1/90000",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "BitDepth": 8,
+                "RefFrames": 1,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Height": 500,
+                "Width": 500,
+                "RealFrameRate": 90000,
+                "ReferenceFrameRate": 90000,
+                "Profile": "Progressive",
+                "Type": "EmbeddedImage",
+                "AspectRatio": "1:1",
+                "Index": 1,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "PixelFormat": "yuvj420p",
+                "Level": -99,
+                "IsAnamorphic": false
+              },
+              {
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Lyric",
+                "Index": 2,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Path": "/data/media/.metadata/library/e5/e567a2069096b784d1ff5ba6e890187e/11. Pink Pony Club.lrc"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "21908d7a414e88b53e5938715df2876e"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "21908d7a414e88b53e5938715df2876e": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -9
+          },
+          {
+            "Name": "Naked In Manhattan",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "f1decfd60e74d319136cdf27b2f59578",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "RunTimeTicks": 2110578230,
+            "ProductionYear": 2023,
+            "IndexNumber": 12,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "f1decfd60e74d319136cdf27b2f59578"
+            },
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "MediaStreams": [
+              {
+                "Codec": "flac",
+                "TimeBase": "1/44100",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "LocalizedDefault": "Default",
+                "LocalizedExternal": "External",
+                "DisplayTitle": "FLAC - Stereo",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "ChannelLayout": "stereo",
+                "BitRate": 1648946,
+                "BitDepth": 24,
+                "Channels": 2,
+                "SampleRate": 44100,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Audio",
+                "Index": 0,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Level": 0
+              },
+              {
+                "Codec": "mjpeg",
+                "ColorSpace": "bt470bg",
+                "Comment": "Cover (front)",
+                "TimeBase": "1/90000",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "BitDepth": 8,
+                "RefFrames": 1,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Height": 500,
+                "Width": 500,
+                "RealFrameRate": 90000,
+                "ReferenceFrameRate": 90000,
+                "Profile": "Progressive",
+                "Type": "EmbeddedImage",
+                "AspectRatio": "1:1",
+                "Index": 1,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "PixelFormat": "yuvj420p",
+                "Level": -99,
+                "IsAnamorphic": false
+              },
+              {
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Lyric",
+                "Index": 2,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Path": "/data/media/.metadata/library/f1/f1decfd60e74d319136cdf27b2f59578/12. Naked In Manhattan.lrc"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "eeb9bd78a1459dc30499c4c2d29200c0"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "eeb9bd78a1459dc30499c4c2d29200c0": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -9.3
+          },
+          {
+            "Name": "California",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "08b94aec010ba3ac304d8c4552e91439",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "RunTimeTicks": 1980894780,
+            "ProductionYear": 2023,
+            "IndexNumber": 13,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "08b94aec010ba3ac304d8c4552e91439"
+            },
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "MediaStreams": [
+              {
+                "Codec": "flac",
+                "TimeBase": "1/44100",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "LocalizedDefault": "Default",
+                "LocalizedExternal": "External",
+                "DisplayTitle": "FLAC - Stereo",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "ChannelLayout": "stereo",
+                "BitRate": 1442847,
+                "BitDepth": 24,
+                "Channels": 2,
+                "SampleRate": 44100,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Audio",
+                "Index": 0,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Level": 0
+              },
+              {
+                "Codec": "mjpeg",
+                "ColorSpace": "bt470bg",
+                "Comment": "Cover (front)",
+                "TimeBase": "1/90000",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "BitDepth": 8,
+                "RefFrames": 1,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Height": 500,
+                "Width": 500,
+                "RealFrameRate": 90000,
+                "ReferenceFrameRate": 90000,
+                "Profile": "Progressive",
+                "Type": "EmbeddedImage",
+                "AspectRatio": "1:1",
+                "Index": 1,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "PixelFormat": "yuvj420p",
+                "Level": -99,
+                "IsAnamorphic": false
+              },
+              {
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Lyric",
+                "Index": 2,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Path": "/data/media/.metadata/library/08/08b94aec010ba3ac304d8c4552e91439/13. California.lrc"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "4a118c683f43d329c9d89a651ea795a2"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "4a118c683f43d329c9d89a651ea795a2": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -6.8
+          },
+          {
+            "Name": "Guilty Pleasure",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "82c29a9f186beddd099cbfea04079a80",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "RunTimeTicks": 2245839000,
+            "ProductionYear": 2023,
+            "IndexNumber": 14,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "82c29a9f186beddd099cbfea04079a80"
+            },
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "MediaStreams": [
+              {
+                "Codec": "flac",
+                "TimeBase": "1/44100",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "LocalizedDefault": "Default",
+                "LocalizedExternal": "External",
+                "DisplayTitle": "FLAC - Stereo",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "ChannelLayout": "stereo",
+                "BitRate": 1677780,
+                "BitDepth": 24,
+                "Channels": 2,
+                "SampleRate": 44100,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Audio",
+                "Index": 0,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Level": 0
+              },
+              {
+                "Codec": "mjpeg",
+                "ColorSpace": "bt470bg",
+                "Comment": "Cover (front)",
+                "TimeBase": "1/90000",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "BitDepth": 8,
+                "RefFrames": 1,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Height": 500,
+                "Width": 500,
+                "RealFrameRate": 90000,
+                "ReferenceFrameRate": 90000,
+                "Profile": "Progressive",
+                "Type": "EmbeddedImage",
+                "AspectRatio": "1:1",
+                "Index": 1,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "PixelFormat": "yuvj420p",
+                "Level": -99,
+                "IsAnamorphic": false
+              },
+              {
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Lyric",
+                "Index": 2,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Path": "/data/media/.metadata/library/82/82c29a9f186beddd099cbfea04079a80/14. Guilty Pleasure.lrc"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "3f6c09c06a6d55382c480d041817523a"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "3f6c09c06a6d55382c480d041817523a": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -11.7
+          }
+        ],
+        "TotalRecordCount": 14,
+        "StartIndex": 0
+      }
+    }
+  }
+}

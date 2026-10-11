@@ -1,11 +1,13 @@
 /**
- * Playing an Audiobookshelf item, as the signed-in person. `POST /api/play` opens an
+ * Playing an item, as the signed-in person. A Jellyfin track or album plans and streams as
+ * `jellyfinPlay.ts` says. For an Audiobookshelf item, `POST /api/play` opens an
  * Audiobookshelf session offering the types the clients play, and ABS chooses:
  * - direct play: one track per file at `/api/media/{ref}/tracks/{n}`, chapters at their absolute
  *   positions across files, and the session closed at once, since nothing reports progress yet;
  * - a transcode: one HLS track at `/api/media/{ref}/hls/{playId}/output.m3u8`, the session kept
  *   open because the transcode lives in it, named as the progress target, and closed by
  *   `POST /api/play/{playId}/close`.
+ * Anything else ABS answers, such as a file in a type the clients do not play, is refused 422.
  * The media routes pass a checked `Range` through with the person's own token and send the bytes
  * on as they come, never transcoded or buffered whole. Only the playlist is read whole, parsed,
  * and passed on with bare segment names that resolve under the same route.
@@ -23,18 +25,23 @@ import {
   type PlaybackTrack,
 } from '@auralis/schema';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { contentUrlParts, hlsSessionOf } from '../adapters/audiobookshelf/client.js';
 import {
-  type AbsClient,
-  contentUrlParts,
-  hlsSessionOf,
-  type UpstreamFile,
-} from '../adapters/audiobookshelf/client.js';
-import { type playSessionSchema } from '../adapters/audiobookshelf/schemas.js';
+  type playSessionSchema,
+  SUPPORTED_MIME_TYPES,
+} from '../adapters/audiobookshelf/schemas.js';
 import { AdapterError, type FetchLike } from '../adapters/http/fetch.js';
+import { RangeNotSatisfiable, type UpstreamFile } from '../adapters/stream.js';
 import { Refusal, serve, serveStream, type StreamAnswer } from '../route.js';
 import type { Db } from '../store/connection.js';
-import { type Linker, type UpstreamConfig, upstreamFor } from '../upstream/links.js';
+import {
+  type Linker,
+  type UpstreamConfig,
+  upstreamFor,
+  type Upstreams,
+} from '../upstream/links.js';
 import { signedIn } from './auth.js';
+import { planJellyfin } from './jellyfinPlay.js';
 import { OpenPlays } from './openPlays.js';
 import { type z } from 'zod';
 
@@ -95,7 +102,10 @@ export function planChapters(session: AbsSession, length: number): PlaybackChapt
     .sort((a, b) => a.start - b.start);
 }
 
-/** How to play what ABS answered, or null when it is neither direct play nor one transcode. */
+/**
+ * How to play what ABS answered, or null when the clients cannot play it: neither direct play of
+ * files in types they play, nor one transcode.
+ */
 function planFor(session: AbsSession, ref: string): PlaybackPlan | null {
   const startAt = session.currentTime ?? 0;
   const [first, ...rest] = session.audioTracks;
@@ -120,6 +130,7 @@ function planFor(session: AbsSession, ref: string): PlaybackPlan | null {
     if (
       contentUrlParts(track.contentUrl) === null ||
       track.mimeType === undefined ||
+      !(SUPPORTED_MIME_TYPES as readonly string[]).includes(track.mimeType) ||
       track.duration === undefined
     ) {
       return null;
@@ -147,11 +158,19 @@ function passOn(opened: UpstreamFile, contentType?: string): StreamAnswer {
   return { status: opened.status, headers, body: opened.body };
 }
 
-/** An upstream failure as this server's answer: a missing item or range stays that. */
+/**
+ * An upstream failure as this server's answer: a missing item stays that, and a range past the
+ * end stays that too, naming the file's size as the upstream did.
+ */
 function refusalFor(error: unknown): never {
   if (error instanceof AdapterError) {
     if (error.status === 404) throw new Refusal(404, 'not_found');
-    if (error.status === 416) throw new Refusal(416, 'range_not_satisfiable');
+    if (error.status === 416) {
+      const size = error instanceof RangeNotSatisfiable ? error.size : undefined;
+      const headers: Record<string, string> =
+        size === undefined ? {} : { 'content-range': `bytes */${size}` };
+      throw new Refusal(416, 'range_not_satisfiable', headers);
+    }
     throw new Refusal(502, 'upstream_failed');
   }
   throw error;
@@ -179,23 +198,41 @@ export function playRoutes(
     await open.closeAll();
   });
 
-  /** The caller's own Audiobookshelf, after closing any transcode gone idle. */
-  const absFor = async (
+  /** The caller's own upstream client for `source`, after closing any transcode gone idle. */
+  const personFor = async <S extends keyof Upstreams>(
     request: FastifyRequest,
-  ): Promise<{ abs: AbsClient; userId: string; deviceId: string }> => {
+    source: S,
+  ): Promise<{ client: NonNullable<Upstreams[S]>; userId: string; deviceId: string }> => {
     await open.sweep();
     const user = signedIn(request);
-    const abs = upstreams === null ? null : upstreamFor({ db, ...upstreams }, user).abs;
-    if (abs === null) throw new Refusal(409, 'not_linked');
-    return { abs, userId: user.id, deviceId: user.deviceId };
+    const client = upstreams === null ? null : upstreamFor({ db, ...upstreams }, user)[source];
+    if (client === null) throw new Refusal(409, 'not_linked');
+    return {
+      client: client as NonNullable<Upstreams[S]>,
+      userId: user.id,
+      deviceId: user.deviceId,
+    };
+  };
+  const absFor = async (request: FastifyRequest) => {
+    const { client, ...owner } = await personFor(request, 'abs');
+    return { abs: client, ...owner };
   };
 
   serve(app, play, async (request, _reply, body) => {
+    const ref = mediaRefKey(body.ref);
+    if (body.ref.source === 'jellyfin') {
+      if (parseMediaRefKey(ref) === null) throw new Refusal(400, 'bad_request');
+      const { client, userId, deviceId } = await personFor(request, 'jellyfin');
+      const item = await client.getPlayable(body.ref.id).catch(refusalFor);
+      const plan = await planJellyfin(client, item).catch(refusalFor);
+      // Nothing is held open for music; planning it ends whatever this device held.
+      await open.closeDevice(userId, deviceId);
+      return plan;
+    }
     const { abs, userId, deviceId } = await absFor(request);
     const session = await abs
       .play(body.ref.id, { deviceId, clientVersion: CLIENT_VERSION })
       .catch(refusalFor);
-    const ref = mediaRefKey(body.ref);
     const plan = planFor(session, ref);
     const target = plan?.progressTarget;
     if (target === undefined) {
@@ -213,7 +250,7 @@ export function playRoutes(
         close: () => abs.closeSession(playId),
       });
     }
-    if (plan === null) throw new Refusal(502, 'unplayable');
+    if (plan === null) throw new Refusal(422, 'unsupported_format');
     return plan;
   });
 
@@ -228,6 +265,15 @@ export function playRoutes(
   serveStream(app, mediaTrack, async (request, { params, range }) => {
     const ref = parseMediaRefKey(params.ref);
     if (ref === null) throw new Refusal(400, 'bad_request');
+    if (ref.source === 'jellyfin') {
+      // A Jellyfin track is its own ref's only track. Jellyfin streams to anyone with the id, so
+      // the person's own lookup decides whether they may have it.
+      if (params.n !== '0') throw new Refusal(404, 'not_found');
+      const { client } = await personFor(request, 'jellyfin');
+      const item = await client.getPlayable(ref.id).catch(refusalFor);
+      if (item.Type !== 'Audio') throw new Refusal(404, 'not_found');
+      return passOn(await client.openAudio(ref.id, range).catch(refusalFor));
+    }
     const { abs } = await absFor(request);
     const item = await abs.getItem(ref.id).catch(refusalFor);
     const track = item.media.tracks?.[Number(params.n)];

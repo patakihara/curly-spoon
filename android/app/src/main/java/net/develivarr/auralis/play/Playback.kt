@@ -177,11 +177,17 @@ class Playback(
 
     companion object {
         private const val TAG = "Auralis"
-        private val KEY = Regex("""^abs:([\w-]{1,64})$""")
+        private val KEY = Regex("""^(?:abs:([\w-]{1,64})|jellyfin:([0-9a-f]{32}))$""")
 
-        /** The ref a page's `<Play>` key names, `abs:<id>` (schema's `MediaRefKey`), or null. */
+        /**
+         * The ref a page's `<Play>` key names, `abs:<id>` or `jellyfin:<32 hex>` (schema's
+         * `MediaRefKey`), or null.
+         */
         fun refOf(key: String): MediaRef? =
-            KEY.matchEntire(key)?.let { MediaRef(Source.ABS, it.groupValues[1]) }
+            KEY.matchEntire(key)?.let { match ->
+                val (abs, jellyfin) = match.destructured
+                if (abs.isNotEmpty()) MediaRef(Source.ABS, abs) else MediaRef(Source.JELLYFIN, jellyfin)
+            }
 
         private fun keyOf(ref: MediaRef) = "${ref.source.name.lowercase()}:${ref.id}"
     }

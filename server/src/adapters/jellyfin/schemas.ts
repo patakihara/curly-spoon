@@ -65,3 +65,27 @@ export const indexQueryResultSchema = z.object({
   TotalRecordCount: z.number().int().nonnegative(),
 });
 export type IndexQueryResult = z.infer<typeof indexQueryResultSchema>;
+
+/**
+ * A track or an album as playing reads it, from `GET /Items/{id}` or an album's `GET /Items`
+ * with the person's own token, so Jellyfin answers only what they can see. `Container` is the
+ * file's format (`flac`); Jellyfin may list several names for one format (`mov,mp4,m4a`).
+ * `RunTimeTicks` are 100 ns.
+ */
+export const playableItemSchema = z.object({
+  Id: z.string(),
+  Type: z.string(),
+  Container: z.string().nullable().optional(),
+  /** The file's streams; the `Audio` one's `Codec` says what the container holds. */
+  MediaStreams: z
+    .array(z.object({ Type: z.string(), Codec: z.string().nullable().optional() }))
+    .nullable()
+    .optional(),
+  RunTimeTicks: z.number().nonnegative().nullable().optional(),
+  IndexNumber: z.number().int().nullable().optional(),
+  ParentIndexNumber: z.number().int().nullable().optional(),
+});
+export type PlayableItem = z.infer<typeof playableItemSchema>;
+
+/** An album's tracks, as playing reads them. */
+export const playableQueryResultSchema = z.object({ Items: z.array(playableItemSchema) });

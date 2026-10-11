@@ -365,7 +365,8 @@
       "MediaSource": {
         "type": "string",
         "enum": [
-          "abs"
+          "abs",
+          "jellyfin"
         ]
       },
       "MediaRef": {
@@ -1208,7 +1209,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^abs:[\\w-]{1,64}$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
             },
             "required": true,
             "name": "ref",
@@ -1297,7 +1298,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^abs:[\\w-]{1,64}$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
             },
             "required": true,
             "name": "ref",
@@ -1351,7 +1352,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^abs:[\\w-]{1,64}$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
             },
             "required": true,
             "name": "ref",
@@ -1449,7 +1450,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^abs:[\\w-]{1,64}$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
             },
             "required": true,
             "name": "ref",

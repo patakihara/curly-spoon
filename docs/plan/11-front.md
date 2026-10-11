@@ -13,7 +13,7 @@ This is M5's work; until then the frontend is M1.shell's minimal shell.
 
 ### How you work on the design
 
-- **Two artifacts, one repo.** The [Sonora Design System](https://claude.ai/artifact/CUW4CN7KpxgvjeWnbhTQBB) (the building blocks) and the [Auralis canvas](https://claude.ai/artifact/S3ob9VNh7LjZHBmEmE9ULq) (the app's pages and navigation), published from `design/sonora` and `design/app`, beside `server`, `web` and `android`.
+- **Two artifacts, one repo.** The [Sonora Design System](https://claude.ai/artifact/CUW4CN7KpxgvjeWnbhTQBB) (the building blocks) and the [Auralis canvas](https://claude.ai/artifact/S3ob9VNh7LjZHBmEmE9ULq) (the app's pages and navigation), published from `design/sonora` and `design/app`.
 - **Asking for a change:** comment on either artifact, or ask in chat; Claude changes the repo, regenerates and republishes. Edits made in an artifact are pulled into the repo before anything else changes there.
 - **How a design change reaches the apps.** One commit carries design and apps:
   - colours, spacing and fonts change on both platforms automatically;

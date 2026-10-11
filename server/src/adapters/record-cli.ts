@@ -16,6 +16,10 @@
  * directly, each file's first two bytes, then the same book transcoded to HLS, its playlist and
  * first segment. The transcode is closed as soon as it is recorded.
  *
+ * `--only jfplay --jellyfin-item <album id>` records M1.music's calls as the service identity
+ * `auralis`, through a Jellyfin token minted for it by Quick Connect and logged out at the end:
+ * the album and its tracks, its first track, and that track's first two bytes.
+ *
  * `--dry-run` makes the same calls but writes into a fresh temporary folder instead of the
  * committed recordings, and says where.
  */
@@ -31,8 +35,10 @@ import { recordingSchema } from './http/recording.js';
 import { localNames } from './http/localNames.js';
 import { scanRecording } from './http/scan.js';
 import { type RawExchange } from './http/scrub.js';
+import { buildAuthorizationHeader } from './jellyfin/auth.js';
 import { JellyfinClient } from './jellyfin/client.js';
-import { recordOidc } from './record-oidc.js';
+import { JellyfinProvisioner, personDevice } from './jellyfin/quickConnect.js';
+import { RECORD_USER_ID, recordOidc, TEST_IDENTITY } from './record-oidc.js';
 
 /**
  * The index calls record one page of two items from each library. The fifth page holds the
@@ -50,8 +56,10 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
 
   --abs <url>        Audiobookshelf base URL
   --jellyfin <url>   Jellyfin base URL
-  --jellyfin-item <id> the Jellyfin item to record, instead of the first album
-  --only <name>      record only abs, jellyfin, index or play; or oidc, a sign-in and its links
+  --jellyfin-item <id> the Jellyfin item to record, instead of the first album; for --only
+                     jfplay, the album
+  --only <name>      record only abs, jellyfin, index, play or jfplay; or oidc, a sign-in and
+                     its links
   --play-item <id>   the multi-file book --only play records
   --index-page <n>   the page of two the index calls record, from 0 (default ${INDEX_PAGE})
   --oidc <url>       the sign-on's issuer, for --only oidc
@@ -59,7 +67,7 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
   --dry-run          write into a temporary folder, not the committed recordings
   --help             show this
 
-stdin carries ABS_API_KEY=... and JELLYFIN_API_KEY=... lines; for --only oidc,
+stdin carries ABS_API_KEY=... and JELLYFIN_API_KEY=... lines (jfplay needs only the latter); for --only oidc,
 OIDC_CLIENT_SECRET, OIDC_TEST_PASSWORD, ABS_PROVISION_KEY and JELLYFIN_API_KEY.
 `;
 
@@ -89,6 +97,13 @@ export const ITEM_FILE_STAND_IN = {
   bytes: 'item-file.m4a',
   synthesized:
     'A 20 s 440 Hz sine tone, AAC mono 22.05 kHz in MP4, made by scripts/fixtures/tone.sh. ' +
+    'Status and headers are the real answer to Range: bytes=0-1; the body is not.',
+} as const;
+/** Jellyfin's static stream of a FLAC track: its body is a household music file. */
+export const JELLYFIN_STREAM_STAND_IN = {
+  bytes: 'jf-stream.flac',
+  synthesized:
+    'A 5 s 220 Hz sine tone, FLAC mono 44.1 kHz, made by scripts/fixtures/tone.sh. ' +
     'Status and headers are the real answer to Range: bytes=0-1; the body is not.',
 } as const;
 const here = fileURLToPath(new URL('.', import.meta.url));
@@ -352,6 +367,64 @@ async function recordPlay(
   return calls.map((c) => join(dir, `${c}.json`));
 }
 
+/**
+ * M1.music's calls on one album, as the service identity: the album and its tracks, the first
+ * track, and its first two bytes. The person's token is minted unrecorded through Quick Connect,
+ * as sign-in does, and logged out whatever fails. Reads only; no play is reported.
+ */
+async function recordJellyfinPlay(
+  io: RecordIo,
+  baseUrl: string,
+  apiKey: string,
+  dir: string,
+  albumId: string,
+) {
+  const upstreamVersion = await new JellyfinClient({
+    baseUrl,
+    token: apiKey,
+    fetch: io.fetch,
+  }).getServerVersion();
+  const provisioner = new JellyfinProvisioner({ baseUrl, apiKey, fetch: io.fetch });
+  const identity = (await provisioner.accounts()).find((a) => a.username === TEST_IDENTITY);
+  if (!identity) throw new Error(`Jellyfin has no user ${TEST_IDENTITY}`);
+  const { token } = await provisioner.mint(identity.id, RECORD_USER_ID);
+  const rec = createRecorder({
+    fetch: io.fetch,
+    dir,
+    upstream: 'jellyfin',
+    upstreamVersion,
+    secrets: [apiKey, token],
+    baseUrl,
+  });
+  const jf = new JellyfinClient({
+    baseUrl,
+    token,
+    device: personDevice(RECORD_USER_ID),
+    fetch: rec.fetch,
+  });
+  try {
+    const album = await rec.capture('jf-album', () => jf.getPlayable(albumId));
+    if (album.Type !== 'MusicAlbum') throw new Error(`${albumId} is not an album`);
+    const tracks = await rec.capture('jf-album-tracks', () => jf.getAlbumPlayables(albumId));
+    const [first] = tracks;
+    if (!first) throw new Error('the album has no tracks');
+    await rec.capture('jf-track', () => jf.getPlayable(first.Id));
+    const opened = await rec.capture('jf-stream', () => jf.openAudio(first.Id, 'bytes=0-1'), {
+      standIn: JELLYFIN_STREAM_STAND_IN,
+    });
+    await opened.body.cancel();
+  } finally {
+    const res = await io.fetch(new URL('Sessions/Logout', `${baseUrl}/`).toString(), {
+      method: 'POST',
+      headers: { authorization: buildAuthorizationHeader(personDevice(RECORD_USER_ID), token) },
+    });
+    io.out(`logged out the minted Jellyfin token: ${res.status}`);
+  }
+  return ['jf-album', 'jf-album-tracks', 'jf-track', 'jf-stream'].map((c) =>
+    join(dir, `${c}.json`),
+  );
+}
+
 /** What an episode's show notes are replaced with in a recording. */
 export const SHOW_NOTES_DROPPED =
   'Show notes dropped by the recorder: they carry third-party links.';
@@ -489,8 +562,11 @@ export async function runRecord(io: RecordIo): Promise<number> {
     return 0;
   }
   const only = values.only;
-  if (only !== undefined && !['abs', 'jellyfin', 'index', 'play', 'oidc'].includes(only)) {
-    io.err(`--only is abs, jellyfin, index, play or oidc, not ${only}`);
+  if (
+    only !== undefined &&
+    !['abs', 'jellyfin', 'index', 'play', 'jfplay', 'oidc'].includes(only)
+  ) {
+    io.err(`--only is abs, jellyfin, index, play, jfplay or oidc, not ${only}`);
     return 2;
   }
   const indexPage = Number(values['index-page'] ?? INDEX_PAGE);
@@ -501,6 +577,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
   const root = values['dry-run'] ? mkdtempSync(join(tmpdir(), 'auralis-record-')) : here;
   if (only === 'oidc') return runOidc(io, values, parseKeys(io.stdin), root);
   if (only === 'play') return runPlay(io, values, parseKeys(io.stdin), root);
+  if (only === 'jfplay') return runJellyfinPlay(io, values, parseKeys(io.stdin), root);
   const wantIndex = only === undefined || only === 'index';
   const wantAbs = only !== 'jellyfin';
   const wantJellyfin = only !== 'abs';
@@ -592,6 +669,27 @@ async function runPlay(
   }
   const dir = join(root, 'audiobookshelf', 'recordings');
   const written = await recordPlay(io, absUrl as string, key!, dir, [key!], itemId as string);
+  return scanWritten(io, written, []);
+}
+
+async function runJellyfinPlay(
+  io: RecordIo,
+  values: Record<string, string | boolean | undefined>,
+  keys: Record<string, string>,
+  root: string,
+): Promise<number> {
+  const [url, albumId, key] = [values.jellyfin, values['jellyfin-item'], keys.JELLYFIN_API_KEY];
+  const missing = [
+    typeof url !== 'string' && '--jellyfin',
+    typeof albumId !== 'string' && '--jellyfin-item',
+    key === undefined && 'JELLYFIN_API_KEY on stdin',
+  ].filter(Boolean);
+  if (missing.length > 0) {
+    io.err(`missing ${missing.join(', ')}\n\n${USAGE}`);
+    return 2;
+  }
+  const dir = join(root, 'jellyfin', 'recordings');
+  const written = await recordJellyfinPlay(io, url as string, key!, dir, albumId as string);
   return scanWritten(io, written, []);
 }
 

@@ -1,0 +1,327 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "jf-track",
+  "request": {
+    "method": "GET",
+    "path": "/Items/7c8b8e35e6ec0f40736aadee1f8979bb",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis\", DeviceId=\"auralis-recorder\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Name": "Femininomenon",
+        "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+        "Id": "7c8b8e35e6ec0f40736aadee1f8979bb",
+        "Etag": "1a64d715cc8decd5caa8831dd6e22c83",
+        "DateCreated": "2026-03-04T12:35:41.0000000Z",
+        "CanDelete": false,
+        "CanDownload": false,
+        "HasLyrics": true,
+        "Container": "flac",
+        "SortName": "0001 - Femininomenon",
+        "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+        "ExternalUrls": [],
+        "MediaSources": [
+          {
+            "Protocol": "File",
+            "Id": "7c8b8e35e6ec0f40736aadee1f8979bb",
+            "Path": "/data/media/Music/Chappell Roan/01. Femininomenon.flac",
+            "Type": "Default",
+            "Container": "flac",
+            "Size": 44117873,
+            "Name": "01. Femininomenon",
+            "IsRemote": false,
+            "ETag": "abe0df30dc2c8797cc5889a1c8bb70a9",
+            "RunTimeTicks": 2197107260,
+            "ReadAtNativeFramerate": false,
+            "IgnoreDts": false,
+            "IgnoreIndex": false,
+            "GenPtsInput": false,
+            "SupportsTranscoding": true,
+            "SupportsDirectStream": true,
+            "SupportsDirectPlay": true,
+            "IsInfiniteStream": false,
+            "UseMostCompatibleTranscodingProfile": false,
+            "RequiresOpening": false,
+            "RequiresClosing": false,
+            "RequiresLooping": false,
+            "SupportsProbing": true,
+            "MediaStreams": [
+              {
+                "Codec": "flac",
+                "TimeBase": "1/44100",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "LocalizedDefault": "Default",
+                "LocalizedExternal": "External",
+                "DisplayTitle": "FLAC - Stereo",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "ChannelLayout": "stereo",
+                "BitRate": 1606398,
+                "BitDepth": 24,
+                "Channels": 2,
+                "SampleRate": 44100,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Audio",
+                "Index": 0,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Level": 0
+              },
+              {
+                "Codec": "mjpeg",
+                "ColorSpace": "bt470bg",
+                "Comment": "Cover (front)",
+                "TimeBase": "1/90000",
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsAVC": false,
+                "BitDepth": 8,
+                "RefFrames": 1,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Height": 500,
+                "Width": 500,
+                "RealFrameRate": 90000,
+                "ReferenceFrameRate": 90000,
+                "Profile": "Progressive",
+                "Type": "EmbeddedImage",
+                "AspectRatio": "1:1",
+                "Index": 1,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "PixelFormat": "yuvj420p",
+                "Level": -99,
+                "IsAnamorphic": false
+              },
+              {
+                "VideoRange": "Unknown",
+                "VideoRangeType": "Unknown",
+                "AudioSpatialFormat": "None",
+                "IsInterlaced": false,
+                "IsDefault": false,
+                "IsForced": false,
+                "IsHearingImpaired": false,
+                "Type": "Lyric",
+                "Index": 2,
+                "IsExternal": false,
+                "IsTextSubtitleStream": false,
+                "SupportsExternalStream": false,
+                "Path": "/data/media/.metadata/library/7c/7c8b8e35e6ec0f40736aadee1f8979bb/01. Femininomenon.lrc"
+              }
+            ],
+            "MediaAttachments": [],
+            "Formats": [],
+            "Bitrate": 1606398,
+            "RequiredHttpHeaders": {},
+            "TranscodingSubProtocol": "http",
+            "DefaultAudioStreamIndex": 0,
+            "HasSegments": false
+          }
+        ],
+        "Path": "/data/media/Music/Chappell Roan/01. Femininomenon.flac",
+        "EnableMediaSourceDisplay": true,
+        "ChannelId": null,
+        "Taglines": [],
+        "Genres": [
+          "Indie Pop",
+          "Alt-Pop",
+          "Synth-Pop",
+          "Electropop",
+          "Pop Rock"
+        ],
+        "RunTimeTicks": 2197107260,
+        "PlayAccess": "Full",
+        "ProductionYear": 2023,
+        "IndexNumber": 1,
+        "RemoteTrailers": [],
+        "ProviderIds": {},
+        "IsFolder": false,
+        "ParentId": "65de8562c54b89ceef199f91bacd8709",
+        "Type": "Audio",
+        "People": [
+          {
+            "Name": "Daniel Nigro",
+            "Id": "4e59411fd07edc089c619670b6540575",
+            "Role": "",
+            "Type": "Composer"
+          }
+        ],
+        "Studios": [],
+        "GenreItems": [
+          {
+            "Name": "Indie Pop",
+            "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+          },
+          {
+            "Name": "Alt-Pop",
+            "Id": "2e77a5300bd6cfade8dd8d621fdb8ae6"
+          },
+          {
+            "Name": "Synth-Pop",
+            "Id": "66af562335fe0325186394856fd4b801"
+          },
+          {
+            "Name": "Electropop",
+            "Id": "085490e8bd71b444aa31d1dc96614153"
+          },
+          {
+            "Name": "Pop Rock",
+            "Id": "b57a846c306912e7d3ce635042df69d7"
+          }
+        ],
+        "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+        "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+        "ParentBackdropImageTags": [
+          "9855482c023325ef94625c10994d5dc5"
+        ],
+        "LocalTrailerCount": 0,
+        "UserData": {
+          "PlaybackPositionTicks": 0,
+          "PlayCount": 0,
+          "IsFavorite": false,
+          "Played": false,
+          "Key": "<token>",
+          "ItemId": "7c8b8e35e6ec0f40736aadee1f8979bb"
+        },
+        "SpecialFeatureCount": 0,
+        "DisplayPreferencesId": "61bba315f137702baa296a1c417faada",
+        "Tags": [],
+        "PrimaryImageAspectRatio": 1,
+        "Artists": [
+          "Chappell Roan"
+        ],
+        "ArtistItems": [
+          {
+            "Name": "Chappell Roan",
+            "Id": "87179c1db4d100f90591e4f9b0e341c8"
+          }
+        ],
+        "Album": "The Rise and Fall of a Midwest Princess",
+        "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+        "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+        "AlbumArtist": "Chappell Roan",
+        "AlbumArtists": [
+          {
+            "Name": "Chappell Roan",
+            "Id": "87179c1db4d100f90591e4f9b0e341c8"
+          }
+        ],
+        "MediaStreams": [
+          {
+            "Codec": "flac",
+            "TimeBase": "1/44100",
+            "VideoRange": "Unknown",
+            "VideoRangeType": "Unknown",
+            "AudioSpatialFormat": "None",
+            "LocalizedDefault": "Default",
+            "LocalizedExternal": "External",
+            "DisplayTitle": "FLAC - Stereo",
+            "IsInterlaced": false,
+            "IsAVC": false,
+            "ChannelLayout": "stereo",
+            "BitRate": 1606398,
+            "BitDepth": 24,
+            "Channels": 2,
+            "SampleRate": 44100,
+            "IsDefault": false,
+            "IsForced": false,
+            "IsHearingImpaired": false,
+            "Type": "Audio",
+            "Index": 0,
+            "IsExternal": false,
+            "IsTextSubtitleStream": false,
+            "SupportsExternalStream": false,
+            "Level": 0
+          },
+          {
+            "Codec": "mjpeg",
+            "ColorSpace": "bt470bg",
+            "Comment": "Cover (front)",
+            "TimeBase": "1/90000",
+            "VideoRange": "Unknown",
+            "VideoRangeType": "Unknown",
+            "AudioSpatialFormat": "None",
+            "IsInterlaced": false,
+            "IsAVC": false,
+            "BitDepth": 8,
+            "RefFrames": 1,
+            "IsDefault": false,
+            "IsForced": false,
+            "IsHearingImpaired": false,
+            "Height": 500,
+            "Width": 500,
+            "RealFrameRate": 90000,
+            "ReferenceFrameRate": 90000,
+            "Profile": "Progressive",
+            "Type": "EmbeddedImage",
+            "AspectRatio": "1:1",
+            "Index": 1,
+            "IsExternal": false,
+            "IsTextSubtitleStream": false,
+            "SupportsExternalStream": false,
+            "PixelFormat": "yuvj420p",
+            "Level": -99,
+            "IsAnamorphic": false
+          },
+          {
+            "VideoRange": "Unknown",
+            "VideoRangeType": "Unknown",
+            "AudioSpatialFormat": "None",
+            "IsInterlaced": false,
+            "IsDefault": false,
+            "IsForced": false,
+            "IsHearingImpaired": false,
+            "Type": "Lyric",
+            "Index": 2,
+            "IsExternal": false,
+            "IsTextSubtitleStream": false,
+            "SupportsExternalStream": false,
+            "Path": "/data/media/.metadata/library/7c/7c8b8e35e6ec0f40736aadee1f8979bb/01. Femininomenon.lrc"
+          }
+        ],
+        "ImageTags": {
+          "Primary": "436a49810142c4f856b033bae929874a"
+        },
+        "BackdropImageTags": [],
+        "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+        "ImageBlurHashes": {
+          "Primary": {
+            "436a49810142c4f856b033bae929874a": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+            "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+          },
+          "Logo": {
+            "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+          },
+          "Backdrop": {
+            "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+          }
+        },
+        "LocationType": "FileSystem",
+        "MediaType": "Audio",
+        "LockedFields": [],
+        "LockData": false,
+        "NormalizationGain": -10
+      }
+    }
+  }
+}

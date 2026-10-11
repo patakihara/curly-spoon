@@ -1,7 +1,7 @@
 /**
  * `pnpm --filter @auralis/server e2e:serve`: the recorded-upstreams server, listening on loopback
- * until it is stopped. It prints where the app and the sign-on are, the test user and the item
- * that plays, then `ready`. Request logs go to stderr.
+ * until it is stopped. It prints where the app and the sign-on are, the test user, the items
+ * that play (a book, a four-file book and a Jellyfin track), then `ready`. Request logs go to stderr.
  *
  * AURALIS_E2E_ADDRESS is the host clients put in URLs (the emulator's `10.0.2.2` in CI);
  * AURALIS_E2E_PORT and AURALIS_E2E_SIGN_ON_PORT are the app's and the sign-on's ports.
@@ -39,4 +39,5 @@ out(`  sign-on:  ${server.signOn.origin}`);
 out(`  user:     ${server.user.username} (${server.user.groups.join(', ')}), any sign-in`);
 out(`  playable: ${mediaRefKey(server.playable)}`);
 out(`  four files: ${mediaRefKey(server.multiFile)}`);
+out(`  music:    ${mediaRefKey(server.music)}`);
 out('ready');

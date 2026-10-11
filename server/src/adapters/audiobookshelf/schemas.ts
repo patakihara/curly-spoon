@@ -5,6 +5,7 @@
  */
 import { HLS_SEGMENT } from '@auralis/schema';
 import { z } from 'zod';
+import { fileHeadersSchema } from '../stream.js';
 
 /** `GET /status`, unauthenticated. */
 export const statusSchema = z.object({ serverVersion: z.string() }).passthrough();
@@ -116,21 +117,6 @@ export interface FileRef {
   itemId: string;
   ino: string;
 }
-
-/**
- * The headers of `GET /api/items/:id/file/:ino`, recorded as a 206 to `Range: bytes=0-1`:
- * ABS sets the audio type from the file's extension and serves ranges.
- */
-export const fileHeadersSchema = z.object({
-  'content-type': z.string().regex(/^audio\//i, 'an audio type'),
-  'content-length': z.string().regex(/^\d+$/).optional(),
-  'content-range': z
-    .string()
-    .regex(/^bytes (?:\d+-\d+|\*)\/(?:\d+|\*)$/)
-    .optional(),
-  'accept-ranges': z.string().optional(),
-});
-export type FileHeaders = z.infer<typeof fileHeadersSchema>;
 
 /** The largest playlist read: a 6 s segment is about 30 bytes of it, so this is ~800 hours. */
 export const MAX_PLAYLIST_BYTES = 4_000_000;
