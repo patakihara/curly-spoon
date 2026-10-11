@@ -4,7 +4,8 @@
  */
 import { createHash } from 'node:crypto';
 import type { Db } from '../store/connection.js';
-import type { IndexKind, IndexRow, IndexSource, IndexTree } from './rows.js';
+import type { EpisodeOrder } from '../adapters/feed/client.js';
+import type { IndexKind, IndexRow, IndexSource, IndexTree, ShowOrdering } from './rows.js';
 
 export interface IndexCounts {
   /** Upstream answers read for a whole item: an ABS item, a Jellyfin album's tracks. */
@@ -13,10 +14,12 @@ export interface IndexCounts {
   updated: number;
   unchanged: number;
   removed: number;
+  /** Shows' feeds that could not be read; each show kept the order the index held. */
+  feedsFailed: number;
 }
 
 export function emptyCounts(): IndexCounts {
-  return { fetched: 0, inserted: 0, updated: 0, unchanged: 0, removed: 0 };
+  return { fetched: 0, inserted: 0, updated: 0, unchanged: 0, removed: 0, feedsFailed: 0 };
 }
 
 /** A stored row, as later readers see it. */
@@ -42,12 +45,16 @@ interface RawRow {
   year: number | null;
   published_at: number | null;
   upstream_version: string | null;
+  episode_order: EpisodeOrder | null;
   version: number;
   created_at: number;
   updated_at: number;
 }
 
-/** Every field that makes a row what it is, in a fixed order, ids sorted by scheme. */
+/**
+ * Every field that makes a row what it is, in a fixed order, ids sorted by scheme. A show's
+ * episode order comes last, and only on a show, so rows hashed before it existed keep their hash.
+ */
 function contentHash(row: IndexRow): string {
   const ids = Object.entries(row.ids).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
   const content = [
@@ -67,6 +74,7 @@ function contentHash(row: IndexRow): string {
     row.publishedAt,
     row.upstreamVersion,
     ids,
+    ...(row.episodeOrder === null ? [] : [row.episodeOrder]),
   ];
   return createHash('sha256').update(JSON.stringify(content)).digest('hex');
 }
@@ -96,6 +104,7 @@ function upsertRow(db: Db, row: IndexRow, now: number, counts: IndexCounts): voi
     year: row.year,
     published_at: row.publishedAt,
     upstream_version: row.upstreamVersion,
+    episode_order: row.episodeOrder,
     content_hash: hash,
     now,
   };
@@ -103,10 +112,10 @@ function upsertRow(db: Db, row: IndexRow, now: number, counts: IndexCounts): voi
     db.prepare(
       `INSERT INTO index_items (source, upstream_id, kind, parent_id, library_id, title, creators,
          series, genres, position, disc, duration, year, published_at, upstream_version,
-         content_hash, version, created_at, updated_at)
+         episode_order, content_hash, version, created_at, updated_at)
        VALUES (@source, @upstream_id, @kind, @parent_id, @library_id, @title, @creators, @series,
          @genres, @position, @disc, @duration, @year, @published_at, @upstream_version,
-         @content_hash, 1, @now, @now)`,
+         @episode_order, @content_hash, 1, @now, @now)`,
     ).run(values);
     counts.inserted += 1;
   } else {
@@ -116,7 +125,7 @@ function upsertRow(db: Db, row: IndexRow, now: number, counts: IndexCounts): voi
          title = @title, creators = @creators, series = @series, genres = @genres,
          position = @position, disc = @disc, duration = @duration, year = @year,
          published_at = @published_at, upstream_version = @upstream_version,
-         content_hash = @content_hash, version = version + 1, updated_at = @now
+         episode_order = @episode_order, content_hash = @content_hash, version = version + 1, updated_at = @now
        WHERE source = @source AND upstream_id = @upstream_id`,
     ).run(values);
     db.prepare('DELETE FROM index_ids WHERE source = ? AND upstream_id = ?').run(
@@ -231,8 +240,8 @@ export function recordRun(
 ): void {
   db.prepare(
     `INSERT INTO index_runs (source, started_at, finished_at, complete, error, fetched, inserted,
-       updated, unchanged, removed)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       updated, unchanged, removed, feeds_failed)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     run.source,
     run.startedAt,
@@ -244,6 +253,7 @@ export function recordRun(
     run.counts.updated,
     run.counts.unchanged,
     run.counts.removed,
+    run.counts.feedsFailed,
   );
 }
 
@@ -265,6 +275,7 @@ function fromRaw(raw: RawRow, ids: Record<string, string>): StoredRow {
     publishedAt: raw.published_at,
     upstreamVersion: raw.upstream_version,
     ids,
+    episodeOrder: raw.episode_order,
     version: raw.version,
     createdAt: raw.created_at,
     updatedAt: raw.updated_at,
@@ -291,4 +302,83 @@ export function listIndexed(db: Db, filter: { source?: IndexSource } = {}): Stor
     byRow.set(key, { ...byRow.get(key), [id.scheme]: id.value });
   }
   return rows.map((raw) => fromRaw(raw, byRow.get(`${raw.source}:${raw.upstream_id}`) ?? {}));
+}
+
+/** What the index holds of a show's ordering, for a re-read whose feed can't be read. */
+export function storedOrdering(db: Db, showId: string): ShowOrdering | undefined {
+  const show = db
+    .prepare(
+      `SELECT episode_order FROM index_items
+       WHERE source = 'abs' AND upstream_id = ? AND kind = 'show'`,
+    )
+    .get(showId) as { episode_order: EpisodeOrder | null } | undefined;
+  if (show?.episode_order == null) return undefined;
+  const episodes = db
+    .prepare(
+      `SELECT upstream_id, published_at FROM index_items
+       WHERE source = 'abs' AND parent_id = ? AND published_at IS NOT NULL`,
+    )
+    .all(showId) as { upstream_id: string; published_at: number }[];
+  return {
+    order: show.episode_order,
+    publishedAt: new Map(episodes.map((e) => [e.upstream_id, e.published_at])),
+  };
+}
+
+function ids(db: Db, rows: RawRow[]): StoredRow[] {
+  const read = db.prepare(
+    'SELECT scheme, value FROM index_ids WHERE source = ? AND upstream_id = ?',
+  );
+  return rows.map((raw) => {
+    const found = read.all(raw.source, raw.upstream_id) as { scheme: string; value: string }[];
+    return fromRaw(raw, Object.fromEntries(found.map((i) => [i.scheme, i.value])));
+  });
+}
+
+/**
+ * A show's episodes in its order: oldest first when serial, newest first when episodic. Undated
+ * episodes come last, in season and episode number order.
+ */
+export function episodesInOrder(db: Db, showId: string): StoredRow[] {
+  const show = db
+    .prepare(`SELECT episode_order FROM index_items WHERE source = 'abs' AND upstream_id = ?`)
+    .get(showId) as { episode_order: EpisodeOrder | null } | undefined;
+  const direction = show?.episode_order === 'serial' ? 'ASC' : 'DESC';
+  const rows = db
+    .prepare(
+      `SELECT * FROM index_items WHERE source = 'abs' AND parent_id = ? AND kind = 'episode'
+       ORDER BY published_at IS NULL, published_at ${direction}, disc, position, upstream_id`,
+    )
+    .all(showId) as RawRow[];
+  return ids(db, rows);
+}
+
+/** A sequence as a number where it is one (`2`, `2.5`); others sort after, as text. */
+function sequenceKey(sequence: string | null): [number, string] {
+  const trimmed = sequence?.trim() ?? '';
+  return /^\d+(\.\d+)?$/.test(trimmed)
+    ? [Number(trimmed), '']
+    : [Number.POSITIVE_INFINITY, trimmed];
+}
+
+/** The indexed books of one series, in series order; books with no sequence come last. */
+export function booksInSeries(db: Db, seriesId: string): StoredRow[] {
+  const rows = db
+    .prepare(
+      `SELECT index_items.*, entry.value ->> '$.sequence' AS sequence
+       FROM index_items, json_each(index_items.series) AS entry
+       WHERE kind = 'book' AND entry.value ->> '$.id' = ?`,
+    )
+    .all(seriesId) as (RawRow & { sequence: string | null })[];
+  const keyed = rows.map((row) => ({ row, key: sequenceKey(row.sequence) }));
+  keyed.sort(
+    (a, b) =>
+      a.key[0] - b.key[0] ||
+      a.key[1].localeCompare(b.key[1]) ||
+      a.row.upstream_id.localeCompare(b.row.upstream_id),
+  );
+  return ids(
+    db,
+    keyed.map(({ row: { sequence: _sequence, ...row } }) => row),
+  );
 }

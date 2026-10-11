@@ -41,3 +41,40 @@ describe('runMigrations', () => {
     db.close();
   });
 });
+
+describe('the episode order migration', () => {
+  it('has every indexed show read again on the next run, and nothing else', () => {
+    const db = new Database(':memory:');
+    runMigrations(
+      db,
+      migrations.filter((m) => m.id < 6),
+    );
+    const add = db.prepare(
+      `INSERT INTO index_items (source, upstream_id, kind, title, creators, series, genres,
+         content_hash, version, created_at, updated_at)
+       VALUES ('abs', ?, ?, 't', '[]', '[]', '[]', 'h', 1, 1, 1)`,
+    );
+    const sync = db.prepare(
+      `INSERT INTO index_sync (source, upstream_id, upstream_version, checked_at)
+       VALUES ('abs', ?, '1', 1)`,
+    );
+    for (const [id, kind] of [
+      ['show-1', 'show'],
+      ['book-1', 'book'],
+    ]) {
+      add.run(id, kind);
+      sync.run(id);
+    }
+
+    runMigrations(db);
+
+    expect(db.prepare('SELECT upstream_id FROM index_sync').all()).toEqual([
+      { upstream_id: 'book-1' },
+    ]);
+    expect(db.prepare('SELECT episode_order FROM index_items').all()).toEqual([
+      { episode_order: null },
+      { episode_order: null },
+    ]);
+    db.close();
+  });
+});

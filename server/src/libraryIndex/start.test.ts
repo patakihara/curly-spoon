@@ -1,11 +1,14 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FetchLike } from '../adapters/http/fetch.js';
+import { type Recording, recordingSchema } from '../adapters/http/recording.js';
 import type { Job } from '../jobs/schedule.js';
 import { openDatabase, type Db } from '../store/connection.js';
 import { startIndexJob } from './start.js';
+import { listIndexed } from './store.js';
 
 let db: Db;
 let keys: string;
@@ -90,5 +93,56 @@ describe('starting the index job with the server', () => {
     const { jobs } = start({ everyMinutes: 60, absKeyFile: null }, fetch);
     await expect(jobs[0]!.run()).rejects.toThrow(/^jellyfin: /);
     expect(asked).toEqual(['jellyfin.upstream.invalid']);
+  });
+
+  it("reads each show's feed from the feed's own host, carrying no upstream key", async () => {
+    const recorded = (upstream: string, call: string): Recording => {
+      const dir = fileURLToPath(new URL(`../adapters/${upstream}/recordings/`, import.meta.url));
+      return recordingSchema.parse(JSON.parse(readFileSync(join(dir, `${call}.json`), 'utf8')));
+    };
+    const json = (r: Recording) => (r.response.body as { json: Record<string, unknown> }).json;
+    const shows = [
+      recorded('audiobookshelf', 'index-show-1'),
+      recorded('audiobookshelf', 'index-show-2'),
+    ];
+    const feeds = [recorded('feed', 'show-1-feed'), recorded('feed', 'show-2-feed')];
+    const page = recorded('audiobookshelf', 'index-shows-page');
+    const asked: { url: URL; authorization: string | null }[] = [];
+    const fetch: FetchLike = async (raw, init) => {
+      const url = new URL(raw);
+      asked.push({ url, authorization: new Headers(init?.headers).get('authorization') });
+      const answer = (body: unknown) => Response.json(body);
+      if (url.host === 'abs.upstream.invalid') {
+        if (url.pathname === '/api/libraries')
+          return answer(json(recorded('audiobookshelf', 'library-list')));
+        if (url.pathname === page.request.path) return answer({ ...json(page), total: 2 });
+        if (url.pathname.endsWith('/items'))
+          return answer({ ...json(page), results: [], total: 0 });
+        const show = shows.find((r) => r.request.path === url.pathname);
+        if (show) return answer(json(show));
+      }
+      const feed = feeds.find((r) => r.request.path === url.pathname);
+      if (feed) {
+        return new Response((feed.response.body as { text: string }).text, {
+          headers: { 'content-type': 'application/xml' },
+        });
+      }
+      return new Response('{}', { status: 500 });
+    };
+    const { jobs } = start({ everyMinutes: 60, absKeyFile: join(keys, 'abs-index') }, fetch);
+    await expect(jobs[0]!.run()).rejects.toThrow(/^jellyfin: /);
+
+    const feedCalls = asked.filter((a) => feeds.some((f) => f.request.path === a.url.pathname));
+    expect(feedCalls.map((a) => [a.url.protocol, a.authorization])).toEqual([
+      ['https:', null],
+      ['https:', null],
+    ]);
+    const orders = listIndexed(db)
+      .filter((row) => row.kind === 'show')
+      .map((row) => [row.id, row.episodeOrder]);
+    expect(Object.fromEntries(orders)).toEqual({
+      [(json(shows[0]!) as { id: string }).id]: 'serial',
+      [(json(shows[1]!) as { id: string }).id]: 'episodic',
+    });
   });
 });

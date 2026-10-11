@@ -15,6 +15,7 @@
 import { join } from 'node:path';
 import { z } from 'zod';
 import { AbsClient } from './audiobookshelf/client.js';
+import { FEED_MAX_BYTES, type FeedEpisode, parseFeed } from './feed/client.js';
 import { type MediaProgress } from './audiobookshelf/schemas.js';
 import { type FetchLike, requestJson } from './http/fetch.js';
 import { createRecorder } from './http/record.js';
@@ -26,8 +27,6 @@ import { RECORD_USER_ID, TEST_IDENTITY } from './record-oidc.js';
 
 /** How many tracks the Instant Mix recording asks for. */
 export const INSTANT_MIX_LIMIT = 20;
-/** A feed larger than this is refused rather than read. */
-export const FEED_MAX_BYTES = 4 * 1024 * 1024;
 /** A feed has no server version; the recording names the format it was read as. */
 export const FEED_VERSION = 'RSS 2.0';
 
@@ -100,15 +99,12 @@ export function trimFeedExchange(raw: RawExchange): RawExchange {
 
 /** The enclosure URL of a feed's item with the earliest `pubDate`, entities decoded. */
 export function oldestEnclosure(xml: string): string | undefined {
-  let best: { at: number; url: string } | undefined;
-  for (const [, item = ''] of xml.matchAll(/<item>([\s\S]*?)<\/item>/g)) {
-    const at = Date.parse(/<pubDate>([^<]*)<\/pubDate>/.exec(item)?.[1] ?? '');
-    const raw = /<enclosure\b[^>]*\burl="([^"]*)"/.exec(item)?.[1];
-    if (Number.isNaN(at) || raw === undefined) continue;
-    const decoded = raw.replace(/&amp;/g, '&');
-    if (best === undefined || at < best.at) best = { at, url: decoded };
+  let best: FeedEpisode | undefined;
+  for (const episode of parseFeed(xml).episodes) {
+    if (episode.publishedAt === null || episode.enclosureUrl === null) continue;
+    if (best?.publishedAt == null || episode.publishedAt < best.publishedAt) best = episode;
   }
-  return best?.url;
+  return best?.enclosureUrl ?? undefined;
 }
 
 export interface SessionsRecordInput {
