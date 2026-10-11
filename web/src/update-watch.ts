@@ -2,7 +2,9 @@
  * Keeps an open tab on the app the server runs. The tab reads the commit `/api/health` reports
  * when it starts, asks again every minute and whenever it is shown, and reloads once the server
  * reports another commit. It waits while audio plays: the reload comes once nothing has played for
- * 2 s, so the hand-over from one file to the next does not count as stopping. A null commit (a
+ * 2 s, so the hand-over from one file to the next does not count as stopping. Media events say
+ * when audio stops, and every check looks again, so audio that stopped without a word (its element
+ * taken out of the page while it played) still lets the reload go ahead. A null commit (a
  * server not built into an image) never reloads, and a tab reloads at most once for a commit, so
  * a server flipping between two images cannot loop it. No UI: the reload is silent.
  */
@@ -133,7 +135,9 @@ export function watchForUpdates(options: UpdateWatchOptions = {}): () => void {
       quiet = undefined;
       return;
     }
-    if (commit === pending || commit === reloadedFor()) return;
+    // Still waiting on the same commit: look at the audio again, since media events alone miss
+    // audio that stopped by leaving the page.
+    if (commit !== pending && commit === reloadedFor()) return;
     pending = commit;
     settle();
   };

@@ -48,6 +48,8 @@ function rig(options: { commit?: string | null; storage?: Map<string, string> | 
       playing = on;
       mediaListeners.forEach((listener) => listener());
     },
+    /** Audio stops with no word of it, as when its element leaves the page while playing. */
+    vanish: () => (playing = false),
     show: async () => {
       page.visibilityState = 'visible';
       pageListeners.forEach((listener) => listener());
@@ -112,6 +114,17 @@ describe('[M0.staging/c] the update watch', () => {
     expect(page.reloads()).toBe(1);
   });
 
+  it('[M0.staging/c] reloads once no audio plays, even when nothing said it stopped', async () => {
+    const page = rig();
+    await wait(0);
+    page.play(true);
+    page.deploy(B);
+    await wait(2 * 60_000);
+    page.vanish();
+    await wait(62_000);
+    expect(page.reloads()).toBe(1);
+  });
+
   it('[M0.staging/c] does not reload across a gapless hand-over from one file to the next', async () => {
     const page = rig();
     await wait(0);
@@ -162,6 +175,14 @@ describe('[M0.staging/c] the update watch', () => {
     await page.show();
     await wait(2_000);
     expect(page.reloads()).toBe(1);
+  });
+
+  it('[M0.staging/c] never reloads on a commit that is not a full commit id', async () => {
+    const page = rig();
+    await wait(0);
+    page.deploy('zz');
+    await wait(5 * 60_000);
+    expect(page.reloads()).toBe(0);
   });
 
   it('[M0.staging/c] keeps watching through a failed check', async () => {

@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { type Page, expect, test } from '@playwright/test';
+import { type Rollup, build } from 'vite';
+import { type PlaybackPlan, type Player, type createPlayer } from '../src/playback';
 
 /**
  * An open tab follows the app the server runs. The server's own `/api/health` answer is passed
@@ -16,6 +18,26 @@ const tone = readFileSync(
     new URL('../../server/src/adapters/audiobookshelf/recordings/multi-file.mp3', import.meta.url),
   ),
 );
+
+/** The web player engine, bundled as it is, for a page to run. */
+let engine: string;
+
+test.beforeAll(async () => {
+  const output = (await build({
+    configFile: false,
+    logLevel: 'silent',
+    build: {
+      write: false,
+      minify: false,
+      lib: {
+        entry: fileURLToPath(new URL('../src/playback.ts', import.meta.url)),
+        name: 'AuralisPlayback',
+        formats: ['iife'],
+      },
+    },
+  })) as Rollup.RollupOutput[];
+  engine = output[0]!.output[0].code;
+});
 
 test.afterEach(({ page }) => page.unrouteAll({ behavior: 'ignoreErrors' }));
 
@@ -113,4 +135,46 @@ test('[M0.staging/c] an open tab on a server reporting no commit never reloads',
   expect(tab.checks()).toBeGreaterThan(checksBefore);
   expect(tab.loads()).toBe(0);
   expect(await tab.same()).toBe(true);
+});
+
+test('[M0.staging/c] an open tab waiting on the player reloads once the player is gone', async ({
+  page,
+}) => {
+  let commit = A;
+  const tab = await openApp(page, () => commit);
+  await page.addScriptTag({ content: engine });
+  await page.evaluate(async () => {
+    const { createPlayer: create } = (
+      window as unknown as { AuralisPlayback: { createPlayer: typeof createPlayer } }
+    ).AuralisPlayback;
+    const plan: PlaybackPlan = {
+      tracks: [{ url: '/e2e/tone.mp3', mime: 'audio/mpeg', duration: 5, offset: 0 }],
+      chapters: [],
+      startAt: 0,
+    };
+    const player = create(plan);
+    await player.play();
+    // The player's own elements, looped and muted so the tone plays on for as long as the test.
+    document.querySelectorAll('audio').forEach((audio) => {
+      audio.loop = true;
+      audio.muted = true;
+    });
+    Object.assign(window, { player });
+  });
+
+  commit = B;
+  const checksBefore = tab.checks();
+  await tab.tick(130_000);
+  expect(tab.checks()).toBeGreaterThan(checksBefore);
+  expect(tab.loads()).toBe(0);
+  expect(
+    await page.evaluate(() => [...document.querySelectorAll('audio')].some((a) => !a.paused)),
+  ).toBe(true);
+
+  // The player is destroyed mid-play: its elements leave the page before they say they stopped.
+  await page.evaluate(() => (window as unknown as { player: Player }).player.destroy());
+  expect(await page.evaluate(() => document.querySelectorAll('audio').length)).toBe(0);
+  await tab.tick(65_000);
+  await expect.poll(tab.loads).toBe(1);
+  expect(await tab.same()).toBe(false);
 });
