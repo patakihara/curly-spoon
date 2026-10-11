@@ -73,6 +73,18 @@ describe('reading a show’s feed', () => {
     expect(feed.episodes).toEqual([{ guid: null, enclosureUrl: null, publishedAt: null }]);
   });
 
+  it('skips an item it cannot read and keeps the rest', () => {
+    const item = '<item><guid>g</guid><pubDate>Fri, 08 Sep 2023 04:00:00 +0000</pubDate></item>';
+    for (const bad of ['<item>hello</item>', '<item></item>']) {
+      expect(parseFeed(rss(`<itunes:type>serial</itunes:type>${bad}${item}`))).toEqual({
+        order: 'serial',
+        episodes: [
+          { guid: 'g', enclosureUrl: null, publishedAt: Date.parse('2023-09-08T04:00:00Z') },
+        ],
+      });
+    }
+  });
+
   it('refuses anything that is not an RSS feed', () => {
     expect(() => parseFeed('<feed xmlns="http://www.w3.org/2005/Atom"></feed>')).toThrow();
     expect(() => parseFeed('not xml at all <')).toThrow();

@@ -228,9 +228,10 @@ export const migrations: readonly Migration[] = [
     up: (db) => {
       db.exec(`
         -- A show's episode order, from its feed's itunes:type: oldest first when serial, newest
-        -- first when episodic. Null on every row but a show.
+        -- first when episodic; unknown, played newest first, until a read of its feed succeeds.
+        -- Null on every row but a show.
         ALTER TABLE index_items ADD COLUMN episode_order TEXT
-          CHECK (episode_order IN ('serial', 'episodic'));
+          CHECK (episode_order IN ('serial', 'episodic', 'unknown'));
 
         -- Feeds the index could not read, per run.
         ALTER TABLE index_runs ADD COLUMN feeds_failed INTEGER NOT NULL DEFAULT 0;

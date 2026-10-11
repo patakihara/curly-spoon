@@ -8,7 +8,9 @@
  * alone would miss it. Rows are written only where their content changed.
  *
  * A show read again has its feed read with it, for its episode order and its episodes' dates; a
- * feed that can't be read leaves the show with the ordering the index already holds.
+ * feed that can't be read leaves the show with the ordering the index already holds. A show none
+ * of whose feed reads has succeeded is stored as `unknown`, played newest first, and read again on
+ * the next run until its feed answers.
  *
  * Top-level items a pass did not see are removed only after a complete pass, from the first page
  * to the last, and only once the upstream confirms each is gone; a window of pages (`pages`) never
@@ -116,18 +118,21 @@ async function removeGone(
   }
 }
 
-/** A show's ordering from its feed, else what the index holds, else none (the defaults). */
+/**
+ * A show's ordering from its feed. A feed that fails leaves what the index holds, else `unknown`.
+ * A show with no feed to read keeps what the index holds, else none (the default order).
+ */
 async function showOrdering(pass: Pass, item: ItemSummary): Promise<ShowOrdering | undefined> {
   if (item.mediaType !== 'podcast') return undefined;
+  const stored = storedOrdering(pass.db, item.id);
   const url = item.media.metadata.feedUrl;
-  if (pass.feeds !== undefined && url) {
-    try {
-      return orderingFromFeed(item, await pass.feeds(url));
-    } catch {
-      pass.counts.feedsFailed += 1;
-    }
+  if (pass.feeds === undefined || !url) return stored?.order === 'unknown' ? undefined : stored;
+  try {
+    return orderingFromFeed(item, await pass.feeds(url));
+  } catch {
+    pass.counts.feedsFailed += 1;
+    return stored ?? { order: 'unknown', publishedAt: new Map() };
   }
-  return storedOrdering(pass.db, item.id);
 }
 
 async function indexAbs(pass: Pass, abs: NonNullable<IndexJobOptions['abs']>): Promise<boolean> {
@@ -149,7 +154,8 @@ async function indexAbs(pass: Pass, abs: NonNullable<IndexJobOptions['abs']>): P
         pass.counts.fetched += 1;
         const tree = absTree(summary, await showOrdering(pass, summary));
         applyTree(pass.db, tree, pass.now, pass.counts);
-        markRead(pass, 'abs', item.id, version);
+        // An unknown order is left unread, so the next run tries the show's feed again.
+        if (tree.top.episodeOrder !== 'unknown') markRead(pass, 'abs', item.id, version);
       }
       if (listed.results.length === 0 || (page + 1) * pass.size >= listed.total) {
         reachedEnd = true;

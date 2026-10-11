@@ -36,21 +36,40 @@ export interface RequestInitJson {
   maxBytes?: number;
 }
 
-/** The body as text, reading no more than `maxBytes` of it when given; null past the cap. */
-async function readText(response: Response, maxBytes: number | undefined): Promise<string | null> {
-  if (maxBytes === undefined || response.body === null) return response.text();
+/**
+ * The body as text, reading no more than `maxBytes` of it when given; null past the cap. Each read
+ * races `signal`, so a body that stalls fails once the call's time is up, and is cancelled, even
+ * when the stream itself ignores the abort.
+ */
+async function readText(
+  response: Response,
+  maxBytes: number | undefined,
+  signal: AbortSignal,
+): Promise<string | null> {
+  if (response.body === null) return '';
   const reader = response.body.getReader();
+  const aborted = new Promise<never>((_, reject) => {
+    const fail = () => reject(signal.reason);
+    if (signal.aborted) fail();
+    else signal.addEventListener('abort', fail, { once: true });
+  });
+  aborted.catch(() => undefined);
   const chunks: Uint8Array[] = [];
   let total = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    total += value.byteLength;
-    if (total > maxBytes) {
-      await reader.cancel();
-      return null;
+  try {
+    for (;;) {
+      const { done, value } = await Promise.race([reader.read(), aborted]);
+      if (done) break;
+      total += value.byteLength;
+      if (maxBytes !== undefined && total > maxBytes) {
+        await reader.cancel();
+        return null;
+      }
+      chunks.push(value);
     }
-    chunks.push(value);
+  } catch (cause) {
+    await reader.cancel(cause).catch(() => undefined);
+    throw cause;
   }
   return Buffer.concat(chunks).toString('utf8');
 }
@@ -77,12 +96,16 @@ export async function requestJson<T>(
     body = new URLSearchParams(init.form).toString();
   }
 
+  // One limit covers the whole call, the body included: a feed that sends its headers and then
+  // stalls would otherwise hold this run, and every later one, forever.
   const timeoutMs = init.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   let response: Response;
+  let text: string | null;
   try {
     response = await fetch(url, { method, headers, body, signal: controller.signal });
+    text = await readText(response, init.maxBytes, controller.signal);
   } catch (cause) {
     if (controller.signal.aborted) {
       throw new AdapterError('timeout', call, `no answer in ${timeoutMs} ms`, undefined, { cause });
@@ -92,7 +115,6 @@ export async function requestJson<T>(
     clearTimeout(timer);
   }
 
-  const text = await readText(response, init.maxBytes);
   if (text === null) {
     throw new AdapterError('parse', call, `the body is larger than ${init.maxBytes} bytes`);
   }

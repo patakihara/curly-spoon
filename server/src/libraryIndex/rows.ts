@@ -10,6 +10,12 @@ import type { IndexItem } from '../adapters/jellyfin/schemas.js';
 export type IndexSource = 'abs' | 'jellyfin';
 export type IndexKind = 'book' | 'show' | 'episode' | 'album' | 'track';
 
+/**
+ * A show's episode order as the index holds it: its feed's, or `unknown` while no read of its
+ * feed has succeeded. Autoplay plays an unknown show newest first, as for episodic.
+ */
+export type ShowEpisodeOrder = EpisodeOrder | 'unknown';
+
 export interface Creator {
   /** The upstream's own id for the person, where it has one. */
   id?: string;
@@ -48,10 +54,10 @@ export interface IndexRow {
   /** External ids by scheme: `asin`, `feed_url`, `musicbrainz_album`, ... */
   ids: Record<string, string>;
   /** A show's episode order; null on every other row. */
-  episodeOrder: EpisodeOrder | null;
+  episodeOrder: ShowEpisodeOrder | null;
 }
 
-/** Apple's default for a feed that names no order: newest first. */
+/** Apple's default for a feed that names no order, and for a show with no feed: newest first. */
 export const DEFAULT_EPISODE_ORDER: EpisodeOrder = 'episodic';
 
 /**
@@ -60,7 +66,7 @@ export const DEFAULT_EPISODE_ORDER: EpisodeOrder = 'episodic';
  * date: feeds often carry only the latest episodes.
  */
 export interface ShowOrdering {
-  order: EpisodeOrder;
+  order: ShowEpisodeOrder;
   publishedAt: ReadonlyMap<string, number>;
 }
 

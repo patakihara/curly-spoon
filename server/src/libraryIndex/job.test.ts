@@ -625,15 +625,31 @@ describe("episode order from each show's feed", () => {
     );
   });
 
-  it("indexes a show whose feed can't be read with the default order and Audiobookshelf's dates, and counts the failure", async () => {
+  it("stores a show whose feed has never been read as unknown, newest first by Audiobookshelf's dates, and counts the failure", async () => {
     const r = recorded();
-    const { feed: _gone, ...noFeeds } = r;
-    const { result } = await run(db, T0, { ...noFeeds, feed: {} as typeof r.feed });
+    const { result } = await run(db, T0, { ...r, feed: {} as typeof r.feed });
     const serial = body<AbsShow>(r.abs['index-show-1']);
-    expect(byKey(listIndexed(db)).get(`abs:${serial.id}`)?.episodeOrder).toBe('episodic');
-    expect(episodesInOrder(db, serial.id)[3]?.publishedAt).toBe(Date.UTC(2023, 0, 1));
+    expect(byKey(listIndexed(db)).get(`abs:${serial.id}`)?.episodeOrder).toBe('unknown');
+    const order = episodesInOrder(db, serial.id);
+    expect(order.map(shortTitle)[0]).toBe('The Marshall Islands, Part Four');
+    expect(order[3]?.publishedAt).toBe(Date.UTC(2023, 0, 1));
     expect(result.abs?.error).toBeNull();
     expect(result.abs?.counts.feedsFailed).toBe(2);
+  });
+
+  it('reads a show of unknown order again on the next run, until its feed answers', async () => {
+    const r = recorded();
+    await run(db, T0, { ...r, feed: {} as typeof r.feed });
+    const again = await run(db, T0 + HOUR, { ...r, feed: {} as typeof r.feed });
+    expect(again.result.abs?.counts.feedsFailed).toBe(2);
+
+    const answered = await run(db, T0 + 2 * HOUR);
+    expect(answered.result.abs?.counts.feedsFailed).toBe(0);
+    const serial = body<AbsShow>(r.abs['index-show-1']);
+    expect(byKey(listIndexed(db)).get(`abs:${serial.id}`)?.episodeOrder).toBe('serial');
+
+    const settled = await run(db, T0 + 3 * HOUR);
+    expect(settled.asked).not.toContain(`/api/items/${serial.id}`);
   });
 
   it('keeps the order and dates the index holds when a re-read finds the feed unreadable', async () => {

@@ -4,8 +4,14 @@
  */
 import { createHash } from 'node:crypto';
 import type { Db } from '../store/connection.js';
-import type { EpisodeOrder } from '../adapters/feed/client.js';
-import type { IndexKind, IndexRow, IndexSource, IndexTree, ShowOrdering } from './rows.js';
+import type {
+  IndexKind,
+  IndexRow,
+  IndexSource,
+  IndexTree,
+  ShowEpisodeOrder,
+  ShowOrdering,
+} from './rows.js';
 
 export interface IndexCounts {
   /** Upstream answers read for a whole item: an ABS item, a Jellyfin album's tracks. */
@@ -14,7 +20,7 @@ export interface IndexCounts {
   updated: number;
   unchanged: number;
   removed: number;
-  /** Shows' feeds that could not be read; each show kept the order the index held. */
+  /** Shows' feeds that could not be read; each show kept the order the index held, else unknown. */
   feedsFailed: number;
 }
 
@@ -45,7 +51,7 @@ interface RawRow {
   year: number | null;
   published_at: number | null;
   upstream_version: string | null;
-  episode_order: EpisodeOrder | null;
+  episode_order: ShowEpisodeOrder | null;
   version: number;
   created_at: number;
   updated_at: number;
@@ -311,7 +317,7 @@ export function storedOrdering(db: Db, showId: string): ShowOrdering | undefined
       `SELECT episode_order FROM index_items
        WHERE source = 'abs' AND upstream_id = ? AND kind = 'show'`,
     )
-    .get(showId) as { episode_order: EpisodeOrder | null } | undefined;
+    .get(showId) as { episode_order: ShowEpisodeOrder | null } | undefined;
   if (show?.episode_order == null) return undefined;
   const episodes = db
     .prepare(
@@ -336,18 +342,21 @@ function ids(db: Db, rows: RawRow[]): StoredRow[] {
 }
 
 /**
- * A show's episodes in its order: oldest first when serial, newest first when episodic. Undated
- * episodes come last, in season and episode number order.
+ * A show's episodes in its order: oldest first when serial, newest first when episodic or when the
+ * order is unknown (no feed read has succeeded yet; Apple's default). Episodes of one date, and
+ * undated ones, which come last, follow season and episode number in the same direction, with
+ * unnumbered ones after the numbered.
  */
 export function episodesInOrder(db: Db, showId: string): StoredRow[] {
   const show = db
     .prepare(`SELECT episode_order FROM index_items WHERE source = 'abs' AND upstream_id = ?`)
-    .get(showId) as { episode_order: EpisodeOrder | null } | undefined;
+    .get(showId) as { episode_order: ShowEpisodeOrder | null } | undefined;
   const direction = show?.episode_order === 'serial' ? 'ASC' : 'DESC';
   const rows = db
     .prepare(
       `SELECT * FROM index_items WHERE source = 'abs' AND parent_id = ? AND kind = 'episode'
-       ORDER BY published_at IS NULL, published_at ${direction}, disc, position, upstream_id`,
+       ORDER BY published_at IS NULL, published_at ${direction}, disc IS NULL, disc ${direction},
+         position IS NULL, position ${direction}, upstream_id`,
     )
     .all(showId) as RawRow[];
   return ids(db, rows);

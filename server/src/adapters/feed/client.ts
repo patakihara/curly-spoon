@@ -66,7 +66,9 @@ const feedSchema = z
     rss: z.object({
       channel: z.object({
         'itunes:type': textOf,
-        item: z.array(z.union([itemSchema, z.literal('').transform(() => null)])).default([]),
+        // An item that is not an element (`<item>hello</item>`, `<item></item>`) is skipped;
+        // the rest of the feed still reads.
+        item: z.array(itemSchema.nullable().catch(null)).default([]),
       }),
     }),
   })
