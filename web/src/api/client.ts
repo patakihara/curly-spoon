@@ -1,7 +1,7 @@
+import { HealthResponse } from '@auralis/schema';
 import createClient, { type Client } from 'openapi-fetch';
-import { type components, type paths } from '../generated/api/schema';
+import { type paths } from '../generated/api/schema';
 
-export type HealthResponse = components['schemas']['HealthResponse'];
 export type ApiClient = Client<paths>;
 
 /** The typed API client. Same origin by default; tests inject `fetch` and a base URL. */
@@ -11,8 +11,9 @@ export function createApiClient(
   return createClient<paths>({ baseUrl: options.baseUrl ?? '', fetch: options.fetch });
 }
 
+/** The server's health answer; throws on a failed request or an answer that does not parse. */
 export async function fetchHealth(client: ApiClient): Promise<HealthResponse> {
   const { data, response } = await client.GET('/api/health');
   if (data === undefined) throw new Error(`GET /api/health answered ${response.status}`);
-  return data;
+  return HealthResponse.parse(data);
 }

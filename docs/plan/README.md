@@ -112,8 +112,9 @@ pnpm canvas:build [--draft]                     build/canvas/project/** and buil
 
 The lint checks structure, directives, raw HTML, the item grammar, the standing rules for
 subagents (a `### Standing rules for subagents` subsection that every brief opens with), orphan
-test tags (every tag names an existing item and test criterion), the size limit, dated notes,
-and the outbox format.
+test tags (every tag names an existing item and test criterion), "What this plan hasn't
+verified" (every list item, nested or continued, names an existing item or sits under one that
+does), the size limit, dated notes, and the outbox format.
 A dated note is an ISO or month-name date, or a history phrase such as "previously" or "as of";
 code spans, quoted text and a commit citation like `` `781efd4` (2026-08-21 `` are exempt.
 The render refuses on any lint error, and on uncommitted changes to `docs/plan`, `docs/outbox`
