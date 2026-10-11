@@ -20,6 +20,11 @@
  * `auralis`, through a Jellyfin token minted for it by Quick Connect and logged out at the end:
  * the album and its tracks, its first track, and that track's first two bytes.
  *
+ * `--only progress --play-item <book> --jellyfin-item <track>` records M1.progress's writes as the
+ * service identity `auralis`: a play's sync and close and a bookmark on the book, and a track's
+ * start, progress and stop, each after real listening time. It reads the test user's state
+ * first, undoes the run whatever fails, and fails unless a read-back matches (record-progress.ts).
+ *
  * `--dry-run` makes the same calls but writes into a fresh temporary folder instead of the
  * committed recordings, and says where.
  */
@@ -39,6 +44,7 @@ import { buildAuthorizationHeader } from './jellyfin/auth.js';
 import { JellyfinClient } from './jellyfin/client.js';
 import { JellyfinProvisioner, personDevice } from './jellyfin/quickConnect.js';
 import { RECORD_USER_ID, recordOidc, TEST_IDENTITY } from './record-oidc.js';
+import { recordProgress } from './record-progress.js';
 
 /**
  * The index calls record one page of two items from each library. The fifth page holds the
@@ -57,17 +63,18 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
   --abs <url>        Audiobookshelf base URL
   --jellyfin <url>   Jellyfin base URL
   --jellyfin-item <id> the Jellyfin item to record, instead of the first album; for --only
-                     jfplay, the album
-  --only <name>      record only abs, jellyfin, index, play or jfplay; or oidc, a sign-in and
-                     its links
-  --play-item <id>   the multi-file book --only play records
+                     jfplay, the album; for --only progress, the track
+  --only <name>      record only abs, jellyfin, index, play, jfplay or progress; or oidc, a
+                     sign-in and its links
+  --play-item <id>   the multi-file book --only play and --only progress record
   --index-page <n>   the page of two the index calls record, from 0 (default ${INDEX_PAGE})
   --oidc <url>       the sign-on's issuer, for --only oidc
   --oidc-version <v> the sign-on's version, for --only oidc
   --dry-run          write into a temporary folder, not the committed recordings
   --help             show this
 
-stdin carries ABS_API_KEY=... and JELLYFIN_API_KEY=... lines (jfplay needs only the latter); for --only oidc,
+stdin carries ABS_API_KEY=... and JELLYFIN_API_KEY=... lines (jfplay needs only the latter;
+progress needs both); for --only oidc,
 OIDC_CLIENT_SECRET, OIDC_TEST_PASSWORD, ABS_PROVISION_KEY and JELLYFIN_API_KEY.
 `;
 
@@ -564,9 +571,9 @@ export async function runRecord(io: RecordIo): Promise<number> {
   const only = values.only;
   if (
     only !== undefined &&
-    !['abs', 'jellyfin', 'index', 'play', 'jfplay', 'oidc'].includes(only)
+    !['abs', 'jellyfin', 'index', 'play', 'jfplay', 'progress', 'oidc'].includes(only)
   ) {
-    io.err(`--only is abs, jellyfin, index, play, jfplay or oidc, not ${only}`);
+    io.err(`--only is abs, jellyfin, index, play, jfplay, progress or oidc, not ${only}`);
     return 2;
   }
   const indexPage = Number(values['index-page'] ?? INDEX_PAGE);
@@ -578,6 +585,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
   if (only === 'oidc') return runOidc(io, values, parseKeys(io.stdin), root);
   if (only === 'play') return runPlay(io, values, parseKeys(io.stdin), root);
   if (only === 'jfplay') return runJellyfinPlay(io, values, parseKeys(io.stdin), root);
+  if (only === 'progress') return runProgress(io, values, parseKeys(io.stdin), root);
   const wantIndex = only === undefined || only === 'index';
   const wantAbs = only !== 'jellyfin';
   const wantJellyfin = only !== 'abs';
@@ -691,6 +699,47 @@ async function runJellyfinPlay(
   const dir = join(root, 'jellyfin', 'recordings');
   const written = await recordJellyfinPlay(io, url as string, key!, dir, albumId as string);
   return scanWritten(io, written, []);
+}
+
+async function runProgress(
+  io: RecordIo,
+  values: Record<string, string | boolean | undefined>,
+  keys: Record<string, string>,
+  root: string,
+): Promise<number> {
+  const need = {
+    '--abs': values.abs,
+    '--jellyfin': values.jellyfin,
+    '--play-item': values['play-item'],
+    '--jellyfin-item': values['jellyfin-item'],
+    'ABS_API_KEY on stdin': keys.ABS_API_KEY,
+    'JELLYFIN_API_KEY on stdin': keys.JELLYFIN_API_KEY,
+  };
+  const missing = Object.entries(need)
+    .filter(([, v]) => typeof v !== 'string' || v === '')
+    .map(([k]) => k);
+  if (missing.length > 0) {
+    io.err(`missing ${missing.join(', ')}\n\n${USAGE}`);
+    return 2;
+  }
+  const { written, matches } = await recordProgress({
+    fetch: io.fetch,
+    out: io.out,
+    sleep: io.sleep ?? sleep,
+    root,
+    absUrl: values.abs as string,
+    jellyfinUrl: values.jellyfin as string,
+    absKey: keys.ABS_API_KEY as string,
+    jellyfinKey: keys.JELLYFIN_API_KEY as string,
+    bookId: values['play-item'] as string,
+    trackId: values['jellyfin-item'] as string,
+  });
+  const scanned = scanWritten(io, written, []);
+  if (!matches) {
+    io.err("the test user's state is not as it was before the run: do not commit");
+    return 1;
+  }
+  return scanned;
 }
 
 async function runOidc(

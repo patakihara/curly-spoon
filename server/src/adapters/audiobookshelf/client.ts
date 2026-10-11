@@ -7,7 +7,11 @@ import { AdapterError, type FetchLike, requestJson, type RequestInitJson } from 
 import { type FileHeaders, fileHeadersSchema, openStream, type UpstreamFile } from '../stream.js';
 import { type ZodType, type z } from 'zod';
 import {
+  type AbsBookmark,
+  type AbsMe,
+  bookmarkSchema,
   closeSessionSchema,
+  deleteBookmarkSchema,
   type FileRef,
   hlsPlaylistSchema,
   hlsSegmentHeadersSchema,
@@ -17,11 +21,16 @@ import {
   itemSummarySchema,
   librariesSchema,
   MAX_PLAYLIST_BYTES,
+  type MediaProgress,
+  mediaProgressSchema,
+  meSchema,
   libraryItemsSchema,
   type PlayRequest,
   playSessionSchema,
+  type SessionSync,
   statusSchema,
   SUPPORTED_MIME_TYPES,
+  syncSessionSchema,
 } from './schemas.js';
 
 /** The session an HLS track's `contentUrl` names; null for anything else. */
@@ -146,10 +155,50 @@ export class AbsClient {
     });
   }
 
-  async closeSession(sessionId: string): Promise<void> {
+  /** Reports where the person is and how long they listened; never retried, as a repeat adds the
+   * listening time twice. */
+  async syncSession(sessionId: string, sync: SessionSync): Promise<void> {
+    await this.call(`api/session/${encodeURIComponent(sessionId)}/sync`, syncSessionSchema, {
+      method: 'POST',
+      json: sync,
+    });
+  }
+
+  /** Closes a playback session, with a last report when given: ABS syncs it before closing. */
+  async closeSession(sessionId: string, sync?: SessionSync): Promise<void> {
     await this.call(`api/session/${encodeURIComponent(sessionId)}/close`, closeSessionSchema, {
       method: 'POST',
+      ...(sync === undefined ? {} : { json: sync }),
     });
+  }
+
+  /** The key's own user, their progress and their bookmarks: `GET /api/me`. */
+  getMe(): Promise<AbsMe> {
+    return this.call('api/me', meSchema);
+  }
+
+  /** The person's progress on one item, or null when they have none (ABS answers 404). */
+  async findMyProgress(itemId: string): Promise<MediaProgress | null> {
+    try {
+      return await this.call(`api/me/progress/${encodeURIComponent(itemId)}`, mediaProgressSchema);
+    } catch (error) {
+      if (error instanceof AdapterError && error.status === 404) return null;
+      throw error;
+    }
+  }
+
+  /** Makes a bookmark on a library item, at whole seconds `time`. */
+  createBookmark(itemId: string, bookmark: { time: number; title: string }): Promise<AbsBookmark> {
+    return this.call(`api/me/item/${encodeURIComponent(itemId)}/bookmark`, bookmarkSchema, {
+      method: 'POST',
+      json: bookmark,
+    });
+  }
+
+  /** Deletes the bookmark at `time` on a library item. */
+  async deleteBookmark(itemId: string, time: number): Promise<void> {
+    const path = `api/me/item/${encodeURIComponent(itemId)}/bookmark/${encodeURIComponent(String(time))}`;
+    await this.call(path, deleteBookmarkSchema, { method: 'DELETE' });
   }
 
   /** A transcode's playlist, each segment URI cut to its bare name (see `hlsPlaylistSchema`). */

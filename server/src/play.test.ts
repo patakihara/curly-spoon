@@ -250,16 +250,25 @@ describe('playing one Audiobookshelf item by direct play', () => {
       ],
       chapters: session.chapters.map(({ title, start, end }) => ({ title, start, end })),
       startAt: session.currentTime,
+      progressTarget: { playId: session.id },
     });
   });
 
-  it('closes the Audiobookshelf session it opened to read the tracks', async () => {
-    const { sent, plan } = await server();
-    await plan();
-    expect(sent.map((s) => `${s.method} ${s.path}`)).toEqual([
-      `POST ${itemPlay.request.path}`,
-      `POST ${sessionClose.request.path}`,
-    ]);
+  it('keeps the Audiobookshelf session it opened, for progress, and closes it on request', async () => {
+    const { app, as, sent, plan } = await server();
+    const { progressTarget } = await plan();
+    expect(sent.map((s) => `${s.method} ${s.path}`)).toEqual([`POST ${itemPlay.request.path}`]);
+    const closed = await app.inject({
+      method: 'POST',
+      url: `/api/play/${progressTarget.playId}/close`,
+      headers: as('kara'),
+    });
+    expect(closed.statusCode).toBe(200);
+    expect(sent.at(-1)).toMatchObject({
+      method: 'POST',
+      path: sessionClose.request.path,
+      authorization: 'Bearer abs-token-kara',
+    });
   });
 
   it('still closes the session when planning fails after it opened', async () => {
@@ -372,8 +381,8 @@ describe('playing one Audiobookshelf item by direct play', () => {
       });
     }
     expect(sent.map((s) => s.authorization)).toEqual([
-      ...Array<string>(4).fill('Bearer abs-token-kara'),
-      ...Array<string>(4).fill('Bearer abs-token-otto'),
+      ...Array<string>(3).fill('Bearer abs-token-kara'),
+      ...Array<string>(3).fill('Bearer abs-token-otto'),
     ]);
     expect(sent.filter((s) => s.path.includes('/file/')).map((s) => s.range)).toEqual([
       'bytes=0-9',
@@ -480,7 +489,7 @@ describe('[M1.play/b] direct play of a multi-file Audiobookshelf book', () => {
       const before = tracks[n - 1]!;
       expect(track.offset).toBeCloseTo(before.offset + before.duration, 3);
     }
-    expect(progressTarget).toBeUndefined();
+    expect(progressTarget).toEqual({ playId: multiSession.id });
   });
 });
 

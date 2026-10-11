@@ -14,12 +14,27 @@ import {
   type IndexItem,
   type IndexQueryResult,
   indexQueryResultSchema,
+  noContentSchema,
   type PlayableItem,
   playableItemSchema,
   playableQueryResultSchema,
   publicSystemInfoSchema,
+  type UserItemData,
+  userItemDataSchema,
   userListSchema,
 } from './schemas.js';
+
+/** Jellyfin counts time in 100 ns ticks. */
+export const TICKS_PER_SECOND = 10_000_000;
+
+/** One report of a track playing: where it is, in seconds, and whether it is paused. */
+export interface PlaybackReport {
+  itemId: string;
+  position: number;
+  paused: boolean;
+  /** The play this report belongs to; Jellyfin ties a start, its progress and its stop by it. */
+  playSessionId: string;
+}
 
 export interface JellyfinClientOptions {
   baseUrl: string;
@@ -63,6 +78,16 @@ export class JellyfinClient {
       this.opts.fetch,
       this.url(path, query),
       { headers: { authorization } },
+      schema,
+    );
+  }
+
+  private post<T>(path: string, json: unknown, schema: ZodType<T>) {
+    const authorization = buildAuthorizationHeader(this.device, this.opts.token);
+    return requestJson(
+      this.opts.fetch,
+      this.url(path),
+      { method: 'POST', headers: { authorization }, json },
       schema,
     );
   }
@@ -150,6 +175,37 @@ export class JellyfinClient {
   }
 
   /**
+   * Tells Jellyfin a track started playing: `POST /Sessions/Playing`. Jellyfin times the play
+   * itself from the start, progress and stop it is sent; it takes no listening time.
+   */
+  async reportStart(report: PlaybackReport): Promise<void> {
+    await this.post('Sessions/Playing', playbackInfo(report), noContentSchema);
+  }
+
+  /** Where the track is, and whether it is paused: `POST /Sessions/Playing/Progress`. */
+  async reportProgress(report: PlaybackReport): Promise<void> {
+    await this.post('Sessions/Playing/Progress', playbackInfo(report), noContentSchema);
+  }
+
+  /**
+   * The play ended at `position`: `POST /Sessions/Playing/Stopped`. Jellyfin counts a music track
+   * played at its start and keeps no resume point for it, wherever it stopped (recorded).
+   */
+  async reportStopped(report: Omit<PlaybackReport, 'paused'>): Promise<void> {
+    const json = {
+      ItemId: report.itemId,
+      PositionTicks: Math.round(report.position * TICKS_PER_SECOND),
+      PlaySessionId: report.playSessionId,
+    };
+    await this.post('Sessions/Playing/Stopped', json, noContentSchema);
+  }
+
+  /** The token's own user's state on one item: `GET /UserItems/{id}/UserData`. */
+  getUserData(itemId: string): Promise<UserItemData> {
+    return this.get(`UserItems/${encodeURIComponent(itemId)}/UserData`, userItemDataSchema);
+  }
+
+  /**
    * A track's own file, untranscoded, passing `range` through: `GET /Audio/{id}/stream?static=true`.
    * Jellyfin serves this route to anyone who has the id (checked live), so a caller first checks
    * the person can see the track with `getPlayable`.
@@ -159,4 +215,15 @@ export class JellyfinClient {
     const authorization = buildAuthorizationHeader(this.device, this.opts.token);
     return openStream(this.opts.fetch, url, { authorization }, range, fileHeadersSchema);
   }
+}
+
+/** A start or progress report's body: `PlaybackStartInfo` and `PlaybackProgressInfo` share it. */
+function playbackInfo(report: PlaybackReport) {
+  return {
+    ItemId: report.itemId,
+    PositionTicks: Math.round(report.position * TICKS_PER_SECOND),
+    IsPaused: report.paused,
+    PlayMethod: 'DirectPlay',
+    PlaySessionId: report.playSessionId,
+  };
 }

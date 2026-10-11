@@ -191,6 +191,35 @@ describe('the recorded-upstreams server', () => {
     expect(res.rawPayload).toEqual(flacTone.subarray(0, 100));
   });
 
+  it('takes a progress report and a close for each book and the track it plans', async () => {
+    const server = await boot();
+    const headers = { authorization: `Bearer ${await bearerFor(server)}` };
+    for (const ref of [server.playable, server.multiFile, server.music]) {
+      const planned = await server.app.inject({
+        method: 'POST',
+        url: '/api/play',
+        headers,
+        payload: { ref },
+      });
+      expect(planned.statusCode, planned.body).toBe(200);
+      const { playId } = planned.json<PlaybackPlan>().progressTarget;
+      const reported = await server.app.inject({
+        method: 'POST',
+        url: '/api/progress',
+        headers,
+        payload: { playId, seq: 0, position: 3, listened: 0, paused: false },
+      });
+      expect(reported.statusCode, reported.body).toBe(200);
+      const closed = await server.app.inject({
+        method: 'POST',
+        url: `/api/play/${playId}/close`,
+        headers,
+        payload: { seq: 1, position: 4, listened: 0, paused: true },
+      });
+      expect(closed.statusCode, closed.body).toBe(200);
+    }
+  });
+
   it('refuses a callback whose state is not the sign-in it started', async () => {
     const server = await boot();
     const login = await server.app.inject({

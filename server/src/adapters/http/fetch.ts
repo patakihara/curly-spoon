@@ -25,7 +25,7 @@ export class AdapterError extends Error {
 }
 
 export interface RequestInitJson {
-  method?: 'GET' | 'POST' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   headers?: Record<string, string>;
   /** Serialized as JSON with `content-type: application/json`. */
   json?: unknown;

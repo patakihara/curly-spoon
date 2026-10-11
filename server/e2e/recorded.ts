@@ -133,6 +133,19 @@ function timedByStandIns(recorded: Recording, tone: string): Recording {
   return timed;
 }
 
+/**
+ * The recorded sync, as it would answer for the session [play] opened: ABS's sync is recorded for
+ * M1.progress's own session only, which the server does not replay, so each session it plans
+ * syncs with that recording's answer under its own path.
+ */
+function syncFor(play: Recording, sync: Recording): Recording {
+  const { id } = jsonOf<{ id: string }>(play);
+  const synced = structuredClone(sync);
+  synced.call = `${play.call}-sync`;
+  synced.request.path = `/api/session/${id}/sync`;
+  return synced;
+}
+
 /** Sends each request to the replay for its upstream's origin. */
 function byOrigin(upstreams: Record<string, FetchLike>): FetchLike {
   return (url, init) => {
@@ -269,13 +282,26 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     clientId,
     redirectUri: config.oidc!.redirectUri,
   });
-  // The four-file book is recorded twice under one play call, directly and transcoded, and its
-  // first segment twice, before and after it was cut. The server replays direct play and the cut
-  // segment; the transcode's plan is exercised in server/src/play.test.ts.
+  // The four-file book is recorded three times under one play call: directly, transcoded, and
+  // directly again for M1.progress. Its first segment is recorded twice, before and after it was
+  // cut, and its bookmark's delete twice, present and gone. The server replays M1.play's direct
+  // play, the cut segment and the delete that finds the bookmark; the transcode's plan is
+  // exercised in server/src/play.test.ts. M1.progress's sync answers for each session it plans.
   // Its files are all one 5 s stand-in tone, so the book is served timed by that tone.
-  const abs = recordingsOf('audiobookshelf')
-    .filter((r) => r.call !== 'hls-play' && r.call !== 'hls-segment-pending')
-    .map((r) => (r.call === 'multi-play' ? timedByStandIns(r, 'multi-file.mp3') : r));
+  const notReplayed = new Set([
+    'hls-play',
+    'hls-segment-pending',
+    'progress-play',
+    'progress-sync',
+    'bookmark-delete-missing',
+  ]);
+  const absRecorded = recordingsOf('audiobookshelf');
+  const replayed = absRecorded.filter((r) => !notReplayed.has(r.call));
+  const sync = call(absRecorded, 'progress-sync');
+  const abs = [
+    ...replayed.map((r) => (r.call === 'multi-play' ? timedByStandIns(r, 'multi-file.mp3') : r)),
+    ...['item-play', 'multi-play'].map((name) => syncFor(call(replayed, name), sync)),
+  ];
   const jellyfin = recordingsOf('jellyfin');
   const server = await assembleServer(config, {
     fetch: byOrigin({

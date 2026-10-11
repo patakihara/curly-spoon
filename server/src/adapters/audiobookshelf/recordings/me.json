@@ -1,0 +1,77 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.1",
+  "call": "me",
+  "request": {
+    "method": "GET",
+    "path": "/api/me",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "id": "169161f6-18a9-4b97-804e-4870fe980143",
+        "username": "auralis",
+        "email": null,
+        "type": "user",
+        "token": "<token>",
+        "mediaProgress": [
+          {
+            "id": "257b1666-cf96-45f4-9e95-f01aabc045f2",
+            "userId": "169161f6-18a9-4b97-804e-4870fe980143",
+            "libraryItemId": "7b3fa64c-f00c-4de6-8cd5-15d301b91f4b",
+            "episodeId": null,
+            "mediaItemId": "2c08a9e0-a78f-495c-8fcc-400160a20208",
+            "mediaItemType": "book",
+            "duration": 167.581502,
+            "progress": 0.11934491433308672,
+            "currentTime": 20,
+            "isFinished": false,
+            "hideFromContinueListening": false,
+            "ebookLocation": null,
+            "ebookProgress": 0,
+            "lastUpdate": 1791734510805,
+            "startedAt": 1791734505426,
+            "finishedAt": null
+          }
+        ],
+        "seriesHideFromContinueListening": [],
+        "bookmarks": [
+          {
+            "libraryItemId": "7b3fa64c-f00c-4de6-8cd5-15d301b91f4b",
+            "time": 30,
+            "title": "Auralis test",
+            "createdAt": 1791734510865
+          }
+        ],
+        "isActive": true,
+        "isLocked": false,
+        "lastSeen": null,
+        "createdAt": 1790548724381,
+        "permissions": {
+          "download": false,
+          "update": false,
+          "delete": false,
+          "upload": false,
+          "createEreader": false,
+          "accessAllLibraries": true,
+          "accessAllTags": true,
+          "accessExplicitContent": true,
+          "selectedTagsNotAccessible": false
+        },
+        "librariesAccessible": [],
+        "itemTagsSelected": [],
+        "hasOpenIDLink": false
+      }
+    }
+  }
+}

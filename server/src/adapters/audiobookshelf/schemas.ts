@@ -104,6 +104,8 @@ export const playSessionSchema = z
     audioTracks: z.array(audioTrackSchema),
     /** Seconds into the item where this person left off. */
     currentTime: z.number().optional(),
+    /** The item's length in seconds, which every sync reports back. */
+    duration: z.number().optional(),
     chapters: z.array(chapterSchema).optional(),
   })
   .passthrough();
@@ -173,6 +175,65 @@ export const hlsSegmentHeadersSchema = fileHeadersSchema.extend({
 
 /** `POST /api/session/:id/close` answers a bare 200 (`OK` as text); nothing in it is read. */
 export const closeSessionSchema = z.unknown();
+
+/**
+ * The body of `POST /api/session/:id/sync`, and of a close that reports last: where the person is,
+ * the wall-clock seconds they listened since the last report, and the item's length. ABS adds
+ * `timeListened` to their listening stats, so it is time spent playing, never a position delta.
+ */
+export interface SessionSync {
+  currentTime: number;
+  timeListened: number;
+  duration: number;
+}
+
+/** `POST /api/session/:id/sync` answers a bare 200 (`OK` as text, recorded); nothing is read. */
+export const syncSessionSchema = z.unknown();
+
+/** One person's progress on one item: `GET /api/me/progress/:id`, and each of `GET /api/me`'s. */
+export const mediaProgressSchema = z
+  .object({
+    id: z.string(),
+    libraryItemId: z.string(),
+    episodeId: z.string().nullable().optional(),
+    duration: z.number(),
+    progress: z.number(),
+    currentTime: z.number(),
+    isFinished: z.boolean(),
+  })
+  .passthrough();
+export type MediaProgress = z.infer<typeof mediaProgressSchema>;
+
+/** A bookmark: ABS keeps them per library item and tells them apart by `time`, in seconds. */
+export const bookmarkSchema = z
+  .object({
+    libraryItemId: z.string(),
+    time: z.number(),
+    title: z.string(),
+    createdAt: z.number(),
+  })
+  .passthrough();
+export type AbsBookmark = z.infer<typeof bookmarkSchema>;
+
+/**
+ * `GET /api/me`: the key's own user, cut to who they are, their progress and their bookmarks. The
+ * answer also carries the user's own token, which nothing here reads.
+ */
+export const meSchema = z
+  .object({
+    id: z.string(),
+    username: z.string(),
+    mediaProgress: z.array(mediaProgressSchema),
+    bookmarks: z.array(bookmarkSchema),
+  })
+  .passthrough();
+export type AbsMe = z.infer<typeof meSchema>;
+
+/**
+ * `DELETE /api/me/item/:id/bookmark/:time` answers a bare 200 (`OK` as text), and 404 `Not Found`
+ * when the item has no bookmark at that time (both recorded); nothing in it is read.
+ */
+export const deleteBookmarkSchema = z.unknown();
 
 const optionalString = z.string().nullable().optional();
 

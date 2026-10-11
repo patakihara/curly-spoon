@@ -415,7 +415,8 @@
         "required": [
           "tracks",
           "chapters",
-          "startAt"
+          "startAt",
+          "progressTarget"
         ]
       },
       "PlayBody": {
@@ -427,6 +428,139 @@
         },
         "required": [
           "ref"
+        ]
+      },
+      "ProgressAnswer": {
+        "type": "object",
+        "properties": {
+          "taken": {
+            "type": "boolean"
+          },
+          "lastSeq": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "taken",
+          "lastSeq"
+        ]
+      },
+      "ProgressBody": {
+        "type": "object",
+        "properties": {
+          "playId": {
+            "type": "string",
+            "pattern": "^[\\w-]{1,64}$"
+          },
+          "seq": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "position": {
+            "type": "number",
+            "minimum": 0
+          },
+          "listened": {
+            "type": "number",
+            "minimum": 0
+          },
+          "paused": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "playId",
+          "seq",
+          "position",
+          "listened",
+          "paused"
+        ]
+      },
+      "ProgressReport": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "position": {
+            "type": "number",
+            "minimum": 0
+          },
+          "listened": {
+            "type": "number",
+            "minimum": 0
+          },
+          "paused": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "seq",
+          "position",
+          "listened",
+          "paused"
+        ]
+      },
+      "Bookmark": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "time": {
+            "type": "number",
+            "minimum": 0
+          },
+          "title": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ref",
+          "time",
+          "title",
+          "createdAt"
+        ]
+      },
+      "BookmarkList": {
+        "type": "object",
+        "properties": {
+          "bookmarks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Bookmark"
+            }
+          }
+        },
+        "required": [
+          "bookmarks"
+        ]
+      },
+      "CreateBookmarkBody": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "time": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "ref",
+          "time",
+          "title"
         ]
       }
     },
@@ -1126,9 +1260,74 @@
         }
       }
     },
+    "/api/progress": {
+      "post": {
+        "summary": "Report where the person is in a plan's item, and how long they listened, to its server",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "reportProgress",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgressBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Whether the report was taken, reaching the item's server, and the number of the last one taken.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressAnswer"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/play/{playId}/close": {
       "post": {
-        "summary": "Close a plan's open playback session, ending its transcode",
+        "summary": "Close a plan's open playback session, with a last progress report when given",
         "security": [
           {
             "session": []
@@ -1149,6 +1348,15 @@
             "in": "path"
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgressReport"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "The session is closed.",
@@ -1493,6 +1701,212 @@
           },
           "416": {
             "description": "The range starts past the end of the file."
+          }
+        }
+      }
+    },
+    "/api/bookmarks": {
+      "get": {
+        "summary": "The signed-in person's bookmarks in one item, from its own server",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "listBookmarks",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+            },
+            "required": true,
+            "name": "ref",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The item's bookmarks, in the order they sit in it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookmarkList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Bookmark a place in an item, on its own server, as the signed-in person",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "createBookmark",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookmarkBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The bookmark made.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Bookmark"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bookmarks/{ref}/{time}": {
+      "delete": {
+        "summary": "Delete one of the signed-in person's bookmarks, by its item and time",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "deleteBookmark",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+            },
+            "required": true,
+            "name": "ref",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:0|[1-9]\\d{0,8})(?:\\.\\d{1,9})?$"
+            },
+            "required": true,
+            "name": "time",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The bookmark is gone.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       }

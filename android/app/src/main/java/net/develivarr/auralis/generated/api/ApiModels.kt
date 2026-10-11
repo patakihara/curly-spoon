@@ -20,12 +20,32 @@ data class AppToken(
 )
 
 @Serializable
+data class Bookmark(
+    val ref: MediaRef,
+    val time: Double,
+    val title: String,
+    val createdAt: Long,
+)
+
+@Serializable
+data class BookmarkList(
+    val bookmarks: List<Bookmark>,
+)
+
+@Serializable
 enum class ClientKind {
     @SerialName("web")
     WEB,
     @SerialName("android")
     ANDROID,
 }
+
+@Serializable
+data class CreateBookmarkBody(
+    val ref: MediaRef,
+    val time: Long,
+    val title: String,
+)
 
 @Serializable
 data class Device(
@@ -122,7 +142,7 @@ data class PlaybackPlan(
     val tracks: List<PlaybackTrack>,
     val chapters: List<PlaybackChapter>,
     val startAt: Double,
-    val progressTarget: ProgressTarget? = null,
+    val progressTarget: ProgressTarget,
     val next: MediaRef? = null,
 )
 
@@ -132,6 +152,29 @@ data class PlaybackTrack(
     val mime: String,
     val duration: Double,
     val offset: Double,
+)
+
+@Serializable
+data class ProgressAnswer(
+    val taken: Boolean,
+    val lastSeq: Long,
+)
+
+@Serializable
+data class ProgressBody(
+    val playId: String,
+    val seq: Long,
+    val position: Double,
+    val listened: Double,
+    val paused: Boolean,
+)
+
+@Serializable
+data class ProgressReport(
+    val seq: Long,
+    val position: Double,
+    val listened: Double,
+    val paused: Boolean,
 )
 
 @Serializable

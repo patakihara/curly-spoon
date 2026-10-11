@@ -2,7 +2,8 @@
  * Playback: what to play in, a plan to play it by out. An Audiobookshelf item plays by direct
  * play, one track per file, or, when a file is a type the clients do not play, as one HLS
  * transcode. A Jellyfin track plays its own file, and an album its tracks in order, never
- * transcoded. M1.progress and the queues fill the progress target and what comes next in place.
+ * transcoded. Every plan names its open playback session, where the player reports progress and
+ * which it closes when done. The queues fill what comes next in place.
  */
 import { z } from './zod.js';
 
@@ -82,24 +83,60 @@ export type PlaybackChapter = z.infer<typeof PlaybackChapter>;
 const PlayId = z.string().regex(/^[\w-]{1,64}$/);
 
 /**
- * Where the player reports its position while this plan plays: the open playback session. A
- * transcode lives in it, so the player closes it (`POST /api/play/{playId}/close`) when done.
+ * Where the player reports its position while this plan plays: the open playback session
+ * (`POST /api/progress`). It closes it (`POST /api/play/{playId}/close`) when done with the plan.
  */
 export const ProgressTarget = z.object({ playId: PlayId }).openapi('ProgressTarget');
 export type ProgressTarget = z.infer<typeof ProgressTarget>;
 
 /**
+ * Where the person is in the whole item, and how long they listened. `seq` numbers the reports on
+ * one play in the order the player made them, from 0: one no newer than a report already taken,
+ * late or repeated, is dropped, so it never moves the position back or counts listening twice.
+ * `listened` is wall-clock seconds spent playing since the last report the server acknowledged,
+ * never a position delta, so a seek or a skip never counts as listening. `paused` says whether
+ * playback is paused now. Jellyfin takes no listening time and keeps no resume point for music:
+ * it times the play itself from the start, reports and stop it is sent, leaving out paused time.
+ */
+export const ProgressReport = z
+  .object({
+    seq: z.number().int().nonnegative(),
+    position: z.number().nonnegative(),
+    listened: z.number().nonnegative(),
+    paused: z.boolean(),
+  })
+  .openapi('ProgressReport');
+export type ProgressReport = z.infer<typeof ProgressReport>;
+
+/**
+ * One progress report for an open playback session. A session this device does not hold, closed,
+ * gone idle or forgotten by a restart, answers 404: the player plans again and reports there.
+ */
+export const ProgressBody = z
+  .object({ playId: PlayId, ...ProgressReport.shape })
+  .openapi('ProgressBody');
+export type ProgressBody = z.infer<typeof ProgressBody>;
+
+/**
+ * What became of a progress report: whether it was taken, and the number of the newest report
+ * taken on the play. One not taken was no newer than that one, so a player that numbered its
+ * reports from 0 again carries on from `lastSeq + 1`.
+ */
+export const ProgressAnswer = z
+  .object({ taken: z.boolean(), lastSeq: z.number().int().nonnegative() })
+  .openapi('ProgressAnswer');
+export type ProgressAnswer = z.infer<typeof ProgressAnswer>;
+
+/**
  * How to play an item: its tracks in order, its chapters, where in the item to start, where to
- * report progress, and what plays next. Direct play closes its session at once and Jellyfin opens
- * none, so neither has a progress target until M1.progress; a transcode keeps its session open
- * and names it. Nothing plays next until the queues do.
+ * report progress, and what plays next. Nothing plays next until the queues do.
  */
 export const PlaybackPlan = z
   .object({
     tracks: z.array(PlaybackTrack).min(1),
     chapters: z.array(PlaybackChapter),
     startAt: z.number().nonnegative(),
-    progressTarget: ProgressTarget.optional(),
+    progressTarget: ProgressTarget,
     /** What plays when this item ends; absent, playback stops. */
     next: MediaRef.optional(),
   })

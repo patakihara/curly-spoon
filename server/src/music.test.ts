@@ -1,14 +1,15 @@
 /**
  * Playing Jellyfin music through the real routes. Jellyfin answers from its recordings, made as
- * the service identity with its own token: one album, its tracks, its first track, and that
- * track's static stream with real status and headers over a committed FLAC tone.
+ * the service identity with its own token: one album, its tracks, its first track, that track's
+ * static stream with real status and headers over a committed FLAC tone, and a play's start,
+ * progress and stop reports.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type PlaybackPlan } from '@auralis/schema';
 import { type FastifyInstance } from 'fastify';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type FetchLike } from './adapters/http/fetch.js';
 import { type Recording, recordingSchema } from './adapters/http/recording.js';
 import { replayFetch, standInsBeside } from './adapters/http/replay.js';
@@ -29,6 +30,9 @@ const album = jfRecording('jf-album');
 const albumTracks = jfRecording('jf-album-tracks');
 const track = jfRecording('jf-track');
 const stream = jfRecording('jf-stream');
+const playing = jfRecording('jf-playing');
+const progress = jfRecording('jf-progress');
+const stopped = jfRecording('jf-stopped');
 const flacTone = readFileSync(join(adapters, 'jellyfin', 'recordings', 'jf-stream.flac'));
 
 const albumId = album.request.path.split('/')[2] as string;
@@ -70,15 +74,30 @@ interface Sent {
   path: string;
   authorization: string;
   range: string | null;
+  json: unknown;
 }
 
-/** Two people, kara and otto, each with an app's bearer token; otto can be left unlinked. */
-async function server(options: { ottoLinked?: boolean; recordings?: Recording[] } = {}) {
+/**
+ * Two people, kara and otto, each with an app's bearer token; otto can be left unlinked. A slow
+ * Jellyfin answers each call only after a turn of the clock, so calls sent together overlap.
+ */
+async function server(
+  options: {
+    ottoLinked?: boolean;
+    recordings?: Recording[];
+    reports?: Recording[];
+    slow?: boolean;
+  } = {},
+) {
   const db = openDatabase(':memory:');
   const sent: Sent[] = [];
-  const replay = replayFetch(options.recordings ?? [album, albumTracks, track, stream], {
-    readBytes: standInsBeside(adapters),
-  });
+  const replay = replayFetch(
+    [
+      ...(options.recordings ?? [album, albumTracks, track, stream]),
+      ...(options.reports ?? [playing, progress, stopped]),
+    ],
+    { readBytes: standInsBeside(adapters) },
+  );
   const fetch: FetchLike = async (url, init) => {
     const headers = new Headers(init?.headers);
     sent.push({
@@ -86,7 +105,9 @@ async function server(options: { ottoLinked?: boolean; recordings?: Recording[] 
       path: new URL(url).pathname,
       authorization: headers.get('authorization') ?? '',
       range: headers.get('range'),
+      json: typeof init?.body === 'string' ? (JSON.parse(init.body) as unknown) : undefined,
     });
+    if (options.slow) await new Promise((resolve) => setTimeout(resolve, 5));
     return replay(url, init);
   };
   const bearer: Record<string, string> = {};
@@ -152,13 +173,27 @@ describe('[M1.music/a] playing a Jellyfin track', () => {
 });
 
 describe('playing a Jellyfin track', () => {
-  it('starts at the beginning, with no chapters, and nothing held open', async () => {
+  it('starts at the beginning, with no chapters, under a play of its own', async () => {
     const { plan } = await server();
-    expect(await plan(trackId)).toEqual({
+    const first = await plan(trackId);
+    expect(first).toEqual({
       tracks: [expect.objectContaining({ url: trackUrl(trackId) })],
       chapters: [],
       startAt: 0,
+      progressTarget: { playId: expect.stringMatching(/^[\w-]{1,64}$/) as unknown },
     });
+    const second = await plan(trackId);
+    expect(second.progressTarget.playId).not.toBe(first.progressTarget.playId);
+  });
+
+  it('closes its play on request, once, and only for the person who planned it', async () => {
+    const { app, as, plan } = await server();
+    const { playId } = (await plan(trackId)).progressTarget;
+    const close = (name: string) =>
+      app.inject({ method: 'POST', url: `/api/play/${playId}/close`, headers: as(name) });
+    expect((await close('otto')).statusCode).toBe(404);
+    expect((await close('kara')).statusCode).toBe(200);
+    expect((await close('kara')).statusCode).toBe(404);
   });
 
   it("looks the track up, then streams its own file untranscoded, with the person's own token", async () => {
@@ -171,10 +206,11 @@ describe('playing a Jellyfin track', () => {
     });
     expect(sent.map((s) => `${s.method} ${s.path}`)).toEqual([
       `GET /Items/${trackId}`,
+      'POST /Sessions/Playing',
       `GET /Items/${trackId}`,
       `GET /Audio/${trackId}/stream`,
     ]);
-    expect(sent[2]?.range).toBe('bytes=0-1');
+    expect(sent[3]?.range).toBe('bytes=0-1');
     for (const s of sent) expect(s.authorization).toContain('Token="jf-token-kara"');
   });
 
@@ -345,7 +381,117 @@ describe('[M1.music/b] playing a Jellyfin album', () => {
     expect(sent.map((s) => `${s.method} ${s.path}`)).toEqual([
       `GET /Items/${albumId}`,
       'GET /Items',
+      'POST /Sessions/Playing',
     ]);
     for (const s of sent) expect(s.authorization).toContain('Token="jf-token-kara"');
+  });
+});
+
+describe("reporting an album's progress to Jellyfin", () => {
+  const report = (
+    app: FastifyInstance,
+    headers: Record<string, string>,
+    playId: string,
+    seq: number,
+    at: number,
+  ) =>
+    app.inject({
+      method: 'POST',
+      url: '/api/progress',
+      headers,
+      payload: { playId, seq, position: at, listened: 0, paused: false },
+    });
+  const reported = (sent: Sent[]) =>
+    sent
+      .filter((s) => s.path.startsWith('/Sessions/Playing'))
+      .map((s) => {
+        const json = s.json as { ItemId: string; PositionTicks: number };
+        return `${s.path} ${json.ItemId} ${json.PositionTicks / 1e7}`;
+      });
+
+  it('starts the first track, reports each position within the track it falls in, and moves on to the next track by stopping one and starting the other', async () => {
+    const { app, sent, as, plan } = await server();
+    const { tracks, progressTarget } = await plan(albumId);
+    const [first, second] = recordedTracks as [RecordedTrack, RecordedTrack];
+    const secondStart = tracks[1]!.offset;
+    expect((await report(app, as('kara'), progressTarget.playId, 0, 10)).statusCode).toBe(200);
+    expect(
+      (await report(app, as('kara'), progressTarget.playId, 1, secondStart + 4)).statusCode,
+    ).toBe(200);
+    const close = await app.inject({
+      method: 'POST',
+      url: `/api/play/${progressTarget.playId}/close`,
+      headers: as('kara'),
+      payload: { seq: 2, position: secondStart + 6, listened: 0, paused: true },
+    });
+    expect(close.statusCode).toBe(200);
+    await vi.waitFor(() =>
+      expect(reported(sent)).toEqual([
+        `/Sessions/Playing ${first.Id} 0`,
+        `/Sessions/Playing/Progress ${first.Id} 10`,
+        `/Sessions/Playing/Stopped ${first.Id} 10`,
+        `/Sessions/Playing ${second.Id} 4`,
+        `/Sessions/Playing/Stopped ${second.Id} 6`,
+      ]),
+    );
+  });
+
+  it('moves on to the next track when Jellyfin does not take the stop of the one before', async () => {
+    const { app, sent, as, plan } = await server({ reports: [playing] });
+    const { tracks, progressTarget } = await plan(albumId);
+    const [first, second] = recordedTracks as [RecordedTrack, RecordedTrack];
+    const moved = await report(app, as('kara'), progressTarget.playId, 0, tracks[1]!.offset + 4);
+    expect(moved.statusCode, moved.body).toBe(200);
+    await vi.waitFor(() =>
+      expect(reported(sent)).toEqual([
+        `/Sessions/Playing ${first.Id} 0`,
+        `/Sessions/Playing/Stopped ${first.Id} 0`,
+        `/Sessions/Playing ${second.Id} 4`,
+      ]),
+    );
+  });
+  it('reaches Jellyfin in order when a report moves on to the next track and a close comes right behind it', async () => {
+    const { app, sent, as, plan } = await server({ slow: true });
+    const { tracks, progressTarget } = await plan(albumId);
+    const [first, second] = recordedTracks as [RecordedTrack, RecordedTrack];
+    const secondStart = tracks[1]!.offset;
+    const [moved, closed] = await Promise.all([
+      report(app, as('kara'), progressTarget.playId, 0, secondStart + 4),
+      app.inject({
+        method: 'POST',
+        url: `/api/play/${progressTarget.playId}/close`,
+        headers: as('kara'),
+        payload: { seq: 1, position: secondStart + 6, listened: 0, paused: true },
+      }),
+    ]);
+    expect([moved.statusCode, closed.statusCode]).toEqual([200, 200]);
+    await vi.waitFor(() =>
+      expect(reported(sent)).toEqual([
+        `/Sessions/Playing ${first.Id} 0`,
+        `/Sessions/Playing/Stopped ${first.Id} 0`,
+        `/Sessions/Playing ${second.Id} 4`,
+        `/Sessions/Playing/Stopped ${second.Id} 6`,
+      ]),
+    );
+  });
+
+  it('moves on to the next track once when two reports sent together both fall in it', async () => {
+    const { app, sent, as, plan } = await server({ slow: true });
+    const { tracks, progressTarget } = await plan(albumId);
+    const [first, second] = recordedTracks as [RecordedTrack, RecordedTrack];
+    const secondStart = tracks[1]!.offset;
+    const answers = await Promise.all([
+      report(app, as('kara'), progressTarget.playId, 0, secondStart + 4),
+      report(app, as('kara'), progressTarget.playId, 1, secondStart + 5),
+    ]);
+    expect(answers.map((a) => a.statusCode)).toEqual([200, 200]);
+    await vi.waitFor(() =>
+      expect(reported(sent)).toEqual([
+        `/Sessions/Playing ${first.Id} 0`,
+        `/Sessions/Playing/Stopped ${first.Id} 0`,
+        `/Sessions/Playing ${second.Id} 4`,
+        `/Sessions/Playing/Progress ${second.Id} 5`,
+      ]),
+    );
   });
 });

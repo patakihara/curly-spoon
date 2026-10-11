@@ -190,6 +190,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Report where the person is in a plan's item, and how long they listened, to its server */
+        post: operations["reportProgress"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/play/{playId}/close": {
         parameters: {
             query?: never;
@@ -199,7 +216,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Close a plan's open playback session, ending its transcode */
+        /** Close a plan's open playback session, with a last progress report when given */
         post: operations["closePlay"];
         delete?: never;
         options?: never;
@@ -240,6 +257,41 @@ export interface paths {
         options?: never;
         /** A transcode's playlist or one of its segments, with the signed-in person's own access */
         head: operations["getMediaHlsHead"];
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bookmarks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in person's bookmarks in one item, from its own server */
+        get: operations["listBookmarks"];
+        put?: never;
+        /** Bookmark a place in an item, on its own server, as the signed-in person */
+        post: operations["createBookmark"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bookmarks/{ref}/{time}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete one of the signed-in person's bookmarks, by its item and time */
+        delete: operations["deleteBookmark"];
+        options?: never;
+        head?: never;
         patch?: never;
         trace?: never;
     };
@@ -347,11 +399,42 @@ export interface components {
             tracks: components["schemas"]["PlaybackTrack"][];
             chapters: components["schemas"]["PlaybackChapter"][];
             startAt: number;
-            progressTarget?: components["schemas"]["ProgressTarget"];
+            progressTarget: components["schemas"]["ProgressTarget"];
             next?: components["schemas"]["MediaRef"];
         };
         PlayBody: {
             ref: components["schemas"]["MediaRef"];
+        };
+        ProgressAnswer: {
+            taken: boolean;
+            lastSeq: number;
+        };
+        ProgressBody: {
+            playId: string;
+            seq: number;
+            position: number;
+            listened: number;
+            paused: boolean;
+        };
+        ProgressReport: {
+            seq: number;
+            position: number;
+            listened: number;
+            paused: boolean;
+        };
+        Bookmark: {
+            ref: components["schemas"]["MediaRef"];
+            time: number;
+            title: string;
+            createdAt: number;
+        };
+        BookmarkList: {
+            bookmarks: components["schemas"]["Bookmark"][];
+        };
+        CreateBookmarkBody: {
+            ref: components["schemas"]["MediaRef"];
+            time: number;
+            title: string;
         };
     };
     responses: never;
@@ -884,6 +967,57 @@ export interface operations {
             };
         };
     };
+    reportProgress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ProgressBody"];
+            };
+        };
+        responses: {
+            /** @description Whether the report was taken, reaching the item's server, and the number of the last one taken. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgressAnswer"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     closePlay: {
         parameters: {
             query?: never;
@@ -893,7 +1027,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ProgressReport"];
+            };
+        };
         responses: {
             /** @description The session is closed. */
             200: {
@@ -1176,6 +1314,156 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    listBookmarks: {
+        parameters: {
+            query: {
+                ref: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item's bookmarks, in the order they sit in it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookmarkList"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createBookmark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CreateBookmarkBody"];
+            };
+        };
+        responses: {
+            /** @description The bookmark made. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Bookmark"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    deleteBookmark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+                time: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The bookmark is gone. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
             };
         };
     };

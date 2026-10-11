@@ -1,0 +1,29 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "jf-playing",
+  "request": {
+    "method": "POST",
+    "path": "/Sessions/Playing",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis\", DeviceId=\"auralis-recorder\", Version=\"0.0.0\", Token=\"<token>\"",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "ItemId": "7c8b8e35e6ec0f40736aadee1f8979bb",
+        "PositionTicks": 0,
+        "IsPaused": false,
+        "PlayMethod": "DirectPlay",
+        "PlaySessionId": "9c897ac1b8c44b0bb1832c38ff17e37c"
+      }
+    }
+  },
+  "response": {
+    "status": 204,
+    "headers": {},
+    "body": null
+  }
+}

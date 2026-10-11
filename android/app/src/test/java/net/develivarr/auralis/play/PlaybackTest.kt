@@ -88,6 +88,7 @@ class PlaybackTest {
                 tracks = listOf(track(0, duration = 600.0, offset = 0.0), track(1, duration = 400.0, offset = 600.0)),
                 chapters = emptyList(),
                 startAt = 700.0,
+                progressTarget = TARGET,
             ),
         )
         val player = playback.player
@@ -108,6 +109,7 @@ class PlaybackTest {
                 tracks = listOf(track(0, duration = 600.0, offset = 0.0), track(1, duration = 400.0, offset = 600.0)),
                 chapters = emptyList(),
                 startAt = 700.0,
+                progressTarget = TARGET,
             ),
         )
         assertEquals(700.0, playback.position, 0.001)
@@ -122,6 +124,7 @@ class PlaybackTest {
                 tracks = listOf(track(0, duration = 600.0, offset = 0.0), track(1, duration = 400.0, offset = 600.0)),
                 chapters = emptyList(),
                 startAt = 0.0,
+                progressTarget = TARGET,
             ),
         )
         playback.player.seekTo(0, 600_040)
@@ -142,6 +145,7 @@ class PlaybackTest {
                 tracks = listOf(track(0, duration = 60.0, offset = 0.0).copy(url = "/api/media/abs:item-1/hls/p-1/output.m3u8", mime = HLS_MIME)),
                 chapters = emptyList(),
                 startAt = 0.0,
+                progressTarget = TARGET,
             ),
         )
         assertEquals(1, playback.player.mediaItemCount)
@@ -168,15 +172,6 @@ class PlaybackTest {
     }
 
     @Test
-    fun `releasing a plan with no open session asks the server nothing`() {
-        playback.start(
-            PlaybackPlan(tracks = listOf(track(0, duration = 60.0, offset = 0.0)), chapters = emptyList(), startAt = 0.0),
-        )
-        playback.release()
-        assertEquals(emptyList<FakeServer.Seen>(), playCalls())
-    }
-
-    @Test
     fun `a new plan closes the last one's open session`() {
         server.answer = { 200 to """{"ok":true}""" }
         val first = PlaybackPlan(
@@ -194,7 +189,7 @@ class PlaybackTest {
     fun `a plan that arrives after release plays nothing, and its session is closed`() {
         server.answer = {
             when (it.url.encodedPath) {
-                "/api/play" -> 200 to PLAN_JSON.replace(""""startAt":0}""", """"startAt":0,"progressTarget":{"playId":"p-late"}}""")
+                "/api/play" -> 200 to PLAN_JSON.replace("p-0", "p-late")
                 else -> 200 to """{"ok":true}"""
             }
         }
@@ -259,6 +254,7 @@ class PlaybackTest {
                 tracks = listOf(track(0, duration = 60.0, offset = 0.0).copy(mime = MimeTypes.VIDEO_MP4)),
                 chapters = emptyList(),
                 startAt = 0.0,
+                progressTarget = TARGET,
             ),
         )
         assertEquals(1, playback.player.mediaItemCount)
@@ -288,7 +284,7 @@ class PlaybackTest {
 
     @Test
     fun `a plan with no tracks plays nothing, and says so`() {
-        server.answer = { 200 to """{"tracks":[],"chapters":[],"startAt":0}""" }
+        server.answer = { 200 to """{"tracks":[],"chapters":[],"startAt":0,"progressTarget":{"playId":"p-0"}}""" }
         playback.play("abs:item-1")
         assertEquals(0, playback.player.mediaItemCount)
         assertTrue(said("nothing to play for abs:item-1"))
@@ -321,7 +317,8 @@ class PlaybackTest {
     private companion object {
         val REF = MediaRef(MediaSource.ABS, "item-1")
         const val PLAN_JSON =
-            """{"tracks":[{"url":"/api/media/abs:item-1/tracks/0","mime":"audio/mp4","duration":20,"offset":0}],"chapters":[],"startAt":0}"""
+            """{"tracks":[{"url":"/api/media/abs:item-1/tracks/0","mime":"audio/mp4","duration":20,"offset":0}],"chapters":[],"startAt":0,"progressTarget":{"playId":"p-0"}}"""
+        val TARGET = ProgressTarget("p-0")
 
         val VIDEO: Format = Format.Builder().setSampleMimeType(MimeTypes.VIDEO_H264).setWidth(64).setHeight(64).build()
         val AUDIO: Format =

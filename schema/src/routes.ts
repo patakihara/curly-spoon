@@ -15,6 +15,13 @@ import {
   TokenBody,
   UserList,
 } from './auth.js';
+import {
+  Bookmark,
+  BookmarkList,
+  BookmarkParams,
+  BookmarksQuery,
+  CreateBookmarkBody,
+} from './bookmarks.js';
 import { HealthResponse } from './health.js';
 import {
   AudioBytes,
@@ -23,6 +30,9 @@ import {
   PlaybackPlan,
   PlayBody,
   PlayParams,
+  ProgressAnswer,
+  ProgressBody,
+  ProgressReport,
 } from './play.js';
 import { type z } from './zod.js';
 
@@ -216,15 +226,28 @@ export const mediaTrack = {
   stream: true,
 } as const satisfies Route;
 
+export const reportProgress = {
+  method: 'POST',
+  path: '/api/progress',
+  operationId: 'reportProgress',
+  summary: "Report where the person is in a plan's item, and how long they listened, to its server",
+  responseDescription:
+    "Whether the report was taken, reaching the item's server, and the number of the last one taken.",
+  response: ProgressAnswer,
+  access: 'member',
+  body: ProgressBody,
+} as const satisfies Route;
+
 export const closePlay = {
   method: 'POST',
   path: '/api/play/{playId}/close',
   operationId: 'closePlay',
-  summary: "Close a plan's open playback session, ending its transcode",
+  summary: "Close a plan's open playback session, with a last progress report when given",
   responseDescription: 'The session is closed.',
   response: Ok,
   access: 'member',
   params: PlayParams,
+  body: ProgressReport.optional(),
 } as const satisfies Route;
 
 export const mediaHls = {
@@ -237,6 +260,39 @@ export const mediaHls = {
   access: 'member',
   params: MediaHlsParams,
   stream: true,
+} as const satisfies Route;
+
+export const listBookmarks = {
+  method: 'GET',
+  path: '/api/bookmarks',
+  operationId: 'listBookmarks',
+  summary: "The signed-in person's bookmarks in one item, from its own server",
+  responseDescription: "The item's bookmarks, in the order they sit in it.",
+  response: BookmarkList,
+  access: 'member',
+  query: BookmarksQuery,
+} as const satisfies Route;
+
+export const createBookmark = {
+  method: 'POST',
+  path: '/api/bookmarks',
+  operationId: 'createBookmark',
+  summary: 'Bookmark a place in an item, on its own server, as the signed-in person',
+  responseDescription: 'The bookmark made.',
+  response: Bookmark,
+  access: 'member',
+  body: CreateBookmarkBody,
+} as const satisfies Route;
+
+export const deleteBookmark = {
+  method: 'DELETE',
+  path: '/api/bookmarks/{ref}/{time}',
+  operationId: 'deleteBookmark',
+  summary: "Delete one of the signed-in person's bookmarks, by its item and time",
+  responseDescription: 'The bookmark is gone.',
+  response: Ok,
+  access: 'member',
+  params: BookmarkParams,
 } as const satisfies Route;
 
 /** Every route the API has. The generator and the server's route test both read this list. */
@@ -254,7 +310,11 @@ export const routes: readonly Route[] = [
   deleteDevice,
   listUsers,
   play,
+  reportProgress,
   closePlay,
   mediaTrack,
   mediaHls,
+  listBookmarks,
+  createBookmark,
+  deleteBookmark,
 ];

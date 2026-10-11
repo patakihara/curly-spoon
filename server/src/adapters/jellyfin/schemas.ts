@@ -89,3 +89,23 @@ export type PlayableItem = z.infer<typeof playableItemSchema>;
 
 /** An album's tracks, as playing reads them. */
 export const playableQueryResultSchema = z.object({ Items: z.array(playableItemSchema) });
+
+/** `POST /Sessions/Playing`, `/Progress` and `/Stopped` answer 204 with no body. */
+export const noContentSchema = z.undefined();
+
+/**
+ * `UserItemDataDto`: one person's state on one item, from `GET /UserItems/{id}/UserData`.
+ * `PlaybackPositionTicks` is the resume point, in 100 ns ticks; `LastPlayedDate` is absent until
+ * the item is first played.
+ */
+export const userItemDataSchema = z
+  .object({
+    PlaybackPositionTicks: z.number(),
+    PlayCount: z.number(),
+    IsFavorite: z.boolean(),
+    Played: z.boolean(),
+    LastPlayedDate: z.string().nullable().optional(),
+    ItemId: z.string(),
+  })
+  .passthrough();
+export type UserItemData = z.infer<typeof userItemDataSchema>;
