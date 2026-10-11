@@ -1,7 +1,8 @@
 /**
  * Plan progress, computed from the repo and never written to it: each criterion's status from
  * test results (results.mjs) or its sign-off tag, items in flight from plan/<ID> branches, the
- * outbox, recent Decision: lines and recently sorted inbox ideas.
+ * outbox, recent Decision: lines, recently sorted inbox ideas, and the "What this plan hasn't
+ * verified" lines whose item is done.
  *
  * CLI: node scripts/plan/progress.mjs [--summary] [--local|--no-results] [--json] [--root <dir>]
  *   [--gh-deadline <epoch ms>]
@@ -10,7 +11,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { readPlan } from './parse.mjs';
+import { readPlan, unverifiedLines } from './parse.mjs';
 import { defaultExec, git, loadResults } from './results.mjs';
 
 const tryGit = (exec, root, ...args) => {
@@ -206,6 +207,7 @@ export function computeProgress({ root, results = 'ci', exec = defaultExec, ghDe
   }
 
   const all = milestones.flatMap((m) => m.items);
+  const doneIds = new Set(all.filter((i) => i.status === 'done').map((i) => i.id));
   const outbox = readOutbox(root);
   return {
     commit: tryGit(exec, root, 'rev-parse', 'HEAD'),
@@ -227,6 +229,9 @@ export function computeProgress({ root, results = 'ci', exec = defaultExec, ghDe
     decisions: readDecisions(exec, root),
     sortedIdeas: readSortedIdeas(exec, root),
     waitingIdeas: readWaitingIdeas(root),
+    staleUnverified: unverifiedLines(plan)
+      .map((u) => ({ ...u, done: u.items.filter((id) => doneIds.has(id)) }))
+      .filter((u) => u.done.length),
   };
 }
 
@@ -246,40 +251,59 @@ const plain = (text, max = 110) => {
   return t.length > max ? `${t.slice(0, max - 1)}…` : t;
 };
 
-/** The session-start summary: at most 25 lines. */
+export const SUMMARY_LINES = 25;
+
+/**
+ * The session-start summary: at most 25 printed lines. Only the in-flight branch notes run long,
+ * so they alone are cut to fit; every other line, stale "hasn't verified" lines included, stays.
+ */
 export function formatSummary(p) {
   const checks = p.results.error
     ? `checks unavailable: ${p.results.error}`
     : `checks from ${sourcesLine(p)}`;
   const current = p.milestones.find((m) => m.id === p.current);
-  const lines = [];
-  if (!p.milestones.length) lines.push(`Auralis plan · no milestones yet · ${checks}`);
-  else if (!current) lines.push(`Auralis plan · every milestone done · ${checks}`);
+  const head = [];
+  if (!p.milestones.length) head.push(`Auralis plan · no milestones yet · ${checks}`);
+  else if (!current) head.push(`Auralis plan · every milestone done · ${checks}`);
   else
-    lines.push(
+    head.push(
       `Auralis plan · current ${current.id} ${current.title} · ${current.done}/${current.total} done · ${checks}`,
     );
   const done = p.milestones.flatMap((m) => m.items).filter((i) => i.status === 'done');
-  lines.push(
+  head.push(
     done.length ? `Done (${done.length}): ${done.map((i) => i.id).join(', ')}` : 'Done: nothing',
   );
-  lines.push(`Next: ${p.next ? `${p.next.id}: ${plain(p.next.text)}` : 'nothing'}`);
-  lines.push(
-    `In flight: ${p.inFlight.map((f) => `${f.branch}: "${f.note}"`).join(' · ') || 'nothing'}`,
-  );
-  lines.push(
+  head.push(`Next: ${p.next ? `${p.next.id}: ${plain(p.next.text)}` : 'nothing'}`);
+  const inFlight = `In flight: ${p.inFlight.map((f) => `${f.branch}: "${f.note}"`).join(' · ') || 'nothing'}`;
+  const tail = [];
+  tail.push(
     `Failing: ${p.failing.map((f) => `${f.item} (${f.criterion}): ${f.tests.join(', ')}`).join(' · ') || 'nothing'}`,
   );
-  lines.push(
+  if (p.staleUnverified.length)
+    tail.push(
+      `Stale "hasn't verified" lines (${p.staleUnverified.length}): ${p.staleUnverified
+        .map((u) => `${u.file}:${u.line}, ${u.done.join(', ')} done: ${plain(u.text, 80)}`)
+        .join(' · ')}`,
+    );
+  tail.push(
     p.outbox.length
       ? `Waiting on you (${p.outbox.length}): ${p.outbox.map((o) => `${o.title} (default: ${plain(o.default, 80)})`).join(' · ')}`
       : 'Waiting on you: nothing',
   );
-  if (p.overAsking) lines.push('More than five open outbox items: sessions are over-asking.');
-  lines.push(
+  if (p.overAsking) tail.push('More than five open outbox items: sessions are over-asking.');
+  tail.push(
     `Recent decisions: ${p.decisions.map((d) => `${d.sha.slice(0, 7)} ${plain(d.text, 80)}`).join(' · ') || 'none'}`,
   );
-  return lines.slice(0, 25).join('\n');
+  const printed = (lines) => lines.join('\n').split('\n');
+  const fixed = [...printed(head), ...printed(tail)];
+  const room = Math.max(SUMMARY_LINES - fixed.length, 2);
+  let flight = printed([inFlight]);
+  if (flight.length > room)
+    flight = [
+      ...flight.slice(0, room - 1),
+      `… ${flight.length - room + 1} more in-flight note lines`,
+    ];
+  return [...printed(head), ...flight, ...printed(tail)].slice(0, SUMMARY_LINES).join('\n');
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
