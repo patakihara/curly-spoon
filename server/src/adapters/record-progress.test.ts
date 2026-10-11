@@ -393,6 +393,27 @@ describe("record mode for M1.progress's calls", () => {
     expect(jf.state().userData).toMatchObject({ PlayCount: 0, PlaybackPositionTicks: 0 });
   });
 
+  it("names the track's last-played date and the listening total as known leftovers when the revert could not put them back", async () => {
+    const up = fakeUpstreams({ sessionDelete: 403 });
+    const { io, out } = progressIo(up.fetch);
+    expect(await runRecord(io)).toBe(0);
+    const leftovers = out.filter((l) => l.startsWith('known leftover: '));
+    expect(leftovers).toEqual([
+      'known leftover: audiobookshelf listening total 100 s, now 120 s',
+      'known leftover: jellyfin last played never, now 2026-10-11T16:00:42.2891977Z',
+    ]);
+    expect(out.join('\n')).toMatch(/^reverted: the read-back matches/m);
+  });
+
+  it('names no listening leftover when the listening session could be deleted', async () => {
+    const up = fakeUpstreams({ sessionDelete: 200 });
+    const { io, out } = progressIo(up.fetch);
+    expect(await runRecord(io)).toBe(0);
+    expect(out.filter((l) => l.startsWith('known leftover: '))).toEqual([
+      'known leftover: jellyfin last played never, now 2026-10-11T16:00:42.2891977Z',
+    ]);
+  });
+
   it('fails when the read-back differs from before', async () => {
     const up = fakeUpstreams({ ignoreUserDataPost: true });
     const { io, err } = progressIo(up.fetch);

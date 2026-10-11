@@ -12,7 +12,8 @@
  * A `finally` undoes the run whatever failed: it closes a session left open, deletes a bookmark
  * left behind, deletes the progress made or puts back the progress there was, tries to delete the
  * listening session, stops a track left playing, posts the track's user data back, then reads
- * everything again. The run fails unless the read-back matches the before-read.
+ * everything again. The run fails unless the read-back matches the before-read, and names what
+ * no call puts back as known leftovers: the listening total, and the track's last-played date.
  */
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
@@ -91,7 +92,11 @@ function url(base: string, path: string): string {
   return new URL(path, base.endsWith('/') ? base : `${base}/`).toString();
 }
 
-/** What both sides compare: the progress, the book's bookmarks and the track's own state. */
+/**
+ * What both sides compare: the progress, the book's bookmarks and the track's own state. The
+ * listening total and the track's last-played date are not: no call puts them back when ABS keeps
+ * the listening session or Jellyfin keeps the date it set, so `leftovers` names them instead.
+ */
 function comparable(s: Snapshot) {
   const p = s.progress;
   const t = s.track;
@@ -100,6 +105,19 @@ function comparable(s: Snapshot) {
     bookmarks: s.bookmarks,
     track: t && [t.PlaybackPositionTicks, t.PlayCount, t.Played, t.IsFavorite],
   });
+}
+
+/** What the run left that the revert cannot undo, each as one line naming before and now. */
+function leftovers(before: Snapshot, after: Snapshot): string[] {
+  const lines: string[] = [];
+  if (after.listened !== before.listened) {
+    lines.push(`audiobookshelf listening total ${before.listened} s, now ${after.listened} s`);
+  }
+  const last = (s: Snapshot) => s.track?.LastPlayedDate ?? 'never';
+  if (last(after) !== last(before)) {
+    lines.push(`jellyfin last played ${last(before)}, now ${last(after)}`);
+  }
+  return lines;
 }
 
 function describeSnapshot(s: Snapshot): string {
@@ -377,6 +395,7 @@ export async function recordProgress(
       const after: Snapshot = { ...afterAbs, track: afterTrack };
       out(`after the revert: ${describeSnapshot(after)}`);
       matches = comparable(after) === comparable(before);
+      for (const line of leftovers(before, after)) out(`known leftover: ${line}`);
     }
     if (token !== undefined) {
       const res = await input.fetch(url(jellyfinUrl, 'Sessions/Logout'), {

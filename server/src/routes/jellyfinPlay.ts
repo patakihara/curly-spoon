@@ -4,9 +4,16 @@
  * track order, back to back, so the players run it gapless like a multi-file book. Each track's
  * URL names the track itself, `/api/media/jellyfin:<track>/tracks/0`, and streams its own file
  * through the range proxy, never transcoded: a format the clients do not play is refused.
+ *
+ * Jellyfin hears of the play as the person: a start when it is planned, progress with each
+ * report, and a stop when it closes or goes idle, each naming the track the position falls in and
+ * the position within it. Jellyfin takes no listening time: it times the play itself, leaving out
+ * the time it is told the track was paused. It counts a music track played at its start and keeps
+ * no resume point for it (recorded), so a plan always starts at 0.
  */
 import { type PlaybackPlan, type PlaybackTrack } from '@auralis/schema';
 import { type JellyfinClient } from '../adapters/jellyfin/client.js';
+import { type UpstreamReport } from './openPlays.js';
 import { type PlayableItem } from '../adapters/jellyfin/schemas.js';
 import type { SUPPORTED_MIME_TYPES } from '../adapters/audiobookshelf/schemas.js';
 import { Refusal } from '../route.js';
@@ -56,19 +63,28 @@ function inAlbumOrder(tracks: PlayableItem[]): PlayableItem[] {
   return [...tracks].sort((a, b) => disc(a) - disc(b) || number(a) - number(b));
 }
 
+/** One track of a plan, by its Jellyfin id, where it sits in the plan. */
+export interface PlannedTrack {
+  id: string;
+  offset: number;
+  duration: number;
+}
+
 /**
- * How to play a track or an album, short of the play it reports to, or a refusal: 404 for what is
- * not music or an album with no tracks, 422 `unsupported_format` for a file the clients do not play.
+ * How to play a track or an album, short of the play it reports to, with the tracks it plays by
+ * their Jellyfin ids; or a refusal: 404 for what is not music or an album with no tracks, 422
+ * `unsupported_format` for a file the clients do not play.
  */
 export async function planJellyfin(
   jellyfin: JellyfinClient,
   item: PlayableItem,
-): Promise<Omit<PlaybackPlan, 'progressTarget'>> {
+): Promise<{ plan: Omit<PlaybackPlan, 'progressTarget'>; played: PlannedTrack[] }> {
   if (item.Type !== 'Audio' && item.Type !== 'MusicAlbum') throw new Refusal(404, 'not_found');
   const files =
     item.Type === 'Audio' ? [item] : inAlbumOrder(await jellyfin.getAlbumPlayables(item.Id));
 
   const tracks: PlaybackTrack[] = [];
+  const played: PlannedTrack[] = [];
   let offset = 0;
   for (const file of files) {
     const ticks = file.RunTimeTicks;
@@ -79,8 +95,62 @@ export async function planJellyfin(
     if (mime === null) throw new Refusal(422, 'unsupported_format');
     const duration = ticks / 1e7;
     tracks.push({ url: jellyfinTrackUrl(file.Id), mime, duration, offset });
+    played.push({ id: file.Id, offset, duration });
     offset += duration;
   }
   if (tracks.length === 0) throw new Refusal(404, 'not_found');
-  return { tracks, chapters: [], startAt: 0 };
+  return { plan: { tracks, chapters: [], startAt: 0 }, played };
+}
+
+/**
+ * A play's reports to Jellyfin, as the person whose client `jellyfin` is, under `playSessionId`.
+ * A report whose position falls in another track than the one playing stops that one where the
+ * last report left it and starts the new one. Reports on one play reach it one at a time.
+ */
+export function jellyfinReports(
+  jellyfin: JellyfinClient,
+  played: readonly PlannedTrack[],
+  playSessionId: string,
+) {
+  const first = played[0];
+  if (first === undefined) throw new Error('a plan has at least one track');
+  /** The track a position falls in, and the position within it. */
+  const at = (position: number) => {
+    const track = played.findLast((t) => t.offset <= position) ?? first;
+    return { track, within: Math.min(position - track.offset, track.duration) };
+  };
+  let playing = first;
+  let within = 0;
+  const stop = () =>
+    jellyfin.reportStopped({ itemId: playing.id, position: within, playSessionId });
+  return {
+    /** Tells Jellyfin the first track started, at its start. */
+    start: () =>
+      jellyfin.reportStart({ itemId: first.id, position: 0, paused: false, playSessionId }),
+    async report({ position, paused }: UpstreamReport) {
+      const now = at(position);
+      if (now.track !== playing) {
+        await stop();
+        playing = now.track;
+        within = now.within;
+        await jellyfin.reportStart({ itemId: playing.id, position: within, paused, playSessionId });
+        return;
+      }
+      within = now.within;
+      await jellyfin.reportProgress({
+        itemId: playing.id,
+        position: within,
+        paused,
+        playSessionId,
+      });
+    },
+    /** Tells Jellyfin the track playing stopped: where `last` is, if it is in that track. */
+    async close(last?: UpstreamReport) {
+      if (last !== undefined) {
+        const now = at(last.position);
+        if (now.track === playing) within = now.within;
+      }
+      await stop();
+    },
+  };
 }

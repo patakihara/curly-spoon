@@ -372,11 +372,13 @@ export interface components {
         };
         ProgressBody: {
             playId: string;
+            seq: number;
             position: number;
             listened: number;
             paused: boolean;
         };
         ProgressReport: {
+            seq: number;
             position: number;
             listened: number;
             paused: boolean;

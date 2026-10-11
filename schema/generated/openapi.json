@@ -437,6 +437,10 @@
             "type": "string",
             "pattern": "^[\\w-]{1,64}$"
           },
+          "seq": {
+            "type": "integer",
+            "minimum": 0
+          },
           "position": {
             "type": "number",
             "minimum": 0
@@ -451,6 +455,7 @@
         },
         "required": [
           "playId",
+          "seq",
           "position",
           "listened",
           "paused"
@@ -459,6 +464,10 @@
       "ProgressReport": {
         "type": "object",
         "properties": {
+          "seq": {
+            "type": "integer",
+            "minimum": 0
+          },
           "position": {
             "type": "number",
             "minimum": 0
@@ -472,6 +481,7 @@
           }
         },
         "required": [
+          "seq",
           "position",
           "listened",
           "paused"

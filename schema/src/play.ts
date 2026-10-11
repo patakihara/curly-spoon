@@ -90,12 +90,17 @@ export const ProgressTarget = z.object({ playId: PlayId }).openapi('ProgressTarg
 export type ProgressTarget = z.infer<typeof ProgressTarget>;
 
 /**
- * Where the person is in the whole item, and how long they listened. `listened` is wall-clock
- * seconds spent playing since the last report the server acknowledged, never a position delta, so
- * a seek or a skip never counts as listening. `paused` says whether playback is paused now.
+ * Where the person is in the whole item, and how long they listened. `seq` numbers the reports on
+ * one play in the order the player made them, from 0: one no newer than a report already taken,
+ * late or repeated, is dropped, so it never moves the position back or counts listening twice.
+ * `listened` is wall-clock seconds spent playing since the last report the server acknowledged,
+ * never a position delta, so a seek or a skip never counts as listening. `paused` says whether
+ * playback is paused now. Jellyfin takes no listening time and keeps no resume point for music:
+ * it times the play itself from the start, reports and stop it is sent, leaving out paused time.
  */
 export const ProgressReport = z
   .object({
+    seq: z.number().int().nonnegative(),
     position: z.number().nonnegative(),
     listened: z.number().nonnegative(),
     paused: z.boolean(),

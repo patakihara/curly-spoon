@@ -9,7 +9,7 @@
  * Anything else ABS answers, such as a file in a type the clients do not play, is refused 422.
  * Every plan names the session it holds open as its progress target. `POST /api/progress` reports
  * to it: to ABS, a sync with the wall-clock time listened, as the person, never retried, since a
- * repeat counts the listening twice. `POST /api/play/{playId}/close` closes it, with a last
+ * repeat counts the listening twice; to Jellyfin, as `jellyfinPlay.ts` says. `POST /api/play/{playId}/close` closes it, with a last
  * report when given; so does planning again on the same device, or its idle time running out.
  * The media routes pass a checked `Range` through with the person's own token and send the bytes
  * on as they come, never transcoded or buffered whole. Only the playlist is read whole, parsed,
@@ -27,7 +27,6 @@ import {
   reportProgress,
   type PlaybackChapter,
   type PlaybackPlan,
-  type ProgressReport,
   type PlaybackTrack,
 } from '@auralis/schema';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
@@ -47,8 +46,8 @@ import {
   type Upstreams,
 } from '../upstream/links.js';
 import { signedIn } from './auth.js';
-import { planJellyfin } from './jellyfinPlay.js';
-import { OpenPlays } from './openPlays.js';
+import { jellyfinReports, planJellyfin } from './jellyfinPlay.js';
+import { OpenPlays, type UpstreamReport } from './openPlays.js';
 import { type z } from 'zod';
 
 /** What the server needs to act upstream as a person: their tokens' key and the upstreams. */
@@ -241,10 +240,12 @@ export function playRoutes(
       if (parseMediaRefKey(ref) === null) throw new Refusal(400, 'bad_request');
       const { client, userId, deviceId } = await personFor(request, 'jellyfin');
       const item = await client.getPlayable(body.ref.id).catch(refusalFor);
-      const plan = await planJellyfin(client, item).catch(refusalFor);
-      const playId = randomUUID();
+      const { plan, played } = await planJellyfin(client, item).catch(refusalFor);
+      // Jellyfin's own play session ids are 32 hex digits (recorded).
+      const playId = randomUUID().replace(/-/g, '');
+      const reports = jellyfinReports(client, played, playId);
+      await reports.start().catch(refusalFor);
       const last = plan.tracks[plan.tracks.length - 1]!;
-      // Jellyfin hears nothing of the play yet: its start, progress and stop reports come next.
       await open.open({
         playId,
         userId,
@@ -252,8 +253,8 @@ export function playRoutes(
         ref,
         duration: last.offset + last.duration,
         idleMs: directIdleMs,
-        report: () => Promise.resolve(),
-        close: () => Promise.resolve(),
+        report: (report) => reports.report(report),
+        close: (report) => reports.close(report),
       });
       return { ...plan, progressTarget: { playId } };
     }
@@ -271,7 +272,7 @@ export function playRoutes(
     const playId = plan.progressTarget.playId;
     const last = plan.tracks[plan.tracks.length - 1]!;
     const duration = session.duration ?? last.offset + last.duration;
-    const sync = ({ position, listened }: ProgressReport) => ({
+    const sync = ({ position, listened }: UpstreamReport) => ({
       currentTime: position,
       timeListened: listened,
       duration,

@@ -137,6 +137,7 @@ data class PlaybackTrack(
 @Serializable
 data class ProgressBody(
     val playId: String,
+    val seq: Long,
     val position: Double,
     val listened: Double,
     val paused: Boolean,
@@ -144,6 +145,7 @@ data class ProgressBody(
 
 @Serializable
 data class ProgressReport(
+    val seq: Long,
     val position: Double,
     val listened: Double,
     val paused: Boolean,

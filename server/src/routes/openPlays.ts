@@ -9,10 +9,14 @@
 import { type ProgressReport } from '@auralis/schema';
 
 /**
- * How far a report's listening time may run ahead of the server's own clock since the report
- * before, in seconds: the client measures it, and the two clocks and the request's trip differ.
+ * How far the listening time reported may run ahead of the server's own clock, in seconds, over
+ * all of a play's reports together: the client measures it, and the two clocks and the requests'
+ * trips differ. A report that uses some leaves that much less for the next.
  */
 const LISTENED_SLACK_S = 2;
+
+/** A report as an upstream is told it: in order, bounded, with no number of its own. */
+export type UpstreamReport = Omit<ProgressReport, 'seq'>;
 
 export interface OpenPlay {
   playId: string;
@@ -25,9 +29,9 @@ export interface OpenPlay {
   /** How long it is held with nothing asked of it, in milliseconds. */
   idleMs: number;
   /** Tells the upstream where the person is and how long they listened, as that person. */
-  report: (report: ProgressReport) => Promise<void>;
+  report: (report: UpstreamReport) => Promise<void>;
   /** Closes the session upstream, as the person who opened it, with a last report when given. */
-  close: (report?: ProgressReport) => Promise<void>;
+  close: (report?: UpstreamReport) => Promise<void>;
 }
 
 interface Held extends OpenPlay {
@@ -36,6 +40,10 @@ interface Held extends OpenPlay {
   lastReportAt: number;
   /** Where the last report left the person, if one came. */
   lastPosition?: number;
+  /** The number of the newest report taken; one no newer is dropped. */
+  lastSeq?: number;
+  /** How far the listening counted so far runs ahead of the server's clock, in seconds. */
+  ahead: number;
 }
 
 interface Owner {
@@ -52,7 +60,7 @@ export class OpenPlays {
   async open(play: OpenPlay): Promise<void> {
     await this.closeDevice(play.userId, play.deviceId, play.playId);
     const now = this.options.now();
-    this.held.set(play.playId, { ...play, lastSeen: now, lastReportAt: now });
+    this.held.set(play.playId, { ...play, lastSeen: now, lastReportAt: now, ahead: 0 });
   }
 
   /** Closes what a device holds, when it plans something new; `keep` is the new plan's own id. */
@@ -73,37 +81,46 @@ export class OpenPlays {
 
   /**
    * Passes a report on, if this person's device holds the play: the position kept within the
-   * item, and the listening time within the time since the last report taken, so a repeated or
-   * bogus report never counts listening twice. False when the device holds no such play.
+   * item, and the listening time within the time since the last report taken, so a bogus report
+   * never counts more listening than there was time for. A report no newer than one already
+   * taken, late or repeated, is dropped. False when the device holds no such play.
    */
   async report(playId: string, owner: Owner, report: ProgressReport): Promise<boolean> {
     const held = this.owned(playId, owner);
     if (held === null) return false;
     const now = this.options.now();
-    const since = held.lastReportAt;
-    const bounded = this.bounded(held, report, since);
     held.lastSeen = now;
+    if (this.stale(held, report)) return true;
+    const before = { lastSeq: held.lastSeq, lastReportAt: held.lastReportAt, ahead: held.ahead };
+    const bounded = this.bounded(held, report);
     // Taken before the upstream answers, so a report sent alongside counts only what is left.
+    held.lastSeq = report.seq;
     held.lastReportAt = now;
+    held.ahead = bounded.ahead;
     try {
-      await held.report(bounded);
+      await held.report(bounded.report);
     } catch (error) {
-      // Not counted upstream: the client reports the same listening again with its next report.
-      if (held.lastReportAt === now) held.lastReportAt = since;
+      // Not taken upstream: the client reports the same listening again, under the same number
+      // or a newer one.
+      if (held.lastSeq === report.seq) Object.assign(held, before);
       throw error;
     }
-    held.lastPosition = bounded.position;
+    // A newer report taken meanwhile keeps its own position.
+    if (held.lastSeq === report.seq) held.lastPosition = bounded.report.position;
     return true;
   }
 
-  /** Stops holding the play, if this person's device opened it, and closes it with `report`. */
+  /**
+   * Stops holding the play, if this person's device opened it, and closes it with `report`; with
+   * a report no newer than one already taken, at the last position taken with no listening added.
+   */
   async finish(playId: string, owner: Owner, report?: ProgressReport): Promise<boolean> {
     const held = this.owned(playId, owner);
     if (held === null) return false;
     this.held.delete(playId);
-    await held.close(
-      report === undefined ? undefined : this.bounded(held, report, held.lastReportAt),
-    );
+    if (report === undefined) await held.close();
+    else if (this.stale(held, report)) await held.close(this.lastTaken(held));
+    else await held.close(this.bounded(held, report).report);
     return true;
   }
 
@@ -120,13 +137,35 @@ export class OpenPlays {
     for (const held of [...this.held.values()]) await this.end(held);
   }
 
-  private bounded(held: Held, report: ProgressReport, since: number): ProgressReport {
-    const elapsed = Math.max(0, (this.options.now() - since) / 1000);
+  private stale(held: Held, report: ProgressReport): boolean {
+    return held.lastSeq !== undefined && report.seq <= held.lastSeq;
+  }
+
+  /**
+   * The report as it may reach the upstream, and how far the listening counted then runs ahead of
+   * the server's clock: listening may use what is left of the slack, never the whole slack again.
+   */
+  private bounded(held: Held, report: ProgressReport): { report: UpstreamReport; ahead: number } {
+    const elapsed = Math.max(0, (this.options.now() - held.lastReportAt) / 1000);
+    const listened = Math.min(
+      report.listened,
+      Math.max(0, elapsed + LISTENED_SLACK_S - held.ahead),
+    );
     return {
-      position: Math.min(report.position, held.duration),
-      listened: Math.min(report.listened, elapsed + LISTENED_SLACK_S),
-      paused: report.paused,
+      report: {
+        position: Math.min(report.position, held.duration),
+        listened,
+        paused: report.paused,
+      },
+      ahead: Math.max(0, held.ahead + listened - elapsed),
     };
+  }
+
+  /** Where the last report taken left the person, adding no listening; none when none came. */
+  private lastTaken(held: Held): UpstreamReport | undefined {
+    return held.lastPosition === undefined
+      ? undefined
+      : { position: held.lastPosition, listened: 0, paused: true };
   }
 
   private owned(playId: string, owner: Owner & { ref?: string }): Held | null {
@@ -143,11 +182,7 @@ export class OpenPlays {
    */
   private async end(held: Held): Promise<void> {
     this.held.delete(held.playId);
-    const last =
-      held.lastPosition === undefined
-        ? undefined
-        : { position: held.lastPosition, listened: 0, paused: true };
     // A failed close loses nothing more than the upstream's own stale-session sweep cleans up.
-    await held.close(last).catch(() => undefined);
+    await held.close(this.lastTaken(held)).catch(() => undefined);
   }
 }
