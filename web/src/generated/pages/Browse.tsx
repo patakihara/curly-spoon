@@ -455,15 +455,17 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
   const play = usePlay();
   return (
     <PageBody platform={platform}>
-      <Section title="Jump back in" platform={platform}>
-        <LayoutGrid item="wide" maxWidth="var(--grid-max-width-tiles)" platform={platform}>
-          {data.jumpBackIn.map((pick, i) => (
-            <Fragment key={i}>
-              <QuickPick title={pick.title} sub={pick.sub} image={pick.image} onClick={pick.ref ? () => navigate(generatePath(routes[pick.page]!, { ref: pick.ref })) : undefined} platform={platform} />
-            </Fragment>
-          ))}
-        </LayoutGrid>
-      </Section>
+      {data.sections.includes('Jump back in') && (
+        <Section title="Jump back in" platform={platform}>
+          <LayoutGrid item="wide" maxWidth="var(--grid-max-width-tiles)" platform={platform}>
+            {data.jumpBackIn.map((pick, i) => (
+              <Fragment key={i}>
+                <QuickPick title={pick.title} sub={pick.sub} image={pick.image} onClick={pick.ref ? () => navigate(generatePath(routes[pick.page]!, { ref: pick.ref })) : undefined} platform={platform} />
+              </Fragment>
+            ))}
+          </LayoutGrid>
+        </Section>
+      )}
       <Section platform={platform}>
         <LayoutGrid columns={1} maxWidth="var(--grid-max-width-form)" platform={platform}>
           <FeatureCard
@@ -478,40 +480,48 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           />
         </LayoutGrid>
       </Section>
-      <Section title="Recently added" action="arrow_forward" actionLabel="See all" onAction={data.shelves.recentlyAdded ? () => navigate(generatePath('/shelves/:id', { id: data.shelves.recentlyAdded })) : undefined} platform={platform}>
-        <Shelf platform={platform}>
-          {data.recentlyAdded.map((item, i) => (
+      {data.sections.includes('Recently added') && (
+        <Section title="Recently added" action="arrow_forward" actionLabel="See all" onAction={data.shelves.recentlyAdded ? () => navigate(generatePath('/shelves/:id', { id: data.shelves.recentlyAdded })) : undefined} platform={platform}>
+          <Shelf platform={platform}>
+            {data.recentlyAdded.map((item, i) => (
+              <Fragment key={i}>
+                <MediaCard title={item.title} sub={item.sub} image={item.image} progress={item.progress} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} platform={platform} />
+              </Fragment>
+            ))}
+          </Shelf>
+        </Section>
+      )}
+      {data.sections.includes('Artists & authors') && (
+        <Section title="Artists & authors" action="arrow_forward" actionLabel="See all" onAction={data.shelves.people ? () => navigate(generatePath('/shelves/:id', { id: data.shelves.people })) : undefined} platform={platform}>
+          <Shelf platform={platform}>
+            {data.people.map((person, i) => (
+              <Fragment key={i}>
+                <ArtistCard title={person.title} sub={person.sub} image={person.image} onClick={person.ref ? () => navigate(generatePath(routes[person.page]!, { ref: person.ref })) : undefined} platform={platform} />
+              </Fragment>
+            ))}
+          </Shelf>
+        </Section>
+      )}
+      {data.sections.includes('Picked for you') && (
+        <Section title="Picked for you" action="arrow_forward" actionLabel="See all" onAction={data.shelves.pickedForYou ? () => navigate(generatePath('/shelves/:id', { id: data.shelves.pickedForYou })) : undefined} platform={platform}>
+          <Shelf platform={platform}>
+            {data.pickedForYou.map((item, i) => (
+              <Fragment key={i}>
+                <MediaCard size="sm" title={item.title} sub={item.sub} image={item.image} progress={item.progress} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} platform={platform} />
+              </Fragment>
+            ))}
+          </Shelf>
+        </Section>
+      )}
+      {data.sections.includes('Recently played') && (
+        <Section title="Recently played" last={true} platform={platform}>
+          {data.recentlyPlayed.map((track, i) => (
             <Fragment key={i}>
-              <MediaCard title={item.title} sub={item.sub} image={item.image} progress={item.progress} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} platform={platform} />
+              <ResultRow title={track.title} meta={track.meta} image={track.image} divider={true} platform={platform} />
             </Fragment>
           ))}
-        </Shelf>
-      </Section>
-      <Section title="Artists & authors" action="arrow_forward" actionLabel="See all" onAction={data.shelves.people ? () => navigate(generatePath('/shelves/:id', { id: data.shelves.people })) : undefined} platform={platform}>
-        <Shelf platform={platform}>
-          {data.people.map((person, i) => (
-            <Fragment key={i}>
-              <ArtistCard title={person.title} sub={person.sub} image={person.image} onClick={person.ref ? () => navigate(generatePath(routes[person.page]!, { ref: person.ref })) : undefined} platform={platform} />
-            </Fragment>
-          ))}
-        </Shelf>
-      </Section>
-      <Section title="Picked for you" action="arrow_forward" actionLabel="See all" onAction={data.shelves.pickedForYou ? () => navigate(generatePath('/shelves/:id', { id: data.shelves.pickedForYou })) : undefined} platform={platform}>
-        <Shelf platform={platform}>
-          {data.pickedForYou.map((item, i) => (
-            <Fragment key={i}>
-              <MediaCard size="sm" title={item.title} sub={item.sub} image={item.image} progress={item.progress} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} platform={platform} />
-            </Fragment>
-          ))}
-        </Shelf>
-      </Section>
-      <Section title="Recently played" last={true} platform={platform}>
-        {data.recentlyPlayed.map((track, i) => (
-          <Fragment key={i}>
-            <ResultRow title={track.title} meta={track.meta} image={track.image} divider={true} platform={platform} />
-          </Fragment>
-        ))}
-      </Section>
+        </Section>
+      )}
     </PageBody>
   );
 }

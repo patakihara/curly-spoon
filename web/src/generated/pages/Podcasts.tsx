@@ -314,24 +314,28 @@ export default function Podcasts({ data = placeholder, state = 'full' }: Podcast
           platform={platform}
         />
       </Section>
-      <Section title="Shows" platform={platform}>
-        <LayoutGrid platform={platform}>
-          {data.library.map((show, i) => (
-            <Fragment key={i}>
-              <MediaCard width="100%" title={show.title} sub={show.sub} image={show.image} unplayed={show.unplayed} onClick={show.ref ? () => navigate(generatePath('/podcasts/:ref', { ref: show.ref })) : undefined} platform={platform} />
-            </Fragment>
-          ))}
-        </LayoutGrid>
-      </Section>
-      <Section title="Lists" last={true} platform={platform}>
-        <LayoutGrid platform={platform}>
-          {data.lists.map((list, i) => (
-            <Fragment key={i}>
-              <MediaCard width="100%" title={list.title} sub={list.sub} covers={list.covers} onClick={list.ref ? () => navigate(generatePath('/lists/:ref', { ref: list.ref })) : undefined} platform={platform} />
-            </Fragment>
-          ))}
-        </LayoutGrid>
-      </Section>
+      {data.sections.includes('Shows') && (
+        <Section title="Shows" platform={platform}>
+          <LayoutGrid platform={platform}>
+            {data.library.map((show, i) => (
+              <Fragment key={i}>
+                <MediaCard width="100%" title={show.title} sub={show.sub} image={show.image} unplayed={show.unplayed} onClick={show.ref ? () => navigate(generatePath('/podcasts/:ref', { ref: show.ref })) : undefined} platform={platform} />
+              </Fragment>
+            ))}
+          </LayoutGrid>
+        </Section>
+      )}
+      {data.sections.includes('Lists') && (
+        <Section title="Lists" last={true} platform={platform}>
+          <LayoutGrid platform={platform}>
+            {data.lists.map((list, i) => (
+              <Fragment key={i}>
+                <MediaCard width="100%" title={list.title} sub={list.sub} covers={list.covers} onClick={list.ref ? () => navigate(generatePath('/lists/:ref', { ref: list.ref })) : undefined} platform={platform} />
+              </Fragment>
+            ))}
+          </LayoutGrid>
+        </Section>
+      )}
     </PageBody>
   );
 }

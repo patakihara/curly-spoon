@@ -40,6 +40,7 @@ const loaded = (variant: 'spoken' | 'music', art: string | null = null): PlayerS
   playing: true,
   speed: 1.5,
   sleep: '15 min',
+  restored: true,
 });
 
 const IDLE: PlayerState = {
@@ -50,6 +51,7 @@ const IDLE: PlayerState = {
   playing: false,
   speed: 1,
   sleep: 'Off',
+  restored: true,
 };
 
 const handlers = (p: object) =>

@@ -68,6 +68,8 @@ type Ctx = WebComponents & {
   wired: Map<PageTree, Record<string, string>>;
   /** The shell's elements showing what is loaded, drawn only once something is. */
   loaded: Set<PageTree>;
+  /** Elements drawn only while a condition holds, as its code. */
+  gated: Map<PageTree, string>;
 };
 
 /** Whether a bound path is what is loaded, shell.json's `playing`, which the web's player holds. */
@@ -234,6 +236,13 @@ function render(tree: PageTree, indent: string, components: Ctx): string[] {
         `${indent})}`,
       ];
     case 'element': {
+      const gate = components.gated.get(tree);
+      if (gate !== undefined) {
+        components.gated.delete(tree);
+        const lines = render(tree, inner, components);
+        components.gated.set(tree, gate);
+        return [`${indent}{${gate} && (`, ...lines, `${indent})}`];
+      }
       if (components.loaded.has(tree)) {
         components.loaded.delete(tree);
         const lines = render(tree, inner, components);
@@ -324,6 +333,75 @@ function framePart(name: string, lines: string[]): string[] {
   return [`  ${name}: (${args}) => (`, ...lines, '  ),'];
 }
 
+/**
+ * A play button labelled Resume on a header that binds the item's progress says Resume only while
+ * there is some, and Play on an item not begun: the canvas draws an item part way through.
+ */
+function resumes(root: PageTree, wired: Map<PageTree, Record<string, string>>) {
+  some(root, (n) => {
+    if (n.kind !== 'element') return false;
+    const { playLabel, progress } = n.props;
+    if (
+      playLabel?.kind === 'literal' &&
+      playLabel.value === 'Resume' &&
+      progress?.kind === 'binding'
+    ) {
+      const at = pathCode(progress.path);
+      wired.set(n, { ...wired.get(n), playLabel: `${at} ? 'Resume' : 'Play'` });
+    }
+    return false;
+  });
+}
+
+/** The value at a bound data path in the placeholder. */
+const valueAt = (placeholder: unknown, path: string[]): unknown =>
+  path[0] !== 'data'
+    ? undefined
+    : path
+        .slice(1)
+        .reduce<unknown>(
+          (at, key) =>
+            at !== null && typeof at === 'object'
+              ? (at as Record<string, unknown>)[key]
+              : undefined,
+          placeholder,
+        );
+
+/**
+ * A page whose subheader's section bar (`spy`) binds its titles from the data draws each titled
+ * section the bar's placeholder names only while the data names it too: the data says which of
+ * its sections the page has, as the bar names them. A section the bar never names always draws.
+ */
+function barred(
+  root: PageTree,
+  subheader: PageTree,
+  placeholder: unknown,
+  gated: Map<PageTree, string>,
+) {
+  let bar: string[] | undefined;
+  some(subheader, (n) => {
+    if (n.kind !== 'element' || n.props.spy === undefined) return false;
+    const sections = n.props.sections;
+    if (sections?.kind !== 'binding') return false;
+    const named = valueAt(placeholder, sections.path);
+    if (Array.isArray(named)) bar = sections.path;
+    return bar !== undefined;
+  });
+  if (bar === undefined) return;
+  const names = new Set(valueAt(placeholder, bar) as unknown[]);
+  some(root, (n) => {
+    if (n.kind !== 'element' || n.component !== 'Section') return false;
+    const title = n.props.title;
+    if (title?.kind === 'literal' && typeof title.value === 'string' && names.has(title.value)) {
+      gated.set(
+        n,
+        `${pathCode(bar!)}.includes(${JSON.stringify(title.value).replaceAll('"', "'")})`,
+      );
+    }
+    return false;
+  });
+}
+
 export function generateWebPage(
   tree: PageTree,
   id: string,
@@ -332,7 +410,13 @@ export function generateWebPage(
   { nav, shell, page }: WebShell,
 ): string {
   const paths = new Map(nav.pages.map((p) => [p.id, splitRoute(p.route).path]));
-  const components: Ctx = { ...webComponents, paths, wired: new Map(), loaded: new Set() };
+  const components: Ctx = {
+    ...webComponents,
+    paths,
+    wired: new Map(),
+    loaded: new Set(),
+    gated: new Map(),
+  };
   /** The elements whose transport the player does. */
   const transport = new Set<PageTree>();
   /** Whether any of the shell's navigation is wired into the page. */
@@ -400,6 +484,8 @@ export function generateWebPage(
         const uses = wire(shellHandlers(nav, page, { chrome: parts }));
         return [layoutId(layout), parts, { go: uses.go, playing: uses.playing || loaded }] as const;
       });
+  resumes(root, components.wired);
+  if (subheader !== undefined) barred(root, subheader, placeholder, components.gated);
   const body = render(root, '    ', components);
   const own = [root, back, subheader].filter((t): t is PageTree => t !== undefined);
   const inPage = (test: (node: PageTree) => boolean) => own.some((t) => some(t, test));

@@ -154,6 +154,8 @@ function rig(
     browserClock?: boolean;
     /** Paths the server refuses for want of a sign-in. */
     refuses?: string[];
+    /** Items the server cannot plan, by id: their plan fails upstream. */
+    unplannable?: string[];
   } = {},
 ) {
   const sent: Sent[] = [];
@@ -209,6 +211,9 @@ function rig(
       }
       if (path === '/api/play') {
         const ref = body!.ref as MediaRef;
+        if (options.unplannable?.includes(ref.id)) {
+          return Response.json({ error: 'upstream_failed' }, { status: 502 });
+        }
         return Response.json(planOf(ref, `play-${plays++}`, startAts.shift() ?? 0));
       }
       if (path === '/api/progress') {
@@ -611,6 +616,56 @@ describe('[M1.shell] the web player store', () => {
       ref: book,
       how: 'next',
     });
+  });
+
+  it('[M1.shell] says where it is before putting an item next, so the cut lands after the part playing', async () => {
+    const { store, engine, sent } = rig();
+    await store.play(book);
+    engine().at(230);
+    await store.queueNext(episode, 'spoken');
+    const after = sent.slice(sent.findIndex((s) => s.path === '/api/play') + 1);
+    expect(after.map((s) => s.path)).toEqual([
+      '/api/progress',
+      '/api/queues/spoken/items',
+      '/api/progress',
+    ]);
+    expect(after[0]!.body).toMatchObject({ position: 230 });
+  });
+
+  it('[M1.shell] keeps what was playing, playing, when another item cannot be planned', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { store, engine, startAts } = rig({ unplannable: [episode.id] });
+    await store.play(book);
+    engine().at(37);
+    startAts.push(37);
+    await store.play(episode);
+    expect(store.getState()).toMatchObject({ ref: book, position: 37, playing: true });
+    expect(engine().plan.meta.title).toBe('The Salt Road');
+    expect(engine().calls).toContain('play');
+    expect(warn).toHaveBeenCalledWith('playing failed', episode);
+  });
+
+  it('[M1.shell] stays idle when an item cannot be planned with nothing loaded', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { store } = rig({ unplannable: [episode.id] });
+    await store.play(episode);
+    expect(store.getState()).toMatchObject({ ref: null, plan: null, playing: false });
+  });
+
+  it('[M1.shell] says once it has looked for what a reload left, found or not', async () => {
+    const idle = rig();
+    expect(idle.store.getState().restored).toBe(false);
+    await idle.store.restore();
+    expect(idle.store.getState()).toMatchObject({ restored: true, plan: null });
+
+    const kept = rig();
+    kept.saved.current = book;
+    await kept.store.restore();
+    expect(kept.store.getState()).toMatchObject({ restored: true, ref: book });
+
+    const refused = rig({ refuses: ['/api/sessions'] });
+    await refused.store.restore();
+    expect(refused.store.getState().restored).toBe(true);
   });
 
   it('[M1.shell] restores what this device’s session plays, paused where it stopped, after a reload', async () => {

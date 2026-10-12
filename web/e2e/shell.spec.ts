@@ -3,10 +3,14 @@ import { type Recorded, serveRecorded } from './recorded';
 import {
   advances,
   audios,
+  episodeTitleIn,
   keyOf,
+  pageOf,
   playedTo,
   signIn as signInAt,
+  songsIn,
   titleIn as titleAt,
+  titlePlaying,
 } from './shell-steps';
 
 /**
@@ -33,29 +37,11 @@ const signIn = (page: Page, path: string) => signInAt(page, recorded.origin, pat
 const titleIn = (page: Page, medium: string, ref: { source: string; id: string }) =>
   titleAt(page, recorded.origin, medium, ref);
 
-/** The address of `ref`'s page under `path`, its ref's colon written as it is or escaped. */
-const pageOf = (path: string, ref: { source: string; id: string }) =>
-  new RegExp(`${path}${ref.source}(?::|%3A)${ref.id}$`);
-
 /** The album's songs, in order, by the titles the server gives them. */
-async function songsOf(page: Page) {
-  const album = await page.request.get(`${recorded.origin}/api/items/${keyOf(recorded.album)}`);
-  const { tracks } = (await album.json()) as { tracks: { title: string }[] };
-  return tracks.map((t) => t.title);
-}
+const songsOf = (page: Page) => songsIn(page, recorded);
 
 /** The title the server gives the show's playing episode. */
-async function episodeTitle(page: Page) {
-  const show = await page.request.get(`${recorded.origin}/api/items/${keyOf(recorded.show)}`);
-  const { episodes } = (await show.json()) as {
-    episodes: { ref: { source: string; id: string }; title: string }[];
-  };
-  return episodes.find((e) => keyOf(e.ref) === keyOf(recorded.episode))!.title;
-}
-
-/** What the system's media controls say plays. */
-const titlePlaying = (page: Page) =>
-  page.evaluate(() => navigator.mediaSession.metadata?.title ?? null);
+const episodeTitle = (page: Page) => episodeTitleIn(page, recorded);
 
 /** Opens the list at `home` from the shell's own destination, then the card titled `title`. */
 async function open(page: Page, destination: string, home: string, title: string) {
@@ -116,7 +102,7 @@ test.describe('[M1.shell/b] the shell on recorded upstreams', () => {
     const episode = await episodeTitle(page);
     await page.getByText(episode, { exact: true }).first().click();
     await expect(page).toHaveURL(pageOf('/podcasts/episodes/', recorded.episode));
-    await page.getByRole('button', { name: /Resume$/ }).click();
+    await page.getByRole('button', { name: /^play_arrow\s*Play$/ }).click();
     await expect.poll(() => titlePlaying(page)).toBe(episode);
     await advances(page);
   });

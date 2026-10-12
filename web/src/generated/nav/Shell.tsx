@@ -2,7 +2,7 @@
 import { cloneElement, isValidElement, useContext, type ComponentProps, type ComponentType } from 'react';
 import { useLocation, useMatches, useOutlet } from 'react-router';
 import { InPanel, useShellNav } from '../../shell-nav';
-import { usePlaying } from '../../player';
+import { useLeaveIdle, usePlaying } from '../../player';
 import { BackdropShell, NowPlaying } from '../ui/index.js';
 import { PANEL, PANEL_OVER, PLATFORM, useLayout, type PageFrame, type Platform } from './platform';
 
@@ -37,6 +37,7 @@ export function Player({ tab, closes = true }: PlayerProps) {
   const { tabs } = useMatches()[0]!.handle as ShellTabs;
   const Content = tab === undefined ? undefined : tabs[tab];
   const playing = usePlaying();
+  useLeaveIdle(playing, tab === undefined ? () => go.close('browse') : undefined);
   if (playing === null) return null;
   return (
     <NowPlaying open={true} tab={shown} variant={playing.variant as ComponentProps<typeof NowPlaying>['variant']} track={playing} onClose={closes ? () => go.close('browse') : undefined} onTabChange={(to) => go.tab(to)} platform={platform}>

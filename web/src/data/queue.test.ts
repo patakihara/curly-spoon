@@ -99,6 +99,29 @@ describe('[M1.shell] the queue page from GET /api/queues/{active}', () => {
     expect(data.context).toBe('Spoken queue');
   });
 
+  it('lists only what played on the queue it shows, never the other queue’s plays', () => {
+    const played = (seq: number, queue: QueueType, title: string) => ({
+      seq,
+      queue,
+      ref: { source: 'abs' as const, id: `item-${seq}` },
+      playedAt: seq,
+      title,
+      sub: null,
+      duration: null,
+    });
+    const data = queueData(
+      view('music', {
+        played: [
+          played(1, 'music', 'A Song'),
+          played(2, 'spoken', 'A Chapter'),
+          played(3, 'music', 'B Song'),
+        ],
+      }),
+      null,
+    );
+    expect(titles(data.played)).toEqual(['A Song', 'B Song']);
+  });
+
   it('shows an empty queue named for the queue the controls drive', () => {
     expect(emptyQueue('spoken')).toEqual({
       context: 'Spoken queue',

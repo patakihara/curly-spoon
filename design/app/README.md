@@ -52,6 +52,13 @@ the web plays it through its player, `usePlay()` in `web/src/player`, and Androi
 `onPlay` it is given. What is loaded, shell.json's `playing`, is the web player's `usePlaying()`:
 the mini-player draws only once something is loaded, and its transport and Now Playing's are the
 player's own on the web; Android's wait for M5.player.
+Two things the canvas draws only one way follow the data in the web app. A header's play button
+labelled `Resume` beside the item's bound `progress` says Resume only while there is some, and
+Play on an item not begun. A page whose subheader's section bar binds its titles from the data
+(`<FrontLayerHeader spy sections={data.sections} />`) draws each titled `Section` the bar's
+placeholder names only while the data names it too, so the data can leave out a section it has
+nothing for; a section the bar never names always draws.
+
 `onRequest={<Request ref={book.ref} />}` asks for an item the library lacks; no request endpoint
 exists yet, so both apps leave it unbound and the card draws its Request disabled. A generated
 page never binds a handler that does nothing: a control that seems to work must work. The web

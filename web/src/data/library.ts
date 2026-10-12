@@ -95,9 +95,9 @@ const KINDS = {
 
 /**
  * Browse, the home page, from the three library lists: its first shelf holds what you are part
- * way through (a book, show or album with progress between 0 and 1), each opening its own page.
- * Nothing else is served before M2.sorting, so every other shelf, the feature and the shelves'
- * ids stay empty, and only the first shelf is named in the page's section bar.
+ * way through (a book, show or album with progress between 0 and 1), each opening its own page,
+ * and is left out, unnamed in the page's section bar, while there is none. Nothing else is served
+ * before M2.sorting, so every other shelf, the feature and the shelves' ids stay empty.
  */
 export function browseData(lists: LibraryList[], page: BrowseData): BrowseData {
   const begun = lists
@@ -105,7 +105,7 @@ export function browseData(lists: LibraryList[], page: BrowseData): BrowseData {
     .filter((item) => item.progress !== null && item.progress > 0 && item.progress < 1);
   return {
     ...emptied(page),
-    sections: page.sections.slice(0, 1),
+    sections: begun.length > 0 ? page.sections : page.sections.slice(1),
     jumpBackIn: begun.map((item) => ({
       title: item.title,
       page: KINDS[item.kind].page,

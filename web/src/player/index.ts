@@ -1,5 +1,5 @@
 import { parseMediaRefKey } from '@auralis/schema';
-import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import { useDeps } from '../data/deps';
 import { useAccessOf } from '../data/access';
 import { placeholder, type Loaded } from '../generated/nav/playing';
@@ -16,7 +16,8 @@ import { createPlayerStore, heardAt, type PlayerState, type PlayerStore } from '
  * placeholders, does it show the canvas's picture, with no transport. Music is named by the song
  * playing, and its seek bar spans that song; a book or an episode is named, and spans, whole.
  * Once a member is known, the player restores what this device's session plays; a request the
- * player makes that is refused for want of a sign-in sends them to sign in.
+ * player makes that is refused for want of a sign-in sends them to sign in. The full-screen player
+ * with nothing to show leaves for the page under it (`useLeaveIdle`), rather than stand empty.
  */
 
 /** The queue an item plays on. */
@@ -172,4 +173,31 @@ export function usePlayId(): string {
 export function usePlay(): Play {
   const store = playerStore();
   return useMemo(() => playOf(store), [store]);
+}
+
+const restoredOf = () => playerStore().getState().restored;
+
+/**
+ * Leaves the full-screen player once it has nothing to show: nothing is loaded, and no reload's
+ * play is still being looked for, as when an item ends with nothing after it or Now Playing is
+ * opened with nothing loaded. `leave`, the player's close, runs once each time it falls idle; the
+ * panel passes none, as the shell draws no panel while nothing is loaded.
+ */
+export function useLeaveIdle(playing: Playing | null, leave: (() => void) | undefined): void {
+  const restored = useSyncExternalStore(playerStore().subscribe, restoredOf, () => false);
+  const idle = playing === null && restored;
+  const latest = useRef(leave);
+  useEffect(() => {
+    latest.current = leave;
+  });
+  const left = useRef(false);
+  useEffect(() => {
+    if (!idle) {
+      left.current = false;
+      return;
+    }
+    if (left.current || latest.current === undefined) return;
+    left.current = true;
+    latest.current();
+  }, [idle]);
 }

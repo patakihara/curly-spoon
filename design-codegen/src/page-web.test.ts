@@ -692,3 +692,70 @@ describe('a page whose items name the page they open, on the web', () => {
     expect(mixed).toMatch(/onClick=\{m\.ref \? \(\) => navigate\(.*\) : undefined\}/);
   });
 });
+
+describe('[M1.shell] what a page draws from its data alone, on the web', () => {
+  const resuming = generateWebPage(
+    parsePage(
+      `export default function Book({ data }) {
+  return (
+    <PageBody>
+      <MediaHeader progress={data.progress} playLabel="Resume" onPlay={<Play ref={data.ref} queue="spoken" />} />
+      <MediaHeader playLabel="Resume" />
+      <MediaHeader progress={data.progress} playLabel="Play all" />
+    </PageBody>
+  );
+}
+`,
+      'book',
+    ),
+    'book',
+    { ref: 'the-salt-road', progress: 0.4 },
+    { platformed: new Set() },
+    shellOf('book'),
+  );
+
+  it('offers Resume only on an item part way through, and Play on one not begun', () => {
+    expect(resuming).toContain(
+      "<MediaHeader progress={data.progress} playLabel={data.progress ? 'Resume' : 'Play'} onPlay=",
+    );
+    expect(resuming).toContain('<MediaHeader playLabel="Resume" />');
+    expect(resuming).toContain('<MediaHeader progress={data.progress} playLabel="Play all" />');
+  });
+
+  const spied = generateWebPage(
+    parsePage(
+      `export default function Books({ data }) {
+  return (
+    <BackdropShell subheader={<FrontLayerHeader spy sections={data.sections} />}>
+      <PageBody>
+        <Section title="Jump back in">
+          <Each of={data.picks} as="pick"><MediaCard title={pick.title} /></Each>
+        </Section>
+        <Section>
+          <MediaCard title={data.feature} />
+        </Section>
+        <Section title="Not in the bar" last>
+          <MediaCard title={data.feature} />
+        </Section>
+      </PageBody>
+    </BackdropShell>
+  );
+}
+`,
+      'books',
+    ),
+    'books',
+    { sections: ['Jump back in'], picks: [{ title: 'Wind and Truth' }], feature: 'A' },
+    { platformed: new Set() },
+    shellOf('books'),
+  );
+
+  it('draws a section its section bar can name only while the data names it there', () => {
+    expect(spied).toMatch(
+      /\{data\.sections\.includes\('Jump back in'\) && \(\n\s+<Section title="Jump back in">/,
+    );
+    expect(spied).toMatch(/\n\s+<Section>\n/);
+    expect(spied).toMatch(/\n\s+<Section title="Not in the bar" last=\{true\}>\n/);
+    expect(spied.match(/sections\.includes/g)).toHaveLength(1);
+  });
+});

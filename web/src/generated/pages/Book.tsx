@@ -440,7 +440,7 @@ export default function Book({ data = placeholder, state = 'full' }: BookProps) 
           rating={<Rating value={data.rating.value} count={data.rating.count} platform={platform} />}
           progress={data.progress}
           image={data.image}
-          playLabel="Resume"
+          playLabel={data.progress ? 'Resume' : 'Play'}
           onPlay={play(data.ref, 'spoken', 'now')}
           nextLabel="Play next"
           lastLabel={null}

@@ -7,7 +7,8 @@ import { clock, span } from './format';
  * what plays now and what plays next, then autoplay's kept pick. When the session moves over to
  * the other queue after the current item (`switchAfterCurrent`), up next runs on into that queue,
  * its first entry marked where playback moves over, and this queue's rest follows, marked where it
- * waits. Entries carry no art yet, so each row draws its art's fallback.
+ * waits. What played lists only that queue's own plays. Entries carry no art yet, so each row draws
+ * its art's fallback.
  */
 
 /** Each queue's name, as the page's switch names it. */
@@ -87,13 +88,15 @@ export function queueData(active: QueueView, then: QueueView | null): QueueData 
     context,
     queues: QUEUES,
     queue: active.type,
-    played: active.played.map((entry) => ({
-      id: `played-${entry.seq}`,
-      title: entry.title,
-      sub: entry.sub ?? '',
-      time: entry.duration === null ? '' : clock(entry.duration),
-      image: '',
-    })),
+    played: active.played
+      .filter((entry) => entry.queue === active.type)
+      .map((entry) => ({
+        id: `played-${entry.seq}`,
+        title: entry.title,
+        sub: entry.sub ?? '',
+        time: entry.duration === null ? '' : clock(entry.duration),
+        image: '',
+      })),
     items: [
       ...(active.current ? [{ ...rowOf(active.current), current: true } as Row] : []),
       ...next,

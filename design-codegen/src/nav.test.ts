@@ -394,7 +394,7 @@ describe('the one web shell', () => {
   });
 
   it("[M1.shell] draws what the web's player has loaded, the player and its panel only once something is", () => {
-    expect(out).toContain("import { usePlaying } from '../../player';");
+    expect(out).toContain("import { useLeaveIdle, usePlaying } from '../../player';");
     expect(out).not.toContain('const playing = {');
     const player = out.slice(
       out.indexOf('export function Player('),
@@ -408,6 +408,20 @@ describe('the one web shell', () => {
       shell.indexOf('  if (frame === undefined) return outlet;'),
     );
     expect(shell).toContain("  const tab = playing === null || platform !== 'desktop' ? undefined");
+  });
+
+  it('[M1.shell] leaves the full-screen player for the page under it once nothing is loaded', () => {
+    expect(out).toContain("import { useLeaveIdle, usePlaying } from '../../player';");
+    const player = out.slice(
+      out.indexOf('export function Player('),
+      out.indexOf('export function Shell('),
+    );
+    expect(player).toContain(
+      "  useLeaveIdle(playing, tab === undefined ? () => go.close('browse') : undefined);",
+    );
+    expect(player.indexOf('useLeaveIdle(')).toBeLessThan(
+      player.indexOf('  if (playing === null) return null;'),
+    );
   });
 
   it("[M0.canvas/c] draws the player panel through the same Player, at the tab held or the layout's own Now Playing, beside the page, which stays", () => {

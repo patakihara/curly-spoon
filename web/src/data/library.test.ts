@@ -150,13 +150,22 @@ describe('[M1.shell] Browse, the home page, from the library lists', () => {
     ]);
   });
 
-  it('shows nothing else, none of the canvas’s samples, and names only its one shelf', () => {
-    expect(data.sections).toEqual([browse.placeholder.sections[0]]);
+  it('shows nothing else, none of the canvas’s samples, and names every section it draws', () => {
+    expect(data.sections).toEqual(browse.placeholder.sections);
     expect(data.recentlyAdded).toEqual([]);
     expect(data.people).toEqual([]);
     expect(data.pickedForYou).toEqual([]);
     expect(data.recentlyPlayed).toEqual([]);
     expect(data.feature.title).toBe('');
     expect(data.shelves.recentlyAdded).toBe('');
+  });
+
+  it('leaves its first shelf out when you are part way through nothing', () => {
+    const none = browseData(
+      [list(entry({ title: 'Unstarted', progress: null }))],
+      browse.placeholder,
+    );
+    expect(none.jumpBackIn).toEqual([]);
+    expect(none.sections).toEqual(browse.placeholder.sections.slice(1));
   });
 });

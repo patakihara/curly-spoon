@@ -12,7 +12,10 @@
  * order. After a reload, `restore` plans what this device's session plays, paused where it
  * stopped; as the page is hidden, a last report goes out that the browser keeps sending while it
  * unloads. A request refused for want of a sign-in (401) stops everything and says so. Music is
- * named by the playing track's own title, and its place is within that track.
+ * named by the playing track's own title, and its place is within that track. Putting an item next
+ * first says where it is, so the server cuts the play after the part playing, not one it left. An
+ * item that cannot be planned leaves the player on what it had, or idle; the shell binds no status
+ * to show it, so it is logged.
  */
 import {
   ListeningSession,
@@ -87,6 +90,11 @@ export interface PlayerState {
   speed: number;
   /** The sleep timer as the player names it: "Off", "23 min", "End of chapter". */
   sleep: string;
+  /**
+   * Whether what a reload left has been looked for, found or not: until then, nothing loaded may
+   * only mean not yet.
+   */
+  restored: boolean;
 }
 
 export interface PlayerStore {
@@ -116,6 +124,9 @@ export interface PlayerStore {
 type Sleep = { kind: 'off' } | { kind: 'timer'; endsAt: number } | { kind: 'chapter'; at: number };
 
 const logClose = (error: unknown) => console.warn('closing a play failed', error);
+
+/** Logs an item that could not be planned: the shell binds no status to show it in. */
+const logPlay = (ref: MediaRef) => console.warn('playing failed', ref);
 
 const lengthOf = (plan: PlaybackPlan | null) => {
   const last = plan?.tracks.at(-1);
@@ -190,7 +201,8 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
   let sleepTimer: unknown = null;
   /** The track the system's controls name: null for a spoken item, undefined before any. */
   let named: number | null | undefined;
-  let restored: Promise<void> | null = null;
+  let restoring: Promise<void> | null = null;
+  let restored = false;
 
   const listeners = new Set<() => void>();
   const sleepLabel = () =>
@@ -207,6 +219,7 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     playing,
     speed,
     sleep: sleepLabel(),
+    restored,
   });
   let state = snapshot();
   const emit = () => {
@@ -404,18 +417,18 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     step: (direction) => void store.step(direction),
   };
 
-  /** Plans `to` and loads its plan, playing it when `autoplay`. */
-  const load = async (to: MediaRef, autoplay: boolean) => {
+  /**
+   * Plans `to` and loads its plan, playing it when `autoplay`: false when it could not be planned,
+   * leaving the player as it was. A refusal for want of a sign-in stops everything.
+   */
+  const start = async (to: MediaRef, autoplay: boolean): Promise<boolean> => {
     const answered = await api.POST('/api/play', { body: { ref: to } }).catch(() => null);
     if (answered?.response.status === 401) {
       await signOut();
-      return;
+      return true;
     }
     const parsed = PlaybackPlan.safeParse(answered?.data);
-    if (!parsed.success) {
-      unload();
-      return;
-    }
+    if (!parsed.success) return false;
     ref = to;
     plan = parsed.data;
     position = plan.startAt;
@@ -449,6 +462,12 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     setPlaying(autoplay);
     emit();
     if (autoplay) await mine.play();
+    return true;
+  };
+
+  /** Plans `to` and loads it, or holds nothing when it cannot be planned. */
+  const load = async (to: MediaRef, autoplay: boolean) => {
+    if (!(await start(to, autoplay))) unload();
   };
 
   /** The engine stopped at its stop: the sleep's pauses, the server's steps on. */
@@ -505,6 +524,20 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     await report();
   };
 
+  /** Plans what this device's session plays, paused where it stopped, unless something is loaded. */
+  const restoreOnce = async () => {
+    if (plan !== null) return;
+    // Decision (M1.shell): a refusal here restores nothing and sends no one anywhere. Only the
+    // sign-in page meets it, as the server signs everyone else in first; a page's own requests
+    // send a member whose sign-in lapsed to sign in.
+    const answered = await api.GET('/api/sessions').catch(() => null);
+    const list = ListeningSessionList.safeParse(answered?.data);
+    const mine = list.success ? list.data.sessions.find((s) => s.thisDevice) : undefined;
+    const now = mine === undefined ? null : mine.currents[mine.active];
+    if (now === null || plan !== null) return;
+    await load(now.ref, false);
+  };
+
   const store: PlayerStore = {
     subscribe(listener) {
       listeners.add(listener);
@@ -513,21 +546,25 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     getState: () => state,
     play: (to) =>
       run(async () => {
+        const was = ref;
+        const playOn = playing;
         await closeCurrent();
-        await load(to, true);
+        if (await start(to, true)) return;
+        logPlay(to);
+        // Decision (M1.shell): an item that cannot be planned leaves the player on what it had,
+        // planned again where the close left it, or idle. The play it had is closed first, so its
+        // last place and listening reach the server before anything else plans.
+        if (was === null) unload();
+        else await load(was, playOn);
       }),
     restore: () =>
-      (restored ??= run(async () => {
-        if (plan !== null) return;
-        // Decision (M1.shell): a refusal here restores nothing and sends no one anywhere. Only the
-        // sign-in page meets it, as the server signs everyone else in first; a page's own requests
-        // send a member whose sign-in lapsed to sign in.
-        const answered = await api.GET('/api/sessions').catch(() => null);
-        const list = ListeningSessionList.safeParse(answered?.data);
-        const mine = list.success ? list.data.sessions.find((s) => s.thisDevice) : undefined;
-        const now = mine === undefined ? null : mine.currents[mine.active];
-        if (now === null || plan !== null) return;
-        await load(now.ref, false);
+      (restoring ??= run(async () => {
+        try {
+          await restoreOnce();
+        } finally {
+          restored = true;
+          emit();
+        }
       })),
     queueNext: (to, queue) =>
       run(async () => {
@@ -535,6 +572,9 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
           await load(to, true);
           return;
         }
+        // Decision (M1.shell): the server puts it next after the part it last heard of, and cuts
+        // the play there, so it hears where the play is first.
+        await report();
         await api
           .POST('/api/queues/{type}/items', {
             params: { path: { type: queue } },

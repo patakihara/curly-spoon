@@ -289,7 +289,7 @@ export default function Episode({ data = placeholder, state = 'full' }: EpisodeP
           meta={data.meta}
           progress={data.progress}
           image={data.image}
-          playLabel="Resume"
+          playLabel={data.progress ? 'Resume' : 'Play'}
           onPlay={play(data.ref, 'spoken', 'now')}
           nextLabel="Play next"
           onPlayNext={play(data.ref, 'spoken', 'next')}

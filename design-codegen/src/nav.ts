@@ -340,7 +340,9 @@ export function generateRoutes(nav: Nav, drawn: Set<string>, over?: string): str
  * full screen it is the route over the player's sheets (`sheets`, each page's tab), the matched
  * sheet its tab and its page the content; in the panel it is at the tab the shell gives it, that
  * tab's page, from the shell's own route (`tabs`), the content. Its tabs switch only the content, so the sheet or panel stays. Its close
- * goes to the page under it, or with nothing under it to `player.home`'s home.
+ * goes to the page under it, or with nothing under it to `player.home`'s home. Full screen with
+ * nothing loaded, once no reload's play is still being looked for, it leaves as its close does
+ * (`useLeaveIdle`), rather than stand empty.
  */
 export function generateWebShell(
   sheets: Readonly<Record<string, string>>,
@@ -352,7 +354,7 @@ export function generateWebShell(
     "import { cloneElement, isValidElement, useContext, type ComponentProps, type ComponentType } from 'react';",
     "import { useLocation, useMatches, useOutlet } from 'react-router';",
     "import { InPanel, useShellNav } from '../../shell-nav';",
-    "import { usePlaying } from '../../player';",
+    "import { useLeaveIdle, usePlaying } from '../../player';",
     "import { BackdropShell, NowPlaying } from '../ui/index.js';",
     "import { PANEL, PANEL_OVER, PLATFORM, useLayout, type PageFrame, type Platform } from './platform';",
     '',
@@ -387,6 +389,7 @@ export function generateWebShell(
     '  const { tabs } = useMatches()[0]!.handle as ShellTabs;',
     '  const Content = tab === undefined ? undefined : tabs[tab];',
     '  const playing = usePlaying();',
+    `  useLeaveIdle(playing, tab === undefined ? () => go.close(${literal(player.home)}) : undefined);`,
     '  if (playing === null) return null;',
     '  return (',
     `    <NowPlaying open={true} tab={shown} variant={playing.variant as ComponentProps<typeof NowPlaying>['variant']} track={playing} onClose={closes ? () => go.close(${literal(player.home)}) : undefined} onTabChange={(to) => go.tab(to)} platform={platform}>`,
