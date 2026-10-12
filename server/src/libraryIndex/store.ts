@@ -341,6 +341,26 @@ function ids(db: Db, rows: RawRow[]): StoredRow[] {
   });
 }
 
+/** One indexed row by its source and upstream id, or undefined when the index does not hold it. */
+export function indexedRow(db: Db, source: IndexSource, id: string): StoredRow | undefined {
+  const raw = db
+    .prepare('SELECT * FROM index_items WHERE source = ? AND upstream_id = ?')
+    .all(source, id) as RawRow[];
+  return ids(db, raw)[0];
+}
+
+/** An album's indexed tracks by disc and position; unnumbered ones last. */
+export function albumTracks(db: Db, albumId: string): StoredRow[] {
+  const rows = db
+    .prepare(
+      `SELECT * FROM index_items
+       WHERE source = 'jellyfin' AND parent_id = ? AND kind = 'track'
+       ORDER BY disc IS NULL, disc, position IS NULL, position, upstream_id`,
+    )
+    .all(albumId) as RawRow[];
+  return ids(db, rows);
+}
+
 /**
  * A show's episodes in its order: oldest first when serial, newest first when episodic or when the
  * order is unknown (no feed read has succeeded yet; Apple's default). Episodes of one date, and

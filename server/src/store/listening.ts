@@ -8,6 +8,7 @@
 import {
   type HistoryEntry,
   type ListeningSession,
+  type MediaRef,
   MediaSource,
   PlayingFromKind,
   type QueueContext,
@@ -35,6 +36,24 @@ export interface SessionItem extends QueueItem {
   replayOf?: number;
   after?: number;
   position?: QueuePosition;
+}
+
+/** A queue entry before it has an id: an item, and which chapter when it is a book's. */
+export type QueueEntry = Omit<QueueItem, 'itemId'>;
+
+/**
+ * Autoplay's pick for one queue, worked out ahead from the item it follows (`after`): what plays
+ * once that item ends with nothing queued after it. `next` is null when nothing is left.
+ */
+export interface AutoplayPick {
+  after: QueueEntry;
+  next: QueueEntry | null;
+}
+
+/** Music's radio run: what Instant Mix answered for `seed`, kept until every track has played. */
+export interface RadioRun {
+  seed: MediaRef;
+  tracks: MediaRef[];
 }
 
 /**
@@ -66,6 +85,9 @@ export interface SessionValue {
   queueStyle: QueueStyle;
   queues: Record<QueueType, SessionQueue>;
   history: SessionPlay[];
+  /** Each queue's autoplay pick, or null when none has been worked out for it. */
+  autoplay: Record<QueueType, AutoplayPick | null>;
+  radio: RadioRun | null;
 }
 
 export interface StoredSession extends SessionValue {
@@ -123,6 +145,8 @@ const SessionRow = z.object({
   queue_style: QueueStyle,
   rev: z.number().int().nonnegative(),
   updated_at: z.number(),
+  radio_seed_source: MediaSource.nullable(),
+  radio_seed_id: z.string().nullable(),
 });
 type SessionRow = z.infer<typeof SessionRow>;
 
@@ -177,6 +201,36 @@ const HistoryRow = z
     playedAt: row.played_at,
     ...(row.after === null ? {} : { after: row.after }),
   }));
+
+const entryOf = (source: MediaSource, id: string, chapter: number | null): QueueEntry => ({
+  ref: { source, id },
+  ...chapterOf(chapter),
+});
+
+const PickRow = z
+  .object({
+    queue: QueueType,
+    after_source: MediaSource,
+    after_upstream_id: z.string(),
+    after_chapter: z.number().int().nonnegative().nullable(),
+    source: MediaSource.nullable(),
+    upstream_id: z.string().nullable(),
+    chapter: z.number().int().nonnegative().nullable(),
+  })
+  .transform((row) => ({
+    queue: row.queue,
+    pick: {
+      after: entryOf(row.after_source, row.after_upstream_id, row.after_chapter),
+      next:
+        row.source === null || row.upstream_id === null
+          ? null
+          : entryOf(row.source, row.upstream_id, row.chapter),
+    } satisfies AutoplayPick,
+  }));
+
+const RadioTrackRow = z
+  .object({ source: MediaSource, upstream_id: z.string() })
+  .transform((row): MediaRef => ({ source: row.source, id: row.upstream_id }));
 
 const SESSION_SELECT = `
   SELECT listening_sessions.*, devices.name AS device_name
@@ -238,6 +292,25 @@ function readHistory(db: Db, deviceId: string): SessionPlay[] {
     .parse(db.prepare('SELECT * FROM play_history WHERE device_id = ? ORDER BY seq').all(deviceId));
 }
 
+function readAutoplay(db: Db, deviceId: string): Record<QueueType, AutoplayPick | null> {
+  const autoplay: Record<QueueType, AutoplayPick | null> = { music: null, spoken: null };
+  const rows = z
+    .array(PickRow)
+    .parse(db.prepare('SELECT * FROM autoplay_picks WHERE device_id = ?').all(deviceId));
+  for (const { queue, pick } of rows) autoplay[queue] = pick;
+  return autoplay;
+}
+
+function readRadio(db: Db, row: SessionRow): RadioRun | null {
+  if (row.radio_seed_source === null || row.radio_seed_id === null) return null;
+  const tracks = z
+    .array(RadioTrackRow)
+    .parse(
+      db.prepare('SELECT * FROM radio_tracks WHERE device_id = ? ORDER BY ord').all(row.device_id),
+    );
+  return { seed: { source: row.radio_seed_source, id: row.radio_seed_id }, tracks };
+}
+
 function stored(db: Db, row: SessionRow): StoredSession {
   return {
     userId: row.user_id,
@@ -247,6 +320,8 @@ function stored(db: Db, row: SessionRow): StoredSession {
     queueStyle: row.queue_style,
     queues: readQueues(db, row.device_id),
     history: readHistory(db, row.device_id),
+    autoplay: readAutoplay(db, row.device_id),
+    radio: readRadio(db, row),
     rev: row.rev,
     updatedAt: row.updated_at,
   };
@@ -313,7 +388,7 @@ export function saveSession(
       .prepare(
         `UPDATE listening_sessions
          SET active = ?, switch_after_current = ?, queue_style = ?, rev = rev + 1,
-           updated_at = ?
+           updated_at = ?, radio_seed_source = ?, radio_seed_id = ?
          WHERE device_id = ? AND user_id = ? AND rev = ?`,
       )
       .run(
@@ -321,6 +396,8 @@ export function saveSession(
         value.switchAfterCurrent,
         value.queueStyle,
         now,
+        value.radio?.seed.source ?? null,
+        value.radio?.seed.id ?? null,
         deviceId,
         userId,
         rev,
@@ -331,6 +408,7 @@ export function saveSession(
     }
     writeQueues(db, deviceId, value.queues);
     writeHistory(db, deviceId, value.history);
+    writeAutoplay(db, deviceId, value.autoplay, value.radio);
     const row = readRow(db, userId, deviceId);
     if (row === null) throw new Error('invariant: the session just written is missing');
     return stored(db, row);
@@ -383,6 +461,39 @@ function writeQueues(db: Db, deviceId: string, queues: Record<QueueType, Session
     insertFrom.run(deviceId, type, from.kind, from.ref.source, from.ref.id);
     put(type, 'context', items, () => null);
   }
+}
+
+function writeAutoplay(
+  db: Db,
+  deviceId: string,
+  autoplay: Record<QueueType, AutoplayPick | null>,
+  radio: RadioRun | null,
+): void {
+  db.prepare('DELETE FROM autoplay_picks WHERE device_id = ?').run(deviceId);
+  db.prepare('DELETE FROM radio_tracks WHERE device_id = ?').run(deviceId);
+  const insertPick = db.prepare(
+    `INSERT INTO autoplay_picks (device_id, queue, after_source, after_upstream_id, after_chapter,
+       source, upstream_id, chapter)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  );
+  for (const queue of QueueType.options) {
+    const pick = autoplay[queue];
+    if (pick === null) continue;
+    insertPick.run(
+      deviceId,
+      queue,
+      pick.after.ref.source,
+      pick.after.ref.id,
+      pick.after.chapter ?? null,
+      pick.next?.ref.source ?? null,
+      pick.next?.ref.id ?? null,
+      pick.next?.chapter ?? null,
+    );
+  }
+  const insertTrack = db.prepare(
+    'INSERT INTO radio_tracks (device_id, ord, source, upstream_id) VALUES (?, ?, ?, ?)',
+  );
+  radio?.tracks.forEach((track, ord) => insertTrack.run(deviceId, ord, track.source, track.id));
 }
 
 /** A play as stored: an absent chapter and an undefined one are the same play. */

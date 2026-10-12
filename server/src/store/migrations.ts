@@ -260,7 +260,11 @@ export const migrations: readonly Migration[] = [
           queue_style          TEXT NOT NULL DEFAULT 'youtube'
             CHECK (queue_style IN ('youtube', 'spotify')),
           rev                  INTEGER NOT NULL CHECK (rev >= 0),
-          updated_at           INTEGER NOT NULL
+          updated_at           INTEGER NOT NULL,
+          -- The track music's radio run was asked for; its tracks are in radio_tracks.
+          radio_seed_source    TEXT CHECK (radio_seed_source IN ('abs', 'jellyfin')),
+          radio_seed_id        TEXT,
+          CHECK ((radio_seed_source IS NULL) = (radio_seed_id IS NULL))
         );
         CREATE INDEX idx_listening_sessions_user_id ON listening_sessions(user_id);
 
@@ -318,6 +322,34 @@ export const migrations: readonly Migration[] = [
           played_at   INTEGER NOT NULL,
           after       INTEGER CHECK (after >= 0),
           PRIMARY KEY (device_id, seq)
+        );
+
+        -- Autoplay's pick for each queue, worked out ahead from the item it follows (after_*),
+        -- so a step never waits on an upstream: what plays once that item ends with nothing
+        -- queued after it. No source when nothing is left.
+        CREATE TABLE autoplay_picks (
+          device_id         TEXT NOT NULL
+            REFERENCES listening_sessions(device_id) ON DELETE CASCADE,
+          queue             TEXT NOT NULL CHECK (queue IN ('music', 'spoken')),
+          after_source      TEXT NOT NULL CHECK (after_source IN ('abs', 'jellyfin')),
+          after_upstream_id TEXT NOT NULL,
+          after_chapter     INTEGER CHECK (after_chapter >= 0),
+          source            TEXT CHECK (source IN ('abs', 'jellyfin')),
+          upstream_id       TEXT,
+          chapter           INTEGER CHECK (chapter >= 0),
+          PRIMARY KEY (device_id, queue),
+          CHECK ((source IS NULL) = (upstream_id IS NULL)),
+          CHECK (source IS NOT NULL OR chapter IS NULL)
+        );
+
+        -- Music's radio run: the tracks Instant Mix answered for the session's radio seed, in
+        -- its order, kept until every one has played.
+        CREATE TABLE radio_tracks (
+          device_id   TEXT NOT NULL REFERENCES listening_sessions(device_id) ON DELETE CASCADE,
+          ord         INTEGER NOT NULL CHECK (ord >= 0),
+          source      TEXT NOT NULL CHECK (source IN ('abs', 'jellyfin')),
+          upstream_id TEXT NOT NULL,
+          PRIMARY KEY (device_id, ord)
         );
       `);
     },

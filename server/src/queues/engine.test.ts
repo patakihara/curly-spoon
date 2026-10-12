@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { itemSummarySchema, playSessionSchema } from '../adapters/audiobookshelf/schemas.js';
 import { recordingSchema } from '../adapters/http/recording.js';
 import { indexQueryResultSchema } from '../adapters/jellyfin/schemas.js';
-import type { SessionValue } from '../store/listening.js';
+import type { QueueEntry, SessionValue } from '../store/listening.js';
 import {
   add,
   defaultAction,
@@ -16,7 +16,6 @@ import {
   switchTo,
   type EngineDeps,
   type Expansion,
-  type QueueEntry,
 } from './engine.js';
 
 const ADAPTERS = fileURLToPath(new URL('../adapters/', import.meta.url));
@@ -105,6 +104,8 @@ const empty = (queueStyle: SessionValue['queueStyle'] = 'youtube'): SessionValue
     spoken: { current: null, position: null, user: [], context: null },
   },
   history: [],
+  autoplay: { music: null, spoken: null },
+  radio: null,
 });
 
 /** Runs each change in turn, failing on a ref the index does not hold. */

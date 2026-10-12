@@ -18,16 +18,13 @@
  * first. Ending a replay records nothing.
  */
 import type { MediaRef, PlayingFrom, QueueItem, QueueStyle, QueueType } from '@auralis/schema';
-import type { SessionItem, SessionQueue, SessionValue } from '../store/listening.js';
+import type { QueueEntry, SessionItem, SessionQueue, SessionValue } from '../store/listening.js';
 
 /** What the index says an item is: a song, an album, a podcast episode or a book. */
 export type ItemKind = 'track' | 'album' | 'episode' | 'book';
 
 /** Play it now, put it next, or add it to the end of its queue. */
 export type How = 'now' | 'next' | 'end';
-
-/** A queue entry before it has an id: an item, and which chapter when it is a book's. */
-export type QueueEntry = Omit<QueueItem, 'itemId'>;
 
 /** An item as the index answers it: its kind, the entries it enters a queue as, in play order. */
 export interface Expansion {

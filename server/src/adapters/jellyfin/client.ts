@@ -24,6 +24,9 @@ import {
   userListSchema,
 } from './schemas.js';
 
+/** How many tracks autoplay's radio asks Instant Mix for, and the recording records. */
+export const INSTANT_MIX_LIMIT = 20;
+
 /** Jellyfin counts time in 100 ns ticks. */
 export const TICKS_PER_SECOND = 10_000_000;
 

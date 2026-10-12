@@ -21,12 +21,10 @@ import { type FetchLike, requestJson } from './http/fetch.js';
 import { createRecorder } from './http/record.js';
 import { type RawExchange } from './http/scrub.js';
 import { buildAuthorizationHeader } from './jellyfin/auth.js';
-import { JellyfinClient } from './jellyfin/client.js';
+import { INSTANT_MIX_LIMIT, JellyfinClient } from './jellyfin/client.js';
 import { JellyfinProvisioner, personDevice } from './jellyfin/quickConnect.js';
 import { RECORD_USER_ID, TEST_IDENTITY } from './record-oidc.js';
 
-/** How many tracks the Instant Mix recording asks for. */
-export const INSTANT_MIX_LIMIT = 20;
 /** A feed has no server version; the recording names the format it was read as. */
 export const FEED_VERSION = 'RSS 2.0';
 

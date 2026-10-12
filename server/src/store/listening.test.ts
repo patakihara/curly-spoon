@@ -35,6 +35,8 @@ const value = (session: StoredSession): SessionValue => ({
   queueStyle: session.queueStyle,
   queues: session.queues,
   history: session.history,
+  autoplay: session.autoplay,
+  radio: session.radio,
 });
 
 let dir: string;
@@ -85,7 +87,7 @@ describe('[M1.sessions/a] one listening session per device', () => {
     expect(openSession(db, user.id, laptop.id)!.queues.music.user).toEqual([]);
   });
 
-  it('deletes a device’s session, queues and history with the device, and nothing else', () => {
+  it('deletes a device’s session, queues, history and autoplay picks with the device, and nothing else', () => {
     const { user, phone, laptop } = twoDevices();
     for (const device of [phone, laptop]) {
       const session = openSession(db, user.id, device.id)!;
@@ -96,6 +98,8 @@ describe('[M1.sessions/a] one listening session per device', () => {
           spoken: { current: entry(book, 0), position: null, user: [], context: null },
         },
         history: [{ seq: 0, queue: 'music', ref: song, playedAt: 1 }],
+        autoplay: { music: { after: { ref: song }, next: { ref: album } }, spoken: null },
+        radio: { seed: song, tracks: [album] },
       });
     }
 
@@ -106,6 +110,8 @@ describe('[M1.sessions/a] one listening session per device', () => {
       db.prepare(`SELECT DISTINCT device_id FROM ${table}`).all() as { device_id: string }[];
     expect(rows('queue_items')).toEqual([{ device_id: laptop.id }]);
     expect(rows('play_history')).toEqual([{ device_id: laptop.id }]);
+    expect(rows('autoplay_picks')).toEqual([{ device_id: laptop.id }]);
+    expect(rows('radio_tracks')).toEqual([{ device_id: laptop.id }]);
   });
 
   it('never opens or lists a session on another user’s device', () => {
@@ -138,6 +144,8 @@ describe('a listening session in the store', () => {
         spoken: { current: null, position: null, user: [], context: null },
       },
       history: [],
+      autoplay: { music: null, spoken: null },
+      radio: null,
       rev: 0,
       updatedAt: 1000,
     });
@@ -172,6 +180,11 @@ describe('a listening session in the store', () => {
         { seq: 0, queue: 'music', ref: song, playedAt: 10 },
         { seq: 1, queue: 'spoken', ref: book, chapter: 1, playedAt: 20, after: 0 },
       ],
+      autoplay: {
+        music: { after: { ref: song }, next: { ref: album } },
+        spoken: { after: { ref: book, chapter: 2 }, next: null },
+      },
+      radio: { seed: song, tracks: [album, song] },
     };
 
     const saved = saveSession(db, user.id, phone.id, session.rev, written, 2000);
@@ -368,6 +381,30 @@ describe('a listening session in the store', () => {
 
     expect(ranOut.queues.music.context).toEqual({ from, items: [] });
     expect(openSession(db, user.id, phone.id)!.queues.music.context).toEqual({ from, items: [] });
+  });
+
+  it('keeps autoplay’s picks and radio run until the session drops them', () => {
+    const { user, phone } = twoDevices();
+    const start = openSession(db, user.id, phone.id)!;
+    const picked = saveSession(db, user.id, phone.id, start.rev, {
+      ...value(start),
+      autoplay: { music: { after: { ref: song }, next: { ref: album } }, spoken: null },
+      radio: { seed: song, tracks: [] },
+    })!;
+    expect(openSession(db, user.id, phone.id)!.radio).toEqual({ seed: song, tracks: [] });
+
+    saveSession(db, user.id, phone.id, picked.rev, {
+      ...value(picked),
+      autoplay: { music: null, spoken: { after: { ref: book, chapter: 9 }, next: null } },
+      radio: null,
+    });
+
+    const read = openSession(db, user.id, phone.id)!;
+    expect(read.autoplay).toEqual({
+      music: null,
+      spoken: { after: { ref: book, chapter: 9 }, next: null },
+    });
+    expect(read.radio).toBeNull();
   });
 
   it('keeps the device’s last position in its current item, and never one without an item', () => {
