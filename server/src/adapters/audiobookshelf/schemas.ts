@@ -105,11 +105,6 @@ export const bookDetailSchema = z
   })
   .passthrough();
 
-/** `GET /api/items/:id?expanded=1` read for a book's chapters only (recorded): none for a show. */
-export const itemChaptersSchema = z
-  .object({ media: z.object({ chapters: z.array(chapterSchema).optional() }).passthrough() })
-  .passthrough();
-
 /**
  * `POST /api/items/:id/play`: the playback session. `playMethod` 0 is direct play, 2 a transcode
  * (both recorded).
@@ -124,6 +119,12 @@ export const playSessionSchema = z
     /** The item's length in seconds, which every sync reports back. */
     duration: z.number().optional(),
     chapters: z.array(chapterSchema).optional(),
+    /** What plays, as ABS names it: a book's title, or an episode's own title. */
+    displayTitle: z.string().nullable().optional(),
+    /** A book's authors, or a show's author, as one line. */
+    displayAuthor: z.string().nullable().optional(),
+    /** The book's or the show's metadata: for an episode, its `title` is the show's. */
+    mediaMetadata: z.object({ title: z.string().nullable().optional() }).passthrough().optional(),
   })
   .passthrough();
 

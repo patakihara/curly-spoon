@@ -319,7 +319,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** One of this device's queues: its current item, your queue and playing-from */
+        /** One of this device's queues as the queue page shows it: every entry labelled, autoplay's kept pick and the newest plays */
         get: operations["getQueue"];
         /** Reorder or remove entries of one of this device's queues */
         put: operations["putQueue"];
@@ -474,6 +474,15 @@ export interface components {
             ref: components["schemas"]["MediaRef"];
             chapter?: number;
         };
+        QueueViewItem: {
+            /** Format: uuid */
+            itemId: string;
+            ref: components["schemas"]["MediaRef"];
+            chapter?: number;
+            title: string;
+            sub: string | null;
+            duration: number | null;
+        };
         QueuePosition: {
             ms: number;
             takenAt: number;
@@ -483,6 +492,17 @@ export interface components {
         PlayingFrom: {
             kind: components["schemas"]["PlayingFromKind"];
             ref: components["schemas"]["MediaRef"];
+        };
+        QueueViewContext: {
+            from: components["schemas"]["PlayingFrom"];
+            items: components["schemas"]["QueueViewItem"][];
+        };
+        QueueViewAutoplay: {
+            ref: components["schemas"]["MediaRef"];
+            chapter?: number;
+            title: string;
+            sub: string | null;
+            duration: number | null;
         };
         QueueContext: {
             from: components["schemas"]["PlayingFrom"];
@@ -558,6 +578,14 @@ export interface components {
         UserList: {
             users: components["schemas"]["Me"][];
         };
+        /** @enum {string} */
+        PlaybackVariant: "music" | "spoken";
+        PlaybackMeta: {
+            title: string;
+            sub: string | null;
+            art: string | null;
+            variant: components["schemas"]["PlaybackVariant"];
+        };
         PlaybackTrack: {
             url: string;
             mime: string;
@@ -573,6 +601,7 @@ export interface components {
             playId: string;
         };
         PlaybackPlan: {
+            meta: components["schemas"]["PlaybackMeta"];
             tracks: components["schemas"]["PlaybackTrack"][];
             chapters: components["schemas"]["PlaybackChapter"][];
             startAt: number;
@@ -633,6 +662,26 @@ export interface components {
         };
         ListeningSessionList: {
             sessions: components["schemas"]["ListeningSession"][];
+        };
+        QueueViewPlayed: {
+            seq: number;
+            queue: components["schemas"]["QueueType"];
+            ref: components["schemas"]["MediaRef"];
+            chapter?: number;
+            playedAt: number;
+            title: string;
+            sub: string | null;
+            duration: number | null;
+        };
+        QueueView: {
+            type: components["schemas"]["QueueType"];
+            current: components["schemas"]["QueueViewItem"] & (Record<string, never> | null);
+            position: components["schemas"]["QueuePosition"] & (Record<string, never> | null);
+            user: components["schemas"]["QueueViewItem"][];
+            context: components["schemas"]["QueueViewContext"] & (Record<string, never> | null);
+            rev: number;
+            autoplay: components["schemas"]["QueueViewAutoplay"] & (Record<string, never> | null);
+            played: components["schemas"]["QueueViewPlayed"][];
         };
         Queue: {
             type: components["schemas"]["QueueType"];
@@ -1812,7 +1861,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Queue"];
+                    "application/json": components["schemas"]["QueueView"];
                 };
             };
             /** @description The request does not parse, or was refused. */

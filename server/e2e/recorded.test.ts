@@ -6,7 +6,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { type PlaybackPlan } from '@auralis/schema';
+import { type LibraryList, type PlaybackPlan } from '@auralis/schema';
 import { afterEach, describe, expect, it } from 'vitest';
 import { type RecordedServer, recordedServer } from './recorded.js';
 
@@ -96,6 +96,25 @@ describe('the recorded-upstreams server', () => {
     const server = await boot();
     await bearerFor(server);
     await bearerFor(server);
+  });
+
+  it('[M1.shell] lists the recorded books, shows and albums once it has started, each owned', async () => {
+    const server = await boot();
+    const headers = { authorization: `Bearer ${await bearerFor(server)}` };
+    const listed = async (medium: string) => {
+      const res = await server.app.inject({ url: `/api/library/${medium}`, headers });
+      expect(res.statusCode, res.body).toBe(200);
+      return res.json<LibraryList>().items;
+    };
+    for (const [medium, item] of [
+      ['books', server.multiFile],
+      ['podcasts', server.show],
+      ['music', server.album],
+    ] as const) {
+      expect(await listed(medium)).toContainEqual(
+        expect.objectContaining({ ref: item, availability: { kind: 'owned' } }),
+      );
+    }
   });
 
   it('plans the recorded item, and its track answers a range request with 206 audio', async () => {

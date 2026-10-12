@@ -18,7 +18,6 @@ import {
   type ItemDetail,
   type ItemEpisode,
   type ItemTrack,
-  type LibraryEntryKind,
   mediaArt,
   parseMediaRefKey,
   type PlaybackChapter,
@@ -29,6 +28,7 @@ import { albumTracks, episodesInOrder, indexedRow, type StoredRow } from '../lib
 import { Refusal, serve, serveStream, type StreamAnswer } from '../route.js';
 import type { Db } from '../store/connection.js';
 import { type Upstreams, upstreamFor } from '../upstream/links.js';
+import { PAGE_KINDS } from './art.js';
 import { signedIn } from './auth.js';
 import { type AbsAccess, absAccess, entry, jellyfinViews } from './library.js';
 import { refusalFor, type UpstreamAccess } from './play.js';
@@ -38,8 +38,6 @@ export const ART_WIDTH: Record<ArtSize, number> = { small: 192, medium: 512, lar
 
 /** How art is cached: a day, by the person's own client only, since who may see it is checked. */
 const ART_CACHE = 'private, max-age=86400';
-
-const PAGE_KINDS: readonly string[] = ['book', 'show', 'album'] satisfies LibraryEntryKind[];
 
 /** A book, show or album the person may open, with what was learned checking. */
 type Openable =

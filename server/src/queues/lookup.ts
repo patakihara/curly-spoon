@@ -1,9 +1,9 @@
 /**
  * The queue engine's index lookup, as the server runs it: what an item enters a queue as, from
  * the library index. An album enters as its indexed tracks by disc and position, a book as its
- * chapters, an episode or a song as itself. The index keeps no chapters, so a book's chapter
- * count is read from Audiobookshelf as the person, ahead of the engine's synchronous lookup, and
- * kept until the index sees the book change. A Jellyfin item the index does not hold plays as a
+ * chapters, an episode or a song as itself. The index keeps no chapters, so a book's chapters are
+ * read from Audiobookshelf as the person, ahead of the engine's synchronous lookup, and kept until
+ * the index sees the book change; the queue page labels a book's entries with them. A Jellyfin item the index does not hold plays as a
  * lone song: Instant Mix can name tracks the index has not reached yet.
  */
 import type { MediaRef, QueueType } from '@auralis/schema';
@@ -12,16 +12,23 @@ import type { Db } from '../store/connection.js';
 import type { QueueEntry, SessionValue } from '../store/listening.js';
 import type { Expansion } from './engine.js';
 
-/** What reads a book's chapter count, as the person. */
+/** One chapter of a book, in seconds from the start of the book. */
+export interface BookChapter {
+  title: string;
+  start: number;
+  end: number;
+}
+
+/** What reads a book's chapters, as the person. */
 export interface ChapterSource {
-  getChapterCount(itemId: string): Promise<number>;
+  getBookDetail(itemId: string): Promise<{ chapters: BookChapter[] }>;
 }
 
 const key = (ref: MediaRef) => `${ref.source}:${ref.id}`;
 
 export class IndexLookup {
-  /** Each book's chapter count, by ref key, with the index version of the book it was read for. */
-  private readonly chapters = new Map<string, { version: number; count: number }>();
+  /** Each book's chapters, by ref key, with the index version of the book they were read for. */
+  private readonly read = new Map<string, { version: number; chapters: BookChapter[] }>();
 
   constructor(
     private readonly db: Db,
@@ -29,19 +36,19 @@ export class IndexLookup {
   ) {}
 
   /**
-   * Reads the chapter count of every indexed book among `refs` that this lookup does not hold for
-   * the book's current index version. A book whose read fails plays as one entry until a later
-   * read succeeds.
+   * Reads the chapters of every indexed book among `refs` that this lookup does not hold for the
+   * book's current index version. A book whose read fails plays as one entry until a later read
+   * succeeds.
    */
   async load(refs: readonly MediaRef[], abs: ChapterSource | null): Promise<void> {
     if (abs === null) return;
     await Promise.all(
       refs.map(async (ref) => {
         const row = this.book(ref);
-        if (row === null || this.chapters.get(key(ref))?.version === row.version) return;
+        if (row === null || this.read.get(key(ref))?.version === row.version) return;
         try {
-          const count = await abs.getChapterCount(ref.id);
-          this.chapters.set(key(ref), { version: row.version, count });
+          const { chapters } = await abs.getBookDetail(ref.id);
+          this.read.set(key(ref), { version: row.version, chapters });
         } catch (err) {
           this.log.warn({ err, ref }, "a book's chapters could not be read; it plays as one entry");
         }
@@ -76,10 +83,7 @@ export class IndexLookup {
               : { kind: 'show', ref: { source: 'abs', id: row.parentId } },
         };
       case 'book': {
-        const count =
-          this.chapters.get(key(ref))?.version === row.version
-            ? (this.chapters.get(key(ref))?.count ?? 0)
-            : 0;
+        const count = this.chapters(ref)?.length ?? 0;
         const entries: QueueEntry[] =
           count === 0
             ? [{ ref }]
@@ -96,6 +100,13 @@ export class IndexLookup {
     const row = indexedRow(this.db, ref.source, ref.id);
     const tracks = row?.kind === 'album' ? albumTracks(this.db, row.id) : [];
     return new Set([key(ref), ...tracks.map((t) => key({ source: t.source, id: t.id }))]);
+  }
+
+  /** A book's chapters as last read for its current index version; null when none were read. */
+  chapters(ref: MediaRef): readonly BookChapter[] | null {
+    const row = this.book(ref);
+    const held = this.read.get(key(ref));
+    return row !== null && held?.version === row.version ? held.chapters : null;
   }
 
   /**

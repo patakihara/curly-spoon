@@ -75,6 +75,12 @@ export type IndexQueryResult = z.infer<typeof indexQueryResultSchema>;
 export const playableItemSchema = z.object({
   Id: z.string(),
   Type: z.string(),
+  /** What plays and who made it, as a plan names it (recorded). */
+  Name: z.string().nullable().optional(),
+  Artists: z.array(z.string()).nullable().optional(),
+  AlbumArtist: z.string().nullable().optional(),
+  /** A track's album. */
+  AlbumId: z.string().nullable().optional(),
   Container: z.string().nullable().optional(),
   /** The file's streams; the `Audio` one's `Codec` says what the container holds. */
   MediaStreams: z

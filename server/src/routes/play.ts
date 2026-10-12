@@ -15,7 +15,10 @@
  * closes it, with a last report when given; so does planning again on the same device, or its
  * idle time running out. Each play also keeps the device's listening session (`queues/sessions.ts`):
  * the item becomes current, the plan names what plays after it, and progress keeps where the
- * device is, moving the session on through an album's tracks or a book's chapters.
+ * device is, moving the session on through an album's tracks or a book's chapters. When the
+ * session plays something else after the track or chapter the plan is on (an item put next), the
+ * progress answer says where the plan must stop (`endAt`). Every plan names what it plays (`meta`),
+ * as the upstream's own answer names it, with art where this server serves it.
  * The media routes pass a checked `Range` through with the person's own token and send the bytes
  * on as they come, never transcoded or buffered whole. Only the playlist is read whole, parsed,
  * and passed on with bare segment names that resolve under the same route.
@@ -32,6 +35,7 @@ import {
   reportProgress,
   type MediaRef,
   type PlaybackChapter,
+  type PlaybackMeta,
   type PlaybackPlan,
   type PlaybackTrack,
 } from '@auralis/schema';
@@ -53,6 +57,7 @@ import {
   upstreamFor,
   type Upstreams,
 } from '../upstream/links.js';
+import { artOf } from './art.js';
 import { signedIn } from './auth.js';
 import { type JellyfinLine, jellyfinLine, jellyfinReports, planJellyfin } from './jellyfinPlay.js';
 import { OpenPlays, type UpstreamReport } from './openPlays.js';
@@ -127,15 +132,31 @@ export function planChapters(session: AbsSession, length: number): PlaybackChapt
 }
 
 /**
+ * What an Audiobookshelf play is, as its session names it: a book by its title and author, an
+ * episode (of `show`) by its own title and its show's; with the book's or the show's art, where
+ * this server serves it.
+ */
+function absMeta(db: Db, session: AbsSession, ref: MediaRef, show: string | null): PlaybackMeta {
+  const named = session.mediaMetadata?.title ?? null;
+  return {
+    title: session.displayTitle ?? named ?? '',
+    sub: show === null ? (session.displayAuthor ?? null) : named,
+    art: artOf(db, show === null ? ref : { source: 'abs', id: show }),
+    variant: 'spoken',
+  };
+}
+
+/**
  * How to play what ABS answered, reporting to its session, or null when the clients cannot play
  * it: neither direct play of files in types they play, nor one transcode.
  */
-function planFor(session: AbsSession, ref: string): PlaybackPlan | null {
+function planFor(session: AbsSession, ref: string, meta: PlaybackMeta): PlaybackPlan | null {
   const startAt = session.currentTime ?? 0;
   const [first, ...rest] = session.audioTracks;
   const hls = first === undefined || rest.length > 0 ? null : hlsSessionOf(first.contentUrl);
   if (hls !== null && first?.duration !== undefined) {
     return {
+      meta,
       tracks: [
         {
           url: `/api/media/${ref}/hls/${hls}/output.m3u8`,
@@ -170,6 +191,7 @@ function planFor(session: AbsSession, ref: string): PlaybackPlan | null {
   const last = tracks[tracks.length - 1]!;
   const length = last.offset + last.duration;
   return {
+    meta,
     tracks,
     chapters: planChapters(session, length),
     startAt,
@@ -305,6 +327,17 @@ export function playRoutes(
     }
   };
 
+  /** Where the session says a play must stop; a failure is only logged, and says nothing. */
+  const stopAt = (caller: Caller, held: HeldPlan | null): number | undefined => {
+    if (held === null) return undefined;
+    try {
+      return sessions.endAt(caller, held);
+    } catch (err) {
+      app.log.warn({ err }, 'the listening session could not say where the play ends');
+      return undefined;
+    }
+  };
+
   serve(app, play, async (request, _reply, body) => {
     const ref = mediaRefKey(body.ref);
     const caller = signedIn(request);
@@ -313,7 +346,9 @@ export function playRoutes(
       if (parseMediaRefKey(ref) === null) throw new Refusal(400, 'bad_request');
       const { client, userId, deviceId } = await personFor(request, 'jellyfin');
       const item = await client.getPlayable(body.ref.id).catch(refusalFor);
-      const { plan, played } = await planJellyfin(client, item).catch(refusalFor);
+      const { plan, played } = await planJellyfin(client, item, (r) => artOf(db, r)).catch(
+        refusalFor,
+      );
       // Jellyfin's own play session ids are 32 hex digits (recorded).
       const playId = randomUUID().replace(/-/g, '');
       const reports = jellyfinReports(client, played, playId, lineFor(userId, deviceId));
@@ -352,7 +387,7 @@ export function playRoutes(
     const session = await (
       show === null ? abs.play(body.ref.id, device) : abs.playEpisode(show, body.ref.id, device)
     ).catch(refusalFor);
-    const plan = planFor(session, ref);
+    const plan = planFor(session, ref, absMeta(db, session, body.ref, show));
     if (plan === null) {
       // A failed close loses nothing.
       await abs.closeSession(session.id).catch(() => undefined);
@@ -395,8 +430,10 @@ export function playRoutes(
     const { playId, ...report } = body;
     const answer = await open.report(playId, owner, report).catch(refusalFor);
     if (answer === null) throw new Refusal(404, 'not_found');
-    if (answer.taken) keepPosition(caller, open.planOf(playId, owner), report.position);
-    return answer;
+    const held = open.planOf(playId, owner);
+    if (answer.taken) keepPosition(caller, held, report.position);
+    const endAt = stopAt(caller, held);
+    return endAt === undefined ? answer : { ...answer, endAt };
   });
 
   serve(app, closePlay, async (request, _reply, body, { params }) => {

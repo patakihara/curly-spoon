@@ -148,6 +148,7 @@ test('[M0.staging/c] an open tab waiting on the player reloads once the player i
       window as unknown as { AuralisPlayback: { createPlayer: typeof createPlayer } }
     ).AuralisPlayback;
     const plan: PlaybackPlan = {
+      meta: { title: 'A tone', sub: null, art: null, variant: 'spoken' },
       tracks: [{ url: '/e2e/tone.mp3', mime: 'audio/mpeg', duration: 5, offset: 0 }],
       chapters: [],
       startAt: 0,

@@ -75,6 +75,45 @@
           "ref"
         ]
       },
+      "QueueViewItem": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "chapter": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "title": {
+            "type": "string"
+          },
+          "sub": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "duration": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          }
+        },
+        "required": [
+          "itemId",
+          "ref",
+          "title",
+          "sub",
+          "duration"
+        ]
+      },
       "QueuePosition": {
         "type": "object",
         "properties": {
@@ -113,6 +152,58 @@
         "required": [
           "kind",
           "ref"
+        ]
+      },
+      "QueueViewContext": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "$ref": "#/components/schemas/PlayingFrom"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QueueViewItem"
+            }
+          }
+        },
+        "required": [
+          "from",
+          "items"
+        ]
+      },
+      "QueueViewAutoplay": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "chapter": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "title": {
+            "type": "string"
+          },
+          "sub": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "duration": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          }
+        },
+        "required": [
+          "ref",
+          "title",
+          "sub",
+          "duration"
         ]
       },
       "QueueContext": {
@@ -412,6 +503,42 @@
           "users"
         ]
       },
+      "PlaybackVariant": {
+        "type": "string",
+        "enum": [
+          "music",
+          "spoken"
+        ]
+      },
+      "PlaybackMeta": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "sub": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "art": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "variant": {
+            "$ref": "#/components/schemas/PlaybackVariant"
+          }
+        },
+        "required": [
+          "title",
+          "sub",
+          "art",
+          "variant"
+        ]
+      },
       "PlaybackTrack": {
         "type": "object",
         "properties": {
@@ -473,6 +600,9 @@
       "PlaybackPlan": {
         "type": "object",
         "properties": {
+          "meta": {
+            "$ref": "#/components/schemas/PlaybackMeta"
+          },
           "tracks": {
             "type": "array",
             "items": {
@@ -498,6 +628,7 @@
           }
         },
         "required": [
+          "meta",
           "tracks",
           "chapters",
           "startAt",
@@ -760,6 +891,140 @@
         },
         "required": [
           "sessions"
+        ]
+      },
+      "QueueViewPlayed": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "queue": {
+            "$ref": "#/components/schemas/QueueType"
+          },
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "chapter": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "playedAt": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "sub": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "duration": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          }
+        },
+        "required": [
+          "seq",
+          "queue",
+          "ref",
+          "playedAt",
+          "title",
+          "sub",
+          "duration"
+        ]
+      },
+      "QueueView": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/QueueType"
+          },
+          "current": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QueueViewItem"
+              },
+              {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            ]
+          },
+          "position": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QueuePosition"
+              },
+              {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            ]
+          },
+          "user": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QueueViewItem"
+            }
+          },
+          "context": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QueueViewContext"
+              },
+              {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            ]
+          },
+          "rev": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "autoplay": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QueueViewAutoplay"
+              },
+              {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            ]
+          },
+          "played": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QueueViewPlayed"
+            },
+            "maxItems": 20
+          }
+        },
+        "required": [
+          "type",
+          "current",
+          "position",
+          "user",
+          "context",
+          "rev",
+          "autoplay",
+          "played"
         ]
       },
       "Queue": {
@@ -2618,7 +2883,7 @@
     },
     "/api/queues/{type}": {
       "get": {
-        "summary": "One of this device's queues: its current item, your queue and playing-from",
+        "summary": "One of this device's queues as the queue page shows it: every entry labelled, autoplay's kept pick and the newest plays",
         "security": [
           {
             "session": []
@@ -2644,7 +2909,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Queue"
+                  "$ref": "#/components/schemas/QueueView"
                 }
               }
             }

@@ -26,7 +26,6 @@ import {
   hlsSegmentHeadersSchema,
   inoSchema,
   itemIdSchema,
-  itemChaptersSchema,
   itemSchema,
   itemSummarySchema,
   librariesSchema,
@@ -132,13 +131,6 @@ export class AbsClient {
       if (error instanceof AdapterError && error.status === 404) return null;
       throw error;
     }
-  }
-
-  /** How many chapters an item has: a book's, from the same answer as `getItem`; none for a show. */
-  async getChapterCount(itemId: string): Promise<number> {
-    const path = `api/items/${encodeURIComponent(itemId)}`;
-    const item = await this.call(path, itemChaptersSchema, {}, { expanded: '1' });
-    return item.media.chapters?.length ?? 0;
   }
 
   /** A book's length in seconds and its chapters, from the same answer as `getItem`. */

@@ -159,11 +159,12 @@ export const PlaybackMeta = z
 export type PlaybackMeta = z.infer<typeof PlaybackMeta>;
 
 /**
- * How to play an item: its tracks in order, its chapters, where in the item to start, where to
- * report progress, and what plays next. Nothing plays next until the queues do.
+ * How to play an item: what it is, its tracks in order, its chapters, where in the item to start,
+ * where to report progress, and what plays next.
  */
 export const PlaybackPlan = z
   .object({
+    meta: PlaybackMeta,
     tracks: z.array(PlaybackTrack).min(1),
     chapters: z.array(PlaybackChapter),
     startAt: z.number().nonnegative(),

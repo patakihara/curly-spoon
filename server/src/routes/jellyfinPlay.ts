@@ -13,7 +13,13 @@
  * playing, never what plays it: the plan, the report or the close they come with never waits for
  * Jellyfin's answer, and one Jellyfin does not take is logged.
  */
-import { type PlaybackPlan, type PlaybackTrack } from '@auralis/schema';
+import {
+  type ArtUrl,
+  type MediaRef,
+  type PlaybackMeta,
+  type PlaybackPlan,
+  type PlaybackTrack,
+} from '@auralis/schema';
 import { type FastifyBaseLogger } from 'fastify';
 import { type JellyfinClient } from '../adapters/jellyfin/client.js';
 import { type UpstreamReport } from './openPlays.js';
@@ -73,6 +79,28 @@ export interface PlannedTrack {
   duration: number;
 }
 
+/** Names joined into one line; null when there are none. */
+const line = (names: readonly string[] | null | undefined): string | null =>
+  names !== null && names !== undefined && names.length > 0 ? names.join(', ') : null;
+
+/**
+ * What a track or an album is, as Jellyfin names it: a track by its title and artists, with its
+ * album's art; an album by its title and album artist, with its own. `artOf` says where this
+ * server serves an album's art, if it does.
+ */
+function jellyfinMeta(item: PlayableItem, artOf: (ref: MediaRef) => ArtUrl | null): PlaybackMeta {
+  const albumArtist = item.AlbumArtist ?? null;
+  const track = item.Type === 'Audio';
+  const albumId = track ? item.AlbumId : item.Id;
+  return {
+    title: item.Name ?? '',
+    sub: track ? (line(item.Artists) ?? albumArtist) : (albumArtist ?? line(item.Artists)),
+    art:
+      albumId === null || albumId === undefined ? null : artOf({ source: 'jellyfin', id: albumId }),
+    variant: 'music',
+  };
+}
+
 /**
  * How to play a track or an album, short of the play it reports to, with the tracks it plays by
  * their Jellyfin ids; or a refusal: 404 for what is not music or an album with no tracks, 422
@@ -81,6 +109,7 @@ export interface PlannedTrack {
 export async function planJellyfin(
   jellyfin: JellyfinClient,
   item: PlayableItem,
+  artOf: (ref: MediaRef) => ArtUrl | null,
 ): Promise<{ plan: Omit<PlaybackPlan, 'progressTarget'>; played: PlannedTrack[] }> {
   if (item.Type !== 'Audio' && item.Type !== 'MusicAlbum') throw new Refusal(404, 'not_found');
   const files =
@@ -102,7 +131,7 @@ export async function planJellyfin(
     offset += duration;
   }
   if (tracks.length === 0) throw new Refusal(404, 'not_found');
-  return { plan: { tracks, chapters: [], startAt: 0 }, played };
+  return { plan: { meta: jellyfinMeta(item, artOf), tracks, chapters: [], startAt: 0 }, played };
 }
 
 type ReportKind = 'playing' | 'progress' | 'stopped';

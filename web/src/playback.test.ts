@@ -60,7 +60,10 @@ class FakeAudio implements MediaLike {
   }
 }
 
+const meta: PlaybackPlan['meta'] = { title: 'A book', sub: null, art: null, variant: 'spoken' };
+
 const book: PlaybackPlan = {
+  meta,
   tracks: [
     { url: '/api/media/abs:b/tracks/0', mime: 'audio/mpeg', duration: 21, offset: 0 },
     { url: '/api/media/abs:b/tracks/1', mime: 'audio/mpeg', duration: 62, offset: 21 },
@@ -253,6 +256,7 @@ describe('the web player', () => {
   });
 
   const transcode: PlaybackPlan = {
+    meta,
     tracks: [
       { url: '/api/media/abs:b/hls/p1/output.m3u8', mime: HLS_MIME, duration: 168, offset: 0 },
     ],

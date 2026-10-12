@@ -270,7 +270,16 @@ data class PlaybackChapter(
 )
 
 @Serializable
+data class PlaybackMeta(
+    val title: String,
+    val sub: String?,
+    val art: String?,
+    val variant: PlaybackVariant,
+)
+
+@Serializable
 data class PlaybackPlan(
+    val meta: PlaybackMeta,
     val tracks: List<PlaybackTrack>,
     val chapters: List<PlaybackChapter>,
     val startAt: Double,
@@ -285,6 +294,14 @@ data class PlaybackTrack(
     val duration: Double,
     val offset: Double,
 )
+
+@Serializable
+enum class PlaybackVariant {
+    @SerialName("music")
+    MUSIC,
+    @SerialName("spoken")
+    SPOKEN,
+}
 
 @Serializable
 data class PlayingFrom(
@@ -408,6 +425,55 @@ enum class QueueType {
     @SerialName("spoken")
     SPOKEN,
 }
+
+@Serializable
+data class QueueView(
+    val type: QueueType,
+    val current: QueueViewItem?,
+    val position: QueuePosition?,
+    val user: List<QueueViewItem>,
+    val context: QueueViewContext?,
+    val rev: Long,
+    val autoplay: QueueViewAutoplay?,
+    val played: List<QueueViewPlayed>,
+)
+
+@Serializable
+data class QueueViewAutoplay(
+    val ref: MediaRef,
+    val chapter: Long? = null,
+    val title: String,
+    val sub: String?,
+    val duration: Double?,
+)
+
+@Serializable
+data class QueueViewContext(
+    val from: PlayingFrom,
+    val items: List<QueueViewItem>,
+)
+
+@Serializable
+data class QueueViewItem(
+    val itemId: String,
+    val ref: MediaRef,
+    val chapter: Long? = null,
+    val title: String,
+    val sub: String?,
+    val duration: Double?,
+)
+
+@Serializable
+data class QueueViewPlayed(
+    val seq: Long,
+    val queue: QueueType,
+    val ref: MediaRef,
+    val chapter: Long? = null,
+    val playedAt: Long,
+    val title: String,
+    val sub: String?,
+    val duration: Double?,
+)
 
 @Serializable
 data class RenameDeviceBody(

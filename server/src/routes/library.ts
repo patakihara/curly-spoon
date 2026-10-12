@@ -12,7 +12,6 @@ import {
   type LibraryEntryKind,
   listLibrary,
   type MediaRef,
-  mediaRefKey,
 } from '@auralis/schema';
 import type { FastifyInstance } from 'fastify';
 import type { AbsClient } from '../adapters/audiobookshelf/client.js';
@@ -21,6 +20,7 @@ import type { JellyfinClient } from '../adapters/jellyfin/client.js';
 import type { Creator } from '../libraryIndex/rows.js';
 import { type StoredRow, topLevelOfKind } from '../libraryIndex/store.js';
 import { Refusal, serve } from '../route.js';
+import { artUrl } from './art.js';
 import type { Db } from '../store/connection.js';
 import { upstreamFor } from '../upstream/links.js';
 import { signedIn } from './auth.js';
@@ -48,7 +48,7 @@ export function entry(
     kind,
     title: row.title,
     sub: names.length > 0 ? names.join(', ') : null,
-    art: `/api/media/${mediaRefKey(ref)}/art`,
+    art: artUrl(ref),
     progress,
     availability: { kind: 'owned' },
   };

@@ -51,6 +51,7 @@ import {
   Queue,
   QueueParams,
   QueueStyleBody,
+  QueueView,
   StepBody,
 } from './sessions.js';
 import { type z } from './zod.js';
@@ -329,10 +330,11 @@ export const getQueue = {
   method: 'GET',
   path: '/api/queues/{type}',
   operationId: 'getQueue',
-  summary: "One of this device's queues: its current item, your queue and playing-from",
+  summary:
+    "One of this device's queues as the queue page shows it: every entry labelled, autoplay's kept pick and the newest plays",
   responseDescription:
     'The queue, with the newer of where this device was and where the upstream says.',
-  response: Queue,
+  response: QueueView,
   access: 'member',
   params: QueueParams,
 } as const satisfies Route;

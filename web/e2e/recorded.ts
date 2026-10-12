@@ -12,6 +12,10 @@ export interface Recorded {
   origin: string;
   /** The four-file book, as `{ source, id }`. */
   multiFile: { source: string; id: string };
+  /** The show the podcasts list holds, whose recorded episode plays. */
+  show: { source: string; id: string };
+  /** The album the music list holds, which plays. */
+  album: { source: string; id: string };
   stop(): void;
 }
 
@@ -46,10 +50,15 @@ export async function serveRecorded(): Promise<Recorded> {
   });
   const line = (label: string) =>
     new RegExp(`^\\s*${label}:\\s*(\\S+)$`, 'm').exec(banner)?.[1] ?? '';
-  const key = line('four files');
+  const ref = (label: string) => {
+    const key = line(label);
+    return { source: key.slice(0, key.indexOf(':')), id: key.slice(key.indexOf(':') + 1) };
+  };
   return {
     origin: line('app'),
-    multiFile: { source: key.slice(0, key.indexOf(':')), id: key.slice(key.indexOf(':') + 1) },
+    multiFile: ref('four files'),
+    show: ref('show'),
+    album: ref('album'),
     stop: () => void child.kill('SIGTERM'),
   };
 }

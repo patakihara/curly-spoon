@@ -13,7 +13,14 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { ListeningSession, MediaRef, PlaybackPlan, Queue } from '@auralis/schema';
+import type {
+  ListeningSession,
+  MediaRef,
+  PlaybackPlan,
+  ProgressAnswer,
+  Queue,
+  QueueView,
+} from '@auralis/schema';
 import { type FastifyInstance } from 'fastify';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { itemSummarySchema } from './adapters/audiobookshelf/schemas.js';
@@ -26,7 +33,7 @@ import { indexQueryResultSchema } from './adapters/jellyfin/schemas.js';
 import { buildApp } from './app.js';
 import { AUTOPLAY_MISSED } from './queues/sessions.js';
 import { absTree, albumRow, orderingFromFeed, trackRows } from './libraryIndex/rows.js';
-import { applyTree, emptyCounts } from './libraryIndex/store.js';
+import { applyTree, emptyCounts, removeItem } from './libraryIndex/store.js';
 import { openDatabase, type Db } from './store/connection.js';
 import { createDevice } from './store/devices.js';
 import { openSession, savePosition } from './store/listening.js';
@@ -70,8 +77,12 @@ const nextEpisode = ref('abs', 'fef398e0-ce0f-48ad-86fe-9b45c96c1911');
 /** The first track of the recorded Instant Mix for the album's last track that is not that track. */
 const mixPick = tracks[11]!;
 /** The recorded book's chapters, from its recorded answer. */
-const bookChapters = (json(abs('multi-detail')) as { media: { chapters: unknown[] } }).media
-  .chapters.length;
+const chapters = (
+  json(abs('multi-detail')) as {
+    media: { chapters: { title: string; start: number; end: number }[] };
+  }
+).media.chapters;
+const bookChapters = chapters.length;
 
 /** After the recorded progress read, so a position this device keeps now is the newer. */
 const NOW = progressRead.lastUpdate + 60_000;
@@ -234,7 +245,7 @@ async function server(setup: Setup = {}) {
     return answer.json() as T;
   };
   const queue = (who: string, type: 'music' | 'spoken') =>
-    ok<Queue>(call(who, 'GET', `/api/queues/${type}`));
+    ok<QueueView>(call(who, 'GET', `/api/queues/${type}`));
   const put = (who: string, ref: MediaRef, how: string, extra: object = {}) =>
     call(who, 'POST', `/api/queues/${ref.source === 'abs' ? 'spoken' : 'music'}/items`, {
       ref,
@@ -263,7 +274,7 @@ async function server(setup: Setup = {}) {
   };
   /** Reports `position` seconds into the play `playId`, as report number `seq`. */
   const progress = (who: string, playId: string, seq: number, position: number) =>
-    ok<{ taken: boolean }>(
+    ok<ProgressAnswer>(
       call(who, 'POST', '/api/progress', { playId, seq, position, listened: 1, paused: false }),
     );
   return {
@@ -391,8 +402,10 @@ describe('changing a queue through the API', () => {
         user: kept.map((i) => i.itemId),
       }),
     );
-    expect(changed.user).toEqual(kept);
-    expect(changed.current).toEqual(q.current);
+    // The change answers the queue's entries without the labels the queue page shows.
+    const unlabelled = ({ itemId, ref }: { itemId: string; ref: MediaRef }) => ({ itemId, ref });
+    expect(changed.user).toEqual(kept.map(unlabelled));
+    expect(changed.current).toEqual(unlabelled(q.current!));
     expect(changed.rev).toBe(q.rev + 1);
 
     const unknown = await s.call('kara-phone', 'PUT', '/api/queues/music', {
@@ -892,5 +905,190 @@ describe('an episode plays through its show', () => {
     expect(streamed.statusCode).toBe(200);
     expect(s.sent).toContain(`GET ${abs('episode-file').request.path}`);
     expect(s.stored('kara-phone').queues.spoken.current?.ref).toEqual(episode);
+  });
+});
+
+/** A recorded Jellyfin track's label: its title, its artists and its length in seconds. */
+const trackLabel = (t: (typeof albumTracks)[number]) => ({
+  title: t.Name,
+  sub: (t.ArtistItems ?? []).map((a) => a.Name).join(', '),
+  duration: t.RunTimeTicks! / 10_000_000,
+});
+
+describe('[M1.shell] what a plan names', () => {
+  it('names a book by its title and author, with its art, as spoken', async () => {
+    const s = await server();
+    expect((await s.play('kara-phone', bookRef)).meta).toEqual({
+      title: 'Three Poems from “Wild Angels”',
+      sub: 'Ursula K. Le Guin',
+      art: `/api/media/abs:${book.id}/art`,
+      variant: 'spoken',
+    });
+  });
+
+  it('names an episode by its title and its show, with the show’s art, as spoken', async () => {
+    const s = await server();
+    expect((await s.play('kara-phone', episode)).meta).toEqual({
+      title: 'The Marshall Islands, Part Two: For the Good of Humanity and to End All Wars',
+      sub: 'Marshall Islands: After the Bomb Dropped',
+      art: `/api/media/abs:${show.id}/art`,
+      variant: 'spoken',
+    });
+  });
+
+  it('names a Jellyfin track by its title and artist, with its album’s art, as music', async () => {
+    const s = await server();
+    expect((await s.play('kara-phone', tracks[0]!)).meta).toEqual({
+      title: 'Femininomenon',
+      sub: 'Chappell Roan',
+      art: `/api/media/jellyfin:${album.id}/art`,
+      variant: 'music',
+    });
+  });
+
+  it('names an album by its title and album artist, with its art, as music', async () => {
+    const s = await server();
+    expect((await s.play('kara-phone', album)).meta).toEqual({
+      title: 'The Rise and Fall of a Midwest Princess',
+      sub: 'Chappell Roan',
+      art: `/api/media/jellyfin:${album.id}/art`,
+      variant: 'music',
+    });
+  });
+
+  it('names a book the index does not hold, with no art, since the art route would not serve it', async () => {
+    const s = await server();
+    const unindexed = ref('abs', abs('item-play').request.path.split('/')[3]!);
+    expect((await s.play('kara-phone', unindexed)).meta).toEqual({
+      title: 'Exhalation - Stories',
+      sub: 'Ted Chiang',
+      art: null,
+      variant: 'spoken',
+    });
+  });
+});
+
+describe('[M1.shell] GET /api/queues/{type} answers the queue page', () => {
+  it('labels the current entry and your queue from the index: title, artists and length', async () => {
+    const s = await server();
+    await s.ok(s.put('kara-phone', album, 'now'));
+    await s.ok(s.put('kara-phone', lone, 'next'));
+
+    const view = await s.queue('kara-phone', 'music');
+    expect(view.current).toMatchObject({ ref: tracks[0], ...trackLabel(albumTracks[0]!) });
+    expect(view.user[0]).toMatchObject({ ref: lone, ...trackLabel(otherTracks[0]!) });
+    expect(view.user.slice(1)).toEqual(
+      albumTracks.slice(1).map((t) => expect.objectContaining({ ...trackLabel(t) })),
+    );
+    expect(view.autoplay).toBeNull();
+    expect(view.played).toEqual([]);
+  });
+
+  it('labels a book’s chapter entries with the chapter, under the book’s title', async () => {
+    const s = await server();
+    await s.ok(s.put('kara-phone', bookRef, 'now'));
+
+    const view = await s.queue('kara-phone', 'spoken');
+    const [first, second] = chapters;
+    expect(view.current).toMatchObject({
+      ref: bookRef,
+      chapter: 0,
+      title: first!.title,
+      sub: 'Three Poems from “Wild Angels”',
+      duration: first!.end - first!.start,
+    });
+    expect(view.user[0]).toMatchObject({ chapter: 1, title: second!.title });
+  });
+
+  it('labels an episode with its show', async () => {
+    const s = await server();
+    await s.ok(s.put('kara-phone', episode, 'now'));
+
+    expect((await s.queue('kara-phone', 'spoken')).current).toMatchObject({
+      ref: episode,
+      title: 'The Marshall Islands, Part Two: For the Good of Humanity and to End All Wars',
+      sub: 'Marshall Islands: After the Bomb Dropped',
+    });
+  });
+
+  it('names autoplay’s kept pick, labelled, without asking an upstream for it again', async () => {
+    const s = await server();
+    await s.ok(s.put('kara-phone', album, 'now'));
+    const q = await s.queue('kara-phone', 'music');
+    await s.ok(s.call('kara-phone', 'PUT', '/api/queues/music', { rev: q.rev, user: [] }));
+    await s.autoplayed('kara-phone');
+
+    const asked = s.sent.length;
+    const view = await s.queue('kara-phone', 'music');
+    expect(view.autoplay).toEqual({ ref: tracks[1], ...trackLabel(albumTracks[1]!) });
+    expect(s.sent.slice(asked)).toEqual([]);
+  });
+
+  it('lists the session’s newest 20 plays, newest last, each labelled', async () => {
+    const s = await server();
+    await s.ok(s.put('kara-phone', album, 'now'));
+    for (let n = 0; n < 13; n += 1) await s.stepped('kara-phone', 'next');
+    await s.ok(s.put('kara-phone', album, 'now'));
+    for (let n = 0; n < 13; n += 1) await s.stepped('kara-phone', 'next');
+    const history = s.stored('kara-phone').history;
+    expect(history.length).toBeGreaterThan(20);
+
+    const view = await s.queue('kara-phone', 'music');
+    expect(view.played.map((p) => p.seq)).toEqual(history.slice(-20).map((h) => h.seq));
+    const last = history.at(-1)!;
+    const track = albumTracks.find((t) => t.Id === last.ref.id)!;
+    expect(view.played.at(-1)).toEqual({
+      seq: last.seq,
+      queue: 'music',
+      ref: last.ref,
+      playedAt: last.playedAt,
+      ...trackLabel(track),
+    });
+  });
+
+  it('labels a track the index does not hold from Jellyfin, as the person', async () => {
+    const s = await server();
+    await s.ok(s.put('kara-phone', album, 'now'));
+    removeItem(s.db, 'jellyfin', tracks[0]!.id, emptyCounts());
+
+    const view = await s.queue('kara-phone', 'music');
+    expect(view.current).toMatchObject({ ref: tracks[0], ...trackLabel(albumTracks[0]!) });
+    expect(s.sent).toContain(`GET /Items/${tracks[0]!.id}`);
+  });
+});
+
+describe('[M1.shell] a progress answer cuts the plan where the session plays something else next', () => {
+  it('says nothing while the album plays on, and the end of its track once an item is put next', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', album);
+    const { playId } = plan.progressTarget;
+    const before = await s.progress('kara-phone', playId, 0, plan.tracks[2]!.offset + 5);
+    expect(before.endAt).toBeUndefined();
+
+    await s.ok(s.put('kara-phone', lone, 'next'));
+    const after = await s.progress('kara-phone', playId, 1, plan.tracks[2]!.offset + 6);
+    expect(after.endAt).toBe(plan.tracks[3]!.offset);
+  });
+
+  it('cuts a book at the end of its chapter once an episode is put next', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', bookRef);
+    const { playId } = plan.progressTarget;
+    await s.progress('kara-phone', playId, 0, plan.chapters[1]!.start + 3);
+    await s.ok(s.put('kara-phone', episode, 'next'));
+
+    const answer = await s.progress('kara-phone', playId, 1, plan.chapters[1]!.start + 4);
+    expect(answer.endAt).toBe(plan.chapters[2]!.start);
+  });
+
+  it('says nothing on the plan’s last entry, where the plan ends anyway', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', album);
+    const last = plan.tracks.at(-1)!;
+    await s.progress('kara-phone', plan.progressTarget.playId, 0, last.offset + 5);
+    await s.ok(s.put('kara-phone', lone, 'next'));
+
+    const answer = await s.progress('kara-phone', plan.progressTarget.playId, 1, last.offset + 6);
+    expect(answer.endAt).toBeUndefined();
   });
 });

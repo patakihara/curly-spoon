@@ -179,6 +179,7 @@ describe('playing a Jellyfin track', () => {
     const { plan } = await server();
     const first = await plan(trackId);
     expect(first).toEqual({
+      meta: expect.objectContaining({ title: 'Femininomenon', variant: 'music' }) as unknown,
       tracks: [expect.objectContaining({ url: trackUrl(trackId) })],
       chapters: [],
       startAt: 0,

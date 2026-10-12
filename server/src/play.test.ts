@@ -240,6 +240,8 @@ describe('playing one Audiobookshelf item by direct play', () => {
     const { plan } = await server();
     const session = jsonOf<RecordedSession>(itemPlay);
     expect(await plan()).toEqual({
+      // Named as its session names it; the index holds no book here, so no art is served.
+      meta: { title: 'Exhalation - Stories', sub: 'Ted Chiang', art: null, variant: 'spoken' },
       tracks: [
         {
           url: trackUrl(0),
