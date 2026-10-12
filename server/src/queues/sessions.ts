@@ -13,6 +13,13 @@
  * item: from the start of a book for its chapters, from the start of a track for an album's. On a
  * play or a read, the newer of that and the item's upstream progress, which every device shares,
  * wins.
+ *
+ * A seek is not a play: a position in an earlier track or chapter of the plan moves the current
+ * entry back to it, with nothing recorded in history and nothing taken out of it. Only the
+ * device's current play moves its session: the play it started last, until a Back, a Next, a Play
+ * now or the switch moves the controls off the entry it played. A late report from a play no
+ * longer current changes nothing on the session (the upstream still hears it). The play is named
+ * by the play id its plan answered, which every report carries.
  */
 import { randomUUID } from 'node:crypto';
 import {
@@ -57,8 +64,12 @@ export interface PlanEntry {
   start: number;
 }
 
-/** A play the device holds: the ref key it was planned for, and the entries it plays, in order. */
+/**
+ * A play the device holds: its play id, the ref key it was planned for, and the entries it plays,
+ * in order.
+ */
 export interface HeldPlan {
+  playId: string;
   ref: string;
   entries: readonly PlanEntry[];
 }
@@ -124,9 +135,17 @@ const valueOf = ({
 
 const currentOf = (s: SessionValue) => s.queues[s.active].current;
 
+/** What the controls drive: the active queue and its current entry. */
+const controlled = (s: SessionValue) => `${s.active} ${currentOf(s)?.itemId ?? ''}`;
+
 export class Sessions {
   /** The autoplay runs each device has under way, by `userId deviceId`. */
   private readonly preparing = new Map<string, Set<Promise<void>>>();
+  /**
+   * Each device's current play id, by `userId deviceId`: held in memory, like the plays themselves,
+   * so a restart forgets both together.
+   */
+  private readonly plays = new Map<string, string>();
 
   constructor(
     private readonly options: {
@@ -188,6 +207,9 @@ export class Sessions {
     const s = this.open(caller);
     if (rev !== undefined && rev !== s.rev) throw new Refusal(409, 'stale_revision');
     const saved = this.save(caller, s, change(valueOf(s)));
+    // A Back, a Next, a Play now or the switch moves the controls off the play's entry: the play
+    // is no longer current, and its late reports change nothing.
+    if (controlled(saved) !== controlled(s)) this.plays.delete(this.device(caller));
     this.refreshAutoplay(caller);
     return saved;
   }
@@ -219,14 +241,17 @@ export class Sessions {
    * position and the upstream's, when the session holds one. With nothing queued after the plan
    * and no autoplay pick kept for its end, it waits for the run this play starts, up to the wait;
    * past it, it answers nothing next and the run goes on (the client reads the pick on its Next).
+   * `playId` becomes the device's current play.
    */
   async played(
     caller: Caller,
+    playId: string,
     ref: MediaRef,
     heldBefore: string | null,
     entries: readonly PlanEntry[],
   ): Promise<{ next: MediaRef | undefined; position: QueuePosition | null }> {
     const { lookup } = this.options;
+    this.plays.set(this.device(caller), playId);
     await this.load(caller, [ref]);
     const covered = lookup.covered(ref);
     const s = this.open(caller);
@@ -364,13 +389,18 @@ export class Sessions {
   }
 
   /**
-   * Keeps where this device is in the plan it holds, from a report `seconds` into the plan. When
+   * Keeps where this device is in the plan it holds, from a report `seconds` into the plan, when
+   * the plan is the device's current play; a report from any other play changes nothing. When
    * the position falls in a later entry of the plan than the queue's current one, the active
    * queue steps on to it, each entry passed recorded as played; an entry outside the plan in
-   * between (an item put next) stops it, and so does a position before the current entry. Then
-   * works autoplay out again when the last run is over two minutes old.
+   * between (an item put next) stops it. When it falls in an earlier one, a seek back, the
+   * active queue moves back to it, history untouched. Then works autoplay out again when the
+   * last run is over two minutes old.
    */
   progress(caller: Caller, plan: HeldPlan, seconds: number): void {
+    // Decision (M1.sessions): a report applies only when it belongs to the device's current play;
+    // a late one from a play a Back, Next or Play now left behind would undo that step.
+    if (this.plays.get(this.device(caller)) !== plan.playId) return;
     const s = this.open(caller);
     const now = this.options.now();
     const at = entryAt(plan.entries, seconds);
@@ -412,11 +442,62 @@ export class Sessions {
           this.save(caller, s, stepped);
           moved = true;
         }
+      } else if (placed > at && queue === s.active) {
+        // Decision (M1.sessions): a seek is not a play. The session moves back to the entry the
+        // position falls in and keeps the position there; nothing is recorded or removed.
+        const back = this.movedBack(valueOf(s), queue, plan.entries, at, placed);
+        back.queues[queue].position = position(target?.entry, target?.start ?? 0);
+        this.save(caller, s, back);
+        moved = true;
       }
     }
     if (moved || (autoplayStale(s, now) && !this.preparing.has(this.device(caller)))) {
       this.refreshAutoplay(caller);
     }
+  }
+
+  /**
+   * `s` with `queue`'s current entry, plan entry `from`, moved back to plan entry `to`. The
+   * entries in between, and the one it leaves, wait again ahead of what followed them: before the
+   * plan's next entry when the playing-from list holds it, else at the front of the queue, behind
+   * a Back walk's entries. The entry moved to follows the play its last play followed, so Back
+   * from it returns there. History is left as it is.
+   */
+  private movedBack(
+    s: SessionValue,
+    queue: QueueType,
+    entries: readonly PlanEntry[],
+    to: number,
+    from: number,
+  ): SessionValue {
+    const t = structuredClone(s);
+    const q = t.queues[queue];
+    const left = q.current!;
+    const target = entries[to]!.entry;
+    const waiting: SessionItem[] = [
+      ...entries
+        .slice(to + 1, from)
+        .map(({ entry }): SessionItem => ({ ...entry, itemId: this.deps.newId() })),
+      plain(left),
+    ];
+    const following = entries[from + 1]?.entry;
+    const inContext =
+      following === undefined || q.context === null
+        ? -1
+        : q.context.items.findIndex((i) => sameEntry(i, following));
+    if (inContext !== -1) q.context!.items.splice(inContext, 0, ...waiting.map(plain));
+    else {
+      const at = q.user.findIndex((i) => i.walk === undefined);
+      q.user.splice(at === -1 ? q.user.length : at, 0, ...waiting);
+    }
+    const last = t.history.findLast((h) => h.queue === queue && sameEntry(h, target));
+    const after = last === undefined ? (left.replayOf ?? left.after) : last.after;
+    q.current = {
+      ...target,
+      itemId: this.deps.newId(),
+      ...(after === undefined ? {} : { after }),
+    };
+    return t;
   }
 
   /** `s` stepped next through exactly `path`, in order; null when a step lands anywhere else. */

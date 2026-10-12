@@ -613,6 +613,138 @@ describe('a plan of many tracks or chapters, through its progress reports', () =
   });
 });
 
+describe('[M1.sessions/d] a seek back within a plan, and reports from a play no longer current', () => {
+  it('[M1.sessions/d] moves a book back to the chapter a seek lands in, keeping the position and leaving history alone; Next plays the chapter after it', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', bookRef);
+    const { playId } = plan.progressTarget;
+    await s.progress('kara-phone', playId, 0, plan.chapters[3]!.start + 6);
+    const history = s.stored('kara-phone').history;
+    expect(history.map((h) => h.chapter)).toEqual([0, 1, 2]);
+
+    await s.progress('kara-phone', playId, 1, 30);
+    const kept = s.stored('kara-phone');
+    expect(kept.queues.spoken.current).toMatchObject({ ref: bookRef, chapter: 1 });
+    expect(kept.queues.spoken.position).toEqual({ ms: 30_000, takenAt: NOW });
+    expect(kept.history).toEqual(history);
+    const queued = await s.queue('kara-phone', 'spoken');
+    expect(queued.current).toMatchObject({ ref: bookRef, chapter: 1 });
+    expect(queued.position).toEqual({ ms: 30_000, takenAt: NOW });
+
+    expect((await s.play('kara-phone', bookRef)).startAt).toBe(30);
+    expect((await s.stepped('kara-phone', 'next')).currents.spoken).toMatchObject({
+      ref: bookRef,
+      chapter: 2,
+    });
+  });
+
+  it('[M1.sessions/d] moves an album back to the track a seek lands in, keeping the position in it; Next plays the track after it', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', album);
+    const { playId } = plan.progressTarget;
+    await s.progress('kara-phone', playId, 0, plan.tracks[9]!.offset + 5);
+    const history = s.stored('kara-phone').history;
+    expect(history.map((h) => h.ref)).toEqual(tracks.slice(0, 9));
+
+    await s.progress('kara-phone', playId, 1, 30);
+    const kept = s.stored('kara-phone');
+    expect(kept.queues.music.current?.ref).toEqual(tracks[0]);
+    expect(kept.queues.music.position).toEqual({ ms: 30_000, takenAt: NOW });
+    expect(kept.history).toEqual(history);
+
+    expect((await s.play('kara-phone', album)).startAt).toBeCloseTo(30, 3);
+    expect((await s.stepped('kara-phone', 'next')).currents.music?.ref).toEqual(tracks[1]);
+  });
+
+  it('[M1.sessions/d] follows a book resumed at the upstream’s newer position: later reports are kept and Next plays the following chapter', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', bookRef);
+    await s.progress('kara-phone', plan.progressTarget.playId, 0, plan.chapters[3]!.start + 6);
+    const kara = s.stored('kara-phone');
+    // Another device listened since: the upstream's progress is newer than this device's.
+    savePosition(s.db, kara.userId, kara.deviceId, 'spoken', kara.queues.spoken.current!.itemId, {
+      ms: Math.round((plan.chapters[3]!.start + 6) * 1000),
+      takenAt: progressRead.lastUpdate - 1,
+    });
+
+    const resumed = await s.play('kara-phone', bookRef);
+    expect(resumed.startAt).toBe(progressRead.currentTime);
+    const at = progressRead.currentTime + 2;
+    const chapter = resumed.chapters.findLastIndex((c) => c.start <= at);
+    await s.progress('kara-phone', resumed.progressTarget.playId, 0, at);
+    const kept = s.stored('kara-phone');
+    expect(kept.queues.spoken.current).toMatchObject({ ref: bookRef, chapter });
+    expect(kept.queues.spoken.position).toEqual({ ms: at * 1000, takenAt: NOW });
+
+    expect((await s.stepped('kara-phone', 'next')).currents.spoken).toMatchObject({
+      ref: bookRef,
+      chapter: chapter + 1,
+    });
+  });
+
+  it('[M1.sessions/d] ignores a late report from a play a Next moved the session off', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', bookRef);
+    const { playId } = plan.progressTarget;
+    await s.progress('kara-phone', playId, 0, 30);
+    await s.stepped('kara-phone', 'next');
+    const before = s.stored('kara-phone');
+    expect(before.queues.spoken.current).toMatchObject({ ref: bookRef, chapter: 2 });
+
+    expect((await s.progress('kara-phone', playId, 1, 31)).taken).toBe(true);
+    const after = s.stored('kara-phone');
+    expect([after.rev, after.queues, after.history]).toEqual([
+      before.rev,
+      before.queues,
+      before.history,
+    ]);
+  });
+
+  it('[M1.sessions/d] ignores a late report from a play a Back moved the session off; the play planned after it is followed', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', bookRef);
+    await s.progress('kara-phone', plan.progressTarget.playId, 0, 90);
+    expect((await s.stepped('kara-phone', 'back')).currents.spoken).toMatchObject({
+      ref: bookRef,
+      chapter: 1,
+    });
+    const before = s.stored('kara-phone');
+
+    await s.progress('kara-phone', plan.progressTarget.playId, 1, 91);
+    const after = s.stored('kara-phone');
+    expect([after.rev, after.queues, after.history]).toEqual([
+      before.rev,
+      before.queues,
+      before.history,
+    ]);
+
+    const again = await s.play('kara-phone', bookRef);
+    await s.progress('kara-phone', again.progressTarget.playId, 0, plan.chapters[2]!.start + 1);
+    expect(s.stored('kara-phone').queues.spoken.current).toMatchObject({
+      ref: bookRef,
+      chapter: 2,
+    });
+  });
+
+  it('[M1.sessions/d] ignores a late report from a play a Play now replaced', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', bookRef);
+    const { playId } = plan.progressTarget;
+    await s.progress('kara-phone', playId, 0, 30);
+    await s.ok(s.put('kara-phone', bookRef, 'now'));
+    const before = s.stored('kara-phone');
+    expect(before.queues.spoken.current).toMatchObject({ ref: bookRef, chapter: 0 });
+
+    await s.progress('kara-phone', playId, 1, 90);
+    const after = s.stored('kara-phone');
+    expect([after.rev, after.queues, after.history]).toEqual([
+      before.rev,
+      before.queues,
+      before.history,
+    ]);
+  });
+});
+
 describe('autoplay, as a play or a Next meets it', () => {
   it('[M1.sessions/e] names the next episode on a first play, waiting for autoplay to work it out', async () => {
     const s = await server({ slow: { '/api/me': 100 } });

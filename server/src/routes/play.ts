@@ -275,7 +275,13 @@ export function playRoutes(
     entries: readonly PlanEntry[],
   ): Promise<PlaybackPlan> => {
     try {
-      const { next, position } = await sessions.played(caller, ref, heldBefore, entries);
+      const { next, position } = await sessions.played(
+        caller,
+        plan.progressTarget.playId,
+        ref,
+        heldBefore,
+        entries,
+      );
       const last = plan.tracks[plan.tracks.length - 1]!;
       const length = last.offset + last.duration;
       return {

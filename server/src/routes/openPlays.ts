@@ -91,10 +91,10 @@ export class OpenPlays {
     }
   }
 
-  /** The plan this person's device holds under `playId`: its ref key and entries; or null. */
+  /** The plan this person's device holds under `playId`: its id, ref key and entries; or null. */
   planOf(playId: string, owner: Owner): HeldPlan | null {
     const held = this.owned(playId, owner);
-    return held === null ? null : { ref: held.ref, entries: held.entries };
+    return held === null ? null : { playId, ref: held.ref, entries: held.entries };
   }
 
   /** The ref key of the play a device holds now, or null when it holds none. */
