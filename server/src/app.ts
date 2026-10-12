@@ -15,11 +15,14 @@ import { authRoutes } from './routes/auth.js';
 import { bookmarkRoutes } from './routes/bookmarks.js';
 import { deviceRoutes } from './routes/devices.js';
 import { type PlaybackOptions, playRoutes, type UpstreamAccess } from './routes/play.js';
+import { IndexLookup } from './queues/lookup.js';
+import { Sessions } from './queues/sessions.js';
+import { sessionRoutes } from './routes/sessions.js';
 import { setupRoutes } from './routes/setup.js';
 import { SIGN_IN_PAGE, signOnRoutes } from './routes/signOn.js';
 import type { Db } from './store/connection.js';
 import type { Random } from './store/signIn.js';
-import type { Linker } from './upstream/links.js';
+import { type Linker, upstreamFor } from './upstream/links.js';
 
 export interface BuildAppOptions {
   /** web's build output; `null`, or a path that does not exist, serves no web app. */
@@ -106,9 +109,22 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   authRoutes(app, { db, cookieSecure });
   deviceRoutes(app, { db, cookieSecure });
   adminRoutes(app, { db });
+  const upstreams = options.upstreams ?? null;
+  const sessions = new Sessions({
+    db,
+    lookup: new IndexLookup(db, app.log),
+    clients: (caller) =>
+      upstreams === null
+        ? { abs: null, jellyfin: null }
+        : upstreamFor({ db, ...upstreams }, caller),
+    now: options.now ?? Date.now,
+    log: app.log,
+  });
+  sessionRoutes(app, { sessions });
   playRoutes(app, {
     db,
-    upstreams: options.upstreams ?? null,
+    upstreams,
+    sessions,
     ...(options.playback ? { playback: options.playback } : {}),
     ...(options.now ? { now: options.now } : {}),
   });

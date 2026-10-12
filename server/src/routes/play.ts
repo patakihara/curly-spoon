@@ -12,7 +12,9 @@
  * repeat counts the listening twice; to Jellyfin, as `jellyfinPlay.ts` says, through the device's
  * line, never waiting for Jellyfin's answer. `POST /api/play/{playId}/close`
  * closes it, with a last report when given; so does planning again on the same device, or its
- * idle time running out.
+ * idle time running out. Each play also keeps the device's listening session (`queues/sessions.ts`):
+ * the item becomes current, the plan names what plays after it, and progress keeps where the
+ * device is.
  * The media routes pass a checked `Range` through with the person's own token and send the bytes
  * on as they come, never transcoded or buffered whole. Only the playlist is read whole, parsed,
  * and passed on with bare segment names that resolve under the same route.
@@ -27,6 +29,7 @@ import {
   closePlay,
   play,
   reportProgress,
+  type MediaRef,
   type PlaybackChapter,
   type PlaybackPlan,
   type PlaybackTrack,
@@ -39,6 +42,7 @@ import {
 } from '../adapters/audiobookshelf/schemas.js';
 import { AdapterError, type FetchLike } from '../adapters/http/fetch.js';
 import { RangeNotSatisfiable, type UpstreamFile } from '../adapters/stream.js';
+import type { Caller, Sessions } from '../queues/sessions.js';
 import { Refusal, serve, serveStream, type StreamAnswer } from '../route.js';
 import type { Db } from '../store/connection.js';
 import {
@@ -200,11 +204,13 @@ export function playRoutes(
   options: {
     db: Db;
     upstreams: UpstreamAccess | null;
+    /** This device's listening session, which every play and progress report keeps. */
+    sessions: Sessions;
     playback?: PlaybackOptions;
     now?: () => number;
   },
 ): void {
-  const { db, upstreams } = options;
+  const { db, upstreams, sessions } = options;
   const segmentWait = options.playback?.segmentWait ?? DEFAULT_SEGMENT_WAIT;
   const transcodeIdleMs = options.playback?.idleMs ?? DEFAULT_IDLE_MS;
   const directIdleMs = options.playback?.directIdleMs ?? DEFAULT_DIRECT_IDLE_MS;
@@ -244,8 +250,46 @@ export function playRoutes(
     return { abs: client, ...owner };
   };
 
+  /**
+   * The plan as this device's session has it: what plays after it, and where to start when the
+   * session's position in the item is newer than the upstream's. A session that cannot be kept
+   * (logged) leaves the plan as the upstream planned it.
+   */
+  const inSession = async (
+    caller: Caller,
+    plan: PlaybackPlan,
+    ref: MediaRef,
+    heldBefore: string | null,
+  ): Promise<PlaybackPlan> => {
+    try {
+      const { next, position } = await sessions.played(caller, ref, heldBefore);
+      const last = plan.tracks[plan.tracks.length - 1]!;
+      const length = last.offset + last.duration;
+      return {
+        ...plan,
+        ...(position === null ? {} : { startAt: Math.min(position.ms / 1000, length) }),
+        ...(next === undefined ? {} : { next }),
+      };
+    } catch (err) {
+      app.log.warn({ err }, 'the listening session could not keep this play');
+      return plan;
+    }
+  };
+
+  /** Keeps where the device is in a play's item on its session; a failure is only logged. */
+  const keepPosition = (caller: Caller, refKey: string | null, position: number) => {
+    if (refKey === null) return;
+    try {
+      sessions.progress(caller, refKey, position);
+    } catch (err) {
+      app.log.warn({ err }, 'the listening session could not keep a position');
+    }
+  };
+
   serve(app, play, async (request, _reply, body) => {
     const ref = mediaRefKey(body.ref);
+    const caller = signedIn(request);
+    const heldBefore = open.heldBy({ userId: caller.id, deviceId: caller.deviceId });
     if (body.ref.source === 'jellyfin') {
       if (parseMediaRefKey(ref) === null) throw new Refusal(400, 'bad_request');
       const { client, userId, deviceId } = await personFor(request, 'jellyfin');
@@ -270,7 +314,7 @@ export function playRoutes(
           close: async (report) => reports.close(report),
         });
       });
-      return { ...plan, progressTarget: { playId } };
+      return inSession(caller, { ...plan, progressTarget: { playId } }, body.ref, heldBefore);
     }
     const { abs, userId, deviceId } = await absFor(request);
     const session = await abs
@@ -303,23 +347,28 @@ export function playRoutes(
         close: (report) => abs.closeSession(playId, report && sync(report)),
       }),
     );
-    return plan;
+    return inSession(caller, plan, body.ref, heldBefore);
   });
 
   serve(app, reportProgress, async (request, _reply, body) => {
     await open.sweep();
-    const { id: userId, deviceId } = signedIn(request);
+    const caller = signedIn(request);
+    const owner = { userId: caller.id, deviceId: caller.deviceId };
     const { playId, ...report } = body;
-    const answer = await open.report(playId, { userId, deviceId }, report).catch(refusalFor);
+    const answer = await open.report(playId, owner, report).catch(refusalFor);
     if (answer === null) throw new Refusal(404, 'not_found');
+    if (answer.taken) keepPosition(caller, open.refOf(playId, owner), report.position);
     return answer;
   });
 
   serve(app, closePlay, async (request, _reply, body, { params }) => {
     await open.sweep();
-    const { id: userId, deviceId } = signedIn(request);
-    const closed = await open.finish(params.playId, { userId, deviceId }, body).catch(refusalFor);
+    const caller = signedIn(request);
+    const owner = { userId: caller.id, deviceId: caller.deviceId };
+    const refKey = open.refOf(params.playId, owner);
+    const closed = await open.finish(params.playId, owner, body).catch(refusalFor);
     if (!closed) throw new Refusal(404, 'not_found');
+    if (body !== undefined) keepPosition(caller, refKey, body.position);
     return { ok: true };
   });
 

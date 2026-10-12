@@ -88,6 +88,19 @@ export class OpenPlays {
     }
   }
 
+  /** The ref key of the play this person's device holds under `playId`, or null. */
+  refOf(playId: string, owner: Owner): string | null {
+    return this.owned(playId, owner)?.ref ?? null;
+  }
+
+  /** The ref key of the play a device holds now, or null when it holds none. */
+  heldBy(owner: Owner): string | null {
+    for (const held of this.held.values()) {
+      if (held.userId === owner.userId && held.deviceId === owner.deviceId) return held.ref;
+    }
+    return null;
+  }
+
   /** The play, if this person's device opened it under this ref, marked as just asked for. */
   touch(playId: string, owner: Owner & { ref: string }): OpenPlay | null {
     const held = this.owned(playId, owner);

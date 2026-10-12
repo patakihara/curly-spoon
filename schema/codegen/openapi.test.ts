@@ -125,4 +125,29 @@ describe('the OpenAPI document', () => {
       const: 'audio/x-tone',
     });
   });
+
+  it('keeps a named schema as it is when a route first reaches it as `.nullable()`', () => {
+    const Item = z.object({ id: z.string() }).openapi('Item');
+    const Kind = z.enum(['a', 'b']).openapi('Kind');
+    const Shelf = z
+      .object({
+        current: Item.nullable(),
+        kind: Kind.nullable(),
+        items: z.array(Item),
+        first: Kind,
+      })
+      .openapi('Shelf');
+    const doc = buildOpenApiDocument([{ ...open, response: Shelf }], ErrorResponse);
+    const schemas = doc.components?.schemas;
+    expect(schemas?.Item).toMatchObject({ type: 'object' });
+    expect(schemas?.Kind).toMatchObject({ type: 'string' });
+    expect(schemas?.Shelf).toMatchObject({
+      properties: {
+        current: { allOf: [{ $ref: '#/components/schemas/Item' }, { type: ['object', 'null'] }] },
+        kind: { allOf: [{ $ref: '#/components/schemas/Kind' }, { type: ['string', 'null'] }] },
+        items: { type: 'array', items: { $ref: '#/components/schemas/Item' } },
+        first: { $ref: '#/components/schemas/Kind' },
+      },
+    });
+  });
 });

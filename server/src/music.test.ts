@@ -100,6 +100,8 @@ async function server(
   );
   const fetch: FetchLike = async (url, init) => {
     const headers = new Headers(init?.headers);
+    // Autoplay's own read, made in the background once a play starts, is not what these watch.
+    if (new URL(url).pathname.endsWith('/InstantMix')) return replay(url, init);
     sent.push({
       method: init?.method ?? 'GET',
       path: new URL(url).pathname,

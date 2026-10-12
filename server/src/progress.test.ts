@@ -96,6 +96,8 @@ async function server(
   const fetch: FetchLike = async (url, init) => {
     const body = typeof init?.body === 'string' ? (JSON.parse(init.body) as unknown) : undefined;
     const path = new URL(url).pathname;
+    // Autoplay's own read, made in the background once a play starts, is not what these watch.
+    if (path.endsWith('/InstantMix')) return replay(url, init);
     sent.push({
       method: init?.method ?? 'GET',
       path,

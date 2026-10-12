@@ -2,8 +2,9 @@
  * Listening sessions: what plays on one device. Each of a user's devices keeps its own session,
  * never mixed with another's: a music queue and a spoken queue that podcasts and books share, the
  * queue the controls drive, the queue style and the play history. A session's `rev` goes up on
- * every change, and a write naming an older one is refused, so two tabs on one device cannot
- * overwrite each other.
+ * every change to what it queues, and a write naming an older one is refused, so two tabs on one
+ * device cannot overwrite each other. Where playback is in the current item, and autoplay's pick,
+ * are kept as playback goes and leave `rev` alone, so a progress report never makes a view stale.
  */
 import { MediaRef } from './play.js';
 import { z } from './zod.js';
@@ -19,8 +20,8 @@ export type QueueType = z.infer<typeof QueueType>;
 export const QueueStyle = z.enum(['youtube', 'spotify']).openapi('QueueStyle');
 export type QueueStyle = z.infer<typeof QueueStyle>;
 
-/** A session's revision: it goes up by one on every change. */
-export const Revision = z.number().int().nonnegative().openapi('Revision');
+/** A session's revision: it goes up by one on every change to what it queues. */
+export const Revision = z.number().int().nonnegative();
 export type Revision = z.infer<typeof Revision>;
 
 /**
@@ -102,6 +103,12 @@ export const HistoryEntry = z
   .openapi('HistoryEntry');
 export type HistoryEntry = z.infer<typeof HistoryEntry>;
 
+/** Each queue's current item: what plays, or would play again once that queue is active. */
+export const QueueCurrents = z
+  .object({ music: QueueItem.nullable(), spoken: QueueItem.nullable() })
+  .openapi('QueueCurrents');
+export type QueueCurrents = z.infer<typeof QueueCurrents>;
+
 /**
  * One device's listening session, as the session list shows it: the device, whether it is the
  * one asking, the queue the controls drive, the queue to land on after the current item when one
@@ -115,7 +122,7 @@ export const ListeningSession = z
     active: QueueType,
     switchAfterCurrent: QueueType.nullable(),
     queueStyle: QueueStyle,
-    currents: z.object({ music: QueueItem.nullable(), spoken: QueueItem.nullable() }),
+    currents: QueueCurrents,
     rev: Revision,
     updatedAt: z.number().int(),
   })
@@ -127,3 +134,60 @@ export const ListeningSessionList = z
   .object({ sessions: z.array(ListeningSession) })
   .openapi('ListeningSessionList');
 export type ListeningSessionList = z.infer<typeof ListeningSessionList>;
+
+/** One of this device's queues, by its type, as it sits in a path. */
+export const QueueParams = z.object({ type: QueueType });
+export type QueueParams = z.infer<typeof QueueParams>;
+
+/**
+ * This device's queue rewritten by its entries' ids: `user` is your queue and `context` what is
+ * left of playing-from, each in the order given. An entry left out is removed; every id named must
+ * be one of the queue's own entries (not its current item), named once. `rev` must be the
+ * session's revision, else 409.
+ */
+export const PutQueueBody = z
+  .object({
+    rev: Revision,
+    user: z.array(z.string().uuid()),
+    context: z.array(z.string().uuid()).default([]),
+  })
+  .openapi('PutQueueBody');
+export type PutQueueBody = z.infer<typeof PutQueueBody>;
+
+/**
+ * Where an item goes: play it now, put it next, add it to the end of its queue, or what its button
+ * does (`default`).
+ */
+export const QueueHow = z.enum(['now', 'next', 'end', 'default']).openapi('QueueHow');
+export type QueueHow = z.infer<typeof QueueHow>;
+
+/**
+ * An item put into its queue: an album enters as its tracks and a book as its chapters, placed by
+ * the session's queue style. `rev`, when given, must be the session's revision, else 409; so it is
+ * on every change to a session below.
+ */
+export const AddToQueueBody = z
+  .object({ ref: MediaRef, how: QueueHow, rev: Revision.optional() })
+  .openapi('AddToQueueBody');
+export type AddToQueueBody = z.infer<typeof AddToQueueBody>;
+
+/** Next plays what follows; back plays again what played before the current item. */
+export const StepDirection = z.enum(['next', 'back']).openapi('StepDirection');
+export type StepDirection = z.infer<typeof StepDirection>;
+
+export const StepBody = z
+  .object({ direction: StepDirection, rev: Revision.optional() })
+  .openapi('StepBody');
+export type StepBody = z.infer<typeof StepBody>;
+
+/** The meta-queue switch: the queue the controls drive from now on. */
+export const ActiveQueueBody = z
+  .object({ queue: QueueType, rev: Revision.optional() })
+  .openapi('ActiveQueueBody');
+export type ActiveQueueBody = z.infer<typeof ActiveQueueBody>;
+
+/** This device's queue style, until settings keep one per person. */
+export const QueueStyleBody = z
+  .object({ queueStyle: QueueStyle, rev: Revision.optional() })
+  .openapi('QueueStyleBody');
+export type QueueStyleBody = z.infer<typeof QueueStyleBody>;

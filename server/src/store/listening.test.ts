@@ -12,6 +12,8 @@ import {
   listSessions,
   openSession,
   PositionWithoutItem,
+  saveAutoplay,
+  savePosition,
   saveSession,
   StaleRevision,
   type SessionValue,
@@ -430,5 +432,58 @@ describe('a listening session in the store', () => {
       }),
     ).toThrow(PositionWithoutItem);
     expect(openSession(db, user.id, phone.id)).toEqual(saved);
+  });
+
+  it('keeps a position for the current item it was taken in, leaving the revision alone', () => {
+    const { user, phone, laptop } = twoDevices();
+    const start = openSession(db, user.id, phone.id)!;
+    const playing = entry(song);
+    const saved = saveSession(db, user.id, phone.id, start.rev, {
+      ...value(start),
+      queues: {
+        ...start.queues,
+        music: { current: playing, position: null, user: [], context: null },
+      },
+    })!;
+    const position = { ms: 61_000, takenAt: 7000 };
+
+    expect(savePosition(db, user.id, phone.id, 'music', playing.itemId, position)).toBe(true);
+    expect(
+      savePosition(db, user.id, phone.id, 'music', randomUUID(), { ms: 1, takenAt: 8000 }),
+    ).toBe(false);
+    expect(savePosition(db, user.id, laptop.id, 'music', playing.itemId, position)).toBe(false);
+    const other = upsertUser(db, { username: 'otto', role: 'member' });
+    expect(savePosition(db, other.id, phone.id, 'music', playing.itemId, position)).toBe(false);
+
+    const read = openSession(db, user.id, phone.id)!;
+    expect(read.queues.music.position).toEqual(position);
+    expect(read.rev).toBe(saved.rev);
+  });
+
+  it('keeps autoplay worked out from the current revision, leaving it alone, and drops a stale one', () => {
+    const { user, phone } = twoDevices();
+    const start = openSession(db, user.id, phone.id)!;
+    const picks = {
+      autoplay: { music: { after: { ref: song }, next: { ref: album } }, spoken: null },
+      radio: { seed: song, tracks: [album] },
+      autoplayAt: 9000,
+    };
+
+    expect(saveAutoplay(db, user.id, phone.id, start.rev, picks)).toBe(true);
+    const read = openSession(db, user.id, phone.id)!;
+    expect(read.rev).toBe(start.rev);
+    expect({ autoplay: read.autoplay, radio: read.radio, autoplayAt: read.autoplayAt }).toEqual(
+      picks,
+    );
+
+    const moved = saveSession(db, user.id, phone.id, read.rev, {
+      ...value(read),
+      active: 'spoken',
+    })!;
+    const stale = { autoplay: { music: null, spoken: null }, radio: null, autoplayAt: 10_000 };
+    expect(saveAutoplay(db, user.id, phone.id, start.rev, stale)).toBe(false);
+    expect(openSession(db, user.id, phone.id)).toEqual(moved);
+    const other = upsertUser(db, { username: 'otto', role: 'member' });
+    expect(saveAutoplay(db, other.id, phone.id, moved.rev, stale)).toBe(false);
   });
 });

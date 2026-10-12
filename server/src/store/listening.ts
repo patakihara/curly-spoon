@@ -420,6 +420,63 @@ export function saveSession(
   })();
 }
 
+/**
+ * Keeps autoplay's picks, music's radio run and when autoplay ran, worked out from revision
+ * `rev`, without moving the revision: they are no change to what is queued. Nothing is written,
+ * and false answered, when the session has moved past `rev` (the change that moved it works the
+ * picks out again) or the device is not this user's.
+ */
+export function saveAutoplay(
+  db: Db,
+  userId: string,
+  deviceId: string,
+  rev: number,
+  value: Pick<SessionValue, 'autoplay' | 'radio' | 'autoplayAt'>,
+): boolean {
+  return db.transaction(() => {
+    const changed = db
+      .prepare(
+        `UPDATE listening_sessions SET radio_seed_source = ?, radio_seed_id = ?, autoplay_at = ?
+         WHERE device_id = ? AND user_id = ? AND rev = ?`,
+      )
+      .run(
+        value.radio?.seed.source ?? null,
+        value.radio?.seed.id ?? null,
+        value.autoplayAt,
+        deviceId,
+        userId,
+        rev,
+      ).changes;
+    if (changed === 0) return false;
+    writeAutoplay(db, deviceId, value.autoplay, value.radio);
+    return true;
+  })();
+}
+
+/**
+ * Keeps where this device is in `queue`'s current item, when that item is still `itemId`, without
+ * moving the revision. False when it is not, or the device is not this user's.
+ */
+export function savePosition(
+  db: Db,
+  userId: string,
+  deviceId: string,
+  queue: QueueType,
+  itemId: string,
+  position: QueuePosition,
+): boolean {
+  return (
+    db
+      .prepare(
+        `UPDATE queue_items SET position_ms = ?, position_at = ?
+         WHERE device_id = ? AND queue = ? AND segment = 'current' AND item_id = ?
+           AND EXISTS (SELECT 1 FROM listening_sessions
+             WHERE device_id = queue_items.device_id AND user_id = ?)`,
+      )
+      .run(position.ms, position.takenAt, deviceId, queue, itemId, userId).changes > 0
+  );
+}
+
 function writeQueues(db: Db, deviceId: string, queues: Record<QueueType, SessionQueue>): void {
   db.prepare('DELETE FROM queue_items WHERE device_id = ?').run(deviceId);
   db.prepare('DELETE FROM playing_from WHERE device_id = ?').run(deviceId);
