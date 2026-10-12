@@ -1,0 +1,156 @@
+import { type MediaRef, type PlaybackPlan } from '@auralis/schema';
+import { describe, expect, it } from 'vitest';
+import { placeholder } from '../generated/nav/playing';
+import { playingOf, playOf } from './index';
+import { type PlayerState, type PlayerStore } from './store';
+
+/** A store stand-in: its state, and each call made on it. */
+function fakeStore(state: PlayerState) {
+  const calls: string[] = [];
+  const store: PlayerStore = {
+    subscribe: () => () => undefined,
+    getState: () => state,
+    play: async (ref) => void calls.push(`play ${ref.source}:${ref.id}`),
+    queueNext: async (ref, queue) => void calls.push(`next ${ref.source}:${ref.id} ${queue}`),
+    resume: async () => void calls.push('resume'),
+    pause: async () => void calls.push('pause'),
+    seek: async (to) => void calls.push(`seek ${to}`),
+    skip: async (s) => void calls.push(`skip ${s}`),
+    step: async (d) => void calls.push(`step ${d}`),
+    cycleSpeed: () => void calls.push('speed'),
+    cycleSleep: () => void calls.push('sleep'),
+  };
+  return { store, calls };
+}
+
+const planOf = (variant: 'spoken' | 'music', art: string | null): PlaybackPlan => ({
+  meta: { title: 'The Salt Road', sub: null, art, variant },
+  tracks: [{ url: '/api/media/abs:b/tracks/0', mime: 'audio/mpeg', duration: 600, offset: 0 }],
+  chapters: [],
+  startAt: 0,
+  progressTarget: { playId: 'p' },
+});
+
+const loaded = (variant: 'spoken' | 'music', art: string | null = null): PlayerState => ({
+  ref: { source: 'abs', id: 'b' },
+  plan: planOf(variant, art),
+  position: 150,
+  duration: 600,
+  playing: true,
+  speed: 1.5,
+  sleep: '15 min',
+});
+
+const IDLE: PlayerState = {
+  ref: null,
+  plan: null,
+  position: 0,
+  duration: 0,
+  playing: false,
+  speed: 1,
+  sleep: 'Off',
+};
+
+const handlers = (p: object) =>
+  Object.entries(p)
+    .filter(([key, value]) => key.startsWith('on') && typeof value === 'function')
+    .map(([key]) => key)
+    .sort();
+
+describe('[M1.shell] what the player shows', () => {
+  it('[M1.shell] shows the canvas’s picture with every control disabled while nothing is loaded', () => {
+    const { store } = fakeStore(IDLE);
+    const shown = playingOf(IDLE, store);
+    expect(shown.title).toBe(placeholder.title);
+    expect(handlers(shown)).toEqual([]);
+  });
+
+  it('[M1.shell] names a book or episode by its plan, where it is, its speed and its sleep timer', () => {
+    const { store } = fakeStore(loaded('spoken', '/api/media/abs:b/art'));
+    const shown = playingOf(loaded('spoken', '/api/media/abs:b/art'), store);
+    expect(shown).toMatchObject({
+      title: 'The Salt Road',
+      artist: '',
+      image: '/api/media/abs:b/art',
+      variant: 'spoken',
+      progress: 0.25,
+      duration: 600,
+      playing: true,
+      speed: 1.5,
+      sleep: '15 min',
+    });
+  });
+
+  it('[M1.shell] shows no art where its plan has none', () => {
+    const { store } = fakeStore(loaded('music'));
+    expect(playingOf(loaded('music'), store).image).toBe('');
+  });
+
+  it('[M1.shell] gives a book or episode play, seek, skip, speed and sleep, and music previous and next instead', () => {
+    const { store } = fakeStore(loaded('spoken'));
+    expect(handlers(playingOf(loaded('spoken'), store))).toEqual([
+      'onSeek',
+      'onSkipBack',
+      'onSkipForward',
+      'onSleep',
+      'onSpeed',
+      'onTogglePlay',
+    ]);
+    expect(handlers(playingOf(loaded('music'), store))).toEqual([
+      'onNext',
+      'onPrev',
+      'onSeek',
+      'onSleep',
+      'onTogglePlay',
+    ]);
+  });
+
+  it('[M1.shell] drives the store with each control', () => {
+    const { store, calls } = fakeStore(loaded('spoken'));
+    const spoken = playingOf(loaded('spoken'), store);
+    spoken.onTogglePlay!();
+    spoken.onSkipBack!();
+    spoken.onSkipForward!();
+    spoken.onSeek!(0.5);
+    spoken.onSpeed!();
+    spoken.onSleep!();
+    const music = playingOf(loaded('music'), store);
+    music.onPrev!();
+    music.onNext!();
+    expect(calls).toEqual([
+      'pause',
+      'skip -15',
+      'skip 15',
+      'seek 300',
+      'speed',
+      'sleep',
+      'step back',
+      'step next',
+    ]);
+  });
+
+  it('[M1.shell] keeps the same handlers from one change to the next', () => {
+    const { store } = fakeStore(loaded('spoken'));
+    expect(playingOf(loaded('spoken'), store).onSeek).toBe(
+      playingOf({ ...loaded('spoken'), position: 300 }, store).onSeek,
+    );
+  });
+});
+
+describe('[M1.shell] Play', () => {
+  const ref: MediaRef = { source: 'abs', id: 'book-1' };
+
+  it('[M1.shell] has no handler for a ref that names no playable item, so its Play stays disabled', () => {
+    const { store } = fakeStore(IDLE);
+    expect(playOf(store)('shadows-and-sighs', 'spoken', 'now')).toBeUndefined();
+  });
+
+  it('[M1.shell] plays an item now, or from its source, and puts it next in its queue', () => {
+    const { store, calls } = fakeStore(IDLE);
+    const play = playOf(store);
+    play('abs:book-1', 'spoken', 'now')!();
+    play('abs:book-1', 'spoken', 'source')!();
+    play(`${ref.source}:${ref.id}`, 'spoken', 'next')!();
+    expect(calls).toEqual(['play abs:book-1', 'play abs:book-1', 'next abs:book-1 spoken']);
+  });
+});
