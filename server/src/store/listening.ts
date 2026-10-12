@@ -23,30 +23,31 @@ import type { Db } from './connection.js';
 export const HISTORY_KEPT = 500;
 
 /**
+ * A queue entry as the session keeps it. `walk` orders the entries of a walk Back started:
+ * Forward plays them first, lowest first, wherever they sit. `replayOf` is the play (its `seq`)
+ * the entry plays again: it is already in history, so ending it records nothing. `position` is
+ * where the device was in an entry of your queue when it was last current.
+ */
+export interface SessionItem extends QueueItem {
+  walk?: number;
+  replayOf?: number;
+  position?: QueuePosition;
+}
+
+/**
  * One queue: its current item and the device's last position in it, your queue, and Spotify
  * style's playing-from, which outlives its items.
  */
 export interface SessionQueue {
-  current: QueueItem | null;
+  current: SessionItem | null;
   position: QueuePosition | null;
-  user: QueueItem[];
+  user: SessionItem[];
   context: QueueContext | null;
 }
 
 /**
- * Where Back has walked to. `back` counts the plays walked from the newest: the item now current
- * is the play `back` places from the end of history. `resumeQueue` is the queue of the item that
- * was current when the walk began, which Forward lands on last; null when nothing was.
- */
-export interface HistoryCursor {
-  back: number;
-  resumeQueue: QueueType | null;
-}
-
-/**
  * Everything a session holds that the engine changes. History is oldest first, by `seq`, and
- * append-only: Back moves `historyCursor` through it and never takes a play out. The cursor is
- * null when Back has not walked.
+ * append-only: Back walks it from the current item's place and never takes a play out.
  */
 export interface SessionValue {
   active: QueueType;
@@ -54,7 +55,6 @@ export interface SessionValue {
   queueStyle: QueueStyle;
   queues: Record<QueueType, SessionQueue>;
   history: HistoryEntry[];
-  historyCursor: HistoryCursor | null;
 }
 
 export interface StoredSession extends SessionValue {
@@ -110,8 +110,6 @@ const SessionRow = z.object({
   active: QueueType,
   switch_after_current: QueueType.nullable(),
   queue_style: QueueStyle,
-  history_back: z.number().int().nonnegative(),
-  back_resume_queue: QueueType.nullable(),
   rev: z.number().int().nonnegative(),
   updated_at: z.number(),
 });
@@ -129,6 +127,8 @@ const ItemRow = z
     chapter: z.number().int().nonnegative().nullable(),
     position_ms: z.number().int().nonnegative().nullable(),
     position_at: z.number().int().nullable(),
+    walk: z.number().int().nullable(),
+    replay_of: z.number().int().nonnegative().nullable(),
   })
   .transform((row) => ({
     queue: row.queue,
@@ -142,6 +142,8 @@ const ItemRow = z
       ref: { source: row.source, id: row.upstream_id },
       ...chapterOf(row.chapter),
     } satisfies QueueItem,
+    walk: row.walk,
+    replayOf: row.replay_of,
   }));
 
 const HistoryRow = z
@@ -172,6 +174,10 @@ const PlayingFromRow = z
     from: { kind: row.kind, ref: { source: row.source, id: row.upstream_id } },
   }));
 
+/** An entry as a client sees it, without what only the session keeps. */
+const plain = (item: SessionItem | null): QueueItem | null =>
+  item === null ? null : { itemId: item.itemId, ref: item.ref, ...chapterOf(item.chapter ?? null) };
+
 const emptyQueue = (): SessionQueue => ({ current: null, position: null, user: [], context: null });
 
 function readRow(db: Db, userId: string, deviceId: string): SessionRow | null {
@@ -194,13 +200,18 @@ function readQueues(db: Db, deviceId: string): Record<QueueType, SessionQueue> {
     .array(PlayingFromRow)
     .parse(db.prepare('SELECT * FROM playing_from WHERE device_id = ?').all(deviceId));
   for (const { queue, from } of froms) queues[queue].context = { from, items: [] };
-  for (const { queue, segment, position, item } of rows) {
+  for (const { queue, segment, position, item, walk, replayOf } of rows) {
     const q = queues[queue];
+    const marks = {
+      ...(walk === null ? {} : { walk }),
+      ...(replayOf === null ? {} : { replayOf }),
+    };
     if (segment === 'current') {
-      q.current = item;
+      q.current = { ...item, ...marks };
       q.position = position;
-    } else if (segment === 'user') q.user.push(item);
-    else q.context?.items.push(item);
+    } else if (segment === 'user') {
+      q.user.push({ ...item, ...marks, ...(position === null ? {} : { position }) });
+    } else q.context?.items.push(item);
   }
   return queues;
 }
@@ -220,10 +231,6 @@ function stored(db: Db, row: SessionRow): StoredSession {
     queueStyle: row.queue_style,
     queues: readQueues(db, row.device_id),
     history: readHistory(db, row.device_id),
-    historyCursor:
-      row.history_back === 0
-        ? null
-        : { back: row.history_back, resumeQueue: row.back_resume_queue },
     rev: row.rev,
     updatedAt: row.updated_at,
   };
@@ -265,7 +272,7 @@ export function listSessions(db: Db, userId: string): SessionSummary[] {
       active: row.active,
       switchAfterCurrent: row.switch_after_current,
       queueStyle: row.queue_style,
-      currents: { music: queues.music.current, spoken: queues.spoken.current },
+      currents: { music: plain(queues.music.current), spoken: plain(queues.spoken.current) },
       rev: row.rev,
       updatedAt: row.updated_at,
     };
@@ -289,16 +296,14 @@ export function saveSession(
     const changed = db
       .prepare(
         `UPDATE listening_sessions
-         SET active = ?, switch_after_current = ?, queue_style = ?, history_back = ?,
-           back_resume_queue = ?, rev = rev + 1, updated_at = ?
+         SET active = ?, switch_after_current = ?, queue_style = ?, rev = rev + 1,
+           updated_at = ?
          WHERE device_id = ? AND user_id = ? AND rev = ?`,
       )
       .run(
         value.active,
         value.switchAfterCurrent,
         value.queueStyle,
-        value.historyCursor?.back ?? 0,
-        value.historyCursor?.resumeQueue ?? null,
         now,
         deviceId,
         userId,
@@ -321,8 +326,8 @@ function writeQueues(db: Db, deviceId: string, queues: Record<QueueType, Session
   db.prepare('DELETE FROM playing_from WHERE device_id = ?').run(deviceId);
   const insert = db.prepare(
     `INSERT INTO queue_items (device_id, queue, segment, ord, item_id, source, upstream_id,
-       chapter, position_ms, position_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       chapter, position_ms, position_at, walk, replay_of)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   const insertFrom = db.prepare(
     `INSERT INTO playing_from (device_id, queue, kind, source, upstream_id) VALUES (?, ?, ?, ?, ?)`,
@@ -330,8 +335,8 @@ function writeQueues(db: Db, deviceId: string, queues: Record<QueueType, Session
   const put = (
     queue: QueueType,
     segment: 'current' | 'user' | 'context',
-    items: readonly QueueItem[],
-    position: QueuePosition | null = null,
+    items: readonly SessionItem[],
+    position: (item: SessionItem) => QueuePosition | null,
   ) =>
     items.forEach((item, ord) =>
       insert.run(
@@ -343,8 +348,10 @@ function writeQueues(db: Db, deviceId: string, queues: Record<QueueType, Session
         item.ref.source,
         item.ref.id,
         item.chapter ?? null,
-        position?.ms ?? null,
-        position?.takenAt ?? null,
+        position(item)?.ms ?? null,
+        position(item)?.takenAt ?? null,
+        segment === 'user' ? (item.walk ?? null) : null,
+        segment === 'context' ? null : (item.replayOf ?? null),
       ),
     );
   for (const type of QueueType.options) {
@@ -352,12 +359,12 @@ function writeQueues(db: Db, deviceId: string, queues: Record<QueueType, Session
     if (q.current === null && q.position !== null) {
       throw new PositionWithoutItem(deviceId, type);
     }
-    put(type, 'current', q.current === null ? [] : [q.current], q.position);
-    put(type, 'user', q.user);
+    put(type, 'current', q.current === null ? [] : [q.current], () => q.position);
+    put(type, 'user', q.user, (item) => item.position ?? null);
     if (q.context === null) continue;
     const { from, items }: QueueContext = q.context;
     insertFrom.run(deviceId, type, from.kind, from.ref.source, from.ref.id);
-    put(type, 'context', items);
+    put(type, 'context', items, () => null);
   }
 }
 

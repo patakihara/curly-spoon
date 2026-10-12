@@ -251,9 +251,7 @@ export const migrations: readonly Migration[] = [
         -- What plays on one device, made on its first use and gone with the device. ('sessions'
         -- are sign-in sessions.) The queue the controls drive, the queue to land on once the
         -- current item ends, and the queue style, set here until settings are kept per user.
-        -- Back's cursor: how many plays Back has walked from the newest (0 when it has not),
-        -- and the queue of the item that was current when the walk began, which Forward lands
-        -- on last. rev goes up on every write; a write from an older rev is refused.
+        -- rev goes up on every write; a write from an older rev is refused.
         CREATE TABLE listening_sessions (
           device_id            TEXT PRIMARY KEY REFERENCES devices(id) ON DELETE CASCADE,
           user_id              TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -261,18 +259,18 @@ export const migrations: readonly Migration[] = [
           switch_after_current TEXT CHECK (switch_after_current IN ('music', 'spoken')),
           queue_style          TEXT NOT NULL DEFAULT 'youtube'
             CHECK (queue_style IN ('youtube', 'spotify')),
-          history_back         INTEGER NOT NULL DEFAULT 0 CHECK (history_back >= 0),
-          back_resume_queue    TEXT CHECK (back_resume_queue IN ('music', 'spoken')),
           rev                  INTEGER NOT NULL CHECK (rev >= 0),
-          updated_at           INTEGER NOT NULL,
-          CHECK (history_back > 0 OR back_resume_queue IS NULL)
+          updated_at           INTEGER NOT NULL
         );
         CREATE INDEX idx_listening_sessions_user_id ON listening_sessions(user_id);
 
         -- Each queue's entries: its current item (at most one, kept while the queue is paused),
         -- your queue, and what is left of Spotify style's playing-from. chapter says which
         -- entry of a book this is. The current item carries the device's last position in it,
-        -- in ms, and when that was taken.
+        -- in ms, and when that was taken; an item of your queue keeps the one it had when it
+        -- was last current. walk orders the entries of a walk Back started, which Forward
+        -- plays first, lowest first; replay_of is the play (play_history seq) an entry plays
+        -- again, which ending it does not record twice.
         CREATE TABLE queue_items (
           device_id   TEXT NOT NULL REFERENCES listening_sessions(device_id) ON DELETE CASCADE,
           queue       TEXT NOT NULL CHECK (queue IN ('music', 'spoken')),
@@ -284,11 +282,14 @@ export const migrations: readonly Migration[] = [
           chapter     INTEGER CHECK (chapter >= 0),
           position_ms INTEGER CHECK (position_ms >= 0),
           position_at INTEGER,
+          walk        INTEGER,
+          replay_of   INTEGER CHECK (replay_of >= 0),
           PRIMARY KEY (device_id, queue, segment, ord),
           UNIQUE (device_id, item_id),
           CHECK (segment <> 'current' OR ord = 0),
           CHECK ((position_ms IS NULL) = (position_at IS NULL)),
-          CHECK (segment = 'current' OR position_ms IS NULL)
+          CHECK (segment = 'user' OR walk IS NULL),
+          CHECK (segment <> 'context' OR (position_ms IS NULL AND replay_of IS NULL))
         );
 
         -- The album, playlist, show or book a queue plays from, kept on the session once its

@@ -59,14 +59,10 @@ const key = (ref: MediaRef) => `${ref.source}:${ref.id}`;
 
 /** The index lookup, over the recordings. */
 const index = new Map<string, Expansion>([
-  [
-    key(first.album),
-    {
-      kind: 'album',
-      entries: first.tracks.map((ref) => ({ ref })),
-      from: { kind: 'album', ref: first.album },
-    },
-  ],
+  ...[first, second].map(({ album, tracks }): [string, Expansion] => [
+    key(album),
+    { kind: 'album', entries: tracks.map((ref) => ({ ref })), from: { kind: 'album', ref: album } },
+  ]),
   ...second.tracks.map((ref): [string, Expansion] => [
     key(ref),
     { kind: 'track', entries: [{ ref }], from: null },
@@ -109,7 +105,6 @@ const empty = (queueStyle: SessionValue['queueStyle'] = 'youtube'): SessionValue
     spoken: { current: null, position: null, user: [], context: null },
   },
   history: [],
-  historyCursor: null,
 });
 
 /** Runs each change in turn, failing on a ref the index does not hold. */
@@ -150,7 +145,7 @@ describe('[M1.sessions/b] the music and spoken queues', () => {
     expect(refOf(s.queues.music.current)).toEqual(first.tracks[1]);
     expect(refs(s.queues.spoken.user)).toEqual([episodeE, episodeF]);
 
-    s = switchTo(s, 'spoken');
+    s = switchTo(s, 'spoken', d);
     expect(s.active).toBe('spoken');
     expect(refOf(s.queues.spoken.current)).toEqual(episodeE);
     expect(refOf(s.queues.music.current)).toEqual(first.tracks[1]);
@@ -160,7 +155,7 @@ describe('[M1.sessions/b] the music and spoken queues', () => {
     expect(refOf(s.queues.music.current)).toEqual(first.tracks[1]);
     expect(refs(s.queues.music.user)).toEqual(first.tracks.slice(2));
 
-    s = switchTo(s, 'music');
+    s = switchTo(s, 'music', d);
     s = step(s, 'next', d);
     expect(refOf(s.queues.music.current)).toEqual(first.tracks[2]);
     expect(refOf(s.queues.spoken.current)).toEqual(episodeF);
@@ -201,6 +196,42 @@ describe('[M1.sessions/b] the music and spoken queues', () => {
 
     expect(refOf(s.queues.spoken.current)).toEqual(episodeF);
     expect(refs(s.queues.spoken.user)).toEqual([episodeE]);
+  });
+
+  it("keeps a book put next on a paused queue whole, and the paused episode's place in it", () => {
+    const d = deps();
+    let s = run(empty(), (s) => add(s, episodeE, 'now', d));
+    s = {
+      ...s,
+      queues: { ...s.queues, spoken: { ...s.queues.spoken, position: { ms: 61_000, takenAt: 5 } } },
+    };
+    s = run(
+      s,
+      (s) => add(s, first.album, 'now', d),
+      (s) => add(s, book, 'next', d),
+    );
+    const chapters = Array.from({ length: chapterCount }, (_, chapter) => ({ ...book, chapter }));
+
+    s = step(s, 'next', d);
+    expect(order(s, 'spoken')).toEqual([...chapters, episodeE]);
+    expect(s.queues.spoken.position).toBeNull();
+
+    chapters.forEach(() => (s = step(s, 'next', d)));
+    expect(refOf(s.queues.spoken.current)).toEqual(episodeE);
+    expect(s.queues.spoken.position).toEqual({ ms: 61_000, takenAt: 5 });
+  });
+
+  it('starts autoplay when the switch lands on a queue with nothing left', () => {
+    const d = deps((queue) => (queue === 'spoken' ? { ref: episodeF } : null));
+    const s = switchTo(
+      run(empty(), (s) => add(s, trackX, 'now', d)),
+      'spoken',
+      d,
+    );
+
+    expect(s.active).toBe('spoken');
+    expect(refOf(s.queues.spoken.current)).toEqual(episodeF);
+    expect(refOf(s.queues.music.current)).toEqual(trackX);
   });
 
   it('asks the injected autoplay for the queue that ran out, and stops when it has nothing', () => {
@@ -296,6 +327,25 @@ describe('[M1.sessions/c] Play next and Add to queue', () => {
     expect(refOf(s.queues.music.current)).toEqual(first.tracks[1]);
   });
 
+  it("Spotify style: Play on a second album plays from it, the first album's rest after it", () => {
+    const d = deps();
+    const s = run(
+      empty('spotify'),
+      (s) => add(s, first.album, 'now', d),
+      (s) => add(s, trackX, 'end', d),
+      (s) => add(s, second.album, 'now', d),
+    );
+
+    expect(refs(s.queues.music.user)).toEqual([trackX]);
+    expect(s.queues.music.context?.from).toEqual({ kind: 'album', ref: second.album });
+    expect(order(s, 'music')).toEqual([
+      second.tracks[0],
+      trackX,
+      ...second.tracks.slice(1),
+      ...first.tracks.slice(1),
+    ]);
+  });
+
   it('a style change to YouTube Music style folds what is left of the album into the queue', () => {
     const d = deps();
     const spotify = run(
@@ -336,7 +386,6 @@ describe('[M1.sessions/d] Back and Forward', () => {
     expect(s.active).toBe('spoken');
     expect(refOf(s.queues.spoken.current)).toEqual(episodeE);
     expect(s.history.map((h) => h.ref)).toEqual([trackX]);
-    expect(s.historyCursor).toBeNull();
   });
 
   it('walks back several plays over both queues and forward again in the order they played', () => {
@@ -368,7 +417,6 @@ describe('[M1.sessions/d] Back and Forward', () => {
       ['music', walkedFrom],
     ]);
     expect(s.history.map((h) => h.ref)).toEqual([first.tracks[0], episodeE, trackX]);
-    expect(s.historyCursor).toBeNull();
   });
 
   it('never takes a play out of history, and a new play ends the walk', () => {
@@ -381,25 +429,120 @@ describe('[M1.sessions/d] Back and Forward', () => {
     s = step(s, 'back', d);
     s = step(s, 'back', d);
     expect(s.history).toEqual(history);
-    expect(s.historyCursor).toEqual({ back: 2, resumeQueue: 'music' });
 
     s = run(s, (s) => add(s, trackX, 'now', d));
-    expect(s.historyCursor).toBeNull();
     expect(s.history).toEqual(history);
     expect(order(s, 'music')).toEqual([trackX, ...first.tracks.slice(1)]);
+
+    s = step(s, 'next', d);
+    expect(refOf(s.queues.music.current)).toEqual(first.tracks[1]);
+    expect(s.history.map((h) => h.ref)).toEqual([...history.map((h) => h.ref), trackX]);
+  });
+
+  it('plays a song put next during a walk right after the replay, and records each play once', () => {
+    const d = deps();
+    let s = run(empty(), (s) => add(s, first.album, 'now', d));
+    s = step(s, 'next', d);
+    s = step(s, 'next', d);
+    s = step(s, 'back', d);
+    s = step(s, 'back', d);
+    expect(refOf(s.queues.music.current)).toEqual(first.tracks[0]);
+
+    s = run(s, (s) => add(s, trackX, 'next', d));
+    const heard = [1, 2, 3].map(() => refOf((s = step(s, 'next', d)).queues.music.current));
+
+    expect(heard).toEqual([trackX, first.tracks[1], first.tracks[2]]);
+    s = step(s, 'next', d);
+    expect(s.history.map((h) => h.ref)).toEqual([
+      first.tracks[0],
+      first.tracks[1],
+      trackX,
+      first.tracks[2],
+    ]);
+  });
+
+  it('keeps a walk over both queues in order around a song put next, recording each play once', () => {
+    const d = deps();
+    let s = run(
+      empty(),
+      (s) => add(s, first.album, 'now', d),
+      (s) => add(s, episodeE, 'next', d),
+    );
+    s = step(s, 'next', d);
+    s = step(s, 'next', d);
+    s = switchTo(s, 'music', d);
+    s = step(s, 'next', d);
+    expect(s.history.map((h) => h.ref)).toEqual([first.tracks[0], episodeE, first.tracks[1]]);
+    [1, 2, 3].forEach(() => (s = step(s, 'back', d)));
+    expect(refOf(s.queues.music.current)).toEqual(first.tracks[0]);
+
+    s = step(s, 'next', d);
+    expect(refOf(s.queues.spoken.current)).toEqual(episodeE);
+    s = run(s, (s) => add(s, trackX, 'next', d));
+    const heard = [1, 2, 3].map(() => {
+      s = step(s, 'next', d);
+      return [s.active, refOf(s.queues[s.active].current)];
+    });
+
+    expect(heard).toEqual([
+      ['music', trackX],
+      ['music', first.tracks[1]],
+      ['music', first.tracks[2]],
+    ]);
+    s = step(s, 'next', d);
+    expect(s.history.map((h) => h.ref)).toEqual([
+      first.tracks[0],
+      episodeE,
+      first.tracks[1],
+      trackX,
+      first.tracks[2],
+    ]);
+  });
+
+  it('never records the replayed item again when the switch or Play now ends the walk', () => {
+    const d = deps();
+    let s = run(
+      empty(),
+      (s) => add(s, first.album, 'now', d),
+      (s) => add(s, episodeE, 'next', d),
+    );
+    s = step(s, 'next', d);
+    s = step(s, 'next', d);
+    s = run(s, (s) => add(s, trackX, 'now', d));
+    s = step(s, 'back', d);
+    s = step(s, 'back', d);
+    expect(refOf(s.queues.music.current)).toEqual(first.tracks[0]);
+    const history = s.history.map((h) => h.ref);
+    expect(history).toEqual([first.tracks[0], episodeE]);
+
+    const switched = step(switchTo(switchTo(s, 'spoken', d), 'music', d), 'next', d);
+    expect(switched.history.map((h) => h.ref)).toEqual(history);
+
+    s = run(s, (s) => add(s, episodeF, 'now', d));
+    s = switchTo(s, 'music', d);
+    s = step(s, 'next', d);
+    expect(refOf(s.queues.music.current)).toEqual(trackX);
+    expect(s.history.map((h) => h.ref)).toEqual(history);
   });
 });
 
-describe('default button actions', () => {
+describe('[M1.sessions/c] default button actions', () => {
   const d = deps();
   const musicPlaying = run(empty(), (s) => add(s, trackX, 'now', d));
   const spokenPlaying = run(empty(), (s) => add(s, episodeE, 'now', d));
 
-  it('plays a song next and puts an album at the end, while music or nothing plays', () => {
-    for (const s of [empty(), musicPlaying]) {
-      expect(defaultAction(s, 'track')).toBe('next');
-      expect(defaultAction(s, 'album')).toBe('end');
+  it('plays a song next and puts an album at the end while music plays', () => {
+    expect(defaultAction(musicPlaying, 'track')).toBe('next');
+    expect(defaultAction(musicPlaying, 'album')).toBe('end');
+  });
+
+  it('starts playback from any item when nothing is playing', () => {
+    for (const kind of ['track', 'album', 'episode', 'book'] as const) {
+      expect(defaultAction(empty(), kind)).toBe('now');
     }
+    const idle = run(empty(), (s) => add(s, first.album, 'default', deps()));
+    expect(order(idle, 'music')).toEqual(first.tracks);
+    expect(refOf(idle.queues.music.current)).toEqual(first.tracks[0]);
   });
 
   it('plays music now while a podcast or book is playing', () => {
@@ -407,9 +550,8 @@ describe('default button actions', () => {
     expect(defaultAction(spokenPlaying, 'album')).toBe('now');
   });
 
-  it('plays an episode or a book now when nothing is playing, otherwise next', () => {
+  it('plays an episode or a book next while something plays', () => {
     for (const kind of ['episode', 'book'] as const) {
-      expect(defaultAction(empty(), kind)).toBe('now');
       expect(defaultAction(musicPlaying, kind)).toBe('next');
       expect(defaultAction(spokenPlaying, kind)).toBe('next');
     }

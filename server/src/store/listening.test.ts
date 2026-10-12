@@ -35,7 +35,6 @@ const value = (session: StoredSession): SessionValue => ({
   queueStyle: session.queueStyle,
   queues: session.queues,
   history: session.history,
-  historyCursor: session.historyCursor,
 });
 
 let dir: string;
@@ -139,7 +138,6 @@ describe('a listening session in the store', () => {
         spoken: { current: null, position: null, user: [], context: null },
       },
       history: [],
-      historyCursor: null,
       rev: 0,
       updatedAt: 1000,
     });
@@ -154,9 +152,13 @@ describe('a listening session in the store', () => {
       queueStyle: 'spotify',
       queues: {
         music: {
-          current: entry(song),
+          current: { ...entry(song), replayOf: 0 },
           position: null,
-          user: [entry(song), entry(album)],
+          user: [
+            { ...entry(song), walk: -1, replayOf: 0 },
+            { ...entry(album), walk: 0, position: { ms: 4_000, takenAt: 1200 } },
+            entry(song),
+          ],
           context: { from: { kind: 'album', ref: album }, items: [entry(song), entry(song)] },
         },
         spoken: {
@@ -170,7 +172,6 @@ describe('a listening session in the store', () => {
         { seq: 0, queue: 'music', ref: song, playedAt: 10 },
         { seq: 1, queue: 'spoken', ref: book, chapter: 1, playedAt: 20 },
       ],
-      historyCursor: { back: 1, resumeQueue: 'music' },
     };
 
     const saved = saveSession(db, user.id, phone.id, session.rev, written, 2000);
@@ -190,7 +191,10 @@ describe('a listening session in the store', () => {
         active: 'spoken',
         switchAfterCurrent: 'music',
         queueStyle: 'spotify',
-        currents: { music: written.queues.music.current, spoken: written.queues.spoken.current },
+        currents: {
+          music: { itemId: written.queues.music.current!.itemId, ref: song },
+          spoken: written.queues.spoken.current,
+        },
         rev: 1,
         updatedAt: 2000,
       },
@@ -249,7 +253,7 @@ describe('a listening session in the store', () => {
     expect(openSession(db, user.id, phone.id)).toEqual(session);
   });
 
-  it('keeps every play when Back walks the history: the cursor moves, no play is forgotten', () => {
+  it('keeps every play when Back walks the history: replays are marked, no play is forgotten', () => {
     const { user, phone } = twoDevices();
     const start = openSession(db, user.id, phone.id)!;
     const played = saveSession(db, user.id, phone.id, start.rev, {
@@ -257,16 +261,19 @@ describe('a listening session in the store', () => {
       history: plays(0, 3),
     })!;
 
+    const music = {
+      current: { ...entry(song), replayOf: 1 },
+      position: null,
+      user: [{ ...entry(song), walk: 0, replayOf: 2 }],
+      context: null,
+    };
     const walked = saveSession(db, user.id, phone.id, played.rev, {
       ...value(played),
-      historyCursor: { back: 2, resumeQueue: 'spoken' },
+      queues: { ...played.queues, music },
     })!;
 
     expect(openSession(db, user.id, phone.id)!.history).toEqual(plays(0, 3));
-    expect(openSession(db, user.id, phone.id)!.historyCursor).toEqual({
-      back: 2,
-      resumeQueue: 'spoken',
-    });
+    expect(openSession(db, user.id, phone.id)!.queues.music).toEqual(music);
     for (const removed of [plays(0, 2), [...plays(0, 1), ...plays(2, 3)], []]) {
       expect(() =>
         saveSession(db, user.id, phone.id, walked.rev, { ...value(walked), history: removed }),

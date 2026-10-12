@@ -35,8 +35,8 @@ Queues belong to a device's listening session (see "Library and accounts"), stor
 #### Music queue: two styles, a setting
 
 - **YouTube Music style, the default.** No "playing from": an album goes into the queue whole. _Play next_ inserts after the current item; _Add to queue_ appends after everything, album included. Then autoplay.
-- **Spotify style.** Current → your queue → the "playing from" album or playlist → autoplay.
-- Default button actions: a **song → Play next**, an **album → end of queue**. When a podcast or book is playing, music's default becomes **Play**. An episode's or a book's button plays it now (**Play**) when nothing is playing, otherwise **Play next**; tapping the item itself opens its page. Long-press or double-tap for the other action (to be tried in design). Buttons never move.
+- **Spotify style.** Current → your queue → the "playing from" album or playlist → autoplay. A second album becomes "playing from", the first's rest after it.
+- Default button actions: with nothing playing, any item plays. Otherwise a **song → Play next**, an **album → end of queue**, or **Play** while a podcast or book plays. An episode or book → **Play next**; tapping it opens its page. Long-press or double-tap for the other action (to be tried in design). Buttons never move.
 :::
 :::
 
