@@ -87,7 +87,7 @@ describe('the OpenAPI document', () => {
       response: z.string().openapi({ format: 'binary' }),
       access: 'member',
       params: z.object({ id: z.string() }),
-      stream: true,
+      stream: 'audio',
     } as const satisfies Route;
     const get = buildOpenApiDocument([listen], ErrorResponse).paths?.['/listen/{id}']?.get;
     expect(Object.keys(get?.responses ?? {})).toEqual(['200', '206', '400', '401', '403', '416']);
@@ -107,7 +107,7 @@ describe('the OpenAPI document', () => {
       response: z.string().openapi({ format: 'binary' }),
       access: 'member',
       params: z.object({ id: z.string() }),
-      stream: true,
+      stream: 'audio',
     } as const satisfies Route;
     const path = buildOpenApiDocument([listen], ErrorResponse).paths?.['/listen/{id}'];
     expect(path?.head?.operationId).toBe('listenHead');

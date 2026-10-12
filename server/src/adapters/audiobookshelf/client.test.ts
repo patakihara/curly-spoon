@@ -302,7 +302,7 @@ describe('the Audiobookshelf client', () => {
     expect(failure.status).toBe(416);
   });
 
-  it("an item's cover opens as an image stream with the key, and anything else is refused", async () => {
+  it("an item's cover opens as an image stream with the key, scaled to a width when asked, and anything else is refused", async () => {
     const sent: { url: string; authorization: string | null }[] = [];
     let type = 'image/webp';
     const fetch: FetchLike = async (url, init) => {
@@ -320,6 +320,8 @@ describe('the Audiobookshelf client', () => {
     });
     expect(cover.headers).toEqual({ 'content-type': 'image/webp' });
     await cover.body.cancel();
+    await (await abs.openCover('li_1', 512)).body.cancel();
+    expect(sent[1]?.url).toBe('http://upstream.invalid/api/items/li_1/cover?width=512');
     type = 'application/json';
     const failure = (await abs.openCover('li_1').catch((e: unknown) => e)) as AdapterError;
     expect(failure.kind).toBe('parse');

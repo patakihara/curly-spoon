@@ -89,6 +89,20 @@ export const ItemParams = z.object({ ref: MediaRefKey });
 export type ItemParams = z.infer<typeof ItemParams>;
 
 /**
+ * How large art is drawn: `small` in a list's row, `medium` on a card or a page's header, `large`
+ * on Now Playing. The upstream scales it down to fit; with no size, art comes as it is stored.
+ */
+export const ArtSize = z.enum(['small', 'medium', 'large']).openapi('ArtSize');
+export type ArtSize = z.infer<typeof ArtSize>;
+
+/** The size art is asked for at, if any. */
+export const ArtQuery = z.object({ size: ArtSize.optional() });
+export type ArtQuery = z.infer<typeof ArtQuery>;
+
+/** The image bytes the art route answers. */
+export const ImageBytes = z.string().openapi({ format: 'binary' });
+
+/**
  * One episode of a show: its description, when it was published (milliseconds since the epoch),
  * its length in seconds, how far through it you are, and whether you finished it.
  */

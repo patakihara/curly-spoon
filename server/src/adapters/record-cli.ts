@@ -35,7 +35,8 @@
  *
  * `--only shell --play-item <book> --jellyfin-item <album>` records M1.shell's reads: the books page
  * holding the book and its books, its cover, each music library's albums page, and as `auralis`
- * the views and the album's primary image (record-shell.ts).
+ * the views and the album's primary image, each image as stored and at the art route's medium
+ * width (record-shell.ts).
  *
  * `--dry-run` makes the same calls but writes into a fresh temporary folder instead of the
  * committed recordings, and says where.

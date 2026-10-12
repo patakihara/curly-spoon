@@ -14,6 +14,7 @@ import { adminRoutes } from './routes/admin.js';
 import { authRoutes } from './routes/auth.js';
 import { bookmarkRoutes } from './routes/bookmarks.js';
 import { deviceRoutes } from './routes/devices.js';
+import { itemRoutes } from './routes/items.js';
 import { libraryRoutes } from './routes/library.js';
 import { type PlaybackOptions, playRoutes, type UpstreamAccess } from './routes/play.js';
 import { IndexLookup } from './queues/lookup.js';
@@ -134,6 +135,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   });
   bookmarkRoutes(app, { db, upstreams: options.upstreams ?? null });
   libraryRoutes(app, { db, upstreams });
+  itemRoutes(app, { db, upstreams });
 
   const distDir = options.webDistDir;
   if (distDir !== null && existsSync(distDir)) {

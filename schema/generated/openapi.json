@@ -1050,6 +1050,177 @@
           "podcasts",
           "music"
         ]
+      },
+      "ItemEpisode": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "publishedAt": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "duration": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "progress": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          },
+          "finished": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ref",
+          "title",
+          "description",
+          "publishedAt",
+          "duration",
+          "progress",
+          "finished"
+        ]
+      },
+      "ItemTrack": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "number": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0
+          },
+          "title": {
+            "type": "string"
+          },
+          "sub": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "duration": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          }
+        },
+        "required": [
+          "ref",
+          "number",
+          "title",
+          "sub",
+          "duration"
+        ]
+      },
+      "ItemDetail": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/LibraryEntryKind"
+          },
+          "title": {
+            "type": "string"
+          },
+          "sub": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "art": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "progress": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          },
+          "duration": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "availability": {
+            "$ref": "#/components/schemas/Availability"
+          },
+          "chapters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaybackChapter"
+            }
+          },
+          "episodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemEpisode"
+            }
+          },
+          "tracks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemTrack"
+            }
+          }
+        },
+        "required": [
+          "ref",
+          "kind",
+          "title",
+          "sub",
+          "art",
+          "progress",
+          "duration",
+          "availability",
+          "chapters",
+          "episodes",
+          "tracks"
+        ]
+      },
+      "ArtSize": {
+        "type": "string",
+        "enum": [
+          "small",
+          "medium",
+          "large"
+        ]
       }
     },
     "parameters": {}
@@ -2916,6 +3087,194 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/items/{ref}": {
+      "get": {
+        "summary": "One book, show or album the signed-in person may open",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getItem",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+            },
+            "required": true,
+            "name": "ref",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Its header, then a book's chapters, a show's episodes in its order, or an album's tracks.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/media/{ref}/art": {
+      "get": {
+        "summary": "A book's, show's or album's art, with the signed-in person's own access",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getMediaArt",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+            },
+            "required": true,
+            "name": "ref",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "$ref": "#/components/schemas/ArtSize"
+            },
+            "required": false,
+            "name": "size",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image, at the size asked for, or as stored.",
+            "content": {
+              "image/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "summary": "A book's, show's or album's art, with the signed-in person's own access",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getMediaArtHead",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+            },
+            "required": true,
+            "name": "ref",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "$ref": "#/components/schemas/ArtSize"
+            },
+            "required": false,
+            "name": "size",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image, at the size asked for, or as stored."
+          },
+          "400": {
+            "description": "The request does not parse, or was refused."
+          },
+          "401": {
+            "description": "No session."
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site."
           }
         }
       }

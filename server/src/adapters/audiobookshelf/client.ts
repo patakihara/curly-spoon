@@ -16,7 +16,9 @@ import { type ZodType, type z } from 'zod';
 import {
   type AbsBookmark,
   type AbsMe,
+  bookDetailSchema,
   bookmarkSchema,
+  type chapterSchema,
   closeSessionSchema,
   deleteBookmarkSchema,
   type FileRef,
@@ -137,6 +139,15 @@ export class AbsClient {
     const path = `api/items/${encodeURIComponent(itemId)}`;
     const item = await this.call(path, itemChaptersSchema, {}, { expanded: '1' });
     return item.media.chapters?.length ?? 0;
+  }
+
+  /** A book's length in seconds and its chapters, from the same answer as `getItem`. */
+  async getBookDetail(
+    itemId: string,
+  ): Promise<{ duration: number; chapters: z.infer<typeof chapterSchema>[] }> {
+    const path = `api/items/${encodeURIComponent(itemId)}`;
+    const item = await this.call(path, bookDetailSchema, {}, { expanded: '1' });
+    return { duration: item.media.duration, chapters: item.media.chapters ?? [] };
   }
 
   getItem(itemId: string): Promise<z.infer<typeof itemSchema>> {
@@ -261,11 +272,16 @@ export class AbsClient {
     return this.openStream(path, range, hlsSegmentHeadersSchema);
   }
 
-  /** An item's cover image, as ABS serves it to its own apps (WebP, recorded). */
-  openCover(itemId: string): Promise<UpstreamFile<ImageHeaders>> {
+  /**
+   * An item's cover image, as ABS serves it to its own apps (WebP, recorded), or scaled by ABS to
+   * `width` pixels wide.
+   */
+  openCover(itemId: string, width?: number): Promise<UpstreamFile<ImageHeaders>> {
     const path = `api/items/${encodeURIComponent(itemId)}/cover`;
+    const query: Record<string, string> = width === undefined ? {} : { width: String(width) };
     const headers = { authorization: `Bearer ${this.opts.token}` };
-    return openStream(this.opts.fetch, this.url(path), headers, undefined, imageHeadersSchema);
+    const url = this.url(path, query);
+    return openStream(this.opts.fetch, url, headers, undefined, imageHeadersSchema);
   }
 
   /** Opens audio bytes with this person's key, passing `range` through. */

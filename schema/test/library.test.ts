@@ -2,13 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { generateKotlin } from '../codegen/kotlin.js';
 import { buildOpenApiDocument } from '../codegen/openapi.js';
 import {
+  ArtQuery,
   Availability,
   ErrorResponse,
+  getItem,
   ItemDetail,
   ItemParams,
   LibraryList,
   LibraryParams,
   listLibrary,
+  mediaArt,
   type Route,
   routes,
 } from '../src/index.js';
@@ -266,5 +269,60 @@ describe('the library route', () => {
     };
     const parameters = doc.paths['/api/library/{medium}']?.get.parameters ?? [];
     expect(parameters.map((p) => [p.name, p.in])).toEqual([['medium', 'path']]);
+  });
+});
+
+describe('the item route', () => {
+  it('opens one book, show or album for a signed-in member, at /api/items/{ref}', () => {
+    expect(routes).toContain(getItem);
+    expect(getItem).toMatchObject({
+      method: 'GET',
+      path: '/api/items/{ref}',
+      access: 'member',
+      params: ItemParams,
+      response: ItemDetail,
+    });
+  });
+});
+
+describe('the art route', () => {
+  it("streams a book's, show's or album's art for a signed-in member, at /api/media/{ref}/art", () => {
+    expect(routes).toContain(mediaArt);
+    expect(mediaArt).toMatchObject({
+      method: 'GET',
+      path: '/api/media/{ref}/art',
+      access: 'member',
+      params: ItemParams,
+      query: ArtQuery,
+      stream: 'image',
+    });
+  });
+
+  it('takes an optional size, small, medium or large, and nothing else', () => {
+    for (const query of [{}, { size: 'small' }, { size: 'medium' }, { size: 'large' }]) {
+      expect(ArtQuery.parse(query)).toEqual(query);
+    }
+    expect(ArtQuery.safeParse({ size: '4000' }).success).toBe(false);
+  });
+
+  it('is described as an image, whole, with no ranges', () => {
+    const doc = buildOpenApiDocument([mediaArt], ErrorResponse) as {
+      paths: Record<
+        string,
+        {
+          get: {
+            parameters: { name: string; in: string }[];
+            responses: Record<string, { content?: Record<string, unknown> }>;
+          };
+        }
+      >;
+    };
+    const get = doc.paths['/api/media/{ref}/art']?.get;
+    expect(get?.parameters.map((p) => [p.name, p.in])).toEqual([
+      ['ref', 'path'],
+      ['size', 'query'],
+    ]);
+    expect(Object.keys(get?.responses ?? {})).toEqual(['200', '400', '401', '403']);
+    expect(Object.keys(get?.responses['200']?.content ?? {})).toEqual(['image/*']);
   });
 });

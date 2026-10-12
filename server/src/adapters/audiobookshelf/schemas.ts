@@ -93,6 +93,18 @@ export const chapterSchema = z
   .object({ title: z.string(), start: z.number(), end: z.number() })
   .passthrough();
 
+/**
+ * `GET /api/items/:id?expanded=1` read for a book's page: its length in seconds, the sum of the
+ * files it plays, and its chapters (recorded).
+ */
+export const bookDetailSchema = z
+  .object({
+    media: z
+      .object({ duration: z.number().nonnegative(), chapters: z.array(chapterSchema).optional() })
+      .passthrough(),
+  })
+  .passthrough();
+
 /** `GET /api/items/:id?expanded=1` read for a book's chapters only (recorded): none for a show. */
 export const itemChaptersSchema = z
   .object({ media: z.object({ chapters: z.array(chapterSchema).optional() }).passthrough() })

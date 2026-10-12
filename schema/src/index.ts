@@ -33,8 +33,11 @@ export {
 } from './bookmarks.js';
 export { CommitId, HealthResponse } from './health.js';
 export {
+  ArtQuery,
+  ArtSize,
   Availability,
   AvailabilityKind,
+  ImageBytes,
   ItemDetail,
   ItemEpisode,
   ItemParams,
@@ -78,6 +81,7 @@ export {
   createBookmark,
   deleteBookmark,
   deleteDevice,
+  getItem,
   getMe,
   getQueue,
   getSetup,
@@ -90,6 +94,7 @@ export {
   login,
   loginCallback,
   logout,
+  mediaArt,
   mediaHls,
   mediaTrack,
   play,

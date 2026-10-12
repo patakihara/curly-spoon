@@ -33,6 +33,16 @@ data class AppToken(
 )
 
 @Serializable
+enum class ArtSize {
+    @SerialName("small")
+    SMALL,
+    @SerialName("medium")
+    MEDIUM,
+    @SerialName("large")
+    LARGE,
+}
+
+@Serializable
 data class Availability(
     val kind: AvailabilityKind,
     val status: RequestStatus? = null,
@@ -113,6 +123,41 @@ enum class HealthResponseStatus {
 }
 
 const val HLS_MIME = "application/vnd.apple.mpegurl"
+
+@Serializable
+data class ItemDetail(
+    val ref: MediaRef,
+    val kind: LibraryEntryKind,
+    val title: String,
+    val sub: String?,
+    val art: String?,
+    val progress: Double?,
+    val duration: Double?,
+    val availability: Availability,
+    val chapters: List<PlaybackChapter>,
+    val episodes: List<ItemEpisode>,
+    val tracks: List<ItemTrack>,
+)
+
+@Serializable
+data class ItemEpisode(
+    val ref: MediaRef,
+    val title: String,
+    val description: String?,
+    val publishedAt: Long?,
+    val duration: Double?,
+    val progress: Double?,
+    val finished: Boolean,
+)
+
+@Serializable
+data class ItemTrack(
+    val ref: MediaRef,
+    val number: Long?,
+    val title: String,
+    val sub: String?,
+    val duration: Double?,
+)
 
 @Serializable
 data class LibraryEntry(

@@ -4,13 +4,14 @@
  *
  * - Audiobookshelf, as the service identity `auralis` with Auralis's own key: the books page of two,
  *   oldest added first, that holds the given book (`shell-books-page`), each listed book as the
- *   index reads it (`shell-book-<n>`), and the book's cover (`shell-cover`, body synthesized).
+ *   index reads it (`shell-book-<n>`), and the book's cover as stored (`shell-cover`) and at the
+ *   art route's medium width (`shell-cover-medium`), bodies synthesized.
  * - Jellyfin, with the API key as the index asks: one page of two albums from each music library,
  *   by its id, at the page holding the given album where that library has it, else the first
  *   (`jf-library-albums-<n>`).
  * - Jellyfin, as `auralis` through a token minted by Quick Connect and logged out at the end: the
- *   person's views (`jf-user-views`) and the album's primary image (`jf-primary-image`, body
- *   synthesized).
+ *   person's views (`jf-user-views`) and the album's primary image as stored (`jf-primary-image`)
+ *   and at the medium width (`jf-primary-image-medium`), bodies synthesized.
  *
  * Only the library holding the book is listed: the Podcasts library is never listed or scanned,
  * and no audio file is opened, so no podcast stub is hydrated.
@@ -22,6 +23,7 @@ import { createRecorder } from './http/record.js';
 import { buildAuthorizationHeader } from './jellyfin/auth.js';
 import { JellyfinClient } from './jellyfin/client.js';
 import { JellyfinProvisioner, personDevice } from './jellyfin/quickConnect.js';
+import { ART_WIDTH } from '../routes/items.js';
 import { RECORD_USER_ID, TEST_IDENTITY } from './record-oidc.js';
 
 /** Audiobookshelf's cover: its body is household cover art. */
@@ -132,6 +134,12 @@ export async function recordShell(input: ShellRecordInput): Promise<{ written: s
     standIn: COVER_STAND_IN,
   });
   await cover.body.cancel();
+  const sized = await absCapture(
+    'shell-cover-medium',
+    () => abs.openCover(input.bookId, ART_WIDTH.medium),
+    { standIn: COVER_STAND_IN },
+  );
+  await sized.body.cancel();
 
   const jellyfinDir = join(input.root, 'jellyfin', 'recordings');
   const jfPlain = new JellyfinClient({
@@ -196,6 +204,13 @@ export async function recordShell(input: ShellRecordInput): Promise<{ written: s
     });
     await image.body.cancel();
     written.push(join(jellyfinDir, 'jf-primary-image.json'));
+    const sizedImage = await jfRec.capture(
+      'jf-primary-image-medium',
+      () => jf.openImage(input.albumId, ART_WIDTH.medium),
+      { standIn: PRIMARY_IMAGE_STAND_IN },
+    );
+    await sizedImage.body.cancel();
+    written.push(join(jellyfinDir, 'jf-primary-image-medium.json'));
   } finally {
     const res = await input.fetch(url(jellyfinUrl, 'Sessions/Logout'), {
       method: 'POST',

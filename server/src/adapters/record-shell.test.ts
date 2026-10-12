@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { type FetchLike } from './http/fetch.js';
 import { recordingSchema } from './http/recording.js';
 import { runRecord } from './record-cli.js';
+import { ART_WIDTH } from '../routes/items.js';
 import { COVER_STAND_IN, PRIMARY_IMAGE_STAND_IN } from './record-shell.js';
 
 const ABS = 'http://abs.invalid:13378';
@@ -131,7 +132,7 @@ async function run(username?: string) {
 const read = (file: string) => recordingSchema.parse(JSON.parse(readFileSync(file, 'utf8')));
 
 describe("record mode for M1.shell's reads", () => {
-  it("records the books page holding the book, its books, the book's cover, each music library's albums page, the views and the album's image", async () => {
+  it("records the books page holding the book, its books, the book's cover, each music library's albums page, the views and the album's image, each image twice", async () => {
     const { code, err, files } = await run();
     expect(err).toEqual([]);
     expect(code).toBe(0);
@@ -140,10 +141,12 @@ describe("record mode for M1.shell's reads", () => {
       'audiobookshelf/recordings/shell-book-1.json',
       'audiobookshelf/recordings/shell-book-2.json',
       'audiobookshelf/recordings/shell-cover.json',
+      'audiobookshelf/recordings/shell-cover-medium.json',
       'jellyfin/recordings/jf-library-albums-1.json',
       'jellyfin/recordings/jf-library-albums-2.json',
       'jellyfin/recordings/jf-user-views.json',
       'jellyfin/recordings/jf-primary-image.json',
+      'jellyfin/recordings/jf-primary-image-medium.json',
     ]);
   });
 
@@ -162,21 +165,33 @@ describe("record mode for M1.shell's reads", () => {
 
   it('records each music library by its id, at the page holding the album where it is there', async () => {
     const { files } = await run();
-    const [first, second] = [read(files[4]!), read(files[5]!)];
+    const [first, second] = [read(files[5]!), read(files[6]!)];
     expect(first.request.query).toMatchObject({ ParentId: 'music', StartIndex: '2', Limit: '2' });
     expect(second.request.query).toMatchObject({ ParentId: 'more', StartIndex: '0', Limit: '2' });
   });
 
   it('keeps the images their real status and headers, with synthesized bodies', async () => {
     const { files } = await run();
-    const cover = read(files[3]!);
-    expect(cover.request.path).toBe(`/api/items/${BOOK}/cover`);
-    expect(cover.response.headers['content-type']).toBe('image/webp');
-    expect(cover.response.body).toEqual(COVER_STAND_IN);
-    const image = read(files[7]!);
-    expect(image.request.path).toBe(`/Items/${ALBUM}/Images/Primary`);
-    expect(image.response.headers['content-type']).toBe('image/jpeg');
-    expect(image.response.body).toEqual(PRIMARY_IMAGE_STAND_IN);
+    for (const file of [files[3]!, files[4]!]) {
+      const cover = read(file);
+      expect(cover.request.path).toBe(`/api/items/${BOOK}/cover`);
+      expect(cover.response.headers['content-type']).toBe('image/webp');
+      expect(cover.response.body).toEqual(COVER_STAND_IN);
+    }
+    for (const file of [files[8]!, files[9]!]) {
+      const image = read(file);
+      expect(image.request.path).toBe(`/Items/${ALBUM}/Images/Primary`);
+      expect(image.response.headers['content-type']).toBe('image/jpeg');
+      expect(image.response.body).toEqual(PRIMARY_IMAGE_STAND_IN);
+    }
+  });
+
+  it('records each image as stored and at the medium size the art route asks for', async () => {
+    const { files } = await run();
+    expect(read(files[3]!).request.query).toEqual({});
+    expect(read(files[4]!).request.query).toEqual({ width: String(ART_WIDTH.medium) });
+    expect(read(files[8]!).request.query).toEqual({});
+    expect(read(files[9]!).request.query).toEqual({ maxWidth: String(ART_WIDTH.medium) });
   });
 
   it('never lists or reads the Podcasts library, and logs out the token it minted', async () => {
@@ -187,7 +202,7 @@ describe("record mode for M1.shell's reads", () => {
 
   it('asks for the views and the image as the test user, through the minted token', async () => {
     const { files } = await run();
-    for (const file of [files[6]!, files[7]!]) {
+    for (const file of [files[7]!, files[8]!, files[9]!]) {
       expect(read(file).request.headers.authorization).toContain('DeviceId="auralis-recorder"');
     }
   });

@@ -57,8 +57,8 @@ function nullableNamed(
  * and so does each of [constants], one literal value both clients name, marked `const`.
  * A route that is not public asks for the session cookie or an app's bearer token, and may answer
  * 401 or 403 with `error`. A route that parses its input may answer 400; a rate-limited one, 429;
- * a streamed one answers audio, 206 to a range and 416 to a range past the end, and HEAD with the
- * same answers and no body.
+ * a streamed audio one answers audio, 206 to a range and 416 to a range past the end; a streamed
+ * image one answers the image whole; both answer HEAD with the same answers and no body.
  */
 export function buildOpenApiDocument(
   routes: readonly Route[],
@@ -106,7 +106,7 @@ export function buildOpenApiDocument(
               headers: { Location: { schema: { type: 'string' as const } } },
             },
           }
-        : route.stream
+        : route.stream === 'audio'
           ? {
               200: {
                 description: route.responseDescription,
@@ -117,12 +117,19 @@ export function buildOpenApiDocument(
                 content: { 'audio/*': { schema: route.response } },
               },
             }
-          : {
-              200: {
-                description: route.responseDescription,
-                content: { 'application/json': { schema: route.response } },
-              },
-            }),
+          : route.stream === 'image'
+            ? {
+                200: {
+                  description: route.responseDescription,
+                  content: { 'image/*': { schema: route.response } },
+                },
+              }
+            : {
+                200: {
+                  description: route.responseDescription,
+                  content: { 'application/json': { schema: route.response } },
+                },
+              }),
       ...(parsesInput ? { 400: refusal('The request does not parse, or was refused.') } : {}),
       ...(signedIn
         ? {
@@ -131,7 +138,7 @@ export function buildOpenApiDocument(
           }
         : {}),
       ...(route.rateLimited ? { 429: refusal('Too many attempts; see Retry-After.') } : {}),
-      ...(route.stream
+      ...(route.stream === 'audio'
         ? { 416: { description: 'The range starts past the end of the file.' } }
         : {}),
     };

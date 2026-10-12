@@ -415,6 +415,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/items/{ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One book, show or album the signed-in person may open */
+        get: operations["getItem"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/media/{ref}/art": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A book's, show's or album's art, with the signed-in person's own access */
+        get: operations["getMediaArt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /** A book's, show's or album's art, with the signed-in person's own access */
+        head: operations["getMediaArtHead"];
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -660,6 +695,37 @@ export interface components {
         };
         /** @enum {string} */
         LibraryMedium: "books" | "podcasts" | "music";
+        ItemEpisode: {
+            ref: components["schemas"]["MediaRef"];
+            title: string;
+            description: string | null;
+            publishedAt: number | null;
+            duration: number | null;
+            progress: number | null;
+            finished: boolean;
+        };
+        ItemTrack: {
+            ref: components["schemas"]["MediaRef"];
+            number: number | null;
+            title: string;
+            sub: string | null;
+            duration: number | null;
+        };
+        ItemDetail: {
+            ref: components["schemas"]["MediaRef"];
+            kind: components["schemas"]["LibraryEntryKind"];
+            title: string;
+            sub: string | null;
+            art: string | null;
+            progress: number | null;
+            duration: number | null;
+            availability: components["schemas"]["Availability"];
+            chapters: components["schemas"]["PlaybackChapter"][];
+            episodes: components["schemas"]["ItemEpisode"][];
+            tracks: components["schemas"]["ItemTrack"][];
+        };
+        /** @enum {string} */
+        ArtSize: "small" | "medium" | "large";
     };
     responses: never;
     parameters: never;
@@ -2083,6 +2149,149 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
+            };
+        };
+    };
+    getItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Its header, then a book's chapters, a show's episodes in its order, or an album's tracks. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemDetail"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getMediaArt: {
+        parameters: {
+            query?: {
+                size?: components["schemas"]["ArtSize"];
+            };
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The image, at the size asked for, or as stored. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/*": string;
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getMediaArtHead: {
+        parameters: {
+            query?: {
+                size?: components["schemas"]["ArtSize"];
+            };
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The image, at the size asked for, or as stored. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

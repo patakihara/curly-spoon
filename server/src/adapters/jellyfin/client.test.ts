@@ -71,7 +71,7 @@ describe('the Jellyfin client', () => {
     expect(sent[0]?.headers.get('authorization')).toContain('Token="theirs"');
   });
 
-  it("an item's primary image opens as an image stream, and anything else is refused", async () => {
+  it("an item's primary image opens as an image stream, scaled down to a width when asked, and anything else is refused", async () => {
     const sent: string[] = [];
     let type = 'image/jpeg';
     const fetch: FetchLike = async (url) => {
@@ -91,6 +91,8 @@ describe('the Jellyfin client', () => {
       'last-modified': 'x',
     });
     await image.body.cancel();
+    await (await jf.openImage('a1', 512)).body.cancel();
+    expect(sent[1]).toBe('http://upstream.invalid/Items/a1/Images/Primary?maxWidth=512');
     type = 'text/html';
     const failure = (await jf.openImage('a1').catch((e: unknown) => e)) as AdapterError;
     expect(failure.kind).toBe('parse');

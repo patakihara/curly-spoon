@@ -252,11 +252,14 @@ export class JellyfinClient {
   }
 
   /**
-   * An item's primary image, as Jellyfin stores it: `GET /Items/{id}/Images/Primary`. With no
-   * `Accept` asking for another format, Jellyfin answers JPEG (recorded).
+   * An item's primary image, as Jellyfin stores it or scaled down to at most `maxWidth` pixels
+   * wide: `GET /Items/{id}/Images/Primary`. With no `Accept` asking for another format, Jellyfin
+   * answers JPEG (recorded).
    */
-  openImage(itemId: string): Promise<UpstreamFile<ImageHeaders>> {
-    const url = this.url(`Items/${encodeURIComponent(itemId)}/Images/Primary`);
+  openImage(itemId: string, maxWidth?: number): Promise<UpstreamFile<ImageHeaders>> {
+    const query: Record<string, string> =
+      maxWidth === undefined ? {} : { maxWidth: String(maxWidth) };
+    const url = this.url(`Items/${encodeURIComponent(itemId)}/Images/Primary`, query);
     const authorization = buildAuthorizationHeader(this.device, this.opts.token);
     return openStream(this.opts.fetch, url, { authorization }, undefined, imageHeadersSchema);
   }
