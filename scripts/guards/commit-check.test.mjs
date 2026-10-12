@@ -70,6 +70,22 @@ test('[M0.uikit/d] Plan: none is refused for an app change and accepted for a to
   });
 });
 
+test('a commit through the hook forks no background git maintenance that could outlive removeTree', () => {
+  const traced = process.env.GIT_TRACE;
+  process.env.GIT_TRACE = '1';
+  try {
+    withRepo((root) => {
+      const run = commitWith(root, { 'docs/inbox/idea.md': 'An idea.\n' }, 'An idea\n');
+      assert.equal(run.status, 0, run.stderr);
+      assert.match(run.stderr, /trace: /);
+      assert.doesNotMatch(run.stderr, /maintenance|\bgc\b/);
+    });
+  } finally {
+    if (traced === undefined) delete process.env.GIT_TRACE;
+    else process.env.GIT_TRACE = traced;
+  }
+});
+
 test('a tooling-only commit needs no Plan: line', () => {
   withRepo((root) => {
     const run = commitWith(

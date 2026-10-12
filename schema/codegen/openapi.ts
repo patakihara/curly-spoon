@@ -6,6 +6,52 @@ import type { Route } from '../src/routes.js';
 const SESSION_SCHEME = 'session';
 const BEARER_SCHEME = 'bearer';
 
+const isZod = (value: unknown): value is z.ZodTypeAny =>
+  typeof value === 'object' && value !== null && '_def' in value && 'safeParse' in value;
+
+/** The schemas a schema holds: an object's fields, an array's items, what a wrapper wraps. */
+function children(schema: z.ZodTypeAny): z.ZodTypeAny[] {
+  const def = schema._def as Record<string, unknown>;
+  const shape = typeof def.shape === 'function' ? Object.values((def.shape as () => object)()) : [];
+  const options = Array.isArray(def.options) ? def.options : [];
+  const items = Array.isArray(def.items) ? def.items : [];
+  return [
+    ...shape,
+    ...options,
+    ...items,
+    def.type,
+    def.innerType,
+    def.schema,
+    def.left,
+    def.right,
+    def.keyType,
+    def.valueType,
+  ].filter(isZod);
+}
+
+const refIdOf = (schema: z.ZodTypeAny): string | undefined =>
+  (schema._def as { openapi?: { _internal?: { refId?: string } } }).openapi?._internal?.refId;
+
+/**
+ * The named schemas `schema` reaches as `.nullable()`, by name, each after any such schema it
+ * holds. zod-to-openapi 7 makes a component nullable when the first place it meets it is
+ * `.nullable()` (and then drops the null where it was asked for); registering these before
+ * anything that holds them keeps every component as it is written.
+ */
+function nullableNamed(
+  schema: z.ZodTypeAny,
+  found: Map<string, z.ZodTypeAny>,
+  seen = new Set<z.ZodTypeAny>(),
+) {
+  if (seen.has(schema)) return;
+  seen.add(schema);
+  for (const child of children(schema)) nullableNamed(child, found, seen);
+  const def = schema._def as { typeName?: string; innerType?: z.ZodTypeAny };
+  const inner = def.typeName === 'ZodNullable' ? def.innerType : undefined;
+  const refId = inner === undefined ? undefined : refIdOf(inner);
+  if (inner !== undefined && refId !== undefined && !found.has(refId)) found.set(refId, inner);
+}
+
 /**
  * The OpenAPI 3.1 document for these routes; every `.openapi('Name')` schema becomes a component,
  * and so does each of [constants], one literal value both clients name, marked `const`.
@@ -21,6 +67,15 @@ export function buildOpenApiDocument(
 ): ReturnType<OpenApiGeneratorV31['generateDocument']> {
   const registry = new OpenAPIRegistry();
   for (const [name, schema] of Object.entries(constants)) registry.register(name, schema);
+  const components = new Map<string, z.ZodTypeAny>();
+  for (const route of routes) {
+    for (const schema of [route.params, route.query, route.body, route.response]) {
+      if (schema !== undefined) nullableNamed(schema, components);
+    }
+  }
+  for (const [name, schema] of components) {
+    if (!(name in constants)) registry.register(name, schema);
+  }
   registry.registerComponent('securitySchemes', SESSION_SCHEME, {
     type: 'apiKey',
     in: 'cookie',

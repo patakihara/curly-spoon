@@ -7,14 +7,28 @@
  * needed: ABS edits an episode without moving its show's `updatedAt` (recorded), so the marker
  * alone would miss it. Rows are written only where their content changed.
  *
+ * A show read again has its feed read with it, for its episode order and its episodes' dates; a
+ * feed that can't be read leaves the show with the ordering the index already holds. A show none
+ * of whose feed reads has succeeded is stored as `unknown`, played newest first, and read again on
+ * the next run until its feed answers.
+ *
  * Top-level items a pass did not see are removed only after a complete pass, from the first page
  * to the last, and only once the upstream confirms each is gone; a window of pages (`pages`) never
  * removes anything.
  */
 import type { AbsClient } from '../adapters/audiobookshelf/client.js';
+import type { ItemSummary } from '../adapters/audiobookshelf/schemas.js';
+import type { Feed } from '../adapters/feed/client.js';
 import type { JellyfinClient } from '../adapters/jellyfin/client.js';
 import type { Db } from '../store/connection.js';
-import { absTree, albumRow, trackRows, type IndexSource } from './rows.js';
+import {
+  absTree,
+  albumRow,
+  type IndexSource,
+  orderingFromFeed,
+  type ShowOrdering,
+  trackRows,
+} from './rows.js';
 import {
   applyRow,
   applyTree,
@@ -23,6 +37,7 @@ import {
   readSync,
   recordRun,
   removeItem,
+  storedOrdering,
   unseenItems,
   writeSync,
 } from './store.js';
@@ -34,6 +49,8 @@ export interface IndexJobOptions {
   db: Db;
   abs?: Pick<AbsClient, 'getLibraries' | 'getLibraryItems' | 'getItemSummary' | 'findItemSummary'>;
   jellyfin?: Pick<JellyfinClient, 'getAlbums' | 'getAlbumTracks' | 'findAlbum'>;
+  /** Reads a show's feed from its URL. */
+  feeds?: (url: string) => Promise<Feed>;
   now?: () => number;
   /** In [0, 1): spreads each item's next re-read, so the daily re-reads don't all land at once. */
   random?: () => number;
@@ -60,6 +77,7 @@ const JITTER_SHARE = 0.25;
 
 interface Pass {
   db: Db;
+  feeds: IndexJobOptions['feeds'];
   size: number;
   first: number;
   count: number;
@@ -100,6 +118,23 @@ async function removeGone(
   }
 }
 
+/**
+ * A show's ordering from its feed. A feed that fails leaves what the index holds, else `unknown`.
+ * A show with no feed to read keeps what the index holds, else none (the default order).
+ */
+async function showOrdering(pass: Pass, item: ItemSummary): Promise<ShowOrdering | undefined> {
+  if (item.mediaType !== 'podcast') return undefined;
+  const stored = storedOrdering(pass.db, item.id);
+  const url = item.media.metadata.feedUrl;
+  if (pass.feeds === undefined || !url) return stored?.order === 'unknown' ? undefined : stored;
+  try {
+    return orderingFromFeed(item, await pass.feeds(url));
+  } catch {
+    pass.counts.feedsFailed += 1;
+    return stored ?? { order: 'unknown', publishedAt: new Map() };
+  }
+}
+
 async function indexAbs(pass: Pass, abs: NonNullable<IndexJobOptions['abs']>): Promise<boolean> {
   let complete = true;
   for (const library of await abs.getLibraries()) {
@@ -117,8 +152,10 @@ async function indexAbs(pass: Pass, abs: NonNullable<IndexJobOptions['abs']>): P
         if (!stale(pass, 'abs', item.id, version)) continue;
         const summary = await abs.getItemSummary(item.id);
         pass.counts.fetched += 1;
-        applyTree(pass.db, absTree(summary), pass.now, pass.counts);
-        markRead(pass, 'abs', item.id, version);
+        const tree = absTree(summary, await showOrdering(pass, summary));
+        applyTree(pass.db, tree, pass.now, pass.counts);
+        // An unknown order is left unread, so the next run tries the show's feed again.
+        if (tree.top.episodeOrder !== 'unknown') markRead(pass, 'abs', item.id, version);
       }
       if (listed.results.length === 0 || (page + 1) * pass.size >= listed.total) {
         reachedEnd = true;
@@ -188,6 +225,7 @@ export async function runIndex(options: IndexJobOptions): Promise<IndexRun> {
     const startedAt = now();
     const pass: Pass = {
       db: options.db,
+      feeds: options.feeds,
       size: options.pageSize ?? DEFAULT_PAGE_SIZE,
       first: options.pages?.first ?? 0,
       count: options.pages?.count ?? Number.POSITIVE_INFINITY,

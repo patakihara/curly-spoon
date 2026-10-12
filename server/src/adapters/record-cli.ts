@@ -16,6 +16,9 @@
  * directly, each file's first two bytes, then the same book transcoded to HLS, its playlist and
  * first segment. The transcode is closed as soon as it is recorded.
  *
+ * `--only episode --play-item <show> --episode <id>` records one podcast episode played through its
+ * show and its file's first two bytes, then closes that session at once.
+ *
  * `--only jfplay --jellyfin-item <album id>` records M1.music's calls as the service identity
  * `auralis`, through a Jellyfin token minted for it by Quick Connect and logged out at the end:
  * the album and its tracks, its first track, and that track's first two bytes.
@@ -24,6 +27,11 @@
  * service identity `auralis`: a play's sync and close and a bookmark on the book, and a track's
  * start, progress and stop, each after real listening time. It reads the test user's state
  * first, undoes the run whatever fails, and fails unless a read-back matches (record-progress.ts).
+ *
+ * `--only sessions --books <a,b> --shows <a,b> --jellyfin-item <track>` records M1.sessions' reads
+ * as the service identity `auralis`: two books of one series, the two shows' public feeds trimmed,
+ * a finished episode on the first show read back through `GET /api/me` and undone, and Jellyfin's
+ * Instant Mix for the track (record-sessions.ts).
  *
  * `--dry-run` makes the same calls but writes into a fresh temporary folder instead of the
  * committed recordings, and says where.
@@ -45,6 +53,7 @@ import { JellyfinClient } from './jellyfin/client.js';
 import { JellyfinProvisioner, personDevice } from './jellyfin/quickConnect.js';
 import { RECORD_USER_ID, recordOidc, TEST_IDENTITY } from './record-oidc.js';
 import { recordProgress } from './record-progress.js';
+import { recordSessions } from './record-sessions.js';
 
 /**
  * The index calls record one page of two items from each library. The fifth page holds the
@@ -63,10 +72,16 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
   --abs <url>        Audiobookshelf base URL
   --jellyfin <url>   Jellyfin base URL
   --jellyfin-item <id> the Jellyfin item to record, instead of the first album; for --only
-                     jfplay, the album; for --only progress, the track
-  --only <name>      record only abs, jellyfin, index, play, jfplay or progress; or oidc, a
-                     sign-in and its links
-  --play-item <id>   the multi-file book --only play and --only progress record
+                     jfplay, the album; for --only progress, the track; for --only
+                     sessions, the track Instant Mix is asked for
+  --only <name>      record only abs, jellyfin, index, play, episode, jfplay, progress or
+                     sessions; or
+                     oidc, a sign-in and its links
+  --books <a,b>      for --only sessions, two books of one series, in series order
+  --shows <a,b>      for --only sessions, two shows, the first serial
+  --play-item <id>   the multi-file book --only play and --only progress record; for
+                     --only episode, the show
+  --episode <id>     for --only episode, the episode played
   --index-page <n>   the page of two the index calls record, from 0 (default ${INDEX_PAGE})
   --oidc <url>       the sign-on's issuer, for --only oidc
   --oidc-version <v> the sign-on's version, for --only oidc
@@ -74,7 +89,7 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
   --help             show this
 
 stdin carries ABS_API_KEY=... and JELLYFIN_API_KEY=... lines (jfplay needs only the latter;
-progress needs both); for --only oidc,
+progress and sessions need both); for --only oidc,
 OIDC_CLIENT_SECRET, OIDC_TEST_PASSWORD, ABS_PROVISION_KEY and JELLYFIN_API_KEY.
 `;
 
@@ -437,16 +452,26 @@ export const SHOW_NOTES_DROPPED =
   'Show notes dropped by the recorder: they carry third-party links.';
 
 /**
- * Replaces each episode's `description` in a recorded show. Show notes are published HTML full of
- * sponsors' and networks' links and addresses, which the scan rightly fails; the index never
- * reads them. Everything else in the answer stays as recorded.
+ * Replaces each episode's `description` in a recorded show, or in the show a play session carries
+ * as its `libraryItem`. Show notes are published HTML full of sponsors' and networks' links and
+ * addresses, which the scan rightly fails; nothing reads them. Everything else in the answer stays
+ * as recorded.
  */
 export function dropShowNotes(raw: RawExchange): RawExchange {
   const body = raw.response.body;
   if (body === null || !('json' in body)) return raw;
-  const item = body.json as { media?: { episodes?: unknown } } | null;
+  const answer = body.json as { libraryItem?: unknown } | null;
+  const json =
+    answer !== null && typeof answer === 'object' && 'libraryItem' in answer
+      ? { ...answer, libraryItem: withoutShowNotes(answer.libraryItem) }
+      : withoutShowNotes(answer);
+  return { ...raw, response: { ...raw.response, body: { json } } };
+}
+
+function withoutShowNotes(show: unknown): unknown {
+  const item = show as { media?: { episodes?: unknown } } | null;
   const episodes = item?.media?.episodes;
-  if (!Array.isArray(episodes)) return raw;
+  if (!Array.isArray(episodes)) return show;
   const media = {
     ...item?.media,
     episodes: episodes.map((e: unknown) =>
@@ -455,7 +480,7 @@ export function dropShowNotes(raw: RawExchange): RawExchange {
         : e,
     ),
   };
-  return { ...raw, response: { ...raw.response, body: { json: { ...item, media } } } };
+  return { ...item, media };
 }
 
 /**
@@ -556,6 +581,9 @@ export async function runRecord(io: RecordIo): Promise<number> {
       jellyfin: { type: 'string' },
       'jellyfin-item': { type: 'string' },
       'play-item': { type: 'string' },
+      episode: { type: 'string' },
+      books: { type: 'string' },
+      shows: { type: 'string' },
       'index-page': { type: 'string' },
       only: { type: 'string' },
       oidc: { type: 'string' },
@@ -571,9 +599,21 @@ export async function runRecord(io: RecordIo): Promise<number> {
   const only = values.only;
   if (
     only !== undefined &&
-    !['abs', 'jellyfin', 'index', 'play', 'jfplay', 'progress', 'oidc'].includes(only)
+    ![
+      'abs',
+      'jellyfin',
+      'index',
+      'play',
+      'episode',
+      'jfplay',
+      'progress',
+      'sessions',
+      'oidc',
+    ].includes(only)
   ) {
-    io.err(`--only is abs, jellyfin, index, play, jfplay, progress or oidc, not ${only}`);
+    io.err(
+      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions or oidc, not ${only}`,
+    );
     return 2;
   }
   const indexPage = Number(values['index-page'] ?? INDEX_PAGE);
@@ -584,8 +624,10 @@ export async function runRecord(io: RecordIo): Promise<number> {
   const root = values['dry-run'] ? mkdtempSync(join(tmpdir(), 'auralis-record-')) : here;
   if (only === 'oidc') return runOidc(io, values, parseKeys(io.stdin), root);
   if (only === 'play') return runPlay(io, values, parseKeys(io.stdin), root);
+  if (only === 'episode') return runEpisode(io, values, parseKeys(io.stdin), root);
   if (only === 'jfplay') return runJellyfinPlay(io, values, parseKeys(io.stdin), root);
   if (only === 'progress') return runProgress(io, values, parseKeys(io.stdin), root);
+  if (only === 'sessions') return runSessions(io, values, parseKeys(io.stdin), root);
   const wantIndex = only === undefined || only === 'index';
   const wantAbs = only !== 'jellyfin';
   const wantJellyfin = only !== 'abs';
@@ -680,6 +722,66 @@ async function runPlay(
   return scanWritten(io, written, []);
 }
 
+async function runEpisode(
+  io: RecordIo,
+  values: Record<string, string | boolean | undefined>,
+  keys: Record<string, string>,
+  root: string,
+): Promise<number> {
+  const [baseUrl, showId, episodeId, token] = [
+    values.abs,
+    values['play-item'],
+    values.episode,
+    keys.ABS_API_KEY,
+  ];
+  const missing = [
+    typeof baseUrl !== 'string' && '--abs',
+    typeof showId !== 'string' && '--play-item',
+    typeof episodeId !== 'string' && '--episode',
+    token === undefined && 'ABS_API_KEY on stdin',
+  ].filter(Boolean);
+  if (missing.length > 0) {
+    io.err(`missing ${missing.join(', ')}\n\n${USAGE}`);
+    return 2;
+  }
+  const dir = join(root, 'audiobookshelf', 'recordings');
+  const upstreamVersion = await new AbsClient({
+    baseUrl: baseUrl as string,
+    token: token!,
+    fetch: io.fetch,
+  }).getServerVersion();
+  const rec = createRecorder({
+    fetch: io.fetch,
+    dir,
+    upstream: 'audiobookshelf',
+    upstreamVersion,
+    secrets: [token!],
+    baseUrl: baseUrl as string,
+    prepare: dropShowNotes,
+  });
+  const abs = new AbsClient({ baseUrl: baseUrl as string, token: token!, fetch: rec.fetch });
+  const device = { deviceId: 'auralis-recorder', clientVersion: CLIENT_VERSION };
+  const played = await rec.capture('episode-play', () =>
+    abs.playEpisode(showId as string, episodeId as string, device),
+  );
+  try {
+    const [track, ...rest] = played.audioTracks;
+    const file = track === undefined || rest.length > 0 ? null : contentUrlParts(track.contentUrl);
+    if (file === null) throw new Error('the play answer is not a direct play of one file');
+    const opened = await rec.capture('episode-file', () => abs.openFile(file, 'bytes=0-1'), {
+      standIn: MULTI_FILE_STAND_IN,
+    });
+    await opened.body.cancel();
+  } finally {
+    await rec.capture('episode-close', () => abs.closeSession(played.id));
+  }
+  return scanWritten(
+    io,
+    ['episode-play', 'episode-file', 'episode-close'].map((c) => join(dir, `${c}.json`)),
+    [],
+  );
+}
+
 async function runJellyfinPlay(
   io: RecordIo,
   values: Record<string, string | boolean | undefined>,
@@ -737,6 +839,57 @@ async function runProgress(
   const scanned = scanWritten(io, written, []);
   if (!matches) {
     io.err("the test user's state is not as it was before the run: do not commit");
+    return 1;
+  }
+  return scanned;
+}
+
+/** Two comma-separated ids, or undefined. */
+function pair(value: string | boolean | undefined): [string, string] | undefined {
+  if (typeof value !== 'string') return undefined;
+  const ids = value.split(',').map((v) => v.trim());
+  return ids.length === 2 && ids.every((v) => v !== '') ? [ids[0]!, ids[1]!] : undefined;
+}
+
+async function runSessions(
+  io: RecordIo,
+  values: Record<string, string | boolean | undefined>,
+  keys: Record<string, string>,
+  root: string,
+): Promise<number> {
+  const books = pair(values.books);
+  const shows = pair(values.shows);
+  const need = {
+    '--abs': values.abs,
+    '--jellyfin': values.jellyfin,
+    '--jellyfin-item': values['jellyfin-item'],
+    '--books (two ids)': books && 'ok',
+    '--shows (two ids)': shows && 'ok',
+    'ABS_API_KEY on stdin': keys.ABS_API_KEY,
+    'JELLYFIN_API_KEY on stdin': keys.JELLYFIN_API_KEY,
+  };
+  const missing = Object.entries(need)
+    .filter(([, v]) => typeof v !== 'string' || v === '')
+    .map(([k]) => k);
+  if (missing.length > 0) {
+    io.err(`missing ${missing.join(', ')}\n\n${USAGE}`);
+    return 2;
+  }
+  const { written, matches } = await recordSessions({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    absUrl: values.abs as string,
+    jellyfinUrl: values.jellyfin as string,
+    absKey: keys.ABS_API_KEY as string,
+    jellyfinKey: keys.JELLYFIN_API_KEY as string,
+    books: books!,
+    shows: shows!,
+    mixTrack: values['jellyfin-item'] as string,
+  });
+  const scanned = scanWritten(io, written, []);
+  if (!matches) {
+    io.err("the test user's episode progress is not as it was before the run: do not commit");
     return 1;
   }
   return scanned;

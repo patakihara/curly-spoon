@@ -50,11 +50,13 @@ export interface Finding {
 }
 
 /**
- * Public hosts that published metadata carries: an album's `ExternalUrls` on Jellyfin, and a
- * podcast's feed, episode enclosures and directory page on Audiobookshelf.
+ * Public hosts that published metadata carries: an album's `ExternalUrls` on Jellyfin, a
+ * podcast's feed, episode enclosures and directory page on Audiobookshelf, and the iTunes
+ * namespace a feed declares.
  */
 export const PUBLIC_HOSTS: readonly string[] = [
   'musicbrainz.org',
+  'www.itunes.com',
   'www.theaudiodb.com',
   'www.omnycontent.com',
   'podtrac.com',

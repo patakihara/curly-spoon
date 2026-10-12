@@ -36,7 +36,7 @@ Each rule here is a check that fails, not a habit to remember.
 ::: card
 #### The progress: computed, never written
 
-- **Done**: each item's check (a test, a recording, a route that exists) is tagged with its id; done means it passes. Items that are done only when you say so ("you used it for a week") get your sign-off as a git tag.
+- **Done**: each item's check (a test, a recording, a route that exists) is tagged with its id; done means it passes. Items that are done only when you say so get your sign-off as a git tag.
 - **In progress**: unfinished work lives on a branch whose description is its "where I stopped, what's next" note, gone when the branch merges.
 - **Next**: the first unfinished item of the current milestone.
 :::
@@ -79,5 +79,5 @@ Anything you say about Auralis, in any session or artifact comment, takes one fi
 - **Five kinds only:** a product call that passes your test ("would she have an opinion, and does the answer change what she gets?"); a name; anything published or shared beyond the machines; anything destructive or irreversible; something only you can physically do (try a milestone build, sign off, export YouTube cookies, test in the car).
 - **Every item carries its default**, and work goes ahead on it: a working name gets used until you rename it, a product call gets the session's best choice, yours to overturn. Only irreversible or outward-facing actions wait for your answer; other work continues around them.
 - **Kept small by checks.** An item without its kind and default is rejected. Over about five open items means sessions over-ask, and the session-start summary says so. Answered items are deleted.
-- **Decisions made for you are visible, not queued.** They're written into the plan in place, their commits carrying a `Decision:` line. The session-start summary and this page list recent ones; overruling one is just saying so.
+- **Decisions made for you are visible, not queued.** They're written into the plan in place, their commits carrying a `Decision:` line. The session-start summary and this page list recent ones; overruling one is saying so.
 - **Where you see it:** a "waiting on you" box at the top of this page, in every session's opening summary, and as a phone notification when an item is time-sensitive.

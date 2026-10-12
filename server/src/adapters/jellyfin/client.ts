@@ -24,6 +24,9 @@ import {
   userListSchema,
 } from './schemas.js';
 
+/** How many tracks autoplay's radio asks Instant Mix for, and the recording records. */
+export const INSTANT_MIX_LIMIT = 20;
+
 /** Jellyfin counts time in 100 ns ticks. */
 export const TICKS_PER_SECOND = 10_000_000;
 
@@ -141,6 +144,16 @@ export class JellyfinClient {
       Fields: INDEX_FIELDS,
     };
     return (await this.get('Items', indexQueryResultSchema, query)).Items;
+  }
+
+  /**
+   * Jellyfin's Instant Mix for one track: up to `limit` similar tracks from the person's own
+   * library, `GET /Items/{id}/InstantMix`, with the index's fields.
+   */
+  async getInstantMix(itemId: string, limit: number): Promise<IndexItem[]> {
+    const query = { Limit: String(limit), Fields: INDEX_FIELDS };
+    const path = `Items/${encodeURIComponent(itemId)}/InstantMix`;
+    return (await this.get(path, indexQueryResultSchema, query)).Items;
   }
 
   /** The first administrator's id: `GET /Users`, which only an admin token may call. */

@@ -3,13 +3,14 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AbsClient } from '../adapters/audiobookshelf/client.js';
+import { readFeed } from '../adapters/feed/client.js';
 import { type FetchLike } from '../adapters/http/fetch.js';
 import { type Recording, recordingSchema } from '../adapters/http/recording.js';
 import { replayFetch } from '../adapters/http/replay.js';
 import { JellyfinClient } from '../adapters/jellyfin/client.js';
 import { openDatabase, type Db } from '../store/connection.js';
 import { runIndex } from './job.js';
-import { listIndexed, type StoredRow } from './store.js';
+import { booksInSeries, episodesInOrder, listIndexed, type StoredRow } from './store.js';
 
 const ADAPTERS = fileURLToPath(new URL('../adapters/', import.meta.url));
 const HOUR = 60 * 60 * 1000;
@@ -37,7 +38,9 @@ const JELLYFIN_CALLS = [
   'index-album-tracks-1',
   'index-album-tracks-2',
 ] as const;
+const FEED_CALLS = ['show-1-feed', 'show-2-feed'] as const;
 type AbsCall = (typeof ABS_CALLS)[number];
+type FeedCall = (typeof FEED_CALLS)[number];
 type JellyfinCall = (typeof JELLYFIN_CALLS)[number];
 
 /** The committed recordings, as parsed JSON bodies a test may copy and change. */
@@ -50,6 +53,10 @@ function recorded() {
     jellyfin: Object.fromEntries(
       JELLYFIN_CALLS.map((c) => [c, recording('jellyfin', c)]),
     ) as Record<JellyfinCall, Recording>,
+    feed: Object.fromEntries(FEED_CALLS.map((c) => [c, recording('feed', c)])) as Record<
+      FeedCall,
+      Recording
+    >,
   };
 }
 
@@ -95,7 +102,7 @@ function changed<T>(r: Recording, edit: (json: T) => void): Recording {
 }
 
 /** Clients on replayed recordings, and every path they asked for. */
-function clients(abs: Recording[], jellyfin: Recording[]) {
+function clients(abs: Recording[], jellyfin: Recording[], feeds: Recording[] = []) {
   const asked: string[] = [];
   const counting =
     (fetch: FetchLike): FetchLike =>
@@ -115,16 +122,18 @@ function clients(abs: Recording[], jellyfin: Recording[]) {
     asked,
     abs: new AbsClient({ ...common, fetch: counting(replayFetch(abs)) }),
     jellyfin: new JellyfinClient({ ...common, fetch: counting(replayFetch(jellyfin)) }),
+    feeds: (url: string) => readFeed(counting(replayFetch(feeds)), url),
   };
 }
 
 /** Runs the index on the recorded page (the fifth, of two items per library). */
 async function run(db: Db, at: number, r = recorded(), random = () => 0) {
-  const c = clients(Object.values(r.abs), Object.values(r.jellyfin));
+  const c = clients(Object.values(r.abs), Object.values(r.jellyfin), Object.values(r.feed));
   const result = await runIndex({
     db,
     abs: c.abs,
     jellyfin: c.jellyfin,
+    feeds: c.feeds,
     now: () => at,
     random,
     pageSize: 2,
@@ -544,5 +553,208 @@ describe('removing what a complete pass did not see', () => {
       ).toEqual([]);
     }
     expect(listIndexed(db)).toEqual(before);
+  });
+});
+
+/** A copy of a recorded feed whose text is `edit` applied to the recorded text. */
+function feedWith(r: Recording, edit: (xml: string) => string): Recording {
+  const b = r.response.body;
+  if (b === null || !('text' in b)) throw new Error(r.call);
+  return { ...r, response: { ...r.response, body: { text: edit(b.text) } } };
+}
+
+function feedText(r: Recording): string {
+  const b = r.response.body;
+  if (b === null || !('text' in b)) throw new Error(r.call);
+  return b.text;
+}
+
+/** The recorded show's episodes, newest first by the dates its recorded feed gives them. */
+function newestFirstByFeed(show: AbsShow, feed: Recording): string[] {
+  const dated = [...feedText(feed).matchAll(/<item>([\s\S]*?)<\/item>/g)].map((m) => ({
+    at: Date.parse(/<pubDate>([^<]*)</.exec(m[1] ?? '')?.[1] ?? ''),
+    url: /<enclosure\b[^>]*\burl="([^"]*)"/.exec(m[1] ?? '')?.[1]?.replace(/&amp;/g, '&'),
+  }));
+  dated.sort((a, b) => b.at - a.at);
+  return dated.map((d) => show.media.episodes.find((e) => e.enclosure.url === d.url)!.id);
+}
+
+const shortTitle = (row: StoredRow) => row.title.split(':')[0];
+
+describe("episode order from each show's feed", () => {
+  it("plays a serial show oldest first and an episodic one newest first, by the feed's dates", async () => {
+    const r = recorded();
+    await run(db, T0, r);
+    const [serial, episodic] = (['index-show-1', 'index-show-2'] as const).map((c) =>
+      body<AbsShow>(r.abs[c]),
+    );
+    const rows = byKey(listIndexed(db));
+
+    expect(rows.get(`abs:${serial!.id}`)?.episodeOrder).toBe('serial');
+    expect(rows.get(`abs:${episodic!.id}`)?.episodeOrder).toBe('episodic');
+    expect(episodesInOrder(db, serial!.id).map(shortTitle)).toEqual([
+      'The Marshall Islands, Part One',
+      'The Marshall Islands, Part Two',
+      'The Marshall Islands, Part Three',
+      'The Marshall Islands, Part Four',
+    ]);
+    expect(episodesInOrder(db, episodic!.id).map((e) => e.id)).toEqual(
+      newestFirstByFeed(episodic!, r.feed['show-2-feed']),
+    );
+  });
+
+  it("dates each episode by its feed item, not Audiobookshelf's own date", async () => {
+    const r = recorded();
+    await run(db, T0, r);
+    const serial = body<AbsShow>(r.abs['index-show-1']);
+    const partOne = episodesInOrder(db, serial.id)[0];
+    // Audiobookshelf dates part one 1 January 2023; its feed item says 5 September.
+    expect(partOne?.publishedAt).toBe(Date.parse('Tue, 05 Sep 2023 04:00:00 +0000'));
+  });
+
+  it("leaves a show whose feed names no order episodic, Apple's default, newest first", async () => {
+    const r = recorded();
+    r.feed['show-1-feed'] = feedWith(r.feed['show-1-feed'], (xml) =>
+      xml.replace(/\s*<itunes:type>serial<\/itunes:type>/, ''),
+    );
+    await run(db, T0, r);
+    const serial = body<AbsShow>(r.abs['index-show-1']);
+    expect(byKey(listIndexed(db)).get(`abs:${serial.id}`)?.episodeOrder).toBe('episodic');
+    expect(episodesInOrder(db, serial.id).map(shortTitle)[0]).toBe(
+      'The Marshall Islands, Part Four',
+    );
+  });
+
+  it("stores a show whose feed has never been read as unknown, newest first by Audiobookshelf's dates, and counts the failure", async () => {
+    const r = recorded();
+    const { result } = await run(db, T0, { ...r, feed: {} as typeof r.feed });
+    const serial = body<AbsShow>(r.abs['index-show-1']);
+    expect(byKey(listIndexed(db)).get(`abs:${serial.id}`)?.episodeOrder).toBe('unknown');
+    const order = episodesInOrder(db, serial.id);
+    expect(order.map(shortTitle)[0]).toBe('The Marshall Islands, Part Four');
+    expect(order[3]?.publishedAt).toBe(Date.UTC(2023, 0, 1));
+    expect(result.abs?.error).toBeNull();
+    expect(result.abs?.counts.feedsFailed).toBe(2);
+  });
+
+  it('reads a show of unknown order again on the next run, until its feed answers', async () => {
+    const r = recorded();
+    await run(db, T0, { ...r, feed: {} as typeof r.feed });
+    const again = await run(db, T0 + HOUR, { ...r, feed: {} as typeof r.feed });
+    expect(again.result.abs?.counts.feedsFailed).toBe(2);
+
+    const answered = await run(db, T0 + 2 * HOUR);
+    expect(answered.result.abs?.counts.feedsFailed).toBe(0);
+    const serial = body<AbsShow>(r.abs['index-show-1']);
+    expect(byKey(listIndexed(db)).get(`abs:${serial.id}`)?.episodeOrder).toBe('serial');
+
+    const settled = await run(db, T0 + 3 * HOUR);
+    expect(settled.asked).not.toContain(`/api/items/${serial.id}`);
+  });
+
+  it('keeps the order and dates the index holds when a re-read finds the feed unreadable', async () => {
+    await run(db, T0);
+    const before = listIndexed(db);
+    const r = recorded();
+    const { 'show-1-feed': _gone, ...rest } = r.feed;
+    const { result } = await run(db, T0 + 25 * HOUR, { ...r, feed: rest as typeof r.feed });
+    expect(listIndexed(db)).toEqual(before);
+    expect(result.abs?.counts.feedsFailed).toBe(1);
+  });
+});
+
+describe("keeping each show's order up to date, as the index's second-run rule says", () => {
+  const feedsAsked = (asked: string[]) => {
+    const r = recorded();
+    const paths = FEED_CALLS.map((c) => r.feed[c].request.path);
+    return asked.filter((a) => paths.includes(a)).map((a) => FEED_CALLS[paths.indexOf(a)]);
+  };
+
+  it('reads no feed again on a run where no show is read again', async () => {
+    const first = await run(db, T0);
+    expect(feedsAsked(first.asked)).toEqual(['show-1-feed', 'show-2-feed']);
+    expect(feedsAsked((await run(db, T0 + HOUR)).asked)).toEqual([]);
+  });
+
+  it('reads a changed show’s feed again with it, and only that one', async () => {
+    await run(db, T0);
+    const r = recorded();
+    const show = body<AbsShow>(r.abs['index-show-2']);
+    r.abs['index-shows-page'] = changed<Listing>(r.abs['index-shows-page'], (page) => {
+      page.results.find((i) => i.id === show.id)!.updatedAt = show.updatedAt + 60_000;
+    });
+    r.abs['index-show-2'] = changed<AbsShow>(r.abs['index-show-2'], (s) => {
+      s.updatedAt += 60_000;
+    });
+    expect(feedsAsked((await run(db, T0 + HOUR, r)).asked)).toEqual(['show-2-feed']);
+  });
+
+  it("a day on, reads every show's feed again, and a changed order updates only the show", async () => {
+    await run(db, T0);
+    const before = byKey(listIndexed(db));
+    const r = recorded();
+    r.feed['show-1-feed'] = feedWith(r.feed['show-1-feed'], (xml) =>
+      xml.replace('<itunes:type>serial</itunes:type>', '<itunes:type>episodic</itunes:type>'),
+    );
+    const { asked } = await run(db, T0 + 25 * HOUR, r);
+
+    expect(feedsAsked(asked)).toEqual(['show-1-feed', 'show-2-feed']);
+    const serial = body<AbsShow>(r.abs['index-show-1']);
+    for (const [key, row] of byKey(listIndexed(db))) {
+      if (key === `abs:${serial.id}`) {
+        expect(row.episodeOrder).toBe('episodic');
+        expect(row.version).toBe(2);
+      } else {
+        expect(row, key).toEqual(before.get(key));
+      }
+    }
+  });
+});
+
+describe('series order for books', () => {
+  /** The recorded books page, listing the two recorded books of one series instead. */
+  function seriesRun(at: number, edit: (book: AbsBook & SeriesBook) => void = () => undefined) {
+    const r = recorded();
+    const series = (['series-book-1', 'series-book-2'] as const).map((c) =>
+      recording('audiobookshelf', c),
+    );
+    const books = series.map((s) => body<AbsBook & SeriesBook>(s));
+    const edited = series.map((s, n) => (n === 0 ? changed<AbsBook & SeriesBook>(s, edit) : s));
+    r.abs['index-books-page'] = changed<Listing>(r.abs['index-books-page'], (page) => {
+      page.results = books.map((b) => ({ ...page.results[0]!, id: b.id, updatedAt: b.updatedAt }));
+    });
+    return { books, done: runWith(at, [...Object.values(r.abs), ...edited], r) };
+  }
+  interface SeriesBook {
+    media: { metadata: { series: { id: string; sequence: string }[] } };
+  }
+  async function runWith(at: number, abs: Recording[], r: ReturnType<typeof recorded>) {
+    const c = clients(abs, Object.values(r.jellyfin), Object.values(r.feed));
+    return runIndex({
+      db,
+      abs: c.abs,
+      jellyfin: c.jellyfin,
+      feeds: c.feeds,
+      now: () => at,
+      random: () => 0,
+      pageSize: 2,
+      pages: { first: 4, count: 1 },
+    });
+  }
+
+  it('lists the two recorded books of one series in their series order', async () => {
+    const { books, done } = seriesRun(T0);
+    expect((await done).abs?.error).toBeNull();
+    const seriesId = books[0]!.media.metadata.series[0]!.id;
+    expect(booksInSeries(db, seriesId).map((b) => b.id)).toEqual(books.map((b) => b.id));
+  });
+
+  it('orders sequences as numbers, so book 10 comes after book 2', async () => {
+    const { books, done } = seriesRun(T0, (b) => {
+      b.media.metadata.series[0]!.sequence = '10';
+    });
+    await done;
+    const seriesId = books[0]!.media.metadata.series[0]!.id;
+    expect(booksInSeries(db, seriesId).map((b) => b.id)).toEqual([books[1]!.id, books[0]!.id]);
   });
 });

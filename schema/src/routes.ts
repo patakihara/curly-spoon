@@ -34,6 +34,17 @@ import {
   ProgressBody,
   ProgressReport,
 } from './play.js';
+import {
+  ActiveQueueBody,
+  AddToQueueBody,
+  ListeningSession,
+  ListeningSessionList,
+  PutQueueBody,
+  Queue,
+  QueueParams,
+  QueueStyleBody,
+  StepBody,
+} from './sessions.js';
 import { type z } from './zod.js';
 
 /**
@@ -295,6 +306,86 @@ export const deleteBookmark = {
   params: BookmarkParams,
 } as const satisfies Route;
 
+export const listSessions = {
+  method: 'GET',
+  path: '/api/sessions',
+  operationId: 'listSessions',
+  summary: "The signed-in person's listening sessions, one per device",
+  responseDescription: 'Each device with a session, which one is asking, and what each plays.',
+  response: ListeningSessionList,
+  access: 'member',
+} as const satisfies Route;
+
+export const getQueue = {
+  method: 'GET',
+  path: '/api/queues/{type}',
+  operationId: 'getQueue',
+  summary: "One of this device's queues: its current item, your queue and playing-from",
+  responseDescription:
+    'The queue, with the newer of where this device was and where the upstream says.',
+  response: Queue,
+  access: 'member',
+  params: QueueParams,
+} as const satisfies Route;
+
+export const putQueue = {
+  method: 'PUT',
+  path: '/api/queues/{type}',
+  operationId: 'putQueue',
+  summary: "Reorder or remove entries of one of this device's queues",
+  responseDescription: 'The queue as it now is; 409 when `rev` is not the session revision.',
+  response: Queue,
+  access: 'member',
+  params: QueueParams,
+  body: PutQueueBody,
+} as const satisfies Route;
+
+export const addToQueue = {
+  method: 'POST',
+  path: '/api/queues/{type}/items',
+  operationId: 'addToQueue',
+  summary: 'Play an item now, put it next, add it to the end, or do what its button does',
+  responseDescription:
+    'The queue as it now is; 400 `wrong_queue` for an item of the other queue, 404 for one not indexed.',
+  response: Queue,
+  access: 'member',
+  params: QueueParams,
+  body: AddToQueueBody,
+} as const satisfies Route;
+
+export const stepSession = {
+  method: 'POST',
+  path: '/api/sessions/this/step',
+  operationId: 'stepSession',
+  summary: "Next or back on this device's session; a queue that runs out autoplays",
+  responseDescription: "This device's session, with each queue's current item.",
+  response: ListeningSession,
+  access: 'member',
+  body: StepBody,
+} as const satisfies Route;
+
+export const setActiveQueue = {
+  method: 'PUT',
+  path: '/api/sessions/this/active',
+  operationId: 'setActiveQueue',
+  summary: 'The meta-queue switch: drive the other queue, pausing this one',
+  responseDescription: "This device's session, with each queue's current item.",
+  response: ListeningSession,
+  access: 'member',
+  body: ActiveQueueBody,
+} as const satisfies Route;
+
+export const setQueueStyle = {
+  method: 'PUT',
+  path: '/api/sessions/this/style',
+  operationId: 'setQueueStyle',
+  summary: "This device's queue style: YouTube Music or Spotify",
+  responseDescription: "This device's session, with each queue's current item.",
+  response: ListeningSession,
+  access: 'member',
+  body: QueueStyleBody,
+} as const satisfies Route;
+
 /** Every route the API has. The generator and the server's route test both read this list. */
 export const routes: readonly Route[] = [
   health,
@@ -317,4 +408,11 @@ export const routes: readonly Route[] = [
   listBookmarks,
   createBookmark,
   deleteBookmark,
+  listSessions,
+  getQueue,
+  putQueue,
+  addToQueue,
+  stepSession,
+  setActiveQueue,
+  setQueueStyle,
 ];

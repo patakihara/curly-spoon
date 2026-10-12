@@ -1,9 +1,10 @@
 /**
  * Starts the index job on the server's schedule, with the keys its configuration names: the
- * listen-only Audiobookshelf key and the Jellyfin API key. Off when `INDEX_EVERY_MINUTES` is 0
- * or neither upstream has a key for it.
+ * listen-only Audiobookshelf key and the Jellyfin API key; shows' public feeds are read with no
+ * key. Off when `INDEX_EVERY_MINUTES` is 0 or neither upstream has a key for it.
  */
 import { AbsClient } from '../adapters/audiobookshelf/client.js';
+import { readFeed } from '../adapters/feed/client.js';
 import type { FetchLike } from '../adapters/http/fetch.js';
 import { JellyfinClient } from '../adapters/jellyfin/client.js';
 import type { AppConfig } from '../config.js';
@@ -42,7 +43,8 @@ export function startIndexJob(
       name: 'index',
       everyMs: everyMinutes * 60_000,
       run: async () => {
-        const result = await runIndex({ db: deps.db, abs, jellyfin });
+        const feeds = (url: string) => readFeed(deps.fetch, url);
+        const result = await runIndex({ db: deps.db, abs, jellyfin, feeds });
         const failed = Object.entries(result).filter(([, r]) => r.error !== null);
         if (failed.length > 0) {
           throw new Error(failed.map(([source, r]) => `${source}: ${r.error}`).join('; '));

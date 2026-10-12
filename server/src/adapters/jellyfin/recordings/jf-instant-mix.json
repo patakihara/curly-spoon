@@ -1,0 +1,1888 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "jf-instant-mix",
+  "request": {
+    "method": "GET",
+    "path": "/Items/82c29a9f186beddd099cbfea04079a80/InstantMix",
+    "query": {
+      "Fields": "ProviderIds,Genres,Etag",
+      "Limit": "20"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis\", DeviceId=\"auralis-recorder\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [
+          {
+            "Name": "Guilty Pleasure",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "82c29a9f186beddd099cbfea04079a80",
+            "Etag": "eeef42cec41369ecf8e48345c76fd7a6",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Alt-Pop",
+              "Synth-Pop",
+              "Electropop",
+              "Pop Rock"
+            ],
+            "RunTimeTicks": 2245839000,
+            "ProductionYear": 2023,
+            "IndexNumber": 14,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Alt-Pop",
+                "Id": "2e77a5300bd6cfade8dd8d621fdb8ae6"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electropop",
+                "Id": "085490e8bd71b444aa31d1dc96614153"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "82c29a9f186beddd099cbfea04079a80"
+            },
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "3f6c09c06a6d55382c480d041817523a"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "3f6c09c06a6d55382c480d041817523a": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -11.7
+          },
+          {
+            "Name": "Naked In Manhattan",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "f1decfd60e74d319136cdf27b2f59578",
+            "Etag": "33b6eaed3cd1f55113e53db9113e1009",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Alt-Pop",
+              "Synth-Pop",
+              "Electropop",
+              "Pop Rock"
+            ],
+            "RunTimeTicks": 2110578230,
+            "ProductionYear": 2023,
+            "IndexNumber": 12,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Alt-Pop",
+                "Id": "2e77a5300bd6cfade8dd8d621fdb8ae6"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electropop",
+                "Id": "085490e8bd71b444aa31d1dc96614153"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "f1decfd60e74d319136cdf27b2f59578"
+            },
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "eeb9bd78a1459dc30499c4c2d29200c0"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "eeb9bd78a1459dc30499c4c2d29200c0": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -9.3
+          },
+          {
+            "Name": "Super Graphic Ultra Modern Girl",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "3df20a2809be65eef5f1aff800df6f66",
+            "Etag": "455e970bbf28c632ece862a40e27608f",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Alt-Pop",
+              "Synth-Pop",
+              "Electropop",
+              "Pop Rock"
+            ],
+            "RunTimeTicks": 1838882769,
+            "ProductionYear": 2023,
+            "IndexNumber": 6,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Alt-Pop",
+                "Id": "2e77a5300bd6cfade8dd8d621fdb8ae6"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electropop",
+                "Id": "085490e8bd71b444aa31d1dc96614153"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "3df20a2809be65eef5f1aff800df6f66"
+            },
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "06a26077baa67333bf8908b97cd43d81"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "06a26077baa67333bf8908b97cd43d81": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10.6
+          },
+          {
+            "Name": "The Mother of My Mother",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "2061989e07b8a6ad3d3bce373098d175",
+            "Etag": "4353a908bca454253c1920a90f9af133",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2011-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Electronic",
+              "Pop",
+              "Pop Rock",
+              "Rock"
+            ],
+            "RunTimeTicks": 2351020410,
+            "ProductionYear": 2011,
+            "IndexNumber": 12,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {
+              "MusicBrainzAlbum": "90614fcc-54e4-4002-8be4-a487111f3a9a",
+              "MusicBrainzAlbumArtist": "f326ff88-98f7-472e-96c6-42b31f97bcb6",
+              "MusicBrainzArtist": "f326ff88-98f7-472e-96c6-42b31f97bcb6",
+              "MusicBrainzRecording": "30749c5c-926c-4c67-b5a2-f5423b6cf65d",
+              "MusicBrainzReleaseGroup": "42dc40f6-f27c-47ef-8d09-58e941046fa1",
+              "MusicBrainzTrack": "24bdf860-557c-35fb-ba51-035f0970348e"
+            },
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Electronic",
+                "Id": "8204660f9178d6add224c5719016f2de"
+              },
+              {
+                "Name": "Pop",
+                "Id": "5b0e2941bb91463ff6d8393b390e6cab"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              },
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "a498c3e7c4abd0782fff69f3566d0d0f",
+            "ParentBackdropItemId": "a498c3e7c4abd0782fff69f3566d0d0f",
+            "ParentBackdropImageTags": [
+              "b33a01b2347dececa211069c66da16d9"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "2061989e07b8a6ad3d3bce373098d175"
+            },
+            "Artists": [
+              "The Gift"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "The Gift",
+                "Id": "a498c3e7c4abd0782fff69f3566d0d0f"
+              }
+            ],
+            "Album": "Explode",
+            "AlbumId": "9e2861386785e330bff47e3b7c84d698",
+            "AlbumPrimaryImageTag": "0f8f966c001d186777082571880c88d0",
+            "AlbumArtist": "The Gift",
+            "AlbumArtists": [
+              {
+                "Name": "The Gift",
+                "Id": "a498c3e7c4abd0782fff69f3566d0d0f"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "38a8d60d2d6a92d5fd953bbc803f2020"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "cd6b753125da66949f93293df449bd14",
+            "ImageBlurHashes": {
+              "Primary": {
+                "38a8d60d2d6a92d5fd953bbc803f2020": "VBF4[w=z$$?Fkr}bxnm.nl$eO,K0bcsVs:%MOs#U-Okq",
+                "0f8f966c001d186777082571880c88d0": "VBF4[w=z$$?Fkr}bxnm.nl$eO,K0bcsVs:%MOs#U-Okq"
+              },
+              "Logo": {
+                "cd6b753125da66949f93293df449bd14": "OZQ,L1xuofj[xuxuM{xuj[WBfQayayj[~qWBWBofRjRjxu"
+              },
+              "Backdrop": {
+                "b33a01b2347dececa211069c66da16d9": "WHDIzW=[xA-ltPs,~Wt8bJD*Rkt7tSo#oN4:E3tR_3k9MxsSRjt6"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -1.2999992
+          },
+          {
+            "Name": "Revelation IX",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "f57beb0da6a6e666ee44274c4e3636e8",
+            "Etag": "3037dc447299580f99c341a9813fba88",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative",
+              "Indie Pop",
+              "Indie Rock"
+            ],
+            "RunTimeTicks": 2787265310,
+            "ProductionYear": 2021,
+            "IndexNumber": 9,
+            "ParentIndexNumber": 3,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              },
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Indie Rock",
+                "Id": "fd8c2f2be213f6053439eb916fee204f"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "f57beb0da6a6e666ee44274c4e3636e8"
+            },
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Convocations",
+            "AlbumId": "cd7c37a186875123226a8e626faa9158",
+            "AlbumPrimaryImageTag": "127c407e79bcf41585c56662a5731720",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "5e9756104719d5e217b51c844621301f"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Primary": {
+                "5e9756104719d5e217b51c844621301f": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d",
+                "127c407e79bcf41585c56662a5731720": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d"
+              },
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -3.3999996
+          },
+          {
+            "Name": "Lamentation VIII",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "e2520626ac63a41b6e7212945bb09b46",
+            "Etag": "bbc8e19ce73c42cc668938cddea7c065",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative",
+              "Indie Pop",
+              "Indie Rock"
+            ],
+            "RunTimeTicks": 2152228570,
+            "ProductionYear": 2021,
+            "IndexNumber": 8,
+            "ParentIndexNumber": 2,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              },
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Indie Rock",
+                "Id": "fd8c2f2be213f6053439eb916fee204f"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "e2520626ac63a41b6e7212945bb09b46"
+            },
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Convocations",
+            "AlbumId": "cd7c37a186875123226a8e626faa9158",
+            "AlbumPrimaryImageTag": "127c407e79bcf41585c56662a5731720",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "95aa32fcee93a8c9cadd6ae286effc4e"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Primary": {
+                "95aa32fcee93a8c9cadd6ae286effc4e": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d",
+                "127c407e79bcf41585c56662a5731720": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d"
+              },
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -3.8999996
+          },
+          {
+            "Name": "Incantation IX",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "901438c71f8c1804789c61a2d6451c23",
+            "Etag": "af242082f2cc978146fc13a3aa2a5c22",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative",
+              "Indie Pop",
+              "Indie Rock"
+            ],
+            "RunTimeTicks": 2688000000,
+            "ProductionYear": 2021,
+            "IndexNumber": 9,
+            "ParentIndexNumber": 5,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              },
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Indie Rock",
+                "Id": "fd8c2f2be213f6053439eb916fee204f"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "901438c71f8c1804789c61a2d6451c23"
+            },
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Convocations",
+            "AlbumId": "cd7c37a186875123226a8e626faa9158",
+            "AlbumPrimaryImageTag": "127c407e79bcf41585c56662a5731720",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "c2bc5932a6d64ddd166f966ef2031500"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Primary": {
+                "c2bc5932a6d64ddd166f966ef2031500": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d",
+                "127c407e79bcf41585c56662a5731720": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d"
+              },
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -4.6000004
+          },
+          {
+            "Name": "Revelation X",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "14498c7ab8da8704e14979738c47d5a4",
+            "Etag": "fd5ddf4fab775a05c0eab12fb72496d3",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative",
+              "Indie Pop",
+              "Indie Rock"
+            ],
+            "RunTimeTicks": 2583510200,
+            "ProductionYear": 2021,
+            "IndexNumber": 10,
+            "ParentIndexNumber": 3,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              },
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Indie Rock",
+                "Id": "fd8c2f2be213f6053439eb916fee204f"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "14498c7ab8da8704e14979738c47d5a4"
+            },
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Convocations",
+            "AlbumId": "cd7c37a186875123226a8e626faa9158",
+            "AlbumPrimaryImageTag": "127c407e79bcf41585c56662a5731720",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "30478515d4e10b5a63b1ad907cd54481"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Primary": {
+                "30478515d4e10b5a63b1ad907cd54481": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d",
+                "127c407e79bcf41585c56662a5731720": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d"
+              },
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -3.1999998
+          },
+          {
+            "Name": "Revelation VIII",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "c805f52ca3cff376f255f5d4feed86ea",
+            "Etag": "5db776e45399ca66550894b63e1366db",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative",
+              "Indie Pop",
+              "Indie Rock"
+            ],
+            "RunTimeTicks": 1719118370,
+            "ProductionYear": 2021,
+            "IndexNumber": 8,
+            "ParentIndexNumber": 3,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              },
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Indie Rock",
+                "Id": "fd8c2f2be213f6053439eb916fee204f"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "c805f52ca3cff376f255f5d4feed86ea"
+            },
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Convocations",
+            "AlbumId": "cd7c37a186875123226a8e626faa9158",
+            "AlbumPrimaryImageTag": "127c407e79bcf41585c56662a5731720",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "5abc60f360bc23c401a61451853a0c68"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Primary": {
+                "5abc60f360bc23c401a61451853a0c68": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d",
+                "127c407e79bcf41585c56662a5731720": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d"
+              },
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -1.8999996
+          },
+          {
+            "Name": "Revelation II",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "429024efc9dede190782b8d830bc73e4",
+            "Etag": "aeb3c66f58388cfb28cc5ab458d59571",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative",
+              "Indie Pop",
+              "Indie Rock"
+            ],
+            "RunTimeTicks": 1735836730,
+            "ProductionYear": 2021,
+            "IndexNumber": 2,
+            "ParentIndexNumber": 3,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              },
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Indie Rock",
+                "Id": "fd8c2f2be213f6053439eb916fee204f"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "429024efc9dede190782b8d830bc73e4"
+            },
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Convocations",
+            "AlbumId": "cd7c37a186875123226a8e626faa9158",
+            "AlbumPrimaryImageTag": "127c407e79bcf41585c56662a5731720",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "04210d763ec01055a94145ea74a791bd"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Primary": {
+                "04210d763ec01055a94145ea74a791bd": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d",
+                "127c407e79bcf41585c56662a5731720": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d"
+              },
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -4.8999996
+          },
+          {
+            "Name": "The Singles",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "ccac2e246256546d6da6d60c149856a9",
+            "Etag": "86eb1cc1a62bcc9ad6e8e12698b77be4",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2011-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Electronic",
+              "Pop",
+              "Pop Rock",
+              "Rock"
+            ],
+            "RunTimeTicks": 7405485000,
+            "ProductionYear": 2011,
+            "IndexNumber": 5,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {
+              "MusicBrainzAlbum": "90614fcc-54e4-4002-8be4-a487111f3a9a",
+              "MusicBrainzAlbumArtist": "f326ff88-98f7-472e-96c6-42b31f97bcb6",
+              "MusicBrainzArtist": "f326ff88-98f7-472e-96c6-42b31f97bcb6",
+              "MusicBrainzRecording": "c718b0b0-1854-4fee-a51c-ae88b148042e",
+              "MusicBrainzReleaseGroup": "42dc40f6-f27c-47ef-8d09-58e941046fa1",
+              "MusicBrainzTrack": "7b0454ea-86b6-34d5-be4d-45abdf0599c2"
+            },
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Electronic",
+                "Id": "8204660f9178d6add224c5719016f2de"
+              },
+              {
+                "Name": "Pop",
+                "Id": "5b0e2941bb91463ff6d8393b390e6cab"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              },
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "a498c3e7c4abd0782fff69f3566d0d0f",
+            "ParentBackdropItemId": "a498c3e7c4abd0782fff69f3566d0d0f",
+            "ParentBackdropImageTags": [
+              "b33a01b2347dececa211069c66da16d9"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "ccac2e246256546d6da6d60c149856a9"
+            },
+            "Artists": [
+              "The Gift"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "The Gift",
+                "Id": "a498c3e7c4abd0782fff69f3566d0d0f"
+              }
+            ],
+            "Album": "Explode",
+            "AlbumId": "9e2861386785e330bff47e3b7c84d698",
+            "AlbumPrimaryImageTag": "0f8f966c001d186777082571880c88d0",
+            "AlbumArtist": "The Gift",
+            "AlbumArtists": [
+              {
+                "Name": "The Gift",
+                "Id": "a498c3e7c4abd0782fff69f3566d0d0f"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "9e73d51c82859973f50d394c04dea87a"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "cd6b753125da66949f93293df449bd14",
+            "ImageBlurHashes": {
+              "Primary": {
+                "9e73d51c82859973f50d394c04dea87a": "VBF4[w=z$$?Fkr}bxnm.nl$eO,K0bcsVs:%MOs#U-Okq",
+                "0f8f966c001d186777082571880c88d0": "VBF4[w=z$$?Fkr}bxnm.nl$eO,K0bcsVs:%MOs#U-Okq"
+              },
+              "Logo": {
+                "cd6b753125da66949f93293df449bd14": "OZQ,L1xuofj[xuxuM{xuj[WBfQayayj[~qWBWBofRjRjxu"
+              },
+              "Backdrop": {
+                "b33a01b2347dececa211069c66da16d9": "WHDIzW=[xA-ltPs,~Wt8bJD*Rkt7tSo#oN4:E3tR_3k9MxsSRjt6"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -6.6000004
+          },
+          {
+            "Name": "Made for You",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "8c2c47eeddcd24b3015b6083015bb428",
+            "Etag": "9e82bc704bfccca4e2a10dd0d2bb12a7",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2011-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Electronic",
+              "Pop",
+              "Pop Rock",
+              "Rock"
+            ],
+            "RunTimeTicks": 2803232000,
+            "ProductionYear": 2011,
+            "IndexNumber": 2,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {
+              "MusicBrainzAlbum": "90614fcc-54e4-4002-8be4-a487111f3a9a",
+              "MusicBrainzAlbumArtist": "f326ff88-98f7-472e-96c6-42b31f97bcb6",
+              "MusicBrainzArtist": "f326ff88-98f7-472e-96c6-42b31f97bcb6",
+              "MusicBrainzRecording": "2d97e8f8-d01e-4851-8de2-3ad96b8bc7ae",
+              "MusicBrainzReleaseGroup": "42dc40f6-f27c-47ef-8d09-58e941046fa1",
+              "MusicBrainzTrack": "fc1ab9fc-0752-3ed7-8d8b-4ffb90361b51"
+            },
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Electronic",
+                "Id": "8204660f9178d6add224c5719016f2de"
+              },
+              {
+                "Name": "Pop",
+                "Id": "5b0e2941bb91463ff6d8393b390e6cab"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              },
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "a498c3e7c4abd0782fff69f3566d0d0f",
+            "ParentBackdropItemId": "a498c3e7c4abd0782fff69f3566d0d0f",
+            "ParentBackdropImageTags": [
+              "b33a01b2347dececa211069c66da16d9"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "8c2c47eeddcd24b3015b6083015bb428"
+            },
+            "Artists": [
+              "The Gift"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "The Gift",
+                "Id": "a498c3e7c4abd0782fff69f3566d0d0f"
+              }
+            ],
+            "Album": "Explode",
+            "AlbumId": "9e2861386785e330bff47e3b7c84d698",
+            "AlbumPrimaryImageTag": "0f8f966c001d186777082571880c88d0",
+            "AlbumArtist": "The Gift",
+            "AlbumArtists": [
+              {
+                "Name": "The Gift",
+                "Id": "a498c3e7c4abd0782fff69f3566d0d0f"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "7d59646d3e27ff4f4d41f879879fcbd3"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "cd6b753125da66949f93293df449bd14",
+            "ImageBlurHashes": {
+              "Primary": {
+                "7d59646d3e27ff4f4d41f879879fcbd3": "VBF4[w=z$$?Fkr}bxnm.nl$eO,K0bcsVs:%MOs#U-Okq",
+                "0f8f966c001d186777082571880c88d0": "VBF4[w=z$$?Fkr}bxnm.nl$eO,K0bcsVs:%MOs#U-Okq"
+              },
+              "Logo": {
+                "cd6b753125da66949f93293df449bd14": "OZQ,L1xuofj[xuxuM{xuj[WBfQayayj[~qWBWBofRjRjxu"
+              },
+              "Backdrop": {
+                "b33a01b2347dececa211069c66da16d9": "WHDIzW=[xA-ltPs,~Wt8bJD*Rkt7tSo#oN4:E3tR_3k9MxsSRjt6"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -6.1000004
+          },
+          {
+            "Name": "Liability (reprise)",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "8375132bb15da1585944e7cdf36655d1",
+            "Etag": "8806990d1ce59bf60588299fc37b3f90",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2017-06-15T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Synth-Pop",
+              "Electronic"
+            ],
+            "RunTimeTicks": 1360195690,
+            "ProductionYear": 2017,
+            "IndexNumber": 10,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {
+              "MusicBrainzAlbum": "85e66fed-b2a3-4d48-9cc4-feff50088f33",
+              "MusicBrainzAlbumArtist": "8e494408-8620-4c6a-82c2-c2ca4a1e4f12",
+              "MusicBrainzArtist": "8e494408-8620-4c6a-82c2-c2ca4a1e4f12",
+              "MusicBrainzRecording": "f5732adb-2bd2-4982-bcf8-854cfdb452e6",
+              "MusicBrainzReleaseGroup": "668e80e0-b35e-4471-9788-0a3d797fe42c"
+            },
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electronic",
+                "Id": "8204660f9178d6add224c5719016f2de"
+              }
+            ],
+            "ParentLogoItemId": "bb3008156c89044f10babcc27f7209a7",
+            "ParentBackdropItemId": "bb3008156c89044f10babcc27f7209a7",
+            "ParentBackdropImageTags": [
+              "c8ca8ce6e8b334516f0ba2d641073020"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "8375132bb15da1585944e7cdf36655d1"
+            },
+            "Artists": [
+              "Lorde"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Lorde",
+                "Id": "bb3008156c89044f10babcc27f7209a7"
+              }
+            ],
+            "Album": "Melodrama",
+            "AlbumId": "a76a8074943b5aee7b8a45e34f4b59ff",
+            "AlbumPrimaryImageTag": "8d23286234a5b7896fca0d2d77a2bf90",
+            "AlbumArtist": "Lorde",
+            "AlbumArtists": [
+              {
+                "Name": "Lorde",
+                "Id": "bb3008156c89044f10babcc27f7209a7"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "4ae60786b2669236dac42c195356458b"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "00341794aa4e6bdd55c0c9fb36b9844e",
+            "ImageBlurHashes": {
+              "Primary": {
+                "4ae60786b2669236dac42c195356458b": "eMCQAj9Eu5?YE3DNVqMxM|I^9}-.wGo$==OINNxBM~t7aLxZNHbbjc",
+                "8d23286234a5b7896fca0d2d77a2bf90": "eMCQAj9Eu5?YE3DNVqMxM|I^9}-.wGo$==OINNxBM~t7aLxZNHbbjc"
+              },
+              "Logo": {
+                "00341794aa4e6bdd55c0c9fb36b9844e": "O?L4+=ofj[ofofofofj[ayayayfQfQay~qayfQayWBaya|"
+              },
+              "Backdrop": {
+                "c8ca8ce6e8b334516f0ba2d641073020": "WnFF~tROtSx]ROof_4flbIt8axWB%gt8ofofbHa}-=j]t7ofWBog"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -7.3
+          },
+          {
+            "Name": "Casual",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "c7c085df530eb76f5a0c88aaa2cf5127",
+            "Etag": "837c1e7bab22981b964e0acfcac50ce3",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Alt-Pop",
+              "Synth-Pop",
+              "Electropop",
+              "Pop Rock"
+            ],
+            "RunTimeTicks": 2327962130,
+            "ProductionYear": 2023,
+            "IndexNumber": 5,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Alt-Pop",
+                "Id": "2e77a5300bd6cfade8dd8d621fdb8ae6"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electropop",
+                "Id": "085490e8bd71b444aa31d1dc96614153"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              }
+            ],
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "c7c085df530eb76f5a0c88aaa2cf5127"
+            },
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "b4951bd14f56695410c1db6ad8252f01"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "b4951bd14f56695410c1db6ad8252f01": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -8.6
+          },
+          {
+            "Name": "Meditation III",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "8f4f3b5cb805e6b874aa082ccd7a00dd",
+            "Etag": "36238d52f6c374a941ecf494b5ffc825",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative",
+              "Indie Pop",
+              "Indie Rock"
+            ],
+            "RunTimeTicks": 2445061220,
+            "ProductionYear": 2021,
+            "IndexNumber": 3,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              },
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Indie Rock",
+                "Id": "fd8c2f2be213f6053439eb916fee204f"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "8f4f3b5cb805e6b874aa082ccd7a00dd"
+            },
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Convocations",
+            "AlbumId": "cd7c37a186875123226a8e626faa9158",
+            "AlbumPrimaryImageTag": "127c407e79bcf41585c56662a5731720",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "cb40b7fcae4c12fc5859bf129dd55c0c"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Primary": {
+                "cb40b7fcae4c12fc5859bf129dd55c0c": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d",
+                "127c407e79bcf41585c56662a5731720": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d"
+              },
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -4.3999996
+          },
+          {
+            "Name": "Incantation IV",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "b787a0303c1fc71d484b755ac2100933",
+            "Etag": "a480e091b88fc41b3e8adf2681b56a5c",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative",
+              "Indie Pop",
+              "Indie Rock"
+            ],
+            "RunTimeTicks": 1204767350,
+            "ProductionYear": 2021,
+            "IndexNumber": 4,
+            "ParentIndexNumber": 5,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              },
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Indie Rock",
+                "Id": "fd8c2f2be213f6053439eb916fee204f"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "b787a0303c1fc71d484b755ac2100933"
+            },
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Convocations",
+            "AlbumId": "cd7c37a186875123226a8e626faa9158",
+            "AlbumPrimaryImageTag": "127c407e79bcf41585c56662a5731720",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "20613fea276019de18c62abdd3438b15"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Primary": {
+                "20613fea276019de18c62abdd3438b15": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d",
+                "127c407e79bcf41585c56662a5731720": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d"
+              },
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -4.5
+          },
+          {
+            "Name": "Meditation II",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "bc2a4705bbcef6d4733a6f3d2a2c3fbb",
+            "Etag": "076b506ad9c6b784db1fe3bb3a706cf3",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative",
+              "Indie Pop",
+              "Indie Rock"
+            ],
+            "RunTimeTicks": 1470693880,
+            "ProductionYear": 2021,
+            "IndexNumber": 2,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              },
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Indie Rock",
+                "Id": "fd8c2f2be213f6053439eb916fee204f"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "bc2a4705bbcef6d4733a6f3d2a2c3fbb"
+            },
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Convocations",
+            "AlbumId": "cd7c37a186875123226a8e626faa9158",
+            "AlbumPrimaryImageTag": "127c407e79bcf41585c56662a5731720",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "308beb6c2d0c082a45082670a23e4ada"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Primary": {
+                "308beb6c2d0c082a45082670a23e4ada": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d",
+                "127c407e79bcf41585c56662a5731720": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d"
+              },
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -6.3
+          },
+          {
+            "Name": "Primavera",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "d712169d9e735bba869f3399f99c6025",
+            "Etag": "c31a81b8c3cba9eaaf43e5685b706c02",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2011-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Electronic",
+              "Pop",
+              "Pop Rock",
+              "Rock"
+            ],
+            "RunTimeTicks": 2028701500,
+            "ProductionYear": 2011,
+            "IndexNumber": 6,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {
+              "MusicBrainzAlbum": "90614fcc-54e4-4002-8be4-a487111f3a9a",
+              "MusicBrainzAlbumArtist": "f326ff88-98f7-472e-96c6-42b31f97bcb6",
+              "MusicBrainzArtist": "f326ff88-98f7-472e-96c6-42b31f97bcb6",
+              "MusicBrainzRecording": "c8e7cd39-4bd5-4287-9657-f78ab06e886f",
+              "MusicBrainzReleaseGroup": "42dc40f6-f27c-47ef-8d09-58e941046fa1",
+              "MusicBrainzTrack": "70cc5de8-3fb6-37a3-802d-d20faa4c302b"
+            },
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Electronic",
+                "Id": "8204660f9178d6add224c5719016f2de"
+              },
+              {
+                "Name": "Pop",
+                "Id": "5b0e2941bb91463ff6d8393b390e6cab"
+              },
+              {
+                "Name": "Pop Rock",
+                "Id": "b57a846c306912e7d3ce635042df69d7"
+              },
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "a498c3e7c4abd0782fff69f3566d0d0f",
+            "ParentBackdropItemId": "a498c3e7c4abd0782fff69f3566d0d0f",
+            "ParentBackdropImageTags": [
+              "b33a01b2347dececa211069c66da16d9"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "d712169d9e735bba869f3399f99c6025"
+            },
+            "Artists": [
+              "The Gift"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "The Gift",
+                "Id": "a498c3e7c4abd0782fff69f3566d0d0f"
+              }
+            ],
+            "Album": "Explode",
+            "AlbumId": "9e2861386785e330bff47e3b7c84d698",
+            "AlbumPrimaryImageTag": "0f8f966c001d186777082571880c88d0",
+            "AlbumArtist": "The Gift",
+            "AlbumArtists": [
+              {
+                "Name": "The Gift",
+                "Id": "a498c3e7c4abd0782fff69f3566d0d0f"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "3af2537e1da876c2d0e5641e56db2445"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "cd6b753125da66949f93293df449bd14",
+            "ImageBlurHashes": {
+              "Primary": {
+                "3af2537e1da876c2d0e5641e56db2445": "VBF4[w=z$$?Fkr}bxnm.nl$eO,K0bcsVs:%MOs#U-Okq",
+                "0f8f966c001d186777082571880c88d0": "VBF4[w=z$$?Fkr}bxnm.nl$eO,K0bcsVs:%MOs#U-Okq"
+              },
+              "Logo": {
+                "cd6b753125da66949f93293df449bd14": "OZQ,L1xuofj[xuxuM{xuj[WBfQayayj[~qWBWBofRjRjxu"
+              },
+              "Backdrop": {
+                "b33a01b2347dececa211069c66da16d9": "WHDIzW=[xA-ltPs,~Wt8bJD*Rkt7tSo#oN4:E3tR_3k9MxsSRjt6"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -6.2
+          },
+          {
+            "Name": "Liability",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "7340a29d2c9e67a0d445dee0c67d95ae",
+            "Etag": "03792af53070079bbfa85a2f7aeaccb8",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2017-06-15T21:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Pop",
+              "Synth-Pop",
+              "Electronic"
+            ],
+            "RunTimeTicks": 1717276420,
+            "ProductionYear": 2017,
+            "IndexNumber": 5,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {
+              "MusicBrainzAlbum": "85e66fed-b2a3-4d48-9cc4-feff50088f33",
+              "MusicBrainzAlbumArtist": "8e494408-8620-4c6a-82c2-c2ca4a1e4f12",
+              "MusicBrainzArtist": "8e494408-8620-4c6a-82c2-c2ca4a1e4f12",
+              "MusicBrainzRecording": "06ff6c25-a825-49ec-88a6-5394cd868fcf",
+              "MusicBrainzReleaseGroup": "668e80e0-b35e-4471-9788-0a3d797fe42c"
+            },
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Synth-Pop",
+                "Id": "66af562335fe0325186394856fd4b801"
+              },
+              {
+                "Name": "Electronic",
+                "Id": "8204660f9178d6add224c5719016f2de"
+              }
+            ],
+            "ParentLogoItemId": "bb3008156c89044f10babcc27f7209a7",
+            "ParentBackdropItemId": "bb3008156c89044f10babcc27f7209a7",
+            "ParentBackdropImageTags": [
+              "c8ca8ce6e8b334516f0ba2d641073020"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "7340a29d2c9e67a0d445dee0c67d95ae"
+            },
+            "Artists": [
+              "Lorde"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Lorde",
+                "Id": "bb3008156c89044f10babcc27f7209a7"
+              }
+            ],
+            "Album": "Melodrama",
+            "AlbumId": "a76a8074943b5aee7b8a45e34f4b59ff",
+            "AlbumPrimaryImageTag": "8d23286234a5b7896fca0d2d77a2bf90",
+            "AlbumArtist": "Lorde",
+            "AlbumArtists": [
+              {
+                "Name": "Lorde",
+                "Id": "bb3008156c89044f10babcc27f7209a7"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "dc8427af1c623aab489c7fe8932f735d"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "00341794aa4e6bdd55c0c9fb36b9844e",
+            "ImageBlurHashes": {
+              "Primary": {
+                "dc8427af1c623aab489c7fe8932f735d": "eMCQAj9Eu5?YE3DNVqMxM|I^9}-.wGo$==OINNxBM~t7aLxZNHbbjc",
+                "8d23286234a5b7896fca0d2d77a2bf90": "eMCQAj9Eu5?YE3DNVqMxM|I^9}-.wGo$==OINNxBM~t7aLxZNHbbjc"
+              },
+              "Logo": {
+                "00341794aa4e6bdd55c0c9fb36b9844e": "O?L4+=ofj[ofofofofj[ayayayfQfQay~qayfQayWBaya|"
+              },
+              "Backdrop": {
+                "c8ca8ce6e8b334516f0ba2d641073020": "WnFF~tROtSx]ROof_4flbIt8axWB%gt8ofofbHa}-=j]t7ofWBog"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -7.3
+          },
+          {
+            "Name": "Revelation IV",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "2a3a10ee21c8b75ca8e04294c91c9eaf",
+            "Etag": "64d32ce6c2990cfb83a99506ced79adb",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative",
+              "Indie Pop",
+              "Indie Rock"
+            ],
+            "RunTimeTicks": 2499918370,
+            "ProductionYear": 2021,
+            "IndexNumber": 4,
+            "ParentIndexNumber": 3,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              },
+              {
+                "Name": "Indie Pop",
+                "Id": "c598dc66f7b841a67904c4ba21d92cd2"
+              },
+              {
+                "Name": "Indie Rock",
+                "Id": "fd8c2f2be213f6053439eb916fee204f"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "2a3a10ee21c8b75ca8e04294c91c9eaf"
+            },
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Convocations",
+            "AlbumId": "cd7c37a186875123226a8e626faa9158",
+            "AlbumPrimaryImageTag": "127c407e79bcf41585c56662a5731720",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "5ce35f6ee409e98ffce9fff48a33ab62"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Primary": {
+                "5ce35f6ee409e98ffce9fff48a33ab62": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d",
+                "127c407e79bcf41585c56662a5731720": "eGGm0lxu1To~AK-QsmR+aybI1mWVE,WYw[T0SNR+fibIEna#xCbG$d"
+              },
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -4.8999996
+          }
+        ],
+        "TotalRecordCount": 86,
+        "StartIndex": 0
+      }
+    }
+  }
+}

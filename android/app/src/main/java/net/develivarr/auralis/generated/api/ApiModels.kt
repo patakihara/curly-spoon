@@ -13,6 +13,19 @@ data class Account(
 )
 
 @Serializable
+data class ActiveQueueBody(
+    val queue: QueueType,
+    val rev: Long? = null,
+)
+
+@Serializable
+data class AddToQueueBody(
+    val ref: MediaRef,
+    val how: QueueHow,
+    val rev: Long? = null,
+)
+
+@Serializable
 data class AppToken(
     val token: String,
     val deviceId: String,
@@ -101,6 +114,24 @@ data class LinkStatus(
 )
 
 @Serializable
+data class ListeningSession(
+    val deviceId: String,
+    val deviceName: String,
+    val thisDevice: Boolean,
+    val active: QueueType,
+    val switchAfterCurrent: QueueType?,
+    val queueStyle: QueueStyle,
+    val currents: QueueCurrents,
+    val rev: Long,
+    val updatedAt: Long,
+)
+
+@Serializable
+data class ListeningSessionList(
+    val sessions: List<ListeningSession>,
+)
+
+@Serializable
 data class Me(
     val username: String,
     val role: Role,
@@ -155,6 +186,24 @@ data class PlaybackTrack(
 )
 
 @Serializable
+data class PlayingFrom(
+    val kind: PlayingFromKind,
+    val ref: MediaRef,
+)
+
+@Serializable
+enum class PlayingFromKind {
+    @SerialName("album")
+    ALBUM,
+    @SerialName("playlist")
+    PLAYLIST,
+    @SerialName("show")
+    SHOW,
+    @SerialName("book")
+    BOOK,
+}
+
+@Serializable
 data class ProgressAnswer(
     val taken: Boolean,
     val lastSeq: Long,
@@ -181,6 +230,82 @@ data class ProgressReport(
 data class ProgressTarget(
     val playId: String,
 )
+
+@Serializable
+data class PutQueueBody(
+    val rev: Long,
+    val user: List<String>,
+    val context: List<String>? = null,
+)
+
+@Serializable
+data class Queue(
+    val type: QueueType,
+    val current: QueueItem?,
+    val position: QueuePosition?,
+    val user: List<QueueItem>,
+    val context: QueueContext?,
+    val rev: Long,
+)
+
+@Serializable
+data class QueueContext(
+    val from: PlayingFrom,
+    val items: List<QueueItem>,
+)
+
+@Serializable
+data class QueueCurrents(
+    val music: QueueItem?,
+    val spoken: QueueItem?,
+)
+
+@Serializable
+enum class QueueHow {
+    @SerialName("now")
+    NOW,
+    @SerialName("next")
+    NEXT,
+    @SerialName("end")
+    END,
+    @SerialName("default")
+    DEFAULT,
+}
+
+@Serializable
+data class QueueItem(
+    val itemId: String,
+    val ref: MediaRef,
+    val chapter: Long? = null,
+)
+
+@Serializable
+data class QueuePosition(
+    val ms: Long,
+    val takenAt: Long,
+)
+
+@Serializable
+enum class QueueStyle {
+    @SerialName("youtube")
+    YOUTUBE,
+    @SerialName("spotify")
+    SPOTIFY,
+}
+
+@Serializable
+data class QueueStyleBody(
+    val queueStyle: QueueStyle,
+    val rev: Long? = null,
+)
+
+@Serializable
+enum class QueueType {
+    @SerialName("music")
+    MUSIC,
+    @SerialName("spoken")
+    SPOKEN,
+}
 
 @Serializable
 data class RenameDeviceBody(
@@ -213,6 +338,20 @@ data class SetupBody(
 data class SetupStatus(
     val configured: Boolean,
 )
+
+@Serializable
+data class StepBody(
+    val direction: StepDirection,
+    val rev: Long? = null,
+)
+
+@Serializable
+enum class StepDirection {
+    @SerialName("next")
+    NEXT,
+    @SerialName("back")
+    BACK,
+}
 
 @Serializable
 data class TokenBody(

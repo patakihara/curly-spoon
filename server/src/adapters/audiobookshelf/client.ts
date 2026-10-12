@@ -17,6 +17,7 @@ import {
   hlsSegmentHeadersSchema,
   inoSchema,
   itemIdSchema,
+  itemChaptersSchema,
   itemSchema,
   itemSummarySchema,
   librariesSchema,
@@ -124,6 +125,13 @@ export class AbsClient {
     }
   }
 
+  /** How many chapters an item has: a book's, from the same answer as `getItem`; none for a show. */
+  async getChapterCount(itemId: string): Promise<number> {
+    const path = `api/items/${encodeURIComponent(itemId)}`;
+    const item = await this.call(path, itemChaptersSchema, {}, { expanded: '1' });
+    return item.media.chapters?.length ?? 0;
+  }
+
   getItem(itemId: string): Promise<z.infer<typeof itemSchema>> {
     return this.call(`api/items/${encodeURIComponent(itemId)}`, itemSchema, {}, { expanded: '1' });
   }
@@ -138,6 +146,24 @@ export class AbsClient {
     device: { deviceId: string; clientVersion: string },
     options: { forceTranscode?: boolean } = {},
   ): Promise<z.infer<typeof playSessionSchema>> {
+    return this.startPlay(`api/items/${encodeURIComponent(itemId)}/play`, device, options);
+  }
+
+  /** Starts a playback session on one episode of a podcast show, as `play` does for a book. */
+  playEpisode(
+    showId: string,
+    episodeId: string,
+    device: { deviceId: string; clientVersion: string },
+  ): Promise<z.infer<typeof playSessionSchema>> {
+    const path = `api/items/${encodeURIComponent(showId)}/play/${encodeURIComponent(episodeId)}`;
+    return this.startPlay(path, device, {});
+  }
+
+  private startPlay(
+    path: string,
+    device: { deviceId: string; clientVersion: string },
+    options: { forceTranscode?: boolean },
+  ): Promise<z.infer<typeof playSessionSchema>> {
     const json: PlayRequest = {
       deviceInfo: {
         clientName: 'Auralis',
@@ -149,10 +175,7 @@ export class AbsClient {
       forceDirectPlay: false,
       forceTranscode: options.forceTranscode ?? false,
     };
-    return this.call(`api/items/${encodeURIComponent(itemId)}/play`, playSessionSchema, {
-      method: 'POST',
-      json,
-    });
+    return this.call(path, playSessionSchema, { method: 'POST', json });
   }
 
   /** Reports where the person is and how long they listened; never retried, as a repeat adds the
@@ -181,6 +204,17 @@ export class AbsClient {
   async findMyProgress(itemId: string): Promise<MediaProgress | null> {
     try {
       return await this.call(`api/me/progress/${encodeURIComponent(itemId)}`, mediaProgressSchema);
+    } catch (error) {
+      if (error instanceof AdapterError && error.status === 404) return null;
+      throw error;
+    }
+  }
+
+  /** The person's progress on one episode of a show, or null when they have none. */
+  async findMyEpisodeProgress(itemId: string, episodeId: string): Promise<MediaProgress | null> {
+    const path = `api/me/progress/${encodeURIComponent(itemId)}/${encodeURIComponent(episodeId)}`;
+    try {
+      return await this.call(path, mediaProgressSchema);
     } catch (error) {
       if (error instanceof AdapterError && error.status === 404) return null;
       throw error;

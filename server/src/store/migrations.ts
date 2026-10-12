@@ -222,6 +222,140 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 6,
+    name: 'episode_order',
+    up: (db) => {
+      db.exec(`
+        -- A show's episode order, from its feed's itunes:type: oldest first when serial, newest
+        -- first when episodic; unknown, played newest first, until a read of its feed succeeds.
+        -- Null on every row but a show.
+        ALTER TABLE index_items ADD COLUMN episode_order TEXT
+          CHECK (episode_order IN ('serial', 'episodic', 'unknown'));
+
+        -- Feeds the index could not read, per run.
+        ALTER TABLE index_runs ADD COLUMN feeds_failed INTEGER NOT NULL DEFAULT 0;
+
+        -- Every show is read again on the next run, so its order and its episodes' dates come
+        -- from its feed.
+        DELETE FROM index_sync WHERE (source, upstream_id) IN
+          (SELECT source, upstream_id FROM index_items WHERE kind = 'show');
+      `);
+    },
+  },
+  {
+    id: 7,
+    name: 'listening_sessions',
+    up: (db) => {
+      db.exec(`
+        -- What plays on one device, made on its first use and gone with the device. ('sessions'
+        -- are sign-in sessions.) The queue the controls drive, the queue to land on once the
+        -- current item ends, and the queue style, set here until settings are kept per user.
+        -- rev goes up on every write; a write from an older rev is refused.
+        CREATE TABLE listening_sessions (
+          device_id            TEXT PRIMARY KEY REFERENCES devices(id) ON DELETE CASCADE,
+          user_id              TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          active               TEXT NOT NULL CHECK (active IN ('music', 'spoken')),
+          switch_after_current TEXT CHECK (switch_after_current IN ('music', 'spoken')),
+          queue_style          TEXT NOT NULL DEFAULT 'youtube'
+            CHECK (queue_style IN ('youtube', 'spotify')),
+          rev                  INTEGER NOT NULL CHECK (rev >= 0),
+          updated_at           INTEGER NOT NULL,
+          -- The track music's radio run was asked for; its tracks are in radio_tracks.
+          radio_seed_source    TEXT CHECK (radio_seed_source IN ('abs', 'jellyfin')),
+          radio_seed_id        TEXT,
+          -- When autoplay's picks were last worked out (ms); NULL until they first are.
+          autoplay_at          INTEGER,
+          CHECK ((radio_seed_source IS NULL) = (radio_seed_id IS NULL))
+        );
+        CREATE INDEX idx_listening_sessions_user_id ON listening_sessions(user_id);
+
+        -- Each queue's entries: its current item (at most one, kept while the queue is paused),
+        -- your queue, and what is left of Spotify style's playing-from. chapter says which
+        -- entry of a book this is. The current item carries the device's last position in it,
+        -- in ms, and when that was taken; an item of your queue keeps the one it had when it
+        -- was last current. walk marks the entries of a walk Back started, which Forward
+        -- plays first, in queue order (across the two queues, lowest first); replay_of is the
+        -- play (play_history seq) an entry plays again, which ending it does not record twice;
+        -- after, on a current item, is the play that played immediately before it.
+        CREATE TABLE queue_items (
+          device_id   TEXT NOT NULL REFERENCES listening_sessions(device_id) ON DELETE CASCADE,
+          queue       TEXT NOT NULL CHECK (queue IN ('music', 'spoken')),
+          segment     TEXT NOT NULL CHECK (segment IN ('current', 'user', 'context')),
+          ord         INTEGER NOT NULL CHECK (ord >= 0),
+          item_id     TEXT NOT NULL,
+          source      TEXT NOT NULL CHECK (source IN ('abs', 'jellyfin')),
+          upstream_id TEXT NOT NULL,
+          chapter     INTEGER CHECK (chapter >= 0),
+          position_ms INTEGER CHECK (position_ms >= 0),
+          position_at INTEGER,
+          walk        INTEGER,
+          replay_of   INTEGER CHECK (replay_of >= 0),
+          after       INTEGER CHECK (after >= 0),
+          PRIMARY KEY (device_id, queue, segment, ord),
+          UNIQUE (device_id, item_id),
+          CHECK (segment <> 'current' OR ord = 0),
+          CHECK ((position_ms IS NULL) = (position_at IS NULL)),
+          CHECK (segment = 'user' OR walk IS NULL),
+          CHECK (segment = 'current' OR after IS NULL),
+          CHECK (segment <> 'context' OR (position_ms IS NULL AND replay_of IS NULL))
+        );
+
+        -- The album, playlist, show or book a queue plays from, kept on the session once its
+        -- list runs out: autoplay continues from it.
+        CREATE TABLE playing_from (
+          device_id   TEXT NOT NULL REFERENCES listening_sessions(device_id) ON DELETE CASCADE,
+          queue       TEXT NOT NULL CHECK (queue IN ('music', 'spoken')),
+          kind        TEXT NOT NULL CHECK (kind IN ('album', 'playlist', 'show', 'book')),
+          source      TEXT NOT NULL CHECK (source IN ('abs', 'jellyfin')),
+          upstream_id TEXT NOT NULL,
+          PRIMARY KEY (device_id, queue)
+        );
+
+        -- What each device played, for Back; append-only, and only the newest plays are kept.
+        -- after is the play each one followed, so Back retraces the order things played.
+        CREATE TABLE play_history (
+          device_id   TEXT NOT NULL REFERENCES listening_sessions(device_id) ON DELETE CASCADE,
+          seq         INTEGER NOT NULL CHECK (seq >= 0),
+          queue       TEXT NOT NULL CHECK (queue IN ('music', 'spoken')),
+          source      TEXT NOT NULL CHECK (source IN ('abs', 'jellyfin')),
+          upstream_id TEXT NOT NULL,
+          chapter     INTEGER CHECK (chapter >= 0),
+          played_at   INTEGER NOT NULL,
+          after       INTEGER CHECK (after >= 0),
+          PRIMARY KEY (device_id, seq)
+        );
+
+        -- Autoplay's pick for each queue, worked out ahead from the item it follows (after_*),
+        -- so a step never waits on an upstream: what plays once that item ends with nothing
+        -- queued after it. No source when nothing is left.
+        CREATE TABLE autoplay_picks (
+          device_id         TEXT NOT NULL
+            REFERENCES listening_sessions(device_id) ON DELETE CASCADE,
+          queue             TEXT NOT NULL CHECK (queue IN ('music', 'spoken')),
+          after_source      TEXT NOT NULL CHECK (after_source IN ('abs', 'jellyfin')),
+          after_upstream_id TEXT NOT NULL,
+          after_chapter     INTEGER CHECK (after_chapter >= 0),
+          source            TEXT CHECK (source IN ('abs', 'jellyfin')),
+          upstream_id       TEXT,
+          chapter           INTEGER CHECK (chapter >= 0),
+          PRIMARY KEY (device_id, queue),
+          CHECK ((source IS NULL) = (upstream_id IS NULL)),
+          CHECK (source IS NOT NULL OR chapter IS NULL)
+        );
+
+        -- Music's radio run: the tracks Instant Mix answered for the session's radio seed, in
+        -- its order, kept until every one has played.
+        CREATE TABLE radio_tracks (
+          device_id   TEXT NOT NULL REFERENCES listening_sessions(device_id) ON DELETE CASCADE,
+          ord         INTEGER NOT NULL CHECK (ord >= 0),
+          source      TEXT NOT NULL CHECK (source IN ('abs', 'jellyfin')),
+          upstream_id TEXT NOT NULL,
+          PRIMARY KEY (device_id, ord)
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

@@ -4,10 +4,17 @@
  * there. `ids` holds the external ids matching needs later (ASIN, feed URL, MusicBrainz ids).
  */
 import type { BookSummary, ItemSummary, ShowSummary } from '../adapters/audiobookshelf/schemas.js';
+import type { EpisodeOrder, Feed } from '../adapters/feed/client.js';
 import type { IndexItem } from '../adapters/jellyfin/schemas.js';
 
 export type IndexSource = 'abs' | 'jellyfin';
 export type IndexKind = 'book' | 'show' | 'episode' | 'album' | 'track';
+
+/**
+ * A show's episode order as the index holds it: its feed's, or `unknown` while no read of its
+ * feed has succeeded. Autoplay plays an unknown show newest first, as for episodic.
+ */
+export type ShowEpisodeOrder = EpisodeOrder | 'unknown';
 
 export interface Creator {
   /** The upstream's own id for the person, where it has one. */
@@ -40,12 +47,46 @@ export interface IndexRow {
   /** Seconds. */
   duration: number | null;
   year: number | null;
-  /** Milliseconds since the epoch. */
+  /** Milliseconds since the epoch; an episode's from its show's feed where the feed lists it. */
   publishedAt: number | null;
   /** The upstream's own change marker: ABS `updatedAt`, Jellyfin `Etag`. */
   upstreamVersion: string | null;
   /** External ids by scheme: `asin`, `feed_url`, `musicbrainz_album`, ... */
   ids: Record<string, string>;
+  /** A show's episode order; null on every other row. */
+  episodeOrder: ShowEpisodeOrder | null;
+}
+
+/** Apple's default for a feed that names no order, and for a show with no feed: newest first. */
+export const DEFAULT_EPISODE_ORDER: EpisodeOrder = 'episodic';
+
+/**
+ * How a show's episodes are ordered: its order, and each episode's date by Audiobookshelf
+ * episode id where its feed lists it. An episode the feed doesn't list keeps Audiobookshelf's
+ * date: feeds often carry only the latest episodes.
+ */
+export interface ShowOrdering {
+  order: ShowEpisodeOrder;
+  publishedAt: ReadonlyMap<string, number>;
+}
+
+/** Matches each of the show's episodes to its feed item, by enclosure URL, else by guid. */
+export function orderingFromFeed(item: ShowSummary, feed: Feed): ShowOrdering {
+  const byUrl = new Map<string, number>();
+  const byGuid = new Map<string, number>();
+  for (const e of feed.episodes) {
+    if (e.publishedAt === null) continue;
+    if (e.enclosureUrl !== null) byUrl.set(e.enclosureUrl, e.publishedAt);
+    if (e.guid !== null) byGuid.set(e.guid, e.publishedAt);
+  }
+  const publishedAt = new Map<string, number>();
+  for (const e of item.media.episodes) {
+    const url = e.enclosure?.url;
+    const at =
+      (url ? byUrl.get(url) : undefined) ?? (present(e.guid) ? byGuid.get(e.guid) : undefined);
+    if (at !== undefined) publishedAt.set(e.id, at);
+  }
+  return { order: feed.order ?? DEFAULT_EPISODE_ORDER, publishedAt };
 }
 
 /** A top-level item and everything under it, as one upstream answer gives them. */
@@ -81,6 +122,7 @@ const base = {
   publishedAt: null,
   upstreamVersion: null,
   ids: {},
+  episodeOrder: null,
 } satisfies Partial<IndexRow>;
 
 function bookTree(item: BookSummary): IndexTree {
@@ -113,7 +155,7 @@ function bookTree(item: BookSummary): IndexTree {
   };
 }
 
-function showTree(item: ShowSummary): IndexTree {
+function showTree(item: ShowSummary, ordering: ShowOrdering | undefined): IndexTree {
   const meta = item.media.metadata;
   const hosts: Creator[] = present(meta.author) ? [{ name: meta.author, role: 'host' }] : [];
   return {
@@ -127,6 +169,7 @@ function showTree(item: ShowSummary): IndexTree {
       creators: hosts,
       genres: meta.genres,
       upstreamVersion: String(item.updatedAt),
+      episodeOrder: ordering?.order ?? DEFAULT_EPISODE_ORDER,
       ids: idsOf([
         ['feed_url', meta.feedUrl],
         ['itunes_id', meta.itunesId],
@@ -145,7 +188,7 @@ function showTree(item: ShowSummary): IndexTree {
       position: whole(e.episode),
       disc: whole(e.season),
       duration: e.audioFile?.duration ?? null,
-      publishedAt: e.publishedAt ?? null,
+      publishedAt: ordering?.publishedAt.get(e.id) ?? e.publishedAt ?? null,
       upstreamVersion: String(e.updatedAt),
       ids: idsOf([
         ['guid', e.guid],
@@ -155,9 +198,12 @@ function showTree(item: ShowSummary): IndexTree {
   };
 }
 
-/** A book with no children, or a show with its episodes. */
-export function absTree(item: ItemSummary): IndexTree {
-  return item.mediaType === 'book' ? bookTree(item) : showTree(item);
+/**
+ * A book with no children, or a show with its episodes, ordered by `ordering` where given, else
+ * by the default order and Audiobookshelf's own dates.
+ */
+export function absTree(item: ItemSummary, ordering?: ShowOrdering): IndexTree {
+  return item.mediaType === 'book' ? bookTree(item) : showTree(item, ordering);
 }
 
 /** `MusicBrainzReleaseGroup` becomes `musicbrainz_release_group`, `AudioDbAlbum` `audiodb_album`. */

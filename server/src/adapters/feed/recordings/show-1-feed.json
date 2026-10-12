@@ -1,0 +1,23 @@
+{
+  "upstream": "feed",
+  "upstreamVersion": "RSS 2.0",
+  "call": "show-1-feed",
+  "request": {
+    "method": "GET",
+    "path": "/d/playlist/e73c998e-6e60-432f-8610-ae210140c5b1/78d30acb-8463-4c40-a5ae-ae2d0145c9ff/263f0d81-9fa6-43f0-b350-b2b20161986b/podcast.rss",
+    "query": {},
+    "headers": {
+      "accept": "application/rss+xml, application/xml"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/xml; charset=utf-8"
+    },
+    "body": {
+      "text": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<rss version=\"2.0\" xmlns:itunes=\"http://www.itunes.com/dtds/podcast-1.0.dtd\">\n  <channel>\n    <!-- Trimmed by the recorder: every item kept in order, with only the elements ordering needs. -->\n    <title>Marshall Islands: After the Bomb Dropped </title>\n    <itunes:type>serial</itunes:type>\n    <item>\n      <title>The Marshall Islands, Part Four: Water Is Life</title>\n      <guid isPermaLink=\"false\">db7c0126-10a6-4bb9-95ca-b077000c5f7f</guid>\n      <pubDate>Fri, 08 Sep 2023 04:00:00 +0000</pubDate>\n      <itunes:season>2</itunes:season>\n      <itunes:episodeType>full</itunes:episodeType>\n      <itunes:duration>2092</itunes:duration>\n      <enclosure url=\"https://podtrac.com/pts/redirect.mp3/traffic.omny.fm/d/clips/e73c998e-6e60-432f-8610-ae210140c5b1/78d30acb-8463-4c40-a5ae-ae2d0145c9ff/db7c0126-10a6-4bb9-95ca-b077000c5f7f/audio.mp3?utm_source=Podcast&amp;in_playlist=263f0d81-9fa6-43f0-b350-b2b20161986b\" length=\"33541097\" type=\"audio/mpeg\" />\n    </item>\n    <item>\n      <title>The Marshall Islands, Part Three: Climate Change</title>\n      <guid isPermaLink=\"false\">28c74a14-ffc3-4e36-8bca-b0750182550a</guid>\n      <pubDate>Thu, 07 Sep 2023 04:00:00 +0000</pubDate>\n      <itunes:season>2</itunes:season>\n      <itunes:episodeType>full</itunes:episodeType>\n      <itunes:duration>2001</itunes:duration>\n      <enclosure url=\"https://podtrac.com/pts/redirect.mp3/traffic.omny.fm/d/clips/e73c998e-6e60-432f-8610-ae210140c5b1/78d30acb-8463-4c40-a5ae-ae2d0145c9ff/28c74a14-ffc3-4e36-8bca-b0750182550a/audio.mp3?utm_source=Podcast&amp;in_playlist=263f0d81-9fa6-43f0-b350-b2b20161986b\" length=\"32087437\" type=\"audio/mpeg\" />\n    </item>\n    <item>\n      <title>The Marshall Islands, Part Two: For the Good of Humanity and to End All Wars</title>\n      <guid isPermaLink=\"false\">f5ad2a9e-df19-4c5a-a09a-b0750020cfea</guid>\n      <pubDate>Wed, 06 Sep 2023 04:00:00 +0000</pubDate>\n      <itunes:season>2</itunes:season>\n      <itunes:episodeType>full</itunes:episodeType>\n      <itunes:duration>1970</itunes:duration>\n      <enclosure url=\"https://podtrac.com/pts/redirect.mp3/traffic.omny.fm/d/clips/e73c998e-6e60-432f-8610-ae210140c5b1/78d30acb-8463-4c40-a5ae-ae2d0145c9ff/f5ad2a9e-df19-4c5a-a09a-b0750020cfea/audio.mp3?utm_source=Podcast&amp;in_playlist=263f0d81-9fa6-43f0-b350-b2b20161986b\" length=\"31584660\" type=\"audio/mpeg\" />\n    </item>\n    <item>\n      <title>The Marshall Islands, Part One: For the Good of Humanity and to End All Wars</title>\n      <guid isPermaLink=\"false\">61efe1aa-d65e-486e-b68b-b073017b8a9d</guid>\n      <pubDate>Tue, 05 Sep 2023 04:00:00 +0000</pubDate>\n      <itunes:season>2</itunes:season>\n      <itunes:episodeType>full</itunes:episodeType>\n      <itunes:duration>1449</itunes:duration>\n      <enclosure url=\"https://podtrac.com/pts/redirect.mp3/traffic.omny.fm/d/clips/e73c998e-6e60-432f-8610-ae210140c5b1/78d30acb-8463-4c40-a5ae-ae2d0145c9ff/61efe1aa-d65e-486e-b68b-b073017b8a9d/audio.mp3?utm_source=Podcast&amp;in_playlist=263f0d81-9fa6-43f0-b350-b2b20161986b\" length=\"23257241\" type=\"audio/mpeg\" />\n    </item>\n  </channel>\n</rss>\n"
+    }
+  }
+}

@@ -72,7 +72,7 @@ This is M5's work; until then the frontend is M1.shell's minimal shell.
 
 Your rule: Sonora artifact, then canvas artifact, then code, ported mechanically; nothing frontend reaches code unpublished:
 
-1. **Structure comes before pictures.** Every screen first gets a plain-text structure in `nav.json`: its purpose, its sections in order (unsettled ones marked provisional), its empty state and the screens it links to. The canvas's start page shows the generated navigation flowchart and screen list, no mockups, so you settle the hierarchy by commenting before detail distracts you. Each screen gets a canvas page: its structure beside its mockups, nothing else loaded. A page is drawn only once it has a structure.
+1. **Structure comes before pictures.** Every screen first gets a plain-text structure in `nav.json`: its purpose, its sections in order (unsettled ones marked provisional), its empty state and the screens it links to. The canvas's start page shows the generated navigation flowchart and screen list, no mockups, so you settle the hierarchy first. Each screen gets a canvas page: its structure beside its mockups, nothing else loaded. A page is drawn only once it has a structure.
 2. **Navigation is data.** The canvas holds `nav.json`: destinations, routes and parameters, which destination each page lights up, back behaviour, and the layout at each breakpoint (bottom bar, rail, side panel). Code generation turns it into the web router and the Android Navigation-Compose graph: **the same flows from the same file**.
 3. **Pages are a restricted format.** Each page is JSX that may only use Sonora components, literal props, and bindings to its screen endpoint's generated types (`{feed.shelves}`). No custom styling, no logic. A parser turns it into a page tree, generated as React for web and Compose for Android, both calling the same component names.
 4. **Generated code is off-limits.** Routes and page layouts are generated files, never edited by hand. Hand-written code only supplies data (the screen's API call, view-model state and actions) behind the page's typed slots.
@@ -83,8 +83,6 @@ Your rule: Sonora artifact, then canvas artifact, then code, ported mechanically
    - each page's screenshot on both platforms is compared against the design's render of that page;
    - the "Published artifacts are current" job, and the Stop hook, fail while `design/sonora`, `design/app` and its art, or the code building either, differs from its recorded publish, has no record, or the canvas installs a Sonora other than the published one;
    - the `auralis/no-hand-ui` lint refuses HTML elements, `style` and `className` in `web/src` outside `generated/`, and a test refuses `@Composable` functions outside Android's `generated` and `ui/sonora` packages, each with a documented allowlist. The minimal shell's hand-written data code supplies data only and stays within this lint.
-
-   Adding a screen in code alone fails the build.
 6. **The frontend build starts with navigation.** First, both apps navigate the full generated map with placeholder data, compared against the design and each other (M0.canvas), before any screen, the minimal shell's included, gets real content.
 
 - **Mantine** is optional, only inside a component needing a behaviour primitive (menus, focus traps), never as the visual layer.
@@ -104,7 +102,7 @@ Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;
 - **Shapes never change meaning:** artists, authors and hosts are circles; all content is rounded squares. Don't copy Spotify's podcast-versus-album split.
 - **Now Playing matches the content:** podcasts and books get speed and skip (Sonora's `TransportBar` _spoken_ variant); music gets shuffle and repeat, with speed tucked away, not removed.
 - **Tabs and menus:** a tab row opens on its first tab. On the phone a context menu is a modal bottom sheet over the bottom bar and mini-player; on desktop it hangs from its button.
-- **Lyrics:** a sync toggle always in the top corner. Sync off shows every line at full opacity, a dot marking the current line that the three-dot menu can switch off. Sonora specifies this.
+- **Lyrics:** a sync toggle always in the top corner. Sync off shows every line at full opacity, a dot marking the current line that the three-dot menu can switch off.
 
 ### Screens and the one call behind each
 
@@ -122,7 +120,7 @@ Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;
 | Settings · onboarding | `GET/PUT /settings`, `/setup`, `/auth` | theme, autoplay rules, services, providers, requests | <span class="pill t-lib">Sonora</span> UI kit settings screen |
 
 ::: callout warn
-**Still to design on the Auralis canvas, before their milestone:** the YouTube channel settings (SponsorBlock, Shorts) and the YouTube account connection, provisional sections of the Show and Settings pages, and loading and empty states per screen. Everything else has a Sonora component and reference screen. Nobody invents UI in code.
+**Still to design on the Auralis canvas, before their milestone:** the YouTube channel settings (SponsorBlock, Shorts) and the YouTube account connection, provisional sections of the Show and Settings pages, and loading and empty states per screen. Everything else has a Sonora component and reference screen.
 :::
 
 ### How parity stays true

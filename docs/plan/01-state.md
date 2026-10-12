@@ -5,7 +5,7 @@ part: Why and what
 ---
 ## Where it stands
 
-Almost none of the old project ran against your real servers or a real phone. Each row was checked live or in code.
+Almost none of the old project ran against your real servers or a real phone.
 
 | What | Evidence | Effect |
 |---|---|---|

@@ -93,6 +93,11 @@ export const chapterSchema = z
   .object({ title: z.string(), start: z.number(), end: z.number() })
   .passthrough();
 
+/** `GET /api/items/:id?expanded=1` read for a book's chapters only (recorded): none for a show. */
+export const itemChaptersSchema = z
+  .object({ media: z.object({ chapters: z.array(chapterSchema).optional() }).passthrough() })
+  .passthrough();
+
 /**
  * `POST /api/items/:id/play`: the playback session. `playMethod` 0 is direct play, 2 a transcode
  * (both recorded).
@@ -200,6 +205,8 @@ export const mediaProgressSchema = z
     progress: z.number(),
     currentTime: z.number(),
     isFinished: z.boolean(),
+    /** When it last changed, in milliseconds since the epoch (recorded). */
+    lastUpdate: z.number().optional(),
   })
   .passthrough();
 export type MediaProgress = z.infer<typeof mediaProgressSchema>;
@@ -249,8 +256,12 @@ const bookMetadataSchema = z.object({
   asin: optionalString,
 });
 
-/** One audio file of an item; a book's length is the sum of the files it plays. */
+/**
+ * One audio file of an item; a book's length is the sum of the files it plays. `ino` names the
+ * file an episode streams from, under its show (recorded).
+ */
 const audioFileSchema = z.object({
+  ino: inoSchema.optional(),
   duration: z.number().nullable().optional(),
   exclude: z.boolean().optional(),
 });

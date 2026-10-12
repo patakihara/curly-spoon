@@ -37,7 +37,7 @@ A job mirrors the Audiobookshelf and Jellyfin libraries into SQLite as shared me
 ::: card
 #### 4 · Recorded reality, not guesses
 
-Each adapter's `record` mode captures real responses from mediaserver, secrets scrubbed, as fixtures. Tests run on those; a nightly re-record turns upstream drift into a failing diff, not a silent break. Recordings are made from the laptop over Tailscale with Auralis's own API keys, named Auralis in each service, kept in a 0600 file on mediaserver; no other service's key is reused. The Audiobookshelf key belongs to `auralis`, a listen-only non-admin user. A second ABS key, an admin's, kept only on mediaserver, creates a member's missing ABS account and mints each person's key at first sign-in; Jellyfin's key (always admin) mints each person's session through Quick Connect. Upstream calls carry the person's own token, encrypted at rest.
+Each adapter's `record` mode captures real responses from mediaserver, secrets scrubbed, as fixtures. A nightly re-record turns upstream drift into a failing diff. Recordings are made from the laptop with Auralis's own API keys, named Auralis in each service, kept in a 0600 file on mediaserver; no other service's key is reused. The ABS key belongs to `auralis`, a listen-only non-admin user. A second ABS key, an admin's, kept only on mediaserver, creates a member's missing ABS account and mints each person's key at first sign-in; Jellyfin's key (always admin) mints each person's session through Quick Connect. Upstream calls carry the person's own token, encrypted at rest.
 :::
 
 ::: card
@@ -55,7 +55,7 @@ Setup claims the admin role once, with a one-time code the server writes to its 
 ::: card
 #### 7 · The extractor lives in the server
 
-The server runs `yt-dlp`, the counterpart of AbleMusicPlayer's on-phone NewPipeExtractor, in the one container: both clients get it, with one place to update. Per your notes it should **point and forward, not burden the server**: no transcoding, bytes passed straight through, a small capped cache only for streamed tracks (the next one preloaded, a recent one replayed, a song being kept) and cut channel episodes. The same path would let **people without a media server** use Auralis for streaming. Audiobooks always come from Audiobookshelf. It asks YouTube only for audio-only formats, music and channels alike. A daily job promotes a new extractor only once a canary search-and-resolve passes, else keeps the last that passed; failures show on the admin jobs page. Android may later add NewPipeExtractor as an offline fallback.
+The server runs `yt-dlp` in the one container, for both clients. It should **point and forward, not burden the server**: no transcoding, bytes passed straight through, a small capped cache only for streamed tracks (the next one preloaded, a recent one replayed, a song being kept) and cut channel episodes. The same path would let **people without a media server** use Auralis for streaming. Audiobooks always come from Audiobookshelf. It asks YouTube only for audio-only formats, music and channels alike. A daily job promotes a new extractor only once a canary search-and-resolve passes, else keeps the last that passed; failures show on the admin jobs page. Android may later add NewPipeExtractor as an offline fallback.
 :::
 
 ::: card
@@ -75,5 +75,5 @@ These types carry every screen.
 | `Availability` | Where you stand with it, on every card and row | `owned` · `streamable` (plays now, can be kept) · `requested{status, progress}` · `external{requestable}`. Maps straight onto Sonora's four tones: <span class="pill t-lib">In library</span> <span class="pill t-prog">Downloading · 87%</span> <span class="pill t-req">Not in library</span> <span class="pill t-err">Failed</span> |
 | `PlaybackPlan` | Everything a player needs to play one item, from the start or a resume point | ordered `tracks[]` (url, mime, duration, offset), `chapters[]`, `startAt`, `progressTarget` (where the server reports progress), `next` (the autoplay rule) |
 | `User` · `Device` | Who is listening, and on what | An Auralis user maps to their own Audiobookshelf and Jellyfin accounts, so progress, favourites and play history stay theirs upstream too. Each device (a browser or a phone) registers under a user. |
-| `ListeningSession` | What's playing on one device | Owned by (user, device): its queues, current item and position, and play history. **Sessions on different devices don't mix by default.** |
+| `ListeningSession` | What's playing on one device | Owned by (user, device): its two queues (music, in the queue style's order, and spoken), the active queue, position, and play history. **Sessions on different devices don't mix by default.** |
 | `Shelf` | A carousel on Browse or a library home | `eyebrow` ("More like"), `title`, `subject` + `subjectArt` (what the shelf is about), `subtitle` (names the types in a mixed shelf), `items[]` of `MediaCard` or `FeatureCard` data, `mixed` flag |

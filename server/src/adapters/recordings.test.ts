@@ -494,3 +494,100 @@ describe("Jellyfin's playback reports, recorded for M1.progress", () => {
     });
   });
 });
+
+/** M1.sessions' recordings: what autoplay reads, as `auralis`. */
+const sessions = {
+  books: [
+    recording('audiobookshelf', 'series-book-1'),
+    recording('audiobookshelf', 'series-book-2'),
+  ],
+  feeds: [recording('feed', 'show-1-feed'), recording('feed', 'show-2-feed')],
+  me: recording('audiobookshelf', 'me-finished'),
+  mix: recording('jellyfin', 'jf-instant-mix'),
+  shows: [recording('audiobookshelf', 'index-show-1'), recording('audiobookshelf', 'index-show-2')],
+  album: recording('jellyfin', 'index-album-tracks-1'),
+};
+
+function feedText(r: Recording): string {
+  const b = r.response.body;
+  if (b === null || !('text' in b)) throw new Error(`${r.call}: expected a text body`);
+  return b.text;
+}
+
+describe("Audiobookshelf's, the feeds' and Jellyfin's answers, recorded for M1.sessions", () => {
+  it('two books of one series parse through the client, in series order', async () => {
+    const client = new AbsClient({
+      baseUrl: 'http://upstream.invalid',
+      token: '<token>',
+      fetch: replayFetch(sessions.books),
+    });
+    const books = await Promise.all(sessions.books.map((r) => client.getItemSummary(itemId(r))));
+    const series = books.map((b) => (b.mediaType === 'book' ? b.media.metadata.series : []));
+    expect(series[0]?.[0]?.id).toBeDefined();
+    expect(series[1]?.[0]?.id).toBe(series[0]?.[0]?.id);
+    expect(series.map((s) => s[0]?.sequence)).toEqual(['1', '2']);
+  });
+
+  it("each recorded show's feed names its order: the first serial, the second episodic", () => {
+    const types = sessions.feeds.map(
+      (r) => /<itunes:type>(\w+)<\/itunes:type>/.exec(feedText(r))?.[1],
+    );
+    expect(types).toEqual(['serial', 'episodic']);
+  });
+
+  it("each feed keeps every item, each with a date and an enclosure the show's episodes carry", () => {
+    for (const [n, feed] of sessions.feeds.entries()) {
+      const items = [...feedText(feed).matchAll(/<item>([\s\S]*?)<\/item>/g)].map(
+        (m) => m[1] ?? '',
+      );
+      const show = json(sessions.shows[n]!.response.body) as {
+        media: { episodes: { enclosure: { url: string } | null }[] };
+      };
+      expect(items.length, feed.call).toBe(show.media.episodes.length);
+      const enclosures = new Set(show.media.episodes.map((e) => e.enclosure?.url));
+      for (const item of items) {
+        expect(Number.isNaN(Date.parse(/<pubDate>([^<]*)</.exec(item)?.[1] ?? ''))).toBe(false);
+        const url = /<enclosure\b[^>]*\burl="([^"]*)"/.exec(item)?.[1]?.replace(/&amp;/g, '&');
+        expect(enclosures.has(url), url).toBe(true);
+      }
+    }
+  });
+
+  it("the test user's finished episode parses through the client: the serial show's oldest", async () => {
+    const client = new AbsClient({
+      baseUrl: 'http://upstream.invalid',
+      token: '<token>',
+      fetch: replayFetch([sessions.me]),
+    });
+    const me = await client.getMe();
+    const [finished] = me.mediaProgress.filter((p) => p.isFinished);
+    expect(finished?.libraryItemId).toBe(itemId(sessions.shows[0]!));
+    const show = json(sessions.shows[0]!.response.body) as {
+      media: { episodes: { id: string; enclosure: { url: string } | null }[] };
+    };
+    const episode = show.media.episodes.find((e) => e.id === finished?.episodeId);
+    const items = [...feedText(sessions.feeds[0]!).matchAll(/<item>([\s\S]*?)<\/item>/g)];
+    const oldest = items
+      .map((m) => m[1] ?? '')
+      .sort(
+        (a, b) =>
+          Date.parse(/<pubDate>([^<]*)</.exec(a)?.[1] ?? '') -
+          Date.parse(/<pubDate>([^<]*)</.exec(b)?.[1] ?? ''),
+      )[0];
+    expect(oldest).toContain((episode?.enclosure?.url ?? '?').replace(/&/g, '&amp;'));
+  });
+
+  it("Instant Mix for the recorded album's last track parses through the client", async () => {
+    const tracks = (json(sessions.album.response.body) as { Items: { Id: string }[] }).Items;
+    const last = tracks.at(-1)?.Id ?? '';
+    expect(sessions.mix.request.path).toBe(`/Items/${last}/InstantMix`);
+    const jf = new JellyfinClient({
+      baseUrl: 'http://upstream.invalid',
+      token: '<token>',
+      fetch: replayFetch([sessions.mix]),
+    });
+    const mix = await jf.getInstantMix(last, 20);
+    expect(mix.length).toBe(20);
+    expect(mix.every((t) => t.Type === 'Audio' && Boolean(t.AlbumId))).toBe(true);
+  });
+});

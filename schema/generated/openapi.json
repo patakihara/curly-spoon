@@ -25,6 +25,114 @@
         "description": "The mime type of a transcode's one track: an HLS playlist.",
         "const": "application/vnd.apple.mpegurl"
       },
+      "QueueType": {
+        "type": "string",
+        "enum": [
+          "music",
+          "spoken"
+        ]
+      },
+      "MediaSource": {
+        "type": "string",
+        "enum": [
+          "abs",
+          "jellyfin"
+        ]
+      },
+      "MediaRef": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/MediaSource"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[\\w-]{1,64}$"
+          }
+        },
+        "required": [
+          "source",
+          "id"
+        ]
+      },
+      "QueueItem": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "chapter": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "itemId",
+          "ref"
+        ]
+      },
+      "QueuePosition": {
+        "type": "object",
+        "properties": {
+          "ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "takenAt": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ms",
+          "takenAt"
+        ]
+      },
+      "PlayingFromKind": {
+        "type": "string",
+        "enum": [
+          "album",
+          "playlist",
+          "show",
+          "book"
+        ]
+      },
+      "PlayingFrom": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/PlayingFromKind"
+          },
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          }
+        },
+        "required": [
+          "kind",
+          "ref"
+        ]
+      },
+      "QueueContext": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "$ref": "#/components/schemas/PlayingFrom"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QueueItem"
+            }
+          }
+        },
+        "required": [
+          "from",
+          "items"
+        ]
+      },
       "HealthResponse": {
         "type": "object",
         "properties": {
@@ -362,29 +470,6 @@
           "playId"
         ]
       },
-      "MediaSource": {
-        "type": "string",
-        "enum": [
-          "abs",
-          "jellyfin"
-        ]
-      },
-      "MediaRef": {
-        "type": "object",
-        "properties": {
-          "source": {
-            "$ref": "#/components/schemas/MediaSource"
-          },
-          "id": {
-            "type": "string",
-            "pattern": "^[\\w-]{1,64}$"
-          }
-        },
-        "required": [
-          "source",
-          "id"
-        ]
-      },
       "PlaybackPlan": {
         "type": "object",
         "properties": {
@@ -561,6 +646,289 @@
           "ref",
           "time",
           "title"
+        ]
+      },
+      "QueueStyle": {
+        "type": "string",
+        "enum": [
+          "youtube",
+          "spotify"
+        ]
+      },
+      "QueueCurrents": {
+        "type": "object",
+        "properties": {
+          "music": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QueueItem"
+              },
+              {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            ]
+          },
+          "spoken": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QueueItem"
+              },
+              {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            ]
+          }
+        },
+        "required": [
+          "music",
+          "spoken"
+        ]
+      },
+      "ListeningSession": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string"
+          },
+          "deviceName": {
+            "type": "string"
+          },
+          "thisDevice": {
+            "type": "boolean"
+          },
+          "active": {
+            "$ref": "#/components/schemas/QueueType"
+          },
+          "switchAfterCurrent": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QueueType"
+              },
+              {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            ]
+          },
+          "queueStyle": {
+            "$ref": "#/components/schemas/QueueStyle"
+          },
+          "currents": {
+            "$ref": "#/components/schemas/QueueCurrents"
+          },
+          "rev": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "updatedAt": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "deviceId",
+          "deviceName",
+          "thisDevice",
+          "active",
+          "switchAfterCurrent",
+          "queueStyle",
+          "currents",
+          "rev",
+          "updatedAt"
+        ]
+      },
+      "ListeningSessionList": {
+        "type": "object",
+        "properties": {
+          "sessions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListeningSession"
+            }
+          }
+        },
+        "required": [
+          "sessions"
+        ]
+      },
+      "Queue": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/QueueType"
+          },
+          "current": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QueueItem"
+              },
+              {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            ]
+          },
+          "position": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QueuePosition"
+              },
+              {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            ]
+          },
+          "user": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QueueItem"
+            }
+          },
+          "context": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QueueContext"
+              },
+              {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            ]
+          },
+          "rev": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "type",
+          "current",
+          "position",
+          "user",
+          "context",
+          "rev"
+        ]
+      },
+      "PutQueueBody": {
+        "type": "object",
+        "properties": {
+          "rev": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "user": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "context": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "default": []
+          }
+        },
+        "required": [
+          "rev",
+          "user"
+        ]
+      },
+      "QueueHow": {
+        "type": "string",
+        "enum": [
+          "now",
+          "next",
+          "end",
+          "default"
+        ]
+      },
+      "AddToQueueBody": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "how": {
+            "$ref": "#/components/schemas/QueueHow"
+          },
+          "rev": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "ref",
+          "how"
+        ]
+      },
+      "StepDirection": {
+        "type": "string",
+        "enum": [
+          "next",
+          "back"
+        ]
+      },
+      "StepBody": {
+        "type": "object",
+        "properties": {
+          "direction": {
+            "$ref": "#/components/schemas/StepDirection"
+          },
+          "rev": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "direction"
+        ]
+      },
+      "ActiveQueueBody": {
+        "type": "object",
+        "properties": {
+          "queue": {
+            "$ref": "#/components/schemas/QueueType"
+          },
+          "rev": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "queue"
+        ]
+      },
+      "QueueStyleBody": {
+        "type": "object",
+        "properties": {
+          "queueStyle": {
+            "$ref": "#/components/schemas/QueueStyle"
+          },
+          "rev": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "queueStyle"
         ]
       }
     },
@@ -1874,6 +2242,461 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions": {
+      "get": {
+        "summary": "The signed-in person's listening sessions, one per device",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "listSessions",
+        "responses": {
+          "200": {
+            "description": "Each device with a session, which one is asking, and what each plays.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeningSessionList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/queues/{type}": {
+      "get": {
+        "summary": "One of this device's queues: its current item, your queue and playing-from",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getQueue",
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/components/schemas/QueueType"
+            },
+            "required": true,
+            "name": "type",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The queue, with the newer of where this device was and where the upstream says.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Queue"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Reorder or remove entries of one of this device's queues",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "putQueue",
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/components/schemas/QueueType"
+            },
+            "required": true,
+            "name": "type",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutQueueBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The queue as it now is; 409 when `rev` is not the session revision.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Queue"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/queues/{type}/items": {
+      "post": {
+        "summary": "Play an item now, put it next, add it to the end, or do what its button does",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "addToQueue",
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/components/schemas/QueueType"
+            },
+            "required": true,
+            "name": "type",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddToQueueBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The queue as it now is; 400 `wrong_queue` for an item of the other queue, 404 for one not indexed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Queue"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/this/step": {
+      "post": {
+        "summary": "Next or back on this device's session; a queue that runs out autoplays",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "stepSession",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StepBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "This device's session, with each queue's current item.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeningSession"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/this/active": {
+      "put": {
+        "summary": "The meta-queue switch: drive the other queue, pausing this one",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "setActiveQueue",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActiveQueueBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "This device's session, with each queue's current item.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeningSession"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sessions/this/style": {
+      "put": {
+        "summary": "This device's queue style: YouTube Music or Spotify",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "setQueueStyle",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueueStyleBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "This device's session, with each queue's current item.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeningSession"
                 }
               }
             }

@@ -295,6 +295,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in person's listening sessions, one per device */
+        get: operations["listSessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/queues/{type}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One of this device's queues: its current item, your queue and playing-from */
+        get: operations["getQueue"];
+        /** Reorder or remove entries of one of this device's queues */
+        put: operations["putQueue"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/queues/{type}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Play an item now, put it next, add it to the end, or do what its button does */
+        post: operations["addToQueue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/this/step": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Next or back on this device's session; a queue that runs out autoplays */
+        post: operations["stepSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/this/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** The meta-queue switch: drive the other queue, pausing this one */
+        put: operations["setActiveQueue"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sessions/this/style": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** This device's queue style: YouTube Music or Spotify */
+        put: operations["setQueueStyle"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -305,6 +408,34 @@ export interface components {
          * @enum {string}
          */
         HlsMime: "application/vnd.apple.mpegurl";
+        /** @enum {string} */
+        QueueType: "music" | "spoken";
+        /** @enum {string} */
+        MediaSource: "abs" | "jellyfin";
+        MediaRef: {
+            source: components["schemas"]["MediaSource"];
+            id: string;
+        };
+        QueueItem: {
+            /** Format: uuid */
+            itemId: string;
+            ref: components["schemas"]["MediaRef"];
+            chapter?: number;
+        };
+        QueuePosition: {
+            ms: number;
+            takenAt: number;
+        };
+        /** @enum {string} */
+        PlayingFromKind: "album" | "playlist" | "show" | "book";
+        PlayingFrom: {
+            kind: components["schemas"]["PlayingFromKind"];
+            ref: components["schemas"]["MediaRef"];
+        };
+        QueueContext: {
+            from: components["schemas"]["PlayingFrom"];
+            items: components["schemas"]["QueueItem"][];
+        };
         HealthResponse: {
             /** @enum {string} */
             status: "ok";
@@ -389,12 +520,6 @@ export interface components {
         ProgressTarget: {
             playId: string;
         };
-        /** @enum {string} */
-        MediaSource: "abs" | "jellyfin";
-        MediaRef: {
-            source: components["schemas"]["MediaSource"];
-            id: string;
-        };
         PlaybackPlan: {
             tracks: components["schemas"]["PlaybackTrack"][];
             chapters: components["schemas"]["PlaybackChapter"][];
@@ -435,6 +560,61 @@ export interface components {
             ref: components["schemas"]["MediaRef"];
             time: number;
             title: string;
+        };
+        /** @enum {string} */
+        QueueStyle: "youtube" | "spotify";
+        QueueCurrents: {
+            music: components["schemas"]["QueueItem"] & (Record<string, never> | null);
+            spoken: components["schemas"]["QueueItem"] & (Record<string, never> | null);
+        };
+        ListeningSession: {
+            deviceId: string;
+            deviceName: string;
+            thisDevice: boolean;
+            active: components["schemas"]["QueueType"];
+            switchAfterCurrent: components["schemas"]["QueueType"] & (string | null);
+            queueStyle: components["schemas"]["QueueStyle"];
+            currents: components["schemas"]["QueueCurrents"];
+            rev: number;
+            updatedAt: number;
+        };
+        ListeningSessionList: {
+            sessions: components["schemas"]["ListeningSession"][];
+        };
+        Queue: {
+            type: components["schemas"]["QueueType"];
+            current: components["schemas"]["QueueItem"] & (Record<string, never> | null);
+            position: components["schemas"]["QueuePosition"] & (Record<string, never> | null);
+            user: components["schemas"]["QueueItem"][];
+            context: components["schemas"]["QueueContext"] & (Record<string, never> | null);
+            rev: number;
+        };
+        PutQueueBody: {
+            rev: number;
+            user: string[];
+            /** @default [] */
+            context: string[];
+        };
+        /** @enum {string} */
+        QueueHow: "now" | "next" | "end" | "default";
+        AddToQueueBody: {
+            ref: components["schemas"]["MediaRef"];
+            how: components["schemas"]["QueueHow"];
+            rev?: number;
+        };
+        /** @enum {string} */
+        StepDirection: "next" | "back";
+        StepBody: {
+            direction: components["schemas"]["StepDirection"];
+            rev?: number;
+        };
+        ActiveQueueBody: {
+            queue: components["schemas"]["QueueType"];
+            rev?: number;
+        };
+        QueueStyleBody: {
+            queueStyle: components["schemas"]["QueueStyle"];
+            rev?: number;
         };
     };
     responses: never;
@@ -1436,6 +1616,352 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Each device with a session, which one is asking, and what each plays. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListeningSessionList"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getQueue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                type: components["schemas"]["QueueType"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The queue, with the newer of where this device was and where the upstream says. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Queue"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    putQueue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                type: components["schemas"]["QueueType"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PutQueueBody"];
+            };
+        };
+        responses: {
+            /** @description The queue as it now is; 409 when `rev` is not the session revision. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Queue"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    addToQueue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                type: components["schemas"]["QueueType"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AddToQueueBody"];
+            };
+        };
+        responses: {
+            /** @description The queue as it now is; 400 `wrong_queue` for an item of the other queue, 404 for one not indexed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Queue"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    stepSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["StepBody"];
+            };
+        };
+        responses: {
+            /** @description This device's session, with each queue's current item. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListeningSession"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    setActiveQueue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ActiveQueueBody"];
+            };
+        };
+        responses: {
+            /** @description This device's session, with each queue's current item. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListeningSession"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    setQueueStyle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["QueueStyleBody"];
+            };
+        };
+        responses: {
+            /** @description This device's session, with each queue's current item. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListeningSession"];
                 };
             };
             /** @description The request does not parse, or was refused. */
