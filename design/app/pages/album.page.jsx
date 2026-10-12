@@ -9,6 +9,7 @@ export default function Album({ data }) {
             onSubtitle={<Open page="artist" ref={data.artistRef} />}
             meta={data.meta}
             image={data.image}
+            onPlay={<Play ref={data.ref} queue="music" />}
             nextLabel={null}
             lastLabel="Add to queue"
             menu={<OverflowMenu items={data.menu} />}

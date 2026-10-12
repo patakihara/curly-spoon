@@ -48,7 +48,10 @@ to a data path. A list of several kinds binds the page instead, `<Open page={ite
 and every page its data names must be one of those; the check refuses anything else. `onPlay={<Play ref={episode.ref} queue="spoken" />}`
 plays the item its ref binds on the queue it names, spoken or music, `next` makes it Play next,
 and `source` plays a list on its own, leaving the queue as it is;
-until the web has a page player, the web page leaves it unbound, so the control draws disabled.
+the web plays it through its player, `usePlay()` in `web/src/player`, and Android through the
+`onPlay` it is given. What is loaded, shell.json's `playing`, is the web player's `usePlaying()`:
+the mini-player draws only once something is loaded, and its transport and Now Playing's are the
+player's own on the web; Android's wait for M5.player.
 `onRequest={<Request ref={book.ref} />}` asks for an item the library lacks; no request endpoint
 exists yet, so both apps leave it unbound and the card draws its Request disabled. A generated
 page never binds a handler that does nothing: a control that seems to work must work. The web

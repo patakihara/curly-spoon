@@ -5,6 +5,7 @@ import {
   generateNavMap,
   generatePlatform,
   generateRoutes,
+  generateWebPlaying,
   generateWebShell,
   parseNav,
   readNav,
@@ -348,14 +349,11 @@ describe('the web route table', () => {
 });
 
 describe('the one web shell', () => {
-  const out = generateWebShell(
-    { nowPlaying: 'now', queue: 'queue' },
-    { playing: { title: 'Tidal Lines', variant: 'music' }, home: 'browse' },
-  );
+  const out = generateWebShell({ nowPlaying: 'now', queue: 'queue' }, { home: 'browse' });
 
   it('[M0.canvas/c] draws one BackdropShell from the frame the page showing hands it, its content in the front layer', () => {
     expect(out.match(/<BackdropShell\b/g)).toHaveLength(1);
-    expect(out).toContain('  const chrome = frame.chrome[layout](go);');
+    expect(out).toContain('  const chrome = frame.chrome[layout](go, playing);');
     expect(out).toContain('      rail={chrome.rail}');
     expect(out).toContain('      {Over === undefined ? outlet : <Over />}');
   });
@@ -387,7 +385,23 @@ describe('the one web shell', () => {
     expect(out).toContain('      {Content === undefined ? outlet : <Content />}');
     expect(out).toContain("onClose={closes ? () => go.close('browse') : undefined}");
     expect(out).toContain('onTabChange={(to) => go.tab(to)}');
-    expect(out).toContain('const playing = {\n  "title": "Tidal Lines",');
+  });
+
+  it("[M1.shell] draws what the web's player has loaded, the player and its panel only once something is", () => {
+    expect(out).toContain("import { usePlaying } from '../../player';");
+    expect(out).not.toContain('const playing = {');
+    const player = out.slice(
+      out.indexOf('export function Player('),
+      out.indexOf('export function Shell('),
+    );
+    expect(player).toContain('  const playing = usePlaying();');
+    expect(player).toContain('  if (playing === null) return null;');
+    expect(player).toContain('track={playing}');
+    const shell = out.slice(out.indexOf('export function Shell('));
+    expect(shell.indexOf('  const playing = usePlaying();')).toBeLessThan(
+      shell.indexOf('  if (frame === undefined) return outlet;'),
+    );
+    expect(shell).toContain("  const tab = playing === null || platform !== 'desktop' ? undefined");
   });
 
   it("[M0.canvas/c] draws the player panel through the same Player, at the tab held or the layout's own Now Playing, beside the page, which stays", () => {
@@ -397,7 +411,7 @@ describe('the one web shell', () => {
       'const PANEL_TABS: Record<string, ComponentType> = { now: NowPlayingTab, queue: QueueTab };',
     );
     expect(out).toContain(
-      "  const tab = platform !== 'desktop' ? undefined : over !== undefined ? TABS[match?.id ?? ''] : (go.panel() ?? (chrome.sheetOpen ? 'now' : undefined));",
+      "  const tab = playing === null || platform !== 'desktop' ? undefined : over !== undefined ? TABS[match?.id ?? ''] : (go.panel() ?? (chrome.sheetOpen ? 'now' : undefined));",
     );
     expect(out).toContain('<InPanel.Provider value={true}>');
     // The panel the layout always opens has no close, whatever its tab.
@@ -517,7 +531,10 @@ describe('the web layout hook', () => {
 
   it('[M0.canvas/c] describes what a page hands the shell: its parts at each layout, its back layer and subheader', () => {
     expect(out).toContain('export interface PageFrame<Data> {');
-    expect(out).toContain('  chrome: Record<LayoutId, (go: ShellNav) => Chrome>;');
+    expect(out).toContain(
+      '  chrome: Record<LayoutId, (go: ShellNav, playing: Playing | null) => Chrome>;',
+    );
+    expect(out).toContain("import type { Playing } from '../../player';");
     expect(out).toContain('  back(data: Data, context: FrameContext): ReactNode;');
     expect(out).toContain('  subheader?(data: Data, context: FrameContext): ReactNode;');
   });
@@ -546,5 +563,18 @@ describe('the web layout hook', () => {
       "const detected = useSyncExternalStore<LayoutId>(subscribe, current, () => 'w1240');",
     );
     expect(out).toContain('  return given ?? detected;');
+  });
+});
+
+describe('[M1.shell] what is loaded, as the canvas draws it', () => {
+  const out = generateWebPlaying({
+    title: 'Tidal Lines',
+    artist: 'Halcyon Bloom',
+    variant: 'music',
+  });
+
+  it("gives the web's player shell.json's playing, the shape it fills with what is loaded", () => {
+    expect(out).toContain('export const placeholder = {\n  "title": "Tidal Lines",');
+    expect(out).toContain('export type Loaded = typeof placeholder;');
   });
 });

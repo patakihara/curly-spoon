@@ -5,6 +5,9 @@
  * parts for every layout, the window's width picking one, and its back layer and subheader. A
  * player sheet is its tab's page alone: the shell's one player draws it, beside the page it is
  * drawn over or full screen, and the side panel too, so a tab switch never redraws the player.
+ * What is loaded, `shell.playing` on the canvas, is the web player's (`web/src/player`):
+ * `usePlaying()` in a page, the `playing` the shell hands each layout's parts, the mini-player
+ * drawn only once something is loaded. A `<Play>` plays through `usePlay()`.
  */
 import { LoginQuery, login } from '@auralis/schema';
 import { componentName, splitRoute, type Nav, type NavPage } from './nav.js';
@@ -16,6 +19,8 @@ import {
   framePage,
   framed,
   layoutId,
+  playerTab,
+  playerTree,
   shellData,
   type Chrome,
   type ShellFile,
@@ -61,7 +66,29 @@ export interface WebComponents {
 type Ctx = WebComponents & {
   paths: Map<string, string>;
   wired: Map<PageTree, Record<string, string>>;
+  /** The shell's elements showing what is loaded, drawn only once something is. */
+  loaded: Set<PageTree>;
 };
+
+/** Whether a bound path is what is loaded, shell.json's `playing`, which the web's player holds. */
+const isLoaded = (path: string[]) => path[0] === 'shell' && path[1] === 'playing';
+
+/** A bound path as web code: what is loaded is the player's `playing`, the rest as written. */
+const pathCode = (path: string[]) =>
+  (isLoaded(path) ? ['playing', ...path.slice(2)] : path).join('.');
+
+/** Whether a node shows what is loaded, in a prop, a child or a list. */
+const showsLoaded = (node: PageTree) =>
+  node.kind === 'binding'
+    ? isLoaded(node.path)
+    : node.kind === 'each'
+      ? isLoaded(node.of)
+      : node.kind === 'element' &&
+        Object.values(node.props).some((v) => v.kind === 'binding' && isLoaded(v.path));
+
+/** Whether an element plays an item, a `<Play>` in one of its handler props. */
+const plays = (node: PageTree) =>
+  node.kind === 'element' && Object.values(node.props).some((v) => v.kind === 'play');
 
 /**
  * Each of the shell's actions on the handler prop `prop`, as the web code doing it through
@@ -89,6 +116,12 @@ function spell(prop: string, action: ShellAction, paths: Map<string, string>) {
       return {
         [`${action.tab}Open`]: `go.panel() === '${action.tab}'`,
         [prop]: `() => go.togglePanel('${action.tab}')`,
+      };
+    case 'player':
+      return {
+        ...(prop === 'onTogglePlay' ? { playing: 'playing.playing' } : {}),
+        ...(prop === 'onSpeed' ? { speed: 'playing.speed' } : {}),
+        [prop]: `playing.${prop}`,
       };
   }
 }
@@ -137,17 +170,24 @@ function propLines(
     const to = params.length === 0 ? path : `generatePath(${path}, { ${params.join(', ')} })`;
     return [`${name}={() => navigate(${to})}`];
   }
-  // No request endpoint and no page player exist yet. A handler doing nothing would draw a dead
-  // control as enabled, so the prop is left out and Sonora draws the control disabled.
-  if (value.kind === 'request' || value.kind === 'play') return [];
+  // A Play plays its item through the web's player, now, next or as a list on its own.
+  if (value.kind === 'play') {
+    const ref = value.params['ref'];
+    if (ref === undefined) throw new Error(`${owner}.${name}: Play needs ref={…}`);
+    const mode = value.next ? 'next' : value.source ? 'source' : 'now';
+    return [`${name}={() => play(${pathCode(ref)}, '${value.queue}', '${mode}')}`];
+  }
+  // No request endpoint exists yet. A handler doing nothing would draw a dead control as
+  // enabled, so the prop is left out and Sonora draws the control disabled.
+  if (value.kind === 'request') return [];
   // Sign-in leaves the app for the server's route, which sends the browser on to the sign-on.
   if (value.kind === 'signIn') return [`${name}={${signInHandler()}}`];
   if (value.kind === 'binding' && choice) {
     return [
-      `${name}={${value.path.join('.')} as Exclude<ComponentProps<typeof ${owner}>['${name}'], undefined>}`,
+      `${name}={${pathCode(value.path)} as Exclude<ComponentProps<typeof ${owner}>['${name}'], undefined>}`,
     ];
   }
-  if (value.kind === 'binding') return [`${name}={${value.path.join('.')}}`];
+  if (value.kind === 'binding') return [`${name}={${pathCode(value.path)}}`];
   if (value.kind === 'literal') {
     return [
       typeof value.value === 'string'
@@ -167,12 +207,12 @@ function render(tree: PageTree, indent: string, components: Ctx): string[] {
     case 'text':
       return [`${indent}{${JSON.stringify(tree.value)}}`];
     case 'binding':
-      return [`${indent}{${tree.path.join('.')}}`];
+      return [`${indent}{${pathCode(tree.path)}}`];
     case 'fragment':
       return [`${indent}<>`, ...kids(tree.children, inner), `${indent}</>`];
     case 'each':
       return [
-        `${indent}{${tree.of.join('.')}.map((${tree.as}, i) => (`,
+        `${indent}{${pathCode(tree.of)}.map((${tree.as}, i) => (`,
         `${inner}<Fragment key={i}>`,
         ...kids(tree.children, inner + '  '),
         `${inner}</Fragment>`,
@@ -187,6 +227,12 @@ function render(tree: PageTree, indent: string, components: Ctx): string[] {
         `${indent})}`,
       ];
     case 'element': {
+      if (components.loaded.has(tree)) {
+        components.loaded.delete(tree);
+        const lines = render(tree, inner, components);
+        components.loaded.add(tree);
+        return [`${indent}{playing !== null && (`, ...lines, `${indent})}`];
+      }
       const wired = components.wired.get(tree) ?? {};
       const props = Object.entries(tree.props)
         .map(([name, value]) =>
@@ -230,16 +276,22 @@ function render(tree: PageTree, indent: string, components: Ctx): string[] {
 
 /**
  * A layout's parts as the page hands them to the shell. The side panel's player is the shell's
- * own, so the page says only whether its layout draws it open.
+ * own, so the page says only whether its layout draws it open, once something is loaded.
  */
 function chromeEntry(parts: Chrome, components: Ctx): string[] {
   const out = [`    appBar: ${parts.appBar},`];
   for (const key of DRAWN) {
     const tree = parts[key];
     if (tree === undefined) continue;
-    out.push(`    ${key}: (`, ...render(tree, '      ', components), '    ),');
+    const loaded = components.loaded.delete(tree);
+    out.push(
+      `    ${key}: ${loaded ? 'playing === null ? undefined : ' : ''}(`,
+      ...render(tree, '      ', components),
+      '    ),',
+    );
+    if (loaded) components.loaded.add(tree);
   }
-  out.push(`    sheetOpen: ${parts.sheetOpen},`);
+  out.push(`    sheetOpen: ${parts.sheetOpen ? 'playing !== null' : 'false'},`);
   if (parts.column !== undefined) out.push(`    column: '${parts.column}',`);
   return out;
 }
@@ -273,16 +325,32 @@ export function generateWebPage(
   { nav, shell, page }: WebShell,
 ): string {
   const paths = new Map(nav.pages.map((p) => [p.id, splitRoute(p.route).path]));
-  const components: Ctx = { ...webComponents, paths, wired: new Map() };
-  /** Wires the shell's handlers, `handlers`, into the page; whether it wired any. */
-  const wire = (handlers: ShellHandlers) => {
+  const components: Ctx = { ...webComponents, paths, wired: new Map(), loaded: new Set() };
+  /** The elements whose transport the player does. */
+  const transport = new Set<PageTree>();
+  /** Whether any of the shell's navigation is wired into the page. */
+  let goes = false;
+  /**
+   * Wires the shell's handlers, `handlers`, into the page, but for `skip`'s: whether it wired any
+   * of the shell's navigation, `go`, and any of the player's transport, `playing`.
+   */
+  const wire = (handlers: ShellHandlers, skip?: PageTree) => {
+    const uses = { go: false, playing: false };
     for (const [tree, props] of handlers) {
+      if (tree === skip) continue;
       components.wired.set(
         tree,
         Object.assign({}, ...Object.entries(props).map(([p, a]) => spell(p, a, paths))),
       );
+      for (const action of Object.values(props)) {
+        if (action.kind === 'player') {
+          uses.playing = true;
+          transport.add(tree);
+        } else uses.go = true;
+      }
     }
-    return handlers.size > 0;
+    goes ||= uses.go;
+    return uses;
   };
   const sheet = page.presentation === 'sheet';
   const frame = framePage(tree);
@@ -294,22 +362,47 @@ export function generateWebPage(
   };
   const back = sheet ? undefined : slot('back');
   const subheader = sheet ? undefined : slot('subheader');
+  for (const part of [back, subheader]) {
+    if (part !== undefined && some(part, (n) => plays(n) || showsLoaded(n))) {
+      throw new Error(
+        `pages/${id}.page.jsx: the back layer and subheader are drawn by the shell, outside the page, so they can neither play nor show what is loaded`,
+      );
+    }
+  }
   const root: PageTree =
     frame.content.length === 1 ? frame.content[0]! : { kind: 'fragment', children: frame.content };
+  // A player sheet's transport is the player's; its tab's close and switch are the shell's own.
+  if (sheet) {
+    const player = playerTree(playerTab(page), frame.content);
+    wire(shellHandlers(nav, page, { player }), player);
+  }
   const chromes = sheet
     ? []
     : nav.layouts.map((layout) => {
         const parts = chrome(nav, shell, page, layout, components.platformed);
-        return [
-          layoutId(layout),
-          parts,
-          wire(shellHandlers(nav, page, { chrome: parts })),
-        ] as const;
+        let loaded = parts.sheetOpen;
+        for (const key of DRAWN) {
+          some(parts[key] ?? { kind: 'fragment', children: [] }, (n) => {
+            if (n.kind === 'element' && showsLoaded(n)) {
+              components.loaded.add(n);
+              loaded = true;
+            }
+            return false;
+          });
+        }
+        const uses = wire(shellHandlers(nav, page, { chrome: parts }));
+        return [layoutId(layout), parts, { go: uses.go, playing: uses.playing || loaded }] as const;
       });
-  const goes = components.wired.size > 0;
   const body = render(root, '    ', components);
   const own = [root, back, subheader].filter((t): t is PageTree => t !== undefined);
   const inPage = (test: (node: PageTree) => boolean) => own.some((t) => some(t, test));
+  const usesPlay = inPage(plays);
+  const usesPlaying = inPage((n) => showsLoaded(n) || transport.has(n));
+  const fromPlayer = [
+    ...(usesPlay ? ['usePlay'] : []),
+    ...(usesPlaying ? ['usePlaying'] : []),
+    ...(sheet ? [] : ['type Playing']),
+  ];
   const used = new Set<string>();
   for (const t of own) drawn(t, used);
   for (const [, parts] of chromes) {
@@ -358,9 +451,12 @@ export function generateWebPage(
       : "import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';",
     ...(sheet
       ? [`import { InPanel${goes ? ', useShellNav' : ''} } from '../../shell-nav';`]
-      : goes
-        ? ["import type { ShellNav } from '../../shell-nav';"]
-        : []),
+      : ["import type { ShellNav } from '../../shell-nav';"]),
+    ...(fromPlayer.length === 0
+      ? []
+      : fromPlayer.every((name) => name.startsWith('type '))
+        ? [`import type { ${fromPlayer.map((n) => n.slice(5)).join(', ')} } from '../../player';`]
+        : [`import { ${fromPlayer.join(', ')} } from '../../player';`]),
     `import { ${[...used].sort().join(', ')} } from '../ui/index.js';`,
     '',
     `const placeholder = ${JSON.stringify(placeholder, null, 2)};`,
@@ -381,15 +477,15 @@ export function generateWebPage(
         ]
       : []),
     '/** What the shell shows around the page: shell.json, and each layout’s destinations in its order. */',
-    `const shell = ${JSON.stringify(shellData(nav, shell), null, 2)};`,
+    `const shell = ${JSON.stringify({ ...shellData(nav, shell), playing: undefined, transport: undefined }, null, 2)};`,
     '',
     ...(sheet
       ? []
       : [
-          '/** The shell’s parts at each layout, from nav.json, its controls wired to the shell’s navigation. */',
-          `const CHROME: Record<LayoutId, (${goes ? 'go: ShellNav' : ''}) => Chrome> = {`,
-          ...chromes.flatMap(([layout, parts, wired]) => [
-            `  ${layout}: (${wired ? 'go' : ''}) => ({`,
+          '/** The shell’s parts at each layout, from nav.json, its controls wired to the shell’s navigation and to what the player has loaded, `playing`, null while nothing is. */',
+          'const CHROME: Record<LayoutId, (go: ShellNav, playing: Playing | null) => Chrome> = {',
+          ...chromes.flatMap(([layout, parts, uses]) => [
+            `  ${layout}: (${uses.playing ? `${uses.go ? 'go' : '_go'}, playing` : uses.go ? 'go' : ''}) => ({`,
             ...chromeEntry(parts, components),
             '  }),',
           ]),
@@ -427,6 +523,10 @@ export function generateWebPage(
       : ['  const platform = PLATFORM[useLayout()];']),
     ...(opens ? ['  const navigate = useNavigate();'] : []),
     ...(sheet && goes ? ['  const go = useShellNav();'] : []),
+    ...(usesPlay ? ['  const play = usePlay();'] : []),
+    ...(usesPlaying
+      ? ['  const playing = usePlaying();', '  if (playing === null) return null;']
+      : []),
     '  return (',
     ...body,
     '  );',

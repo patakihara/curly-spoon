@@ -14,6 +14,7 @@ export default function Book({ data }) {
             progress={data.progress}
             image={data.image}
             playLabel="Resume"
+            onPlay={<Play ref={data.ref} queue="spoken" />}
             nextLabel="Play next"
             lastLabel={null}
             download={data.download}

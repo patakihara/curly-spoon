@@ -179,7 +179,7 @@ describe('a generated web page', () => {
 
   it('holds the shell’s parts for every layout: the avatar and bottom bar on the phone, the rail wider', () => {
     expect(homeOut).toContain(
-      "  w0: (go) => ({\n    appBar: false,\n    leading: (\n      <AccountButton label={shell.account.label} onClick={() => go.open('/settings')} />",
+      "  w0: (go, playing) => ({\n    appBar: false,\n    leading: (\n      <AccountButton label={shell.account.label} onClick={() => go.open('/settings')} />",
     );
     expect(homeOut).toContain(
       "<BottomNav items={shell.nav.w0} active={go.lit('books')} onChange={(key) => go.destination(key)} />",
@@ -188,7 +188,7 @@ describe('a generated web page', () => {
       "<NavRail items={shell.nav.w600} footerItems={shell.footer} active={go.lit('books')} expanded={go.rail(false)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(false)} />",
     );
     expect(homeOut).toContain(
-      '<MiniPlayer title={shell.playing.title} artist={shell.playing.artist} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant} sleep={shell.playing.sleep} platform="desktop" />',
+      '<MiniPlayer title={playing.title} artist={playing.artist} playing={playing.playing} progress={playing.progress} duration={playing.duration} variant={playing.variant} sleep={playing.sleep} platform="desktop" onTogglePlay={playing.onTogglePlay} onPrev={playing.onPrev} onNext={playing.onNext} onSkipBack={playing.onSkipBack} onSkipForward={playing.onSkipForward} onSeek={playing.onSeek} speed={playing.speed} onSpeed={playing.onSpeed} onSleep={playing.onSleep} />',
     );
     expect(homeOut).toContain('const shell = {\n  "account": {');
   });
@@ -227,7 +227,9 @@ describe('a generated web page', () => {
 describe("the shell's controls on a web page", () => {
   it('[M0.canvas] wires them to the shell’s navigation, which the shell hands its parts', () => {
     expect(out).toContain("import type { ShellNav } from '../../shell-nav';");
-    expect(out).toContain('const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {');
+    expect(out).toContain(
+      'const CHROME: Record<LayoutId, (go: ShellNav, playing: Playing | null) => Chrome> = {',
+    );
     expect(out).toContain('  chrome: CHROME,');
   });
 
@@ -280,7 +282,7 @@ describe("the shell's controls on a web page", () => {
       components,
       inPlayer('book'),
     );
-    expect(book).toMatch(/<MiniPlayer [^>]*onOpen=\{\(\) => go.open\('\/playing'\)\} \/>/);
+    expect(book).toMatch(/<MiniPlayer [^>]*onOpen=\{\(\) => go.open\('\/playing'\)\}/);
   });
 
   it("shows the player panel at the desktop mini-player's Queue or Lyrics, tinting the one it shows", () => {
@@ -298,7 +300,8 @@ describe("the shell's controls on a web page", () => {
     expect(desktop).toContain(
       "lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')}",
     );
-    expect(phone).not.toContain('Toggle');
+    expect(phone).not.toContain('onToggleQueue');
+    expect(phone).not.toContain('onToggleLyrics');
   });
 
   const queuePage = () =>
@@ -353,7 +356,7 @@ describe("the shell's controls on a web page", () => {
       page: wide.pages.find((p) => p.id === 'book')!,
     });
     const w1240 = book.slice(book.indexOf('  w1240: '));
-    expect(w1240).toContain('    sheetOpen: true,');
+    expect(w1240).toContain('    sheetOpen: playing !== null,');
     expect(book).not.toContain('    sheet: (');
     expect(book).not.toContain('<NowPlaying');
   });
@@ -400,25 +403,195 @@ describe('a page requesting an item, on the web', () => {
   });
 });
 
-describe('a page playing an item, on the web', () => {
+describe('[M1.shell] a page playing an item, on the web', () => {
   const playing = generateWebPage(
     parsePage(
       `export default function Book({ data }) {
-  return <Each of={data.books} as="b"><MediaCard title={b.title} onClick={<Play ref={b.ref} queue="spoken" />} /></Each>;
+  return (
+    <PageBody>
+      <MediaHeader onPlay={<Play ref={data.ref} queue="spoken" />} onPlayNext={<Play ref={data.ref} queue="spoken" next />} onPlayLast={<Play ref={data.ref} queue="music" source />} />
+      <Each of={data.books} as="b"><MediaCard title={b.title} onClick={<Play ref={b.ref} queue="spoken" />} /></Each>
+    </PageBody>
+  );
 }
 `,
       'book',
     ),
     'book',
-    { books: [{ title: 'Wind and Truth', ref: 'wind-and-truth' }] },
+    { ref: 'the-salt-road', books: [{ title: 'Wind and Truth', ref: 'wind-and-truth' }] },
     { platformed: new Set() },
     shellOf('book'),
   );
 
-  it('[M0.states/c] binds no play, since no page player exists yet: the control draws disabled', () => {
-    expect(playing).toContain('<MediaCard title={b.title} />');
-    expect(playing).not.toMatch(/<MediaCard[^>]*onClick/);
-    expect(playing).not.toContain('ignore');
+  it("plays the item its ref binds through the web's player, on the queue it names", () => {
+    expect(playing).toContain("import { usePlay, type Playing } from '../../player';");
+    expect(playing).toContain('  const play = usePlay();');
+    expect(playing).toContain(
+      "<MediaCard title={b.title} onClick={() => play(b.ref, 'spoken', 'now')} />",
+    );
+  });
+
+  it('plays it next, or a list on its own, as the Play says', () => {
+    expect(playing).toContain("onPlay={() => play(data.ref, 'spoken', 'now')}");
+    expect(playing).toContain("onPlayNext={() => play(data.ref, 'spoken', 'next')}");
+    expect(playing).toContain("onPlayLast={() => play(data.ref, 'music', 'source')}");
+  });
+
+  it('refuses a Play in the back layer or subheader, which the shell draws outside the page', () => {
+    const backed = `export default function Book({ data }) {
+  return (
+    <BackdropShell back={<BackLayer controls={<IconButton icon="play_arrow" onClick={<Play ref={data.ref} queue="spoken" />} />} />}>
+      <PageBody />
+    </BackdropShell>
+  );
+}
+`;
+    expect(() =>
+      generateWebPage(
+        parsePage(backed, 'book'),
+        'book',
+        { ref: 'r' },
+        { platformed: new Set() },
+        shellOf('book'),
+      ),
+    ).toThrow(/back layer and subheader .* play/);
+  });
+});
+
+describe('[M1.shell] what is loaded, on a web page', () => {
+  it("draws the mini-player from the web's player, only once something is loaded", () => {
+    expect(out).toContain("import type { Playing } from '../../player';");
+    expect(out).toContain('  w0: (go, playing) => ({');
+    expect(out).toContain(
+      '        {playing !== null && (\n          <MiniPlayer title={playing.title}',
+    );
+    expect(out).toContain('  w600: (go, playing) => ({');
+    expect(out).toContain(
+      '    player: playing === null ? undefined : (\n      <MiniPlayer title={playing.title}',
+    );
+    expect(out).not.toContain('shell.playing');
+  });
+
+  it('plays and pauses, skips, seeks and sets the speed and sleep timer through the player', () => {
+    for (const line of out.split('\n').filter((l) => l.includes('<MiniPlayer '))) {
+      expect(line).toContain('playing={playing.playing}');
+      expect(line).toContain('onTogglePlay={playing.onTogglePlay}');
+      expect(line).toContain('onSeek={playing.onSeek}');
+      expect(line).toContain('speed={playing.speed} onSpeed={playing.onSpeed}');
+      expect(line).toContain('onSleep={playing.onSleep}');
+    }
+  });
+
+  it("keeps what is loaded out of the page's own copy of shell.json", () => {
+    const shell = out.slice(
+      out.indexOf('const shell = '),
+      out.indexOf('\n};\n', out.indexOf('const shell = ')),
+    );
+    expect(shell).not.toContain('"playing"');
+    expect(shell).not.toContain('"transport"');
+  });
+
+  it('opens the side panel the layout always opens only once something is loaded', () => {
+    const wide = parseNav({
+      ...nav,
+      layouts: [
+        { minWidth: 0, nav: 'bottomBar', order: ['books'] },
+        {
+          minWidth: 1240,
+          nav: 'labelledRail',
+          order: ['books'],
+          sidePanel: 'nowPlaying',
+          sidePanelOpens: 'always',
+          sidePanelSits: 'beside',
+        },
+      ],
+    });
+    const book = generateWebPage(
+      parsePage(source, 'book'),
+      'book',
+      {},
+      { platformed: new Set() },
+      {
+        ...shellOf('book'),
+        nav: wide,
+        page: wide.pages.find((p) => p.id === 'book')!,
+      },
+    );
+    expect(book.slice(book.indexOf('  w1240: '))).toContain('    sheetOpen: playing !== null,');
+    expect(book.slice(book.indexOf('  w0: '), book.indexOf('  w1240: '))).toContain(
+      '    sheetOpen: false,',
+    );
+  });
+
+  const sheetNav = parseNav({
+    ...nav,
+    pages: [
+      ...nav.pages,
+      {
+        ...nav.pages[1]!,
+        id: 'nowPlaying',
+        route: '/playing',
+        params: {},
+        lights: null,
+        close: 'sheet',
+        presentation: 'sheet',
+      },
+    ],
+  });
+  const nowPlaying = generateWebPage(
+    parsePage(
+      `export default function NowPlaying() {
+  return (
+    <NowPlayingPage title={shell.playing.title} variant={shell.playing.variant} playing favourite={shell.playing.favourite}>
+      <AboutCard title={shell.playing.about.title} />
+    </NowPlayingPage>
+  );
+}
+`,
+      'nowPlaying',
+    ),
+    'nowPlaying',
+    {},
+    { platformed: new Set() },
+    { ...shellOf('book'), nav: sheetNav, page: sheetNav.pages.find((p) => p.id === 'nowPlaying')! },
+  );
+
+  it("draws Now Playing from the web's player, and nothing while nothing is loaded", () => {
+    expect(nowPlaying).toContain("import { usePlaying } from '../../player';");
+    expect(nowPlaying).toContain(
+      '  const playing = usePlaying();\n  if (playing === null) return null;',
+    );
+    expect(nowPlaying).toContain('<NowPlayingPage title={playing.title} variant={playing.variant}');
+    expect(nowPlaying).toContain('<AboutCard title={playing.about.title} />');
+    expect(nowPlaying).not.toContain('shell.playing');
+  });
+
+  it("gives Now Playing's transport to the player, its favourite to the item that binds it", () => {
+    expect(nowPlaying).toContain('playing={playing.playing}');
+    expect(nowPlaying).toContain('onTogglePlay={playing.onTogglePlay}');
+    expect(nowPlaying).toContain('speed={playing.speed} onSpeed={playing.onSpeed}');
+    expect(nowPlaying).not.toContain('onFavourite');
+    expect(nowPlaying).not.toContain('useShellNav');
+  });
+
+  it('refuses a back layer or subheader showing what is loaded, which the shell draws outside the page', () => {
+    const backed = `export default function Books({ data }) {
+  return (
+    <BackdropShell subheader={<FrontLayerHeader title={shell.playing.title} />}>
+      <PageBody />
+    </BackdropShell>
+  );
+}
+`;
+    expect(() =>
+      generateWebPage(
+        parsePage(backed, 'books'),
+        'books',
+        {},
+        { platformed: new Set() },
+        shellOf('books'),
+      ),
+    ).toThrow(/back layer and subheader .* what is loaded/);
   });
 });
 

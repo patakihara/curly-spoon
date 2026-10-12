@@ -3,6 +3,7 @@ import { useContext } from 'react';
 import type { ComponentProps } from 'react';
 import { PANEL, useLayout, type Platform } from '../nav/platform';
 import { InPanel } from '../../shell-nav';
+import { usePlaying } from '../../player';
 import { LyricsPage } from '../ui/index.js';
 
 const placeholder = {
@@ -24,30 +25,6 @@ const placeholder = {
 const shell = {
   "account": {
     "label": "Account"
-  },
-  "playing": {
-    "title": "Heartbeats in Silence",
-    "artist": "Deep Inertia",
-    "image": "/art/deep-inertia.jpg",
-    "context": "Playing from Deep Inertia",
-    "variant": "music",
-    "favourite": true,
-    "progress": 0.05,
-    "duration": 262,
-    "sleep": "Off",
-    "about": {
-      "title": "About the artist",
-      "heading": "Deep Inertia",
-      "meta": "9 releases · 2 in your library",
-      "image": "/art/deep-inertia.jpg",
-      "body": "Deep Inertia is the slow, cold-weather project of a producer who records in an unheated boathouse through the winter months. Tape loops, a detuned upright piano and field recordings of ice on the lake carry most of the weight; vocals arrive late, half-buried, and leave early. Tears of Ice, the fourth album, was finished in a single February and released without a single."
-    }
-  },
-  "transport": {
-    "playing": true,
-    "progress": 0.05,
-    "duration": 262,
-    "favourite": true
   },
   "footer": [
     {
@@ -187,7 +164,9 @@ export interface LyricsProps {
 export default function Lyrics({ data = placeholder, state = 'full' }: LyricsProps) {
   const inPanel = useContext(InPanel);
   const platform: Platform = inPanel || PANEL[useLayout()] ? 'desktop' : 'mobile';
+  const playing = usePlaying();
+  if (playing === null) return null;
   return (
-    <LyricsPage heading={null} title={shell.playing.title} artist={shell.playing.artist} lines={data.lines} activeIndex={data.activeIndex} syncMode={data.syncMode as Exclude<ComponentProps<typeof LyricsPage>['syncMode'], undefined>} platform={platform} />
+    <LyricsPage heading={null} title={playing.title} artist={playing.artist} lines={data.lines} activeIndex={data.activeIndex} syncMode={data.syncMode as Exclude<ComponentProps<typeof LyricsPage>['syncMode'], undefined>} platform={platform} />
   );
 }

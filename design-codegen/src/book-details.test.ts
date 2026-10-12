@@ -1,4 +1,7 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { REPO_ROOT } from './outputs.js';
 import type { PageTree } from './page.js';
 import { framePage } from './shell.js';
 import { dataRoots, elements, readPage, shown, type Element } from './test-pages.js';
@@ -78,7 +81,7 @@ describe('Book', () => {
   const narrations = data.narrations as (Row & { narrator: string; absent: boolean })[];
   const more = data.more as Record<string, { title: string; items: Card[] }>;
 
-  it('[M0.canvas] binds only the book: name, kind, author, series, meta, rating, progress, art, download, menu, chapters, about, narrations and more', () => {
+  it('[M0.canvas] binds only the book: ref, name, kind, author, series, meta, rating, progress, art, download, menu, chapters, about, narrations and more', () => {
     expect(dataRoots(tree)).toEqual([
       'about',
       'author',
@@ -93,9 +96,23 @@ describe('Book', () => {
       'narrations',
       'progress',
       'rating',
+      'ref',
       'series',
       'title',
     ]);
+  });
+
+  it('[M1.shell] resumes the book from its header on the spoken queue, on the web through its player', () => {
+    expect(header.props.onPlay).toEqual({
+      kind: 'play',
+      queue: 'spoken',
+      next: false,
+      source: false,
+      params: { ref: ['data', 'ref'] },
+    });
+    expect(typeof data.ref).toBe('string');
+    const web = readFileSync(join(REPO_ROOT, 'web/src/generated/pages/Book.tsx'), 'utf8');
+    expect(web).toContain("onPlay={() => play(data.ref, 'spoken', 'now')}");
   });
 
   it("[M0.canvas] names the book once, in the page's heading, with a local search over its chapters", () => {

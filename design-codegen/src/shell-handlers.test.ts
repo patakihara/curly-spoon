@@ -187,3 +187,59 @@ describe("the shell's controls, wired alike on both apps", () => {
     expect(wiring(handlers)['MiniPlayer.onOpen']).toBeUndefined();
   });
 });
+
+describe("[M1.shell] the transport, wired to the web's player", () => {
+  const TRANSPORT = [
+    'onTogglePlay',
+    'onPrev',
+    'onNext',
+    'onSkipBack',
+    'onSkipForward',
+    'onSeek',
+    'onSpeed',
+    'onSleep',
+  ];
+  const nowPlaying = playerTree(playerTab(page('nowPlaying')), [
+    { kind: 'element', component: 'NowPlayingPage', line: 1, props: {}, children: [] },
+  ]);
+  const android = (id: string) =>
+    wiring(
+      shellHandlers(
+        nav,
+        page(id),
+        { chrome: chrome(nav, shell, page(id), nav.layouts[0]!, new Set()) },
+        'android',
+      ),
+    );
+
+  it('plays, pauses, skips, seeks and sets speed and sleep from the mini-player, on the phone and on desktop', () => {
+    for (const layout of [0, 1]) {
+      for (const prop of TRANSPORT) {
+        expect(at('album', layout)[`MiniPlayer.${prop}`], prop).toEqual({ kind: 'player' });
+      }
+    }
+  });
+
+  it("does the same from Now Playing's own transport", () => {
+    const wired = wiring(shellHandlers(nav, page('nowPlaying'), { player: nowPlaying }));
+    for (const prop of TRANSPORT) {
+      expect(wired[`NowPlayingPage.${prop}`], prop).toEqual({ kind: 'player' });
+    }
+  });
+
+  it('leaves shuffle, repeat, volume and favourite to the items that bind them', () => {
+    for (const prop of ['onShuffle', 'onRepeat', 'onVolume']) {
+      expect(at('album', 1)[`MiniPlayer.${prop}`]).toBeUndefined();
+    }
+    const wired = wiring(shellHandlers(nav, page('nowPlaying'), { player: nowPlaying }));
+    expect(wired['NowPlayingPage.onFavourite']).toBeUndefined();
+  });
+
+  it("leaves Android's transport to M5.player, which gives it a player", () => {
+    const sheet = wiring(shellHandlers(nav, page('nowPlaying'), { player: nowPlaying }, 'android'));
+    for (const prop of TRANSPORT) {
+      expect(android('album')[`MiniPlayer.${prop}`]).toBeUndefined();
+      expect(sheet[`NowPlayingPage.${prop}`]).toBeUndefined();
+    }
+  });
+});
