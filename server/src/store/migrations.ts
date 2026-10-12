@@ -356,6 +356,19 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 8,
+    name: 'jellyfin_library',
+    up: (db) => {
+      db.exec(`
+        -- Jellyfin albums are paged per music library, and each album and track keeps its
+        -- library's id, as Audiobookshelf items do: a person's lists hold only the libraries they
+        -- may see. Every album, with its tracks, is read again on the next run to fill it in.
+        DELETE FROM index_sync WHERE source = 'jellyfin';
+        CREATE INDEX idx_index_items_kind_library ON index_items(kind, library_id);
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

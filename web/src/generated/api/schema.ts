@@ -398,6 +398,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/library/{medium}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in person's books, podcast shows or albums */
+        get: operations["listLibrary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -617,6 +634,32 @@ export interface components {
             queueStyle: components["schemas"]["QueueStyle"];
             rev?: number;
         };
+        /** @enum {string} */
+        LibraryEntryKind: "book" | "show" | "album";
+        /** @enum {string} */
+        AvailabilityKind: "owned" | "streamable" | "requested" | "external";
+        /** @enum {string} */
+        RequestStatus: "requested" | "needsChoice" | "downloading" | "failed";
+        Availability: {
+            kind: components["schemas"]["AvailabilityKind"];
+            status?: components["schemas"]["RequestStatus"];
+            progress?: number;
+            requestable?: boolean;
+        };
+        LibraryEntry: {
+            ref: components["schemas"]["MediaRef"];
+            kind: components["schemas"]["LibraryEntryKind"];
+            title: string;
+            sub: string | null;
+            art: string | null;
+            progress: number | null;
+            availability: components["schemas"]["Availability"];
+        };
+        LibraryList: {
+            items: components["schemas"]["LibraryEntry"][];
+        };
+        /** @enum {string} */
+        LibraryMedium: "books" | "podcasts" | "music";
     };
     responses: never;
     parameters: never;
@@ -1963,6 +2006,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ListeningSession"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listLibrary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                medium: components["schemas"]["LibraryMedium"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every indexed book, show or album in the libraries this person may open, by title. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryList"];
                 };
             };
             /** @description The request does not parse, or was refused. */

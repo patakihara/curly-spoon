@@ -237,6 +237,18 @@ export const meSchema = z
 export type AbsMe = z.infer<typeof meSchema>;
 
 /**
+ * Which libraries a person may open, from the same `GET /api/me`: every one when
+ * `accessAllLibraries`, else those `librariesAccessible` names (recorded).
+ */
+export const libraryAccessSchema = z
+  .object({
+    permissions: z.object({ accessAllLibraries: z.boolean() }).passthrough(),
+    librariesAccessible: z.array(z.string()),
+  })
+  .passthrough();
+export type LibraryAccess = z.infer<typeof libraryAccessSchema>;
+
+/**
  * `DELETE /api/me/item/:id/bookmark/:time` answers a bare 200 (`OK` as text), and 404 `Not Found`
  * when the item has no bookmark at that time (both recorded); nothing in it is read.
  */

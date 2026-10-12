@@ -8,7 +8,9 @@ import {
   ItemParams,
   LibraryList,
   LibraryParams,
+  listLibrary,
   type Route,
+  routes,
 } from '../src/index.js';
 
 const book = { source: 'abs', id: '7b3fa64c-f00c-4de6-8cd5-15d301b91f4b' } as const;
@@ -234,5 +236,23 @@ describe('the shell’s shapes in the generated clients', () => {
         ')',
       ].join('\n'),
     );
+  });
+});
+
+describe('the library route', () => {
+  it('lists one medium for a signed-in member, at /api/library/{medium}', () => {
+    expect(routes).toContain(listLibrary);
+    expect(listLibrary).toMatchObject({
+      method: 'GET',
+      path: '/api/library/{medium}',
+      access: 'member',
+      params: LibraryParams,
+      response: LibraryList,
+    });
+    const doc = buildOpenApiDocument([listLibrary], ErrorResponse) as {
+      paths: Record<string, { get: { parameters: { name: string; in: string }[] } }>;
+    };
+    const parameters = doc.paths['/api/library/{medium}']?.get.parameters ?? [];
+    expect(parameters.map((p) => [p.name, p.in])).toEqual([['medium', 'path']]);
   });
 });

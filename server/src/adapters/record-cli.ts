@@ -535,7 +535,11 @@ async function recordIndexAbs(
   return calls.map((c) => join(dir, `${c}.json`));
 }
 
-/** The index's Jellyfin calls: one page of albums, and each listed album's tracks. */
+/**
+ * The index's Jellyfin calls: each listed album's tracks, and the lookups that confirm an album is
+ * still there or gone. The albums are those on the page of each music library; the pages
+ * themselves are `--only shell`'s `jf-library-albums-<n>`, so they are read here unrecorded.
+ */
 async function recordIndexJellyfin(
   io: RecordIo,
   baseUrl: string,
@@ -544,11 +548,8 @@ async function recordIndexJellyfin(
   secrets: string[],
   page: number,
 ) {
-  const upstreamVersion = await new JellyfinClient({
-    baseUrl,
-    token,
-    fetch: io.fetch,
-  }).getServerVersion();
+  const plain = new JellyfinClient({ baseUrl, token, fetch: io.fetch });
+  const upstreamVersion = await plain.getServerVersion();
   const rec = createRecorder({
     fetch: io.fetch,
     dir,
@@ -558,16 +559,23 @@ async function recordIndexJellyfin(
     baseUrl,
   });
   const jf = new JellyfinClient({ baseUrl, token, fetch: rec.fetch });
-  const calls = ['index-albums-page'];
-  const albums = await rec.capture('index-albums-page', () =>
-    jf.getAlbums({ limit: INDEX_PAGE_SIZE, startIndex: page * INDEX_PAGE_SIZE }),
-  );
-  for (const [n, album] of albums.Items.entries()) {
+  const albums = [];
+  for (const library of await plain.getLibraries()) {
+    if (library.CollectionType !== 'music') continue;
+    const listed = await plain.getAlbums({
+      limit: INDEX_PAGE_SIZE,
+      startIndex: page * INDEX_PAGE_SIZE,
+      parentId: library.Id,
+    });
+    albums.push(...listed.Items);
+  }
+  const calls: string[] = [];
+  for (const [n, album] of albums.entries()) {
     const call = `index-album-tracks-${n + 1}`;
     await rec.capture(call, () => jf.getAlbumTracks(album.Id));
     calls.push(call);
   }
-  const [first] = albums.Items;
+  const [first] = albums;
   if (first) {
     await rec.capture('index-album-lookup', () => jf.findAlbum(first.Id));
     calls.push('index-album-lookup');

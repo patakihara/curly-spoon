@@ -14,6 +14,7 @@ import { adminRoutes } from './routes/admin.js';
 import { authRoutes } from './routes/auth.js';
 import { bookmarkRoutes } from './routes/bookmarks.js';
 import { deviceRoutes } from './routes/devices.js';
+import { libraryRoutes } from './routes/library.js';
 import { type PlaybackOptions, playRoutes, type UpstreamAccess } from './routes/play.js';
 import { IndexLookup } from './queues/lookup.js';
 import { Sessions } from './queues/sessions.js';
@@ -132,6 +133,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     ...(options.now ? { now: options.now } : {}),
   });
   bookmarkRoutes(app, { db, upstreams: options.upstreams ?? null });
+  libraryRoutes(app, { db, upstreams });
 
   const distDir = options.webDistDir;
   if (distDir !== null && existsSync(distDir)) {

@@ -217,7 +217,12 @@ function providerScheme(key: string): string {
 
 const TICKS_PER_SECOND = 10_000_000;
 
-function jellyfinRow(item: IndexItem, kind: 'album' | 'track', parentId: string | null): IndexRow {
+function jellyfinRow(
+  item: IndexItem,
+  kind: 'album' | 'track',
+  parentId: string | null,
+  libraryId: string,
+): IndexRow {
   const people =
     kind === 'album'
       ? (item.AlbumArtists ?? []).map((a): Creator => ({
@@ -237,6 +242,7 @@ function jellyfinRow(item: IndexItem, kind: 'album' | 'track', parentId: string 
     id: item.Id,
     kind,
     parentId,
+    libraryId,
     title: item.Name ?? '',
     creators: people,
     genres: item.Genres ?? [],
@@ -250,10 +256,12 @@ function jellyfinRow(item: IndexItem, kind: 'album' | 'track', parentId: string 
   };
 }
 
-export function albumRow(album: IndexItem): IndexRow {
-  return jellyfinRow(album, 'album', null);
+/** An album, in the music library it was listed from. */
+export function albumRow(album: IndexItem, libraryId: string): IndexRow {
+  return jellyfinRow(album, 'album', null, libraryId);
 }
 
-export function trackRows(albumId: string, tracks: IndexItem[]): IndexRow[] {
-  return tracks.map((t) => jellyfinRow(t, 'track', albumId));
+/** An album's tracks, in its music library. */
+export function trackRows(albumId: string, libraryId: string, tracks: IndexItem[]): IndexRow[] {
+  return tracks.map((t) => jellyfinRow(t, 'track', albumId, libraryId));
 }

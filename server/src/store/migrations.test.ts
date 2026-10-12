@@ -78,3 +78,37 @@ describe('the episode order migration', () => {
     db.close();
   });
 });
+
+describe('the Jellyfin library migration', () => {
+  it('has every indexed Jellyfin album read again on the next run, so its tracks gain their library, and nothing else', () => {
+    const db = new Database(':memory:');
+    runMigrations(
+      db,
+      migrations.filter((m) => m.id < 8),
+    );
+    const add = db.prepare(
+      `INSERT INTO index_items (source, upstream_id, kind, title, creators, series, genres,
+         content_hash, version, created_at, updated_at)
+       VALUES (?, ?, ?, 't', '[]', '[]', '[]', 'h', 1, 1, 1)`,
+    );
+    const sync = db.prepare(
+      `INSERT INTO index_sync (source, upstream_id, upstream_version, checked_at)
+       VALUES (?, ?, '1', 1)`,
+    );
+    for (const [source, id, kind] of [
+      ['jellyfin', 'album-1', 'album'],
+      ['abs', 'book-1', 'book'],
+    ]) {
+      add.run(source, id, kind);
+      sync.run(source, id);
+    }
+
+    runMigrations(db);
+
+    expect(db.prepare('SELECT source, upstream_id FROM index_sync').all()).toEqual([
+      { source: 'abs', upstream_id: 'book-1' },
+    ]);
+    expect(db.prepare('SELECT COUNT(*) AS n FROM index_items').get()).toEqual({ n: 2 });
+    db.close();
+  });
+});

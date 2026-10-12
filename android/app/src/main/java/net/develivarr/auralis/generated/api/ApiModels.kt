@@ -33,6 +33,26 @@ data class AppToken(
 )
 
 @Serializable
+data class Availability(
+    val kind: AvailabilityKind,
+    val status: RequestStatus? = null,
+    val progress: Double? = null,
+    val requestable: Boolean? = null,
+)
+
+@Serializable
+enum class AvailabilityKind {
+    @SerialName("owned")
+    OWNED,
+    @SerialName("streamable")
+    STREAMABLE,
+    @SerialName("requested")
+    REQUESTED,
+    @SerialName("external")
+    EXTERNAL,
+}
+
+@Serializable
 data class Bookmark(
     val ref: MediaRef,
     val time: Double,
@@ -93,6 +113,42 @@ enum class HealthResponseStatus {
 }
 
 const val HLS_MIME = "application/vnd.apple.mpegurl"
+
+@Serializable
+data class LibraryEntry(
+    val ref: MediaRef,
+    val kind: LibraryEntryKind,
+    val title: String,
+    val sub: String?,
+    val art: String?,
+    val progress: Double?,
+    val availability: Availability,
+)
+
+@Serializable
+enum class LibraryEntryKind {
+    @SerialName("book")
+    BOOK,
+    @SerialName("show")
+    SHOW,
+    @SerialName("album")
+    ALBUM,
+}
+
+@Serializable
+data class LibraryList(
+    val items: List<LibraryEntry>,
+)
+
+@Serializable
+enum class LibraryMedium {
+    @SerialName("books")
+    BOOKS,
+    @SerialName("podcasts")
+    PODCASTS,
+    @SerialName("music")
+    MUSIC,
+}
 
 @Serializable
 enum class LinkState {
@@ -312,6 +368,18 @@ enum class QueueType {
 data class RenameDeviceBody(
     val name: String,
 )
+
+@Serializable
+enum class RequestStatus {
+    @SerialName("requested")
+    REQUESTED,
+    @SerialName("needsChoice")
+    NEEDS_CHOICE,
+    @SerialName("downloading")
+    DOWNLOADING,
+    @SerialName("failed")
+    FAILED,
+}
 
 @Serializable
 enum class Role {

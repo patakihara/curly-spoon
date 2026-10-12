@@ -934,6 +934,122 @@
         "required": [
           "queueStyle"
         ]
+      },
+      "LibraryEntryKind": {
+        "type": "string",
+        "enum": [
+          "book",
+          "show",
+          "album"
+        ]
+      },
+      "AvailabilityKind": {
+        "type": "string",
+        "enum": [
+          "owned",
+          "streamable",
+          "requested",
+          "external"
+        ]
+      },
+      "RequestStatus": {
+        "type": "string",
+        "enum": [
+          "requested",
+          "needsChoice",
+          "downloading",
+          "failed"
+        ]
+      },
+      "Availability": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/AvailabilityKind"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RequestStatus"
+          },
+          "progress": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "requestable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "LibraryEntry": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/LibraryEntryKind"
+          },
+          "title": {
+            "type": "string"
+          },
+          "sub": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "art": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "progress": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          },
+          "availability": {
+            "$ref": "#/components/schemas/Availability"
+          }
+        },
+        "required": [
+          "ref",
+          "kind",
+          "title",
+          "sub",
+          "art",
+          "progress",
+          "availability"
+        ]
+      },
+      "LibraryList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LibraryEntry"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "LibraryMedium": {
+        "type": "string",
+        "enum": [
+          "books",
+          "podcasts",
+          "music"
+        ]
       }
     },
     "parameters": {}
@@ -2701,6 +2817,72 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ListeningSession"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/library/{medium}": {
+      "get": {
+        "summary": "The signed-in person's books, podcast shows or albums",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "listLibrary",
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/components/schemas/LibraryMedium"
+            },
+            "required": true,
+            "name": "medium",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Every indexed book, show or album in the libraries this person may open, by title.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryList"
                 }
               }
             }

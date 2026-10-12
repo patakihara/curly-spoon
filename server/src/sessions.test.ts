@@ -46,8 +46,10 @@ const jf = (call: string) => recording('jellyfin', call);
 
 const albumTracks = indexQueryResultSchema.parse(json(jf('index-album-tracks-1'))).Items;
 const otherTracks = indexQueryResultSchema.parse(json(jf('index-album-tracks-2'))).Items;
+const albumsPage = jf('jf-library-albums-1');
+const musicLibrary = albumsPage.request.query.ParentId!;
 const albumSummary = indexQueryResultSchema
-  .parse(json(jf('index-albums-page')))
+  .parse(json(albumsPage))
   .Items.find((a) => a.Id === albumTracks[0]!.AlbumId)!;
 const book = itemSummarySchema.parse(json(abs('multi-detail')));
 const show = itemSummarySchema.parse(json(abs('index-show-1')));
@@ -114,15 +116,18 @@ function indexed(db: Db): void {
   const counts = emptyCounts();
   applyTree(
     db,
-    { top: albumRow(albumSummary), children: trackRows(album.id, albumTracks) },
+    {
+      top: albumRow(albumSummary, musicLibrary),
+      children: trackRows(album.id, musicLibrary, albumTracks),
+    },
     1,
     counts,
   );
   applyTree(
     db,
     {
-      top: albumRow({ ...albumSummary, Id: otherTracks[0]!.AlbumId! }),
-      children: trackRows(otherTracks[0]!.AlbumId!, otherTracks.slice(0, 1)),
+      top: albumRow({ ...albumSummary, Id: otherTracks[0]!.AlbumId! }, musicLibrary),
+      children: trackRows(otherTracks[0]!.AlbumId!, musicLibrary, otherTracks.slice(0, 1)),
     },
     1,
     counts,

@@ -23,6 +23,7 @@ import {
   CreateBookmarkBody,
 } from './bookmarks.js';
 import { HealthResponse } from './health.js';
+import { LibraryList, LibraryParams } from './library.js';
 import {
   AudioBytes,
   MediaHlsParams,
@@ -386,6 +387,18 @@ export const setQueueStyle = {
   body: QueueStyleBody,
 } as const satisfies Route;
 
+export const listLibrary = {
+  method: 'GET',
+  path: '/api/library/{medium}',
+  operationId: 'listLibrary',
+  summary: "The signed-in person's books, podcast shows or albums",
+  responseDescription:
+    'Every indexed book, show or album in the libraries this person may open, by title.',
+  response: LibraryList,
+  access: 'member',
+  params: LibraryParams,
+} as const satisfies Route;
+
 /** Every route the API has. The generator and the server's route test both read this list. */
 export const routes: readonly Route[] = [
   health,
@@ -415,4 +428,5 @@ export const routes: readonly Route[] = [
   stepSession,
   setActiveQueue,
   setQueueStyle,
+  listLibrary,
 ];

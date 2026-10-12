@@ -1,7 +1,8 @@
 /**
  * The index job: mirrors the Audiobookshelf and Jellyfin libraries into the index tables.
  *
- * Each library is paged, oldest added first. A listed item's change marker (ABS `updatedAt`,
+ * Each library is paged, oldest added first: every Audiobookshelf library, and every Jellyfin
+ * music library by its id. A listed item's change marker (ABS `updatedAt`,
  * Jellyfin `Etag`) is compared with the one stored when its full answer was last read; only a
  * new or changed item, or one not read for `refreshAfterMs`, is read again. The daily re-read is
  * needed: ABS edits an episode without moving its show's `updatedAt` (recorded), so the marker
@@ -48,7 +49,7 @@ export const DEFAULT_REFRESH_AFTER_MS = 24 * 60 * 60 * 1000;
 export interface IndexJobOptions {
   db: Db;
   abs?: Pick<AbsClient, 'getLibraries' | 'getLibraryItems' | 'getItemSummary' | 'findItemSummary'>;
-  jellyfin?: Pick<JellyfinClient, 'getAlbums' | 'getAlbumTracks' | 'findAlbum'>;
+  jellyfin?: Pick<JellyfinClient, 'getLibraries' | 'getAlbums' | 'getAlbumTracks' | 'findAlbum'>;
   /** Reads a show's feed from its URL. */
   feeds?: (url: string) => Promise<Feed>;
   now?: () => number;
@@ -173,21 +174,27 @@ async function indexAbs(pass: Pass, abs: NonNullable<IndexJobOptions['abs']>): P
   return complete;
 }
 
-async function indexJellyfin(
+/** Pages one music library's albums, each with its tracks; true when the pass reached its end. */
+async function indexMusicLibrary(
   pass: Pass,
   jellyfin: NonNullable<IndexJobOptions['jellyfin']>,
+  libraryId: string,
 ): Promise<boolean> {
   const seen = new Set<string>();
   let reachedEnd = false;
   for (let page = pass.first; page < pass.first + pass.count; page += 1) {
-    const listed = await jellyfin.getAlbums({ limit: pass.size, startIndex: page * pass.size });
+    const listed = await jellyfin.getAlbums({
+      limit: pass.size,
+      startIndex: page * pass.size,
+      parentId: libraryId,
+    });
     for (const album of listed.Items) {
       seen.add(album.Id);
-      const row = albumRow(album);
+      const row = albumRow(album, libraryId);
       if (stale(pass, 'jellyfin', album.Id, row.upstreamVersion)) {
         const tracks = await jellyfin.getAlbumTracks(album.Id);
         pass.counts.fetched += 1;
-        const tree = { top: row, children: trackRows(album.Id, tracks) };
+        const tree = { top: row, children: trackRows(album.Id, libraryId, tracks) };
         applyTree(pass.db, tree, pass.now, pass.counts);
         markRead(pass, 'jellyfin', album.Id, row.upstreamVersion);
       } else {
@@ -201,9 +208,25 @@ async function indexJellyfin(
   }
   const complete = pass.first === 0 && reachedEnd;
   if (complete) {
-    await removeGone(pass, 'jellyfin', null, seen, async (id) => {
+    await removeGone(pass, 'jellyfin', libraryId, seen, async (id) => {
       return (await jellyfin.findAlbum(id)) === undefined;
     });
+  }
+  return complete;
+}
+
+/**
+ * Jellyfin's albums, library by library: each music library is paged by its id, so every album
+ * and track keeps the library it sits in, which says who may see it.
+ */
+async function indexJellyfin(
+  pass: Pass,
+  jellyfin: NonNullable<IndexJobOptions['jellyfin']>,
+): Promise<boolean> {
+  let complete = true;
+  for (const library of await jellyfin.getLibraries()) {
+    if (library.CollectionType !== 'music') continue;
+    if (!(await indexMusicLibrary(pass, jellyfin, library.Id))) complete = false;
   }
   return complete;
 }

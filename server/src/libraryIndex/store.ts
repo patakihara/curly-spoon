@@ -349,6 +349,14 @@ export function indexedRow(db: Db, source: IndexSource, id: string): StoredRow |
   return ids(db, raw)[0];
 }
 
+/** Every indexed book, show or album: the top-level items of one kind, with their libraries. */
+export function topLevelOfKind(db: Db, kind: 'book' | 'show' | 'album'): StoredRow[] {
+  const rows = db
+    .prepare('SELECT * FROM index_items WHERE kind = ? AND parent_id IS NULL')
+    .all(kind) as RawRow[];
+  return ids(db, rows);
+}
+
 /** An album's indexed tracks by disc and position; unnumbered ones last. */
 export function albumTracks(db: Db, albumId: string): StoredRow[] {
   const rows = db

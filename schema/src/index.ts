@@ -84,6 +84,7 @@ export {
   health,
   listBookmarks,
   listDevices,
+  listLibrary,
   listSessions,
   listUsers,
   login,
