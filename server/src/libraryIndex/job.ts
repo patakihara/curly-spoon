@@ -221,7 +221,8 @@ async function indexMusicLibrary(
  * and track keeps the library it sits in, which says who may see it. After a complete pass, an
  * album in no music library Jellyfin still lists (its library is gone, or it was indexed before
  * albums kept their library and no library lists it now) is removed with its tracks: no one could
- * see it.
+ * see it. A list with no music library removes nothing: an empty answer is more likely a fault
+ * than every music library gone.
  */
 async function indexJellyfin(
   pass: Pass,
@@ -232,7 +233,7 @@ async function indexJellyfin(
   for (const library of music) {
     if (!(await indexMusicLibrary(pass, jellyfin, library.Id))) complete = false;
   }
-  if (complete) {
+  if (complete && music.length > 0) {
     const listed = new Set(music.map((library) => library.Id));
     for (const id of itemsOutside(pass.db, 'jellyfin', listed)) {
       removeItem(pass.db, 'jellyfin', id, pass.counts);

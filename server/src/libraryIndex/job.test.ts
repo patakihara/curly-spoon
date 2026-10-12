@@ -539,7 +539,32 @@ describe('removing what a complete pass did not see', () => {
     expect(result.jellyfin?.counts.removed).toBe(1 + firstAlbumTracks.length);
   });
 
-  it('removes an album whose library is gone, with its tracks, once a complete pass no longer lists that library', async () => {
+  it('removes an album whose library is gone, with its tracks, once a complete pass lists only another music library', async () => {
+    await indexBoth();
+    const stored = listIndexed(db).filter((row) => row.source === 'jellyfin');
+    expect(stored.length).toBeGreaterThan(2);
+    const other = 'another-music-library';
+    const replaced = changed<{ Items: { Id: string; CollectionType?: string }[] }>(
+      r.jellyfin['library-list'],
+      (list) => {
+        for (const l of list.Items) if (l.CollectionType === 'music') l.Id = other;
+      },
+    );
+    const empty = jfPage(0, [], 0);
+    const otherPage = {
+      ...empty,
+      request: { ...empty.request, query: { ...empty.request.query, ParentId: other } },
+    };
+
+    const { result, asked } = await pass(T0 + HOUR, [], [replaced, otherPage]);
+
+    expect(result.jellyfin).toMatchObject({ complete: true, error: null });
+    expect(listIndexed(db).filter((row) => row.source === 'jellyfin')).toEqual([]);
+    expect(result.jellyfin?.counts.removed).toBe(stored.length);
+    expect(asked.filter((a) => a.startsWith('lookup'))).toEqual([]);
+  });
+
+  it('removes nothing when Jellyfin lists no music library at all, or none of any kind', async () => {
     await indexBoth();
     const stored = listIndexed(db).filter((row) => row.source === 'jellyfin');
     expect(stored.length).toBeGreaterThan(2);
@@ -549,13 +574,17 @@ describe('removing what a complete pass did not see', () => {
         list.Items = list.Items.filter((l) => l.CollectionType !== 'music');
       },
     );
+    const none = changed<{ Items: unknown[] }>(r.jellyfin['library-list'], (list) => {
+      list.Items = [];
+    });
 
-    const { result, asked } = await pass(T0 + HOUR, [], [noMusic]);
+    for (const listing of [noMusic, none]) {
+      const { result } = await pass(T0 + HOUR, [], [listing]);
 
-    expect(result.jellyfin).toMatchObject({ complete: true, error: null });
-    expect(listIndexed(db).filter((row) => row.source === 'jellyfin')).toEqual([]);
-    expect(result.jellyfin?.counts.removed).toBe(stored.length);
-    expect(asked.filter((a) => a.startsWith('lookup'))).toEqual([]);
+      expect(result.jellyfin?.error).toBeNull();
+      expect(result.jellyfin?.counts.removed).toBe(0);
+      expect(listIndexed(db).filter((row) => row.source === 'jellyfin')).toEqual(stored);
+    }
   });
 
   it('removes an album left with no library that a complete pass no longer lists, and gives a listed one its library back', async () => {

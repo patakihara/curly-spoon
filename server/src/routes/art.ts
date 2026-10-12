@@ -12,9 +12,13 @@ export const PAGE_KINDS: readonly string[] = ['book', 'show', 'album'] satisfies
 /** The art route's URL for `ref`. */
 export const artUrl = (ref: MediaRef): ArtUrl => `/api/media/${mediaRefKey(ref)}/art`;
 
-/** `ref`'s art where the art route serves it: an indexed top-level book, show or album; else null. */
+/**
+ * `ref`'s art where the art route serves it: an indexed top-level book, show or album its upstream
+ * has art for; else null.
+ */
 export function artOf(db: Db, ref: MediaRef): ArtUrl | null {
   const row = indexedRow(db, ref.source, ref.id);
-  const served = row !== undefined && row.parentId === null && PAGE_KINDS.includes(row.kind);
+  const served =
+    row !== undefined && row.parentId === null && PAGE_KINDS.includes(row.kind) && row.hasArt;
   return served ? artUrl(ref) : null;
 }

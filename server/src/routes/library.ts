@@ -5,7 +5,8 @@
  * `GET /UserViews`, asked the same way, says which music libraries they see, hidden from their
  * home screen or not. An unfinished book at 0 is listed as not started. A person not linked
  * to an upstream may open none of its libraries, so its lists are empty. Everything listed is in
- * the household's own libraries, so it is `owned`.
+ * the household's own libraries, so it is `owned`. An entry links art only when its upstream has
+ * art for it, as the index read: a cover, or a primary image.
  */
 import {
   type LibraryEntry,
@@ -48,7 +49,7 @@ export function entry(
     kind,
     title: row.title,
     sub: names.length > 0 ? names.join(', ') : null,
-    art: artUrl(ref),
+    art: row.hasArt ? artUrl(ref) : null,
     progress,
     availability: { kind: 'owned' },
   };

@@ -95,12 +95,20 @@ export const chapterSchema = z
 
 /**
  * `GET /api/items/:id?expanded=1` read for a book's page: its length in seconds, the sum of the
- * files it plays, and its chapters (recorded).
+ * files it plays, and its chapters; its title and authors label a book the index no longer holds
+ * (recorded).
  */
 export const bookDetailSchema = z
   .object({
     media: z
-      .object({ duration: z.number().nonnegative(), chapters: z.array(chapterSchema).optional() })
+      .object({
+        metadata: z.object({
+          title: z.string(),
+          authors: z.array(z.object({ name: z.string() })).optional(),
+        }),
+        duration: z.number().nonnegative(),
+        chapters: z.array(chapterSchema).optional(),
+      })
       .passthrough(),
   })
   .passthrough();
@@ -314,13 +322,18 @@ const itemBase = { id: z.string(), libraryId: z.string(), updatedAt: z.number() 
 /**
  * `GET /api/items/:id`, not expanded: what the index reads of a book or a show, and nothing else.
  * zod strips every other field, so a 2,000-episode show parses to little more than its rows.
- * The shapes follow the index recordings (`index-book-*`, `index-show-*`).
+ * The shapes follow the index recordings (`index-book-*`, `index-show-*`). `coverPath` is null
+ * or missing for an item with no cover.
  */
 export const itemSummarySchema = z.discriminatedUnion('mediaType', [
   z.object({
     ...itemBase,
     mediaType: z.literal('book'),
-    media: z.object({ metadata: bookMetadataSchema, audioFiles: z.array(audioFileSchema) }),
+    media: z.object({
+      metadata: bookMetadataSchema,
+      audioFiles: z.array(audioFileSchema),
+      coverPath: optionalString,
+    }),
   }),
   z.object({
     ...itemBase,
@@ -334,6 +347,7 @@ export const itemSummarySchema = z.discriminatedUnion('mediaType', [
         itunesId: optionalString,
       }),
       episodes: z.array(episodeSchema),
+      coverPath: optionalString,
     }),
   }),
 ]);

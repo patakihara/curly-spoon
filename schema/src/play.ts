@@ -129,7 +129,8 @@ export const ProgressAnswer = z
     /**
      * Where in the plan's item, in seconds from its start, the play must stop instead of playing
      * on: set when what the session plays next lies outside this plan, as after Play next in the
-     * middle of a book or an album. The player pauses there and never starts the next file.
+     * middle of a book or an album. The player pauses there and never starts the next file. A
+     * report already past the cut is answered with its own position: the player stops now.
      */
     endAt: z.number().nonnegative().optional(),
   })

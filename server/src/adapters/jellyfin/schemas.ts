@@ -56,6 +56,8 @@ export const indexItemSchema = z.object({
   ProviderIds: z.record(z.string().nullable()).nullable().optional(),
   ArtistItems: z.array(namedIdSchema).nullable().optional(),
   AlbumArtists: z.array(namedIdSchema).nullable().optional(),
+  /** The item's images by type; `Primary` is its cover (recorded). */
+  ImageTags: z.record(z.string()).nullable().optional(),
 });
 export type IndexItem = z.infer<typeof indexItemSchema>;
 

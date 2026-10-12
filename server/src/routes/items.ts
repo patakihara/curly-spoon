@@ -10,7 +10,9 @@
  * - An album's page: its tracks as the index holds them, in disc and track order.
  * - Art: the Audiobookshelf cover or the Jellyfin primary image, asked for with the person's own
  *   token and passed on as it streams, at the size asked for. The client only ever sees this
- *   server's own `/api/media/{ref}/art`; it is kept a day, private to the person.
+ *   server's own `/api/media/{ref}/art`; it is kept a day, private to the person. Who may see
+ *   art is checked once a minute per person, so a grid of covers costs one lookup of each
+ *   upstream; a page always checks afresh, since it shows how far through the person is.
  */
 import {
   type ArtSize,
@@ -45,6 +47,29 @@ type Openable =
   | { row: StoredRow; kind: 'album'; jellyfin: NonNullable<Upstreams['jellyfin']> };
 
 const notFound = () => new Refusal(404, 'not_found');
+
+/** How long the art route keeps a person's access check. */
+const ART_ACCESS_MS = 60_000;
+
+/**
+ * One answer per key, kept for `ART_ACCESS_MS`: a person's Audiobookshelf access or Jellyfin
+ * views. A failed check is not kept. Expired answers are dropped as new ones are kept.
+ */
+function accessCache() {
+  const kept = new Map<string, { until: number; answer: Promise<unknown> }>();
+  return <T>(key: string, check: () => Promise<T>): Promise<T> => {
+    const now = Date.now();
+    const hit = kept.get(key);
+    if (hit !== undefined && hit.until > now) return hit.answer as Promise<T>;
+    for (const [k, v] of kept) if (v.until <= now) kept.delete(k);
+    const answer = check();
+    kept.set(key, { until: now + ART_ACCESS_MS, answer });
+    answer.catch(() => {
+      if (kept.get(key)?.answer === answer) kept.delete(key);
+    });
+    return answer;
+  };
+}
 
 /** Who an album's track names under its title: its own artists. */
 function trackSub(row: StoredRow): string | null {
@@ -114,9 +139,17 @@ export function itemRoutes(
   options: { db: Db; upstreams: UpstreamAccess | null },
 ): void {
   const { db, upstreams } = options;
+  const artAccess = accessCache();
 
-  /** The book, show or album `key` names, if the person may open it; else 404. */
-  const openable = async (request: FastifyRequest, key: string): Promise<Openable> => {
+  /**
+   * The book, show or album `key` names, if the person may open it; else 404. `forArt` takes the
+   * person's access from the last minute's check, where there is one.
+   */
+  const openable = async (
+    request: FastifyRequest,
+    key: string,
+    forArt = false,
+  ): Promise<Openable> => {
     const user = signedIn(request);
     const ref = parseMediaRefKey(key);
     const row = ref === null ? undefined : indexedRow(db, ref.source, ref.id);
@@ -128,12 +161,18 @@ export function itemRoutes(
     try {
       if (row.kind === 'album') {
         if (clients.jellyfin === null) throw notFound();
-        const views = await jellyfinViews(clients.jellyfin);
+        const jellyfin = clients.jellyfin;
+        const views = forArt
+          ? await artAccess(`${user.id}:jellyfin`, () => jellyfinViews(jellyfin))
+          : await jellyfinViews(jellyfin);
         if (row.libraryId === null || !views.has(row.libraryId)) throw notFound();
         return { row, kind: 'album', jellyfin: clients.jellyfin };
       }
       if (clients.abs === null) throw notFound();
-      const access = await absAccess(clients.abs);
+      const abs = clients.abs;
+      const access = forArt
+        ? await artAccess(`${user.id}:abs`, () => absAccess(abs))
+        : await absAccess(abs);
       if (!access.open(row.libraryId)) throw notFound();
       return { row, kind: row.kind as 'book' | 'show', abs: clients.abs, access };
     } catch (error) {
@@ -168,7 +207,7 @@ export function itemRoutes(
   });
 
   serveStream(app, mediaArt, async (request, { params, query }) => {
-    const item = await openable(request, params.ref);
+    const item = await openable(request, params.ref, true);
     const width = query.size === undefined ? undefined : ART_WIDTH[query.size];
     const opened =
       item.kind === 'album'

@@ -52,6 +52,7 @@ interface RawRow {
   published_at: number | null;
   upstream_version: string | null;
   episode_order: ShowEpisodeOrder | null;
+  has_art: 0 | 1;
   version: number;
   created_at: number;
   updated_at: number;
@@ -81,6 +82,7 @@ function contentHash(row: IndexRow): string {
     row.upstreamVersion,
     ids,
     ...(row.episodeOrder === null ? [] : [row.episodeOrder]),
+    row.hasArt,
   ];
   return createHash('sha256').update(JSON.stringify(content)).digest('hex');
 }
@@ -111,6 +113,7 @@ function upsertRow(db: Db, row: IndexRow, now: number, counts: IndexCounts): voi
     published_at: row.publishedAt,
     upstream_version: row.upstreamVersion,
     episode_order: row.episodeOrder,
+    has_art: row.hasArt ? 1 : 0,
     content_hash: hash,
     now,
   };
@@ -118,10 +121,10 @@ function upsertRow(db: Db, row: IndexRow, now: number, counts: IndexCounts): voi
     db.prepare(
       `INSERT INTO index_items (source, upstream_id, kind, parent_id, library_id, title, creators,
          series, genres, position, disc, duration, year, published_at, upstream_version,
-         episode_order, content_hash, version, created_at, updated_at)
+         episode_order, has_art, content_hash, version, created_at, updated_at)
        VALUES (@source, @upstream_id, @kind, @parent_id, @library_id, @title, @creators, @series,
          @genres, @position, @disc, @duration, @year, @published_at, @upstream_version,
-         @episode_order, @content_hash, 1, @now, @now)`,
+         @episode_order, @has_art, @content_hash, 1, @now, @now)`,
     ).run(values);
     counts.inserted += 1;
   } else {
@@ -131,7 +134,7 @@ function upsertRow(db: Db, row: IndexRow, now: number, counts: IndexCounts): voi
          title = @title, creators = @creators, series = @series, genres = @genres,
          position = @position, disc = @disc, duration = @duration, year = @year,
          published_at = @published_at, upstream_version = @upstream_version,
-         episode_order = @episode_order, content_hash = @content_hash, version = version + 1, updated_at = @now
+         episode_order = @episode_order, has_art = @has_art, content_hash = @content_hash, version = version + 1, updated_at = @now
        WHERE source = @source AND upstream_id = @upstream_id`,
     ).run(values);
     db.prepare('DELETE FROM index_ids WHERE source = ? AND upstream_id = ?').run(
@@ -301,6 +304,7 @@ function fromRaw(raw: RawRow, ids: Record<string, string>): StoredRow {
     upstreamVersion: raw.upstream_version,
     ids,
     episodeOrder: raw.episode_order,
+    hasArt: raw.has_art === 1,
     version: raw.version,
     createdAt: raw.created_at,
     updatedAt: raw.updated_at,

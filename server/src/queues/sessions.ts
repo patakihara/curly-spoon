@@ -597,6 +597,7 @@ export class Sessions {
         db: this.options.db,
         lookup: this.options.lookup,
         jellyfin: this.options.clients(caller).jellyfin,
+        abs: this.options.clients(caller).abs,
         log: this.options.log,
       },
       entries,
@@ -621,9 +622,10 @@ export class Sessions {
    * the end of the entry its active queue is on, when the plan's next entry is not what plays
    * after it (an item put next mid-album or mid-book, or the rest taken out). Undefined when the
    * plan plays on, when the active queue is on its last entry or on none of its entries, or when
-   * the plan is not the device's current play.
+   * the plan is not the device's current play. A `position` already at or past that cut is the
+   * answer itself: the plan stops now.
    */
-  endAt(caller: Caller, plan: HeldPlan): number | undefined {
+  endAt(caller: Caller, plan: HeldPlan, position?: number): number | undefined {
     if (this.plays.get(this.device(caller))?.playId !== plan.playId) return undefined;
     const s = valueOf(this.open(caller));
     const current = currentOf(s);
@@ -632,7 +634,8 @@ export class Sessions {
     const following = placed === -1 ? undefined : plan.entries[placed + 1];
     if (following === undefined) return undefined;
     const after = currentOf(step(s, 'next', this.deps));
-    return after !== null && sameEntry(after, following.entry) ? undefined : following.start;
+    if (after !== null && sameEntry(after, following.entry)) return undefined;
+    return position !== undefined && position >= following.start ? position : following.start;
   }
 
   /** A queue of `s` as a client sees it. */

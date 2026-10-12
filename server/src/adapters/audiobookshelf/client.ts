@@ -133,13 +133,22 @@ export class AbsClient {
     }
   }
 
-  /** A book's length in seconds and its chapters, from the same answer as `getItem`. */
-  async getBookDetail(
-    itemId: string,
-  ): Promise<{ duration: number; chapters: z.infer<typeof chapterSchema>[] }> {
+  /** A book's title, authors, length in seconds and chapters, from the same answer as `getItem`. */
+  async getBookDetail(itemId: string): Promise<{
+    title: string;
+    authors: string[];
+    duration: number;
+    chapters: z.infer<typeof chapterSchema>[];
+  }> {
     const path = `api/items/${encodeURIComponent(itemId)}`;
     const item = await this.call(path, bookDetailSchema, {}, { expanded: '1' });
-    return { duration: item.media.duration, chapters: item.media.chapters ?? [] };
+    const { metadata, duration, chapters } = item.media;
+    return {
+      title: metadata.title,
+      authors: (metadata.authors ?? []).map((a) => a.name),
+      duration,
+      chapters: chapters ?? [],
+    };
   }
 
   getItem(itemId: string): Promise<z.infer<typeof itemSchema>> {

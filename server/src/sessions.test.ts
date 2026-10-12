@@ -185,6 +185,8 @@ interface Setup {
   /** Milliseconds each call whose path contains the key waits before it is answered. */
   slow?: Record<string, number>;
   autoplayWaitMs?: number;
+  /** Recordings answered in place of the usual ones for the same call. */
+  recordings?: Recording[];
 }
 
 async function appOn(db: Db, fetch: FetchLike, setup: Setup, logs: string[]) {
@@ -222,7 +224,9 @@ async function server(setup: Setup = {}) {
   const { bearer, devices, users } = people(db);
   const sent: string[] = [];
   const logs: string[] = [];
-  const replay = replayFetch(RECORDINGS, { readBytes: standInsBeside(adapters) });
+  const replay = replayFetch([...RECORDINGS, ...(setup.recordings ?? [])], {
+    readBytes: standInsBeside(adapters),
+  });
   const fetch: FetchLike = async (url, init) => {
     const path = new URL(url).pathname;
     sent.push(`${init?.method ?? 'GET'} ${path}`);
@@ -1055,6 +1059,41 @@ describe('[M1.shell] GET /api/queues/{type} answers the queue page', () => {
     expect(view.current).toMatchObject({ ref: tracks[0], ...trackLabel(albumTracks[0]!) });
     expect(s.sent).toContain(`GET /Items/${tracks[0]!.id}`);
   });
+
+  it('labels a book the index does not hold, chapter by chapter, from Audiobookshelf as the person', async () => {
+    const s = await server();
+    await s.ok(s.put('kara-phone', bookRef, 'now'));
+    removeItem(s.db, 'abs', book.id, emptyCounts());
+
+    const view = await s.queue('kara-phone', 'spoken');
+    const [first, second] = chapters;
+    expect(view.current).toMatchObject({
+      ref: bookRef,
+      chapter: 0,
+      title: first!.title,
+      sub: 'Three Poems from “Wild Angels”',
+      duration: first!.end - first!.start,
+    });
+    expect(view.user[0]).toMatchObject({ chapter: 1, title: second!.title });
+    expect(s.sent).toContain(`GET /api/items/${book.id}`);
+  });
+
+  it('labels an episode the index does not hold with its show, finding the show from the person’s progress on Audiobookshelf', async () => {
+    const s = await server({ recordings: [abs('me-finished')] });
+    const first = show.mediaType === 'podcast' ? show.media.episodes[0]! : undefined;
+    const ref1 = ref('abs', first!.id);
+    await s.ok(s.put('kara-phone', ref1, 'now'));
+    removeItem(s.db, 'abs', first!.id, emptyCounts());
+
+    const view = await s.queue('kara-phone', 'spoken');
+    expect(view.current).toMatchObject({
+      ref: ref1,
+      title: first!.title,
+      sub: show.media.metadata.title,
+      duration: first!.audioFile?.duration ?? null,
+    });
+    expect(s.sent).toEqual(expect.arrayContaining(['GET /api/me', `GET /api/items/${show.id}`]));
+  });
 });
 
 describe('[M1.shell] a progress answer cuts the plan where the session plays something else next', () => {
@@ -1079,6 +1118,32 @@ describe('[M1.shell] a progress answer cuts the plan where the session plays som
 
     const answer = await s.progress('kara-phone', playId, 1, plan.chapters[1]!.start + 4);
     expect(answer.endAt).toBe(plan.chapters[2]!.start);
+  });
+
+  it('stops an album at once when a report is already past the end of its track', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', album);
+    const { playId } = plan.progressTarget;
+    await s.progress('kara-phone', playId, 0, plan.tracks[2]!.offset + 5);
+    await s.ok(s.put('kara-phone', lone, 'next'));
+    await s.progress('kara-phone', playId, 1, plan.tracks[2]!.offset + 6);
+
+    const late = plan.tracks[3]!.offset + 3;
+    const answer = await s.progress('kara-phone', playId, 2, late);
+    expect(answer.endAt).toBe(late);
+  });
+
+  it('stops a book at once when a report is already past the end of its chapter', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', bookRef);
+    const { playId } = plan.progressTarget;
+    await s.progress('kara-phone', playId, 0, plan.chapters[1]!.start + 3);
+    await s.ok(s.put('kara-phone', episode, 'next'));
+    await s.progress('kara-phone', playId, 1, plan.chapters[1]!.start + 4);
+
+    const late = plan.chapters[2]!.start + 2;
+    const answer = await s.progress('kara-phone', playId, 2, late);
+    expect(answer.endAt).toBe(late);
   });
 
   it('says nothing on the plan’s last entry, where the plan ends anyway', async () => {

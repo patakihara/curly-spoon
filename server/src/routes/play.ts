@@ -327,11 +327,18 @@ export function playRoutes(
     }
   };
 
-  /** Where the session says a play must stop; a failure is only logged, and says nothing. */
-  const stopAt = (caller: Caller, held: HeldPlan | null): number | undefined => {
+  /**
+   * Where the session says a play must stop, given where its taken report says it is; a failure
+   * is only logged, and says nothing.
+   */
+  const stopAt = (
+    caller: Caller,
+    held: HeldPlan | null,
+    position: number | undefined,
+  ): number | undefined => {
     if (held === null) return undefined;
     try {
-      return sessions.endAt(caller, held);
+      return sessions.endAt(caller, held, position);
     } catch (err) {
       app.log.warn({ err }, 'the listening session could not say where the play ends');
       return undefined;
@@ -432,7 +439,7 @@ export function playRoutes(
     if (answer === null) throw new Refusal(404, 'not_found');
     const held = open.planOf(playId, owner);
     if (answer.taken) keepPosition(caller, held, report.position);
-    const endAt = stopAt(caller, held);
+    const endAt = stopAt(caller, held, answer.taken ? report.position : undefined);
     return endAt === undefined ? answer : { ...answer, endAt };
   });
 

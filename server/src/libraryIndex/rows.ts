@@ -55,6 +55,11 @@ export interface IndexRow {
   ids: Record<string, string>;
   /** A show's episode order; null on every other row. */
   episodeOrder: ShowEpisodeOrder | null;
+  /**
+   * Whether the upstream has art for the item: a book's or show's cover, an album's primary
+   * image. False on episodes and tracks, whose art is their show's or album's.
+   */
+  hasArt: boolean;
 }
 
 /** Apple's default for a feed that names no order, and for a show with no feed: newest first. */
@@ -123,6 +128,7 @@ const base = {
   upstreamVersion: null,
   ids: {},
   episodeOrder: null,
+  hasArt: false,
 } satisfies Partial<IndexRow>;
 
 function bookTree(item: BookSummary): IndexTree {
@@ -146,6 +152,7 @@ function bookTree(item: BookSummary): IndexTree {
       duration: played.length > 0 ? duration : null,
       year: whole(meta.publishedYear),
       upstreamVersion: String(item.updatedAt),
+      hasArt: present(item.media.coverPath),
       ids: idsOf([
         ['asin', meta.asin],
         ['isbn', meta.isbn],
@@ -170,6 +177,7 @@ function showTree(item: ShowSummary, ordering: ShowOrdering | undefined): IndexT
       genres: meta.genres,
       upstreamVersion: String(item.updatedAt),
       episodeOrder: ordering?.order ?? DEFAULT_EPISODE_ORDER,
+      hasArt: present(item.media.coverPath),
       ids: idsOf([
         ['feed_url', meta.feedUrl],
         ['itunes_id', meta.itunesId],
@@ -252,6 +260,7 @@ function jellyfinRow(
     year: item.ProductionYear ?? null,
     publishedAt: Number.isNaN(premiere) ? null : premiere,
     upstreamVersion: item.Etag ?? null,
+    hasArt: kind === 'album' && present(item.ImageTags?.Primary),
     ids: idsOf(Object.entries(item.ProviderIds ?? {}).map(([k, v]) => [providerScheme(k), v])),
   };
 }

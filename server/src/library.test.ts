@@ -14,7 +14,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ItemDetail, LibraryList } from '@auralis/schema';
 import { type FastifyInstance } from 'fastify';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AbsClient } from './adapters/audiobookshelf/client.js';
 import { type FetchLike } from './adapters/http/fetch.js';
 import { type Recording, recordingSchema } from './adapters/http/recording.js';
@@ -85,23 +85,41 @@ json<{ Items: unknown[]; TotalRecordCount: number }>(ottoViews).TotalRecordCount
 const KEY = Buffer.alloc(32, 7);
 const UPSTREAM = 'http://upstream.invalid';
 
-/** Fills the index from the recordings, as the index job does. */
-async function index(db: Db) {
+/** `index-book-1` with no cover, as Audiobookshelf answers for a book it has none for. */
+function noCover(r: Recording): Recording {
+  const copy = structuredClone(r);
+  json<{ media: { coverPath: string | null } }>(copy).media.coverPath = null;
+  return copy;
+}
+/** `jf-library-albums-1` with its first album's primary image gone from its image tags. */
+function noPrimary(r: Recording): Recording {
+  const copy = structuredClone(r);
+  delete json<{ Items: { ImageTags: Record<string, string> }[] }>(copy).Items[0]!.ImageTags.Primary;
+  return copy;
+}
+
+/**
+ * Fills the index from the recordings, as the index job does; `withoutArt` takes the cover off
+ * `index-book-1` and the primary image off the first album.
+ */
+async function index(db: Db, withoutArt = false) {
   const common = { baseUrl: UPSTREAM, token: '<token>' };
+  const strip = (edit: (r: Recording) => Recording) => (r: Recording) => (withoutArt ? edit(r) : r);
   const page4 = new AbsClient({
     ...common,
     fetch: replayFetch(
-      ['library-list', 'index-books-page', 'index-book-1', 'index-book-2']
+      ['library-list', 'index-books-page', 'index-book-2']
         .concat(['index-shows-page', 'index-show-1', 'index-show-2'])
-        .map(abs),
+        .map(abs)
+        .concat(strip(noCover)(abs('index-book-1'))),
     ),
   });
   const music = new JellyfinClient({
     ...common,
     fetch: replayFetch(
-      ['library-list', 'jf-library-albums-1', 'index-album-tracks-1', 'index-album-tracks-2'].map(
-        jf,
-      ),
+      ['library-list', 'index-album-tracks-1', 'index-album-tracks-2']
+        .map(jf)
+        .concat(strip(noPrimary)(jf('jf-library-albums-1'))),
     ),
   });
   const pageOfFour = { db, pageSize: 2, pages: { first: 4, count: 1 } };
@@ -296,6 +314,20 @@ describe('[M1.shell/a] the signed-in person’s library, from the index on the r
         .sort(byTitle),
     );
     expect(s.asked).toEqual(['/UserViews?includeHidden=true']);
+  });
+});
+
+describe('[M1.shell] art links', () => {
+  it('[M1.shell] links art only for an item its upstream has art for: a cover, or a primary image', async () => {
+    await index(db, true);
+    const s = await server();
+    const bare = [books[0]!.id, albums[0]!.Id];
+
+    const listed = [...(await s.items('books')), ...(await s.items('music'))];
+
+    expect(listed.filter((e) => e.art === null).map((e) => e.ref.id)).toEqual(bare);
+    expect(listed.filter((e) => !bare.includes(e.ref.id)).every((e) => e.art !== null)).toBe(true);
+    expect((await s.page(`jellyfin:${albums[0]!.Id}`)).art).toBeNull();
   });
 });
 
@@ -570,6 +602,35 @@ describe('[M1.shell] art, passed on from the upstream with the person’s own ac
       expect([res.statusCode, res.json()], `${key} ${name}`).toEqual([404, { error: 'not_found' }]);
     }
     expect(s.asked.filter((a) => /cover|Images/.test(a))).toEqual([]);
+  });
+
+  it('checks who may see art once a minute per person, so a grid of covers costs one lookup; a page still asks afresh', async () => {
+    await index(db);
+    const s = await server();
+    const urls = [`/api/media/abs:${fourFiles.id}/art`, `/api/media/jellyfin:${album.Id}/art`];
+    const lookups = () => s.asked.filter((a) => a === '/api/me' || a.startsWith('/UserViews'));
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      for (let n = 0; n < 3; n += 1) {
+        for (const url of urls) {
+          expect((await s.get(url)).statusCode).toBe(200);
+          expect((await s.get(`${url}?size=medium`)).statusCode).toBe(200);
+        }
+      }
+      expect(lookups()).toEqual(['/api/me', '/UserViews?includeHidden=true']);
+
+      expect((await s.get(urls[1]!, 'otto')).statusCode).toBe(404);
+      expect(lookups()).toHaveLength(3);
+
+      await s.page(`abs:${fourFiles.id}`);
+      expect(lookups()).toHaveLength(4);
+
+      vi.advanceTimersByTime(61_000);
+      for (const url of urls) expect((await s.get(url)).statusCode).toBe(200);
+      expect(lookups()).toHaveLength(6);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('answers 400 to a size it does not draw', async () => {
