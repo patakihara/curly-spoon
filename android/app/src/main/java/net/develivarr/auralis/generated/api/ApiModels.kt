@@ -128,7 +128,7 @@ const val HLS_MIME = "application/vnd.apple.mpegurl"
 @Serializable
 data class ItemDetail(
     val ref: MediaRef,
-    val kind: LibraryEntryKind,
+    val kind: ItemKind,
     val title: String,
     val sub: String?,
     val art: String?,
@@ -138,6 +138,7 @@ data class ItemDetail(
     val chapters: List<PlaybackChapter>,
     val episodes: List<ItemEpisode>,
     val tracks: List<ItemTrack>,
+    val episode: ItemEpisodeAbout? = null,
 )
 
 @Serializable
@@ -150,6 +151,26 @@ data class ItemEpisode(
     val progress: Double?,
     val finished: Boolean,
 )
+
+@Serializable
+data class ItemEpisodeAbout(
+    val show: MediaRef,
+    val description: String?,
+    val publishedAt: Long?,
+    val finished: Boolean,
+)
+
+@Serializable
+enum class ItemKind {
+    @SerialName("book")
+    BOOK,
+    @SerialName("show")
+    SHOW,
+    @SerialName("episode")
+    EPISODE,
+    @SerialName("album")
+    ALBUM,
+}
 
 @Serializable
 data class ItemTrack(
@@ -294,6 +315,8 @@ data class PlaybackTrack(
     val mime: String,
     val duration: Double,
     val offset: Double,
+    val title: String? = null,
+    val sub: String? = null,
 )
 
 @Serializable

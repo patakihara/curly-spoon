@@ -559,6 +559,12 @@
           "offset": {
             "type": "number",
             "minimum": 0
+          },
+          "title": {
+            "type": "string"
+          },
+          "sub": {
+            "type": "string"
           }
         },
         "required": [
@@ -1320,6 +1326,15 @@
           "music"
         ]
       },
+      "ItemKind": {
+        "type": "string",
+        "enum": [
+          "book",
+          "show",
+          "episode",
+          "album"
+        ]
+      },
       "ItemEpisode": {
         "type": "object",
         "properties": {
@@ -1408,6 +1423,35 @@
           "duration"
         ]
       },
+      "ItemEpisodeAbout": {
+        "type": "object",
+        "properties": {
+          "show": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "publishedAt": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "finished": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "show",
+          "description",
+          "publishedAt",
+          "finished"
+        ]
+      },
       "ItemDetail": {
         "type": "object",
         "properties": {
@@ -1415,7 +1459,7 @@
             "$ref": "#/components/schemas/MediaRef"
           },
           "kind": {
-            "$ref": "#/components/schemas/LibraryEntryKind"
+            "$ref": "#/components/schemas/ItemKind"
           },
           "title": {
             "type": "string"
@@ -1467,6 +1511,9 @@
             "items": {
               "$ref": "#/components/schemas/ItemTrack"
             }
+          },
+          "episode": {
+            "$ref": "#/components/schemas/ItemEpisodeAbout"
           }
         },
         "required": [
@@ -3362,7 +3409,7 @@
     },
     "/api/items/{ref}": {
       "get": {
-        "summary": "One book, show or album the signed-in person may open",
+        "summary": "One book, show, episode or album the signed-in person may open",
         "security": [
           {
             "session": []
@@ -3385,7 +3432,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Its header, then a book's chapters, a show's episodes in its order, or an album's tracks.",
+            "description": "Its header, then a book's chapters, a show's episodes in its order, an album's tracks, or an episode's show, notes and standing.",
             "content": {
               "application/json": {
                 "schema": {

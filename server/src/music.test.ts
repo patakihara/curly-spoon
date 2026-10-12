@@ -39,6 +39,8 @@ const albumId = album.request.path.split('/')[2] as string;
 const trackId = track.request.path.split('/')[2] as string;
 interface RecordedTrack {
   Id: string;
+  Name: string;
+  Artists: string[];
   RunTimeTicks: number;
   IndexNumber: number;
   ParentIndexNumber?: number | null;
@@ -158,7 +160,13 @@ describe('[M1.music/a] playing a Jellyfin track', () => {
     const { app, as, plan } = await server();
     const { tracks } = await plan(trackId);
     expect(tracks).toEqual([
-      { url: trackUrl(trackId), mime: 'audio/flac', duration: 219.710726, offset: 0 },
+      {
+        url: trackUrl(trackId),
+        mime: 'audio/flac',
+        duration: 219.710726,
+        offset: 0,
+        title: 'Femininomenon',
+      },
     ]);
     const res = await app.inject({
       method: 'GET',
@@ -324,7 +332,7 @@ describe('[M1.music/b] playing a Jellyfin album', () => {
     let offset = 0;
     const expected = recordedTracks.map((t) => {
       const duration = t.RunTimeTicks / 1e7;
-      const planned = { url: trackUrl(t.Id), mime: 'audio/flac', duration, offset };
+      const planned = { url: trackUrl(t.Id), mime: 'audio/flac', duration, offset, title: t.Name };
       offset += duration;
       return planned;
     });
@@ -344,6 +352,25 @@ describe('[M1.music/b] playing a Jellyfin album', () => {
     const last = recordedTracks[recordedTracks.length - 1]!;
     const discOne = recordedTracks.slice(0, -1);
     expect(tracks.map((t) => t.url)).toEqual([...discOne, last].map((t) => trackUrl(t.Id)));
+  });
+
+  it('names each song by its own title, while the meta names the album', async () => {
+    const { plan } = await server();
+    const { meta, tracks } = await plan(albumId);
+    expect(meta).toMatchObject({ title: 'The Rise and Fall of a Midwest Princess' });
+    expect(tracks.map((t) => t.title)).toEqual(recordedTracks.map((t) => t.Name));
+    expect(tracks[0]!.title).toBe('Femininomenon');
+  });
+
+  it("gives a song its own artists only where they differ from the album's", async () => {
+    const duet = edited<{ Items: RecordedTrack[] }>(albumTracks, (json) => {
+      json.Items[1]!.Artists = ['Chappell Roan', 'A guest'];
+    });
+    const { plan } = await server({ recordings: [album, duet] });
+    const { meta, tracks } = await plan(albumId);
+    expect(meta.sub).toBe('Chappell Roan');
+    expect(tracks[0]).not.toHaveProperty('sub');
+    expect(tracks[1]).toMatchObject({ sub: 'Chappell Roan, A guest' });
   });
 
   it("plays the album's first track through its URL in the plan", async () => {

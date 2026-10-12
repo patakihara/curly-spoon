@@ -1,13 +1,16 @@
 /**
- * One book, show or album opened, and its art. Each is one the index holds at the top level, in a
- * library the signed-in person may open, as their own upstream says (the same check as the
- * library lists); anything else, an episode or a track included, answers 404 before any image or
- * detail is asked for.
+ * One book, show, episode or album opened, and a book's, show's or album's art. Each is one the
+ * index holds, in a library the signed-in person may open, as their own upstream says (the same
+ * check as the library lists): a book, show or album at the top level, or an episode under its
+ * show. Anything else, a track included, answers 404 before any image or detail is asked for.
  *
  * - A book's page: its header, its length and its chapters from its own expanded answer.
  * - A show's page: its episodes in the show's order as the index holds it, each with how far
  *   through the person is and whether they finished it, from their `GET /api/me`.
  * - An album's page: its tracks as the index holds them, in disc and track order.
+ * - An episode's page: its show's title and art, its length and published date as the index
+ *   holds them, how far through the person is and whether they finished it, from their
+ *   `GET /api/me`, and its notes from its show's own answer.
  * - Art: the Audiobookshelf cover or the Jellyfin primary image, asked for with the person's own
  *   token and passed on as it streams, at the size asked for. The client only ever sees this
  *   server's own `/api/media/{ref}/art`; it is kept a day, private to the person. Who may see
@@ -41,9 +44,12 @@ export const ART_WIDTH: Record<ArtSize, number> = { small: 192, medium: 512, lar
 /** How art is cached: a day, by the person's own client only, since who may see it is checked. */
 const ART_CACHE = 'private, max-age=86400';
 
-/** A book, show or album the person may open, with what was learned checking. */
+type Abs = NonNullable<Upstreams['abs']>;
+
+/** A book, show, episode or album the person may open, with what was learned checking. */
 type Openable =
-  | { row: StoredRow; kind: 'book' | 'show'; abs: NonNullable<Upstreams['abs']>; access: AbsAccess }
+  | { row: StoredRow; kind: 'book' | 'show'; abs: Abs; access: AbsAccess }
+  | { row: StoredRow; kind: 'episode'; show: StoredRow; abs: Abs; access: AbsAccess }
   | { row: StoredRow; kind: 'album'; jellyfin: NonNullable<Upstreams['jellyfin']> };
 
 const notFound = () => new Refusal(404, 'not_found');
@@ -142,8 +148,9 @@ export function itemRoutes(
   const artAccess = accessCache();
 
   /**
-   * The book, show or album `key` names, if the person may open it; else 404. `forArt` takes the
-   * person's access from the last minute's check, where there is one.
+   * The book, show or album `key` names, or for a page an episode, if the person may open it; else
+   * 404. `forArt` takes the person's access from the last minute's check, where there is one, and
+   * opens no episode: an episode's art is its show's.
    */
   const openable = async (
     request: FastifyRequest,
@@ -153,9 +160,12 @@ export function itemRoutes(
     const user = signedIn(request);
     const ref = parseMediaRefKey(key);
     const row = ref === null ? undefined : indexedRow(db, ref.source, ref.id);
-    if (row === undefined || row.parentId !== null || !PAGE_KINDS.includes(row.kind)) {
-      throw notFound();
-    }
+    const show =
+      !forArt && row?.kind === 'episode' && row.parentId !== null
+        ? indexedRow(db, row.source, row.parentId)
+        : undefined;
+    const topLevel = row?.parentId === null && PAGE_KINDS.includes(row.kind);
+    if (row === undefined || !(topLevel || show?.kind === 'show')) throw notFound();
     const clients =
       upstreams === null ? { abs: null, jellyfin: null } : upstreamFor({ db, ...upstreams }, user);
     try {
@@ -173,12 +183,40 @@ export function itemRoutes(
       const access = forArt
         ? await artAccess(`${user.id}:abs`, () => absAccess(abs))
         : await absAccess(abs);
+      if (show !== undefined) {
+        if (!access.open(show.libraryId)) throw notFound();
+        return { row, kind: 'episode', show, abs, access };
+      }
       if (!access.open(row.libraryId)) throw notFound();
-      return { row, kind: row.kind as 'book' | 'show', abs: clients.abs, access };
+      return { row, kind: row.kind as 'book' | 'show', abs, access };
     } catch (error) {
       if (error instanceof Refusal) throw error;
       return refusalFor(error);
     }
+  };
+
+  /** An episode's page: headed by its show, as the show's page heads it, with its own standing. */
+  const episodePage = async ({
+    row,
+    show,
+    abs,
+    access,
+  }: Extract<Openable, { kind: 'episode' }>): Promise<ItemDetail> => {
+    const description = await abs.getEpisodeNotes(show.id, row.id).catch(refusalFor);
+    const { progress, finished } = access.standing(row.id);
+    const head = entry(show, 'show', progress);
+    return {
+      ...head,
+      ref: { source: 'abs', id: row.id },
+      kind: 'episode',
+      title: row.title,
+      sub: show.title,
+      duration: row.duration,
+      chapters: [],
+      episodes: [],
+      tracks: [],
+      episode: { show: head.ref, description, publishedAt: row.publishedAt, finished },
+    };
   };
 
   serve(app, getItem, async (request, _reply, _body, { params }): Promise<ItemDetail> => {
@@ -197,6 +235,7 @@ export function itemRoutes(
       const list = episodes(db, row, item.access);
       return { ...entry(row, 'show', null), duration: null, ...none, episodes: list };
     }
+    if (item.kind === 'episode') return episodePage(item);
     const detail = await item.abs.getBookDetail(row.id).catch(refusalFor);
     return {
       ...entry(row, 'book', item.access.standing(row.id).progress),

@@ -36,6 +36,7 @@ import {
   libraryItemsSchema,
   type PlayRequest,
   playSessionSchema,
+  showNotesSchema,
   type SessionSync,
   statusSchema,
   SUPPORTED_MIME_TYPES,
@@ -149,6 +150,12 @@ export class AbsClient {
       duration,
       chapters: chapters ?? [],
     };
+  }
+
+  /** One episode's notes, from its show's answer: null when it has none or the show lists no such episode. */
+  async getEpisodeNotes(showId: string, episodeId: string): Promise<string | null> {
+    const show = await this.call(`api/items/${encodeURIComponent(showId)}`, showNotesSchema);
+    return show.media.episodes.find((e) => e.id === episodeId)?.description ?? null;
   }
 
   getItem(itemId: string): Promise<z.infer<typeof itemSchema>> {

@@ -195,6 +195,31 @@ describe('an item page', () => {
     expect(ItemDetail.parse(page)).toEqual(page);
   });
 
+  it("holds an episode's own page: its show, notes, published date and whether you finished it", () => {
+    const page = {
+      ref: episode,
+      kind: 'episode',
+      ...header,
+      chapters: [],
+      episodes: [],
+      tracks: [],
+      episode: { show, description: 'Notes', publishedAt: 1_760_000_000_000, finished: false },
+    };
+    expect(ItemDetail.parse(page)).toEqual(page);
+  });
+
+  it('refuses an episode page without its show, and episode details on any other page', () => {
+    const empty = { chapters: [], episodes: [], tracks: [] };
+    const about = { show, description: null, publishedAt: null, finished: true };
+    expect(
+      ItemDetail.safeParse({ ref: episode, kind: 'episode', ...header, ...empty }).success,
+    ).toBe(false);
+    for (const kind of ['book', 'show', 'album'] as const) {
+      const page = { ref: book, kind, ...header, ...empty, episode: about };
+      expect(ItemDetail.safeParse(page).success, kind).toBe(false);
+    }
+  });
+
   it('refuses chapters on anything but a book, episodes on anything but a show, and tracks on anything but an album', () => {
     const chapter = { title: 'Chapter 1', start: 0, end: 10 };
     const ep = {

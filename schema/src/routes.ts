@@ -413,9 +413,9 @@ export const getItem = {
   method: 'GET',
   path: '/api/items/{ref}',
   operationId: 'getItem',
-  summary: 'One book, show or album the signed-in person may open',
+  summary: 'One book, show, episode or album the signed-in person may open',
   responseDescription:
-    "Its header, then a book's chapters, a show's episodes in its order, or an album's tracks.",
+    "Its header, then a book's chapters, a show's episodes in its order, an album's tracks, or an episode's show, notes and standing.",
   response: ItemDetail,
   access: 'member',
   params: ItemParams,

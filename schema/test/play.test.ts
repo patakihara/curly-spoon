@@ -39,6 +39,33 @@ describe("a plan's meta", () => {
     expect(PlaybackPlan.safeParse(unnamed).success).toBe(false);
   });
 
+  it("lets an album's plan name each song by its own title, and its artists where they differ", () => {
+    const plan = {
+      meta: { title: 'An album', sub: 'An artist', art: null, variant: 'music' },
+      tracks: [
+        {
+          url: '/api/media/jellyfin:a/tracks/0',
+          mime: 'audio/flac',
+          duration: 1,
+          offset: 0,
+          title: 'A song',
+        },
+        {
+          url: '/api/media/jellyfin:b/tracks/0',
+          mime: 'audio/flac',
+          duration: 1,
+          offset: 1,
+          title: 'A duet',
+          sub: 'An artist, A guest',
+        },
+      ],
+      chapters: [],
+      startAt: 0,
+      progressTarget: { playId: 'p' },
+    };
+    expect(PlaybackPlan.parse(plan)).toEqual(plan);
+  });
+
   it('refuses a variant other than music or spoken, and art this server does not serve', () => {
     const meta = { title: 'A track', sub: null, art: null, variant: 'music' };
     expect(PlaybackMeta.safeParse({ ...meta, variant: 'video' }).success).toBe(false);

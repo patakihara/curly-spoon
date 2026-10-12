@@ -103,7 +103,8 @@ function jellyfinMeta(item: PlayableItem, artOf: (ref: MediaRef) => ArtUrl | nul
 
 /**
  * How to play a track or an album, short of the play it reports to, with the tracks it plays by
- * their Jellyfin ids; or a refusal: 404 for what is not music or an album with no tracks, 422
+ * their Jellyfin ids. Each track carries its own title, and its artists where they differ from
+ * the plan's, so an album's plan names the song playing while its meta names the album; or a refusal: 404 for what is not music or an album with no tracks, 422
  * `unsupported_format` for a file the clients do not play.
  */
 export async function planJellyfin(
@@ -115,6 +116,7 @@ export async function planJellyfin(
   const files =
     item.Type === 'Audio' ? [item] : inAlbumOrder(await jellyfin.getAlbumPlayables(item.Id));
 
+  const meta = jellyfinMeta(item, artOf);
   const tracks: PlaybackTrack[] = [];
   const played: PlannedTrack[] = [];
   let offset = 0;
@@ -126,12 +128,20 @@ export async function planJellyfin(
     const mime = mimeOf(file);
     if (mime === null) throw new Refusal(422, 'unsupported_format');
     const duration = ticks / 1e7;
-    tracks.push({ url: jellyfinTrackUrl(file.Id), mime, duration, offset });
+    const sub = line(file.Artists) ?? file.AlbumArtist ?? null;
+    tracks.push({
+      url: jellyfinTrackUrl(file.Id),
+      mime,
+      duration,
+      offset,
+      title: file.Name ?? '',
+      ...(sub === null || sub === meta.sub ? {} : { sub }),
+    });
     played.push({ id: file.Id, offset, duration });
     offset += duration;
   }
   if (tracks.length === 0) throw new Refusal(404, 'not_found');
-  return { plan: { meta: jellyfinMeta(item, artOf), tracks, chapters: [], startAt: 0 }, played };
+  return { plan: { meta, tracks, chapters: [], startAt: 0 }, played };
 }
 
 /** A plan of Jellyfin tracks, short of the play it reports to, with the tracks it plays by id. */

@@ -62,6 +62,13 @@ export const PlaybackTrack = z
     duration: z.number().nonnegative(),
     /** Where the track starts within the whole item. */
     offset: z.number().nonnegative(),
+    /**
+     * A music track's own title: in an album's plan, the song playing, while the plan's `meta`
+     * names the album. A spoken item's tracks carry none; the item's title is what plays.
+     */
+    title: z.string().optional(),
+    /** A music track's artists, only where they differ from the plan's `meta.sub`. */
+    sub: z.string().optional(),
   })
   .openapi('PlaybackTrack');
 export type PlaybackTrack = z.infer<typeof PlaybackTrack>;
@@ -146,8 +153,10 @@ export const PlaybackVariant = z.enum(['music', 'spoken']).openapi('PlaybackVari
 export type PlaybackVariant = z.infer<typeof PlaybackVariant>;
 
 /**
- * What a plan plays, as the player and the system's media controls name it: its title, its
- * artist, author or show (`sub`), its art, and whether it is music or spoken.
+ * What a plan plays, as a whole: its title (a book, an episode, a song, or an album), its artist,
+ * author or show (`sub`), its art, and whether it is music or spoken. The player and the system's
+ * media controls name spoken playback by it; music by the playing track's own `title` and `sub`,
+ * falling back to these.
  */
 export const PlaybackMeta = z
   .object({

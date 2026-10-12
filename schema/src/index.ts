@@ -40,6 +40,8 @@ export {
   ImageBytes,
   ItemDetail,
   ItemEpisode,
+  ItemEpisodeAbout,
+  ItemKind,
   ItemParams,
   ItemTrack,
   LibraryEntry,

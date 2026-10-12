@@ -317,6 +317,17 @@ const episodeSchema = z.object({
   audioFile: audioFileSchema.nullable().optional(),
 });
 
+/**
+ * `GET /api/items/:id` of a show, not expanded, read for one episode's page: each episode's notes
+ * as the show's feed gives them, null when it gives none (recorded, the notes dropped by the
+ * recorder).
+ */
+export const showNotesSchema = z.object({
+  media: z.object({
+    episodes: z.array(z.object({ id: z.string(), description: optionalString })),
+  }),
+});
+
 const itemBase = { id: z.string(), libraryId: z.string(), updatedAt: z.number() };
 
 /**

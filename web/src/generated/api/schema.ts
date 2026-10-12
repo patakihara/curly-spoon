@@ -422,7 +422,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** One book, show or album the signed-in person may open */
+        /** One book, show, episode or album the signed-in person may open */
         get: operations["getItem"];
         put?: never;
         post?: never;
@@ -592,6 +592,8 @@ export interface components {
             mime: string;
             duration: number;
             offset: number;
+            title?: string;
+            sub?: string;
         };
         PlaybackChapter: {
             title: string;
@@ -745,6 +747,8 @@ export interface components {
         };
         /** @enum {string} */
         LibraryMedium: "books" | "podcasts" | "music";
+        /** @enum {string} */
+        ItemKind: "book" | "show" | "episode" | "album";
         ItemEpisode: {
             ref: components["schemas"]["MediaRef"];
             title: string;
@@ -761,9 +765,15 @@ export interface components {
             sub: string | null;
             duration: number | null;
         };
+        ItemEpisodeAbout: {
+            show: components["schemas"]["MediaRef"];
+            description: string | null;
+            publishedAt: number | null;
+            finished: boolean;
+        };
         ItemDetail: {
             ref: components["schemas"]["MediaRef"];
-            kind: components["schemas"]["LibraryEntryKind"];
+            kind: components["schemas"]["ItemKind"];
             title: string;
             sub: string | null;
             art: string | null;
@@ -773,6 +783,7 @@ export interface components {
             chapters: components["schemas"]["PlaybackChapter"][];
             episodes: components["schemas"]["ItemEpisode"][];
             tracks: components["schemas"]["ItemTrack"][];
+            episode?: components["schemas"]["ItemEpisodeAbout"];
         };
         /** @enum {string} */
         ArtSize: "small" | "medium" | "large";
@@ -2213,7 +2224,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Its header, then a book's chapters, a show's episodes in its order, or an album's tracks. */
+            /** @description Its header, then a book's chapters, a show's episodes in its order, an album's tracks, or an episode's show, notes and standing. */
             200: {
                 headers: {
                     [name: string]: unknown;

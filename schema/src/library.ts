@@ -84,7 +84,7 @@ export type LibraryEntry = z.infer<typeof LibraryEntry>;
 export const LibraryList = z.object({ items: z.array(LibraryEntry) }).openapi('LibraryList');
 export type LibraryList = z.infer<typeof LibraryList>;
 
-/** One book, show or album, by its ref as it sits in a path. */
+/** One book, show, episode or album, by its ref as it sits in a path. */
 export const ItemParams = z.object({ ref: MediaRefKey });
 export type ItemParams = z.infer<typeof ItemParams>;
 
@@ -131,15 +131,34 @@ export const ItemTrack = z
   .openapi('ItemTrack');
 export type ItemTrack = z.infer<typeof ItemTrack>;
 
+/** What an item page shows: a book, a show, one episode of a show, or an album. */
+export const ItemKind = z.enum(['book', 'show', 'episode', 'album']).openapi('ItemKind');
+export type ItemKind = z.infer<typeof ItemKind>;
+
 /**
- * A book, show or album page: its header (title, author, host or artist, art, how far through it
- * you are, its length in seconds, where you stand with it), then a book's chapters, a show's
- * episodes in the show's own order, or an album's tracks. The other two lists are empty.
+ * What only an episode's page has: its show, its notes as the show's feed gives them, when it was
+ * published (milliseconds since the epoch), and whether you finished it.
+ */
+export const ItemEpisodeAbout = z
+  .object({
+    show: MediaRef,
+    description: z.string().nullable(),
+    publishedAt: z.number().int().nullable(),
+    finished: z.boolean(),
+  })
+  .openapi('ItemEpisodeAbout');
+export type ItemEpisodeAbout = z.infer<typeof ItemEpisodeAbout>;
+
+/**
+ * A book, show, episode or album page: its header (title, author, host, show or artist, art, how
+ * far through it you are, its length in seconds, where you stand with it), then a book's
+ * chapters, a show's episodes in the show's own order, or an album's tracks. The other two lists
+ * are empty. An episode's page lists none and carries `episode`; no other page does.
  */
 export const ItemDetail = z
   .object({
     ref: MediaRef,
-    kind: LibraryEntryKind,
+    kind: ItemKind,
     title: z.string(),
     sub: z.string().nullable(),
     art: ArtUrl.nullable(),
@@ -149,13 +168,21 @@ export const ItemDetail = z
     chapters: z.array(PlaybackChapter),
     episodes: z.array(ItemEpisode),
     tracks: z.array(ItemTrack),
+    episode: ItemEpisodeAbout.optional(),
   })
   .superRefine((value, ctx) => {
     const owner = { chapters: 'book', episodes: 'show', tracks: 'album' } as const;
-    for (const [list, kind] of Object.entries(owner) as [keyof typeof owner, LibraryEntryKind][]) {
+    for (const [list, kind] of Object.entries(owner) as [keyof typeof owner, ItemKind][]) {
       if (value.kind !== kind && value[list].length > 0) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: [list], message: `only a ${kind} has` });
       }
+    }
+    if ((value.kind === 'episode') !== (value.episode !== undefined)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['episode'],
+        message: 'only an episode has',
+      });
     }
   })
   .openapi('ItemDetail');

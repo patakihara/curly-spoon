@@ -167,6 +167,8 @@ async function server(karaMe = me) {
   const asked: string[] = [];
   const reads = [
     abs('multi-detail'),
+    abs('index-show-1'),
+    abs('index-show-2'),
     abs('shell-cover'),
     abs('shell-cover-medium'),
     jf('jf-primary-image'),
@@ -483,6 +485,79 @@ describe('[M1.shell] a book, show or album page, from the index and the personâ€
   });
 });
 
+/** A show's episodes as its recorded `GET /api/items/{id}` lists them, notes included. */
+const recordedEpisodes = (showId: string) =>
+  json<{ id: string; media: { episodes: { id: string; description: string | null }[] } }>(
+    abs(['index-show-1', 'index-show-2'].find((c) => json<AbsItem>(abs(c)).id === showId)!),
+  ).media.episodes;
+
+describe("[M1.shell] an episode's page, from the index, its show and the person's own standing", () => {
+  it("[M1.shell] opens an episode with its show's title and art, its notes, length and published date, and that it was played", async () => {
+    await index(db);
+    const s = await server(karaFinished);
+    const show = shows.find((sh) => sh.id === finished.libraryItemId)!;
+    const row = episodesInOrder(db, show.id).find((e) => e.id === finished.episodeId)!;
+    const notes = recordedEpisodes(show.id).find((e) => e.id === row.id)!.description;
+
+    const page = await s.page(`abs:${row.id}`);
+
+    expect(notes).toEqual(expect.any(String));
+    expect(page).toEqual({
+      ref: { source: 'abs', id: row.id },
+      kind: 'episode',
+      title: row.title,
+      sub: show.media.metadata.title,
+      art: `/api/media/abs:${show.id}/art`,
+      progress: 1,
+      duration: row.duration,
+      availability: { kind: 'owned' },
+      chapters: [],
+      episodes: [],
+      tracks: [],
+      episode: {
+        show: { source: 'abs', id: show.id },
+        description: notes,
+        publishedAt: row.publishedAt,
+        finished: true,
+      },
+    });
+    expect(s.asked).toEqual(['/api/me', `/api/items/${show.id}`]);
+  });
+
+  it('[M1.shell] opens an episode not yet played as not started and not finished', async () => {
+    await index(db);
+    const s = await server(karaFinished);
+    const show = shows.find((sh) => sh.id === finished.libraryItemId)!;
+    const row = episodesInOrder(db, show.id).find((e) => e.id !== finished.episodeId)!;
+
+    const page = await s.page(`abs:${row.id}`);
+
+    expect(page).toMatchObject({ kind: 'episode', progress: null });
+    expect(page.episode).toMatchObject({ finished: false });
+  });
+
+  it("answers 404 for an episode of a show in a library the person can't open, asking only who they are", async () => {
+    await index(db);
+    const booksOnly = structuredClone(me);
+    Object.assign(json<AbsMe>(booksOnly), {
+      permissions: { ...json<AbsMe>(me).permissions, accessAllLibraries: false },
+      librariesAccessible: libraries.filter((l) => l.mediaType === 'book').map((l) => l.id),
+    });
+    const s = await server(booksOnly);
+    const episode = episodesInOrder(db, shows[0]!.id)[0]!;
+
+    expect(await s.item(`abs:${episode.id}`)).toEqual({
+      status: 404,
+      body: { error: 'not_found' },
+    });
+    expect(await s.item(`abs:${episode.id}`, 'nora')).toEqual({
+      status: 404,
+      body: { error: 'not_found' },
+    });
+    expect(s.asked).toEqual(['/api/me']);
+  });
+});
+
 describe('an item page no one may open', () => {
   it("answers 404 for a book or album in a library the person can't open, asking only who they are", async () => {
     await index(db);
@@ -509,16 +584,14 @@ describe('an item page no one may open', () => {
     expect(s.asked).toEqual([]);
   });
 
-  it('answers 404 for a ref the index does not hold, or for an episode or a track, which have no page', async () => {
+  it('answers 404 for a ref the index does not hold, or for a track, which has no page', async () => {
     await index(db);
     const s = await server();
-    const episode = episodesInOrder(db, shows[0]!.id)[0]!;
     const track = albumTracks(db, album.Id)[0]!;
 
     for (const key of [
       'abs:00000000-0000-4000-8000-000000000000',
       'jellyfin:00000000000000000000000000000000',
-      `abs:${episode.id}`,
       `jellyfin:${track.id}`,
     ]) {
       expect((await s.item(key)).status, key).toBe(404);
