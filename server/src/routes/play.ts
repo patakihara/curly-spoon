@@ -15,7 +15,9 @@
  * closes it, with a last report when given; so does planning again on the same device, or its
  * idle time running out. Each play also keeps the device's listening session (`queues/sessions.ts`):
  * the item becomes current, the plan names what plays after it, and progress keeps where the
- * device is, moving the session on through an album's tracks or a book's chapters. When the
+ * device is, moving the session on through an album's tracks or a book's chapters. A track the
+ * session plays on through its album from (a Next or Back inside an album) plans as the rest of
+ * that album, so it stays gapless. When the
  * session plays something else after the track or chapter the plan is on (an item put next), the
  * progress answer says where the plan must stop (`endAt`). Every plan names what it plays (`meta`),
  * as the upstream's own answer names it, with art where this server serves it.
@@ -46,6 +48,7 @@ import {
   SUPPORTED_MIME_TYPES,
 } from '../adapters/audiobookshelf/schemas.js';
 import { AdapterError, type FetchLike } from '../adapters/http/fetch.js';
+import type { JellyfinClient } from '../adapters/jellyfin/client.js';
 import { RangeNotSatisfiable, type UpstreamFile } from '../adapters/stream.js';
 import { indexedRow } from '../libraryIndex/store.js';
 import type { Caller, HeldPlan, PlanEntry, Sessions } from '../queues/sessions.js';
@@ -59,7 +62,14 @@ import {
 } from '../upstream/links.js';
 import { artOf } from './art.js';
 import { signedIn } from './auth.js';
-import { type JellyfinLine, jellyfinLine, jellyfinReports, planJellyfin } from './jellyfinPlay.js';
+import {
+  type JellyfinLine,
+  jellyfinLine,
+  type JellyfinPlan,
+  jellyfinReports,
+  planJellyfin,
+  planRun,
+} from './jellyfinPlay.js';
 import { OpenPlays, type UpstreamReport } from './openPlays.js';
 import { type z } from 'zod';
 
@@ -317,6 +327,36 @@ export function playRoutes(
     }
   };
 
+  /**
+   * How to play a Jellyfin ref: a track the session plays on through its album from, as that
+   * part of the album's own plan; anything else, or a run the album's tracks do not hold, alone.
+   * A session that cannot be read (logged) plans the ref alone.
+   */
+  const jellyfinPlan = async (
+    client: JellyfinClient,
+    caller: Caller,
+    ref: MediaRef,
+  ): Promise<JellyfinPlan> => {
+    const art = (r: MediaRef) => artOf(db, r);
+    let run: { album: string | null; refs: MediaRef[] } = { album: null, refs: [ref] };
+    try {
+      run = sessions.albumRun(caller, ref);
+    } catch (err) {
+      app.log.warn({ err }, 'the listening session could not say what plays after this track');
+    }
+    if (run.album !== null) {
+      const album = await client.getPlayable(run.album).catch(refusalFor);
+      const whole = await planJellyfin(client, album, art).catch(refusalFor);
+      const part = planRun(
+        whole,
+        run.refs.map((r) => r.id),
+      );
+      if (part !== null) return part;
+    }
+    const item = await client.getPlayable(ref.id).catch(refusalFor);
+    return planJellyfin(client, item, art).catch(refusalFor);
+  };
+
   /** Keeps where the device is in a play's plan on its session; a failure is only logged. */
   const keepPosition = (caller: Caller, held: HeldPlan | null, position: number) => {
     if (held === null) return;
@@ -352,10 +392,7 @@ export function playRoutes(
     if (body.ref.source === 'jellyfin') {
       if (parseMediaRefKey(ref) === null) throw new Refusal(400, 'bad_request');
       const { client, userId, deviceId } = await personFor(request, 'jellyfin');
-      const item = await client.getPlayable(body.ref.id).catch(refusalFor);
-      const { plan, played } = await planJellyfin(client, item, (r) => artOf(db, r)).catch(
-        refusalFor,
-      );
+      const { plan, played } = await jellyfinPlan(client, caller, body.ref);
       // Jellyfin's own play session ids are 32 hex digits (recorded).
       const playId = randomUUID().replace(/-/g, '');
       const reports = jellyfinReports(client, played, playId, lineFor(userId, deviceId));

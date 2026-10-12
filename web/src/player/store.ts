@@ -2,12 +2,14 @@
  * The web's player store: what is loaded, where it is, whether it plays, its speed and its sleep
  * timer, kept outside React and read through `useSyncExternalStore`. Playing an item plans it
  * (`POST /api/play`) and hands the plan to the engine (`playback.ts`). While it plays it reports
- * every 10 s, and on pause, seek and close, numbered from 0 on each play, with the wall-clock time
- * listened since the last report the server took. A play the server no longer holds (404) is
+ * every 10 s, and on pause, seek and close, numbered from 0 on each play, with the time listened
+ * since the last report the server took, on a monotonic clock. A play the server no longer holds (404) is
  * planned again, from where the server says to start. A cut the server answers (`endAt`) goes to
  * the engine; a cut at or before where it is stops it at once and steps on. An item's end, Next
  * and Back step the device's session (`POST /api/sessions/this/step`) and plan what it plays now,
- * reporting under that play from then on. Every change to what plays runs one at a time, in order.
+ * reporting under that play from then on. Closing a play is best-effort: a failed close is logged and
+ * never keeps the player from what comes next. Every change to what plays runs one at a time, in
+ * order.
  */
 import {
   ListeningSession,
@@ -36,13 +38,15 @@ const AT_STOP_S = 0.01;
 
 /** Time, and timers on it: the browser's own by default, a test's by hand. */
 export interface Clock {
+  /** Milliseconds on a clock that never goes back. */
   now(): number;
   setTimeout(fn: () => void, ms: number): unknown;
   clearTimeout(handle: unknown): void;
 }
 
 const browserClock: Clock = {
-  now: () => Date.now(),
+  // Decision (M1.shell): listening is timed on the monotonic clock; the wall clock can be set back.
+  now: () => performance.now(),
   setTimeout: (fn, ms) => globalThis.setTimeout(fn, ms),
   clearTimeout: (handle) => globalThis.clearTimeout(handle as ReturnType<typeof setTimeout>),
 };
@@ -92,6 +96,8 @@ export interface PlayerStore {
 }
 
 type Sleep = { kind: 'off' } | { kind: 'timer'; endsAt: number } | { kind: 'chapter'; at: number };
+
+const logClose = (error: unknown) => console.warn('closing a play failed', error);
 
 const lengthOf = (plan: PlaybackPlan | null) => {
   const last = plan?.tracks.at(-1);
@@ -167,7 +173,8 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
   const count = () => {
     if (since === null) return;
     const now = clock.now();
-    listenedMs += now - since;
+    // Decision (M1.shell): a clock that went back counts nothing, never negative listening.
+    listenedMs += Math.max(0, now - since);
     since = now;
   };
 
@@ -285,7 +292,9 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     };
     listenedMs = 0;
     engine = null;
-    await last.destroy(final);
+    // Decision (M1.shell): closing is best-effort. A failed close is logged and never keeps the
+    // player from what comes next.
+    await last.destroy(final).catch(logClose);
   };
 
   const unload = () => {
@@ -386,7 +395,7 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     const gone = engine;
     engine = null;
     stopReports();
-    void gone?.destroy();
+    void gone?.destroy().catch(logClose);
     await load(ref, playOn);
   };
 

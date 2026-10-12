@@ -21,6 +21,10 @@
  * now or the switch moves the controls off the entry it played. A late report from a play no
  * longer current changes nothing on the session (the upstream still hears it). The play is named
  * by the play id its plan answered, which every report carries.
+ *
+ * A track a queue is on plays on through the rest of its album as one plan, as far as stepping
+ * next reaches the album's following tracks in order (`albumRun`), so a Next or Back inside an
+ * album keeps it gapless.
  */
 import { randomUUID } from 'node:crypto';
 import {
@@ -33,7 +37,7 @@ import {
   type QueueView,
 } from '@auralis/schema';
 import type { AbsClient } from '../adapters/audiobookshelf/client.js';
-import { indexedRow } from '../libraryIndex/store.js';
+import { albumTracks, indexedRow } from '../libraryIndex/store.js';
 import { Refusal } from '../route.js';
 import type { Db } from '../store/connection.js';
 import {
@@ -269,7 +273,8 @@ export class Sessions {
     const { lookup } = this.options;
     this.plays.set(this.device(caller), { playId, recorded: new Map() });
     await this.load(caller, [ref]);
-    const covered = lookup.covered(ref);
+    // What the plan plays: an album's tracks, or a track and the rest of its album after it.
+    const covered = new Set([...lookup.covered(ref), ...entries.map((e) => key(e.entry.ref))]);
     const s = this.open(caller);
     const holding = QUEUES.find((q) => {
       const c = s.queues[q].current;
@@ -336,6 +341,44 @@ export class Sessions {
       };
     }
     return null;
+  }
+
+  /**
+   * The tracks a play of `ref` plays on through, in order: when `ref` is the track one of this
+   * device's queues is on, it and each queued entry stepping next reaches after it (autoplay's
+   * picks are not queued), while that is the next track of its album; `album` names the album.
+   * Otherwise `ref` alone, with no album.
+   */
+  albumRun(caller: Caller, ref: MediaRef): { album: string | null; refs: MediaRef[] } {
+    const lone = { album: null, refs: [ref] };
+    if (ref.source !== 'jellyfin') return lone;
+    const { db } = this.options;
+    const row = indexedRow(db, ref.source, ref.id);
+    if (row?.kind !== 'track' || row.parentId === null) return lone;
+    const order = albumTracks(db, row.parentId).map((t) => t.id);
+    const s = valueOf(this.open(caller));
+    const queue = QUEUES.find((q) => {
+      const c = s.queues[q].current;
+      return c !== null && c.chapter === undefined && key(c.ref) === key(ref);
+    });
+    if (queue === undefined) return lone;
+    // Decision (M1.shell): a Next or Back inside an album plans the rest of the album the queue
+    // holds in order, so it stays gapless; the session's progress follows a plan of many tracks.
+    const queued: EngineDeps = { ...this.deps, autoplay: () => null };
+    let t = switchTo(s, queue, queued);
+    const refs = [ref];
+    for (let at = order.indexOf(ref.id) + 1; at > 0 && at < order.length; at += 1) {
+      t = step(t, 'next', queued);
+      const c = currentOf(t);
+      if (
+        c === null ||
+        c.chapter !== undefined ||
+        key(c.ref) !== key({ source: 'jellyfin', id: order[at]! })
+      )
+        break;
+      refs.push(c.ref);
+    }
+    return refs.length > 1 ? { album: row.parentId, refs } : lone;
   }
 
   /** True when a step reached `current`: a Back to it, or a Next to it from the same item. */

@@ -1,5 +1,5 @@
 import { type MediaRef, type PlaybackPlan, type ProgressAnswer } from '@auralis/schema';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApiClient } from '../api/client';
 import { type Player, type PlayerOptions, type ProgressReport } from '../playback';
 import { type MediaControls } from './media-session';
@@ -51,6 +51,8 @@ class FakeEngine implements Player {
   rate = 1;
   cut: number | null = null;
   closedWith: ProgressReport | undefined | null = null;
+  /** Closing the play fails, as when the network is gone. */
+  closeFails = false;
   constructor(
     readonly plan: PlaybackPlan,
     readonly options: PlayerOptions,
@@ -86,6 +88,7 @@ class FakeEngine implements Player {
   }
   async destroy(report?: ProgressReport) {
     this.closedWith = report;
+    if (this.closeFails) throw new TypeError('Failed to fetch');
   }
   /** Plays on to `position`, as timeupdate would say. */
   at(position: number) {
@@ -140,7 +143,15 @@ interface Sent {
 }
 
 /** The server: plans, progress answers and steps, each request kept. */
-function rig(options: { answers?: (body: Record<string, unknown>) => ProgressAnswer | 404 } = {}) {
+function rig(
+  options: {
+    answers?: (body: Record<string, unknown>) => ProgressAnswer | 404;
+    /** Every play's close fails. */
+    closeFails?: boolean;
+    /** The browser's own clock in place of the test's. */
+    browserClock?: boolean;
+  } = {},
+) {
   const sent: Sent[] = [];
   const engines: FakeEngine[] = [];
   const clock = new FakeClock();
@@ -201,10 +212,11 @@ function rig(options: { answers?: (body: Record<string, unknown>) => ProgressAns
   });
   const store = createPlayerStore({
     api,
-    clock,
+    ...(options.browserClock === true ? {} : { clock }),
     controls: media,
     createPlayer: (plan, opts) => {
       const engine = new FakeEngine(plan as PlaybackPlan, opts);
+      engine.closeFails = options.closeFails === true;
       engines.push(engine);
       return engine;
     },
@@ -214,6 +226,10 @@ function rig(options: { answers?: (body: Record<string, unknown>) => ProgressAns
   const paths = () => sent.map((s) => s.path);
   return { store, sent, engines, engine, clock, reports, paths, after, startAts, controls };
 }
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('[M1.shell] the web player store', () => {
   it('[M1.shell] plays an item by planning it, then starting its plan where the plan starts', async () => {
@@ -271,6 +287,27 @@ describe('[M1.shell] the web player store', () => {
     expect(reports()).toEqual([
       { playId: 'play-0', seq: 0, position: 400, listened: 3, paused: false },
     ]);
+  });
+
+  it('[M1.shell] never reports negative listening, even when its clock goes back', async () => {
+    const { store, clock, reports } = rig();
+    await store.play(book);
+    clock.time -= 5_000;
+    await store.pause();
+    expect(reports()[0]).toMatchObject({ listened: 0 });
+  });
+
+  it('[M1.shell] times listening on the monotonic clock, so a wall clock set back changes nothing', async () => {
+    let monotonic = 5_000;
+    let wall = 1_000_000;
+    vi.spyOn(performance, 'now').mockImplementation(() => monotonic);
+    vi.spyOn(Date, 'now').mockImplementation(() => wall);
+    const { store, reports } = rig({ browserClock: true });
+    await store.play(book);
+    monotonic += 3_000;
+    wall -= 60_000;
+    await store.pause();
+    expect(reports()[0]).toMatchObject({ listened: 3 });
   });
 
   it('[M1.shell] counts listening on from the last report the server took', async () => {
@@ -355,6 +392,32 @@ describe('[M1.shell] the web player store', () => {
     expect(engines[1]!.calls).toContain('play');
     await clock.advance(10_000);
     expect(reports().at(-1)).toMatchObject({ playId: 'play-1', seq: 0 });
+  });
+
+  it('[M1.shell] steps on when closing the play it leaves fails, and pause and play still work', async () => {
+    const warned = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { store, engines } = rig({ closeFails: true });
+    await store.play(book);
+    engines[0]!.at(600);
+    engines[0]!.options.onEnded?.();
+    await settle();
+    expect(store.getState().ref).toEqual(episode);
+    expect(store.getState().playing).toBe(true);
+    await store.pause();
+    expect(store.getState().playing).toBe(false);
+    await store.resume();
+    expect(store.getState().playing).toBe(true);
+    expect(engines[1]!.calls).toEqual(['play', 'pause', 'play']);
+    expect(warned).toHaveBeenCalledWith('closing a play failed', expect.any(TypeError));
+  });
+
+  it('[M1.shell] plays another item when closing the one it leaves fails', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { store } = rig({ closeFails: true });
+    await store.play(book);
+    await store.play(song);
+    expect(store.getState().ref).toEqual(song);
+    expect(store.getState().playing).toBe(true);
   });
 
   it('[M1.shell] steps next and back through the session, as asked', async () => {

@@ -1157,3 +1157,50 @@ describe('[M1.shell] a progress answer cuts the plan where the session plays som
     expect(answer.endAt).toBeUndefined();
   });
 });
+
+describe('[M1.shell] a Next or Back inside an album plans the rest of it as one gapless plan', () => {
+  const urls = (refs: MediaRef[]) => refs.map((t) => `/api/media/jellyfin:${t.id}/tracks/0`);
+
+  it('plans tracks 2 to the last, in order, starting at track 2, after a Next from track 1', async () => {
+    const s = await server();
+    const whole = await s.play('kara-phone', album);
+    expect((await s.stepped('kara-phone', 'next')).currents.music?.ref).toEqual(tracks[1]);
+
+    const plan = await s.play('kara-phone', tracks[1]!);
+    expect(plan.tracks.map((t) => t.url)).toEqual(urls(tracks.slice(1)));
+    expect(plan.startAt).toBe(plan.tracks[0]!.offset);
+    expect(plan.tracks[1]!.offset).toBeCloseTo(plan.tracks[0]!.duration, 6);
+    expect(plan.meta).toEqual(whole.meta);
+  });
+
+  it('moves the session on through the album as the plan reports from a later track', async () => {
+    const s = await server();
+    await s.play('kara-phone', album);
+    await s.stepped('kara-phone', 'next');
+    const plan = await s.play('kara-phone', tracks[1]!);
+
+    await s.progress('kara-phone', plan.progressTarget.playId, 0, plan.tracks[1]!.offset + 5);
+    expect(s.stored('kara-phone').queues.music.current?.ref).toEqual(tracks[2]);
+    expect(s.stored('kara-phone').history.map((h) => h.ref)).toEqual(tracks.slice(0, 2));
+  });
+
+  it('plans from the track Back returned to on to the album’s last', async () => {
+    const s = await server();
+    const whole = await s.play('kara-phone', album);
+    await s.progress('kara-phone', whole.progressTarget.playId, 0, whole.tracks[2]!.offset + 5);
+    expect((await s.stepped('kara-phone', 'back')).currents.music?.ref).toEqual(tracks[1]);
+
+    const plan = await s.play('kara-phone', tracks[1]!);
+    expect(plan.tracks.map((t) => t.url)).toEqual(urls(tracks.slice(1)));
+    expect(plan.startAt).toBe(0);
+  });
+
+  it('plans the track alone when the session plays something else after it', async () => {
+    const s = await server();
+    await s.play('kara-phone', album);
+    await s.ok(s.put('kara-phone', lone, 'next'));
+
+    const plan = await s.play('kara-phone', tracks[0]!);
+    expect(plan.tracks.map((t) => t.url)).toEqual(urls([tracks[0]!]));
+  });
+});

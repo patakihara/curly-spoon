@@ -110,7 +110,7 @@ export async function planJellyfin(
   jellyfin: JellyfinClient,
   item: PlayableItem,
   artOf: (ref: MediaRef) => ArtUrl | null,
-): Promise<{ plan: Omit<PlaybackPlan, 'progressTarget'>; played: PlannedTrack[] }> {
+): Promise<JellyfinPlan> {
   if (item.Type !== 'Audio' && item.Type !== 'MusicAlbum') throw new Refusal(404, 'not_found');
   const files =
     item.Type === 'Audio' ? [item] : inAlbumOrder(await jellyfin.getAlbumPlayables(item.Id));
@@ -132,6 +132,31 @@ export async function planJellyfin(
   }
   if (tracks.length === 0) throw new Refusal(404, 'not_found');
   return { plan: { meta: jellyfinMeta(item, artOf), tracks, chapters: [], startAt: 0 }, played };
+}
+
+/** A plan of Jellyfin tracks, short of the play it reports to, with the tracks it plays by id. */
+export interface JellyfinPlan {
+  plan: Omit<PlaybackPlan, 'progressTarget'>;
+  played: PlannedTrack[];
+}
+
+/**
+ * The part of an album's plan that plays the tracks `ids`, in that order, from the start; null
+ * when the album does not hold every one of them.
+ */
+export function planRun(album: JellyfinPlan, ids: readonly string[]): JellyfinPlan | null {
+  const tracks: PlaybackTrack[] = [];
+  const played: PlannedTrack[] = [];
+  let offset = 0;
+  for (const id of ids) {
+    const at = album.played.findIndex((t) => t.id === id);
+    const track = album.plan.tracks[at];
+    if (track === undefined) return null;
+    tracks.push({ ...track, offset });
+    played.push({ id, offset, duration: track.duration });
+    offset += track.duration;
+  }
+  return { plan: { ...album.plan, tracks, startAt: 0 }, played };
 }
 
 type ReportKind = 'playing' | 'progress' | 'stopped';
