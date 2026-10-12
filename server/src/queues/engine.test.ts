@@ -499,6 +499,56 @@ describe('[M1.sessions/d] Back and Forward', () => {
     ]);
   });
 
+  it('Back retraces what actually played after a song put next during a walk', () => {
+    const d = deps();
+    let s = run(empty(), (s) => add(s, first.album, 'now', d));
+    s = step(s, 'next', d);
+    s = step(s, 'next', d);
+    s = step(s, 'back', d);
+    s = step(s, 'back', d);
+    s = run(s, (s) => add(s, trackX, 'next', d));
+    [1, 2, 3].forEach(() => (s = step(s, 'next', d)));
+    expect(refOf(s.queues.music.current)).toEqual(first.tracks[2]);
+
+    const backs = [1, 2, 3].map(() => refOf((s = step(s, 'back', d)).queues.music.current));
+
+    expect(backs).toEqual([first.tracks[1], trackX, first.tracks[0]]);
+    expect(step(s, 'back', d)).toEqual(s);
+  });
+
+  it('Back from a song played now during a walk returns to the replay it replaced', () => {
+    const d = deps();
+    let s = run(empty(), (s) => add(s, first.album, 'now', d));
+    s = step(s, 'next', d);
+    s = step(s, 'next', d);
+    s = step(s, 'back', d);
+    s = step(s, 'back', d);
+    s = run(s, (s) => add(s, trackX, 'now', d));
+
+    s = step(s, 'back', d);
+
+    expect(refOf(s.queues.music.current)).toEqual(first.tracks[0]);
+    expect(step(s, 'back', d)).toEqual(s);
+  });
+
+  it('Forward follows the queue: a walk reordered in the queue plays in its new order', () => {
+    const d = deps();
+    let s = run(empty(), (s) => add(s, first.album, 'now', d));
+    s = step(s, 'next', d);
+    s = step(s, 'next', d);
+    s = step(s, 'back', d);
+    s = step(s, 'back', d);
+    const [walkA2, walkA3, ...rest] = s.queues.music.user;
+    expect(refs([walkA2!, walkA3!])).toEqual([first.tracks[1], first.tracks[2]]);
+    s = { ...s, queues: { ...s.queues, music: { ...s.queues.music } } };
+    s.queues.music.user = [walkA3!, walkA2!, ...rest];
+
+    const heard = [1, 2].map(() => refOf((s = step(s, 'next', d)).queues.music.current));
+
+    expect(heard).toEqual([first.tracks[2], first.tracks[1]]);
+    expect(refOf(step(s, 'back', d).queues.music.current)).toEqual(first.tracks[2]);
+  });
+
   it('never records the replayed item again when the switch or Play now ends the walk', () => {
     const d = deps();
     let s = run(

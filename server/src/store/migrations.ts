@@ -268,9 +268,10 @@ export const migrations: readonly Migration[] = [
         -- your queue, and what is left of Spotify style's playing-from. chapter says which
         -- entry of a book this is. The current item carries the device's last position in it,
         -- in ms, and when that was taken; an item of your queue keeps the one it had when it
-        -- was last current. walk orders the entries of a walk Back started, which Forward
-        -- plays first, lowest first; replay_of is the play (play_history seq) an entry plays
-        -- again, which ending it does not record twice.
+        -- was last current. walk marks the entries of a walk Back started, which Forward
+        -- plays first, in queue order (across the two queues, lowest first); replay_of is the
+        -- play (play_history seq) an entry plays again, which ending it does not record twice;
+        -- after, on a current item, is the play that played immediately before it.
         CREATE TABLE queue_items (
           device_id   TEXT NOT NULL REFERENCES listening_sessions(device_id) ON DELETE CASCADE,
           queue       TEXT NOT NULL CHECK (queue IN ('music', 'spoken')),
@@ -284,11 +285,13 @@ export const migrations: readonly Migration[] = [
           position_at INTEGER,
           walk        INTEGER,
           replay_of   INTEGER CHECK (replay_of >= 0),
+          after       INTEGER CHECK (after >= 0),
           PRIMARY KEY (device_id, queue, segment, ord),
           UNIQUE (device_id, item_id),
           CHECK (segment <> 'current' OR ord = 0),
           CHECK ((position_ms IS NULL) = (position_at IS NULL)),
           CHECK (segment = 'user' OR walk IS NULL),
+          CHECK (segment = 'current' OR after IS NULL),
           CHECK (segment <> 'context' OR (position_ms IS NULL AND replay_of IS NULL))
         );
 
@@ -304,6 +307,7 @@ export const migrations: readonly Migration[] = [
         );
 
         -- What each device played, for Back; append-only, and only the newest plays are kept.
+        -- after is the play each one followed, so Back retraces the order things played.
         CREATE TABLE play_history (
           device_id   TEXT NOT NULL REFERENCES listening_sessions(device_id) ON DELETE CASCADE,
           seq         INTEGER NOT NULL CHECK (seq >= 0),
@@ -312,6 +316,7 @@ export const migrations: readonly Migration[] = [
           upstream_id TEXT NOT NULL,
           chapter     INTEGER CHECK (chapter >= 0),
           played_at   INTEGER NOT NULL,
+          after       INTEGER CHECK (after >= 0),
           PRIMARY KEY (device_id, seq)
         );
       `);

@@ -162,7 +162,7 @@ describe('a listening session in the store', () => {
           context: { from: { kind: 'album', ref: album }, items: [entry(song), entry(song)] },
         },
         spoken: {
-          current: entry(book, 2),
+          current: { ...entry(book, 2), after: 1 },
           position: { ms: 61_000, takenAt: 1500 },
           user: [entry(book, 3), entry(book, 4)],
           context: null,
@@ -170,7 +170,7 @@ describe('a listening session in the store', () => {
       },
       history: [
         { seq: 0, queue: 'music', ref: song, playedAt: 10 },
-        { seq: 1, queue: 'spoken', ref: book, chapter: 1, playedAt: 20 },
+        { seq: 1, queue: 'spoken', ref: book, chapter: 1, playedAt: 20, after: 0 },
       ],
     };
 
@@ -193,7 +193,7 @@ describe('a listening session in the store', () => {
         queueStyle: 'spotify',
         currents: {
           music: { itemId: written.queues.music.current!.itemId, ref: song },
-          spoken: written.queues.spoken.current,
+          spoken: { itemId: written.queues.spoken.current!.itemId, ref: book, chapter: 2 },
         },
         rev: 1,
         updatedAt: 2000,
@@ -312,6 +312,10 @@ describe('a listening session in the store', () => {
     const edited = [played.history[0]!, { ...played.history[1]!, ref: song }];
     expect(() =>
       saveSession(db, user.id, phone.id, played.rev, { ...value(played), history: edited }),
+    ).toThrow(HistoryRewritten);
+    const relinked = [played.history[0]!, { ...played.history[1]!, after: 0 }];
+    expect(() =>
+      saveSession(db, user.id, phone.id, played.rev, { ...value(played), history: relinked }),
     ).toThrow(HistoryRewritten);
 
     const reused: HistoryEntry[] = [
