@@ -18,10 +18,10 @@ const echo = {
 describe('serving a declared route', () => {
   it('answers what the handler returns when it fits the schema', async () => {
     const app = Fastify();
-    serve(app, health, () => ({ status: 'ok' as const, commit: null }));
+    serve(app, health, () => ({ status: 'ok' as const, commit: null, signOn: false }));
     const res = await app.inject({ method: 'GET', url: '/api/health' });
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ status: 'ok', commit: null });
+    expect(res.json()).toEqual({ status: 'ok', commit: null, signOn: false });
     await app.close();
   });
 

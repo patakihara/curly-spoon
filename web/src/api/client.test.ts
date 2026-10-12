@@ -9,11 +9,11 @@ describe('the API client', () => {
     const calls: string[] = [];
     const fetch = async (req: Request) => {
       calls.push(req.url);
-      return new Response(`{"status":"ok","commit":"${COMMIT}"}`, { headers: json });
+      return new Response(`{"status":"ok","commit":"${COMMIT}","signOn":true}`, { headers: json });
     };
     const client = createApiClient({ baseUrl: 'http://auralis.test', fetch });
     const health = await fetchHealth(client);
-    expect(health).toEqual({ status: 'ok', commit: COMMIT });
+    expect(health).toEqual({ status: 'ok', commit: COMMIT, signOn: true });
     expect(calls).toEqual(['http://auralis.test/api/health']);
     expectTypeOf(health.status).toEqualTypeOf<'ok'>();
     expectTypeOf(health.commit).toEqualTypeOf<string | null>();
@@ -27,7 +27,8 @@ describe('the API client', () => {
 
   it.each([
     ['a commit that is not a full commit id', '{"status":"ok","commit":"zz"}'],
-    ['no commit', '{"status":"ok"}'],
+    ['no commit', '{"status":"ok","signOn":true}'],
+    ['no word on a sign-on', `{"status":"ok","commit":"${COMMIT}"}`],
     ['another status', `{"status":"starting","commit":"${COMMIT}"}`],
   ])('refuses a health answer with %s', async (_, body) => {
     const fetch = async () => new Response(body, { headers: json });
@@ -36,8 +37,9 @@ describe('the API client', () => {
   });
 
   it('reads a null commit, from a server not built into an image', async () => {
-    const fetch = async () => new Response('{"status":"ok","commit":null}', { headers: json });
+    const fetch = async () =>
+      new Response('{"status":"ok","commit":null,"signOn":false}', { headers: json });
     const client = createApiClient({ baseUrl: 'http://auralis.test', fetch });
-    expect(await fetchHealth(client)).toEqual({ status: 'ok', commit: null });
+    expect(await fetchHealth(client)).toEqual({ status: 'ok', commit: null, signOn: false });
   });
 });

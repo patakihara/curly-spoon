@@ -1,5 +1,6 @@
 import { parseMediaRefKey } from '@auralis/schema';
 import { useMemo, useSyncExternalStore } from 'react';
+import { useAccess } from '../data/deps';
 import { placeholder, type Loaded } from '../generated/nav/playing';
 import { SKIP_SECONDS } from './media-session';
 import { createPlayerStore, type PlayerState, type PlayerStore } from './store';
@@ -9,9 +10,9 @@ import { createPlayerStore, type PlayerState, type PlayerStore } from './store';
  * in the canvas's shape, with its transport; `usePlay()` hands the handler that starts an item.
  * Both read one player store (`store.ts`). A handler left out draws its control disabled, as a
  * Sonora control with no action does: a book or an episode skips and changes speed, music steps
- * to the previous or next track. While nothing is loaded it still shows the canvas's picture,
- * with no transport, as every page still shows its canvas placeholder (M1.shell, Part 8 gives the
- * pages their data and shows nothing loaded as nothing).
+ * to the previous or next track. While nothing is loaded there is nothing to show, so the shell
+ * draws no player; only on a server nobody can sign in to, whose pages keep their canvas
+ * placeholders, does it show the canvas's picture, with no transport.
  */
 
 /** The queue an item plays on. */
@@ -40,8 +41,8 @@ export interface Playing extends Loaded {
   onSleep?: () => void;
 }
 
-/** Nothing loaded: the canvas's picture, its transport disabled. */
-const IDLE: Playing = { ...placeholder, playing: true, speed: 1 };
+/** Nothing loaded on the canvas: its picture, its transport disabled. */
+const CANVAS: Playing = { ...placeholder, playing: true, speed: 1 };
 
 /** What is played knows no artist page yet: its about card is empty. */
 const NO_ABOUT: Loaded['about'] = { title: '', heading: '', meta: '', image: '', body: '' };
@@ -81,10 +82,13 @@ const transportOf = (store: PlayerStore): Transport => {
   return made;
 };
 
-/** What `state` shows, in the canvas's shape, with the controls its variant has. */
-export function playingOf(state: PlayerState, store: PlayerStore): Playing {
+/**
+ * What `state` shows, in the canvas's shape, with the controls its variant has: nothing while
+ * nothing is loaded, or the canvas's picture where the app draws the canvas.
+ */
+export function playingOf(state: PlayerState, store: PlayerStore, canvas: boolean): Playing | null {
   const { plan } = state;
-  if (plan === null) return IDLE;
+  if (plan === null) return canvas ? CANVAS : null;
   const t = transportOf(store);
   const spoken = plan.meta.variant === 'spoken';
   return {
@@ -127,7 +131,15 @@ export const playerStore = (): PlayerStore => (shared ??= createPlayerStore());
 export function usePlaying(): Playing | null {
   const store = playerStore();
   const state = useSyncExternalStore(store.subscribe, store.getState, store.getState);
-  return useMemo(() => playingOf(state, store), [state, store]);
+  const canvas = useAccess() === 'canvas';
+  return useMemo(() => playingOf(state, store, canvas), [state, store, canvas]);
+}
+
+const playIdOf = () => playerStore().getState().plan?.progressTarget.playId ?? '';
+
+/** The id of the play loaded, '' while none is: it changes with each item played. */
+export function usePlayId(): string {
+  return useSyncExternalStore(playerStore().subscribe, playIdOf, playIdOf);
 }
 
 /** The player's Play. */

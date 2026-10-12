@@ -1,15 +1,16 @@
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
-import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router';
+import { createMemoryRouter, RouterProvider } from 'react-router';
 import { describe, expect, it } from 'vitest';
-import { routes } from './generated/nav/routes';
-import { signInData, withSignInData } from './sign-in';
+import { routes } from '../generated/nav/routes';
+import { withPageData } from '.';
+import { signInData } from './sign-in';
 
 const NOT_HOUSEHOLD = /one of the household/;
 
 /** The app at `url`, rendered as the router would draw it there. */
 function renderAt(url: string) {
-  const router = createMemoryRouter(withSignInData(routes), { initialEntries: [url] });
+  const router = createMemoryRouter(withPageData(routes), { initialEntries: [url] });
   return renderToString(createElement(RouterProvider, { router }));
 }
 
@@ -40,16 +41,5 @@ describe('[M0.sso/d] the sign-in page’s data', () => {
       'Sign in with your household account',
     );
     expect(renderAt('/sign-in?error=not_household')).toMatch(NOT_HOUSEHOLD);
-  });
-
-  it('leaves every other route as generated', () => {
-    const pages = (table: RouteObject[]) => table.flatMap((r) => r.children ?? []);
-    const given = withSignInData(routes);
-    expect(given.map((r) => r.id)).toEqual(routes.map((r) => r.id));
-    expect(pages(given).map((r) => r.path)).toEqual(pages(routes).map((r) => r.path));
-    for (const [i, route] of pages(routes).entries()) {
-      if (route.id !== 'signIn') expect(pages(given)[i]).toBe(route);
-      else expect(pages(given)[i]!.handle).toBe(route.handle);
-    }
   });
 });

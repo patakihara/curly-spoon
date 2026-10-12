@@ -14,6 +14,8 @@ export interface Recorded {
   multiFile: { source: string; id: string };
   /** The show the podcasts list holds, whose recorded episode plays. */
   show: { source: string; id: string };
+  /** That show's episode that plays. */
+  episode: { source: string; id: string };
   /** The album the music list holds, which plays. */
   album: { source: string; id: string };
   stop(): void;
@@ -58,6 +60,7 @@ export async function serveRecorded(): Promise<Recorded> {
     origin: line('app'),
     multiFile: ref('four files'),
     show: ref('show'),
+    episode: ref('episode'),
     album: ref('album'),
     stop: () => void child.kill('SIGTERM'),
   };

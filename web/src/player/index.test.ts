@@ -58,16 +58,26 @@ const handlers = (p: object) =>
     .sort();
 
 describe('[M1.shell] what the player shows', () => {
-  it('[M1.shell] shows the canvas’s picture with every control disabled while nothing is loaded', () => {
+  it('[M1.shell] shows nothing while nothing is loaded', () => {
     const { store } = fakeStore(IDLE);
-    const shown = playingOf(IDLE, store);
+    expect(playingOf(IDLE, store, false)).toBeNull();
+  });
+
+  it('[M1.shell] shows the canvas’s picture, every control disabled, on a server nobody can sign in to', () => {
+    const { store } = fakeStore(IDLE);
+    const shown = playingOf(IDLE, store, true)!;
     expect(shown.title).toBe(placeholder.title);
     expect(handlers(shown)).toEqual([]);
   });
 
+  it('[M1.shell] shows what is loaded, on the canvas too', () => {
+    const { store } = fakeStore(loaded('spoken'));
+    expect(playingOf(loaded('spoken'), store, true)!.title).toBe('The Salt Road');
+  });
+
   it('[M1.shell] names a book or episode by its plan, where it is, its speed and its sleep timer', () => {
     const { store } = fakeStore(loaded('spoken', '/api/media/abs:b/art'));
-    const shown = playingOf(loaded('spoken', '/api/media/abs:b/art'), store);
+    const shown = playingOf(loaded('spoken', '/api/media/abs:b/art'), store, false)!;
     expect(shown).toMatchObject({
       title: 'The Salt Road',
       artist: '',
@@ -83,12 +93,12 @@ describe('[M1.shell] what the player shows', () => {
 
   it('[M1.shell] shows no art where its plan has none', () => {
     const { store } = fakeStore(loaded('music'));
-    expect(playingOf(loaded('music'), store).image).toBe('');
+    expect(playingOf(loaded('music'), store, false)!.image).toBe('');
   });
 
   it('[M1.shell] gives a book or episode play, seek, skip, speed and sleep, and music previous and next instead', () => {
     const { store } = fakeStore(loaded('spoken'));
-    expect(handlers(playingOf(loaded('spoken'), store))).toEqual([
+    expect(handlers(playingOf(loaded('spoken'), store, false)!)).toEqual([
       'onSeek',
       'onSkipBack',
       'onSkipForward',
@@ -96,7 +106,7 @@ describe('[M1.shell] what the player shows', () => {
       'onSpeed',
       'onTogglePlay',
     ]);
-    expect(handlers(playingOf(loaded('music'), store))).toEqual([
+    expect(handlers(playingOf(loaded('music'), store, false)!)).toEqual([
       'onNext',
       'onPrev',
       'onSeek',
@@ -107,14 +117,14 @@ describe('[M1.shell] what the player shows', () => {
 
   it('[M1.shell] drives the store with each control', () => {
     const { store, calls } = fakeStore(loaded('spoken'));
-    const spoken = playingOf(loaded('spoken'), store);
+    const spoken = playingOf(loaded('spoken'), store, false)!;
     spoken.onTogglePlay!();
     spoken.onSkipBack!();
     spoken.onSkipForward!();
     spoken.onSeek!(0.5);
     spoken.onSpeed!();
     spoken.onSleep!();
-    const music = playingOf(loaded('music'), store);
+    const music = playingOf(loaded('music'), store, false)!;
     music.onPrev!();
     music.onNext!();
     expect(calls).toEqual([
@@ -131,8 +141,8 @@ describe('[M1.shell] what the player shows', () => {
 
   it('[M1.shell] keeps the same handlers from one change to the next', () => {
     const { store } = fakeStore(loaded('spoken'));
-    expect(playingOf(loaded('spoken'), store).onSeek).toBe(
-      playingOf({ ...loaded('spoken'), position: 300 }, store).onSeek,
+    expect(playingOf(loaded('spoken'), store, false)!.onSeek).toBe(
+      playingOf({ ...loaded('spoken'), position: 300 }, store, false)!.onSeek,
     );
   });
 });

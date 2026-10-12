@@ -1,5 +1,5 @@
-import { type RouteObject, useSearchParams } from 'react-router';
-import SignIn, { type SignInData } from './generated/pages/SignIn';
+import { useSearchParams } from 'react-router';
+import SignIn, { type SignInData } from '../generated/pages/SignIn';
 
 /**
  * The data behind the sign-in page. The server sends a signed-out visitor here with `return_to`,
@@ -21,21 +21,8 @@ export function signInData(query: URLSearchParams): SignInData {
   return { errors: [{ message: MESSAGES[error] ?? DID_NOT_FINISH }] };
 }
 
-function SignInScreen() {
+/** The sign-in page, given its data from the address. */
+export function SignInScreen() {
   const [query] = useSearchParams();
   return <SignIn data={signInData(query)} />;
-}
-
-/** The generated routes, the sign-in page inside the shell given its data from the address. */
-export function withSignInData(routes: RouteObject[]): RouteObject[] {
-  return routes.map((route) =>
-    route.children === undefined
-      ? route
-      : {
-          ...route,
-          children: route.children.map((child) =>
-            child.id === 'signIn' ? { ...child, element: <SignInScreen /> } : child,
-          ),
-        },
-  );
 }

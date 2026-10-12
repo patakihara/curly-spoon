@@ -161,6 +161,7 @@ export const routes: RouteObject[] = [
   {
     id: 'shell',
     element: <Shell />,
+    handle: { tabs: { now: NowPlaying, queue: Queue, lyrics: Lyrics } },
     children: [
       { id: 'browse', path: '/', element: <Browse />, handle: { frame: BrowseFrame } },
       { id: 'requests', path: '/requests', element: <Requests />, handle: { frame: RequestsFrame } },

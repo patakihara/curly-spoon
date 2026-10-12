@@ -114,6 +114,7 @@ data class ErrorResponse(
 data class HealthResponse(
     val status: HealthResponseStatus,
     val commit: String?,
+    val signOn: Boolean,
 )
 
 @Serializable

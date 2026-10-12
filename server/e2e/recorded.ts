@@ -84,6 +84,8 @@ export interface RecordedServer {
   music: MediaRef;
   /** The recorded show the podcasts list holds, whose recorded episode plays. */
   show: MediaRef;
+  /** That show's episode that plays. */
+  episode: MediaRef;
   /** The recorded album the music list holds, which plays. */
   album: MediaRef;
   listen(): Promise<void>;
@@ -418,7 +420,9 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
   const itemId = call(abs, 'item-play').request.path.split('/')[3] ?? '';
   const multiId = call(abs, 'multi-play').request.path.split('/')[3] ?? '';
   const trackId = call(jellyfin, 'jf-track').request.path.split('/')[2] ?? '';
-  const showId = call(abs, 'episode-play').request.path.split('/')[3] ?? '';
+  const [showId = '', episodeId = ''] = call(abs, 'episode-play')
+    .request.path.split('/')
+    .filter((_, i) => i === 3 || i === 5);
   const albumId = call(jellyfin, 'jf-album').request.path.split('/')[2] ?? '';
   const signOnHttp = signOnListener(signOn.authorize, signOnOrigin);
 
@@ -431,6 +435,7 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     multiFile: { source: 'abs', id: multiId },
     music: { source: 'jellyfin', id: trackId },
     show: { source: 'abs', id: showId },
+    episode: { source: 'abs', id: episodeId },
     album: { source: 'jellyfin', id: albumId },
     async listen() {
       await new Promise<void>((resolve, reject) => {

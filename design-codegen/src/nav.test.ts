@@ -311,7 +311,9 @@ describe('the web route table', () => {
 
   it('[M0.canvas/c] holds every page route as a child of the one shell, so the shell stays mounted between pages', () => {
     expect(out).toContain("import { Player, Shell } from './Shell';");
-    expect(out).toContain("  {\n    id: 'shell',\n    element: <Shell />,\n    children: [\n");
+    expect(out).toContain(
+      "  {\n    id: 'shell',\n    element: <Shell />,\n    handle: { tabs: { queue: Queue } },\n    children: [\n",
+    );
     const children = out.slice(out.indexOf('children: ['));
     for (const id of ['music', 'album', 'search', 'queue']) {
       expect(children).toContain(`{ id: '${id}', path: `);
@@ -341,6 +343,10 @@ describe('the web route table', () => {
     );
     expect(out.match(/<Player \/>/g)).toHaveLength(1);
     expect(out).not.toMatch(/^ {6}\{ id: 'queue'/m);
+  });
+
+  it("[M1.shell] hands the shell each player tab's page on its own route, where the app can give the page its data", () => {
+    expect(out).toContain('    handle: { tabs: { queue: Queue } },');
   });
 
   it('leaves out Android-only pages', () => {
@@ -405,11 +411,11 @@ describe('the one web shell', () => {
   });
 
   it("[M0.canvas/c] draws the player panel through the same Player, at the tab held or the layout's own Now Playing, beside the page, which stays", () => {
-    expect(out).toContain("import NowPlayingTab from '../pages/NowPlaying';");
-    expect(out).toContain("import QueueTab from '../pages/Queue';");
-    expect(out).toContain(
-      'const PANEL_TABS: Record<string, ComponentType> = { now: NowPlayingTab, queue: QueueTab };',
-    );
+    // Each tab's page comes from the shell's own route, where the app gives it its data.
+    expect(out).not.toContain("from '../pages/");
+    expect(out).toContain('export interface ShellTabs {');
+    expect(out).toContain('  const { tabs } = useMatches()[0]!.handle as ShellTabs;');
+    expect(out).toContain('  const Content = tab === undefined ? undefined : tabs[tab];');
     expect(out).toContain(
       "  const tab = playing === null || platform !== 'desktop' ? undefined : over !== undefined ? TABS[match?.id ?? ''] : (go.panel() ?? (chrome.sheetOpen ? 'now' : undefined));",
     );

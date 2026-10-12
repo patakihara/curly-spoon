@@ -512,6 +512,7 @@ export interface components {
             /** @enum {string} */
             status: "ok";
             commit: string | null;
+            signOn: boolean;
         };
         SetupStatus: {
             configured: boolean;

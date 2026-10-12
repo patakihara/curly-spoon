@@ -3,6 +3,9 @@ import { createElement, type ComponentType } from 'react';
 import { renderToString } from 'react-dom/server';
 import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createApiClient } from './api/client';
+import { PageDepsContext, type PageDeps } from './data/deps';
+import { createPageStore } from './data/store';
 import { GivenLayout, type LayoutId } from './generated/nav/platform';
 import { pages as table, routes } from './generated/nav/routes';
 
@@ -14,6 +17,18 @@ const LAYOUTS = (
   }
 ).layouts.map((l) => `w${l.minWidth}` as LayoutId);
 const pages = readdirSync(dir).filter((file) => file.endsWith('.tsx'));
+
+/** The canvas: what a server nobody can sign in to draws, every page and the player at its placeholder. */
+const CANVAS: PageDeps = {
+  api: createApiClient({ fetch: () => Promise.reject(new Error('no network in unit tests')) }),
+  access: {
+    subscribe: () => () => undefined,
+    getState: () => 'canvas',
+    refused: () => undefined,
+    signIn: () => undefined,
+  },
+  pages: createPageStore({ onSignedOut: () => undefined }),
+};
 
 describe('every drawn canvas page', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -36,9 +51,13 @@ describe('every drawn canvas page', () => {
         // A page opens others through the router, as it does in the app.
         const html = renderToString(
           createElement(
-            GivenLayout.Provider,
-            { value: layout },
-            createElement(MemoryRouter, null, createElement(page)),
+            PageDepsContext.Provider,
+            { value: CANVAS },
+            createElement(
+              GivenLayout.Provider,
+              { value: layout },
+              createElement(MemoryRouter, null, createElement(page)),
+            ),
           ),
         );
         expect(html.length).toBeGreaterThan(0);
@@ -66,9 +85,13 @@ describe('the shell around each drawn page', () => {
     const router = createMemoryRouter(routes, { initialEntries: [at] });
     return renderToString(
       createElement(
-        GivenLayout.Provider,
-        { value: layout },
-        createElement(RouterProvider, { router }),
+        PageDepsContext.Provider,
+        { value: CANVAS },
+        createElement(
+          GivenLayout.Provider,
+          { value: layout },
+          createElement(RouterProvider, { router }),
+        ),
       ),
     );
   };

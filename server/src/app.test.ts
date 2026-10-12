@@ -14,14 +14,14 @@ describe('GET /api/health', () => {
     const app = await buildApp({ webDistDir: null, db: openDatabase(':memory:') });
     const res = await app.inject({ method: 'GET', url: '/api/health' });
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ status: 'ok', commit: null });
+    expect(res.json()).toEqual({ status: 'ok', commit: null, signOn: false });
     await app.close();
   });
 
   it('reports the commit the server was built from', async () => {
     const app = await buildApp({ webDistDir: null, db: openDatabase(':memory:'), commit: COMMIT });
     const res = await app.inject({ method: 'GET', url: '/api/health' });
-    expect(res.json()).toEqual({ status: 'ok', commit: COMMIT });
+    expect(res.json()).toEqual({ status: 'ok', commit: COMMIT, signOn: false });
     await app.close();
   });
 
@@ -33,7 +33,7 @@ describe('GET /api/health', () => {
       url: `/api/health?commit=${other}`,
       headers: { 'x-auralis-commit': other, 'x-commit': other, commit: other },
     });
-    expect(res.json()).toEqual({ status: 'ok', commit: COMMIT });
+    expect(res.json()).toEqual({ status: 'ok', commit: COMMIT, signOn: false });
     await app.close();
   });
 });

@@ -83,7 +83,7 @@ Your rule: Sonora artifact, then canvas artifact, then code, ported mechanically
    - each page's screenshot on both platforms is compared against the design's render of that page;
    - the "Published artifacts are current" job, and the Stop hook, fail while `design/sonora`, `design/app` and its art, or the code building either, differs from its recorded publish, has no record, or the canvas installs a Sonora other than the published one;
    - the `auralis/no-hand-ui` lint refuses HTML elements, `style` and `className` in `web/src` outside `generated/`, and a test refuses `@Composable` functions outside Android's `generated` and `ui/sonora` packages, each with a documented allowlist. The minimal shell's hand-written data code supplies data only and stays within this lint.
-6. **The frontend build starts with navigation.** First, both apps navigate the full generated map with placeholder data, compared against the design and each other (M0.canvas), before any screen, the minimal shell's included, gets real content.
+6. **The frontend build starts with navigation.** First, both apps navigate the full generated map with placeholder data, compared against the design (M0.canvas), before any screen gets real content; without a household sign-on (`/api/health` says), placeholders stay.
 
 - **Mantine** is optional, only inside a component needing a behaviour primitive (menus, focus traps), never as the visual layer.
 - **The app frame** is Sonora's backdrop shell (per `SPEC-backdrop.md`), a real Material 2 backdrop as Sonora Prime, the last mockups before the rebuild, draws it.

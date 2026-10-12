@@ -15,16 +15,17 @@ class HealthResponseTest {
         val health =
             ApiJson.decodeFromString(
                 HealthResponse.serializer(),
-                """{"status":"ok","commit":"$commit"}""",
+                """{"status":"ok","commit":"$commit","signOn":true}""",
             )
         assertEquals(HealthResponseStatus.OK, health.status)
         assertEquals(commit, health.commit)
+        assertEquals(true, health.signOn)
     }
 
     @Test
     fun `reads a server built from no commit`() {
         val health =
-            ApiJson.decodeFromString(HealthResponse.serializer(), """{"status":"ok","commit":null}""")
+            ApiJson.decodeFromString(HealthResponse.serializer(), """{"status":"ok","commit":null,"signOn":false}""")
         assertNull(health.commit)
     }
 
@@ -33,7 +34,7 @@ class HealthResponseTest {
         val health =
             ApiJson.decodeFromString(
                 HealthResponse.serializer(),
-                """{"status":"ok","commit":null,"uptime":3}""",
+                """{"status":"ok","commit":null,"signOn":true,"uptime":3}""",
             )
         assertEquals(HealthResponseStatus.OK, health.status)
     }

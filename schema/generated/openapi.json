@@ -239,11 +239,15 @@
               "null"
             ],
             "pattern": "^[0-9a-f]{40}$"
+          },
+          "signOn": {
+            "type": "boolean"
           }
         },
         "required": [
           "status",
-          "commit"
+          "commit",
+          "signOn"
         ]
       },
       "SetupStatus": {
