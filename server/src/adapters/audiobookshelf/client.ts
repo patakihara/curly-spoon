@@ -4,7 +4,14 @@
  * fetch })`.
  */
 import { AdapterError, type FetchLike, requestJson, type RequestInitJson } from '../http/fetch.js';
-import { type FileHeaders, fileHeadersSchema, openStream, type UpstreamFile } from '../stream.js';
+import {
+  type FileHeaders,
+  fileHeadersSchema,
+  type ImageHeaders,
+  imageHeadersSchema,
+  openStream,
+  type UpstreamFile,
+} from '../stream.js';
 import { type ZodType, type z } from 'zod';
 import {
   type AbsBookmark,
@@ -252,6 +259,13 @@ export class AbsClient {
   openHlsSegment(sessionId: string, file: string, range?: string): Promise<UpstreamFile> {
     const path = `hls/${encodeURIComponent(sessionId)}/${encodeURIComponent(file)}`;
     return this.openStream(path, range, hlsSegmentHeadersSchema);
+  }
+
+  /** An item's cover image, as ABS serves it to its own apps (WebP, recorded). */
+  openCover(itemId: string): Promise<UpstreamFile<ImageHeaders>> {
+    const path = `api/items/${encodeURIComponent(itemId)}/cover`;
+    const headers = { authorization: `Bearer ${this.opts.token}` };
+    return openStream(this.opts.fetch, this.url(path), headers, undefined, imageHeadersSchema);
   }
 
   /** Opens audio bytes with this person's key, passing `range` through. */

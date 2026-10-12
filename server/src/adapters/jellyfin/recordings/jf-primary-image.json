@@ -1,0 +1,24 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "jf-primary-image",
+  "request": {
+    "method": "GET",
+    "path": "/Items/65de8562c54b89ceef199f91bacd8709/Images/Primary",
+    "query": {},
+    "headers": {
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis\", DeviceId=\"auralis-recorder\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "image/jpeg"
+    },
+    "body": {
+      "bytes": "primary.jpg",
+      "synthesized": "A 64 x 64 px mid-grey square, baseline JPEG, made by scripts/fixtures/still.sh. Status and headers are the real answer; the body is not."
+    }
+  }
+}

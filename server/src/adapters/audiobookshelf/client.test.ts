@@ -302,6 +302,30 @@ describe('the Audiobookshelf client', () => {
     expect(failure.status).toBe(416);
   });
 
+  it("an item's cover opens as an image stream with the key, and anything else is refused", async () => {
+    const sent: { url: string; authorization: string | null }[] = [];
+    let type = 'image/webp';
+    const fetch: FetchLike = async (url, init) => {
+      sent.push({ url, authorization: new Headers(init?.headers).get('authorization') });
+      return new Response(new Uint8Array([0x52, 0x49]), {
+        status: 200,
+        headers: { 'content-type': type },
+      });
+    };
+    const abs = new AbsClient({ baseUrl: 'http://upstream.invalid', token: 'the-key', fetch });
+    const cover = await abs.openCover('li_1');
+    expect(sent[0]).toEqual({
+      url: 'http://upstream.invalid/api/items/li_1/cover',
+      authorization: 'Bearer the-key',
+    });
+    expect(cover.headers).toEqual({ 'content-type': 'image/webp' });
+    await cover.body.cancel();
+    type = 'application/json';
+    const failure = (await abs.openCover('li_1').catch((e: unknown) => e)) as AdapterError;
+    expect(failure.kind).toBe('parse');
+    expect(failure.message).toContain('GET /api/items/li_1/cover');
+  });
+
   it("a direct-play track's content URL names its item and file, and nothing else does", () => {
     expect(contentUrlParts('/api/items/li_1/file/45152')).toEqual({ itemId: 'li_1', ino: '45152' });
     expect(contentUrlParts('/hls/play_1/output.m3u8')).toBeNull();
