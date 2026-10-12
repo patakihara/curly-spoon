@@ -412,7 +412,7 @@ export default function Album({ data = placeholder, state = 'full' }: AlbumProps
         <MediaHeader
           kindLabel={data.kind}
           subtitle={data.artist}
-          onSubtitle={() => navigate(generatePath('/music/artists/:ref', { ref: data.artistRef }))}
+          onSubtitle={data.artistRef ? () => navigate(generatePath('/music/artists/:ref', { ref: data.artistRef })) : undefined}
           meta={data.meta}
           image={data.image}
           onPlay={play(data.ref, 'music', 'now')}
@@ -444,7 +444,7 @@ export default function Album({ data = placeholder, state = 'full' }: AlbumProps
         <Shelf platform={platform}>
           {data.more.items.map((album, i) => (
             <Fragment key={i}>
-              <MediaCard title={album.title} sub={album.sub} image={album.image} onClick={() => navigate(generatePath('/music/albums/:ref', { ref: album.ref }))} platform={platform} />
+              <MediaCard title={album.title} sub={album.sub} image={album.image} onClick={album.ref ? () => navigate(generatePath('/music/albums/:ref', { ref: album.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </Shelf>

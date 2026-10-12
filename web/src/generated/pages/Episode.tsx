@@ -285,7 +285,7 @@ export default function Episode({ data = placeholder, state = 'full' }: EpisodeP
         <MediaHeader
           kindLabel={data.kind}
           subtitle={data.show}
-          onSubtitle={() => navigate(generatePath('/podcasts/:ref', { ref: data.showRef }))}
+          onSubtitle={data.showRef ? () => navigate(generatePath('/podcasts/:ref', { ref: data.showRef })) : undefined}
           meta={data.meta}
           progress={data.progress}
           image={data.image}
@@ -306,7 +306,7 @@ export default function Episode({ data = placeholder, state = 'full' }: EpisodeP
       <Section title="More from the show" last={true} platform={platform}>
         {data.more.map((other, i) => (
           <Fragment key={i}>
-            <EpisodeRow title={other.title} description={other.description} meta={other.meta} image={other.image} progress={other.progress} finished={other.finished} onClick={() => navigate(generatePath('/podcasts/episodes/:ref', { ref: other.ref }))} onPlay={play(other.ref, 'spoken', 'now')} divider={true} platform={platform} />
+            <EpisodeRow title={other.title} description={other.description} meta={other.meta} image={other.image} progress={other.progress} finished={other.finished} onClick={other.ref ? () => navigate(generatePath('/podcasts/episodes/:ref', { ref: other.ref })) : undefined} onPlay={play(other.ref, 'spoken', 'now')} divider={true} platform={platform} />
           </Fragment>
         ))}
       </Section>

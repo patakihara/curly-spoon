@@ -375,7 +375,7 @@ export default function List({ data = placeholder, state = 'full' }: ListProps) 
         <Shelf platform={platform}>
           {data.shows.map((show, i) => (
             <Fragment key={i}>
-              <MediaCard size="sm" title={show.title} sub={show.sub} image={show.image} onClick={() => navigate(generatePath('/podcasts/:ref', { ref: show.ref }))} platform={platform} />
+              <MediaCard size="sm" title={show.title} sub={show.sub} image={show.image} onClick={show.ref ? () => navigate(generatePath('/podcasts/:ref', { ref: show.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </Shelf>
@@ -384,7 +384,7 @@ export default function List({ data = placeholder, state = 'full' }: ListProps) 
         <SortFilterBar icon="swap_vert" label={data.order} platform={platform} />
         {data.items.map((item, i) => (
           <Fragment key={i}>
-            <EpisodeRow title={item.title} description={item.description} meta={item.meta} image={item.image} progress={item.progress} onClick={() => navigate(generatePath('/podcasts/episodes/:ref', { ref: item.ref }))} onPlay={play(item.ref, 'spoken', 'now')} divider={true} platform={platform} />
+            <EpisodeRow title={item.title} description={item.description} meta={item.meta} image={item.image} progress={item.progress} onClick={item.ref ? () => navigate(generatePath('/podcasts/episodes/:ref', { ref: item.ref })) : undefined} onPlay={play(item.ref, 'spoken', 'now')} divider={true} platform={platform} />
           </Fragment>
         ))}
       </Section>

@@ -323,7 +323,7 @@ export default function ShelfReview({ data = placeholder, state = 'full' }: Shel
     <PageBody width="list" platform={platform}>
       {data.shelves.map((shelf, i) => (
         <Fragment key={i}>
-          <Section eyebrow={shelf.eyebrow} title={shelf.subject} image={shelf.image} round={shelf.round} actionText="Open" onAction={() => navigate(generatePath('/shelves/:id', { id: shelf.id }))} platform={platform}>
+          <Section eyebrow={shelf.eyebrow} title={shelf.subject} image={shelf.image} round={shelf.round} actionText="Open" onAction={shelf.id ? () => navigate(generatePath('/shelves/:id', { id: shelf.id })) : undefined} platform={platform}>
             {shelf.items.map((item, i) => (
               <Fragment key={i}>
                 <ResultRow title={item.title} meta={item.meta} detail={item.reason} image={item.image} status={item.status} tone={item.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>} divider={true} platform={platform} />

@@ -323,7 +323,7 @@ export default function Books({ data = placeholder, state = 'full' }: BooksProps
         <LayoutGrid platform={platform}>
           {data.library.map((book, i) => (
             <Fragment key={i}>
-              <MediaCard width="100%" title={book.title} sub={book.sub} image={book.image} progress={book.progress} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} platform={platform} />
+              <MediaCard width="100%" title={book.title} sub={book.sub} image={book.image} progress={book.progress} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={book.ref ? () => navigate(generatePath('/books/:ref', { ref: book.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </LayoutGrid>

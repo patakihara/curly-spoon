@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 import { type ApiClient, createApiClient } from '../api/client';
-import { type Access, type AccessStore, createAccess, useAccessOf } from './access';
+import { type AccessStore, createAccess } from './access';
 import { createPageStore, type PageStore } from './store';
 
 /** What the pages' data is read through: the API, who the app is drawn for, the kept data. */
@@ -26,8 +26,3 @@ const appDeps = (): PageDeps => {
 export const PageDepsContext = createContext<PageDeps | null>(null);
 
 export const useDeps = (): PageDeps => useContext(PageDepsContext) ?? appDeps();
-
-/** Who the app is drawn for. */
-export function useAccess(): Access {
-  return useAccessOf(useDeps().access);
-}

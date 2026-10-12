@@ -1,8 +1,9 @@
 import { type Availability, type LibraryList, mediaRefKey } from '@auralis/schema';
 import { type BooksData } from '../generated/pages/Books';
+import { type BrowseData } from '../generated/pages/Browse';
 import { type MusicData } from '../generated/pages/Music';
 import { type PodcastsData } from '../generated/pages/Podcasts';
-import { artAt } from './format';
+import { artAt, emptied } from './format';
 
 /**
  * The library homes' data from `GET /api/library/{medium}`: each book, show or album as the
@@ -82,5 +83,35 @@ export function musicData(list: LibraryList, page: MusicData): MusicData {
           ...statusOf(album.availability),
         }) as AlbumCard,
     ),
+  };
+}
+
+/** What each kind of card is called in Browse's shelf, and the page it opens. */
+const KINDS = {
+  book: { label: 'Book', page: 'book' },
+  show: { label: 'Podcast', page: 'show' },
+  album: { label: 'Album', page: 'album' },
+} as const;
+
+/**
+ * Browse, the home page, from the three library lists: its first shelf holds what you are part
+ * way through (a book, show or album with progress between 0 and 1), each opening its own page.
+ * Nothing else is served before M2.sorting, so every other shelf, the feature and the shelves'
+ * ids stay empty, and only the first shelf is named in the page's section bar.
+ */
+export function browseData(lists: LibraryList[], page: BrowseData): BrowseData {
+  const begun = lists
+    .flatMap((list) => list.items)
+    .filter((item) => item.progress !== null && item.progress > 0 && item.progress < 1);
+  return {
+    ...emptied(page),
+    sections: page.sections.slice(0, 1),
+    jumpBackIn: begun.map((item) => ({
+      title: item.title,
+      page: KINDS[item.kind].page,
+      ref: mediaRefKey(item.ref),
+      sub: [KINDS[item.kind].label, item.sub].filter((part) => part !== null).join(' · '),
+      image: artAt(item.art, 'medium'),
+    })),
   };
 }

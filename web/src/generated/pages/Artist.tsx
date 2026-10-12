@@ -427,7 +427,7 @@ export default function Artist({ data = placeholder, state = 'full' }: ArtistPro
         <Shelf platform={platform}>
           {data.library.map((item, i) => (
             <Fragment key={i}>
-              <MediaCard title={item.title} sub={item.sub} image={item.image} onClick={() => navigate(generatePath('/music/albums/:ref', { ref: item.ref }))} platform={platform} />
+              <MediaCard title={item.title} sub={item.sub} image={item.image} onClick={item.ref ? () => navigate(generatePath('/music/albums/:ref', { ref: item.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </Shelf>
@@ -438,7 +438,7 @@ export default function Artist({ data = placeholder, state = 'full' }: ArtistPro
             <Shelf platform={platform}>
               {group.items.map((release, i) => (
                 <Fragment key={i}>
-                  <MediaCard title={release.title} sub={release.sub} image={release.image} size={group.size as Exclude<ComponentProps<typeof MediaCard>['size'], undefined>} absent={release.absent} status={release.status} tone={release.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/music/albums/:ref', { ref: release.ref }))} platform={platform} />
+                  <MediaCard title={release.title} sub={release.sub} image={release.image} size={group.size as Exclude<ComponentProps<typeof MediaCard>['size'], undefined>} absent={release.absent} status={release.status} tone={release.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={release.ref ? () => navigate(generatePath('/music/albums/:ref', { ref: release.ref })) : undefined} platform={platform} />
                 </Fragment>
               ))}
             </Shelf>
@@ -463,7 +463,7 @@ export default function Artist({ data = placeholder, state = 'full' }: ArtistPro
         <Shelf platform={platform}>
           {data.similar.map((artist, i) => (
             <Fragment key={i}>
-              <ArtistCard title={artist.title} sub={artist.sub} image={artist.image} onClick={() => navigate(generatePath('/music/artists/:ref', { ref: artist.ref }))} platform={platform} />
+              <ArtistCard title={artist.title} sub={artist.sub} image={artist.image} onClick={artist.ref ? () => navigate(generatePath('/music/artists/:ref', { ref: artist.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </Shelf>

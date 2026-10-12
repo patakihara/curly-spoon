@@ -58,6 +58,25 @@ describe('[M1.shell] the system’s media controls', () => {
     });
   });
 
+  it('[M1.shell] names a song by its own title and artists, its album as the album', () => {
+    const { session, transport, controls } = rig();
+    const album = { title: 'Rumours', sub: 'Fleetwood Mac', art: null, variant: 'music' as const };
+    const track = {
+      url: '/api/media/jellyfin:t/tracks/0',
+      mime: 'audio/flac',
+      duration: 200,
+      offset: 0,
+    };
+    controls.show(album, transport, { ...track, title: 'Dreams' });
+    expect(session.metadata).toEqual({
+      made: { title: 'Dreams', artist: 'Fleetwood Mac', album: 'Rumours', artwork: [] },
+    });
+    controls.show(album, transport, { ...track, title: 'Songbird', sub: 'Christine McVie' });
+    expect(session.metadata).toEqual({
+      made: { title: 'Songbird', artist: 'Christine McVie', album: 'Rumours', artwork: [] },
+    });
+  });
+
   it('[M1.shell] names a play with no art and no artist with neither', () => {
     const { session, transport, controls } = rig();
     controls.show(song, transport);

@@ -41,7 +41,7 @@ describe('Album', () => {
     });
     const web = readFileSync(join(REPO_ROOT, 'web/src/generated/pages/Album.tsx'), 'utf8');
     expect(web).toContain(
-      "onSubtitle={() => navigate(generatePath('/music/artists/:ref', { ref: data.artistRef }))}",
+      "onSubtitle={data.artistRef ? () => navigate(generatePath('/music/artists/:ref', { ref: data.artistRef })) : undefined}",
     );
   });
 

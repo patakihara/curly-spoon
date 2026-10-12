@@ -1,11 +1,19 @@
 import { expect, test, type Page } from '@playwright/test';
 import { type Recorded, serveRecorded } from './recorded';
+import {
+  advances,
+  audios,
+  keyOf,
+  playedTo,
+  signIn as signInAt,
+  titleIn as titleAt,
+} from './shell-steps';
 
 /**
  * The minimal web shell on the server with recorded upstreams (M1.shell): sign in, open the
  * Books, Podcasts and Music lists, open an item's page and start it playing; Now Playing and the
- * queue page; speed, the sleep timer and the system's media controls. The recordings' four-file
- * book is timed by 5 s stand-in tones, a chapter to a file. What each list and page shows is read
+ * queue page; speed, the sleep timer and the system's media controls; an episode's own page, and
+ * an author or artist with no page drawn as plain text. The recordings' four-file book is timed by 5 s stand-in tones, a chapter to a file. What each list and page shows is read
  * from the server's own answers, never written here.
  */
 
@@ -18,40 +26,22 @@ test.beforeAll(async () => {
 });
 test.afterAll(() => recorded?.stop());
 
-const keyOf = (ref: { source: string; id: string }) => `${ref.source}:${ref.id}`;
+/** Signs in from the page `path`, landing back on it. */
+const signIn = (page: Page, path: string) => signInAt(page, recorded.origin, path);
+
+/** The title the server gives `ref` in `medium`'s list. */
+const titleIn = (page: Page, medium: string, ref: { source: string; id: string }) =>
+  titleAt(page, recorded.origin, medium, ref);
 
 /** The address of `ref`'s page under `path`, its ref's colon written as it is or escaped. */
 const pageOf = (path: string, ref: { source: string; id: string }) =>
   new RegExp(`${path}${ref.source}(?::|%3A)${ref.id}$`);
 
-/** Spies on the system's media controls: each action given a handler, by name. */
-const spyOnMediaSession = () => {
-  const handled = new Set<string>();
-  (window as unknown as { handled: Set<string> }).handled = handled;
-  const set = MediaSession.prototype.setActionHandler;
-  MediaSession.prototype.setActionHandler = function (action, handler) {
-    if (handler === null) handled.delete(action);
-    else handled.add(action);
-    return set.call(this, action, handler);
-  };
-};
-
-/** Signs in through the household sign-on, from the page `path`, landing back on it. */
-async function signIn(page: Page, path: string) {
-  await page.addInitScript(spyOnMediaSession);
-  await page.goto(`${recorded.origin}${path}`);
-  await expect(page).toHaveURL(/\/sign-in\?/);
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await expect(page).toHaveURL(`${recorded.origin}${path}`);
-}
-
-/** The title the server gives `ref` in `medium`'s list. */
-async function titleIn(page: Page, medium: string, ref: { source: string; id: string }) {
-  const listed = await page.request.get(`${recorded.origin}/api/library/${medium}`);
-  const { items } = (await listed.json()) as {
-    items: { ref: { source: string; id: string }; title: string }[];
-  };
-  return items.find((i) => keyOf(i.ref) === keyOf(ref))!.title;
+/** The album's songs, in order, by the titles the server gives them. */
+async function songsOf(page: Page) {
+  const album = await page.request.get(`${recorded.origin}/api/items/${keyOf(recorded.album)}`);
+  const { tracks } = (await album.json()) as { tracks: { title: string }[] };
+  return tracks.map((t) => t.title);
 }
 
 /** The title the server gives the show's playing episode. */
@@ -66,28 +56,6 @@ async function episodeTitle(page: Page) {
 /** What the system's media controls say plays. */
 const titlePlaying = (page: Page) =>
   page.evaluate(() => navigator.mediaSession.metadata?.title ?? null);
-
-/** Every audio element the player made: its file, where it is, whether it plays, its rate. */
-const audios = (page: Page) =>
-  page.evaluate(() =>
-    [...document.querySelectorAll('audio')].map((a) => ({
-      src: a.src === '' ? '' : new URL(a.src).pathname,
-      time: a.currentTime,
-      paused: a.paused,
-      rate: a.playbackRate,
-    })),
-  );
-
-/** How far the audio playing has played; 0 while none plays. */
-const playedTo = async (page: Page) =>
-  Math.max(0, ...(await audios(page)).filter((a) => !a.paused).map((a) => a.time));
-
-/** The audio plays, and goes on playing. */
-async function advances(page: Page) {
-  await expect.poll(() => playedTo(page), { timeout: 15_000 }).toBeGreaterThan(0.3);
-  const from = await playedTo(page);
-  await expect.poll(() => playedTo(page), { timeout: 10_000 }).toBeGreaterThan(from + 0.5);
-}
 
 /** Opens the list at `home` from the shell's own destination, then the card titled `title`. */
 async function open(page: Page, destination: string, home: string, title: string) {
@@ -134,8 +102,44 @@ test.describe('[M1.shell/b] the shell on recorded upstreams', () => {
       .getByRole('button', { name: /^play_arrow\s*Play$/ })
       .first()
       .click();
-    await expect.poll(() => titlePlaying(page)).toBe(album);
+    // A song is named by its own title, the album by the album's.
+    const [song] = await songsOf(page);
+    await expect.poll(() => titlePlaying(page)).toBe(song);
+    await expect(page.getByRole('button', { name: `Open player, ${song}` })).toBeVisible();
     await advances(page);
+  });
+
+  test("opens an episode's own page from its show, and plays it from there", async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signIn(page, `/podcasts/${keyOf(recorded.show)}`);
+    const episode = await episodeTitle(page);
+    await page.getByText(episode, { exact: true }).first().click();
+    await expect(page).toHaveURL(pageOf('/podcasts/episodes/', recorded.episode));
+    await page.getByRole('button', { name: /Resume$/ }).click();
+    await expect.poll(() => titlePlaying(page)).toBe(episode);
+    await advances(page);
+  });
+
+  test('draws an author or artist with no page to open as plain text, never a link', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signIn(page, `/books/${keyOf(recorded.multiFile)}`);
+    const books = await page.request.get(`${recorded.origin}/api/library/books`);
+    const { items } = (await books.json()) as {
+      items: { ref: { source: string; id: string }; sub: string }[];
+    };
+    const author = items.find((i) => keyOf(i.ref) === keyOf(recorded.multiFile))!.sub;
+    await expect(page.getByText(author, { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: author })).toHaveCount(0);
+
+    await page.goto(`${recorded.origin}/music/albums/${keyOf(recorded.album)}`);
+    const albums = await page.request.get(`${recorded.origin}/api/library/music`);
+    const music = (await albums.json()) as { items: typeof items };
+    const artist = music.items.find((i) => keyOf(i.ref) === keyOf(recorded.album))!.sub;
+    await expect(page.getByText(artist, { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: artist })).toHaveCount(0);
   });
 
   test('draws no player until something is loaded, then the mini-player and the panel', async ({

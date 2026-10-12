@@ -167,8 +167,14 @@ function propLines(
       typeof value.page === 'string'
         ? `'${components.paths.get(value.page)!}'`
         : `routes[${value.page.path.join('.')}]!`;
-    const to = params.length === 0 ? path : `generatePath(${path}, { ${params.join(', ')} })`;
-    return [`${name}={() => navigate(${to})}`];
+    if (params.length === 0) return [`${name}={() => navigate(${path})}`];
+    // A link whose ref is empty has no page to open: the prop is left undefined, so Sonora draws
+    // it as plain text, never a link to an empty or Not found page.
+    const given = Object.values(value.params)
+      .map((p) => p.join('.'))
+      .join(' && ');
+    const to = `generatePath(${path}, { ${params.join(', ')} })`;
+    return [`${name}={${given} ? () => navigate(${to}) : undefined}`];
   }
   // A Play plays its item through the web's player, now, next or as a list on its own: the
   // player hands the handler, or none while it cannot play, so the control draws disabled.

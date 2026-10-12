@@ -117,12 +117,14 @@ const planOf = (ref: MediaRef, playId: string, startAt: number): PlaybackPlan =>
       mime: 'audio/mpeg',
       duration: 300,
       offset: 0,
+      ...(ref.source === 'jellyfin' ? { title: 'Song 1' } : {}),
     },
     {
       url: `/api/media/${ref.source}:${ref.id}/tracks/1`,
       mime: 'audio/mpeg',
       duration: 300,
       offset: 300,
+      ...(ref.source === 'jellyfin' ? { title: 'Song 2' } : {}),
     },
   ],
   chapters:
@@ -150,9 +152,18 @@ function rig(
     closeFails?: boolean;
     /** The browser's own clock in place of the test's. */
     browserClock?: boolean;
+    /** Paths the server refuses for want of a sign-in. */
+    refuses?: string[];
   } = {},
 ) {
   const sent: Sent[] = [];
+  /** Each request's `keepalive`, by the order sent. */
+  const keptAlive: boolean[] = [];
+  /** This device's session as `GET /api/sessions` answers: its active queue's current, or none. */
+  const saved: { current: MediaRef | null } = { current: null };
+  /** What the page does when it is hidden. */
+  const hidden: (() => void)[] = [];
+  let signedOut = 0;
   const engines: FakeEngine[] = [];
   const clock = new FakeClock();
   let plays = 0;
@@ -161,7 +172,7 @@ function rig(
   const startAts: number[] = [];
   const controls: string[] = [];
   const media: MediaControls = {
-    show: (m) => controls.push(`show ${m.title} ${m.variant}`),
+    show: (m, _t, track) => controls.push(`show ${track?.title ?? m.title} ${m.variant}`),
     playing: (p) => controls.push(`playing ${p}`),
     position: (p, d, r) => controls.push(`position ${p}/${d}@${r}`),
     clear: () => controls.push('clear'),
@@ -173,6 +184,29 @@ function rig(
       const text = await request.text();
       const body = text === '' ? null : (JSON.parse(text) as Record<string, unknown>);
       sent.push({ path, body });
+      keptAlive.push(request.keepalive);
+      if (options.refuses?.includes(path)) {
+        return Response.json({ error: 'signed_out' }, { status: 401 });
+      }
+      if (path === '/api/sessions') {
+        const current =
+          saved.current === null ? null : { itemId: crypto.randomUUID(), ref: saved.current };
+        return Response.json({
+          sessions: [
+            {
+              deviceId: 'd',
+              deviceName: 'This browser',
+              thisDevice: true,
+              active: 'spoken',
+              switchAfterCurrent: null,
+              queueStyle: 'youtube',
+              currents: { music: null, spoken: current },
+              rev: 1,
+              updatedAt: 0,
+            },
+          ],
+        });
+      }
       if (path === '/api/play') {
         const ref = body!.ref as MediaRef;
         return Response.json(planOf(ref, `play-${plays++}`, startAts.shift() ?? 0));
@@ -214,6 +248,8 @@ function rig(
     api,
     ...(options.browserClock === true ? {} : { clock }),
     controls: media,
+    onPageHide: (send) => void hidden.push(send),
+    onSignedOut: () => void signedOut++,
     createPlayer: (plan, opts) => {
       const engine = new FakeEngine(plan as PlaybackPlan, opts);
       engine.closeFails = options.closeFails === true;
@@ -224,7 +260,22 @@ function rig(
   const engine = () => engines.at(-1)!;
   const reports = () => sent.filter((s) => s.path === '/api/progress').map((s) => s.body!);
   const paths = () => sent.map((s) => s.path);
-  return { store, sent, engines, engine, clock, reports, paths, after, startAts, controls };
+  return {
+    store,
+    sent,
+    engines,
+    engine,
+    clock,
+    reports,
+    paths,
+    after,
+    startAts,
+    controls,
+    keptAlive,
+    saved,
+    hide: () => hidden.forEach((send) => send()),
+    signedOut: () => signedOut,
+  };
 }
 
 afterEach(() => {
@@ -560,5 +611,90 @@ describe('[M1.shell] the web player store', () => {
       ref: book,
       how: 'next',
     });
+  });
+
+  it('[M1.shell] restores what this device’s session plays, paused where it stopped, after a reload', async () => {
+    const { store, engine, saved, startAts, paths } = rig();
+    saved.current = book;
+    startAts.push(131);
+    await store.restore();
+    expect(paths()).toEqual(['/api/sessions', '/api/play']);
+    expect(store.getState()).toMatchObject({ ref: book, position: 131, playing: false });
+    expect(engine().calls).not.toContain('play');
+    await store.resume();
+    expect(engine().calls).toContain('play');
+  });
+
+  it('[M1.shell] restores nothing when the session plays nothing, or something already plays', async () => {
+    const idle = rig();
+    await idle.store.restore();
+    expect(idle.paths()).toEqual(['/api/sessions']);
+    expect(idle.store.getState().plan).toBeNull();
+
+    const busy = rig();
+    busy.saved.current = episode;
+    await busy.store.play(book);
+    await busy.store.restore();
+    expect(busy.store.getState().ref).toEqual(book);
+    expect(busy.paths()).not.toContain('/api/sessions');
+  });
+
+  it('[M1.shell] restores nothing, and sends no one to sign in, where no one is signed in yet', async () => {
+    const { store, signedOut } = rig({ refuses: ['/api/sessions'] });
+    await store.restore();
+    expect(signedOut()).toBe(0);
+    expect(store.getState().plan).toBeNull();
+  });
+
+  it('[M1.shell] restores once, however often it is asked', async () => {
+    const { store, saved, paths } = rig();
+    saved.current = book;
+    await Promise.all([store.restore(), store.restore()]);
+    await store.restore();
+    expect(paths().filter((p) => p === '/api/sessions')).toHaveLength(1);
+  });
+
+  it('[M1.shell] sends a last report as the page is hidden, one the browser keeps sending as it unloads', async () => {
+    const { store, engine, reports, hide, sent, keptAlive } = rig();
+    await store.play(book);
+    engine().at(37);
+    hide();
+    await settle();
+    expect(reports().at(-1)).toMatchObject({ position: 37, seq: 0 });
+    expect(keptAlive[sent.findLastIndex((s) => s.path === '/api/progress')]).toBe(true);
+  });
+
+  it('[M1.shell] sends nothing as the page is hidden while nothing is loaded', async () => {
+    const { hide, sent } = rig();
+    hide();
+    await settle();
+    expect(sent).toEqual([]);
+  });
+
+  it('[M1.shell] stops and says so when the server refuses a report for want of a sign-in', async () => {
+    const { store, engine, signedOut, controls } = rig({ refuses: ['/api/progress'] });
+    await store.play(book);
+    const played = engine();
+    await store.pause();
+    await settle();
+    expect(signedOut()).toBe(1);
+    expect(played.paused).toBe(true);
+    expect(store.getState()).toMatchObject({ plan: null, playing: false });
+    expect(controls.at(-1)).toBe('clear');
+  });
+
+  it('[M1.shell] says so when the server refuses to plan for want of a sign-in', async () => {
+    const { store, signedOut } = rig({ refuses: ['/api/play'] });
+    await store.play(book);
+    expect(signedOut()).toBe(1);
+    expect(store.getState().plan).toBeNull();
+  });
+
+  it('[M1.shell] names a song by its own title to the system, and where it is within it', async () => {
+    const { store, engine, controls } = rig();
+    await store.play(song);
+    engine().at(320);
+    expect(controls).toContain('show Song 2 music');
+    expect(controls.at(-1)).toBe('position 20/300@1');
   });
 });

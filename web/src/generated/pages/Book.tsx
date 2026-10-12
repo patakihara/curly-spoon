@@ -433,9 +433,9 @@ export default function Book({ data = placeholder, state = 'full' }: BookProps) 
         <MediaHeader
           kindLabel={data.kind}
           subtitle={data.author}
-          onSubtitle={() => navigate(generatePath('/books/authors/:ref', { ref: data.authorRef }))}
+          onSubtitle={data.authorRef ? () => navigate(generatePath('/books/authors/:ref', { ref: data.authorRef })) : undefined}
           partOf={data.series.label}
-          onPartOf={() => navigate(generatePath('/books/series/:ref', { ref: data.series.ref }))}
+          onPartOf={data.series.ref ? () => navigate(generatePath('/books/series/:ref', { ref: data.series.ref })) : undefined}
           meta={data.meta}
           rating={<Rating value={data.rating.value} count={data.rating.count} platform={platform} />}
           progress={data.progress}
@@ -463,16 +463,16 @@ export default function Book({ data = placeholder, state = 'full' }: BookProps) 
         <Shelf platform={platform}>
           {data.narrations.map((narration, i) => (
             <Fragment key={i}>
-              <MediaCard eyebrow="Read by" title={narration.narrator} sub={narration.sub} image={narration.image} absent={narration.absent} status={narration.status} tone={narration.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: narration.ref }))} platform={platform} />
+              <MediaCard eyebrow="Read by" title={narration.narrator} sub={narration.sub} image={narration.image} absent={narration.absent} status={narration.status} tone={narration.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={narration.ref ? () => navigate(generatePath('/books/:ref', { ref: narration.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </Shelf>
       </Section>
-      <Section title={data.more.series.title} eyebrow="More in" onSubject={() => navigate(generatePath('/books/series/:ref', { ref: data.series.ref }))} platform={platform}>
+      <Section title={data.more.series.title} eyebrow="More in" onSubject={data.series.ref ? () => navigate(generatePath('/books/series/:ref', { ref: data.series.ref })) : undefined} platform={platform}>
         <Shelf platform={platform}>
           {data.more.series.items.map((book, i) => (
             <Fragment key={i}>
-              <MediaCard title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} platform={platform} />
+              <MediaCard title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={book.ref ? () => navigate(generatePath('/books/:ref', { ref: book.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </Shelf>
@@ -481,7 +481,7 @@ export default function Book({ data = placeholder, state = 'full' }: BookProps) 
         <Shelf platform={platform}>
           {data.more.author.items.map((other, i) => (
             <Fragment key={i}>
-              <MediaCard title={other.title} sub={other.sub} image={other.image} progress={other.progress} absent={other.absent} status={other.status} tone={other.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: other.ref }))} platform={platform} />
+              <MediaCard title={other.title} sub={other.sub} image={other.image} progress={other.progress} absent={other.absent} status={other.status} tone={other.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={other.ref ? () => navigate(generatePath('/books/:ref', { ref: other.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </Shelf>

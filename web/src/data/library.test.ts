@@ -1,9 +1,10 @@
 import { type LibraryEntry, LibraryList } from '@auralis/schema';
 import { describe, expect, it } from 'vitest';
 import { frame as books } from '../generated/pages/Books';
+import { frame as browse } from '../generated/pages/Browse';
 import { frame as music } from '../generated/pages/Music';
 import { frame as podcasts } from '../generated/pages/Podcasts';
-import { booksData, musicData, podcastsData, statusOf } from './library';
+import { booksData, browseData, musicData, podcastsData, statusOf } from './library';
 
 const entry = (over: Partial<LibraryEntry>): LibraryEntry => ({
   ref: { source: 'abs', id: 'b1' },
@@ -102,5 +103,60 @@ describe('[M1.shell] the library homes from GET /api/library/{medium}', () => {
       status: 'Requested',
       tone: 'request',
     });
+  });
+});
+
+describe('[M1.shell] Browse, the home page, from the library lists', () => {
+  const data = browseData(
+    [
+      list(
+        entry({ title: 'Begun', progress: 0.4 }),
+        entry({ ref: { source: 'abs', id: 'b2' }, title: 'Unstarted', progress: null }),
+        entry({ ref: { source: 'abs', id: 'b3' }, title: 'Done', progress: 1 }),
+      ),
+      list(
+        entry({
+          ref: { source: 'abs', id: 's1' },
+          kind: 'show',
+          title: 'A Show',
+          sub: 'A Host',
+          progress: null,
+        }),
+      ),
+      list(
+        entry({
+          ref: { source: 'jellyfin', id: 'a1' },
+          kind: 'album',
+          title: 'Half Heard',
+          sub: 'A Band',
+          art: null,
+          progress: 0.5,
+        }),
+      ),
+    ],
+    browse.placeholder,
+  );
+
+  it('shows in its first shelf only what you are part way through, each opening its own page', () => {
+    expect(data.jumpBackIn).toEqual([
+      {
+        title: 'Begun',
+        page: 'book',
+        ref: 'abs:b1',
+        sub: 'Book · Rosa Elin',
+        image: '/api/media/abs:b1/art?size=medium',
+      },
+      { title: 'Half Heard', page: 'album', ref: 'jellyfin:a1', sub: 'Album · A Band', image: '' },
+    ]);
+  });
+
+  it('shows nothing else, none of the canvas’s samples, and names only its one shelf', () => {
+    expect(data.sections).toEqual([browse.placeholder.sections[0]]);
+    expect(data.recentlyAdded).toEqual([]);
+    expect(data.people).toEqual([]);
+    expect(data.pickedForYou).toEqual([]);
+    expect(data.recentlyPlayed).toEqual([]);
+    expect(data.feature.title).toBe('');
+    expect(data.shelves.recentlyAdded).toBe('');
   });
 });

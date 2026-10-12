@@ -32,7 +32,20 @@ export const loadLibrary = (api: ApiClient, medium: LibraryMedium): Promise<Libr
     LibraryList.parse(d),
   );
 
-/** The book, show or album `ref` names, as it sits in the page's address; none for anything else. */
+/**
+ * The three library lists, books, podcasts and music; a list that fails is left out, but a
+ * refusal for want of a sign-in still throws.
+ */
+export async function loadLibraries(api: ApiClient): Promise<LibraryList[]> {
+  const settled = await Promise.allSettled(
+    (['books', 'podcasts', 'music'] as const).map((medium) => loadLibrary(api, medium)),
+  );
+  const refused = settled.find((s) => s.status === 'rejected' && s.reason instanceof SignedOut);
+  if (refused !== undefined) throw new SignedOut();
+  return settled.flatMap((s) => (s.status === 'fulfilled' ? [s.value] : []));
+}
+
+/** The book, show, episode or album `ref` names, as it sits in the page's address; else none. */
 export const loadItem = (api: ApiClient, ref: string | undefined): Promise<ItemDetail> => {
   if (ref === undefined || parseMediaRefKey(ref) === null) {
     return Promise.reject(new Error(`no item ${ref}`));

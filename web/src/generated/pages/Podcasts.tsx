@@ -318,7 +318,7 @@ export default function Podcasts({ data = placeholder, state = 'full' }: Podcast
         <LayoutGrid platform={platform}>
           {data.library.map((show, i) => (
             <Fragment key={i}>
-              <MediaCard width="100%" title={show.title} sub={show.sub} image={show.image} unplayed={show.unplayed} onClick={() => navigate(generatePath('/podcasts/:ref', { ref: show.ref }))} platform={platform} />
+              <MediaCard width="100%" title={show.title} sub={show.sub} image={show.image} unplayed={show.unplayed} onClick={show.ref ? () => navigate(generatePath('/podcasts/:ref', { ref: show.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </LayoutGrid>
@@ -327,7 +327,7 @@ export default function Podcasts({ data = placeholder, state = 'full' }: Podcast
         <LayoutGrid platform={platform}>
           {data.lists.map((list, i) => (
             <Fragment key={i}>
-              <MediaCard width="100%" title={list.title} sub={list.sub} covers={list.covers} onClick={() => navigate(generatePath('/lists/:ref', { ref: list.ref }))} platform={platform} />
+              <MediaCard width="100%" title={list.title} sub={list.sub} covers={list.covers} onClick={list.ref ? () => navigate(generatePath('/lists/:ref', { ref: list.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </LayoutGrid>

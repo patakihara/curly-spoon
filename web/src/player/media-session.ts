@@ -1,10 +1,10 @@
 /**
  * The system's media controls (the lock screen, a headset's buttons, the browser's own media hub)
- * through the Media Session API: what plays, named by its plan's `meta`, the actions its player
- * offers, and where it is. A book or an episode seeks back and forward; music steps to the
+ * through the Media Session API: what plays, named by its plan's `meta` or, for music, by the song
+ * playing with its album as the album, the actions its player offers, and where it is. A book or an episode seeks back and forward; music steps to the
  * previous or next track. A browser without a media session gets nothing, silently.
  */
-import { type PlaybackMeta } from '@auralis/schema';
+import { type PlaybackMeta, type PlaybackTrack } from '@auralis/schema';
 
 /** The Media Session actions the player answers. */
 export type MediaAction =
@@ -49,8 +49,8 @@ export interface Transport {
 }
 
 export interface MediaControls {
-  /** Names what plays and offers its variant's actions. */
-  show(meta: PlaybackMeta, transport: Transport): void;
+  /** Names what plays, a song by its own `track`'s title, and offers its variant's actions. */
+  show(meta: PlaybackMeta, transport: Transport, track?: PlaybackTrack): void;
   playing(playing: boolean): void;
   /** Seconds in, of `duration`, playing at `rate`. */
   position(position: number, duration: number, rate: number): void;
@@ -88,12 +88,13 @@ export function createMediaControls(
     }
   };
   return {
-    show(meta, transport) {
+    show(meta, transport, track) {
       if (session === null) return;
+      const song = track?.title;
       session.metadata = makeMetadata({
-        title: meta.title,
-        artist: meta.sub ?? '',
-        album: '',
+        title: song ?? meta.title,
+        artist: track?.sub ?? meta.sub ?? '',
+        album: song === undefined ? '' : meta.title,
         artwork: artwork(meta.art),
       });
       const spoken = meta.variant === 'spoken';

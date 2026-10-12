@@ -277,13 +277,13 @@ export default function Series({ data = placeholder, state = 'full' }: SeriesPro
   return (
     <PageBody platform={platform}>
       <Section platform={platform}>
-        <MediaHeader kindLabel={data.kind} subtitle={data.author} onSubtitle={() => navigate(generatePath('/books/authors/:ref', { ref: data.authorRef }))} meta={data.meta} image={data.image} playLabel={null} nextLabel={null} lastLabel={null} platform={platform} />
+        <MediaHeader kindLabel={data.kind} subtitle={data.author} onSubtitle={data.authorRef ? () => navigate(generatePath('/books/authors/:ref', { ref: data.authorRef })) : undefined} meta={data.meta} image={data.image} playLabel={null} nextLabel={null} lastLabel={null} platform={platform} />
       </Section>
       <Section last={true} platform={platform}>
         <LayoutGrid platform={platform}>
           {data.books.map((book, i) => (
             <Fragment key={i}>
-              <MediaCard width="100%" eyebrow={book.eyebrow} title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} platform={platform} />
+              <MediaCard width="100%" eyebrow={book.eyebrow} title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={book.ref ? () => navigate(generatePath('/books/:ref', { ref: book.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </LayoutGrid>

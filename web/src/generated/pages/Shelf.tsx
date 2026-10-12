@@ -308,7 +308,7 @@ export default function Shelf({ data = placeholder, state = 'full' }: ShelfProps
         <LayoutGrid platform={platform}>
           {data.items.map((item, i) => (
             <Fragment key={i}>
-              <MediaCard width="100%" title={item.title} sub={item.sub} image={item.image} progress={item.progress} onClick={() => navigate(generatePath(routes[item.page]!, { ref: item.ref }))} platform={platform} />
+              <MediaCard width="100%" title={item.title} sub={item.sub} image={item.image} progress={item.progress} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </LayoutGrid>

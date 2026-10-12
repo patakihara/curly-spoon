@@ -459,7 +459,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
         <LayoutGrid item="wide" maxWidth="var(--grid-max-width-tiles)" platform={platform}>
           {data.jumpBackIn.map((pick, i) => (
             <Fragment key={i}>
-              <QuickPick title={pick.title} sub={pick.sub} image={pick.image} onClick={() => navigate(generatePath(routes[pick.page]!, { ref: pick.ref }))} platform={platform} />
+              <QuickPick title={pick.title} sub={pick.sub} image={pick.image} onClick={pick.ref ? () => navigate(generatePath(routes[pick.page]!, { ref: pick.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </LayoutGrid>
@@ -478,29 +478,29 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           />
         </LayoutGrid>
       </Section>
-      <Section title="Recently added" action="arrow_forward" actionLabel="See all" onAction={() => navigate(generatePath('/shelves/:id', { id: data.shelves.recentlyAdded }))} platform={platform}>
+      <Section title="Recently added" action="arrow_forward" actionLabel="See all" onAction={data.shelves.recentlyAdded ? () => navigate(generatePath('/shelves/:id', { id: data.shelves.recentlyAdded })) : undefined} platform={platform}>
         <Shelf platform={platform}>
           {data.recentlyAdded.map((item, i) => (
             <Fragment key={i}>
-              <MediaCard title={item.title} sub={item.sub} image={item.image} progress={item.progress} onClick={() => navigate(generatePath(routes[item.page]!, { ref: item.ref }))} platform={platform} />
+              <MediaCard title={item.title} sub={item.sub} image={item.image} progress={item.progress} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </Shelf>
       </Section>
-      <Section title="Artists & authors" action="arrow_forward" actionLabel="See all" onAction={() => navigate(generatePath('/shelves/:id', { id: data.shelves.people }))} platform={platform}>
+      <Section title="Artists & authors" action="arrow_forward" actionLabel="See all" onAction={data.shelves.people ? () => navigate(generatePath('/shelves/:id', { id: data.shelves.people })) : undefined} platform={platform}>
         <Shelf platform={platform}>
           {data.people.map((person, i) => (
             <Fragment key={i}>
-              <ArtistCard title={person.title} sub={person.sub} image={person.image} onClick={() => navigate(generatePath(routes[person.page]!, { ref: person.ref }))} platform={platform} />
+              <ArtistCard title={person.title} sub={person.sub} image={person.image} onClick={person.ref ? () => navigate(generatePath(routes[person.page]!, { ref: person.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </Shelf>
       </Section>
-      <Section title="Picked for you" action="arrow_forward" actionLabel="See all" onAction={() => navigate(generatePath('/shelves/:id', { id: data.shelves.pickedForYou }))} platform={platform}>
+      <Section title="Picked for you" action="arrow_forward" actionLabel="See all" onAction={data.shelves.pickedForYou ? () => navigate(generatePath('/shelves/:id', { id: data.shelves.pickedForYou })) : undefined} platform={platform}>
         <Shelf platform={platform}>
           {data.pickedForYou.map((item, i) => (
             <Fragment key={i}>
-              <MediaCard size="sm" title={item.title} sub={item.sub} image={item.image} progress={item.progress} onClick={() => navigate(generatePath(routes[item.page]!, { ref: item.ref }))} platform={platform} />
+              <MediaCard size="sm" title={item.title} sub={item.sub} image={item.image} progress={item.progress} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </Shelf>

@@ -11,6 +11,7 @@ function fakeStore(state: PlayerState) {
     subscribe: () => () => undefined,
     getState: () => state,
     play: async (ref) => void calls.push(`play ${ref.source}:${ref.id}`),
+    restore: async () => void calls.push('restore'),
     queueNext: async (ref, queue) => void calls.push(`next ${ref.source}:${ref.id} ${queue}`),
     resume: async () => void calls.push('resume'),
     pause: async () => void calls.push('pause'),
@@ -137,6 +138,43 @@ describe('[M1.shell] what the player shows', () => {
       'step back',
       'step next',
     ]);
+  });
+
+  it('[M1.shell] names music by the song playing, its seek bar spanning only that song', () => {
+    const album: PlaybackPlan = {
+      ...planOf('music', null),
+      meta: { title: 'Rumours', sub: 'Fleetwood Mac', art: null, variant: 'music' },
+      tracks: [
+        {
+          url: '/api/media/jellyfin:a/tracks/0',
+          mime: 'audio/flac',
+          duration: 200,
+          offset: 0,
+          title: 'Dreams',
+        },
+        {
+          url: '/api/media/jellyfin:b/tracks/0',
+          mime: 'audio/flac',
+          duration: 400,
+          offset: 200,
+          title: 'Songbird',
+          sub: 'Christine McVie',
+        },
+      ],
+    };
+    const state: PlayerState = { ...loaded('music'), plan: album, position: 300, duration: 600 };
+    const { store, calls } = fakeStore(state);
+    const shown = playingOf(state, store, false)!;
+    expect(shown).toMatchObject({
+      title: 'Songbird',
+      artist: 'Christine McVie',
+      progress: 0.25,
+      duration: 400,
+    });
+    shown.onSeek!(0.5);
+    expect(calls).toEqual(['seek 400']);
+    const first = playingOf({ ...state, position: 50 }, store, false)!;
+    expect(first).toMatchObject({ title: 'Dreams', artist: 'Fleetwood Mac', progress: 0.25 });
   });
 
   it('[M1.shell] keeps the same handlers from one change to the next', () => {

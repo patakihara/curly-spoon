@@ -9,10 +9,14 @@
  * and Back step the device's session (`POST /api/sessions/this/step`) and plan what it plays now,
  * reporting under that play from then on. Closing a play is best-effort: a failed close is logged and
  * never keeps the player from what comes next. Every change to what plays runs one at a time, in
- * order.
+ * order. After a reload, `restore` plans what this device's session plays, paused where it
+ * stopped; as the page is hidden, a last report goes out that the browser keeps sending while it
+ * unloads. A request refused for want of a sign-in (401) stops everything and says so. Music is
+ * named by the playing track's own title, and its place is within that track.
  */
 import {
   ListeningSession,
+  ListeningSessionList,
   type MediaRef,
   PlaybackPlan,
   ProgressAnswer,
@@ -59,7 +63,15 @@ export interface PlayerStoreOptions {
   clock?: Clock;
   /** The system's media controls; the browser's media session by default. */
   controls?: MediaControls;
+  /** Calls `send` as the page is hidden, for good or into the back cache: `pagehide`. */
+  onPageHide?: (send: () => void) => void;
+  /** The server refused a request for want of a sign-in; the player has stopped. */
+  onSignedOut?: () => void;
 }
+
+const browserPageHide = (send: () => void) => {
+  if (typeof window !== 'undefined') window.addEventListener('pagehide', send);
+};
 
 /** What the store holds, one unchanging object per change. */
 export interface PlayerState {
@@ -82,6 +94,12 @@ export interface PlayerStore {
   getState(): PlayerState;
   /** Plans `ref` and plays it. */
   play(ref: MediaRef): Promise<void>;
+  /**
+   * Plans what this device's session plays, paused where it stopped, unless something is loaded
+   * already: what a reload left. Once only, however often it is asked; nothing where no one is
+   * signed in.
+   */
+  restore(): Promise<void>;
   /** Puts `ref` next in `queue`; with nothing loaded, plays it. */
   queueNext(ref: MediaRef, queue: QueueType): Promise<void>;
   resume(): Promise<void>;
@@ -104,6 +122,38 @@ const lengthOf = (plan: PlaybackPlan | null) => {
   return last === undefined ? 0 : last.offset + last.duration;
 };
 
+/** What is heard at a place in a plan: its name, and the span of the plan it is the place in. */
+export interface Heard {
+  title: string;
+  sub: string | null;
+  /** Where the span starts in the plan, and how long it is, in seconds. */
+  offset: number;
+  duration: number;
+  /** The plan's track it is, for music; null for a spoken item, heard whole. */
+  track: number | null;
+}
+
+/**
+ * What is heard at `position` in `plan`: for music, the track playing there, by its own title and
+ * artists, falling back to the plan's; for a book or an episode, the whole item.
+ */
+export function heardAt(plan: PlaybackPlan, position: number): Heard {
+  const { meta, tracks } = plan;
+  if (meta.variant !== 'music') {
+    return { title: meta.title, sub: meta.sub, offset: 0, duration: lengthOf(plan), track: null };
+  }
+  let index = 0;
+  for (let i = 0; i < tracks.length; i++) if (tracks[i]!.offset <= position) index = i;
+  const track = tracks[index]!;
+  return {
+    title: track.title ?? meta.title,
+    sub: track.sub ?? meta.sub,
+    offset: track.offset,
+    duration: track.duration,
+    track: index,
+  };
+}
+
 /** Where the chapter holding `position` ends; with none, the file's end, else the item's. */
 const chapterEnd = (plan: PlaybackPlan, position: number) => {
   const chapter = plan.chapters.find((c) => c.start <= position && position < c.end);
@@ -117,6 +167,7 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
   const clock = options.clock ?? browserClock;
   const controls = options.controls ?? browserMediaControls();
   const makePlayer = options.createPlayer ?? createPlayer;
+  const onPageHide = options.onPageHide ?? browserPageHide;
 
   let ref: MediaRef | null = null;
   let plan: PlaybackPlan | null = null;
@@ -137,6 +188,9 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
   let stop: number | null = null;
   let reportTimer: unknown = null;
   let sleepTimer: unknown = null;
+  /** The track the system's controls name: null for a spoken item, undefined before any. */
+  let named: number | null | undefined;
+  let restored: Promise<void> | null = null;
 
   const listeners = new Set<() => void>();
   const sleepLabel = () =>
@@ -209,7 +263,36 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     engine?.stopAt(next);
   };
 
-  const report = async () => {
+  /** Names what is heard at `at` to the system, again only when a song changes, and where it is. */
+  const tellControls = (at: number) => {
+    if (plan === null) return;
+    const heard = heardAt(plan, at);
+    if (heard.track !== named) {
+      named = heard.track;
+      controls.show(
+        plan.meta,
+        transport,
+        heard.track === null ? undefined : plan.tracks[heard.track],
+      );
+    }
+    controls.position(at - heard.offset, heard.duration, rate());
+  };
+
+  /** A request was refused for want of a sign-in: everything stops, and the app is told. */
+  const signOut = async () => {
+    const last = engine;
+    engine = null;
+    stopReports();
+    if (last !== null) {
+      last.pause();
+      void last.destroy().catch(logClose);
+    }
+    unload();
+    options.onSignedOut?.();
+  };
+
+  /** Reports where it is; `keepalive` keeps it going out while the page unloads. */
+  const report = async (keepalive = false) => {
     if (engine === null || plan === null) return;
     const { playId } = plan.progressTarget;
     count();
@@ -221,8 +304,12 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
       listened: sentMs / 1000,
       paused: !playing,
     };
-    const answered = await api.POST('/api/progress', { body }).catch(() => null);
+    const answered = await api.POST('/api/progress', { body, keepalive }).catch(() => null);
     if (answered === null || plan?.progressTarget.playId !== playId) return;
+    if (answered.response.status === 401) {
+      void run(signOut);
+      return;
+    }
     if (answered.response.status === 404) {
       void run(() => replan(playId));
       return;
@@ -320,6 +407,10 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
   /** Plans `to` and loads its plan, playing it when `autoplay`. */
   const load = async (to: MediaRef, autoplay: boolean) => {
     const answered = await api.POST('/api/play', { body: { ref: to } }).catch(() => null);
+    if (answered?.response.status === 401) {
+      await signOut();
+      return;
+    }
     const parsed = PlaybackPlan.safeParse(answered?.data);
     if (!parsed.success) {
       unload();
@@ -340,7 +431,7 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
       onPosition: (at) => {
         if (!ours()) return;
         position = at;
-        controls.position(at, lengthOf(plan), rate());
+        tellControls(at);
         emit();
       },
       onEnded: () => {
@@ -353,7 +444,8 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     });
     engine = mine;
     mine.setRate(rate());
-    controls.show(plan.meta, transport);
+    named = undefined;
+    tellControls(position);
     setPlaying(autoplay);
     emit();
     if (autoplay) await mine.play();
@@ -379,6 +471,10 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     const answered = await api
       .POST('/api/sessions/this/step', { body: { direction } })
       .catch(() => null);
+    if (answered?.response.status === 401) {
+      await signOut();
+      return;
+    }
     const session = ListeningSession.safeParse(answered?.data);
     const now = session.success ? session.data.currents[session.data.active] : null;
     if (now === null) {
@@ -420,6 +516,19 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
         await closeCurrent();
         await load(to, true);
       }),
+    restore: () =>
+      (restored ??= run(async () => {
+        if (plan !== null) return;
+        // Decision (M1.shell): a refusal here restores nothing and sends no one anywhere. Only the
+        // sign-in page meets it, as the server signs everyone else in first; a page's own requests
+        // send a member whose sign-in lapsed to sign in.
+        const answered = await api.GET('/api/sessions').catch(() => null);
+        const list = ListeningSessionList.safeParse(answered?.data);
+        const mine = list.success ? list.data.sessions.find((s) => s.thisDevice) : undefined;
+        const now = mine === undefined ? null : mine.currents[mine.active];
+        if (now === null || plan !== null) return;
+        await load(now.ref, false);
+      })),
     queueNext: (to, queue) =>
       run(async () => {
         if (plan === null) {
@@ -472,5 +581,9 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
       emit();
     },
   };
+  // Decision (M1.shell): as the page goes, its last place goes with it, kept alive past the unload.
+  onPageHide(() => {
+    if (engine !== null && plan !== null) void report(true);
+  });
   return store;
 }

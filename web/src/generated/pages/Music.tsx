@@ -303,7 +303,7 @@ export default function Music({ data = placeholder, state = 'full' }: MusicProps
         <LayoutGrid platform={platform}>
           {data.library.map((item, i) => (
             <Fragment key={i}>
-              <MediaCard width="100%" title={item.title} sub={item.sub} image={item.image} status={item.status} tone={item.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/music/albums/:ref', { ref: item.ref }))} platform={platform} />
+              <MediaCard width="100%" title={item.title} sub={item.sub} image={item.image} status={item.status} tone={item.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={item.ref ? () => navigate(generatePath('/music/albums/:ref', { ref: item.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </LayoutGrid>

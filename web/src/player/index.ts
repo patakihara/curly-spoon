@@ -1,9 +1,10 @@
 import { parseMediaRefKey } from '@auralis/schema';
-import { useMemo, useSyncExternalStore } from 'react';
-import { useAccess } from '../data/deps';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useDeps } from '../data/deps';
+import { useAccessOf } from '../data/access';
 import { placeholder, type Loaded } from '../generated/nav/playing';
 import { SKIP_SECONDS } from './media-session';
-import { createPlayerStore, type PlayerState, type PlayerStore } from './store';
+import { createPlayerStore, heardAt, type PlayerState, type PlayerStore } from './store';
 
 /**
  * The web's player, as the generated pages and shell bind it: `usePlaying()` is what is loaded,
@@ -12,7 +13,10 @@ import { createPlayerStore, type PlayerState, type PlayerStore } from './store';
  * Sonora control with no action does: a book or an episode skips and changes speed, music steps
  * to the previous or next track. While nothing is loaded there is nothing to show, so the shell
  * draws no player; only on a server nobody can sign in to, whose pages keep their canvas
- * placeholders, does it show the canvas's picture, with no transport.
+ * placeholders, does it show the canvas's picture, with no transport. Music is named by the song
+ * playing, and its seek bar spans that song; a book or an episode is named, and spans, whole.
+ * Once a member is known, the player restores what this device's session plays; a request the
+ * player makes that is refused for want of a sign-in sends them to sign in.
  */
 
 /** The queue an item plays on. */
@@ -73,7 +77,12 @@ const transportOf = (store: PlayerStore): Transport => {
       onNext: () => void store.step('next'),
       onSkipBack: () => void store.skip(-SKIP_SECONDS),
       onSkipForward: () => void store.skip(SKIP_SECONDS),
-      onSeek: (value) => void store.seek(value * store.getState().duration),
+      onSeek: (value) => {
+        const { plan, position } = store.getState();
+        if (plan === null) return;
+        const heard = heardAt(plan, position);
+        void store.seek(heard.offset + value * heard.duration);
+      },
       onSpeed: () => store.cycleSpeed(),
       onSleep: () => store.cycleSleep(),
     };
@@ -91,15 +100,17 @@ export function playingOf(state: PlayerState, store: PlayerStore, canvas: boolea
   if (plan === null) return canvas ? CANVAS : null;
   const t = transportOf(store);
   const spoken = plan.meta.variant === 'spoken';
+  const heard = heardAt(plan, state.position);
+  const into = Math.max(0, state.position - heard.offset);
   return {
-    title: plan.meta.title,
-    artist: plan.meta.sub ?? '',
+    title: heard.title,
+    artist: heard.sub ?? '',
     image: plan.meta.art ?? '',
     context: '',
     variant: plan.meta.variant,
     favourite: false,
-    progress: state.duration > 0 ? Math.min(state.position / state.duration, 1) : 0,
-    duration: state.duration,
+    progress: heard.duration > 0 ? Math.min(into / heard.duration, 1) : 0,
+    duration: heard.duration,
     sleep: state.sleep,
     about: NO_ABOUT,
     playing: state.playing,
@@ -124,14 +135,29 @@ export function playOf(store: PlayerStore): Play {
 
 let shared: PlayerStore | null = null;
 
+/** Who hears that the player was refused for want of a sign-in. */
+const refusals = new Set<() => void>();
+
 /** The page's one player store, made when first read. */
-export const playerStore = (): PlayerStore => (shared ??= createPlayerStore());
+export const playerStore = (): PlayerStore =>
+  (shared ??= createPlayerStore({ onSignedOut: () => refusals.forEach((tell) => tell()) }));
 
 /** What is loaded, with its transport. */
 export function usePlaying(): Playing | null {
   const store = playerStore();
   const state = useSyncExternalStore(store.subscribe, store.getState, store.getState);
-  const canvas = useAccess() === 'canvas';
+  const { access } = useDeps();
+  const who = useAccessOf(access);
+  useEffect(() => {
+    const tell = () => access.refused();
+    refusals.add(tell);
+    return () => void refusals.delete(tell);
+  }, [access]);
+  useEffect(() => {
+    if (who === 'member') void store.restore();
+    else if (who === 'signedOut') access.signIn();
+  }, [who, store, access]);
+  const canvas = who === 'canvas';
   return useMemo(() => playingOf(state, store, canvas), [state, store, canvas]);
 }
 

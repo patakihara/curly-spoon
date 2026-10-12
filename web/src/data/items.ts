@@ -1,15 +1,18 @@
 import { type ItemDetail, mediaRefKey } from '@auralis/schema';
 import { type AlbumData } from '../generated/pages/Album';
 import { type BookData } from '../generated/pages/Book';
+import { type EpisodeData } from '../generated/pages/Episode';
 import { type ShowData } from '../generated/pages/Show';
 import { artAt, clock, day, emptied, span } from './format';
 
 /**
- * A book's, show's or album's page from `GET /api/items/{ref}`: its header, then a book's
- * chapters, a show's episodes or an album's tracks. What the answer does not hold (a book's
- * series, narrations and rating, a show's related shows, an album's editions and more by the
- * artist, every About) stays empty, so its section draws with nothing in it. The page's own
- * words (its kind, a show's subscribe labels and sort) stay as the canvas has them.
+ * A book's, show's, episode's or album's page from `GET /api/items/{ref}`: its header, then a
+ * book's chapters, a show's episodes, an episode's notes or an album's tracks. What the answer
+ * does not hold (a book's series, narrations and rating, a show's related shows, an episode's
+ * other episodes, an album's editions and more by the artist, every About) stays empty, so its
+ * section draws with nothing in it. An author's or artist's ref stays empty too: there is no
+ * such page to open yet, so the name draws as plain text. The page's own words (its kind, a
+ * show's subscribe labels and sort) stay as the canvas has them.
  */
 
 /** Where you are in the item, in seconds, from how far through it you are. */
@@ -108,5 +111,27 @@ export function albumData(detail: ItemDetail, page: AlbumData): AlbumData {
       status: null,
       menu: [],
     })),
+  };
+}
+
+export function episodeData(detail: ItemDetail, page: EpisodeData): EpisodeData {
+  const about = detail.episode;
+  return {
+    ...emptied(page),
+    ref: mediaRefKey(detail.ref),
+    title: detail.title,
+    kind: page.kind,
+    show: detail.sub ?? '',
+    showRef: about === undefined ? '' : mediaRefKey(about.show),
+    meta: [
+      about === undefined || about.publishedAt === null ? null : day(about.publishedAt),
+      factsOf(detail.duration, about?.finished === true ? null : detail.progress),
+    ]
+      .filter((fact) => fact !== null && fact !== '')
+      .join(' · '),
+    progress: about?.finished === true ? 0 : (detail.progress ?? 0),
+    image: artAt(detail.art, 'medium'),
+    download: 'idle',
+    notes: about?.description ?? '',
   };
 }

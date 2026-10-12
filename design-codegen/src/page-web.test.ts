@@ -680,11 +680,15 @@ describe('a page whose items name the page they open, on the web', () => {
 
   it("[M0.canvas] navigates each item to its own page's route, looked up among the pages it may open", () => {
     expect(mixed).toContain(
-      'onClick={() => navigate(generatePath(routes[m.page]!, { ref: m.ref }))}',
+      'onClick={m.ref ? () => navigate(generatePath(routes[m.page]!, { ref: m.ref })) : undefined}',
     );
     expect(mixed).toMatch(
       /const routes: Record<string, string> = \{\s+"books": "\/books",\s+"book": "\/book"\s+\};/,
     );
     expect(mixed).not.toContain('"settings": "/settings"');
+  });
+
+  it('[M1.shell] opens nothing from a link whose ref is empty, so Sonora draws it as plain text', () => {
+    expect(mixed).toMatch(/onClick=\{m\.ref \? \(\) => navigate\(.*\) : undefined\}/);
   });
 });

@@ -2,8 +2,9 @@ import { ItemDetail } from '@auralis/schema';
 import { describe, expect, it } from 'vitest';
 import { frame as album } from '../generated/pages/Album';
 import { frame as book } from '../generated/pages/Book';
+import { frame as episodePage } from '../generated/pages/Episode';
 import { frame as show } from '../generated/pages/Show';
-import { albumData, bookData, showData } from './items';
+import { albumData, bookData, episodeData, showData } from './items';
 
 const detail = (over: Partial<ItemDetail>): ItemDetail =>
   ItemDetail.parse({
@@ -203,5 +204,64 @@ describe('[M1.shell] an album’s page from GET /api/items/{ref}', () => {
     ]);
     expect(data.more.items).toEqual([]);
     expect(data.editions).toEqual({ label: '' });
+  });
+});
+
+describe('[M1.shell] an episode’s page from GET /api/items/{ref}', () => {
+  const data = episodeData(
+    detail({
+      ref: { source: 'abs', id: 'ep-1' },
+      kind: 'episode',
+      title: 'The Night Ferry',
+      sub: 'The Long Read',
+      art: '/api/media/abs:show-1/art',
+      progress: 0.5,
+      duration: 3120,
+      episode: {
+        show: { source: 'abs', id: 'show-1' },
+        description: 'A crossing logged at six hours.',
+        publishedAt: Date.UTC(2026, 7, 12),
+        finished: false,
+      },
+    }),
+    episodePage.placeholder,
+  );
+
+  it('heads the page with the episode, its show to open, when it came out, its length and what is left', () => {
+    expect(data).toMatchObject({
+      ref: 'abs:ep-1',
+      title: 'The Night Ferry',
+      kind: episodePage.placeholder.kind,
+      show: 'The Long Read',
+      showRef: 'abs:show-1',
+      meta: '12 Aug 2026 · 52 min · 26 min left',
+      progress: 0.5,
+      image: '/api/media/abs:show-1/art?size=medium',
+      notes: 'A crossing logged at six hours.',
+    });
+  });
+
+  it('lists no other episodes and no menu of the canvas’s: the show’s page lists them', () => {
+    expect(data.more).toEqual([]);
+    expect(data.menu).toEqual([]);
+  });
+
+  it('shows a finished episode with no progress and nothing left', () => {
+    const done = episodeData(
+      detail({
+        ref: { source: 'abs', id: 'ep-1' },
+        kind: 'episode',
+        progress: null,
+        duration: 600,
+        episode: {
+          show: { source: 'abs', id: 'show-1' },
+          description: null,
+          publishedAt: null,
+          finished: true,
+        },
+      }),
+      episodePage.placeholder,
+    );
+    expect(done).toMatchObject({ meta: '10 min', progress: 0, notes: '' });
   });
 });

@@ -3,7 +3,7 @@ import { renderToString } from 'react-dom/server';
 import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router';
 import { describe, expect, it } from 'vitest';
 import { createApiClient } from '../api/client';
-import { routes } from '../generated/nav/routes';
+import { pages, routes } from '../generated/nav/routes';
 import { type ShellHandle, type ShellTabs } from '../generated/nav/Shell';
 import Book, { frame as bookFrame } from '../generated/pages/Book';
 import { frame as booksFrame } from '../generated/pages/Books';
@@ -67,6 +67,26 @@ const books = {
 const SAMPLE_BOOK = booksFrame.placeholder.library[1]!.title;
 const SAMPLE_TRACK = 'Heartbeats in Silence';
 
+/** A sample from each page's canvas placeholder, and from its player's. */
+const SAMPLES = [
+  SAMPLE_BOOK,
+  SAMPLE_TRACK,
+  'The Quiet Lodger', // Browse
+  'Salt in the Ledger', // Browse's feature, Episode's more
+  'The Night Ferry', // Episode
+  'Salt and Static', // Search, Requests, Shelf
+  'Deep Inertia', // Artist, Shelf
+  'Late walks', // Playlist
+  'Evelyn Harper', // Author, Series
+  'The Harbour Quartet', // Series
+  'Auto-download requests', // Settings
+  'media.example.org', // Settings
+  'books.example.org', // Setup
+  'Prowlarr', // Setup
+  'Morning', // List
+  'Heartbeats in silence, counting down the hall', // Lyrics
+];
+
 describe('[M1.shell] the pages given their data', () => {
   it('lists a member’s own books, with no player while nothing is loaded', () => {
     const html = renderAt('/books', deps('member', { books }).given);
@@ -97,6 +117,15 @@ describe('[M1.shell] the pages given their data', () => {
     expect(html).not.toContain(bookFrame.placeholder.title);
   });
 
+  it('draws every page empty for a member, with none of the canvas’s samples, until it is served', () => {
+    for (const page of pages) {
+      if (page.id === 'signIn') continue;
+      const url = page.path.replace(':ref', 'abs:x').replace(':id', 'x').replace('*', '/nowhere');
+      const html = renderAt(url, deps('member').given);
+      for (const sample of SAMPLES) expect(html, `${page.id}: ${sample}`).not.toContain(sample);
+    }
+  });
+
   it('draws sign in from its address, as before', () => {
     const html = renderAt('/sign-in?error=not_household', deps('signedOut').given);
     expect(html).toMatch(/one of the household/);
@@ -115,11 +144,16 @@ describe('[M1.shell] the route table given its data', () => {
     expect(all(given).map((r) => [r.id, r.path])).toEqual(all(routes).map((r) => [r.id, r.path]));
   });
 
-  it('draws each page with data as its screen, and every other page as generated', () => {
+  it('draws every page with data as its screen; Now Playing and Not found, which have none, as generated', () => {
+    for (const page of pages) {
+      const generated = typeOf(find(routes, page.id));
+      const drawn = typeOf(find(given, page.id));
+      if (page.id === 'nowPlaying' || page.id === 'notFound')
+        expect(drawn, page.id).toBe(generated);
+      else expect(drawn, page.id).not.toBe(generated);
+    }
     expect(typeOf(find(given, 'book'))).not.toBe(Book);
     expect(typeOf(find(given, 'queue'))).not.toBe(Queue);
-    expect(typeOf(find(given, 'settings'))).toBe(typeOf(find(routes, 'settings')));
-    expect(typeOf(find(given, 'nowPlaying'))).toBe(typeOf(find(routes, 'nowPlaying')));
   });
 
   it('gives the page under a player sheet, and the side panel’s queue, their data too', () => {
@@ -137,6 +171,6 @@ describe('[M1.shell] the route table given its data', () => {
       (find(table, id)?.handle as ShellHandle).frame!;
     expect(frameOf(given, 'book')).not.toBe(bookFrame);
     expect(frameOf(given, 'book').chrome).toBe(bookFrame.chrome);
-    expect(frameOf(given, 'settings')).toBe(frameOf(routes, 'settings'));
+    expect(frameOf(given, 'notFound')).toBe(frameOf(routes, 'notFound'));
   });
 });
