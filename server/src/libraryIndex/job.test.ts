@@ -539,6 +539,49 @@ describe('removing what a complete pass did not see', () => {
     expect(result.jellyfin?.counts.removed).toBe(1 + firstAlbumTracks.length);
   });
 
+  it('removes an album whose library is gone, with its tracks, once a complete pass no longer lists that library', async () => {
+    await indexBoth();
+    const stored = listIndexed(db).filter((row) => row.source === 'jellyfin');
+    expect(stored.length).toBeGreaterThan(2);
+    const noMusic = changed<{ Items: { CollectionType?: string }[] }>(
+      r.jellyfin['library-list'],
+      (list) => {
+        list.Items = list.Items.filter((l) => l.CollectionType !== 'music');
+      },
+    );
+
+    const { result, asked } = await pass(T0 + HOUR, [], [noMusic]);
+
+    expect(result.jellyfin).toMatchObject({ complete: true, error: null });
+    expect(listIndexed(db).filter((row) => row.source === 'jellyfin')).toEqual([]);
+    expect(result.jellyfin?.counts.removed).toBe(stored.length);
+    expect(asked.filter((a) => a.startsWith('lookup'))).toEqual([]);
+  });
+
+  it('removes an album left with no library that a complete pass no longer lists, and gives a listed one its library back', async () => {
+    await indexBoth();
+    const libraryOf = (id: string) => listIndexed(db).find((row) => row.id === id)?.libraryId;
+    const library = libraryOf(albums[0]!.Id);
+    expect(library).toBeTruthy();
+    // As migration 8 left albums indexed before it: no library, and no sync state.
+    db.prepare(
+      "UPDATE index_items SET library_id = NULL, content_hash = '' WHERE source = 'jellyfin'",
+    ).run();
+    db.prepare("DELETE FROM index_sync WHERE source = 'jellyfin'").run();
+    const firstAlbumTracks = listIndexed(db).filter((row) => row.parentId === albums[0]!.Id);
+
+    const { result } = await pass(T0 + HOUR, [], [...tracks, jfPage(0, [albums[1]!], 1)]);
+
+    expect(result.jellyfin).toMatchObject({ complete: true, error: null });
+    const left = indexedIds();
+    expect(left.has(albums[0]!.Id)).toBe(false);
+    for (const track of firstAlbumTracks) expect(left.has(track.id)).toBe(false);
+    expect(libraryOf(albums[1]!.Id)).toBe(library);
+    expect(
+      listIndexed(db).filter((row) => row.source === 'jellyfin' && row.libraryId === null),
+    ).toEqual([]);
+  });
+
   it('never removes anything on a partial window of pages, nor asks whether an item is gone', async () => {
     await indexBoth();
     const before = listIndexed(db);

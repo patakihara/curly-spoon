@@ -34,9 +34,9 @@ export const AvailabilityKind = z
 export type AvailabilityKind = z.infer<typeof AvailabilityKind>;
 
 /**
- * Where you stand with an item, on every card and row. A request carries its `status` and, while
- * it downloads, its `progress`; an external item says whether it is `requestable`. Nothing else
- * carries either.
+ * Where you stand with an item, on every card and row. A request carries its `status` and, only
+ * while it downloads, its `progress`; an external item says whether it is `requestable`. Nothing
+ * else carries any of them.
  */
 export const Availability = z
   .object({
@@ -52,7 +52,7 @@ export const Availability = z
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: [key], message: `not on ${value.kind}` });
     if (requested && value.status === undefined) misplaced('status');
     if (!requested && value.status !== undefined) misplaced('status');
-    if (!requested && value.progress !== undefined) misplaced('progress');
+    if (value.status !== 'downloading' && value.progress !== undefined) misplaced('progress');
     if (external !== (value.requestable !== undefined)) misplaced('requestable');
   })
   .openapi('Availability');

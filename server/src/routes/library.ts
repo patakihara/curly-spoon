@@ -2,7 +2,8 @@
  * The signed-in person's library lists: their books, podcast shows or albums, from the library
  * index, kept to the libraries they may open. Audiobookshelf's own `GET /api/me`, asked with their
  * token, says which libraries those are and how far through each book they are; Jellyfin's
- * `GET /UserViews`, asked the same way, says which music libraries they see. A person not linked
+ * `GET /UserViews`, asked the same way, says which music libraries they see, hidden from their
+ * home screen or not. An unfinished book at 0 is listed as not started. A person not linked
  * to an upstream may open none of its libraries, so its lists are empty. Everything listed is in
  * the household's own libraries, so it is `owned`.
  */
@@ -60,7 +61,8 @@ async function absEntries(db: Db, abs: AbsClient, kind: 'book' | 'show'): Promis
   const progress = new Map(
     me.mediaProgress
       .filter((p) => p.episodeId == null)
-      .map((p) => [p.libraryItemId, p.isFinished ? 1 : Math.min(1, Math.max(0, p.progress))]),
+      .map((p) => [p.libraryItemId, p.isFinished ? 1 : Math.min(1, p.progress)] as const)
+      .filter(([, share]) => share > 0),
   );
   return topLevelOfKind(db, kind)
     .filter((row) => row.source === 'abs' && open(row.libraryId))

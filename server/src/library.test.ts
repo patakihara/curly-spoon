@@ -135,9 +135,9 @@ afterEach(async () => {
  * kara, granted every library and seeing Music; otto, granted only Podcasts and seeing no music
  * library; nora, linked to neither upstream.
  */
-async function server() {
+async function server(karaMe = me) {
   const asked: string[] = [];
-  const kara = replayFetch([me, jf('jf-user-views')]);
+  const kara = replayFetch([karaMe, jf('jf-user-views')]);
   const otto = replayFetch([ottoMe, ottoViews]);
   const fetch: FetchLike = async (url, init) => {
     const authorization = new Headers(init?.headers).get('authorization') ?? '';
@@ -212,6 +212,19 @@ describe('[M1.shell/a] the signed-in person’s library, from the index on the r
     expect(listed.filter((e) => e.progress !== null)).toHaveLength(1);
   });
 
+  it('[M1.shell/a] gives a book begun but at 0, unfinished, no progress, as one not started', async () => {
+    await index(db);
+    const atZero = structuredClone(me);
+    const progress = json<AbsMe>(atZero).mediaProgress.find((p) => !p.episodeId)!;
+    Object.assign(progress, { progress: 0, isFinished: false });
+    const s = await server(atZero);
+
+    const listed = await s.items('books');
+
+    expect(listed.find((e) => e.ref.id === started.libraryItemId)?.progress).toBeNull();
+    expect(listed.every((e) => e.progress === null)).toBe(true);
+  });
+
   it('[M1.shell/a] lists every indexed podcast show with its host and art, owned, with no progress of its own', async () => {
     await index(db);
     const s = await server();
@@ -233,7 +246,7 @@ describe('[M1.shell/a] the signed-in person’s library, from the index on the r
     );
   });
 
-  it('[M1.shell/a] lists every indexed album of a music library the person sees, with its album artists and art, owned', async () => {
+  it('[M1.shell/a] lists every indexed album of a music library the person sees, hidden from their home or not, with its album artists and art, owned', async () => {
     await index(db);
     const s = await server();
 
@@ -253,6 +266,8 @@ describe('[M1.shell/a] the signed-in person’s library, from the index on the r
         .sort(byTitle),
     );
     expect(s.asked).toEqual(['/UserViews']);
+    // Replay matches the query too: the views were asked for with the hidden ones.
+    expect(jf('jf-user-views').request.query).toEqual({ includeHidden: 'true' });
   });
 });
 

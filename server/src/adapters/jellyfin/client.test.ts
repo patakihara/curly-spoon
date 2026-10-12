@@ -61,13 +61,13 @@ describe('the Jellyfin client', () => {
     expect(new URL(sent[0]?.url ?? '').searchParams.get('ParentId')).toBe('music');
   });
 
-  it("the person's libraries are their views, asked with their own token", async () => {
+  it("the person's libraries are their views, hidden ones too, asked with their own token", async () => {
     const view = { Id: 'music', Name: 'Music', Type: 'CollectionFolder', CollectionType: 'music' };
     const { fetch, sent } = fake({ Items: [view], TotalRecordCount: 1 });
     const jf = new JellyfinClient({ baseUrl: 'http://upstream.invalid', token: 'theirs', fetch });
     expect(await jf.getUserViews()).toEqual([view]);
     expect(new URL(sent[0]?.url ?? '').pathname).toBe('/UserViews');
-    expect(new URL(sent[0]?.url ?? '').search).toBe('');
+    expect(new URL(sent[0]?.url ?? '').search).toBe('?includeHidden=true');
     expect(sent[0]?.headers.get('authorization')).toContain('Token="theirs"');
   });
 

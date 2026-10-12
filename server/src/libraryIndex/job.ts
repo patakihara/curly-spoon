@@ -35,6 +35,7 @@ import {
   applyTree,
   emptyCounts,
   type IndexCounts,
+  itemsOutside,
   readSync,
   recordRun,
   removeItem,
@@ -217,16 +218,25 @@ async function indexMusicLibrary(
 
 /**
  * Jellyfin's albums, library by library: each music library is paged by its id, so every album
- * and track keeps the library it sits in, which says who may see it.
+ * and track keeps the library it sits in, which says who may see it. After a complete pass, an
+ * album in no music library Jellyfin still lists (its library is gone, or it was indexed before
+ * albums kept their library and no library lists it now) is removed with its tracks: no one could
+ * see it.
  */
 async function indexJellyfin(
   pass: Pass,
   jellyfin: NonNullable<IndexJobOptions['jellyfin']>,
 ): Promise<boolean> {
   let complete = true;
-  for (const library of await jellyfin.getLibraries()) {
-    if (library.CollectionType !== 'music') continue;
+  const music = (await jellyfin.getLibraries()).filter((l) => l.CollectionType === 'music');
+  for (const library of music) {
     if (!(await indexMusicLibrary(pass, jellyfin, library.Id))) complete = false;
+  }
+  if (complete) {
+    const listed = new Set(music.map((library) => library.Id));
+    for (const id of itemsOutside(pass.db, 'jellyfin', listed)) {
+      removeItem(pass.db, 'jellyfin', id, pass.counts);
+    }
   }
   return complete;
 }

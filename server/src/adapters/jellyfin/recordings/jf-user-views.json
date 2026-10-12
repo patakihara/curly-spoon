@@ -5,7 +5,9 @@
   "request": {
     "method": "GET",
     "path": "/UserViews",
-    "query": {},
+    "query": {
+      "includeHidden": "true"
+    },
     "headers": {
       "accept": "application/json",
       "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis\", DeviceId=\"auralis-recorder\", Version=\"0.0.0\", Token=\"<token>\""

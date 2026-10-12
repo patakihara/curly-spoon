@@ -148,11 +148,13 @@ export class JellyfinClient {
   }
 
   /**
-   * The libraries the token's own user may see: `GET /UserViews`. A view's `Id` is its library's
-   * `Library/MediaFolders` id (recorded).
+   * The libraries the token's own user may see, with those they hid from their home screen:
+   * `GET /UserViews?includeHidden=true`. A view's `Id` is its library's `Library/MediaFolders` id
+   * (recorded).
    */
   async getUserViews(): Promise<BaseItemDto[]> {
-    return (await this.get('UserViews', baseItemQueryResultSchema)).Items;
+    const query = { includeHidden: 'true' };
+    return (await this.get('UserViews', baseItemQueryResultSchema, query)).Items;
   }
 
   /** Every track of one album, in disc and track order. */

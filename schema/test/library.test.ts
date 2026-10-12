@@ -63,6 +63,18 @@ describe('availability', () => {
     ).toBe(false);
   });
 
+  it('carries download progress only while the request is downloading', () => {
+    for (const status of ['requested', 'needsChoice', 'failed']) {
+      expect(
+        Availability.safeParse({ kind: 'requested', status, progress: 0.5 }).success,
+        status,
+      ).toBe(false);
+    }
+    expect(
+      Availability.safeParse({ kind: 'requested', status: 'downloading', progress: 0.5 }).success,
+    ).toBe(true);
+  });
+
   it('keeps download progress between 0 and 1', () => {
     expect(
       Availability.safeParse({ kind: 'requested', status: 'downloading', progress: 1.2 }).success,

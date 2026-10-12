@@ -191,6 +191,25 @@ export function unseenItems(
   return stored.map((row) => row.upstream_id).filter((id) => !seen.has(id));
 }
 
+/**
+ * The top-level items of one source that sit in none of `libraryIds`: in a library the upstream no
+ * longer has, or in none at all.
+ */
+export function itemsOutside(
+  db: Db,
+  source: IndexSource,
+  libraryIds: ReadonlySet<string>,
+): string[] {
+  const stored = db
+    .prepare(
+      'SELECT upstream_id, library_id FROM index_items WHERE source = ? AND parent_id IS NULL',
+    )
+    .all(source) as { upstream_id: string; library_id: string | null }[];
+  return stored
+    .filter((row) => row.library_id === null || !libraryIds.has(row.library_id))
+    .map((row) => row.upstream_id);
+}
+
 /** Removes one item; its children, external ids and sync state go with it. */
 export function removeItem(db: Db, source: IndexSource, id: string, counts: IndexCounts): void {
   db.transaction(() => {
