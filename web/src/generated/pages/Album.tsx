@@ -415,7 +415,7 @@ export default function Album({ data = placeholder, state = 'full' }: AlbumProps
           onSubtitle={() => navigate(generatePath('/music/artists/:ref', { ref: data.artistRef }))}
           meta={data.meta}
           image={data.image}
-          onPlay={() => play(data.ref, 'music', 'now')}
+          onPlay={play(data.ref, 'music', 'now')}
           nextLabel={null}
           lastLabel="Add to queue"
           menu={<OverflowMenu items={data.menu} platform={platform} />}

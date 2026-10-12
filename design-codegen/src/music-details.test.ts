@@ -72,7 +72,7 @@ describe('Album', () => {
     });
     expect(typeof data.ref).toBe('string');
     const web = readFileSync(join(REPO_ROOT, 'web/src/generated/pages/Album.tsx'), 'utf8');
-    expect(web).toContain("onPlay={() => play(data.ref, 'music', 'now')}");
+    expect(web).toContain("onPlay={play(data.ref, 'music', 'now')}");
   });
 
   it("[M0.canvas] names the album once, in the page's heading, and not again in its header", () => {

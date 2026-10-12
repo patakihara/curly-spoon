@@ -112,7 +112,7 @@ describe('Book', () => {
     });
     expect(typeof data.ref).toBe('string');
     const web = readFileSync(join(REPO_ROOT, 'web/src/generated/pages/Book.tsx'), 'utf8');
-    expect(web).toContain("onPlay={() => play(data.ref, 'spoken', 'now')}");
+    expect(web).toContain("onPlay={play(data.ref, 'spoken', 'now')}");
   });
 
   it("[M0.canvas] names the book once, in the page's heading, with a local search over its chapters", () => {

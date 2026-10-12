@@ -427,14 +427,14 @@ describe('[M1.shell] a page playing an item, on the web', () => {
     expect(playing).toContain("import { usePlay, type Playing } from '../../player';");
     expect(playing).toContain('  const play = usePlay();');
     expect(playing).toContain(
-      "<MediaCard title={b.title} onClick={() => play(b.ref, 'spoken', 'now')} />",
+      "<MediaCard title={b.title} onClick={play(b.ref, 'spoken', 'now')} />",
     );
   });
 
   it('plays it next, or a list on its own, as the Play says', () => {
-    expect(playing).toContain("onPlay={() => play(data.ref, 'spoken', 'now')}");
-    expect(playing).toContain("onPlayNext={() => play(data.ref, 'spoken', 'next')}");
-    expect(playing).toContain("onPlayLast={() => play(data.ref, 'music', 'source')}");
+    expect(playing).toContain("onPlay={play(data.ref, 'spoken', 'now')}");
+    expect(playing).toContain("onPlayNext={play(data.ref, 'spoken', 'next')}");
+    expect(playing).toContain("onPlayLast={play(data.ref, 'music', 'source')}");
   });
 
   it('refuses a Play in the back layer or subheader, which the shell draws outside the page', () => {

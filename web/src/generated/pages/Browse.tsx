@@ -472,7 +472,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
             meta={data.feature.meta}
             description={data.feature.description}
             image={data.feature.image}
-            onPlay={() => play(data.feature.ref, 'spoken', 'now')}
+            onPlay={play(data.feature.ref, 'spoken', 'now')}
             preview={<PreviewButton kind="episode" muted={true} platform={platform} />}
             platform={platform}
           />

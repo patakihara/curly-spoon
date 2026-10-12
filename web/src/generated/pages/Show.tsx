@@ -354,7 +354,7 @@ export default function Show({ data = placeholder, state = 'full' }: ShowProps) 
         <SortFilterBar icon="swap_vert" label={data.sort} platform={platform} />
         {data.episodes.map((episode, i) => (
           <Fragment key={i}>
-            <EpisodeRow title={episode.title} description={episode.description} meta={episode.meta} image={episode.image} progress={episode.progress} finished={episode.finished} absent={episode.absent} onClick={() => navigate(generatePath('/podcasts/episodes/:ref', { ref: episode.ref }))} onPlay={() => play(episode.ref, 'spoken', 'now')} divider={true} platform={platform} />
+            <EpisodeRow title={episode.title} description={episode.description} meta={episode.meta} image={episode.image} progress={episode.progress} finished={episode.finished} absent={episode.absent} onClick={() => navigate(generatePath('/podcasts/episodes/:ref', { ref: episode.ref }))} onPlay={play(episode.ref, 'spoken', 'now')} divider={true} platform={platform} />
           </Fragment>
         ))}
       </Section>

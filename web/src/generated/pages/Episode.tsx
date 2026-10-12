@@ -290,9 +290,9 @@ export default function Episode({ data = placeholder, state = 'full' }: EpisodeP
           progress={data.progress}
           image={data.image}
           playLabel="Resume"
-          onPlay={() => play(data.ref, 'spoken', 'now')}
+          onPlay={play(data.ref, 'spoken', 'now')}
           nextLabel="Play next"
-          onPlayNext={() => play(data.ref, 'spoken', 'next')}
+          onPlayNext={play(data.ref, 'spoken', 'next')}
           lastLabel={null}
           addLabel="Add to a list"
           download={data.download as Exclude<ComponentProps<typeof MediaHeader>['download'], undefined>}
@@ -306,7 +306,7 @@ export default function Episode({ data = placeholder, state = 'full' }: EpisodeP
       <Section title="More from the show" last={true} platform={platform}>
         {data.more.map((other, i) => (
           <Fragment key={i}>
-            <EpisodeRow title={other.title} description={other.description} meta={other.meta} image={other.image} progress={other.progress} finished={other.finished} onClick={() => navigate(generatePath('/podcasts/episodes/:ref', { ref: other.ref }))} onPlay={() => play(other.ref, 'spoken', 'now')} divider={true} platform={platform} />
+            <EpisodeRow title={other.title} description={other.description} meta={other.meta} image={other.image} progress={other.progress} finished={other.finished} onClick={() => navigate(generatePath('/podcasts/episodes/:ref', { ref: other.ref }))} onPlay={play(other.ref, 'spoken', 'now')} divider={true} platform={platform} />
           </Fragment>
         ))}
       </Section>

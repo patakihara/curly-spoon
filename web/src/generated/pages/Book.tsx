@@ -441,7 +441,7 @@ export default function Book({ data = placeholder, state = 'full' }: BookProps) 
           progress={data.progress}
           image={data.image}
           playLabel="Resume"
-          onPlay={() => play(data.ref, 'spoken', 'now')}
+          onPlay={play(data.ref, 'spoken', 'now')}
           nextLabel="Play next"
           lastLabel={null}
           download={data.download as Exclude<ComponentProps<typeof MediaHeader>['download'], undefined>}

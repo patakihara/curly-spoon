@@ -170,12 +170,13 @@ function propLines(
     const to = params.length === 0 ? path : `generatePath(${path}, { ${params.join(', ')} })`;
     return [`${name}={() => navigate(${to})}`];
   }
-  // A Play plays its item through the web's player, now, next or as a list on its own.
+  // A Play plays its item through the web's player, now, next or as a list on its own: the
+  // player hands the handler, or none while it cannot play, so the control draws disabled.
   if (value.kind === 'play') {
     const ref = value.params['ref'];
     if (ref === undefined) throw new Error(`${owner}.${name}: Play needs ref={…}`);
     const mode = value.next ? 'next' : value.source ? 'source' : 'now';
-    return [`${name}={() => play(${pathCode(ref)}, '${value.queue}', '${mode}')}`];
+    return [`${name}={play(${pathCode(ref)}, '${value.queue}', '${mode}')}`];
   }
   // No request endpoint exists yet. A handler doing nothing would draw a dead control as
   // enabled, so the prop is left out and Sonora draws the control disabled.

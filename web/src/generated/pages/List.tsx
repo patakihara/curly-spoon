@@ -363,9 +363,9 @@ export default function List({ data = placeholder, state = 'full' }: ListProps) 
           meta={data.meta}
           covers={data.covers}
           playLabel="Play"
-          onPlay={() => play(data.ref, 'spoken', 'source')}
+          onPlay={play(data.ref, 'spoken', 'source')}
           nextLabel="Play next"
-          onPlayNext={() => play(data.ref, 'spoken', 'next')}
+          onPlayNext={play(data.ref, 'spoken', 'next')}
           lastLabel={null}
           menu={<OverflowMenu items={data.menu} platform={platform} />}
           platform={platform}
@@ -384,7 +384,7 @@ export default function List({ data = placeholder, state = 'full' }: ListProps) 
         <SortFilterBar icon="swap_vert" label={data.order} platform={platform} />
         {data.items.map((item, i) => (
           <Fragment key={i}>
-            <EpisodeRow title={item.title} description={item.description} meta={item.meta} image={item.image} progress={item.progress} onClick={() => navigate(generatePath('/podcasts/episodes/:ref', { ref: item.ref }))} onPlay={() => play(item.ref, 'spoken', 'now')} divider={true} platform={platform} />
+            <EpisodeRow title={item.title} description={item.description} meta={item.meta} image={item.image} progress={item.progress} onClick={() => navigate(generatePath('/podcasts/episodes/:ref', { ref: item.ref }))} onPlay={play(item.ref, 'spoken', 'now')} divider={true} platform={platform} />
           </Fragment>
         ))}
       </Section>
