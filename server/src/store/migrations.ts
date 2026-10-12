@@ -251,7 +251,9 @@ export const migrations: readonly Migration[] = [
         -- What plays on one device, made on its first use and gone with the device. ('sessions'
         -- are sign-in sessions.) The queue the controls drive, the queue to land on once the
         -- current item ends, and the queue style, set here until settings are kept per user.
-        -- rev goes up on every write; a write from an older rev is refused.
+        -- Back's cursor: how many plays Back has walked from the newest (0 when it has not),
+        -- and the queue of the item that was current when the walk began, which Forward lands
+        -- on last. rev goes up on every write; a write from an older rev is refused.
         CREATE TABLE listening_sessions (
           device_id            TEXT PRIMARY KEY REFERENCES devices(id) ON DELETE CASCADE,
           user_id              TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -259,8 +261,11 @@ export const migrations: readonly Migration[] = [
           switch_after_current TEXT CHECK (switch_after_current IN ('music', 'spoken')),
           queue_style          TEXT NOT NULL DEFAULT 'youtube'
             CHECK (queue_style IN ('youtube', 'spotify')),
+          history_back         INTEGER NOT NULL DEFAULT 0 CHECK (history_back >= 0),
+          back_resume_queue    TEXT CHECK (back_resume_queue IN ('music', 'spoken')),
           rev                  INTEGER NOT NULL CHECK (rev >= 0),
-          updated_at           INTEGER NOT NULL
+          updated_at           INTEGER NOT NULL,
+          CHECK (history_back > 0 OR back_resume_queue IS NULL)
         );
         CREATE INDEX idx_listening_sessions_user_id ON listening_sessions(user_id);
 
@@ -297,7 +302,7 @@ export const migrations: readonly Migration[] = [
           PRIMARY KEY (device_id, queue)
         );
 
-        -- What each device played, for Back; only the newest plays are kept.
+        -- What each device played, for Back; append-only, and only the newest plays are kept.
         CREATE TABLE play_history (
           device_id   TEXT NOT NULL REFERENCES listening_sessions(device_id) ON DELETE CASCADE,
           seq         INTEGER NOT NULL CHECK (seq >= 0),

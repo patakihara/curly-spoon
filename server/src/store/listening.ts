@@ -16,7 +16,6 @@ import {
   QueueStyle,
   QueueType,
 } from '@auralis/schema';
-import { isDeepStrictEqual } from 'node:util';
 import { z } from 'zod';
 import type { Db } from './connection.js';
 
@@ -34,13 +33,28 @@ export interface SessionQueue {
   context: QueueContext | null;
 }
 
-/** Everything a session holds that the engine changes. History is oldest first, by `seq`. */
+/**
+ * Where Back has walked to. `back` counts the plays walked from the newest: the item now current
+ * is the play `back` places from the end of history. `resumeQueue` is the queue of the item that
+ * was current when the walk began, which Forward lands on last; null when nothing was.
+ */
+export interface HistoryCursor {
+  back: number;
+  resumeQueue: QueueType | null;
+}
+
+/**
+ * Everything a session holds that the engine changes. History is oldest first, by `seq`, and
+ * append-only: Back moves `historyCursor` through it and never takes a play out. The cursor is
+ * null when Back has not walked.
+ */
 export interface SessionValue {
   active: QueueType;
   switchAfterCurrent: QueueType | null;
   queueStyle: QueueStyle;
   queues: Record<QueueType, SessionQueue>;
   history: HistoryEntry[];
+  historyCursor: HistoryCursor | null;
 }
 
 export interface StoredSession extends SessionValue {
@@ -64,7 +78,10 @@ export class StaleRevision extends Error {
   }
 }
 
-/** A save that would change a stored play, or add one older than the newest stored. */
+/**
+ * A save that would change, renumber or drop a stored play, or add one older than the newest
+ * stored. Only new plays pushing the oldest past `HISTORY_KEPT` take a play out.
+ */
 export class HistoryRewritten extends Error {
   constructor(
     readonly deviceId: string,
@@ -75,6 +92,17 @@ export class HistoryRewritten extends Error {
   }
 }
 
+/** A queue position saved with no current item to be a position in. */
+export class PositionWithoutItem extends Error {
+  constructor(
+    readonly deviceId: string,
+    readonly queue: QueueType,
+  ) {
+    super(`listening session ${deviceId}: a ${queue} position with no current item`);
+    this.name = 'PositionWithoutItem';
+  }
+}
+
 const SessionRow = z.object({
   device_id: z.string(),
   user_id: z.string(),
@@ -82,6 +110,8 @@ const SessionRow = z.object({
   active: QueueType,
   switch_after_current: QueueType.nullable(),
   queue_style: QueueStyle,
+  history_back: z.number().int().nonnegative(),
+  back_resume_queue: QueueType.nullable(),
   rev: z.number().int().nonnegative(),
   updated_at: z.number(),
 });
@@ -190,6 +220,10 @@ function stored(db: Db, row: SessionRow): StoredSession {
     queueStyle: row.queue_style,
     queues: readQueues(db, row.device_id),
     history: readHistory(db, row.device_id),
+    historyCursor:
+      row.history_back === 0
+        ? null
+        : { back: row.history_back, resumeQueue: row.back_resume_queue },
     rev: row.rev,
     updatedAt: row.updated_at,
   };
@@ -255,13 +289,16 @@ export function saveSession(
     const changed = db
       .prepare(
         `UPDATE listening_sessions
-         SET active = ?, switch_after_current = ?, queue_style = ?, rev = rev + 1, updated_at = ?
+         SET active = ?, switch_after_current = ?, queue_style = ?, history_back = ?,
+           back_resume_queue = ?, rev = rev + 1, updated_at = ?
          WHERE device_id = ? AND user_id = ? AND rev = ?`,
       )
       .run(
         value.active,
         value.switchAfterCurrent,
         value.queueStyle,
+        value.historyCursor?.back ?? 0,
+        value.historyCursor?.resumeQueue ?? null,
         now,
         deviceId,
         userId,
@@ -313,7 +350,7 @@ function writeQueues(db: Db, deviceId: string, queues: Record<QueueType, Session
   for (const type of QueueType.options) {
     const q = queues[type];
     if (q.current === null && q.position !== null) {
-      throw new Error(`listening session ${deviceId}: a ${type} position with no current item`);
+      throw new PositionWithoutItem(deviceId, type);
     }
     put(type, 'current', q.current === null ? [] : [q.current], q.position);
     put(type, 'user', q.user);
@@ -324,39 +361,49 @@ function writeQueues(db: Db, deviceId: string, queues: Record<QueueType, Session
   }
 }
 
+/** A play as stored: an absent chapter and an undefined one are the same play. */
+const samePlay = (a: HistoryEntry, b: HistoryEntry) =>
+  a.seq === b.seq &&
+  a.queue === b.queue &&
+  a.ref.source === b.ref.source &&
+  a.ref.id === b.ref.id &&
+  (a.chapter ?? null) === (b.chapter ?? null) &&
+  a.playedAt === b.playedAt;
+
 /**
- * History is append-only, and callers number the plays they append (the store does not): a save
- * writes plays numbered past the newest stored one, and forgets the ones Back took off the end
- * or the oldest past `HISTORY_KEPT`. A save that would change a stored play, reuse its number, or
- * add one older than the newest stored is refused with `HistoryRewritten`, whole.
+ * History is append-only, and callers number the plays they append (the store does not). A save
+ * names every stored play unchanged and adds new ones numbered past the newest stored, in order;
+ * the only plays it may leave out are the oldest, as many as its new plays push past
+ * `HISTORY_KEPT`. Anything else is refused with `HistoryRewritten`, whole.
  */
 function writeHistory(db: Db, deviceId: string, history: readonly HistoryEntry[]): void {
-  const before = z
-    .array(HistoryRow)
-    .parse(db.prepare('SELECT * FROM play_history WHERE device_id = ? ORDER BY seq').all(deviceId));
+  const before = readHistory(db, deviceId);
   const had = new Map(before.map((h) => [h.seq, h]));
-  const kept = new Set(history.map((h) => h.seq));
-  let newest = -1;
-  for (const h of history) {
+  let newest = before.at(-1)?.seq ?? -1;
+  const added: HistoryEntry[] = [];
+  for (const h of [...history].sort((a, b) => a.seq - b.seq)) {
     const stored = had.get(h.seq);
-    if (stored === undefined ? h.seq <= newest : !isDeepStrictEqual(stored, h)) {
+    if (stored !== undefined) {
+      if (!samePlay(stored, h)) throw new HistoryRewritten(deviceId, h.seq);
+    } else if (h.seq <= newest) {
       throw new HistoryRewritten(deviceId, h.seq);
+    } else {
+      added.push(h);
+      newest = h.seq;
     }
-    newest = Math.max(newest, h.seq);
   }
-  const newestStored = before.filter((h) => kept.has(h.seq)).at(-1)?.seq ?? -1;
-  const firstNew = history.find((h) => !had.has(h.seq));
-  if (firstNew !== undefined && firstNew.seq <= newestStored) {
-    throw new HistoryRewritten(deviceId, firstNew.seq);
+  const named = new Set(history.map((h) => h.seq));
+  const dropped = before.filter((h) => !named.has(h.seq));
+  const pushedOut = Math.max(0, before.length + added.length - HISTORY_KEPT);
+  const firstKept = before.findIndex((h) => named.has(h.seq));
+  if (dropped.length > pushedOut || (firstKept !== -1 && firstKept !== dropped.length)) {
+    throw new HistoryRewritten(deviceId, dropped[0]!.seq);
   }
-  const remove = db.prepare('DELETE FROM play_history WHERE device_id = ? AND seq = ?');
-  for (const seq of had.keys()) if (!kept.has(seq)) remove.run(deviceId, seq);
   const insert = db.prepare(
     `INSERT INTO play_history (device_id, seq, queue, source, upstream_id, chapter, played_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
   );
-  for (const h of history.slice(-HISTORY_KEPT)) {
-    if (had.has(h.seq)) continue;
+  for (const h of added.slice(-HISTORY_KEPT)) {
     insert.run(deviceId, h.seq, h.queue, h.ref.source, h.ref.id, h.chapter ?? null, h.playedAt);
   }
   db.prepare(

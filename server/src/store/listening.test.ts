@@ -11,6 +11,7 @@ import {
   HistoryRewritten,
   listSessions,
   openSession,
+  PositionWithoutItem,
   saveSession,
   StaleRevision,
   type SessionValue,
@@ -34,6 +35,7 @@ const value = (session: StoredSession): SessionValue => ({
   queueStyle: session.queueStyle,
   queues: session.queues,
   history: session.history,
+  historyCursor: session.historyCursor,
 });
 
 let dir: string;
@@ -137,6 +139,7 @@ describe('a listening session in the store', () => {
         spoken: { current: null, position: null, user: [], context: null },
       },
       history: [],
+      historyCursor: null,
       rev: 0,
       updatedAt: 1000,
     });
@@ -167,6 +170,7 @@ describe('a listening session in the store', () => {
         { seq: 0, queue: 'music', ref: song, playedAt: 10 },
         { seq: 1, queue: 'spoken', ref: book, chapter: 1, playedAt: 20 },
       ],
+      historyCursor: { back: 1, resumeQueue: 'music' },
     };
 
     const saved = saveSession(db, user.id, phone.id, session.rev, written, 2000);
@@ -207,16 +211,17 @@ describe('a listening session in the store', () => {
     expect(openSession(db, user.id, phone.id)).toEqual(first);
   });
 
-  it('keeps only the newest plays, and forgets one Back took off the end', () => {
+  const plays = (from: number, to: number): HistoryEntry[] =>
+    Array.from({ length: to - from }, (_, n) => ({
+      seq: from + n,
+      queue: 'music' as const,
+      ref: song,
+      playedAt: from + n,
+    }));
+
+  it('keeps only the newest plays, forgetting the oldest only as new plays push them out', () => {
     const { user, phone } = twoDevices();
     let session = openSession(db, user.id, phone.id)!;
-    const plays = (from: number, to: number): HistoryEntry[] =>
-      Array.from({ length: to - from }, (_, n) => ({
-        seq: from + n,
-        queue: 'music' as const,
-        ref: song,
-        playedAt: from + n,
-      }));
 
     session = saveSession(db, user.id, phone.id, session.rev, {
       ...value(session),
@@ -228,13 +233,65 @@ describe('a listening session in the store', () => {
 
     session = saveSession(db, user.id, phone.id, session.rev, {
       ...value(session),
-      history: session.history.slice(0, -1),
+      history: [...session.history.slice(1), ...plays(HISTORY_KEPT + 20, HISTORY_KEPT + 21)],
     })!;
-    expect(session.history.at(-1)?.seq).toBe(HISTORY_KEPT + 18);
-    expect(session.history).toHaveLength(HISTORY_KEPT - 1);
+    expect(session.history.map((h) => h.seq)).toEqual(
+      plays(21, HISTORY_KEPT + 21).map((h) => h.seq),
+    );
+
+    const overTrimmed = [
+      ...session.history.slice(2),
+      ...plays(HISTORY_KEPT + 21, HISTORY_KEPT + 22),
+    ];
+    expect(() =>
+      saveSession(db, user.id, phone.id, session.rev, { ...value(session), history: overTrimmed }),
+    ).toThrow(HistoryRewritten);
+    expect(openSession(db, user.id, phone.id)).toEqual(session);
   });
 
-  it('refuses a save that edits a stored play or reuses its number, and keeps the stored one', () => {
+  it('keeps every play when Back walks the history: the cursor moves, no play is forgotten', () => {
+    const { user, phone } = twoDevices();
+    const start = openSession(db, user.id, phone.id)!;
+    const played = saveSession(db, user.id, phone.id, start.rev, {
+      ...value(start),
+      history: plays(0, 3),
+    })!;
+
+    const walked = saveSession(db, user.id, phone.id, played.rev, {
+      ...value(played),
+      historyCursor: { back: 2, resumeQueue: 'spoken' },
+    })!;
+
+    expect(openSession(db, user.id, phone.id)!.history).toEqual(plays(0, 3));
+    expect(openSession(db, user.id, phone.id)!.historyCursor).toEqual({
+      back: 2,
+      resumeQueue: 'spoken',
+    });
+    for (const removed of [plays(0, 2), [...plays(0, 1), ...plays(2, 3)], []]) {
+      expect(() =>
+        saveSession(db, user.id, phone.id, walked.rev, { ...value(walked), history: removed }),
+      ).toThrow(HistoryRewritten);
+    }
+    expect(openSession(db, user.id, phone.id)).toEqual(walked);
+  });
+
+  it('takes an unchanged play back whether its missing chapter is left out or undefined', () => {
+    const { user, phone } = twoDevices();
+    const start = openSession(db, user.id, phone.id)!;
+    const played = saveSession(db, user.id, phone.id, start.rev, {
+      ...value(start),
+      history: plays(0, 2),
+    })!;
+
+    const resaved = saveSession(db, user.id, phone.id, played.rev, {
+      ...value(played),
+      history: played.history.map((h) => ({ ...h, chapter: undefined })),
+    });
+
+    expect(resaved?.history).toEqual(plays(0, 2));
+  });
+
+  it('refuses a save that edits a stored play, reuses its number or adds an older one', () => {
     const { user, phone } = twoDevices();
     const start = openSession(db, user.id, phone.id)!;
     const played = saveSession(db, user.id, phone.id, start.rev, {
@@ -250,33 +307,22 @@ describe('a listening session in the store', () => {
       saveSession(db, user.id, phone.id, played.rev, { ...value(played), history: edited }),
     ).toThrow(HistoryRewritten);
 
-    const backThenAnotherPlay: HistoryEntry[] = [
+    const reused: HistoryEntry[] = [
       played.history[0]!,
       { seq: 1, queue: 'spoken', ref: book, chapter: 0, playedAt: 30 },
     ];
     expect(() =>
-      saveSession(db, user.id, phone.id, played.rev, {
-        ...value(played),
-        history: backThenAnotherPlay,
-      }),
+      saveSession(db, user.id, phone.id, played.rev, { ...value(played), history: reused }),
     ).toThrow(HistoryRewritten);
 
-    const olderThanNewest: HistoryEntry[] = [
-      { seq: 0, queue: 'music', ref: song, playedAt: 10 },
-      { seq: 2, queue: 'music', ref: song, playedAt: 30 },
-    ];
     const gapped = saveSession(db, user.id, phone.id, played.rev, {
       ...value(played),
-      history: olderThanNewest,
+      history: [...played.history, { seq: 3, queue: 'music', ref: song, playedAt: 30 }],
     })!;
     expect(() =>
       saveSession(db, user.id, phone.id, gapped.rev, {
         ...value(gapped),
-        history: [
-          gapped.history[0]!,
-          { seq: 1, queue: 'music', ref: album, playedAt: 40 },
-          gapped.history[1]!,
-        ],
+        history: [...gapped.history, { seq: 2, queue: 'music', ref: album, playedAt: 40 }],
       }),
     ).toThrow(HistoryRewritten);
 
@@ -331,7 +377,7 @@ describe('a listening session in the store', () => {
         ...value(saved),
         queues: { ...saved.queues, spoken: { current: null, position, user: [], context: null } },
       }),
-    ).toThrow();
+    ).toThrow(PositionWithoutItem);
     expect(openSession(db, user.id, phone.id)).toEqual(saved);
   });
 });
