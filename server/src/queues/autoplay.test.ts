@@ -16,7 +16,13 @@ import { absTree, albumRow, orderingFromFeed, trackRows } from '../libraryIndex/
 import { applyTree, emptyCounts, episodesInOrder } from '../libraryIndex/store.js';
 import { openDatabase, type Db } from '../store/connection.js';
 import type { QueueEntry, SessionPlay, SessionValue } from '../store/listening.js';
-import { type AutoplayDeps, prepareAutoplay, storedAutoplay } from './autoplay.js';
+import {
+  AUTOPLAY_STALE_MS,
+  type AutoplayDeps,
+  autoplayStale,
+  prepareAutoplay,
+  storedAutoplay,
+} from './autoplay.js';
 import { step, type EngineDeps, type Expansion } from './engine.js';
 
 const ADAPTERS = fileURLToPath(new URL('../adapters/', import.meta.url));
@@ -108,6 +114,9 @@ afterEach(() => {
 });
 
 const COMMON = { baseUrl: 'http://upstream.invalid', token: '<token>' };
+const NOW = 5_000_000;
+/** How long an adapter waits for an upstream before it gives up. */
+const ONE_TIMEOUT_MS = 15_000;
 
 /** Resolver deps on replayed recordings, counting every upstream call and every warning. */
 function resolver(
@@ -128,6 +137,7 @@ function resolver(
     abs: new AbsClient({ ...COMMON, fetch: counted(absAnswers) }),
     jellyfin: new JellyfinClient({ ...COMMON, fetch: counted(jellyfinAnswers) }),
     log: { warn: (_detail, message) => warnings.push(message) },
+    now: () => NOW,
   };
   return { deps, calls, warnings };
 }
@@ -161,6 +171,7 @@ function playing(
     history: plays(queue, played),
     autoplay: { music: null, spoken: null },
     radio: null,
+    autoplayAt: null,
   };
 }
 
@@ -176,30 +187,90 @@ const engine = (autoplay: EngineDeps['autoplay']): EngineDeps => ({
 describe('[M1.sessions/e] autoplay on the spoken queue', () => {
   const serial = () => episodesInOrder(db, show1.id).map((e) => abs(e.id));
 
-  it('plays the next unfinished episode of a serial show, oldest first, skipping one the user finished', async () => {
+  /** `me` with each of `episodes` (of show 1) marked finished too. */
+  const finishing = (me: Recording, episodes: MediaRef[]) =>
+    changed(me, (body) => {
+      const progress = body['mediaProgress'] as Record<string, unknown>[];
+      const template = meSchema.parse(json(ME_FINISHED)).mediaProgress[0]!;
+      for (const e of episodes) {
+        progress.push({ ...template, id: `${template.id}-${e.id}`, episodeId: e.id });
+      }
+    });
+
+  it('plays the episode after the current one in a serial show, oldest to newest', async () => {
     const [partOne, partTwo, partThree] = serial();
     const finished = meSchema.parse(json(ME_FINISHED)).mediaProgress[0]!;
     expect(finished).toMatchObject({ episodeId: partOne!.id, isFinished: true });
 
-    const { deps } = resolver([ME_FINISHED]);
-    const s = await prepareAutoplay(playing('spoken', { ref: partTwo! }), deps);
+    const s = await prepareAutoplay(playing('spoken', { ref: partTwo! }), resolver().deps);
+    // Part one is unfinished and older, but it comes before part two: never jump back to it.
     expect(pick(s, 'spoken')).toEqual({ ref: partThree });
 
-    // Without the finished mark, the oldest unfinished episode is part one.
-    const unread = await prepareAutoplay(playing('spoken', { ref: partTwo! }), resolver().deps);
-    expect(pick(unread, 'spoken')).toEqual({ ref: partOne });
+    const fromOne = await prepareAutoplay(playing('spoken', { ref: partOne! }), resolver().deps);
+    expect(pick(fromOne, 'spoken')).toEqual({ ref: partTwo });
   });
 
-  it('plays the newest unfinished episode of an episodic show', async () => {
+  it('skips an episode after the current one that the user finished on Audiobookshelf', async () => {
+    const [partOne, partTwo, partThree] = serial();
+    const { deps } = resolver([finishing(ME, [partTwo!])]);
+
+    const s = await prepareAutoplay(playing('spoken', { ref: partOne! }), deps);
+
+    expect(pick(s, 'spoken')).toEqual({ ref: partThree });
+  });
+
+  it('skips an episode this session already played, even before Audiobookshelf marks it finished', async () => {
+    const [partOne, partTwo, partThree] = serial();
+    // Part two played here earlier; Audiobookshelf has not caught up.
+    const s = await prepareAutoplay(
+      playing('spoken', { ref: partOne! }, [{ ref: partTwo! }]),
+      resolver().deps,
+    );
+
+    expect(pick(s, 'spoken')).toEqual({ ref: partThree });
+  });
+
+  it('has nothing after the last episode of a serial show, even with earlier ones unfinished', async () => {
+    const order = serial();
+    const last = { ref: order.at(-1)! };
+
+    const s = await prepareAutoplay(playing('spoken', last), resolver().deps);
+
+    expect(s.autoplay.spoken).toEqual({ after: last, next: null });
+  });
+
+  it('plays the next older episode of an episodic show, and nothing after its oldest', async () => {
     const order = episodesInOrder(db, show2.id).map((e) => abs(e.id));
     expect(show2.mediaType === 'podcast' && show2.media.episodes.length).toBe(order.length);
     const { deps } = resolver();
 
-    const fromOld = await prepareAutoplay(playing('spoken', { ref: order.at(-1)! }), deps);
-    expect(pick(fromOld, 'spoken')).toEqual({ ref: order[0] });
-
     const fromNewest = await prepareAutoplay(playing('spoken', { ref: order[0]! }), deps);
     expect(pick(fromNewest, 'spoken')).toEqual({ ref: order[1] });
+
+    const fromSecond = await prepareAutoplay(playing('spoken', { ref: order[1]! }), deps);
+    expect(pick(fromSecond, 'spoken')).toEqual({ ref: order[2] });
+
+    const fromOldest = await prepareAutoplay(playing('spoken', { ref: order.at(-1)! }), deps);
+    expect(pick(fromOldest, 'spoken')).toBeNull();
+  });
+
+  it('plays a show of unknown order like an episodic one, newest to oldest', async () => {
+    const oldestFirst = serial();
+    db.prepare(`UPDATE index_items SET episode_order = 'unknown' WHERE upstream_id = ?`).run(
+      show1.id,
+    );
+    const order = episodesInOrder(db, show1.id).map((e) => abs(e.id));
+    expect(order).toEqual([...oldestFirst].reverse());
+    const [newest, second] = order;
+
+    const s = await prepareAutoplay(playing('spoken', { ref: newest! }), resolver().deps);
+    expect(pick(s, 'spoken')).toEqual({ ref: second });
+
+    const oldest = await prepareAutoplay(
+      playing('spoken', { ref: order.at(-1)! }),
+      resolver().deps,
+    );
+    expect(pick(oldest, 'spoken')).toBeNull();
   });
 
   it('plays the next chapter of a book without asking Audiobookshelf', async () => {
@@ -309,6 +380,23 @@ describe('[M1.sessions/e] autoplay on the music queue', () => {
     expect(next.radio).toEqual({ seed: last, tracks: mix });
   });
 
+  it('keeps no radio run that has nothing left to play: the next pass asks Instant Mix again', async () => {
+    const last = tracks.at(-1)!;
+    const emptyMix = changed(INSTANT_MIX, (body) => {
+      body['Items'] = [];
+      body['TotalRecordCount'] = 0;
+    });
+    const { deps, calls } = resolver([ME], [emptyMix]);
+
+    const once = await prepareAutoplay(playing('music', { ref: last }, [], fromAlbum), deps);
+    expect(once.autoplay.music).toEqual({ after: { ref: last }, next: null });
+    expect(once.radio).toBeNull();
+
+    const again = await prepareAutoplay(once, resolver().deps);
+    expect(pick(again, 'music')).toEqual({ ref: mix[1] });
+    expect(calls.filter((c) => c.endsWith('/InstantMix'))).toHaveLength(1);
+  });
+
   it('works nothing out while the queue still has items after the current one', async () => {
     const { deps, calls } = resolver();
     const s = playing('music', { ref: tracks.at(-1)! }, [], fromAlbum);
@@ -332,14 +420,34 @@ describe('[M1.sessions/e] the stored pick', () => {
     expect(calls).toHaveLength(before);
   });
 
-  it('is worked out once per item: a second pass over the same item reads nothing', async () => {
-    const { deps, calls } = resolver([ME_FINISHED]);
-    const [, partTwo] = episodesInOrder(db, show1.id).map((e) => abs(e.id));
-    const once = await prepareAutoplay(playing('spoken', { ref: partTwo! }), deps);
-    const reads = calls.length;
+  it('is worked out afresh on every pass, seeing what another device finished meanwhile', async () => {
+    const [, partTwo, partThree, partFour] = episodesInOrder(db, show1.id).map((e) => abs(e.id));
+    const first = await prepareAutoplay(
+      playing('spoken', { ref: partTwo! }),
+      resolver([ME_FINISHED]).deps,
+    );
+    expect(pick(first, 'spoken')).toEqual({ ref: partThree });
 
-    expect(await prepareAutoplay(once, deps)).toEqual(once);
-    expect(calls).toHaveLength(reads);
+    // Another device finishes part three; the same item, prepared again, reads it.
+    const elsewhere = changed(ME_FINISHED, (me) => {
+      const progress = me['mediaProgress'] as Record<string, unknown>[];
+      progress.push({ ...progress[0], id: 'elsewhere', episodeId: partThree!.id });
+    });
+    const { deps, calls } = resolver([elsewhere]);
+    const again = await prepareAutoplay(first, deps);
+
+    expect(calls).toEqual(['/api/me']);
+    expect(pick(again, 'spoken')).toEqual({ ref: partFour });
+  });
+
+  it('records when it was worked out, and is stale once that is over two minutes old', async () => {
+    const s = await prepareAutoplay(playing('music', null), resolver().deps);
+
+    expect(s.autoplayAt).toBe(NOW);
+    expect(AUTOPLAY_STALE_MS).toBe(2 * 60_000);
+    expect(autoplayStale(playing('music', null), NOW)).toBe(true);
+    expect(autoplayStale(s, NOW + AUTOPLAY_STALE_MS)).toBe(false);
+    expect(autoplayStale(s, NOW + AUTOPLAY_STALE_MS + 1)).toBe(true);
   });
 
   it('is not used for an item it was not worked out for', () => {
@@ -395,5 +503,27 @@ describe('[M1.sessions/e] an upstream that fails', () => {
 
     expect(s.autoplay.spoken).toBeNull();
     expect(warnings).toHaveLength(1);
+  });
+
+  it('reads both upstreams at once, so when both hang the pass costs one timeout, not two', async () => {
+    vi.useFakeTimers();
+    const hangs: FetchLike = (_url, init) =>
+      new Promise((_, reject) =>
+        init?.signal?.addEventListener('abort', () => reject(new Error('aborted'))),
+      );
+    const [, partTwo] = episodesInOrder(db, show1.id).map((e) => abs(e.id));
+    const s = playing('music', { ref: tracks.at(-1)! }, [], {
+      from: { kind: 'album', ref: albumRef },
+      items: [],
+    });
+    s.queues.spoken.current = item({ ref: partTwo! });
+    const { deps, warnings } = resolver(hangs, hangs);
+
+    let done: SessionValue | undefined;
+    void prepareAutoplay(s, deps).then((value) => (done = value));
+    await vi.advanceTimersByTimeAsync(ONE_TIMEOUT_MS);
+
+    expect(done?.autoplay).toEqual({ music: null, spoken: null });
+    expect(warnings).toHaveLength(2);
   });
 });

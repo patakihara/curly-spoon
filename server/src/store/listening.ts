@@ -88,6 +88,8 @@ export interface SessionValue {
   /** Each queue's autoplay pick, or null when none has been worked out for it. */
   autoplay: Record<QueueType, AutoplayPick | null>;
   radio: RadioRun | null;
+  /** When autoplay was last worked out for the session (ms), or null when it never was. */
+  autoplayAt: number | null;
 }
 
 export interface StoredSession extends SessionValue {
@@ -147,6 +149,7 @@ const SessionRow = z.object({
   updated_at: z.number(),
   radio_seed_source: MediaSource.nullable(),
   radio_seed_id: z.string().nullable(),
+  autoplay_at: z.number().nullable(),
 });
 type SessionRow = z.infer<typeof SessionRow>;
 
@@ -322,6 +325,7 @@ function stored(db: Db, row: SessionRow): StoredSession {
     history: readHistory(db, row.device_id),
     autoplay: readAutoplay(db, row.device_id),
     radio: readRadio(db, row),
+    autoplayAt: row.autoplay_at,
     rev: row.rev,
     updatedAt: row.updated_at,
   };
@@ -388,7 +392,7 @@ export function saveSession(
       .prepare(
         `UPDATE listening_sessions
          SET active = ?, switch_after_current = ?, queue_style = ?, rev = rev + 1,
-           updated_at = ?, radio_seed_source = ?, radio_seed_id = ?
+           updated_at = ?, radio_seed_source = ?, radio_seed_id = ?, autoplay_at = ?
          WHERE device_id = ? AND user_id = ? AND rev = ?`,
       )
       .run(
@@ -398,6 +402,7 @@ export function saveSession(
         now,
         value.radio?.seed.source ?? null,
         value.radio?.seed.id ?? null,
+        value.autoplayAt,
         deviceId,
         userId,
         rev,

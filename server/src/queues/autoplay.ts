@@ -1,13 +1,16 @@
 /**
  * Autoplay: what a queue plays once it runs out, worked out ahead so a step never waits on an
- * upstream. After every change to a session, `prepareAutoplay` works out each queue's pick from
- * the item it would follow (its current item, else its newest play) and keeps it on the session,
- * with music's radio run; the engine's `autoplay` is `storedAutoplay`, which only reads them.
+ * upstream. `prepareAutoplay` works out each queue's pick from the item it would follow (its
+ * current item, else its newest play) and keeps it on the session, with music's radio run and
+ * when it ran; the engine's `autoplay` is `storedAutoplay`, which only reads them. It runs after
+ * every change to a session, when a play starts, and after a progress report once the last run
+ * is over `AUTOPLAY_STALE_MS` old, so a pick is never more than about two minutes stale.
  *
  * Spoken: the next chapter of the book, then the first unfinished book after it in its series;
- * for an episode, the first unfinished episode of its show in the show's order (oldest first for
- * serial shows, newest first for episodic and unknown ones), other than the one it follows.
- * Finished means finished on Audiobookshelf, read as the user.
+ * for an episode, the first episode after it in its show's order (older to newer for serial
+ * shows, newer to older for episodic and unknown ones) that is neither finished nor played in
+ * this session; nothing when none is left after it. Finished means finished on Audiobookshelf,
+ * read as the user.
  *
  * Music: the rest of the album the queue plays from, by disc and position, then radio from music
  * you own: Jellyfin's Instant Mix for the last track, read as the user, skipping tracks that have
@@ -42,6 +45,15 @@ export interface AutoplayDeps {
   /** Jellyfin as the user, for Instant Mix from their library. */
   jellyfin: { getInstantMix(itemId: string, limit: number): Promise<IndexItem[]> };
   log: { warn(detail: object, message: string): void };
+  now(): number;
+}
+
+/** How old the last autoplay run may get before a progress report runs it again. */
+export const AUTOPLAY_STALE_MS = 2 * 60_000;
+
+/** True when autoplay has never run for the session, or last ran over two minutes before `now`. */
+export function autoplayStale(session: SessionValue, now: number): boolean {
+  return session.autoplayAt === null || now - session.autoplayAt > AUTOPLAY_STALE_MS;
 }
 
 const QUEUES: readonly QueueType[] = ['music', 'spoken'];
@@ -74,29 +86,34 @@ function followed(s: SessionValue, queue: QueueType): QueueEntry | null {
 }
 
 /**
- * Works out each queue's autoplay pick and keeps it on the session, with music's radio run. A
- * pick already worked out for the same item is kept as it is, with nothing read.
+ * Works out each queue's autoplay pick and keeps it on the session, with music's radio run and
+ * when it ran.
  */
 export async function prepareAutoplay(
   session: SessionValue,
   deps: AutoplayDeps,
 ): Promise<SessionValue> {
   const s = structuredClone(session);
-  for (const queue of QUEUES) {
-    const after = followed(s, queue);
-    const kept = s.autoplay[queue];
-    if (after === null) s.autoplay[queue] = null;
-    else if (kept === null || !sameEntry(kept.after, after)) {
+  // Always worked out afresh, even for the same item: another device may have finished an
+  // episode or book since. Both queues read their upstreams at once, so a hang costs one timeout.
+  await Promise.all(
+    QUEUES.map(async (queue) => {
+      const after = followed(s, queue);
+      if (after === null) {
+        s.autoplay[queue] = null;
+        return;
+      }
       try {
         const next =
-          queue === 'music' ? await musicPick(s, after, deps) : await spokenPick(after, deps);
+          queue === 'music' ? await musicPick(s, after, deps) : await spokenPick(s, after, deps);
         s.autoplay[queue] = { after, next };
       } catch (err) {
         deps.log.warn({ err, queue }, `autoplay has nothing for the ${queue} queue this time`);
         s.autoplay[queue] = null;
       }
-    }
-  }
+    }),
+  );
+  s.autoplayAt = deps.now();
   return s;
 }
 
@@ -121,9 +138,13 @@ async function finishedSet(deps: AutoplayDeps): Promise<Set<string>> {
   );
 }
 
-async function spokenPick(after: QueueEntry, deps: AutoplayDeps): Promise<QueueEntry | null> {
+async function spokenPick(
+  s: SessionValue,
+  after: QueueEntry,
+  deps: AutoplayDeps,
+): Promise<QueueEntry | null> {
   const row = indexedRow(deps.db, after.ref.source, after.ref.id);
-  if (row?.kind === 'episode') return nextEpisode(row, deps);
+  if (row?.kind === 'episode') return nextEpisode(s, row, deps);
 
   const chapters = deps.expand(after.ref)?.entries ?? [];
   const at = chapters.findIndex((e) => sameEntry(e, after));
@@ -132,13 +153,23 @@ async function spokenPick(after: QueueEntry, deps: AutoplayDeps): Promise<QueueE
   return row?.kind === 'book' ? nextBook(row, deps) : null;
 }
 
-async function nextEpisode(episode: StoredRow, deps: AutoplayDeps): Promise<QueueEntry | null> {
+async function nextEpisode(
+  s: SessionValue,
+  episode: StoredRow,
+  deps: AutoplayDeps,
+): Promise<QueueEntry | null> {
   if (episode.parentId === null) return null;
   const show = episode.parentId;
-  const others = episodesInOrder(deps.db, show).filter((e) => e.id !== episode.id);
-  if (others.length === 0) return null;
+  const order = episodesInOrder(deps.db, show);
+  // Only episodes after this one in the show's own order; never jump back to an earlier one.
+  const later = order.slice(order.findIndex((e) => e.id === episode.id) + 1 || order.length);
+  if (later.length === 0) return null;
+  // Played here counts as done, even before Audiobookshelf says it is finished.
+  const played = new Set(s.history.map((h) => key(h.ref)));
   const finished = await finishedSet(deps);
-  const next = others.find((e) => !finished.has(`${show}/${e.id}`));
+  const next = later.find(
+    (e) => !finished.has(`${show}/${e.id}`) && !played.has(key({ source: 'abs', id: e.id })),
+  );
   return next === undefined ? null : { ref: { source: 'abs', id: next.id } };
 }
 
@@ -188,7 +219,8 @@ async function musicPick(
 
   const mix = await deps.jellyfin.getInstantMix(after.ref.id, INSTANT_MIX_LIMIT);
   const tracks = mix.map((t): MediaRef => ({ source: 'jellyfin', id: t.Id }));
-  s.radio = { seed: after.ref, tracks };
   const next = tracks.find((t) => !played.has(key(t)));
+  // A run with nothing left to play is not kept, so the next pass asks Instant Mix again.
+  s.radio = next === undefined ? null : { seed: after.ref, tracks };
   return next === undefined ? null : { ref: next };
 }

@@ -106,6 +106,7 @@ const empty = (queueStyle: SessionValue['queueStyle'] = 'youtube'): SessionValue
   history: [],
   autoplay: { music: null, spoken: null },
   radio: null,
+  autoplayAt: null,
 });
 
 /** Runs each change in turn, failing on a ref the index does not hold. */

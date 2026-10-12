@@ -37,6 +37,7 @@ const value = (session: StoredSession): SessionValue => ({
   history: session.history,
   autoplay: session.autoplay,
   radio: session.radio,
+  autoplayAt: session.autoplayAt,
 });
 
 let dir: string;
@@ -146,6 +147,7 @@ describe('a listening session in the store', () => {
       history: [],
       autoplay: { music: null, spoken: null },
       radio: null,
+      autoplayAt: null,
       rev: 0,
       updatedAt: 1000,
     });
@@ -185,6 +187,7 @@ describe('a listening session in the store', () => {
         spoken: { after: { ref: book, chapter: 2 }, next: null },
       },
       radio: { seed: song, tracks: [album, song] },
+      autoplayAt: 1500,
     };
 
     const saved = saveSession(db, user.id, phone.id, session.rev, written, 2000);

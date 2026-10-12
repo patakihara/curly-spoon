@@ -264,6 +264,8 @@ export const migrations: readonly Migration[] = [
           -- The track music's radio run was asked for; its tracks are in radio_tracks.
           radio_seed_source    TEXT CHECK (radio_seed_source IN ('abs', 'jellyfin')),
           radio_seed_id        TEXT,
+          -- When autoplay's picks were last worked out (ms); NULL until they first are.
+          autoplay_at          INTEGER,
           CHECK ((radio_seed_source IS NULL) = (radio_seed_id IS NULL))
         );
         CREATE INDEX idx_listening_sessions_user_id ON listening_sessions(user_id);
