@@ -533,6 +533,7 @@ export interface components {
         ProgressAnswer: {
             taken: boolean;
             lastSeq: number;
+            endAt?: number;
         };
         ProgressBody: {
             playId: string;

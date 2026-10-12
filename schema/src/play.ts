@@ -123,9 +123,40 @@ export type ProgressBody = z.infer<typeof ProgressBody>;
  * reports from 0 again carries on from `lastSeq + 1`.
  */
 export const ProgressAnswer = z
-  .object({ taken: z.boolean(), lastSeq: z.number().int().nonnegative() })
+  .object({
+    taken: z.boolean(),
+    lastSeq: z.number().int().nonnegative(),
+    /**
+     * Where in the plan's item, in seconds from its start, the play must stop instead of playing
+     * on: set when what the session plays next lies outside this plan, as after Play next in the
+     * middle of a book or an album. The player pauses there and never starts the next file.
+     */
+    endAt: z.number().nonnegative().optional(),
+  })
   .openapi('ProgressAnswer');
 export type ProgressAnswer = z.infer<typeof ProgressAnswer>;
+
+/** An item's art, served by this server: `/api/media/{ref}/art`. */
+export const ArtUrl = z.string().startsWith('/api/');
+export type ArtUrl = z.infer<typeof ArtUrl>;
+
+/** How a plan plays: music, or spoken (a book or an episode), with speed and the sleep timer. */
+export const PlaybackVariant = z.enum(['music', 'spoken']).openapi('PlaybackVariant');
+export type PlaybackVariant = z.infer<typeof PlaybackVariant>;
+
+/**
+ * What a plan plays, as the player and the system's media controls name it: its title, its
+ * artist, author or show (`sub`), its art, and whether it is music or spoken.
+ */
+export const PlaybackMeta = z
+  .object({
+    title: z.string(),
+    sub: z.string().nullable(),
+    art: ArtUrl.nullable(),
+    variant: PlaybackVariant,
+  })
+  .openapi('PlaybackMeta');
+export type PlaybackMeta = z.infer<typeof PlaybackMeta>;
 
 /**
  * How to play an item: its tracks in order, its chapters, where in the item to start, where to

@@ -207,6 +207,7 @@ enum class PlayingFromKind {
 data class ProgressAnswer(
     val taken: Boolean,
     val lastSeq: Long,
+    val endAt: Double? = null,
 )
 
 @Serializable
