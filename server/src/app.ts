@@ -119,6 +119,9 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         : upstreamFor({ db, ...upstreams }, caller),
     now: options.now ?? Date.now,
     log: app.log,
+    ...(options.playback?.autoplayWaitMs === undefined
+      ? {}
+      : { autoplayWaitMs: options.playback.autoplayWaitMs }),
   });
   sessionRoutes(app, { sessions });
   playRoutes(app, {

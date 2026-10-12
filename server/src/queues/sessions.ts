@@ -2,11 +2,17 @@
  * Listening sessions as the routes run them: each request works on the caller's own device's
  * session only, read, changed by the queue engine and saved at once, with nothing awaited in
  * between. Every change, and every play started, then works autoplay's picks out again in the
- * background, as the person, never holding up the answer; so does a progress report once the last
- * run is over two minutes old. A failure there is logged and leaves the picks as they were.
+ * background, as the person; so does a progress report once the last run is over two minutes old.
+ * A failure there is logged and leaves the picks as they were. Only a play, or a Next, that needs
+ * a pick still being worked out waits for it, and never longer than `AUTOPLAY_WAIT_MS`.
  *
- * Where a device is in its current item is kept from its progress reports. On a play or a read,
- * the newer of that and the item's upstream progress, which every device shares, wins.
+ * A plan of many tracks or chapters (an album, a book) reports its progress under its own ref, as
+ * a position from the start of the plan. The session follows it: its current entry moves on to
+ * the track or chapter that position falls in, recording each entry passed as played, once, in
+ * order. Where a device is in its current entry is kept from those reports, in the entry's own
+ * item: from the start of a book for its chapters, from the start of a track for an album's. On a
+ * play or a read, the newer of that and the item's upstream progress, which every device shares,
+ * wins.
  */
 import { randomUUID } from 'node:crypto';
 import {
@@ -26,6 +32,7 @@ import {
   saveAutoplay,
   savePosition,
   saveSession,
+  type QueueEntry,
   type SessionItem,
   type SessionValue,
   StaleRevision,
@@ -33,7 +40,7 @@ import {
 } from '../store/listening.js';
 import type { User } from '../store/users.js';
 import type { Upstreams } from '../upstream/links.js';
-import { autoplayStale, prepareAutoplay, storedAutoplay } from './autoplay.js';
+import { autoplayKept, autoplayStale, prepareAutoplay, storedAutoplay } from './autoplay.js';
 import { add, type EngineDeps, step, switchTo } from './engine.js';
 import type { IndexLookup } from './lookup.js';
 
@@ -44,8 +51,36 @@ export interface Log {
   warn(detail: object, message: string): void;
 }
 
+/** One entry a plan plays, and where it starts in the plan, in seconds. */
+export interface PlanEntry {
+  entry: QueueEntry;
+  start: number;
+}
+
+/** A play the device holds: the ref key it was planned for, and the entries it plays, in order. */
+export interface HeldPlan {
+  ref: string;
+  entries: readonly PlanEntry[];
+}
+
+/** How long a play, or a Next at a queue's end, waits for autoplay being worked out. */
+export const AUTOPLAY_WAIT_MS = 3_000;
+
+/** What is logged when autoplay's picks are worked out twice for a session that moved on. */
+export const AUTOPLAY_MISSED =
+  'autoplay was worked out twice for a session that changed meanwhile; its picks wait for the next run';
+
 const key = (ref: MediaRef) => `${ref.source}:${ref.id}`;
 const QUEUES: readonly QueueType[] = ['music', 'spoken'];
+
+const sameEntry = (a: QueueEntry, b: QueueEntry) =>
+  key(a.ref) === key(b.ref) && (a.chapter ?? null) === (b.chapter ?? null);
+
+/** The entry of `entries` a position `seconds` into the plan falls in: the last started by then. */
+const entryAt = (entries: readonly PlanEntry[], seconds: number): number => {
+  const at = entries.findLastIndex((e) => e.start <= seconds);
+  return at === -1 ? 0 : at;
+};
 
 /** How far ahead a play's `next` is looked for: past every entry a session could queue. */
 const LOOKAHEAD = 10_000;
@@ -90,8 +125,8 @@ const valueOf = ({
 const currentOf = (s: SessionValue) => s.queues[s.active].current;
 
 export class Sessions {
-  /** How many autoplay runs each device has under way, by `userId deviceId`. */
-  private readonly preparing = new Map<string, number>();
+  /** The autoplay runs each device has under way, by `userId deviceId`. */
+  private readonly preparing = new Map<string, Set<Promise<void>>>();
 
   constructor(
     private readonly options: {
@@ -101,6 +136,8 @@ export class Sessions {
       clients: (user: Caller) => Upstreams;
       now: () => number;
       log: Log;
+      /** How long a play or a Next waits for autoplay; `AUTOPLAY_WAIT_MS` when not given. */
+      autoplayWaitMs?: number;
     },
   ) {}
 
@@ -175,15 +212,19 @@ export class Sessions {
 
   /**
    * A play starts on this device: `ref` becomes its current item, unless it already is (an album
-   * is, while one of its tracks is current); when it is the paused queue's, that queue resumes. When `ref` is what follows in the queue, past what the
-   * device's last plan (`heldBefore`, a ref key) already played, the session steps on to it;
-   * otherwise `ref` plays now. Answers what plays after this plan, and the newer of this device's
-   * position in the item and the upstream's, when the session holds one.
+   * is, while one of its tracks is current); when it is the paused queue's, that queue resumes.
+   * When `ref` is what follows in the queue, past what the device's last plan (`heldBefore`, a ref
+   * key) already played, the session steps on to it; otherwise `ref` plays now. Answers what plays
+   * after this plan, and where to start in it: in the current entry, at the newer of this device's
+   * position and the upstream's, when the session holds one. With nothing queued after the plan
+   * and no autoplay pick kept for its end, it waits for the run this play starts, up to the wait;
+   * past it, it answers nothing next and the run goes on (the client reads the pick on its Next).
    */
   async played(
     caller: Caller,
     ref: MediaRef,
     heldBefore: string | null,
+    entries: readonly PlanEntry[],
   ): Promise<{ next: MediaRef | undefined; position: QueuePosition | null }> {
     const { lookup } = this.options;
     await this.load(caller, [ref]);
@@ -202,19 +243,51 @@ export class Sessions {
           : (this.advancedTo(value, ref, heldBefore) ?? add(value, ref, 'now', this.deps));
       if (changed !== null) saved = this.save(caller, s, changed);
     }
-    this.refreshAutoplay(caller);
+    const running = this.refreshAutoplay(caller);
     // An item the session could not take (one the index does not hold) has nothing after it.
     const now = currentOf(saved);
     if (now === null || !covered.has(key(now.ref))) return { next: undefined, position: null };
 
-    const next = this.nextAfter(valueOf(saved), covered);
+    let after = this.nextAfter(valueOf(saved), covered);
+    if (after.waiting) {
+      await this.within(running);
+      after = this.nextAfter(valueOf(this.open(caller)), covered);
+    }
+    return { next: after.next, position: await this.startIn(caller, saved, ref, entries) };
+  }
+
+  /**
+   * Where a plan for `ref` starts, from the start of the plan: in the queue's current entry, at
+   * this device's position there (for the plan's own item, the newer of it and the upstream's).
+   * Null when the session keeps no position for the plan's own item.
+   */
+  private async startIn(
+    caller: Caller,
+    s: StoredSession,
+    ref: MediaRef,
+    entries: readonly PlanEntry[],
+  ): Promise<QueuePosition | null> {
     const queue = QUEUES.find((q) => {
-      const c = saved.queues[q].current;
+      const c = s.queues[q].current;
       return c !== null && key(c.ref) === key(ref);
     });
-    const kept = queue === undefined ? null : saved.queues[queue].position;
-    const position = kept === null ? null : newer(kept, await this.upstreamPosition(caller, ref));
-    return { next, position };
+    if (queue !== undefined) {
+      const kept = s.queues[queue].position;
+      return kept === null ? null : newer(kept, await this.upstreamPosition(caller, ref));
+    }
+    // An album: the track its queue is on, at the device's position in that track.
+    for (const q of QUEUES) {
+      const current = s.queues[q].current;
+      const placed =
+        current === null ? undefined : entries.find((e) => sameEntry(e.entry, current));
+      if (placed === undefined) continue;
+      const kept = s.queues[q].position;
+      return {
+        ms: Math.round(placed.start * 1000) + (kept?.ms ?? 0),
+        takenAt: kept?.takenAt ?? this.options.now(),
+      };
+    }
+    return null;
   }
 
   /**
@@ -245,36 +318,116 @@ export class Sessions {
     return null;
   }
 
-  /** What plays once a plan for the covered refs ends: the first entry stepping next reaches past them. */
-  private nextAfter(s: SessionValue, covered: Set<string>): MediaRef | undefined {
+  /**
+   * What plays once a plan for the covered refs ends: the first entry stepping next reaches past
+   * them. `waiting` when stepping reaches the queue's end with no autoplay pick kept for it yet.
+   */
+  private nextAfter(
+    s: SessionValue,
+    covered: Set<string>,
+  ): { next: MediaRef | undefined; waiting: boolean } {
     let t = s;
     for (let n = 0; n < LOOKAHEAD; n += 1) {
+      const before = t;
       t = step(t, 'next', this.deps);
       const c = currentOf(t);
-      if (c === null) return undefined;
-      if (!covered.has(key(c.ref))) return c.ref;
+      if (c === null) return { next: undefined, waiting: !this.autoplayReady(before) };
+      if (!covered.has(key(c.ref))) return { next: c.ref, waiting: false };
     }
-    return undefined;
+    return { next: undefined, waiting: false };
   }
 
   /**
-   * Keeps where this device is in the item a play of `refKey` plays, when it is a queue's current
-   * item, then works autoplay out again when the last run is over two minutes old.
+   * False when a Next from `s` would ask autoplay for a pick it keeps none of yet: its queue ends
+   * there and the play ending is not the one the kept pick was worked out for.
    */
-  progress(caller: Caller, refKey: string, seconds: number): void {
+  private autoplayReady(s: SessionValue): boolean {
+    let asked: QueueType | null = null;
+    const ended = step(s, 'next', {
+      ...this.deps,
+      autoplay: (queue, session) => {
+        asked = queue;
+        return this.deps.autoplay(queue, session);
+      },
+    });
+    return asked === null || autoplayKept(asked, ended);
+  }
+
+  /**
+   * Before a Next: when it reaches the queue's end while autoplay is being worked out for this
+   * device, waits for that run (up to the wait) so the Next plays its pick.
+   */
+  async beforeNext(caller: Caller): Promise<void> {
+    if (!this.preparing.has(this.device(caller))) return;
+    if (this.autoplayReady(valueOf(this.open(caller)))) return;
+    await this.within(Promise.all(this.preparing.get(this.device(caller)) ?? []));
+  }
+
+  /**
+   * Keeps where this device is in the plan it holds, from a report `seconds` into the plan. When
+   * the position falls in a later entry of the plan than the queue's current one, the active
+   * queue steps on to it, each entry passed recorded as played; an entry outside the plan in
+   * between (an item put next) stops it, and so does a position before the current entry. Then
+   * works autoplay out again when the last run is over two minutes old.
+   */
+  progress(caller: Caller, plan: HeldPlan, seconds: number): void {
     const s = this.open(caller);
     const now = this.options.now();
+    const at = entryAt(plan.entries, seconds);
+    const target = plan.entries[at];
+    const position = (entry: QueueEntry | undefined, start: number) => ({
+      ms: Math.round(
+        (seconds - (entry === undefined || key(entry.ref) === plan.ref ? 0 : start)) * 1000,
+      ),
+      takenAt: now,
+    });
+    let moved = false;
     for (const queue of QUEUES) {
       const current = s.queues[queue].current;
-      if (current === null || key(current.ref) !== refKey) continue;
-      savePosition(this.options.db, caller.id, caller.deviceId, queue, current.itemId, {
-        ms: Math.round(seconds * 1000),
-        takenAt: now,
-      });
+      if (current === null) continue;
+      const placed = plan.entries.findIndex((e) => sameEntry(e.entry, current));
+      if (placed === -1) {
+        // The plan's own item, queued as one entry: the position is in that item.
+        if (key(current.ref) === plan.ref) {
+          savePosition(this.options.db, caller.id, caller.deviceId, queue, current.itemId, {
+            ms: Math.round(seconds * 1000),
+            takenAt: now,
+          });
+        }
+        continue;
+      }
+      if (placed === at) {
+        savePosition(
+          this.options.db,
+          caller.id,
+          caller.deviceId,
+          queue,
+          current.itemId,
+          position(target?.entry, target?.start ?? 0),
+        );
+      } else if (placed < at && queue === s.active) {
+        const stepped = this.steppedThrough(valueOf(s), plan.entries.slice(placed + 1, at + 1));
+        if (stepped !== null) {
+          stepped.queues[queue].position = position(target?.entry, target?.start ?? 0);
+          this.save(caller, s, stepped);
+          moved = true;
+        }
+      }
     }
-    if (autoplayStale(s, now) && !this.preparing.has(`${caller.id} ${caller.deviceId}`)) {
+    if (moved || (autoplayStale(s, now) && !this.preparing.has(this.device(caller)))) {
       this.refreshAutoplay(caller);
     }
+  }
+
+  /** `s` stepped next through exactly `path`, in order; null when a step lands anywhere else. */
+  private steppedThrough(s: SessionValue, path: readonly PlanEntry[]): SessionValue | null {
+    let t = s;
+    for (const { entry } of path) {
+      t = step(t, 'next', this.deps);
+      const c = currentOf(t);
+      if (c === null || !sameEntry(c, entry)) return null;
+    }
+    return t;
   }
 
   /** One of this device's queues, its position the newer of this device's and the upstream's. */
@@ -327,35 +480,60 @@ export class Sessions {
 
   /**
    * Works autoplay's picks out again for this device, in the background, as the person, and keeps
-   * them unless the session changed meanwhile (that change works them out itself).
+   * them unless the session changed meanwhile. Then it works them out once more on the newer
+   * session; a second miss is logged and leaves the picks to the next run. Answers when the run
+   * is over, never failing (a failure is logged).
    */
-  refreshAutoplay(caller: Caller): void {
-    const device = `${caller.id} ${caller.deviceId}`;
-    this.preparing.set(device, (this.preparing.get(device) ?? 0) + 1);
-    void this.prepare(caller)
+  refreshAutoplay(caller: Caller): Promise<void> {
+    const device = this.device(caller);
+    const runs = this.preparing.get(device) ?? new Set<Promise<void>>();
+    this.preparing.set(device, runs);
+    const run: Promise<void> = this.prepare(caller)
       .catch((err: unknown) => this.options.log.warn({ err }, 'autoplay could not be worked out'))
       .finally(() => {
-        const left = (this.preparing.get(device) ?? 1) - 1;
-        if (left === 0) this.preparing.delete(device);
-        else this.preparing.set(device, left);
+        runs.delete(run);
+        if (runs.size === 0 && this.preparing.get(device) === runs) this.preparing.delete(device);
       });
+    runs.add(run);
+    return run;
+  }
+
+  private device(caller: Caller): string {
+    return `${caller.id} ${caller.deviceId}`;
+  }
+
+  /** Waits for `work`, or for the wait to run out, whichever is first. */
+  private async within(work: Promise<unknown>): Promise<void> {
+    let timer: NodeJS.Timeout | undefined;
+    const waited = new Promise<void>((resolve) => {
+      timer = setTimeout(resolve, this.options.autoplayWaitMs ?? AUTOPLAY_WAIT_MS);
+    });
+    try {
+      await Promise.race([work, waited]);
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   private async prepare(caller: Caller): Promise<void> {
     const { db, lookup, log } = this.options;
-    const s = this.open(caller);
-    const clients = this.options.clients(caller);
-    await lookup.load(lookup.autoplayBooks(s), clients.abs);
-    const unlinked = (service: string) => () =>
-      Promise.reject(new Error(`no ${service} account is linked`));
-    const done = await prepareAutoplay(valueOf(s), {
-      db,
-      expand: (ref) => lookup.expand(ref),
-      abs: clients.abs ?? { getMe: unlinked('Audiobookshelf') },
-      jellyfin: clients.jellyfin ?? { getInstantMix: unlinked('Jellyfin') },
-      log,
-      now: this.options.now,
-    });
-    saveAutoplay(db, caller.id, caller.deviceId, s.rev, done);
+    for (let tries = 0; tries < 2; tries += 1) {
+      const s = this.open(caller);
+      const clients = this.options.clients(caller);
+      await lookup.load(lookup.autoplayBooks(s), clients.abs);
+      const unlinked = (service: string) => () =>
+        Promise.reject(new Error(`no ${service} account is linked`));
+      const done = await prepareAutoplay(valueOf(s), {
+        db,
+        expand: (ref) => lookup.expand(ref),
+        abs: clients.abs ?? { getMe: unlinked('Audiobookshelf') },
+        jellyfin: clients.jellyfin ?? { getInstantMix: unlinked('Jellyfin') },
+        log,
+        now: this.options.now,
+      });
+      // A session that moved on meanwhile is read again and its picks worked out once more.
+      if (saveAutoplay(db, caller.id, caller.deviceId, s.rev, done)) return;
+    }
+    log.warn({ deviceId: caller.deviceId }, AUTOPLAY_MISSED);
   }
 }

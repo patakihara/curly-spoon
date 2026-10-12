@@ -122,10 +122,17 @@ export async function prepareAutoplay(
  * ended there (its newest). Never reads an upstream.
  */
 export function storedAutoplay(queue: QueueType, session: SessionValue): QueueEntry | null {
+  return autoplayKept(queue, session) ? session.autoplay[queue]!.next : null;
+}
+
+/**
+ * True when the session keeps a pick for `queue` worked out for the play that just ended there
+ * (its newest), even one saying nothing follows; false when that pick is yet to be worked out.
+ */
+export function autoplayKept(queue: QueueType, session: SessionValue): boolean {
   const pick = session.autoplay[queue];
   const last = newestPlay(session, queue);
-  if (pick === null || last === undefined || !sameEntry(pick.after, entryOf(last))) return null;
-  return pick.next;
+  return pick !== null && last !== undefined && sameEntry(pick.after, entryOf(last));
 }
 
 /** What the user has finished on Audiobookshelf: books by id, episodes by show and episode id. */

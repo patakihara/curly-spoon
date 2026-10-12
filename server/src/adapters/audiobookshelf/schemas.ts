@@ -256,8 +256,12 @@ const bookMetadataSchema = z.object({
   asin: optionalString,
 });
 
-/** One audio file of an item; a book's length is the sum of the files it plays. */
+/**
+ * One audio file of an item; a book's length is the sum of the files it plays. `ino` names the
+ * file an episode streams from, under its show (recorded).
+ */
 const audioFileSchema = z.object({
+  ino: inoSchema.optional(),
   duration: z.number().nullable().optional(),
   exclude: z.boolean().optional(),
 });

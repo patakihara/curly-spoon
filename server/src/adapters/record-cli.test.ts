@@ -278,6 +278,98 @@ describe("record mode for M1.play's calls", () => {
   });
 });
 
+/** A fake Audiobookshelf holding one podcast episode, `ep` of show `sh`, played directly. */
+function fakeEpisodeAbs() {
+  const asked: string[] = [];
+  const fetch: FetchLike = async (url, init) => {
+    const { pathname } = new URL(url);
+    asked.push(`${init?.method ?? 'GET'} ${pathname}`);
+    const json = (body: unknown) =>
+      new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    if (pathname === '/status') return json({ serverVersion: '2.37.1' });
+    if (pathname === '/api/items/sh/play/ep') {
+      return json({
+        id: 'play_e',
+        playMethod: 0,
+        episodeId: 'ep',
+        audioTracks: [{ contentUrl: '/api/items/sh/file/9', mimeType: 'audio/mpeg' }],
+        libraryItem: {
+          id: 'sh',
+          media: { episodes: [{ id: 'ep', description: '<a href="https://ads.example">x</a>' }] },
+        },
+      });
+    }
+    if (pathname.startsWith('/api/session/')) return new Response('OK', { status: 200 });
+    if (pathname === '/api/items/sh/file/9') {
+      return new Response('ID', {
+        status: 206,
+        headers: { 'content-type': 'audio/mpeg', 'content-range': 'bytes 0-1/1000' },
+      });
+    }
+    return new Response('not found', { status: 404 });
+  };
+  return { fetch, asked };
+}
+
+describe("record mode for M1.sessions' episode play", () => {
+  const episodeIo = (fetch: FetchLike, argv: string[]) => {
+    const out: string[] = [];
+    const err: string[] = [];
+    return {
+      io: {
+        argv: ['--abs', BASE, '--only', 'episode', ...argv, '--dry-run'],
+        stdin: 'ABS_API_KEY=test-abs-key-0000\n',
+        fetch,
+        out: (line: string) => out.push(line),
+        err: (line: string) => err.push(line),
+      },
+      out,
+      err,
+    };
+  };
+
+  it('records the episode played through its show, without its show notes, and its file, then closes that session once', async () => {
+    const abs = fakeEpisodeAbs();
+    const {
+      io: recordIo,
+      out,
+      err,
+    } = episodeIo(abs.fetch, ['--play-item', 'sh', '--episode', 'ep']);
+    expect(await runRecord(recordIo)).toBe(0);
+    expect(err).toEqual([]);
+    expect(out.map((l) => l.split('/').pop())).toEqual([
+      'episode-play.json',
+      'episode-file.json',
+      'episode-close.json',
+    ]);
+    const played = JSON.parse(
+      readFileSync(
+        out.find((l) => l.endsWith('episode-play.json'))!.replace(/^wrote /, ''),
+        'utf8',
+      ),
+    ) as { response: { body: { json: { libraryItem: { media: { episodes: unknown[] } } } } } };
+    expect(played.response.body.json.libraryItem.media.episodes).toEqual([
+      { id: 'ep', description: SHOW_NOTES_DROPPED },
+    ]);
+    expect(abs.asked.filter((a) => a !== 'GET /status')).toEqual([
+      'POST /api/items/sh/play/ep',
+      'GET /api/items/sh/file/9',
+      'POST /api/session/play_e/close',
+    ]);
+  });
+
+  it('needs the show and the episode', async () => {
+    const abs = fakeEpisodeAbs();
+    const { io: recordIo, err } = episodeIo(abs.fetch, ['--play-item', 'sh']);
+    expect(await runRecord(recordIo)).toBe(2);
+    expect(err.join('\n')).toContain('--episode');
+    expect(abs.asked).toEqual([]);
+  });
+});
+
 /** A fake Jellyfin with one album and one administrator; it keeps every URL asked. */
 function fakeJellyfin() {
   const asked: string[] = [];

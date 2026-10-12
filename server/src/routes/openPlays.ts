@@ -8,6 +8,7 @@
  * Held in memory: a restart forgets them, and a player then plans again.
  */
 import { type ProgressAnswer, type ProgressReport } from '@auralis/schema';
+import type { HeldPlan, PlanEntry } from '../queues/sessions.js';
 
 /**
  * How far the listening time reported may run ahead of the server's own clock, in seconds, over
@@ -25,6 +26,8 @@ export interface OpenPlay {
   deviceId: string;
   /** The ref's key the plan was for, `abs:<id>` or `jellyfin:<id>`. */
   ref: string;
+  /** What the plan plays as the listening session queues it, each where it starts in the plan. */
+  entries: readonly PlanEntry[];
   /** The whole item's length in seconds; a reported position never goes past it. */
   duration: number;
   /** How long it is held with nothing asked of it, in milliseconds. */
@@ -88,9 +91,10 @@ export class OpenPlays {
     }
   }
 
-  /** The ref key of the play this person's device holds under `playId`, or null. */
-  refOf(playId: string, owner: Owner): string | null {
-    return this.owned(playId, owner)?.ref ?? null;
+  /** The plan this person's device holds under `playId`: its ref key and entries; or null. */
+  planOf(playId: string, owner: Owner): HeldPlan | null {
+    const held = this.owned(playId, owner);
+    return held === null ? null : { ref: held.ref, entries: held.entries };
   }
 
   /** The ref key of the play a device holds now, or null when it holds none. */

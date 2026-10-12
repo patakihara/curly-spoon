@@ -1,0 +1,27 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.1",
+  "call": "episode-file",
+  "request": {
+    "method": "GET",
+    "path": "/api/items/e6751961-22eb-4064-8987-b75bfe655929/file/95916",
+    "query": {},
+    "headers": {
+      "authorization": "Bearer <token>",
+      "range": "bytes=0-1"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 206,
+    "headers": {
+      "accept-ranges": "bytes",
+      "content-range": "bytes 0-1/44717179",
+      "content-type": "audio/mpeg"
+    },
+    "body": {
+      "bytes": "multi-file.mp3",
+      "synthesized": "A 5 s 330 Hz sine tone, MP3 mono 44.1 kHz, made by scripts/fixtures/tone.sh. Status and headers are the real answer to Range: bytes=0-1; the body is not."
+    }
+  }
+}

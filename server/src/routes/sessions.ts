@@ -70,8 +70,10 @@ export function sessionRoutes(app: FastifyInstance, options: { sessions: Session
     return sessions.queueOf(saved, params.type);
   });
 
-  serve(app, stepSession, (request, _reply, body) => {
+  serve(app, stepSession, async (request, _reply, body) => {
     const caller = signedIn(request);
+    // A Next at a queue's end plays autoplay's pick, so it waits for one being worked out.
+    if (body.direction === 'next') await sessions.beforeNext(caller);
     sessions.change(caller, body.rev, (s) => step(s, body.direction, sessions.deps));
     return sessions.summary(caller);
   });

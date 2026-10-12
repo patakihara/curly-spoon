@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { REPO_ROOT, fixtureRepo, git, write } from '../plan/testing.mjs';
+import { GIT_SETTINGS, REPO_ROOT, fixtureRepo, git, write } from '../plan/testing.mjs';
 import { INSTALLS, SOURCES, sourcesTree } from '../plan/record-publish.mjs';
 
 export const HOOKS_DIR = dirname(fileURLToPath(import.meta.url));
@@ -108,15 +108,6 @@ process.exit(1);
   return dir;
 }
 
-const GIT_ENV = {
-  GIT_AUTHOR_NAME: 'Fixture',
-  GIT_AUTHOR_EMAIL: 'fixture@example.invalid',
-  GIT_COMMITTER_NAME: 'Fixture',
-  GIT_COMMITTER_EMAIL: 'fixture@example.invalid',
-  GIT_CONFIG_GLOBAL: '/dev/null',
-  GIT_CONFIG_NOSYSTEM: '1',
-};
-
 /** `fixtureRepo()` with this repo's .githooks/commit-msg linked in as its only hook. */
 export function commitRepo() {
   const repo = fixtureRepo();
@@ -138,7 +129,7 @@ export function commitWith(root, files, message, ...flags) {
   try {
     return spawnSync('git', ['commit', '-q', ...flags, '-F', msgFile], {
       cwd: root,
-      env: hookEnv(GIT_ENV),
+      env: hookEnv(GIT_SETTINGS),
       encoding: 'utf8',
     });
   } finally {

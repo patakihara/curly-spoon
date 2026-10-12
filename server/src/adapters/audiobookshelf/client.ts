@@ -146,6 +146,24 @@ export class AbsClient {
     device: { deviceId: string; clientVersion: string },
     options: { forceTranscode?: boolean } = {},
   ): Promise<z.infer<typeof playSessionSchema>> {
+    return this.startPlay(`api/items/${encodeURIComponent(itemId)}/play`, device, options);
+  }
+
+  /** Starts a playback session on one episode of a podcast show, as `play` does for a book. */
+  playEpisode(
+    showId: string,
+    episodeId: string,
+    device: { deviceId: string; clientVersion: string },
+  ): Promise<z.infer<typeof playSessionSchema>> {
+    const path = `api/items/${encodeURIComponent(showId)}/play/${encodeURIComponent(episodeId)}`;
+    return this.startPlay(path, device, {});
+  }
+
+  private startPlay(
+    path: string,
+    device: { deviceId: string; clientVersion: string },
+    options: { forceTranscode?: boolean },
+  ): Promise<z.infer<typeof playSessionSchema>> {
     const json: PlayRequest = {
       deviceInfo: {
         clientName: 'Auralis',
@@ -157,10 +175,7 @@ export class AbsClient {
       forceDirectPlay: false,
       forceTranscode: options.forceTranscode ?? false,
     };
-    return this.call(`api/items/${encodeURIComponent(itemId)}/play`, playSessionSchema, {
-      method: 'POST',
-      json,
-    });
+    return this.call(path, playSessionSchema, { method: 'POST', json });
   }
 
   /** Reports where the person is and how long they listened; never retried, as a repeat adds the

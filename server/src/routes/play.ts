@@ -1,7 +1,8 @@
 /**
  * Playing an item, as the signed-in person. A Jellyfin track or album plans and streams as
  * `jellyfinPlay.ts` says. For an Audiobookshelf item, `POST /api/play` opens an
- * Audiobookshelf session offering the types the clients play, and ABS chooses:
+ * Audiobookshelf session offering the types the clients play (a podcast episode's on its show, as
+ * the library index names it), and ABS chooses:
  * - direct play: one track per file at `/api/media/{ref}/tracks/{n}`, chapters at their absolute
  *   positions across files;
  * - a transcode: one HLS track at `/api/media/{ref}/hls/{playId}/output.m3u8`, the transcode
@@ -14,7 +15,7 @@
  * closes it, with a last report when given; so does planning again on the same device, or its
  * idle time running out. Each play also keeps the device's listening session (`queues/sessions.ts`):
  * the item becomes current, the plan names what plays after it, and progress keeps where the
- * device is.
+ * device is, moving the session on through an album's tracks or a book's chapters.
  * The media routes pass a checked `Range` through with the person's own token and send the bytes
  * on as they come, never transcoded or buffered whole. Only the playlist is read whole, parsed,
  * and passed on with bare segment names that resolve under the same route.
@@ -42,7 +43,8 @@ import {
 } from '../adapters/audiobookshelf/schemas.js';
 import { AdapterError, type FetchLike } from '../adapters/http/fetch.js';
 import { RangeNotSatisfiable, type UpstreamFile } from '../adapters/stream.js';
-import type { Caller, Sessions } from '../queues/sessions.js';
+import { indexedRow } from '../libraryIndex/store.js';
+import type { Caller, HeldPlan, PlanEntry, Sessions } from '../queues/sessions.js';
 import { Refusal, serve, serveStream, type StreamAnswer } from '../route.js';
 import type { Db } from '../store/connection.js';
 import {
@@ -81,6 +83,11 @@ export interface PlaybackOptions {
    * and stops as soon as the client has gone. Default 20 tries 500 ms apart.
    */
   segmentWait?: { tries: number; everyMs: number };
+  /**
+   * How long a play, or a Next at a queue's end, waits for autoplay's pick being worked out before
+   * answering without it. Default 3 s (`AUTOPLAY_WAIT_MS`).
+   */
+  autoplayWaitMs?: number;
 }
 
 const DEFAULT_IDLE_MS = 10 * 60_000;
@@ -245,6 +252,11 @@ export function playRoutes(
       deviceId: user.deviceId,
     };
   };
+  /** The show an Audiobookshelf id is an episode of, as the library index holds it; else null. */
+  const showOf = (id: string): string | null => {
+    const row = indexedRow(db, 'abs', id);
+    return row?.kind === 'episode' ? row.parentId : null;
+  };
   const absFor = async (request: FastifyRequest) => {
     const { client, ...owner } = await personFor(request, 'abs');
     return { abs: client, ...owner };
@@ -260,9 +272,10 @@ export function playRoutes(
     plan: PlaybackPlan,
     ref: MediaRef,
     heldBefore: string | null,
+    entries: readonly PlanEntry[],
   ): Promise<PlaybackPlan> => {
     try {
-      const { next, position } = await sessions.played(caller, ref, heldBefore);
+      const { next, position } = await sessions.played(caller, ref, heldBefore, entries);
       const last = plan.tracks[plan.tracks.length - 1]!;
       const length = last.offset + last.duration;
       return {
@@ -276,11 +289,11 @@ export function playRoutes(
     }
   };
 
-  /** Keeps where the device is in a play's item on its session; a failure is only logged. */
-  const keepPosition = (caller: Caller, refKey: string | null, position: number) => {
-    if (refKey === null) return;
+  /** Keeps where the device is in a play's plan on its session; a failure is only logged. */
+  const keepPosition = (caller: Caller, held: HeldPlan | null, position: number) => {
+    if (held === null) return;
     try {
-      sessions.progress(caller, refKey, position);
+      sessions.progress(caller, held, position);
     } catch (err) {
       app.log.warn({ err }, 'the listening session could not keep a position');
     }
@@ -298,6 +311,10 @@ export function playRoutes(
       // Jellyfin's own play session ids are 32 hex digits (recorded).
       const playId = randomUUID().replace(/-/g, '');
       const reports = jellyfinReports(client, played, playId, lineFor(userId, deviceId));
+      const entries = played.map((t): PlanEntry => ({
+        entry: { ref: { source: 'jellyfin', id: t.id } },
+        start: t.offset,
+      }));
       const last = plan.tracks[plan.tracks.length - 1]!;
       await open.planOn({ userId, deviceId }, async () => {
         // The device's track before stops before Jellyfin hears this one started.
@@ -308,18 +325,27 @@ export function playRoutes(
           userId,
           deviceId,
           ref,
+          entries,
           duration: last.offset + last.duration,
           idleMs: directIdleMs,
           report: async (report) => reports.report(report),
           close: async (report) => reports.close(report),
         });
       });
-      return inSession(caller, { ...plan, progressTarget: { playId } }, body.ref, heldBefore);
+      return inSession(
+        caller,
+        { ...plan, progressTarget: { playId } },
+        body.ref,
+        heldBefore,
+        entries,
+      );
     }
     const { abs, userId, deviceId } = await absFor(request);
-    const session = await abs
-      .play(body.ref.id, { deviceId, clientVersion: CLIENT_VERSION })
-      .catch(refusalFor);
+    const show = showOf(body.ref.id);
+    const device = { deviceId, clientVersion: CLIENT_VERSION };
+    const session = await (
+      show === null ? abs.play(body.ref.id, device) : abs.playEpisode(show, body.ref.id, device)
+    ).catch(refusalFor);
     const plan = planFor(session, ref);
     if (plan === null) {
       // A failed close loses nothing.
@@ -328,6 +354,11 @@ export function playRoutes(
       throw new Refusal(422, 'unsupported_format');
     }
     const playId = plan.progressTarget.playId;
+    // A book queues as its chapters; an episode, or a book without chapters, as itself.
+    const entries: PlanEntry[] =
+      show === null && plan.chapters.length > 0
+        ? plan.chapters.map((c, chapter) => ({ entry: { ref: body.ref, chapter }, start: c.start }))
+        : [{ entry: { ref: body.ref }, start: 0 }];
     const last = plan.tracks[plan.tracks.length - 1]!;
     const duration = session.duration ?? last.offset + last.duration;
     const sync = ({ position, listened }: UpstreamReport) => ({
@@ -341,13 +372,14 @@ export function playRoutes(
         userId,
         deviceId,
         ref,
+        entries,
         duration,
         idleMs: plan.tracks[0]?.mime === HLS_MIME ? transcodeIdleMs : directIdleMs,
         report: (report) => abs.syncSession(playId, sync(report)),
         close: (report) => abs.closeSession(playId, report && sync(report)),
       }),
     );
-    return inSession(caller, plan, body.ref, heldBefore);
+    return inSession(caller, plan, body.ref, heldBefore, entries);
   });
 
   serve(app, reportProgress, async (request, _reply, body) => {
@@ -357,7 +389,7 @@ export function playRoutes(
     const { playId, ...report } = body;
     const answer = await open.report(playId, owner, report).catch(refusalFor);
     if (answer === null) throw new Refusal(404, 'not_found');
-    if (answer.taken) keepPosition(caller, open.refOf(playId, owner), report.position);
+    if (answer.taken) keepPosition(caller, open.planOf(playId, owner), report.position);
     return answer;
   });
 
@@ -365,10 +397,10 @@ export function playRoutes(
     await open.sweep();
     const caller = signedIn(request);
     const owner = { userId: caller.id, deviceId: caller.deviceId };
-    const refKey = open.refOf(params.playId, owner);
+    const held = open.planOf(params.playId, owner);
     const closed = await open.finish(params.playId, owner, body).catch(refusalFor);
     if (!closed) throw new Refusal(404, 'not_found');
-    if (body !== undefined) keepPosition(caller, refKey, body.position);
+    if (body !== undefined) keepPosition(caller, held, body.position);
     return { ok: true };
   });
 
@@ -385,6 +417,19 @@ export function playRoutes(
       return passOn(await client.openAudio(ref.id, range).catch(refusalFor));
     }
     const { abs } = await absFor(request);
+    const show = showOf(ref.id);
+    if (show !== null) {
+      // An episode is one file of its show, read as the index reads the show.
+      if (params.n !== '0') throw new Refusal(404, 'not_found');
+      const summary = await abs.getItemSummary(show).catch(refusalFor);
+      const episode =
+        summary.mediaType === 'podcast'
+          ? summary.media.episodes.find((e) => e.id === ref.id)
+          : undefined;
+      const ino = episode?.audioFile?.ino;
+      if (ino === undefined) throw new Refusal(404, 'not_found');
+      return passOn(await abs.openFile({ itemId: show, ino }, range).catch(refusalFor));
+    }
     const item = await abs.getItem(ref.id).catch(refusalFor);
     const track = item.media.tracks?.[Number(params.n)];
     const file = track === undefined ? null : contentUrlParts(track.contentUrl);

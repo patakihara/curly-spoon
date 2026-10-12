@@ -40,7 +40,12 @@ export const unverifiedBody = (body) =>
 export const unverifiedSection = (...items) =>
   unverifiedBody(items.map((i) => `- ${i}\n`).join(''));
 
-export const removeTree = (root) => rmSync(root, { recursive: true, force: true });
+/**
+ * Deletes a fixture tree. A git child that outlives its caller can still be writing into it, so a
+ * delete that meets a directory filling up again retries a few times before failing.
+ */
+export const removeTree = (root) =>
+  rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 
 export const read = (root, path) => readFileSync(join(root, path), 'utf8');
 
@@ -55,12 +60,12 @@ export function edit(root, path, fn) {
 }
 
 /**
- * Git for fixture repos. Auto-maintenance is off: a commit otherwise forks a detached
- * `git maintenance run --auto --detach` that can still be writing .git when removeTree runs,
- * failing the cleanup with ENOTEMPTY.
+ * Git settings for fixture repos, for every git a test runs, a hook's commit included.
+ * Auto-maintenance is off: a commit otherwise forks a detached `git maintenance run --auto
+ * --detach` that can still be writing .git when removeTree runs, failing the cleanup with
+ * ENOTEMPTY.
  */
-export const GIT_ENV = {
-  ...process.env,
+export const GIT_SETTINGS = {
   GIT_CONFIG_COUNT: '2',
   GIT_CONFIG_KEY_0: 'maintenance.auto',
   GIT_CONFIG_VALUE_0: 'false',
@@ -73,6 +78,9 @@ export const GIT_ENV = {
   GIT_CONFIG_GLOBAL: '/dev/null',
   GIT_CONFIG_NOSYSTEM: '1',
 };
+
+/** This process's environment with the fixture repos' git settings. */
+export const GIT_ENV = { ...process.env, ...GIT_SETTINGS };
 
 export function git(root, ...args) {
   return execFileSync('git', args, { cwd: root, env: GIT_ENV, encoding: 'utf8' }).trim();

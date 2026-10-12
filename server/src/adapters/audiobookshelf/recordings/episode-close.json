@@ -1,0 +1,24 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.1",
+  "call": "episode-close",
+  "request": {
+    "method": "POST",
+    "path": "/api/session/a74dcbb8-7c0f-4f5b-a654-a8bac8c508fa/close",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "text/plain; charset=utf-8"
+    },
+    "body": {
+      "text": "OK"
+    }
+  }
+}

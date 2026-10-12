@@ -1,10 +1,13 @@
 /**
  * Listening sessions and their queues through the real routes. The library index holds the
- * recorded album (its fourteen tracks), a track of the second recorded album, and the recorded
- * four-file book. Audiobookshelf answers from the recordings of that book (its chapters, its
- * direct-play session, a sync, a close and a progress read); Jellyfin from the recordings of the
- * album and its first track played. Replay matches a call by method and path. Autoplay works its
- * picks out in the background, so a test waits for them in the store.
+ * recorded album (its fourteen tracks), a track of the second recorded album, the recorded
+ * four-file book and the recorded serial show (its four episodes, ordered by its recorded feed).
+ * Audiobookshelf answers from the recordings of that book (its chapters, its direct-play session,
+ * a sync, a close and a progress read), of one episode played and its file, and of what the user
+ * has finished; Jellyfin from the recordings of the album and its first track played, and of
+ * Instant Mix for the album's last track. Replay matches a call by method, path and query; a test
+ * may slow an upstream path down. Autoplay works its picks out in the background, so a test
+ * waits for them in the store.
  */
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -16,11 +19,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { itemSummarySchema } from './adapters/audiobookshelf/schemas.js';
 import { type FetchLike } from './adapters/http/fetch.js';
 import { type Recording, recordingSchema } from './adapters/http/recording.js';
-import { replayFetch } from './adapters/http/replay.js';
+import { replayFetch, standInsBeside } from './adapters/http/replay.js';
 import { PLACEHOLDER_ORIGIN } from './adapters/http/scrub.js';
+import { parseFeed } from './adapters/feed/client.js';
 import { indexQueryResultSchema } from './adapters/jellyfin/schemas.js';
 import { buildApp } from './app.js';
-import { absTree, albumRow, trackRows } from './libraryIndex/rows.js';
+import { AUTOPLAY_MISSED } from './queues/sessions.js';
+import { absTree, albumRow, orderingFromFeed, trackRows } from './libraryIndex/rows.js';
 import { applyTree, emptyCounts } from './libraryIndex/store.js';
 import { openDatabase, type Db } from './store/connection.js';
 import { createDevice } from './store/devices.js';
@@ -45,6 +50,10 @@ const albumSummary = indexQueryResultSchema
   .parse(json(jf('index-albums-page')))
   .Items.find((a) => a.Id === albumTracks[0]!.AlbumId)!;
 const book = itemSummarySchema.parse(json(abs('multi-detail')));
+const show = itemSummarySchema.parse(json(abs('index-show-1')));
+const showFeed = parseFeed(
+  (recording('feed', 'show-1-feed').response.body as { text: string }).text,
+);
 const progressRead = json(abs('progress-read')) as { currentTime: number; lastUpdate: number };
 
 const ref = (source: MediaRef['source'], id: string): MediaRef => ({ source, id });
@@ -52,6 +61,12 @@ const album = ref('jellyfin', albumSummary.Id);
 const tracks = albumTracks.map((t) => ref('jellyfin', t.Id));
 const lone = ref('jellyfin', otherTracks[0]!.Id);
 const bookRef = ref('abs', book.id);
+/** The serial show's second episode, the one recorded played, and the episode after it. */
+const played = json(abs('episode-play')) as { episodeId: string };
+const episode = ref('abs', played.episodeId);
+const nextEpisode = ref('abs', 'fef398e0-ce0f-48ad-86fe-9b45c96c1911');
+/** The first track of the recorded Instant Mix for the album's last track that is not that track. */
+const mixPick = tracks[11]!;
 /** The recorded book's chapters, from its recorded answer. */
 const bookChapters = (json(abs('multi-detail')) as { media: { chapters: unknown[] } }).media
   .chapters.length;
@@ -70,6 +85,12 @@ const RECORDINGS = [
   // A book the index does not hold, played.
   abs('item-play'),
   abs('session-close'),
+  // An episode of the serial show played, its file, its show read, and what the user finished.
+  abs('episode-play'),
+  abs('episode-file'),
+  abs('episode-close'),
+  abs('index-show-1'),
+  abs('me'),
   // The album and its first track, planned and played.
   jf('jf-album'),
   jf('jf-album-tracks'),
@@ -77,6 +98,7 @@ const RECORDINGS = [
   jf('jf-playing'),
   jf('jf-progress'),
   jf('jf-stopped'),
+  jf('jf-instant-mix'),
 ];
 
 let dirs: string[] = [];
@@ -106,6 +128,8 @@ function indexed(db: Db): void {
     counts,
   );
   applyTree(db, absTree(book), 1, counts);
+  if (show.mediaType === 'podcast')
+    applyTree(db, absTree(show, orderingFromFeed(show, showFeed)), 1, counts);
 }
 
 /** kara on her phone and her laptop, and otto on his phone, each linked to both upstreams. */
@@ -140,11 +164,29 @@ function people(db: Db) {
   return { bearer, devices, users };
 }
 
-async function appOn(db: Db, fetch: FetchLike) {
+/** How the test server runs: upstream paths slowed down, and how long autoplay is waited for. */
+interface Setup {
+  /** Milliseconds each call whose path contains the key waits before it is answered. */
+  slow?: Record<string, number>;
+  autoplayWaitMs?: number;
+}
+
+async function appOn(db: Db, fetch: FetchLike, setup: Setup, logs: string[]) {
   const app = await buildApp({
     webDistDir: null,
     db,
     now: () => NOW,
+    ...(setup.autoplayWaitMs === undefined
+      ? {}
+      : { playback: { autoplayWaitMs: setup.autoplayWaitMs } }),
+    logger: {
+      stream: {
+        write: (line: string) => {
+          const entry = JSON.parse(line) as { level: number; msg: string };
+          if (entry.level >= 40) logs.push(entry.msg);
+        },
+      },
+    },
     upstreams: {
       key: KEY,
       config: { absUrl: PLACEHOLDER_ORIGIN, jellyfinUrl: 'http://jellyfin.upstream.invalid' },
@@ -155,7 +197,7 @@ async function appOn(db: Db, fetch: FetchLike) {
   return app;
 }
 
-async function server() {
+async function server(setup: Setup = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'auralis-sessions-'));
   dirs.push(dir);
   const file = join(dir, 'auralis.db');
@@ -163,12 +205,16 @@ async function server() {
   indexed(db);
   const { bearer, devices, users } = people(db);
   const sent: string[] = [];
-  const replay = replayFetch(RECORDINGS);
-  const fetch: FetchLike = (url, init) => {
-    sent.push(`${init?.method ?? 'GET'} ${new URL(url).pathname}`);
+  const logs: string[] = [];
+  const replay = replayFetch(RECORDINGS, { readBytes: standInsBeside(adapters) });
+  const fetch: FetchLike = async (url, init) => {
+    const path = new URL(url).pathname;
+    sent.push(`${init?.method ?? 'GET'} ${path}`);
+    const slow = Object.entries(setup.slow ?? {}).find(([part]) => path.includes(part));
+    if (slow !== undefined) await new Promise((r) => setTimeout(r, slow[1]));
     return replay(url, init);
   };
-  let app = await appOn(db, fetch);
+  let app = await appOn(db, fetch, setup, logs);
 
   const call = (who: string, method: 'GET' | 'POST' | 'PUT', url: string, payload?: object) =>
     app.inject({
@@ -207,10 +253,29 @@ async function server() {
     await app.close();
     db.close();
     const reopened = openDatabase(file);
-    app = await appOn(reopened, fetch);
+    app = await appOn(reopened, fetch, setup, logs);
     return reopened;
   };
-  return { db, sent, call, ok, queue, put, stepped, play, stored, autoplayed, restart };
+  /** Reports `position` seconds into the play `playId`, as report number `seq`. */
+  const progress = (who: string, playId: string, seq: number, position: number) =>
+    ok<{ taken: boolean }>(
+      call(who, 'POST', '/api/progress', { playId, seq, position, listened: 1, paused: false }),
+    );
+  return {
+    db,
+    sent,
+    logs,
+    call,
+    ok,
+    queue,
+    put,
+    stepped,
+    play,
+    progress,
+    stored,
+    autoplayed,
+    restart,
+  };
 }
 
 const refs = (items: { ref: MediaRef }[]) => items.map((i) => i.ref);
@@ -483,5 +548,132 @@ describe('POST /api/play keeps the session', () => {
     expect(planned.next).toBeUndefined();
     const after = s.stored('kara-phone');
     expect([after.rev, after.queues]).toEqual([before.rev, before.queues]);
+  });
+});
+
+describe('a plan of many tracks or chapters, through its progress reports', () => {
+  it('[M1.sessions/b] moves the spoken queue to the chapter a book’s progress falls in, recording each chapter passed once; Next plays the chapter after it', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', bookRef);
+    expect(plan.chapters.length).toBe(bookChapters);
+    const third = plan.chapters[2]!;
+
+    await s.progress('kara-phone', plan.progressTarget.playId, 0, third.start + 4);
+    const kept = s.stored('kara-phone');
+    expect(kept.queues.spoken.current).toMatchObject({ ref: bookRef, chapter: 2 });
+    expect(kept.queues.spoken.position).toEqual({
+      ms: Math.round((third.start + 4) * 1000),
+      takenAt: NOW,
+    });
+    expect(kept.history.map((h) => [h.ref, h.chapter])).toEqual([
+      [bookRef, 0],
+      [bookRef, 1],
+    ]);
+
+    await s.progress('kara-phone', plan.progressTarget.playId, 1, third.start + 9);
+    expect(s.stored('kara-phone').history).toHaveLength(2);
+
+    const next = await s.stepped('kara-phone', 'next');
+    expect(next.currents.spoken).toMatchObject({ ref: bookRef, chapter: 3 });
+  });
+
+  it('[M1.sessions/c] plays an item put next mid-album right after the track the album is on, then the album goes on from the next track', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', album);
+    await s.progress('kara-phone', plan.progressTarget.playId, 0, plan.tracks[2]!.offset + 5);
+    expect(s.stored('kara-phone').queues.music.current?.ref).toEqual(tracks[2]);
+
+    await s.ok(s.put('kara-phone', lone, 'next'));
+    expect((await s.stepped('kara-phone', 'next')).currents.music?.ref).toEqual(lone);
+    expect((await s.stepped('kara-phone', 'next')).currents.music?.ref).toEqual(tracks[3]);
+    expect(s.stored('kara-phone').history.map((h) => h.ref)).toEqual([
+      tracks[0],
+      tracks[1],
+      tracks[2],
+      lone,
+    ]);
+  });
+
+  it('[M1.sessions/d] goes Back from the track an album’s progress reached to the track before it', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', album);
+    await s.progress('kara-phone', plan.progressTarget.playId, 0, plan.tracks[2]!.offset + 5);
+
+    expect((await s.stepped('kara-phone', 'back')).currents.music?.ref).toEqual(tracks[1]);
+  });
+
+  it('starts the album again at the track it reached, where the device left off in it', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', album);
+    await s.progress('kara-phone', plan.progressTarget.playId, 0, plan.tracks[2]!.offset + 5);
+
+    const again = await s.play('kara-phone', album);
+    expect(again.startAt).toBeCloseTo(plan.tracks[2]!.offset + 5, 3);
+    expect(s.stored('kara-phone').queues.music.current?.ref).toEqual(tracks[2]);
+  });
+});
+
+describe('autoplay, as a play or a Next meets it', () => {
+  it('[M1.sessions/e] names the next episode on a first play, waiting for autoplay to work it out', async () => {
+    const s = await server({ slow: { '/api/me': 100 } });
+    const plan = await s.play('kara-phone', episode);
+    expect(plan.next).toEqual(nextEpisode);
+    expect(s.sent).toContain(`POST /api/items/${show.id}/play/${episode.id}`);
+  });
+
+  it('answers a play with nothing next once the wait is over, and keeps the pick worked out after', async () => {
+    const s = await server({ slow: { '/api/me': 300 }, autoplayWaitMs: 30 });
+    const plan = await s.play('kara-phone', episode);
+    expect(plan.next).toBeUndefined();
+    await vi.waitFor(() =>
+      expect(s.stored('kara-phone').autoplay.spoken?.next).toEqual({ ref: nextEpisode }),
+    );
+  });
+
+  it('never waits for autoplay when the queue has an item next', async () => {
+    const s = await server({ slow: { '/api/me': 2_000 } });
+    // A paused episode with nothing after it keeps every autoplay run waiting on Audiobookshelf.
+    await s.ok(s.put('kara-phone', episode, 'now'));
+    await s.ok(s.put('kara-phone', tracks[0]!, 'now'));
+    await s.ok(s.put('kara-phone', lone, 'next'));
+    const started = Date.now();
+    expect((await s.play('kara-phone', tracks[0]!)).next).toEqual(lone);
+    expect(Date.now() - started).toBeLessThan(1_000);
+  });
+
+  it('[M1.sessions/e] lets a Next at the queue’s end wait for the radio autoplay is still working out', async () => {
+    const s = await server({ slow: { '/InstantMix': 200 } });
+    await s.ok(s.put('kara-phone', tracks[13]!, 'now'));
+
+    const next = await s.stepped('kara-phone', 'next');
+    expect(next.currents.music?.ref).toEqual(mixPick);
+  });
+
+  it('works autoplay out again on a session that changed meanwhile, and logs a second miss', async () => {
+    const s = await server({ slow: { '/InstantMix': 300 } });
+    const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    await s.ok(s.put('kara-phone', tracks[13]!, 'now'));
+    await wait(100);
+    await s.ok(s.call('kara-phone', 'PUT', '/api/sessions/this/style', { queueStyle: 'spotify' }));
+    await wait(350);
+    await s.ok(s.call('kara-phone', 'PUT', '/api/sessions/this/style', { queueStyle: 'youtube' }));
+
+    await vi.waitFor(() => expect(s.logs).toContain(AUTOPLAY_MISSED), { timeout: 2_000 });
+    await vi.waitFor(() =>
+      expect(s.stored('kara-phone').autoplay.music?.next).toEqual({ ref: mixPick }),
+    );
+  });
+});
+
+describe('an episode plays through its show', () => {
+  it('opens the episode’s session on its show, and streams the episode’s own file', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', episode);
+    expect(plan.tracks.map((t) => t.url)).toEqual([`/api/media/abs:${episode.id}/tracks/0`]);
+
+    const streamed = await s.call('kara-phone', 'GET', plan.tracks[0]!.url);
+    expect(streamed.statusCode).toBe(200);
+    expect(s.sent).toContain(`GET ${abs('episode-file').request.path}`);
+    expect(s.stored('kara-phone').queues.spoken.current?.ref).toEqual(episode);
   });
 });
