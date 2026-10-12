@@ -11,6 +11,9 @@ class FakeAudio implements MediaLike {
   paused = true;
   loads = 0;
   native = '';
+  playbackRate = 1;
+  defaultPlaybackRate = 1;
+  preservesPitch = false;
   private listeners = new Map<string, Set<() => void>>();
 
   addEventListener(type: string, listener: () => void) {
@@ -30,8 +33,10 @@ class FakeAudio implements MediaLike {
   canPlayType(type: string) {
     return type === this.native ? 'maybe' : '';
   }
+  /** A new source plays at the normal rate again, as a browser's may. */
   load() {
     this.loads++;
+    this.playbackRate = 1;
   }
   removeAttribute(name: string) {
     if (name === 'src') this.src = '';
@@ -79,12 +84,16 @@ function rig(plan: PlaybackPlan, options: { native?: string; hlsArrives?: Promis
   const positions: number[] = [];
   const hls: { source?: string; media?: MediaLike; destroyed: boolean }[] = [];
   const requests: string[] = [];
+  const bodies: unknown[] = [];
   let ended = 0;
+  let stops = 0;
   const player = createPlayer(plan, {
     api: createApiClient({
       baseUrl: 'http://auralis.test',
       fetch: async (request) => {
         requests.push(`${request.method} ${new URL(request.url).pathname}`);
+        const text = await request.text();
+        if (text !== '') bodies.push(JSON.parse(text));
         return Response.json({ ok: true });
       },
     }),
@@ -114,9 +123,20 @@ function rig(plan: PlaybackPlan, options: { native?: string; hlsArrives?: Promis
     },
     onPosition: (position) => positions.push(position),
     onEnded: () => ended++,
+    onStop: () => stops++,
   });
   const playing = () => audios.find((a) => !a.paused);
-  return { player, audios, positions, hls, requests, playing, ended: () => ended };
+  return {
+    player,
+    audios,
+    positions,
+    hls,
+    requests,
+    bodies,
+    playing,
+    ended: () => ended,
+    stops: () => stops,
+  };
 }
 
 describe('the web player', () => {
@@ -253,6 +273,93 @@ describe('the web player', () => {
     await player.play();
     expect(playing()).toBe(first);
     expect(player.position).toBe(4);
+  });
+
+  it('[M1.shell] plays at the rate asked on both elements, its pitch kept', async () => {
+    const { player, audios } = rig(book);
+    await player.play();
+    player.setRate(1.5);
+    for (const audio of audios) {
+      expect(audio.playbackRate).toBe(1.5);
+      expect(audio.defaultPlaybackRate).toBe(1.5);
+      expect(audio.preservesPitch).toBe(true);
+    }
+  });
+
+  it('[M1.shell] keeps its rate on the next file, though a new source resets an element’s rate', async () => {
+    const { player, playing } = rig(book);
+    player.setRate(1.25);
+    await player.play();
+    expect(playing()!.playbackRate).toBe(1.25);
+    playing()!.loaded(21);
+    playing()!.at(20);
+    playing()!.finish();
+    expect(playing()!.src).toBe('/api/media/abs:b/tracks/1');
+    expect(playing()!.playbackRate).toBe(1.25);
+    await player.seek(100);
+    expect(playing()!.playbackRate).toBe(1.25);
+  });
+
+  it('[M1.shell] pauses at a stop within a file, there, and says so', async () => {
+    const { player, audios, playing, stops } = rig(book);
+    await player.play();
+    player.stopAt(12);
+    playing()!.at(11.8);
+    expect(stops()).toBe(0);
+    playing()!.at(12.2);
+    expect(audios.every((a) => a.paused)).toBe(true);
+    expect(player.position).toBe(12);
+    expect(stops()).toBe(1);
+  });
+
+  it('[M1.shell] never starts the next file when the stop is where one file ends', async () => {
+    const { player, audios, playing, stops, ended } = rig(book);
+    await player.play();
+    player.stopAt(21);
+    const first = playing()!;
+    first.loaded(21);
+    first.at(20.9);
+    first.finish();
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(audios.every((a) => a.paused)).toBe(true);
+    expect(player.position).toBe(21);
+    expect(stops()).toBe(1);
+    expect(ended()).toBe(0);
+  });
+
+  it('[M1.shell] stops at once when the stop is at or before where it is', async () => {
+    const { player, audios, playing, stops } = rig(book);
+    await player.play();
+    playing()!.at(15);
+    player.stopAt(15);
+    expect(audios.every((a) => a.paused)).toBe(true);
+    expect(stops()).toBe(1);
+  });
+
+  it('[M1.shell] starts nothing when asked to play at its stop, and says so again', async () => {
+    const { player, audios, stops } = rig({ ...book, startAt: 30 });
+    player.stopAt(30);
+    await player.play();
+    expect(audios.every((a) => a.paused)).toBe(true);
+    expect(stops()).toBe(1);
+  });
+
+  it('[M1.shell] plays on past a stop taken back', async () => {
+    const { player, playing, stops } = rig(book);
+    await player.play();
+    player.stopAt(12);
+    player.stopAt(null);
+    playing()!.at(13);
+    expect(playing()).toBeDefined();
+    expect(stops()).toBe(0);
+  });
+
+  it('[M1.shell] closes its playback session with the last report when given one', async () => {
+    const { player, requests, bodies } = rig(book);
+    await player.play();
+    await player.destroy({ seq: 3, position: 9, listened: 4, paused: true });
+    expect(requests).toEqual(['POST /api/play/p0/close']);
+    expect(bodies).toEqual([{ seq: 3, position: 9, listened: 4, paused: true }]);
   });
 
   const transcode: PlaybackPlan = {
