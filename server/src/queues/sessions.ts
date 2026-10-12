@@ -8,11 +8,12 @@
  *
  * A plan of many tracks or chapters (an album, a book) reports its progress under its own ref, as
  * a position from the start of the plan. The session follows it: its current entry moves on to
- * the track or chapter that position falls in, recording each entry passed as played, once, in
- * order. Where a device is in its current entry is kept from those reports, in the entry's own
- * item: from the start of a book for its chapters, from the start of a track for an album's. On a
- * play or a read, the newer of that and the item's upstream progress, which every device shares,
- * wins.
+ * the track or chapter that position falls in, recording each entry passed as played, in order:
+ * within one play, an entry is recorded at most once. Where a device is in its current entry is
+ * kept from those reports, in the entry's own item: from the start of a book for its chapters,
+ * from the start of a track for an album's. On a play or a read, the newer of that and the item's
+ * upstream progress, which every device shares, wins. That resumes the same entry only: a plan
+ * after a Back, or a Next within the item, starts at the start of the entry it reached.
  *
  * A seek is not a play: a position in an earlier track or chapter of the plan moves the current
  * entry back to it, with nothing recorded in history and nothing taken out of it. Only the
@@ -64,6 +65,12 @@ export interface PlanEntry {
   start: number;
 }
 
+/** A device's current play: its play id, and each entry it recorded as played, with its play. */
+interface CurrentPlay {
+  playId: string;
+  recorded: Map<string, number>;
+}
+
 /**
  * A play the device holds: its play id, the ref key it was planned for, and the entries it plays,
  * in order.
@@ -84,8 +91,8 @@ export const AUTOPLAY_MISSED =
 const key = (ref: MediaRef) => `${ref.source}:${ref.id}`;
 const QUEUES: readonly QueueType[] = ['music', 'spoken'];
 
-const sameEntry = (a: QueueEntry, b: QueueEntry) =>
-  key(a.ref) === key(b.ref) && (a.chapter ?? null) === (b.chapter ?? null);
+const entryKey = (e: QueueEntry) => `${key(e.ref)}#${e.chapter ?? ''}`;
+const sameEntry = (a: QueueEntry, b: QueueEntry) => entryKey(a) === entryKey(b);
 
 /** The entry of `entries` a position `seconds` into the plan falls in: the last started by then. */
 const entryAt = (entries: readonly PlanEntry[], seconds: number): number => {
@@ -142,10 +149,10 @@ export class Sessions {
   /** The autoplay runs each device has under way, by `userId deviceId`. */
   private readonly preparing = new Map<string, Set<Promise<void>>>();
   /**
-   * Each device's current play id, by `userId deviceId`: held in memory, like the plays themselves,
+   * Each device's current play, by `userId deviceId`: held in memory, like the plays themselves,
    * so a restart forgets both together.
    */
-  private readonly plays = new Map<string, string>();
+  private readonly plays = new Map<string, CurrentPlay>();
 
   constructor(
     private readonly options: {
@@ -251,7 +258,7 @@ export class Sessions {
     entries: readonly PlanEntry[],
   ): Promise<{ next: MediaRef | undefined; position: QueuePosition | null }> {
     const { lookup } = this.options;
-    this.plays.set(this.device(caller), playId);
+    this.plays.set(this.device(caller), { playId, recorded: new Map() });
     await this.load(caller, [ref]);
     const covered = lookup.covered(ref);
     const s = this.open(caller);
@@ -297,7 +304,14 @@ export class Sessions {
       return c !== null && key(c.ref) === key(ref);
     });
     if (queue !== undefined) {
-      const kept = s.queues[queue].position;
+      const { current, position: kept } = s.queues[queue];
+      if (kept === null && this.stepTo(s, current!)) {
+        // Decision (M1.sessions): Back, or a Next within the item, lands at the start of the
+        // entry it reached; the kept and upstream positions resume the same entry only.
+        // Rounded up, so the plan never starts in the entry before it.
+        const placed = entries.find((e) => sameEntry(e.entry, current!));
+        return { ms: Math.ceil((placed?.start ?? 0) * 1000), takenAt: this.options.now() };
+      }
       return kept === null ? null : newer(kept, await this.upstreamPosition(caller, ref));
     }
     // An album: the track its queue is on, at the device's position in that track.
@@ -313,6 +327,13 @@ export class Sessions {
       };
     }
     return null;
+  }
+
+  /** True when a step reached `current`: a Back to it, or a Next to it from the same item. */
+  private stepTo(s: SessionValue, current: SessionItem): boolean {
+    if (current.replayOf !== undefined) return true;
+    const followed = s.history.find((h) => h.seq === current.after);
+    return followed !== undefined && key(followed.ref) === key(current.ref);
   }
 
   /**
@@ -392,7 +413,8 @@ export class Sessions {
    * Keeps where this device is in the plan it holds, from a report `seconds` into the plan, when
    * the plan is the device's current play; a report from any other play changes nothing. When
    * the position falls in a later entry of the plan than the queue's current one, the active
-   * queue steps on to it, each entry passed recorded as played; an entry outside the plan in
+   * queue steps on to it, each entry passed recorded as played unless this play recorded it
+   * already (after a seek back); an entry outside the plan in
    * between (an item put next) stops it. When it falls in an earlier one, a seek back, the
    * active queue moves back to it, history untouched. Then works autoplay out again when the
    * last run is over two minutes old.
@@ -400,7 +422,8 @@ export class Sessions {
   progress(caller: Caller, plan: HeldPlan, seconds: number): void {
     // Decision (M1.sessions): a report applies only when it belongs to the device's current play;
     // a late one from a play a Back, Next or Play now left behind would undo that step.
-    if (this.plays.get(this.device(caller)) !== plan.playId) return;
+    const playing = this.plays.get(this.device(caller));
+    if (playing?.playId !== plan.playId) return;
     const s = this.open(caller);
     const now = this.options.now();
     const at = entryAt(plan.entries, seconds);
@@ -436,7 +459,11 @@ export class Sessions {
           position(target?.entry, target?.start ?? 0),
         );
       } else if (placed < at && queue === s.active) {
-        const stepped = this.steppedThrough(valueOf(s), plan.entries.slice(placed + 1, at + 1));
+        const stepped = this.steppedThrough(
+          valueOf(s),
+          plan.entries.slice(placed + 1, at + 1),
+          playing.recorded,
+        );
         if (stepped !== null) {
           stepped.queues[queue].position = position(target?.entry, target?.start ?? 0);
           this.save(caller, s, stepped);
@@ -500,14 +527,33 @@ export class Sessions {
     return t;
   }
 
-  /** `s` stepped next through exactly `path`, in order; null when a step lands anywhere else. */
-  private steppedThrough(s: SessionValue, path: readonly PlanEntry[]): SessionValue | null {
+  /**
+   * `s` stepped next through exactly `path`, in order; null when a step lands anywhere else. An
+   * entry the play recorded already (`recorded`, its play by entry) is not recorded again: the
+   * entry stepped to follows that play instead. Each entry recorded joins `recorded`.
+   */
+  private steppedThrough(
+    s: SessionValue,
+    path: readonly PlanEntry[],
+    recorded: Map<string, number>,
+  ): SessionValue | null {
     let t = s;
+    const added = new Map<string, number>();
     for (const { entry } of path) {
+      const length = t.history.length;
       t = step(t, 'next', this.deps);
       const c = currentOf(t);
       if (c === null || !sameEntry(c, entry)) return null;
+      const played = t.history.length > length ? t.history.at(-1)! : undefined;
+      if (played === undefined) continue;
+      const earlier = recorded.get(entryKey(played)) ?? added.get(entryKey(played));
+      if (earlier === undefined) added.set(entryKey(played), played.seq);
+      else {
+        t.history.pop();
+        if (c.after === played.seq) c.after = earlier;
+      }
     }
+    for (const [k, seq] of added) recorded.set(k, seq);
     return t;
   }
 

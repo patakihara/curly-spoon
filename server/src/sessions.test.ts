@@ -745,6 +745,86 @@ describe('[M1.sessions/d] a seek back within a plan, and reports from a play no 
   });
 });
 
+describe('[M1.sessions/d] within one play, and where a step lands', () => {
+  it('[M1.sessions/d] records a chapter at most once within one play, however a seek goes back and forward again; Back returns to the chapter before', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', bookRef);
+    const { playId } = plan.progressTarget;
+    await s.progress('kara-phone', playId, 0, plan.chapters[3]!.start + 6);
+    await s.progress('kara-phone', playId, 1, 30);
+    await s.progress('kara-phone', playId, 2, plan.chapters[3]!.start + 6);
+
+    const kept = s.stored('kara-phone');
+    expect(kept.queues.spoken.current).toMatchObject({ ref: bookRef, chapter: 3 });
+    expect(kept.history.map((h) => h.chapter)).toEqual([0, 1, 2]);
+    expect((await s.stepped('kara-phone', 'back')).currents.spoken).toMatchObject({
+      ref: bookRef,
+      chapter: 2,
+    });
+  });
+
+  it('[M1.sessions/d] records a track at most once within one play, however a seek goes back and forward again; Back returns to the track before', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', album);
+    const { playId } = plan.progressTarget;
+    await s.progress('kara-phone', playId, 0, plan.tracks[9]!.offset + 5);
+    await s.progress('kara-phone', playId, 1, 30);
+    await s.progress('kara-phone', playId, 2, plan.tracks[9]!.offset + 5);
+
+    const kept = s.stored('kara-phone');
+    expect(kept.queues.music.current?.ref).toEqual(tracks[9]);
+    expect(kept.history.map((h) => h.ref)).toEqual(tracks.slice(0, 9));
+    expect((await s.stepped('kara-phone', 'back')).currents.music?.ref).toEqual(tracks[8]);
+  });
+
+  it('[M1.sessions/d] starts the plan after a Back at the start of the chapter Back returned to', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', bookRef);
+    await s.progress('kara-phone', plan.progressTarget.playId, 0, plan.chapters[2]!.start + 7);
+    await s.stepped('kara-phone', 'back');
+
+    const again = await s.play('kara-phone', bookRef);
+    expect(again.startAt).toBeCloseTo(plan.chapters[1]!.start, 2);
+    await s.progress('kara-phone', again.progressTarget.playId, 0, again.startAt);
+    expect(s.stored('kara-phone').queues.spoken.current).toMatchObject({
+      ref: bookRef,
+      chapter: 1,
+    });
+  });
+
+  it('[M1.sessions/d] starts the plan after a Back at the start of the track Back returned to', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', album);
+    await s.progress('kara-phone', plan.progressTarget.playId, 0, plan.tracks[2]!.offset + 5);
+    await s.stepped('kara-phone', 'back');
+
+    expect((await s.play('kara-phone', album)).startAt).toBeCloseTo(plan.tracks[1]!.offset, 3);
+  });
+
+  it('[M1.sessions/d] starts the plan after a Next within a book at the start of the chapter it reached', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', bookRef);
+    await s.progress('kara-phone', plan.progressTarget.playId, 0, 30);
+    await s.stepped('kara-phone', 'next');
+
+    expect((await s.play('kara-phone', bookRef)).startAt).toBeCloseTo(plan.chapters[2]!.start, 2);
+  });
+
+  it('[M1.sessions/d] resumes the entry it left off in where this device kept its position', async () => {
+    const s = await server();
+    const plan = await s.play('kara-phone', bookRef);
+    await s.progress('kara-phone', plan.progressTarget.playId, 0, plan.chapters[2]!.start + 7);
+    await s.stepped('kara-phone', 'back');
+    const again = await s.play('kara-phone', bookRef);
+    await s.progress('kara-phone', again.progressTarget.playId, 0, plan.chapters[1]!.start + 3);
+
+    expect((await s.play('kara-phone', bookRef)).startAt).toBeCloseTo(
+      plan.chapters[1]!.start + 3,
+      3,
+    );
+  });
+});
+
 describe('autoplay, as a play or a Next meets it', () => {
   it('[M1.sessions/e] names the next episode on a first play, waiting for autoplay to work it out', async () => {
     const s = await server({ slow: { '/api/me': 100 } });
