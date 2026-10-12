@@ -39,7 +39,7 @@ Grouped by what they serve, all under `/api` so none clashes with a page address
 `POST /play` → PlaybackPlan\
 `POST /progress` · `POST /play/{id}/close`\
 `GET/PUT /queues/{type}` · `POST /queues/{type}/items` (now, next, end, default)\
-`POST /sessions/this/step` (next, back) · `PUT /sessions/this/active` (the meta-queue switch) · `PUT /sessions/this/style`\
+`POST /sessions/this/step` (next, back) · `PUT /sessions/this/active` (the meta-queue switch) · `PUT /sessions/this/style` (until M2.settings)\
 `GET/POST/DELETE /bookmarks`\
 `GET /lyrics/{ref}`
 :::

@@ -15,7 +15,7 @@ Each rule answers a failure recorded in the old ROADMAP and HANDOVER.
 | Android written blind, a post-login crash nobody could see | Emulator in CI from M0; once Android work resumes, each milestone's build arrives as an ordinary update through Droid-ify, with a one-tap crash report (logcat to the server). |
 | `main` auto-deployed half-finished work to your daily container | Until you use Auralis, the container on mediaserver follows `main` as the test instance. Before "It plays" ships, `main` moves to `:edge` and only releases reach `:latest`, so your daily container then moves only when you've tried a milestone. |
 | Parallel sessions colliding; 9,000 lines of handover | **No parallelism.** One Opus 5.5 orchestrator session holds the plan and never stops between items; Opus 5.5 subagents do all the work, strictly one at a time, each sized (an item split if needed) to keep its context small. After every plan addition a Sonnet 5.5 subagent checks the whole plan for contradictions and hierarchy, and the orchestrator weighs each finding before adopting it. Each part runs plan, build, test (fresh context, real recordings), then fix, handing off through the written plan and test output. No handover or status file; progress is computed, history is git. |
-| Over-escalation, and "verified" claims that were wrong | Ordinary calls get made. Every status line says how it was checked (live, recording, code), like "Where it stands". |
+| Over-escalation, and "verified" claims that were wrong | Ordinary calls get made. Every status line says how it was checked (live, recording, code). |
 
 ### Standing rules for subagents
 

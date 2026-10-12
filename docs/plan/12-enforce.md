@@ -36,7 +36,7 @@ Each rule here is a check that fails, not a habit to remember.
 ::: card
 #### The progress: computed, never written
 
-- **Done**: each item's check (a test, a recording, a route that exists) is tagged with its id; done means it passes. Items that are done only when you say so ("you used it for a week") get your sign-off as a git tag.
+- **Done**: each item's check (a test, a recording, a route that exists) is tagged with its id; done means it passes. Items that are done only when you say so get your sign-off as a git tag.
 - **In progress**: unfinished work lives on a branch whose description is its "where I stopped, what's next" note, gone when the branch merges.
 - **Next**: the first unfinished item of the current milestone.
 :::

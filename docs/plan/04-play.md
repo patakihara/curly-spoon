@@ -19,24 +19,24 @@ The rule: **the server works out how to play something; the clients just play th
 
 ### Queues and autoplay
 
-Queues belong to a device's listening session (see "Library and accounts"), stored on the server, moving to another device only with "Continue here".
+Queues belong to a device's listening session, stored on the server, moving to another device only with "Continue here".
 
 ::: grid g2
 ::: card
 #### Two queues
 
 - **Music queue.** **Spoken queue**, shared by podcasts and audiobooks by default. A book enters as its chapters, since a chapter is roughly an episode.
-- Switching is a **meta-queue** over the two. Play next on an episode or chapter while music plays makes it play right after the current song, and playback moves over to the spoken queue there. Starting one queue pauses, not clears, the other.
+- Switching is a **meta-queue** over the two. Play next on an episode or chapter while music plays puts it right after the current song, where playback moves to the spoken queue. Starting one queue pauses, not clears, the other.
 - **Back walks your play history, Forward walks the queue.** Nothing leaves the queue unrecoverably (the Spotify flaw you called out).
 - **Autoplay** always comes at the end and continues from the last queue that played.
 :::
 
 ::: card
-#### Music queue: two styles, a setting
+#### Music queue: two styles, a per-user setting
 
 - **YouTube Music style, the default.** No "playing from": an album goes into the queue whole. _Play next_ inserts after the current item; _Add to queue_ appends after everything, album included. Then autoplay.
-- **Spotify style.** Current → your queue → the "playing from" album or playlist → autoplay. A second album becomes "playing from", the first's rest after it.
-- Default button actions: with nothing playing, any item plays. Otherwise a **song → Play next**, an **album → end of queue**, or **Play** while a podcast or book plays. An episode or book → **Play next**; tapping it opens its page. Long-press or double-tap for the other action (to be tried in design). Buttons never move.
+- **Spotify style.** Current → your queue → the "playing from" album or playlist → autoplay. **Play** on a second album makes it "playing from", the first's unplayed rest after it.
+- Default button actions: with nothing playing, any item's button plays it. While music plays, a **song → Play next** and an **album → Add to queue**; while a podcast or book plays, a song or album → **Play**. Either way, an episode or book → **Play next**. Tapping an episode or book opens its page. Long-press or double-tap for the other action (to be tried in design). Buttons never move.
 :::
 :::
 
@@ -48,5 +48,5 @@ Queues belong to a device's listening session (see "Library and accounts"), stor
 ### Lists that aren't queues
 
 - **Listening lists** (books, and limited-run podcasts): a watch list you tick through, with finished items crossed off. At the bottom, recommendations for what to add next, filterable by type.
-- **Podcast playlists**: episodes you pick. **Digests**: a rule over shows. _The Digest_ covers every subscription; custom digests cover a group you name. Played in chronological or reverse order, and an episode leaves once played. Playing an episode from a digest marks it played but never moves your place in a show you're working through, oldest-first or newest-first. Playing a digest switches to its own queue, saving the one playing. Playing that queue's current episode, or the next if it had just finished, goes back to it; playing the digest, or an episode from the digest's page, returns to the digest's queue.
-- **Later**: alternating two books, meaning a generated spoken queue that interleaves their chapters, skips each chapter's intro where chapter metadata allows, and can be edited.
+- **Podcast playlists**: episodes you pick. **Digests**: a rule over shows. _The Digest_ covers every subscription; custom digests cover a group you name. Played in chronological or reverse order, and an episode leaves once played. Playing an episode from a digest marks it played but never moves your place in a show you're working through. Playing a digest switches to its own queue, saving the one playing. Playing that queue's current episode, or the next if it had just finished, goes back to it; playing the digest, or an episode from the digest's page, returns to the digest's queue.
+- **Later**: alternating two books: a generated spoken queue that interleaves their chapters, skips each chapter's intro where chapter metadata allows, and can be edited.
