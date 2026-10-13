@@ -5,7 +5,7 @@ part: The product
 ---
 ## Getting what you don't have
 
-One pipeline and status vocabulary for music, books and podcasts; only search and fulfil differ per medium, so Browse and Search render every request alike.
+One pipeline and status vocabulary for music, books and podcasts, so Browse and Search render every request alike.
 
 ::: diagram get
 
@@ -20,12 +20,12 @@ One pipeline and status vocabulary for music, books and podcasts; only search an
   - scores each release on format (FLAC over 320 over the rest), how well its track list fits one of the album's editions, a sensible size and seeders;
   - picks automatically only when one release clearly wins. Otherwise the request shows <span class="pill t-req">Needs choice</span> with the candidates listed, so choosing takes one tap;
   - imports itself: tags against the edition whose track list matches the files, tags them, files them under `/data/media/Music` (hardlinked, so seeding continues) and refreshes Jellyfin. Any songs from that album already kept from YouTube Music are replaced by the lossless copies, with play history and favourites following the MusicBrainz ids.
-  - **A clean album catalogue.** Lidarr shows MusicBrainz's structure raw through its own metadata server. Auralis uses MusicBrainz too (tagging, artist pages), so it avoids that mess:
+  - **A clean album catalogue** from MusicBrainz, unlike Lidarr's raw one:
     - **one entry per album**, with its editions, remasters and regional releases folded under it, never listed side by side;
     - EPs, singles, compilations and live albums shown in their own groups rather than hidden;
     - **gaps filled from YouTube Music and Deezer**: albums they list that MusicBrainz lacks still appear, play through YouTube Music, and can be added like any other.
 
-  Prowlarr's indexers matter more than any of this code: public trackers carry little lossless music. deemix, which already runs here, can slot in as another source.
+  deemix, which already runs here, can slot in as another source.
 
 ### Books
 

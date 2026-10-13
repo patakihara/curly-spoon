@@ -7,7 +7,7 @@ part: The product
 
 ### Your library
 
-- **Library pages stay pure.** Music, Books and Podcasts show only your library plus your requests. External items appear only on Browse, in Search, and on artist or author pages (on by default).
+- **Library pages stay pure.** Music, Books and Podcasts show only your library plus your requests. External items appear only on Browse, in Search, and on artist or author pages.
 - **Artist and author pages** show the whole catalogue by default, unowned titles greyed out and requestable, with a setting to hide them. Artist pages do what Spotify's do, plus an "In your library" carousel.
 - **Library:** a 3-across grid on phones, bigger on desktop, a grid/list toggle, and sort by title, artist or **Random** (tap again to reshuffle).
 - **In-library marking:** not-playable items are greyed out. Streamable ones stay normal, with a subtle marker. Where the marker goes is still open.

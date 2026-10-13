@@ -6,7 +6,7 @@ part: Why and what
 ## The short version
 
 ::: hero
-1. **Start a fresh codebase, keep the decisions and a few proven parts.** The old repo's decisions and research stand; its code mostly doesn't: audiobook playback breaks on your real server, Android plays only the first file of a book and never saves progress, and the API is hand-copied three times.
+1. **Start a fresh codebase, keep the decisions and a few proven parts.** The old repo's decisions and research stand; its code mostly doesn't (see "Where it stands").
 2. **The same stack, but every seam is shared.** What's new: one API schema generates both clients, one _playback plan_ drives every player, and one request pipeline serves all three media.
 3. **Nothing counts until it works on your real servers.** Every upstream adapter is tested against responses recorded from mediaserver, never against fixtures written from docs.
 4. **Music works the way AbleMusicPlayer does.** Anything on YouTube Music is searchable and plays straight away, through a NewPipe-style extractor that runs in the server container. **Keep** saves it, tagged, into your Jellyfin library.

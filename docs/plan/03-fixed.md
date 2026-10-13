@@ -17,7 +17,7 @@ From `USER_DECISIONS.md`, the spec addendum and the research notes. Where a deci
 
 - Bundle music, podcasts and audiobooks and replace Spotify. _"spotify killer, don't forget ;)"_
 - Spotify is the reference, looked at rather than guessed at.
-- **Browse** (icon `explore`) is the one discovery screen. Home, For You and Discover are the same thing and are distinct from **Search**. The name lives only in UI strings.
+- **Browse** (icon `explore`) is the one discovery screen. Home, For You and Discover are the same thing and are distinct from **Search**. The name lives only in the string table.
 - Five destinations: Browse, Music, Books, Podcasts, Search, one button each (as Sonora draws it), not a single Library button with a sub-menu.
 - Web includes desktop, in one Docker container on one port, a PWA rather than Electron; native Compose + Media3 on Android.
 - Web and Android have parity, reached by M5; until then the web app is ahead.
@@ -75,5 +75,5 @@ From `USER_DECISIONS.md`, the spec addendum and the research notes. Where a deci
 :::
 
 ::: small muted
-Also carried over: the escalation test _"would she have an opinion, and does the answer change what she gets?"_ The extractor is still a poor _recommender_, as research found. ListenBrainz picks what to suggest, and YouTube Music makes it playable.
+The extractor is still a poor _recommender_, as research found. ListenBrainz picks what to suggest, and YouTube Music makes it playable.
 :::

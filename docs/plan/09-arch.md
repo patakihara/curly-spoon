@@ -67,8 +67,6 @@ No video path exists to switch on by mistake. The extractor adapter's type has o
 
 ### The shared domain model
 
-These types carry every screen.
-
 | Type | What it is | Key fields |
 |---|---|---|
 | `MediaRef` | A pointer to anything: book, episode, show, track, album, artist, author, series, owned or not | `kind`, `source` (abs · jellyfin · ytmusic · external), `ids` (local id, ASIN, ISBN, MBID, feed GUID, provider id), `parentRef` (show, album or series, which is what the per-podcast dedupe keys on) |
@@ -76,4 +74,4 @@ These types carry every screen.
 | `PlaybackPlan` | Everything a player needs to play one item, from the start or a resume point | ordered `tracks[]` (url, mime, duration, offset), `chapters[]`, `startAt`, `progressTarget` (where the server reports progress), `next` (the autoplay rule) |
 | `User` · `Device` | Who is listening, and on what | An Auralis user maps to their own Audiobookshelf and Jellyfin accounts, so progress, favourites and play history stay theirs upstream too. Each device (a browser or a phone) registers under a user. |
 | `ListeningSession` | What's playing on one device | Owned by (user, device): its two queues (music, in the queue style's order, and spoken), the active queue, position, and play history. **Sessions on different devices don't mix by default.** |
-| `Shelf` | A carousel on Browse or a library home | `eyebrow` ("More like"), `title`, `subject` + `subjectArt` (what the shelf is about), `subtitle` (names the types in a mixed shelf), `items[]` of `MediaCard` or `FeatureCard` data, `mixed` flag |
+| `Shelf` | A carousel on Browse or a library home | `eyebrow` (a string key: "More like"), `title`, `subject` + `subjectArt` (what the shelf is about), `subtitle` (names the types in a mixed shelf), `items[]` of `MediaCard` or `FeatureCard` data, `mixed` flag |

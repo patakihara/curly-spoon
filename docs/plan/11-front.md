@@ -15,11 +15,7 @@ This is M5's work; until then the frontend is M1.shell's minimal shell.
 
 - **Two artifacts, one repo.** The [Sonora Design System](https://claude.ai/artifact/CUW4CN7KpxgvjeWnbhTQBB) (the building blocks) and the [Auralis canvas](https://claude.ai/artifact/S3ob9VNh7LjZHBmEmE9ULq) (the app's pages and navigation), published from `design/sonora` and `design/app`.
 - **Asking for a change:** comment on either artifact, or ask in chat; Claude changes the repo, regenerates and republishes.
-- **How a design change reaches the apps.** One commit carries design and apps:
-  - colours, spacing and fonts change on both platforms automatically;
-  - a component's look changes on web automatically, since web uses Sonora's components directly;
-  - a new or changed component option fails the Android build until implemented there, so the platforms can't drift;
-  - a new or changed page, or navigation, regenerates both apps' routes and page layouts.
+- **A design change reaches both apps in one commit:** tokens and web components follow automatically, a changed component option fails the Android build until implemented, and a changed page or navigation regenerates both apps' routes and layouts.
 
 ### Where Sonora ends and the canvas begins
 
@@ -46,6 +42,7 @@ This is M5's work; until then the frontend is M1.shell's minimal shell.
 - **One hierarchy:** tokens → basic pieces (buttons, chips, inputs, cover art) → components (cards, rows, transport, headers) → page layouts (backdrop shell, sections, shelves, the player's pages). The artifact is organised the same way. Pages live only on the canvas.
 - **Pruned against the screens.** Each component lists the canvas pages that draw it, directly or inside a component they draw, and a test fails on one no page draws. A component a later milestone needs, such as the output device button for "Play on…", arrives with its page.
 - **No hard-coding, no copies.** Every size, colour, timing and layer is a token, and a component reuses another by composing it; a check refuses raw literals (M5.sonoraclean).
+- **Every app string is a token.** All app text, accessible names included, lives in one string table in `design/app`, generated for both apps. Pages and the shell pass its keys, Sonora components take text only as props, and the server sends UI text as keys with parameters (M5.strings).
 - **Input hands its handler the text.** `Input`'s `onChange` gets the new string, like every other form component, so `FieldRow`'s handler does too.
 - **Controls show Material's states.** Every interactive component has enabled, disabled, hovered, focused (an outer ring) and pressed, a ripple spreading from the press point with no change of shape. One with no action attached is disabled, as is one set `disabled`.
 
@@ -73,7 +70,7 @@ Your rule: Sonora, then the canvas, then code:
 
 1. **Structure comes before pictures.** Every screen first gets a plain-text structure in `nav.json`: its purpose, its sections in order (unsettled ones marked provisional), its empty state and the screens it links to. The canvas's start page shows the generated navigation flowchart and screen list, no mockups, so you settle the hierarchy first. Each screen gets a canvas page: its structure beside its mockups, nothing else loaded. A page is drawn only once it has a structure.
 2. **Navigation is data.** The canvas holds `nav.json`: destinations, routes and parameters, which destination each page lights up, back behaviour, and the layout at each breakpoint (bottom bar, rail, side panel). Code generation turns it into the web router and the Android Navigation-Compose graph: **the same flows from the same file**.
-3. **Pages are a restricted format.** Each page is JSX that may only use Sonora components, literal props, and bindings to its screen endpoint's generated types (`{feed.shelves}`). No custom styling, no logic. A parser turns it into a page tree, generated as React for web and Compose for Android, both calling the same component names.
+3. **Pages are a restricted format.** Each page is JSX that may only use Sonora components, string-table keys for text, other literal props, and bindings to its screen endpoint's generated types (`{feed.shelves}`). No custom styling, no logic. A parser turns it into a page tree, generated as React for web and Compose for Android, both calling the same component names.
 4. **Generated code is off-limits.** Routes and page layouts are generated files, never edited by hand. Hand-written code only supplies data (the screen's API call, view-model state and actions) behind the page's typed slots.
 5. **CI enforces it**:
    - the app's routes must equal `nav.json` exactly;
