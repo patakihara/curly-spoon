@@ -21,8 +21,12 @@ export function searchFold(text: string): string {
 }
 
 /**
- * Letters, numbers and private-use characters make words, as the full-text index's unicode61
- * tokenizer splits them; everything else separates them.
+ * Letters, numbers and private-use characters make words; everything else separates them. Search
+ * rows hold these words space-joined, so the full-text index's unicode61 tokenizer sees nothing
+ * else, and keeps each word whole except at 21 letters its tables class as spacing marks: New Tai
+ * Lue U+19B0-19C0 and U+19C8-19C9, Vedic U+1CF2-1CF3 (SQLite 3.53.4). A title holding one is one
+ * word to the title tiers and two to the full-text index, so a query for its second half finds it
+ * by its words (tier 2).
  */
 const NON_TOKEN = /[^\p{L}\p{N}\p{Co}]+/u;
 

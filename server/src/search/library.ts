@@ -17,6 +17,8 @@
  * Tiers are read in order, each only while the limit wants more: titles starting with the query
  * off the title index, then titles holding its words, then the rest, the only tier that asks the
  * full-text index for bm25. A common word or a two-letter prefix fills the limit from the first.
+ * Suggestions read each tier one row per kind and title, grouped in the database, so a title
+ * repeated thousands of times is one row to them.
  */
 import { Buffer } from 'node:buffer';
 import {
@@ -88,25 +90,62 @@ const COLUMNS = 's.kind, s.source, s.upstream_id, s.title AS words';
 const OF_KINDS = '(@kinds IS NULL OR s.kind IN (SELECT value FROM json_each(@kinds)))';
 const WORD_COUNT = "length(s.title) - length(replace(s.title, ' ', '')) + 1";
 const STARTS = 's.title >= @joined AND s.title < @past';
-/** The order within a tier, then the limit: `-1` reads all. */
-const IN_ORDER = `ORDER BY tier, s.kind IN (${LATER_KINDS.map((k) => `'${k}'`).join(', ')}), score,
-  s.title, s.kind, s.source, s.upstream_id LIMIT @limit`;
+/** The order within a tier, then the limit. */
+const IN_ORDER = `ORDER BY tier, kind IN (${LATER_KINDS.map((k) => `'${k}'`).join(', ')}), score,
+  words, kind, source, upstream_id LIMIT @limit`;
 
-/** Each tier's rows, as candidates, in order: no row is in two. */
-const TIERS = [
+/**
+ * Each tier: its candidates' score and tier, and the rows it holds. No row is in two, and a kind
+ * and title are in one only.
+ */
+const TIER_PARTS = [
   // 0 and 1: titles starting with the query's words, off the title index.
-  `SELECT ${COLUMNS}, ${WORD_COUNT} AS score, CASE WHEN s.title = @joined THEN 0 ELSE 1 END AS tier
-   FROM search_items s WHERE ${STARTS} AND ${OF_KINDS} ${IN_ORDER}`,
+  {
+    columns: `${WORD_COUNT} AS score, CASE WHEN s.title = @joined THEN 0 ELSE 1 END AS tier`,
+    rows: `FROM search_items s WHERE ${STARTS} AND ${OF_KINDS}`,
+  },
   // 2: titles holding every word, not at their start.
-  `SELECT ${COLUMNS}, ${WORD_COUNT} AS score, 2 AS tier
-   FROM search_fts f JOIN search_items s ON s.id = f.rowid
-   WHERE search_fts MATCH @inTitle AND NOT (${STARTS}) AND ${OF_KINDS} ${IN_ORDER}`,
+  {
+    columns: `${WORD_COUNT} AS score, 2 AS tier`,
+    rows: `FROM search_fts f JOIN search_items s ON s.id = f.rowid
+     WHERE search_fts MATCH @inTitle AND NOT (${STARTS}) AND ${OF_KINDS}`,
+  },
   // 3: through people, series, or words spread across them; bm25 read for these rows alone.
-  `SELECT ${COLUMNS}, f.rank AS score, 3 AS tier
-   FROM search_fts f JOIN search_items s ON s.id = f.rowid
-   WHERE search_fts MATCH @match
-     AND f.rowid NOT IN (SELECT rowid FROM search_fts WHERE search_fts MATCH @inTitle)
-     AND ${OF_KINDS} ${IN_ORDER}`,
+  {
+    columns: 'f.rank AS score, 3 AS tier',
+    rows: `FROM search_fts f JOIN search_items s ON s.id = f.rowid
+     WHERE search_fts MATCH @match
+       AND f.rowid NOT IN (SELECT rowid FROM search_fts WHERE search_fts MATCH @inTitle)
+       AND ${OF_KINDS}`,
+  },
+] as const;
+
+/** Each tier's rows in order, the first `@limit`. */
+const TIERS = TIER_PARTS.map(
+  ({ columns, rows }) => `SELECT ${COLUMNS}, ${columns} ${rows} ${IN_ORDER}`,
+);
+
+/**
+ * Grouped rows' first: the least source, then id (sources are lower-case names, so a space sorts
+ * the pair). SQLite reads a grouped query's other columns from the row holding its lone min().
+ */
+const FIRST = "min(s.source || ' ' || s.upstream_id)";
+
+/**
+ * The same, one row for each kind and title, the first in order: suggestions offer a text once,
+ * and a few titles repeated thousands of times would otherwise be read in full to find the next.
+ * In the title tiers every row of a title has one score, so the first row stands for them; through
+ * people or series, bm25 differs between them: the first row of each score, then the least score.
+ */
+const DISTINCT_TIERS = [
+  ...TIER_PARTS.slice(0, 2).map(
+    ({ columns, rows }) =>
+      `SELECT ${COLUMNS}, ${columns}, ${FIRST} ${rows} GROUP BY s.title, s.kind ${IN_ORDER}`,
+  ),
+  `SELECT kind, source, upstream_id, words, min(score) AS score, tier FROM (
+     SELECT ${COLUMNS}, ${TIER_PARTS[2].columns}, ${FIRST} ${TIER_PARTS[2].rows}
+     GROUP BY s.title, s.kind, f.rank)
+   GROUP BY words, kind ${IN_ORDER}`,
 ];
 
 /** The people and series named by every row whose people or series hold every word, once each. */
@@ -196,10 +235,16 @@ interface ItemRow {
 }
 
 /**
- * The matching items and names of `kinds` (all when absent), in order. `read(limit)` gives the
- * first `limit` items (-1: all) and the names among them, and whether no item was left unread.
+ * The matching items and names of `kinds` (all when absent), in order: the first `limit` items
+ * `tiers` read, each a distinct kind and title or ref, and every matching name.
  */
-function ranking(db: Db, query: Query, kinds: readonly SearchKind[] | undefined) {
+function ranking(
+  db: Db,
+  query: Query,
+  kinds: readonly SearchKind[] | undefined,
+  tiers: readonly string[],
+  limit: number,
+): Candidate[] {
   const wanted = <K extends SearchKind>(all: readonly K[]) =>
     kinds === undefined ? all : all.filter((k) => kinds.includes(k));
   const itemKinds = wanted(ITEM_KINDS);
@@ -212,26 +257,23 @@ function ranking(db: Db, query: Query, kinds: readonly SearchKind[] | undefined)
     inTitle: `title : (${query.match})`,
     kinds: kinds === undefined ? null : JSON.stringify(itemKinds),
   };
-  return (limit: number): { list: Candidate[]; complete: boolean } => {
-    const rows: ItemRow[] = [];
-    for (const tier of itemKinds.length === 0 ? [] : TIERS) {
-      const left = limit < 0 ? -1 : limit - rows.length;
-      if (left === 0) break;
-      rows.push(...(statement(db, tier).all({ ...params, limit: left }) as ItemRow[]));
-    }
-    const items = rows.map((row): Candidate => ({
-      kind: row.kind,
-      ref: { source: row.source, id: row.upstream_id },
-      words: row.words,
-      tier: row.tier,
-      score: row.score,
-      name: null,
-    }));
-    const list = [...items, ...named].sort(compare);
-    const complete = limit < 0 || items.length < limit;
-    // A name after the last item read may come after items not read yet.
-    return { list: complete ? list : list.slice(0, list.indexOf(items.at(-1)!) + 1), complete };
-  };
+  const rows: ItemRow[] = [];
+  for (const tier of itemKinds.length === 0 ? [] : tiers) {
+    const left = limit - rows.length;
+    if (left === 0) break;
+    rows.push(...(statement(db, tier).all({ ...params, limit: left }) as ItemRow[]));
+  }
+  const items = rows.map((row): Candidate => ({
+    kind: row.kind,
+    ref: { source: row.source, id: row.upstream_id },
+    words: row.words,
+    tier: row.tier,
+    score: row.score,
+    name: null,
+  }));
+  // A name past the last item read may rank after items not read, but the `limit` distinct items
+  // read come first: a caller takes the first `limit` entries, so never such a name.
+  return [...items, ...named].sort(compare);
 }
 
 const owned = { kind: 'owned' } as const;
@@ -300,17 +342,11 @@ export function librarySource(db: Db): SearchSource {
     search: ({ q, kinds }) => {
       const query = queryOf(q);
       if (query === null) return Promise.resolve([]);
-      const { list } = ranking(db, query, kinds)(RESULT_LIMIT);
+      const list = ranking(db, query, kinds, TIERS, RESULT_LIMIT);
       return Promise.resolve(resultsOf(db, list.slice(0, RESULT_LIMIT)));
     },
   };
 }
-
-/**
- * How many items are read first for each suggestion wanted, so the same text repeated rarely
- * leaves too few; when it does, every item is read.
- */
-const READ_PER_SUGGESTION = 64;
 
 /**
  * Up to `limit` suggestions for `q` from the index, ranked as results: titles of every kind, and
@@ -319,25 +355,19 @@ const READ_PER_SUGGESTION = 64;
 export function suggestFromIndex(db: Db, q: string, limit: number): Suggestion[] {
   const query = queryOf(q);
   if (query === null || limit <= 0) return [];
-  const read = ranking(db, query, undefined);
-  for (const reading of [limit * READ_PER_SUGGESTION, -1]) {
-    const { list, complete } = read(reading);
-    const chosen: Candidate[] = [];
-    const seen = new Set<string>();
-    for (const c of list) {
-      const key = `${c.kind}:${c.words}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      chosen.push(c);
-      if (chosen.length === limit) break;
-    }
-    if (chosen.length === limit || complete) {
-      return resultsOf(db, chosen).map(({ result }) => ({
-        kind: result.kind,
-        text: result.title,
-        ref: result.ref,
-      }));
-    }
+  // Items come once per kind and title; two people or series may still share a name.
+  const chosen: Candidate[] = [];
+  const seen = new Set<string>();
+  for (const c of ranking(db, query, undefined, DISTINCT_TIERS, limit)) {
+    const key = `${c.kind}:${c.words}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    chosen.push(c);
+    if (chosen.length === limit) break;
   }
-  throw new Error('unreachable: reading every item is complete');
+  return resultsOf(db, chosen).map(({ result }) => ({
+    kind: result.kind,
+    text: result.title,
+    ref: result.ref,
+  }));
 }

@@ -36,4 +36,12 @@ describe('folding text for search', () => {
     expect(searchTokens('AC/DC — Live!')).toEqual(['ac', 'dc', 'live']);
     expect(searchTokens(' ,; ')).toEqual([]);
   });
+
+  it('folds compatibility forms to plain letters and digits', () => {
+    expect(searchFold('ＦＵＬＬ ﬁve ²')).toBe('full five 2');
+  });
+
+  it('keeps a private-use character inside its word, as the full-text index does', () => {
+    expect(searchTokens('Logo\uF8FFMark Live')).toEqual(['logo\uF8FFmark', 'live']);
+  });
 });

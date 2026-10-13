@@ -71,6 +71,37 @@ describe('recent searches', () => {
     expect(queries(kara, '', 2)).toEqual(['fémme', 'Rumours']);
   });
 
+  it('keeps twenty for each person: one person searching never pushes out another’s', () => {
+    for (let n = 0; n < 20; n += 1) recordSearch(db, kara, `kara ${n}`, T0 + n);
+    for (let n = 0; n < 25; n += 1) recordSearch(db, otto, `otto ${n}`, T0 + 100 + n);
+    recordSearch(db, kara, 'kara 20', T0 + 200);
+
+    expect(queries(kara)).toEqual(Array.from({ length: 20 }, (_, n) => `kara ${20 - n}`));
+    expect(queries(otto)).toEqual(Array.from({ length: 20 }, (_, n) => `otto ${24 - n}`));
+  });
+
+  it('counts the same words once, however often and however typed, so the other nineteen stay', () => {
+    for (let n = 0; n < 20; n += 1) recordSearch(db, kara, `search ${n}`, T0 + n);
+    for (let n = 0; n < 5; n += 1)
+      recordSearch(db, kara, `SEARCH, ${n % 2 === 0 ? 0 : '0!'}`, T0 + 50 + n);
+
+    expect(queries(kara)).toEqual([
+      'SEARCH, 0',
+      ...Array.from({ length: 19 }, (_, n) => `search ${19 - n}`),
+    ]);
+  });
+
+  it('finds a search by the start of its words only, never by a later word or inside one', () => {
+    recordSearch(db, kara, 'Love, Songs!', T0);
+    recordSearch(db, kara, 'Glove Box', T0 + 1);
+
+    expect(queries(kara, 'LOVE-so')).toEqual(['Love, Songs!']);
+    expect(queries(kara, 'love songs')).toEqual(['Love, Songs!']);
+    expect(queries(kara, 'songs')).toEqual([]);
+    expect(queries(kara, 'loves')).toEqual([]);
+    expect(queries(kara, 'love  box')).toEqual([]);
+  });
+
   it('records nothing for a search with no words in it', () => {
     for (const typed of ['   ', '"', '*', '..', '\u0000', '\uD800', "' ’"])
       recordSearch(db, kara, typed, T0);

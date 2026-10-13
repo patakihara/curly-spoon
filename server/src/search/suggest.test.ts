@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { itemSummarySchema } from '../adapters/audiobookshelf/schemas.js';
 import { recordingSchema } from '../adapters/http/recording.js';
 import { absTree } from '../libraryIndex/rows.js';
-import { applyTree, emptyCounts } from '../libraryIndex/store.js';
+import { applyTree, emptyCounts, listIndexed } from '../libraryIndex/store.js';
 import { openDatabase, type Db } from '../store/connection.js';
 import { recordSearch } from '../store/recentSearches.js';
 import { upsertUser } from '../store/users.js';
@@ -76,10 +76,44 @@ describe('suggestions', () => {
     expect(suggested[3]!.ref).toEqual(expect.objectContaining({ source: 'abs' }));
   });
 
+  it('offer eight in all when the index has more than the recent searches leave room for', () => {
+    const book = listIndexed(db)[0]!;
+    for (let n = 0; n < 8; n += 1) {
+      applyTree(
+        db,
+        { top: { ...book, id: `lexicon-${n}`, title: `Lexicon ${n}` }, children: [] },
+        T0,
+        emptyCounts(),
+      );
+    }
+    for (const [n, q] of ['lemons', 'le guin', 'legends'].entries())
+      recordSearch(db, kara, q, T0 + n);
+
+    const kinds = suggest(db, kara, 'le').map((s) => s.kind);
+    expect(kinds).toHaveLength(8);
+    expect(kinds.slice(0, 3)).toEqual(['recent', 'recent', 'recent']);
+    expect(kinds.slice(3)).not.toContain('recent');
+  });
+
   it('ask the index only once a typed word has two letters, however much else is typed', () => {
     for (const typed of ['a.', 'a t', ' a - t '])
       expect(suggest(db, kara, typed), typed).toEqual([]);
     expect(shown(suggest(db, kara, 'a to'))).toEqual([['book', 'The Tombs of Atuan [Archer]']]);
+  });
+
+  it('count letters, not UTF-16 units: one letter past the Basic Multilingual Plane asks no index', () => {
+    const book = listIndexed(db)[0]!;
+    applyTree(
+      db,
+      { top: { ...book, id: 'astral', title: '\u{20000}\u{20001} Stories' }, children: [] },
+      T0,
+      emptyCounts(),
+    );
+
+    expect(suggest(db, kara, '\u{20000}')).toEqual([]);
+    expect(shown(suggest(db, kara, '\u{20000}\u{20001}'))).toEqual([
+      ['book', '\u{20000}\u{20001} Stories'],
+    ]);
   });
 
   it('offer a recent search by its words, punctuation aside', () => {

@@ -180,14 +180,14 @@ describe('library search', () => {
   it('finds a title by its start whatever letter follows the query', async () => {
     await index(db);
     const book = row('Powers [Sandvold]');
-    applyTree(
-      db,
-      { top: { ...book, id: 'f'.repeat(32), title: 'Palæontology' }, children: [] },
-      T0,
-      emptyCounts(),
-    );
+    const write = (id: string, title: string) =>
+      applyTree(db, { top: { ...book, id, title }, children: [] }, T0, emptyCounts());
+    write('f'.repeat(32), 'Palæontology');
+    // U+20000, past every character of the Basic Multilingual Plane.
+    write('e'.repeat(32), '東\u{20000}京 Stories');
 
     expect(shown(await search('pal'))[0]).toEqual([1, 'book', 'Palæontology']);
+    expect(shown(await search('東'))).toEqual([[1, 'book', '東\u{20000}京 Stories']]);
   });
 
   it('follows a person to their new id upstream under the same name', async () => {

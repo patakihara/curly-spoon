@@ -236,6 +236,17 @@ describe('the search tables on the recorded library', () => {
     write([{ name: 'Quillon Varga', role: 'author' }], saga('Yonder Saga'), T0 + 3 * HOUR);
     expect(found(db, 'yonder saga')).toEqual([key]);
     expect(found(db, 'zanzibar')).toEqual([]);
+
+    // A narrator is no result of their own: only the row's people change.
+    write(
+      [
+        { name: 'Quillon Varga', role: 'author' },
+        { name: 'Nadia Reader', role: 'narrator' },
+      ],
+      saga('Yonder Saga'),
+      T0 + 4 * HOUR,
+    );
+    expect(found(db, 'nadia reader')).toEqual([key]);
     expectInSync(db);
   });
 
@@ -401,17 +412,19 @@ describe('the search tables when the database opens', () => {
     expect(preparedFor(1000)).toBe(preparedFor(1));
   });
 
-  it('rewrite every search row an older fold wrote, and no other', async () => {
+  it('rewrite every search row another fold wrote, older or newer, and no other', async () => {
     const file = join(dir, 'auralis.sqlite');
     const first = openDatabase(file);
     await index(first, T0, recordedPage(), onRecordedPage);
     const current = searchItems(first);
     const stale = current[3]!;
-    first
-      .prepare(
-        "UPDATE search_items SET title = 'zzstale', text_version = text_version - 1 WHERE id = ?",
-      )
-      .run(stale.id);
+    // A newer build's row, left by a rollback.
+    const newer = current[5]!;
+    const age = first.prepare(
+      'UPDATE search_items SET title = ?, text_version = text_version + ? WHERE id = ?',
+    );
+    age.run('zzstale', -1, stale.id);
+    age.run('zznewer', 1, newer.id);
     first.exec(`
       CREATE TABLE search_writes (id INTEGER);
       CREATE TRIGGER log_search_insert AFTER INSERT ON search_items
@@ -422,9 +435,13 @@ describe('the search tables when the database opens', () => {
 
     const reopened = openDatabase(file);
 
-    expect(reopened.prepare('SELECT id FROM search_writes').all()).toEqual([{ id: stale.id }]);
+    expect(reopened.prepare('SELECT id FROM search_writes ORDER BY id').all()).toEqual([
+      { id: stale.id },
+      { id: newer.id },
+    ]);
     expect(searchItems(reopened)).toEqual(current);
     expect(found(reopened, 'zzstale')).toEqual([]);
+    expect(found(reopened, 'zznewer')).toEqual([]);
     expectInSync(reopened);
     reopened.close();
   });

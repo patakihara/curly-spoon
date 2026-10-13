@@ -1,8 +1,9 @@
 /**
- * How fast search answers on about 25 000 indexed rows: suggestions and results within the 50 ms
- * budget. This file runs on its own, after every other test (`vitest.timing.config.ts`), so no
- * other test competes for the machine. Each query's time is the median of several runs after a
- * warm-up, and times the query alone: the library is built first.
+ * How fast search answers within the 50 ms budget: suggestions and results on about 25 000 indexed
+ * rows, and suggestions on a library where a few titles repeat thousands of times. This file runs
+ * on its own, after every other test (`vitest.timing.config.ts`), so no other test competes for
+ * the machine. Each query's time is the median of several runs after a warm-up, and times the
+ * query alone: the library is built first.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Creator, IndexKind, IndexRow, SeriesEntry } from '../libraryIndex/rows.js';
@@ -10,7 +11,7 @@ import { applyTree, emptyCounts } from '../libraryIndex/store.js';
 import { openDatabase, type Db } from '../store/connection.js';
 import { recordSearch } from '../store/recentSearches.js';
 import { upsertUser } from '../store/users.js';
-import { librarySource } from './library.js';
+import { librarySource, suggestFromIndex } from './library.js';
 import { suggest } from './suggest.js';
 
 const T0 = Date.UTC(2026, 9, 13, 8);
@@ -147,6 +148,25 @@ const WARM_UP = 2;
 /** Timed runs per query; their median is its time. */
 const RUNS = 7;
 
+/** Each query's time, in milliseconds: the median of its timed runs. */
+async function timed(run: (q: string) => unknown, queries: readonly string[]) {
+  const times: Record<string, number> = {};
+  for (const q of queries) {
+    for (let n = 0; n < WARM_UP; n += 1) await run(q);
+    const runs: number[] = [];
+    for (let n = 0; n < RUNS; n += 1) {
+      const start = performance.now();
+      await run(q);
+      runs.push(performance.now() - start);
+    }
+    times[q] = median(runs);
+  }
+  return times;
+}
+/** The queries, with their times, that took `ms` or more. */
+const over = (times: Record<string, number>, ms: number) =>
+  Object.entries(times).filter(([, time]) => time >= ms);
+
 describe('search on 25 000 indexed rows', () => {
   let db: Db;
   let kara: string;
@@ -157,25 +177,6 @@ describe('search on 25 000 indexed rows', () => {
     for (let n = 0; n < 20; n += 1) recordSearch(db, kara, `search ${n}`, T0 + n);
   });
   afterAll(() => db.close());
-
-  /** Each query's time, in milliseconds: the median of its timed runs. */
-  async function timed(run: (q: string) => unknown, queries: readonly string[]) {
-    const times: Record<string, number> = {};
-    for (const q of queries) {
-      for (let n = 0; n < WARM_UP; n += 1) await run(q);
-      const runs: number[] = [];
-      for (let n = 0; n < RUNS; n += 1) {
-        const start = performance.now();
-        await run(q);
-        runs.push(performance.now() - start);
-      }
-      times[q] = median(runs);
-    }
-    return times;
-  }
-  /** The queries, with their times, that took `ms` or more. */
-  const over = (times: Record<string, number>, ms: number) =>
-    Object.entries(times).filter(([, time]) => time >= ms);
 
   it('holds about 25 000 rows', () => {
     expect(db.prepare('SELECT COUNT(*) AS n FROM index_items').get()).toEqual({ n: 25_650 });
@@ -200,5 +201,47 @@ describe('search on 25 000 indexed rows', () => {
 
     expect(over(suggesting, 50)).toEqual([]);
     expect(over(searching, 50)).toEqual([]);
+  });
+});
+
+describe('search on 2 000 albums whose 11 tracks share their titles with every other album', () => {
+  let db: Db;
+  beforeAll(() => {
+    db = openDatabase(':memory:');
+    db.transaction(() => {
+      for (let n = 0; n < 2000; n += 1) {
+        const artist = { id: `artist-${n % 500}`, name: `Common Person ${n % 500}` };
+        write(
+          db,
+          item('album', `album-${n}`, `Record ${n} kalo`, {
+            creators: [{ ...artist, role: 'album-artist' }],
+          }),
+          Array.from({ length: 11 }, (_, k) =>
+            item('track', `album-${n}-${k}`, `Track ${k} mori`, {
+              parentId: `album-${n}`,
+              creators: [{ ...artist, role: 'artist' }],
+            }),
+          ),
+        );
+      }
+    })();
+  });
+  afterAll(() => db.close());
+
+  it('suggests each repeated title once, the first album’s track for it', () => {
+    const suggested = suggestFromIndex(db, 'tr', 8);
+
+    expect(suggested.map((s) => s.text)).toEqual(
+      [0, 1, 10, 2, 3, 4, 5, 6].map((k) => `Track ${k} mori`),
+    );
+    expect(suggested.map((s) => s.ref?.id)).toEqual(
+      [0, 1, 10, 2, 3, 4, 5, 6].map((k) => `album-0-${k}`),
+    );
+  });
+
+  it('suggests for the repeated titles within 50 ms, reading each title once', async () => {
+    const suggesting = await timed((q) => suggest(db, 'nobody', q), ['tr', 'track']);
+
+    expect(over(suggesting, 50)).toEqual([]);
   });
 });

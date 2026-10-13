@@ -406,8 +406,9 @@ export const migrations: readonly Migration[] = [
           FOREIGN KEY (source, upstream_id)
             REFERENCES index_items(source, upstream_id) ON DELETE CASCADE
         );
-        -- Titles starting with a query's words, the first tiers of a search, read off this index.
-        CREATE INDEX idx_search_items_title ON search_items(title);
+        -- Titles starting with a query's words, the first tiers of a search, read off this index;
+        -- with kind and ref, suggestions group a title's rows by kind in its order.
+        CREATE INDEX idx_search_items_title ON search_items(title, kind, source, upstream_id);
 
         -- Words of the folded text, and their two- and three-letter prefixes. The text is folded
         -- already, so the tokenizer only splits it into words.
