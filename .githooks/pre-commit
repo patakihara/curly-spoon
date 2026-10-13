@@ -4,9 +4,9 @@
 #
 # Why this exists: CI's most frequent failure by far was the "Lint · format · typecheck" job,
 # almost always on formatting. Every one of those emails the user. It is also not merely noise —
-# `format:check` gates the `publish` job, `publish` writes ghcr.io/patakihara/auralis:latest, and
-# mediaserver pulls that tag every fifteen minutes, so a formatting failure on `main` quietly
-# stops the live deployment updating.
+# `format:check` gates the `publish` job, and `publish` writes ghcr.io/patakihara/auralis:edge,
+# so a formatting failure on `main` quietly stops `:edge` updating, and leaves a commit nobody
+# can cut a release from.
 #
 # Design constraints, each one deliberate:
 #

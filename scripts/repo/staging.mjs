@@ -1,33 +1,32 @@
 /**
- * The staging container follows `main`: each green build of `main` is published to `:latest`,
- * and mediaserver redeploys it. These read GitHub's Publish runs to find the publish the
- * container must have caught up with by now. Publish names each run after the commit it built.
+ * The staging container follows `:latest`, which only a release writes (release.yml), and
+ * mediaserver redeploys it. The newest release is GitHub's latest release: never a draft or a
+ * prerelease, matching release.yml, which moves `:latest` only for a release that is neither.
  */
 
-/** How long staging has, after a publish finishes, to report that commit. */
+/** How long staging has, after a release is published, to report its commit. */
 export const STAGING_GRACE_MS = 30 * 60 * 1000;
 
-const NAMED = /^Publish ([0-9a-f]{40})$/;
-
 /**
- * The publishes among GitHub's workflow runs: each successful run named after a commit, as
- * `{ commit, at }` with `at` the time the run finished.
- * @param {Array<{ display_title: string, conclusion: string | null, updated_at: string }>} runs
+ * GitHub's `GET /releases/latest` answer, as `{ tag, at }` with `at` the time it was published.
+ * Throws on an answer that is not a published, final release.
+ * @param {unknown} answer
  */
-export function publishes(runs) {
-  return runs.flatMap((run) => {
-    const named = NAMED.exec(run.display_title);
-    if (run.conclusion !== 'success' || named === null) return [];
-    return [{ commit: named[1], at: Date.parse(run.updated_at) }];
-  });
+export function newestRelease(answer) {
+  const release = /** @type {Record<string, unknown>} */ (answer ?? {});
+  if (typeof release.tag_name !== 'string' || release.tag_name === '') {
+    throw new Error('the latest release has no tag_name');
+  }
+  if (release.draft !== false) throw new Error(`${release.tag_name} is a draft`);
+  if (release.prerelease !== false) throw new Error(`${release.tag_name} is a prerelease`);
+  const at = typeof release.published_at === 'string' ? Date.parse(release.published_at) : NaN;
+  if (Number.isNaN(at)) throw new Error(`${release.tag_name} has no published_at`);
+  return { tag: release.tag_name, at };
 }
 
 /**
- * The newest publish that finished at least the grace period before `now`, or null.
- * @param {Array<{ commit: string, at: number }>} list
+ * Whether staging has had its grace period since the release was published.
+ * @param {{ at: number }} release
  * @param {number} now
  */
-export function duePublish(list, now) {
-  const due = list.filter((p) => now - p.at >= STAGING_GRACE_MS).sort((a, b) => b.at - a.at);
-  return due[0] ?? null;
-}
+export const isDue = (release, now) => now - release.at >= STAGING_GRACE_MS;

@@ -14,9 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
+  # [M0.staging/a] and [M1.release/b] read the latest release and the commit its tag names.
   contents: read
-  # [M0.staging/a] reads which commit Publish last published.
-  actions: read
 
 jobs:
   live:
