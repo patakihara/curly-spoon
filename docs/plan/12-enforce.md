@@ -5,10 +5,6 @@ part: How it's built
 ---
 ## Staying on track, enforced
 
-::: lede
-Each rule here is a check that fails, not a habit to remember.
-:::
-
 ### Build through the design
 
 - **Generated code can't be edited by hand.** The web UI package, Android's component props, the routes and the page layouts are generated from `design/`. CI fails on any difference from a regeneration, and a repo hook refuses edits there.

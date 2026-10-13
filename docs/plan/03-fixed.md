@@ -28,7 +28,7 @@ Fixed inputs, not re-opened.
 #### Playback
 
 - **Queues**: a **music queue** and a **spoken queue that podcasts and audiobooks share** by default, with books split into chapters. The music queue works YouTube Music-style by default, Spotify-style as an option. **Back always walks play history.** Every queue can be cleared.
-- Transcoding is acceptable. <span class="pill t-req">premise fixed</span> It was said to work; it doesn't (see "Where it stands"). The plan makes it work _and_ adds direct play, since offline downloads need the original files anyway.
+- Transcoding is acceptable. <span class="pill t-req">premise fixed</span> The plan makes it work _and_ adds direct play, since offline downloads need the original files anyway.
 - **Never video.** Auralis has no way to show video, anywhere: not for YouTube, music, or podcast feeds publishing video episodes. Everything plays as audio; YouTube thumbnails serve only as cover art.
 :::
 
@@ -47,7 +47,7 @@ Fixed inputs, not re-opened.
 ::: card
 #### YouTube channels
 
-- **YouTube channels are added from global Search**, nowhere else, as audio-only shows behaving like any other subscription.
+- **YouTube channels are added from global Search**, nowhere else, as audio-only shows behaving like any other subscription, **tagged as YouTube** wherever they or their episodes appear.
 - **SponsorBlock on YouTube channels**, in Auralis and in the Audiobookshelf app alike.
 - **Watched state and position sync with your YouTube account only for channels you've added**, both ways, as an opt-in setting per person. The rest of your YouTube history never enters Auralis, and nothing from a channel you haven't added is recommended.
 :::

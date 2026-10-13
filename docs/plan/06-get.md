@@ -15,7 +15,7 @@ One pipeline and status vocabulary for all three media, so every request renders
 ### Music
 
 - **Songs: kept from YouTube Music.** A song you stream is **added automatically once about 90% has played**; a few seconds and a skip doesn't count. By hand it's a **menu option** (_Add to library_ in the song's three-dot menu), not a button on the card or in Now Playing. The server saves the original Opus stream without re-encoding, reusing any cached copy, and writes tags from the matching MusicBrainz release (artist, album, track number, cover art) so Jellyfin files it properly. It lands in `/data/media/Music` and turns into an owned card.
-- **Albums: always by torrent, in lossless.** _Add to library_ on an album never keeps it from YouTube Music; it requests the album by torrent. Until then, it streams from YouTube Music. Not through Lidarr, which you find patchy; Auralis does what you do by hand:
+- **Albums: always by torrent, in lossless.** _Add to library_ on an album never keeps it from YouTube Music; it requests the album by torrent. Until then, it streams from YouTube Music. Not through Lidarr; Auralis does what you do by hand:
   - searches Prowlarr with several query forms (artist + album, album alone, discography packs), with results cached and spread across indexers so it stays under their limits;
   - scores each release on format (FLAC over 320 over the rest), how well its track list fits one of the album's editions, a sensible size and seeders;
   - picks automatically only when one release clearly wins. Otherwise the request shows <span class="pill t-req">Needs choice</span> with the candidates listed, so choosing takes one tap;

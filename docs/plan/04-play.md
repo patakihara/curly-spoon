@@ -26,7 +26,7 @@ The rule: **the server works out how to play something; the clients just play th
 
 - **Music queue.** **Spoken queue**, shared by podcasts and audiobooks by default. A book enters as its chapters, since a chapter is roughly an episode.
 - Switching is a **meta-queue** over the two. Play next on an episode or chapter while music plays puts it right after the current song, where playback moves to the spoken queue. Starting one queue pauses, not clears, the other.
-- **Back walks your play history, Forward walks the queue.** Nothing leaves the queue unrecoverably (the Spotify flaw you called out).
+- **Back walks your play history, Forward walks the queue.** Nothing leaves the queue unrecoverably.
 - **Autoplay** always comes at the end and continues from the last queue that played.
 :::
 

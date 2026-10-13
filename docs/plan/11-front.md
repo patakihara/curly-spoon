@@ -82,7 +82,7 @@ Your rule: Sonora, then the canvas, then code:
 6. **The frontend build starts with navigation.** First, both apps navigate the full generated map with placeholder data, compared against the design (M0.canvas), before any screen gets real content; without a household sign-on (`/api/health` says), placeholders stay.
 
 - **Mantine** is optional, only inside a component needing a behaviour primitive (menus, focus traps), never as the visual layer.
-- **The app frame** is Sonora's backdrop shell (per `SPEC-backdrop.md`), a real Material 2 backdrop as Sonora Prime, the last mockups before the rebuild, draws it.
+- **The app frame** is Sonora's backdrop shell (per `SPEC-backdrop.md`), a real Material 2 backdrop as Sonora Prime draws it.
 
 ### Shell and navigation
 
@@ -116,7 +116,7 @@ Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;
 | Settings · onboarding | `GET/PUT /settings`, `/setup`, `/auth` | theme, autoplay rules, services, providers, requests | <span class="pill t-lib">Sonora</span> UI kit settings screen |
 
 ::: callout warn
-**Still to design on the Auralis canvas, before their milestone:** the YouTube channel settings (SponsorBlock, Shorts) and the YouTube account connection, provisional sections of the Show and Settings pages, and loading and empty states per screen. Everything else has a Sonora component and reference screen.
+**Still to design on the Auralis canvas, before their milestone:** the YouTube tag, the YouTube channel settings (SponsorBlock, Shorts) and the YouTube account connection, provisional sections of the Show and Settings pages, and loading and empty states per screen. Everything else has a Sonora component and reference screen.
 :::
 
 ### How parity stays true
