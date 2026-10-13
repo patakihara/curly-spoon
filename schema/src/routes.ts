@@ -24,6 +24,14 @@ import {
 } from './bookmarks.js';
 import { HealthResponse } from './health.js';
 import {
+  ArtQuery,
+  ImageBytes,
+  ItemDetail,
+  ItemParams,
+  LibraryList,
+  LibraryParams,
+} from './library.js';
+import {
   AudioBytes,
   MediaHlsParams,
   MediaTrackParams,
@@ -43,6 +51,7 @@ import {
   Queue,
   QueueParams,
   QueueStyleBody,
+  QueueView,
   StepBody,
 } from './sessions.js';
 import { type z } from './zod.js';
@@ -75,11 +84,12 @@ export interface Route<Response extends z.ZodTypeAny = z.ZodTypeAny> {
   /** May answer 429 with `Retry-After`. */
   rateLimited?: true;
   /**
-   * Streams audio instead of JSON: the whole file with 200, or with `Range` 206 and that range,
-   * or 416 for a range past the end. `response` describes the bytes. HEAD answers the same
-   * status and headers with no body.
+   * Streams bytes instead of JSON, and `response` describes them. `audio` answers the whole file
+   * with 200, or with `Range` 206 and that range, or 416 for a range past the end; `image`
+   * answers the whole image with 200 and takes no range. HEAD answers the same status and
+   * headers with no body.
    */
-  stream?: true;
+  stream?: 'audio' | 'image';
 }
 
 export const health = {
@@ -234,7 +244,7 @@ export const mediaTrack = {
   response: AudioBytes,
   access: 'member',
   params: MediaTrackParams,
-  stream: true,
+  stream: 'audio',
 } as const satisfies Route;
 
 export const reportProgress = {
@@ -270,7 +280,7 @@ export const mediaHls = {
   response: AudioBytes,
   access: 'member',
   params: MediaHlsParams,
-  stream: true,
+  stream: 'audio',
 } as const satisfies Route;
 
 export const listBookmarks = {
@@ -320,10 +330,11 @@ export const getQueue = {
   method: 'GET',
   path: '/api/queues/{type}',
   operationId: 'getQueue',
-  summary: "One of this device's queues: its current item, your queue and playing-from",
+  summary:
+    "One of this device's queues as the queue page shows it: every entry labelled, autoplay's kept pick and the newest plays",
   responseDescription:
     'The queue, with the newer of where this device was and where the upstream says.',
-  response: Queue,
+  response: QueueView,
   access: 'member',
   params: QueueParams,
 } as const satisfies Route;
@@ -386,6 +397,43 @@ export const setQueueStyle = {
   body: QueueStyleBody,
 } as const satisfies Route;
 
+export const listLibrary = {
+  method: 'GET',
+  path: '/api/library/{medium}',
+  operationId: 'listLibrary',
+  summary: "The signed-in person's books, podcast shows or albums",
+  responseDescription:
+    'Every indexed book, show or album in the libraries this person may open, by title.',
+  response: LibraryList,
+  access: 'member',
+  params: LibraryParams,
+} as const satisfies Route;
+
+export const getItem = {
+  method: 'GET',
+  path: '/api/items/{ref}',
+  operationId: 'getItem',
+  summary: 'One book, show, episode or album the signed-in person may open',
+  responseDescription:
+    "Its header, then a book's chapters, a show's episodes in its order, an album's tracks, or an episode's show, notes and standing.",
+  response: ItemDetail,
+  access: 'member',
+  params: ItemParams,
+} as const satisfies Route;
+
+export const mediaArt = {
+  method: 'GET',
+  path: '/api/media/{ref}/art',
+  operationId: 'getMediaArt',
+  summary: "A book's, show's or album's art, with the signed-in person's own access",
+  responseDescription: 'The image, at the size asked for, or as stored.',
+  response: ImageBytes,
+  access: 'member',
+  params: ItemParams,
+  query: ArtQuery,
+  stream: 'image',
+} as const satisfies Route;
+
 /** Every route the API has. The generator and the server's route test both read this list. */
 export const routes: readonly Route[] = [
   health,
@@ -415,4 +463,7 @@ export const routes: readonly Route[] = [
   stepSession,
   setActiveQueue,
   setQueueStyle,
+  listLibrary,
+  getItem,
+  mediaArt,
 ];

@@ -126,7 +126,7 @@ describe('the web router and the Android graph, generated from one nav.json', ()
  * counted as the shell's own opens, since a page's own links navigate the same way.
  */
 function webWiring(source: string, ids: Map<string, string>): string[] {
-  const phone = / {2}w0: \(\w*\) => \(\{\n([\s\S]*?)\n {2}\}\),/.exec(source)?.[1] ?? source;
+  const phone = / {2}w0: \([\w, ]*\) => \(\{\n([\s\S]*?)\n {2}\}\),/.exec(source)?.[1] ?? source;
   return [
     ...new Set(
       [...phone.matchAll(/(\w+)=\{(?:\w+ \? )?\(?\w*\)? => go\.(\w+)\(([^)]*)\)/g)].map(

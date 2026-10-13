@@ -56,6 +56,8 @@ export const indexItemSchema = z.object({
   ProviderIds: z.record(z.string().nullable()).nullable().optional(),
   ArtistItems: z.array(namedIdSchema).nullable().optional(),
   AlbumArtists: z.array(namedIdSchema).nullable().optional(),
+  /** The item's images by type; `Primary` is its cover (recorded). */
+  ImageTags: z.record(z.string()).nullable().optional(),
 });
 export type IndexItem = z.infer<typeof indexItemSchema>;
 
@@ -75,6 +77,12 @@ export type IndexQueryResult = z.infer<typeof indexQueryResultSchema>;
 export const playableItemSchema = z.object({
   Id: z.string(),
   Type: z.string(),
+  /** What plays and who made it, as a plan names it (recorded). */
+  Name: z.string().nullable().optional(),
+  Artists: z.array(z.string()).nullable().optional(),
+  AlbumArtist: z.string().nullable().optional(),
+  /** A track's album. */
+  AlbumId: z.string().nullable().optional(),
   Container: z.string().nullable().optional(),
   /** The file's streams; the `Audio` one's `Codec` says what the container holds. */
   MediaStreams: z

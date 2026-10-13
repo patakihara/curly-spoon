@@ -32,7 +32,7 @@ part: The product
 ### Shared files, personal view
 
 - **Files are stored once, for the whole household**, as today: one Music library in Jellyfin, one Books and one Podcasts library in Audiobookshelf.
-- **Auralis shows each person their own library**: what they added, requested, subscribed to or played. Auralis records who added what; things already on the server count as yours once played.
+- **Auralis shows each person their own library**: what they added, requested, subscribed to or played, from M3.requests, which records who added what; things already on the server count as yours once played. Until then it lists everything your own accounts reach.
 - **Everyone else's things stay findable.** Search covers the whole household library, and those results play at once, not as requests.
 - **"Show everyone's library" is a setting**, off by default, only in Settings, never a toggle on library screens.
 - The Audiobookshelf and Jellyfin apps are unchanged and still show everything.

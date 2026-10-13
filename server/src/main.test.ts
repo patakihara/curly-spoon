@@ -121,7 +121,7 @@ describe('main.ts', () => {
 
     const health = await fetch(`http://127.0.0.1:${port}/api/health`);
     expect(health.status).toBe(200);
-    expect(await health.json()).toEqual({ status: 'ok', commit: COMMIT });
+    expect(await health.json()).toEqual({ status: 'ok', commit: COMMIT, signOn: false });
     expect(existsSync(join(dir, 'setup-code'))).toBe(true);
     expect(existsSync(join(dir, 'auralis.sqlite'))).toBe(true);
     expect(run.output()).toContain('No admin yet');

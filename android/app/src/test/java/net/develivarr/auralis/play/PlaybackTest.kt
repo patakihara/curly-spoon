@@ -28,8 +28,10 @@ import net.develivarr.auralis.generated.api.HLS_MIME
 import net.develivarr.auralis.generated.api.MediaRef
 import net.develivarr.auralis.generated.api.MediaSource
 import net.develivarr.auralis.generated.api.PlayBody
+import net.develivarr.auralis.generated.api.PlaybackMeta
 import net.develivarr.auralis.generated.api.PlaybackPlan
 import net.develivarr.auralis.generated.api.PlaybackTrack
+import net.develivarr.auralis.generated.api.PlaybackVariant
 import net.develivarr.auralis.generated.api.ProgressTarget
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import org.junit.After
@@ -85,6 +87,7 @@ class PlaybackTest {
     fun `the plan's tracks become the player's playlist, starting at startAt`() {
         playback.start(
             PlaybackPlan(
+                meta = META,
                 tracks = listOf(track(0, duration = 600.0, offset = 0.0), track(1, duration = 400.0, offset = 600.0)),
                 chapters = emptyList(),
                 startAt = 700.0,
@@ -106,6 +109,7 @@ class PlaybackTest {
         assertEquals(0.0, playback.position, 0.0)
         playback.start(
             PlaybackPlan(
+                meta = META,
                 tracks = listOf(track(0, duration = 600.0, offset = 0.0), track(1, duration = 400.0, offset = 600.0)),
                 chapters = emptyList(),
                 startAt = 700.0,
@@ -121,6 +125,7 @@ class PlaybackTest {
     fun `a file that runs past its planned length is at its end, so the position never goes back`() {
         playback.start(
             PlaybackPlan(
+                meta = META,
                 tracks = listOf(track(0, duration = 600.0, offset = 0.0), track(1, duration = 400.0, offset = 600.0)),
                 chapters = emptyList(),
                 startAt = 0.0,
@@ -142,6 +147,7 @@ class PlaybackTest {
     fun `an HLS plan is queued on the audio-only player like any other`() {
         playback.start(
             PlaybackPlan(
+                meta = META,
                 tracks = listOf(track(0, duration = 60.0, offset = 0.0).copy(url = "/api/media/abs:item-1/hls/p-1/output.m3u8", mime = HLS_MIME)),
                 chapters = emptyList(),
                 startAt = 0.0,
@@ -157,6 +163,7 @@ class PlaybackTest {
         server.answer = { 200 to """{"ok":true}""" }
         playback.start(
             PlaybackPlan(
+                meta = META,
                 tracks = listOf(track(0, duration = 60.0, offset = 0.0)),
                 chapters = emptyList(),
                 startAt = 0.0,
@@ -175,6 +182,7 @@ class PlaybackTest {
     fun `a new plan closes the last one's open session`() {
         server.answer = { 200 to """{"ok":true}""" }
         val first = PlaybackPlan(
+            meta = META,
             tracks = listOf(track(0, duration = 60.0, offset = 0.0)),
             chapters = emptyList(),
             startAt = 0.0,
@@ -251,6 +259,7 @@ class PlaybackTest {
     fun `a track in a video container is queued like any other, for its soundtrack`() {
         playback.start(
             PlaybackPlan(
+                meta = META,
                 tracks = listOf(track(0, duration = 60.0, offset = 0.0).copy(mime = MimeTypes.VIDEO_MP4)),
                 chapters = emptyList(),
                 startAt = 0.0,
@@ -284,7 +293,7 @@ class PlaybackTest {
 
     @Test
     fun `a plan with no tracks plays nothing, and says so`() {
-        server.answer = { 200 to """{"tracks":[],"chapters":[],"startAt":0,"progressTarget":{"playId":"p-0"}}""" }
+        server.answer = { 200 to """{"meta":{"title":"A book","sub":null,"art":null,"variant":"spoken"},"tracks":[],"chapters":[],"startAt":0,"progressTarget":{"playId":"p-0"}}""" }
         playback.play("abs:item-1")
         assertEquals(0, playback.player.mediaItemCount)
         assertTrue(said("nothing to play for abs:item-1"))
@@ -317,8 +326,9 @@ class PlaybackTest {
     private companion object {
         val REF = MediaRef(MediaSource.ABS, "item-1")
         const val PLAN_JSON =
-            """{"tracks":[{"url":"/api/media/abs:item-1/tracks/0","mime":"audio/mp4","duration":20,"offset":0}],"chapters":[],"startAt":0,"progressTarget":{"playId":"p-0"}}"""
+            """{"meta":{"title":"A book","sub":null,"art":null,"variant":"spoken"},"tracks":[{"url":"/api/media/abs:item-1/tracks/0","mime":"audio/mp4","duration":20,"offset":0}],"chapters":[],"startAt":0,"progressTarget":{"playId":"p-0"}}"""
         val TARGET = ProgressTarget("p-0")
+        val META = PlaybackMeta(title = "A book", sub = null, art = null, variant = PlaybackVariant.SPOKEN)
 
         val VIDEO: Format = Format.Builder().setSampleMimeType(MimeTypes.VIDEO_H264).setWidth(64).setHeight(64).build()
         val AUDIO: Format =

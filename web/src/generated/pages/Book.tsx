@@ -4,9 +4,11 @@ import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
 import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
 import type { ShellNav } from '../../shell-nav';
+import { usePlay, type Playing } from '../../player';
 import { BackLayer, BottomNav, ExpandableText, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, OverflowMenu, PageBody, Rating, ResultRow, Section, Shelf } from '../ui/index.js';
 
 const placeholder = {
+  "ref": "shadows-and-sighs",
   "title": "Shadows and Sighs",
   "kind": "Audiobook",
   "author": "Evelyn Harper",
@@ -221,30 +223,6 @@ const shell = {
   "account": {
     "label": "Account"
   },
-  "playing": {
-    "title": "Heartbeats in Silence",
-    "artist": "Deep Inertia",
-    "image": "/art/deep-inertia.jpg",
-    "context": "Playing from Deep Inertia",
-    "variant": "music",
-    "favourite": true,
-    "progress": 0.05,
-    "duration": 262,
-    "sleep": "Off",
-    "about": {
-      "title": "About the artist",
-      "heading": "Deep Inertia",
-      "meta": "9 releases · 2 in your library",
-      "image": "/art/deep-inertia.jpg",
-      "body": "Deep Inertia is the slow, cold-weather project of a producer who records in an unheated boathouse through the winter months. Tape loops, a detuned upright piano and field recordings of ice on the lake carry most of the weight; vocals arrive late, half-buried, and leave early. Tears of Ice, the fourth album, was finished in a single February and released without a single."
-    }
-  },
-  "transport": {
-    "playing": true,
-    "progress": 0.05,
-    "duration": 262,
-    "favourite": true
-  },
   "footer": [
     {
       "key": "settings",
@@ -372,22 +350,24 @@ const shell = {
   }
 };
 
-/** The shell’s parts at each layout, from nav.json, its controls wired to the shell’s navigation. */
-const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
-  w0: (go) => ({
+/** The shell’s parts at each layout, from nav.json, its controls wired to the shell’s navigation and to what the player has loaded, `playing`, null while nothing is. */
+const CHROME: Record<LayoutId, (go: ShellNav, playing: Playing | null) => Chrome> = {
+  w0: (go, playing) => ({
     appBar: true,
     leading: (
       <IconButton icon="close" label="Close" onClick={() => go.close('books')} />
     ),
     player: (
       <>
-        <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="mobile" onOpen={() => go.open('/playing')} />
+        {playing !== null && (
+          <MiniPlayer title={playing.title} artist={playing.artist} image={playing.image} playing={playing.playing} progress={playing.progress} duration={playing.duration} variant={playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={playing.sleep} platform="mobile" onOpen={() => go.open('/playing')} onTogglePlay={playing.onTogglePlay} onPrev={playing.onPrev} onNext={playing.onNext} onSkipBack={playing.onSkipBack} onSkipForward={playing.onSkipForward} onSeek={playing.onSeek} speed={playing.speed} onSpeed={playing.onSpeed} onSleep={playing.onSleep} />
+        )}
         <BottomNav items={shell.nav.w0} active={go.lit('books')} onChange={(key) => go.destination(key)} />
       </>
     ),
     sheetOpen: false,
   }),
-  w600: (go) => ({
+  w600: (go, playing) => ({
     appBar: false,
     rail: (
       <NavRail items={shell.nav.w600} footerItems={shell.footer} active={go.lit('books')} expanded={go.rail(false)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(false)} />
@@ -395,12 +375,12 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
     leading: (
       <IconButton icon="close" label="Close" onClick={() => go.close('books')} />
     ),
-    player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} />
+    player: playing === null ? undefined : (
+      <MiniPlayer title={playing.title} artist={playing.artist} image={playing.image} playing={playing.playing} progress={playing.progress} duration={playing.duration} variant={playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} onTogglePlay={playing.onTogglePlay} onPrev={playing.onPrev} onNext={playing.onNext} onSkipBack={playing.onSkipBack} onSkipForward={playing.onSkipForward} onSeek={playing.onSeek} speed={playing.speed} onSpeed={playing.onSpeed} onSleep={playing.onSleep} />
     ),
     sheetOpen: false,
   }),
-  w1024: (go) => ({
+  w1024: (go, playing) => ({
     appBar: false,
     rail: (
       <NavRail items={shell.nav.w1024} footerItems={shell.footer} active={go.lit('books')} expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />
@@ -408,12 +388,12 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
     leading: (
       <IconButton icon="close" label="Close" onClick={() => go.close('books')} />
     ),
-    player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} />
+    player: playing === null ? undefined : (
+      <MiniPlayer title={playing.title} artist={playing.artist} image={playing.image} playing={playing.playing} progress={playing.progress} duration={playing.duration} variant={playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} onTogglePlay={playing.onTogglePlay} onPrev={playing.onPrev} onNext={playing.onNext} onSkipBack={playing.onSkipBack} onSkipForward={playing.onSkipForward} onSeek={playing.onSeek} speed={playing.speed} onSpeed={playing.onSpeed} onSleep={playing.onSleep} />
     ),
     sheetOpen: false,
   }),
-  w1240: (go) => ({
+  w1240: (go, playing) => ({
     appBar: false,
     rail: (
       <NavRail items={shell.nav.w1240} footerItems={shell.footer} active={go.lit('books')} expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />
@@ -421,10 +401,10 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
     leading: (
       <IconButton icon="close" label="Close" onClick={() => go.close('books')} />
     ),
-    player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} />
+    player: playing === null ? undefined : (
+      <MiniPlayer title={playing.title} artist={playing.artist} image={playing.image} playing={playing.playing} progress={playing.progress} duration={playing.duration} variant={playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} onTogglePlay={playing.onTogglePlay} onPrev={playing.onPrev} onNext={playing.onNext} onSkipBack={playing.onSkipBack} onSkipForward={playing.onSkipForward} onSeek={playing.onSeek} speed={playing.speed} onSpeed={playing.onSpeed} onSleep={playing.onSleep} />
     ),
-    sheetOpen: true,
+    sheetOpen: playing !== null,
   }),
 };
 
@@ -446,20 +426,22 @@ export interface BookProps {
 export default function Book({ data = placeholder, state = 'full' }: BookProps) {
   const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
+  const play = usePlay();
   return (
     <PageBody width="list" platform={platform}>
       <Section platform={platform}>
         <MediaHeader
           kindLabel={data.kind}
           subtitle={data.author}
-          onSubtitle={() => navigate(generatePath('/books/authors/:ref', { ref: data.authorRef }))}
+          onSubtitle={data.authorRef ? () => navigate(generatePath('/books/authors/:ref', { ref: data.authorRef })) : undefined}
           partOf={data.series.label}
-          onPartOf={() => navigate(generatePath('/books/series/:ref', { ref: data.series.ref }))}
+          onPartOf={data.series.ref ? () => navigate(generatePath('/books/series/:ref', { ref: data.series.ref })) : undefined}
           meta={data.meta}
           rating={<Rating value={data.rating.value} count={data.rating.count} platform={platform} />}
           progress={data.progress}
           image={data.image}
-          playLabel="Resume"
+          playLabel={data.progress ? 'Resume' : 'Play'}
+          onPlay={play(data.ref, 'spoken', 'now')}
           nextLabel="Play next"
           lastLabel={null}
           download={data.download as Exclude<ComponentProps<typeof MediaHeader>['download'], undefined>}
@@ -481,16 +463,16 @@ export default function Book({ data = placeholder, state = 'full' }: BookProps) 
         <Shelf platform={platform}>
           {data.narrations.map((narration, i) => (
             <Fragment key={i}>
-              <MediaCard eyebrow="Read by" title={narration.narrator} sub={narration.sub} image={narration.image} absent={narration.absent} status={narration.status} tone={narration.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: narration.ref }))} platform={platform} />
+              <MediaCard eyebrow="Read by" title={narration.narrator} sub={narration.sub} image={narration.image} absent={narration.absent} status={narration.status} tone={narration.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={narration.ref ? () => navigate(generatePath('/books/:ref', { ref: narration.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </Shelf>
       </Section>
-      <Section title={data.more.series.title} eyebrow="More in" onSubject={() => navigate(generatePath('/books/series/:ref', { ref: data.series.ref }))} platform={platform}>
+      <Section title={data.more.series.title} eyebrow="More in" onSubject={data.series.ref ? () => navigate(generatePath('/books/series/:ref', { ref: data.series.ref })) : undefined} platform={platform}>
         <Shelf platform={platform}>
           {data.more.series.items.map((book, i) => (
             <Fragment key={i}>
-              <MediaCard title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: book.ref }))} platform={platform} />
+              <MediaCard title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={book.ref ? () => navigate(generatePath('/books/:ref', { ref: book.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </Shelf>
@@ -499,7 +481,7 @@ export default function Book({ data = placeholder, state = 'full' }: BookProps) 
         <Shelf platform={platform}>
           {data.more.author.items.map((other, i) => (
             <Fragment key={i}>
-              <MediaCard title={other.title} sub={other.sub} image={other.image} progress={other.progress} absent={other.absent} status={other.status} tone={other.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={() => navigate(generatePath('/books/:ref', { ref: other.ref }))} platform={platform} />
+              <MediaCard title={other.title} sub={other.sub} image={other.image} progress={other.progress} absent={other.absent} status={other.status} tone={other.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={other.ref ? () => navigate(generatePath('/books/:ref', { ref: other.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </Shelf>

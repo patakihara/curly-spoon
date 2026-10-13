@@ -1,0 +1,26 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.1",
+  "call": "shell-cover-medium",
+  "request": {
+    "method": "GET",
+    "path": "/api/items/7b3fa64c-f00c-4de6-8cd5-15d301b91f4b/cover",
+    "query": {
+      "width": "512"
+    },
+    "headers": {
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "image/webp"
+    },
+    "body": {
+      "bytes": "cover.webp",
+      "synthesized": "A 64 x 64 px mid-grey square, lossless WebP, made by scripts/fixtures/still.sh. Status and headers are the real answer; the body is not."
+    }
+  }
+}

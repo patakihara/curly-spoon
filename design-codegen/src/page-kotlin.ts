@@ -452,6 +452,8 @@ export function generateKotlinPage(
         throw new Error(`${id}: Android's phone has no rail to collapse`);
       case 'panel':
         throw new Error(`${id}: Android's phone has no player panel to show`);
+      case 'player':
+        throw new Error(`${id}: Android has no player for the transport until M5.player`);
       case 'lit':
         fromNav.add('litDestination');
         return raw(`litDestination(${kotlinString(action.fallback)})`);

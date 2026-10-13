@@ -1,7 +1,7 @@
 {
   "upstream": "jellyfin",
   "upstreamVersion": "10.11.11",
-  "call": "index-albums-page",
+  "call": "jf-library-albums-1",
   "request": {
     "method": "GET",
     "path": "/Items",
@@ -9,6 +9,7 @@
       "Fields": "ProviderIds,Genres,Etag",
       "IncludeItemTypes": "MusicAlbum",
       "Limit": "2",
+      "ParentId": "7e64e319657a9516ec78490da03edccb",
       "Recursive": "true",
       "SortBy": "DateCreated,SortName",
       "SortOrder": "Ascending",

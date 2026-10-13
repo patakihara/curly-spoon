@@ -93,9 +93,24 @@ export const chapterSchema = z
   .object({ title: z.string(), start: z.number(), end: z.number() })
   .passthrough();
 
-/** `GET /api/items/:id?expanded=1` read for a book's chapters only (recorded): none for a show. */
-export const itemChaptersSchema = z
-  .object({ media: z.object({ chapters: z.array(chapterSchema).optional() }).passthrough() })
+/**
+ * `GET /api/items/:id?expanded=1` read for a book's page: its length in seconds, the sum of the
+ * files it plays, and its chapters; its title and authors label a book the index no longer holds
+ * (recorded).
+ */
+export const bookDetailSchema = z
+  .object({
+    media: z
+      .object({
+        metadata: z.object({
+          title: z.string(),
+          authors: z.array(z.object({ name: z.string() })).optional(),
+        }),
+        duration: z.number().nonnegative(),
+        chapters: z.array(chapterSchema).optional(),
+      })
+      .passthrough(),
+  })
   .passthrough();
 
 /**
@@ -112,6 +127,12 @@ export const playSessionSchema = z
     /** The item's length in seconds, which every sync reports back. */
     duration: z.number().optional(),
     chapters: z.array(chapterSchema).optional(),
+    /** What plays, as ABS names it: a book's title, or an episode's own title. */
+    displayTitle: z.string().nullable().optional(),
+    /** A book's authors, or a show's author, as one line. */
+    displayAuthor: z.string().nullable().optional(),
+    /** The book's or the show's metadata: for an episode, its `title` is the show's. */
+    mediaMetadata: z.object({ title: z.string().nullable().optional() }).passthrough().optional(),
   })
   .passthrough();
 
@@ -237,6 +258,18 @@ export const meSchema = z
 export type AbsMe = z.infer<typeof meSchema>;
 
 /**
+ * Which libraries a person may open, from the same `GET /api/me`: every one when
+ * `accessAllLibraries`, else those `librariesAccessible` names (recorded).
+ */
+export const libraryAccessSchema = z
+  .object({
+    permissions: z.object({ accessAllLibraries: z.boolean() }).passthrough(),
+    librariesAccessible: z.array(z.string()),
+  })
+  .passthrough();
+export type LibraryAccess = z.infer<typeof libraryAccessSchema>;
+
+/**
  * `DELETE /api/me/item/:id/bookmark/:time` answers a bare 200 (`OK` as text), and 404 `Not Found`
  * when the item has no bookmark at that time (both recorded); nothing in it is read.
  */
@@ -284,18 +317,34 @@ const episodeSchema = z.object({
   audioFile: audioFileSchema.nullable().optional(),
 });
 
+/**
+ * `GET /api/items/:id` of a show, not expanded, read for one episode's page: each episode's notes
+ * as the show's feed gives them, null when it gives none (recorded, the notes dropped by the
+ * recorder).
+ */
+export const showNotesSchema = z.object({
+  media: z.object({
+    episodes: z.array(z.object({ id: z.string(), description: optionalString })),
+  }),
+});
+
 const itemBase = { id: z.string(), libraryId: z.string(), updatedAt: z.number() };
 
 /**
  * `GET /api/items/:id`, not expanded: what the index reads of a book or a show, and nothing else.
  * zod strips every other field, so a 2,000-episode show parses to little more than its rows.
- * The shapes follow the index recordings (`index-book-*`, `index-show-*`).
+ * The shapes follow the index recordings (`index-book-*`, `index-show-*`). `coverPath` is null
+ * or missing for an item with no cover.
  */
 export const itemSummarySchema = z.discriminatedUnion('mediaType', [
   z.object({
     ...itemBase,
     mediaType: z.literal('book'),
-    media: z.object({ metadata: bookMetadataSchema, audioFiles: z.array(audioFileSchema) }),
+    media: z.object({
+      metadata: bookMetadataSchema,
+      audioFiles: z.array(audioFileSchema),
+      coverPath: optionalString,
+    }),
   }),
   z.object({
     ...itemBase,
@@ -309,6 +358,7 @@ export const itemSummarySchema = z.discriminatedUnion('mediaType', [
         itunesId: optionalString,
       }),
       episodes: z.array(episodeSchema),
+      coverPath: optionalString,
     }),
   }),
 ]);

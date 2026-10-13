@@ -4,13 +4,15 @@
  * little before the end, so the next file starts the moment the last one ends. The position it
  * reports is on the whole item's timeline (the file's offset plus its own time, no further than
  * its planned end), so chapters and progress work across files. A transcode's one HLS track plays
- * through hls.js, loaded only then, or through the browser's own HLS where it has one. The plan's
- * playback session is closed when the player is.
+ * through hls.js, loaded only then, or through the browser's own HLS where it has one. It plays at
+ * the rate it is given, its pitch kept, and stops where it is told to, never starting a file past
+ * that point. The plan's playback session is closed when the player is.
  */
 import { type ApiClient, createApiClient } from './api/client';
 import { type components } from './generated/api/schema';
 
 export type PlaybackPlan = components['schemas']['PlaybackPlan'];
+export type ProgressReport = components['schemas']['ProgressReport'];
 type Track = PlaybackPlan['tracks'][number];
 
 /** A transcode's one track: an HLS playlist. Typed by the generated `HlsMime`, so it cannot drift. */
@@ -26,6 +28,10 @@ export interface MediaLike {
   currentTime: number;
   readonly duration: number;
   readonly paused: boolean;
+  playbackRate: number;
+  /** The rate a newly loaded source plays at. */
+  defaultPlaybackRate: number;
+  preservesPitch: boolean;
   play(): Promise<void>;
   pause(): void;
   load(): void;
@@ -58,6 +64,8 @@ export interface PlayerOptions {
   onPosition?: (position: number) => void;
   /** The last file has ended. */
   onEnded?: () => void;
+  /** It paused at the stop `stopAt` set, or was asked to play at or past it. */
+  onStop?: () => void;
 }
 
 export interface Player {
@@ -68,11 +76,18 @@ export interface Player {
   seek(position: number): Promise<void>;
   /** Seconds from the item's start. */
   readonly position: number;
+  /** Plays at `rate` times normal speed, its pitch kept, on this file and every one after. */
+  setRate(rate: number): void;
+  /**
+   * Pauses at `position` seconds from the item's start and never starts a file after it; at or
+   * past it already, it pauses at once. Each stop says so through `onStop`. Null plays on.
+   */
+  stopAt(position: number | null): void;
   /**
    * Stops, lets go of both elements and takes them out of the document, and closes the plan's
-   * open playback session if it has one.
+   * open playback session, with `report` as its last report when given.
    */
-  destroy(): Promise<void>;
+  destroy(report?: ProgressReport): Promise<void>;
 }
 
 const audioInDocument = (): MediaLike => {
@@ -105,6 +120,9 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
   let current = 0;
   let started = false;
   let startAt = plan.startAt;
+  let rate = 1;
+  /** Where to stop, from the item's start; null plays on. */
+  let cut: number | null = null;
   /** Set by `destroy`, whose one run it holds: nothing loads or plays after it. */
   let destroyed: Promise<void> | null = null;
   const unlisten: (() => void)[] = [];
@@ -115,6 +133,13 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
     let index = 0;
     for (let i = 0; i < tracks.length; i++) if (tracks[i]!.offset <= position) index = i;
     return index;
+  };
+
+  /** A new source can reset an element's rate, so it is set again after every load. */
+  const applyRate = (audio: MediaLike) => {
+    audio.preservesPitch = true;
+    audio.defaultPlaybackRate = rate;
+    audio.playbackRate = rate;
   };
 
   const release = (slot: Slot) => {
@@ -145,6 +170,7 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
       slot.audio.src = track.url;
       slot.audio.load();
     }
+    applyRate(slot.audio);
     slot.audio.currentTime = time;
   };
 
@@ -155,6 +181,20 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
     const track = tracks[slot.track]!;
     return track.offset + Math.min(slot.audio.currentTime, track.duration);
   };
+
+  /** Pauses at the stop, moving back to it from a little past, and says so. */
+  const halt = () => {
+    const slot = now();
+    slot.audio.pause();
+    if (cut !== null && slot.track !== null) {
+      const track = tracks[slot.track]!;
+      const within = cut - track.offset;
+      if (within >= 0 && within < slot.audio.currentTime) slot.audio.currentTime = within;
+    }
+    options.onStop?.();
+  };
+
+  const atCut = () => cut !== null && position() >= cut;
 
   const preloadNext = () => {
     const slot = now();
@@ -174,12 +214,26 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
     };
     on('timeupdate', () => {
       if (!mine()) return;
+      if (atCut() && !slot.audio.paused) halt();
       options.onPosition?.(position());
       preloadNext();
     });
     on('ended', () => {
       if (!mine() || slot.track === null) return;
       const next = slot.track + 1;
+      const end = tracks[slot.track]!.offset + tracks[slot.track]!.duration;
+      if (cut !== null && cut <= end) {
+        // The stop is where this file ends: the next waits, loaded, at its start.
+        if (next < tracks.length) {
+          const ready = spare().track === next;
+          current = 1 - current;
+          if (ready) now().audio.currentTime = 0;
+          else void put(now(), next, 0);
+        } else startAt = end;
+        options.onPosition?.(Math.min(cut, end));
+        options.onStop?.();
+        return;
+      }
       if (next >= tracks.length) {
         startAt = tracks[slot.track]!.offset + slot.audio.currentTime;
         options.onEnded?.();
@@ -202,6 +256,10 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
         started = true;
         await put(now(), trackAt(startAt), startAt - tracks[trackAt(startAt)]!.offset);
         if (destroyed) return;
+      }
+      if (atCut()) {
+        halt();
+        return;
       }
       await now().audio.play();
     },
@@ -233,14 +291,25 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
     get position() {
       return position();
     },
-    destroy() {
+    setRate(to) {
+      rate = to;
+      slots.forEach((slot) => applyRate(slot.audio));
+    },
+    stopAt(to) {
+      cut = to;
+      if (started && !destroyed && atCut()) halt();
+    },
+    destroy(report) {
       destroyed ??= (async () => {
         unlisten.splice(0).forEach((stop) => stop());
         slots.forEach(release);
         slots.forEach((slot) => slot.audio.remove?.());
         const { playId } = plan.progressTarget;
         const api = options.api ?? createApiClient();
-        await api.POST('/api/play/{playId}/close', { params: { path: { playId } } });
+        await api.POST('/api/play/{playId}/close', {
+          params: { path: { playId } },
+          ...(report === undefined ? {} : { body: report }),
+        });
       })();
       return destroyed;
     },

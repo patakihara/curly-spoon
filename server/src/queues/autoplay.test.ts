@@ -54,7 +54,9 @@ const show2 = itemSummarySchema.parse(json(recording('audiobookshelf', 'index-sh
 const books = (['series-book-1', 'series-book-2'] as const).map((c) =>
   itemSummarySchema.parse(json(recording('audiobookshelf', c))),
 );
-const albums = indexQueryResultSchema.parse(json(recording('jellyfin', 'index-albums-page')));
+const albumsPage = recording('jellyfin', 'jf-library-albums-1');
+const albums = indexQueryResultSchema.parse(json(albumsPage));
+const musicLibrary = albumsPage.request.query.ParentId!;
 const albumTracks = indexQueryResultSchema.parse(
   json(recording('jellyfin', 'index-album-tracks-1')),
 ).Items;
@@ -106,7 +108,11 @@ beforeEach(() => {
     applyTree(db, absTree(show, ordering), 1, counts);
   }
   for (const book of books) applyTree(db, absTree(book), 1, counts);
-  applyTree(db, { top: albumRow(album), children: trackRows(album.Id, albumTracks) }, 1, counts);
+  const tree = {
+    top: albumRow(album, musicLibrary),
+    children: trackRows(album.Id, musicLibrary, albumTracks),
+  };
+  applyTree(db, tree, 1, counts);
 });
 afterEach(() => {
   db.close();

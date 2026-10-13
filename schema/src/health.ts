@@ -9,6 +9,11 @@ export const HealthResponse = z
     status: z.literal('ok'),
     /** The commit the running image was built from; null for a server not built into an image. */
     commit: CommitId.nullable(),
+    /**
+     * Whether the server has a household sign-on: with one, a signed-out visitor goes to sign in;
+     * with none, nobody can sign in, and the web app draws the canvas's placeholders.
+     */
+    signOn: z.boolean(),
   })
   .openapi('HealthResponse');
 

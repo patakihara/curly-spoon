@@ -14,6 +14,8 @@ import { adminRoutes } from './routes/admin.js';
 import { authRoutes } from './routes/auth.js';
 import { bookmarkRoutes } from './routes/bookmarks.js';
 import { deviceRoutes } from './routes/devices.js';
+import { itemRoutes } from './routes/items.js';
+import { libraryRoutes } from './routes/library.js';
 import { type PlaybackOptions, playRoutes, type UpstreamAccess } from './routes/play.js';
 import { IndexLookup } from './queues/lookup.js';
 import { Sessions } from './queues/sessions.js';
@@ -95,7 +97,8 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   registerAccess(app, { db, proxy, cookieSecure, publicOrigin: options.publicOrigin });
 
   const commit = options.commit ?? null;
-  serve(app, health, () => ({ status: 'ok' as const, commit }));
+  const signOn = (options.signOn ?? null) !== null;
+  serve(app, health, () => ({ status: 'ok' as const, commit, signOn }));
   setupRoutes(app, { db, cookieSecure, setupCodeFile: options.setupCodeFile ?? null });
   signOnRoutes(app, {
     db,
@@ -132,6 +135,8 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     ...(options.now ? { now: options.now } : {}),
   });
   bookmarkRoutes(app, { db, upstreams: options.upstreams ?? null });
+  libraryRoutes(app, { db, upstreams });
+  itemRoutes(app, { db, upstreams });
 
   const distDir = options.webDistDir;
   if (distDir !== null && existsSync(distDir)) {
@@ -159,11 +164,10 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     retiredWorkerRoute(app);
     // A signed-out visitor opening a page goes to sign in first, keeping where they were going.
     // With no sign-on nobody can sign in, so every page is served as it is.
-    const signOnConfigured = (options.signOn ?? null) !== null;
     const sendPage = (request: FastifyRequest, reply: FastifyReply) => {
       const path = request.url.split('?')[0]!;
       const open = OPEN_PAGES.includes(path);
-      if (signOnConfigured && request.user === null && !open) {
+      if (signOn && request.user === null && !open) {
         const query = new URLSearchParams({ return_to: request.url });
         void reply.redirect(`${SIGN_IN_PAGE}?${query.toString()}`);
         return;

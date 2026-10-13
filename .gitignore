@@ -8,6 +8,8 @@ playwright-report/
 *.tsbuildinfo
 
 data/
+# The web app's page data code, not a server's data directory.
+!web/src/data/
 *.sqlite
 *.sqlite-journal
 *.sqlite-wal

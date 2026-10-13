@@ -319,7 +319,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** One of this device's queues: its current item, your queue and playing-from */
+        /** One of this device's queues as the queue page shows it: every entry labelled, autoplay's kept pick and the newest plays */
         get: operations["getQueue"];
         /** Reorder or remove entries of one of this device's queues */
         put: operations["putQueue"];
@@ -398,6 +398,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/library/{medium}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in person's books, podcast shows or albums */
+        get: operations["listLibrary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/items/{ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One book, show, episode or album the signed-in person may open */
+        get: operations["getItem"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/media/{ref}/art": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A book's, show's or album's art, with the signed-in person's own access */
+        get: operations["getMediaArt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /** A book's, show's or album's art, with the signed-in person's own access */
+        head: operations["getMediaArtHead"];
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -422,6 +474,15 @@ export interface components {
             ref: components["schemas"]["MediaRef"];
             chapter?: number;
         };
+        QueueViewItem: {
+            /** Format: uuid */
+            itemId: string;
+            ref: components["schemas"]["MediaRef"];
+            chapter?: number;
+            title: string;
+            sub: string | null;
+            duration: number | null;
+        };
         QueuePosition: {
             ms: number;
             takenAt: number;
@@ -432,6 +493,17 @@ export interface components {
             kind: components["schemas"]["PlayingFromKind"];
             ref: components["schemas"]["MediaRef"];
         };
+        QueueViewContext: {
+            from: components["schemas"]["PlayingFrom"];
+            items: components["schemas"]["QueueViewItem"][];
+        };
+        QueueViewAutoplay: {
+            ref: components["schemas"]["MediaRef"];
+            chapter?: number;
+            title: string;
+            sub: string | null;
+            duration: number | null;
+        };
         QueueContext: {
             from: components["schemas"]["PlayingFrom"];
             items: components["schemas"]["QueueItem"][];
@@ -440,6 +512,7 @@ export interface components {
             /** @enum {string} */
             status: "ok";
             commit: string | null;
+            signOn: boolean;
         };
         SetupStatus: {
             configured: boolean;
@@ -506,11 +579,21 @@ export interface components {
         UserList: {
             users: components["schemas"]["Me"][];
         };
+        /** @enum {string} */
+        PlaybackVariant: "music" | "spoken";
+        PlaybackMeta: {
+            title: string;
+            sub: string | null;
+            art: string | null;
+            variant: components["schemas"]["PlaybackVariant"];
+        };
         PlaybackTrack: {
             url: string;
             mime: string;
             duration: number;
             offset: number;
+            title?: string;
+            sub?: string;
         };
         PlaybackChapter: {
             title: string;
@@ -521,6 +604,7 @@ export interface components {
             playId: string;
         };
         PlaybackPlan: {
+            meta: components["schemas"]["PlaybackMeta"];
             tracks: components["schemas"]["PlaybackTrack"][];
             chapters: components["schemas"]["PlaybackChapter"][];
             startAt: number;
@@ -533,6 +617,7 @@ export interface components {
         ProgressAnswer: {
             taken: boolean;
             lastSeq: number;
+            endAt?: number;
         };
         ProgressBody: {
             playId: string;
@@ -581,6 +666,26 @@ export interface components {
         ListeningSessionList: {
             sessions: components["schemas"]["ListeningSession"][];
         };
+        QueueViewPlayed: {
+            seq: number;
+            queue: components["schemas"]["QueueType"];
+            ref: components["schemas"]["MediaRef"];
+            chapter?: number;
+            playedAt: number;
+            title: string;
+            sub: string | null;
+            duration: number | null;
+        };
+        QueueView: {
+            type: components["schemas"]["QueueType"];
+            current: components["schemas"]["QueueViewItem"] & (Record<string, never> | null);
+            position: components["schemas"]["QueuePosition"] & (Record<string, never> | null);
+            user: components["schemas"]["QueueViewItem"][];
+            context: components["schemas"]["QueueViewContext"] & (Record<string, never> | null);
+            rev: number;
+            autoplay: components["schemas"]["QueueViewAutoplay"] & (Record<string, never> | null);
+            played: components["schemas"]["QueueViewPlayed"][];
+        };
         Queue: {
             type: components["schemas"]["QueueType"];
             current: components["schemas"]["QueueItem"] & (Record<string, never> | null);
@@ -616,6 +721,72 @@ export interface components {
             queueStyle: components["schemas"]["QueueStyle"];
             rev?: number;
         };
+        /** @enum {string} */
+        LibraryEntryKind: "book" | "show" | "album";
+        /** @enum {string} */
+        AvailabilityKind: "owned" | "streamable" | "requested" | "external";
+        /** @enum {string} */
+        RequestStatus: "requested" | "needsChoice" | "downloading" | "failed";
+        Availability: {
+            kind: components["schemas"]["AvailabilityKind"];
+            status?: components["schemas"]["RequestStatus"];
+            progress?: number;
+            requestable?: boolean;
+        };
+        LibraryEntry: {
+            ref: components["schemas"]["MediaRef"];
+            kind: components["schemas"]["LibraryEntryKind"];
+            title: string;
+            sub: string | null;
+            art: string | null;
+            progress: number | null;
+            availability: components["schemas"]["Availability"];
+        };
+        LibraryList: {
+            items: components["schemas"]["LibraryEntry"][];
+        };
+        /** @enum {string} */
+        LibraryMedium: "books" | "podcasts" | "music";
+        /** @enum {string} */
+        ItemKind: "book" | "show" | "episode" | "album";
+        ItemEpisode: {
+            ref: components["schemas"]["MediaRef"];
+            title: string;
+            description: string | null;
+            publishedAt: number | null;
+            duration: number | null;
+            progress: number | null;
+            finished: boolean;
+        };
+        ItemTrack: {
+            ref: components["schemas"]["MediaRef"];
+            number: number | null;
+            title: string;
+            sub: string | null;
+            duration: number | null;
+        };
+        ItemEpisodeAbout: {
+            show: components["schemas"]["MediaRef"];
+            description: string | null;
+            publishedAt: number | null;
+            finished: boolean;
+        };
+        ItemDetail: {
+            ref: components["schemas"]["MediaRef"];
+            kind: components["schemas"]["ItemKind"];
+            title: string;
+            sub: string | null;
+            art: string | null;
+            progress: number | null;
+            duration: number | null;
+            availability: components["schemas"]["Availability"];
+            chapters: components["schemas"]["PlaybackChapter"][];
+            episodes: components["schemas"]["ItemEpisode"][];
+            tracks: components["schemas"]["ItemTrack"][];
+            episode?: components["schemas"]["ItemEpisodeAbout"];
+        };
+        /** @enum {string} */
+        ArtSize: "small" | "medium" | "large";
     };
     responses: never;
     parameters: never;
@@ -1702,7 +1873,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Queue"];
+                    "application/json": components["schemas"]["QueueView"];
                 };
             };
             /** @description The request does not parse, or was refused. */
@@ -1990,6 +2161,198 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
+            };
+        };
+    };
+    listLibrary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                medium: components["schemas"]["LibraryMedium"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every indexed book, show or album in the libraries this person may open, by title. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LibraryList"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Its header, then a book's chapters, a show's episodes in its order, an album's tracks, or an episode's show, notes and standing. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemDetail"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getMediaArt: {
+        parameters: {
+            query?: {
+                size?: components["schemas"]["ArtSize"];
+            };
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The image, at the size asked for, or as stored. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/*": string;
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getMediaArtHead: {
+        parameters: {
+            query?: {
+                size?: components["schemas"]["ArtSize"];
+            };
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The image, at the size asked for, or as stored. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -487,7 +487,13 @@ function fakeIndexUpstreams() {
       '/api/items/b1': book,
       '/api/items/s1': show,
       '/System/Info/Public': { Version: '10.11.11' },
-      '/Items': search.includes('ParentId=')
+      '/Library/MediaFolders': {
+        Items: [
+          { Id: 'books', Name: 'Books', CollectionType: 'books' },
+          { Id: 'music', Name: 'Music', CollectionType: 'music' },
+        ],
+      },
+      '/Items': search.includes('IncludeItemTypes=Audio')
         ? { Items: [{ Id: 't1', Type: 'Audio' }], TotalRecordCount: 1 }
         : { Items: [{ Id: 'a1', Type: 'MusicAlbum' }], TotalRecordCount: 1 },
     };
@@ -522,15 +528,17 @@ describe("record mode for the index's calls", () => {
     expect(asked.some((a) => a.includes('/file/') || a.endsWith('/play'))).toBe(false);
   });
 
-  it('records a page of each library, each listed item, each listed album with its tracks, and the lookups that confirm an item is gone', async () => {
-    const { written } = await run();
+  it("records a page of each Audiobookshelf library, each listed item, the tracks of each album on each music library's page, and the lookups that confirm an item is gone", async () => {
+    const { written, asked } = await run();
+    expect(asked).toContain(
+      'GET /Items?ParentId=music&IncludeItemTypes=MusicAlbum&Recursive=true&SortBy=DateCreated%2CSortName&SortOrder=Ascending&StartIndex=8&Limit=2&Fields=ProviderIds%2CGenres%2CEtag',
+    );
     expect(written.map((w) => w.split('/').slice(-3).join('/'))).toEqual([
       'audiobookshelf/recordings/index-books-page.json',
       'audiobookshelf/recordings/index-book-1.json',
       'audiobookshelf/recordings/index-shows-page.json',
       'audiobookshelf/recordings/index-show-1.json',
       'audiobookshelf/recordings/index-item-gone.json',
-      'jellyfin/recordings/index-albums-page.json',
       'jellyfin/recordings/index-album-tracks-1.json',
       'jellyfin/recordings/index-album-lookup.json',
       'jellyfin/recordings/index-album-gone.json',

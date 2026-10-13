@@ -33,6 +33,11 @@
  * a finished episode on the first show read back through `GET /api/me` and undone, and Jellyfin's
  * Instant Mix for the track (record-sessions.ts).
  *
+ * `--only shell --play-item <book> --jellyfin-item <album>` records M1.shell's reads: the books page
+ * holding the book and its books, its cover, each music library's albums page, and as `auralis`
+ * the views and the album's primary image, each image as stored and at the art route's medium
+ * width (record-shell.ts).
+ *
  * `--dry-run` makes the same calls but writes into a fresh temporary folder instead of the
  * committed recordings, and says where.
  */
@@ -54,6 +59,7 @@ import { JellyfinProvisioner, personDevice } from './jellyfin/quickConnect.js';
 import { RECORD_USER_ID, recordOidc, TEST_IDENTITY } from './record-oidc.js';
 import { recordProgress } from './record-progress.js';
 import { recordSessions } from './record-sessions.js';
+import { recordShell } from './record-shell.js';
 
 /**
  * The index calls record one page of two items from each library. The fifth page holds the
@@ -72,14 +78,14 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
   --abs <url>        Audiobookshelf base URL
   --jellyfin <url>   Jellyfin base URL
   --jellyfin-item <id> the Jellyfin item to record, instead of the first album; for --only
-                     jfplay, the album; for --only progress, the track; for --only
-                     sessions, the track Instant Mix is asked for
-  --only <name>      record only abs, jellyfin, index, play, episode, jfplay, progress or
-                     sessions; or
+                     jfplay and shell, the album; for --only progress, the track; for
+                     --only sessions, the track Instant Mix is asked for
+  --only <name>      record only abs, jellyfin, index, play, episode, jfplay, progress,
+                     sessions or shell; or
                      oidc, a sign-in and its links
   --books <a,b>      for --only sessions, two books of one series, in series order
   --shows <a,b>      for --only sessions, two shows, the first serial
-  --play-item <id>   the multi-file book --only play and --only progress record; for
+  --play-item <id>   the multi-file book --only play, progress and shell record; for
                      --only episode, the show
   --episode <id>     for --only episode, the episode played
   --index-page <n>   the page of two the index calls record, from 0 (default ${INDEX_PAGE})
@@ -89,7 +95,7 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
   --help             show this
 
 stdin carries ABS_API_KEY=... and JELLYFIN_API_KEY=... lines (jfplay needs only the latter;
-progress and sessions need both); for --only oidc,
+progress, sessions and shell need both); for --only oidc,
 OIDC_CLIENT_SECRET, OIDC_TEST_PASSWORD, ABS_PROVISION_KEY and JELLYFIN_API_KEY.
 `;
 
@@ -530,7 +536,11 @@ async function recordIndexAbs(
   return calls.map((c) => join(dir, `${c}.json`));
 }
 
-/** The index's Jellyfin calls: one page of albums, and each listed album's tracks. */
+/**
+ * The index's Jellyfin calls: each listed album's tracks, and the lookups that confirm an album is
+ * still there or gone. The albums are those on the page of each music library; the pages
+ * themselves are `--only shell`'s `jf-library-albums-<n>`, so they are read here unrecorded.
+ */
 async function recordIndexJellyfin(
   io: RecordIo,
   baseUrl: string,
@@ -539,11 +549,8 @@ async function recordIndexJellyfin(
   secrets: string[],
   page: number,
 ) {
-  const upstreamVersion = await new JellyfinClient({
-    baseUrl,
-    token,
-    fetch: io.fetch,
-  }).getServerVersion();
+  const plain = new JellyfinClient({ baseUrl, token, fetch: io.fetch });
+  const upstreamVersion = await plain.getServerVersion();
   const rec = createRecorder({
     fetch: io.fetch,
     dir,
@@ -553,16 +560,23 @@ async function recordIndexJellyfin(
     baseUrl,
   });
   const jf = new JellyfinClient({ baseUrl, token, fetch: rec.fetch });
-  const calls = ['index-albums-page'];
-  const albums = await rec.capture('index-albums-page', () =>
-    jf.getAlbums({ limit: INDEX_PAGE_SIZE, startIndex: page * INDEX_PAGE_SIZE }),
-  );
-  for (const [n, album] of albums.Items.entries()) {
+  const albums = [];
+  for (const library of await plain.getLibraries()) {
+    if (library.CollectionType !== 'music') continue;
+    const listed = await plain.getAlbums({
+      limit: INDEX_PAGE_SIZE,
+      startIndex: page * INDEX_PAGE_SIZE,
+      parentId: library.Id,
+    });
+    albums.push(...listed.Items);
+  }
+  const calls: string[] = [];
+  for (const [n, album] of albums.entries()) {
     const call = `index-album-tracks-${n + 1}`;
     await rec.capture(call, () => jf.getAlbumTracks(album.Id));
     calls.push(call);
   }
-  const [first] = albums.Items;
+  const [first] = albums;
   if (first) {
     await rec.capture('index-album-lookup', () => jf.findAlbum(first.Id));
     calls.push('index-album-lookup');
@@ -608,11 +622,12 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'jfplay',
       'progress',
       'sessions',
+      'shell',
       'oidc',
     ].includes(only)
   ) {
     io.err(
-      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions or oidc, not ${only}`,
+      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell or oidc, not ${only}`,
     );
     return 2;
   }
@@ -628,6 +643,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
   if (only === 'jfplay') return runJellyfinPlay(io, values, parseKeys(io.stdin), root);
   if (only === 'progress') return runProgress(io, values, parseKeys(io.stdin), root);
   if (only === 'sessions') return runSessions(io, values, parseKeys(io.stdin), root);
+  if (only === 'shell') return runShell(io, values, parseKeys(io.stdin), root);
   const wantIndex = only === undefined || only === 'index';
   const wantAbs = only !== 'jellyfin';
   const wantJellyfin = only !== 'abs';
@@ -893,6 +909,42 @@ async function runSessions(
     return 1;
   }
   return scanned;
+}
+
+async function runShell(
+  io: RecordIo,
+  values: Record<string, string | boolean | undefined>,
+  keys: Record<string, string>,
+  root: string,
+): Promise<number> {
+  const need = {
+    '--abs': values.abs,
+    '--jellyfin': values.jellyfin,
+    '--play-item': values['play-item'],
+    '--jellyfin-item': values['jellyfin-item'],
+    'ABS_API_KEY on stdin': keys.ABS_API_KEY,
+    'JELLYFIN_API_KEY on stdin': keys.JELLYFIN_API_KEY,
+  };
+  const missing = Object.entries(need)
+    .filter(([, v]) => typeof v !== 'string' || v === '')
+    .map(([k]) => k);
+  if (missing.length > 0) {
+    io.err(`missing ${missing.join(', ')}\n\n${USAGE}`);
+    return 2;
+  }
+  const { written } = await recordShell({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    absUrl: values.abs as string,
+    jellyfinUrl: values.jellyfin as string,
+    absKey: keys.ABS_API_KEY as string,
+    jellyfinKey: keys.JELLYFIN_API_KEY as string,
+    bookId: values['play-item'] as string,
+    albumId: values['jellyfin-item'] as string,
+    pageSize: INDEX_PAGE_SIZE,
+  });
+  return scanWritten(io, written, []);
 }
 
 async function runOidc(

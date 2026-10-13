@@ -7,6 +7,7 @@ import { AdapterError, type FetchLike } from './http/fetch.js';
 import { type Recording, recordingSchema } from './http/recording.js';
 import { replayFetch, standInsBeside } from './http/replay.js';
 import { JellyfinClient, TICKS_PER_SECOND } from './jellyfin/client.js';
+import { ART_WIDTH } from '../routes/items.js';
 import { ABS_PROGRESS_CALLS, JELLYFIN_PROGRESS_CALLS, TEST_BOOKMARK } from './record-progress.js';
 
 const adapters = dirname(fileURLToPath(import.meta.url));
@@ -589,5 +590,115 @@ describe("Audiobookshelf's, the feeds' and Jellyfin's answers, recorded for M1.s
     const mix = await jf.getInstantMix(last, 20);
     expect(mix.length).toBe(20);
     expect(mix.every((t) => t.Type === 'Audio' && Boolean(t.AlbumId))).toBe(true);
+  });
+});
+
+/** M1.shell's recordings: the lists' pages, the views and the art. */
+const shell = {
+  booksPage: recording('audiobookshelf', 'shell-books-page'),
+  books: [recording('audiobookshelf', 'shell-book-1'), recording('audiobookshelf', 'shell-book-2')],
+  cover: recording('audiobookshelf', 'shell-cover'),
+  coverMedium: recording('audiobookshelf', 'shell-cover-medium'),
+  fourFiles: recording('audiobookshelf', 'multi-detail'),
+  folders: recording('jellyfin', 'library-list'),
+  albums: recording('jellyfin', 'jf-library-albums-1'),
+  views: recording('jellyfin', 'jf-user-views'),
+  image: recording('jellyfin', 'jf-primary-image'),
+  imageMedium: recording('jellyfin', 'jf-primary-image-medium'),
+  album: recording('jellyfin', 'jf-album'),
+  track: recording('jellyfin', 'jf-track'),
+};
+
+describe("Audiobookshelf's and Jellyfin's answers, recorded for M1.shell", () => {
+  const abs = () =>
+    new AbsClient({
+      baseUrl: 'http://upstream.invalid',
+      token: '<token>',
+      fetch: replayFetch(
+        [shell.booksPage, ...shell.books, shell.cover, shell.coverMedium, shell.fourFiles],
+        {
+          readBytes: standInsBeside(adapters),
+        },
+      ),
+    });
+  const jf = () =>
+    new JellyfinClient({
+      baseUrl: 'http://upstream.invalid',
+      token: '<token>',
+      fetch: replayFetch([shell.albums, shell.views, shell.image, shell.imageMedium], {
+        readBytes: standInsBeside(adapters),
+      }),
+    });
+
+  it('a books page of two, oldest added first, holds the four-file book, and each book parses', async () => {
+    const library = shell.booksPage.request.path.split('/')[3] ?? '';
+    const page = Number(shell.booksPage.request.query.page);
+    const listed = await abs().getLibraryItems(library, { limit: 2, page, sort: 'addedAt' });
+    expect(listed.results.map((r) => r.id)).toContain(itemId(shell.fourFiles));
+    const books = await Promise.all(listed.results.map((r) => abs().getItemSummary(r.id)));
+    expect(books.map((b) => [b.mediaType, b.libraryId])).toEqual([
+      ['book', library],
+      ['book', library],
+    ]);
+  });
+
+  it("the four-file book's cover replays as WebP from its synthesized stand-in", async () => {
+    expect(shell.cover.request.headers.authorization).toBe('Bearer <token>');
+    const cover = await abs().openCover(itemId(shell.fourFiles));
+    expect(cover.headers['content-type']).toBe('image/webp');
+    const bytes = new Uint8Array(await new Response(cover.body).arrayBuffer());
+    expect(new TextDecoder().decode(bytes.slice(8, 12))).toBe('WEBP');
+  });
+
+  it("the four-file book's cover, asked for at the medium width, replays as WebP", async () => {
+    const cover = await abs().openCover(itemId(shell.fourFiles), ART_WIDTH.medium);
+    expect(cover.headers['content-type']).toBe('image/webp');
+    await cover.body.cancel();
+  });
+
+  it("the four-file book's page reads its length and its chapters, in order, from its expanded answer", async () => {
+    const detail = await abs().getBookDetail(itemId(shell.fourFiles));
+    expect(detail.duration).toBeGreaterThan(0);
+    expect(detail.chapters.length).toBe(4);
+    expect(detail.chapters[0]).toMatchObject({ start: 0 });
+    expect(detail.chapters.at(-1)?.end).toBeCloseTo(detail.duration, 3);
+  });
+
+  it("the test user's views name the music library by its media folder's id", async () => {
+    expect(shell.views.request.headers.authorization).toContain('DeviceId="auralis-recorder"');
+    const views = await jf().getUserViews();
+    const music = (
+      json(shell.folders.response.body) as { Items: { Id: string; CollectionType?: string }[] }
+    ).Items.filter((f) => f.CollectionType === 'music').map((f) => f.Id);
+    expect(views.filter((v) => v.CollectionType === 'music').map((v) => v.Id)).toEqual(music);
+  });
+
+  it("the music library's albums page, by its id, holds the album M1.music recorded", async () => {
+    const parentId = shell.albums.request.query.ParentId ?? '';
+    const startIndex = Number(shell.albums.request.query.StartIndex);
+    const page = await jf().getAlbums({ limit: 2, startIndex, parentId });
+    const albumId = shell.album.request.path.split('/')[2] ?? '';
+    expect(page.Items.map((a) => a.Id)).toContain(albumId);
+  });
+
+  it('the recorded track belongs to the recorded album, as its first track', () => {
+    const album = json(shell.album.response.body) as { Id: string };
+    const track = json(shell.track.response.body) as { AlbumId: string; IndexNumber: number };
+    expect(track).toMatchObject({ AlbumId: album.Id, IndexNumber: 1 });
+  });
+
+  it("the album's primary image replays as JPEG from its synthesized stand-in", async () => {
+    const albumId = shell.album.request.path.split('/')[2] ?? '';
+    const image = await jf().openImage(albumId);
+    expect(image.headers['content-type']).toBe('image/jpeg');
+    const bytes = new Uint8Array(await new Response(image.body).arrayBuffer());
+    expect([bytes[0], bytes[1]]).toEqual([0xff, 0xd8]);
+  });
+
+  it("the album's primary image, asked for at the medium width, replays as JPEG", async () => {
+    const albumId = shell.album.request.path.split('/')[2] ?? '';
+    const image = await jf().openImage(albumId, ART_WIDTH.medium);
+    expect(image.headers['content-type']).toBe('image/jpeg');
+    await image.body.cancel();
   });
 });

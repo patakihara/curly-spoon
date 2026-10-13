@@ -17,6 +17,9 @@
  *   it, leaving the page as it is.
  * - The avatar leading the phone's top bar opens Settings.
  * - The player's tabs switch to that tab's sheet.
+ * - On the web, the mini-player's and Now Playing's transport (play and pause, previous and next,
+ *   skip back and forward, seek, speed and the sleep timer) is the player's, which holds what is
+ *   loaded. Android has no player to give them until M5.player.
  */
 import type { Nav, NavPage } from './nav.js';
 import type { PageTree } from './page.js';
@@ -36,7 +39,21 @@ export type ShellAction =
   /** The player panel at `tab`, or at Now Playing when it shows `tab` already; the page stays. */
   | { kind: 'panel'; tab: 'queue' | 'lyrics' }
   /** The rail collapsed or expanded, from `expanded`, the width's own default, until toggled. */
-  | { kind: 'rail'; expanded: boolean };
+  | { kind: 'rail'; expanded: boolean }
+  /** The player's own handler of the same name, for what is loaded. */
+  | { kind: 'player' };
+
+/** The transport's handler props, the same on the mini-player and Now Playing, that the player does. */
+export const TRANSPORT = [
+  'onTogglePlay',
+  'onPrev',
+  'onNext',
+  'onSkipBack',
+  'onSkipForward',
+  'onSeek',
+  'onSpeed',
+  'onSleep',
+] as const;
 
 /** The shell's handlers on a page's shell elements, each element's handler props to their actions. */
 export type ShellHandlers = Map<PageTree, Record<string, ShellAction>>;
@@ -76,10 +93,16 @@ export function shellHandlers(
     if (tree !== undefined) handlers.set(tree, { ...handlers.get(tree), [prop]: action });
   };
   const has = (id: string) => nav.pages.some((p) => p.id === id && p.platforms.includes(platform));
+  /** The transport of `tree`, on the web, which has a player. */
+  const transport = (tree: PageTree | undefined) => {
+    if (platform !== 'web') return;
+    for (const prop of TRANSPORT) on(tree, prop, { kind: 'player' });
+  };
   const close = closeAction(nav, page);
   if (shell.player !== undefined) {
     if (close !== undefined) on(shell.player, 'onClose', close);
     on(shell.player, 'onTabChange', { kind: 'tab' });
+    transport(find(shell.player, 'NowPlayingPage'));
   }
   const parts = shell.chrome;
   if (parts !== undefined) {
@@ -111,6 +134,7 @@ export function shellHandlers(
       if (has('queue')) on(mini, 'onToggleQueue', { kind: 'panel', tab: 'queue' });
       if (has('lyrics')) on(mini, 'onToggleLyrics', { kind: 'panel', tab: 'lyrics' });
     }
+    transport(mini);
     if (has('settings'))
       on(find(parts.leading, 'AccountButton'), 'onClick', { kind: 'open', page: 'settings' });
     on(parts.sheet, 'onTabChange', { kind: 'tab' });

@@ -105,6 +105,18 @@ describe('[M0.sso/d] a signed-out visitor', () => {
     expect((await page(server, '/books/x')).statusCode).toBe(200);
   });
 
+  it('[M1.shell] tells the app, in its health answer, whether it has a sign-on to send anyone to', async () => {
+    for (const [signOn, says] of [
+      [standIn, true],
+      [null, false],
+    ] as const) {
+      const server = await serving(signOn);
+      const res = await server.inject({ method: 'GET', url: '/api/health' });
+      expect(res.json()).toEqual({ status: 'ok', commit: null, signOn: says });
+      await server.close();
+    }
+  });
+
   it('the pages open to everyone are the bare pages of nav.json', () => {
     const nav = JSON.parse(
       readFileSync(new URL('../../design/app/nav.json', import.meta.url), 'utf8'),

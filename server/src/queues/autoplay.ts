@@ -135,6 +135,17 @@ export function autoplayKept(queue: QueueType, session: SessionValue): boolean {
   return pick !== null && last !== undefined && sameEntry(pick.after, entryOf(last));
 }
 
+/**
+ * What plays once `queue` runs out, as the session keeps it: the pick worked out for the entry the
+ * queue follows now; null when it keeps none for that entry, or nothing follows it. Never reads an
+ * upstream.
+ */
+export function pendingAutoplay(queue: QueueType, session: SessionValue): QueueEntry | null {
+  const pick = session.autoplay[queue];
+  const after = followed(session, queue);
+  return pick !== null && after !== null && sameEntry(pick.after, after) ? pick.next : null;
+}
+
 /** What the user has finished on Audiobookshelf: books by id, episodes by show and episode id. */
 async function finishedSet(deps: AutoplayDeps): Promise<Set<string>> {
   const me = await deps.abs.getMe();

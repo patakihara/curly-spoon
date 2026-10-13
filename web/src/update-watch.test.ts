@@ -29,7 +29,7 @@ function rig(options: { commit?: string | null; storage?: Map<string, string> | 
   const stop = watchForUpdates({
     api: createApiClient({
       baseUrl: 'http://auralis.test',
-      fetch: async () => Response.json({ status: 'ok', commit }),
+      fetch: async () => Response.json({ status: 'ok', commit, signOn: true }),
     }),
     reload: () => reloads++,
     media,
@@ -193,7 +193,9 @@ describe('[M0.staging/c] the update watch', () => {
       api: createApiClient({
         baseUrl: 'http://auralis.test',
         fetch: async () =>
-          fail ? new Response('down', { status: 502 }) : Response.json({ status: 'ok', commit }),
+          fail
+            ? new Response('down', { status: 502 })
+            : Response.json({ status: 'ok', commit, signOn: true }),
       }),
       reload: () => reloads++,
       media: { isPlaying: () => false, subscribe: () => () => undefined },

@@ -1,0 +1,1144 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.1",
+  "call": "shell-book-2",
+  "request": {
+    "method": "GET",
+    "path": "/api/items/5d43a275-d4f4-4130-b2a5-87c2a79a7f1f",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "id": "5d43a275-d4f4-4130-b2a5-87c2a79a7f1f",
+        "ino": "49783",
+        "oldLibraryItemId": null,
+        "libraryId": "e8aa253f-82d0-44ff-b87a-74671278ce9d",
+        "folderId": "46f3a6da-763c-4197-b197-d7519c832355",
+        "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]",
+        "relPath": "Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]",
+        "isFile": false,
+        "mtimeMs": 1778671906845,
+        "ctimeMs": 1778735999409,
+        "birthtimeMs": 1778670574569,
+        "addedAt": 1778671906723,
+        "updatedAt": 1778737029231,
+        "lastScan": 1778737027498,
+        "scanVersion": "2.34.0",
+        "isMissing": false,
+        "isInvalid": false,
+        "mediaType": "book",
+        "media": {
+          "id": "007346bb-5c31-4378-a6e0-ef23b4269ed8",
+          "libraryItemId": "5d43a275-d4f4-4130-b2a5-87c2a79a7f1f",
+          "metadata": {
+            "title": "Powers [Sandvold]",
+            "subtitle": null,
+            "authors": [
+              {
+                "id": "b47357e7-1131-415e-99cb-f40b0942ffcc",
+                "name": "Ursula K. Le Guin"
+              }
+            ],
+            "narrators": [
+              "Sandvold"
+            ],
+            "series": [
+              {
+                "id": "3274c05d-2489-4bc7-8a02-32212fdaa469",
+                "name": "Annals of the Western Shore (Ellison, Sandvold)",
+                "sequence": "3"
+              }
+            ],
+            "genres": [
+              "Audio Book"
+            ],
+            "publishedYear": "2007",
+            "publishedDate": null,
+            "publisher": null,
+            "description": "Read by Erik Sandvold",
+            "isbn": null,
+            "asin": null,
+            "language": null,
+            "explicit": false,
+            "abridged": false
+          },
+          "coverPath": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/cover.jpg",
+          "tags": [],
+          "audioFiles": [
+            {
+              "index": 1,
+              "ino": "47255",
+              "metadata": {
+                "filename": "Powers 01.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 01.mp3",
+                "relPath": "Powers 01.mp3",
+                "size": 22277972,
+                "mtimeMs": 1777796718267,
+                "ctimeMs": 1778670574613,
+                "birthtimeMs": 1777796010004
+              },
+              "addedAt": 1778671904399,
+              "updatedAt": 1778671904399,
+              "trackNumFromMeta": 1,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 1,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 2754.31619,
+              "bitRate": 64000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 1,
+              "channelLayout": "mono",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "Powers",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "Powers 01",
+                "tagTrack": "1",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "2007",
+                "tagComment": "Read by Erik Sandvold"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 2,
+              "ino": "46935",
+              "metadata": {
+                "filename": "Powers 02.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 02.mp3",
+                "relPath": "Powers 02.mp3",
+                "size": 22766566,
+                "mtimeMs": 1777796720487,
+                "ctimeMs": 1778670574569,
+                "birthtimeMs": 1777795881686
+              },
+              "addedAt": 1778671904346,
+              "updatedAt": 1778671904346,
+              "trackNumFromMeta": 2,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 2,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 2815.384694,
+              "bitRate": 64000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 1,
+              "channelLayout": "mono",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "Powers",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "Powers 02",
+                "tagTrack": "2",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "2007",
+                "tagComment": "Read by Erik Sandvold"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 3,
+              "ino": "46831",
+              "metadata": {
+                "filename": "Powers 03.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 03.mp3",
+                "relPath": "Powers 03.mp3",
+                "size": 27418661,
+                "mtimeMs": 1777796688010,
+                "ctimeMs": 1778670574569,
+                "birthtimeMs": 1777795840294
+              },
+              "addedAt": 1778671904050,
+              "updatedAt": 1778671904050,
+              "trackNumFromMeta": 3,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 3,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 3396.901565,
+              "bitRate": 64000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 1,
+              "channelLayout": "mono",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "Powers",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "Powers 03",
+                "tagTrack": "3",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "2007",
+                "tagComment": "Read by Erik Sandvold"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 4,
+              "ino": "46657",
+              "metadata": {
+                "filename": "Powers 04.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 04.mp3",
+                "relPath": "Powers 04.mp3",
+                "size": 16267928,
+                "mtimeMs": 1777796690946,
+                "ctimeMs": 1778670574569,
+                "birthtimeMs": 1777795796537
+              },
+              "addedAt": 1778671904302,
+              "updatedAt": 1778671904302,
+              "trackNumFromMeta": 4,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 4,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 2003.061406,
+              "bitRate": 64000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 1,
+              "channelLayout": "mono",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "Powers",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "Powers 04",
+                "tagTrack": "4",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "2007",
+                "tagComment": "Read by Erik Sandvold"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 5,
+              "ino": "47285",
+              "metadata": {
+                "filename": "Powers 05.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 05.mp3",
+                "relPath": "Powers 05.mp3",
+                "size": 24980705,
+                "mtimeMs": 1777796849329,
+                "ctimeMs": 1778670574613,
+                "birthtimeMs": 1777796020300
+              },
+              "addedAt": 1778671904330,
+              "updatedAt": 1778671904330,
+              "trackNumFromMeta": 5,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 5,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 3092.143265,
+              "bitRate": 64000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 1,
+              "channelLayout": "mono",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "Powers",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "Powers 05",
+                "tagTrack": "5",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "2007",
+                "tagComment": "Read by Erik Sandvold"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 6,
+              "ino": "46834",
+              "metadata": {
+                "filename": "Powers 06.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 06.mp3",
+                "relPath": "Powers 06.mp3",
+                "size": 20432055,
+                "mtimeMs": 1777796857481,
+                "ctimeMs": 1778670574569,
+                "birthtimeMs": 1777795840866
+              },
+              "addedAt": 1778671904759,
+              "updatedAt": 1778671904759,
+              "trackNumFromMeta": 6,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 6,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 2523.579637,
+              "bitRate": 64000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 1,
+              "channelLayout": "mono",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "Powers",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "Powers 06",
+                "tagTrack": "6",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "2007",
+                "tagComment": "Read by Erik Sandvold"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 7,
+              "ino": "47268",
+              "metadata": {
+                "filename": "Powers 07.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 07.mp3",
+                "relPath": "Powers 07.mp3",
+                "size": 23992649,
+                "mtimeMs": 1777796867921,
+                "ctimeMs": 1778670574613,
+                "birthtimeMs": 1777796013604
+              },
+              "addedAt": 1778671904737,
+              "updatedAt": 1778671904737,
+              "trackNumFromMeta": 7,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 7,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 2968.647914,
+              "bitRate": 64000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 1,
+              "channelLayout": "mono",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "Powers",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "Powers 07",
+                "tagTrack": "7",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "2007",
+                "tagComment": "Read by Erik Sandvold"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 8,
+              "ino": "46941",
+              "metadata": {
+                "filename": "Powers 08.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 08.mp3",
+                "relPath": "Powers 08.mp3",
+                "size": 19069926,
+                "mtimeMs": 1777796871681,
+                "ctimeMs": 1778670574613,
+                "birthtimeMs": 1777795885546
+              },
+              "addedAt": 1778671904907,
+              "updatedAt": 1778671904907,
+              "trackNumFromMeta": 8,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 8,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 2353.300023,
+              "bitRate": 64000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 1,
+              "channelLayout": "mono",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "Powers",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "Powers 08",
+                "tagTrack": "8",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "2007",
+                "tagComment": "Read by Erik Sandvold"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 9,
+              "ino": "47406",
+              "metadata": {
+                "filename": "Powers 09.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 09.mp3",
+                "relPath": "Powers 09.mp3",
+                "size": 34796476,
+                "mtimeMs": 1777796927462,
+                "ctimeMs": 1778670574613,
+                "birthtimeMs": 1777796088149
+              },
+              "addedAt": 1778671904590,
+              "updatedAt": 1778671904590,
+              "trackNumFromMeta": 9,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 9,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 4319.133855,
+              "bitRate": 64000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 1,
+              "channelLayout": "mono",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "Powers",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "Powers 09",
+                "tagTrack": "9",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "2007",
+                "tagComment": "Read by Erik Sandvold"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 10,
+              "ino": "46704",
+              "metadata": {
+                "filename": "Powers 10.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 10.mp3",
+                "relPath": "Powers 10.mp3",
+                "size": 24695448,
+                "mtimeMs": 1777796930226,
+                "ctimeMs": 1778670574569,
+                "birthtimeMs": 1777795804301
+              },
+              "addedAt": 1778671905011,
+              "updatedAt": 1778671905011,
+              "trackNumFromMeta": 10,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 10,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 3056.494898,
+              "bitRate": 64000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 1,
+              "channelLayout": "mono",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "Powers",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "Powers 10",
+                "tagTrack": "10",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "2007",
+                "tagComment": "Read by Erik Sandvold"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 11,
+              "ino": "46925",
+              "metadata": {
+                "filename": "Powers 11.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 11.mp3",
+                "relPath": "Powers 11.mp3",
+                "size": 20843327,
+                "mtimeMs": 1777796758907,
+                "ctimeMs": 1778670574569,
+                "birthtimeMs": 1777795876842
+              },
+              "addedAt": 1778671905701,
+              "updatedAt": 1778671905701,
+              "trackNumFromMeta": 11,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 11,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 2574.973968,
+              "bitRate": 64000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 1,
+              "channelLayout": "mono",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "Powers",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "Powers 11",
+                "tagTrack": "11",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "2007",
+                "tagComment": "Read by Erik Sandvold"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 12,
+              "ino": "46733",
+              "metadata": {
+                "filename": "Powers 12.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 12.mp3",
+                "relPath": "Powers 12.mp3",
+                "size": 30420652,
+                "mtimeMs": 1777796329537,
+                "ctimeMs": 1778670574569,
+                "birthtimeMs": 1777795811141
+              },
+              "addedAt": 1778671905461,
+              "updatedAt": 1778671905461,
+              "trackNumFromMeta": 12,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 12,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 3772.142608,
+              "bitRate": 64000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 1,
+              "channelLayout": "mono",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "Powers",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "Powers 12",
+                "tagTrack": "12",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "2007",
+                "tagComment": "Read by Erik Sandvold"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 13,
+              "ino": "46873",
+              "metadata": {
+                "filename": "Powers 13.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 13.mp3",
+                "relPath": "Powers 13.mp3",
+                "size": 25941175,
+                "mtimeMs": 1777796106850,
+                "ctimeMs": 1778670574569,
+                "birthtimeMs": 1777795855046
+              },
+              "addedAt": 1778671905040,
+              "updatedAt": 1778671905040,
+              "trackNumFromMeta": 13,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 13,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 3212.225261,
+              "bitRate": 64000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 1,
+              "channelLayout": "mono",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "Powers",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "Powers 13",
+                "tagTrack": "13",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "2007",
+                "tagComment": "Read by Erik Sandvold"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 14,
+              "ino": "46821",
+              "metadata": {
+                "filename": "Powers 14.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 14.mp3",
+                "relPath": "Powers 14.mp3",
+                "size": 34414670,
+                "mtimeMs": 1777796547956,
+                "ctimeMs": 1778670574569,
+                "birthtimeMs": 1777795836446
+              },
+              "addedAt": 1778671904563,
+              "updatedAt": 1778671904563,
+              "trackNumFromMeta": 14,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 14,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 4271.403537,
+              "bitRate": 64000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 1,
+              "channelLayout": "mono",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "Powers",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "Powers 14",
+                "tagTrack": "14",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "2007",
+                "tagComment": "Read by Erik Sandvold"
+              },
+              "mimeType": "audio/mpeg"
+            },
+            {
+              "index": 15,
+              "ino": "46894",
+              "metadata": {
+                "filename": "Powers 15.mp3",
+                "ext": ".mp3",
+                "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 15.mp3",
+                "relPath": "Powers 15.mp3",
+                "size": 27951559,
+                "mtimeMs": 1777796832145,
+                "ctimeMs": 1778670574569,
+                "birthtimeMs": 1777795863158
+              },
+              "addedAt": 1778671905099,
+              "updatedAt": 1778671905099,
+              "trackNumFromMeta": 15,
+              "discNumFromMeta": null,
+              "trackNumFromFilename": 15,
+              "discNumFromFilename": null,
+              "manuallyVerified": false,
+              "exclude": false,
+              "error": null,
+              "format": "MP2/3 (MPEG audio layer 2/3)",
+              "duration": 3463.519365,
+              "bitRate": 64000,
+              "language": null,
+              "codec": "mp3",
+              "timeBase": "1/14112000",
+              "channels": 1,
+              "channelLayout": "mono",
+              "chapters": [],
+              "embeddedCoverArt": "mjpeg",
+              "metaTags": {
+                "tagAlbum": "Powers",
+                "tagArtist": "Ursula K. Le Guin",
+                "tagGenre": "Audio Book",
+                "tagTitle": "Powers 15",
+                "tagTrack": "15",
+                "tagAlbumArtist": "Ursula K. Le Guin",
+                "tagDate": "2007",
+                "tagComment": "Read by Erik Sandvold"
+              },
+              "mimeType": "audio/mpeg"
+            }
+          ],
+          "chapters": [
+            {
+              "id": 0,
+              "start": 0,
+              "end": 2754.31619,
+              "title": "Powers 01"
+            },
+            {
+              "id": 1,
+              "start": 2754.31619,
+              "end": 5569.700884,
+              "title": "Powers 02"
+            },
+            {
+              "id": 2,
+              "start": 5569.700884,
+              "end": 8966.602449,
+              "title": "Powers 03"
+            },
+            {
+              "id": 3,
+              "start": 8966.602449,
+              "end": 10969.663855,
+              "title": "Powers 04"
+            },
+            {
+              "id": 4,
+              "start": 10969.663855,
+              "end": 14061.807120000001,
+              "title": "Powers 05"
+            },
+            {
+              "id": 5,
+              "start": 14061.807120000001,
+              "end": 16585.386757,
+              "title": "Powers 06"
+            },
+            {
+              "id": 6,
+              "start": 16585.386757,
+              "end": 19554.034671,
+              "title": "Powers 07"
+            },
+            {
+              "id": 7,
+              "start": 19554.034671,
+              "end": 21907.334694,
+              "title": "Powers 08"
+            },
+            {
+              "id": 8,
+              "start": 21907.334694,
+              "end": 26226.468549,
+              "title": "Powers 09"
+            },
+            {
+              "id": 9,
+              "start": 26226.468549,
+              "end": 29282.963447000002,
+              "title": "Powers 10"
+            },
+            {
+              "id": 10,
+              "start": 29282.963447000002,
+              "end": 31857.937415,
+              "title": "Powers 11"
+            },
+            {
+              "id": 11,
+              "start": 31857.937415,
+              "end": 35630.080023,
+              "title": "Powers 12"
+            },
+            {
+              "id": 12,
+              "start": 35630.080023,
+              "end": 38842.305284,
+              "title": "Powers 13"
+            },
+            {
+              "id": 13,
+              "start": 38842.305284,
+              "end": 43113.708821,
+              "title": "Powers 14"
+            },
+            {
+              "id": 14,
+              "start": 43113.708821,
+              "end": 46577.228186,
+              "title": "Powers 15"
+            }
+          ],
+          "ebookFile": null
+        },
+        "libraryFiles": [
+          {
+            "ino": "47255",
+            "metadata": {
+              "filename": "Powers 01.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 01.mp3",
+              "relPath": "Powers 01.mp3",
+              "size": 22277972,
+              "mtimeMs": 1777796718267,
+              "ctimeMs": 1778670574613,
+              "birthtimeMs": 1777796010004
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842449,
+            "updatedAt": 1778737027495,
+            "fileType": "audio"
+          },
+          {
+            "ino": "46935",
+            "metadata": {
+              "filename": "Powers 02.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 02.mp3",
+              "relPath": "Powers 02.mp3",
+              "size": 22766566,
+              "mtimeMs": 1777796720487,
+              "ctimeMs": 1778670574569,
+              "birthtimeMs": 1777795881686
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842449,
+            "updatedAt": 1778737027495,
+            "fileType": "audio"
+          },
+          {
+            "ino": "46831",
+            "metadata": {
+              "filename": "Powers 03.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 03.mp3",
+              "relPath": "Powers 03.mp3",
+              "size": 27418661,
+              "mtimeMs": 1777796688010,
+              "ctimeMs": 1778670574569,
+              "birthtimeMs": 1777795840294
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842449,
+            "updatedAt": 1778737027495,
+            "fileType": "audio"
+          },
+          {
+            "ino": "46657",
+            "metadata": {
+              "filename": "Powers 04.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 04.mp3",
+              "relPath": "Powers 04.mp3",
+              "size": 16267928,
+              "mtimeMs": 1777796690946,
+              "ctimeMs": 1778670574569,
+              "birthtimeMs": 1777795796537
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842449,
+            "updatedAt": 1778737027495,
+            "fileType": "audio"
+          },
+          {
+            "ino": "47285",
+            "metadata": {
+              "filename": "Powers 05.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 05.mp3",
+              "relPath": "Powers 05.mp3",
+              "size": 24980705,
+              "mtimeMs": 1777796849329,
+              "ctimeMs": 1778670574613,
+              "birthtimeMs": 1777796020300
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842449,
+            "updatedAt": 1778737027496,
+            "fileType": "audio"
+          },
+          {
+            "ino": "46834",
+            "metadata": {
+              "filename": "Powers 06.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 06.mp3",
+              "relPath": "Powers 06.mp3",
+              "size": 20432055,
+              "mtimeMs": 1777796857481,
+              "ctimeMs": 1778670574569,
+              "birthtimeMs": 1777795840866
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842449,
+            "updatedAt": 1778737027496,
+            "fileType": "audio"
+          },
+          {
+            "ino": "47268",
+            "metadata": {
+              "filename": "Powers 07.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 07.mp3",
+              "relPath": "Powers 07.mp3",
+              "size": 23992649,
+              "mtimeMs": 1777796867921,
+              "ctimeMs": 1778670574613,
+              "birthtimeMs": 1777796013604
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842449,
+            "updatedAt": 1778737027496,
+            "fileType": "audio"
+          },
+          {
+            "ino": "46941",
+            "metadata": {
+              "filename": "Powers 08.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 08.mp3",
+              "relPath": "Powers 08.mp3",
+              "size": 19069926,
+              "mtimeMs": 1777796871681,
+              "ctimeMs": 1778670574613,
+              "birthtimeMs": 1777795885546
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842449,
+            "updatedAt": 1778737027496,
+            "fileType": "audio"
+          },
+          {
+            "ino": "47406",
+            "metadata": {
+              "filename": "Powers 09.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 09.mp3",
+              "relPath": "Powers 09.mp3",
+              "size": 34796476,
+              "mtimeMs": 1777796927462,
+              "ctimeMs": 1778670574613,
+              "birthtimeMs": 1777796088149
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842449,
+            "updatedAt": 1778737027496,
+            "fileType": "audio"
+          },
+          {
+            "ino": "46704",
+            "metadata": {
+              "filename": "Powers 10.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 10.mp3",
+              "relPath": "Powers 10.mp3",
+              "size": 24695448,
+              "mtimeMs": 1777796930226,
+              "ctimeMs": 1778670574569,
+              "birthtimeMs": 1777795804301
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842449,
+            "updatedAt": 1778737027496,
+            "fileType": "audio"
+          },
+          {
+            "ino": "46925",
+            "metadata": {
+              "filename": "Powers 11.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 11.mp3",
+              "relPath": "Powers 11.mp3",
+              "size": 20843327,
+              "mtimeMs": 1777796758907,
+              "ctimeMs": 1778670574569,
+              "birthtimeMs": 1777795876842
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842449,
+            "updatedAt": 1778737027496,
+            "fileType": "audio"
+          },
+          {
+            "ino": "46733",
+            "metadata": {
+              "filename": "Powers 12.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 12.mp3",
+              "relPath": "Powers 12.mp3",
+              "size": 30420652,
+              "mtimeMs": 1777796329537,
+              "ctimeMs": 1778670574569,
+              "birthtimeMs": 1777795811141
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842449,
+            "updatedAt": 1778737027497,
+            "fileType": "audio"
+          },
+          {
+            "ino": "46873",
+            "metadata": {
+              "filename": "Powers 13.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 13.mp3",
+              "relPath": "Powers 13.mp3",
+              "size": 25941175,
+              "mtimeMs": 1777796106850,
+              "ctimeMs": 1778670574569,
+              "birthtimeMs": 1777795855046
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842449,
+            "updatedAt": 1778737027497,
+            "fileType": "audio"
+          },
+          {
+            "ino": "46821",
+            "metadata": {
+              "filename": "Powers 14.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 14.mp3",
+              "relPath": "Powers 14.mp3",
+              "size": 34414670,
+              "mtimeMs": 1777796547956,
+              "ctimeMs": 1778670574569,
+              "birthtimeMs": 1777795836446
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842449,
+            "updatedAt": 1778737027497,
+            "fileType": "audio"
+          },
+          {
+            "ino": "46894",
+            "metadata": {
+              "filename": "Powers 15.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/Powers 15.mp3",
+              "relPath": "Powers 15.mp3",
+              "size": 27951559,
+              "mtimeMs": 1777796832145,
+              "ctimeMs": 1778670574569,
+              "birthtimeMs": 1777795863158
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842449,
+            "updatedAt": 1778737027497,
+            "fileType": "audio"
+          },
+          {
+            "ino": "47372",
+            "metadata": {
+              "filename": "info.txt",
+              "ext": ".txt",
+              "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/info.txt",
+              "relPath": "info.txt",
+              "size": 4038,
+              "mtimeMs": 1777796059049,
+              "ctimeMs": 1778670574613,
+              "birthtimeMs": 1777796059049
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671842449,
+            "updatedAt": 1778737027497,
+            "fileType": "text"
+          },
+          {
+            "ino": "51085",
+            "metadata": {
+              "filename": "metadata.json",
+              "ext": ".json",
+              "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/metadata.json",
+              "relPath": "metadata.json",
+              "size": 2165,
+              "mtimeMs": 1778737029229,
+              "ctimeMs": 1778737029229,
+              "birthtimeMs": 1778671906845
+            },
+            "isSupplementary": null,
+            "addedAt": 1778671906847,
+            "updatedAt": 1778737027497,
+            "fileType": "metadata"
+          },
+          {
+            "ino": "51082",
+            "metadata": {
+              "filename": "cover.jpg",
+              "ext": ".jpg",
+              "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/cover.jpg",
+              "relPath": "cover.jpg",
+              "size": 64686,
+              "mtimeMs": 1778671905781,
+              "ctimeMs": 1778671905781,
+              "birthtimeMs": 1778671905781
+            },
+            "isSupplementary": null,
+            "addedAt": 1778672130861,
+            "updatedAt": 1778737027498,
+            "fileType": "image"
+          }
+        ]
+      }
+    }
+  }
+}

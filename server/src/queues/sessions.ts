@@ -21,17 +21,23 @@
  * now or the switch moves the controls off the entry it played. A late report from a play no
  * longer current changes nothing on the session (the upstream still hears it). The play is named
  * by the play id its plan answered, which every report carries.
+ *
+ * A track a queue is on plays on through the rest of its album as one plan, as far as stepping
+ * next reaches the album's following tracks in order (`albumRun`), so a Next or Back inside an
+ * album keeps it gapless.
  */
 import { randomUUID } from 'node:crypto';
 import {
   type ListeningSession,
   type MediaRef,
+  PLAYED_SHOWN,
   type QueueItem,
   type QueuePosition,
   type QueueType,
+  type QueueView,
 } from '@auralis/schema';
 import type { AbsClient } from '../adapters/audiobookshelf/client.js';
-import { indexedRow } from '../libraryIndex/store.js';
+import { albumTracks, indexedRow } from '../libraryIndex/store.js';
 import { Refusal } from '../route.js';
 import type { Db } from '../store/connection.js';
 import {
@@ -48,8 +54,15 @@ import {
 } from '../store/listening.js';
 import type { User } from '../store/users.js';
 import type { Upstreams } from '../upstream/links.js';
-import { autoplayKept, autoplayStale, prepareAutoplay, storedAutoplay } from './autoplay.js';
+import {
+  autoplayKept,
+  autoplayStale,
+  pendingAutoplay,
+  prepareAutoplay,
+  storedAutoplay,
+} from './autoplay.js';
 import { add, type EngineDeps, step, switchTo } from './engine.js';
+import { labelled } from './labels.js';
 import type { IndexLookup } from './lookup.js';
 
 /** The signed-in person on one of their devices. */
@@ -260,7 +273,8 @@ export class Sessions {
     const { lookup } = this.options;
     this.plays.set(this.device(caller), { playId, recorded: new Map() });
     await this.load(caller, [ref]);
-    const covered = lookup.covered(ref);
+    // What the plan plays: an album's tracks, or a track and the rest of its album after it.
+    const covered = new Set([...lookup.covered(ref), ...entries.map((e) => key(e.entry.ref))]);
     const s = this.open(caller);
     const holding = QUEUES.find((q) => {
       const c = s.queues[q].current;
@@ -327,6 +341,44 @@ export class Sessions {
       };
     }
     return null;
+  }
+
+  /**
+   * The tracks a play of `ref` plays on through, in order: when `ref` is the track one of this
+   * device's queues is on, it and each queued entry stepping next reaches after it (autoplay's
+   * picks are not queued), while that is the next track of its album; `album` names the album.
+   * Otherwise `ref` alone, with no album.
+   */
+  albumRun(caller: Caller, ref: MediaRef): { album: string | null; refs: MediaRef[] } {
+    const lone = { album: null, refs: [ref] };
+    if (ref.source !== 'jellyfin') return lone;
+    const { db } = this.options;
+    const row = indexedRow(db, ref.source, ref.id);
+    if (row?.kind !== 'track' || row.parentId === null) return lone;
+    const order = albumTracks(db, row.parentId).map((t) => t.id);
+    const s = valueOf(this.open(caller));
+    const queue = QUEUES.find((q) => {
+      const c = s.queues[q].current;
+      return c !== null && c.chapter === undefined && key(c.ref) === key(ref);
+    });
+    if (queue === undefined) return lone;
+    // Decision (M1.shell): a Next or Back inside an album plans the rest of the album the queue
+    // holds in order, so it stays gapless; the session's progress follows a plan of many tracks.
+    const queued: EngineDeps = { ...this.deps, autoplay: () => null };
+    let t = switchTo(s, queue, queued);
+    const refs = [ref];
+    for (let at = order.indexOf(ref.id) + 1; at > 0 && at < order.length; at += 1) {
+      t = step(t, 'next', queued);
+      const c = currentOf(t);
+      if (
+        c === null ||
+        c.chapter !== undefined ||
+        key(c.ref) !== key({ source: 'jellyfin', id: order[at]! })
+      )
+        break;
+      refs.push(c.ref);
+    }
+    return refs.length > 1 ? { album: row.parentId, refs } : lone;
   }
 
   /** True when a step reached `current`: a Back to it, or a Next to it from the same item. */
@@ -557,15 +609,76 @@ export class Sessions {
     return t;
   }
 
-  /** One of this device's queues, its position the newer of this device's and the upstream's. */
-  async queue(caller: Caller, type: QueueType) {
+  /**
+   * One of this device's queues as the queue page shows it: its position the newer of this
+   * device's and the upstream's, every entry labelled, autoplay's kept pick for what the queue
+   * follows now (never worked out afresh here), and the session's newest plays.
+   */
+  async queue(caller: Caller, type: QueueType): Promise<QueueView> {
     const s = this.open(caller);
     const q = s.queues[type];
     const position =
       q.current === null
         ? null
         : newer(q.position, await this.upstreamPosition(caller, q.current.ref));
-    return { ...this.queueOf(s, type), position };
+    const shown = this.queueOf(s, type);
+    const pick = pendingAutoplay(type, s);
+    const played = s.history.slice(-PLAYED_SHOWN).map(({ after: _after, ...play }) => play);
+    const entries = [
+      ...(shown.current === null ? [] : [shown.current]),
+      ...shown.user,
+      ...(shown.context?.items ?? []),
+      ...(pick === null ? [] : [pick]),
+      ...played,
+    ];
+    await this.load(
+      caller,
+      entries.map((e) => e.ref),
+    );
+    const label = await labelled(
+      {
+        db: this.options.db,
+        lookup: this.options.lookup,
+        jellyfin: this.options.clients(caller).jellyfin,
+        abs: this.options.clients(caller).abs,
+        log: this.options.log,
+      },
+      entries,
+    );
+    const view = <T extends QueueItem>(item: T) => ({ ...item, ...label(item) });
+    return {
+      ...shown,
+      position,
+      current: shown.current === null ? null : view(shown.current),
+      user: shown.user.map(view),
+      context:
+        shown.context === null
+          ? null
+          : { from: shown.context.from, items: shown.context.items.map(view) },
+      autoplay: pick === null ? null : { ...pick, ...label(pick) },
+      played: played.map((play) => ({ ...play, ...label(play) })),
+    };
+  }
+
+  /**
+   * Where the plan this device holds must stop instead of playing on, in seconds from its start:
+   * the end of the entry its active queue is on, when the plan's next entry is not what plays
+   * after it (an item put next mid-album or mid-book, or the rest taken out). Undefined when the
+   * plan plays on, when the active queue is on its last entry or on none of its entries, or when
+   * the plan is not the device's current play. A `position` already at or past that cut is the
+   * answer itself: the plan stops now.
+   */
+  endAt(caller: Caller, plan: HeldPlan, position?: number): number | undefined {
+    if (this.plays.get(this.device(caller))?.playId !== plan.playId) return undefined;
+    const s = valueOf(this.open(caller));
+    const current = currentOf(s);
+    if (current === null) return undefined;
+    const placed = plan.entries.findIndex((e) => sameEntry(e.entry, current));
+    const following = placed === -1 ? undefined : plan.entries[placed + 1];
+    if (following === undefined) return undefined;
+    const after = currentOf(step(s, 'next', this.deps));
+    if (after !== null && sameEntry(after, following.entry)) return undefined;
+    return position !== undefined && position >= following.start ? position : following.start;
   }
 
   /** A queue of `s` as a client sees it. */

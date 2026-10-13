@@ -5,6 +5,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import net.develivarr.auralis.generated.nav.PageActions
+import net.develivarr.auralis.generated.nav.PlayMode
+import net.develivarr.auralis.generated.nav.PlayQueue
 import net.develivarr.auralis.generated.nav.Route
 import net.develivarr.auralis.generated.nav.closePage
 import net.develivarr.auralis.generated.nav.litDestination
@@ -122,6 +124,9 @@ fun BookPage(navController: NavController, actions: PageActions) {
                                                 playLabel = "Resume",
                                                 nextLabel = "Play next",
                                                 lastLabel = null,
+                                                onPlay = {
+                                                    actions.onPlay("shadows-and-sighs", PlayQueue.SPOKEN, PlayMode.NOW)
+                                                },
                                                 onSubtitle = {
                                                     navController.navigate(Route.Author(ref = "evelyn-harper"))
                                                 },

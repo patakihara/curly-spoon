@@ -33,6 +33,36 @@ data class AppToken(
 )
 
 @Serializable
+enum class ArtSize {
+    @SerialName("small")
+    SMALL,
+    @SerialName("medium")
+    MEDIUM,
+    @SerialName("large")
+    LARGE,
+}
+
+@Serializable
+data class Availability(
+    val kind: AvailabilityKind,
+    val status: RequestStatus? = null,
+    val progress: Double? = null,
+    val requestable: Boolean? = null,
+)
+
+@Serializable
+enum class AvailabilityKind {
+    @SerialName("owned")
+    OWNED,
+    @SerialName("streamable")
+    STREAMABLE,
+    @SerialName("requested")
+    REQUESTED,
+    @SerialName("external")
+    EXTERNAL,
+}
+
+@Serializable
 data class Bookmark(
     val ref: MediaRef,
     val time: Double,
@@ -84,6 +114,7 @@ data class ErrorResponse(
 data class HealthResponse(
     val status: HealthResponseStatus,
     val commit: String?,
+    val signOn: Boolean,
 )
 
 @Serializable
@@ -93,6 +124,98 @@ enum class HealthResponseStatus {
 }
 
 const val HLS_MIME = "application/vnd.apple.mpegurl"
+
+@Serializable
+data class ItemDetail(
+    val ref: MediaRef,
+    val kind: ItemKind,
+    val title: String,
+    val sub: String?,
+    val art: String?,
+    val progress: Double?,
+    val duration: Double?,
+    val availability: Availability,
+    val chapters: List<PlaybackChapter>,
+    val episodes: List<ItemEpisode>,
+    val tracks: List<ItemTrack>,
+    val episode: ItemEpisodeAbout? = null,
+)
+
+@Serializable
+data class ItemEpisode(
+    val ref: MediaRef,
+    val title: String,
+    val description: String?,
+    val publishedAt: Long?,
+    val duration: Double?,
+    val progress: Double?,
+    val finished: Boolean,
+)
+
+@Serializable
+data class ItemEpisodeAbout(
+    val show: MediaRef,
+    val description: String?,
+    val publishedAt: Long?,
+    val finished: Boolean,
+)
+
+@Serializable
+enum class ItemKind {
+    @SerialName("book")
+    BOOK,
+    @SerialName("show")
+    SHOW,
+    @SerialName("episode")
+    EPISODE,
+    @SerialName("album")
+    ALBUM,
+}
+
+@Serializable
+data class ItemTrack(
+    val ref: MediaRef,
+    val number: Long?,
+    val title: String,
+    val sub: String?,
+    val duration: Double?,
+)
+
+@Serializable
+data class LibraryEntry(
+    val ref: MediaRef,
+    val kind: LibraryEntryKind,
+    val title: String,
+    val sub: String?,
+    val art: String?,
+    val progress: Double?,
+    val availability: Availability,
+)
+
+@Serializable
+enum class LibraryEntryKind {
+    @SerialName("book")
+    BOOK,
+    @SerialName("show")
+    SHOW,
+    @SerialName("album")
+    ALBUM,
+}
+
+@Serializable
+data class LibraryList(
+    val items: List<LibraryEntry>,
+)
+
+@Serializable
+enum class LibraryMedium {
+    @SerialName("books")
+    BOOKS,
+    @SerialName("podcasts")
+    PODCASTS,
+    @SerialName("music")
+    MUSIC,
+}
 
 @Serializable
 enum class LinkState {
@@ -169,7 +292,16 @@ data class PlaybackChapter(
 )
 
 @Serializable
+data class PlaybackMeta(
+    val title: String,
+    val sub: String?,
+    val art: String?,
+    val variant: PlaybackVariant,
+)
+
+@Serializable
 data class PlaybackPlan(
+    val meta: PlaybackMeta,
     val tracks: List<PlaybackTrack>,
     val chapters: List<PlaybackChapter>,
     val startAt: Double,
@@ -183,7 +315,17 @@ data class PlaybackTrack(
     val mime: String,
     val duration: Double,
     val offset: Double,
+    val title: String? = null,
+    val sub: String? = null,
 )
+
+@Serializable
+enum class PlaybackVariant {
+    @SerialName("music")
+    MUSIC,
+    @SerialName("spoken")
+    SPOKEN,
+}
 
 @Serializable
 data class PlayingFrom(
@@ -207,6 +349,7 @@ enum class PlayingFromKind {
 data class ProgressAnswer(
     val taken: Boolean,
     val lastSeq: Long,
+    val endAt: Double? = null,
 )
 
 @Serializable
@@ -308,9 +451,70 @@ enum class QueueType {
 }
 
 @Serializable
+data class QueueView(
+    val type: QueueType,
+    val current: QueueViewItem?,
+    val position: QueuePosition?,
+    val user: List<QueueViewItem>,
+    val context: QueueViewContext?,
+    val rev: Long,
+    val autoplay: QueueViewAutoplay?,
+    val played: List<QueueViewPlayed>,
+)
+
+@Serializable
+data class QueueViewAutoplay(
+    val ref: MediaRef,
+    val chapter: Long? = null,
+    val title: String,
+    val sub: String?,
+    val duration: Double?,
+)
+
+@Serializable
+data class QueueViewContext(
+    val from: PlayingFrom,
+    val items: List<QueueViewItem>,
+)
+
+@Serializable
+data class QueueViewItem(
+    val itemId: String,
+    val ref: MediaRef,
+    val chapter: Long? = null,
+    val title: String,
+    val sub: String?,
+    val duration: Double?,
+)
+
+@Serializable
+data class QueueViewPlayed(
+    val seq: Long,
+    val queue: QueueType,
+    val ref: MediaRef,
+    val chapter: Long? = null,
+    val playedAt: Long,
+    val title: String,
+    val sub: String?,
+    val duration: Double?,
+)
+
+@Serializable
 data class RenameDeviceBody(
     val name: String,
 )
+
+@Serializable
+enum class RequestStatus {
+    @SerialName("requested")
+    REQUESTED,
+    @SerialName("needsChoice")
+    NEEDS_CHOICE,
+    @SerialName("downloading")
+    DOWNLOADING,
+    @SerialName("failed")
+    FAILED,
+}
 
 @Serializable
 enum class Role {

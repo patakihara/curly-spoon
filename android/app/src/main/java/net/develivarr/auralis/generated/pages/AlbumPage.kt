@@ -5,6 +5,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import net.develivarr.auralis.generated.nav.PageActions
+import net.develivarr.auralis.generated.nav.PlayMode
+import net.develivarr.auralis.generated.nav.PlayQueue
 import net.develivarr.auralis.generated.nav.Route
 import net.develivarr.auralis.generated.nav.closePage
 import net.develivarr.auralis.generated.nav.litDestination
@@ -116,6 +118,9 @@ fun AlbumPage(navController: NavController, actions: PageActions) {
                                                 meta = "2022 · 8 tracks · 36 min · Plays from YouTube Music",
                                                 nextLabel = null,
                                                 lastLabel = "Add to queue",
+                                                onPlay = {
+                                                    actions.onPlay("tears-of-ice", PlayQueue.MUSIC, PlayMode.NOW)
+                                                },
                                                 onSubtitle = {
                                                     navController.navigate(Route.Artist(ref = "deep-inertia"))
                                                 },

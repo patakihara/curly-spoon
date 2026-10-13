@@ -6,7 +6,13 @@
  */
 import { type z, type ZodType } from 'zod';
 import { type FetchLike, requestJson } from '../http/fetch.js';
-import { fileHeadersSchema, openStream, type UpstreamFile } from '../stream.js';
+import {
+  fileHeadersSchema,
+  type ImageHeaders,
+  imageHeadersSchema,
+  openStream,
+  type UpstreamFile,
+} from '../stream.js';
 import { buildAuthorizationHeader, type JellyfinDeviceInfo } from './auth.js';
 import {
   baseItemDtoSchema,
@@ -106,11 +112,17 @@ export class JellyfinClient {
   }
 
   /**
-   * One page of albums from every library, oldest added first, so a new album lands on the last
-   * page. `Etag` moves when Jellyfin saves the album again, which is what the index compares.
+   * One page of albums, from every library or from the one `parentId` names, oldest added first,
+   * so a new album lands on the last page. `Etag` moves when Jellyfin saves the album again,
+   * which is what the index compares.
    */
-  getAlbums(page: { limit: number; startIndex: number }): Promise<IndexQueryResult> {
+  getAlbums(page: {
+    limit: number;
+    startIndex: number;
+    parentId?: string;
+  }): Promise<IndexQueryResult> {
     return this.get('Items', indexQueryResultSchema, {
+      ...(page.parentId === undefined ? {} : { ParentId: page.parentId }),
       IncludeItemTypes: 'MusicAlbum',
       Recursive: 'true',
       SortBy: 'DateCreated,SortName',
@@ -133,6 +145,16 @@ export class JellyfinClient {
       Fields: INDEX_FIELDS,
     };
     return (await this.get('Items', indexQueryResultSchema, query)).Items[0];
+  }
+
+  /**
+   * The libraries the token's own user may see, with those they hid from their home screen:
+   * `GET /UserViews?includeHidden=true`. A view's `Id` is its library's `Library/MediaFolders` id
+   * (recorded).
+   */
+  async getUserViews(): Promise<BaseItemDto[]> {
+    const query = { includeHidden: 'true' };
+    return (await this.get('UserViews', baseItemQueryResultSchema, query)).Items;
   }
 
   /** Every track of one album, in disc and track order. */
@@ -227,6 +249,19 @@ export class JellyfinClient {
     const url = this.url(`Audio/${encodeURIComponent(itemId)}/stream`, { static: 'true' });
     const authorization = buildAuthorizationHeader(this.device, this.opts.token);
     return openStream(this.opts.fetch, url, { authorization }, range, fileHeadersSchema);
+  }
+
+  /**
+   * An item's primary image, as Jellyfin stores it or scaled down to at most `maxWidth` pixels
+   * wide: `GET /Items/{id}/Images/Primary`. With no `Accept` asking for another format, Jellyfin
+   * answers JPEG (recorded).
+   */
+  openImage(itemId: string, maxWidth?: number): Promise<UpstreamFile<ImageHeaders>> {
+    const query: Record<string, string> =
+      maxWidth === undefined ? {} : { maxWidth: String(maxWidth) };
+    const url = this.url(`Items/${encodeURIComponent(itemId)}/Images/Primary`, query);
+    const authorization = buildAuthorizationHeader(this.device, this.opts.token);
+    return openStream(this.opts.fetch, url, { authorization }, undefined, imageHeadersSchema);
   }
 }
 

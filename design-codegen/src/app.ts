@@ -11,6 +11,7 @@ import {
   generateNavMap,
   generatePlatform,
   generateRoutes,
+  generateWebPlaying,
   generateWebShell,
   readNav,
   type Nav,
@@ -341,11 +342,11 @@ export function generateAppWeb(app: App): { nav: Map<string, string>; pages: Map
       [
         'Shell.tsx',
         generateWebShell(Object.fromEntries(sheets.map((p) => [p.id, PLAYER_TABS[p.id]!])), {
-          playing: app.shell.playing,
           home: playerHome(app.nav, sheets),
         }),
       ],
       ['platform.ts', generatePlatform(app.nav)],
+      ['playing.ts', generateWebPlaying(app.shell.playing)],
       [
         'stacks.ts',
         generateNavMap(

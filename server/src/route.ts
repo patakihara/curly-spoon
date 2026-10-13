@@ -102,12 +102,13 @@ const BYTES_RANGE = /^bytes=(?:\d{1,15}-\d{0,15}|-\d{1,15})$/;
 
 /**
  * Serves one declared streamed route at GET and HEAD: path parameters and query parsed as
- * `serve` does, and `Range` checked to be one plain bytes range (400 `bad_range` if not) before
- * the handler sees it. GET sends the handler's stream on as it arrives, never buffered; HEAD
+ * `serve` does. On an audio route, `Range` is checked to be one plain bytes range (400
+ * `bad_range` if not) before the handler sees it; an image route ignores it and its handler sees
+ * none. GET sends the handler's stream on as it arrives, never buffered; HEAD
  * sends the same status and headers and cancels the stream unread. A refusal answers `{ error }`.
  * The handler's `signal` aborts when the client disconnects first.
  */
-export function serveStream<R extends Route & { stream: true; method: 'GET' }>(
+export function serveStream<R extends Route & { stream: 'audio' | 'image'; method: 'GET' }>(
   app: FastifyInstance,
   route: R,
   handler: (
@@ -131,7 +132,7 @@ export function serveStream<R extends Route & { stream: true; method: 'GET' }>(
         if (!result.success) return reply.code(400).send({ error: 'bad_request' });
         parsed[name] = result.data;
       }
-      const range = request.headers.range;
+      const range = route.stream === 'audio' ? request.headers.range : undefined;
       if (range !== undefined && !BYTES_RANGE.test(range)) {
         return reply.code(400).send({ error: 'bad_range' });
       }

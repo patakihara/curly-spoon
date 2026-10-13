@@ -1,0 +1,144 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.1",
+  "call": "shell-books-page",
+  "request": {
+    "method": "GET",
+    "path": "/api/libraries/e8aa253f-82d0-44ff-b87a-74671278ce9d/items",
+    "query": {
+      "limit": "2",
+      "minified": "1",
+      "page": "15",
+      "sort": "addedAt"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "results": [
+          {
+            "id": "7b3fa64c-f00c-4de6-8cd5-15d301b91f4b",
+            "ino": "49741",
+            "oldLibraryItemId": null,
+            "libraryId": "e8aa253f-82d0-44ff-b87a-74671278ce9d",
+            "folderId": "46f3a6da-763c-4197-b197-d7519c832355",
+            "path": "/data/Books/Ursula K. Le Guin/2007 - Three Poems from “Wild Angels” (Le Guin) 64k 00.02.47 {4.03mb}",
+            "relPath": "Ursula K. Le Guin/2007 - Three Poems from “Wild Angels” (Le Guin) 64k 00.02.47 {4.03mb}",
+            "isFile": false,
+            "mtimeMs": 1778671903701,
+            "ctimeMs": 1778671903701,
+            "birthtimeMs": 1778670571157,
+            "addedAt": 1778671903616,
+            "updatedAt": 1778737046558,
+            "isMissing": false,
+            "isInvalid": false,
+            "mediaType": "book",
+            "media": {
+              "id": "2c08a9e0-a78f-495c-8fcc-400160a20208",
+              "metadata": {
+                "title": "Three Poems from “Wild Angels”",
+                "titleIgnorePrefix": "Three Poems from “Wild Angels”",
+                "subtitle": null,
+                "authorName": "Ursula K. Le Guin",
+                "authorNameLF": "Le Guin, Ursula K.",
+                "narratorName": "Le Guin",
+                "seriesName": "",
+                "genres": [
+                  "Audio Book"
+                ],
+                "publishedYear": "2007",
+                "publishedDate": null,
+                "publisher": null,
+                "description": "Read by Ursula K. Le Guin",
+                "isbn": null,
+                "asin": null,
+                "language": null,
+                "explicit": false,
+                "abridged": false
+              },
+              "coverPath": "/data/Books/Ursula K. Le Guin/2007 - Three Poems from “Wild Angels” (Le Guin) 64k 00.02.47 {4.03mb}/cover.jpg",
+              "tags": [],
+              "numTracks": 4,
+              "numAudioFiles": 4,
+              "numChapters": 4,
+              "duration": 167.581502,
+              "size": 4221644
+            },
+            "numFiles": 6,
+            "size": 4332487
+          },
+          {
+            "id": "5d43a275-d4f4-4130-b2a5-87c2a79a7f1f",
+            "ino": "49783",
+            "oldLibraryItemId": null,
+            "libraryId": "e8aa253f-82d0-44ff-b87a-74671278ce9d",
+            "folderId": "46f3a6da-763c-4197-b197-d7519c832355",
+            "path": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]",
+            "relPath": "Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]",
+            "isFile": false,
+            "mtimeMs": 1778671906845,
+            "ctimeMs": 1778735999409,
+            "birthtimeMs": 1778670574569,
+            "addedAt": 1778671906723,
+            "updatedAt": 1778737029231,
+            "isMissing": false,
+            "isInvalid": false,
+            "mediaType": "book",
+            "media": {
+              "id": "007346bb-5c31-4378-a6e0-ef23b4269ed8",
+              "metadata": {
+                "title": "Powers [Sandvold]",
+                "titleIgnorePrefix": "Powers [Sandvold]",
+                "subtitle": null,
+                "authorName": "Ursula K. Le Guin",
+                "authorNameLF": "Le Guin, Ursula K.",
+                "narratorName": "Sandvold",
+                "seriesName": "Annals of the Western Shore (Ellison, Sandvold) #3",
+                "genres": [
+                  "Audio Book"
+                ],
+                "publishedYear": "2007",
+                "publishedDate": null,
+                "publisher": null,
+                "description": "Read by Erik Sandvold",
+                "isbn": null,
+                "asin": null,
+                "language": null,
+                "explicit": false,
+                "abridged": false
+              },
+              "coverPath": "/data/Books/Ursula K. Le Guin/2007 - Powers (Sandvold) 64k 12.56.18 {358mb} [Sandvold]/cover.jpg",
+              "tags": [],
+              "numTracks": 15,
+              "numAudioFiles": 15,
+              "numChapters": 15,
+              "duration": 46577.228186,
+              "size": 376269769
+            },
+            "numFiles": 18,
+            "size": 376340658
+          }
+        ],
+        "total": 233,
+        "limit": 2,
+        "page": 15,
+        "sortBy": "addedAt",
+        "sortDesc": false,
+        "mediaType": "book",
+        "minified": true,
+        "collapseseries": false,
+        "include": "",
+        "offset": 30
+      }
+    }
+  }
+}

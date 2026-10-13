@@ -191,3 +191,63 @@ export const QueueStyleBody = z
   .object({ queueStyle: QueueStyle, rev: Revision.optional() })
   .openapi('QueueStyleBody');
 export type QueueStyleBody = z.infer<typeof QueueStyleBody>;
+
+/**
+ * What a queue row shows of its entry: its title, its artist, author or show (`sub`), and its
+ * length in seconds; a book's chapter entry shows the chapter.
+ */
+const EntryLabel = {
+  title: z.string(),
+  sub: z.string().nullable(),
+  duration: z.number().nonnegative().nullable(),
+};
+
+/** A queue entry as the queue page shows it: the entry and its label. */
+export const QueueViewItem = z
+  .object({ ...QueueItem.shape, ...EntryLabel })
+  .openapi('QueueViewItem');
+export type QueueViewItem = z.infer<typeof QueueViewItem>;
+
+/** Playing-from as the queue page shows it: what it plays from, and its labelled entries left. */
+export const QueueViewContext = z
+  .object({ from: PlayingFrom, items: z.array(QueueViewItem) })
+  .openapi('QueueViewContext');
+export type QueueViewContext = z.infer<typeof QueueViewContext>;
+
+/** Autoplay's kept pick for a queue, labelled: what plays once the queue runs out. */
+export const QueueViewAutoplay = z
+  .object({
+    ref: MediaRef,
+    chapter: z.number().int().nonnegative().optional(),
+    ...EntryLabel,
+  })
+  .openapi('QueueViewAutoplay');
+export type QueueViewAutoplay = z.infer<typeof QueueViewAutoplay>;
+
+/** One play from the session's history, labelled. */
+export const QueueViewPlayed = z
+  .object({ ...HistoryEntry.shape, ...EntryLabel })
+  .openapi('QueueViewPlayed');
+export type QueueViewPlayed = z.infer<typeof QueueViewPlayed>;
+
+/** How many of the newest plays the queue page lists. */
+export const PLAYED_SHOWN = 20;
+
+/**
+ * One of this device's queues as the queue page shows it: the queue, every entry labelled, then
+ * autoplay's kept pick (null when it keeps none; never worked out afresh for this answer), and the
+ * session's newest plays, at most `PLAYED_SHOWN`, newest last.
+ */
+export const QueueView = z
+  .object({
+    type: QueueType,
+    current: QueueViewItem.nullable(),
+    position: QueuePosition.nullable(),
+    user: z.array(QueueViewItem),
+    context: QueueViewContext.nullable(),
+    rev: Revision,
+    autoplay: QueueViewAutoplay.nullable(),
+    played: z.array(QueueViewPlayed).max(PLAYED_SHOWN),
+  })
+  .openapi('QueueView');
+export type QueueView = z.infer<typeof QueueView>;

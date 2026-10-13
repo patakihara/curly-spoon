@@ -3,6 +3,7 @@ import { useContext } from 'react';
 import type { ComponentProps } from 'react';
 import { PANEL, useLayout, type Platform } from '../nav/platform';
 import { InPanel } from '../../shell-nav';
+import { usePlaying } from '../../player';
 import { AboutCard, NowPlayingPage } from '../ui/index.js';
 
 const placeholder = {};
@@ -11,30 +12,6 @@ const placeholder = {};
 const shell = {
   "account": {
     "label": "Account"
-  },
-  "playing": {
-    "title": "Heartbeats in Silence",
-    "artist": "Deep Inertia",
-    "image": "/art/deep-inertia.jpg",
-    "context": "Playing from Deep Inertia",
-    "variant": "music",
-    "favourite": true,
-    "progress": 0.05,
-    "duration": 262,
-    "sleep": "Off",
-    "about": {
-      "title": "About the artist",
-      "heading": "Deep Inertia",
-      "meta": "9 releases · 2 in your library",
-      "image": "/art/deep-inertia.jpg",
-      "body": "Deep Inertia is the slow, cold-weather project of a producer who records in an unheated boathouse through the winter months. Tape loops, a detuned upright piano and field recordings of ice on the lake carry most of the weight; vocals arrive late, half-buried, and leave early. Tears of Ice, the fourth album, was finished in a single February and released without a single."
-    }
-  },
-  "transport": {
-    "playing": true,
-    "progress": 0.05,
-    "duration": 262,
-    "favourite": true
   },
   "footer": [
     {
@@ -174,9 +151,11 @@ export interface NowPlayingProps {
 export default function NowPlaying({ data = placeholder, state = 'full' }: NowPlayingProps) {
   const inPanel = useContext(InPanel);
   const platform: Platform = inPanel || PANEL[useLayout()] ? 'desktop' : 'mobile';
+  const playing = usePlaying();
+  if (playing === null) return null;
   return (
-    <NowPlayingPage variant={shell.playing.variant as Exclude<ComponentProps<typeof NowPlayingPage>['variant'], undefined>} image={shell.playing.image} title={shell.playing.title} artist={shell.playing.artist} context={shell.playing.context} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} favourite={shell.playing.favourite} sleep={shell.playing.sleep} platform={platform}>
-      <AboutCard title={shell.playing.about.title} heading={shell.playing.about.heading} meta={shell.playing.about.meta} image={shell.playing.about.image} round={true} body={shell.playing.about.body} platform={platform} />
+    <NowPlayingPage variant={playing.variant as Exclude<ComponentProps<typeof NowPlayingPage>['variant'], undefined>} image={playing.image} title={playing.title} artist={playing.artist} context={playing.context} playing={playing.playing} progress={playing.progress} duration={playing.duration} favourite={playing.favourite} sleep={playing.sleep} onTogglePlay={playing.onTogglePlay} onPrev={playing.onPrev} onNext={playing.onNext} onSkipBack={playing.onSkipBack} onSkipForward={playing.onSkipForward} onSeek={playing.onSeek} speed={playing.speed} onSpeed={playing.onSpeed} onSleep={playing.onSleep} platform={platform}>
+      <AboutCard title={playing.about.title} heading={playing.about.heading} meta={playing.about.meta} image={playing.about.image} round={true} body={playing.about.body} platform={platform} />
     </NowPlayingPage>
   );
 }

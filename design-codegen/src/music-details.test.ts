@@ -41,11 +41,11 @@ describe('Album', () => {
     });
     const web = readFileSync(join(REPO_ROOT, 'web/src/generated/pages/Album.tsx'), 'utf8');
     expect(web).toContain(
-      "onSubtitle={() => navigate(generatePath('/music/artists/:ref', { ref: data.artistRef }))}",
+      "onSubtitle={data.artistRef ? () => navigate(generatePath('/music/artists/:ref', { ref: data.artistRef })) : undefined}",
     );
   });
 
-  it('[M0.canvas] binds only the album: its name, kind, artist, meta, art, menu, tracks, editions and more by the artist', () => {
+  it('[M0.canvas] binds only the album: its ref, name, kind, artist, meta, art, menu, tracks, editions and more by the artist', () => {
     expect(dataRoots(tree)).toEqual([
       'artist',
       'artistRef',
@@ -55,10 +55,24 @@ describe('Album', () => {
       'menu',
       'meta',
       'more',
+      'ref',
       'title',
       'tracks',
     ]);
     expect(bindings(tree).filter((p) => p.startsWith('shell.'))).toEqual([]);
+  });
+
+  it('[M1.shell] plays the album from its header on the music queue, on the web through its player', () => {
+    expect(header.props.onPlay).toEqual({
+      kind: 'play',
+      queue: 'music',
+      next: false,
+      source: false,
+      params: { ref: ['data', 'ref'] },
+    });
+    expect(typeof data.ref).toBe('string');
+    const web = readFileSync(join(REPO_ROOT, 'web/src/generated/pages/Album.tsx'), 'utf8');
+    expect(web).toContain("onPlay={play(data.ref, 'music', 'now')}");
   });
 
   it("[M0.canvas] names the album once, in the page's heading, and not again in its header", () => {

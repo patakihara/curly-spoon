@@ -6,7 +6,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { type PlaybackPlan } from '@auralis/schema';
+import { type ItemDetail, type LibraryList, type PlaybackPlan } from '@auralis/schema';
 import { afterEach, describe, expect, it } from 'vitest';
 import { type RecordedServer, recordedServer } from './recorded.js';
 
@@ -66,7 +66,7 @@ describe('the recorded-upstreams server', () => {
   it('boots and answers its health check', async () => {
     const server = await boot();
     const res = await server.app.inject({ url: '/api/health' });
-    expect(res.json()).toEqual({ status: 'ok', commit: null });
+    expect(res.json()).toEqual({ status: 'ok', commit: null, signOn: true });
   });
 
   it('sends an Android sign-in to the stand-in sign-on, which returns it to the app with a code and the same state', async () => {
@@ -96,6 +96,43 @@ describe('the recorded-upstreams server', () => {
     const server = await boot();
     await bearerFor(server);
     await bearerFor(server);
+  });
+
+  it('[M1.shell] lists the recorded books, shows and albums once it has started, each owned', async () => {
+    const server = await boot();
+    const headers = { authorization: `Bearer ${await bearerFor(server)}` };
+    const listed = async (medium: string) => {
+      const res = await server.app.inject({ url: `/api/library/${medium}`, headers });
+      expect(res.statusCode, res.body).toBe(200);
+      return res.json<LibraryList>().items;
+    };
+    for (const [medium, item] of [
+      ['books', server.multiFile],
+      ['podcasts', server.show],
+      ['music', server.album],
+    ] as const) {
+      expect(await listed(medium)).toContainEqual(
+        expect.objectContaining({ ref: item, availability: { kind: 'owned' } }),
+      );
+    }
+  });
+
+  it("[M1.shell] names the show's episode that plays, one of the show's own episodes", async () => {
+    const server = await boot();
+    const headers = { authorization: `Bearer ${await bearerFor(server)}` };
+    const show = await server.app.inject({
+      url: `/api/items/${server.show.source}:${server.show.id}`,
+      headers,
+    });
+    expect(show.statusCode, show.body).toBe(200);
+    expect(show.json<ItemDetail>().episodes.map((e) => e.ref)).toContainEqual(server.episode);
+    const planned = await server.app.inject({
+      method: 'POST',
+      url: '/api/play',
+      headers,
+      payload: { ref: server.episode },
+    });
+    expect(planned.statusCode, planned.body).toBe(200);
   });
 
   it('plans the recorded item, and its track answers a range request with 206 audio', async () => {

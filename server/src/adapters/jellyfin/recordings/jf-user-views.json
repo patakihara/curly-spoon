@@ -1,0 +1,85 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "jf-user-views",
+  "request": {
+    "method": "GET",
+    "path": "/UserViews",
+    "query": {
+      "includeHidden": "true"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis\", DeviceId=\"auralis-recorder\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [
+          {
+            "Name": "Music",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "7e64e319657a9516ec78490da03edccb",
+            "Etag": "d2299ce720b541f5e8f4eef97dde70c5",
+            "DateCreated": "2026-03-04T13:17:06.5072912Z",
+            "DateLastMediaAdded": "0001-01-01T00:00:00.0000000Z",
+            "CanDelete": false,
+            "CanDownload": false,
+            "SortName": "music",
+            "ExternalUrls": [],
+            "Path": "/var/lib/jellyfin/root/default/Music",
+            "EnableMediaSourceDisplay": true,
+            "ChannelId": null,
+            "Taglines": [],
+            "Genres": [],
+            "PlayAccess": "Full",
+            "RemoteTrailers": [],
+            "ProviderIds": {},
+            "IsFolder": true,
+            "ParentId": "e9d5075a555c1cbc394eec4cef295274",
+            "Type": "CollectionFolder",
+            "People": [],
+            "Studios": [],
+            "GenreItems": [],
+            "LocalTrailerCount": 0,
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 0,
+              "IsFavorite": false,
+              "Played": false,
+              "Key": "<token>",
+              "ItemId": "7e64e319657a9516ec78490da03edccb"
+            },
+            "ChildCount": 2,
+            "SpecialFeatureCount": 0,
+            "DisplayPreferencesId": "7e64e319657a9516ec78490da03edccb",
+            "Tags": [],
+            "PrimaryImageAspectRatio": 1.7777777777777777,
+            "CollectionType": "music",
+            "ImageTags": {
+              "Primary": "9ae97c6b1fafb91e09a432af6994f9ab"
+            },
+            "BackdropImageTags": [],
+            "ImageBlurHashes": {
+              "Primary": {
+                "9ae97c6b1fafb91e09a432af6994f9ab": "WA9aN$MxIpkCnhjZ_4f+WWogWBWAD*og?bt7M{WBt8WBt7j@aykC"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown",
+            "LockedFields": [],
+            "LockData": false
+          }
+        ],
+        "TotalRecordCount": 1,
+        "StartIndex": 0
+      }
+    }
+  }
+}

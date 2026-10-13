@@ -54,6 +54,51 @@ describe('the Jellyfin client', () => {
     });
   });
 
+  it("a page of albums can be one library's, named by its id", async () => {
+    const { fetch, sent } = fake({ Items: [album], TotalRecordCount: 38 });
+    const jf = new JellyfinClient({ baseUrl: 'http://upstream.invalid', token: 'k', fetch });
+    await jf.getAlbums({ limit: 2, startIndex: 8, parentId: 'music' });
+    expect(new URL(sent[0]?.url ?? '').searchParams.get('ParentId')).toBe('music');
+  });
+
+  it("the person's libraries are their views, hidden ones too, asked with their own token", async () => {
+    const view = { Id: 'music', Name: 'Music', Type: 'CollectionFolder', CollectionType: 'music' };
+    const { fetch, sent } = fake({ Items: [view], TotalRecordCount: 1 });
+    const jf = new JellyfinClient({ baseUrl: 'http://upstream.invalid', token: 'theirs', fetch });
+    expect(await jf.getUserViews()).toEqual([view]);
+    expect(new URL(sent[0]?.url ?? '').pathname).toBe('/UserViews');
+    expect(new URL(sent[0]?.url ?? '').search).toBe('?includeHidden=true');
+    expect(sent[0]?.headers.get('authorization')).toContain('Token="theirs"');
+  });
+
+  it("an item's primary image opens as an image stream, scaled down to a width when asked, and anything else is refused", async () => {
+    const sent: string[] = [];
+    let type = 'image/jpeg';
+    const fetch: FetchLike = async (url) => {
+      sent.push(url);
+      return new Response(new Uint8Array([0xff, 0xd8]), {
+        status: 200,
+        headers: { 'content-type': type, 'content-length': '2', 'last-modified': 'x' },
+      });
+    };
+    const jf = new JellyfinClient({ baseUrl: 'http://upstream.invalid', token: 'k', fetch });
+    const image = await jf.openImage('a1');
+    expect(sent[0]).toBe('http://upstream.invalid/Items/a1/Images/Primary');
+    expect(image.status).toBe(200);
+    expect(image.headers).toEqual({
+      'content-type': 'image/jpeg',
+      'content-length': '2',
+      'last-modified': 'x',
+    });
+    await image.body.cancel();
+    await (await jf.openImage('a1', 512)).body.cancel();
+    expect(sent[1]).toBe('http://upstream.invalid/Items/a1/Images/Primary?maxWidth=512');
+    type = 'text/html';
+    const failure = (await jf.openImage('a1').catch((e: unknown) => e)) as AdapterError;
+    expect(failure.kind).toBe('parse');
+    expect(failure.message).toContain('GET /Items/a1/Images/Primary');
+  });
+
   it("an album's tracks are its Audio children in disc and track order", async () => {
     const track = { Id: 't1', Name: 'A Track', Type: 'Audio' };
     const { fetch, sent } = fake({ Items: [track], TotalRecordCount: 1 });

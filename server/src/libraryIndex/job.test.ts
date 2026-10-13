@@ -32,9 +32,10 @@ const ABS_CALLS = [
   'index-item-gone',
 ] as const;
 const JELLYFIN_CALLS = [
+  'library-list',
   'index-album-lookup',
   'index-album-gone',
-  'index-albums-page',
+  'jf-library-albums-1',
   'index-album-tracks-1',
   'index-album-tracks-2',
 ] as const;
@@ -109,11 +110,13 @@ function clients(abs: Recording[], jellyfin: Recording[], feeds: Recording[] = [
     (url, init) => {
       const { pathname, searchParams } = new URL(url);
       asked.push(
-        searchParams.has('ParentId')
-          ? `tracks ${searchParams.get('ParentId')}`
-          : searchParams.has('Ids')
-            ? `lookup ${searchParams.get('Ids')}`
-            : pathname,
+        searchParams.has('Ids')
+          ? `lookup ${searchParams.get('Ids')}`
+          : searchParams.get('IncludeItemTypes') === 'Audio'
+            ? `tracks ${searchParams.get('ParentId')}`
+            : searchParams.get('IncludeItemTypes') === 'MusicAlbum'
+              ? `albums ${searchParams.get('ParentId')}`
+              : pathname,
       );
       return fetch(url, init);
     };
@@ -163,7 +166,7 @@ describe('[M1.index/a] the index job on the Audiobookshelf and Jellyfin recordin
         const show = body<AbsShow>(r.abs[call]);
         return [`abs:show:${show.id}`, ...show.media.episodes.map((e) => `abs:episode:${e.id}`)];
       }),
-      ...body<JfPage>(r.jellyfin['index-albums-page']).Items.map((a) => `jellyfin:album:${a.Id}`),
+      ...body<JfPage>(r.jellyfin['jf-library-albums-1']).Items.map((a) => `jellyfin:album:${a.Id}`),
       ...(['index-album-tracks-1', 'index-album-tracks-2'] as const).flatMap((call) =>
         body<JfPage>(r.jellyfin[call]).Items.map((t) => `jellyfin:track:${t.Id}`),
       ),
@@ -211,7 +214,7 @@ describe('[M1.index/a] the index job on the Audiobookshelf and Jellyfin recordin
     await run(db, T0, r);
     const rows = byKey(listIndexed(db));
 
-    const albums = body<JfPage>(r.jellyfin['index-albums-page']).Items;
+    const albums = body<JfPage>(r.jellyfin['jf-library-albums-1']).Items;
     for (const [n, album] of albums.entries()) {
       const row = rows.get(`jellyfin:${album.Id}`);
       expect(row?.title).toBe(album.Name);
@@ -229,6 +232,20 @@ describe('[M1.index/a] the index job on the Audiobookshelf and Jellyfin recordin
         expect(t.duration).toBeGreaterThan(0);
       }
     }
+  });
+
+  it("[M1.index/a] pages albums per music library, keeping each album and track with its library's id", async () => {
+    const r = recorded();
+    const { asked } = await run(db, T0, r);
+    const folders = body<{ Items: { Id: string; CollectionType: string }[] }>(
+      r.jellyfin['library-list'],
+    ).Items;
+    const music = folders.filter((f) => f.CollectionType === 'music').map((f) => f.Id);
+    expect(music).toHaveLength(1);
+    expect(asked.filter((a) => a.startsWith('albums '))).toEqual([`albums ${music[0]}`]);
+    const jellyfin = listIndexed(db, { source: 'jellyfin' });
+    expect(jellyfin.length).toBeGreaterThan(2);
+    for (const row of jellyfin) expect(row.libraryId, row.id).toBe(music[0]);
   });
 
   it('[M1.index/a] every row starts at version 1, and the run is recorded with its counts', async () => {
@@ -254,7 +271,7 @@ describe('[M1.index/b] a second run after a recorded change', () => {
   function withOneChange() {
     const r = recorded();
     const show = body<AbsShow>(r.abs['index-show-2']);
-    const album = body<JfPage>(r.jellyfin['index-albums-page']).Items[1]!;
+    const album = body<JfPage>(r.jellyfin['jf-library-albums-1']).Items[1]!;
     const later = show.updatedAt + 60_000;
     r.abs['index-shows-page'] = changed<Listing>(r.abs['index-shows-page'], (page) => {
       page.results.find((i) => i.id === show.id)!.updatedAt = later;
@@ -264,7 +281,7 @@ describe('[M1.index/b] a second run after a recorded change', () => {
       s.media.episodes[0]!.title = 'Renamed upstream';
       s.media.episodes[0]!.updatedAt = later;
     });
-    r.jellyfin['index-albums-page'] = changed<JfPage>(r.jellyfin['index-albums-page'], (p) => {
+    r.jellyfin['jf-library-albums-1'] = changed<JfPage>(r.jellyfin['jf-library-albums-1'], (p) => {
       p.Items[1]!.Etag = 'moved-on';
     });
     r.jellyfin['index-album-tracks-2'] = changed<JfPage>(
@@ -363,7 +380,7 @@ describe('the daily re-read', () => {
 
     const books = body<Listing>(r.abs['index-books-page']).results;
     const shows = body<Listing>(r.abs['index-shows-page']).results;
-    const albums = body<JfPage>(r.jellyfin['index-albums-page']).Items;
+    const albums = body<JfPage>(r.jellyfin['jf-library-albums-1']).Items;
     expect(asked.filter((a) => a.startsWith('/api/items/'))).toEqual([
       `/api/items/${books[0]!.id}`,
       `/api/items/${shows[0]!.id}`,
@@ -380,7 +397,7 @@ describe('the daily re-read', () => {
 describe('removing what a complete pass did not see', () => {
   const r = recorded();
   const books = body<Listing>(r.abs['index-books-page']).results;
-  const albums = body<JfPage>(r.jellyfin['index-albums-page']).Items;
+  const albums = body<JfPage>(r.jellyfin['jf-library-albums-1']).Items;
 
   function absPage(page: number, results: Listing['results'], total: number): Recording {
     const listing = r.abs['index-books-page'];
@@ -406,7 +423,7 @@ describe('removing what a complete pass did not see', () => {
   };
 
   function jfPage(page: number, items: JfItem[], total: number): Recording {
-    const listing = r.jellyfin['index-albums-page'];
+    const listing = r.jellyfin['jf-library-albums-1'];
     return {
       ...listing,
       request: {
@@ -434,7 +451,11 @@ describe('removing what a complete pass did not see', () => {
     };
   }
   const details = [r.abs['library-list'], r.abs['index-book-1'], r.abs['index-book-2']];
-  const tracks = [r.jellyfin['index-album-tracks-1'], r.jellyfin['index-album-tracks-2']];
+  const tracks = [
+    r.jellyfin['library-list'],
+    r.jellyfin['index-album-tracks-1'],
+    r.jellyfin['index-album-tracks-2'],
+  ];
 
   async function pass(
     at: number,
@@ -516,6 +537,78 @@ describe('removing what a complete pass did not see', () => {
     for (const track of firstAlbumTracks) expect(left.has(track.id)).toBe(false);
     expect(result.abs?.counts.removed).toBe(1);
     expect(result.jellyfin?.counts.removed).toBe(1 + firstAlbumTracks.length);
+  });
+
+  it('removes an album whose library is gone, with its tracks, once a complete pass lists only another music library', async () => {
+    await indexBoth();
+    const stored = listIndexed(db).filter((row) => row.source === 'jellyfin');
+    expect(stored.length).toBeGreaterThan(2);
+    const other = 'another-music-library';
+    const replaced = changed<{ Items: { Id: string; CollectionType?: string }[] }>(
+      r.jellyfin['library-list'],
+      (list) => {
+        for (const l of list.Items) if (l.CollectionType === 'music') l.Id = other;
+      },
+    );
+    const empty = jfPage(0, [], 0);
+    const otherPage = {
+      ...empty,
+      request: { ...empty.request, query: { ...empty.request.query, ParentId: other } },
+    };
+
+    const { result, asked } = await pass(T0 + HOUR, [], [replaced, otherPage]);
+
+    expect(result.jellyfin).toMatchObject({ complete: true, error: null });
+    expect(listIndexed(db).filter((row) => row.source === 'jellyfin')).toEqual([]);
+    expect(result.jellyfin?.counts.removed).toBe(stored.length);
+    expect(asked.filter((a) => a.startsWith('lookup'))).toEqual([]);
+  });
+
+  it('removes nothing when Jellyfin lists no music library at all, or none of any kind', async () => {
+    await indexBoth();
+    const stored = listIndexed(db).filter((row) => row.source === 'jellyfin');
+    expect(stored.length).toBeGreaterThan(2);
+    const noMusic = changed<{ Items: { CollectionType?: string }[] }>(
+      r.jellyfin['library-list'],
+      (list) => {
+        list.Items = list.Items.filter((l) => l.CollectionType !== 'music');
+      },
+    );
+    const none = changed<{ Items: unknown[] }>(r.jellyfin['library-list'], (list) => {
+      list.Items = [];
+    });
+
+    for (const listing of [noMusic, none]) {
+      const { result } = await pass(T0 + HOUR, [], [listing]);
+
+      expect(result.jellyfin?.error).toBeNull();
+      expect(result.jellyfin?.counts.removed).toBe(0);
+      expect(listIndexed(db).filter((row) => row.source === 'jellyfin')).toEqual(stored);
+    }
+  });
+
+  it('removes an album left with no library that a complete pass no longer lists, and gives a listed one its library back', async () => {
+    await indexBoth();
+    const libraryOf = (id: string) => listIndexed(db).find((row) => row.id === id)?.libraryId;
+    const library = libraryOf(albums[0]!.Id);
+    expect(library).toBeTruthy();
+    // As migration 8 left albums indexed before it: no library, and no sync state.
+    db.prepare(
+      "UPDATE index_items SET library_id = NULL, content_hash = '' WHERE source = 'jellyfin'",
+    ).run();
+    db.prepare("DELETE FROM index_sync WHERE source = 'jellyfin'").run();
+    const firstAlbumTracks = listIndexed(db).filter((row) => row.parentId === albums[0]!.Id);
+
+    const { result } = await pass(T0 + HOUR, [], [...tracks, jfPage(0, [albums[1]!], 1)]);
+
+    expect(result.jellyfin).toMatchObject({ complete: true, error: null });
+    const left = indexedIds();
+    expect(left.has(albums[0]!.Id)).toBe(false);
+    for (const track of firstAlbumTracks) expect(left.has(track.id)).toBe(false);
+    expect(libraryOf(albums[1]!.Id)).toBe(library);
+    expect(
+      listIndexed(db).filter((row) => row.source === 'jellyfin' && row.libraryId === null),
+    ).toEqual([]);
   });
 
   it('never removes anything on a partial window of pages, nor asks whether an item is gone', async () => {

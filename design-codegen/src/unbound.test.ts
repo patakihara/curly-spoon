@@ -115,21 +115,17 @@ const drawsControl = (element: Element, prop: string) =>
   (DRAWN_WHEN[`${element.component}.${prop}`]?.(element.props) ?? true);
 
 /**
- * Whether the app binds `prop` of `element`: the shell wires it, or the page opens a page or
- * starts signing in with it, or, on Android, plays with it. The web has no page player yet, and
- * neither app a request. An uncontrolled ExpandableText folds itself, its whole action its own.
+ * Whether the app binds `prop` of `element`: the shell wires it, or the page opens a page, plays
+ * or starts signing in with it. Neither app has a request yet. An uncontrolled ExpandableText
+ * folds itself, its whole action its own.
  */
-function bound(element: Element, prop: string, wired: ShellHandlers, platform: Platform) {
+function bound(element: Element, prop: string, wired: ShellHandlers) {
   if (wired.get(element)?.[prop] !== undefined) return true;
   if (element.component === 'ExpandableText' && prop === 'onToggle')
     return !('expanded' in element.props);
   const value = element.props[prop];
   if (value === undefined) return false;
-  return (
-    value.kind === 'open' ||
-    value.kind === 'signIn' ||
-    (value.kind === 'play' && platform === 'android')
-  );
+  return value.kind === 'open' || value.kind === 'signIn' || value.kind === 'play';
 }
 
 /** Each unbound action on `page` in `platform`'s app, at every layout it draws, as ledger keys. */
@@ -138,7 +134,7 @@ function unboundOn(page: NavPage, tree: PageTree, platform: Platform): string[] 
   const check = (key: string, list: Element[], wired: ShellHandlers) => {
     for (const element of list) {
       for (const prop of actions.get(element.component) ?? []) {
-        if (drawsControl(element, prop) && !bound(element, prop, wired, platform))
+        if (drawsControl(element, prop) && !bound(element, prop, wired))
           out.push(`${key}/${element.component}.${prop}`);
       }
     }

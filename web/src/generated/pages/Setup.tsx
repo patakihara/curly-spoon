@@ -2,6 +2,8 @@
 import { Fragment } from 'react';
 import { useNavigate } from 'react-router';
 import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
+import type { ShellNav } from '../../shell-nav';
+import type { Playing } from '../../player';
 import { BackLayer, Button, FieldRow, LayoutGrid, PageBody, Section, SettingRow, StatusBanner } from '../ui/index.js';
 
 const placeholder = {
@@ -54,30 +56,6 @@ const placeholder = {
 const shell = {
   "account": {
     "label": "Account"
-  },
-  "playing": {
-    "title": "Heartbeats in Silence",
-    "artist": "Deep Inertia",
-    "image": "/art/deep-inertia.jpg",
-    "context": "Playing from Deep Inertia",
-    "variant": "music",
-    "favourite": true,
-    "progress": 0.05,
-    "duration": 262,
-    "sleep": "Off",
-    "about": {
-      "title": "About the artist",
-      "heading": "Deep Inertia",
-      "meta": "9 releases · 2 in your library",
-      "image": "/art/deep-inertia.jpg",
-      "body": "Deep Inertia is the slow, cold-weather project of a producer who records in an unheated boathouse through the winter months. Tape loops, a detuned upright piano and field recordings of ice on the lake carry most of the weight; vocals arrive late, half-buried, and leave early. Tears of Ice, the fourth album, was finished in a single February and released without a single."
-    }
-  },
-  "transport": {
-    "playing": true,
-    "progress": 0.05,
-    "duration": 262,
-    "favourite": true
   },
   "footer": [
     {
@@ -206,8 +184,8 @@ const shell = {
   }
 };
 
-/** The shell’s parts at each layout, from nav.json, its controls wired to the shell’s navigation. */
-const CHROME: Record<LayoutId, () => Chrome> = {
+/** The shell’s parts at each layout, from nav.json, its controls wired to the shell’s navigation and to what the player has loaded, `playing`, null while nothing is. */
+const CHROME: Record<LayoutId, (go: ShellNav, playing: Playing | null) => Chrome> = {
   w0: () => ({
     appBar: true,
     sheetOpen: false,

@@ -18,10 +18,10 @@ const echo = {
 describe('serving a declared route', () => {
   it('answers what the handler returns when it fits the schema', async () => {
     const app = Fastify();
-    serve(app, health, () => ({ status: 'ok' as const, commit: null }));
+    serve(app, health, () => ({ status: 'ok' as const, commit: null, signOn: false }));
     const res = await app.inject({ method: 'GET', url: '/api/health' });
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ status: 'ok', commit: null });
+    expect(res.json()).toEqual({ status: 'ok', commit: null, signOn: false });
     await app.close();
   });
 
@@ -126,7 +126,7 @@ describe('serving a declared route', () => {
       response: z.string(),
       access: 'public',
       params: z.object({ id: z.string().max(3) }),
-      stream: true,
+      stream: 'audio',
     } as const satisfies Route;
     const app = Fastify();
     serveStream(app, listen, async (_request, input) => {
@@ -159,7 +159,7 @@ describe('serving a declared route', () => {
       response: z.string(),
       access: 'public',
       params: z.object({ id: z.string().max(3) }),
-      stream: true,
+      stream: 'audio',
     } as const satisfies Route;
     let pulled = 0;
     let cancelled = false;
@@ -193,6 +193,37 @@ describe('serving a declared route', () => {
     expect(res.rawPayload.byteLength).toBe(0);
     expect(cancelled).toBe(true);
     expect(pulled).toBe(0);
+    await app.close();
+  });
+
+  it('answers a streamed image whole, never handing its handler a range, even a malformed one', async () => {
+    const art = {
+      method: 'GET',
+      path: '/art/{id}',
+      operationId: 'art',
+      summary: 'Art',
+      responseDescription: 'The image.',
+      response: z.string(),
+      access: 'public',
+      params: z.object({ id: z.string() }),
+      stream: 'image',
+    } as const satisfies Route;
+    const ranges: (string | undefined)[] = [];
+    const app = Fastify();
+    serveStream(app, art, async (_request, input) => {
+      ranges.push(input.range);
+      return {
+        status: 200,
+        headers: { 'content-type': 'image/jpeg' },
+        body: new Response('jpg').body as ReadableStream<Uint8Array>,
+      };
+    });
+    for (const range of ['bytes=0-1', 'lines=all']) {
+      const res = await app.inject({ method: 'GET', url: '/art/a', headers: { range } });
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBe('jpg');
+    }
+    expect(ranges).toEqual([undefined, undefined]);
     await app.close();
   });
 });

@@ -3,6 +3,11 @@
  * as `main.ts` runs it, configured through its environment, with one thing swapped: the `fetch`
  * its adapters are given answers from the committed recordings instead of the network.
  *
+ * Before it starts, one index pass reads every library page the recordings hold, each page on
+ * its own (the four-file book is on the books library's page 15, the show and the albums on page
+ * 4), so the library lists hold the recorded books, shows and albums. The scheduled index job stays
+ * off: a real run starts from the first page, which is not recorded.
+ *
  * The sign-on is replayed from its recordings (discovery, keys, token exchange, userinfo) by a
  * stand-in that also does the two things a browser meets and a recording cannot hold: it serves
  * the authorize step, sending the browser back to the app with a fresh code and the same state,
@@ -14,20 +19,32 @@
  */
 import { createServer, type Server as HttpServer } from 'node:http';
 import { randomBytes } from 'node:crypto';
-import { chmodSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type MediaRef } from '@auralis/schema';
 import type { FastifyInstance } from 'fastify';
+import { AbsClient } from '../src/adapters/audiobookshelf/client.js';
 import { type FetchLike } from '../src/adapters/http/fetch.js';
 import { type Recording, recordingSchema } from '../src/adapters/http/recording.js';
 import { replayFetch, standInsBeside } from '../src/adapters/http/replay.js';
 import { PLACEHOLDER, PLACEHOLDER_ORIGIN } from '../src/adapters/http/scrub.js';
 import { decodePart, signWithTestKey } from '../src/adapters/http/testSigningKey.js';
+import { JellyfinClient } from '../src/adapters/jellyfin/client.js';
 import { type BuildAppOptions } from '../src/app.js';
 import { loadConfig } from '../src/config.js';
+import { runIndex } from '../src/libraryIndex/job.js';
 import { assembleServer } from '../src/server.js';
+import { openDatabase } from '../src/store/connection.js';
 import { s256 } from '../src/store/signIn.js';
 
 const ADAPTERS = fileURLToPath(new URL('../src/adapters/', import.meta.url));
@@ -65,6 +82,12 @@ export interface RecordedServer {
   multiFile: MediaRef;
   /** The recorded Jellyfin track that plays, its file the 5 s FLAC stand-in tone. */
   music: MediaRef;
+  /** The recorded show the podcasts list holds, whose recorded episode plays. */
+  show: MediaRef;
+  /** That show's episode that plays. */
+  episode: MediaRef;
+  /** The recorded album the music list holds, which plays. */
+  album: MediaRef;
   listen(): Promise<void>;
   close(): Promise<void>;
 }
@@ -144,6 +167,78 @@ function syncFor(play: Recording, sync: Recording): Recording {
   synced.call = `${play.call}-sync`;
   synced.request.path = `/api/session/${id}/sync`;
   return synced;
+}
+
+/** A recorded page's query value, as a number. */
+function queryNumber(recording: Recording, name: string): number {
+  const value = Number(recording.request.query[name]);
+  if (!Number.isInteger(value)) throw new Error(`${recording.call} has no ${name}`);
+  return value;
+}
+
+/**
+ * Indexes every library page the recordings hold into the database at `file`, one pass a page,
+ * each over that page's own library only: an Audiobookshelf items page by its `page` and `limit`,
+ * a Jellyfin albums page by its `StartIndex`, `Limit` and `ParentId`. Throws if a pass fails.
+ */
+async function indexRecordedPages(
+  file: string,
+  upstreams: {
+    abs: { recordings: Recording[]; fetch: FetchLike };
+    jellyfin: { recordings: Recording[]; fetch: FetchLike };
+  },
+): Promise<void> {
+  const token = PLACEHOLDER;
+  const abs = new AbsClient({ baseUrl: ABS_ORIGIN, token, fetch: upstreams.abs.fetch });
+  const jellyfin = new JellyfinClient({
+    baseUrl: JELLYFIN_ORIGIN,
+    token,
+    fetch: upstreams.jellyfin.fetch,
+  });
+  const db = openDatabase(file);
+  const passes: Parameters<typeof runIndex>[0][] = [];
+  try {
+    for (const page of upstreams.abs.recordings) {
+      const library = /^\/api\/libraries\/([^/]+)\/items$/.exec(page.request.path)?.[1];
+      if (library === undefined) continue;
+      passes.push({
+        db,
+        pageSize: queryNumber(page, 'limit'),
+        pages: { first: queryNumber(page, 'page'), count: 1 },
+        abs: {
+          getLibraries: async () => (await abs.getLibraries()).filter((l) => l.id === library),
+          getLibraryItems: abs.getLibraryItems.bind(abs),
+          getItemSummary: abs.getItemSummary.bind(abs),
+          findItemSummary: abs.findItemSummary.bind(abs),
+        },
+      });
+    }
+    for (const page of upstreams.jellyfin.recordings) {
+      const { IncludeItemTypes: types, ParentId: library } = page.request.query;
+      if (page.request.path !== '/Items' || types !== 'MusicAlbum' || library === undefined) {
+        continue;
+      }
+      const size = queryNumber(page, 'Limit');
+      passes.push({
+        db,
+        pageSize: size,
+        pages: { first: queryNumber(page, 'StartIndex') / size, count: 1 },
+        jellyfin: {
+          getLibraries: async () => (await jellyfin.getLibraries()).filter((l) => l.Id === library),
+          getAlbums: jellyfin.getAlbums.bind(jellyfin),
+          getAlbumTracks: jellyfin.getAlbumTracks.bind(jellyfin),
+          findAlbum: jellyfin.findAlbum.bind(jellyfin),
+        },
+      });
+    }
+    for (const pass of passes) {
+      for (const [source, run] of Object.entries(await runIndex(pass))) {
+        if (run.error !== null) throw new Error(`indexing ${source}: ${run.error}`);
+      }
+    }
+  } finally {
+    db.close();
+  }
 }
 
 /** Sends each request to the replay for its upstream's origin. */
@@ -273,7 +368,7 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     ABS_PROVISION_KEY_FILE: secret('abs-provision-key'),
     JELLYFIN_URL: JELLYFIN_ORIGIN,
     JELLYFIN_API_KEY_FILE: secret('jellyfin-api-key'),
-    // The recordings hold one page of each library, not the pages a real run starts from.
+    // The recordings hold a few pages of each library, not the first a real run starts from.
     INDEX_EVERY_MINUTES: '0',
   });
 
@@ -303,11 +398,18 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     ...['item-play', 'multi-play'].map((name) => syncFor(call(replayed, name), sync)),
   ];
   const jellyfin = recordingsOf('jellyfin');
+  const absFetch = replayFetch(abs, { readBytes: standInsBeside(ADAPTERS) });
+  const jellyfinFetch = replayFetch(jellyfin, { readBytes: standInsBeside(ADAPTERS) });
+  mkdirSync(config.dataDir, { recursive: true });
+  await indexRecordedPages(join(config.dataDir, 'auralis.sqlite'), {
+    abs: { recordings: abs, fetch: absFetch },
+    jellyfin: { recordings: jellyfin, fetch: jellyfinFetch },
+  });
   const server = await assembleServer(config, {
     fetch: byOrigin({
       [SIGN_ON_ISSUER]: signOn.fetch,
-      [ABS_ORIGIN]: replayFetch(abs, { readBytes: standInsBeside(ADAPTERS) }),
-      [JELLYFIN_ORIGIN]: replayFetch(jellyfin, { readBytes: standInsBeside(ADAPTERS) }),
+      [ABS_ORIGIN]: absFetch,
+      [JELLYFIN_ORIGIN]: jellyfinFetch,
     }),
     logger: options.logger,
   });
@@ -318,6 +420,10 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
   const itemId = call(abs, 'item-play').request.path.split('/')[3] ?? '';
   const multiId = call(abs, 'multi-play').request.path.split('/')[3] ?? '';
   const trackId = call(jellyfin, 'jf-track').request.path.split('/')[2] ?? '';
+  const [showId = '', episodeId = ''] = call(abs, 'episode-play')
+    .request.path.split('/')
+    .filter((_, i) => i === 3 || i === 5);
+  const albumId = call(jellyfin, 'jf-album').request.path.split('/')[2] ?? '';
   const signOnHttp = signOnListener(signOn.authorize, signOnOrigin);
 
   return {
@@ -328,6 +434,9 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     playable: { source: 'abs', id: itemId },
     multiFile: { source: 'abs', id: multiId },
     music: { source: 'jellyfin', id: trackId },
+    show: { source: 'abs', id: showId },
+    episode: { source: 'abs', id: episodeId },
+    album: { source: 'jellyfin', id: albumId },
     async listen() {
       await new Promise<void>((resolve, reject) => {
         signOnHttp.once('error', reject).listen(signOnPort, LISTEN_HOST, resolve);

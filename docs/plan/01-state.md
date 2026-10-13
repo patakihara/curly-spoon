@@ -17,7 +17,3 @@ Almost none of the old project ran against your real servers or a real phone.
 | API contract | <span class="pill t-err">code</span> server zod, web `types.ts`, Android `ApiModels.kt` | Three hand-kept copies of one set of shapes, never checked against each other. |
 | Recommendations | <span class="pill t-req">code</span> ListenBrainz and Open Library are called uncached on every request; no podcast provider | Slow; nothing external reaches podcasts. |
 | Security | <span class="pill t-err">code</span> `POST /setup` is unauthenticated and can be called again; no admin role; a client-supplied `downloadUrl` is fetched by the server | Anyone reaching the port can point Auralis at their own server and collect passwords. |
-
-::: small muted
-The deployed container on mediaserver runs; what it does is broken.
-:::

@@ -154,7 +154,8 @@ jobs:
         run: |
           body="$(curl -fsS http://127.0.0.1:8787/api/health)"
           echo "$body"
-          [ "$body" = "{\"status\":\"ok\",\"commit\":\"$GITHUB_SHA\"}" ]
+          # The image boots with no household sign-on, so it says it has none.
+          [ "$body" = "{\"status\":\"ok\",\"commit\":\"$GITHUB_SHA\",\"signOn\":false}" ]
           curl -fsS http://127.0.0.1:8787/ | grep -q '<title>Auralis</title>'
       # The browser tests run against the booted image: every font and icon comes from it.
       - uses: pnpm/action-setup@v4

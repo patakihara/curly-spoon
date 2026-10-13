@@ -4,12 +4,21 @@
  * fetch })`.
  */
 import { AdapterError, type FetchLike, requestJson, type RequestInitJson } from '../http/fetch.js';
-import { type FileHeaders, fileHeadersSchema, openStream, type UpstreamFile } from '../stream.js';
+import {
+  type FileHeaders,
+  fileHeadersSchema,
+  type ImageHeaders,
+  imageHeadersSchema,
+  openStream,
+  type UpstreamFile,
+} from '../stream.js';
 import { type ZodType, type z } from 'zod';
 import {
   type AbsBookmark,
   type AbsMe,
+  bookDetailSchema,
   bookmarkSchema,
+  type chapterSchema,
   closeSessionSchema,
   deleteBookmarkSchema,
   type FileRef,
@@ -17,7 +26,6 @@ import {
   hlsSegmentHeadersSchema,
   inoSchema,
   itemIdSchema,
-  itemChaptersSchema,
   itemSchema,
   itemSummarySchema,
   librariesSchema,
@@ -28,6 +36,7 @@ import {
   libraryItemsSchema,
   type PlayRequest,
   playSessionSchema,
+  showNotesSchema,
   type SessionSync,
   statusSchema,
   SUPPORTED_MIME_TYPES,
@@ -125,11 +134,28 @@ export class AbsClient {
     }
   }
 
-  /** How many chapters an item has: a book's, from the same answer as `getItem`; none for a show. */
-  async getChapterCount(itemId: string): Promise<number> {
+  /** A book's title, authors, length in seconds and chapters, from the same answer as `getItem`. */
+  async getBookDetail(itemId: string): Promise<{
+    title: string;
+    authors: string[];
+    duration: number;
+    chapters: z.infer<typeof chapterSchema>[];
+  }> {
     const path = `api/items/${encodeURIComponent(itemId)}`;
-    const item = await this.call(path, itemChaptersSchema, {}, { expanded: '1' });
-    return item.media.chapters?.length ?? 0;
+    const item = await this.call(path, bookDetailSchema, {}, { expanded: '1' });
+    const { metadata, duration, chapters } = item.media;
+    return {
+      title: metadata.title,
+      authors: (metadata.authors ?? []).map((a) => a.name),
+      duration,
+      chapters: chapters ?? [],
+    };
+  }
+
+  /** One episode's notes, from its show's answer: null when it has none or the show lists no such episode. */
+  async getEpisodeNotes(showId: string, episodeId: string): Promise<string | null> {
+    const show = await this.call(`api/items/${encodeURIComponent(showId)}`, showNotesSchema);
+    return show.media.episodes.find((e) => e.id === episodeId)?.description ?? null;
   }
 
   getItem(itemId: string): Promise<z.infer<typeof itemSchema>> {
@@ -252,6 +278,18 @@ export class AbsClient {
   openHlsSegment(sessionId: string, file: string, range?: string): Promise<UpstreamFile> {
     const path = `hls/${encodeURIComponent(sessionId)}/${encodeURIComponent(file)}`;
     return this.openStream(path, range, hlsSegmentHeadersSchema);
+  }
+
+  /**
+   * An item's cover image, as ABS serves it to its own apps (WebP, recorded), or scaled by ABS to
+   * `width` pixels wide.
+   */
+  openCover(itemId: string, width?: number): Promise<UpstreamFile<ImageHeaders>> {
+    const path = `api/items/${encodeURIComponent(itemId)}/cover`;
+    const query: Record<string, string> = width === undefined ? {} : { width: String(width) };
+    const headers = { authorization: `Bearer ${this.opts.token}` };
+    const url = this.url(path, query);
+    return openStream(this.opts.fetch, url, headers, undefined, imageHeadersSchema);
   }
 
   /** Opens audio bytes with this person's key, passing `range` through. */

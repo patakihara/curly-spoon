@@ -2,11 +2,9 @@
 import { cloneElement, isValidElement, useContext, type ComponentProps, type ComponentType } from 'react';
 import { useLocation, useMatches, useOutlet } from 'react-router';
 import { InPanel, useShellNav } from '../../shell-nav';
+import { useLeaveIdle, usePlaying } from '../../player';
 import { BackdropShell, NowPlaying } from '../ui/index.js';
 import { PANEL, PANEL_OVER, PLATFORM, useLayout, type PageFrame, type Platform } from './platform';
-import NowPlayingTab from '../pages/NowPlaying';
-import QueueTab from '../pages/Queue';
-import LyricsTab from '../pages/Lyrics';
 
 /** What a page's route hands the shell: its frame, or, for a player sheet, the page it is drawn over. */
 export interface ShellHandle {
@@ -14,31 +12,13 @@ export interface ShellHandle {
   over?: { frame: PageFrame<unknown>; Page: ComponentType };
 }
 
-/** What is loaded, as the player shows it. */
-const playing = {
-  "title": "Heartbeats in Silence",
-  "artist": "Deep Inertia",
-  "image": "/art/deep-inertia.jpg",
-  "context": "Playing from Deep Inertia",
-  "variant": "music",
-  "favourite": true,
-  "progress": 0.05,
-  "duration": 262,
-  "sleep": "Off",
-  "about": {
-    "title": "About the artist",
-    "heading": "Deep Inertia",
-    "meta": "9 releases · 2 in your library",
-    "image": "/art/deep-inertia.jpg",
-    "body": "Deep Inertia is the slow, cold-weather project of a producer who records in an unheated boathouse through the winter months. Tape loops, a detuned upright piano and field recordings of ice on the lake carry most of the weight; vocals arrive late, half-buried, and leave early. Tears of Ice, the fourth album, was finished in a single February and released without a single."
-  }
-};
-
 /** Each of the player's sheets, by its route's id, as the tab it is. */
 const TABS: Record<string, string> = { nowPlaying: 'now', queue: 'queue', lyrics: 'lyrics' };
 
-/** Each of the player's tabs, by key, as its sheet's page, which the panel draws at it. */
-const PANEL_TABS: Record<string, ComponentType> = { now: NowPlayingTab, queue: QueueTab, lyrics: LyricsTab };
+/** What the shell's own route hands it: each of the player's tabs, by key, as its sheet's page, which the panel draws at it. */
+export interface ShellTabs {
+  tabs: Record<string, ComponentType>;
+}
 
 export interface PlayerProps {
   /** The tab, in the panel; left out, the matched sheet's, full screen, its route's page the content. */
@@ -54,7 +34,11 @@ export function Player({ tab, closes = true }: PlayerProps) {
   const platform: Platform = inPanel || PANEL[useLayout()] ? 'desktop' : 'mobile';
   const outlet = useOutlet();
   const shown = tab ?? TABS[useMatches().at(-1)?.id ?? ''];
-  const Content = tab === undefined ? undefined : PANEL_TABS[tab];
+  const { tabs } = useMatches()[0]!.handle as ShellTabs;
+  const Content = tab === undefined ? undefined : tabs[tab];
+  const playing = usePlaying();
+  useLeaveIdle(playing, tab === undefined ? () => go.close('browse') : undefined);
+  if (playing === null) return null;
   return (
     <NowPlaying open={true} tab={shown} variant={playing.variant as ComponentProps<typeof NowPlaying>['variant']} track={playing} onClose={closes ? () => go.close('browse') : undefined} onTabChange={(to) => go.tab(to)} platform={platform}>
       {Content === undefined ? outlet : <Content />}
@@ -68,18 +52,19 @@ export function Shell() {
   const location = useLocation();
   const outlet = useOutlet();
   const match = useMatches().at(-1);
+  const playing = usePlaying();
   const handle = match?.handle as ShellHandle | undefined;
   const over = handle?.over;
   const frame = over === undefined ? handle?.frame : PANEL[layout] ? over.frame : undefined;
   if (frame === undefined) return outlet;
-  const chrome = frame.chrome[layout](go);
+  const chrome = frame.chrome[layout](go, playing);
   const platform = PLATFORM[layout];
   const context = { platform, leading: chrome.leading };
   const where = location.pathname + location.search;
   const back = frame.back(frame.placeholder, context);
   const Over = over?.Page;
   // The panel: a sheet's own tab, the one the mini-player holds, or the layout's own Now Playing.
-  const tab = platform !== 'desktop' ? undefined : over !== undefined ? TABS[match?.id ?? ''] : (go.panel() ?? (chrome.sheetOpen ? 'now' : undefined));
+  const tab = playing === null || platform !== 'desktop' ? undefined : over !== undefined ? TABS[match?.id ?? ''] : (go.panel() ?? (chrome.sheetOpen ? 'now' : undefined));
   return (
     <BackdropShell
       rail={chrome.rail}

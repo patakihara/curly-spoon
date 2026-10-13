@@ -4,6 +4,7 @@ import type { ComponentProps } from 'react';
 import { generatePath, useNavigate } from 'react-router';
 import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
 import type { ShellNav } from '../../shell-nav';
+import { usePlay, type Playing } from '../../player';
 import { BackLayer, BottomNav, EpisodeRow, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, OverflowMenu, PageBody, Section, Shelf, SortFilterBar } from '../ui/index.js';
 
 const placeholder = {
@@ -150,30 +151,6 @@ const shell = {
   "account": {
     "label": "Account"
   },
-  "playing": {
-    "title": "Heartbeats in Silence",
-    "artist": "Deep Inertia",
-    "image": "/art/deep-inertia.jpg",
-    "context": "Playing from Deep Inertia",
-    "variant": "music",
-    "favourite": true,
-    "progress": 0.05,
-    "duration": 262,
-    "sleep": "Off",
-    "about": {
-      "title": "About the artist",
-      "heading": "Deep Inertia",
-      "meta": "9 releases · 2 in your library",
-      "image": "/art/deep-inertia.jpg",
-      "body": "Deep Inertia is the slow, cold-weather project of a producer who records in an unheated boathouse through the winter months. Tape loops, a detuned upright piano and field recordings of ice on the lake carry most of the weight; vocals arrive late, half-buried, and leave early. Tears of Ice, the fourth album, was finished in a single February and released without a single."
-    }
-  },
-  "transport": {
-    "playing": true,
-    "progress": 0.05,
-    "duration": 262,
-    "favourite": true
-  },
   "footer": [
     {
       "key": "settings",
@@ -301,22 +278,24 @@ const shell = {
   }
 };
 
-/** The shell’s parts at each layout, from nav.json, its controls wired to the shell’s navigation. */
-const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
-  w0: (go) => ({
+/** The shell’s parts at each layout, from nav.json, its controls wired to the shell’s navigation and to what the player has loaded, `playing`, null while nothing is. */
+const CHROME: Record<LayoutId, (go: ShellNav, playing: Playing | null) => Chrome> = {
+  w0: (go, playing) => ({
     appBar: true,
     leading: (
       <IconButton icon="close" label="Close" onClick={() => go.close('podcasts')} />
     ),
     player: (
       <>
-        <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="mobile" onOpen={() => go.open('/playing')} />
+        {playing !== null && (
+          <MiniPlayer title={playing.title} artist={playing.artist} image={playing.image} playing={playing.playing} progress={playing.progress} duration={playing.duration} variant={playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={playing.sleep} platform="mobile" onOpen={() => go.open('/playing')} onTogglePlay={playing.onTogglePlay} onPrev={playing.onPrev} onNext={playing.onNext} onSkipBack={playing.onSkipBack} onSkipForward={playing.onSkipForward} onSeek={playing.onSeek} speed={playing.speed} onSpeed={playing.onSpeed} onSleep={playing.onSleep} />
+        )}
         <BottomNav items={shell.nav.w0} active={go.lit('podcasts')} onChange={(key) => go.destination(key)} />
       </>
     ),
     sheetOpen: false,
   }),
-  w600: (go) => ({
+  w600: (go, playing) => ({
     appBar: false,
     rail: (
       <NavRail items={shell.nav.w600} footerItems={shell.footer} active={go.lit('podcasts')} expanded={go.rail(false)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(false)} />
@@ -324,12 +303,12 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
     leading: (
       <IconButton icon="close" label="Close" onClick={() => go.close('podcasts')} />
     ),
-    player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} />
+    player: playing === null ? undefined : (
+      <MiniPlayer title={playing.title} artist={playing.artist} image={playing.image} playing={playing.playing} progress={playing.progress} duration={playing.duration} variant={playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} onTogglePlay={playing.onTogglePlay} onPrev={playing.onPrev} onNext={playing.onNext} onSkipBack={playing.onSkipBack} onSkipForward={playing.onSkipForward} onSeek={playing.onSeek} speed={playing.speed} onSpeed={playing.onSpeed} onSleep={playing.onSleep} />
     ),
     sheetOpen: false,
   }),
-  w1024: (go) => ({
+  w1024: (go, playing) => ({
     appBar: false,
     rail: (
       <NavRail items={shell.nav.w1024} footerItems={shell.footer} active={go.lit('podcasts')} expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />
@@ -337,12 +316,12 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
     leading: (
       <IconButton icon="close" label="Close" onClick={() => go.close('podcasts')} />
     ),
-    player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} />
+    player: playing === null ? undefined : (
+      <MiniPlayer title={playing.title} artist={playing.artist} image={playing.image} playing={playing.playing} progress={playing.progress} duration={playing.duration} variant={playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} onTogglePlay={playing.onTogglePlay} onPrev={playing.onPrev} onNext={playing.onNext} onSkipBack={playing.onSkipBack} onSkipForward={playing.onSkipForward} onSeek={playing.onSeek} speed={playing.speed} onSpeed={playing.onSpeed} onSleep={playing.onSleep} />
     ),
     sheetOpen: false,
   }),
-  w1240: (go) => ({
+  w1240: (go, playing) => ({
     appBar: false,
     rail: (
       <NavRail items={shell.nav.w1240} footerItems={shell.footer} active={go.lit('podcasts')} expanded={go.rail(true)} toggle={true} onChange={(key) => go.destination(key)} onToggleExpanded={() => go.toggleRail(true)} />
@@ -350,10 +329,10 @@ const CHROME: Record<LayoutId, (go: ShellNav) => Chrome> = {
     leading: (
       <IconButton icon="close" label="Close" onClick={() => go.close('podcasts')} />
     ),
-    player: (
-      <MiniPlayer title={shell.playing.title} artist={shell.playing.artist} image={shell.playing.image} playing={true} progress={shell.playing.progress} duration={shell.playing.duration} variant={shell.playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={shell.playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} />
+    player: playing === null ? undefined : (
+      <MiniPlayer title={playing.title} artist={playing.artist} image={playing.image} playing={playing.playing} progress={playing.progress} duration={playing.duration} variant={playing.variant as Exclude<ComponentProps<typeof MiniPlayer>['variant'], undefined>} sleep={playing.sleep} platform="desktop" onOpen={() => go.open('/playing')} queueOpen={go.panel() === 'queue'} onToggleQueue={() => go.togglePanel('queue')} lyricsOpen={go.panel() === 'lyrics'} onToggleLyrics={() => go.togglePanel('lyrics')} onTogglePlay={playing.onTogglePlay} onPrev={playing.onPrev} onNext={playing.onNext} onSkipBack={playing.onSkipBack} onSkipForward={playing.onSkipForward} onSeek={playing.onSeek} speed={playing.speed} onSpeed={playing.onSpeed} onSleep={playing.onSleep} />
     ),
-    sheetOpen: true,
+    sheetOpen: playing !== null,
   }),
 };
 
@@ -375,6 +354,7 @@ export interface ListProps {
 export default function List({ data = placeholder, state = 'full' }: ListProps) {
   const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
+  const play = usePlay();
   return (
     <PageBody width="list" platform={platform}>
       <Section platform={platform}>
@@ -383,7 +363,9 @@ export default function List({ data = placeholder, state = 'full' }: ListProps) 
           meta={data.meta}
           covers={data.covers}
           playLabel="Play"
+          onPlay={play(data.ref, 'spoken', 'source')}
           nextLabel="Play next"
+          onPlayNext={play(data.ref, 'spoken', 'next')}
           lastLabel={null}
           menu={<OverflowMenu items={data.menu} platform={platform} />}
           platform={platform}
@@ -393,7 +375,7 @@ export default function List({ data = placeholder, state = 'full' }: ListProps) 
         <Shelf platform={platform}>
           {data.shows.map((show, i) => (
             <Fragment key={i}>
-              <MediaCard size="sm" title={show.title} sub={show.sub} image={show.image} onClick={() => navigate(generatePath('/podcasts/:ref', { ref: show.ref }))} platform={platform} />
+              <MediaCard size="sm" title={show.title} sub={show.sub} image={show.image} onClick={show.ref ? () => navigate(generatePath('/podcasts/:ref', { ref: show.ref })) : undefined} platform={platform} />
             </Fragment>
           ))}
         </Shelf>
@@ -402,7 +384,7 @@ export default function List({ data = placeholder, state = 'full' }: ListProps) 
         <SortFilterBar icon="swap_vert" label={data.order} platform={platform} />
         {data.items.map((item, i) => (
           <Fragment key={i}>
-            <EpisodeRow title={item.title} description={item.description} meta={item.meta} image={item.image} progress={item.progress} onClick={() => navigate(generatePath('/podcasts/episodes/:ref', { ref: item.ref }))} divider={true} platform={platform} />
+            <EpisodeRow title={item.title} description={item.description} meta={item.meta} image={item.image} progress={item.progress} onClick={item.ref ? () => navigate(generatePath('/podcasts/episodes/:ref', { ref: item.ref })) : undefined} onPlay={play(item.ref, 'spoken', 'now')} divider={true} platform={platform} />
           </Fragment>
         ))}
       </Section>

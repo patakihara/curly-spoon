@@ -5,6 +5,7 @@ from here.
 
 - `src/` holds the zod schemas and the route declarations (method, path, response schema). The
   server serves each declared route and parses its answer through the route's schema.
+- `test/` holds the tests of those schemas; it stays out of the server image, which copies `src/`.
 - `codegen/` turns them into three files:
   - `schema/generated/openapi.json`, the OpenAPI 3.1 document (zod-to-openapi);
   - `web/src/generated/api/schema.ts`, the web client's types (openapi-typescript), used through

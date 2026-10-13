@@ -1,5 +1,5 @@
 /**
- * Opening upstream audio bytes, for every adapter that serves them: the request passes `range`
+ * Opening upstream audio or image bytes, for every adapter that serves them: the request passes `range`
  * through, only the answer's headers are waited for (within the timeout) and parsed, and the body
  * streams on to the caller, who must read or cancel it. Nothing is transcoded or buffered whole.
  */
@@ -21,6 +21,19 @@ export const fileHeadersSchema = z.object({
 });
 export type FileHeaders = z.infer<typeof fileHeadersSchema>;
 
+/**
+ * An image's headers, as Audiobookshelf's cover route and Jellyfin's primary image answer
+ * (recorded): an image type, and the caching headers a pass-through keeps.
+ */
+export const imageHeadersSchema = z.object({
+  'content-type': z.string().regex(/^image\//i, 'an image type'),
+  'content-length': z.string().regex(/^\d+$/).optional(),
+  'cache-control': z.string().optional(),
+  'last-modified': z.string().optional(),
+  etag: z.string().optional(),
+});
+export type ImageHeaders = z.infer<typeof imageHeadersSchema>;
+
 /** A 416's `Content-Range`, `bytes *` then a slash and the file's size, as that size. */
 const unsatisfiedRangeSchema = z.object({
   'content-range': z
@@ -39,23 +52,23 @@ export class RangeNotSatisfiable extends AdapterError {
   }
 }
 
-/** An audio file's answer: its status, its parsed headers and its body, still streaming. */
-export interface UpstreamFile {
+/** A file's answer: its status, its parsed headers and its body, still streaming. */
+export interface UpstreamFile<H = FileHeaders> {
   status: 200 | 206;
-  headers: FileHeaders;
+  headers: H;
   body: ReadableStream<Uint8Array>;
 }
 
 const FILE_TIMEOUT_MS = 15_000;
 
 /** Opens `url` with `headers`, passing `range` through, and parses the answer's headers. */
-export async function openStream(
+export async function openStream<H = FileHeaders>(
   fetch: FetchLike,
   url: string,
   headers: Record<string, string>,
   range: string | undefined,
-  schema: ZodType<FileHeaders, z.ZodTypeDef, unknown>,
-): Promise<UpstreamFile> {
+  schema: ZodType<H, z.ZodTypeDef, unknown>,
+): Promise<UpstreamFile<H>> {
   const call = `GET ${new URL(url).pathname}`;
   const sent: Record<string, string> = { ...headers };
   if (range !== undefined) sent.range = range;
