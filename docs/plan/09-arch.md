@@ -25,7 +25,7 @@ Server routes are declared with zod; an OpenAPI document is emitted from them. T
 ::: card
 #### 2 · Screen-shaped endpoints
 
-Every screen gets one call returning what it draws, fields named for the UI (`status`, `progress`, `reason`, `kind`). Clients never stitch calls together, so web and Android can't combine data differently.
+Every screen gets one call returning what it draws, fields named for the UI (`status`, `progress`, `reason`, `kind`). Clients never stitch calls together.
 :::
 
 ::: card

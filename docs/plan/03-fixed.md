@@ -9,7 +9,7 @@ part: Why and what
 Fixed inputs, not re-opened.
 :::
 
-From `USER_DECISIONS.md`, the spec addendum and the research notes. Where a decision rested on a false premise, the plan keeps it, fixing the premise (one case, marked).
+Where a decision rested on a false premise, the plan keeps it, fixing the premise (one case, marked).
 
 ::: grid g2
 ::: card
@@ -72,8 +72,4 @@ From `USER_DECISIONS.md`, the spec addendum and the research notes. Where a deci
 - **One Auralis repo holds the design and the apps**, and publishes the Sonora and canvas artifacts. You work on the design through artifact comments or chat.
 - **Some design inputs stay private.** The Spotify reference screenshots (on the laptop, gitignored) and the original Sonora author identities stay out of the public repo.
 :::
-:::
-
-::: small muted
-The extractor is still a poor _recommender_, as research found. ListenBrainz picks what to suggest, and YouTube Music makes it playable.
 :::

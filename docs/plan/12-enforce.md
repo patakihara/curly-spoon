@@ -56,7 +56,7 @@ Each rule here is a check that fails, not a habit to remember.
 
 ### Your ideas, without derailing
 
-Anything you say about Auralis, in any session or artifact comment, takes one fixed path, each step safe to interrupt.
+Anything you say about Auralis takes one fixed path, each step safe to interrupt.
 
 1. **Filed.** One file per idea in `docs/inbox/`: your words verbatim, where it came from (chat, a comment thread, a direct message), and the date. The session replies `Noted: <title>` (in the thread, for a comment) and carries on. Filing never touches the plan or the work in progress, unless you say "do it now", answer one of its outbox items, or tell the session itself to stop or pause.
 2. **Sorted, at set moments:** each milestone demo, when you say "let's go through my ideas", or once about ten are waiting. The orchestrator hands each idea in turn to a fresh-context subagent that reads it and the whole plan and decides which it is:

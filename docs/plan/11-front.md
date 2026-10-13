@@ -35,7 +35,7 @@ This is M5's work; until then the frontend is M1.shell's minimal shell.
 :::
 :::
 
-**Where the screens come from.** Sonora's UI kit renders, showcase cards and 43 Spotify reference screens, plus the old "Auralis redesign kickoff" screen list. The canvas rebuilds their union from current Sonora components; where they disagree, Sonora wins.
+**Where the screens come from.** The canvas rebuilds the union of Sonora's UI kit renders, showcase cards and reference screens from current components; where they disagree, Sonora wins.
 
 ### Sonora, pruned and ordered
 
@@ -62,7 +62,7 @@ This is M5's work; until then the frontend is M1.shell's minimal shell.
 
 - **Web uses Sonora's components directly, not ports**: real React with typed props. `pnpm gen` turns Sonora's global-namespace lookups (`NS().CoverArt`) into normal imports and writes them to `web/src/generated/ui`, the app's UI package. The `.d.ts` files are the props, unchanged.
 - **Android**: `SonoraTokens.kt` as the theme, plus one Compose component per Sonora component with the same name. Its props class is **generated from the same `.d.ts`**, so a prop added in Sonora appears in Android's props at once, and a required one breaks the Android build until it is passed. Layout bodies are hand-written, as `export/README.md` spells out.
-- Sonora's Now Playing questions (shape, speed and sleep sheets, queue edit scope) are answered by the canvas's player pages.
+- Sonora's Now Playing questions are answered by the canvas's player pages.
 :::
 :::
 

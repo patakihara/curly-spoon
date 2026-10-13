@@ -44,13 +44,8 @@ Spotify, YouTube and open-source recommender techniques at small scale: no GPU, 
 - **Per user**: every table is keyed by user.
 - **Measured, not guessed**: hold out your latest months of history and check whether each version would have put what you played next in its top 10; that score must not drop between versions.
 
-**Checked live today:**
-
-- **YouTube Music radio**: _Private Eye_ → blink-182, Green Day, Sum 41.
-- **ListenBrainz**: Alkaline Trio → Bad Religion, Yellowcard, Rise Against. **Deezer**: → The Ataris, New Found Glory, MxPx.
-- **Audible**: _If Anyone Builds It, Everyone Dies_ → _Life 3.0_, _The Alignment Problem_. Only 7 of your 233 books carry an Audible ID, but Audible's search finds them by title and author (3 of 3), so a job backfills them. Audnexus has no "similar" field; it stays for metadata.
-- **Apple Podcasts**: _If Books Could Kill_ → _Maintenance Phase_, _You're Wrong About_, _5-4_. Scraped, so fragile.
+**Checked live:** only 7 of your 233 books carry an Audible ID, but Audible's search finds them by title and author (3 of 3), so a job backfills them. Audnexus has no "similar" field; it stays for metadata. Apple Podcasts is scraped, so fragile.
 
 ::: small muted
-**Not established:** that the old YouTube Music algorithm worked in some knowable way. Music-to-book taste transfer (no prior art; an experiment). How fast the embedding and audio models run on this box (benchmark first).
+**Not established:** music-to-book taste transfer (no prior art; an experiment). How fast the embedding and audio models run on this box (benchmark first).
 :::
