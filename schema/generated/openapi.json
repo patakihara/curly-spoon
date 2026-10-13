@@ -224,6 +224,21 @@
           "items"
         ]
       },
+      "SearchParent": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ref",
+          "title"
+        ]
+      },
       "HealthResponse": {
         "type": "object",
         "properties": {
@@ -1536,6 +1551,167 @@
           "small",
           "medium",
           "large"
+        ]
+      },
+      "SuggestionKind": {
+        "type": "string",
+        "enum": [
+          "track",
+          "album",
+          "artist",
+          "book",
+          "author",
+          "series",
+          "show",
+          "episode",
+          "recent"
+        ]
+      },
+      "Suggestion": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/SuggestionKind"
+          },
+          "text": {
+            "type": "string"
+          },
+          "ref": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaRef"
+              },
+              {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "text",
+          "ref"
+        ]
+      },
+      "SuggestionList": {
+        "type": "object",
+        "properties": {
+          "suggestions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Suggestion"
+            }
+          }
+        },
+        "required": [
+          "suggestions"
+        ]
+      },
+      "SearchKind": {
+        "type": "string",
+        "enum": [
+          "track",
+          "album",
+          "artist",
+          "book",
+          "author",
+          "series",
+          "show",
+          "episode"
+        ]
+      },
+      "SearchResult": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/SearchKind"
+          },
+          "title": {
+            "type": "string"
+          },
+          "creators": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "parent": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SearchParent"
+              },
+              {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            ]
+          },
+          "art": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "duration": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "year": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "publishedAt": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "availability": {
+            "$ref": "#/components/schemas/Availability"
+          }
+        },
+        "required": [
+          "ref",
+          "kind",
+          "title",
+          "creators",
+          "parent",
+          "art",
+          "duration",
+          "year",
+          "publishedAt",
+          "availability"
+        ]
+      },
+      "SearchResults": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchResult"
+            }
+          }
+        },
+        "required": [
+          "query",
+          "results"
         ]
       }
     },
@@ -3591,6 +3767,153 @@
           },
           "403": {
             "description": "Without the role this route needs, or sent from another site."
+          }
+        }
+      }
+    },
+    "/api/search/suggest": {
+      "get": {
+        "summary": "Suggestions as the signed-in person types a search",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getSearchSuggest",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "required": true,
+            "name": "q",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Their own recent searches, then titles and names from the household's library index, best first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestionList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/search": {
+      "get": {
+        "summary": "A search of the household's library, kept among the signed-in person's recent searches",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getSearch",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "required": true,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/SearchKind"
+              },
+              "minItems": 1
+            },
+            "required": false,
+            "name": "kinds",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The best results first, of the kinds asked for, or of every kind.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResults"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       }

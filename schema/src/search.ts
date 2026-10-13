@@ -51,3 +51,34 @@ export const Suggestion = z
   .object({ kind: SuggestionKind, text: z.string(), ref: MediaRef.nullable() })
   .openapi('Suggestion');
 export type Suggestion = z.infer<typeof Suggestion>;
+
+/** The longest query either route takes, in characters. */
+const QUERY_MAX = 200;
+
+/** A search's results, best first, for the query as it was searched. */
+export const SearchResults = z
+  .object({ query: z.string(), results: z.array(SearchResult) })
+  .openapi('SearchResults');
+export type SearchResults = z.infer<typeof SearchResults>;
+
+/** Suggestions for what is typed so far, best first. */
+export const SuggestionList = z
+  .object({ suggestions: z.array(Suggestion) })
+  .openapi('SuggestionList');
+export type SuggestionList = z.infer<typeof SuggestionList>;
+
+/** What is typed so far: nothing yet, for recent searches alone. */
+export const SuggestQuery = z.object({ q: z.string().max(QUERY_MAX) });
+export type SuggestQuery = z.infer<typeof SuggestQuery>;
+
+/**
+ * What to search for, trimmed, and the kinds to keep (`kinds=album&kinds=track`), all when
+ * absent. A single `kinds` arrives as one value, not a list, so it is read as a list of one.
+ */
+export const SearchQuery = z.object({
+  q: z.string().trim().min(1).max(QUERY_MAX),
+  kinds: z
+    .preprocess((v) => (typeof v === 'string' ? [v] : v), z.array(SearchKind).min(1))
+    .optional(),
+});
+export type SearchQuery = z.infer<typeof SearchQuery>;

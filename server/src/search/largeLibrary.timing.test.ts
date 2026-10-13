@@ -1,17 +1,22 @@
 /**
- * How fast search answers within the 50 ms budget: suggestions and results on about 25 000 indexed
- * rows, and suggestions on a library where a few titles repeat thousands of times. This file runs
- * on its own, after every other test (`vitest.timing.config.ts`), so no other test competes for
- * the machine. Each query's time is the median of several runs after a warm-up, and times the
- * query alone: the library is built first.
+ * How fast search answers within the 50 ms budget: suggestions and results through the routes on
+ * about 25 000 indexed rows, and suggestions on a library where a few titles repeat thousands of
+ * times. This file runs on its own, after every other test (`vitest.timing.config.ts`), so no
+ * other test competes for the machine. Each query's time is the median of several runs after a
+ * warm-up, and times the query alone: the library is built first. Neither route asks an upstream,
+ * so a route's time is the whole of the budget.
  */
+import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { buildApp } from '../app.js';
 import type { Creator, IndexKind, IndexRow, SeriesEntry } from '../libraryIndex/rows.js';
 import { applyTree, emptyCounts } from '../libraryIndex/store.js';
 import { openDatabase, type Db } from '../store/connection.js';
+import { createDevice } from '../store/devices.js';
 import { recordSearch } from '../store/recentSearches.js';
+import { createSession } from '../store/sessions.js';
 import { upsertUser } from '../store/users.js';
-import { librarySource, suggestFromIndex } from './library.js';
+import { suggestFromIndex } from './library.js';
 import { suggest } from './suggest.js';
 
 const T0 = Date.UTC(2026, 9, 13, 8);
@@ -148,9 +153,10 @@ const WARM_UP = 2;
 /** Timed runs per query; their median is its time. */
 const RUNS = 7;
 
-/** Each query's time, in milliseconds: the median of its timed runs. */
+/** Each query's time, in milliseconds: the median of its timed runs; and the slowest run of all. */
 async function timed(run: (q: string) => unknown, queries: readonly string[]) {
   const times: Record<string, number> = {};
+  let slowest = 0;
   for (const q of queries) {
     for (let n = 0; n < WARM_UP; n += 1) await run(q);
     const runs: number[] = [];
@@ -160,47 +166,60 @@ async function timed(run: (q: string) => unknown, queries: readonly string[]) {
       runs.push(performance.now() - start);
     }
     times[q] = median(runs);
+    slowest = Math.max(slowest, ...runs);
   }
-  return times;
+  return { times, slowest };
 }
 /** The queries, with their times, that took `ms` or more. */
 const over = (times: Record<string, number>, ms: number) =>
   Object.entries(times).filter(([, time]) => time >= ms);
 
-describe('search on 25 000 indexed rows', () => {
+describe('search on 25 000 indexed rows, through the routes', () => {
   let db: Db;
-  let kara: string;
-  beforeAll(() => {
+  let app: FastifyInstance;
+  let get: (url: string) => Promise<void>;
+  beforeAll(async () => {
     db = openDatabase(':memory:');
     fillLibrary(db);
-    kara = upsertUser(db, { username: 'kara', role: 'member' }).id;
+    const kara = upsertUser(db, { username: 'kara', role: 'member' }).id;
     for (let n = 0; n < 20; n += 1) recordSearch(db, kara, `search ${n}`, T0 + n);
+    const device = createDevice(db, { userId: kara, kind: 'web' });
+    const { token } = createSession(db, { userId: kara, deviceId: device.id, kind: 'bearer' });
+    app = await buildApp({ webDistDir: null, db });
+    get = async (url) => {
+      const res = await app.inject({
+        method: 'GET',
+        url,
+        headers: { authorization: `Bearer ${token}` },
+      });
+      expect(res.statusCode, url).toBe(200);
+    };
   });
-  afterAll(() => db.close());
+  afterAll(async () => {
+    await app.close();
+    db.close();
+  });
+  const suggesting = (q: string) => get(`/api/search/suggest?q=${encodeURIComponent(q)}`);
+  const searching = (q: string) => get(`/api/search?q=${encodeURIComponent(q)}`);
 
   it('holds about 25 000 rows', () => {
     expect(db.prepare('SELECT COUNT(*) AS n FROM index_items').get()).toEqual({ n: 25_650 });
   });
 
-  it('suggests for each two-letter prefix within 50 ms', async () => {
+  it('[M2.search/a] GET /api/search/suggest answers each two-letter prefix within the 50 ms budget, and never past 150 ms', async () => {
     const prefixes = ['th', 'ka', 'lo', 'ma', 'sa', 'be', 'go', 'ra', 'an', 'el', 'mi', 'to'];
 
-    const times = await timed((q) => suggest(db, kara, q), prefixes);
+    const { times, slowest } = await timed(suggesting, prefixes);
 
     expect(over(times, 50)).toEqual([]);
+    expect(slowest).toBeLessThan(150);
   });
 
   it('suggests and searches for the commonest word, and its first two letters, within 50 ms', async () => {
     const queries = ['the', 'th'];
 
-    const suggesting = await timed((q) => suggest(db, kara, q), queries);
-    const searching = await timed(
-      (q) => librarySource(db).search({ q }, new AbortController().signal),
-      queries,
-    );
-
-    expect(over(suggesting, 50)).toEqual([]);
-    expect(over(searching, 50)).toEqual([]);
+    expect(over((await timed(suggesting, queries)).times, 50)).toEqual([]);
+    expect(over((await timed(searching, queries)).times, 50)).toEqual([]);
   });
 });
 
@@ -240,8 +259,8 @@ describe('search on 2 000 albums whose 11 tracks share their titles with every o
   });
 
   it('suggests for the repeated titles within 50 ms, reading each title once', async () => {
-    const suggesting = await timed((q) => suggest(db, 'nobody', q), ['tr', 'track']);
+    const { times } = await timed((q) => suggest(db, 'nobody', q), ['tr', 'track']);
 
-    expect(over(suggesting, 50)).toEqual([]);
+    expect(over(times, 50)).toEqual([]);
   });
 });

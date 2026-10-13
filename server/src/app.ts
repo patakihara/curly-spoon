@@ -19,6 +19,7 @@ import { libraryRoutes } from './routes/library.js';
 import { type PlaybackOptions, playRoutes, type UpstreamAccess } from './routes/play.js';
 import { IndexLookup } from './queues/lookup.js';
 import { Sessions } from './queues/sessions.js';
+import { searchRoutes } from './routes/search.js';
 import { sessionRoutes } from './routes/sessions.js';
 import { setupRoutes } from './routes/setup.js';
 import { SIGN_IN_PAGE, signOnRoutes } from './routes/signOn.js';
@@ -137,6 +138,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   bookmarkRoutes(app, { db, upstreams: options.upstreams ?? null });
   libraryRoutes(app, { db, upstreams });
   itemRoutes(app, { db, upstreams });
+  searchRoutes(app, { db, now: options.now ?? Date.now });
 
   const distDir = options.webDistDir;
   if (distDir !== null && existsSync(distDir)) {

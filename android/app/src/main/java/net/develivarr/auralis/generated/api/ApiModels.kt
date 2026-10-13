@@ -525,6 +525,52 @@ enum class Role {
 }
 
 @Serializable
+enum class SearchKind {
+    @SerialName("track")
+    TRACK,
+    @SerialName("album")
+    ALBUM,
+    @SerialName("artist")
+    ARTIST,
+    @SerialName("book")
+    BOOK,
+    @SerialName("author")
+    AUTHOR,
+    @SerialName("series")
+    SERIES,
+    @SerialName("show")
+    SHOW,
+    @SerialName("episode")
+    EPISODE,
+}
+
+@Serializable
+data class SearchParent(
+    val ref: MediaRef,
+    val title: String,
+)
+
+@Serializable
+data class SearchResult(
+    val ref: MediaRef,
+    val kind: SearchKind,
+    val title: String,
+    val creators: List<String>,
+    val parent: SearchParent?,
+    val art: String?,
+    val duration: Double?,
+    val year: Long?,
+    val publishedAt: Long?,
+    val availability: Availability,
+)
+
+@Serializable
+data class SearchResults(
+    val query: String,
+    val results: List<SearchResult>,
+)
+
+@Serializable
 enum class Service {
     @SerialName("abs")
     ABS,
@@ -556,6 +602,40 @@ enum class StepDirection {
     @SerialName("back")
     BACK,
 }
+
+@Serializable
+data class Suggestion(
+    val kind: SuggestionKind,
+    val text: String,
+    val ref: MediaRef?,
+)
+
+@Serializable
+enum class SuggestionKind {
+    @SerialName("track")
+    TRACK,
+    @SerialName("album")
+    ALBUM,
+    @SerialName("artist")
+    ARTIST,
+    @SerialName("book")
+    BOOK,
+    @SerialName("author")
+    AUTHOR,
+    @SerialName("series")
+    SERIES,
+    @SerialName("show")
+    SHOW,
+    @SerialName("episode")
+    EPISODE,
+    @SerialName("recent")
+    RECENT,
+}
+
+@Serializable
+data class SuggestionList(
+    val suggestions: List<Suggestion>,
+)
 
 @Serializable
 data class TokenBody(

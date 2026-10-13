@@ -42,6 +42,7 @@ import {
   ProgressBody,
   ProgressReport,
 } from './play.js';
+import { SearchQuery, SearchResults, SuggestionList, SuggestQuery } from './search.js';
 import {
   ActiveQueueBody,
   AddToQueueBody,
@@ -434,6 +435,29 @@ export const mediaArt = {
   stream: 'image',
 } as const satisfies Route;
 
+export const getSearchSuggest = {
+  method: 'GET',
+  path: '/api/search/suggest',
+  operationId: 'getSearchSuggest',
+  summary: 'Suggestions as the signed-in person types a search',
+  responseDescription:
+    "Their own recent searches, then titles and names from the household's library index, best first.",
+  response: SuggestionList,
+  access: 'member',
+  query: SuggestQuery,
+} as const satisfies Route;
+
+export const getSearch = {
+  method: 'GET',
+  path: '/api/search',
+  operationId: 'getSearch',
+  summary: "A search of the household's library, kept among the signed-in person's recent searches",
+  responseDescription: 'The best results first, of the kinds asked for, or of every kind.',
+  response: SearchResults,
+  access: 'member',
+  query: SearchQuery,
+} as const satisfies Route;
+
 /** Every route the API has. The generator and the server's route test both read this list. */
 export const routes: readonly Route[] = [
   health,
@@ -466,4 +490,6 @@ export const routes: readonly Route[] = [
   listLibrary,
   getItem,
   mediaArt,
+  getSearchSuggest,
+  getSearch,
 ];

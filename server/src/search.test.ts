@@ -1,0 +1,390 @@
+/**
+ * Search and suggestions through the real routes, on an index the index job fills from the
+ * recordings: page four of each library (two books, two shows with their episodes, two albums
+ * with their tracks), then the four recorded Ursula K. Le Guin books, written as the job writes an
+ * item. Both routes read the household's whole index and the store, and ask no upstream: the
+ * upstream fake answers each person's own recorded `GET /api/me` and `GET /UserViews` (otto's
+ * granting only Podcasts and no music library) for the library lists, and records every call.
+ */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { LibraryList, SearchResults, SuggestionList } from '@auralis/schema';
+import { type FastifyInstance } from 'fastify';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { AbsClient } from './adapters/audiobookshelf/client.js';
+import { itemSummarySchema } from './adapters/audiobookshelf/schemas.js';
+import { readFeed } from './adapters/feed/client.js';
+import { type FetchLike } from './adapters/http/fetch.js';
+import { type Recording, recordingSchema } from './adapters/http/recording.js';
+import { replayFetch } from './adapters/http/replay.js';
+import { JellyfinClient } from './adapters/jellyfin/client.js';
+import { buildApp } from './app.js';
+import { runIndex } from './libraryIndex/job.js';
+import { absTree } from './libraryIndex/rows.js';
+import { applyTree, emptyCounts, listIndexed } from './libraryIndex/store.js';
+import { openDatabase, type Db } from './store/connection.js';
+import { createDevice } from './store/devices.js';
+import { createSession } from './store/sessions.js';
+import { saveLink } from './store/upstreamLinks.js';
+import { upsertUser } from './store/users.js';
+import { searchTokens } from './text/fold.js';
+
+const ADAPTERS = fileURLToPath(new URL('./adapters/', import.meta.url));
+const T0 = Date.UTC(2026, 9, 13, 8);
+const KEY = Buffer.alloc(32, 7);
+const UPSTREAM = 'http://upstream.invalid';
+
+function recording(upstream: string, call: string): Recording {
+  const file = join(ADAPTERS, upstream, 'recordings', `${call}.json`);
+  return recordingSchema.parse(JSON.parse(readFileSync(file, 'utf8')));
+}
+const abs = (call: string) => recording('audiobookshelf', call);
+const jf = (call: string) => recording('jellyfin', call);
+const json = <T>(r: Recording) => (r.response.body as { json: T }).json;
+
+interface Libraries {
+  libraries: { id: string; mediaType: string }[];
+}
+interface AbsItem {
+  id: string;
+  media: { metadata: { title: string }; episodes?: { id: string; title: string }[] };
+}
+interface AbsMe {
+  permissions: { accessAllLibraries: boolean };
+  librariesAccessible: string[];
+  mediaProgress: unknown[];
+}
+interface JfItems {
+  Items: { Id: string; Name: string }[];
+  TotalRecordCount: number;
+}
+
+const podcastsLibrary = json<Libraries>(abs('library-list')).libraries.find(
+  (l) => l.mediaType === 'podcast',
+)!.id;
+const books = ['index-book-1', 'index-book-2'].map((c) => json<AbsItem>(abs(c)));
+const shows = ['index-show-1', 'index-show-2'].map((c) => json<AbsItem>(abs(c)));
+const albums = json<JfItems>(jf('jf-library-albums-1')).Items;
+const tracks = ['index-album-tracks-1', 'index-album-tracks-2'].flatMap(
+  (c) => json<JfItems>(jf(c)).Items,
+);
+
+/** otto's `GET /api/me`: the recorded one, granted only the Podcasts library. The only change. */
+const ottoMe = structuredClone(abs('me'));
+Object.assign(json<AbsMe>(ottoMe), {
+  permissions: { ...json<AbsMe>(ottoMe).permissions, accessAllLibraries: false },
+  librariesAccessible: [podcastsLibrary],
+  mediaProgress: [],
+});
+/** otto's `GET /UserViews`: the recorded one, without the Music library. The only change. */
+const ottoViews = structuredClone(jf('jf-user-views'));
+Object.assign(json<JfItems>(ottoViews), { Items: [], TotalRecordCount: 0 });
+
+const common = { baseUrl: UPSTREAM, token: '<token>' };
+
+/** The recorded index: the job's recorded page of each library, then the four Le Guin books. */
+async function index(db: Db) {
+  const result = await runIndex({
+    db,
+    abs: new AbsClient({
+      ...common,
+      fetch: replayFetch(
+        [
+          'library-list',
+          'index-books-page',
+          'index-book-1',
+          'index-book-2',
+          'index-shows-page',
+          'index-show-1',
+          'index-show-2',
+        ].map(abs),
+      ),
+    }),
+    jellyfin: new JellyfinClient({
+      ...common,
+      fetch: replayFetch(
+        ['library-list', 'jf-library-albums-1', 'index-album-tracks-1', 'index-album-tracks-2'].map(
+          jf,
+        ),
+      ),
+    }),
+    feeds: (url: string) =>
+      readFeed(replayFetch(['show-1-feed', 'show-2-feed'].map((c) => recording('feed', c))), url),
+    now: () => T0,
+    random: () => 0,
+    pageSize: 2,
+    pages: { first: 4, count: 1 },
+  });
+  expect(result.abs?.error).toBeNull();
+  expect(result.jellyfin?.error).toBeNull();
+  for (const call of ['shell-book-1', 'shell-book-2', 'series-book-1', 'series-book-2']) {
+    applyTree(db, absTree(itemSummarySchema.parse(json(abs(call)))), T0, emptyCounts());
+  }
+}
+
+let apps: FastifyInstance[] = [];
+let db: Db;
+beforeEach(async () => {
+  db = openDatabase(':memory:');
+  await index(db);
+});
+afterEach(async () => {
+  await Promise.all(apps.map((app) => app.close()));
+  apps = [];
+  db.close();
+});
+
+/** kara, granted every library and seeing Music; otto, granted only Podcasts, seeing no music. */
+async function server() {
+  const asked: string[] = [];
+  const kara = replayFetch([abs('me'), jf('jf-user-views')]);
+  const otto = replayFetch([ottoMe, ottoViews]);
+  const fetch: FetchLike = async (url, init) => {
+    const { pathname, search } = new URL(url);
+    asked.push(`${pathname}${search}`);
+    const authorization = new Headers(init?.headers).get('authorization') ?? '';
+    return (authorization.includes('otto') ? otto : kara)(url, init);
+  };
+  const bearer: Record<string, string> = {};
+  for (const name of ['kara', 'otto']) {
+    const user = upsertUser(db, { username: name, role: 'member' });
+    for (const service of ['abs', 'jellyfin'] as const) {
+      saveLink(db, KEY, {
+        userId: user.id,
+        service,
+        upstreamUserId: `${service}-${name}`,
+        token: `${service}-token-${name}`,
+        state: 'linked',
+      });
+    }
+    const device = createDevice(db, { userId: user.id, kind: 'web' });
+    bearer[name] = createSession(db, {
+      userId: user.id,
+      deviceId: device.id,
+      kind: 'bearer',
+    }).token;
+  }
+  let clock = T0;
+  const app = await buildApp({
+    webDistDir: null,
+    db,
+    upstreams: { key: KEY, config: { absUrl: UPSTREAM, jellyfinUrl: UPSTREAM }, fetch },
+    now: () => (clock += 1000),
+  });
+  apps.push(app);
+  const get = (url: string, name: string | null = 'kara') =>
+    app.inject({
+      method: 'GET',
+      url,
+      headers: name === null ? {} : { authorization: `Bearer ${bearer[name] ?? ''}` },
+    });
+  const search = async (query: string, name = 'kara') => {
+    const res = await get(`/api/search?${query}`, name);
+    expect(res.statusCode).toBe(200);
+    return SearchResults.parse(res.json()).results;
+  };
+  const suggest = async (q: string, name = 'kara') => {
+    const res = await get(`/api/search/suggest?${new URLSearchParams({ q }).toString()}`, name);
+    expect(res.statusCode).toBe(200);
+    return SuggestionList.parse(res.json()).suggestions;
+  };
+  const listed = async (medium: string, name: string) => {
+    const res = await get(`/api/library/${medium}`, name);
+    expect(res.statusCode).toBe(200);
+    return LibraryList.parse(res.json()).items;
+  };
+  return { asked, get, search, suggest, listed };
+}
+
+const q = (text: string) => `q=${encodeURIComponent(text)}`;
+const shown = (results: { kind: string; title: string }[]) => results.map((r) => [r.kind, r.title]);
+
+describe('[M2.search/a] suggestions from the index for a two-letter prefix', () => {
+  it('[M2.search/a] GET /api/search/suggest for the first two letters of a recorded album title suggests that album, with its kind, from the index', async () => {
+    const s = await server();
+    const album = albums[0]!;
+    const prefix = album.Name.slice(0, 2);
+
+    const suggestions = await s.suggest(prefix);
+
+    expect(suggestions).toContainEqual({
+      kind: 'album',
+      text: album.Name,
+      ref: { source: 'jellyfin', id: album.Id },
+    });
+    const folded = searchTokens(prefix)[0]!;
+    for (const suggestion of suggestions) {
+      expect(suggestion.kind).not.toBe('recent');
+      expect(searchTokens(suggestion.text).some((w) => w.startsWith(folded))).toBe(true);
+      expect(listIndexed(db).some((r) => r.id === suggestion.ref?.id)).toBe(true);
+    }
+  });
+});
+
+describe('[M2.search/b] an exact title ranks above partial matches', () => {
+  it('[M2.search/b] a recorded show’s title ranks the show above the episodes whose titles hold it', async () => {
+    const s = await server();
+    const show = shows.find((sh) =>
+      sh.media.episodes!.some(
+        (e) => e.title !== sh.media.metadata.title && e.title.includes(sh.media.metadata.title),
+      ),
+    )!;
+    const title = show.media.metadata.title;
+
+    const results = await s.search(q(title));
+
+    expect(results[0]).toMatchObject({ kind: 'show', title, ref: { source: 'abs', id: show.id } });
+    const partial = results.slice(1).filter((r) => r.title.includes(title));
+    expect(partial.length).toBeGreaterThan(0);
+    expect(results.slice(1).every((r) => r.title !== title)).toBe(true);
+  });
+
+  it('[M2.search/b] a recorded track’s exact title ranks above an album whose title only starts with it', async () => {
+    const track = tracks.find((t) => t.Name === 'Dreams')!;
+    // The recorded album, with another id and a longer title starting with the track's: the only changes.
+    const album = listIndexed(db).find((r) => r.kind === 'album')!;
+    applyTree(
+      db,
+      { top: { ...album, id: 'f'.repeat(32), title: `${track.Name} Deluxe` }, children: [] },
+      T0,
+      emptyCounts(),
+    );
+    const s = await server();
+
+    const results = await s.search(q(track.Name));
+
+    expect(shown(results).slice(0, 2)).toEqual([
+      ['track', track.Name],
+      ['album', `${track.Name} Deluxe`],
+    ]);
+  });
+});
+
+describe('[M2.search/c] search over the household’s library, on the recordings', () => {
+  it('[M2.search/c] kind filters hide rows without reordering the rest', async () => {
+    const s = await server();
+    const all = await s.search(q('the'));
+    const kinds = new Set(all.map((r) => r.kind));
+    expect(kinds.size).toBeGreaterThanOrEqual(4);
+
+    for (const kind of kinds) {
+      const only = await s.search(`${q('the')}&kinds=${kind}`);
+      expect(only, kind).toEqual(all.filter((r) => r.kind === kind));
+    }
+    const [first, second] = [...kinds];
+    const two = await s.search(`${q('the')}&kinds=${first}&kinds=${second}`);
+    expect(two).toEqual(all.filter((r) => r.kind === first || r.kind === second));
+  });
+
+  it('[M2.search/c] every result is owned, on the household’s own servers', async () => {
+    const s = await server();
+
+    for (const text of ['the', 'fleetwood', 'earthsea', 'megacorp']) {
+      const results = await s.search(q(text));
+      expect(results.length, text).toBeGreaterThan(0);
+      expect(results.map((r) => r.availability)).toEqual(results.map(() => ({ kind: 'owned' })));
+    }
+  });
+
+  it('[M2.search/c] results and suggestions cover the household’s library: otto, granted only Podcasts and seeing no music, still finds its books and albums', async () => {
+    const s = await server();
+    expect(await s.listed('books', 'otto')).toEqual([]);
+    expect(await s.listed('music', 'otto')).toEqual([]);
+    s.asked.length = 0;
+
+    for (const book of books) {
+      const title = book.media.metadata.title;
+      const results = await s.search(q(title), 'otto');
+      expect(results[0], title).toMatchObject({
+        kind: 'book',
+        ref: { source: 'abs', id: book.id },
+      });
+      expect(await s.suggest(title.slice(0, 2), 'otto')).toContainEqual({
+        kind: 'book',
+        text: title,
+        ref: { source: 'abs', id: book.id },
+      });
+    }
+    for (const album of albums) {
+      const results = await s.search(q(album.Name), 'otto');
+      expect(results[0], album.Name).toMatchObject({
+        kind: 'album',
+        ref: { source: 'jellyfin', id: album.Id },
+      });
+      expect(await s.suggest(album.Name.slice(0, 2), 'otto')).toContainEqual({
+        kind: 'album',
+        text: album.Name,
+        ref: { source: 'jellyfin', id: album.Id },
+      });
+    }
+    expect(s.asked).toEqual([]);
+  });
+
+  it('[M2.search/c] a search is kept among that person’s recent searches only: first in their suggestions, never in another’s', async () => {
+    const s = await server();
+    const album = albums[0]!;
+
+    await s.search(q(`  ${album.Name} `));
+
+    expect(await s.suggest('')).toEqual([{ kind: 'recent', text: album.Name, ref: null }]);
+    expect((await s.suggest(album.Name.slice(0, 2)))[0]).toEqual({
+      kind: 'recent',
+      text: album.Name,
+      ref: null,
+    });
+    expect(await s.suggest('', 'otto')).toEqual([]);
+    expect((await s.suggest(album.Name.slice(0, 2), 'otto')).map((x) => x.kind)).not.toContain(
+      'recent',
+    );
+  });
+
+  it('[M2.search/c] suggestions keep nothing: typing is not searching', async () => {
+    const s = await server();
+
+    for (const typed of ['', 'r', 'ru', 'rumours']) await s.suggest(typed);
+
+    expect(await s.suggest('')).toEqual([]);
+    expect(db.prepare('SELECT COUNT(*) AS n FROM recent_searches').get()).toEqual({ n: 0 });
+  });
+});
+
+describe('the search routes', () => {
+  it('refuse a kind they don’t know, an empty or spaces-only search, and a query over 200 characters', async () => {
+    const s = await server();
+
+    for (const url of [
+      `/api/search?${q('the')}&kinds=video`,
+      `/api/search?${q('the')}&kinds=Album`,
+      '/api/search?q=',
+      `/api/search?${q('   ')}`,
+      '/api/search',
+      `/api/search?${q('a'.repeat(201))}`,
+      `/api/search/suggest?${q('a'.repeat(201))}`,
+      '/api/search/suggest',
+    ]) {
+      const res = await s.get(url);
+      expect([url, res.statusCode, res.json()]).toEqual([url, 400, { error: 'bad_request' }]);
+    }
+    expect(db.prepare('SELECT COUNT(*) AS n FROM recent_searches').get()).toEqual({ n: 0 });
+  });
+
+  it('answer 401 to no session', async () => {
+    const s = await server();
+
+    for (const url of [`/api/search?${q('the')}`, `/api/search/suggest?${q('th')}`]) {
+      expect((await s.get(url, null)).statusCode, url).toBe(401);
+    }
+  });
+
+  it('ask no upstream', async () => {
+    const s = await server();
+
+    await s.suggest('');
+    await s.suggest('ru');
+    await s.search(q('rumours'));
+    await s.search(`${q('the')}&kinds=book&kinds=episode`);
+
+    expect(s.asked).toEqual([]);
+  });
+});
