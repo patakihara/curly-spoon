@@ -23,7 +23,8 @@ All under `/api`, so none clashes with a page address. Route names avoid "browse
 
 `GET /feed` · `/feed/shelves/{id}`\
 `GET /library/{medium}`\
-`GET /items/{ref}` · `/people/{ref}` · `/series/{ref}`
+`GET /items/{ref}` · `/people/{ref}` · `/series/{ref}`\
+Each takes `?refresh` (pull to refresh)
 :::
 
 ::: card

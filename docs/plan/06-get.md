@@ -9,7 +9,7 @@ One pipeline and status vocabulary for all three media, so every request renders
 
 ::: diagram get
 
-- **"Done" means it plays.** A request reaches <span class="pill t-lib">In library</span> only once the item is in the local index, so the card turns playable by itself, with no `importRequested` dead end.
+- **"Done" means it plays.** A request reaches <span class="pill t-lib">In library</span> only once the item is in the local index, so the card turns playable by itself.
 - **A Requests view** (a Browse chip in the Sonora mock-up) lists every album and book in flight with source, size, status, retry and cancel. Podcasts never appear: subscribing is instant.
 
 ### Music

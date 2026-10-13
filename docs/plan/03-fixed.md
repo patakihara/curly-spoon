@@ -58,7 +58,6 @@ Fixed inputs, not re-opened.
 - Recommendations come from **external** sources, mixed into Browse. _"not useful to me if recommendations only show things already in my library."_
 - Mixed-content carousels, at most one episode per podcast in a carousel, each card with a reason line, and a loading state held until everything arrives.
 - One provider per medium: _"Why would the recommendation services for the THREE different kinds of content we have be the same?"_ Provider choice is delegated. Audible and YouTube terms of service don't matter for your own install.
-- Research picks: for books, Audible's "listeners also enjoyed", with Audnexus for metadata; for podcasts, Apple Podcasts' "You Might Also Like", with PodcastIndex and iTunes as the catalogue; for music, YouTube Music radio alongside ListenBrainz. All checked live.
 - Search doubles as the request view: one global ranking across all sources, each result marked owned, streamable or requestable (never owned and requestable). Suggestions while typing, results on submit; type buttons only filter.
 - Lyrics search uses an external provider (LRCLIB).
 :::

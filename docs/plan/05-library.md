@@ -22,7 +22,7 @@ part: The product
 
 ### Your YouTube account
 
-**Watched state and position for your YouTube channels** sync with your YouTube account, opt-in per person, off until you connect it, and only for the channels you've added; the rest of your YouTube history is never read into Auralis. Google's API hides watch history, so this uses your browser sign-in cookies, stored encrypted on the server under your user only. Unsupported, it can break when YouTube changes.
+**Watched state and position for your YouTube channels** sync with your YouTube account, opt-in per person, off until you connect it, and only for the channels you've added; the rest of your YouTube history is never read into Auralis. Google's API hides watch history, so this uses your browser sign-in cookies, stored encrypted on the server under your user only.
 
 - **From YouTube:** an hourly job checks your watch history for videos from your channels. A finished video marks the episode played; a half-watched one sets your position in it. YouTube gives only a percentage, so Auralis resumes a few seconds early. Anything else in the history is skipped, not stored.
 - **To YouTube:** on pause and stop, Auralis sends your position as the "watched up to here" report YouTube's own player sends; finishing an episode marks the video watched. Whichever side played most recently wins.
