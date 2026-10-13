@@ -153,3 +153,78 @@ describe('the art migration', () => {
     db.close();
   });
 });
+
+describe('the search index migration', () => {
+  it('runs on a SQLite with FTS5, and fills the search tables from what the index already holds', () => {
+    const db = new Database(':memory:');
+    db.pragma('foreign_keys = ON');
+    runMigrations(
+      db,
+      migrations.filter((m) => m.id < 10),
+    );
+    const add = db.prepare(
+      `INSERT INTO index_items (source, upstream_id, kind, parent_id, title, creators, series,
+         genres, content_hash, version, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, '[]', 'h', 1, 1, 1)`,
+    );
+    add.run(
+      'abs',
+      'book-1',
+      'book',
+      null,
+      'Les Misérables',
+      JSON.stringify([{ id: 'a1', name: 'Victor Hugo', role: 'author' }]),
+      JSON.stringify([{ id: 's1', name: "L'Été", sequence: '1' }]),
+    );
+    add.run('jellyfin', 'album-1', 'album', null, 'Saltwater', '[]', '[]');
+    add.run(
+      'jellyfin',
+      'track-1',
+      'track',
+      'album-1',
+      'Don’t Look Back',
+      JSON.stringify([{ name: 'Émile', role: 'artist' }]),
+      '[]',
+    );
+
+    runMigrations(db);
+
+    expect(() => db.exec('CREATE VIRTUAL TABLE probe USING fts5(text)')).not.toThrow();
+    expect(
+      db.prepare('SELECT source, upstream_id, title, people, series FROM search_items').all(),
+    ).toEqual([
+      {
+        source: 'abs',
+        upstream_id: 'book-1',
+        title: 'les miserables',
+        people: 'victor hugo',
+        series: 'lete',
+      },
+      { source: 'jellyfin', upstream_id: 'album-1', title: 'saltwater', people: '', series: '' },
+      {
+        source: 'jellyfin',
+        upstream_id: 'track-1',
+        title: 'dont look back',
+        people: 'emile',
+        series: '',
+      },
+    ]);
+    const hits = (q: string) =>
+      db
+        .prepare(
+          `SELECT search_items.upstream_id AS id FROM search_fts
+           JOIN search_items ON search_items.id = search_fts.rowid
+           WHERE search_fts MATCH ? ORDER BY id`,
+        )
+        .all(q);
+    expect(hits('"sa"*')).toEqual([{ id: 'album-1' }]);
+    expect(hits('"emi"*')).toEqual([{ id: 'track-1' }]);
+    expect(hits('"hugo"')).toEqual([{ id: 'book-1' }]);
+
+    const applied = appliedIds(db);
+    runMigrations(db);
+    expect(appliedIds(db)).toEqual(applied);
+    expect(db.prepare('SELECT COUNT(*) AS n FROM search_items').get()).toEqual({ n: 3 });
+    db.close();
+  });
+});

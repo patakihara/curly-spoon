@@ -4,6 +4,7 @@
  */
 
 import type Database from 'better-sqlite3';
+import { searchText } from '../search/items.js';
 
 export interface Migration {
   id: number;
@@ -379,6 +380,74 @@ export const migrations: readonly Migration[] = [
         ALTER TABLE index_items ADD COLUMN has_art INTEGER NOT NULL DEFAULT 0;
         DELETE FROM index_sync;
       `);
+    },
+  },
+  {
+    id: 10,
+    name: 'search_index',
+    up: (db) => {
+      const fts5 = db.prepare("SELECT 1 FROM pragma_module_list WHERE name = 'fts5'").get();
+      if (fts5 === undefined) throw new Error('search needs SQLite built with FTS5');
+      db.exec(`
+        -- Each indexed row's searchable text, folded in JavaScript (search/items.ts), so search
+        -- and sign-in share one fold. Its own id is the full-text row id: index_items' rowid can
+        -- change on VACUUM. It goes with its index row.
+        CREATE TABLE search_items (
+          id          INTEGER PRIMARY KEY,
+          source      TEXT NOT NULL,
+          upstream_id TEXT NOT NULL,
+          title       TEXT NOT NULL,
+          people      TEXT NOT NULL,
+          series      TEXT NOT NULL,
+          UNIQUE (source, upstream_id),
+          FOREIGN KEY (source, upstream_id)
+            REFERENCES index_items(source, upstream_id) ON DELETE CASCADE
+        );
+        CREATE INDEX idx_search_items_title ON search_items(title);
+
+        -- Words of the folded text, and their two- and three-letter prefixes. The text is folded
+        -- already, so the tokenizer only splits it into words.
+        CREATE VIRTUAL TABLE search_fts USING fts5(
+          title, people, series,
+          content = 'search_items', content_rowid = 'id',
+          tokenize = 'unicode61 remove_diacritics 0', prefix = '2 3'
+        );
+        CREATE TRIGGER search_items_insert AFTER INSERT ON search_items BEGIN
+          INSERT INTO search_fts (rowid, title, people, series)
+            VALUES (new.id, new.title, new.people, new.series);
+        END;
+        CREATE TRIGGER search_items_delete AFTER DELETE ON search_items BEGIN
+          INSERT INTO search_fts (search_fts, rowid, title, people, series)
+            VALUES ('delete', old.id, old.title, old.people, old.series);
+        END;
+        CREATE TRIGGER search_items_update AFTER UPDATE ON search_items BEGIN
+          INSERT INTO search_fts (search_fts, rowid, title, people, series)
+            VALUES ('delete', old.id, old.title, old.people, old.series);
+          INSERT INTO search_fts (rowid, title, people, series)
+            VALUES (new.id, new.title, new.people, new.series);
+        END;
+      `);
+      const rows = db
+        .prepare('SELECT source, upstream_id, title, creators, series FROM index_items')
+        .all() as {
+        source: string;
+        upstream_id: string;
+        title: string;
+        creators: string;
+        series: string;
+      }[];
+      const add = db.prepare(
+        `INSERT INTO search_items (source, upstream_id, title, people, series)
+         VALUES (@source, @upstream_id, @title, @people, @series)`,
+      );
+      for (const row of rows) {
+        const text = searchText({
+          title: row.title,
+          creators: JSON.parse(row.creators) as { name: string }[],
+          series: JSON.parse(row.series) as { name: string }[],
+        });
+        add.run({ source: row.source, upstream_id: row.upstream_id, ...text });
+      }
     },
   },
 ];

@@ -3,6 +3,7 @@
  * `updated_at` say which rows a run really touched.
  */
 import { createHash } from 'node:crypto';
+import { searchText, writeSearchItem } from '../search/items.js';
 import type { Db } from '../store/connection.js';
 import type {
   IndexKind,
@@ -148,6 +149,7 @@ function upsertRow(db: Db, row: IndexRow, now: number, counts: IndexCounts): voi
   );
   for (const [scheme, value] of Object.entries(row.ids))
     addId.run(row.source, row.id, scheme, value);
+  writeSearchItem(db, row, searchText(row));
 }
 
 /**
