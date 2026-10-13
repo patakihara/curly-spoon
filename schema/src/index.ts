@@ -111,6 +111,7 @@ export {
   type Access,
   type Route,
 } from './routes.js';
+export { SearchKind, SearchParent, SearchResult, Suggestion, SuggestionKind } from './search.js';
 export {
   ActiveQueueBody,
   AddToQueueBody,

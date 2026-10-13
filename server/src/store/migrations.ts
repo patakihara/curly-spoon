@@ -450,6 +450,23 @@ export const migrations: readonly Migration[] = [
       }
     },
   },
+  {
+    id: 11,
+    name: 'recent_searches',
+    up: (db) => {
+      db.exec(`
+        -- Each person's recent searches, shared by their devices: one per folded text, in the
+        -- form last typed. Only the newest are kept (store/recentSearches.ts).
+        CREATE TABLE recent_searches (
+          user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          folded      TEXT NOT NULL,
+          query       TEXT NOT NULL,
+          searched_at INTEGER NOT NULL,
+          PRIMARY KEY (user_id, folded)
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(
