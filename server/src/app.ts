@@ -94,6 +94,15 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   const cookieSecure = options.cookieSecure ?? 'auto';
   const app = Fastify({ logger: loggerOptions(options.logger), trustProxy: proxy.trust });
 
+  // Every failure answers `{ error }`, as a refusal does: a request the framework itself refuses
+  // (a body that is not JSON, one too large) as `bad_request` with its status, and anything else
+  // as `internal`, logged here and never described to the client.
+  app.setErrorHandler((error: { statusCode?: number }, request, reply) => {
+    const status = error.statusCode ?? 500;
+    if (status >= 400 && status < 500) return reply.code(status).send({ error: 'bad_request' });
+    request.log.error({ err: error }, 'request failed');
+    return reply.code(500).send({ error: 'internal' });
+  });
   await app.register(fastifyCookie);
   registerAccess(app, { db, proxy, cookieSecure, publicOrigin: options.publicOrigin });
 

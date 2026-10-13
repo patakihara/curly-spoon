@@ -52,8 +52,19 @@ export const Suggestion = z
   .openapi('Suggestion');
 export type Suggestion = z.infer<typeof Suggestion>;
 
-/** The longest query either route takes, in characters. */
+/** The longest query either route takes, in characters: code points, as `maxLength` counts. */
 const QUERY_MAX = 200;
+
+/**
+ * What is typed, trimmed, then up to `QUERY_MAX` characters; an emoji or other letter outside the
+ * Basic Multilingual Plane counts as one, though JavaScript's `length` counts it as two.
+ */
+const queryText = () =>
+  z
+    .string()
+    .trim()
+    .refine((q) => [...q].length <= QUERY_MAX)
+    .openapi({ maxLength: QUERY_MAX });
 
 /** A search's results, best first, for the query as it was searched. */
 export const SearchResults = z
@@ -67,8 +78,8 @@ export const SuggestionList = z
   .openapi('SuggestionList');
 export type SuggestionList = z.infer<typeof SuggestionList>;
 
-/** What is typed so far: nothing yet, for recent searches alone. */
-export const SuggestQuery = z.object({ q: z.string().max(QUERY_MAX) });
+/** What is typed so far, trimmed: nothing yet, for recent searches alone. */
+export const SuggestQuery = z.object({ q: queryText() });
 export type SuggestQuery = z.infer<typeof SuggestQuery>;
 
 /**
@@ -76,7 +87,9 @@ export type SuggestQuery = z.infer<typeof SuggestQuery>;
  * absent. A single `kinds` arrives as one value, not a list, so it is read as a list of one.
  */
 export const SearchQuery = z.object({
-  q: z.string().trim().min(1).max(QUERY_MAX),
+  q: queryText()
+    .refine((q) => q !== '')
+    .openapi({ minLength: 1, maxLength: QUERY_MAX }),
   kinds: z
     .preprocess((v) => (typeof v === 'string' ? [v] : v), z.array(SearchKind).min(1))
     .optional(),

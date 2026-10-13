@@ -52,9 +52,45 @@ function nullableNamed(
   if (inner !== undefined && refId !== undefined && !found.has(refId)) found.set(refId, inner);
 }
 
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** `{ type: [t, 'null'] }` alone: what zod-to-openapi puts beside a `$ref` for `.nullable()`. */
+const isNullCompanion = (value: unknown) =>
+  isObject(value) &&
+  Object.keys(value).length === 1 &&
+  Array.isArray(value.type) &&
+  value.type.length === 2 &&
+  value.type.includes('null');
+
+/**
+ * zod-to-openapi 7 writes a named schema reached as `.nullable()` as
+ * `allOf: [{ $ref }, { type: [t, 'null'] }]`, which null never passes: `allOf` needs both, and
+ * the component itself is not null. Each, anywhere in `node`, becomes
+ * `anyOf: [{ $ref }, { type: 'null' }]`, which says what was meant, in the key's own place.
+ */
+function letNullThrough(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(letNullThrough);
+  if (!isObject(node)) return node;
+  return Object.fromEntries(
+    Object.entries(node).map(([key, value]) => {
+      const nullableRef =
+        key === 'allOf' &&
+        Array.isArray(value) &&
+        value.length === 2 &&
+        isObject(value[0]) &&
+        Object.keys(value[0]).length === 1 &&
+        typeof value[0].$ref === 'string' &&
+        isNullCompanion(value[1]);
+      return nullableRef ? ['anyOf', [value[0], { type: 'null' }]] : [key, letNullThrough(value)];
+    }),
+  );
+}
+
 /**
  * The OpenAPI 3.1 document for these routes; every `.openapi('Name')` schema becomes a component,
- * and so does each of [constants], one literal value both clients name, marked `const`.
+ * and so does each of [constants], one literal value both clients name, marked `const`. A named
+ * schema reached as `.nullable()` is that schema or null.
  * A route that is not public asks for the session cookie or an app's bearer token, and may answer
  * 401 or 403 with `error`. A route that parses its input may answer 400; a rate-limited one, 429;
  * a streamed audio one answers audio, 206 to a range and 416 to a range past the end; a streamed
@@ -165,10 +201,12 @@ export function buildOpenApiDocument(
       });
     }
   }
-  const doc = new OpenApiGeneratorV31(registry.definitions).generateDocument({
-    openapi: '3.1.0',
-    info: { title: 'Auralis API', version: '0.0.0' },
-  });
+  const doc = letNullThrough(
+    new OpenApiGeneratorV31(registry.definitions).generateDocument({
+      openapi: '3.1.0',
+      info: { title: 'Auralis API', version: '0.0.0' },
+    }),
+  ) as ReturnType<OpenApiGeneratorV31['generateDocument']>;
   for (const name of Object.keys(constants)) {
     const schema = doc.components?.schemas?.[name];
     if (!schema || !('enum' in schema) || schema.enum?.length !== 1) {

@@ -687,15 +687,15 @@ export interface components {
         /** @enum {string} */
         QueueStyle: "youtube" | "spotify";
         QueueCurrents: {
-            music: components["schemas"]["QueueItem"] & (Record<string, never> | null);
-            spoken: components["schemas"]["QueueItem"] & (Record<string, never> | null);
+            music: components["schemas"]["QueueItem"] | null;
+            spoken: components["schemas"]["QueueItem"] | null;
         };
         ListeningSession: {
             deviceId: string;
             deviceName: string;
             thisDevice: boolean;
             active: components["schemas"]["QueueType"];
-            switchAfterCurrent: components["schemas"]["QueueType"] & (string | null);
+            switchAfterCurrent: components["schemas"]["QueueType"] | null;
             queueStyle: components["schemas"]["QueueStyle"];
             currents: components["schemas"]["QueueCurrents"];
             rev: number;
@@ -716,20 +716,20 @@ export interface components {
         };
         QueueView: {
             type: components["schemas"]["QueueType"];
-            current: components["schemas"]["QueueViewItem"] & (Record<string, never> | null);
-            position: components["schemas"]["QueuePosition"] & (Record<string, never> | null);
+            current: components["schemas"]["QueueViewItem"] | null;
+            position: components["schemas"]["QueuePosition"] | null;
             user: components["schemas"]["QueueViewItem"][];
-            context: components["schemas"]["QueueViewContext"] & (Record<string, never> | null);
+            context: components["schemas"]["QueueViewContext"] | null;
             rev: number;
-            autoplay: components["schemas"]["QueueViewAutoplay"] & (Record<string, never> | null);
+            autoplay: components["schemas"]["QueueViewAutoplay"] | null;
             played: components["schemas"]["QueueViewPlayed"][];
         };
         Queue: {
             type: components["schemas"]["QueueType"];
-            current: components["schemas"]["QueueItem"] & (Record<string, never> | null);
-            position: components["schemas"]["QueuePosition"] & (Record<string, never> | null);
+            current: components["schemas"]["QueueItem"] | null;
+            position: components["schemas"]["QueuePosition"] | null;
             user: components["schemas"]["QueueItem"][];
-            context: components["schemas"]["QueueContext"] & (Record<string, never> | null);
+            context: components["schemas"]["QueueContext"] | null;
             rev: number;
         };
         PutQueueBody: {
@@ -830,7 +830,7 @@ export interface components {
         Suggestion: {
             kind: components["schemas"]["SuggestionKind"];
             text: string;
-            ref: components["schemas"]["MediaRef"] & (Record<string, never> | null);
+            ref: components["schemas"]["MediaRef"] | null;
         };
         SuggestionList: {
             suggestions: components["schemas"]["Suggestion"][];
@@ -842,7 +842,7 @@ export interface components {
             kind: components["schemas"]["SearchKind"];
             title: string;
             creators: string[];
-            parent: components["schemas"]["SearchParent"] & (Record<string, never> | null);
+            parent: components["schemas"]["SearchParent"] | null;
             art: string | null;
             duration: number | null;
             year: number | null;

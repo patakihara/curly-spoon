@@ -7,9 +7,11 @@
  * granting only Podcasts and no music library) for the library lists, and records every call.
  */
 import { readFileSync } from 'node:fs';
+import { type AddressInfo, connect } from 'node:net';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LibraryList, SearchResults, SuggestionList } from '@auralis/schema';
+import { Ajv2020 } from 'ajv/dist/2020.js';
 import { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AbsClient } from './adapters/audiobookshelf/client.js';
@@ -166,11 +168,21 @@ async function server() {
     }).token;
   }
   let clock = T0;
+  /** What the server logged at warning level or above. */
+  const logs: { level: number; msg: string; err?: { message?: string } }[] = [];
   const app = await buildApp({
     webDistDir: null,
     db,
     upstreams: { key: KEY, config: { absUrl: UPSTREAM, jellyfinUrl: UPSTREAM }, fetch },
     now: () => (clock += 1000),
+    logger: {
+      stream: {
+        write: (line: string) => {
+          const entry = JSON.parse(line) as (typeof logs)[number];
+          if (entry.level >= 40) logs.push(entry);
+        },
+      },
+    },
   });
   apps.push(app);
   const get = (url: string, name: string | null = 'kara') =>
@@ -194,11 +206,68 @@ async function server() {
     expect(res.statusCode).toBe(200);
     return LibraryList.parse(res.json()).items;
   };
-  return { asked, get, search, suggest, listed };
+  return { app, asked, bearer, logs, get, search, suggest, listed };
 }
 
 const q = (text: string) => `q=${encodeURIComponent(text)}`;
 const shown = (results: { kind: string; title: string }[]) => results.map((r) => [r.kind, r.title]);
+
+/** The committed OpenAPI document, as the clients are generated from it. */
+const openApi = new Ajv2020({ strict: false, allErrors: true }).addSchema(
+  JSON.parse(
+    readFileSync(
+      fileURLToPath(new URL('../../schema/generated/openapi.json', import.meta.url)),
+      'utf8',
+    ),
+  ) as object,
+  'openapi',
+);
+/** How `body` fails the document's 200 answer to `method path`: nothing when it fits. */
+function againstOpenApi(method: string, path: string, body: unknown) {
+  const pointer = [
+    'paths',
+    path,
+    method,
+    'responses',
+    '200',
+    'content',
+    'application/json',
+    'schema',
+  ]
+    .map((part) => part.replaceAll('~', '~0').replaceAll('/', '~1'))
+    .join('/');
+  const validate = openApi.compile({ $ref: `openapi#/${pointer}` });
+  return validate(body)
+    ? []
+    : (validate.errors ?? []).map((e) => `${e.instancePath} ${e.message ?? ''}`);
+}
+
+describe('the answers the OpenAPI document describes, for the clients generated from it', () => {
+  it('a search, with and without a parent, suggestions from recents and the index, and an empty queue fit it', async () => {
+    const s = await server();
+    const body = async (url: string) => {
+      const res = await s.get(url);
+      expect(res.statusCode, url).toBe(200);
+      return res.json() as unknown;
+    };
+    await s.search(q('rumours'));
+
+    const searched = await body(`/api/search?${q('the')}`);
+    const suggested = await body(`/api/search/suggest?${q('ru')}`);
+    const queue = await body('/api/queues/music');
+
+    const results = SearchResults.parse(searched).results;
+    expect(results.some((r) => r.parent === null)).toBe(true);
+    expect(results.some((r) => r.parent !== null)).toBe(true);
+    const suggestions = SuggestionList.parse(suggested).suggestions;
+    expect(suggestions.some((x) => x.ref === null)).toBe(true);
+    expect(suggestions.some((x) => x.ref !== null)).toBe(true);
+    expect(queue).toMatchObject({ current: null, position: null });
+    expect(againstOpenApi('get', '/api/search', searched)).toEqual([]);
+    expect(againstOpenApi('get', '/api/search/suggest', suggested)).toEqual([]);
+    expect(againstOpenApi('get', '/api/queues/{type}', queue)).toEqual([]);
+  });
+});
 
 describe('[M2.search/a] suggestions from the index for a two-letter prefix', () => {
   it('[M2.search/a] GET /api/search/suggest for the first two letters of a recorded album title suggests that album, with its kind, from the index', async () => {
@@ -223,21 +292,26 @@ describe('[M2.search/a] suggestions from the index for a two-letter prefix', () 
 });
 
 describe('[M2.search/b] an exact title ranks above partial matches', () => {
-  it('[M2.search/b] a recorded show’s title ranks the show above the episodes whose titles hold it', async () => {
+  it('[M2.search/b] a recorded episode’s exact title ranks above a show whose title only starts with it, though shows come before episodes otherwise', async () => {
+    const episode = shows
+      .flatMap((sh) => sh.media.episodes!)
+      .find((e) => e.title === 'The Siberian Heart Attack')!;
+    // The recorded show, with another id and a longer title starting with the episode's: the only changes.
+    const show = listIndexed(db).find((r) => r.kind === 'show')!;
+    applyTree(
+      db,
+      { top: { ...show, id: 'f'.repeat(36), title: `${episode.title} Revisited` }, children: [] },
+      T0,
+      emptyCounts(),
+    );
     const s = await server();
-    const show = shows.find((sh) =>
-      sh.media.episodes!.some(
-        (e) => e.title !== sh.media.metadata.title && e.title.includes(sh.media.metadata.title),
-      ),
-    )!;
-    const title = show.media.metadata.title;
 
-    const results = await s.search(q(title));
+    const results = await s.search(q(episode.title));
 
-    expect(results[0]).toMatchObject({ kind: 'show', title, ref: { source: 'abs', id: show.id } });
-    const partial = results.slice(1).filter((r) => r.title.includes(title));
-    expect(partial.length).toBeGreaterThan(0);
-    expect(results.slice(1).every((r) => r.title !== title)).toBe(true);
+    expect(shown(results).slice(0, 2)).toEqual([
+      ['episode', episode.title],
+      ['show', `${episode.title} Revisited`],
+    ]);
   });
 
   it('[M2.search/b] a recorded track’s exact title ranks above an album whose title only starts with it', async () => {
@@ -386,5 +460,87 @@ describe('the search routes', () => {
     await s.search(`${q('the')}&kinds=book&kinds=episode`);
 
     expect(s.asked).toEqual([]);
+  });
+
+  it('answer with the query as it was searched: trimmed', async () => {
+    const s = await server();
+
+    const res = await s.get(`/api/search?${q('  rumours ')}`);
+
+    expect(res.statusCode).toBe(200);
+    expect(SearchResults.parse(res.json()).query).toBe('rumours');
+  });
+
+  it('both trim the query, then take up to 200 characters, an emoji counting as one', async () => {
+    const s = await server();
+    const status = async (url: string) => (await s.get(url)).statusCode;
+
+    for (const [text, expected] of [
+      ['🎵'.repeat(200), 200],
+      ['🎵'.repeat(201), 400],
+      [` ${'a'.repeat(200)}  `, 200],
+      [` ${'a'.repeat(201)}  `, 400],
+      [` ${'🎵'.repeat(200)} `, 200],
+    ] as const) {
+      for (const route of ['/api/search', '/api/search/suggest']) {
+        expect([route, text, await status(`${route}?${q(text)}`)]).toEqual([route, text, expected]);
+      }
+    }
+  });
+
+  it('still answer a search whose recent search could not be kept, and log why', async () => {
+    const s = await server();
+    db.exec(
+      "CREATE TRIGGER refuse_recent BEFORE INSERT ON recent_searches BEGIN SELECT RAISE(ABORT, 'disk full'); END",
+    );
+
+    const results = await s.search(q('rumours'));
+
+    expect(results.length).toBeGreaterThan(0);
+    expect(s.logs.some((e) => e.level === 40 && e.err?.message === 'disk full')).toBe(true);
+  });
+
+  it('keep no recent search for a HEAD request', async () => {
+    const s = await server();
+
+    const head = await s.app.inject({
+      method: 'HEAD',
+      url: `/api/search?${q('rumours')}`,
+      headers: { authorization: `Bearer ${s.bearer['kara'] ?? ''}` },
+    });
+
+    expect(head.statusCode).toBe(200);
+    expect(await s.suggest('')).toEqual([]);
+  });
+
+  it('keep no recent search for a client that left before its results were sent', async () => {
+    const s = await server();
+    // Holds the search until the client has gone, as a slow source would.
+    let arrived!: () => void;
+    const arrival = new Promise<void>((resolve) => (arrived = resolve));
+    let handled!: () => void;
+    const handling = new Promise<void>((resolve) => (handled = resolve));
+    s.app.addHook('preHandler', async (request) => {
+      if (!request.url.startsWith('/api/search?')) return;
+      const closed = new Promise((resolve) => request.raw.socket.once('close', resolve));
+      arrived();
+      await closed;
+    });
+    s.app.addHook('onSend', async (request) => {
+      if (request.url.startsWith('/api/search?')) handled();
+    });
+    await s.app.listen({ port: 0, host: '127.0.0.1' });
+    const { port } = s.app.server.address() as AddressInfo;
+
+    const client = connect(port, '127.0.0.1');
+    client.write(
+      `GET /api/search?${q('rumours')} HTTP/1.1\r\nHost: auralis.invalid\r\n` +
+        `Authorization: Bearer ${s.bearer['kara'] ?? ''}\r\n\r\n`,
+    );
+    await arrival;
+    client.destroy();
+    await handling;
+
+    expect(db.prepare('SELECT COUNT(*) AS n FROM recent_searches').get()).toEqual({ n: 0 });
   });
 });

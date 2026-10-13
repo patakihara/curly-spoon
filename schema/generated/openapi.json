@@ -819,28 +819,22 @@
         "type": "object",
         "properties": {
           "music": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/QueueItem"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": "null"
               }
             ]
           },
           "spoken": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/QueueItem"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": "null"
               }
             ]
           }
@@ -866,15 +860,12 @@
             "$ref": "#/components/schemas/QueueType"
           },
           "switchAfterCurrent": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/QueueType"
               },
               {
-                "type": [
-                  "string",
-                  "null"
-                ]
+                "type": "null"
               }
             ]
           },
@@ -972,28 +963,22 @@
             "$ref": "#/components/schemas/QueueType"
           },
           "current": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/QueueViewItem"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": "null"
               }
             ]
           },
           "position": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/QueuePosition"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": "null"
               }
             ]
           },
@@ -1004,15 +989,12 @@
             }
           },
           "context": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/QueueViewContext"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": "null"
               }
             ]
           },
@@ -1021,15 +1003,12 @@
             "minimum": 0
           },
           "autoplay": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/QueueViewAutoplay"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": "null"
               }
             ]
           },
@@ -1059,28 +1038,22 @@
             "$ref": "#/components/schemas/QueueType"
           },
           "current": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/QueueItem"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": "null"
               }
             ]
           },
           "position": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/QueuePosition"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": "null"
               }
             ]
           },
@@ -1091,15 +1064,12 @@
             }
           },
           "context": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/QueueContext"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": "null"
               }
             ]
           },
@@ -1577,15 +1547,12 @@
             "type": "string"
           },
           "ref": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/MediaRef"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": "null"
               }
             ]
           }
@@ -1642,15 +1609,12 @@
             }
           },
           "parent": {
-            "allOf": [
+            "anyOf": [
               {
                 "$ref": "#/components/schemas/SearchParent"
               },
               {
-                "type": [
-                  "object",
-                  "null"
-                ]
+                "type": "null"
               }
             ]
           },

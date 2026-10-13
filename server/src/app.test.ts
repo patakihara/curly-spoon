@@ -52,6 +52,38 @@ describe('the API', () => {
   it('sits under /api, so no route clashes with a page of the app', () => {
     for (const r of routes) expect(r.path, `${r.method} ${r.path}`).toMatch(/^\/api\//);
   });
+
+  it('answers a failure inside the server as { error: "internal" }, logging what failed and telling the client nothing of it', async () => {
+    const logged: { level: number; err?: { message?: string } }[] = [];
+    const db = openDatabase(':memory:');
+    const app = await buildApp({
+      webDistDir: null,
+      db,
+      logger: { stream: { write: (line) => logged.push(JSON.parse(line) as never) } },
+    });
+    db.close();
+
+    const res = await app.inject({ method: 'GET', url: '/api/setup' });
+
+    expect([res.statusCode, res.json()]).toEqual([500, { error: 'internal' }]);
+    expect(res.body).not.toMatch(/database|sqlite/i);
+    expect(logged.some((e) => e.level >= 50 && /database/i.test(e.err?.message ?? ''))).toBe(true);
+    await app.close();
+  });
+
+  it('answers a request the framework refuses before any route, such as a body that is not JSON, as { error }', async () => {
+    const app = await buildApp({ webDistDir: null, db: openDatabase(':memory:') });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/setup',
+      headers: { 'content-type': 'application/json' },
+      payload: '{ not json',
+    });
+
+    expect([res.statusCode, res.json()]).toEqual([400, { error: 'bad_request' }]);
+    await app.close();
+  });
 });
 
 describe('serving the web app', () => {

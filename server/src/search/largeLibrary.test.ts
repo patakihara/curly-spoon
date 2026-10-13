@@ -4,11 +4,15 @@
  * before anything is cut; the edge of the hundredth result; names beside titles. How fast it
  * answers on 25 000 rows is `largeLibrary.timing.test.ts`.
  */
-import type { SearchKind } from '@auralis/schema';
+import { SearchResults, type SearchKind } from '@auralis/schema';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { Creator, IndexKind, IndexRow, SeriesEntry } from '../libraryIndex/rows.js';
+import { buildApp } from '../app.js';
 import { applyTree, emptyCounts } from '../libraryIndex/store.js';
 import { openDatabase, type Db } from '../store/connection.js';
+import { createDevice } from '../store/devices.js';
+import { createSession } from '../store/sessions.js';
+import { upsertUser } from '../store/users.js';
 import { librarySource, suggestFromIndex } from './library.js';
 
 const T0 = Date.UTC(2026, 9, 13, 8);
@@ -180,6 +184,52 @@ describe('search on a large library, where many short titles match better than t
     expect(suggested[0]).toEqual(['track', 'Interlude']);
     expect(suggested).toContainEqual(['album', 'Interludes and Codas']);
     expect(suggested).toContainEqual(['book', 'Interlude Stories']);
+  });
+});
+
+describe('a kinds filter through the route, on more matches than one answer holds', () => {
+  it('answers that kind’s own first hundred, though other kinds fill the hundred unfiltered', async () => {
+    const db = openDatabase(':memory:');
+    db.transaction(() => {
+      album(
+        db,
+        'love-songs',
+        'Love Songs',
+        { id: 'artist-lovers', name: 'The Lovers' },
+        600,
+        (n) => `Love ${n}`,
+      );
+      for (let n = 0; n < 150; n += 1) {
+        write(db, item('book', `book-${String(n).padStart(3, '0')}`, `A Story of Love, Part ${n}`));
+      }
+    })();
+    const kara = upsertUser(db, { username: 'kara', role: 'member' }).id;
+    const device = createDevice(db, { userId: kara, kind: 'web' });
+    const { token } = createSession(db, { userId: kara, deviceId: device.id, kind: 'bearer' });
+    const app = await buildApp({ webDistDir: null, db });
+    const searched = async (query: string) => {
+      const res = await app.inject({
+        url: `/api/search?${query}`,
+        headers: { authorization: `Bearer ${token}` },
+      });
+      expect(res.statusCode).toBe(200);
+      return SearchResults.parse(res.json()).results.map((r) => [r.kind, r.ref.id]);
+    };
+    const firstBooks = (
+      await librarySource(db).search({ q: 'love', kinds: ['book'] }, new AbortController().signal)
+    )
+      .slice(0, 100)
+      .map((r) => ['book', r.result.ref.id]);
+
+    const all = await searched('q=love');
+    const onlyBooks = await searched('q=love&kinds=book');
+
+    expect(all).toHaveLength(100);
+    expect(all.filter(([kind]) => kind === 'book')).toEqual([]);
+    expect(firstBooks).toHaveLength(100);
+    expect(onlyBooks).toEqual(firstBooks);
+    await app.close();
+    db.close();
   });
 });
 
