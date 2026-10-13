@@ -12,7 +12,7 @@ Each rule here is a check that fails, not a habit to remember.
 ### Build through the design
 
 - **Generated code can't be edited by hand.** The web UI package, Android's component props, the routes and the page layouts are generated from `design/`. CI fails on any difference from a regeneration, and a repo hook refuses edits there.
-- **No component without a design.** CI fails if app code uses a component that doesn't exist in Sonora with its `.d.ts`, card and previews. Lint rejects styled elements, raw colours and one-off components outside the UI package, and literal text or formatting outside the string table and format spec; a check refuses raw sizes, colours, timings and layers inside Sonora and Android's `ui/sonora`.
+- **No component without a design.** CI fails if app code uses a component that doesn't exist in Sonora with its `.d.ts`, card and previews. Lint rejects styled elements, raw colours and one-off components outside the UI package, and literal text, formatting or glyph names outside the string table, format spec and icon list; a check refuses raw sizes, colours, timings and layers inside Sonora and Android's `ui/sonora`.
 - **No screen without a page, and looks match.** Routes, layouts and both platforms' screenshots are checked against the canvas, as "From design to both apps" lists.
 
 ### Keep the artifacts current
@@ -67,9 +67,8 @@ Anything you say about Auralis takes one fixed path, each step safe to interrupt
    - **a drop**: only with your OK, asked through the outbox.
 
    It also edits whatever else in the plan the change affects.
-3. **Applied in one commit**: the plan edit, the inbox file's deletion, and a commit message naming the plan item and the inbox file. Until that commit lands the idea stays in the inbox, so a crash loses none. The plan checks run on that commit.
-4. **Progress follows by itself.** The next session-start summary shows a new item as planned; a changed item whose check fails, or a bug's new check, reopens its item.
-5. **Closed the loop with you.** The plan page is republished, a comment thread gets a reply naming where the idea landed and is resolved, and the page and session-start summary list recently sorted ideas.
+3. **Applied in one commit**: the plan edit, the inbox file's deletion, and a commit message naming the plan item and the inbox file. Until that commit lands the idea stays in the inbox, so a crash loses none.
+4. **Closed the loop with you.** The plan page is republished, a comment thread gets a reply naming where the idea landed and is resolved, and the page and session-start summary list recently sorted ideas.
 
 ### What needs you, without waiting on you
 

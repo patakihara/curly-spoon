@@ -9,8 +9,6 @@ part: Why and what
 Fixed inputs, not re-opened.
 :::
 
-Where a decision rested on a false premise, the plan keeps it, fixing the premise (one case, marked).
-
 ::: grid g2
 ::: card
 #### Product and platforms

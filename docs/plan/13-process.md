@@ -9,7 +9,7 @@ Each rule answers a failure recorded in the old ROADMAP and HANDOVER.
 
 | Failure before | Rule now |
 |---|---|
-| Fixtures written from docs; playback broken "since the client was written" | Adapters are only tested against recordings from mediaserver. No recording, no merge. A nightly re-record-and-diff catches upstream changes. |
+| Fixtures written from docs; playback broken "since the client was written" | Adapters are only tested against recordings from mediaserver. No recording, no merge. |
 | Code with nothing calling it (7 cases) | Every change names its plan item and the screen or job that uses it, and the milestone demo exercises it. Dead code fails lint (`knip` on web, detekt on Android). |
 | Green CI that ran no tests (Gradle cache); unstyled screens passing | Android CI runs uncached tests plus an emulator smoke test; screenshot review replaces "testid exists" as the UI check. |
 | Android written blind, a post-login crash nobody could see | Emulator in CI from M0; once Android work resumes, each milestone's build arrives as an ordinary update through Droid-ify, with a one-tap crash report (logcat to the server). |

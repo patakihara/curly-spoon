@@ -14,7 +14,6 @@ This is M5's work; until then the frontend is M1.shell's minimal shell.
 ### How you work on the design
 
 - **Two artifacts, one repo.** The [Sonora Design System](https://claude.ai/artifact/CUW4CN7KpxgvjeWnbhTQBB) (the building blocks) and the [Auralis canvas](https://claude.ai/artifact/S3ob9VNh7LjZHBmEmE9ULq) (the app's pages and navigation), published from `design/sonora` and `design/app`.
-- **Asking for a change:** comment on either artifact, or ask in chat; Claude changes the repo, regenerates and republishes.
 - **A design change reaches both apps in one commit:** tokens and web components follow automatically, a changed component option fails the Android build until implemented, and a changed page or navigation regenerates both apps' routes and layouts.
 
 ### Where Sonora ends and the canvas begins
@@ -44,6 +43,7 @@ This is M5's work; until then the frontend is M1.shell's minimal shell.
 - **No hard-coding, no copies.** Every size, colour, timing and layer is a token, and a component reuses another by composing it; a check refuses raw literals (M5.sonoraclean).
 - **Every app string is a token.** All app text, accessible names included, lives in one string table in `design/app`, generated for both apps. Pages and the shell pass its keys, Sonora components take text only as props, and the server sends UI text as keys with parameters (M5.strings).
 - **Times, dates, counts and sizes have one format spec** beside the string table, generated for both apps; the server sends raw values and nothing else formats them (M5.formats).
+- **Icon names are one fixed list** in Sonora's tokens, generated for both apps as a closed type: `Icon`, every `icon` prop and the pages take only its names (M5.icons).
 - **Input hands its handler the text.** `Input`'s `onChange` gets the new string, like every other form component, so `FieldRow`'s handler does too.
 - **Controls show Material's states.** Every interactive component has enabled, disabled, hovered, focused (an outer ring) and pressed, a ripple spreading from the press point with no change of shape. One with no action attached is disabled, as is one set `disabled`.
 

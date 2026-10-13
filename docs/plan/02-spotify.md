@@ -18,5 +18,5 @@ Spotify's seven jobs, per medium.
 | Anywhere | Web and PWA on desktop and phone; Android with background playback, downloads and Android Auto for all three media; progress shared between devices, each device keeping its own queue |  |  |
 
 ::: callout
-This closes the biggest gap to Spotify, **instant play of music you don't own**, as you asked, costs budgeted. A broken day shows a clear "streaming unavailable" state; owned and kept music keeps working.
+This closes the biggest gap to Spotify, **instant play of music you don't own**, costs budgeted. A broken day shows a clear "streaming unavailable" state; owned and kept music keeps working.
 :::
