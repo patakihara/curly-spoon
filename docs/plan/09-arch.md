@@ -19,7 +19,7 @@ Features sit on a shared index and store. Only adapters talk to the outside worl
 ::: card
 #### 1 · One schema, generated clients
 
-Server routes are declared with zod; an OpenAPI document is emitted from them. The web client (TypeScript) and Android models (Kotlin, kotlinx.serialization) are **generated** by `pnpm gen` and committed under `generated/` folders; CI regenerates them and fails on any difference or on a change that breaks either. Nothing is hand-copied. The server parses every response through its zod schema, so clients needn't re-check.
+Server routes are declared with zod; an OpenAPI document is emitted from them. The web client (TypeScript) and Android models (Kotlin, kotlinx.serialization) are **generated** by `pnpm gen` and committed under `generated/` folders; CI regenerates them and fails on any difference or on a change that breaks either. The server parses every response through its zod schema, so clients needn't re-check.
 :::
 
 ::: card
@@ -55,7 +55,7 @@ Setup claims the admin role once, with a one-time code the server writes to its 
 ::: card
 #### 7 · The extractor lives in the server
 
-The server runs `yt-dlp` in the one container, for both clients. It should **point and forward, not burden the server**: no transcoding, bytes passed straight through, a small capped cache only for streamed tracks (the next one preloaded, a recent one replayed, a song being kept) and cut channel episodes. The same path would let **people without a media server** use Auralis for streaming. Audiobooks always come from Audiobookshelf. It asks YouTube only for audio-only formats, music and channels alike. A daily job promotes a new extractor only once a canary search-and-resolve passes, else keeps the last that passed; failures show on the admin jobs page. Android may later add NewPipeExtractor as an offline fallback.
+The server runs `yt-dlp` in the one container, for both clients. It should **point and forward, not burden the server**: no transcoding, bytes passed straight through, a small capped cache only for streamed tracks (the next one preloaded, a recent one replayed, a song being kept) and cut channel episodes. Audiobooks always come from Audiobookshelf. It asks YouTube only for audio-only formats, music and channels alike. A daily job promotes a new extractor only once a canary search-and-resolve passes, else keeps the last that passed; failures show on the admin jobs page. Android may later add NewPipeExtractor as an offline fallback.
 :::
 
 ::: card

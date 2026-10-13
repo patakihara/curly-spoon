@@ -14,13 +14,12 @@ This is M5's work; until then the frontend is M1.shell's minimal shell.
 ### How you work on the design
 
 - **Two artifacts, one repo.** The [Sonora Design System](https://claude.ai/artifact/CUW4CN7KpxgvjeWnbhTQBB) (the building blocks) and the [Auralis canvas](https://claude.ai/artifact/S3ob9VNh7LjZHBmEmE9ULq) (the app's pages and navigation), published from `design/sonora` and `design/app`.
-- **Asking for a change:** comment on either artifact, or ask in chat; Claude changes the repo, regenerates and republishes. Edits made in an artifact are pulled into the repo before anything else changes there.
+- **Asking for a change:** comment on either artifact, or ask in chat; Claude changes the repo, regenerates and republishes.
 - **How a design change reaches the apps.** One commit carries design and apps:
   - colours, spacing and fonts change on both platforms automatically;
   - a component's look changes on web automatically, since web uses Sonora's components directly;
   - a new or changed component option fails the Android build until implemented there, so the platforms can't drift;
-  - a new or changed page, or navigation, regenerates both apps' routes and page layouts;
-  - screenshots of both apps are compared against the design, and you see differences before they ship.
+  - a new or changed page, or navigation, regenerates both apps' routes and page layouts.
 
 ### Where Sonora ends and the canvas begins
 
@@ -70,7 +69,7 @@ This is M5's work; until then the frontend is M1.shell's minimal shell.
 :::
 :::
 
-Your rule: Sonora artifact, then canvas artifact, then code, ported mechanically; nothing frontend reaches code unpublished:
+Your rule: Sonora, then the canvas, then code:
 
 1. **Structure comes before pictures.** Every screen first gets a plain-text structure in `nav.json`: its purpose, its sections in order (unsettled ones marked provisional), its empty state and the screens it links to. The canvas's start page shows the generated navigation flowchart and screen list, no mockups, so you settle the hierarchy first. Each screen gets a canvas page: its structure beside its mockups, nothing else loaded. A page is drawn only once it has a structure.
 2. **Navigation is data.** The canvas holds `nav.json`: destinations, routes and parameters, which destination each page lights up, back behaviour, and the layout at each breakpoint (bottom bar, rail, side panel). Code generation turns it into the web router and the Android Navigation-Compose graph: **the same flows from the same file**.
@@ -125,5 +124,4 @@ Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;
 
 ### How parity stays true
 
-- Both clients consume the same generated models and screen endpoints; no logic is ported by hand.
 - Each screen has a shared set of recorded API responses (one per state: loading, empty, full, error). Web (Playwright) and Android (Paparazzi) render the same set as screenshots. Each page's render sits beside its Sonora UI kit render in a committed comparison under `design/app/compare`, differences listed; a test fails when a page changes without a fresh comparison.

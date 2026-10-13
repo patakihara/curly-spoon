@@ -9,7 +9,7 @@ part: The product
 Browse, recommending what you don't own.
 :::
 
-The old code's taste profile, from your library and play history, is kept. New: candidates come from outside, are matched against what you own, and Browse mixes them in.
+The old taste profile is kept; candidates from outside are matched against what you own and mixed into Browse.
 
 ::: diagram discover
 
@@ -23,7 +23,7 @@ The old code's taste profile, from your library and play history, is kept. New: 
 - **Precomputed, then composed.** Provider calls run as background jobs within their rate limits (MusicBrainz 1 req/s, Audnexus about 100/min). Browse only reads the pool and your live progress: one fast call.
 - **Every provider is seeded from what you listened to**, weighted by how much you played, never from library contents.
 - **YouTube is recommended only from your own channels.** Browse, autoplay and "Are you feeling lucky?" never suggest a channel you haven't added, or its videos; one you haven't added appears only in Search results. New videos from your channels show up like any other episode, in digests and Up next.
-- **Quality gets judged on your real library**: 231 books, your podcast subscriptions and your Jellyfin history. A review page lists each shelf with its reasons.
+- **Quality gets judged on your real library**: 233 books, your podcast subscriptions and your Jellyfin history. A review page lists each shelf with its reasons.
 
 ### The recommendation algorithm
 
