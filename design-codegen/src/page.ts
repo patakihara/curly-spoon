@@ -47,7 +47,7 @@ export type PropValue =
   /** A field's handler holding the search query: what it types, on `onChange`, and submits. */
   | { kind: 'query' };
 
-/** The handler props a `<Query />` goes on: a field's typing and its submitting. */
+/** The handler props a `<Query />` goes on: a text field's typing and its submitting. */
 export const QUERY_PROPS = ['onChange', 'onSubmit'] as const;
 
 /** The queues an item plays on: spoken word (books and episodes) or music (docs/plan/04-play.md). */
@@ -164,7 +164,12 @@ function handlerAttrs(node: t.JSXElement, what: string) {
         (value.expression.type === 'Identifier' || value.expression.type === 'MemberExpression')
       ) {
         queue = { path: memberPath(value.expression) };
-      } else return fail(attr, `Play's queue must be "spoken", "music" or a data path`);
+      } else {
+        return fail(
+          attr,
+          `Play's queue is written queue="spoken" or queue="music", or bound from the data, queue={item.queue}, not as an expression`,
+        );
+      }
       continue;
     }
     if (what === 'Play' && name === 'next') {
@@ -375,6 +380,11 @@ export interface Opens {
   self?: string;
   /** Each component's props that take a handler, `() => void`. */
   handlers: Map<string, Set<string>>;
+  /**
+   * Each text field's props a `<Query />` may go on: an `onChange` or `onSubmit` whose handler is
+   * handed the typed text. Without it, any such prop may hold the query.
+   */
+  fields?: Map<string, Set<string>>;
 }
 
 const listed = (words: string[]) =>
@@ -451,7 +461,14 @@ export function checkPage(
       const asked = given.filter((name) => !query.includes(name));
       if ([...asked].sort().join() !== [...params].sort().join()) {
         const also = query.length > 0 ? ` and the query [${query}]` : '';
-        errors.push(`${at} gives ${page} [${given}], and its route takes [${params}]${also}`);
+        // A name some route takes as its query: a bound page could have taken it if named.
+        const queried = [...(opens.query?.values() ?? [])].flat();
+        const why =
+          typeof value.page !== 'string' &&
+          given.some((name) => !params.includes(name) && queried.includes(name))
+            ? ': a page bound from data takes its route parameters alone, never a query name'
+            : '';
+        errors.push(`${at} gives ${page} [${given}], and its route takes [${params}]${also}${why}`);
       }
     }
     for (const [name, path] of Object.entries(value.params)) {
@@ -574,7 +591,17 @@ export function checkPage(
               errors.push(`${at} takes no handler, so it cannot hold the query`);
             } else if (!(QUERY_PROPS as readonly string[]).includes(prop)) {
               errors.push(
-                `${at} cannot hold the query: Query goes on a field's ${listed([...QUERY_PROPS])}`,
+                `${at} cannot hold the query: Query goes on a text field's ${listed([...QUERY_PROPS])}`,
+              );
+            } else if (
+              opens?.fields !== undefined &&
+              !opens.fields.get(node.component)?.has(prop)
+            ) {
+              const fields = [...opens.fields].flatMap(([c, ps]) =>
+                [...ps].map((p) => `${c}.${p}`),
+              );
+              errors.push(
+                `${at} cannot hold the query: ${node.component} is not a text field. Query goes on a text field, ${listed(fields.sort())}, whose handler is handed the typed text`,
               );
             }
             continue;

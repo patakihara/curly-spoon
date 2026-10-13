@@ -21,6 +21,7 @@ import {
 import {
   checkPage,
   parsePage,
+  QUERY_PROPS,
   type Choice,
   type Choices,
   type Opens,
@@ -138,6 +139,36 @@ export function handlerNames(model: PropsModel): Map<string, Set<string>> {
   return names;
 }
 
+const strip = (type: KType): KType => (type.kind === 'nullable' ? strip(type.type) : type);
+
+/**
+ * Each text field's props a `<Query />` may go on, read from its declarations: a field the reader
+ * types into declares a `placeholder`, the hint it shows while empty, and its `onChange` or
+ * `onSubmit` hands its handler one string, the text. A handler handed a string alone is not
+ * enough: a ButtonGroup's hands it the chosen segment's key.
+ */
+export function queryFields(model: PropsModel): Map<string, Set<string>> {
+  const fields = new Map<string, Set<string>>();
+  for (const [component, decls] of model.files) {
+    const decl = decls.find((d) => d.kind === 'class' && d.name === `${component}Props`);
+    if (decl?.kind !== 'class') continue;
+    const placeholder = decl.props.find((p) => p.name === 'placeholder');
+    if (placeholder === undefined || strip(placeholder.type).kind !== 'string') continue;
+    const props = decl.props.filter((p) => {
+      const type = strip(p.type);
+      return (
+        (QUERY_PROPS as readonly string[]).includes(p.name) &&
+        type.kind === 'fn' &&
+        !type.composable &&
+        type.params.length === 1 &&
+        type.params[0]!.kind === 'string'
+      );
+    });
+    if (props.length > 0) fields.set(component, new Set(props.map((p) => p.name)));
+  }
+  return fields;
+}
+
 const enumOf = (type: KType): string | undefined =>
   type.kind === 'nullable' ? enumOf(type.type) : type.kind === 'named' ? type.name : undefined;
 
@@ -168,6 +199,7 @@ export function readApp(appDir: string, model: PropsModel): App {
   const slots = slotNames(model);
   const choices = choicesOf(model);
   const handlers = handlerNames(model);
+  const fields = queryFields(model);
   const routes = new Map(nav.pages.map((p) => [p.id, Object.keys(p.params)]));
   const query = new Map(nav.pages.map((p) => [p.id, splitRoute(p.route).query]));
   const pagesDir = join(appDir, 'pages');
@@ -220,6 +252,7 @@ export function readApp(appDir: string, model: PropsModel): App {
         links: nav.pages.find((p) => p.id === id)!.structure.links,
         self: id,
         handlers,
+        fields,
       };
       errors.push(
         ...checkPage(tree, placeholder, props, slots, shown, choices, opens).map(

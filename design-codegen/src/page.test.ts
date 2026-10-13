@@ -1,5 +1,10 @@
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { handlerNames, propNames, queryFields } from './app.js';
+import { REPO_ROOT, SONORA_DIR } from './outputs.js';
 import { checkPage, parsePage, type PageTree } from './page.js';
+import { readProps } from './props.js';
+import { discoverComponents } from './sonora.js';
 
 const page = (body: string, name = 'Book') =>
   `export default function ${name}({ data }) {\n  return (\n${body}\n  );\n}\n`;
@@ -629,7 +634,8 @@ describe('a page holding the search query', () => {
     ['SearchField', new Set(['value', 'onChange', 'onSubmit', 'onClose', 'autoFocus'])],
   ]);
   const handlers = new Map([['SearchField', new Set(['onChange', 'onSubmit', 'onClose'])]]);
-  const opens = { pages: new Map<string, string[]>(), links: [], handlers };
+  const fields = new Map([['SearchField', new Set(['onChange', 'onSubmit'])]]);
+  const opens = { pages: new Map<string, string[]>(), links: [], handlers, fields };
   const data = { query: 'salt' };
   const check = (field: string) =>
     checkPage(parsePage(page(field), 'book'), data, props, undefined, undefined, undefined, opens);
@@ -651,7 +657,7 @@ describe('a page holding the search query', () => {
 
   it("refuses the query on any other prop: only a field's typing and submitting hold it", () => {
     expect(check('<SearchField onClose={<Query />} />')).toEqual([
-      "line 3: SearchField.onClose cannot hold the query: Query goes on a field's onChange or onSubmit",
+      "line 3: SearchField.onClose cannot hold the query: Query goes on a text field's onChange or onSubmit",
     ]);
     expect(check('<SearchField value={<Query />} />')).toEqual([
       'line 3: SearchField.value takes no handler, so it cannot hold the query',
@@ -668,6 +674,74 @@ describe('a page holding the search query', () => {
     expect(() => parsePage(page('<Query />'), 'book')).toThrow(
       /Query goes in a handler prop, onChange=\{<Query \/>\}/,
     );
+  });
+});
+
+describe("[M2.search] the query on Sonora's own components", () => {
+  const model = readProps(discoverComponents(join(REPO_ROOT, SONORA_DIR)));
+  const opens = {
+    pages: new Map<string, string[]>(),
+    links: [],
+    handlers: handlerNames(model),
+    fields: queryFields(model),
+  };
+  const check = (element: string) =>
+    checkPage(
+      parsePage(page(element), 'book'),
+      { query: 'salt', kinds: ['All', 'Books'] },
+      propNames(model),
+      undefined,
+      undefined,
+      undefined,
+      opens,
+    );
+
+  it('finds the text fields from their declarations: a placeholder, and a handler handed the text', () => {
+    expect(
+      [...queryFields(model)].flatMap(([component, props]) =>
+        [...props].map((prop) => `${component}.${prop}`),
+      ),
+    ).toEqual([
+      'FieldRow.onChange',
+      'Input.onChange',
+      'SearchField.onChange',
+      'SearchField.onSubmit',
+    ]);
+  });
+
+  it('accepts the query on every text field', () => {
+    expect(check('<Input value={data.query} onChange={<Query />} />')).toEqual([]);
+    expect(check('<FieldRow label="Find" value={data.query} onChange={<Query />} />')).toEqual([]);
+    expect(
+      check('<SearchField value={data.query} onChange={<Query />} onSubmit={<Query />} />'),
+    ).toEqual([]);
+  });
+
+  it('refuses it on a control handing its handler anything but typed text', () => {
+    const why =
+      'Query goes on a text field, FieldRow.onChange, Input.onChange, SearchField.onChange or SearchField.onSubmit, whose handler is handed the typed text';
+    expect(check('<ButtonGroup items={data.kinds} value="All" onChange={<Query />} />')).toEqual([
+      `line 3: ButtonGroup.onChange cannot hold the query: ButtonGroup is not a text field. ${why}`,
+    ]);
+    expect(check('<Slider value={0.5} onChange={<Query />} />')).toEqual([
+      `line 3: Slider.onChange cannot hold the query: Slider is not a text field. ${why}`,
+    ]);
+    for (const control of [
+      '<TabBar items={data.kinds} onChange={<Query />} />',
+      '<NavRail onChange={<Query />} />',
+      '<BottomNav onChange={<Query />} />',
+      '<SeekBar onChange={<Query />} />',
+      '<Switch onChange={<Query />} />',
+      '<FollowButton onChange={<Query />} />',
+      '<SettingRow label="L" onChange={<Query />} />',
+      '<ViewToggle onChange={<Query />} />',
+      '<LyricsSyncButton onChange={<Query />} />',
+    ]) {
+      const component = /^<(\w+)/.exec(control)![1]!;
+      expect(check(control)).toContain(
+        `line 3: ${component}.onChange cannot hold the query: ${component} is not a text field. ${why}`,
+      );
+    }
   });
 });
 
@@ -733,7 +807,9 @@ describe("a page opening another with its route's query", () => {
 
   it('[M2.search] binds a query only on a page it names: a page bound from data takes its route parameters alone', () => {
     expect(check('<ResultRow onClick={<Open page={s.page} ref={s.ref} q={s.query} />} />')).toEqual(
-      ['line 3: ResultRow.onClick gives album [ref,q], and its route takes [ref]'],
+      [
+        'line 3: ResultRow.onClick gives album [ref,q], and its route takes [ref]: a page bound from data takes its route parameters alone, never a query name',
+      ],
     );
   });
 });
@@ -787,6 +863,11 @@ describe('a page playing each item on the queue its data names', () => {
     ]);
     expect(() =>
       parsePage(page('<ResultRow onAction={<Play ref={data.ref} queue={1} />} />'), 'book'),
-    ).toThrow(/Play's queue must be "spoken", "music" or a data path/);
+    ).toThrow(
+      /Play's queue is written queue="spoken" or queue="music", or bound from the data, queue=\{item.queue\}, not as an expression/,
+    );
+    expect(() =>
+      parsePage(page('<ResultRow onAction={<Play ref={data.ref} queue={"spoken"} />} />'), 'book'),
+    ).toThrow(/line 3: Play's queue is written queue="spoken" or queue="music"/);
   });
 });
