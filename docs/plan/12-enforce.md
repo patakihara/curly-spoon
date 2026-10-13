@@ -8,13 +8,13 @@ part: How it's built
 ### Build through the design
 
 - **Generated code can't be edited by hand.** The web UI package, Android's component props, the routes and the page layouts are generated from `design/`. CI fails on any difference from a regeneration, and a repo hook refuses edits there.
-- **No component without a design.** CI fails if app code uses a component that doesn't exist in Sonora with its `.d.ts`, card and previews. Lint rejects styled elements, raw colours and one-off components outside the UI package, and from M5 (M5.strings, M5.formats, M5.icons) literal text, formatting or glyph names outside the string table, format spec and icon list; a check refuses raw sizes, colours, timings and layers inside Sonora and Android's `ui/sonora`.
-- **No screen without a page, and looks match.** Routes, layouts and both platforms' screenshots are checked against the canvas, as "From design to both apps" lists.
+- **No component without a design.** CI fails if app code uses a component that doesn't exist in Sonora with its `.d.ts`, card and previews. Lint rejects styled elements, raw colours and one-off components outside the UI package, and from M5 (M5.strings, M5.formats, M5.icons) literal text, formatting or glyph names outside the string table, format spec and icon list; M5.sonoraclean's check refuses raw literals in Sonora and `ui/sonora`.
+- **No screen without a page, and looks match:** see "From design to both apps".
 
 ### Keep the artifacts current
 
 - **Every artifact says what it was built from.** Its footer shows the repo commit, and `design/published.json` records the commit and artifact version of each publish.
-- **Unpublished design changes block the merge.** CI fails if `design/` changed after the recorded publish. A repo hook stops a session finishing with a design change unpublished.
+- **Unpublished design changes block the merge**, and a repo hook stops a session finishing with one.
 - **Your side is read first.** Before touching `design/`, the session compares the live artifact with the recorded version, and your edits or comments since come first. Every session starts by listing open comments.
 
 ### Keep the plan clean and the progress true
