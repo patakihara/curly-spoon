@@ -107,8 +107,3 @@ test('every workflow that builds the image passes the commit it builds as AURALI
     assert.equal(passes, builds.length, `${file} passes AURALIS_COMMIT=${commit} to every build`);
   }
 });
-
-test('Publish names each run after the commit it publishes, which the live staging check reads', () => {
-  const text = readFileSync(join(REPO_ROOT, '.github/workflows/publish.yml'), 'utf8');
-  assert.match(text, /^run-name: Publish \$\{\{ github\.event\.workflow_run\.head_sha \}\}$/m);
-});

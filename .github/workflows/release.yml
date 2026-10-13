@@ -1,15 +1,21 @@
-# Tag-driven release automation — additive to `publish.yml`, not a replacement for it.
-# `publish.yml` keeps writing `:latest` on every green push to `main`, and the staging
-# container keeps following that tag; nothing here changes what `:latest` means or how it
-# gets written. This workflow is a second, slower channel for
-# anyone who wants to pin a specific, named version instead of riding continuous deployment —
-# see README.md for how to run the image.
+# Tag-driven releases. A release tag publishes `:latest`, which the container on mediaserver
+# follows, so that container moves only when a release is cut; `publish.yml` publishes every
+# green push to `main` as `:edge` instead. A release also attaches the signed APK to a GitHub
+# Release, and `fdroid-repo.yml` publishes it to the F-Droid repository from the same tag.
+#
+# Cutting a release: tag a commit of `main` whose CI run is green, with the next version, and
+# push the tag. Nothing here re-runs the tests, so the commit must already be green.
+#
+#   git tag -a v0.5.0 -m v0.5.0 <commit> && git push origin v0.5.0
+#
+# A prerelease tag (`v0.5.0-rc.1`) publishes its version and a prerelease, but leaves `:latest`
+# where it is: GitHub's latest release, which the live staging check reads, skips prereleases too.
 name: Release
 
 # Tags only, never a branch push and never a pull_request — a `v*` tag is a deliberate act
 # ("I am cutting a release"), unlike a push to `main`, which happens on every merge. Building
-# on every push here would duplicate `publish.yml` for no reason; building on a `pull_request`
-# would mean a fork's PR could trigger a job with `packages: write`/`contents: write` scopes.
+# on a `pull_request` would mean a fork's PR could trigger a job with
+# `packages: write`/`contents: write` scopes.
 on:
   push:
     tags:
@@ -111,13 +117,9 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      # `:<version>` and `:stable` — never `:latest`. `:latest` is `publish.yml`'s tag alone,
-      # and the staging container redeploys from it; writing it here too would mean an
-      # unrelated tag push could silently redeploy staging outside the continuous path it
-      # follows. `:stable` exists as the moving pointer for someone who wants
-      # "the newest tagged release" without hardcoding a version string in their own compose
-      # file — the tagged-release equivalent of what `:latest` is to `main`, just on the slower
-      # channel.
+      # `:<version>`, and `:latest` unless the tag is a prerelease. `:latest` is this workflow's
+      # tag alone and the container on mediaserver redeploys from it; `publish.yml` writes `:edge`.
+      # An empty line in `tags` is skipped, so a prerelease publishes its version only.
       #
       # Same hardcoded lowercase `ghcr.io/patakihara/auralis` path as `publish.yml`, for the same
       # reason: GHCR rejects uppercase image paths, and interpolating `github.repository_owner`
@@ -129,7 +131,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: |
             ghcr.io/patakihara/auralis:${{ needs.validate-version.outputs.version }}
-            ghcr.io/patakihara/auralis:stable
+            ${{ needs.validate-version.outputs.prerelease == 'false' && 'ghcr.io/patakihara/auralis:latest' || '' }}
           build-args: AURALIS_COMMIT=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -272,7 +274,7 @@ jobs:
             ghcr.io/patakihara/auralis:${{ needs.validate-version.outputs.version }}
             ```
 
-            Also tagged `:stable`, a pinned alternative to `:latest`. See `README.md` for how to
+            A final release is also `:latest`; `:edge` follows `main`. See `README.md` for how to
             run the image.
 
             ## Android APK

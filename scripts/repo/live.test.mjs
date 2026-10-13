@@ -6,7 +6,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { duePublish, publishes, STAGING_GRACE_MS } from './staging.mjs';
+import { isDue, newestRelease, STAGING_GRACE_MS } from './staging.mjs';
 
 const skip = process.env.LIVE === '1' ? false : 'a live check: set LIVE=1 to reach the network';
 
@@ -21,6 +21,8 @@ const get = (url, init = {}) => fetch(url, { signal: AbortSignal.timeout(TIMEOUT
 /** Where the staging container answers: a repository secret, since no hostname is committed. */
 const STAGING = process.env.AURALIS_STAGING_URL;
 const REPO = process.env.GITHUB_REPOSITORY ?? 'patakihara/curly-spoon';
+/** The image release.yml publishes, in GHCR's lowercase path. */
+const IMAGE = 'patakihara/auralis';
 
 /** A GET on GitHub's REST API, with the workflow's token when it has one. */
 async function github(path) {
@@ -64,41 +66,70 @@ test(
   },
 );
 
+/**
+ * The newest release and the commit its tag names, and the commit the staging container reports.
+ * Skips the test while the release is younger than the grace period staging has to follow it.
+ */
+async function stagingAndNewestRelease(t) {
+  assert.ok(STAGING, 'AURALIS_STAGING_URL names the staging container');
+  const res = await get(new URL('/api/health', STAGING));
+  assert.equal(res.status, 200, 'staging answers /api/health');
+  const health = await res.json();
+  assert.equal(health?.status, 'ok', 'staging reports ok');
+  assert.match(String(health?.commit), /^[0-9a-f]{40}$/, 'staging reports the commit it runs');
+
+  const release = newestRelease(await github('/releases/latest'));
+  const { sha } = await github(`/commits/${encodeURIComponent(release.tag)}`);
+  assert.match(String(sha), /^[0-9a-f]{40}$/, `${release.tag} names a commit`);
+  if (!isDue(release, Date.now())) {
+    t.skip(`${release.tag} is younger than ${STAGING_GRACE_MS / 60_000} minutes`);
+    return null;
+  }
+  return { running: health.commit, release: { ...release, commit: sha } };
+}
+
 test(
-  '[M0.staging/a] the staging container reports the latest green main build, or newer, 30 minutes after its publish',
+  '[M0.staging/a] the staging container reports the newest release 30 minutes after its publish',
   { skip },
   async (t) => {
-    assert.ok(STAGING, 'AURALIS_STAGING_URL names the staging container');
-    const res = await get(new URL('/api/health', STAGING));
-    assert.equal(res.status, 200, 'staging answers /api/health');
-    const health = await res.json();
-    assert.equal(health?.status, 'ok', 'staging reports ok');
-    assert.match(String(health?.commit), /^[0-9a-f]{40}$/, 'staging reports the commit it runs');
+    const seen = await stagingAndNewestRelease(t);
+    if (seen === null) return;
+    const { running, release } = seen;
+    const at = new Date(release.at).toISOString();
+    assert.equal(running, release.commit, `staging runs ${running}, not ${release.tag} of ${at}`);
+  },
+);
 
-    const { workflow_runs: runs } = await github(
-      '/actions/workflows/publish.yml/runs?status=success&per_page=50',
-    );
-    const list = publishes(runs);
-    assert.ok(list.length > 0, 'a Publish run names the commit it published');
-    const due = duePublish(list, Date.now());
-    if (due === null) {
-      t.skip(`every publish is younger than ${STAGING_GRACE_MS / 60_000} minutes`);
-      return;
-    }
+/** The image's manifest digest under a tag in GHCR, read anonymously: the package is public. */
+async function imageDigest(tag) {
+  const auth = await get(`https://ghcr.io/token?scope=repository:${IMAGE}:pull`);
+  assert.equal(auth.status, 200, 'GHCR hands out an anonymous pull token');
+  const { token } = await auth.json();
+  const res = await get(`https://ghcr.io/v2/${IMAGE}/manifests/${tag}`, {
+    method: 'HEAD',
+    headers: {
+      authorization: `Bearer ${token}`,
+      accept: [
+        'application/vnd.oci.image.index.v1+json',
+        'application/vnd.docker.distribution.manifest.list.v2+json',
+      ].join(', '),
+    },
+  });
+  assert.equal(res.status, 200, `GHCR holds ${IMAGE}:${tag}`);
+  const digest = res.headers.get('docker-content-digest');
+  assert.match(String(digest), /^sha256:[0-9a-f]{64}$/, `GHCR names the digest of :${tag}`);
+  return digest;
+}
 
-    if (health.commit === due.commit) return;
-
-    const at = new Date(due.at).toISOString();
-    const since = await github(`/compare/${due.commit}...${health.commit}`);
-    assert.equal(
-      since.status,
-      'ahead',
-      `staging runs ${health.commit}, not ${due.commit} published at ${at} or a later commit`,
-    );
-    const onMain = await github(`/compare/main...${health.commit}`);
-    assert.ok(
-      ['behind', 'identical'].includes(onMain.status),
-      `staging runs ${health.commit}, which is not on main`,
-    );
+test(
+  '[M1.release/b] the container on mediaserver reports the commit of the newest release, which :latest holds',
+  { skip },
+  async (t) => {
+    const seen = await stagingAndNewestRelease(t);
+    if (seen === null) return;
+    const { running, release } = seen;
+    assert.equal(running, release.commit, `the newest release is ${release.tag}`);
+    const version = release.tag.replace(/^v/, '');
+    assert.equal(await imageDigest('latest'), await imageDigest(version), `:latest is ${version}`);
   },
 );

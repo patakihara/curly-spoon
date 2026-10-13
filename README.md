@@ -29,6 +29,9 @@ pnpm format && pnpm typecheck && pnpm lint && pnpm test    # before every commit
 docker run -d -p 8787:8787 -v auralis-data:/data ghcr.io/patakihara/auralis:latest
 ```
 
+`:latest` is the newest release, `:<version>` a given one, and `:edge` the newest green build of
+`main`. `.github/workflows/release.yml` says how a release is cut.
+
 The Android app installs from a self-hosted F-Droid repository; see
 [docs/FDROID_REPO.md](docs/FDROID_REPO.md).
 
