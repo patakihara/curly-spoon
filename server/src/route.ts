@@ -24,8 +24,10 @@ function refuse(reply: FastifyReply, refusal: Refusal) {
 }
 
 /**
- * Aborts once the client has gone before its answer was sent, or at once if it already has: a
- * handler can stop waiting on it, and leave undone what only the client would have seen.
+ * Aborts once the client's connection closes before its answer was sent, or at once if it already
+ * had (an earlier hook may wait on I/O, as the proxy's name lookup does), so a handler can stop
+ * waiting on a slow upstream. Node reads a close only between waits: a client that leaves while
+ * the handler runs without waiting on I/O gets its answer written, and this never aborts.
  */
 export function clientGone(reply: FastifyReply): AbortSignal {
   const gone = new AbortController();

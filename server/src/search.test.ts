@@ -513,34 +513,26 @@ describe('the search routes', () => {
     expect(await s.suggest('')).toEqual([]);
   });
 
-  it('keep no recent search for a client that left before its results were sent', async () => {
+  it('keep the search of a client that left right after asking: nothing on the server tells it from one that read its results', async () => {
     const s = await server();
-    // Holds the search until the client has gone, as a slow source would.
-    let arrived!: () => void;
-    const arrival = new Promise<void>((resolve) => (arrived = resolve));
-    let handled!: () => void;
-    const handling = new Promise<void>((resolve) => (handled = resolve));
-    s.app.addHook('preHandler', async (request) => {
-      if (!request.url.startsWith('/api/search?')) return;
-      const closed = new Promise((resolve) => request.raw.socket.once('close', resolve));
-      arrived();
-      await closed;
-    });
-    s.app.addHook('onSend', async (request) => {
-      if (request.url.startsWith('/api/search?')) handled();
+    let closed!: () => void;
+    const responseClosed = new Promise<void>((resolve) => (closed = resolve));
+    s.app.addHook('onRequest', async (request, reply) => {
+      if (request.url.startsWith('/api/search?')) reply.raw.once('close', closed);
     });
     await s.app.listen({ port: 0, host: '127.0.0.1' });
     const { port } = s.app.server.address() as AddressInfo;
 
-    const client = connect(port, '127.0.0.1');
-    client.write(
-      `GET /api/search?${q('rumours')} HTTP/1.1\r\nHost: auralis.invalid\r\n` +
-        `Authorization: Bearer ${s.bearer['kara'] ?? ''}\r\n\r\n`,
-    );
-    await arrival;
-    client.destroy();
-    await handling;
+    const client = connect(port, '127.0.0.1', () => {
+      client.write(
+        `GET /api/search?${q('rumours')} HTTP/1.1\r\nHost: auralis.invalid\r\n` +
+          `Authorization: Bearer ${s.bearer['kara'] ?? ''}\r\n\r\n`,
+      );
+      client.destroy();
+    });
+    client.on('error', () => undefined);
+    await responseClosed;
 
-    expect(db.prepare('SELECT COUNT(*) AS n FROM recent_searches').get()).toEqual({ n: 0 });
+    expect(db.prepare('SELECT COUNT(*) AS n FROM recent_searches').get()).toEqual({ n: 1 });
   });
 });

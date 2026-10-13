@@ -8,6 +8,7 @@ import { registerAccess } from './auth/access.js';
 import type { SignOn } from './auth/oidc.js';
 import { createProxyTrust, type ProxyTrust } from './auth/proxy.js';
 import type { CookieSecure } from './config.js';
+import { answerFailure, refuseConnection } from './failures.js';
 import { retiredWorkerRoute } from './retiredWorker.js';
 import { serve } from './route.js';
 import { adminRoutes } from './routes/admin.js';
@@ -92,17 +93,17 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   const { db } = options;
   const proxy = options.proxy ?? createProxyTrust([]);
   const cookieSecure = options.cookieSecure ?? 'auto';
-  const app = Fastify({ logger: loggerOptions(options.logger), trustProxy: proxy.trust });
-
-  // Every failure answers `{ error }`, as a refusal does: a request the framework itself refuses
-  // (a body that is not JSON, one too large) as `bad_request` with its status, and anything else
-  // as `internal`, logged here and never described to the client.
-  app.setErrorHandler((error: { statusCode?: number }, request, reply) => {
-    const status = error.statusCode ?? 500;
-    if (status >= 400 && status < 500) return reply.code(status).send({ error: 'bad_request' });
-    request.log.error({ err: error }, 'request failed');
-    return reply.code(500).send({ error: 'internal' });
+  // Every failure answers `{ error }`, as a refusal does (failures.ts): a thrown or handed-on
+  // error, a path that does not decode, and a connection whose request never parsed.
+  const app = Fastify({
+    logger: loggerOptions(options.logger),
+    trustProxy: proxy.trust,
+    frameworkErrors: answerFailure,
+    clientErrorHandler(this: FastifyInstance, error, socket) {
+      refuseConnection(this.log, error, socket);
+    },
   });
+  app.setErrorHandler(answerFailure);
   await app.register(fastifyCookie);
   registerAccess(app, { db, proxy, cookieSecure, publicOrigin: options.publicOrigin });
 

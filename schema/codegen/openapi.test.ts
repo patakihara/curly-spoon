@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ErrorResponse, SESSION_COOKIE, type Route } from '../src/index.js';
+import { constants, ErrorResponse, routes, SESSION_COOKIE, type Route } from '../src/index.js';
 import { z } from '../src/zod.js';
 import { buildOpenApiDocument } from './openapi.js';
 
@@ -150,4 +150,49 @@ describe('the OpenAPI document', () => {
       },
     });
   });
+
+  it('lets null through a named schema reached as `.nullable()` with a description or a default, and a nullable named union', () => {
+    const Item = z.object({ id: z.string() }).openapi('Item');
+    const Other = z.object({ name: z.string() }).openapi('Other');
+    const Either = z.union([Item, Other]).openapi('Either');
+    const Shelf = z
+      .object({
+        described: Item.nullable().openapi({ description: 'The item, if any.' }),
+        defaulted: Item.nullable().default(null),
+        either: Either.nullable(),
+      })
+      .openapi('Shelf');
+    const doc = buildOpenApiDocument([{ ...open, response: Shelf }], ErrorResponse);
+    const orNull = (name: string) => [{ $ref: `#/components/schemas/${name}` }, { type: 'null' }];
+
+    expect(doc.components?.schemas?.Shelf).toMatchObject({
+      properties: {
+        described: { anyOf: orNull('Item'), description: 'The item, if any.' },
+        defaulted: { anyOf: orNull('Item'), default: null },
+        either: { anyOf: orNull('Either') },
+      },
+    });
+    expect(nullRefusingAllOf(doc)).toEqual([]);
+  });
+
+  it("holds no `allOf` that asks for null anywhere in the API's document, where null could never pass", () => {
+    const doc = buildOpenApiDocument(routes, ErrorResponse, constants);
+    expect(nullRefusingAllOf(doc)).toEqual([]);
+  });
 });
+
+/** Where, in `node`, an `allOf` holds a part that allows null: null never passes every part. */
+function nullRefusingAllOf(node: unknown, at = '#'): string[] {
+  if (typeof node !== 'object' || node === null) return [];
+  const own = Object.entries(node as Record<string, unknown>);
+  const here =
+    'allOf' in node && Array.isArray(node.allOf) && node.allOf.some(allowsNull) ? [at] : [];
+  return [...here, ...own.flatMap(([key, value]) => nullRefusingAllOf(value, `${at}/${key}`))];
+}
+
+function allowsNull(schema: unknown): boolean {
+  if (typeof schema !== 'object' || schema === null) return false;
+  const { type, anyOf, oneOf } = schema as { type?: unknown; anyOf?: unknown; oneOf?: unknown };
+  if (type === 'null' || (Array.isArray(type) && type.includes('null'))) return true;
+  return [anyOf, oneOf].some((parts) => Array.isArray(parts) && parts.some(allowsNull));
+}

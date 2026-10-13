@@ -55,34 +55,42 @@ function nullableNamed(
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-/** `{ type: [t, 'null'] }` alone: what zod-to-openapi puts beside a `$ref` for `.nullable()`. */
-const isNullCompanion = (value: unknown) =>
-  isObject(value) &&
-  Object.keys(value).length === 1 &&
-  Array.isArray(value.type) &&
-  value.type.length === 2 &&
-  value.type.includes('null');
+/** A schema that lets null through: of type null among others, or null as one of its options. */
+function allowsNull(schema: unknown): boolean {
+  if (!isObject(schema)) return false;
+  const { type, anyOf, oneOf } = schema;
+  if (type === 'null' || (Array.isArray(type) && type.includes('null'))) return true;
+  return [anyOf, oneOf].some((parts) => Array.isArray(parts) && parts.some(allowsNull));
+}
+
+/** `{ $ref }` alone. */
+const isRef = (value: unknown) =>
+  isObject(value) && Object.keys(value).length === 1 && typeof value.$ref === 'string';
 
 /**
- * zod-to-openapi 7 writes a named schema reached as `.nullable()` as
- * `allOf: [{ $ref }, { type: [t, 'null'] }]`, which null never passes: `allOf` needs both, and
- * the component itself is not null. Each, anywhere in `node`, becomes
- * `anyOf: [{ $ref }, { type: 'null' }]`, which says what was meant, in the key's own place.
+ * zod-to-openapi 7 writes a named schema reached as `.nullable()` as `allOf: [{ $ref }, companion]`,
+ * the companion repeating the schema's type or options with null added, and holding whatever else
+ * was said there (a description, a default). Null never passes it: `allOf` needs both, and the
+ * component itself is not null. Each, anywhere in `node`, becomes
+ * `anyOf: [{ $ref }, { type: 'null' }]` in the key's own place, with what else the companion said
+ * beside it.
  */
 function letNullThrough(node: unknown): unknown {
   if (Array.isArray(node)) return node.map(letNullThrough);
   if (!isObject(node)) return node;
   return Object.fromEntries(
-    Object.entries(node).map(([key, value]) => {
+    Object.entries(node).flatMap(([key, value]) => {
+      const [ref, companion] = Array.isArray(value) ? value : [];
       const nullableRef =
         key === 'allOf' &&
         Array.isArray(value) &&
         value.length === 2 &&
-        isObject(value[0]) &&
-        Object.keys(value[0]).length === 1 &&
-        typeof value[0].$ref === 'string' &&
-        isNullCompanion(value[1]);
-      return nullableRef ? ['anyOf', [value[0], { type: 'null' }]] : [key, letNullThrough(value)];
+        isRef(ref) &&
+        isObject(companion) &&
+        allowsNull(companion);
+      if (!nullableRef) return [[key, letNullThrough(value)]];
+      const { type: _type, anyOf: _anyOf, oneOf: _oneOf, ...said } = companion;
+      return [['anyOf', [ref, { type: 'null' }]], ...Object.entries(said)];
     }),
   );
 }

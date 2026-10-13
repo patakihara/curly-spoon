@@ -1,4 +1,5 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { connect } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { routes } from '@auralis/schema';
@@ -82,6 +83,85 @@ describe('the API', () => {
     });
 
     expect([res.statusCode, res.json()]).toEqual([400, { error: 'bad_request' }]);
+    await app.close();
+  });
+
+  it('logs a request the framework refuses at info, with why', async () => {
+    const logged: { level: number; msg?: string; err?: { message?: string } }[] = [];
+    const app = await buildApp({
+      webDistDir: null,
+      db: openDatabase(':memory:'),
+      logger: { stream: { write: (line) => logged.push(JSON.parse(line) as never) } },
+    });
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/setup',
+      headers: { 'content-type': 'application/json' },
+      payload: '{ not json',
+    });
+
+    expect(logged.some((e) => e.level === 30 && /JSON/.test(e.err?.message ?? ''))).toBe(true);
+    await app.close();
+  });
+
+  it('answers a body too large with 413, and a body no route reads with 415, each in its own words', async () => {
+    const app = await buildApp({ webDistDir: null, db: openDatabase(':memory:') });
+
+    const large = await app.inject({
+      method: 'POST',
+      url: '/api/setup',
+      headers: { 'content-type': 'application/json' },
+      payload: JSON.stringify({ code: 'a'.repeat(1_100_000) }),
+    });
+    const plain = await app.inject({
+      method: 'POST',
+      url: '/api/setup',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      payload: 'code=a',
+    });
+
+    expect([large.statusCode, large.json()]).toEqual([413, { error: 'payload_too_large' }]);
+    expect([plain.statusCode, plain.json()]).toEqual([415, { error: 'unsupported_media_type' }]);
+    await app.close();
+  });
+
+  it('answers a path that does not decode with 400 { error }, never echoing the path', async () => {
+    const app = await buildApp({ webDistDir: null, db: openDatabase(':memory:') });
+
+    const res = await app.inject({ method: 'GET', url: '/api/%zz' });
+
+    expect([res.statusCode, res.json()]).toEqual([400, { error: 'bad_request' }]);
+    await app.close();
+  });
+
+  it('answers headers too large with 431, and a request that is not HTTP with 400, each as { error }', async () => {
+    const app = await buildApp({ webDistDir: null, db: openDatabase(':memory:') });
+    await app.listen({ port: 0, host: '127.0.0.1' });
+    const { port } = app.server.address() as { port: number };
+    const answer = (request: string) =>
+      new Promise<string>((resolve) => {
+        const socket = connect(port, '127.0.0.1', () => socket.write(request));
+        let text = '';
+        socket.on('data', (chunk) => (text += chunk.toString()));
+        socket.on('error', () => undefined);
+        socket.on('close', () => resolve(text));
+      });
+    const statusAndBody = (text: string) => [
+      text.split('\r\n')[0],
+      JSON.parse(text.slice(text.indexOf('\r\n\r\n') + 4)) as unknown,
+    ];
+
+    const big = await answer(
+      `GET /api/health HTTP/1.1\r\nHost: a\r\nX-Big: ${'a'.repeat(20_000)}\r\n\r\n`,
+    );
+    const garbled = await answer('NOT HTTP AT ALL\r\n\r\n');
+
+    expect(statusAndBody(big)).toEqual([
+      'HTTP/1.1 431 Request Header Fields Too Large',
+      { error: 'request_header_fields_too_large' },
+    ]);
+    expect(statusAndBody(garbled)).toEqual(['HTTP/1.1 400 Bad Request', { error: 'bad_request' }]);
     await app.close();
   });
 });
@@ -185,6 +265,34 @@ describe('serving the web app', () => {
     });
     expect(unknown.statusCode).toBe(404);
     expect(unknown.json()).toEqual({ error: 'not_found' });
+    await app.close();
+  });
+
+  it('answers a range past the end of a file with 416, its Content-Range, and the code the media routes give 416', async () => {
+    const app = await appWithDist();
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/index.html',
+      headers: { range: 'bytes=99999999-' },
+    });
+
+    const size = readFileSync(join(dist!, 'index.html')).length;
+    expect([res.statusCode, res.headers['content-range'], res.json()]).toEqual([
+      416,
+      `bytes */${size}`,
+      { error: 'range_not_satisfiable' },
+    ]);
+    await app.close();
+  });
+
+  it('answers a folder of the app with 403 forbidden', async () => {
+    const app = await appWithDist();
+    mkdirSync(join(dist!, 'assets'));
+
+    const res = await app.inject({ method: 'GET', url: '/assets/' });
+
+    expect([res.statusCode, res.json()]).toEqual([403, { error: 'forbidden' }]);
     await app.close();
   });
 

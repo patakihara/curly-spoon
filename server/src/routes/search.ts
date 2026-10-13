@@ -1,8 +1,10 @@
 /**
  * Search and suggestions over the household's whole library index, read with no upstream call:
  * a result the signed-in person's own accounts can't play still shows. A search is kept among the
- * person's recent searches once its results are ready, unless they asked by HEAD or have gone; a
- * suggestion keeps nothing.
+ * person's recent searches once its results are ready, unless they asked by HEAD; a suggestion
+ * keeps nothing. A search is kept even when its client has left: one that leaves right after
+ * asking has its answer written before Node reads the close, and a written answer looks delivered
+ * whether or not anyone reads it, so the server cannot tell it from one that read its results.
  */
 import { getSearch, getSearchSuggest } from '@auralis/schema';
 import type { FastifyInstance } from 'fastify';
@@ -27,9 +29,8 @@ export function searchRoutes(app: FastifyInstance, options: { db: Db; now: () =>
     const gone = clientGone(reply);
     const asked = query.kinds === undefined ? { q: query.q } : { q: query.q, kinds: query.kinds };
     const lists = await Promise.all(sources.map((source) => source.search(asked, gone)));
-    // Kept only for a person who asked for the results and is still there to see them. A recent
-    // search is a convenience: failing to keep one never costs the results.
-    if (request.method === 'GET' && !gone.aborted) {
+    // A recent search is a convenience: failing to keep one never costs the results.
+    if (request.method === 'GET') {
       try {
         recordSearch(db, user.id, query.q, now());
       } catch (err) {
