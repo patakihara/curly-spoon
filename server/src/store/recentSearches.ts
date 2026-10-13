@@ -1,8 +1,9 @@
 /**
  * A person's recent searches, kept on the server so every device of theirs shares them: one row
- * per folded text, in the form last typed, the newest `RECENT_KEPT` only.
+ * per search words, as search compares them (case, accents and punctuation aside), in the form
+ * last typed, the newest `RECENT_KEPT` only.
  */
-import { searchFold, searchTokens } from '../text/fold.js';
+import { searchTokens } from '../text/fold.js';
 import type { Db } from './connection.js';
 
 /** How many recent searches a person keeps. */
@@ -11,50 +12,54 @@ export const RECENT_KEPT = 20;
 export interface RecentSearch {
   /** As last typed, trimmed. */
   query: string;
-  folded: string;
+  /** Its search words, space-joined. */
+  words: string;
   /** Milliseconds since the epoch. */
   searchedAt: number;
 }
 
 /**
- * Records a search: a new row, or the same folded text moved to the top in its new form. A search
+ * Records a search: a new row, or the same words moved to the top in their new form. A search
  * with no word in it, only punctuation or spaces, searched for nothing and is not kept.
  */
 export function recordSearch(db: Db, userId: string, query: string, at: number): void {
   const typed = query.trim();
-  if (searchTokens(typed).length === 0) return;
-  const folded = searchFold(typed);
+  const words = searchTokens(typed).join(' ');
+  if (words === '') return;
   db.transaction(() => {
     db.prepare(
-      `INSERT INTO recent_searches (user_id, folded, query, searched_at) VALUES (?, ?, ?, ?)
-       ON CONFLICT (user_id, folded)
+      `INSERT INTO recent_searches (user_id, words, query, searched_at) VALUES (?, ?, ?, ?)
+       ON CONFLICT (user_id, words)
          DO UPDATE SET query = excluded.query, searched_at = excluded.searched_at`,
-    ).run(userId, folded, typed, at);
+    ).run(userId, words, typed, at);
     db.prepare(
-      `DELETE FROM recent_searches WHERE user_id = @user AND folded NOT IN (
-         SELECT folded FROM recent_searches WHERE user_id = @user
-         ORDER BY searched_at DESC, folded LIMIT @kept)`,
+      `DELETE FROM recent_searches WHERE user_id = @user AND words NOT IN (
+         SELECT words FROM recent_searches WHERE user_id = @user
+         ORDER BY searched_at DESC, words LIMIT @kept)`,
     ).run({ user: userId, kept: RECENT_KEPT });
   })();
 }
 
-/** A person's recent searches whose folded text starts with `prefix` (folded), newest first. */
+/**
+ * A person's recent searches whose words start with the words of `typed`, as a title's do for
+ * search, newest first: every one when `typed` holds no word.
+ */
 export function recentSearches(
   db: Db,
   userId: string,
-  prefix: string,
+  typed: string,
   limit: number,
 ): RecentSearch[] {
   const rows = db
     .prepare(
-      `SELECT query, folded, searched_at FROM recent_searches
-       WHERE user_id = @user AND substr(folded, 1, length(@prefix)) = @prefix
-       ORDER BY searched_at DESC, folded LIMIT @limit`,
+      `SELECT query, words, searched_at FROM recent_searches
+       WHERE user_id = @user AND substr(words, 1, length(@prefix)) = @prefix
+       ORDER BY searched_at DESC, words LIMIT @limit`,
     )
-    .all({ user: userId, prefix, limit }) as {
+    .all({ user: userId, prefix: searchTokens(typed).join(' '), limit }) as {
     query: string;
-    folded: string;
+    words: string;
     searched_at: number;
   }[];
-  return rows.map((r) => ({ query: r.query, folded: r.folded, searchedAt: r.searched_at }));
+  return rows.map((r) => ({ query: r.query, words: r.words, searchedAt: r.searched_at }));
 }

@@ -1,17 +1,14 @@
 /**
  * Search on a large library, written through the index's own write path (`applyTree`) from the
- * index's own row type: ranking and the kinds filter cover every match before anything is cut,
- * and suggestions and results answer within the 50 ms budget on 25 000 rows.
+ * index's own row type: ranking and the kinds filter cover every match before anything is cut.
+ * How fast it answers on 25 000 rows is `largeLibrary.timing.test.ts`.
  */
 import type { SearchKind } from '@auralis/schema';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Creator, IndexKind, IndexRow, SeriesEntry } from '../libraryIndex/rows.js';
 import { applyTree, emptyCounts } from '../libraryIndex/store.js';
 import { openDatabase, type Db } from '../store/connection.js';
-import { recordSearch } from '../store/recentSearches.js';
-import { upsertUser } from '../store/users.js';
 import { librarySource, suggestFromIndex } from './library.js';
-import { suggest } from './suggest.js';
 
 const T0 = Date.UTC(2026, 9, 13, 8);
 const SOURCE: Record<IndexKind, IndexRow['source']> = {
@@ -182,153 +179,5 @@ describe('search on a large library, where many short titles match better than t
     expect(suggested[0]).toEqual(['track', 'Interlude']);
     expect(suggested).toContainEqual(['album', 'Interludes and Codas']);
     expect(suggested).toContainEqual(['book', 'Interlude Stories']);
-  });
-});
-
-/** A seeded generator, so the library is the same on every run. */
-function random(seed: number) {
-  let state = seed;
-  return () => {
-    state = (state * 1103515245 + 12345) % 2 ** 31;
-    return state / 2 ** 31;
-  };
-}
-
-/**
- * About 25 000 rows: 700 albums of 12 tracks, 50 shows of 300 episodes and 1 500 books, titled
- * from a few thousand made-up words and twenty common ones, so a common word or a two-letter
- * prefix matches thousands of rows.
- */
-function fillLibrary(db: Db) {
-  const next = random(42);
-  const pick = <T>(list: readonly T[], skew = 1) => list[Math.floor(next() ** skew * list.length)]!;
-  const syllables =
-    'ka lo ma ri the an sun dor el mi ra ten ber vo li na sha tor qui zen be ca fa go ho ju ke mo pe sa ti wu ye'.split(
-      ' ',
-    );
-  const common =
-    'the of a and love night song live part episode my in you to life heart world day time home'.split(
-      ' ',
-    );
-  const made = Array.from({ length: 6000 }, () =>
-    Array.from({ length: 2 + Math.floor(next() * 2) }, () => pick(syllables)).join(''),
-  );
-  const word = () => (next() < 0.35 ? pick(common, 2) : pick(made, 1.5));
-  const title = (most: number) => {
-    const words = Array.from({ length: 1 + Math.floor(next() * most) }, word).join(' ');
-    return words[0]!.toUpperCase() + words.slice(1);
-  };
-  const name = () => `${title(1)} ${title(1)}`;
-  let ids = 0;
-  const id = () => `synthetic-${(ids += 1)}`;
-
-  db.transaction(() => {
-    const artists = Array.from({ length: 300 }, () => ({ id: id(), name: name() }));
-    for (let n = 0; n < 700; n += 1) album(db, id(), title(4), pick(artists), 12, () => title(5));
-    for (let n = 0; n < 50; n += 1) {
-      const host: Creator = { name: name(), role: 'host' };
-      const show = item('show', id(), title(3), { creators: [host] });
-      write(
-        db,
-        show,
-        Array.from({ length: 300 }, () =>
-          item('episode', id(), `${Math.floor(next() * 400)}: ${title(7)}`, {
-            parentId: show.id,
-            creators: [host],
-          }),
-        ),
-      );
-    }
-    const authors = Array.from({ length: 600 }, () => ({ id: id(), name: name() }));
-    for (let n = 0; n < 1500; n += 1) {
-      const series =
-        n % 3 === 0
-          ? [{ id: `series-${n % 200}`, name: `Saga ${n % 200} ${made[n % 200]}`, sequence: '1' }]
-          : [];
-      write(
-        db,
-        item('book', id(), title(5), {
-          creators: [
-            { ...pick(authors), role: 'author' },
-            { name: name(), role: 'narrator' },
-          ],
-          series,
-        }),
-      );
-    }
-  })();
-}
-
-const median = (times: number[]) => [...times].sort((a, b) => a - b)[Math.floor(times.length / 2)]!;
-
-describe('search on 25 000 indexed rows', () => {
-  let db: Db;
-  let kara: string;
-  beforeAll(() => {
-    db = openDatabase(':memory:');
-    fillLibrary(db);
-    kara = upsertUser(db, { username: 'kara', role: 'member' }).id;
-    for (let n = 0; n < 20; n += 1) recordSearch(db, kara, `search ${n}`, T0 + n);
-  });
-  afterAll(() => db.close());
-
-  /**
-   * Each query's time, the fastest of three runs, so a busy machine measures the search and not
-   * the other tests sharing it; then the median and the worst over the queries.
-   */
-  async function timed(run: (q: string) => unknown, queries: readonly string[]) {
-    const times: number[] = [];
-    for (const q of queries) {
-      let fastest = Number.POSITIVE_INFINITY;
-      for (let n = 0; n < 3; n += 1) {
-        const start = performance.now();
-        await run(q);
-        fastest = Math.min(fastest, performance.now() - start);
-      }
-      times.push(fastest);
-    }
-    return { median: median(times), worst: Math.max(...times) };
-  }
-
-  it('holds about 25 000 rows', () => {
-    expect(db.prepare('SELECT COUNT(*) AS n FROM index_items').get()).toEqual({ n: 25_650 });
-  });
-
-  it('suggests for two-letter prefixes within 50 ms at the median and 150 ms at worst', async () => {
-    const prefixes = [
-      'th',
-      'ka',
-      'lo',
-      'ma',
-      'sa',
-      'be',
-      'go',
-      'ra',
-      'an',
-      'el',
-      'mi',
-      'to',
-      'he',
-      'da',
-      'li',
-    ];
-
-    const time = await timed((q) => suggest(db, kara, q), prefixes);
-
-    expect(time.median).toBeLessThan(50);
-    expect(time.worst).toBeLessThan(150);
-  });
-
-  it('suggests and searches for the commonest words, which many titles equal, each within 50 ms', async () => {
-    const words = ['the', 'a'];
-
-    const suggesting = await timed((q) => suggest(db, kara, q), words);
-    const searching = await timed(
-      (q) => librarySource(db).search({ q }, new AbortController().signal),
-      words,
-    );
-
-    expect(suggesting.worst).toBeLessThan(50);
-    expect(searching.worst).toBeLessThan(50);
   });
 });

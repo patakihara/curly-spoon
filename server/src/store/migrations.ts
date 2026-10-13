@@ -388,8 +388,8 @@ export const migrations: readonly Migration[] = [
       const fts5 = db.prepare("SELECT 1 FROM pragma_module_list WHERE name = 'fts5'").get();
       if (fts5 === undefined) throw new Error('search needs SQLite built with FTS5');
       db.exec(`
-        -- Each indexed row's searchable text: the words of its title, people and series, and
-        -- its kind, written by the index's own code (search/items.ts), which also fills in rows
+        -- Each indexed row's searchable text: the words of its title, people and series, its
+        -- kind, and the artists, authors and series it names (JSON), written by the index's own code (search/items.ts), which also fills in rows
         -- missing or written by an older fold when the database opens. Its own id is the
         -- full-text row id: index_items' rowid can change on VACUUM. It goes with its index row.
         CREATE TABLE search_items (
@@ -400,11 +400,14 @@ export const migrations: readonly Migration[] = [
           title        TEXT NOT NULL,
           people       TEXT NOT NULL,
           series       TEXT NOT NULL,
+          names        TEXT NOT NULL,
           text_version INTEGER NOT NULL,
           UNIQUE (source, upstream_id),
           FOREIGN KEY (source, upstream_id)
             REFERENCES index_items(source, upstream_id) ON DELETE CASCADE
         );
+        -- Titles starting with a query's words, the first tiers of a search, read off this index.
+        CREATE INDEX idx_search_items_title ON search_items(title);
 
         -- Words of the folded text, and their two- and three-letter prefixes. The text is folded
         -- already, so the tokenizer only splits it into words.
@@ -421,7 +424,10 @@ export const migrations: readonly Migration[] = [
           INSERT INTO search_fts (search_fts, rowid, title, people, series)
             VALUES ('delete', old.id, old.title, old.people, old.series);
         END;
-        CREATE TRIGGER search_items_update AFTER UPDATE OF title, people, series ON search_items
+        -- Only when the words change: a row rewritten at a new version with the same words
+        -- keeps its full-text entry.
+        CREATE TRIGGER search_items_update AFTER UPDATE ON search_items
+        WHEN old.title <> new.title OR old.people <> new.people OR old.series <> new.series
         BEGIN
           INSERT INTO search_fts (search_fts, rowid, title, people, series)
             VALUES ('delete', old.id, old.title, old.people, old.series);
@@ -436,14 +442,14 @@ export const migrations: readonly Migration[] = [
     name: 'recent_searches',
     up: (db) => {
       db.exec(`
-        -- Each person's recent searches, shared by their devices: one per folded text, in the
+        -- Each person's recent searches, shared by their devices: one per search words, in the
         -- form last typed. Only the newest are kept (store/recentSearches.ts).
         CREATE TABLE recent_searches (
           user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-          folded      TEXT NOT NULL,
+          words       TEXT NOT NULL,
           query       TEXT NOT NULL,
           searched_at INTEGER NOT NULL,
-          PRIMARY KEY (user_id, folded)
+          PRIMARY KEY (user_id, words)
         );
       `);
     },

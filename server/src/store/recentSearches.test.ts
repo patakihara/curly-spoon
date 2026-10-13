@@ -1,6 +1,7 @@
 /**
  * Recent searches are kept per person, not per device: the newest twenty, newest first, one per
- * folded text, in the form last typed. They go with the person.
+ * search words (case, accents and punctuation aside), in the form last typed. They go with the
+ * person.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { openDatabase, type Db } from './connection.js';
@@ -19,8 +20,8 @@ beforeEach(() => {
 });
 afterEach(() => db.close());
 
-const queries = (userId: string, prefix = '', limit = 50) =>
-  recentSearches(db, userId, prefix, limit).map((r) => r.query);
+const queries = (userId: string, typed = '', limit = 50) =>
+  recentSearches(db, userId, typed, limit).map((r) => r.query);
 
 describe('recent searches', () => {
   it('lists a person’s own searches, newest first, and never another person’s', () => {
@@ -32,14 +33,17 @@ describe('recent searches', () => {
     expect(queries(otto)).toEqual(['Megacorp']);
   });
 
-  it('keeps one search per folded text, in the form last typed, moved to the top', () => {
+  it('keeps one search per words, case, accents and punctuation aside, in the form last typed, moved to the top', () => {
     recordSearch(db, kara, 'Émile Zola', T0);
-    recordSearch(db, kara, 'Rumours', T0 + 1);
-    recordSearch(db, kara, '  EMILE   zola ', T0 + 2);
+    recordSearch(db, kara, 'Love', T0 + 1);
+    recordSearch(db, kara, 'Rumours', T0 + 2);
+    recordSearch(db, kara, '  EMILE   zola ', T0 + 3);
+    recordSearch(db, kara, 'love!', T0 + 4);
 
     expect(recentSearches(db, kara, '', 50)).toEqual([
-      { query: 'EMILE   zola', folded: 'emile zola', searchedAt: T0 + 2 },
-      { query: 'Rumours', folded: 'rumours', searchedAt: T0 + 1 },
+      { query: 'love!', words: 'love', searchedAt: T0 + 4 },
+      { query: 'EMILE   zola', words: 'emile zola', searchedAt: T0 + 3 },
+      { query: 'Rumours', words: 'rumours', searchedAt: T0 + 2 },
     ]);
   });
 
@@ -53,15 +57,17 @@ describe('recent searches', () => {
     ).toEqual({ n: 20 });
   });
 
-  it('finds those starting with a folded prefix, up to a limit', () => {
+  it('finds those whose words start with the words typed, up to a limit', () => {
     recordSearch(db, kara, 'Fleetwood Mac', T0);
     recordSearch(db, kara, 'Femininomenon', T0 + 1);
     recordSearch(db, kara, 'Rumours', T0 + 2);
     recordSearch(db, kara, 'fémme', T0 + 3);
 
-    expect(queries(kara, 'fe')).toEqual(['fémme', 'Femininomenon']);
+    expect(queries(kara, 'FE')).toEqual(['fémme', 'Femininomenon']);
     expect(queries(kara, 'f', 2)).toEqual(['fémme', 'Femininomenon']);
     expect(queries(kara, 'fl')).toEqual(['Fleetwood Mac']);
+    expect(queries(kara, 'fleetwood-m')).toEqual(['Fleetwood Mac']);
+    expect(queries(kara, '  Fleetwood,  ')).toEqual(['Fleetwood Mac']);
     expect(queries(kara, '', 2)).toEqual(['fémme', 'Rumours']);
   });
 

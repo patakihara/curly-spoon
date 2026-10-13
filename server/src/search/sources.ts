@@ -16,8 +16,9 @@ export interface SourceQuery {
 }
 
 /**
- * One result as its source ranked it: its tier, and the source's own relevance score (for the
- * library, the full-text index's bm25: lower is better).
+ * One result as its source ranked it: its tier, and the source's own score within the tier, lower
+ * being closer (for the library, the words of the title or name, or bm25 through people or
+ * series).
  */
 export interface Ranked {
   result: SearchResult;

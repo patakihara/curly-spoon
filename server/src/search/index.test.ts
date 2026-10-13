@@ -19,6 +19,7 @@ import { applyRow, emptyCounts, listIndexed } from '../libraryIndex/store.js';
 import { openDatabase, type Db } from '../store/connection.js';
 import { migrations, runMigrations } from '../store/migrations.js';
 import { searchTokens } from '../text/fold.js';
+import { refreshSearchItems, SEARCH_TEXT_VERSION } from './items.js';
 
 const ADAPTERS = fileURLToPath(new URL('../adapters/', import.meta.url));
 const HOUR = 60 * 60 * 1000;
@@ -219,6 +220,40 @@ describe('the search tables on the recorded library', () => {
     expectInSync(db);
   });
 
+  it('follow a change to an item’s people alone, or its series alone', async () => {
+    await index(db, T0, recordedPage(), onRecordedPage);
+    const book = listIndexed(db).find((row) => row.kind === 'book')!;
+    const key = `${book.source}:${book.id}`;
+    const write = (creators: typeof book.creators, series: typeof book.series, at: number) =>
+      applyRow(db, { ...book, creators, series }, at, emptyCounts());
+    const saga = (name: string) => [{ id: 'series-1', name, sequence: '1' }];
+    write(book.creators, saga('Zanzibar Saga'), T0 + HOUR);
+
+    write([{ name: 'Quillon Varga', role: 'author' }], saga('Zanzibar Saga'), T0 + 2 * HOUR);
+    expect(found(db, 'quillon varga')).toEqual([key]);
+    expect(found(db, book.creators[0]!.name)).not.toContain(key);
+
+    write([{ name: 'Quillon Varga', role: 'author' }], saga('Yonder Saga'), T0 + 3 * HOUR);
+    expect(found(db, 'yonder saga')).toEqual([key]);
+    expect(found(db, 'zanzibar')).toEqual([]);
+    expectInSync(db);
+  });
+
+  it('bring a row an older version wrote up to date when its words are the same, and leave the full-text index as it was', async () => {
+    await index(db, T0, recordedPage(), onRecordedPage);
+    db.exec('UPDATE search_items SET text_version = text_version - 1');
+    const fullText = () => db.prepare('SELECT id, block FROM search_fts_data ORDER BY id').all();
+    const before = fullText();
+
+    refreshSearchItems(db);
+
+    expect(new Set(searchItems(db).map((item) => item.text_version))).toEqual(
+      new Set([SEARCH_TEXT_VERSION]),
+    );
+    expect(fullText()).toEqual(before);
+    expectInSync(db);
+  });
+
   it('rewrite no search row for an item that did not change, even when every item is read again', async () => {
     await index(db, T0, recordedPage(), onRecordedPage);
     db.exec(`
@@ -330,6 +365,40 @@ describe('the search tables when the database opens', () => {
     expect(found(opened, 'emi')).toEqual(['jellyfin:track-1']);
     expectInSync(opened);
     opened.close();
+  });
+
+  it('fill in a thousand missing search rows with the statements they fill in one with', () => {
+    /** Statements prepared to fill in `count` missing search rows. */
+    function preparedFor(count: number) {
+      const opened = openDatabase(':memory:');
+      const add = opened.prepare(
+        `INSERT INTO index_items (source, upstream_id, kind, parent_id, title, creators, series,
+           genres, content_hash, version, created_at, updated_at)
+         VALUES ('abs', ?, 'book', NULL, ?, '[]', '[]', '[]', 'h', 1, 1, 1)`,
+      );
+      for (let n = 0; n < count; n += 1) add.run(`book-${n}`, `Book ${n}`);
+      let prepared = 0;
+      const counted = new Proxy(opened, {
+        get(target, key) {
+          if (key === 'prepare') {
+            return (sql: string) => {
+              prepared += 1;
+              return target.prepare(sql);
+            };
+          }
+          const value: unknown = Reflect.get(target, key, target);
+          return typeof value === 'function' ? (value as () => unknown).bind(target) : value;
+        },
+      });
+
+      refreshSearchItems(counted);
+
+      expect(searchItems(opened)).toHaveLength(count);
+      opened.close();
+      return prepared;
+    }
+
+    expect(preparedFor(1000)).toBe(preparedFor(1));
   });
 
   it('rewrite every search row an older fold wrote, and no other', async () => {

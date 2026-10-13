@@ -102,6 +102,27 @@ const search = (q: string, kinds?: SearchKind[]) =>
 const shown = (ranked: Ranked[]) => ranked.map((r) => [r.tier, r.result.kind, r.result.title]);
 const row = (title: string) => listIndexed(db).find((r) => r.title === title)!;
 const refOf = (r: IndexRow) => ({ source: r.source, id: r.id });
+/** A Jellyfin row of `kind` with nothing but its title. */
+const row0 = (kind: 'album' | 'track', id: string, title: string): IndexRow => ({
+  source: 'jellyfin',
+  id,
+  kind,
+  parentId: null,
+  libraryId: null,
+  title,
+  creators: [],
+  series: [],
+  genres: [],
+  position: null,
+  disc: null,
+  duration: 60,
+  year: null,
+  publishedAt: null,
+  upstreamVersion: null,
+  ids: {},
+  episodeOrder: null,
+  hasArt: false,
+});
 
 describe('library search', () => {
   it('ranks the whole title first, then titles starting with the query, then titles holding its words, the closer match first', async () => {
@@ -138,6 +159,56 @@ describe('library search', () => {
     ]);
   });
 
+  it('ranks matches through people by bm25: the item naming fewer others first', async () => {
+    await index(db);
+    const book = row('Powers [Sandvold]');
+    const quill = { id: 'author-quill', name: 'Quill Varga', role: 'author' as const };
+    const copy = (id: string, title: string, creators: IndexRow['creators']) =>
+      applyTree(db, { top: { ...book, id, title, creators }, children: [] }, T0, emptyCounts());
+    copy('a'.repeat(32), 'Apple', [
+      quill,
+      { name: 'Someone Else With A Long Name', role: 'narrator' },
+    ]);
+    copy('b'.repeat(32), 'Zebra', [quill]);
+
+    expect(shown(await search('varga', ['book']))).toEqual([
+      [3, 'book', 'Zebra'],
+      [3, 'book', 'Apple'],
+    ]);
+  });
+
+  it('finds a title by its start whatever letter follows the query', async () => {
+    await index(db);
+    const book = row('Powers [Sandvold]');
+    applyTree(
+      db,
+      { top: { ...book, id: 'f'.repeat(32), title: 'Palæontology' }, children: [] },
+      T0,
+      emptyCounts(),
+    );
+
+    expect(shown(await search('pal'))[0]).toEqual([1, 'book', 'Palæontology']);
+  });
+
+  it('follows a person to their new id upstream under the same name', async () => {
+    await index(db);
+    const book = row('Powers [Sandvold]');
+    const write = (id: string, at: number) =>
+      applyTree(
+        db,
+        { top: { ...book, creators: [{ id, name: 'Quill Varga', role: 'author' }] }, children: [] },
+        at,
+        emptyCounts(),
+      );
+    write('author-old', T0 + 1);
+
+    write('author-new', T0 + 2);
+
+    expect((await search('quill varga', ['author'])).map((r) => r.result.ref.id)).toEqual([
+      'author-new',
+    ]);
+  });
+
   it('ranks an album above its own title track', async () => {
     await index(db, [renamed('index-album-tracks-2', 'Dreams', 'Rumours')]);
 
@@ -168,7 +239,7 @@ describe('library search', () => {
     ]);
   });
 
-  it('breaks a tie in tier, kind and relevance by title, then by ref', async () => {
+  it('breaks a tie in tier, kind and closeness by title, byte for byte as the database orders it, then by ref', async () => {
     await index(db);
     const book = row('Powers [Sandvold]');
     const copy = (id: string, title: string) =>
@@ -176,12 +247,36 @@ describe('library search', () => {
     copy('a'.repeat(32), 'Zebra Tales');
     copy('b'.repeat(32), 'Aardvark Tales');
     copy('c'.repeat(32), 'Aardvark Tales');
+    copy('d'.repeat(32), 'Øya Tales');
+    copy('e'.repeat(32), 'Pala Tales');
 
     expect((await search('tales')).map((r) => [r.result.title, r.result.ref.id])).toEqual([
       ['Aardvark Tales', 'b'.repeat(32)],
       ['Aardvark Tales', 'c'.repeat(32)],
+      ['Pala Tales', 'e'.repeat(32)],
       ['Zebra Tales', 'a'.repeat(32)],
+      ['Øya Tales', 'd'.repeat(32)],
     ]);
+  });
+
+  it('keeps the hundred closest matches when more match: the fewest words, then by title', async () => {
+    await index(db);
+    const book = row('Powers [Sandvold]');
+    const titles = [
+      ...Array.from({ length: 60 }, (_, n) => `Tales X${100 + n}`),
+      ...Array.from({ length: 90 }, (_, n) => `Tales of X${200 + n}`),
+    ];
+    // Refs in the reverse order of titles, so an order falling back to refs keeps others.
+    titles.forEach((title, n) =>
+      applyTree(
+        db,
+        { top: { ...book, id: `${999 - n}`.padStart(32, '0'), title }, children: [] },
+        T0,
+        emptyCounts(),
+      ),
+    );
+
+    expect((await search('tales')).map((r) => r.result.title)).toEqual(titles.slice(0, 100));
   });
 
   it('matches case, accents and apostrophes folded, on both sides', async () => {
@@ -359,6 +454,41 @@ describe('suggestions from the index', () => {
     expect(texts(suggestFromIndex(db, 'meg', 2))).toEqual([
       ['show', 'Megacorp'],
       ['episode', 'Introducing: Megacorp'],
+    ]);
+  });
+
+  it('suggests a text once for each kind that carries it', async () => {
+    await index(db, [renamed('index-album-tracks-2', 'Dreams', 'Rumours')]);
+
+    expect(texts(suggestFromIndex(db, 'rumours', 8))).toEqual([
+      ['album', 'Rumours'],
+      ['track', 'Rumours'],
+    ]);
+  });
+
+  it('suggests no name past the last item read before every item better than it is read', () => {
+    const artist = { id: 'artist-zed', name: 'Zed Zulu', role: 'artist' as const };
+    const album: IndexRow = {
+      ...row0('album', 'album-zed', 'Zed Album'),
+      creators: [{ ...artist, role: 'album-artist' }],
+    };
+    applyTree(
+      db,
+      {
+        top: album,
+        children: Array.from({ length: 200 }, (_, n) => ({
+          ...row0('track', `track-zed-${n}`, 'Zed'),
+          parentId: album.id,
+          creators: [artist],
+        })),
+      },
+      T0,
+      emptyCounts(),
+    );
+
+    expect(texts(suggestFromIndex(db, 'zed', 2))).toEqual([
+      ['track', 'Zed'],
+      ['album', 'Zed Album'],
     ]);
   });
 

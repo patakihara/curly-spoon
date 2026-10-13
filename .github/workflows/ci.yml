@@ -71,6 +71,7 @@ jobs:
       # The same tests as `pnpm test`, with JUnit reports for the plan's progress. The two node
       # test globs must match package.json's `test` script; scripts/repo/live.test.mjs runs in live.yml.
       - run: pnpm exec vitest run --reporter=default --reporter=junit --outputFile.junit=reports/junit/vitest.xml
+      - run: pnpm exec vitest run --config vitest.timing.config.ts --reporter=default --reporter=junit --outputFile.junit=reports/junit/vitest-timing.xml
       - if: always()
         run: mkdir -p reports/junit && node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=reports/junit/node.xml scripts/*.test.mjs scripts/plan/*.test.mjs scripts/guards/*.test.mjs scripts/sonora/*.test.mjs scripts/canvas/*.test.mjs scripts/lint/*.test.mjs scripts/mediaserver/*.test.mjs scripts/repo/layout.test.mjs scripts/repo/staging.test.mjs scripts/repo/image-tags.test.mjs scripts/repo/release-server.test.mjs scripts/repo/install.test.mjs scripts/repo/leftovers.test.mjs
       - if: always()

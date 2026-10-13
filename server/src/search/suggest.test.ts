@@ -82,6 +82,12 @@ describe('suggestions', () => {
     expect(shown(suggest(db, kara, 'a to'))).toEqual([['book', 'The Tombs of Atuan [Archer]']]);
   });
 
+  it('offer a recent search by its words, punctuation aside', () => {
+    recordSearch(db, kara, 'Fleetwood Mac', T0);
+
+    expect(shown(suggest(db, kara, 'fleetwood-m'))).toEqual([['recent', 'Fleetwood Mac']]);
+  });
+
   it('never offer another person’s recent searches', () => {
     recordSearch(db, otto, 'Powers of ten', T0);
     recordSearch(db, otto, 'powder', T0 + 1);
