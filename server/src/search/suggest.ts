@@ -1,24 +1,24 @@
 /**
- * Suggestions as you type. Under two letters, only your own recent searches: the newest with
- * nothing typed, else those starting with it. From two letters, up to three of your recent
- * searches starting with it, then the household's index (`library.ts`), so many in all.
+ * Suggestions as you type. Until some typed word has two letters, only your own recent searches:
+ * the newest with nothing typed, else those starting with it. Then up to three of your recent
+ * searches starting with it, and the household's index (`library.ts`), so many in all.
  */
 import type { Suggestion } from '@auralis/schema';
 import type { Db } from '../store/connection.js';
 import { recentSearches } from '../store/recentSearches.js';
-import { searchFold } from '../text/fold.js';
+import { searchFold, searchTokens } from '../text/fold.js';
 import { suggestFromIndex } from './library.js';
 
 /** How many suggestions are offered. */
 export const SUGGESTION_LIMIT = 8;
 /** How many recent searches come first once the index is asked too. */
 const RECENT_FIRST = 3;
-/** How much of a query, folded, it takes to ask the index. */
+/** How long one word of a query must be to ask the index: one letter matches too much. */
 const INDEX_FROM = 2;
 
 export function suggest(db: Db, userId: string, q: string): Suggestion[] {
   const folded = searchFold(q);
-  const fromIndex = [...folded].length >= INDEX_FROM;
+  const fromIndex = searchTokens(q).some((word) => [...word].length >= INDEX_FROM);
   const recent = recentSearches(
     db,
     userId,

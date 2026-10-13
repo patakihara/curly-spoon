@@ -8,11 +8,16 @@ export function foldName(name: string): string {
   return name.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase();
 }
 
-const APOSTROPHES = /['’]/g;
+/** Apostrophes and the marks typed for them: ' ’ ‘ ʼ ` ´ and the full-width '. */
+const APOSTROPHES = /['’‘ʼ`´＇]/g;
 
-/** `foldName`, then apostrophes dropped and whitespace collapsed: indexed text and queries alike. */
+/**
+ * Apostrophes dropped (before `foldName`, which would split ´ into a space and an accent), then
+ * `foldName`, ß as ss, and whitespace collapsed: indexed text and queries alike. Sign-in keeps
+ * `foldName` alone: a login name matches an account only as spelled.
+ */
 export function searchFold(text: string): string {
-  return foldName(text).replace(APOSTROPHES, '').replace(/\s+/g, ' ').trim();
+  return foldName(text.replace(APOSTROPHES, '')).replace(/ß/g, 'ss').replace(/\s+/g, ' ').trim();
 }
 
 /**

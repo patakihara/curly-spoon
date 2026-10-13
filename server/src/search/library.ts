@@ -2,16 +2,18 @@
  * Search over the library index: the household's whole index, read with no upstream call, and no
  * one's own access asked: a result their accounts can't play still shows.
  *
- * Candidates come from the full-text index, every word of the query a word prefix, best bm25
- * first, up to 500; rows whose whole title is the query join them, so the limit never cuts an
- * exact match. Each candidate is ranked in tiers on its folded title: the whole title is the
- * query (0), the title starts with it (1), every word of the query starts a word of the title
- * (2), or it matched through people, series or words spread across them (3). The artists,
- * authors and series that candidates name become results of their own when their name holds every
- * word, ranked on their name the same way; narrators and hosts have no id upstream, so they
- * don't. Within a tier, albums, books, shows, people and series come before tracks and episodes,
- * then bm25, then the title as the library sorts it, then the ref.
+ * Every row holding each word of the query as a word prefix is ranked, and the kinds filter
+ * applied, before anything is cut, so neither the limit nor a filter loses a better match. A row's
+ * tier compares the query's words with its title's words, punctuation aside: the same words (0);
+ * the title's words starting with the query's, its last word as a prefix (1); every word of the
+ * query starting a word of the title (2); or matched through people, series or words spread
+ * across them (3). The artists, authors and series that matching rows name become results of
+ * their own when their name holds every word, tiered on their name the same way; narrators and
+ * hosts have no id upstream, so they don't. Within a tier, albums, books, shows, people and series
+ * come before tracks and episodes, then bm25, then the title's words, the kind and the ref: one
+ * order over every row, so a kinds filter only hides rows.
  */
+import { Buffer } from 'node:buffer';
 import {
   type MediaRef,
   mediaRefKey,
@@ -22,11 +24,8 @@ import {
 import type { Creator, IndexKind, IndexSource, SeriesEntry } from '../libraryIndex/rows.js';
 import { artUrl } from '../routes/art.js';
 import type { Db } from '../store/connection.js';
-import { searchFold, searchTokens } from '../text/fold.js';
+import { searchTokens } from '../text/fold.js';
 import { RESULT_LIMIT, type Ranked, type SearchSource } from './sources.js';
-
-/** How many full-text hits are read, best first, before ranking. */
-const CANDIDATES = 500;
 
 /** Who an item's result names: a book's authors, a show's or episode's host, an album's or track's artists. */
 const CREATOR_ROLE: Record<IndexKind, Creator['role']> = {
@@ -37,21 +36,78 @@ const CREATOR_ROLE: Record<IndexKind, Creator['role']> = {
   track: 'artist',
 };
 
+const ITEM_KINDS = Object.keys(CREATOR_ROLE) as IndexKind[];
+
 /** Kinds that rank after the others of their tier: an album beats its title track. */
-const LATER_KINDS: readonly SearchKind[] = ['track', 'episode'];
+const LATER_KINDS: readonly IndexKind[] = ['track', 'episode'];
 
 /** The people and series that are results of their own. */
 type NameKind = Extract<SearchKind, 'artist' | 'author' | 'series'>;
+const NAME_KINDS: readonly NameKind[] = ['artist', 'author', 'series'];
 
-const byTitle = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
+/** The query's words; joined as search rows hold a title; and as a full-text expression. */
+interface Query {
+  words: string[];
+  joined: string;
+  match: string;
+}
 
-interface Hit {
-  source: IndexSource;
-  upstream_id: string;
-  kind: IndexKind;
+function queryOf(q: string): Query | null {
+  const words = searchTokens(q);
+  if (words.length === 0) return null;
+  // Each word quoted, so nothing typed is read as full-text syntax; a word holds no quote.
+  const match = words.map((w) => `"${w}"*`).join(' ');
+  return { words, joined: words.join(' '), match };
+}
+
+/** One ranked row, before an item's own fields are read. */
+interface Candidate {
+  kind: SearchKind;
+  ref: MediaRef;
+  /** The words of its title or name, space-joined. */
+  words: string;
+  tier: number;
+  score: number;
+  /** A person's or series' name as shown; null for an item, whose title is read after ranking. */
+  name: string | null;
+}
+
+/**
+ * The first `@limit` matching rows of the asked kinds (all kinds when null), in order. The tier is
+ * worked out here, on every match, before the limit.
+ */
+const ITEMS = `
+  WITH hits AS (SELECT rowid AS id, rank AS score FROM search_fts WHERE search_fts MATCH @match)
+  SELECT s.kind, s.source, s.upstream_id, s.title AS words, hits.score,
+    CASE WHEN s.title = @joined THEN 0
+         WHEN substr(s.title, 1, length(@joined)) = @joined THEN 1
+         WHEN hits.id IN (SELECT rowid FROM search_fts WHERE search_fts MATCH @inTitle) THEN 2
+         ELSE 3 END AS tier
+  FROM hits JOIN search_items s ON s.id = hits.id
+  WHERE @kinds IS NULL OR s.kind IN (SELECT value FROM json_each(@kinds))
+  ORDER BY tier, s.kind IN (${LATER_KINDS.map((k) => `'${k}'`).join(', ')}), hits.score, s.title,
+    s.kind, s.source, s.upstream_id
+  LIMIT @limit`;
+
+/** The creators and series of every row whose people or series hold every word, once each. */
+const NAMING = `
+  SELECT s.source, i.creators, i.series, MIN(hits.score) AS score
+  FROM (SELECT rowid AS id, rank AS score FROM search_fts WHERE search_fts MATCH @inNames) hits
+  JOIN search_items s ON s.id = hits.id
+  JOIN index_items i ON i.source = s.source AND i.upstream_id = s.upstream_id
+  GROUP BY s.source, i.creators, i.series
+  ORDER BY s.source, i.creators, i.series`;
+
+const DETAILS = `
+  SELECT i.title, i.creators, i.duration, i.year, i.published_at, i.has_art, i.parent_id,
+    p.title AS parent_title, p.has_art AS parent_has_art
+  FROM index_items i
+  LEFT JOIN index_items p ON p.source = i.source AND p.upstream_id = i.parent_id
+  WHERE i.source = ? AND i.upstream_id = ?`;
+
+interface Details {
   title: string;
   creators: string;
-  series: string;
   duration: number | null;
   year: number | null;
   published_at: number | null;
@@ -59,81 +115,163 @@ interface Hit {
   parent_id: string | null;
   parent_title: string | null;
   parent_has_art: 0 | 1 | null;
-  folded: string;
+}
+
+/** A name's tier for the query, as a title's; null when its words don't hold every word. */
+function tierOf(words: string, query: Query): number | null {
+  if (words === query.joined) return 0;
+  if (words.startsWith(query.joined)) return 1;
+  const own = words.split(' ');
+  return query.words.every((w) => own.some((o) => o.startsWith(w))) ? 2 : null;
+}
+
+/** Strings as SQLite orders them: by UTF-8 bytes. */
+const binary = (a: string, b: string) => Buffer.compare(Buffer.from(a), Buffer.from(b));
+
+/** The order `ITEMS` sorts by, over items and names alike. */
+function compare(a: Candidate, b: Candidate): number {
+  const later = (c: Candidate) => (LATER_KINDS.includes(c.kind as IndexKind) ? 1 : 0);
+  return (
+    a.tier - b.tier ||
+    later(a) - later(b) ||
+    a.score - b.score ||
+    binary(a.words, b.words) ||
+    binary(a.kind, b.kind) ||
+    binary(a.ref.source, b.ref.source) ||
+    binary(a.ref.id, b.ref.id)
+  );
+}
+
+/** The artists, authors and series a row names that have an id upstream. */
+function namedBy(source: IndexSource, creators: Creator[], series: SeriesEntry[]) {
+  const named: { kind: NameKind; ref: MediaRef; name: string }[] = [];
+  for (const c of creators) {
+    if (c.id === undefined) continue;
+    const kind =
+      source === 'jellyfin' && (c.role === 'artist' || c.role === 'album-artist')
+        ? 'artist'
+        : source === 'abs' && c.role === 'author'
+          ? 'author'
+          : null;
+    if (kind !== null) named.push({ kind, ref: { source, id: c.id }, name: c.name });
+  }
+  if (source === 'abs') {
+    for (const s of series) named.push({ kind: 'series', ref: { source, id: s.id }, name: s.name });
+  }
+  return named;
+}
+
+/** The people and series of `kinds` whose name holds every word, each once. */
+function names(db: Db, query: Query, kinds: readonly NameKind[]): Candidate[] {
+  const rows = db
+    .prepare(NAMING)
+    .all({ inNames: `(people : (${query.match})) OR (series : (${query.match}))` }) as {
+    source: IndexSource;
+    creators: string;
+    series: string;
+    score: number;
+  }[];
+  const found = new Map<string, Candidate>();
+  for (const row of rows) {
+    const named = namedBy(
+      row.source,
+      JSON.parse(row.creators) as Creator[],
+      JSON.parse(row.series) as SeriesEntry[],
+    );
+    for (const { kind, ref, name } of named) {
+      if (!kinds.includes(kind)) continue;
+      const key = `${kind}:${mediaRefKey(ref)}`;
+      const seen = found.get(key);
+      if (seen !== undefined) {
+        seen.score = Math.min(seen.score, row.score);
+        continue;
+      }
+      const words = searchTokens(name).join(' ');
+      const tier = tierOf(words, query);
+      if (tier !== null) found.set(key, { kind, ref, words, tier, score: row.score, name });
+    }
+  }
+  return [...found.values()];
+}
+
+interface ItemRow {
+  kind: IndexKind;
+  source: IndexSource;
+  upstream_id: string;
+  words: string;
   score: number;
+  tier: number;
 }
 
-/** The best hits for the match expression, and every hit whose whole folded title is `folded`. */
-const HITS = `
-  WITH hits AS (
-    SELECT id, MIN(score) AS score FROM (
-      SELECT * FROM (
-        SELECT rowid AS id, rank AS score FROM search_fts
-        WHERE search_fts MATCH @match ORDER BY rank LIMIT @limit
-      )
-      UNION ALL
-      SELECT rowid AS id, rank AS score FROM search_fts
-      WHERE search_fts MATCH @match
-        AND rowid IN (SELECT id FROM search_items WHERE title = @folded)
-    ) GROUP BY id
-  )
-  SELECT i.source, i.upstream_id, i.kind, i.title, i.creators, i.series, i.duration, i.year,
-    i.published_at, i.has_art, i.parent_id, p.title AS parent_title,
-    p.has_art AS parent_has_art, s.title AS folded, hits.score
-  FROM hits
-  JOIN search_items s ON s.id = hits.id
-  JOIN index_items i ON i.source = s.source AND i.upstream_id = s.upstream_id
-  LEFT JOIN index_items p ON p.source = i.source AND p.upstream_id = i.parent_id`;
-
-/** The query's words, folded; and the whole query, folded. */
-interface Words {
-  folded: string;
-  tokens: string[];
-}
-
-const startsAWord = (tokens: readonly string[], words: readonly string[]) =>
-  tokens.every((t) => words.some((w) => w.startsWith(t)));
-
-/** A folded name's tier for the query, as a title's: 0 to 2, or 3 when its words don't all match. */
-function tierOf(name: string, query: Words): number {
-  if (name === query.folded) return 0;
-  if (name.startsWith(query.folded)) return 1;
-  return startsAWord(query.tokens, searchTokens(name)) ? 2 : 3;
+/**
+ * The matching items and names of `kinds` (all when absent), in order. `read(limit)` gives the
+ * first `limit` items (-1: all) and the names among them, and whether no item was left unread.
+ */
+function ranking(db: Db, query: Query, kinds: readonly SearchKind[] | undefined) {
+  const wanted = <K extends SearchKind>(all: readonly K[]) =>
+    kinds === undefined ? all : all.filter((k) => kinds.includes(k));
+  const itemKinds = wanted(ITEM_KINDS);
+  const nameKinds = wanted(NAME_KINDS);
+  const named = nameKinds.length === 0 ? [] : names(db, query, nameKinds);
+  return (limit: number): { list: Candidate[]; complete: boolean } => {
+    const rows =
+      itemKinds.length === 0
+        ? []
+        : (db.prepare(ITEMS).all({
+            match: query.match,
+            joined: query.joined,
+            inTitle: `title : (${query.match})`,
+            kinds: kinds === undefined ? null : JSON.stringify(itemKinds),
+            limit,
+          }) as ItemRow[]);
+    const items = rows.map((row): Candidate => ({
+      kind: row.kind,
+      ref: { source: row.source, id: row.upstream_id },
+      words: row.words,
+      tier: row.tier,
+      score: row.score,
+      name: null,
+    }));
+    const list = [...items, ...named].sort(compare);
+    const complete = limit < 0 || items.length < limit;
+    // A name after the last item read may come after items not read yet.
+    return { list: complete ? list : list.slice(0, list.indexOf(items.at(-1)!) + 1), complete };
+  };
 }
 
 const owned = { kind: 'owned' } as const;
 
-function itemResult(hit: Hit, creators: Creator[]): SearchResult {
-  const ref: MediaRef = { source: hit.source, id: hit.upstream_id };
+function itemResult(kind: IndexKind, ref: MediaRef, item: Details): SearchResult {
   const parentRef: MediaRef | null =
-    hit.parent_id === null ? null : { source: hit.source, id: hit.parent_id };
+    item.parent_id === null ? null : { source: ref.source, id: item.parent_id };
   const art =
     parentRef === null
-      ? hit.has_art === 1
+      ? item.has_art === 1
         ? artUrl(ref)
         : null
-      : hit.parent_has_art === 1
+      : item.parent_has_art === 1
         ? artUrl(parentRef)
         : null;
-  const role = CREATOR_ROLE[hit.kind];
+  const role = CREATOR_ROLE[kind];
+  const creators = JSON.parse(item.creators) as Creator[];
   return {
     ref,
-    kind: hit.kind,
-    title: hit.title,
+    kind,
+    title: item.title,
     creators: [...new Set(creators.filter((c) => c.role === role).map((c) => c.name))],
     parent:
-      parentRef === null || hit.parent_title === null
+      parentRef === null || item.parent_title === null
         ? null
-        : { ref: parentRef, title: hit.parent_title },
+        : { ref: parentRef, title: item.parent_title },
     art,
-    duration: hit.duration,
-    year: hit.year,
-    publishedAt: hit.published_at,
+    duration: item.duration,
+    year: item.year,
+    publishedAt: item.published_at,
     availability: owned,
   };
 }
 
-function nameResult(kind: NameKind, ref: MediaRef, name: string): SearchResult {
+function nameResult(kind: SearchKind, ref: MediaRef, name: string): SearchResult {
   return {
     ref,
     kind,
@@ -148,108 +286,63 @@ function nameResult(kind: NameKind, ref: MediaRef, name: string): SearchResult {
   };
 }
 
-/** The artists, authors and series a hit names that have an id upstream, as results. */
-interface Named {
-  kind: NameKind;
-  ref: MediaRef;
-  name: string;
-}
-
-function namedBy(hit: Hit, creators: Creator[], series: SeriesEntry[]): Named[] {
-  const named: Named[] = [];
-  for (const c of creators) {
-    if (c.id === undefined) continue;
-    const kind =
-      hit.source === 'jellyfin' && (c.role === 'artist' || c.role === 'album-artist')
-        ? 'artist'
-        : hit.source === 'abs' && c.role === 'author'
-          ? 'author'
-          : null;
-    if (kind !== null) named.push({ kind, ref: { source: hit.source, id: c.id }, name: c.name });
-  }
-  if (hit.source === 'abs') {
-    for (const s of series) {
-      named.push({ kind: 'series', ref: { source: hit.source, id: s.id }, name: s.name });
-    }
-  }
-  return named;
-}
-
-function compare(a: Ranked, b: Ranked): number {
-  const later = (r: Ranked) => (LATER_KINDS.includes(r.result.kind) ? 1 : 0);
-  const ka = mediaRefKey(a.result.ref);
-  const kb = mediaRefKey(b.result.ref);
-  return (
-    a.tier - b.tier ||
-    later(a) - later(b) ||
-    a.score - b.score ||
-    byTitle.compare(a.result.title, b.result.title) ||
-    (a.result.kind < b.result.kind ? -1 : a.result.kind > b.result.kind ? 1 : 0) ||
-    (ka < kb ? -1 : ka > kb ? 1 : 0)
-  );
-}
-
-/** Every result for `q` over the whole index, ranked; none when `q` holds no word. */
-function ranked(db: Db, q: string): Ranked[] {
-  const query: Words = { folded: searchFold(q), tokens: searchTokens(q) };
-  if (query.tokens.length === 0) return [];
-  // Each word quoted, so nothing typed is read as full-text syntax; a token holds no quote.
-  const match = query.tokens.map((t) => `"${t}"*`).join(' ');
-  const hits = db.prepare(HITS).all({ match, limit: CANDIDATES, folded: query.folded }) as Hit[];
-
-  const results: Ranked[] = [];
-  const names = new Map<string, Ranked>();
-  for (const hit of hits) {
-    const creators = JSON.parse(hit.creators) as Creator[];
-    const series = JSON.parse(hit.series) as SeriesEntry[];
-    results.push({
-      result: itemResult(hit, creators),
-      tier: tierOf(hit.folded, query),
-      score: hit.score,
-    });
-    for (const { kind, ref, name } of namedBy(hit, creators, series)) {
-      const key = `${kind}:${mediaRefKey(ref)}`;
-      const seen = names.get(key);
-      if (seen !== undefined) {
-        seen.score = Math.min(seen.score, hit.score);
-        continue;
-      }
-      const folded = searchFold(name);
-      if (!startsAWord(query.tokens, searchTokens(folded))) continue;
-      names.set(key, {
-        result: nameResult(kind, ref, name),
-        tier: tierOf(folded, query),
-        score: hit.score,
-      });
-    }
-  }
-  return [...results, ...names.values()].sort(compare);
+/** The candidates' results, each item's fields read now that the ranking is done. */
+function resultsOf(db: Db, chosen: readonly Candidate[]): Ranked[] {
+  const details = db.prepare(DETAILS);
+  return chosen.map((c) => ({
+    result:
+      c.name === null
+        ? itemResult(c.kind as IndexKind, c.ref, details.get(c.ref.source, c.ref.id) as Details)
+        : nameResult(c.kind, c.ref, c.name),
+    tier: c.tier,
+    score: c.score,
+  }));
 }
 
 /** The library index as a search source: the whole household's index, filtered to `kinds`. */
 export function librarySource(db: Db): SearchSource {
   return {
     search: ({ q, kinds }) => {
-      const all = ranked(db, q);
-      const kept = kinds === undefined ? all : all.filter((r) => kinds.includes(r.result.kind));
-      return Promise.resolve(kept.slice(0, RESULT_LIMIT));
+      const query = queryOf(q);
+      if (query === null) return Promise.resolve([]);
+      const { list } = ranking(db, query, kinds)(RESULT_LIMIT);
+      return Promise.resolve(resultsOf(db, list.slice(0, RESULT_LIMIT)));
     },
   };
 }
+
+/**
+ * How many items are read first for each suggestion wanted, so the same text repeated rarely
+ * leaves too few; when it does, every item is read.
+ */
+const READ_PER_SUGGESTION = 64;
 
 /**
  * Up to `limit` suggestions for `q` from the index, ranked as results: titles of every kind, and
  * the names of artists, authors and series. One text is suggested once per kind.
  */
 export function suggestFromIndex(db: Db, q: string, limit: number): Suggestion[] {
-  const suggestions: Suggestion[] = [];
-  const seen = new Set<string>();
-  for (const { result } of ranked(db, q)) {
-    if (suggestions.length >= limit) break;
-    const key = `${result.kind}:${searchFold(result.title)}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    suggestions.push({ kind: result.kind, text: result.title, ref: result.ref });
+  const query = queryOf(q);
+  if (query === null || limit <= 0) return [];
+  const read = ranking(db, query, undefined);
+  for (const reading of [limit * READ_PER_SUGGESTION, -1]) {
+    const { list, complete } = read(reading);
+    const chosen: Candidate[] = [];
+    const seen = new Set<string>();
+    for (const c of list) {
+      const key = `${c.kind}:${c.words}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      chosen.push(c);
+      if (chosen.length === limit) break;
+    }
+    if (chosen.length === limit || complete) {
+      return resultsOf(db, chosen).map(({ result }) => ({
+        kind: result.kind,
+        text: result.title,
+        ref: result.ref,
+      }));
+    }
   }
-  return suggestions;
+  throw new Error('unreachable: reading every item is complete');
 }

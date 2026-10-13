@@ -2,7 +2,7 @@
  * A person's recent searches, kept on the server so every device of theirs shares them: one row
  * per folded text, in the form last typed, the newest `RECENT_KEPT` only.
  */
-import { searchFold } from '../text/fold.js';
+import { searchFold, searchTokens } from '../text/fold.js';
 import type { Db } from './connection.js';
 
 /** How many recent searches a person keeps. */
@@ -16,11 +16,14 @@ export interface RecentSearch {
   searchedAt: number;
 }
 
-/** Records a search: a new row, or the same folded text moved to the top in its new form. */
+/**
+ * Records a search: a new row, or the same folded text moved to the top in its new form. A search
+ * with no word in it, only punctuation or spaces, searched for nothing and is not kept.
+ */
 export function recordSearch(db: Db, userId: string, query: string, at: number): void {
   const typed = query.trim();
+  if (searchTokens(typed).length === 0) return;
   const folded = searchFold(typed);
-  if (folded === '') return;
   db.transaction(() => {
     db.prepare(
       `INSERT INTO recent_searches (user_id, folded, query, searched_at) VALUES (?, ?, ?, ?)

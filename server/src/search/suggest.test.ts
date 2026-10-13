@@ -76,6 +76,12 @@ describe('suggestions', () => {
     expect(suggested[3]!.ref).toEqual(expect.objectContaining({ source: 'abs' }));
   });
 
+  it('ask the index only once a typed word has two letters, however much else is typed', () => {
+    for (const typed of ['a.', 'a t', ' a - t '])
+      expect(suggest(db, kara, typed), typed).toEqual([]);
+    expect(shown(suggest(db, kara, 'a to'))).toEqual([['book', 'The Tombs of Atuan [Archer]']]);
+  });
+
   it('never offer another person’s recent searches', () => {
     recordSearch(db, otto, 'Powers of ten', T0);
     recordSearch(db, otto, 'powder', T0 + 1);

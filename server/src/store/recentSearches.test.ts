@@ -65,8 +65,9 @@ describe('recent searches', () => {
     expect(queries(kara, '', 2)).toEqual(['fémme', 'Rumours']);
   });
 
-  it('records nothing for a search with no text', () => {
-    recordSearch(db, kara, '   ', T0);
+  it('records nothing for a search with no words in it', () => {
+    for (const typed of ['   ', '"', '*', '..', '\u0000', '\uD800', "' ’"])
+      recordSearch(db, kara, typed, T0);
 
     expect(queries(kara)).toEqual([]);
   });

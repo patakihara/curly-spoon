@@ -3,9 +3,11 @@
  * leaves one folded search row per indexed row, and the full-text index holds exactly those rows,
  * through renames and removals.
  */
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AbsClient } from '../adapters/audiobookshelf/client.js';
 import { readFeed } from '../adapters/feed/client.js';
@@ -13,9 +15,10 @@ import { type Recording, recordingSchema } from '../adapters/http/recording.js';
 import { replayFetch } from '../adapters/http/replay.js';
 import { JellyfinClient } from '../adapters/jellyfin/client.js';
 import { runIndex } from '../libraryIndex/job.js';
-import { listIndexed } from '../libraryIndex/store.js';
+import { applyRow, emptyCounts, listIndexed } from '../libraryIndex/store.js';
 import { openDatabase, type Db } from '../store/connection.js';
-import { searchFold, searchTokens } from '../text/fold.js';
+import { migrations, runMigrations } from '../store/migrations.js';
+import { searchTokens } from '../text/fold.js';
 
 const ADAPTERS = fileURLToPath(new URL('../adapters/', import.meta.url));
 const HOUR = 60 * 60 * 1000;
@@ -106,9 +109,11 @@ interface SearchItem {
   id: number;
   source: string;
   upstream_id: string;
+  kind: string;
   title: string;
   people: string;
   series: string;
+  text_version: number;
 }
 const searchItems = (db: Db) =>
   db.prepare('SELECT * FROM search_items ORDER BY id').all() as SearchItem[];
@@ -157,7 +162,7 @@ beforeEach(() => {
 afterEach(() => db.close());
 
 describe('the search tables on the recorded library', () => {
-  it('hold one row per indexed book, show, episode, album and track, with its title, people and series folded', async () => {
+  it('hold one row per indexed book, show, episode, album and track, with the words of its title, people and series', async () => {
     await index(db, T0, recordedPage(), onRecordedPage);
 
     const indexed = listIndexed(db);
@@ -168,9 +173,10 @@ describe('the search tables on the recorded library', () => {
     );
     for (const row of indexed) {
       const item = items.get(`${row.source}:${row.id}`)!;
-      expect(item.title, row.id).toBe(searchFold(row.title));
-      for (const c of row.creators) expect(item.people, row.id).toContain(searchFold(c.name));
-      for (const s of row.series) expect(item.series, row.id).toContain(searchFold(s.name));
+      const words = (text: string) => searchTokens(text).join(' ');
+      expect(item.title, row.id).toBe(words(row.title));
+      for (const c of row.creators) expect(item.people, row.id).toContain(words(c.name));
+      for (const s of row.series) expect(item.series, row.id).toContain(words(s.name));
       if (row.creators.length === 0) expect(item.people).toBe('');
     }
     expect(indexed.some((row) => row.creators.length > 0)).toBe(true);
@@ -228,6 +234,130 @@ describe('the search tables on the recorded library', () => {
 
     expect(db.prepare('SELECT COUNT(*) AS n FROM search_writes').get()).toEqual({ n: 0 });
     expect(searchItems(db)).toEqual(before);
+  });
+
+  it('rewrite no search row when an item changes in nothing search reads', async () => {
+    await index(db, T0, recordedPage(), onRecordedPage);
+    db.exec(`
+      CREATE TEMP TABLE search_writes (id INTEGER);
+      CREATE TEMP TRIGGER log_search_update AFTER UPDATE ON search_items
+        BEGIN INSERT INTO search_writes VALUES (new.id); END;`);
+    const album = listIndexed(db).find((row) => row.kind === 'album')!;
+    const counts = emptyCounts();
+
+    applyRow(db, { ...album, duration: (album.duration ?? 0) + 1, year: 1999 }, T0 + HOUR, counts);
+
+    expect(counts.updated).toBe(1);
+    expect(db.prepare('SELECT COUNT(*) AS n FROM search_writes').get()).toEqual({ n: 0 });
+  });
+});
+
+describe('the search tables when the database opens', () => {
+  let dir: string;
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'auralis-search-'));
+  });
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+
+  it('fill in the search rows of a library indexed before search existed', () => {
+    const file = join(dir, 'auralis.sqlite');
+    const before = new Database(file);
+    runMigrations(
+      before,
+      migrations.filter((m) => m.id < 10),
+    );
+    const add = before.prepare(
+      `INSERT INTO index_items (source, upstream_id, kind, parent_id, title, creators, series,
+         genres, content_hash, version, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, '[]', 'h', 1, 1, 1)`,
+    );
+    add.run(
+      'abs',
+      'book-1',
+      'book',
+      null,
+      'Les Misérables',
+      JSON.stringify([{ id: 'a1', name: 'Victor Hugo', role: 'author' }]),
+      JSON.stringify([{ id: 's1', name: "L'Été", sequence: '1' }]),
+    );
+    add.run('jellyfin', 'album-1', 'album', null, 'Saltwater', '[]', '[]');
+    add.run(
+      'jellyfin',
+      'track-1',
+      'track',
+      'album-1',
+      'Don’t Look Back',
+      JSON.stringify([{ name: 'Émile', role: 'artist' }]),
+      '[]',
+    );
+    before.close();
+
+    const opened = openDatabase(file);
+
+    expect(
+      opened
+        .prepare(
+          'SELECT source, upstream_id, kind, title, people, series FROM search_items ORDER BY id',
+        )
+        .all(),
+    ).toEqual([
+      {
+        source: 'abs',
+        upstream_id: 'book-1',
+        kind: 'book',
+        title: 'les miserables',
+        people: 'victor hugo',
+        series: 'lete',
+      },
+      {
+        source: 'jellyfin',
+        upstream_id: 'album-1',
+        kind: 'album',
+        title: 'saltwater',
+        people: '',
+        series: '',
+      },
+      {
+        source: 'jellyfin',
+        upstream_id: 'track-1',
+        kind: 'track',
+        title: 'dont look back',
+        people: 'emile',
+        series: '',
+      },
+    ]);
+    expect(found(opened, 'sa')).toEqual(['jellyfin:album-1']);
+    expect(found(opened, 'emi')).toEqual(['jellyfin:track-1']);
+    expectInSync(opened);
+    opened.close();
+  });
+
+  it('rewrite every search row an older fold wrote, and no other', async () => {
+    const file = join(dir, 'auralis.sqlite');
+    const first = openDatabase(file);
+    await index(first, T0, recordedPage(), onRecordedPage);
+    const current = searchItems(first);
+    const stale = current[3]!;
+    first
+      .prepare(
+        "UPDATE search_items SET title = 'zzstale', text_version = text_version - 1 WHERE id = ?",
+      )
+      .run(stale.id);
+    first.exec(`
+      CREATE TABLE search_writes (id INTEGER);
+      CREATE TRIGGER log_search_insert AFTER INSERT ON search_items
+        BEGIN INSERT INTO search_writes VALUES (new.id); END;
+      CREATE TRIGGER log_search_update AFTER UPDATE ON search_items
+        BEGIN INSERT INTO search_writes VALUES (new.id); END;`);
+    first.close();
+
+    const reopened = openDatabase(file);
+
+    expect(reopened.prepare('SELECT id FROM search_writes').all()).toEqual([{ id: stale.id }]);
+    expect(searchItems(reopened)).toEqual(current);
+    expect(found(reopened, 'zzstale')).toEqual([]);
+    expectInSync(reopened);
+    reopened.close();
   });
 });
 

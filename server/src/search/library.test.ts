@@ -147,6 +147,43 @@ describe('library search', () => {
     ]);
   });
 
+  it('compares words, not punctuation, for the whole title and its start', async () => {
+    await index(db);
+    const book = row('Powers [Sandvold]');
+    applyTree(
+      db,
+      { top: { ...book, id: 'f'.repeat(32), title: 'Love!', series: [] }, children: [] },
+      T0,
+      emptyCounts(),
+    );
+
+    expect(shown(await search('fleetwood-mac'))[0]).toEqual([0, 'artist', 'Fleetwood Mac']);
+    expect(shown(await search('Fleetwood  Mac!'))[0]).toEqual([0, 'artist', 'Fleetwood Mac']);
+    expect(shown(await search('love'))).toEqual([[0, 'book', 'Love!']]);
+    expect(shown(await search('rumours...'))[0]).toEqual([0, 'album', 'Rumours']);
+    expect(shown(await search('marshall-isl'))[0]).toEqual([
+      1,
+      'show',
+      'Marshall Islands: After the Bomb Dropped',
+    ]);
+  });
+
+  it('breaks a tie in tier, kind and relevance by title, then by ref', async () => {
+    await index(db);
+    const book = row('Powers [Sandvold]');
+    const copy = (id: string, title: string) =>
+      applyTree(db, { top: { ...book, id, title }, children: [] }, T0, emptyCounts());
+    copy('a'.repeat(32), 'Zebra Tales');
+    copy('b'.repeat(32), 'Aardvark Tales');
+    copy('c'.repeat(32), 'Aardvark Tales');
+
+    expect((await search('tales')).map((r) => [r.result.title, r.result.ref.id])).toEqual([
+      ['Aardvark Tales', 'b'.repeat(32)],
+      ['Aardvark Tales', 'c'.repeat(32)],
+      ['Zebra Tales', 'a'.repeat(32)],
+    ]);
+  });
+
   it('matches case, accents and apostrophes folded, on both sides', async () => {
     await index(db);
 
@@ -271,6 +308,7 @@ describe('library search', () => {
     );
 
     expect(await search('ma song')).toHaveLength(RESULT_LIMIT);
+    expect(await search('ma')).toHaveLength(RESULT_LIMIT);
     expect(RESULT_LIMIT).toBe(100);
     expect(shown(await search('ma')).slice(0, 2)).toEqual([
       [0, 'album', 'Ma'],
@@ -286,11 +324,17 @@ describe('library search', () => {
     expect(await search('* - " ^')).toEqual([]);
   });
 
-  it('leaves a single list as it is when ranking it with the others', async () => {
+  it('merges the sources’ lists by tier, each list in its own order within a tier', async () => {
     await index(db);
+    const [a, b, c, d, e] = (await search('the')).map((r) => r.result);
+    const ranked = (tier: number, result: SearchResult): Ranked => ({ result, tier, score: 0 });
 
-    const ranked = await search('the');
-    expect(rank([ranked])).toEqual(ranked.map((r) => r.result));
+    expect(
+      rank([
+        [ranked(1, a!), ranked(2, b!), ranked(3, c!)],
+        [ranked(0, d!), ranked(2, e!)],
+      ]),
+    ).toEqual([d, a, b, e, c]);
   });
 });
 
