@@ -5,7 +5,7 @@ part: How it's built
 ---
 ## How the work runs
 
-Each rule answers a failure recorded in the old ROADMAP and HANDOVER.
+Each rule answers a recorded failure of the old project.
 
 | Failure before | Rule now |
 |---|---|
@@ -43,5 +43,5 @@ Every subagent brief opens with this list verbatim (`node scripts/plan/brief.mjs
 - **Changing mediaserver is allowed, with guard rails.** The session reads mediaserver's rules and known hazards first, commits every change in its config repo, and applies one change at a time: validate, restart only that service, check it's healthy, roll back automatically if not. Deleting household media or other services' data, anything that could cut the network or SSH, and household passwords go to the outbox, while other work continues.
 
 ::: small muted
-Development runs on the laptop, which has the RAM; recording and staging on mediaserver, always on, with the real services.
+Development runs on the laptop, which has the RAM; recording and staging on mediaserver, with the real services.
 :::

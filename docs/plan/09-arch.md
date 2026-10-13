@@ -10,7 +10,7 @@ The shape you chose stays: **one container, one port**, a TypeScript backend hol
 ::: diagram arch
 
 ::: cap
-Features sit on a shared index and store. Only adapters talk to the outside world, and only the server holds secrets.
+Features sit on a shared index and store; only adapters talk to the outside world.
 :::
 
 ### Eight rules the rebuild is organised around

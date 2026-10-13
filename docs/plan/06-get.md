@@ -5,7 +5,7 @@ part: The product
 ---
 ## Getting what you don't have
 
-One pipeline and status vocabulary for music, books and podcasts, so Browse and Search render every request alike.
+One pipeline and status vocabulary for all three media, so every request renders alike.
 
 ::: diagram get
 

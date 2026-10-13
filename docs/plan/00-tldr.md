@@ -8,9 +8,9 @@ part: Why and what
 ::: hero
 1. **Start a fresh codebase, keep the decisions and a few proven parts.** The old code mostly doesn't hold up (see "Where it stands").
 2. **The same stack, but every seam is shared.** What's new: one API schema generates both clients, one _playback plan_ drives every player, and one request pipeline serves all three media.
-3. **Nothing counts until it works on your real servers.** Every upstream adapter is tested against responses recorded from mediaserver, never against fixtures written from docs.
+3. **Nothing counts until it works on your real servers.** Every adapter is tested against recordings from mediaserver.
 4. **Music works the way AbleMusicPlayer does.** Anything on YouTube Music is searchable and plays straight away, through a NewPipe-style extractor that runs in the server container. **Keep** saves it, tagged, into your Jellyfin library.
-5. **Backend first, in slices you can use, in Spotify's order.** First it plays, with no gaps between files and chapters and autoplay onward. Then your library, then play or get anything, then Browse recommending things you don't own, each through a minimal web shell.
+5. **Backend first, in slices you can use, in Spotify's order.** First it plays, gapless with autoplay; then your library, then play or get anything, then Browse recommending what you don't own, each through a minimal web shell.
 6. **Then the frontend catches up: Sonora, on both platforms together.** **Everything in the app starts as a Sonora component**: the web app uses Sonora's own components, and Android's are generated against the same prop definitions. Each screen gets one API call returning exactly what its components take.
 7. **Multiple users, one listening session per device.** Each person has their own accounts, taste and queues; each device its own session, unmixed unless you choose.
 :::

@@ -5,7 +5,7 @@ part: How it's built
 ---
 ## API surface
 
-All under `/api`, so none clashes with a page address. Every response shape lives in the one schema; route names avoid "browse", so the UI name can change.
+All under `/api`, so none clashes with a page address. Route names avoid "browse", so the UI name can change.
 
 ::: grid g3
 ::: card
