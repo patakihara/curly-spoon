@@ -5,7 +5,7 @@ part: How it's built
 ---
 ## API surface
 
-Grouped by what they serve, all under `/api` so none clashes with a page address. Every response shape lives in the one schema; route names avoid "browse", so the UI name can change.
+All under `/api`. Route names avoid "browse", so the UI name can change.
 
 ::: grid g3
 ::: card
@@ -23,7 +23,8 @@ Grouped by what they serve, all under `/api` so none clashes with a page address
 
 `GET /feed` · `/feed/shelves/{id}`\
 `GET /library/{medium}`\
-`GET /items/{ref}` · `/people/{ref}` · `/series/{ref}`
+`GET /items/{ref}` · `/people/{ref}` · `/series/{ref}`\
+Each takes `?refresh` (pull to refresh)
 :::
 
 ::: card

@@ -9,15 +9,13 @@ part: Why and what
 Fixed inputs, not re-opened.
 :::
 
-From `USER_DECISIONS.md`, the spec addendum and the research notes. Where a decision rested on a false premise, the plan keeps it, fixing the premise (one case, marked).
-
 ::: grid g2
 ::: card
 #### Product and platforms
 
 - Bundle music, podcasts and audiobooks and replace Spotify. _"spotify killer, don't forget ;)"_
 - Spotify is the reference, looked at rather than guessed at.
-- **Browse** (icon `explore`) is the one discovery screen. Home, For You and Discover are the same thing and are distinct from **Search**. The name lives only in UI strings.
+- **Browse** (icon `explore`) is the one discovery screen. Home, For You and Discover are the same thing and are distinct from **Search**. The name lives only in the string table.
 - Five destinations: Browse, Music, Books, Podcasts, Search, one button each (as Sonora draws it), not a single Library button with a sub-menu.
 - Web includes desktop, in one Docker container on one port, a PWA rather than Electron; native Compose + Media3 on Android.
 - Web and Android have parity, reached by M5; until then the web app is ahead.
@@ -30,7 +28,7 @@ From `USER_DECISIONS.md`, the spec addendum and the research notes. Where a deci
 #### Playback
 
 - **Queues**: a **music queue** and a **spoken queue that podcasts and audiobooks share** by default, with books split into chapters. The music queue works YouTube Music-style by default, Spotify-style as an option. **Back always walks play history.** Every queue can be cleared.
-- Transcoding is acceptable. <span class="pill t-req">premise fixed</span> It was said to work; it doesn't (see "Where it stands"). The plan makes it work _and_ adds direct play, since offline downloads need the original files anyway.
+- Transcoding is acceptable. <span class="pill t-req">premise fixed</span> The plan makes it work _and_ adds direct play, since offline downloads need the original files anyway.
 - **Never video.** Auralis has no way to show video, anywhere: not for YouTube, music, or podcast feeds publishing video episodes. Everything plays as audio; YouTube thumbnails serve only as cover art.
 :::
 
@@ -49,7 +47,7 @@ From `USER_DECISIONS.md`, the spec addendum and the research notes. Where a deci
 ::: card
 #### YouTube channels
 
-- **YouTube channels are added from global Search**, nowhere else, as audio-only shows behaving like any other subscription.
+- **YouTube channels are added from global Search**, nowhere else, as audio-only shows behaving like any other subscription, **tagged as YouTube** wherever they or their episodes appear.
 - **SponsorBlock on YouTube channels**, in Auralis and in the Audiobookshelf app alike.
 - **Watched state and position sync with your YouTube account only for channels you've added**, both ways, as an opt-in setting per person. The rest of your YouTube history never enters Auralis, and nothing from a channel you haven't added is recommended.
 :::
@@ -60,7 +58,6 @@ From `USER_DECISIONS.md`, the spec addendum and the research notes. Where a deci
 - Recommendations come from **external** sources, mixed into Browse. _"not useful to me if recommendations only show things already in my library."_
 - Mixed-content carousels, at most one episode per podcast in a carousel, each card with a reason line, and a loading state held until everything arrives.
 - One provider per medium: _"Why would the recommendation services for the THREE different kinds of content we have be the same?"_ Provider choice is delegated. Audible and YouTube terms of service don't matter for your own install.
-- Research picks: for books, Audible's "listeners also enjoyed", with Audnexus for metadata; for podcasts, Apple Podcasts' "You Might Also Like", with PodcastIndex and iTunes as the catalogue; for music, YouTube Music radio alongside ListenBrainz. All checked live.
 - Search doubles as the request view: one global ranking across all sources, each result marked owned, streamable or requestable (never owned and requestable). Suggestions while typing, results on submit; type buttons only filter.
 - Lyrics search uses an external provider (LRCLIB).
 :::
@@ -70,10 +67,6 @@ From `USER_DECISIONS.md`, the spec addendum and the research notes. Where a deci
 
 - Sonora is the design source of truth: flat surfaces, one violet accent that nobody picks plus a rose for Now Playing, playback controls and Browse's media filter, nothing green from Spotify, motion by named role, no emoji. From Spotify it takes **affordances, not visual design** (_"not to copy spotify's visual design, but moreso the affordances of the components"_), and no new search bar.
 - **One Auralis repo holds the design and the apps**, and publishes the Sonora and canvas artifacts. You work on the design through artifact comments or chat.
-- **Some design inputs stay private.** The Spotify reference screenshots (on the laptop, gitignored) and the original Sonora author identities stay out of the public repo.
+- **Some design inputs stay private.** The Spotify reference screenshots (on the laptop, gitignored), the original Sonora author identities and your listening-history exports stay out of the public repo.
 :::
-:::
-
-::: small muted
-Also carried over: the escalation test _"would she have an opinion, and does the answer change what she gets?"_ The extractor is still a poor _recommender_, as research found. ListenBrainz picks what to suggest, and YouTube Music makes it playable.
 :::

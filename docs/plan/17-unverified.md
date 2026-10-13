@@ -9,7 +9,7 @@ Each line names the item that checks it, and goes once it's done.
 
 ::: small
 - Where audiobook previews come from (a retail sample URL keyed by ASIN) (M4.browse).
-- How well YouTube Music and Deezer fill MusicBrainz's gaps for your artists (M3.catalog). Lidarr's matching wasn't tested directly; the case rests on its logs and your experience.
+- How well YouTube Music and Deezer fill MusicBrainz's gaps for your artists (M3.catalog).
 - Jellyfin's real lyrics response (M2.lrclib) and the qBittorrent cookie name (M3.books).
 - MusicBrainz ids in Jellyfin's `ProviderIds`: every recorded track carries none (M4.identity).
 - How reliably YouTube Music extraction works from this server's IP; a canary comes first (M3.ytmusic).
@@ -17,5 +17,6 @@ Each line names the item that checks it, and goes once it's done.
 - That Audiobookshelf's folder watcher (on for Books) reliably picks up a new book folder; if not, Auralis scans that library at a quiet moment (M3.books).
 - Watched-state and position sync on your account: reading watch history and marking videos watched with sign-in cookies works in the extractor but is untried here; no known tool sets YouTube's resume position to a real position rather than "the end"; exported cookies' lifetime is unknown (M3.ytsync).
 - Cutting SponsorBlock segments without re-encoding is only as precise as the audio's frame size (tens of milliseconds on YouTube), which should be inaudible; and whether Audiobookshelf takes a re-cut file of an unstarted episode cleanly, new length and no stale progress (M3.ytshows).
-- Recommendation quality, measured by the held-out replay score on your history; your Spotify and YouTube Music exports, requested, not yet seen (M4.reco).
+- Whether Auralis's container can catch Audiobookshelf opening a stub; today's daemon needs a filesystem-wide watch and admin capability (M3.stubs).
+- Recommendation quality, measured by the held-out replay score on your history; YouTube's watch history, missing from the first takeout, and whether it tells music from video (M4.reco).
 :::

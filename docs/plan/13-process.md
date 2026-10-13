@@ -5,15 +5,13 @@ part: How it's built
 ---
 ## How the work runs
 
-Each rule answers a failure recorded in the old ROADMAP and HANDOVER.
-
 | Failure before | Rule now |
 |---|---|
-| Fixtures written from docs; playback broken "since the client was written" | Adapters are only tested against recordings from mediaserver. No recording, no merge. A nightly re-record-and-diff catches upstream changes. |
+| Fixtures written from docs; playback broken "since the client was written" | Adapters are only tested against recordings from mediaserver. No recording, no merge. |
 | Code with nothing calling it (7 cases) | Every change names its plan item and the screen or job that uses it, and the milestone demo exercises it. Dead code fails lint (`knip` on web, detekt on Android). |
 | Green CI that ran no tests (Gradle cache); unstyled screens passing | Android CI runs uncached tests plus an emulator smoke test; screenshot review replaces "testid exists" as the UI check. |
 | Android written blind, a post-login crash nobody could see | Emulator in CI from M0; once Android work resumes, each milestone's build arrives as an ordinary update through Droid-ify, with a one-tap crash report (logcat to the server). |
-| `main` auto-deployed half-finished work to your daily container | Until you use Auralis, the container on mediaserver follows `main` as the test instance. Before "It plays" ships, `main` moves to `:edge` and only releases reach `:latest`, so your daily container then moves only when you've tried a milestone. |
+| `main` auto-deployed half-finished work to your daily container | `main` publishes `:edge`, only releases reach `:latest`, and your daily container on mediaserver follows `:latest` (M1.release), so it moves only when you've tried a milestone. |
 | Parallel sessions colliding; 9,000 lines of handover | **No parallelism.** One Opus 5.5 orchestrator session holds the plan and never stops between items; Opus 5.5 subagents do all the work, strictly one at a time, each sized (an item split if needed) to keep its context small. After every plan addition a Sonnet 5.5 subagent checks the whole plan for contradictions and hierarchy, and the orchestrator weighs each finding before adopting it. Each part runs plan, build, test (fresh context, real recordings), then fix, handing off through the written plan and test output. |
 | Over-escalation, and "verified" claims that were wrong | Ordinary calls get made. Every status line says how it was checked (live, recording, code). |
 
@@ -37,11 +35,11 @@ Every subagent brief opens with this list verbatim (`node scripts/plan/brief.mjs
 
 ### Autonomous runs
 
-- **Started from the laptop** by a 10-minute timer, as one orchestrator session in the repo, only when nothing else works there. It is the `auralis` instance of the shared autorun mode; instances run side by side when memory allows.
+- **Started from the laptop** by a 10-minute timer, as one orchestrator session in the repo, only when nothing else works there. It is the `auralis` instance of the shared autorun mode.
 - **Paused and resumed from any session on either host**, by asking Claude (the `autorun` skill). The switch is a file on mediaserver, working while the laptop sleeps; the timer is never toggled, so pausing can't break it. Pausing can also stop a running session, keeping its conversation.
-- **Budget:** one set of limits decides starting and stopping: the 5-hour window under 80%, the week under a hard 95%, and the weekly share above zero. The share caps weekly use: autonomous work gets half of each day's unspent budget, rising only as your waking hours (outside 20:00–06:00) pass, so your own use keeps priority. A session starts only under all three. Inside it, a hook warns 5 points before the 5-hour limit, and when 1 point of weekly allowance is left; the session then lands its work and runs `autorun hold`. At a limit it blocks every call. Every check fails closed. **Restarting:** the autorun resumes the same conversation at the reset of whichever limit tripped, the 10-minute tick re-checking in between.
+- **Budget:** one set of limits decides starting and stopping: the 5-hour window under 80%, the week under a hard 95%, and the weekly share above zero. The share caps weekly use: autonomous work gets half of each day's unspent budget, rising only as your waking hours (outside 20:00–06:00) pass, so your own use keeps priority. Inside it, a hook warns 5 points before the 5-hour limit, and when 1 point of weekly allowance is left; the session then lands its work and runs `autorun hold`. At a limit it blocks every call. Every check fails closed. **Restarting:** the autorun resumes the same conversation at the reset of whichever limit tripped, the 10-minute tick re-checking in between.
 - **Changing mediaserver is allowed, with guard rails.** The session reads mediaserver's rules and known hazards first, commits every change in its config repo, and applies one change at a time: validate, restart only that service, check it's healthy, roll back automatically if not. Deleting household media or other services' data, anything that could cut the network or SSH, and household passwords go to the outbox, while other work continues.
 
 ::: small muted
-Development runs on the laptop, which has the RAM; recording and staging on mediaserver, always on, with the real services.
+Development runs on the laptop; recording and staging on mediaserver.
 :::
