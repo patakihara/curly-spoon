@@ -6,8 +6,11 @@
  * item naming its own): the page's id
  * in nav.json and each of its route's parameters bound to a data path; or request an item,
  * `onRequest={<Request ref={book.ref} />}`, its ref bound the same way; or play one on the queue it
- * names, `onPlay={<Play ref={episode.ref} queue="spoken" />}`, `next` for Play next, `source` for a list played on its own; or
- * start signing in, `onClick={<SignIn />}`. It is read into a page
+ * names, `onPlay={<Play ref={episode.ref} queue="spoken" />}` (or `queue={item.queue}`, each item
+ * naming its own), `next` for Play next, `source` for a list played on its own; or start signing
+ * in, `onClick={<SignIn />}`; or hold the search query a field types and submits,
+ * `onChange={<Query />}`. An Open may also bind any of its route's query names,
+ * `<Open page="search" q={s.query} />`. It is read into a page
  * tree, never run, so both platforms can generate from the same file: the web as a navigation to
  * the route, Android as one to the nav graph's destination with the same arguments.
  */
@@ -28,18 +31,24 @@ export type PropValue =
   /** A handler that requests the item its `ref` binds, such as a book you don't own. */
   | { kind: 'request'; params: Record<string, string[]> }
   /**
-   * A handler that plays the item its `ref` binds, now or next, on the spoken or the music queue;
-   * `source` plays a list as its own source, leaving the queue as it is (docs/plan/04-play.md).
+   * A handler that plays the item its `ref` binds, now or next, on the spoken or the music queue,
+   * or `{ path }`, the queue each item's data names; `source` plays a list as its own source,
+   * leaving the queue as it is (docs/plan/04-play.md).
    */
   | {
       kind: 'play';
-      queue: Queue;
+      queue: Queue | { path: string[] };
       next: boolean;
       source: boolean;
       params: Record<string, string[]>;
     }
   /** A handler that starts signing in through the household sign-on: the app's own sign-in. */
-  | { kind: 'signIn' };
+  | { kind: 'signIn' }
+  /** A field's handler holding the search query: what it types, on `onChange`, and submits. */
+  | { kind: 'query' };
+
+/** The handler props a `<Query />` goes on: a field's typing and its submitting. */
+export const QUERY_PROPS = ['onChange', 'onSubmit'] as const;
 
 /** The queues an item plays on: spoken word (books and episodes) or music (docs/plan/04-play.md). */
 export const QUEUES = ['spoken', 'music'] as const;
@@ -84,7 +93,7 @@ function memberPath(node: t.Node): string[] {
  */
 const TAKEN = new Set(['data', 'shell', 'slots', 'lists', 'when', 'chrome', 'platform', 'state']);
 TAKEN.add('placeholder').add('i').add('layout').add('detected').add('given');
-TAKEN.add('navigate');
+TAKEN.add('navigate').add('query');
 
 /** `value`, if it is a plain lower-case name a page may give an Each item or a When state. */
 function plainName(value: string, what: string, node: t.Node): string {
@@ -118,6 +127,7 @@ function propValue(value: t.JSXAttribute['value']): PropValue {
     if (name.type === 'JSXIdentifier' && name.name === 'Request') return request(e);
     if (name.type === 'JSXIdentifier' && name.name === 'Play') return play(e);
     if (name.type === 'JSXIdentifier' && name.name === 'SignIn') return signIn(e);
+    if (name.type === 'JSXIdentifier' && name.name === 'Query') return query(e);
     const tree = element(e);
     if (tree.kind !== 'element') return fail(e, 'Each and When go in children, not in a prop');
     return { kind: 'slot', tree };
@@ -129,13 +139,13 @@ function propValue(value: t.JSXAttribute['value']): PropValue {
 }
 
 /**
- * A handler's attributes: `page`, a string literal only an Open takes; a Play's `queue`, a string
- * literal, and `next`, a bare flag; and bound parameters.
+ * A handler's attributes: `page`, a string literal or data path only an Open takes; a Play's
+ * `queue`, a string literal or a data path, and `next`, a bare flag; and bound parameters.
  */
 function handlerAttrs(node: t.JSXElement, what: string) {
   if (node.children.length > 0) return fail(node, `${what} takes no children`);
   let page: string | { path: string[] } | undefined;
-  let queue: string | undefined;
+  let queue: string | { path: string[] } | undefined;
   let next = false;
   let source = false;
   const params: Record<string, string[]> = {};
@@ -148,9 +158,13 @@ function handlerAttrs(node: t.JSXElement, what: string) {
       return fail(attr, `Play takes ref, queue, next and source, not ${name}`);
     }
     if (what === 'Play' && name === 'queue') {
-      if (value?.type !== 'StringLiteral')
-        return fail(attr, "Play's queue must be a string literal");
-      queue = value.value;
+      if (value?.type === 'StringLiteral') queue = value.value;
+      else if (
+        value?.type === 'JSXExpressionContainer' &&
+        (value.expression.type === 'Identifier' || value.expression.type === 'MemberExpression')
+      ) {
+        queue = { path: memberPath(value.expression) };
+      } else return fail(attr, `Play's queue must be "spoken", "music" or a data path`);
       continue;
     }
     if (what === 'Play' && name === 'next') {
@@ -198,27 +212,42 @@ function request(node: t.JSXElement): PropValue {
 }
 
 /**
- * `<Play ref={episode.ref} queue="spoken" next />`: playing the item its ref binds. `source` plays
- * a list on its own, so it never takes over the queue; played next, a list joins the queue instead.
+ * `<Play ref={episode.ref} queue="spoken" next />`: playing the item its ref binds, on the queue it
+ * names or, `queue={item.queue}`, the one each item's data names. `source` plays a list on its own,
+ * so it never takes over the queue; played next, a list joins the queue instead.
  */
 function play(node: t.JSXElement): PropValue {
   const { queue, next, source, params } = handlerAttrs(node, 'Play');
-  if (!QUEUES.includes(queue as Queue)) {
+  if (typeof queue !== 'object' && !QUEUES.includes(queue as Queue)) {
     return fail(node, 'Play needs queue="spoken" or queue="music"');
   }
   if (next && source) return fail(node, 'Play is next or source, not both');
-  return { kind: 'play', queue: queue as Queue, next, source, params };
+  return { kind: 'play', queue: queue as Queue | { path: string[] }, next, source, params };
+}
+
+/** A handler that takes nothing, `<SignIn />` or `<Query />`: each app knows what it does. */
+function bare(node: t.JSXElement, what: string) {
+  if (node.children.length > 0) return fail(node, `${what} takes no children`);
+  const [attr] = node.openingElement.attributes;
+  if (attr !== undefined) {
+    const name = attr.type === 'JSXAttribute' ? String(attr.name.name) : 'a spread';
+    return fail(attr, `${what} takes nothing, not ${name}`);
+  }
 }
 
 /** `<SignIn />`: starting sign-in. Each app knows its own way in, so it takes nothing. */
 function signIn(node: t.JSXElement): PropValue {
-  if (node.children.length > 0) return fail(node, 'SignIn takes no children');
-  const [attr] = node.openingElement.attributes;
-  if (attr !== undefined) {
-    const name = attr.type === 'JSXAttribute' ? String(attr.name.name) : 'a spread';
-    return fail(attr, `SignIn takes nothing, not ${name}`);
-  }
+  bare(node, 'SignIn');
   return { kind: 'signIn' };
+}
+
+/**
+ * `<Query />`: the search query a field holds, typed on its `onChange` and run on its `onSubmit`.
+ * The app holds the draft, so it takes nothing.
+ */
+function query(node: t.JSXElement): PropValue {
+  bare(node, 'Query');
+  return { kind: 'query' };
 }
 
 function literalString(props: Record<string, PropValue>, name: string, node: t.Node): string {
@@ -258,6 +287,8 @@ function element(node: t.JSXElement): PageTree {
   if (name.name === 'Play') return fail(node, 'Play goes in a handler prop, onPlay={<Play … />}');
   if (name.name === 'SignIn')
     return fail(node, 'SignIn goes in a handler prop, onClick={<SignIn />}');
+  if (name.name === 'Query')
+    return fail(node, 'Query goes in a handler prop, onChange={<Query />}');
   const props: Record<string, PropValue> = {};
   for (const attr of node.openingElement.attributes) {
     if (attr.type === 'JSXSpreadAttribute') return fail(attr, 'spread props are not allowed');
@@ -330,6 +361,11 @@ export type Choices = Map<string, Map<string, Choice>>;
 export interface Opens {
   /** Each page of nav.json by id, with its route's parameter names. */
   pages: Map<string, string[]>;
+  /**
+   * Each page's query names (`/search?q`), which an Open naming that page may bind or leave out.
+   * An Open whose page is bound from data takes its route's parameters alone.
+   */
+  query?: Map<string, string[]>;
   /** The page's structure `links`: the only other pages it may open. */
   links: string[];
   /**
@@ -411,8 +447,11 @@ export function checkPage(
         errors.push(`${at} opens ${page}, which is not in this page's structure links`);
       }
       const given = Object.keys(value.params);
-      if ([...given].sort().join() !== [...params].sort().join()) {
-        errors.push(`${at} gives ${page} [${given}], and its route takes [${params}]`);
+      const query = typeof value.page === 'string' ? (opens.query?.get(page) ?? []) : [];
+      const asked = given.filter((name) => !query.includes(name));
+      if ([...asked].sort().join() !== [...params].sort().join()) {
+        const also = query.length > 0 ? ` and the query [${query}]` : '';
+        errors.push(`${at} gives ${page} [${given}], and its route takes [${params}]${also}`);
       }
     }
     for (const [name, path] of Object.entries(value.params)) {
@@ -447,6 +486,11 @@ export function checkPage(
       if (typeof v !== 'string' || v === '') {
         errors.push(`${at}: the ${noun}'s ref (${path.join('.')}) is not a non-empty string`);
       }
+    }
+    if (value.kind !== 'play' || typeof value.queue === 'string') return;
+    const queue = value.queue.path;
+    if (check(line, queue).some((v) => !QUEUES.includes(v as Queue))) {
+      errors.push(`${at}: the play's queue (${queue.join('.')}) is not ${listed([...QUEUES])}`);
     }
   };
   const walk = (node: PageTree, scope: Map<string, Json[]>) => {
@@ -522,6 +566,17 @@ export function checkPage(
           }
           if (value.kind === 'request' || value.kind === 'play') {
             checkItem(node.line, node.component, prop, value, check);
+            continue;
+          }
+          if (value.kind === 'query') {
+            const at = `line ${node.line}: ${node.component}.${prop}`;
+            if (!(opens?.handlers.get(node.component)?.has(prop) ?? true)) {
+              errors.push(`${at} takes no handler, so it cannot hold the query`);
+            } else if (!(QUERY_PROPS as readonly string[]).includes(prop)) {
+              errors.push(
+                `${at} cannot hold the query: Query goes on a field's ${listed([...QUERY_PROPS])}`,
+              );
+            }
             continue;
           }
           if (value.kind === 'signIn') {

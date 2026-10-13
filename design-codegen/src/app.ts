@@ -14,6 +14,7 @@ import {
   generateWebPlaying,
   generateWebShell,
   readNav,
+  splitRoute,
   type Nav,
   type NavPage,
 } from './nav.js';
@@ -76,6 +77,9 @@ function readsData(tree: PageTree): boolean {
       if (value.kind === 'binding' && data(value.path)) return true;
       if (value.kind === 'slot' && readsData(value.tree)) return true;
       if (value.kind === 'open' && typeof value.page !== 'string' && data(value.page.path)) {
+        return true;
+      }
+      if (value.kind === 'play' && typeof value.queue !== 'string' && data(value.queue.path)) {
         return true;
       }
       if (
@@ -165,6 +169,7 @@ export function readApp(appDir: string, model: PropsModel): App {
   const choices = choicesOf(model);
   const handlers = handlerNames(model);
   const routes = new Map(nav.pages.map((p) => [p.id, Object.keys(p.params)]));
+  const query = new Map(nav.pages.map((p) => [p.id, splitRoute(p.route).query]));
   const pagesDir = join(appDir, 'pages');
   const files = existsSync(pagesDir) ? readdirSync(pagesDir).sort() : [];
   const ids = new Set(nav.pages.map((p) => p.id));
@@ -211,6 +216,7 @@ export function readApp(appDir: string, model: PropsModel): App {
       );
       const opens: Opens = {
         pages: routes,
+        query,
         links: nav.pages.find((p) => p.id === id)!.structure.links,
         self: id,
         handlers,

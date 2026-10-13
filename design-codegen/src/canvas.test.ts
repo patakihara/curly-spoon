@@ -649,6 +649,34 @@ describe('a page opening another, on the canvas', () => {
   });
 });
 
+describe('[M2.search] a field holding the search query, on the canvas', () => {
+  const html =
+    generateCanvas(
+      {
+        ...app,
+        pages: [
+          {
+            id: 'search',
+            tree: parsePage(
+              `export default function Search({ data }) {
+  return <PageBody><SearchField value={data.query} onChange={<Query />} onSubmit={<Query />} /></PageBody>;
+}
+`,
+              'search',
+            ),
+            placeholder: { query: 'salt' },
+          },
+        ],
+      },
+      install,
+      now,
+    ).get('search.phone.dc.html') ?? '';
+
+  it('types and submits nowhere, since an artboard is a still', () => {
+    expect(html).toMatch(/on-change="\{\{navigate\}\}" on-submit="\{\{navigate\}\}"/);
+  });
+});
+
 describe('a page starting sign-in, on the canvas', () => {
   const html =
     generateCanvas(

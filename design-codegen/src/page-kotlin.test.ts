@@ -41,6 +41,7 @@ const nav = parseNav({
     entry('nowPlaying', '/playing', { lights: null, close: 'sheet', presentation: 'sheet' }),
     entry('queue', '/playing/queue', { lights: null, close: 'sheet', presentation: 'sheet' }),
     entry('settings', '/settings', { lights: null }),
+    entry('search', '/search?q', { close: 'none' }),
   ],
 });
 const shellOf = (id: string, playing = true): KotlinShell => ({
@@ -323,5 +324,50 @@ describe('an Android page, from a canvas page', () => {
       {},
     );
     expect(out).toMatch(/ButtonProps\([^)]*children = null/);
+  });
+});
+
+describe('[M2.search] an Android page searching', () => {
+  const search = gen(
+    `export default function Search({ data }) {
+  return (
+    <PageBody>
+      <SearchField value={data.query} onChange={<Query />} onSubmit={<Query />} />
+      <Each of={data.items} as="item">
+        <ResultRow title={item.title} onClick={<Open page="search" q={item.query} />} onAction={<Play ref={item.ref} queue={item.queue} />} />
+      </Each>
+    </PageBody>
+  );
+}
+`,
+    'search',
+    {
+      query: 'salt',
+      items: [
+        { title: 'Salt Road', query: 'salt road', ref: 'abs:salt', queue: 'music' },
+        { title: 'Wind and Truth', query: 'wind', ref: 'abs:wind', queue: 'spoken' },
+      ],
+    },
+  );
+
+  it('leaves the query unbound, Android having no search draft until M5.searchui, so the field draws disabled', () => {
+    expect(search).toContain('SearchFieldProps(value = "salt", platform = Platform.MOBILE)');
+    expect(search).not.toContain('onSubmit');
+  });
+
+  it('opens the typed destination with the query name its route declares', () => {
+    expect(search).toMatch(
+      /onClick = \{\s*navController.navigate\(Route.Search\(q = "salt road"\)\)\s*\}/,
+    );
+    expect(search).toContain('onClick = { navController.navigate(Route.Search(q = "wind")) }');
+  });
+
+  it('plays each item on the queue its data names, through the actions the app injects', () => {
+    expect(search).toMatch(
+      /onAction = \{\s*actions.onPlay\("abs:salt", PlayQueue.MUSIC, PlayMode.NOW\)\s*\}/,
+    );
+    expect(search).toMatch(
+      /onAction = \{\s*actions.onPlay\("abs:wind", PlayQueue.SPOKEN, PlayMode.NOW\)\s*\}/,
+    );
   });
 });

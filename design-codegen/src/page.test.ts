@@ -133,7 +133,16 @@ describe('a page file', () => {
   });
 
   it('[M0.canvas] refuses an Each item or a When state that is not a plain name, so neither can write markup or code', () => {
-    for (const as of ['a" onclick="x', 'a, i) => (x', 'class', 'data', 'shell', 'i', 'chrome']) {
+    for (const as of [
+      'a" onclick="x',
+      'a, i) => (x',
+      'class',
+      'data',
+      'shell',
+      'i',
+      'chrome',
+      'query',
+    ]) {
       expect(() =>
         parsePage(page(`<Each of={data.a} as='${as}'><Button /></Each>`), 'book'),
       ).toThrow(/line 3: Each's as must be a plain name/);
@@ -612,5 +621,172 @@ describe('a page opening another', () => {
     expect(checkPage(tree, data, props)).toEqual([
       'line 3: MediaCard.onClick opens settings, and no navigation map was given to check it',
     ]);
+  });
+});
+
+describe('a page holding the search query', () => {
+  const props = new Map([
+    ['SearchField', new Set(['value', 'onChange', 'onSubmit', 'onClose', 'autoFocus'])],
+  ]);
+  const handlers = new Map([['SearchField', new Set(['onChange', 'onSubmit', 'onClose'])]]);
+  const opens = { pages: new Map<string, string[]>(), links: [], handlers };
+  const data = { query: 'salt' };
+  const check = (field: string) =>
+    checkPage(parsePage(page(field), 'book'), data, props, undefined, undefined, undefined, opens);
+
+  it('reads <Query /> in a handler prop as the query the field types and submits', () => {
+    const tree = parsePage(
+      page('<SearchField value={data.query} onChange={<Query />} onSubmit={<Query />} />'),
+      'book',
+    );
+    expect(tree.kind === 'element' && tree.props.onChange).toEqual({ kind: 'query' });
+    expect(tree.kind === 'element' && tree.props.onSubmit).toEqual({ kind: 'query' });
+  });
+
+  it("accepts the query on a field's onChange and onSubmit", () => {
+    expect(
+      check('<SearchField value={data.query} onChange={<Query />} onSubmit={<Query />} />'),
+    ).toEqual([]);
+  });
+
+  it("refuses the query on any other prop: only a field's typing and submitting hold it", () => {
+    expect(check('<SearchField onClose={<Query />} />')).toEqual([
+      "line 3: SearchField.onClose cannot hold the query: Query goes on a field's onChange or onSubmit",
+    ]);
+    expect(check('<SearchField value={<Query />} />')).toEqual([
+      'line 3: SearchField.value takes no handler, so it cannot hold the query',
+    ]);
+  });
+
+  it('refuses a Query given anything, or anywhere but a handler prop', () => {
+    expect(() =>
+      parsePage(page('<SearchField onChange={<Query q={data.query} />} />'), 'book'),
+    ).toThrow(/Query takes nothing, not q/);
+    expect(() => parsePage(page('<SearchField onChange={<Query>q</Query>} />'), 'book')).toThrow(
+      /Query takes no children/,
+    );
+    expect(() => parsePage(page('<Query />'), 'book')).toThrow(
+      /Query goes in a handler prop, onChange=\{<Query \/>\}/,
+    );
+  });
+});
+
+describe("a page opening another with its route's query", () => {
+  const props = new Map([['ResultRow', new Set(['title', 'onClick'])]]);
+  const handlers = new Map([['ResultRow', new Set(['onClick'])]]);
+  const opens = {
+    pages: new Map([
+      ['search', []],
+      ['album', ['ref']],
+    ]),
+    query: new Map([
+      ['search', ['q']],
+      ['album', []],
+    ]),
+    links: ['album'],
+    self: 'search',
+    handlers,
+  };
+  const data = {
+    suggestions: [{ title: 'Salt Road', query: 'salt road', page: 'album', ref: 'salt' }],
+  };
+  const check = (row: string, at = data) =>
+    checkPage(
+      parsePage(page(`<Each of={data.suggestions} as="s">${row}</Each>`, 'Search'), 'search'),
+      at,
+      props,
+      undefined,
+      undefined,
+      undefined,
+      opens,
+    );
+
+  it('[M2.search] binds a query name the route declares, or leaves it out', () => {
+    const tree = parsePage(
+      page('<ResultRow onClick={<Open page="search" q={data.q} />} />', 'Search'),
+      'search',
+    );
+    expect(tree.kind === 'element' && tree.props.onClick).toEqual({
+      kind: 'open',
+      page: 'search',
+      params: { q: ['data', 'q'] },
+    });
+    expect(
+      check('<ResultRow title={s.title} onClick={<Open page="search" q={s.query} />} />'),
+    ).toEqual([]);
+    expect(check('<ResultRow title={s.title} onClick={<Open page="search" />} />')).toEqual([]);
+  });
+
+  it("[M2.search] refuses a name the route doesn't declare, and a query that is not a non-empty string", () => {
+    expect(check('<ResultRow onClick={<Open page="search" text={s.query} />} />')).toEqual([
+      'line 3: ResultRow.onClick gives search [text], and its route takes [] and the query [q]',
+    ]);
+    expect(check('<ResultRow onClick={<Open page="album" ref={s.ref} q={s.query} />} />')).toEqual([
+      'line 3: ResultRow.onClick gives album [ref,q], and its route takes [ref]',
+    ]);
+    expect(
+      check('<ResultRow onClick={<Open page="search" q={s.query} />} />', {
+        suggestions: [{ title: 'Salt Road', query: '', page: 'album', ref: 'salt' }],
+      }),
+    ).toEqual(["line 3: ResultRow.onClick: search's q (s.query) is not a non-empty string"]);
+  });
+
+  it('[M2.search] binds a query only on a page it names: a page bound from data takes its route parameters alone', () => {
+    expect(check('<ResultRow onClick={<Open page={s.page} ref={s.ref} q={s.query} />} />')).toEqual(
+      ['line 3: ResultRow.onClick gives album [ref,q], and its route takes [ref]'],
+    );
+  });
+});
+
+describe('a page playing each item on the queue its data names', () => {
+  const props = new Map([['ResultRow', new Set(['title', 'onAction'])]]);
+  const handlers = new Map([['ResultRow', new Set(['onAction'])]]);
+  const opens = { pages: new Map<string, string[]>(), links: [], handlers };
+  const row =
+    '<ResultRow title={item.title} onAction={<Play ref={item.ref} queue={item.queue} />} />';
+  const check = (items: Record<string, unknown>[]) =>
+    checkPage(
+      parsePage(page(`<Each of={data.items} as="item">${row}</Each>`), 'book'),
+      { items },
+      props,
+      undefined,
+      undefined,
+      undefined,
+      opens,
+    );
+
+  it('[M2.search] reads <Play queue={item.queue}> as the queue each item names', () => {
+    const tree = parsePage(
+      page('<ResultRow onAction={<Play ref={data.ref} queue={data.queue} />} />'),
+      'book',
+    );
+    expect(tree.kind === 'element' && tree.props.onAction).toEqual({
+      kind: 'play',
+      queue: { path: ['data', 'queue'] },
+      next: false,
+      source: false,
+      params: { ref: ['data', 'ref'] },
+    });
+  });
+
+  it('[M2.search] accepts items each playing on the spoken or the music queue', () => {
+    expect(
+      check([
+        { title: 'Salt Road', ref: 'a', queue: 'music' },
+        { title: 'Wind and Truth', ref: 'b', queue: 'spoken' },
+      ]),
+    ).toEqual([]);
+  });
+
+  it('[M2.search] refuses an item whose queue is neither, or missing', () => {
+    expect(check([{ title: 'Salt Road', ref: 'a', queue: 'books' }])).toEqual([
+      "line 3: ResultRow.onAction: the play's queue (item.queue) is not spoken or music",
+    ]);
+    expect(check([{ title: 'Salt Road', ref: 'a' }])).toEqual([
+      'line 3: item.queue is not in the placeholder',
+    ]);
+    expect(() =>
+      parsePage(page('<ResultRow onAction={<Play ref={data.ref} queue={1} />} />'), 'book'),
+    ).toThrow(/Play's queue must be "spoken", "music" or a data path/);
   });
 });
