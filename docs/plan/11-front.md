@@ -71,7 +71,7 @@ Your rule: Sonora, then the canvas, then code:
 1. **Structure comes before pictures.** Every screen first gets a plain-text structure in `nav.json`: its purpose, its sections in order (unsettled ones marked provisional), its empty state and the screens it links to. The canvas's start page shows the generated navigation flowchart and screen list, no mockups, so you settle the hierarchy first. Each screen gets a canvas page: its structure beside its mockups, nothing else loaded. A page is drawn only once it has a structure.
 2. **Navigation is data.** The canvas holds `nav.json`: destinations, routes and parameters, which destination each page lights up, back behaviour, and the layout at each breakpoint (bottom bar, rail, side panel). Code generation turns it into the web router and the Android Navigation-Compose graph: **the same flows from the same file**.
 3. **Pages are a restricted format.** Each page is JSX that may only use Sonora components, string-table keys for text, other literal props, and bindings to its screen endpoint's generated types (`{feed.shelves}`). No custom styling, no logic. A parser turns it into a page tree, generated as React for web and Compose for Android, both calling the same component names.
-4. **Hand-written code only supplies data** (the screen's API call, view-model state and actions) behind the page's typed slots.
+4. **Hand-written code only supplies data** (the screen's API call, view-model state and actions) behind the page's typed slots, which only the canvas adds.
 5. **CI enforces it**:
    - the app's routes must equal `nav.json` exactly;
    - every page must match its generated layout;
@@ -79,7 +79,7 @@ Your rule: Sonora, then the canvas, then code:
    - each page's screenshot on both platforms is compared against the design's render of that page;
    - the "Published artifacts are current" job, and the Stop hook, fail while either artifact, or the code building it, differs from its recorded publish, or the canvas installs another Sonora;
    - the `auralis/no-hand-ui` lint refuses HTML elements, `style` and `className` in `web/src` outside `generated/`, and a test refuses `@Composable` functions outside Android's `generated` and `ui/sonora` packages, each with a documented allowlist.
-6. **The frontend build starts with navigation.** First, both apps navigate the full generated map with placeholder data, compared against the design (M0.canvas), before any screen gets real content; without a household sign-on (`/api/health` says), placeholders stay.
+6. **The frontend build starts with navigation.** Both apps navigate the full generated map with placeholder data, compared against the design (M0.canvas), before any screen gets real content; without a household sign-on (`/api/health` says), placeholders stay.
 
 - **Mantine** is optional, only inside a component needing a behaviour primitive (menus, focus traps), never as the visual layer.
 - **The app frame** is Sonora's backdrop shell (per `SPEC-backdrop.md`), a real Material 2 backdrop as Sonora Prime draws it.
