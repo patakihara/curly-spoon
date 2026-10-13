@@ -8,7 +8,7 @@ part: How it's built
 ### Build through the design
 
 - **Generated code can't be edited by hand.** The web UI package, Android's component props, the routes and the page layouts are generated from `design/`. CI fails on any difference from a regeneration, and a repo hook refuses edits there.
-- **No component without a design.** CI fails if app code uses a component that doesn't exist in Sonora with its `.d.ts`, card and previews. Lint rejects styled elements, raw colours and one-off components outside the UI package, and literal text, formatting or glyph names outside the string table, format spec and icon list; a check refuses raw sizes, colours, timings and layers inside Sonora and Android's `ui/sonora`.
+- **No component without a design.** CI fails if app code uses a component that doesn't exist in Sonora with its `.d.ts`, card and previews. Lint rejects styled elements, raw colours and one-off components outside the UI package, and from M5 (M5.strings, M5.formats, M5.icons) literal text, formatting or glyph names outside the string table, format spec and icon list; a check refuses raw sizes, colours, timings and layers inside Sonora and Android's `ui/sonora`.
 - **No screen without a page, and looks match.** Routes, layouts and both platforms' screenshots are checked against the canvas, as "From design to both apps" lists.
 
 ### Keep the artifacts current

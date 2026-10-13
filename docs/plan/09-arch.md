@@ -31,7 +31,7 @@ Every screen gets one call returning what it draws, fields named for the UI (`st
 ::: card
 #### 3 · A local index, refreshed in the background
 
-A job mirrors the Audiobookshelf and Jellyfin libraries into SQLite as shared metadata (ids, titles, creators, genres, external ids); each person's progress is read with their own token (M1.progress). Browse, search, ownership checks and recommendations read that index, not live fan-out.
+A job mirrors the Audiobookshelf and Jellyfin libraries into SQLite as shared metadata (ids, titles, creators, genres, external ids); each person's progress is read with their own token (M1.progress). Browse, search, ownership checks and recommendations read that index, not live fan-out; an explicit `?refresh` re-syncs only that page's items.
 :::
 
 ::: card
@@ -49,7 +49,7 @@ Books, music and podcasts share one state machine, table and status vocabulary. 
 ::: card
 #### 6 · Secure by default
 
-Setup claims the admin role once, with a one-time code the server writes to its data folder on first start; after that only an admin, who owns providers, paths and approvals, can run it. Download URLs come only from the server's own search results, never the client. Forwarded headers are trusted only from the proxy named in config, and the cookie is `Secure` whenever the request came in over HTTPS, so login works on plain LAN HTTP and behind Caddy. A signed-in write is refused unless its Origin, or failing that its Referer, is `PUBLIC_ORIGIN`, or, when that is unset (as in development), the request's own origin.
+Setup claims the admin role once, with a one-time code the server writes to its data folder on first start; after that only an admin can run it. Download URLs come only from the server's own search results, never the client. Forwarded headers are trusted only from the proxy named in config, and the cookie is `Secure` whenever the request came in over HTTPS, so login works on plain LAN HTTP and behind Caddy. A signed-in write is refused unless its Origin, or failing that its Referer, is `PUBLIC_ORIGIN`, or, when that is unset (as in development), the request's own origin.
 :::
 
 ::: card
@@ -73,5 +73,5 @@ No video path exists to switch on by mistake. The extractor adapter's type has o
 | `Availability` | Where you stand with it, on every card and row | `owned` · `streamable` (plays now, can be kept) · `requested{status, progress}` · `external{requestable}`. Maps straight onto Sonora's four tones: <span class="pill t-lib">In library</span> <span class="pill t-prog">Downloading · 87%</span> <span class="pill t-req">Not in library</span> <span class="pill t-err">Failed</span> |
 | `PlaybackPlan` | Everything a player needs to play one item, from the start or a resume point | ordered `tracks[]` (url, mime, duration, offset), `chapters[]`, `startAt`, `progressTarget` (where the server reports progress), `next` (the autoplay rule) |
 | `User` · `Device` | Who is listening, and on what | An Auralis user maps to their own Audiobookshelf and Jellyfin accounts, so progress, favourites and play history stay theirs upstream too. Each device (a browser or a phone) registers under a user. |
-| `ListeningSession` | What's playing on one device | Owned by (user, device): its two queues (music, in the queue style's order, and spoken), the active queue, position, and play history. **Sessions on different devices don't mix by default.** |
+| `ListeningSession` | What's playing on one device | Owned by (user, device): its two queues (music, in the queue style's order, and spoken), the active queue, position, and play history. |
 | `Shelf` | A carousel on Browse or a library home | `eyebrow` (a string key: "More like"), `title`, `subject` + `subjectArt` (what the shelf is about), `subtitle` (names the types in a mixed shelf), `items[]` of `MediaCard` or `FeatureCard` data, `mixed` flag |

@@ -62,7 +62,7 @@ This is M5's work; until then the frontend is M1.shell's minimal shell.
 #### What the rebuild does with it
 
 - **Web uses Sonora's components directly, not ports**: real React with typed props. `pnpm gen` rewrites Sonora's global-namespace lookups as imports in `web/src/generated/ui`, the app's UI package. The `.d.ts` files are the props, unchanged.
-- **Android**: `SonoraTokens.kt` as the theme, plus one Compose component per Sonora component with the same name. Its props class is **generated from the same `.d.ts`**, so a prop added in Sonora appears in Android's props at once, and a required one breaks the Android build until it is passed. Layout bodies are hand-written, as `export/README.md` spells out.
+- **Android**: `SonoraTokens.kt` as the theme, plus one Compose component per Sonora component with the same name. Its props class is **generated from the same `.d.ts`**, so a required prop added in Sonora breaks the Android build until passed. Layout bodies are hand-written, as `export/README.md` spells out.
 :::
 :::
 
@@ -78,7 +78,7 @@ Your rule: Sonora, then the canvas, then code:
    - web and Android must build the same route set;
    - each page's screenshot on both platforms is compared against the design's render of that page;
    - the "Published artifacts are current" job, and the Stop hook, fail while either artifact, or the code building it, differs from its recorded publish, or the canvas installs another Sonora;
-   - the `auralis/no-hand-ui` lint refuses HTML elements, `style` and `className` in `web/src` outside `generated/`, and a test refuses `@Composable` functions outside Android's `generated` and `ui/sonora` packages, each with a documented allowlist. The minimal shell's hand-written data code supplies data only and stays within this lint.
+   - the `auralis/no-hand-ui` lint refuses HTML elements, `style` and `className` in `web/src` outside `generated/`, and a test refuses `@Composable` functions outside Android's `generated` and `ui/sonora` packages, each with a documented allowlist.
 6. **The frontend build starts with navigation.** First, both apps navigate the full generated map with placeholder data, compared against the design (M0.canvas), before any screen gets real content; without a household sign-on (`/api/health` says), placeholders stay.
 
 - **Mantine** is optional, only inside a component needing a behaviour primitive (menus, focus traps), never as the visual layer.
@@ -116,7 +116,7 @@ Five buttons: Browse, Music, Books, Podcasts, Search. Bottom bar under 600&nbsp;
 | Settings · onboarding | `GET/PUT /settings`, `/setup`, `/auth` | theme, autoplay rules, services, providers, requests | <span class="pill t-lib">Sonora</span> UI kit settings screen |
 
 ::: callout warn
-**Still to design on the Auralis canvas, before their milestone:** the YouTube tag, the YouTube channel settings (SponsorBlock, Shorts) and the YouTube account connection, provisional sections of the Show and Settings pages, and loading and empty states per screen. Everything else has a Sonora component and reference screen.
+**Still to design on the Auralis canvas, before their milestone:** the YouTube tag, the YouTube channel settings (SponsorBlock, Shorts) and the YouTube account connection, provisional sections of the Show and Settings pages, the pull-to-refresh indicator, and loading and empty states per screen. Everything else has a Sonora component and reference screen.
 :::
 
 ### How parity stays true

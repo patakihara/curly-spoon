@@ -7,7 +7,7 @@ part: The product
 
 ### Your library
 
-- **Library pages stay pure.** Music, Books and Podcasts show only your library plus your requests. External items appear only on Browse, in Search, and on artist or author pages.
+- **Library pages stay pure.** External items appear only on Browse, in Search, and on artist or author pages.
 - **Artist and author pages** do what Spotify's do, plus an "In your library" carousel.
 - **Library:** a 3-across grid on phones, bigger on desktop, a grid/list toggle, and sort by title, artist or **Random** (tap again to reshuffle).
 - **In-library marking:** not-playable items are greyed out. Streamable ones stay normal, with a subtle marker. Where the marker goes is still open.
@@ -22,7 +22,7 @@ part: The product
 
 ### Your YouTube account
 
-**Watched state and position for your YouTube channels** sync with your YouTube account, opt-in per person, off until you connect it, and only for the channels you've added; the rest of your YouTube history is never read into Auralis. Google's API hides watch history, so this uses your browser sign-in cookies, stored encrypted on the server under your user only.
+**Watched state and position for your YouTube channels** sync with your YouTube account, opt-in per person, off until you connect it, and only for the channels you've added. Google's API hides watch history, so this uses your browser sign-in cookies, stored encrypted on the server under your user only.
 
 - **From YouTube:** an hourly job checks your watch history for videos from your channels. A finished video marks the episode played; a half-watched one sets your position in it. YouTube gives only a percentage, so Auralis resumes a few seconds early. Anything else in the history is skipped, not stored.
 - **To YouTube:** on pause and stop, Auralis sends your position as the "watched up to here" report YouTube's own player sends; finishing an episode marks the video watched. Whichever side played most recently wins.

@@ -19,7 +19,7 @@ One pipeline and status vocabulary for all three media, so every request renders
   - searches Prowlarr with several query forms (artist + album, album alone, discography packs), with results cached and spread across indexers so it stays under their limits;
   - scores each release on format (FLAC over 320 over the rest), how well its track list fits one of the album's editions, a sensible size and seeders;
   - picks automatically only when one release clearly wins. Otherwise the request shows <span class="pill t-req">Needs choice</span> with the candidates listed, so choosing takes one tap;
-  - imports itself: tags against the edition whose track list matches the files, tags them, files them under `/data/media/Music` (hardlinked, so seeding continues) and refreshes Jellyfin. Any songs from that album already kept from YouTube Music are replaced by the lossless copies, with play history and favourites following the MusicBrainz ids.
+  - imports itself: matches the files to an edition by track list, tags them, files them under `/data/media/Music` (hardlinked, so seeding continues) and refreshes Jellyfin. Any songs from that album already kept from YouTube Music are replaced by the lossless copies, with play history and favourites following the MusicBrainz ids.
   - **A clean album catalogue** from MusicBrainz, unlike Lidarr's raw one:
     - **one entry per album**, with its editions, remasters and regional releases folded under it, never listed side by side;
     - EPs, singles, compilations and live albums shown in their own groups rather than hidden;
@@ -44,7 +44,7 @@ One pipeline and status vocabulary for all three media, so every request renders
 
 ### YouTube channels
 
-A channel you add comes in as an audio-only show in your Podcasts library, with SponsorBlock. **Auralis never shows video.**
+A channel you add comes in as an audio-only show in your Podcasts library, with SponsorBlock.
 
 - **Adding a channel** happens only in Search: find it there, ranked among podcasts, or paste its link. Auralis serves an ordinary podcast feed for it (`/feeds/youtube/{channel}.xml`): one episode per upload, carrying its title, description, date, and thumbnail as cover art. Each episode's file is the video's audio-only stream, SponsorBlock segments cut out. Audiobookshelf subscribes like any feed, so the show gets progress, autoplay and digests. New episodes download automatically; older ones when you ask in either app, and all follow your other shows' 7-day clean-up. No stubs: an episode's length is known only once it's cut. Shorts and livestreams are left out by default, per channel.
 - **SponsorBlock.** Segments come from SponsorBlock's public API (no key; checked live). By default Auralis removes sponsor reads, self-promotion and "like and subscribe" reminders; intros, outros, filler and non-music sections in music videos can be switched on per channel. They are cut from the file without re-encoding, so the Audiobookshelf app, downloads and Android Auto get the clean version. The cut file is cached, so every fetch matches. Segments are community-submitted, often days after an upload, so an episode you haven't started is re-cut when new ones arrive; one you've started is left alone, so your position doesn't jump, and Auralis's players skip the new segments live.
