@@ -76,12 +76,13 @@ goes to the server's login route as the web client, coming back to the sign-in p
 `return_to`, where the visitor was going, or else to the app's start, and Android
 calls the `onSignIn()` it is given, the app's own sign-in.
 
-`onChange={<Query />}` and `onSubmit={<Query />}` give a search field the search query, and take
+`onChange={<Query />}` and `onSubmit={<Query />}` give a text field the search query, and take
 nothing: the field types the draft, and submitting runs the search; the check refuses a Query on
-any other prop. The web binds them to `useQuery()`'s `type` and `submit` from `web/src/query`,
-drawing a back layer or subheader that holds one as a component of its own, since the shell draws
-those outside the page. Android has no search draft until M5.searchui, so it leaves the field
-unbound and it draws disabled. On the canvas every handler does nothing.
+any other prop, or on a component that is not a text field. The web binds them to `useQuery()`'s
+`type` and `submit` from `web/src/query`, drawing a back layer or subheader that holds one, or an
+`<Open>`, as a component of its own, since the shell draws those outside the page. Android has no
+search draft until M5.searchui, so it leaves the field unbound and it draws disabled. On the
+canvas every handler does nothing.
 
 A page binds `data.…`, its placeholder, and may bind `shell.…` for what it shows from `nav.json`:
 a page's `filter` there, its `all` choice and then the destinations it narrows to, labelled as the

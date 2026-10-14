@@ -8,8 +8,9 @@
  * What is loaded, `shell.playing` on the canvas, is the web player's (`web/src/player`):
  * `usePlaying()` in a page, the `playing` the shell hands each layout's parts, the mini-player
  * drawn only once something is loaded. A `<Play>` plays through `usePlay()`, and a `<Query />` is
- * the search draft's `useQuery()` (`web/src/query`); a back layer or subheader holding it is drawn
- * as a component of its own, since the shell calls the frame's parts outside any page.
+ * the search draft's `useQuery()` (`web/src/query`); a back layer or subheader holding one, or an
+ * `<Open>` and so the router's `useNavigate()`, is drawn as a component of its own, since the
+ * shell calls the frame's parts outside any page.
  */
 import { LoginQuery, login } from '@auralis/schema';
 import { componentName, splitRoute, type Nav, type NavPage } from './nav.js';
@@ -390,14 +391,15 @@ function framePart(name: string, lines: string[]): string[] {
 }
 
 /**
- * A frame part holding the search query, as a component of its own, `<Page>Back`: the shell calls
- * the frame's parts as plain functions, outside any page, where no hook may run. Its declaration,
- * and the frame's entry drawing it.
+ * A frame part calling hooks, `hooks`, the router's to open a page or the search draft's, as a
+ * component of its own, `<Page>Back`: the shell calls the frame's parts as plain functions,
+ * outside any page, where no hook may run. Its declaration, and the frame's entry drawing it.
  */
 function framePartComponent(
   name: string,
   component: string,
   dataType: string,
+  hooks: string[],
   lines: string[],
 ): { declaration: string[]; entry: string[] } {
   const { data, context } = partUses(lines);
@@ -417,9 +419,9 @@ function framePartComponent(
   ];
   return {
     declaration: [
-      `/** The page's ${name === 'back' ? 'back layer' : 'subheader'}, a component of its own since it holds the search query: the shell calls the frame's parts as plain functions, where no hook may run. */`,
+      `/** The page's ${name === 'back' ? 'back layer' : 'subheader'}, a component of its own since it calls hooks: the shell calls the frame's parts as plain functions, where no hook may run. */`,
       `function ${component}(${signature}) {`,
-      '  const query = useQuery();',
+      ...hooks.map((hook) => `  ${hook}`),
       '  return (',
       ...lines,
       '  );',
@@ -623,7 +625,7 @@ export function generateWebPage(
   if (typed) react.push("import type { ComponentProps } from 'react';");
   const opening = (n: PageTree) =>
     n.kind === 'element' && Object.values(n.props).some((v) => v.kind === 'open');
-  const opens = some(root, opening);
+  const opens = inPage(opening);
   const bound = inPage(
     (n) =>
       n.kind === 'element' &&
@@ -639,14 +641,18 @@ export function generateWebPage(
   const router = [...(bound ? ['generatePath'] : []), ...(opens ? ['useNavigate'] : [])];
   if (router.length > 0) react.push(`import { ${router.join(', ')} } from 'react-router';`);
   // The back layer and subheader, each a function of the data, or a component of its own where it
-  // holds the search query.
+  // calls a hook: the router's, to open a page, or the search draft's.
   const frameParts = (sheet ? [] : [['back', back!] as const, ['subheader', subheader] as const])
     .filter((entry): entry is readonly ['back' | 'subheader', PageTree] => entry[1] !== undefined)
     .map(([part, tree]) => {
       const lines = render(tree, '    ', components);
-      if (!some(tree, queries)) return { declaration: [], entry: framePart(part, lines) };
+      const hooks = [
+        ...(some(tree, opening) ? ['const navigate = useNavigate();'] : []),
+        ...(some(tree, queries) ? ['const query = useQuery();'] : []),
+      ];
+      if (hooks.length === 0) return { declaration: [], entry: framePart(part, lines) };
       const component = `${name}${part === 'back' ? 'Back' : 'Subheader'}`;
-      return framePartComponent(part, component, `${name}Data`, lines);
+      return framePartComponent(part, component, `${name}Data`, hooks, lines);
     });
   const takesContext = frameParts.some((p) => p.declaration.join('\n').includes('FrameContext'));
   return [
@@ -726,7 +732,7 @@ export function generateWebPage(
           "  const platform: Platform = inPanel || PANEL[useLayout()] ? 'desktop' : 'mobile';",
         ]
       : ['  const platform = PLATFORM[useLayout()];']),
-    ...(opens ? ['  const navigate = useNavigate();'] : []),
+    ...(some(root, opening) ? ['  const navigate = useNavigate();'] : []),
     ...(sheet && goes ? ['  const go = useShellNav();'] : []),
     ...(usesPlay ? ['  const play = usePlay();'] : []),
     ...(some(root, queries) ? ['  const query = useQuery();'] : []),

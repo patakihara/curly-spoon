@@ -91,9 +91,15 @@ function memberPath(node: t.Node): string[] {
  * The names a page's scope already holds, on the canvas board and in the generated web page, so
  * an Each item or a When state never takes one.
  */
-const TAKEN = new Set(['data', 'shell', 'slots', 'lists', 'when', 'chrome', 'platform', 'state']);
-TAKEN.add('placeholder').add('i').add('layout').add('detected').add('given');
-TAKEN.add('navigate').add('query');
+const TAKEN = new Set([
+  // The canvas board's.
+  ...['data', 'shell', 'slots', 'lists', 'when', 'chrome', 'platform', 'state', 'placeholder'],
+  ...['i', 'layout', 'detected', 'given'],
+  // The web page's: what it declares, the hooks it imports, what its handlers take, globals it reads.
+  ...['frame', 'routes', 'generatePath', 'navigate', 'query', 'play', 'playing', 'go', 'inPanel'],
+  ...['context', 'leading', 'key', 'tab', 'window', 'undefined'],
+  ...['useContext', 'useLayout', 'useNavigate', 'usePlay', 'usePlaying', 'useQuery', 'useShellNav'],
+]);
 
 /** `value`, if it is a plain lower-case name a page may give an Each item or a When state. */
 function plainName(value: string, what: string, node: t.Node): string {

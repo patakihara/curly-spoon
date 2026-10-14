@@ -200,6 +200,30 @@ describe('the unbound-action ledger', () => {
     expect(stale).toEqual([]);
   });
 
+  it('[M2.search] counts a field holding the search query bound on the web alone, which has the draft', () => {
+    const search = nav.pages.find((p) => p.id === 'search')!;
+    const tree = parsePage(
+      `export default function Search({ data }) {
+  return (
+    <PageBody>
+      <SearchField value={data.query} placeholder={data.placeholder} onChange={<Query />} onSubmit={<Query />} />
+    </PageBody>
+  );
+}
+`,
+      'search',
+    );
+    const field = (platform: Platform) =>
+      unboundOn(search, tree, platform)
+        .filter((key) => key.startsWith('search/SearchField.'))
+        .sort();
+    expect(field('web')).toEqual([]);
+    expect(field('android')).toEqual([
+      'search/SearchField.onChange',
+      'search/SearchField.onSubmit',
+    ]);
+  });
+
   it('[M0.states/d] names only items the plan has', () => {
     const unknown = Object.entries(UNBOUND)
       .filter(([, item]) => !planItems.has(item))

@@ -5,6 +5,7 @@ import { REPO_ROOT, SONORA_DIR } from './outputs.js';
 import { checkPage, parsePage, type PageTree } from './page.js';
 import { readProps } from './props.js';
 import { discoverComponents } from './sonora.js';
+import { modelOf } from './test-sonora.js';
 
 const page = (body: string, name = 'Book') =>
   `export default function ${name}({ data }) {\n  return (\n${body}\n  );\n}\n`;
@@ -707,6 +708,27 @@ describe("[M2.search] the query on Sonora's own components", () => {
       'SearchField.onChange',
       'SearchField.onSubmit',
     ]);
+  });
+
+  it("takes a field's typing or submitting alone, and only a handler handed the text alone", () => {
+    const field = (name: string, members: string) => ({
+      [`core/${name}.d.ts`]: `import { ReactNode } from 'react';\nexport interface ${name}Props {\n  placeholder?: string;\n${members}\n}\nexport declare function ${name}(props: ${name}Props): JSX.Element;\n`,
+    });
+    const fields = queryFields(
+      modelOf({
+        ...field(
+          'Text',
+          '  onChange?: (text: string) => void;\n  onSubmit?: (text: string) => void;',
+        ),
+        ...field('Count', '  onChange?: (next: number) => void;'),
+        ...field('Pair', '  onChange?: (text: string, at: number) => void;'),
+        ...field('Typed', '  onInput?: (text: string) => void;'),
+        ...field('Drawn', '  onChange?: (text: string) => ReactNode;'),
+      }),
+    );
+    expect(Object.fromEntries([...fields].map(([c, props]) => [c, [...props]]))).toEqual({
+      Text: ['onChange', 'onSubmit'],
+    });
   });
 
   it('accepts the query on every text field', () => {
