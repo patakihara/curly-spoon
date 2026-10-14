@@ -19,11 +19,11 @@ function Demo(){
     <MiniPlayer platform="desktop" title="Glass Weather" artist="Glass Weather · HALCYON BLOOM"
       playing={playing} onTogglePlay={()=>setPlaying(!playing)} progress={0.42} duration={258} onOpen={() => {}} onSeek={() => {}} onPrev={() => {}} onNext={() => {}} onShuffle={() => {}} onRepeat={() => {}} onVolume={() => {}} onToggleQueue={() => {}} onToggleLyrics={() => {}} onSkipBack={() => {}} onSkipForward={() => {}} onSpeed={() => {}} onSleep={() => {}} />
     <div style={{maxWidth:620}}>
-      <ResultRow title="The Long Meridian" meta="Tomas Arden · Audiobook · 62 h" status="In library" tone="library" onClick={() => {}} />
-      <ResultRow title="Escapes and Moons" meta="Soul Vertex · Single · 3:33" status="Requested · 87%" tone="request" actionGlyph="downloading" onClick={() => {}} />
-      <ResultRow title="Shadows and Sighs" meta="Evelyn Harper · Album · 11 tracks" status="Queued" tone="progress" onClick={() => {}} />
-      <ResultRow title="Fleeting Verses Live" meta="Fleeting Verses · Podcast · 2 h 04 m" status="Searching…" tone="progress" onClick={() => {}} />
-      <ResultRow title="Tears of Ice" meta="Deep Inertia · Album · 9 tracks" status="Failed" tone="error" onClick={() => {}} />
+      <ResultRow title="The Long Meridian" meta="Tomas Arden · Audiobook · 62 h" status="In library" tone="library" onClick={() => {}} onAction={() => {}} />
+      <ResultRow title="Escapes and Moons" meta="Soul Vertex · Single · 3:33" status="Requested · 87%" tone="request" actionGlyph="downloading" onClick={() => {}} onAction={() => {}} />
+      <ResultRow title="Shadows and Sighs" meta="Evelyn Harper · Album · 11 tracks" status="Queued" tone="progress" onClick={() => {}} onAction={() => {}} />
+      <ResultRow title="Fleeting Verses Live" meta="Fleeting Verses · Podcast · 2 h 04 m" status="Searching…" tone="progress" onClick={() => {}} onAction={() => {}} />
+      <ResultRow title="Tears of Ice" meta="Deep Inertia · Album · 9 tracks" status="Failed" tone="error" onClick={() => {}} onAction={() => {}} />
     </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>An album's tracks, numbered in place of the art they share, the playing one marked, each with its menu</div>
     <div style={{maxWidth:620}}>
@@ -37,13 +37,13 @@ function Demo(){
     </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Result rows on a phone — a status with a percentage keeps only the percentage beside a trailing control</div>
     <div style={{maxWidth:380}}>
-      <ResultRow platform="mobile" title="Salt and Stone" meta="Book · Maya Lind · AudiobookBay" status="Downloading · 42%" tone="progress" trailing={<Button variant="secondary" size="sm" platform="mobile" pressed onClick={() => {}}>Requested</Button>} onClick={() => {}} />
-      <ResultRow platform="mobile" title="A Grain of Salt" meta="Book · Evelyn Harper · Prowlarr" trailing={<Button variant="secondary" size="sm" platform="mobile" onClick={() => {}}>Request</Button>} onClick={() => {}} />
+      <ResultRow platform="mobile" title="Salt and Stone" meta="Book · Maya Lind · AudiobookBay" status="Downloading · 42%" tone="progress" trailing={<Button variant="secondary" size="sm" platform="mobile" pressed onClick={() => {}}>Requested</Button>} onClick={() => {}} onAction={() => {}} />
+      <ResultRow platform="mobile" title="A Grain of Salt" meta="Book · Evelyn Harper · Prowlarr" trailing={<Button variant="secondary" size="sm" platform="mobile" onClick={() => {}}>Request</Button>} onClick={() => {}} onAction={() => {}} />
     </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Result rows with a detail line — why each row is there, wrapping to two lines</div>
     <div style={{maxWidth:380}}>
-      <ResultRow platform="mobile" title="Salt and Static" meta="Album · Soul Vertex · ListenBrainz" detail="Listeners of Deep Inertia play Soul Vertex most weeks." divider onClick={() => {}} />
-      <ResultRow platform="mobile" title="The Glass Archivist" meta="Book · Rosa Elin · Audible" detail="Listeners who finished The Salt Cartographer went on to this one, the next in its world." status="In library" tone="library" onClick={() => {}} />
+      <ResultRow platform="mobile" title="Salt and Static" meta="Album · Soul Vertex · ListenBrainz" detail="Listeners of Deep Inertia play Soul Vertex most weeks." divider onClick={() => {}} onAction={() => {}} />
+      <ResultRow platform="mobile" title="The Glass Archivist" meta="Book · Rosa Elin · Audible" detail="Listeners who finished The Salt Cartographer went on to this one, the next in its world." status="In library" tone="library" onClick={() => {}} onAction={() => {}} />
     </div>
     <div style={{color:'var(--surface-fg-muted)',fontSize:'var(--text-xs)',fontWeight:'var(--weight-strong)',textTransform:'uppercase',letterSpacing:.5}}>Media header — wide pane (≥600px): art beside the text</div>
     <MediaHeader kindLabel="Audiobook" title="The Ink Orchard" subtitle="Linnea Frost" onSubtitle={()=>{}}

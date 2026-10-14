@@ -58,7 +58,7 @@ function Feed(){
       <Section key={s.title} title={s.title} platform="desktop" last={i === FEED.length - 1}>
         {s.cards
           ? <Shelf>{s.cards.map((c) => <MediaCard key={c.title} size="sm" {...c} onClick={() => {}} />)}</Shelf>
-          : <div>{s.rows.map((r) => <ResultRow key={r.title} {...r} onClick={() => {}} />)}</div>}
+          : <div>{s.rows.map((r) => <ResultRow key={r.title} {...r} onClick={() => {}} onAction={() => {}} />)}</div>}
       </Section>
     ))}
   </div>;

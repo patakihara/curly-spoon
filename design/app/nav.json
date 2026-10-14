@@ -735,7 +735,7 @@
           },
           {
             "name": "Suggestions",
-            "holds": "As you type: titles, creators and series you have, plus recent searches, each naming its kind."
+            "holds": "As you type: titles, creators and series you have, plus recent searches, each naming its kind. Choosing one runs the search."
           },
           {
             "name": "Top result",
@@ -743,7 +743,7 @@
           },
           {
             "name": "Your library",
-            "holds": "Ranked by relevance; plays straight away, no request action. Songs match on their lyrics too: one found by a remembered line shows that line in its row."
+            "holds": "Ranked by relevance; plays straight away from its art, no request action, and tapping a row opens it, a song its album. Songs match on their lyrics too: one found by a remembered line shows that line in its row."
           },
           {
             "name": "Outside your library",

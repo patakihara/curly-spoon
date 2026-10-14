@@ -683,6 +683,7 @@ val componentGallery: List<GalleryEntry> = listOf(
                 meta = "Harbour Lights · 3:41",
                 platform = Platform.MOBILE,
                 onClick = {},
+                onAction = {},
                 trailing = {
                     OverflowMenu(
                         OverflowMenuProps(

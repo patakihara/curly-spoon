@@ -5,6 +5,8 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import net.develivarr.auralis.generated.nav.PageActions
+import net.develivarr.auralis.generated.nav.PlayMode
+import net.develivarr.auralis.generated.nav.PlayQueue
 import net.develivarr.auralis.generated.nav.Route
 import net.develivarr.auralis.generated.nav.litDestination
 import net.develivarr.auralis.generated.nav.openDestination
@@ -188,6 +190,12 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                                 meta = "Album · Soul Vertex · 11 tracks",
                                                 image = "/art/salt-and-static.jpg",
                                                 platform = Platform.MOBILE,
+                                                onClick = {
+                                                    navController.navigate(Route.Album(ref = "salt-and-static"))
+                                                },
+                                                onAction = {
+                                                    actions.onPlay("salt-and-static", PlayQueue.MUSIC, PlayMode.NOW)
+                                                },
                                             ),
                                         )
                                     },
@@ -204,6 +212,12 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                                 meta = "Song · Deep Inertia · Heartbeats in Silence",
                                                 image = "/art/deep-inertia.jpg",
                                                 platform = Platform.MOBILE,
+                                                onClick = {
+                                                    navController.navigate(Route.Album(ref = "heartbeats-in-silence"))
+                                                },
+                                                onAction = {
+                                                    actions.onPlay("salt-water", PlayQueue.MUSIC, PlayMode.NOW)
+                                                },
                                                 divider = true,
                                             ),
                                         )
@@ -213,6 +227,12 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                                 meta = "Book · Adam Rivers · 8 h 20 m",
                                                 image = "/art/foggy-trails.jpg",
                                                 platform = Platform.MOBILE,
+                                                onClick = {
+                                                    navController.navigate(Route.Book(ref = "the-saltwater-diaries"))
+                                                },
+                                                onAction = {
+                                                    actions.onPlay("the-saltwater-diaries", PlayQueue.SPOKEN, PlayMode.NOW)
+                                                },
                                                 divider = true,
                                             ),
                                         )
@@ -222,6 +242,12 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                                 meta = "Song · Deep Inertia · “salt on my tongue, ice in my hands”",
                                                 image = "/art/tears-of-ice.jpg",
                                                 platform = Platform.MOBILE,
+                                                onClick = {
+                                                    navController.navigate(Route.Album(ref = "tears-of-ice"))
+                                                },
+                                                onAction = {
+                                                    actions.onPlay("tears-of-ice-song", PlayQueue.MUSIC, PlayMode.NOW)
+                                                },
                                                 divider = true,
                                             ),
                                         )

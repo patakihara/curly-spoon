@@ -323,7 +323,7 @@ export const gallery = [
   { key: 'add', label: 'Add to library', icon: 'library_add', sub: 'Keeps a copy of your own' },
   { key: 'artist', label: 'Go to artist', icon: 'person' },
   { key: 'share', label: 'Share', icon: 'share' },
-])} onSelect={() => {}} />} onClick={() => {}} /></div>),
+])} onSelect={() => {}} />} onClick={() => {}} onAction={() => {}} /></div>),
   },
   {
     name: 'ScrollArea',

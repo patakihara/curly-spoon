@@ -40,7 +40,7 @@ function Grid({platform}){
 
 function Tracks(){
   return <div style={{padding:'var(--spacing-md) var(--grid-margin-mobile)'}}>
-    {TRACKS.map((t, i) => <ResultRow key={t} platform="mobile" title={t} meta="Halcyon Bloom · 3:41" divider onClick={() => {}} />)}
+    {TRACKS.map((t, i) => <ResultRow key={t} platform="mobile" title={t} meta="Halcyon Bloom · 3:41" divider onClick={() => {}} onAction={() => {}} />)}
   </div>;
 }
 

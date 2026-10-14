@@ -27,7 +27,8 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
   const spinning = pct === null && st.indexOf('searching') > -1;
   const failed = pct === null && (st.indexOf('failed') > -1 || st.indexOf('error') > -1);
   const off = !onClick;
-  const act = onAction || onClick;
+  // The art's action is the row's own, given apart: opening the row never wears a Play label.
+  const act = onAction;
   // No scrim without something to put on it — a bare dark square reads as a broken cover, not as work in flight.
   const ring = (pct !== null || spinning) && !!ProgressRing;
   const dimmed = ring || queued || failed;

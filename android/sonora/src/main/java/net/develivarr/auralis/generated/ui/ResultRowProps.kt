@@ -32,6 +32,10 @@ data class ResultRowProps(
     val platform: Platform? = null,
     /** Without it the row is drawn disabled. */
     val onClick: (() -> Unit)? = null,
+    /**
+     * The art's action: play, or cancel or retry a request, as the status says. Without it the art
+     * draws no action; the row's `onClick` never stands in for it.
+     */
     val onAction: (() -> Unit)? = null,
     /** Hairline separator along the bottom, inset to the text column. Set on all but the last row of a list. */
     val divider: Boolean? = null,

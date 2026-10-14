@@ -29,6 +29,10 @@ export interface ResultRowProps {
   platform?: 'desktop' | 'mobile';
   /** Without it the row is drawn disabled. */
   onClick?: () => void;
+  /**
+   * The art's action: play, or cancel or retry a request, as the status says. Without it the art
+   * draws no action; the row's `onClick` never stands in for it.
+   */
   onAction?: () => void;
   /** Hairline separator along the bottom, inset to the text column. Set on all but the last row of a list. */
   divider?: boolean;

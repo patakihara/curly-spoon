@@ -25,3 +25,26 @@ describe("Sonora's ResultRow with a detail line", () => {
     expect(row({})).not.toContain('line-clamp');
   });
 });
+
+describe("Sonora's ResultRow art action", () => {
+  const opens = () => undefined;
+  const plays = () => undefined;
+
+  it('draws no action on the art of a row that only opens, so opening never wears a Play label', () => {
+    for (const platform of ['desktop', 'mobile'] as const) {
+      const html = row({ platform, onClick: opens });
+      expect(html, platform).not.toContain('aria-label="Play"');
+      expect(html, platform).not.toContain('rr-act');
+      expect(html, platform).toContain('aria-disabled="false"');
+    }
+  });
+
+  it("draws the art's Play only when the row is given an action of its own, beside or without its click", () => {
+    for (const platform of ['desktop', 'mobile'] as const) {
+      expect(row({ platform, onClick: opens, onAction: plays }), platform).toContain(
+        'aria-label="Play"',
+      );
+      expect(row({ platform, onAction: plays }), platform).toContain('aria-label="Play"');
+    }
+  });
+});
