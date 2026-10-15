@@ -37,6 +37,9 @@ export default function Search({ data }) {
             </Each>
           </Section>
         </When>
+        <When state="empty">
+          <EmptyState icon="search_off" title={data.empty.title} body={data.empty.body} />
+        </When>
         <When state="full">
           <Section title="Top result">
             <ResultRow

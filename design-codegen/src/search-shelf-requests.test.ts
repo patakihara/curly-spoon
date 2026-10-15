@@ -54,6 +54,7 @@ describe('Search', () => {
   it('[M0.canvas] binds only its own query, filters, suggestions and results', () => {
     expect(dataRoots(tree)).toEqual([
       'activeFilters',
+      'empty',
       'kinds',
       'library',
       'outside',
@@ -152,13 +153,25 @@ describe('Search', () => {
   });
 
   it('draws the results, all three sections of them, only once the search has run', () => {
-    expect(body().map((c) => (c.kind === 'when' ? c.state : c.kind))).toEqual(['suggest', 'full']);
+    expect(body().map((c) => (c.kind === 'when' ? c.state : c.kind))).toEqual([
+      'suggest',
+      'empty',
+      'full',
+    ]);
     const [full] = when('full');
     expect(
       full!.children.map((c) =>
         c.kind === 'element' && c.props.title?.kind === 'literal' ? c.props.title.value : c.kind,
       ),
     ).toEqual(['Top result', 'In your library', 'Not in your library']);
+  });
+
+  it("says, when a search finds nothing or fails, what happened in its own words, with Sonora's EmptyState alone", () => {
+    const [empty] = when('empty');
+    const drawn = empty!.children.filter((c) => c.kind === 'element');
+    expect(drawn.map((c) => c.component)).toEqual(['EmptyState']);
+    expect(drawn[0]!.props.title).toEqual({ kind: 'binding', path: ['data', 'empty', 'title'] });
+    expect(drawn[0]!.props.body).toEqual({ kind: 'binding', path: ['data', 'empty', 'body'] });
   });
 
   it('opens each result in your library on a tap, a song its album, and plays it from its art on its own queue', () => {

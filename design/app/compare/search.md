@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: ffc6747d75d0da0d598324d0ad6c44568607cc0a2c51f4d686b7d557c009b62f
+pageHash: cf00bb1359e1ca62b5a977d2a611c23e3ab4e65d2f0308401554dfe9e24c9561
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---
@@ -71,8 +71,13 @@ query, running the search, and the results replace them.
 still names the active filters, now with `expand_more`, and tapping it from any scroll position
 slides the results down to show the kind row again.
 
-**Empty states**, per nav.json: with no query, the front layer lists recent searches; with no
-results, one line says nothing matched, in your library or outside it.
+**Empty states**, per nav.json: with no query, the front layer lists recent searches (the
+`suggest` state, asked with nothing typed). A search that finds nothing, or that fails, is the
+page's `empty` state, under `<When state="empty">`: in place of the three sections, one Sonora
+`EmptyState` with a `search_off` glyph, its title and one line from the data ("Nothing found",
+"Nothing in your library matches this search."; a failed search says so in its own words). The
+canvas draws it on its own phone artboard, `search.phone-empty`, as it does `suggest`; these
+renders draw `full` only.
 
 ## Differences
 
@@ -100,8 +105,10 @@ results, one line says nothing matched, in your library or outside it.
 - Open: the revealed back layer takes about 210 px on the phone and 240 px on desktop, so the
   outside rows with Request and Subscribe sit below the fold in both stills (looked at scrolled);
   concealing it gives the results the screen.
-- Open: suggestions are drawn on the canvas's `phone-suggest` artboard but not in these renders,
-  which show the `full` state only (see above).
+- Open: suggestions and the empty state are drawn on the canvas's `phone-suggest` and
+  `phone-empty` artboards but not in these renders, which show the `full` state only (see above).
+- Changed on purpose: neither kit nor Spotify's stills show a search that finds nothing; the
+  page uses Sonora's `EmptyState`, as Not Found does, so it states the fact and names no way on.
 - Changed on purpose: rows in your library open on a tap and play from their art, where the kits
   show no handlers. ResultRow draws its art action only when given one of its own (`onAction`),
   never standing in for the row's tap, so a row that only opens shows no Play.

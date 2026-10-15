@@ -6,7 +6,7 @@ import { PLATFORM, useLayout, type Chrome, type FrameContext, type LayoutId, typ
 import type { ShellNav } from '../../shell-nav';
 import { usePlay, type PlayQueue, type Playing } from '../../player';
 import { useQuery } from '../../query';
-import { AccountButton, BackLayer, BottomNav, Button, ButtonGroup, ExpanderRow, FrontLayerHeader, LayoutGrid, MiniPlayer, NavRail, PageBody, ResultRow, SearchField, Section, SortFilterBar } from '../ui/index.js';
+import { AccountButton, BackLayer, BottomNav, Button, ButtonGroup, EmptyState, ExpanderRow, FrontLayerHeader, LayoutGrid, MiniPlayer, NavRail, PageBody, ResultRow, SearchField, Section, SortFilterBar } from '../ui/index.js';
 
 const placeholder = {
   "query": "salt",
@@ -76,6 +76,10 @@ const placeholder = {
       "icon": "history"
     }
   ],
+  "empty": {
+    "title": "Nothing found",
+    "body": "Nothing in your library matches this search."
+  },
   "top": {
     "title": "Salt and Static",
     "meta": "Album · Soul Vertex · 11 tracks",
@@ -401,6 +405,11 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
               </Fragment>
             ))}
           </Section>
+        </>
+      )}
+      {state === 'empty' && (
+        <>
+          <EmptyState icon="search_off" title={data.empty.title} body={data.empty.body} platform={platform} />
         </>
       )}
       {state === 'full' && (
