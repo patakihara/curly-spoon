@@ -38,9 +38,13 @@ class FakeClock implements Clock {
   }
 }
 
-/** Lets every pending promise and fetch answer run. */
+/**
+ * Lets every pending promise and fetch answer run: 20 turns of the event loop, each a
+ * `setImmediate`, never a real timer, so a fired fake timer costs no wall-clock time and a loaded
+ * machine only slows the work, not the waiting.
+ */
 const settle = async () => {
-  for (let i = 0; i < 20; i++) await new Promise((resolve) => setTimeout(resolve));
+  for (let i = 0; i < 20; i++) await new Promise((resolve) => setImmediate(resolve));
 };
 
 /** An engine stand-in: what the store asked of it, and its callbacks to fire. */

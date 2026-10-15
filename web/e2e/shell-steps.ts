@@ -21,13 +21,34 @@ const spyOnMediaSession = () => {
   };
 };
 
-/** Signs in through the household sign-on, from the page `path`, landing back on it. */
+/**
+ * Waits for the page's fonts, its icons' above all. Until the icon font loads, each icon is laid
+ * out as its name in letters ("play_arrow"), so the buttons holding one are wider; when it arrives
+ * they shrink and move. A click aimed before then lands where the button no longer is: a book's
+ * Resume, aimed at 390 px wide, lands on the disabled Play next beside it, and nothing plays.
+ */
+export async function fontsLoaded(page: Page) {
+  // The icon face is listed once the app's stylesheet is in, and the text faces with it.
+  await page.waitForFunction(() =>
+    [...document.fonts].some((f) => f.family.replace(/"/g, '') === 'Material Symbols Rounded'),
+  );
+  await page.evaluate(() =>
+    Promise.all(
+      ['20px "Material Symbols Rounded"', '16px Inter', '600 16px Archivo'].map((font) =>
+        document.fonts.load(font),
+      ),
+    ),
+  );
+}
+
+/** Signs in through the household sign-on, from the page `path`, landing back on it laid out. */
 export async function signIn(page: Page, origin: string, path: string) {
   await page.addInitScript(spyOnMediaSession);
   await page.goto(`${origin}${path}`);
   await expect(page).toHaveURL(/\/sign-in\?/);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page).toHaveURL(`${origin}${path}`);
+  await fontsLoaded(page);
 }
 
 /** The title the server gives `ref` in `medium`'s list. */
