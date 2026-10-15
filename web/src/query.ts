@@ -3,6 +3,7 @@ import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { useAccessOf } from './data/access';
 import { useDeps } from './data/deps';
+import { pageKey } from './data/store';
 
 /**
  * The search draft: what a search field holds while it is typed into, per tab and in memory, and
@@ -22,7 +23,8 @@ import { useDeps } from './data/deps';
 export interface Query {
   /** Sets the draft to the text typed. */
   type: ((text: string) => void) | undefined;
-  /** Runs the search for `text`: opens Search at `?q=text` and clears the draft. */
+  /** Runs the search for `text`: opens Search at `?q=text` and clears the draft; for the search
+   * shown, asks it again if it failed. */
   submit: ((text: string) => void) | undefined;
 }
 
@@ -104,16 +106,21 @@ const NONE: Query = { type: undefined, submit: undefined };
 
 /**
  * Runs the search for `text` from the search `shown`: opens it, the draft submitted rather than
- * dropped first, or for the search already shown, settles the field on it and opens nothing.
+ * dropped first, or for the search already shown, settles the field on it, opens nothing, and asks
+ * it again (`askAgain`), which tries anew a search that failed and leaves any other as it is.
  */
 export function submitSearch(
   text: string,
   shown: string,
   navigate: (to: string) => void,
   store: DraftStore = drafts,
+  askAgain: (q: string) => void = () => undefined,
 ): void {
   const q = searchText(text);
-  if (q === shown) return store.clear();
+  if (q === shown) {
+    store.clear();
+    return askAgain(q);
+  }
   store.submit();
   navigate(q === '' ? '/search' : `/search?${new URLSearchParams({ q })}`);
 }
@@ -125,7 +132,8 @@ const useShownSearch = (): string => useSearchParams()[0].get('q') ?? '';
 export function useQuery(): Query {
   const navigate = useNavigate();
   const over = useShownSearch();
-  const canvas = useAccessOf(useDeps().access) === 'canvas';
+  const { access, pages } = useDeps();
+  const canvas = useAccessOf(access) === 'canvas';
   useEffect(() => drafts.dropSubmitted(over), [over]);
   return useMemo(
     () =>
@@ -133,9 +141,17 @@ export function useQuery(): Query {
         ? NONE
         : {
             type: (text: string) => drafts.type(text, over),
-            submit: (text: string) => submitSearch(text, over, (to) => void navigate(to)),
+            submit: (text: string) =>
+              submitSearch(
+                text,
+                over,
+                (to) => void navigate(to),
+                drafts,
+                // The key Search keeps a search's results by (data/index.tsx).
+                (q) => void pages.retry(pageKey('search', { q })),
+              ),
           },
-    [canvas, navigate, over],
+    [canvas, navigate, over, pages],
   );
 }
 

@@ -3,7 +3,7 @@
  * loads its data afresh, showing what was kept until the answer comes; the shell's back layer and
  * the page itself read the same key, so they share one request. A request refused for want of a
  * sign-in is handed on (`onSignedOut`); one that fails otherwise leaves what was kept, and is
- * said to have failed until the page is asked for again.
+ * said to have failed until the page is asked for again, or retried.
  */
 
 /** A request the server refused for want of a sign-in (401). */
@@ -21,6 +21,8 @@ export interface PageStore {
   failed(key: string): boolean;
   /** Loads `key` through `run`, unless it is loading already. */
   load(key: string, run: () => Promise<unknown>): Promise<void>;
+  /** Loads `key` again as it was last loaded, if that failed; else does nothing. */
+  retry(key: string): Promise<void>;
 }
 
 /** The answer a page has: what was kept, else that its request failed; undefined while it loads. */
@@ -36,10 +38,11 @@ export const pageKey = (name: string, asks: object, playing = ''): string =>
 export function createPageStore(options: { onSignedOut: () => void }): PageStore {
   const kept = new Map<string, unknown>();
   const loading = new Map<string, Promise<void>>();
-  const failed = new Set<string>();
+  /** Each key whose last request failed, and how it was loaded. */
+  const failed = new Map<string, () => Promise<unknown>>();
   const listeners = new Set<() => void>();
   const tell = () => listeners.forEach((listener) => listener());
-  return {
+  const store: PageStore = {
     subscribe(listener) {
       listeners.add(listener);
       return () => listeners.delete(listener);
@@ -58,7 +61,7 @@ export function createPageStore(options: { onSignedOut: () => void }): PageStore
         .catch((error: unknown) => {
           if (error instanceof SignedOut) options.onSignedOut();
           else {
-            failed.add(key);
+            failed.set(key, run);
             tell();
           }
         })
@@ -66,5 +69,10 @@ export function createPageStore(options: { onSignedOut: () => void }): PageStore
       loading.set(key, done);
       return done;
     },
+    retry(key) {
+      const run = failed.get(key);
+      return run === undefined ? Promise.resolve() : store.load(key, run);
+    },
   };
+  return store;
 }

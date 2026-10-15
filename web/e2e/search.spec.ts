@@ -190,19 +190,41 @@ test.describe('search, left through the shell', () => {
 });
 
 test.describe('a search that finds nothing', () => {
-  test('says nothing was found, and that a search failed when it did', async ({ page }) => {
+  test('says nothing was found, that a search failed when it did, and asks it again on Enter', async ({
+    page,
+  }) => {
     test.setTimeout(60_000);
     await page.setViewportSize({ width: 390, height: 844 });
     await signIn(page, '/search?q=zzqxv');
     await expect(page.getByText('Nothing found', { exact: true })).toBeVisible();
     await expect(page.getByText('Top result', { exact: true })).toHaveCount(0);
+    const album = await titleIn(page, 'music', recorded.album);
+    const letters = album.split(' ')[1]!.slice(0, 2);
 
-    await page.route('**/api/search?*', (route) =>
-      route.fulfill({ status: 500, contentType: 'application/json', body: '{"error":"x"}' }),
+    // The server fails the search itself, GET /api/search, and nothing else: its suggestions
+    // still come.
+    let failing = true;
+    await page.route(
+      (url) => url.pathname === '/api/search',
+      (route) =>
+        failing
+          ? route.fulfill({ status: 500, contentType: 'application/json', body: '{"error":"x"}' })
+          : route.continue(),
     );
-    await field(page).fill('qqzzx');
+    await field(page).fill(letters);
+    await expect(page.getByText(album, { exact: true })).toBeVisible();
     await field(page).press('Enter');
+    await expect(page).toHaveURL(`${recorded.origin}/search?q=${letters}`);
     await expect(page.getByText('Search failed', { exact: true })).toBeVisible();
     await expect(page.getByText('Top result', { exact: true })).toHaveCount(0);
+
+    // Once the server answers, Enter on the same text asks again, opening no new entry.
+    failing = false;
+    const entries = await page.evaluate(() => history.length);
+    await field(page).press('Enter');
+    await expect(page.getByText('Top result', { exact: true })).toBeVisible();
+    await expect.poll(() => between(page, 'Top result', 'In your library')).toContain(album);
+    await expect(page.getByText('Search failed', { exact: true })).toHaveCount(0);
+    expect(await page.evaluate(() => history.length)).toBe(entries);
   });
 });

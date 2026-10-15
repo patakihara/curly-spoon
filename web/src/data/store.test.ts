@@ -59,6 +59,24 @@ describe('[M1.shell] the pages’ kept data', () => {
     expect(store.peek('search{}')).toBe('found');
   });
 
+  it('asks again, as it asked before, only for a page whose request failed', async () => {
+    const store = createPageStore({ onSignedOut: () => undefined });
+    let asked = 0;
+    await store.load('search{"q":"ri"}', async () => {
+      asked++;
+      if (asked === 1) throw new Error('answered 500');
+      return 'found';
+    });
+    expect(store.failed('search{"q":"ri"}')).toBe(true);
+    await store.retry('search{"q":"ri"}');
+    expect(asked).toBe(2);
+    expect(store.failed('search{"q":"ri"}')).toBe(false);
+    expect(store.peek('search{"q":"ri"}')).toBe('found');
+    await store.retry('search{"q":"ri"}');
+    await store.retry('search{"q":"never"}');
+    expect(asked).toBe(2);
+  });
+
   it('never says a request refused for want of a sign-in failed', async () => {
     const store = createPageStore({ onSignedOut: () => undefined });
     await store.load('search{}', async () => {

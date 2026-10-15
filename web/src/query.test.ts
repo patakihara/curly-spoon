@@ -98,6 +98,23 @@ describe('running a search', () => {
     expect(drafts.get()).toBeNull();
   });
 
+  it('asks the search already shown again, so one that failed is tried anew, and only that one', () => {
+    const again: string[] = [];
+    const opened: string[] = [];
+    const run = (text: string, shown: string) =>
+      submitSearch(
+        text,
+        shown,
+        (to) => opened.push(to),
+        createDraftStore(),
+        (q) => again.push(q),
+      );
+    run(' rumours', 'rumours');
+    run('poems', 'rumours');
+    expect(again).toEqual(['rumours']);
+    expect(opened).toEqual(['/search?q=poems']);
+  });
+
   it('opens Search with nothing for nothing but spaces', () => {
     const opened: string[] = [];
     submitSearch('   ', 'rise', (to) => opened.push(to), createDraftStore());
