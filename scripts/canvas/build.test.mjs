@@ -79,7 +79,14 @@ test('[M0.canvas/f] the canvas build puts the flowchart and screen list on the s
       assert.equal(board.page, id, `${name} is on its page`);
       assert.equal(board.is_interactive, kind === 'structure' || undefined, `${name} Play button`);
     }
-    for (const kind of ['structure', 'phone', 'desktop', 'phone-search', 'phone-menu'])
+    for (const kind of [
+      'structure',
+      'phone',
+      'desktop',
+      'phone-search',
+      'phone-menu',
+      'phone-suggest',
+    ])
       assert.ok(kinds.has(kind), `the real nav.json has ${kind} boards`);
     for (const name of ['flows.dc.html', 'screens.dc.html'])
       assert.equal(index.boards[name].is_interactive, true, `${name} has a Play button`);

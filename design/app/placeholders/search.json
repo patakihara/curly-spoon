@@ -44,22 +44,26 @@
     {
       "title": "Salt and Static",
       "meta": "Album · Soul Vertex",
-      "query": "Salt and Static"
+      "query": "Salt and Static",
+      "icon": "search"
     },
     {
       "title": "Salt Water",
       "meta": "Song · Deep Inertia",
-      "query": "Salt Water"
+      "query": "Salt Water",
+      "icon": "search"
     },
     {
       "title": "The Saltwater Diaries",
       "meta": "Book · Adam Rivers",
-      "query": "The Saltwater Diaries"
+      "query": "The Saltwater Diaries",
+      "icon": "search"
     },
     {
       "title": "salt road",
       "meta": "Recent",
-      "query": "salt road"
+      "query": "salt road",
+      "icon": "history"
     }
   ],
   "top": {

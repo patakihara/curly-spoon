@@ -54,22 +54,26 @@ const placeholder = {
     {
       "title": "Salt and Static",
       "meta": "Album · Soul Vertex",
-      "query": "Salt and Static"
+      "query": "Salt and Static",
+      "icon": "search"
     },
     {
       "title": "Salt Water",
       "meta": "Song · Deep Inertia",
-      "query": "Salt Water"
+      "query": "Salt Water",
+      "icon": "search"
     },
     {
       "title": "The Saltwater Diaries",
       "meta": "Book · Adam Rivers",
-      "query": "The Saltwater Diaries"
+      "query": "The Saltwater Diaries",
+      "icon": "search"
     },
     {
       "title": "salt road",
       "meta": "Recent",
-      "query": "salt road"
+      "query": "salt road",
+      "icon": "history"
     }
   ],
   "top": {
@@ -393,7 +397,7 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
           <Section last={true} platform={platform}>
             {data.suggestions.map((s, i) => (
               <Fragment key={i}>
-                <ResultRow title={s.title} meta={s.meta} onClick={s.query ? () => navigate('/search' + '?' + new URLSearchParams({ q: s.query })) : undefined} divider={true} platform={platform} />
+                <ResultRow title={s.title} meta={s.meta} icon={s.icon} onClick={s.query ? () => navigate('/search' + '?' + new URLSearchParams({ q: s.query })) : undefined} divider={true} platform={platform} />
               </Fragment>
             ))}
           </Section>

@@ -26,7 +26,12 @@ export type PlayQueue = 'spoken' | 'music';
 /** How it plays: now, next in the queue, or a list played on its own. */
 export type PlayMode = 'now' | 'next' | 'source';
 
-/** The handler that plays the item `ref` names on `queue`, as `mode` says; none while it cannot. */
+/**
+ * The handler that plays the item `ref` names on `queue`, as `mode` says; none while it cannot.
+ * Next puts it into `queue` by name, which the server refuses for an item of the other queue; now
+ * and from its source plan it by the ref alone (`POST /api/play`), and the server plays it on the
+ * queue its kind belongs to, which is the same queue.
+ */
 export type Play = (ref: string, queue: PlayQueue, mode: PlayMode) => (() => void) | undefined;
 
 /** What is loaded and its transport, the mini-player's and Now Playing's handlers by name. */

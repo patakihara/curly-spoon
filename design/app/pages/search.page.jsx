@@ -30,6 +30,7 @@ export default function Search({ data }) {
               <ResultRow
                 title={s.title}
                 meta={s.meta}
+                icon={s.icon}
                 onClick={<Open page="search" q={s.query} />}
                 divider
               />

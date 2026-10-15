@@ -12,6 +12,7 @@ fun ResultRow(props: ResultRowProps) {
         slots = listOf(props.trailing),
         press = Press(props.onClick),
         label = props.title,
-        taps = listOf((props.actionGlyph ?: "Action") to props.onAction),
+        // The art's action only when given one, never standing in for the row's own tap.
+        taps = props.onAction?.let { listOf((props.actionGlyph ?: "Action") to it) } ?: emptyList(),
     )
 }

@@ -654,8 +654,9 @@ One row of a track, search-result or request list: art with a hover play/cancel 
 | `tone` | `'library' \| 'request' \| 'progress' \| 'error' \| null` | Colour family for the pill and ring; null for a row with no status. |
 | `actionGlyph` | `string` | Glyph for the art overlay action; "downloading" renders a pause control. |
 | `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
+| `icon` | `string` |  Material Symbols Rounded glyph name, leading the row in place of the art: a row with no cover of its own, such as a search suggestion ("search") or a recent search ("history"). With no art there is no art action. Ignored beside `number`.  |
 | `platform` | `'desktop' \| 'mobile'` |  |
-| `onClick` | `() => void` | Without it the row is drawn disabled. |
+| `onClick` | `() => void` |  Without it the row is drawn disabled, unless it has `onAction`: then the row is no control, and only its art acts. A row holding another control (`onAction`, `trailing`) takes its tap on the title for the keyboard and a screen reader, so no control sits inside another; a pointer taps it anywhere.  |
 | `onAction` | `() => void` |  The art's action: play, or cancel or retry a request, as the status says. Without it the art draws no action; the row's `onClick` never stands in for it.  |
 | `divider` | `boolean` | Hairline separator along the bottom, inset to the text column. Set on all but the last row of a list. |
 | `number` | `number \| null` | A track number, leading the row in place of the art: an album's tracks, which share one cover. Null or omitted for art. |

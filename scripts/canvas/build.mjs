@@ -3,7 +3,8 @@
  * into build/canvas. `project/**` is what the orchestrator publishes: a start page holding the
  * flowchart and the screen list, then one canvas page per page of nav.json holding its structure
  * board and, once drawn, one phone and one desktop artboard, a player sheet also a 1024 px one, a
- * phone with its local search out or its first menu open for a page with one; `canvas.json`, the
+ * phone with its local search out or its first menu open for a page with one, and a phone for each
+ * state a page draws beside `full`; `canvas.json`, the
  * art they show under `art/`, and Sonora installed under `project/ds/<folder>/` from build/sonora,
  * which must be Sonora's recorded publish. `stamp.json` carries that publish's version for
  * record-publish.mjs. Refuses uncommitted changes to design/app unless --draft.

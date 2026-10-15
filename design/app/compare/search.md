@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: f77af49ab6c9235b1ab9dbdac5a41c21bcce59aef26717b8229fb4f1fc55405d
+pageHash: ffc6747d75d0da0d598324d0ad6c44568607cc0a2c51f4d686b7d557c009b62f
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---
@@ -58,11 +58,14 @@ search; here it draws disabled, as the web serves no search draft yet.
   phone the pill keeps "42%"), a book with "Request", and a podcast with "Subscribe".
 
 **Suggestions** are the page's `suggest` state, while typing before results come in, drawn under
-`<When state="suggest">`; the results above are its `full` state. The canvas and these renders
-draw `full` only. As you type, the front layer holds one untitled section under the focused
-field, a `ResultRow` per suggestion: titles, creators and series you have, plus recent searches,
-each naming its kind in its meta ("Album · Soul Vertex", "Recent"). Choosing one opens Search with
-its text as the query, running the search, and the results replace them.
+`<When state="suggest">`; the results above are its `full` state. The canvas draws them on their
+own phone artboard, `search.phone-suggest`; these renders, from the web app, draw `full` only
+until its data code passes the state. As you type, the front layer holds one untitled section
+under the focused field, a `ResultRow` per suggestion: titles, creators and series you have, plus
+recent searches, each naming its kind in its meta ("Album · Soul Vertex", "Recent") and led by a
+glyph in place of art (ResultRow `icon`: `search`, or `history` for a recent search), so a
+suggestion never looks like an item with a cover. Choosing one opens Search with its text as the
+query, running the search, and the results replace them.
 
 **Concealed state**: the back layer shrinks to the heading and the field; the results' header
 still names the active filters, now with `expand_more`, and tapping it from any scroll position
@@ -97,8 +100,8 @@ results, one line says nothing matched, in your library or outside it.
 - Open: the revealed back layer takes about 210 px on the phone and 240 px on desktop, so the
   outside rows with Request and Subscribe sit below the fold in both stills (looked at scrolled);
   concealing it gives the results the screen.
-- Open: suggestions are drawn on the page but not in these renders, which show the `full` state
-  only (see above).
+- Open: suggestions are drawn on the canvas's `phone-suggest` artboard but not in these renders,
+  which show the `full` state only (see above).
 - Changed on purpose: rows in your library open on a tap and play from their art, where the kits
   show no handlers. ResultRow draws its art action only when given one of its own (`onAction`),
   never standing in for the row's tap, so a row that only opens shows no Play.

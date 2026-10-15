@@ -16,7 +16,10 @@ Now Playing panel. A local search comes out as the front layer scrolls, so on th
 with one gets a third artboard, a phone with it out (`phone-search`). A page's menus start closed
 in the apps, opening from their button and closing on the scrim or an item; a page never draws
 one `open`, and the check refuses it. On the canvas a page with a menu gets another phone
-artboard with its first menu open (`phone-menu`). A player sheet gets a 1024 px artboard
+artboard with its first menu open (`phone-menu`). The apps draw a page's `full` state until its
+data says otherwise, so a page with another `<When state>` gets a phone artboard for each, in the
+order the page names them, with that state's sections shown and the rest hidden (`phone-suggest`
+for Search's suggestions). A player sheet gets a 1024 px artboard
 (`tablet`), the side panel the mini-player's track block opens there, beside the page under it, and
 its comparison a 1024 px render, `canvas-tablet.png`.
 
