@@ -1,7 +1,7 @@
 import { createElement, type ComponentType, type ReactElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import { createMemoryRouter, RouterProvider, type RouteObject } from 'react-router';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApiClient } from '../api/client';
 import { pages, routes } from '../generated/nav/routes';
 import { type ShellHandle, type ShellTabs } from '../generated/nav/Shell';
@@ -9,9 +9,12 @@ import Book, { frame as bookFrame } from '../generated/pages/Book';
 import { frame as booksFrame } from '../generated/pages/Books';
 import Music from '../generated/pages/Music';
 import Queue from '../generated/pages/Queue';
+import { frame as searchFrame } from '../generated/pages/Search';
+import { drafts, SETTLE_MS } from '../query';
 import { type Access, type AccessStore } from './access';
 import { PageDepsContext, type PageDeps } from './deps';
 import { withPageData } from '.';
+import { emptySearch } from './search';
 import { type PageStore } from './store';
 
 /** What the pages read, with `who` the app is drawn for and each page's kept data by its name. */
@@ -172,5 +175,86 @@ describe('[M1.shell] the route table given its data', () => {
     expect(frameOf(given, 'book')).not.toBe(bookFrame);
     expect(frameOf(given, 'book').chrome).toBe(bookFrame.chrome);
     expect(frameOf(given, 'notFound')).toBe(frameOf(routes, 'notFound'));
+  });
+});
+
+describe('search given its data', () => {
+  afterEach(() => {
+    drafts.clear();
+    vi.useRealTimers();
+  });
+
+  const row = (title: string) => ({
+    title,
+    meta: 'Album',
+    image: '',
+    page: 'album',
+    ref: 'jellyfin:a1',
+    playRef: 'jellyfin:a1',
+    queue: 'music',
+  });
+  const empty = emptySearch(searchFrame.placeholder);
+  const results = { ...empty, top: row('The Rise and Fall'), library: [row('Rumours')] };
+  const suggesting = (...titles: string[]) => ({
+    ...empty,
+    suggestions: titles.map((title) => ({ title, meta: 'Album', query: title, icon: 'search' })),
+  });
+
+  /** A member's pages, Search's answers kept by what was asked for. */
+  function member(answers: Record<string, unknown>): PageDeps {
+    const { given } = deps('member');
+    return {
+      ...given,
+      pages: {
+        ...given.pages,
+        peek: (key) => (key.startsWith('search') ? answers[key.slice('search'.length)] : undefined),
+      },
+    };
+  }
+  const asked = (asks: object) => JSON.stringify(asks);
+
+  it('shows the results of the search in its address, and no suggestions', () => {
+    const html = renderAt('/search?q=ri', member({ [asked({ q: 'ri' })]: results }));
+    expect(html).toContain('The Rise and Fall');
+    expect(html).toContain('Rumours');
+    expect(html).toContain('Top result');
+    expect(html).toContain('value="ri"');
+  });
+
+  it('shows recent searches when opened with nothing typed', () => {
+    const html = renderAt('/search', member({ [asked({ suggest: '' })]: suggesting('rise') }));
+    expect(html).toContain('rise');
+    expect(html).not.toContain('Top result');
+  });
+
+  it('holds the draft in the field as typed, over the search it was typed on', () => {
+    vi.useFakeTimers();
+    drafts.type('rix', 'ri');
+    const html = renderAt('/search?q=ri', member({ [asked({ q: 'ri' })]: results }));
+    expect(html).toContain('value="rix"');
+    expect(html).not.toContain('Top result');
+    expect(html).not.toContain('Rumours');
+  });
+
+  it('draws the suggestions for what has settled, whichever answer came last', () => {
+    vi.useFakeTimers();
+    drafts.type('r', '');
+    vi.advanceTimersByTime(SETTLE_MS);
+    drafts.type('ri', '');
+    vi.advanceTimersByTime(SETTLE_MS);
+    const answers = {
+      [asked({ suggest: 'ri' })]: suggesting('The Rise and Fall'),
+      [asked({ suggest: 'r' })]: suggesting('Rumours'),
+    };
+    const html = renderAt('/search', member(answers));
+    expect(html).toContain('The Rise and Fall');
+    expect(html).not.toContain('Rumours');
+  });
+
+  it('leaves a draft behind when another search opens, as a suggestion does', () => {
+    drafts.type('rix', 'ri');
+    const html = renderAt('/search?q=Rumours', member({ [asked({ q: 'Rumours' })]: results }));
+    expect(html).toContain('value="Rumours"');
+    expect(html).toContain('Top result');
   });
 });

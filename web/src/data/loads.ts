@@ -6,13 +6,15 @@ import {
   parseMediaRefKey,
   type QueueType,
   QueueView,
+  SearchResults,
+  SuggestionList,
 } from '@auralis/schema';
 import { type ApiClient } from '../api/client';
 import { SignedOut } from './store';
 
 /**
  * What the pages read from the API, each answer parsed with the schema's zod: a library list, one
- * book, show or album, and this device's queues. A refusal for want of a sign-in throws
+ * book, show or album, this device's queues, and search's suggestions and results. A refusal for want of a sign-in throws
  * `SignedOut`; any other failure throws too, and the page keeps what it had.
  */
 
@@ -75,3 +77,13 @@ export async function loadQueues(
   ]);
   return { active, then };
 }
+
+/** Suggestions for what is typed so far: recent searches alone while nothing is. */
+export const loadSuggest = (api: ApiClient, q: string): Promise<SuggestionList> =>
+  answer(api.GET('/api/search/suggest', { params: { query: { q } } }), (d) =>
+    SuggestionList.parse(d),
+  );
+
+/** The results of searching for `q`, of every kind. */
+export const loadSearch = (api: ApiClient, q: string): Promise<SearchResults> =>
+  answer(api.GET('/api/search', { params: { query: { q } } }), (d) => SearchResults.parse(d));
