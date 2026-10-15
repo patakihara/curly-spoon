@@ -37,7 +37,7 @@ import ShelfReview, { frame as shelfReviewFrame } from '../generated/pages/Shelf
 import Show, { frame as showFrame } from '../generated/pages/Show';
 import SignIn from '../generated/pages/SignIn';
 import { usePlayId } from '../player';
-import { useDraft } from '../query';
+import { type Draft, useTabDraft } from '../query';
 import { useAccessOf } from './access';
 import { useDeps } from './deps';
 import { emptied } from './format';
@@ -87,8 +87,11 @@ interface Screen<T> {
   followsPlayer?: boolean;
   /** How it loads; a page nothing serves yet draws `empty` and loads nothing. */
   load?(api: ApiClient, params: Params): Promise<T>;
-  /** A hook, for a page drawn from more than its address: what it loads and draws as it is drawn. */
-  live?(params: Params): Live<T>;
+  /**
+   * For a page drawn from more than its address, the tab's search draft too: what it loads and
+   * draws. Not a hook: the hooks it reads from are called for every page alike.
+   */
+  live?(params: Params, draft: Draft | null): Live<T>;
 }
 
 /** A page nothing serves yet: drawn empty, with `words`, the page's own, as the canvas has them. */
@@ -108,9 +111,9 @@ const searchEmpty = emptySearch(searchFrame.placeholder);
  * Search, from the search it shows (`?q=`) and the draft typed over it: suggestions while typing,
  * the last ones staying until the next arrive, else the results; the field always holds the draft.
  */
-function useSearch(params: Params): Live<SearchData> {
+function searchLive(params: Params, draft: Draft | null): Live<SearchData> {
   const q = params.q ?? '';
-  const view = searchView(q, useDraft(q));
+  const view = searchView(q, draft?.over === q ? draft : null);
   return {
     asks: view.asks,
     state: view.state,
@@ -198,7 +201,7 @@ const screens: Screen<never>[] = [
     Page: Search,
     frame: searchFrame,
     empty: searchEmpty,
-    live: useSearch,
+    live: searchLive,
     load: async (api, asks) =>
       asks.suggest !== undefined
         ? suggestData(await loadSuggest(api, asks.suggest), searchEmpty)
@@ -236,8 +239,10 @@ function useScreenData<T>(screen: Screen<T>): { data: T; state?: string } | unde
   const { api, access, pages } = useDeps();
   const who = useAccessOf(access);
   const params = useParams();
-  // `screen` never changes for the component drawing it, so this hook runs on every draw or none.
-  const live = screen.live?.(params);
+  // The same hooks on every draw, whichever screen: the shell's back layer keeps one FramePart
+  // from page to page, handing it each page's screen in turn.
+  const draft = useTabDraft(screen.live !== undefined);
+  const live = screen.live?.(params, draft);
   const asks = live === undefined ? params : live.asks;
   const playId = usePlayId();
   const key =
@@ -249,7 +254,8 @@ function useScreenData<T>(screen: Screen<T>): { data: T; state?: string } | unde
     () => (key === null ? undefined : pages.peek(key)),
     () => (key === null ? undefined : pages.peek(key)),
   );
-  const last = useRef<{ state: string; data: unknown } | null>(null);
+  const last = useRef<{ screen: string; state: string; data: unknown } | null>(null);
+  if (last.current?.screen !== screen.name) last.current = null;
   useEffect(() => {
     const load = screen.load;
     if (who === 'member' && load !== undefined && key !== null && asks !== null) {
@@ -260,7 +266,7 @@ function useScreenData<T>(screen: Screen<T>): { data: T; state?: string } | unde
   if (who === 'canvas') return undefined;
   if (live === undefined) return { data: (kept as T | undefined) ?? screen.empty };
   // An answer drawn stays, in its state, until the next one in that state comes.
-  if (kept !== undefined) last.current = { state: live.state, data: kept };
+  if (kept !== undefined) last.current = { screen: screen.name, state: live.state, data: kept };
   const lasting =
     live.keepsLast && last.current?.state === live.state ? (last.current.data as T) : undefined;
   return { data: live.over((kept as T | undefined) ?? lasting ?? screen.empty), state: live.state };

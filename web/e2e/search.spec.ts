@@ -105,3 +105,65 @@ test.describe('[M2.search/d] search on recorded upstreams', () => {
 function signIn(page: Page, path: string) {
   return signInAt(page, recorded.origin, path);
 }
+
+/**
+ * A destination on the bottom bar or the rail: the button named by its label and showing it, not
+ * a toggle (the kind filter's "Books" shares the name, and says whether it is pressed) nor an
+ * app bar's glyph button (Music's "Search").
+ */
+const destination = (page: Page, label: string) =>
+  page
+    .getByRole('button', { name: label, exact: true })
+    .and(page.locator(':not([aria-pressed])'))
+    .filter({ hasText: new RegExp(label) });
+
+/** What went wrong in the page: uncaught errors, and the router's error page. */
+function failures(page: Page) {
+  const seen: string[] = [];
+  page.on('pageerror', (error) => seen.push(error.message));
+  return async () => {
+    const shown = await page.getByText('Unexpected Application Error').count();
+    return [...seen, ...(shown > 0 ? ['the error page'] : [])];
+  };
+}
+
+test.describe('search, left through the shell', () => {
+  for (const size of [
+    { name: 'desktop, through the rail', width: 1440, height: 900 },
+    { name: 'phone, through the bottom bar', width: 390, height: 844 },
+  ]) {
+    test(`leaves results and suggestions for another page, ${size.name}`, async ({ page }) => {
+      test.setTimeout(60_000);
+      await page.setViewportSize({ width: size.width, height: size.height });
+      const album = await (async () => {
+        await signIn(page, '/music');
+        return titleIn(page, 'music', recorded.album);
+      })();
+      const book = await titleIn(page, 'books', recorded.multiFile);
+      const letters = album.split(' ')[1]!.slice(0, 2);
+      const failed = failures(page);
+
+      // From a search's results to Music.
+      await page.goto(`${recorded.origin}/search?q=${letters}`);
+      await expect.poll(() => between(page, 'Top result', 'In your library')).toContain(album);
+      await destination(page, 'Music').click();
+      await expect(page).toHaveURL(`${recorded.origin}/music`);
+      await expect(page.getByText(album, { exact: true }).first()).toBeVisible();
+      expect(await failed()).toEqual([]);
+
+      // Back to Search, which reopens the search left; typing a book's letters over it for
+      // suggestions, then to Books.
+      await destination(page, 'Search').click();
+      await expect(page).toHaveURL(new RegExp(`^${recorded.origin}/search`));
+      const bookLetters = book.split(' ')[1]!.slice(0, 2);
+      await field(page).fill('');
+      await field(page).pressSequentially(bookLetters, { delay: 20 });
+      await expect(page.getByText(book, { exact: true })).toBeVisible();
+      await expect(page.getByText('Top result', { exact: true })).toHaveCount(0);
+      await destination(page, 'Books').click();
+      await expect(page).toHaveURL(`${recorded.origin}/books`);
+      await expect(page.getByText(book, { exact: true }).first()).toBeVisible();
+      expect(await failed()).toEqual([]);
+    });
+  }
+});

@@ -105,8 +105,10 @@ export function useQuery(): Query {
   );
 }
 
-/** The draft typed over the search `shown`, null while there is none. */
-export function useDraft(shown: string): Draft | null {
-  const draft = useSyncExternalStore(drafts.subscribe, drafts.get, drafts.get);
-  return draft !== null && draft.over === shown ? draft : null;
+const noDraft = (): null => null;
+
+/** The tab's draft, for a page that `follows` it; null, and no redraw as it is typed, for others. */
+export function useTabDraft(follows: boolean): Draft | null {
+  const get = follows ? drafts.get : noDraft;
+  return useSyncExternalStore(drafts.subscribe, get, get);
 }
