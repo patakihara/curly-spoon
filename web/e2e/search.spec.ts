@@ -49,37 +49,52 @@ test.describe('[M2.search/d] search on recorded upstreams', () => {
   }) => {
     test.setTimeout(90_000);
     await page.setViewportSize({ width: 1440, height: 900 });
-    await signIn(page, '/search');
-    const album = await titleIn(page, 'music', recorded.album);
-    const book = await titleIn(page, 'books', recorded.multiFile);
-    const [song] = await songsIn(page, recorded);
-
     const asked: URL[] = [];
     page.on('request', (request) => {
       const url = new URL(request.url());
       if (url.pathname.startsWith('/api/search')) asked.push(url);
     });
+    const calls = (from = 0) =>
+      asked.slice(from).map((url) => `${url.pathname}?${url.searchParams.get('q')}`);
+    await signIn(page, '/search');
+    const album = await titleIn(page, 'music', recorded.album);
+    const book = await titleIn(page, 'books', recorded.multiFile);
+    const [song] = await songsIn(page, recorded);
+
+    // Opened, Search asks for recent searches alone.
+    await expect.poll(() => calls()).toEqual(['/api/search/suggest?']);
 
     // Two letters of the album's second word ("Ri" of "Rise"): no other recorded title has a
-    // word that starts so, so the album leads both the suggestions and the results.
+    // word that starts so, so the album leads both the suggestions and the results. Typed
+    // faster than the draft settles, they make one call for suggestions, and none for results.
     const letters = album.split(' ')[1]!.slice(0, 2);
     await field(page).pressSequentially(letters, { delay: 20 });
     await expect(field(page)).toHaveValue(letters);
     await expect(page.getByText(album, { exact: true })).toBeVisible();
-    expect(asked.map((url) => url.pathname)).toEqual(asked.map(() => '/api/search/suggest'));
-    expect(asked.map((url) => url.searchParams.get('q'))).toContain(letters);
+    expect(calls()).toEqual(['/api/search/suggest?', `/api/search/suggest?${letters}`]);
 
     await field(page).press('Enter');
     await expect(page).toHaveURL(`${recorded.origin}/search?q=${letters}`);
     await expect(page.getByText('Top result', { exact: true })).toBeVisible();
     await expect.poll(() => between(page, 'Top result', 'In your library')).toContain(album);
-    expect(asked.some((url) => url.pathname === '/api/search')).toBe(true);
+    expect(calls(2)).toEqual([`/api/search?${letters}`]);
+
+    // Enter again on the search shown opens nothing and asks nothing.
+    const entries = await page.evaluate(() => history.length);
+    await field(page).press('Enter');
+    await page.waitForTimeout(300);
+    expect(await page.evaluate(() => history.length)).toBe(entries);
+    expect(calls(2)).toEqual([`/api/search?${letters}`]);
 
     await fontsLoaded(page);
     await rowOf(page, album).getByRole('button', { name: 'Play', exact: true }).click();
     await expect.poll(() => titlePlaying(page)).toBe(song);
     await expect(page.getByRole('button', { name: `Open player, ${song}` })).toBeVisible();
     await advances(page);
+    // On the music queue, as the server says.
+    const musicQueue = async () =>
+      JSON.stringify(await (await page.request.get(`${recorded.origin}/api/queues/music`)).json());
+    await expect.poll(musicQueue).toContain(song);
 
     // Its row opens the album; back, the results are as they were.
     await page.getByRole('button', { name: album, exact: true }).click();
@@ -88,12 +103,18 @@ test.describe('[M2.search/d] search on recorded upstreams', () => {
     await expect(page).toHaveURL(`${recorded.origin}/search?q=${letters}`);
     await expect.poll(() => between(page, 'Top result', 'In your library')).toContain(album);
 
-    // A book's own word ("Po" of "Poems"), and its row opens the book.
+    // A book's own word ("Po" of "Poems"): typed over the search, the results give way to
+    // suggestions; submitted, only the new search is asked for, and its row opens the book.
     const bookLetters = book.split(' ')[1]!.slice(0, 2);
     await field(page).fill('');
     await field(page).pressSequentially(bookLetters, { delay: 20 });
+    await expect(page.getByText('Top result', { exact: true })).toHaveCount(0);
+    await expect(page.getByText(book, { exact: true })).toBeVisible();
+    const submitted = asked.length;
     await field(page).press('Enter');
     await expect(page).toHaveURL(`${recorded.origin}/search?q=${bookLetters}`);
+    await expect.poll(() => calls(submitted)).toContain(`/api/search?${bookLetters}`);
+    expect(calls(submitted)).toEqual([`/api/search?${bookLetters}`]);
     await fontsLoaded(page);
     await page.getByRole('button', { name: book, exact: true }).click();
     await expect(page).toHaveURL(pageOf('/books/', recorded.multiFile));
@@ -166,4 +187,22 @@ test.describe('search, left through the shell', () => {
       expect(await failed()).toEqual([]);
     });
   }
+});
+
+test.describe('a search that finds nothing', () => {
+  test('says nothing was found, and that a search failed when it did', async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signIn(page, '/search?q=zzqxv');
+    await expect(page.getByText('Nothing found', { exact: true })).toBeVisible();
+    await expect(page.getByText('Top result', { exact: true })).toHaveCount(0);
+
+    await page.route('**/api/search?*', (route) =>
+      route.fulfill({ status: 500, contentType: 'application/json', body: '{"error":"x"}' }),
+    );
+    await field(page).fill('qqzzx');
+    await field(page).press('Enter');
+    await expect(page.getByText('Search failed', { exact: true })).toBeVisible();
+    await expect(page.getByText('Top result', { exact: true })).toHaveCount(0);
+  });
 });
