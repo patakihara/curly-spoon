@@ -44,9 +44,10 @@ import { emptied } from './format';
 import { albumData, bookData, episodeData, showData } from './items';
 import { booksData, browseData, musicData, podcastsData } from './library';
 import { emptyQueue, queueData } from './queue';
-import { emptySearch, searchData, searchView, suggestData } from './search';
+import { emptySearch, loadSearchPage, searchLive, type SearchLoaded } from './search';
 import { SignInScreen } from './sign-in';
-import { loadItem, loadLibraries, loadLibrary, loadQueues, loadSearch, loadSuggest } from './loads';
+import { loadItem, loadLibraries, loadLibrary, loadQueues } from './loads';
+import { answerFrom, type Answer, pageKey } from './store';
 
 /**
  * The generated pages given their data. `withPageData(routes)` swaps each page for its screen,
@@ -65,20 +66,22 @@ import { loadItem, loadLibraries, loadLibrary, loadQueues, loadSearch, loadSugge
 /** A page's address: its path's params and the query values its route declares. */
 type Params = Readonly<Record<string, string | undefined>>;
 
-/** What a page draws beyond its address, read as it draws: Search, from what is typed. */
-interface Live<T> {
+/** What a page draws beyond its address, from it and what is typed: Search. */
+interface Live<T, L> {
   /** What it loads, in place of its address; null loads nothing yet. */
   asks: Params | null;
-  /** Which of the page's states it draws. */
-  state: string;
-  /** Whether the last answer drawn in this state stays while the next loads. */
-  keepsLast: boolean;
-  /** What it draws over what was loaded. */
-  over(data: T): T;
+  /** What it draws, given the answer to what it asks and what it drew last. */
+  draw(answer: Answer<L>, last: Drawn<T> | null): Drawn<T>;
 }
 
-/** One page's data: what it draws while loading, and how it loads. */
-interface Screen<T> {
+/** A page's data, and which of its states it draws. */
+interface Drawn<T> {
+  data: T;
+  state?: string;
+}
+
+/** One page's data: what it draws while loading, and how it loads (`L`, for a live page). */
+interface Screen<T, L = T> {
   name: string;
   Page: ComponentType<{ data?: T; state?: string }>;
   frame?: PageFrame<T>;
@@ -86,12 +89,12 @@ interface Screen<T> {
   /** Whether its data changes with what the player plays. */
   followsPlayer?: boolean;
   /** How it loads; a page nothing serves yet draws `empty` and loads nothing. */
-  load?(api: ApiClient, params: Params): Promise<T>;
+  load?(api: ApiClient, params: Params): Promise<L>;
   /**
    * For a page drawn from more than its address, the tab's search draft too: what it loads and
    * draws. Not a hook: the hooks it reads from are called for every page alike.
    */
-  live?(params: Params, draft: Draft | null): Live<T>;
+  live?(params: Params, draft: Draft | null): Live<T, L>;
 }
 
 /** A page nothing serves yet: drawn empty, with `words`, the page's own, as the canvas has them. */
@@ -106,21 +109,6 @@ function unserved<T>(
 }
 
 const searchEmpty = emptySearch(searchFrame.placeholder);
-
-/**
- * Search, from the search it shows (`?q=`) and the draft typed over it: suggestions while typing,
- * the last ones staying until the next arrive, else the results; the field always holds the draft.
- */
-function searchLive(params: Params, draft: Draft | null): Live<SearchData> {
-  const q = params.q ?? '';
-  const view = searchView(q, draft?.over === q ? draft : null);
-  return {
-    asks: view.asks,
-    state: view.state,
-    keepsLast: view.state === 'suggest',
-    over: (data) => ({ ...data, query: view.query }),
-  };
-}
 
 const screens: Screen<never>[] = [
   {
@@ -201,12 +189,12 @@ const screens: Screen<never>[] = [
     Page: Search,
     frame: searchFrame,
     empty: searchEmpty,
-    live: searchLive,
-    load: async (api, asks) =>
-      asks.suggest !== undefined
-        ? suggestData(await loadSuggest(api, asks.suggest), searchEmpty)
-        : searchData(await loadSearch(api, asks.q ?? ''), searchEmpty),
-  } satisfies Screen<SearchData>,
+    live: (params, draft) => {
+      const q = params.q ?? '';
+      return searchLive(q, draft?.over === q ? draft : null, searchEmpty);
+    },
+    load: (api, asks) => loadSearchPage(api, asks, searchEmpty),
+  } satisfies Screen<SearchData, SearchLoaded>,
   unserved('settings', Settings, settingsFrame),
   unserved('setup', Setup, setupFrame, ['intro', 'codeHint']),
   unserved('requests', Requests, requestsFrame),
@@ -235,7 +223,7 @@ function useParams(): Params {
  * The data `screen` shows here, and its state: undefined on the canvas, which draws the page's
  * placeholder.
  */
-function useScreenData<T>(screen: Screen<T>): { data: T; state?: string } | undefined {
+function useScreenData<T, L>(screen: Screen<T, L>): Drawn<T> | undefined {
   const { api, access, pages } = useDeps();
   const who = useAccessOf(access);
   const params = useParams();
@@ -245,17 +233,18 @@ function useScreenData<T>(screen: Screen<T>): { data: T; state?: string } | unde
   const live = screen.live?.(params, draft);
   const asks = live === undefined ? params : live.asks;
   const playId = usePlayId();
-  const key =
-    asks === null
-      ? null
-      : `${screen.name}${JSON.stringify(asks)}${screen.followsPlayer ? playId : ''}`;
+  const key = asks === null ? null : pageKey(screen.name, asks, screen.followsPlayer ? playId : '');
   const kept = useSyncExternalStore(
     pages.subscribe,
     () => (key === null ? undefined : pages.peek(key)),
     () => (key === null ? undefined : pages.peek(key)),
   );
-  const last = useRef<{ screen: string; state: string; data: unknown } | null>(null);
-  if (last.current?.screen !== screen.name) last.current = null;
+  const failed = useSyncExternalStore(
+    pages.subscribe,
+    () => key !== null && pages.failed(key),
+    () => key !== null && pages.failed(key),
+  );
+  const last = useRef<{ screen: string; drawn: Drawn<T> } | null>(null);
   useEffect(() => {
     const load = screen.load;
     if (who === 'member' && load !== undefined && key !== null && asks !== null) {
@@ -265,11 +254,12 @@ function useScreenData<T>(screen: Screen<T>): { data: T; state?: string } | unde
   }, [who, key, screen, api, pages, access]);
   if (who === 'canvas') return undefined;
   if (live === undefined) return { data: (kept as T | undefined) ?? screen.empty };
-  // An answer drawn stays, in its state, until the next one in that state comes.
-  if (kept !== undefined) last.current = { screen: screen.name, state: live.state, data: kept };
-  const lasting =
-    live.keepsLast && last.current?.state === live.state ? (last.current.data as T) : undefined;
-  return { data: live.over((kept as T | undefined) ?? lasting ?? screen.empty), state: live.state };
+  const drawn = live.draw(
+    answerFrom(kept as L | undefined, failed),
+    last.current?.screen === screen.name ? last.current.drawn : null,
+  );
+  last.current = { screen: screen.name, drawn };
+  return drawn;
 }
 
 const made = new Map<Screen<never>, ComponentType>();

@@ -1,7 +1,21 @@
 import { type SearchResult, SearchResults, SuggestionList } from '@auralis/schema';
 import { describe, expect, it } from 'vitest';
+import { createApiClient } from '../api/client';
 import { frame as search } from '../generated/pages/Search';
-import { emptySearch, metaOf, rowOf, searchData, searchView, suggestData } from './search';
+import {
+  emptySearch,
+  loadSearchPage,
+  metaOf,
+  rowOf,
+  SEARCH_FAILED,
+  searchData,
+  type SearchDrawn,
+  searchLive,
+  type SearchLoaded,
+  searchView,
+  suggestData,
+} from './search';
+import { answerFrom, createPageStore, pageKey } from './store';
 
 const result = (over: Partial<SearchResult>): SearchResult => ({
   ref: { source: 'jellyfin', id: 'a1' },
@@ -103,6 +117,7 @@ describe('search’s data', () => {
     expect(data.placeholder).toBe(search.placeholder.placeholder);
     expect(data.kinds).toEqual(search.placeholder.kinds);
     expect(data.query).toBe('');
+    expect(data.empty).toEqual(search.placeholder.empty);
   });
 
   it('lists each suggestion as a row that runs its search, a recent one with its own glyph', () => {
@@ -120,7 +135,12 @@ describe('search’s data', () => {
 });
 
 describe('what search draws and asks for', () => {
-  const draft = (text: string, settled: string | null, over = '') => ({ text, over, settled });
+  const draft = (text: string, settled: string | null, over = '') => ({
+    text,
+    over,
+    settled,
+    submitted: false,
+  });
 
   it('asks for recent searches alone when opened with nothing typed', () => {
     expect(searchView('', null)).toEqual({ state: 'suggest', asks: { suggest: '' }, query: '' });
@@ -157,5 +177,157 @@ describe('what search draws and asks for', () => {
 
   it('shows suggestions for a search of nothing but spaces', () => {
     expect(searchView('  ', null).state).toBe('suggest');
+  });
+});
+
+describe('what search asks of the server', () => {
+  const draft = (text: string, settled: string | null, over = '') => ({
+    text,
+    over,
+    settled,
+    submitted: false,
+  });
+
+  it('asks for at most what the server takes, trimmed, the field keeping all that is typed', () => {
+    const long = `${'r'.repeat(199)}🎵🎵`;
+    const capped = `${'r'.repeat(199)}🎵`;
+    expect(searchView('', draft(`${long} `, `${long} `))).toEqual({
+      state: 'suggest',
+      asks: { suggest: capped },
+      query: `${long} `,
+    });
+    expect(searchView(long, null).asks).toEqual({ q: capped });
+  });
+
+  /** An API answering suggest and search, recording each path asked. */
+  function api(results: unknown[]) {
+    const asked: string[] = [];
+    const client = createApiClient({
+      baseUrl: 'http://auralis.test',
+      fetch: async (request) => {
+        const url = new URL(request.url);
+        asked.push(`${url.pathname}?${url.searchParams}`);
+        const body = url.pathname.endsWith('/suggest')
+          ? { suggestions: [{ kind: 'recent', text: 'rise', ref: null }] }
+          : { query: url.searchParams.get('q'), results };
+        return new Response(JSON.stringify(body), {
+          headers: { 'content-type': 'application/json' },
+        });
+      },
+    });
+    return { client, asked };
+  }
+
+  it('asks only for suggestions while typing, never for results', async () => {
+    const { client, asked } = api([]);
+    const loaded = await loadSearchPage(client, { suggest: 'ri' }, empty);
+    expect(asked).toEqual(['/api/search/suggest?q=ri']);
+    expect(loaded.data.suggestions.map((s) => s.title)).toEqual(['rise']);
+  });
+
+  it('asks for the results of a search, and says whether it found anything', async () => {
+    const found = api([result({})]);
+    expect((await loadSearchPage(found.client, { q: 'ri' }, empty)).found).toBe(true);
+    expect(found.asked).toEqual(['/api/search?q=ri']);
+    const none = api([]);
+    expect((await loadSearchPage(none.client, { q: 'zz' }, empty)).found).toBe(false);
+  });
+});
+
+describe('what search draws as its answers come', () => {
+  const typed = (text: string, over = '') => ({ text, over, settled: text, submitted: false });
+  const suggesting = (...titles: string[]): SearchLoaded => ({
+    data: {
+      ...empty,
+      suggestions: titles.map((title) => ({ title, meta: 'Album', query: title, icon: 'search' })),
+    },
+    found: true,
+  });
+  const found = (title: string): SearchLoaded => ({
+    data: { ...empty, top: { ...empty.top, title } },
+    found: true,
+  });
+  const titles = (drawn: SearchDrawn) => drawn.data.suggestions.map((s) => s.title);
+
+  it('draws the suggestions for the text that settled, the field holding the draft', () => {
+    const drawn = searchLive('', typed('ri'), empty).draw({ data: suggesting('Rise') }, null);
+    expect(drawn.state).toBe('suggest');
+    expect(titles(drawn)).toEqual(['Rise']);
+    expect(drawn.data.query).toBe('ri');
+  });
+
+  it('keeps the last suggestions drawn while the next load, and draws none when they fail', () => {
+    const before = searchLive('', typed('ri'), empty).draw({ data: suggesting('Rise') }, null);
+    const live = searchLive('', typed('meg'), empty);
+    const loading = live.draw(undefined, before);
+    expect(titles(loading)).toEqual(['Rise']);
+    expect(loading.data.query).toBe('meg');
+    expect(titles(live.draw('failed', before))).toEqual([]);
+  });
+
+  it('draws the results of a search that found something', () => {
+    const drawn = searchLive('ri', null, empty).draw({ data: found('Rise') }, null);
+    expect(drawn.state).toBe('full');
+    expect(drawn.data.top.title).toBe('Rise');
+    expect(drawn.data.query).toBe('ri');
+  });
+
+  it('says so when a search finds nothing, and in its own words when it fails', () => {
+    const none = searchLive('zz', null, empty).draw({ data: { data: empty, found: false } }, null);
+    expect(none.state).toBe('empty');
+    expect(none.data.empty).toEqual(search.placeholder.empty);
+    const failed = searchLive('zz', null, empty).draw('failed', null);
+    expect(failed.state).toBe('empty');
+    expect(failed.data.empty).toEqual(SEARCH_FAILED);
+    expect(failed.data.top.title).toBe('');
+  });
+
+  it('keeps what it drew while a search loads, the earlier results or the suggestions, never empty rows', () => {
+    const live = searchLive('po', null, empty);
+    const earlier = searchLive('ri', null, empty).draw({ data: found('Rise') }, null);
+    const kept = live.draw(undefined, earlier);
+    expect(kept.state).toBe('full');
+    expect(kept.data.top.title).toBe('Rise');
+    expect(kept.data.query).toBe('po');
+    const suggested = searchLive('', typed('po'), empty).draw({ data: suggesting('Poems') }, null);
+    expect(live.draw(undefined, suggested).state).toBe('suggest');
+    expect(titles(live.draw(undefined, suggested))).toEqual(['Poems']);
+    expect(live.draw(undefined, null)).toEqual({
+      state: 'suggest',
+      data: { ...empty, query: 'po' },
+    });
+  });
+
+  it('draws the newest settled text’s suggestions when the answers come out of order', async () => {
+    const pages = createPageStore({ onSignedOut: () => undefined });
+    const held = new Map<string, (loaded: SearchLoaded) => void>();
+    let last: SearchDrawn | null = null;
+    /** Types `text`, asks for its suggestions as the page does, and draws what is kept. */
+    const typing = (text: string) => {
+      const live = searchLive('', typed(text), empty);
+      const key = pageKey('search', live.asks!);
+      void pages.load(key, () => new Promise((resolve) => held.set(text, resolve)));
+      return () => {
+        last = live.draw(
+          answerFrom(pages.peek(key) as SearchLoaded | undefined, pages.failed(key)),
+          last,
+        );
+        return titles(last);
+      };
+    };
+    const drawR = typing('r');
+    expect(drawR()).toEqual([]);
+    held.get('r')!(suggesting('Rumours'));
+    await Promise.resolve();
+    expect(drawR()).toEqual(['Rumours']);
+    typing('ri');
+    const drawRis = typing('ris');
+    expect(drawRis()).toEqual(['Rumours']);
+    held.get('ris')!(suggesting('Rise and Shine'));
+    await Promise.resolve();
+    expect(drawRis()).toEqual(['Rise and Shine']);
+    held.get('ri')!(suggesting('Rise'));
+    await Promise.resolve();
+    expect(drawRis()).toEqual(['Rise and Shine']);
   });
 });

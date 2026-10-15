@@ -29,6 +29,7 @@ function deps(who: Access, kept: Record<string, unknown> = {}) {
   const pages: PageStore = {
     subscribe: () => () => undefined,
     peek: (key) => kept[/^[a-z]+/.exec(key)![0]],
+    failed: () => false,
     load: async () => undefined,
   };
   const given: PageDeps = {
@@ -194,10 +195,16 @@ describe('search given its data', () => {
     queue: 'music',
   });
   const empty = emptySearch(searchFrame.placeholder);
-  const results = { ...empty, top: row('The Rise and Fall'), library: [row('Rumours')] };
+  const results = {
+    data: { ...empty, top: row('The Rise and Fall'), library: [row('Rumours')] },
+    found: true,
+  };
   const suggesting = (...titles: string[]) => ({
-    ...empty,
-    suggestions: titles.map((title) => ({ title, meta: 'Album', query: title, icon: 'search' })),
+    data: {
+      ...empty,
+      suggestions: titles.map((title) => ({ title, meta: 'Album', query: title, icon: 'search' })),
+    },
+    found: true,
   });
 
   /** A member's pages, Search's answers kept by what was asked for. */

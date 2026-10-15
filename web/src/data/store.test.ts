@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createPageStore, SignedOut } from './store';
+import { answerFrom, createPageStore, pageKey, SignedOut } from './store';
 
 describe('[M1.shell] the pages’ kept data', () => {
   it('keeps nothing for a page until its answer comes, then tells its readers', async () => {
@@ -38,5 +38,45 @@ describe('[M1.shell] the pages’ kept data', () => {
     });
     expect(store.peek('music{}')).toBe('kept');
     expect(signedOut).toBe(1);
+  });
+
+  it('says a page’s request failed, until it is asked again', async () => {
+    const store = createPageStore({ onSignedOut: () => undefined });
+    let told = 0;
+    store.subscribe(() => told++);
+    expect(store.failed('search{}')).toBe(false);
+    await store.load('search{}', async () => {
+      throw new Error('answered 500');
+    });
+    expect(store.failed('search{}')).toBe(true);
+    expect(told).toBe(1);
+    let answer!: (found: string) => void;
+    const again = store.load('search{}', () => new Promise((resolve) => (answer = resolve)));
+    expect(store.failed('search{}')).toBe(false);
+    expect(told).toBe(2);
+    answer('found');
+    await again;
+    expect(store.peek('search{}')).toBe('found');
+  });
+
+  it('never says a request refused for want of a sign-in failed', async () => {
+    const store = createPageStore({ onSignedOut: () => undefined });
+    await store.load('search{}', async () => {
+      throw new SignedOut();
+    });
+    expect(store.failed('search{}')).toBe(false);
+  });
+});
+
+describe('a page’s answer', () => {
+  it('is what was kept, whatever failed since; else that it failed; else nothing while it loads', () => {
+    expect(answerFrom('kept', true)).toEqual({ data: 'kept' });
+    expect(answerFrom(undefined, true)).toBe('failed');
+    expect(answerFrom(undefined, false)).toBeUndefined();
+  });
+
+  it('is kept by the page and what it asked for, and by what plays for a page that follows it', () => {
+    expect(pageKey('search', { suggest: 'ri' })).toBe('search{"suggest":"ri"}');
+    expect(pageKey('queue', {}, 'p1')).toBe('queue{}p1');
   });
 });

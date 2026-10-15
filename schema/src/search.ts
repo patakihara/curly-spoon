@@ -53,7 +53,7 @@ export const Suggestion = z
 export type Suggestion = z.infer<typeof Suggestion>;
 
 /** The longest query either route takes, in characters: code points, as `maxLength` counts. */
-const QUERY_MAX = 200;
+export const QUERY_MAX = 200;
 
 /**
  * What is typed, trimmed, then up to `QUERY_MAX` characters; an emoji or other letter outside the

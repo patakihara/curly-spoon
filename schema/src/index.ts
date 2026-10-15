@@ -114,6 +114,7 @@ export {
   type Route,
 } from './routes.js';
 export {
+  QUERY_MAX,
   SearchKind,
   SearchParent,
   SearchQuery,
