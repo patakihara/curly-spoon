@@ -7,7 +7,6 @@ import {
   loadSearchPage,
   metaOf,
   rowOf,
-  SEARCH_FAILED,
   searchData,
   type SearchDrawn,
   searchLive,
@@ -117,7 +116,6 @@ describe('search’s data', () => {
     expect(data.placeholder).toBe(search.placeholder.placeholder);
     expect(data.kinds).toEqual(search.placeholder.kinds);
     expect(data.query).toBe('');
-    expect(data.empty).toEqual(search.placeholder.empty);
   });
 
   it('lists each suggestion as a row that runs its search, a recent one with its own glyph', () => {
@@ -272,13 +270,11 @@ describe('what search draws as its answers come', () => {
     expect(drawn.data.query).toBe('ri');
   });
 
-  it('says so when a search finds nothing, and in its own words when it fails', () => {
+  it('draws the page’s empty state when a search finds nothing, and its failed state when it fails', () => {
     const none = searchLive('zz', null, empty).draw({ data: { data: empty, found: false } }, null);
     expect(none.state).toBe('empty');
-    expect(none.data.empty).toEqual(search.placeholder.empty);
     const failed = searchLive('zz', null, empty).draw('failed', null);
-    expect(failed.state).toBe('empty');
-    expect(failed.data.empty).toEqual(SEARCH_FAILED);
+    expect(failed.state).toBe('failed');
     expect(failed.data.top.title).toBe('');
   });
 

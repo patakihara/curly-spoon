@@ -76,10 +76,6 @@ const placeholder = {
       "icon": "history"
     }
   ],
-  "empty": {
-    "title": "Nothing found",
-    "body": "Nothing in your library matches this search."
-  },
   "top": {
     "title": "Salt and Static",
     "meta": "Album · Soul Vertex · 11 tracks",
@@ -409,7 +405,12 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
       )}
       {state === 'empty' && (
         <>
-          <EmptyState icon="search_off" title={data.empty.title} body={data.empty.body} platform={platform} />
+          <EmptyState icon="search_off" title="Nothing found" body="Nothing in your library matches this search." platform={platform} />
+        </>
+      )}
+      {state === 'failed' && (
+        <>
+          <EmptyState icon="cloud_off" title="Search failed" body="The server did not answer this search." platform={platform} />
         </>
       )}
       {state === 'full' && (

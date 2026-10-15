@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: cf00bb1359e1ca62b5a977d2a611c23e3ab4e65d2f0308401554dfe9e24c9561
+pageHash: 54a80d910de0fe0e8ba9d2db970e538ab8925995b8001e226cadd3b899071ba3
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---
@@ -72,12 +72,14 @@ still names the active filters, now with `expand_more`, and tapping it from any 
 slides the results down to show the kind row again.
 
 **Empty states**, per nav.json: with no query, the front layer lists recent searches (the
-`suggest` state, asked with nothing typed). A search that finds nothing, or that fails, is the
-page's `empty` state, under `<When state="empty">`: in place of the three sections, one Sonora
-`EmptyState` with a `search_off` glyph, its title and one line from the data ("Nothing found",
-"Nothing in your library matches this search."; a failed search says so in its own words). The
-canvas draws it on its own phone artboard, `search.phone-empty`, as it does `suggest`; these
-renders draw `full` only.
+`suggest` state, asked with nothing typed). A search that finds nothing is the page's `empty`
+state, under `<When state="empty">`: in place of the three sections, one Sonora `EmptyState` with
+a `search_off` glyph, "Nothing found" and "Nothing in your library matches this search.". A search
+the server did not answer is its `failed` state, under `<When state="failed">`: the same
+`EmptyState` with a `cloud_off` glyph, "Search failed" and "The server did not answer this
+search.". Both write their words in the page, as Not Found and Sign In do, so the data only
+chooses the state. The canvas draws each on its own phone artboard, `search.phone-empty` and
+`search.phone-failed`, as it does `suggest`; these renders draw `full` only.
 
 ## Differences
 
@@ -105,10 +107,12 @@ renders draw `full` only.
 - Open: the revealed back layer takes about 210 px on the phone and 240 px on desktop, so the
   outside rows with Request and Subscribe sit below the fold in both stills (looked at scrolled);
   concealing it gives the results the screen.
-- Open: suggestions and the empty state are drawn on the canvas's `phone-suggest` and
-  `phone-empty` artboards but not in these renders, which show the `full` state only (see above).
-- Changed on purpose: neither kit nor Spotify's stills show a search that finds nothing; the
-  page uses Sonora's `EmptyState`, as Not Found does, so it states the fact and names no way on.
+- Open: suggestions and the empty and failed states are drawn on the canvas's `phone-suggest`,
+  `phone-empty` and `phone-failed` artboards but not in these renders, which show the `full` state
+  only (see above).
+- Changed on purpose: neither kit nor Spotify's stills show a search that finds nothing or fails;
+  the page uses Sonora's `EmptyState`, as Not Found does, so it states the fact and names no way
+  on. A failed search is asked again by pressing Enter on it.
 - Changed on purpose: rows in your library open on a tap and play from their art, where the kits
   show no handlers. ResultRow draws its art action only when given one of its own (`onAction`),
   never standing in for the row's tap, so a row that only opens shows no Play.

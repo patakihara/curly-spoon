@@ -18,8 +18,9 @@ import { type Answer } from './store';
  * Search's data from `GET /api/search/suggest` and `GET /api/search`: each suggestion as a row
  * that runs its search, and each result as a row that opens its page (a song its album) and whose
  * art plays it. The best result is the top one, the rest are in your library, and nothing is
- * outside it before M3.catalog. The page's own words (its placeholder, its kinds, what it says
- * when nothing is found) stay as given.
+ * outside it before M3.catalog. The page's own words (its placeholder, its kinds) stay as given;
+ * what it says when a search finds nothing or fails is written in the page, which this only
+ * chooses the state of.
  * The kinds' names and the meta lines are written here, as the library homes write theirs, until
  * M5.strings and M5.formats.
  */
@@ -99,16 +100,10 @@ export function searchData(answer: SearchResults, page: SearchData): SearchData 
   return { ...page, ...(top === undefined ? {} : { top }), library: rest };
 }
 
-/** What a search that failed says, in place of the page's "nothing found". */
-export const SEARCH_FAILED: SearchData['empty'] = {
-  title: 'Search failed',
-  body: 'The server did not answer this search.',
-};
-
 /** Search with nothing found yet: its own words as the canvas has them, every row empty. */
 export function emptySearch(page: SearchData): SearchData {
-  const { placeholder, kinds, activeFilters, empty } = page;
-  return { ...emptied(page), placeholder, kinds, activeFilters, empty };
+  const { placeholder, kinds, activeFilters } = page;
+  return { ...emptied(page), placeholder, kinds, activeFilters };
 }
 
 /** What Search asks the server for: suggestions for some text, or the results of a search. */
@@ -159,7 +154,7 @@ export async function loadSearchPage(
 
 /** What Search draws: its state, and its data with the field's text. */
 export interface SearchDrawn {
-  state: 'suggest' | 'full' | 'empty';
+  state: 'suggest' | 'full' | 'empty' | 'failed';
   data: SearchData;
 }
 
@@ -168,7 +163,7 @@ export interface SearchDrawn {
  * what it asks for, and what it draws given the answer (undefined while it loads) and what it drew
  * last. Suggestions are drawn only for the text they answer: the last ones stay while the next
  * load, and none are drawn when they fail. Results are drawn once found; a search that found
- * nothing or failed draws the page's empty state, a failed one saying so. While a search loads,
+ * nothing draws the page's empty state, and one that failed its failed state. While a search loads,
  * what was drawn stays, the earlier search's results or the suggestions, never empty rows.
  */
 export function searchLive(q: string, draft: Draft | null, page: SearchData) {
@@ -180,7 +175,7 @@ export function searchLive(q: string, draft: Draft | null, page: SearchData) {
       if (answer !== undefined) return { state: 'suggest', data: answer.data.data };
       return last?.state === 'suggest' ? last : nothing;
     }
-    if (answer === 'failed') return { state: 'empty', data: { ...page, empty: SEARCH_FAILED } };
+    if (answer === 'failed') return { state: 'failed', data: page };
     if (answer !== undefined) {
       return { state: answer.data.found ? 'full' : 'empty', data: answer.data.data };
     }

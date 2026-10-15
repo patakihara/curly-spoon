@@ -66,10 +66,6 @@
       "icon": "history"
     }
   ],
-  "empty": {
-    "title": "Nothing found",
-    "body": "Nothing in your library matches this search."
-  },
   "top": {
     "title": "Salt and Static",
     "meta": "Album · Soul Vertex · 11 tracks",

@@ -86,6 +86,8 @@ test('[M0.canvas/f] the canvas build puts the flowchart and screen list on the s
       'phone-search',
       'phone-menu',
       'phone-suggest',
+      'phone-empty',
+      'phone-failed',
     ])
       assert.ok(kinds.has(kind), `the real nav.json has ${kind} boards`);
     for (const name of ['flows.dc.html', 'screens.dc.html'])

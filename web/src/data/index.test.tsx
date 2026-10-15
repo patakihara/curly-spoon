@@ -229,6 +229,21 @@ describe('search given its data', () => {
     expect(html).toContain('value="ri"');
   });
 
+  it('says, in the page’s own words, that nothing was found, or that the search failed', () => {
+    const none = renderAt(
+      '/search?q=zz',
+      member({ [asked({ q: 'zz' })]: { ...results, found: false } }),
+    );
+    expect(none).toContain('Nothing found');
+    expect(none).not.toContain('Search failed');
+    const { given } = deps('member');
+    const failing: PageDeps = { ...given, pages: { ...given.pages, failed: () => true } };
+    const failed = renderAt('/search?q=zz', failing);
+    expect(failed).toContain('Search failed');
+    expect(failed).toContain('The server did not answer this search.');
+    expect(failed).not.toContain('Nothing found');
+  });
+
   it('shows recent searches when opened with nothing typed', () => {
     const html = renderAt('/search', member({ [asked({ suggest: '' })]: suggesting('rise') }));
     expect(html).toContain('rise');

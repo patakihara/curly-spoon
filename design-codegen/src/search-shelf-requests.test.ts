@@ -54,7 +54,6 @@ describe('Search', () => {
   it('[M0.canvas] binds only its own query, filters, suggestions and results', () => {
     expect(dataRoots(tree)).toEqual([
       'activeFilters',
-      'empty',
       'kinds',
       'library',
       'outside',
@@ -156,6 +155,7 @@ describe('Search', () => {
     expect(body().map((c) => (c.kind === 'when' ? c.state : c.kind))).toEqual([
       'suggest',
       'empty',
+      'failed',
       'full',
     ]);
     const [full] = when('full');
@@ -166,13 +166,23 @@ describe('Search', () => {
     ).toEqual(['Top result', 'In your library', 'Not in your library']);
   });
 
-  it("says, when a search finds nothing or fails, what happened in its own words, with Sonora's EmptyState alone", () => {
-    const [empty] = when('empty');
-    const drawn = empty!.children.filter((c) => c.kind === 'element');
-    expect(drawn.map((c) => c.component)).toEqual(['EmptyState']);
-    expect(drawn[0]!.props.title).toEqual({ kind: 'binding', path: ['data', 'empty', 'title'] });
-    expect(drawn[0]!.props.body).toEqual({ kind: 'binding', path: ['data', 'empty', 'body'] });
-  });
+  it.each([
+    ['empty', 'search_off', 'Nothing found', 'Nothing in your library matches this search.'],
+    ['failed', 'cloud_off', 'Search failed', 'The server did not answer this search.'],
+  ])(
+    "says, in its %s state, what happened in the page's own words, with Sonora's EmptyState alone",
+    (state, icon, title, body) => {
+      const [drawn, ...more] = when(state);
+      expect(more).toEqual([]);
+      const elements = drawn!.children.filter((c) => c.kind === 'element');
+      expect(elements.map((c) => c.component)).toEqual(['EmptyState']);
+      expect(elements[0]!.props).toEqual({
+        icon: { kind: 'literal', value: icon },
+        title: { kind: 'literal', value: title },
+        body: { kind: 'literal', value: body },
+      });
+    },
+  );
 
   it('opens each result in your library on a tap, a song its album, and plays it from its art on its own queue', () => {
     const owned = found.filter(

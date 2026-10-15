@@ -38,7 +38,18 @@ export default function Search({ data }) {
           </Section>
         </When>
         <When state="empty">
-          <EmptyState icon="search_off" title={data.empty.title} body={data.empty.body} />
+          <EmptyState
+            icon="search_off"
+            title="Nothing found"
+            body="Nothing in your library matches this search."
+          />
+        </When>
+        <When state="failed">
+          <EmptyState
+            icon="cloud_off"
+            title="Search failed"
+            body="The server did not answer this search."
+          />
         </When>
         <When state="full">
           <Section title="Top result">
