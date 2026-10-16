@@ -1,0 +1,41 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "jf-lyrics-plain",
+  "request": {
+    "method": "GET",
+    "path": "/Audio/eb4b9844fa0fbdfb9b39de71b0ce200f/Lyrics",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis\", DeviceId=\"auralis-recorder\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Metadata": {},
+        "Lyrics": [
+          {
+            "Text": "Telling me to go"
+          },
+          {
+            "Text": "But hands beg me to stay"
+          },
+          {
+            "Text": "Your lips say that you love"
+          },
+          {
+            "Text": "Your eyes say that you hate"
+          }
+        ],
+        "trimmed": "Trimmed by the recorder: song lyrics are copyrighted, so only the first four lines of each are kept, and LRCLIB's lyricsfile copy is dropped."
+      }
+    }
+  }
+}

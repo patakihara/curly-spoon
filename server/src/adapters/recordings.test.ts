@@ -7,6 +7,10 @@ import { AdapterError, type FetchLike } from './http/fetch.js';
 import { type Recording, recordingSchema } from './http/recording.js';
 import { replayFetch, standInsBeside } from './http/replay.js';
 import { JellyfinClient, TICKS_PER_SECOND } from './jellyfin/client.js';
+import { LRCLIB_USER_AGENT, LrclibClient } from './lrclib/client.js';
+import { LYRICS_KEPT_LINES, LYRICS_TRIMMED } from './record-lyrics.js';
+import { albumRow, trackRows } from '../libraryIndex/rows.js';
+import { lyricsQuery } from '../lyrics/query.js';
 import { ART_WIDTH } from '../routes/items.js';
 import { ABS_PROGRESS_CALLS, JELLYFIN_PROGRESS_CALLS, TEST_BOOKMARK } from './record-progress.js';
 
@@ -700,5 +704,171 @@ describe("Audiobookshelf's and Jellyfin's answers, recorded for M1.shell", () =>
     const image = await jf().openImage(albumId, ART_WIDTH.medium);
     expect(image.headers['content-type']).toBe('image/jpeg');
     await image.body.cancel();
+  });
+});
+
+/** M2.lrclib's recordings: three albums and their tracks, Jellyfin's lyrics and LRCLIB's. */
+const lyrics = {
+  albums: [1, 2, 3].map((n) => ({
+    album: recording('jellyfin', `lyrics-album-${n}`),
+    tracks: recording('jellyfin', `lyrics-album-${n}-tracks`),
+  })),
+  jellyfin: {
+    synced: recording('jellyfin', 'jf-lyrics-synced'),
+    plain: recording('jellyfin', 'jf-lyrics-plain'),
+    none: recording('jellyfin', 'jf-lyrics-none'),
+  },
+  lrclib: {
+    synced: recording('lrclib', 'lrclib-get-synced'),
+    missing: recording('lrclib', 'lrclib-get-missing'),
+    instrumental: recording('lrclib', 'lrclib-get-instrumental'),
+  },
+  indexed: [
+    recording('jellyfin', 'index-album-tracks-1'),
+    recording('jellyfin', 'index-album-tracks-2'),
+  ],
+};
+
+const lyricsTrack = (r: Recording) => r.request.path.split('/')[2] ?? '';
+
+/** Every recorded track's raw answer, by id, from the lyrics albums and the index's albums. */
+const recordedTracks = new Map(
+  [...lyrics.albums.map((a) => a.tracks), ...lyrics.indexed].flatMap((r) =>
+    (
+      json(r.response.body) as { Items: { Id: string; Name: string; HasLyrics?: boolean }[] }
+    ).Items.map((t) => [t.Id, t] as const),
+  ),
+);
+
+describe("Jellyfin's lyrics calls, recorded for M2.lrclib", () => {
+  const person = () =>
+    new JellyfinClient({
+      baseUrl: 'http://upstream.invalid',
+      token: '<token>',
+      fetch: replayFetch(Object.values(lyrics.jellyfin)),
+    });
+
+  it('asks as the test user, through a token minted for it', () => {
+    for (const r of Object.values(lyrics.jellyfin)) {
+      expect(r.request.path, r.call).toMatch(/^\/Audio\/[0-9a-f]{32}\/Lyrics$/);
+      expect(r.request.headers.authorization, r.call).toContain('DeviceId="auralis-recorder"');
+      expect(r.request.headers.authorization, r.call).toContain('Token="<token>"');
+    }
+  });
+
+  it("a synced file's lines parse through the client, each with its start in ticks", async () => {
+    const id = lyricsTrack(lyrics.jellyfin.synced);
+    const answer = await person().getLyrics(id);
+    expect(answer?.Lyrics.length).toBeGreaterThan(0);
+    expect(answer?.Lyrics.every((l) => typeof l.Start === 'number')).toBe(true);
+    expect(answer?.Lyrics[0]?.Start).toBe(58_900_000);
+    const starts = answer?.Lyrics.map((l) => l.Start ?? 0) ?? [];
+    expect(starts).toEqual([...starts].sort((a, b) => a - b));
+    expect(recordedTracks.get(id)).toMatchObject({ HasLyrics: true });
+  });
+
+  it("a plain file's lines parse through the client with no start, all of them text", async () => {
+    const id = lyricsTrack(lyrics.jellyfin.plain);
+    const answer = await person().getLyrics(id);
+    expect(answer?.Lyrics.length).toBeGreaterThan(0);
+    expect(answer?.Lyrics.every((l) => l.Start == null)).toBe(true);
+    expect(answer?.Lyrics.some((l) => l.Text.trim() !== '')).toBe(true);
+  });
+
+  it('a track with no lyrics file answers 404, which the client reads as none', async () => {
+    const id = lyricsTrack(lyrics.jellyfin.none);
+    expect(lyrics.jellyfin.none.response.status).toBe(404);
+    expect(await person().getLyrics(id)).toBeNull();
+    expect(recordedTracks.get(id)).toMatchObject({ HasLyrics: false });
+  });
+
+  it('keeps at most four lines of each answer, and says it was trimmed', () => {
+    for (const r of [lyrics.jellyfin.synced, lyrics.jellyfin.plain]) {
+      const body = json(r.response.body) as { Lyrics: unknown[]; trimmed: string };
+      expect(body.Lyrics.length, r.call).toBeLessThanOrEqual(LYRICS_KEPT_LINES);
+      expect(body.trimmed, r.call).toBe(LYRICS_TRIMMED);
+    }
+  });
+});
+
+describe("LRCLIB's answers, recorded for M2.lrclib", () => {
+  const jellyfin = new JellyfinClient({
+    baseUrl: 'http://upstream.invalid',
+    token: '<token>',
+    fetch: replayFetch(lyrics.albums.flatMap((a) => [a.album, a.tracks])),
+  });
+  const lrclib = new LrclibClient({
+    baseUrl: 'http://upstream.invalid',
+    fetch: replayFetch(Object.values(lyrics.lrclib)),
+    userAgent: LRCLIB_USER_AGENT,
+  });
+
+  /** LRCLIB's query for a recorded track, built from its recorded album's rows. */
+  async function queryFor(trackId: string) {
+    for (const { album } of lyrics.albums) {
+      const albumId = album.request.query.Ids ?? '';
+      const found = await jellyfin.findAlbum(albumId);
+      const tracks = trackRows(albumId, 'music', await jellyfin.getAlbumTracks(albumId));
+      const track = tracks.find((t) => t.id === trackId);
+      if (found && track) return lyricsQuery(track, albumRow(found, 'music'));
+    }
+    throw new Error(`${trackId} is on none of the recorded albums`);
+  }
+
+  /** The Jellyfin track each LRCLIB recording asked for, by its recorded query. */
+  function trackOf(r: Recording): string {
+    const match = [...recordedTracks.values()].find((t) => t.Name === r.request.query.track_name);
+    if (!match)
+      throw new Error(`${r.call}: no recorded track is named ${r.request.query.track_name}`);
+    return match.Id;
+  }
+
+  it("asks with Auralis's User-Agent and no credential", () => {
+    for (const r of Object.values(lyrics.lrclib)) {
+      expect(r.upstream, r.call).toBe('lrclib');
+      expect(r.request.path, r.call).toBe('/api/get');
+      expect(r.request.headers['user-agent'], r.call).toBe(LRCLIB_USER_AGENT);
+      expect(r.request.headers, r.call).not.toHaveProperty('authorization');
+    }
+  });
+
+  it('finds synced lyrics for the track Jellyfin has none for, asked as its rows say', async () => {
+    const id = trackOf(lyrics.lrclib.synced);
+    expect(id).toBe(lyricsTrack(lyrics.jellyfin.none));
+    const record = await lrclib.get((await queryFor(id))!);
+    expect(record?.instrumental).toBe(false);
+    expect(record?.syncedLyrics).toMatch(/^\[\d{2}:\d{2}\.\d{2}\]/);
+    expect(record?.plainLyrics).not.toBeNull();
+  });
+
+  it('finds nothing for the missing track, which the client reads as null', async () => {
+    expect(lyrics.lrclib.missing.response.status).toBe(404);
+    const query = await queryFor(trackOf(lyrics.lrclib.missing));
+    expect(await lrclib.get(query!)).toBeNull();
+  });
+
+  it('knows the instrumental track as instrumental, with no lyrics of either kind', async () => {
+    const query = await queryFor(trackOf(lyrics.lrclib.instrumental));
+    expect(await lrclib.get(query!)).toMatchObject({
+      instrumental: true,
+      syncedLyrics: null,
+      plainLyrics: null,
+    });
+  });
+
+  it('keeps at most four lines of each kind, drops lyricsfile, and says it was trimmed', () => {
+    for (const r of [lyrics.lrclib.synced, lyrics.lrclib.instrumental]) {
+      const body = json(r.response.body);
+      for (const kind of ['syncedLyrics', 'plainLyrics']) {
+        const text = body[kind];
+        if (typeof text === 'string') {
+          expect(text.split(/\r?\n/).length, `${r.call} ${kind}`).toBeLessThanOrEqual(
+            LYRICS_KEPT_LINES,
+          );
+        }
+      }
+      expect(body, r.call).not.toHaveProperty('lyricsfile');
+      expect(body.trimmed, r.call).toBe(LYRICS_TRIMMED);
+    }
   });
 });

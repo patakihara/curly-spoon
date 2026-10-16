@@ -1,0 +1,958 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "lyrics-album-2-tracks",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "Fields": "ProviderIds,Genres,Etag",
+      "IncludeItemTypes": "Audio",
+      "ParentId": "6c95141be1efb36c34694c98a821c5f5",
+      "SortBy": "ParentIndexNumber,IndexNumber,SortName"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [
+          {
+            "Name": "Year Of The Asthmatic Cat",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "8d6f8420220c9f7ab6aa51b27d7383de",
+            "Etag": "13a2c7f65b5c9601806274ad28636310",
+            "HasLyrics": false,
+            "Container": "mp3",
+            "PremiereDate": "2001-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Folk"
+            ],
+            "RunTimeTicks": 243872000,
+            "ProductionYear": 2001,
+            "IndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Folk",
+                "Id": "f8c7adb7f869d4f58a1eb1d7bc36bcf2"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Enjoy Your Rabbit",
+            "AlbumId": "6c95141be1efb36c34694c98a821c5f5",
+            "AlbumPrimaryImageTag": "8ecf8468ecf1322a6d3d6382a5bc9914",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              },
+              "Primary": {
+                "8ecf8468ecf1322a6d3d6382a5bc9914": "e,OXOQkENb%gSh~AjZWCt7ofI[bIWBRje.?bozWBV@WBt7kCofayn%"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -0.20000076
+          },
+          {
+            "Name": "Year Of The Monkey",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "a02fc13264f69bcaf9685c8942440f08",
+            "Etag": "8ff6b3ab7c67a710da5ba030f4be942e",
+            "HasLyrics": false,
+            "Container": "mp3",
+            "PremiereDate": "2001-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Folk"
+            ],
+            "RunTimeTicks": 2600432000,
+            "ProductionYear": 2001,
+            "IndexNumber": 2,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Folk",
+                "Id": "f8c7adb7f869d4f58a1eb1d7bc36bcf2"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Enjoy Your Rabbit",
+            "AlbumId": "6c95141be1efb36c34694c98a821c5f5",
+            "AlbumPrimaryImageTag": "8ecf8468ecf1322a6d3d6382a5bc9914",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              },
+              "Primary": {
+                "8ecf8468ecf1322a6d3d6382a5bc9914": "e,OXOQkENb%gSh~AjZWCt7ofI[bIWBRje.?bozWBV@WBt7kCofayn%"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -8.1
+          },
+          {
+            "Name": "Year Of The Rat",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "60a0e3527912ae3ae2079fdf5560597e",
+            "Etag": "a5cf7ecd3c9837e4dc5f85ba1f9ce453",
+            "HasLyrics": false,
+            "Container": "mp3",
+            "PremiereDate": "2001-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Folk"
+            ],
+            "RunTimeTicks": 5025632000,
+            "ProductionYear": 2001,
+            "IndexNumber": 3,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Folk",
+                "Id": "f8c7adb7f869d4f58a1eb1d7bc36bcf2"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Enjoy Your Rabbit",
+            "AlbumId": "6c95141be1efb36c34694c98a821c5f5",
+            "AlbumPrimaryImageTag": "8ecf8468ecf1322a6d3d6382a5bc9914",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              },
+              "Primary": {
+                "8ecf8468ecf1322a6d3d6382a5bc9914": "e,OXOQkENb%gSh~AjZWCt7ofI[bIWBRje.?bozWBV@WBt7kCofayn%"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -6
+          },
+          {
+            "Name": "Year Of The Ox",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "90ea7b594231856bbeac44a9a683e438",
+            "Etag": "320a96fb8433d8d230ade19771162d5b",
+            "HasLyrics": false,
+            "Container": "mp3",
+            "PremiereDate": "2001-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Folk"
+            ],
+            "RunTimeTicks": 2413232000,
+            "ProductionYear": 2001,
+            "IndexNumber": 4,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Folk",
+                "Id": "f8c7adb7f869d4f58a1eb1d7bc36bcf2"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Enjoy Your Rabbit",
+            "AlbumId": "6c95141be1efb36c34694c98a821c5f5",
+            "AlbumPrimaryImageTag": "8ecf8468ecf1322a6d3d6382a5bc9914",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              },
+              "Primary": {
+                "8ecf8468ecf1322a6d3d6382a5bc9914": "e,OXOQkENb%gSh~AjZWCt7ofI[bIWBRje.?bozWBV@WBt7kCofayn%"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -7.3
+          },
+          {
+            "Name": "Year Of The Boar",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "b5508199a68ffb24d9060c0113efb634",
+            "Etag": "3f0a74cd3046a3085a513d0498a72dba",
+            "HasLyrics": false,
+            "Container": "mp3",
+            "PremiereDate": "2001-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Folk"
+            ],
+            "RunTimeTicks": 2354672000,
+            "ProductionYear": 2001,
+            "IndexNumber": 5,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Folk",
+                "Id": "f8c7adb7f869d4f58a1eb1d7bc36bcf2"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Enjoy Your Rabbit",
+            "AlbumId": "6c95141be1efb36c34694c98a821c5f5",
+            "AlbumPrimaryImageTag": "8ecf8468ecf1322a6d3d6382a5bc9914",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              },
+              "Primary": {
+                "8ecf8468ecf1322a6d3d6382a5bc9914": "e,OXOQkENb%gSh~AjZWCt7ofI[bIWBRje.?bozWBV@WBt7kCofayn%"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -7.7
+          },
+          {
+            "Name": "Year Of The Tiger",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "2a4d10a44d68b207c5c46d9a52a0049a",
+            "Etag": "f1665d0a2c277632ce07c9ccf3073458",
+            "HasLyrics": false,
+            "Container": "mp3",
+            "PremiereDate": "2001-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Folk"
+            ],
+            "RunTimeTicks": 2648192000,
+            "ProductionYear": 2001,
+            "IndexNumber": 6,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Folk",
+                "Id": "f8c7adb7f869d4f58a1eb1d7bc36bcf2"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Enjoy Your Rabbit",
+            "AlbumId": "6c95141be1efb36c34694c98a821c5f5",
+            "AlbumPrimaryImageTag": "8ecf8468ecf1322a6d3d6382a5bc9914",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              },
+              "Primary": {
+                "8ecf8468ecf1322a6d3d6382a5bc9914": "e,OXOQkENb%gSh~AjZWCt7ofI[bIWBRje.?bozWBV@WBt7kCofayn%"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -9.8
+          },
+          {
+            "Name": "Year Of The Snake",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "fa70e719cd7a53fa3a1c5338bfdcbabe",
+            "Etag": "ce64f018ddc310ffe08164aaae616cc4",
+            "HasLyrics": false,
+            "Container": "mp3",
+            "PremiereDate": "2001-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Folk"
+            ],
+            "RunTimeTicks": 4075952000,
+            "ProductionYear": 2001,
+            "IndexNumber": 7,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Folk",
+                "Id": "f8c7adb7f869d4f58a1eb1d7bc36bcf2"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Enjoy Your Rabbit",
+            "AlbumId": "6c95141be1efb36c34694c98a821c5f5",
+            "AlbumPrimaryImageTag": "8ecf8468ecf1322a6d3d6382a5bc9914",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              },
+              "Primary": {
+                "8ecf8468ecf1322a6d3d6382a5bc9914": "e,OXOQkENb%gSh~AjZWCt7ofI[bIWBRje.?bozWBV@WBt7kCofayn%"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -7.1000004
+          },
+          {
+            "Name": "Year Of The Sheep",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "bd41453193916fac834e154003818f9a",
+            "Etag": "a06af7b2e63545cbc2fcfc2bc7443cf6",
+            "HasLyrics": false,
+            "Container": "mp3",
+            "PremiereDate": "2001-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Folk"
+            ],
+            "RunTimeTicks": 2146112000,
+            "ProductionYear": 2001,
+            "IndexNumber": 8,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Folk",
+                "Id": "f8c7adb7f869d4f58a1eb1d7bc36bcf2"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Enjoy Your Rabbit",
+            "AlbumId": "6c95141be1efb36c34694c98a821c5f5",
+            "AlbumPrimaryImageTag": "8ecf8468ecf1322a6d3d6382a5bc9914",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              },
+              "Primary": {
+                "8ecf8468ecf1322a6d3d6382a5bc9914": "e,OXOQkENb%gSh~AjZWCt7ofI[bIWBRje.?bozWBV@WBt7kCofayn%"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -0.29999924
+          },
+          {
+            "Name": "Year Of The Rooster",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "c952534c248387dd52da58b45bd331ed",
+            "Etag": "edf11ac190a12033cd8c918c3e071c0e",
+            "HasLyrics": false,
+            "Container": "mp3",
+            "PremiereDate": "2001-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Folk"
+            ],
+            "RunTimeTicks": 3845552000,
+            "ProductionYear": 2001,
+            "IndexNumber": 9,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Folk",
+                "Id": "f8c7adb7f869d4f58a1eb1d7bc36bcf2"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Enjoy Your Rabbit",
+            "AlbumId": "6c95141be1efb36c34694c98a821c5f5",
+            "AlbumPrimaryImageTag": "8ecf8468ecf1322a6d3d6382a5bc9914",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              },
+              "Primary": {
+                "8ecf8468ecf1322a6d3d6382a5bc9914": "e,OXOQkENb%gSh~AjZWCt7ofI[bIWBRje.?bozWBV@WBt7kCofayn%"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -5.5
+          },
+          {
+            "Name": "Year Of The Dragon",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "d9b84c9ff4ed7e6c450d6a3b0025abeb",
+            "Etag": "a7e980da4d057a29fbb8dd09cdebd863",
+            "HasLyrics": false,
+            "Container": "mp3",
+            "PremiereDate": "2001-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Folk"
+            ],
+            "RunTimeTicks": 5667632000,
+            "ProductionYear": 2001,
+            "IndexNumber": 10,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Folk",
+                "Id": "f8c7adb7f869d4f58a1eb1d7bc36bcf2"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Enjoy Your Rabbit",
+            "AlbumId": "6c95141be1efb36c34694c98a821c5f5",
+            "AlbumPrimaryImageTag": "8ecf8468ecf1322a6d3d6382a5bc9914",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              },
+              "Primary": {
+                "8ecf8468ecf1322a6d3d6382a5bc9914": "e,OXOQkENb%gSh~AjZWCt7ofI[bIWBRje.?bozWBV@WBt7kCofayn%"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10
+          },
+          {
+            "Name": "Enjoy Your Rabbit",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "cd7cd9a8b43f761c0a6ce2c7c40358b8",
+            "Etag": "c2f77a7776572197414fcf4e3d2b9988",
+            "HasLyrics": false,
+            "Container": "mp3",
+            "PremiereDate": "2001-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Folk"
+            ],
+            "RunTimeTicks": 2875952000,
+            "ProductionYear": 2001,
+            "IndexNumber": 11,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Folk",
+                "Id": "f8c7adb7f869d4f58a1eb1d7bc36bcf2"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Enjoy Your Rabbit",
+            "AlbumId": "6c95141be1efb36c34694c98a821c5f5",
+            "AlbumPrimaryImageTag": "8ecf8468ecf1322a6d3d6382a5bc9914",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              },
+              "Primary": {
+                "8ecf8468ecf1322a6d3d6382a5bc9914": "e,OXOQkENb%gSh~AjZWCt7ofI[bIWBRje.?bozWBV@WBt7kCofayn%"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -9.3
+          },
+          {
+            "Name": "Year Of The Dog",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "c8a7c0ab3c88b2ffdbbfe19bcde2cf78",
+            "Etag": "696aea6efbc4a6f4188d2466c0182633",
+            "HasLyrics": false,
+            "Container": "mp3",
+            "PremiereDate": "2001-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Folk"
+            ],
+            "RunTimeTicks": 2921552000,
+            "ProductionYear": 2001,
+            "IndexNumber": 12,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Folk",
+                "Id": "f8c7adb7f869d4f58a1eb1d7bc36bcf2"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Enjoy Your Rabbit",
+            "AlbumId": "6c95141be1efb36c34694c98a821c5f5",
+            "AlbumPrimaryImageTag": "8ecf8468ecf1322a6d3d6382a5bc9914",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              },
+              "Primary": {
+                "8ecf8468ecf1322a6d3d6382a5bc9914": "e,OXOQkENb%gSh~AjZWCt7ofI[bIWBRje.?bozWBV@WBt7kCofayn%"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -6.8999996
+          },
+          {
+            "Name": "Year Of The Horse",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "93a16c2c77c5e71bc5391e1c1731e023",
+            "Etag": "f74988650807642ea371e267da26a6ce",
+            "HasLyrics": false,
+            "Container": "mp3",
+            "PremiereDate": "2001-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Folk"
+            ],
+            "RunTimeTicks": 7988432000,
+            "ProductionYear": 2001,
+            "IndexNumber": 13,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Folk",
+                "Id": "f8c7adb7f869d4f58a1eb1d7bc36bcf2"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Enjoy Your Rabbit",
+            "AlbumId": "6c95141be1efb36c34694c98a821c5f5",
+            "AlbumPrimaryImageTag": "8ecf8468ecf1322a6d3d6382a5bc9914",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              },
+              "Primary": {
+                "8ecf8468ecf1322a6d3d6382a5bc9914": "e,OXOQkENb%gSh~AjZWCt7ofI[bIWBRje.?bozWBV@WBt7kCofayn%"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -9.8
+          },
+          {
+            "Name": "Year Of Our Lord",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "32ceaa1058e84d8b054874baf5c109e4",
+            "Etag": "3bd5ebcd743dafd4904d18b3c38fed48",
+            "HasLyrics": false,
+            "Container": "mp3",
+            "PremiereDate": "2001-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Indie Folk"
+            ],
+            "RunTimeTicks": 2700992000,
+            "ProductionYear": 2001,
+            "IndexNumber": 14,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Indie Folk",
+                "Id": "f8c7adb7f869d4f58a1eb1d7bc36bcf2"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "Album": "Enjoy Your Rabbit",
+            "AlbumId": "6c95141be1efb36c34694c98a821c5f5",
+            "AlbumPrimaryImageTag": "8ecf8468ecf1322a6d3d6382a5bc9914",
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {},
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              },
+              "Primary": {
+                "8ecf8468ecf1322a6d3d6382a5bc9914": "e,OXOQkENb%gSh~AjZWCt7ofI[bIWBRje.?bozWBV@WBt7kCofayn%"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -3
+          }
+        ],
+        "TotalRecordCount": 14,
+        "StartIndex": 0
+      }
+    }
+  }
+}

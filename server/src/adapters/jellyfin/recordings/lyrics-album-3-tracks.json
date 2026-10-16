@@ -1,0 +1,1154 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "lyrics-album-3-tracks",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "Fields": "ProviderIds,Genres,Etag",
+      "IncludeItemTypes": "Audio",
+      "ParentId": "492af77ac70e1a2171125144cd4c10e3",
+      "SortBy": "ParentIndexNumber,IndexNumber,SortName"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [
+          {
+            "Name": "Wake",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "541003a096929c913a036ab427d4563e",
+            "Etag": "4f44b8160f6f158b4196a1c5cad57ce2",
+            "HasLyrics": false,
+            "Container": "mp3",
+            "PremiereDate": "2022-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative"
+            ],
+            "RunTimeTicks": 1006759180,
+            "ProductionYear": 2022,
+            "IndexNumber": 1,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              }
+            ],
+            "ParentLogoItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropImageTags": [
+              "da3e8a3059bd2995ae3f2fa3e5b0b5d9"
+            ],
+            "Artists": [
+              "Linkin Park"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "Album": "Minutes to Midnight (Deluxe Edition)",
+            "AlbumId": "492af77ac70e1a2171125144cd4c10e3",
+            "AlbumPrimaryImageTag": "b6e3adc8ef60d4f3cd18c711315fd752",
+            "AlbumArtist": "Linkin Park",
+            "AlbumArtists": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "8f5f478fa372fb7d9a66ba0432b53ec9"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "92250e4cb0b9691d0006b9b05e320a89",
+            "ImageBlurHashes": {
+              "Primary": {
+                "8f5f478fa372fb7d9a66ba0432b53ec9": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of",
+                "b6e3adc8ef60d4f3cd18c711315fd752": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of"
+              },
+              "Logo": {
+                "92250e4cb0b9691d0006b9b05e320a89": "OjI}-QofRjj[M{ofWBRjayM{j[j[ayof00ayofayxuayt7"
+              },
+              "Backdrop": {
+                "da3e8a3059bd2995ae3f2fa3e5b0b5d9": "WB8ga9%MShR.RkjG~pt7M|RkRPae_2tQNHR+f5ax%Mt7NGR*xaoL"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10.3
+          },
+          {
+            "Name": "Given Up",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "2b02ce6690ac43a4acb96fd28c366662",
+            "Etag": "68a3c17aadbb7d8e3187629291c21c38",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2022-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative"
+            ],
+            "RunTimeTicks": 1893877550,
+            "ProductionYear": 2022,
+            "IndexNumber": 2,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              }
+            ],
+            "ParentLogoItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropImageTags": [
+              "da3e8a3059bd2995ae3f2fa3e5b0b5d9"
+            ],
+            "Artists": [
+              "Linkin Park"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "Album": "Minutes to Midnight (Deluxe Edition)",
+            "AlbumId": "492af77ac70e1a2171125144cd4c10e3",
+            "AlbumPrimaryImageTag": "b6e3adc8ef60d4f3cd18c711315fd752",
+            "AlbumArtist": "Linkin Park",
+            "AlbumArtists": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "9c4235246fd167b9616af74eff1b2248"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "92250e4cb0b9691d0006b9b05e320a89",
+            "ImageBlurHashes": {
+              "Primary": {
+                "9c4235246fd167b9616af74eff1b2248": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of",
+                "b6e3adc8ef60d4f3cd18c711315fd752": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of"
+              },
+              "Logo": {
+                "92250e4cb0b9691d0006b9b05e320a89": "OjI}-QofRjj[M{ofWBRjayM{j[j[ayof00ayofayxuayt7"
+              },
+              "Backdrop": {
+                "da3e8a3059bd2995ae3f2fa3e5b0b5d9": "WB8ga9%MShR.RkjG~pt7M|RkRPae_2tQNHR+f5ax%Mt7NGR*xaoL"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10.9
+          },
+          {
+            "Name": "Leave Out All The Rest",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "360d77ad8d90322b0d96c54ec29f7eb6",
+            "Etag": "ecc788e5c8f486f9c28482c7c26b9aef",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2022-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative"
+            ],
+            "RunTimeTicks": 2094236730,
+            "ProductionYear": 2022,
+            "IndexNumber": 3,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              }
+            ],
+            "ParentLogoItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropImageTags": [
+              "da3e8a3059bd2995ae3f2fa3e5b0b5d9"
+            ],
+            "Artists": [
+              "Linkin Park"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "Album": "Minutes to Midnight (Deluxe Edition)",
+            "AlbumId": "492af77ac70e1a2171125144cd4c10e3",
+            "AlbumPrimaryImageTag": "b6e3adc8ef60d4f3cd18c711315fd752",
+            "AlbumArtist": "Linkin Park",
+            "AlbumArtists": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "710b916516b331b0e64e8db8fab1d762"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "92250e4cb0b9691d0006b9b05e320a89",
+            "ImageBlurHashes": {
+              "Primary": {
+                "710b916516b331b0e64e8db8fab1d762": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of",
+                "b6e3adc8ef60d4f3cd18c711315fd752": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of"
+              },
+              "Logo": {
+                "92250e4cb0b9691d0006b9b05e320a89": "OjI}-QofRjj[M{ofWBRjayM{j[j[ayof00ayofayxuayt7"
+              },
+              "Backdrop": {
+                "da3e8a3059bd2995ae3f2fa3e5b0b5d9": "WB8ga9%MShR.RkjG~pt7M|RkRPae_2tQNHR+f5ax%Mt7NGR*xaoL"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -9.9
+          },
+          {
+            "Name": "Bleed It Out",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "a4c312da336cf4fa97d9fb70716838af",
+            "Etag": "82b543e99c2af7dbd9e072d8e7229155",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2022-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative"
+            ],
+            "RunTimeTicks": 1644930610,
+            "ProductionYear": 2022,
+            "IndexNumber": 4,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              }
+            ],
+            "ParentLogoItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropImageTags": [
+              "da3e8a3059bd2995ae3f2fa3e5b0b5d9"
+            ],
+            "Artists": [
+              "Linkin Park"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "Album": "Minutes to Midnight (Deluxe Edition)",
+            "AlbumId": "492af77ac70e1a2171125144cd4c10e3",
+            "AlbumPrimaryImageTag": "b6e3adc8ef60d4f3cd18c711315fd752",
+            "AlbumArtist": "Linkin Park",
+            "AlbumArtists": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "5703991048ba1aa46cc0ee825df0c2b5"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "92250e4cb0b9691d0006b9b05e320a89",
+            "ImageBlurHashes": {
+              "Primary": {
+                "5703991048ba1aa46cc0ee825df0c2b5": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of",
+                "b6e3adc8ef60d4f3cd18c711315fd752": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of"
+              },
+              "Logo": {
+                "92250e4cb0b9691d0006b9b05e320a89": "OjI}-QofRjj[M{ofWBRjayM{j[j[ayof00ayofayxuayt7"
+              },
+              "Backdrop": {
+                "da3e8a3059bd2995ae3f2fa3e5b0b5d9": "WB8ga9%MShR.RkjG~pt7M|RkRPae_2tQNHR+f5ax%Mt7NGR*xaoL"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -11
+          },
+          {
+            "Name": "Shadow of the Day",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "f839866c72ffca5a29faa782fcddda61",
+            "Etag": "4e3df2d715064fbaf25e67efab537910",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2022-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative"
+            ],
+            "RunTimeTicks": 2896718370,
+            "ProductionYear": 2022,
+            "IndexNumber": 5,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              }
+            ],
+            "ParentLogoItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropImageTags": [
+              "da3e8a3059bd2995ae3f2fa3e5b0b5d9"
+            ],
+            "Artists": [
+              "Linkin Park"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "Album": "Minutes to Midnight (Deluxe Edition)",
+            "AlbumId": "492af77ac70e1a2171125144cd4c10e3",
+            "AlbumPrimaryImageTag": "b6e3adc8ef60d4f3cd18c711315fd752",
+            "AlbumArtist": "Linkin Park",
+            "AlbumArtists": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "5712dc40395a56decf125391c5a5d528"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "92250e4cb0b9691d0006b9b05e320a89",
+            "ImageBlurHashes": {
+              "Primary": {
+                "5712dc40395a56decf125391c5a5d528": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of",
+                "b6e3adc8ef60d4f3cd18c711315fd752": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of"
+              },
+              "Logo": {
+                "92250e4cb0b9691d0006b9b05e320a89": "OjI}-QofRjj[M{ofWBRjayM{j[j[ayof00ayofayxuayt7"
+              },
+              "Backdrop": {
+                "da3e8a3059bd2995ae3f2fa3e5b0b5d9": "WB8ga9%MShR.RkjG~pt7M|RkRPae_2tQNHR+f5ax%Mt7NGR*xaoL"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -8.6
+          },
+          {
+            "Name": "What I've Done",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "b3805a8f57ea4355794226e932a08091",
+            "Etag": "d51cdb06d7db59772afb62f0f97c48b1",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2022-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative"
+            ],
+            "RunTimeTicks": 2054791840,
+            "ProductionYear": 2022,
+            "IndexNumber": 6,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              }
+            ],
+            "ParentLogoItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropImageTags": [
+              "da3e8a3059bd2995ae3f2fa3e5b0b5d9"
+            ],
+            "Artists": [
+              "Linkin Park"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "Album": "Minutes to Midnight (Deluxe Edition)",
+            "AlbumId": "492af77ac70e1a2171125144cd4c10e3",
+            "AlbumPrimaryImageTag": "b6e3adc8ef60d4f3cd18c711315fd752",
+            "AlbumArtist": "Linkin Park",
+            "AlbumArtists": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "ea56f868abf3cb86378f50f9b6255192"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "92250e4cb0b9691d0006b9b05e320a89",
+            "ImageBlurHashes": {
+              "Primary": {
+                "ea56f868abf3cb86378f50f9b6255192": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of",
+                "b6e3adc8ef60d4f3cd18c711315fd752": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of"
+              },
+              "Logo": {
+                "92250e4cb0b9691d0006b9b05e320a89": "OjI}-QofRjj[M{ofWBRjayM{j[j[ayof00ayofayxuayt7"
+              },
+              "Backdrop": {
+                "da3e8a3059bd2995ae3f2fa3e5b0b5d9": "WB8ga9%MShR.RkjG~pt7M|RkRPae_2tQNHR+f5ax%Mt7NGR*xaoL"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10.1
+          },
+          {
+            "Name": "Hands Held High",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "f7fcf1be354f4702d5ca1c6fa55a26e5",
+            "Etag": "658e10d77d3f7d4e13ae7a1abef638fa",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2022-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative"
+            ],
+            "RunTimeTicks": 2332212240,
+            "ProductionYear": 2022,
+            "IndexNumber": 7,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              }
+            ],
+            "ParentLogoItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropImageTags": [
+              "da3e8a3059bd2995ae3f2fa3e5b0b5d9"
+            ],
+            "Artists": [
+              "Linkin Park"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "Album": "Minutes to Midnight (Deluxe Edition)",
+            "AlbumId": "492af77ac70e1a2171125144cd4c10e3",
+            "AlbumPrimaryImageTag": "b6e3adc8ef60d4f3cd18c711315fd752",
+            "AlbumArtist": "Linkin Park",
+            "AlbumArtists": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "23fbeaeb71324486697d41c1639c1906"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "92250e4cb0b9691d0006b9b05e320a89",
+            "ImageBlurHashes": {
+              "Primary": {
+                "23fbeaeb71324486697d41c1639c1906": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of",
+                "b6e3adc8ef60d4f3cd18c711315fd752": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of"
+              },
+              "Logo": {
+                "92250e4cb0b9691d0006b9b05e320a89": "OjI}-QofRjj[M{ofWBRjayM{j[j[ayof00ayofayxuayt7"
+              },
+              "Backdrop": {
+                "da3e8a3059bd2995ae3f2fa3e5b0b5d9": "WB8ga9%MShR.RkjG~pt7M|RkRPae_2tQNHR+f5ax%Mt7NGR*xaoL"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -5.8999996
+          },
+          {
+            "Name": "No More Sorrow",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "f54b3cd690e22026e209181a2f5adb48",
+            "Etag": "3c5e1748a623446b6971dcba18caf3bb",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2022-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative"
+            ],
+            "RunTimeTicks": 2218057140,
+            "ProductionYear": 2022,
+            "IndexNumber": 8,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              }
+            ],
+            "ParentLogoItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropImageTags": [
+              "da3e8a3059bd2995ae3f2fa3e5b0b5d9"
+            ],
+            "Artists": [
+              "Linkin Park"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "Album": "Minutes to Midnight (Deluxe Edition)",
+            "AlbumId": "492af77ac70e1a2171125144cd4c10e3",
+            "AlbumPrimaryImageTag": "b6e3adc8ef60d4f3cd18c711315fd752",
+            "AlbumArtist": "Linkin Park",
+            "AlbumArtists": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "27b87c6d390974d260edab1575b2d095"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "92250e4cb0b9691d0006b9b05e320a89",
+            "ImageBlurHashes": {
+              "Primary": {
+                "27b87c6d390974d260edab1575b2d095": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of",
+                "b6e3adc8ef60d4f3cd18c711315fd752": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of"
+              },
+              "Logo": {
+                "92250e4cb0b9691d0006b9b05e320a89": "OjI}-QofRjj[M{ofWBRjayM{j[j[ayof00ayofayxuayt7"
+              },
+              "Backdrop": {
+                "da3e8a3059bd2995ae3f2fa3e5b0b5d9": "WB8ga9%MShR.RkjG~pt7M|RkRPae_2tQNHR+f5ax%Mt7NGR*xaoL"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -11.1
+          },
+          {
+            "Name": "Valentine's Day",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "81f8a3748cc9e6e87d73bd830751c1e6",
+            "Etag": "ac3e8e1d7c26a863d6da000697a678d4",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2022-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative"
+            ],
+            "RunTimeTicks": 1969110200,
+            "ProductionYear": 2022,
+            "IndexNumber": 9,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              }
+            ],
+            "ParentLogoItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropImageTags": [
+              "da3e8a3059bd2995ae3f2fa3e5b0b5d9"
+            ],
+            "Artists": [
+              "Linkin Park"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "Album": "Minutes to Midnight (Deluxe Edition)",
+            "AlbumId": "492af77ac70e1a2171125144cd4c10e3",
+            "AlbumPrimaryImageTag": "b6e3adc8ef60d4f3cd18c711315fd752",
+            "AlbumArtist": "Linkin Park",
+            "AlbumArtists": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "84e97bb25147c0e2f668040825c9a87b"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "92250e4cb0b9691d0006b9b05e320a89",
+            "ImageBlurHashes": {
+              "Primary": {
+                "84e97bb25147c0e2f668040825c9a87b": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of",
+                "b6e3adc8ef60d4f3cd18c711315fd752": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of"
+              },
+              "Logo": {
+                "92250e4cb0b9691d0006b9b05e320a89": "OjI}-QofRjj[M{ofWBRjayM{j[j[ayof00ayofayxuayt7"
+              },
+              "Backdrop": {
+                "da3e8a3059bd2995ae3f2fa3e5b0b5d9": "WB8ga9%MShR.RkjG~pt7M|RkRPae_2tQNHR+f5ax%Mt7NGR*xaoL"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -9.6
+          },
+          {
+            "Name": "In Between",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "3a766da0c70198e0110c68ff8664481a",
+            "Etag": "98cdba39c071f0926db50f0167cba3b4",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2022-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative"
+            ],
+            "RunTimeTicks": 1968326530,
+            "ProductionYear": 2022,
+            "IndexNumber": 10,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              }
+            ],
+            "ParentLogoItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropImageTags": [
+              "da3e8a3059bd2995ae3f2fa3e5b0b5d9"
+            ],
+            "Artists": [
+              "Linkin Park"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "Album": "Minutes to Midnight (Deluxe Edition)",
+            "AlbumId": "492af77ac70e1a2171125144cd4c10e3",
+            "AlbumPrimaryImageTag": "b6e3adc8ef60d4f3cd18c711315fd752",
+            "AlbumArtist": "Linkin Park",
+            "AlbumArtists": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "15058b51538bf7f6932cd7d3555131c3"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "92250e4cb0b9691d0006b9b05e320a89",
+            "ImageBlurHashes": {
+              "Primary": {
+                "15058b51538bf7f6932cd7d3555131c3": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of",
+                "b6e3adc8ef60d4f3cd18c711315fd752": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of"
+              },
+              "Logo": {
+                "92250e4cb0b9691d0006b9b05e320a89": "OjI}-QofRjj[M{ofWBRjayM{j[j[ayof00ayofayxuayt7"
+              },
+              "Backdrop": {
+                "da3e8a3059bd2995ae3f2fa3e5b0b5d9": "WB8ga9%MShR.RkjG~pt7M|RkRPae_2tQNHR+f5ax%Mt7NGR*xaoL"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -8.1
+          },
+          {
+            "Name": "In Pieces",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "eb4b9844fa0fbdfb9b39de71b0ce200f",
+            "Etag": "3e02e579db0bdd22bae2fe1470ff3c38",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2022-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative"
+            ],
+            "RunTimeTicks": 2180179590,
+            "ProductionYear": 2022,
+            "IndexNumber": 11,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              }
+            ],
+            "ParentLogoItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropImageTags": [
+              "da3e8a3059bd2995ae3f2fa3e5b0b5d9"
+            ],
+            "Artists": [
+              "Linkin Park"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "Album": "Minutes to Midnight (Deluxe Edition)",
+            "AlbumId": "492af77ac70e1a2171125144cd4c10e3",
+            "AlbumPrimaryImageTag": "b6e3adc8ef60d4f3cd18c711315fd752",
+            "AlbumArtist": "Linkin Park",
+            "AlbumArtists": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "72f70dd10f60331f62356b052216aca2"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "92250e4cb0b9691d0006b9b05e320a89",
+            "ImageBlurHashes": {
+              "Primary": {
+                "72f70dd10f60331f62356b052216aca2": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of",
+                "b6e3adc8ef60d4f3cd18c711315fd752": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of"
+              },
+              "Logo": {
+                "92250e4cb0b9691d0006b9b05e320a89": "OjI}-QofRjj[M{ofWBRjayM{j[j[ayof00ayofayxuayt7"
+              },
+              "Backdrop": {
+                "da3e8a3059bd2995ae3f2fa3e5b0b5d9": "WB8ga9%MShR.RkjG~pt7M|RkRPae_2tQNHR+f5ax%Mt7NGR*xaoL"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -8.7
+          },
+          {
+            "Name": "The Little Things Give You Away",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "4bc66b9198b9c59669aca1916e0e9606",
+            "Etag": "d4ee2f45775463eed763cbb1cff93da1",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2022-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative"
+            ],
+            "RunTimeTicks": 3835559180,
+            "ProductionYear": 2022,
+            "IndexNumber": 12,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              }
+            ],
+            "ParentLogoItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropImageTags": [
+              "da3e8a3059bd2995ae3f2fa3e5b0b5d9"
+            ],
+            "Artists": [
+              "Linkin Park"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "Album": "Minutes to Midnight (Deluxe Edition)",
+            "AlbumId": "492af77ac70e1a2171125144cd4c10e3",
+            "AlbumPrimaryImageTag": "b6e3adc8ef60d4f3cd18c711315fd752",
+            "AlbumArtist": "Linkin Park",
+            "AlbumArtists": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "87b86318558ab4346bb5a43e06df0472"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "92250e4cb0b9691d0006b9b05e320a89",
+            "ImageBlurHashes": {
+              "Primary": {
+                "87b86318558ab4346bb5a43e06df0472": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of",
+                "b6e3adc8ef60d4f3cd18c711315fd752": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of"
+              },
+              "Logo": {
+                "92250e4cb0b9691d0006b9b05e320a89": "OjI}-QofRjj[M{ofWBRjayM{j[j[ayof00ayofayxuayt7"
+              },
+              "Backdrop": {
+                "da3e8a3059bd2995ae3f2fa3e5b0b5d9": "WB8ga9%MShR.RkjG~pt7M|RkRPae_2tQNHR+f5ax%Mt7NGR*xaoL"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -9.1
+          },
+          {
+            "Name": "No Roads Left",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "f99b1d0258060f8f253933d02fa3ad76",
+            "Etag": "5cd154008ba83b3a5a38218c7d90a924",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2022-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative"
+            ],
+            "RunTimeTicks": 2287542860,
+            "ProductionYear": 2022,
+            "IndexNumber": 13,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              }
+            ],
+            "ParentLogoItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropImageTags": [
+              "da3e8a3059bd2995ae3f2fa3e5b0b5d9"
+            ],
+            "Artists": [
+              "Linkin Park"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "Album": "Minutes to Midnight (Deluxe Edition)",
+            "AlbumId": "492af77ac70e1a2171125144cd4c10e3",
+            "AlbumPrimaryImageTag": "b6e3adc8ef60d4f3cd18c711315fd752",
+            "AlbumArtist": "Linkin Park",
+            "AlbumArtists": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "bcd52bcf3d7b2d9ef4916202822d652c"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "92250e4cb0b9691d0006b9b05e320a89",
+            "ImageBlurHashes": {
+              "Primary": {
+                "bcd52bcf3d7b2d9ef4916202822d652c": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of",
+                "b6e3adc8ef60d4f3cd18c711315fd752": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of"
+              },
+              "Logo": {
+                "92250e4cb0b9691d0006b9b05e320a89": "OjI}-QofRjj[M{ofWBRjayM{j[j[ayof00ayofayxuayt7"
+              },
+              "Backdrop": {
+                "da3e8a3059bd2995ae3f2fa3e5b0b5d9": "WB8ga9%MShR.RkjG~pt7M|RkRPae_2tQNHR+f5ax%Mt7NGR*xaoL"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10.2
+          },
+          {
+            "Name": "Across the Line",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "2b8b9239ff40c7fae216554feca43d0c",
+            "Etag": "78abaceb197a4fedf77a8697159eb0ff",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2022-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative"
+            ],
+            "RunTimeTicks": 1902236730,
+            "ProductionYear": 2022,
+            "IndexNumber": 14,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              }
+            ],
+            "ParentLogoItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropImageTags": [
+              "da3e8a3059bd2995ae3f2fa3e5b0b5d9"
+            ],
+            "Artists": [
+              "Linkin Park"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "Album": "Minutes to Midnight (Deluxe Edition)",
+            "AlbumId": "492af77ac70e1a2171125144cd4c10e3",
+            "AlbumPrimaryImageTag": "b6e3adc8ef60d4f3cd18c711315fd752",
+            "AlbumArtist": "Linkin Park",
+            "AlbumArtists": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "40eccc710a774496902fb1ad4fc66f8f"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "92250e4cb0b9691d0006b9b05e320a89",
+            "ImageBlurHashes": {
+              "Primary": {
+                "40eccc710a774496902fb1ad4fc66f8f": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of",
+                "b6e3adc8ef60d4f3cd18c711315fd752": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of"
+              },
+              "Logo": {
+                "92250e4cb0b9691d0006b9b05e320a89": "OjI}-QofRjj[M{ofWBRjayM{j[j[ayof00ayofayxuayt7"
+              },
+              "Backdrop": {
+                "da3e8a3059bd2995ae3f2fa3e5b0b5d9": "WB8ga9%MShR.RkjG~pt7M|RkRPae_2tQNHR+f5ax%Mt7NGR*xaoL"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10.2
+          },
+          {
+            "Name": "Given Up (Third Encore Session)",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "8ae8c71b802fcdabe6081fd655d6f7d4",
+            "Etag": "d713ce81401f050ffed8b1778974903d",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2022-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative"
+            ],
+            "RunTimeTicks": 1887869390,
+            "ProductionYear": 2022,
+            "IndexNumber": 15,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              }
+            ],
+            "ParentLogoItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropImageTags": [
+              "da3e8a3059bd2995ae3f2fa3e5b0b5d9"
+            ],
+            "Artists": [
+              "Linkin Park"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "Album": "Minutes to Midnight (Deluxe Edition)",
+            "AlbumId": "492af77ac70e1a2171125144cd4c10e3",
+            "AlbumPrimaryImageTag": "b6e3adc8ef60d4f3cd18c711315fd752",
+            "AlbumArtist": "Linkin Park",
+            "AlbumArtists": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "4c03206bc3cd1fc6b918c2307b3a6272"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "92250e4cb0b9691d0006b9b05e320a89",
+            "ImageBlurHashes": {
+              "Primary": {
+                "4c03206bc3cd1fc6b918c2307b3a6272": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of",
+                "b6e3adc8ef60d4f3cd18c711315fd752": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of"
+              },
+              "Logo": {
+                "92250e4cb0b9691d0006b9b05e320a89": "OjI}-QofRjj[M{ofWBRjayM{j[j[ayof00ayofayxuayt7"
+              },
+              "Backdrop": {
+                "da3e8a3059bd2995ae3f2fa3e5b0b5d9": "WB8ga9%MShR.RkjG~pt7M|RkRPae_2tQNHR+f5ax%Mt7NGR*xaoL"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -11.6
+          },
+          {
+            "Name": "What I've Done (Distorted Remix)",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "fb8f5b51f269a917a28b892264a8c9c9",
+            "Etag": "1b1bae15a0e7338f5fd88b1cb1c62de0",
+            "HasLyrics": true,
+            "Container": "mp3",
+            "PremiereDate": "2022-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Alternative"
+            ],
+            "RunTimeTicks": 2276048980,
+            "ProductionYear": 2022,
+            "IndexNumber": 16,
+            "ParentIndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Alternative",
+                "Id": "3079a861f448e4e23dba28ea8576ad0f"
+              }
+            ],
+            "ParentLogoItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropImageTags": [
+              "da3e8a3059bd2995ae3f2fa3e5b0b5d9"
+            ],
+            "Artists": [
+              "Linkin Park"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "Album": "Minutes to Midnight (Deluxe Edition)",
+            "AlbumId": "492af77ac70e1a2171125144cd4c10e3",
+            "AlbumPrimaryImageTag": "b6e3adc8ef60d4f3cd18c711315fd752",
+            "AlbumArtist": "Linkin Park",
+            "AlbumArtists": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "296d3f2d363967e7ef78f757b74489ed"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "92250e4cb0b9691d0006b9b05e320a89",
+            "ImageBlurHashes": {
+              "Primary": {
+                "296d3f2d363967e7ef78f757b74489ed": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of",
+                "b6e3adc8ef60d4f3cd18c711315fd752": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of"
+              },
+              "Logo": {
+                "92250e4cb0b9691d0006b9b05e320a89": "OjI}-QofRjj[M{ofWBRjayM{j[j[ayof00ayofayxuayt7"
+              },
+              "Backdrop": {
+                "da3e8a3059bd2995ae3f2fa3e5b0b5d9": "WB8ga9%MShR.RkjG~pt7M|RkRPae_2tQNHR+f5ax%Mt7NGR*xaoL"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -11.6
+          }
+        ],
+        "TotalRecordCount": 16,
+        "StartIndex": 0
+      }
+    }
+  }
+}

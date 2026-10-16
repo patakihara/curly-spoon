@@ -52,11 +52,13 @@ export interface Finding {
 /**
  * Public hosts that published metadata carries: an album's `ExternalUrls` on Jellyfin, a
  * podcast's feed, episode enclosures and directory page on Audiobookshelf, and the iTunes
- * namespace a feed declares. And `github.com`: Auralis's public homepage, which its User-Agent
- * names to LRCLIB, as LRCLIB asks of every client.
+ * namespace a feed declares. `github.com`: Auralis's public homepage, which its User-Agent names
+ * to LRCLIB, as LRCLIB asks of every client. `tools.ietf.org`: the HTTP RFC a Jellyfin 404's
+ * problem details name as its `type` (recorded).
  */
 export const PUBLIC_HOSTS: readonly string[] = [
   'github.com',
+  'tools.ietf.org',
   'musicbrainz.org',
   'www.itunes.com',
   'www.theaudiodb.com',

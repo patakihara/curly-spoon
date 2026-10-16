@@ -1,0 +1,132 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "lyrics-album-1",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "Fields": "ProviderIds,Genres,Etag",
+      "Ids": "8dcbf3aa770d450e1988ccf23dca8a9b",
+      "IncludeItemTypes": "MusicAlbum",
+      "Recursive": "true"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [
+          {
+            "Name": "Random Access Memories",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "8dcbf3aa770d450e1988ccf23dca8a9b",
+            "Etag": "a39737d0a2b28ed27f38ae96bf767b57",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Pop",
+              "Rock"
+            ],
+            "RunTimeTicks": 44741916999,
+            "ProductionYear": 2021,
+            "ProviderIds": {
+              "AudioDbAlbum": "2162908",
+              "AudioDbArtist": "111492",
+              "MusicBrainzAlbum": "79215cdf-4764-4dee-b0b9-fec1643df7c5",
+              "MusicBrainzAlbumArtist": "056e4f3e-d505-4dad-8ec1-d04f521cbb56",
+              "MusicBrainzReleaseGroup": "aa997ea0-2936-40bd-884d-3af8a0e064dc"
+            },
+            "IsFolder": true,
+            "Type": "MusicAlbum",
+            "GenreItems": [
+              {
+                "Name": "Pop",
+                "Id": "5b0e2941bb91463ff6d8393b390e6cab"
+              },
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "Artists": [
+              "Daft Punk",
+              "Daft Punk feat. Pharrell Williams",
+              "Daft Punk feat. Julian Casablancas",
+              "Daft Punk feat. Paul Williams",
+              "Daft Punk feat. Todd Edwards",
+              "Daft Punk feat. Panda Bear"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              },
+              {
+                "Name": "Daft Punk feat. Pharrell Williams",
+                "Id": "6de99c4d085ed9aa3d2de6b4f00cdf80"
+              },
+              {
+                "Name": "Daft Punk feat. Julian Casablancas",
+                "Id": "0858917077f0724dd500779aa9b706f2"
+              },
+              {
+                "Name": "Daft Punk feat. Paul Williams",
+                "Id": "6a4ca5cc43ccde053d271dfd2ab89724"
+              },
+              {
+                "Name": "Daft Punk feat. Todd Edwards",
+                "Id": "a0f1b34888c93ef81cd5e85aa16f7a6a"
+              },
+              {
+                "Name": "Daft Punk feat. Panda Bear",
+                "Id": "69b6d0286bf2b823656e7bf80910f6bf"
+              }
+            ],
+            "AlbumArtist": "Daft Punk",
+            "AlbumArtists": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "dba55e29d1ddd798793ef23ea8f2cdd1"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "3eb714b69b6dd29a122a1c2e659d0325",
+            "ImageBlurHashes": {
+              "Primary": {
+                "dba55e29d1ddd798793ef23ea8f2cdd1": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              },
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown",
+            "NormalizationGain": -6.8999996
+          }
+        ],
+        "TotalRecordCount": 1,
+        "StartIndex": 0
+      }
+    }
+  }
+}

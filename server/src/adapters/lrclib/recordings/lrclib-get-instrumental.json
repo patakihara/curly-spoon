@@ -1,0 +1,41 @@
+{
+  "upstream": "lrclib",
+  "upstreamVersion": "LRCLIB API, unversioned",
+  "call": "lrclib-get-instrumental",
+  "request": {
+    "method": "GET",
+    "path": "/api/get",
+    "query": {
+      "album_name": "Minutes to Midnight (Deluxe Edition)",
+      "artist_name": "Linkin Park",
+      "duration": "101",
+      "track_name": "Wake"
+    },
+    "headers": {
+      "accept": "application/json",
+      "user-agent": "Auralis/0.0.0 (+https://github.com/patakihara/curly-spoon)"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "id": 1065286,
+        "name": "Wake",
+        "trackName": "Wake",
+        "artistName": "Linkin Park",
+        "albumName": "Minutes to Midnight (Deluxe Edition)",
+        "duration": 101,
+        "instrumental": true,
+        "hasWordSync": false,
+        "plainLyrics": null,
+        "syncedLyrics": null,
+        "trimmed": "Trimmed by the recorder: song lyrics are copyrighted, so only the first four lines of each are kept, and LRCLIB's lyricsfile copy is dropped."
+      }
+    }
+  }
+}
