@@ -21,13 +21,13 @@
       "scripts/canvas/build.mjs",
       "scripts/canvas/install.mjs"
     ],
-    "commit": "30282b3192e6f9b1dae75e20c095ff659b456c93",
-    "tree": "ea32493a7eb50670a0803a6cd6c42eeeb4e67f26",
-    "version": "1792074402-4f78",
+    "commit": "d816c9e653a9cdf52090899355797b6c1feef9b5",
+    "tree": "e8f230e117bd8089c440bac7046cf4ea85ea0580",
+    "version": "1792154422-2032",
     "installs": {
       "sonora": "1792074278-e45c"
     },
-    "publishedAt": "2026-10-15T14:26:53.972Z"
+    "publishedAt": "2026-10-16T12:40:57.726Z"
   },
   "plan": {
     "url": "https://claude.ai/artifact/81FfkqDpQSEe2VwYcT1sjq",
