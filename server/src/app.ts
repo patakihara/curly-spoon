@@ -8,6 +8,7 @@ import { registerAccess } from './auth/access.js';
 import type { SignOn } from './auth/oidc.js';
 import { createProxyTrust, type ProxyTrust } from './auth/proxy.js';
 import type { CookieSecure } from './config.js';
+import { answerFailure, refuseConnection } from './failures.js';
 import { retiredWorkerRoute } from './retiredWorker.js';
 import { serve } from './route.js';
 import { adminRoutes } from './routes/admin.js';
@@ -19,6 +20,7 @@ import { libraryRoutes } from './routes/library.js';
 import { type PlaybackOptions, playRoutes, type UpstreamAccess } from './routes/play.js';
 import { IndexLookup } from './queues/lookup.js';
 import { Sessions } from './queues/sessions.js';
+import { searchRoutes } from './routes/search.js';
 import { sessionRoutes } from './routes/sessions.js';
 import { setupRoutes } from './routes/setup.js';
 import { SIGN_IN_PAGE, signOnRoutes } from './routes/signOn.js';
@@ -91,8 +93,17 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   const { db } = options;
   const proxy = options.proxy ?? createProxyTrust([]);
   const cookieSecure = options.cookieSecure ?? 'auto';
-  const app = Fastify({ logger: loggerOptions(options.logger), trustProxy: proxy.trust });
-
+  // Every failure answers `{ error }`, as a refusal does (failures.ts): a thrown or handed-on
+  // error, a path that does not decode, and a connection whose request never parsed.
+  const app = Fastify({
+    logger: loggerOptions(options.logger),
+    trustProxy: proxy.trust,
+    frameworkErrors: answerFailure,
+    clientErrorHandler(this: FastifyInstance, error, socket) {
+      refuseConnection(this.log, error, socket);
+    },
+  });
+  app.setErrorHandler(answerFailure);
   await app.register(fastifyCookie);
   registerAccess(app, { db, proxy, cookieSecure, publicOrigin: options.publicOrigin });
 
@@ -137,6 +148,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   bookmarkRoutes(app, { db, upstreams: options.upstreams ?? null });
   libraryRoutes(app, { db, upstreams });
   itemRoutes(app, { db, upstreams });
+  searchRoutes(app, { db, now: options.now ?? Date.now });
 
   const distDir = options.webDistDir;
   if (distDir !== null && existsSync(distDir)) {

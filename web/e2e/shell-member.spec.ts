@@ -5,6 +5,7 @@ import { type Recorded, serveRecorded } from './recorded';
 import {
   advances,
   audios,
+  fontsLoaded,
   keyOf,
   playedTo,
   signIn as signInAt,
@@ -125,6 +126,7 @@ test.describe('[M1.shell] a reload and a lost sign-in', () => {
     // Well before the first 10 s report: only the last report, as the page goes, keeps the place.
     const at = (await audios(page)).find((a) => !a.paused)!.time;
     await page.reload();
+    await fontsLoaded(page);
     await expect(page.getByRole('button', { name: 'Play', exact: true }).first()).toBeVisible();
     await page.getByRole('button', { name: `Open player, ${book}` }).click();
     await expect(page).toHaveURL(`${recorded.origin}/playing`);

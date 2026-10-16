@@ -10,6 +10,7 @@
  */
 
 import type { Service } from '../store/upstreamLinks.js';
+import { foldName } from '../text/fold.js';
 
 export interface UpstreamCandidate {
   id: string;
@@ -40,10 +41,6 @@ export type Pick =
       state: 'unlinked';
       detail: 'no_account' | 'ambiguous' | 'upstream_root' | 'service_account' | 'disabled';
     };
-
-export function foldName(name: string): string {
-  return name.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase();
-}
 
 export function pickUpstreamUser(
   service: Service,

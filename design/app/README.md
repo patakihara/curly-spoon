@@ -16,7 +16,10 @@ Now Playing panel. A local search comes out as the front layer scrolls, so on th
 with one gets a third artboard, a phone with it out (`phone-search`). A page's menus start closed
 in the apps, opening from their button and closing on the scrim or an item; a page never draws
 one `open`, and the check refuses it. On the canvas a page with a menu gets another phone
-artboard with its first menu open (`phone-menu`). A player sheet gets a 1024 px artboard
+artboard with its first menu open (`phone-menu`). The apps draw a page's `full` state until its
+data says otherwise, so a page with another `<When state>` gets a phone artboard for each, in the
+order the page names them, with that state's sections shown and the rest hidden (`phone-suggest`
+for Search's suggestions). A player sheet gets a 1024 px artboard
 (`tablet`), the side panel the mini-player's track block opens there, beside the page under it, and
 its comparison a 1024 px render, `canvas-tablet.png`.
 
@@ -45,8 +48,14 @@ A handler prop may open another page: `onClick={<Open page="album" ref={release.
 page of `nav.json` that the page's structure `links` list, or its own page for another item of
 its kind, and binds each of its route's parameters
 to a data path. A list of several kinds binds the page instead, `<Open page={item.page} ref={item.ref} />`,
-and every page its data names must be one of those; the check refuses anything else. `onPlay={<Play ref={episode.ref} queue="spoken" />}`
-plays the item its ref binds on the queue it names, spoken or music, `next` makes it Play next,
+and every page its data names must be one of those; the check refuses anything else. An Open
+naming its page may also bind any of the query names its route declares, or leave them out:
+`<Open page="search" q={s.query} />` for nav.json's `/search?q`. The web navigates to the route
+with them as its search string, `/search?q=salt+road`, and Android passes them as the typed
+route's arguments; a page bound from data takes its route's parameters alone, and the check
+refuses a name the route doesn't declare. `onPlay={<Play ref={episode.ref} queue="spoken" />}`
+plays the item its ref binds on the queue it names, spoken or music, or on the one each item's
+data names, `queue={item.queue}`, which the check holds to those two; `next` makes it Play next,
 and `source` plays a list on its own, leaving the queue as it is;
 the web plays it through its player, `usePlay()` in `web/src/player`, and Android through the
 `onPlay` it is given. What is loaded, shell.json's `playing`, is the web player's `usePlaying()`:
@@ -68,7 +77,15 @@ navigation to the nav graph's destination.
 `onClick={<SignIn />}` starts signing in through the household sign-on and takes nothing: the web
 goes to the server's login route as the web client, coming back to the sign-in page's own
 `return_to`, where the visitor was going, or else to the app's start, and Android
-calls the `onSignIn()` it is given, the app's own sign-in. On the canvas every handler does nothing.
+calls the `onSignIn()` it is given, the app's own sign-in.
+
+`onChange={<Query />}` and `onSubmit={<Query />}` give a text field the search query, and take
+nothing: the field types the draft, and submitting runs the search; the check refuses a Query on
+any other prop, or on a component that is not a text field. The web binds them to `useQuery()`'s
+`type` and `submit` from `web/src/query`, drawing a back layer or subheader that holds one, or an
+`<Open>`, as a component of its own, since the shell draws those outside the page. Android has no
+search draft until M5.searchui, so it leaves the field unbound and it draws disabled. On the
+canvas every handler does nothing.
 
 A page binds `data.…`, its placeholder, and may bind `shell.…` for what it shows from `nav.json`:
 a page's `filter` there, its `all` choice and then the destinations it narrows to, labelled as the

@@ -450,6 +450,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/search/suggest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Suggestions as the signed-in person types a search */
+        get: operations["getSearchSuggest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A search of the household's library, kept among the signed-in person's recent searches */
+        get: operations["getSearch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -507,6 +541,10 @@ export interface components {
         QueueContext: {
             from: components["schemas"]["PlayingFrom"];
             items: components["schemas"]["QueueItem"][];
+        };
+        SearchParent: {
+            ref: components["schemas"]["MediaRef"];
+            title: string;
         };
         HealthResponse: {
             /** @enum {string} */
@@ -649,15 +687,15 @@ export interface components {
         /** @enum {string} */
         QueueStyle: "youtube" | "spotify";
         QueueCurrents: {
-            music: components["schemas"]["QueueItem"] & (Record<string, never> | null);
-            spoken: components["schemas"]["QueueItem"] & (Record<string, never> | null);
+            music: components["schemas"]["QueueItem"] | null;
+            spoken: components["schemas"]["QueueItem"] | null;
         };
         ListeningSession: {
             deviceId: string;
             deviceName: string;
             thisDevice: boolean;
             active: components["schemas"]["QueueType"];
-            switchAfterCurrent: components["schemas"]["QueueType"] & (string | null);
+            switchAfterCurrent: components["schemas"]["QueueType"] | null;
             queueStyle: components["schemas"]["QueueStyle"];
             currents: components["schemas"]["QueueCurrents"];
             rev: number;
@@ -678,20 +716,20 @@ export interface components {
         };
         QueueView: {
             type: components["schemas"]["QueueType"];
-            current: components["schemas"]["QueueViewItem"] & (Record<string, never> | null);
-            position: components["schemas"]["QueuePosition"] & (Record<string, never> | null);
+            current: components["schemas"]["QueueViewItem"] | null;
+            position: components["schemas"]["QueuePosition"] | null;
             user: components["schemas"]["QueueViewItem"][];
-            context: components["schemas"]["QueueViewContext"] & (Record<string, never> | null);
+            context: components["schemas"]["QueueViewContext"] | null;
             rev: number;
-            autoplay: components["schemas"]["QueueViewAutoplay"] & (Record<string, never> | null);
+            autoplay: components["schemas"]["QueueViewAutoplay"] | null;
             played: components["schemas"]["QueueViewPlayed"][];
         };
         Queue: {
             type: components["schemas"]["QueueType"];
-            current: components["schemas"]["QueueItem"] & (Record<string, never> | null);
-            position: components["schemas"]["QueuePosition"] & (Record<string, never> | null);
+            current: components["schemas"]["QueueItem"] | null;
+            position: components["schemas"]["QueuePosition"] | null;
             user: components["schemas"]["QueueItem"][];
-            context: components["schemas"]["QueueContext"] & (Record<string, never> | null);
+            context: components["schemas"]["QueueContext"] | null;
             rev: number;
         };
         PutQueueBody: {
@@ -787,6 +825,34 @@ export interface components {
         };
         /** @enum {string} */
         ArtSize: "small" | "medium" | "large";
+        /** @enum {string} */
+        SuggestionKind: "track" | "album" | "artist" | "book" | "author" | "series" | "show" | "episode" | "recent";
+        Suggestion: {
+            kind: components["schemas"]["SuggestionKind"];
+            text: string;
+            ref: components["schemas"]["MediaRef"] | null;
+        };
+        SuggestionList: {
+            suggestions: components["schemas"]["Suggestion"][];
+        };
+        /** @enum {string} */
+        SearchKind: "track" | "album" | "artist" | "book" | "author" | "series" | "show" | "episode";
+        SearchResult: {
+            ref: components["schemas"]["MediaRef"];
+            kind: components["schemas"]["SearchKind"];
+            title: string;
+            creators: string[];
+            parent: components["schemas"]["SearchParent"] | null;
+            art: string | null;
+            duration: number | null;
+            year: number | null;
+            publishedAt: number | null;
+            availability: components["schemas"]["Availability"];
+        };
+        SearchResults: {
+            query: string;
+            results: components["schemas"]["SearchResult"][];
+        };
     };
     responses: never;
     parameters: never;
@@ -2353,6 +2419,105 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    getSearchSuggest: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Their own recent searches, then titles and names from the household's library index, best first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuggestionList"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getSearch: {
+        parameters: {
+            query: {
+                q: string;
+                kinds?: components["schemas"]["SearchKind"][];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The best results first, of the kinds asked for, or of every kind. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResults"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
             };
         };
     };

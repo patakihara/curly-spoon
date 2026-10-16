@@ -16,7 +16,7 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-resultro
 }
 
 /** One row of a track / search / request list. Replaces the old TrackRow. */
-export function ResultRow({ title, meta, detail, status, progress = null, tone = 'library', actionGlyph, image, platform = 'desktop', onClick, onAction, divider = false, trailing, number = null }) {
+export function ResultRow({ title, meta, detail, status, progress = null, tone = 'library', actionGlyph, image, icon, platform = 'desktop', onClick, onAction, divider = false, trailing, number = null }) {
   const mobile = platform === 'mobile';
   const fg = 'var(--surface-fg)', muted = 'var(--surface-fg-muted)';
   const pctMatch = /(\d+)\s*%/.exec(status || '');
@@ -27,7 +27,8 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
   const spinning = pct === null && st.indexOf('searching') > -1;
   const failed = pct === null && (st.indexOf('failed') > -1 || st.indexOf('error') > -1);
   const off = !onClick;
-  const act = onAction || onClick;
+  // The art's action is the row's own, given apart: opening the row never wears a Play label.
+  const act = onAction;
   // No scrim without something to put on it — a bare dark square reads as a broken cover, not as work in flight.
   const ring = (pct !== null || spinning) && !!ProgressRing;
   const dimmed = ring || queued || failed;
@@ -40,21 +41,38 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
   const statusPill = nowPlaying
     ? <div className="rr-bars" role="img" aria-label="Now playing"><i /><i /><i /></div>
     : (status && Badge ? <div style={sx('flex-shrink:0')}><Badge tone={badgeTone} size="md">{label}</Badge></div> : null);
-  // A track number leads an album's rows in place of the art, which would only repeat the cover.
+  // A track number leads an album's rows in place of the art, which would only repeat the cover,
+  // and a glyph a row with no cover of its own, such as a search suggestion.
   const numbered = typeof number === 'number';
-  const lead = numbered ? (mobile ? 28 : 32) : 52;
+  const glyphed = !numbered && !!icon;
+  const lead = numbered || glyphed ? (mobile ? 28 : 32) : 52;
+  // The art's action as drawn: only on the art, so never beside a number or a glyph.
+  const acts = showAction && !numbered && !glyphed;
+  // With only the art's action the row itself is no control, and nothing of it is drawn disabled.
+  const loose = off && acts;
+  // A row that opens and holds another control (the art's action, a trailing one) takes its tap
+  // on the title for the keyboard and a screen reader, so no button sits inside another; a pointer
+  // still taps it anywhere, and the row still draws the state.
+  const split = !off && (acts || trailing != null);
+  const rowStyle = sx('position:relative;display:flex;align-items:center;gap:' + (mobile ? '12px' : '16px') + ';padding:' + (mobile ? '8px 4px' : '10px 12px') + ';border-radius:var(--radius-xs)' + (loose ? '' : ';cursor:pointer'));
+  const titleStyle = sx('flex:1;min-width:0;font-size:var(--text-md);font-weight:var(--weight-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + fg + (split ? ';outline:none' : ''));
+  const whole = !loose && !split;
+  // The trailing control's press is its own: it never also opens the row.
+  const own = (e) => { if (e && e.stopPropagation) e.stopPropagation(); };
   return (
-    <div className="sn-int" role="button" tabIndex={off ? -1 : 0} aria-disabled={off}
-      onClick={off ? undefined : onClick} onKeyDown={off ? undefined : keys(onClick)}
-      style={sx('position:relative;display:flex;align-items:center;gap:' + (mobile ? '12px' : '16px') + ';padding:' + (mobile ? '8px 4px' : '10px 12px') + ';border-radius:var(--radius-xs);cursor:pointer')}>
+    <div className={loose ? undefined : 'sn-int'} role={whole ? 'button' : undefined} tabIndex={whole ? (off ? -1 : 0) : undefined} aria-disabled={whole ? off : undefined}
+      onClick={off ? undefined : onClick} onKeyDown={whole && !off ? keys(onClick) : undefined}
+      style={rowStyle}>
       {numbered ? (
         <div style={sx('width:' + lead + 'px;flex-shrink:0;text-align:center;font-size:var(--text-md);font-variant-numeric:tabular-nums;color:' + (nowPlaying ? 'var(--play-ink)' : muted))}>{number}</div>
+      ) : glyphed ? (
+        <span aria-hidden="true" style={sx("width:" + lead + "px;flex-shrink:0;text-align:center;font-family:'Material Symbols Rounded';font-size:var(--icon-sm);line-height:1;font-variation-settings:'FILL' 0,'wght' 400;color:" + muted)}>{icon}</span>
       ) : (
       <div className="rr-art" data-always={mobile ? 'true' : 'false'} style={sx('position:relative;width:52px;height:52px;flex-shrink:0')}>
         <div style={sx('position:relative;overflow:hidden;width:52px;height:52px;border-radius:' + (mobile ? '8px' : '6px'))}>
           {CoverArt && <CoverArt src={image} />}
         </div>
-        {showAction && (
+        {acts && (
           <div className="rr-act sn-int" role="button" tabIndex={0} onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); act(e); }}
             onKeyDown={keys((e) => { e.stopPropagation(); act(e); })}
             aria-label={failed ? 'Retry' : (spinning || queued ? 'Cancel request' : 'Play')}
@@ -77,18 +95,20 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
       )}
       <div style={sx('flex:1;min-width:0;display:flex;flex-direction:column;gap:3px')}>
         <div style={sx('display:flex;align-items:center;gap:var(--spacing-md)')}>
-          <div style={sx('flex:1;min-width:0;font-size:var(--text-md);font-weight:var(--weight-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + fg)}>{title}</div>
+          {split
+            ? <div role="button" tabIndex={0} onKeyDown={keys(onClick)} style={titleStyle}>{title}</div>
+            : <div style={titleStyle}>{title}</div>}
           {mobile && statusPill}
-          {mobile && trailing}
+          {mobile && trailing != null && <span style={sx('display:contents')} onClick={own}>{trailing}</span>}
         </div>
         <div style={sx('font-size:var(--text-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + muted)}>{meta}</div>
         {detail && <div style={sx('font-size:var(--text-sm);line-height:var(--leading-sm);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:' + fg)}>{detail}</div>}
       </div>
       {!mobile && statusPill}
-      {!mobile && trailing}
+      {!mobile && trailing != null && <span style={sx('display:contents')} onClick={own}>{trailing}</span>}
       {/* Inset to the text column, so the artwork column reads as one continuous edge. */}
       {divider && <div aria-hidden="true" style={sx('position:absolute;bottom:0;right:' + (mobile ? '4px' : '12px') + ';left:' + ((mobile ? 16 : 28) + lead) + 'px' + ';height:1px;background:var(--surface-border)')} />}
-      {StateLayer && <StateLayer disabled={off} />}
+      {!loose && StateLayer && <StateLayer disabled={off} />}
     </div>
   );
 }

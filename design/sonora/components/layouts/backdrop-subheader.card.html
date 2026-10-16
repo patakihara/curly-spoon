@@ -40,7 +40,7 @@ function Cell({caption, head, offset}) {
       <FrontLayer scroll={false} subheader={head}>
         <div style={{padding:'var(--spacing-lg) var(--grid-margin) 0',marginTop:offset,display:'flex',flexDirection:'column',gap:'var(--spacing-sm)'}}>
           <SectionHeader title="Recently played" platform="desktop" />
-          {TRACKS.map((t) => <ResultRow key={t.title} title={t.title} meta={t.meta} onClick={() => {}} />)}
+          {TRACKS.map((t) => <ResultRow key={t.title} title={t.title} meta={t.meta} onClick={() => {}} onAction={() => {}} />)}
         </div>
       </FrontLayer>
     </div>

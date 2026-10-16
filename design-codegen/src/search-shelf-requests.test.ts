@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PageTree } from './page.js';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { readNav } from './nav.js';
 import { APP_DIR, REPO_ROOT } from './outputs.js';
 import { framePage, framed } from './shell.js';
 import { bindings, dataRoots, elements, readPage, type Element } from './test-pages.js';
@@ -50,7 +51,7 @@ describe('Search', () => {
   const frame = framePage(tree);
   const found = rows(tree);
 
-  it('[M0.canvas] binds only its own query, filters and results', () => {
+  it('[M0.canvas] binds only its own query, filters, suggestions and results', () => {
     expect(dataRoots(tree)).toEqual([
       'activeFilters',
       'kinds',
@@ -58,6 +59,7 @@ describe('Search', () => {
       'outside',
       'placeholder',
       'query',
+      'suggestions',
       'top',
     ]);
     expect(bindings(tree).filter((p) => p.startsWith('shell.'))).toEqual([]);
@@ -97,10 +99,141 @@ describe('Search', () => {
   });
 
   it('[M0.canvas] shows the single top result first, then your library, then outside it', () => {
-    expect(sections(tree)).toEqual(['Top result', 'In your library', 'Not in your library']);
-    const top = found.filter(({ row }) => JSON.stringify(row.props.title).includes('"top"'));
+    expect(sections(tree)).toEqual([
+      undefined,
+      'Top result',
+      'In your library',
+      'Not in your library',
+    ]);
+    const results = found.filter((r) => r.of !== 'data.suggestions');
+    const top = results.filter(({ row }) => JSON.stringify(row.props.title).includes('"top"'));
     expect(top).toHaveLength(1);
-    expect(found[0]).toBe(top[0]);
+    expect(results[0]).toBe(top[0]);
+  });
+
+  /** PageBody's children: what the page draws in each state. */
+  const body = () => {
+    const page = frame.content.find((c) => c.kind === 'element' && c.component === 'PageBody');
+    return page !== undefined && 'children' in page ? page.children : [];
+  };
+  const when = (state: string) =>
+    body().filter(
+      (c): c is Extract<PageTree, { kind: 'when' }> => c.kind === 'when' && c.state === state,
+    );
+
+  it('types the query in its field and runs the search when the field is submitted', () => {
+    const field = elements(frame.controls).find((e) => e.component === 'SearchField');
+    expect(field?.props.onChange).toEqual({ kind: 'query' });
+    expect(field?.props.onSubmit).toEqual({ kind: 'query' });
+  });
+
+  it('lists suggestions first while typing, each choice running the search with its text', () => {
+    expect(body()[0]).toMatchObject({ kind: 'when', state: 'suggest' });
+    const [suggest] = when('suggest');
+    const held = elements(suggest);
+    expect(held.map((e) => e.component)).toEqual(['Section', 'ResultRow']);
+    expect(held[0]!.props.title).toBeUndefined();
+    const listed = found.filter((r) => r.of === 'data.suggestions');
+    expect(listed).toHaveLength(1);
+    const row = listed[0]!.row;
+    expect(row).toBe(held[1]);
+    expect(row.props.title).toEqual({ kind: 'binding', path: ['s', 'title'] });
+    expect(row.props.meta).toEqual({ kind: 'binding', path: ['s', 'meta'] });
+    expect(row.props.onClick).toEqual({
+      kind: 'open',
+      page: 'search',
+      params: { q: ['s', 'query'] },
+    });
+    expect(row.props.onAction).toBeUndefined();
+    const suggestions = data.suggestions as Row[];
+    expect(suggestions.length).toBeGreaterThan(0);
+    for (const s of suggestions)
+      for (const key of ['title', 'meta', 'query']) expect(typeof s[key], key).toBe('string');
+  });
+
+  it('draws the results, all three sections of them, only once the search has run', () => {
+    expect(body().map((c) => (c.kind === 'when' ? c.state : c.kind))).toEqual([
+      'suggest',
+      'empty',
+      'failed',
+      'full',
+    ]);
+    const [full] = when('full');
+    expect(
+      full!.children.map((c) =>
+        c.kind === 'element' && c.props.title?.kind === 'literal' ? c.props.title.value : c.kind,
+      ),
+    ).toEqual(['Top result', 'In your library', 'Not in your library']);
+  });
+
+  it.each([
+    ['empty', 'search_off', 'Nothing found', 'Nothing in your library matches this search.'],
+    ['failed', 'cloud_off', 'Search failed', 'The server did not answer this search.'],
+  ])(
+    "says, in its %s state, what happened in the page's own words, with Sonora's EmptyState alone",
+    (state, icon, title, body) => {
+      const [drawn, ...more] = when(state);
+      expect(more).toEqual([]);
+      const elements = drawn!.children.filter((c) => c.kind === 'element');
+      expect(elements.map((c) => c.component)).toEqual(['EmptyState']);
+      expect(elements[0]!.props).toEqual({
+        icon: { kind: 'literal', value: icon },
+        title: { kind: 'literal', value: title },
+        body: { kind: 'literal', value: body },
+      });
+    },
+  );
+
+  it('opens each result in your library on a tap, a song its album, and plays it from its art on its own queue', () => {
+    const owned = found.filter(
+      ({ of, row }) => of === 'data.library' || JSON.stringify(row.props.title).includes('"top"'),
+    );
+    expect(owned).toHaveLength(2);
+    for (const { row } of owned) {
+      const item = (row.props.title as { path: string[] }).path.slice(0, -1);
+      expect(row.props.onClick).toEqual({
+        kind: 'open',
+        page: { path: [...item, 'page'] },
+        params: { ref: [...item, 'ref'] },
+      });
+      expect(row.props.onAction).toEqual({
+        kind: 'play',
+        queue: { path: [...item, 'queue'] },
+        next: false,
+        source: false,
+        params: { ref: [...item, 'playRef'] },
+      });
+    }
+    const links = new Set(
+      readNav(join(REPO_ROOT, APP_DIR)).pages.find((p) => p.id === 'search')!.structure.links,
+    );
+    const KIND: Record<string, [string, string]> = {
+      Song: ['album', 'music'],
+      Album: ['album', 'music'],
+      Book: ['book', 'spoken'],
+      Episode: ['episode', 'spoken'],
+    };
+    for (const item of [data.top as Row, ...(data.library as Row[])]) {
+      const kind = String(item.meta).split(' · ')[0]!;
+      expect(KIND[kind], kind).toBeDefined();
+      expect([item.page, item.queue], String(item.title)).toEqual(KIND[kind]);
+      expect(links.has(String(item.page))).toBe(true);
+      for (const key of ['ref', 'playRef']) expect(String(item[key]), key).not.toBe('');
+    }
+    // A song opens its album, and plays itself.
+    const song = (data.library as Row[]).find((r) => String(r.meta).startsWith('Song'))!;
+    expect(song.ref).not.toBe(song.playRef);
+  });
+
+  it('leaves the rows outside your library, the kind filters and the results header unbound', () => {
+    for (const { of, row } of found.filter((r) => String(r.of).startsWith('data.outside'))) {
+      expect(row.props.onClick, String(of)).toBeUndefined();
+      expect(row.props.onAction, String(of)).toBeUndefined();
+    }
+    const kinds = elements(frame.controls).find((e) => e.component === 'ButtonGroup');
+    expect(kinds?.props.onChange).toBeUndefined();
+    const header = elements(frame.subheader).find((e) => e.component === 'SortFilterBar');
+    expect(header?.props.onClick).toBeUndefined();
   });
 
   it('[M0.canvas] gives no owned result a request action, a status or a tone', () => {

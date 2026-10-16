@@ -27,9 +27,24 @@ export interface ResultRowProps {
   actionGlyph?: string;
   /** Cover art URL. Falls back to the generated gradient when omitted. */
   image?: string;
+  /**
+   * Material Symbols Rounded glyph name, leading the row in place of the art: a row with no cover
+   * of its own, such as a search suggestion ("search") or a recent search ("history"). With no art
+   * there is no art action. Ignored beside `number`.
+   */
+  icon?: string;
   platform?: 'desktop' | 'mobile';
-  /** Without it the row is drawn disabled. */
+  /**
+   * Without it the row is drawn disabled, unless it has `onAction`: then the row is no control,
+   * and only its art acts. A row holding another control (`onAction`, `trailing`) takes its tap
+   * on the title for the keyboard and a screen reader, so no control sits inside another; a
+   * pointer taps it anywhere.
+   */
   onClick?: () => void;
+  /**
+   * The art's action: play, or cancel or retry a request, as the status says. Without it the art
+   * draws no action; the row's `onClick` never stands in for it.
+   */
   onAction?: () => void;
   /** Hairline separator along the bottom, inset to the text column. Set on all but the last row of a list. */
   divider?: boolean;

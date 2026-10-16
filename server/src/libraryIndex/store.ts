@@ -3,7 +3,9 @@
  * `updated_at` say which rows a run really touched.
  */
 import { createHash } from 'node:crypto';
+import { searchText, writeSearchItem } from '../search/items.js';
 import type { Db } from '../store/connection.js';
+import { statement } from '../store/statements.js';
 import type {
   IndexKind,
   IndexRow,
@@ -89,9 +91,10 @@ function contentHash(row: IndexRow): string {
 
 function upsertRow(db: Db, row: IndexRow, now: number, counts: IndexCounts): void {
   const hash = contentHash(row);
-  const existing = db
-    .prepare('SELECT content_hash FROM index_items WHERE source = ? AND upstream_id = ?')
-    .get(row.source, row.id) as { content_hash: string } | undefined;
+  const existing = statement(
+    db,
+    'SELECT content_hash FROM index_items WHERE source = ? AND upstream_id = ?',
+  ).get(row.source, row.id) as { content_hash: string } | undefined;
   if (existing?.content_hash === hash) {
     counts.unchanged += 1;
     return;
@@ -118,7 +121,8 @@ function upsertRow(db: Db, row: IndexRow, now: number, counts: IndexCounts): voi
     now,
   };
   if (existing === undefined) {
-    db.prepare(
+    statement(
+      db,
       `INSERT INTO index_items (source, upstream_id, kind, parent_id, library_id, title, creators,
          series, genres, position, disc, duration, year, published_at, upstream_version,
          episode_order, has_art, content_hash, version, created_at, updated_at)
@@ -129,7 +133,8 @@ function upsertRow(db: Db, row: IndexRow, now: number, counts: IndexCounts): voi
     counts.inserted += 1;
   } else {
     // An UPDATE, never a REPLACE: replacing would delete the row and cascade to its children.
-    db.prepare(
+    statement(
+      db,
       `UPDATE index_items SET kind = @kind, parent_id = @parent_id, library_id = @library_id,
          title = @title, creators = @creators, series = @series, genres = @genres,
          position = @position, disc = @disc, duration = @duration, year = @year,
@@ -137,17 +142,19 @@ function upsertRow(db: Db, row: IndexRow, now: number, counts: IndexCounts): voi
          episode_order = @episode_order, has_art = @has_art, content_hash = @content_hash, version = version + 1, updated_at = @now
        WHERE source = @source AND upstream_id = @upstream_id`,
     ).run(values);
-    db.prepare('DELETE FROM index_ids WHERE source = ? AND upstream_id = ?').run(
+    statement(db, 'DELETE FROM index_ids WHERE source = ? AND upstream_id = ?').run(
       row.source,
       row.id,
     );
     counts.updated += 1;
   }
-  const addId = db.prepare(
+  const addId = statement(
+    db,
     'INSERT INTO index_ids (source, upstream_id, scheme, value) VALUES (?, ?, ?, ?)',
   );
   for (const [scheme, value] of Object.entries(row.ids))
     addId.run(row.source, row.id, scheme, value);
+  writeSearchItem(db, row, searchText(row));
 }
 
 /**
@@ -159,10 +166,11 @@ export function applyTree(db: Db, tree: IndexTree, now: number, counts: IndexCou
     upsertRow(db, tree.top, now, counts);
     for (const child of tree.children) upsertRow(db, child, now, counts);
     const kept = new Set(tree.children.map((c) => c.id));
-    const stored = db
-      .prepare('SELECT upstream_id FROM index_items WHERE source = ? AND parent_id = ?')
-      .all(tree.top.source, tree.top.id) as { upstream_id: string }[];
-    const remove = db.prepare('DELETE FROM index_items WHERE source = ? AND upstream_id = ?');
+    const stored = statement(
+      db,
+      'SELECT upstream_id FROM index_items WHERE source = ? AND parent_id = ?',
+    ).all(tree.top.source, tree.top.id) as { upstream_id: string }[];
+    const remove = statement(db, 'DELETE FROM index_items WHERE source = ? AND upstream_id = ?');
     for (const { upstream_id: id } of stored) {
       if (!kept.has(id)) counts.removed += remove.run(tree.top.source, id).changes;
     }
@@ -216,12 +224,14 @@ export function itemsOutside(
 /** Removes one item; its children, external ids and sync state go with it. */
 export function removeItem(db: Db, source: IndexSource, id: string, counts: IndexCounts): void {
   db.transaction(() => {
-    const children = db
-      .prepare('SELECT COUNT(*) AS n FROM index_items WHERE source = ? AND parent_id = ?')
-      .get(source, id) as { n: number };
-    const removed = db
-      .prepare('DELETE FROM index_items WHERE source = ? AND upstream_id = ?')
-      .run(source, id).changes;
+    const children = statement(
+      db,
+      'SELECT COUNT(*) AS n FROM index_items WHERE source = ? AND parent_id = ?',
+    ).get(source, id) as { n: number };
+    const removed = statement(
+      db,
+      'DELETE FROM index_items WHERE source = ? AND upstream_id = ?',
+    ).run(source, id).changes;
     counts.removed += removed === 0 ? 0 : removed + children.n;
   })();
 }

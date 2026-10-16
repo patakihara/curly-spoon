@@ -40,26 +40,68 @@
     }
   ],
   "activeFilters": "All kinds",
+  "suggestions": [
+    {
+      "title": "Salt and Static",
+      "meta": "Album · Soul Vertex",
+      "query": "Salt and Static",
+      "icon": "search"
+    },
+    {
+      "title": "Salt Water",
+      "meta": "Song · Deep Inertia",
+      "query": "Salt Water",
+      "icon": "search"
+    },
+    {
+      "title": "The Saltwater Diaries",
+      "meta": "Book · Adam Rivers",
+      "query": "The Saltwater Diaries",
+      "icon": "search"
+    },
+    {
+      "title": "salt road",
+      "meta": "Recent",
+      "query": "salt road",
+      "icon": "history"
+    }
+  ],
   "top": {
     "title": "Salt and Static",
     "meta": "Album · Soul Vertex · 11 tracks",
-    "image": "/art/salt-and-static.jpg"
+    "image": "/art/salt-and-static.jpg",
+    "page": "album",
+    "ref": "salt-and-static",
+    "playRef": "salt-and-static",
+    "queue": "music"
   },
   "library": [
     {
       "title": "Salt Water",
       "meta": "Song · Deep Inertia · Heartbeats in Silence",
-      "image": "/art/deep-inertia.jpg"
+      "image": "/art/deep-inertia.jpg",
+      "page": "album",
+      "ref": "heartbeats-in-silence",
+      "playRef": "salt-water",
+      "queue": "music"
     },
     {
       "title": "The Saltwater Diaries",
       "meta": "Book · Adam Rivers · 8 h 20 m",
-      "image": "/art/foggy-trails.jpg"
+      "image": "/art/foggy-trails.jpg",
+      "page": "book",
+      "ref": "the-saltwater-diaries",
+      "playRef": "the-saltwater-diaries",
+      "queue": "spoken"
     },
     {
       "title": "Tears of Ice",
       "meta": "Song · Deep Inertia · “salt on my tongue, ice in my hands”",
-      "image": "/art/tears-of-ice.jpg"
+      "image": "/art/tears-of-ice.jpg",
+      "page": "album",
+      "ref": "tears-of-ice",
+      "playRef": "tears-of-ice-song",
+      "queue": "music"
     }
   ],
   "outside": {

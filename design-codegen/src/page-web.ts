@@ -7,7 +7,10 @@
  * drawn over or full screen, and the side panel too, so a tab switch never redraws the player.
  * What is loaded, `shell.playing` on the canvas, is the web player's (`web/src/player`):
  * `usePlaying()` in a page, the `playing` the shell hands each layout's parts, the mini-player
- * drawn only once something is loaded. A `<Play>` plays through `usePlay()`.
+ * drawn only once something is loaded. A `<Play>` plays through `usePlay()`, and a `<Query />` is
+ * the search draft's `useQuery()` (`web/src/query`); a back layer or subheader holding one, or an
+ * `<Open>` and so the router's `useNavigate()`, is drawn as a component of its own, since the
+ * shell calls the frame's parts outside any page.
  */
 import { LoginQuery, login } from '@auralis/schema';
 import { componentName, splitRoute, type Nav, type NavPage } from './nav.js';
@@ -65,6 +68,8 @@ export interface WebComponents {
  */
 type Ctx = WebComponents & {
   paths: Map<string, string>;
+  /** Each page's query names, from its route: `q` for `/search?q`. */
+  queries: Map<string, string[]>;
   wired: Map<PageTree, Record<string, string>>;
   /** The shell's elements showing what is loaded, drawn only once something is. */
   loaded: Set<PageTree>;
@@ -91,6 +96,37 @@ const showsLoaded = (node: PageTree) =>
 /** Whether an element plays an item, a `<Play>` in one of its handler props. */
 const plays = (node: PageTree) =>
   node.kind === 'element' && Object.values(node.props).some((v) => v.kind === 'play');
+
+/** Whether an element plays each item on the queue its data names. */
+const playsBound = (node: PageTree) =>
+  node.kind === 'element' &&
+  Object.values(node.props).some((v) => v.kind === 'play' && typeof v.queue !== 'string');
+
+/** Whether an element holds the search query, a `<Query />` in one of its handler props. */
+const queries = (node: PageTree) =>
+  node.kind === 'element' && Object.values(node.props).some((v) => v.kind === 'query');
+
+/** The draft's handler each prop a `<Query />` goes on takes: typing, and submitting. */
+const QUERY_HANDLERS: Readonly<Record<string, string>> = {
+  onChange: 'query.type',
+  onSubmit: 'query.submit',
+};
+
+/**
+ * An Open's bound values, split into its page's route parameters and its query names: a page
+ * bound from data takes its route parameters alone.
+ */
+function openParams(
+  value: Extract<PropValue, { kind: 'open' }>,
+  queryNames: Map<string, string[]>,
+) {
+  const names = typeof value.page === 'string' ? (queryNames.get(value.page) ?? []) : [];
+  const entries = Object.entries(value.params);
+  return {
+    path: entries.filter(([k]) => !names.includes(k)),
+    query: entries.filter(([k]) => names.includes(k)),
+  };
+}
 
 /**
  * Each of the shell's actions on the handler prop `prop`, as the web code doing it through
@@ -163,19 +199,23 @@ function propLines(
   choice: boolean,
 ): string[] {
   if (value.kind === 'open') {
-    const params = Object.entries(value.params).map(([k, path]) => `${k}: ${path.join('.')}`);
+    const bound = openParams(value, components.queries);
+    const spelled = (entries: [string, string[]][]) =>
+      entries.map(([k, path]) => `${k}: ${path.join('.')}`).join(', ');
     // A page bound to the item's data looks its route up among the pages this page may open.
     const path =
       typeof value.page === 'string'
         ? `'${components.paths.get(value.page)!}'`
         : `routes[${value.page.path.join('.')}]!`;
-    if (params.length === 0) return [`${name}={() => navigate(${path})}`];
+    let to = bound.path.length === 0 ? path : `generatePath(${path}, { ${spelled(bound.path)} })`;
+    // The route's query names it binds follow as a search string, `/search?q=salt+road`.
+    if (bound.query.length > 0) to += ` + '?' + new URLSearchParams({ ${spelled(bound.query)} })`;
+    if (Object.keys(value.params).length === 0) return [`${name}={() => navigate(${to})}`];
     // A link whose ref is empty has no page to open: the prop is left undefined, so Sonora draws
     // it as plain text, never a link to an empty or Not found page.
     const given = Object.values(value.params)
       .map((p) => p.join('.'))
       .join(' && ');
-    const to = `generatePath(${path}, { ${params.join(', ')} })`;
     return [`${name}={${given} ? () => navigate(${to}) : undefined}`];
   }
   // A Play plays its item through the web's player, now, next or as a list on its own: the
@@ -184,7 +224,19 @@ function propLines(
     const ref = value.params['ref'];
     if (ref === undefined) throw new Error(`${owner}.${name}: Play needs ref={…}`);
     const mode = value.next ? 'next' : value.source ? 'source' : 'now';
-    return [`${name}={play(${pathCode(ref)}, '${value.queue}', '${mode}')}`];
+    // A queue bound from data is one the check has already held to the player's queues.
+    const queue =
+      typeof value.queue === 'string'
+        ? `'${value.queue}'`
+        : `${pathCode(value.queue.path)} as PlayQueue`;
+    return [`${name}={play(${pathCode(ref)}, ${queue}, '${mode}')}`];
+  }
+  // The search draft types on a field's onChange and runs the search on its onSubmit.
+  if (value.kind === 'query') {
+    const handler = QUERY_HANDLERS[name];
+    if (handler === undefined)
+      throw new Error(`${owner}.${name}: Query goes on onChange or onSubmit`);
+    return [`${name}={${handler}}`];
   }
   // No request endpoint exists yet. A handler doing nothing would draw a dead control as
   // enabled, so the prop is left out and Sonora draws the control disabled.
@@ -320,17 +372,64 @@ const binding = (path: string): PropValue => ({ kind: 'binding', path: path.spli
 /** What a back layer or subheader may use of what the shell draws it with, in this order. */
 const CONTEXT = ['platform', 'leading'] as const;
 
+/** The names a frame part's code uses: the page's data, and what the shell draws it with. */
+function partUses(lines: string[]) {
+  const code = lines.join('\n');
+  const uses = (word: string) => new RegExp(`\\b${word}\\b`).test(code);
+  return { data: uses('data'), context: CONTEXT.filter(uses) };
+}
+
 /**
  * One of the frame's parts, `back` or `subheader`, as a function of the page's data and what the
  * shell draws it with, taking only the names its code uses.
  */
 function framePart(name: string, lines: string[]): string[] {
-  const code = lines.join('\n');
-  const uses = (word: string) => new RegExp(`\\b${word}\\b`).test(code);
-  const context = CONTEXT.filter(uses);
-  const args = context.length > 0 ? `data, { ${context.join(', ')} }` : uses('data') ? 'data' : '';
+  const { data, context } = partUses(lines);
+  const args = context.length > 0 ? `data, { ${context.join(', ')} }` : data ? 'data' : '';
   if (lines.length === 1) return [`  ${name}: (${args}) => ${lines[0]!.trim()},`];
   return [`  ${name}: (${args}) => (`, ...lines, '  ),'];
+}
+
+/**
+ * A frame part calling hooks, `hooks`, the router's to open a page or the search draft's, as a
+ * component of its own, `<Page>Back`: the shell calls the frame's parts as plain functions,
+ * outside any page, where no hook may run. Its declaration, and the frame's entry drawing it.
+ */
+function framePartComponent(
+  name: string,
+  component: string,
+  dataType: string,
+  hooks: string[],
+  lines: string[],
+): { declaration: string[]; entry: string[] } {
+  const { data, context } = partUses(lines);
+  const props = [
+    ...(data ? ['data'] : []),
+    ...(context.length > 0 ? [`context: { ${context.join(', ')} }`] : []),
+  ];
+  const types = [
+    ...(data ? [`data: ${dataType}`] : []),
+    ...(context.length > 0 ? ['context: FrameContext'] : []),
+  ];
+  const signature = props.length === 0 ? '' : `{ ${props.join(', ')} }: { ${types.join('; ')} }`;
+  const args = context.length > 0 ? `${data ? 'data' : '_data'}, context` : data ? 'data' : '';
+  const given = [
+    ...(data ? ['data={data}'] : []),
+    ...(context.length > 0 ? ['context={context}'] : []),
+  ];
+  return {
+    declaration: [
+      `/** The page's ${name === 'back' ? 'back layer' : 'subheader'}, a component of its own since it calls hooks: the shell calls the frame's parts as plain functions, where no hook may run. */`,
+      `function ${component}(${signature}) {`,
+      ...hooks.map((hook) => `  ${hook}`),
+      '  return (',
+      ...lines,
+      '  );',
+      '}',
+      '',
+    ],
+    entry: [`  ${name}: (${args}) => <${component}${given.map((g) => ' ' + g).join('')} />,`],
+  };
 }
 
 /**
@@ -413,6 +512,7 @@ export function generateWebPage(
   const components: Ctx = {
     ...webComponents,
     paths,
+    queries: new Map(nav.pages.map((p) => [p.id, splitRoute(p.route).query])),
     wired: new Map(),
     loaded: new Set(),
     gated: new Map(),
@@ -494,8 +594,10 @@ export function generateWebPage(
   const fromPlayer = [
     ...(usesPlay ? ['usePlay'] : []),
     ...(usesPlaying ? ['usePlaying'] : []),
+    ...(inPage(playsBound) ? ['type PlayQueue'] : []),
     ...(sheet ? [] : ['type Playing']),
   ];
+  const usesQuery = inPage(queries);
   const used = new Set<string>();
   for (const t of own) drawn(t, used);
   for (const [, parts] of chromes) {
@@ -523,11 +625,13 @@ export function generateWebPage(
   if (typed) react.push("import type { ComponentProps } from 'react';");
   const opening = (n: PageTree) =>
     n.kind === 'element' && Object.values(n.props).some((v) => v.kind === 'open');
-  const opens = some(root, opening);
+  const opens = inPage(opening);
   const bound = inPage(
     (n) =>
       n.kind === 'element' &&
-      Object.values(n.props).some((v) => v.kind === 'open' && Object.keys(v.params).length > 0),
+      Object.values(n.props).some(
+        (v) => v.kind === 'open' && openParams(v, components.queries).path.length > 0,
+      ),
   );
   const routed = inPage(
     (n) =>
@@ -536,12 +640,27 @@ export function generateWebPage(
   );
   const router = [...(bound ? ['generatePath'] : []), ...(opens ? ['useNavigate'] : [])];
   if (router.length > 0) react.push(`import { ${router.join(', ')} } from 'react-router';`);
+  // The back layer and subheader, each a function of the data, or a component of its own where it
+  // calls a hook: the router's, to open a page, or the search draft's.
+  const frameParts = (sheet ? [] : [['back', back!] as const, ['subheader', subheader] as const])
+    .filter((entry): entry is readonly ['back' | 'subheader', PageTree] => entry[1] !== undefined)
+    .map(([part, tree]) => {
+      const lines = render(tree, '    ', components);
+      const hooks = [
+        ...(some(tree, opening) ? ['const navigate = useNavigate();'] : []),
+        ...(some(tree, queries) ? ['const query = useQuery();'] : []),
+      ];
+      if (hooks.length === 0) return { declaration: [], entry: framePart(part, lines) };
+      const component = `${name}${part === 'back' ? 'Back' : 'Subheader'}`;
+      return framePartComponent(part, component, `${name}Data`, hooks, lines);
+    });
+  const takesContext = frameParts.some((p) => p.declaration.join('\n').includes('FrameContext'));
   return [
     `// ${APP_NOTE}`,
     ...react,
     sheet
       ? "import { PANEL, useLayout, type Platform } from '../nav/platform';"
-      : "import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';",
+      : `import { PLATFORM, useLayout, type Chrome, ${takesContext ? 'type FrameContext, ' : ''}type LayoutId, type PageFrame } from '../nav/platform';`,
     ...(sheet
       ? [`import { InPanel${goes ? ', useShellNav' : ''} } from '../../shell-nav';`]
       : ["import type { ShellNav } from '../../shell-nav';"]),
@@ -550,6 +669,7 @@ export function generateWebPage(
       : fromPlayer.every((name) => name.startsWith('type '))
         ? [`import type { ${fromPlayer.map((n) => n.slice(5)).join(', ')} } from '../../player';`]
         : [`import { ${fromPlayer.join(', ')} } from '../../player';`]),
+    ...(usesQuery ? ["import { useQuery } from '../../query';"] : []),
     `import { ${[...used].sort().join(', ')} } from '../ui/index.js';`,
     '',
     `const placeholder = ${JSON.stringify(placeholder, null, 2)};`,
@@ -587,6 +707,7 @@ export function generateWebPage(
         ]),
     `export type ${name}Data = typeof placeholder;`,
     '',
+    ...frameParts.flatMap((p) => p.declaration),
     ...(sheet
       ? []
       : [
@@ -594,10 +715,7 @@ export function generateWebPage(
           `export const frame: PageFrame<${name}Data> = {`,
           '  placeholder,',
           '  chrome: CHROME,',
-          ...framePart('back', render(back!, '    ', components)),
-          ...(subheader === undefined
-            ? []
-            : framePart('subheader', render(subheader, '    ', components))),
+          ...frameParts.flatMap((p) => p.entry),
           '};',
           '',
         ]),
@@ -614,9 +732,10 @@ export function generateWebPage(
           "  const platform: Platform = inPanel || PANEL[useLayout()] ? 'desktop' : 'mobile';",
         ]
       : ['  const platform = PLATFORM[useLayout()];']),
-    ...(opens ? ['  const navigate = useNavigate();'] : []),
+    ...(some(root, opening) ? ['  const navigate = useNavigate();'] : []),
     ...(sheet && goes ? ['  const go = useShellNav();'] : []),
     ...(usesPlay ? ['  const play = usePlay();'] : []),
+    ...(some(root, queries) ? ['  const query = useQuery();'] : []),
     ...(usesPlaying
       ? ['  const playing = usePlaying();', '  if (playing === null) return null;']
       : []),

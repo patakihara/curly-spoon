@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { foldName, pickUpstreamUser } from './mapping.js';
+import { foldName } from '../text/fold.js';
+import { pickUpstreamUser } from './mapping.js';
 
 const users = [
   { id: 'u1', username: 'Kara' },

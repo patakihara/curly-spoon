@@ -1,8 +1,9 @@
+import { type AddressInfo, connect, type Socket } from 'node:net';
 import { health, Me, Redirect, SetupBody, type Route } from '@auralis/schema';
 import { z } from 'zod';
-import Fastify from 'fastify';
+import Fastify, { type FastifyInstance } from 'fastify';
 import { describe, expect, it } from 'vitest';
-import { Refusal, serve, serveStream } from './route.js';
+import { clientGone, Refusal, serve, serveStream } from './route.js';
 
 const echo = {
   method: 'POST',
@@ -225,5 +226,69 @@ describe('serving a declared route', () => {
     }
     expect(ranges).toEqual([undefined, undefined]);
     await app.close();
+  });
+});
+
+describe('knowing the client has gone', () => {
+  /**
+   * Serves GET /gone on a real socket: `before` runs as a hook ahead of the handler, `during`
+   * inside it after the signal is taken; what the signal said is read once the response closes.
+   */
+  async function goneApp(steps: {
+    before?: (socket: Socket) => Promise<void>;
+    during?: (socket: Socket) => Promise<void>;
+  }) {
+    const app: FastifyInstance = Fastify();
+    let signal!: AbortSignal;
+    let done!: () => void;
+    const answered = new Promise<void>((resolve) => (done = resolve));
+    app.addHook('onRequest', async (_request, reply) => {
+      reply.raw.once('close', done);
+    });
+    app.get('/gone', {
+      preHandler: async (request) => steps.before?.(request.raw.socket),
+      handler: async (request, reply) => {
+        signal = clientGone(reply);
+        await steps.during?.(request.raw.socket);
+        return { ok: true };
+      },
+    });
+    await app.listen({ port: 0, host: '127.0.0.1' });
+    const { port } = app.server.address() as AddressInfo;
+    return {
+      /** Asks, and goes once `leave` says so; resolves with whether the signal had aborted. */
+      ask: async (leave: (client: Socket) => void) => {
+        const client = connect(port, '127.0.0.1');
+        client.on('error', () => undefined);
+        client.write('GET /gone HTTP/1.1\r\nHost: a\r\n\r\n');
+        leave(client);
+        await answered;
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        client.destroy();
+        await app.close();
+        return signal.aborted;
+      },
+    };
+  }
+  const closed = (socket: Socket) =>
+    new Promise<void>((resolve) => socket.once('close', () => resolve()));
+
+  it('aborts when the client goes while the handler is still working', async () => {
+    const { ask } = await goneApp({ during: closed });
+    expect(
+      await ask((client) => client.once('connect', () => setTimeout(() => client.destroy(), 20))),
+    ).toBe(true);
+  });
+
+  it('is aborted from the start when the client went while an earlier hook was waiting', async () => {
+    const { ask } = await goneApp({ before: closed });
+    expect(
+      await ask((client) => client.once('connect', () => setTimeout(() => client.destroy(), 20))),
+    ).toBe(true);
+  });
+
+  it('never aborts once the answer was sent, though the client goes after', async () => {
+    const { ask } = await goneApp({});
+    expect(await ask((client) => client.once('data', () => client.destroy()))).toBe(false);
   });
 });

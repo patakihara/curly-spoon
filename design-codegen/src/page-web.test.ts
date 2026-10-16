@@ -759,3 +759,136 @@ describe('[M1.shell] what a page draws from its data alone, on the web', () => {
     expect(spied.match(/sections\.includes/g)).toHaveLength(1);
   });
 });
+
+describe('[M2.search] a page holding the search query, on the web', () => {
+  const field =
+    '<SearchField value={data.query} onChange={<Query />} onSubmit={<Query />} autoFocus />';
+  const inBody = generateWebPage(
+    parsePage(
+      `export default function Book({ data }) {
+  return <PageBody>${field}</PageBody>;
+}
+`,
+      'book',
+    ),
+    'book',
+    { query: 'salt' },
+    { platformed: new Set(['SearchField']) },
+    shellOf('book'),
+  );
+  const inBack = generateWebPage(
+    parsePage(
+      `export default function Books({ data }) {
+  return (
+    <BackdropShell back={<BackLayer controls={${field}} />}>
+      <PageBody />
+    </BackdropShell>
+  );
+}
+`,
+      'books',
+    ),
+    'books',
+    { query: 'salt' },
+    { platformed: new Set(['SearchField', 'BackLayer', 'PageBody', 'MiniPlayer']) },
+    shellOf('books'),
+  );
+
+  it("types into the query, and submits it, through the web's search draft", () => {
+    expect(inBody).toContain("import { useQuery } from '../../query';");
+    expect(inBody).toContain('  const query = useQuery();');
+    expect(inBody).toContain(
+      '<SearchField value={data.query} onChange={query.type} onSubmit={query.submit} autoFocus={true} platform={platform} />',
+    );
+    expect(out).not.toContain('useQuery');
+  });
+
+  it('draws a back layer holding the query as a component of its own, since the shell draws it outside the page', () => {
+    expect(inBack).toContain("import { useQuery } from '../../query';");
+    expect(inBack).toContain(
+      'function BooksBack({ data, context: { platform, leading } }: { data: BooksData; context: FrameContext }) {',
+    );
+    expect(inBack).toContain(
+      '  back: (data, context) => <BooksBack data={data} context={context} />,',
+    );
+    expect(inBack).toMatch(
+      /function BooksBack[^\n]*\n {2}const query = useQuery\(\);\n {2}return \(\n {4}<BackLayer/,
+    );
+    expect(inBack).toContain('onChange={query.type} onSubmit={query.submit}');
+    expect(inBack).toContain('type FrameContext');
+    // The page itself holds no query: only its back layer does.
+    expect(inBack.slice(inBack.indexOf('export default function'))).not.toContain('useQuery');
+  });
+});
+
+describe("[M2.search] a page opening another with its route's query, on the web", () => {
+  const searchNav = parseNav({
+    ...JSON.parse(JSON.stringify(nav)),
+    pages: [
+      ...nav.pages.map((p) => ({ ...p, params: p.params })),
+      { ...nav.pages[0]!, id: 'search', route: '/search?q', title: 'Search', close: 'none' },
+    ],
+  });
+  const suggesting = generateWebPage(
+    parsePage(
+      `export default function Search({ data }) {
+  return (
+    <Each of={data.suggestions} as="s">
+      <ResultRow title={s.title} onClick={<Open page="search" q={s.query} />} />
+      <ResultRow title={s.title} onAction={<Open page="search" />} />
+    </Each>
+  );
+}
+`,
+      'search',
+    ),
+    'search',
+    { suggestions: [{ title: 'Salt Road', query: 'salt road' }] },
+    { platformed: new Set() },
+    { ...shellOf('books'), nav: searchNav, page: searchNav.pages.find((p) => p.id === 'search')! },
+  );
+
+  it('navigates to the route with the bound query, encoded as a search string', () => {
+    const handler = /onClick=\{s\.query \? (\(\) => navigate\(.*\)) : undefined\}/.exec(
+      suggesting,
+    )?.[1];
+    expect(handler).toBeDefined();
+    let went = '';
+    const run = new Function('navigate', 's', `(${handler!})()`) as (
+      navigate: (to: string) => void,
+      s: { query: string },
+    ) => void;
+    run((to) => (went = to), { query: 'salt & road' });
+    expect(went).toBe('/search?q=salt+%26+road');
+  });
+
+  it('opens the route alone when no query is bound, and imports no generatePath without a path parameter', () => {
+    expect(suggesting).toContain("onAction={() => navigate('/search')}");
+    expect(suggesting).not.toContain('generatePath');
+  });
+});
+
+describe('[M2.search] a page playing each item on the queue its data names, on the web', () => {
+  const playing = generateWebPage(
+    parsePage(
+      `export default function Book({ data }) {
+  return <Each of={data.items} as="item"><ResultRow title={item.title} onAction={<Play ref={item.ref} queue={item.queue} />} /></Each>;
+}
+`,
+      'book',
+    ),
+    'book',
+    { items: [{ title: 'Salt Road', ref: 'abs:salt', queue: 'music' }] },
+    { platformed: new Set() },
+    shellOf('book'),
+  );
+
+  it("plays each item on its own queue through the web's player", () => {
+    expect(playing).toContain(
+      "<ResultRow title={item.title} onAction={play(item.ref, item.queue as PlayQueue, 'now')} />",
+    );
+    expect(playing).toContain(
+      "import { usePlay, type PlayQueue, type Playing } from '../../player';",
+    );
+  });
+});

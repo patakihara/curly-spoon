@@ -1,6 +1,6 @@
 ---
 page: downloads
-pageHash: 689023c04d2d373381eb523f5390987ac0729c5fea4d2706aedc72946a802184
+pageHash: 4d1405a679b17a18691a86f314b8c20462fcc3e41113422b836d6d3254ece217
 sonora: [none]
 ---
 
@@ -47,8 +47,7 @@ that a book, episode or album downloads from its page.
   a done `DownloadButton`, whose tick says "downloaded" rather than "remove".
 - Changed on purpose: a running download is a row with its status and ✕, as Requests draws a
   request in flight, not a `DownloadButton` ring beside a ring already over the art.
-- Open: rows do not open their book, episode or album yet. On a phone a `ResultRow` with a tap
-  handler shows a play overlay over its art, which would say the tap plays; no drawn page gives a
-  `ResultRow` a tap yet.
+- Open: rows do not open their book, episode or album yet. A `ResultRow`'s tap puts nothing over
+  its art, only its own art action does, so a row that opens never says it plays.
 - Open: the total is a `ValueRow` at the top of Downloaded, not a storage bar; Sonora has none.
 - Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`): the close control and the title on the page surface, no back layer. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Music lit on the rail.

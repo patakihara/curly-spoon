@@ -179,6 +179,8 @@ interface Aside {
   lists: ItemList[];
   /** The top-level lists, built from the board's own scope. */
   roots: number[];
+  /** The page's state the board draws: its `<When>`s of that state show, the rest stay hidden. */
+  state: string;
 }
 
 /** Whether an element given to a prop sits anywhere in `tree`. */
@@ -203,14 +205,9 @@ function render(
     nodes.map((n) => render(n, placeholder, aside, inner)).join('');
   const attr = (name: string, value: PropValue): string => {
     if (value.kind === 'binding') return `${kebab(name)}="{{${value.path.join('.')}}}"`;
-    // An artboard is a still that goes nowhere: an Open, a Request, a Play or a SignIn is a handler that does nothing.
-    if (
-      value.kind === 'open' ||
-      value.kind === 'request' ||
-      value.kind === 'play' ||
-      value.kind === 'signIn'
-    )
-      return `${kebab(name)}="{{navigate}}"`;
+    // An artboard is a still that goes nowhere: every handler, an Open, a Request, a Play, a SignIn
+    // or a Query, is one that does nothing.
+    if (value.kind !== 'literal' && value.kind !== 'slot') return `${kebab(name)}="{{navigate}}"`;
     if (value.kind === 'slot') {
       const slot = aside.slots.push(value.tree) - 1;
       if (each === undefined) {
@@ -242,7 +239,7 @@ function render(
       return `${open(source)}${kids(tree.children, { as: tree.as, list })}</sc-for>\n`;
     }
     case 'when':
-      return `<sc-if value="{{when.${tree.state}}}" hint-placeholder-val="{{ true }}">\n${kids(tree.children)}</sc-if>\n`;
+      return `<sc-if value="{{when.${tree.state}}}" hint-placeholder-val="{{ ${tree.state === aside.state} }}">\n${kids(tree.children)}</sc-if>\n`;
     case 'element': {
       const attrs = Object.entries(tree.props).map(([name, value]) => ' ' + attr(name, value));
       const open = `<x-import component-from-global-scope="${SONORA_NAMESPACE}.${tree.component}"${attrs.join('')}>`;
@@ -255,7 +252,8 @@ function render(
 
 /**
  * `renderVals()`'s builder for the trees set aside as slots: each element from the Sonora bundle
- * it names, with bindings read from `data`, `shell` and any Each item, and the full state shown.
+ * it names, with bindings read from `data`, `shell` and any Each item, and the board's state, the
+ * `when` before it, shown.
  */
 const BUILD = `const S = window.${SONORA_NAMESPACE} || {};
 const R = window.React;
@@ -266,7 +264,7 @@ const build = (n, scope, key) => {
   if (n.kind === 'text') return n.value;
   if (n.kind === 'binding') return at(scope, n.path);
   if (n.kind === 'fragment') return R.createElement(R.Fragment, { key }, ...kids(n.children, scope));
-  if (n.kind === 'when') return n.state === 'full' ? R.createElement(R.Fragment, { key }, ...kids(n.children, scope)) : null;
+  if (n.kind === 'when') return when[n.state] ? R.createElement(R.Fragment, { key }, ...kids(n.children, scope)) : null;
   if (n.kind === 'each') {
     return R.createElement(R.Fragment, { key }, ...(at(scope, n.of) || []).map((item, i) =>
       R.createElement(R.Fragment, { key: i }, ...kids(n.children, Object.assign({}, scope, { [n.as]: item })))));
@@ -275,7 +273,7 @@ const build = (n, scope, key) => {
   if (!C) return null;
   const props = { key };
   for (const [name, v] of Object.entries(n.props)) {
-    props[name] = v.kind === 'literal' ? v.value : v.kind === 'binding' ? at(scope, v.path) : v.kind === 'open' || v.kind === 'request' || v.kind === 'play' || v.kind === 'signIn' ? navigate : build(v.tree, scope);
+    props[name] = v.kind === 'literal' ? v.value : v.kind === 'binding' ? at(scope, v.path) : v.kind === 'slot' ? build(v.tree, scope) : navigate;
   }
   return R.createElement(C, props, ...kids(n.children, scope));
 };`;
@@ -283,6 +281,17 @@ const build = (n, scope, key) => {
 /** A tree as the builder reads it: the same shape, without source lines. */
 const bare = (tree: PageTree): unknown =>
   JSON.parse(JSON.stringify(tree, (key, value) => (key === 'line' ? undefined : value)));
+
+/** The states other than `full` that `tree`'s `<When>`s name, slots included, in document order. */
+function otherStates(tree: PageTree, into: string[] = []): string[] {
+  if (tree.kind === 'when' && tree.state !== 'full' && !into.includes(tree.state))
+    into.push(tree.state);
+  if (tree.kind === 'element')
+    for (const value of Object.values(tree.props))
+      if (value.kind === 'slot') otherStates(value.tree, into);
+  if ('children' in tree) tree.children.forEach((child) => otherStates(child, into));
+  return into;
+}
 
 /** The first menu `tree` draws, slots included, in document order: what `menus` names. */
 function firstMenu(tree: PageTree, menus: Set<string>): PageTree | undefined {
@@ -325,7 +334,8 @@ function opening(tree: PageTree, menu: PageTree): PageTree {
 /**
  * A page's artboard at a board's width. `searching` fixes the page's local search out, a still of
  * what scrolling brings; the apps leave it to the scroll. `menu` draws that menu of the page open,
- * a still of what tapping its button brings; the apps start every menu closed.
+ * a still of what tapping its button brings; the apps start every menu closed. `state` is the
+ * page's state drawn, its `<When>`s of that state shown: `full` but on a page's state boards.
  */
 function artboard(
   app: App,
@@ -333,6 +343,7 @@ function artboard(
   board: (typeof CANVAS_BOARDS)[keyof typeof CANVAS_BOARDS],
   searching = false,
   menu?: PageTree,
+  state = 'full',
 ): string {
   const entry = app.nav.pages.find((p) => p.id === page.id);
   if (entry === undefined) throw new Error(`${page.id} is not a page in nav.json`);
@@ -379,7 +390,7 @@ function artboard(
       sheetData = page.placeholder;
     }
   }
-  const aside: Aside = { slots: [], board: [], lists: [], roots: [] };
+  const aside: Aside = { slots: [], board: [], lists: [], roots: [], state };
   const markup = render(tree, data, aside).trimEnd();
   const json = (value: unknown) => JSON.stringify(value).replace(/<\/script/gi, '<\\/script');
   const preview = JSON.stringify({ $preview: { width: board.width, height: board.height } });
@@ -410,6 +421,7 @@ function artboard(
     `const shell = ${json(relativeArt(shellData(app.nav, app.shell)))};`,
     ...(sheetData === undefined ? [] : [`const sheet = ${json(relativeArt(sheetData))};`]),
     `const trees = ${json(aside.slots.map(bare))};`,
+    `const when = ${json({ [state]: true })};`,
     ...(aside.lists.length === 0 ? [] : [`const itemLists = ${json(aside.lists)};`]),
     BUILD,
     sheetData === undefined
@@ -430,7 +442,7 @@ function artboard(
           'const lists = {};',
           `${json(aside.roots)}.forEach((i) => { lists["l" + i] = items(itemLists[i], scope); });`,
         ]),
-    `return { data, shell, slots, ${aside.lists.length === 0 ? '' : 'lists, '}when: {"full":true}, navigate };`,
+    `return { data, shell, slots, ${aside.lists.length === 0 ? '' : 'lists, '}when, navigate };`,
     '}',
     '}',
     '</script>',
@@ -529,10 +541,18 @@ export function generateCanvas(app: App, sonora: SonoraInstall, now: Date): Map<
     const page = app.pages.find((p) => p.id === entry.id);
     if (page !== undefined) {
       // A page with a local search also gets a phone with it out, since only scrolling shows it,
-      // and a page with a menu a phone with its first menu open, since only a tap shows it.
+      // a page with a menu a phone with its first menu open, since only a tap shows it, and a page
+      // with states beside full a phone for each, since the apps draw full until data says not.
       const searchable = framePage(page.tree).search !== undefined;
       const menu = entry.presentation === 'sheet' ? undefined : firstMenu(page.tree, app.menus);
-      const variants = [
+      const variants: {
+        board: (typeof CANVAS_BOARDS)[keyof typeof CANVAS_BOARDS];
+        searching: boolean;
+        menu?: PageTree;
+        state?: string;
+        kind: string;
+        label: string;
+      }[] = [
         { board: phone, searching: false, kind: phone.label, label: phone.label },
         { board: desktop, searching: false, kind: desktop.label, label: desktop.label },
         // A player sheet also gets 1024 px, where the mini-player opens it as the side panel.
@@ -553,11 +573,18 @@ export function generateCanvas(app: App, sonora: SonoraInstall, now: Date): Map<
               },
             ]
           : []),
+        ...otherStates(page.tree).map((state) => ({
+          board: phone,
+          searching: false,
+          state,
+          kind: `phone-${state}`,
+          label: `phone, ${state} state`,
+        })),
       ];
-      for (const { board, searching, menu: open, kind, label } of variants) {
+      for (const { board, searching, menu: open, state, kind, label } of variants) {
         items.push({
           name: `${entry.id}.${kind}.dc.html`,
-          html: artboard(app, page, board, searching, open),
+          html: artboard(app, page, board, searching, open, state),
           w: board.width,
           h: board.height,
           title: `${entry.title} · ${label}`,

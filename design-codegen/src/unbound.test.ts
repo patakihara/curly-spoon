@@ -115,16 +115,17 @@ const drawsControl = (element: Element, prop: string) =>
   (DRAWN_WHEN[`${element.component}.${prop}`]?.(element.props) ?? true);
 
 /**
- * Whether the app binds `prop` of `element`: the shell wires it, or the page opens a page, plays
- * or starts signing in with it. Neither app has a request yet. An uncontrolled ExpandableText
- * folds itself, its whole action its own.
+ * Whether `platform`'s app binds `prop` of `element`: the shell wires it, or the page opens a page,
+ * plays or starts signing in with it, or, on the web alone, holds the search query in it. Neither
+ * app has a request yet. An uncontrolled ExpandableText folds itself, its whole action its own.
  */
-function bound(element: Element, prop: string, wired: ShellHandlers) {
+function bound(element: Element, prop: string, wired: ShellHandlers, platform: Platform) {
   if (wired.get(element)?.[prop] !== undefined) return true;
   if (element.component === 'ExpandableText' && prop === 'onToggle')
     return !('expanded' in element.props);
   const value = element.props[prop];
   if (value === undefined) return false;
+  if (value.kind === 'query') return platform === 'web';
   return value.kind === 'open' || value.kind === 'signIn' || value.kind === 'play';
 }
 
@@ -134,7 +135,7 @@ function unboundOn(page: NavPage, tree: PageTree, platform: Platform): string[] 
   const check = (key: string, list: Element[], wired: ShellHandlers) => {
     for (const element of list) {
       for (const prop of actions.get(element.component) ?? []) {
-        if (drawsControl(element, prop) && !bound(element, prop, wired))
+        if (drawsControl(element, prop) && !bound(element, prop, wired, platform))
           out.push(`${key}/${element.component}.${prop}`);
       }
     }
@@ -197,6 +198,30 @@ describe('the unbound-action ledger', () => {
   it('[M0.states/d] keeps no line for an action both apps bind, or that no page draws', () => {
     const stale = Object.keys(UNBOUND).filter((key) => !unbound.has(key));
     expect(stale).toEqual([]);
+  });
+
+  it('[M2.search] counts a field holding the search query bound on the web alone, which has the draft', () => {
+    const search = nav.pages.find((p) => p.id === 'search')!;
+    const tree = parsePage(
+      `export default function Search({ data }) {
+  return (
+    <PageBody>
+      <SearchField value={data.query} placeholder={data.placeholder} onChange={<Query />} onSubmit={<Query />} />
+    </PageBody>
+  );
+}
+`,
+      'search',
+    );
+    const field = (platform: Platform) =>
+      unboundOn(search, tree, platform)
+        .filter((key) => key.startsWith('search/SearchField.'))
+        .sort();
+    expect(field('web')).toEqual([]);
+    expect(field('android')).toEqual([
+      'search/SearchField.onChange',
+      'search/SearchField.onSubmit',
+    ]);
   });
 
   it('[M0.states/d] names only items the plan has', () => {

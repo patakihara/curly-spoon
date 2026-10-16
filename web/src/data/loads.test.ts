@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createApiClient } from '../api/client';
-import { loadItem, loadLibrary, loadQueues } from './loads';
+import { loadItem, loadLibrary, loadQueues, loadSearch, loadSuggest } from './loads';
 import { SignedOut } from './store';
 
 /** An API answering each path from `answers` (anything else 404), recording each ask. */
@@ -92,5 +92,46 @@ describe('[M1.shell] what the pages read from the API', () => {
     const { client, asked } = api({ '/api/sessions': [200, { sessions: [] }] });
     expect(await loadQueues(client)).toBeNull();
     expect(asked).toEqual(['/api/sessions']);
+  });
+});
+
+describe('what search reads from the API', () => {
+  /** An API answering `body` to anything, recording each path asked for and its query. */
+  function answering(body: unknown) {
+    const asked: string[] = [];
+    const client = createApiClient({
+      baseUrl: 'http://auralis.test',
+      fetch: async (request) => {
+        const url = new URL(request.url);
+        asked.push(`${url.pathname} ${JSON.stringify([...url.searchParams])}`);
+        return new Response(JSON.stringify(body), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      },
+    });
+    return { client, asked };
+  }
+
+  it('asks for suggestions for what is typed, even nothing, parsed', async () => {
+    const { client, asked } = answering({
+      suggestions: [{ kind: 'recent', text: 'ri', ref: null }],
+    });
+    expect(await loadSuggest(client, 'ri')).toEqual({
+      suggestions: [{ kind: 'recent', text: 'ri', ref: null }],
+    });
+    await loadSuggest(client, '');
+    expect(asked).toEqual(['/api/search/suggest [["q","ri"]]', '/api/search/suggest [["q",""]]']);
+  });
+
+  it('asks for the results of a search, every kind of them, parsed', async () => {
+    const { client, asked } = answering({ query: 'rise and', results: [] });
+    expect(await loadSearch(client, 'rise and')).toEqual({ query: 'rise and', results: [] });
+    expect(asked).toEqual(['/api/search [["q","rise and"]]']);
+  });
+
+  it('refuses suggestions that do not parse', async () => {
+    const { client } = answering({ suggestions: [{ kind: 'nope', text: 'x', ref: null }] });
+    await expect(loadSuggest(client, 'x')).rejects.toThrow();
   });
 });

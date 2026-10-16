@@ -1,10 +1,12 @@
 /**
- * Opens the SQLite store and brings it up to the latest schema. Tests pass `:memory:`. On disk
+ * Opens the SQLite store and brings it up to the latest schema, and the search text up to the
+ * current fold (`search/items.ts`). Tests pass `:memory:`. On disk
  * the database holds session and setup-code hashes, so only the server's user may read it.
  */
 
 import { chmodSync, existsSync } from 'node:fs';
 import Database from 'better-sqlite3';
+import { refreshSearchItems } from '../search/items.js';
 import { runMigrations } from './migrations.js';
 
 export type Db = Database.Database;
@@ -18,6 +20,7 @@ export function openDatabase(path: string): Db {
   // WAL means nothing for an in-memory database, and better-sqlite3 rejects it there.
   if (onDisk) db.pragma('journal_mode = WAL');
   runMigrations(db);
+  refreshSearchItems(db);
   if (onDisk) {
     for (const file of [`${path}-wal`, `${path}-shm`]) {
       if (existsSync(file)) chmodSync(file, 0o600);

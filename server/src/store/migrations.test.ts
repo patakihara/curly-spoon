@@ -153,3 +153,44 @@ describe('the art migration', () => {
     db.close();
   });
 });
+
+describe('the search index migration', () => {
+  it('creates the search tables on a SQLite with FTS5, and reopening applies nothing', () => {
+    const db = new Database(':memory:');
+    db.pragma('foreign_keys = ON');
+
+    runMigrations(db);
+
+    expect(() => db.exec('CREATE VIRTUAL TABLE probe USING fts5(text)')).not.toThrow();
+    expect(db.prepare('SELECT COUNT(*) AS n FROM search_items').get()).toEqual({ n: 0 });
+    const applied = appliedIds(db);
+    runMigrations(db);
+    expect(appliedIds(db)).toEqual(applied);
+    db.close();
+  });
+
+  it('refuses a SQLite built without FTS5, before creating anything', () => {
+    const db = new Database(':memory:');
+    db.pragma('foreign_keys = ON');
+    runMigrations(
+      db,
+      migrations.filter((m) => m.id < 10),
+    );
+    const noFts5 = new Proxy(db, {
+      get(target, key) {
+        const value = Reflect.get(target, key, target) as unknown;
+        if (key !== 'prepare') return typeof value === 'function' ? value.bind(target) : value;
+        return (sql: string) =>
+          sql.includes('pragma_module_list') ? { get: () => undefined } : target.prepare(sql);
+      },
+    });
+
+    expect(() => migrations.find((m) => m.id === 10)!.up(noFts5)).toThrow(
+      'search needs SQLite built with FTS5',
+    );
+    expect(db.prepare("SELECT name FROM sqlite_master WHERE name LIKE 'search%'").all()).toEqual(
+      [],
+    );
+    db.close();
+  });
+});

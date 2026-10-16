@@ -31,7 +31,7 @@ Each takes `?refresh` (pull to refresh)
 #### Search
 
 `GET /search/suggest?q`\
-`GET /search?q&kinds` (one ranked list, once every source answers or times out)
+`GET /search?q&kinds`
 :::
 
 ::: card
@@ -70,8 +70,7 @@ Each takes `?refresh` (pull to refresh)
 `POST /requests {ref | query}`\
 `GET /requests` · `/requests/{id}`\
 `POST /requests/{id}/retry|cancel|choose`\
-`POST /keep {ref}` (a song, from YouTube Music)\
-`POST /requests {ref}` on an album: always a lossless torrent
+`POST /keep {ref}` (a song, from YouTube Music)
 :::
 
 ::: card
@@ -86,8 +85,8 @@ Each takes `?refresh` (pull to refresh)
 ::: card
 #### Settings
 
-`GET/PUT /settings` (theme, autoplay rules, queue style (YouTube Music or Spotify), artist-page catalogue toggle on by default, show everyone's library off by default)\
-`PUT/DELETE /settings/youtube-account` (connect or disconnect watched-state and position sync for YouTube channels) · `GET /settings/youtube-account` (status, last sync, expired)\
+`GET/PUT /settings` (theme, autoplay rules, queue style (YouTube Music or Spotify), artist-page catalogue, show everyone's library)\
+`PUT/DELETE /settings/youtube-account` (connect or disconnect YouTube sync) · `GET /settings/youtube-account` (status, last sync, expired)\
 `GET/PUT /shows/{ref}/youtube` (SponsorBlock categories, Shorts and livestreams)
 :::
 :::

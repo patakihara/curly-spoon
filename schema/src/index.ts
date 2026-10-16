@@ -86,6 +86,8 @@ export {
   getItem,
   getMe,
   getQueue,
+  getSearch,
+  getSearchSuggest,
   getSetup,
   health,
   listBookmarks,
@@ -111,6 +113,18 @@ export {
   type Access,
   type Route,
 } from './routes.js';
+export {
+  QUERY_MAX,
+  SearchKind,
+  SearchParent,
+  SearchQuery,
+  SearchResult,
+  SearchResults,
+  Suggestion,
+  SuggestionKind,
+  SuggestionList,
+  SuggestQuery,
+} from './search.js';
 export {
   ActiveQueueBody,
   AddToQueueBody,

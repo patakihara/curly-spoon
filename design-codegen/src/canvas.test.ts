@@ -322,7 +322,7 @@ describe('the canvas generated from design/app', () => {
     const html = board('book.phone.dc.html');
     expect(html).toContain('data-props=\'{"$preview":{"width":390,"height":844}}\'');
     expect(html).toContain('"title":"Wind <\\/script> Truth"');
-    expect(html).toContain('when: {"full":true}');
+    expect(html).toContain('const when = {"full":true};');
     expect(html).toContain('class Component extends DCLogic');
   });
 
@@ -643,9 +643,161 @@ describe('a page opening another, on the canvas', () => {
     expect(html).toMatch(/title="\{\{row\.title\}\}" on-click="\{\{navigate\}\}"/);
     expect(html).toContain('const navigate = () => {};');
     expect(html).toMatch(/title="\{\{row\.title\}\}" on-request="\{\{navigate\}\}"/);
-    expect(html).toMatch(
-      /return \{ data, shell, slots, lists, when: \{"full":true\}, navigate \};/,
+    expect(html).toMatch(/return \{ data, shell, slots, lists, when, navigate \};/);
+  });
+});
+
+describe('[M2.search] a field holding the search query, on the canvas', () => {
+  const html =
+    generateCanvas(
+      {
+        ...app,
+        pages: [
+          {
+            id: 'search',
+            tree: parsePage(
+              `export default function Search({ data }) {
+  return <PageBody><SearchField value={data.query} onChange={<Query />} onSubmit={<Query />} /></PageBody>;
+}
+`,
+              'search',
+            ),
+            placeholder: { query: 'salt' },
+          },
+        ],
+      },
+      install,
+      now,
+    ).get('search.phone.dc.html') ?? '';
+
+  it('types and submits nowhere, since an artboard is a still', () => {
+    expect(html).toMatch(/on-change="\{\{navigate\}\}" on-submit="\{\{navigate\}\}"/);
+  });
+});
+
+describe("[M2.search] a page's states, on the canvas", () => {
+  const stated = `export default function Search({ data }) {
+  return (
+    <PageBody>
+      <When state="suggest">
+        <Each of={data.suggestions} as="s">
+          <ResultRow title={s.title} />
+        </Each>
+      </When>
+      <When state="full">
+        <ResultRow title={data.top} trailing={<Button><When state="suggest">Go</When><When state="full">Play</When></Button>} />
+      </When>
+      <When state="empty">
+        <ResultRow title="Nothing matched" />
+      </When>
+      <When state="suggest">
+        <ResultRow title="Again" />
+      </When>
+    </PageBody>
+  );
+}
+`;
+  const out = generateCanvas(
+    {
+      ...app,
+      pages: [
+        {
+          id: 'search',
+          tree: parsePage(stated, 'search'),
+          placeholder: { suggestions: [{ title: 'Salt Water' }], top: 'Salt and Static' },
+        },
+      ],
+    },
+    install,
+    now,
+  );
+  const order = JSON.parse(out.get('canvas.json') ?? '{}');
+  const built = (name: string) => {
+    const script = out.get(name)!.split('data-dc-script')[1]!;
+    const body = script.slice(
+      script.indexOf('renderVals() {') + 'renderVals() {'.length,
+      script.lastIndexOf('}\n}'),
     );
+    type Node = { c: unknown; p: Record<string, unknown>; k: unknown[] };
+    const window = {
+      React: {
+        Fragment: 'Fragment',
+        createElement: (c: unknown, p: Record<string, unknown>, ...k: unknown[]): Node => ({
+          c,
+          p,
+          k,
+        }),
+      },
+      SonoraDesignSystem_6c1435: Object.fromEntries(
+        ['BottomNav', 'MiniPlayer', 'AccountButton', 'IconButton', 'Button'].map((n) => [n, n]),
+      ),
+    };
+    const vals = new Function('window', body)(window) as {
+      when: Record<string, boolean>;
+      slots: Record<string, Node>;
+    };
+    const button = Object.values(vals.slots).find((n) => n?.c === 'Button')!;
+    /** The text a Button draws, its Fragments flattened and nulls dropped. */
+    const text = (n: unknown): string[] =>
+      n == null ? [] : typeof n === 'string' ? [n] : (n as Node).k.flatMap((k) => text(k));
+    return { when: vals.when, button: text(button) };
+  };
+
+  it('draws each state other than full on a phone of its own, in the order the page first names them', () => {
+    const { phone, desktop } = CANVAS_BOARDS;
+    expect(order.order.filter((n: string) => order.boards[n].page === 'search')).toEqual([
+      'search.structure.dc.html',
+      'search.phone.dc.html',
+      'search.desktop.dc.html',
+      'search.phone-suggest.dc.html',
+      'search.phone-empty.dc.html',
+    ]);
+    expect(order.boards['search.phone-suggest.dc.html']).toMatchObject({
+      x: order.boards['search.structure.dc.html'].w + 80 + phone.width + 80 + desktop.width + 80,
+      y: 0,
+      page: 'search',
+      w: phone.width,
+      h: phone.height,
+      title: 'Search · phone, suggest state',
+    });
+    expect(order.boards['search.phone-empty.dc.html'].title).toBe('Search · phone, empty state');
+  });
+
+  it('shows on each board its own state alone, in the markup and in the elements given to props', () => {
+    const hint = (name: string) =>
+      [
+        ...out
+          .get(name)!
+          .matchAll(/<sc-if value="\{\{when\.(\w+)\}\}" hint-placeholder-val="\{\{ (\w+) \}\}">/g),
+      ].map((m) => `${m[1]} ${m[2]}`);
+    expect(hint('search.phone.dc.html')).toEqual([
+      'suggest false',
+      'full true',
+      'empty false',
+      'suggest false',
+    ]);
+    expect(hint('search.desktop.dc.html')).toEqual(hint('search.phone.dc.html'));
+    expect(hint('search.phone-suggest.dc.html')).toEqual([
+      'suggest true',
+      'full false',
+      'empty false',
+      'suggest true',
+    ]);
+    expect(built('search.phone.dc.html')).toEqual({ when: { full: true }, button: ['Play'] });
+    expect(built('search.desktop.dc.html')).toEqual({ when: { full: true }, button: ['Play'] });
+    expect(built('search.phone-suggest.dc.html')).toEqual({
+      when: { suggest: true },
+      button: ['Go'],
+    });
+    expect(built('search.phone-empty.dc.html')).toEqual({ when: { empty: true }, button: [] });
+  });
+
+  it('draws a page with no state but full on no extra board', () => {
+    expect(Object.keys(index.boards).filter((n) => n.startsWith('book.'))).toEqual([
+      'book.structure.dc.html',
+      'book.phone.dc.html',
+      'book.desktop.dc.html',
+    ]);
   });
 });
 

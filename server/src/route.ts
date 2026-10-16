@@ -23,6 +23,23 @@ function refuse(reply: FastifyReply, refusal: Refusal) {
   return reply.code(refusal.status).headers(refusal.headers).send({ error: refusal.error });
 }
 
+/**
+ * Aborts once the client's connection closes before its answer was sent, or at once if it already
+ * had (an earlier hook may wait on I/O, as the proxy's name lookup does), so a handler can stop
+ * waiting on a slow upstream. Node reads a close only between waits: a client that leaves while
+ * the handler runs without waiting on I/O gets its answer written, and this never aborts.
+ */
+export function clientGone(reply: FastifyReply): AbortSignal {
+  const gone = new AbortController();
+  if (reply.raw.destroyed) gone.abort();
+  else {
+    reply.raw.once('close', () => {
+      if (!reply.raw.writableFinished) gone.abort();
+    });
+  }
+  return gone.signal;
+}
+
 type Parsed<S> = S extends z.ZodTypeAny ? z.infer<S> : undefined;
 type BodyOf<R extends Route> = Parsed<R['body']>;
 interface InputOf<R extends Route> {
@@ -136,17 +153,12 @@ export function serveStream<R extends Route & { stream: 'audio' | 'image'; metho
       if (range !== undefined && !BYTES_RANGE.test(range)) {
         return reply.code(400).send({ error: 'bad_range' });
       }
-      // Aborts when the client goes before the answer is sent, so a handler can stop waiting.
-      const gone = new AbortController();
-      reply.raw.once('close', () => {
-        if (!reply.raw.writableFinished) gone.abort();
-      });
       let answer: StreamAnswer;
       try {
         answer = await handler(request, {
           ...(parsed as unknown as InputOf<R>),
           range,
-          signal: gone.signal,
+          signal: clientGone(reply),
         });
       } catch (err) {
         if (err instanceof Refusal) return refuse(reply, err);

@@ -24,6 +24,24 @@ function recordedShow(call: string) {
   return itemSummarySchema.parse(response.body.json);
 }
 
+/** `target`, counting the statements prepared through it. */
+function counting(target: Db) {
+  let prepared = 0;
+  const db = new Proxy(target, {
+    get(t, key) {
+      if (key === 'prepare') {
+        return (sql: string) => {
+          prepared += 1;
+          return t.prepare(sql);
+        };
+      }
+      const value: unknown = Reflect.get(t, key, t);
+      return typeof value === 'function' ? (value as () => unknown).bind(t) : value;
+    },
+  });
+  return { db, prepared: () => prepared };
+}
+
 let db: Db;
 beforeEach(() => {
   db = openDatabase(':memory:');
@@ -31,6 +49,30 @@ beforeEach(() => {
 afterEach(() => db.close());
 
 describe('the index store', () => {
+  it('writes a thousand rows with the statements it prepared for the first few', () => {
+    const show = absTree(recordedShow('index-show-1'));
+    const episode = show.children[0]!;
+    const episodes = (ids: number[], title = (id: number) => `Episode ${id}`) =>
+      ids.map((id) => ({ ...episode, id: `episode-${id}`, title: title(id) }));
+    const counted = counting(db);
+    // New rows, then a changed one, a new one and a removed one: every way a row is written.
+    applyTree(counted.db, { top: show.top, children: episodes([0, 1]) }, 1, emptyCounts());
+    applyTree(
+      counted.db,
+      { top: show.top, children: episodes([1, 2], (id) => `Renamed ${id}`) },
+      2,
+      emptyCounts(),
+    );
+    const prepared = counted.prepared();
+    const counts = emptyCounts();
+
+    const thousand = Array.from({ length: 1000 }, (_, n) => n + 1);
+    applyTree(counted.db, { top: show.top, children: episodes(thousand) }, 3, counts);
+
+    expect([counts.inserted, counts.updated]).toEqual([998, 2]);
+    expect(counted.prepared()).toBe(prepared);
+  });
+
   it('names the shows a pass did not see, only in the library it paged', () => {
     const [kept, unseen] = [recordedShow('index-show-1'), recordedShow('index-show-2')];
     const counts = emptyCounts();

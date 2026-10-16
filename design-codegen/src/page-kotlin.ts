@@ -3,8 +3,10 @@
  * composables by name, each with its generated `<Name>Props`, inside the phone's shell. The
  * placeholder is inlined as literals, typed by the props model, as the canvas's artboards show
  * it: an `<Each>` is one call per item, a `<When>` only the full state. `<Open>` navigates to the
- * typed route, `<Play>`, `<Request>` and `<SignIn />` call the actions the app injects, and the
- * shell's own controls close the page, switch destinations and open the player, as nav.json says.
+ * typed route, its query names among its arguments, `<Play>`, `<Request>` and `<SignIn />` call the
+ * actions the app injects, and the shell's own controls close the page, switch destinations and
+ * open the player, as nav.json says. `<Query />` stays unbound: Android has no search draft until
+ * M5.searchui.
  */
 import { enumConstant } from '@auralis/schema/codegen/kotlin';
 import { pascal, typeText } from './kotlin.js';
@@ -17,7 +19,7 @@ import {
   KOTLIN_PACKAGE,
   KOTLIN_SONORA_PACKAGE,
 } from './outputs.js';
-import type { PageTree, PropValue } from './page.js';
+import { QUEUES, type PageTree, type PropValue } from './page.js';
 import {
   closeAction,
   shellHandlers,
@@ -284,7 +286,7 @@ class PageWriter extends KotlinValues {
 
   /** A handler node as the lambda a Kotlin handler prop takes. */
   handler(
-    value: Exclude<PropValue, { kind: 'literal' | 'binding' | 'slot' | 'request' }>,
+    value: Exclude<PropValue, { kind: 'literal' | 'binding' | 'slot' | 'request' | 'query' }>,
     scope: Scope,
   ): Expr {
     const bound = (params: Record<string, string[]>) =>
@@ -306,9 +308,14 @@ class PageWriter extends KotlinValues {
         this.nav.add('PlayQueue').add('PlayMode');
         const mode = value.next ? 'NEXT' : value.source ? 'SOURCE' : 'NOW';
         const ref = kotlinString(bound(value.params).ref!);
-        return raw(
-          `actions.onPlay(${ref}, PlayQueue.${value.queue.toUpperCase()}, PlayMode.${mode})`,
-        );
+        const queue =
+          typeof value.queue === 'string'
+            ? value.queue
+            : String(this.resolve(value.queue.path, scope));
+        if (!(QUEUES as readonly string[]).includes(queue)) {
+          return this.fail(`plays on ${queue}, which is not a queue`);
+        }
+        return raw(`actions.onPlay(${ref}, PlayQueue.${queue.toUpperCase()}, PlayMode.${mode})`);
       }
       case 'signIn':
         return raw('actions.onSignIn()');
@@ -328,6 +335,10 @@ class PageWriter extends KotlinValues {
       // The app has no way to make a request yet. A handler doing nothing would draw a dead control
       // as enabled, so the prop is left out and Sonora draws the control disabled.
       case 'request':
+        return undefined;
+      // Android has no search draft until M5.searchui. A field typing into nothing would seem to
+      // work, so the prop is left out and Sonora draws the field disabled.
+      case 'query':
         return undefined;
       case 'literal':
         return this.value(type, value.value, where);

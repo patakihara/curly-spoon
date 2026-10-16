@@ -2,14 +2,16 @@ import {
   createElement,
   isValidElement,
   useEffect,
+  useRef,
   useSyncExternalStore,
   type ComponentType,
   type ReactElement,
   type ReactNode,
 } from 'react';
-import { type RouteObject, useMatches } from 'react-router';
+import { type RouteObject, useMatches, useSearchParams } from 'react-router';
 import { type ApiClient } from '../api/client';
 import { type FrameContext, type PageFrame } from '../generated/nav/platform';
+import { pages as routePages } from '../generated/nav/routes';
 import { type ShellHandle, type ShellTabs } from '../generated/nav/Shell';
 import Album, { frame as albumFrame } from '../generated/pages/Album';
 import Artist, { frame as artistFrame } from '../generated/pages/Artist';
@@ -26,7 +28,7 @@ import Playlist, { frame as playlistFrame } from '../generated/pages/Playlist';
 import Podcasts, { frame as podcastsFrame } from '../generated/pages/Podcasts';
 import Queue, { type QueueData } from '../generated/pages/Queue';
 import Requests, { frame as requestsFrame } from '../generated/pages/Requests';
-import Search, { frame as searchFrame } from '../generated/pages/Search';
+import Search, { type SearchData, frame as searchFrame } from '../generated/pages/Search';
 import Series, { frame as seriesFrame } from '../generated/pages/Series';
 import Settings, { frame as settingsFrame } from '../generated/pages/Settings';
 import Setup, { frame as setupFrame } from '../generated/pages/Setup';
@@ -35,14 +37,17 @@ import ShelfReview, { frame as shelfReviewFrame } from '../generated/pages/Shelf
 import Show, { frame as showFrame } from '../generated/pages/Show';
 import SignIn from '../generated/pages/SignIn';
 import { usePlayId } from '../player';
+import { type Draft, useTabDraft } from '../query';
 import { useAccessOf } from './access';
 import { useDeps } from './deps';
 import { emptied } from './format';
 import { albumData, bookData, episodeData, showData } from './items';
 import { booksData, browseData, musicData, podcastsData } from './library';
 import { emptyQueue, queueData } from './queue';
+import { emptySearch, loadSearchPage, searchLive, type SearchLoaded } from './search';
 import { SignInScreen } from './sign-in';
 import { loadItem, loadLibraries, loadLibrary, loadQueues } from './loads';
+import { answerFrom, type Answer, pageKey } from './store';
 
 /**
  * The generated pages given their data. `withPageData(routes)` swaps each page for its screen,
@@ -50,25 +55,46 @@ import { loadItem, loadLibraries, loadLibrary, loadQueues } from './loads';
  * player tab's page in the side panel, and the back layer and subheader the page's frame hands
  * the shell. One screen per page: Browse's first shelf and the library homes from
  * `GET /api/library/{medium}`, a book, show, episode or album from `GET /api/items/{ref}`, the
- * queue from `GET /api/queues/{active}`, sign in from the address. Now Playing reads the player
- * itself. Every other page draws empty, keeping only its own words, until its milestone serves it:
- * a member never sees the canvas's samples. A page loading shows its lists empty; on a server
- * nobody can sign in to, every page keeps its canvas placeholder (`access.ts`); a request refused
- * for want of a sign-in goes to sign in.
+ * queue from `GET /api/queues/{active}`, Search from what is typed into it (`../query`) and
+ * `GET /api/search/suggest` or `GET /api/search`, sign in from the address. Now Playing reads the
+ * player itself. Every other page draws empty, keeping only its own words, until its milestone
+ * serves it: a member never sees the canvas's samples. A page loading shows its lists empty; on a
+ * server nobody can sign in to, every page keeps its canvas placeholder (`access.ts`); a request
+ * refused for want of a sign-in goes to sign in.
  */
 
+/** A page's address: its path's params and the query values its route declares. */
 type Params = Readonly<Record<string, string | undefined>>;
 
-/** One page's data: what it draws while loading, and how it loads. */
-interface Screen<T> {
+/** What a page draws beyond its address, from it and what is typed: Search. */
+interface Live<T, L> {
+  /** What it loads, in place of its address; null loads nothing yet. */
+  asks: Params | null;
+  /** What it draws, given the answer to what it asks and what it drew last. */
+  draw(answer: Answer<L>, last: Drawn<T> | null): Drawn<T>;
+}
+
+/** A page's data, and which of its states it draws. */
+interface Drawn<T> {
+  data: T;
+  state?: string;
+}
+
+/** One page's data: what it draws while loading, and how it loads (`L`, for a live page). */
+interface Screen<T, L = T> {
   name: string;
-  Page: ComponentType<{ data?: T }>;
+  Page: ComponentType<{ data?: T; state?: string }>;
   frame?: PageFrame<T>;
   empty: T;
   /** Whether its data changes with what the player plays. */
   followsPlayer?: boolean;
   /** How it loads; a page nothing serves yet draws `empty` and loads nothing. */
-  load?(api: ApiClient, params: Params): Promise<T>;
+  load?(api: ApiClient, params: Params): Promise<L>;
+  /**
+   * For a page drawn from more than its address, the tab's search draft too: what it loads and
+   * draws. Not a hook: the hooks it reads from are called for every page alike.
+   */
+  live?(params: Params, draft: Draft | null): Live<T, L>;
 }
 
 /** A page nothing serves yet: drawn empty, with `words`, the page's own, as the canvas has them. */
@@ -81,6 +107,8 @@ function unserved<T>(
   const kept = Object.fromEntries(words.map((word) => [word, frame.placeholder[word]]));
   return { name, Page, frame, empty: { ...emptied(frame.placeholder), ...kept } };
 }
+
+const searchEmpty = emptySearch(searchFrame.placeholder);
 
 const screens: Screen<never>[] = [
   {
@@ -156,7 +184,17 @@ const screens: Screen<never>[] = [
     Page: Lyrics,
     empty: { lines: [], activeIndex: 0, syncMode: 'dot' },
   } satisfies Screen<LyricsData>,
-  unserved('search', Search, searchFrame, ['placeholder', 'kinds', 'activeFilters']),
+  {
+    name: 'search',
+    Page: Search,
+    frame: searchFrame,
+    empty: searchEmpty,
+    live: (params, draft) => {
+      const q = params.q ?? '';
+      return searchLive(q, draft?.over === q ? draft : null, searchEmpty);
+    },
+    load: (api, asks) => loadSearchPage(api, asks, searchEmpty),
+  } satisfies Screen<SearchData, SearchLoaded>,
   unserved('settings', Settings, settingsFrame),
   unserved('setup', Setup, setupFrame, ['intro', 'codeHint']),
   unserved('requests', Requests, requestsFrame),
@@ -170,26 +208,58 @@ const screens: Screen<never>[] = [
   unserved('list', List, listFrame, ['kind']),
 ] as Screen<never>[];
 
-/** The data `screen` shows here: undefined on the canvas, which draws the page's placeholder. */
-function useScreenData<T>(screen: Screen<T>): T | undefined {
+/** The page's address: its path's params, and the query values its route declares. */
+function useParams(): Params {
+  const match = useMatches().at(-1);
+  const [search] = useSearchParams();
+  const names = routePages.find((page) => page.id === match?.id)?.query ?? [];
+  return {
+    ...match?.params,
+    ...Object.fromEntries(names.map((name) => [name, search.get(name) ?? undefined])),
+  };
+}
+
+/**
+ * The data `screen` shows here, and its state: undefined on the canvas, which draws the page's
+ * placeholder.
+ */
+function useScreenData<T, L>(screen: Screen<T, L>): Drawn<T> | undefined {
   const { api, access, pages } = useDeps();
   const who = useAccessOf(access);
-  const params = useMatches().at(-1)?.params ?? {};
+  const params = useParams();
+  // The same hooks on every draw, whichever screen: the shell's back layer keeps one FramePart
+  // from page to page, handing it each page's screen in turn.
+  const draft = useTabDraft(screen.live !== undefined);
+  const live = screen.live?.(params, draft);
+  const asks = live === undefined ? params : live.asks;
   const playId = usePlayId();
-  const key = `${screen.name}${JSON.stringify(params)}${screen.followsPlayer ? playId : ''}`;
+  const key = asks === null ? null : pageKey(screen.name, asks, screen.followsPlayer ? playId : '');
   const kept = useSyncExternalStore(
     pages.subscribe,
-    () => pages.peek(key),
-    () => pages.peek(key),
+    () => (key === null ? undefined : pages.peek(key)),
+    () => (key === null ? undefined : pages.peek(key)),
   );
+  const failed = useSyncExternalStore(
+    pages.subscribe,
+    () => key !== null && pages.failed(key),
+    () => key !== null && pages.failed(key),
+  );
+  const last = useRef<{ screen: string; drawn: Drawn<T> } | null>(null);
   useEffect(() => {
     const load = screen.load;
-    if (who === 'member' && load !== undefined) void pages.load(key, () => load(api, params));
-    else if (who === 'signedOut') access.signIn();
-    // `params` is in `key`.
+    if (who === 'member' && load !== undefined && key !== null && asks !== null) {
+      void pages.load(key, () => load(api, asks));
+    } else if (who === 'signedOut') access.signIn();
+    // `asks` is in `key`.
   }, [who, key, screen, api, pages, access]);
   if (who === 'canvas') return undefined;
-  return (kept as T | undefined) ?? screen.empty;
+  if (live === undefined) return { data: (kept as T | undefined) ?? screen.empty };
+  const drawn = live.draw(
+    answerFrom(kept as L | undefined, failed),
+    last.current?.screen === screen.name ? last.current.drawn : null,
+  );
+  last.current = { screen: screen.name, drawn };
+  return drawn;
 }
 
 const made = new Map<Screen<never>, ComponentType>();
@@ -201,7 +271,8 @@ function pageOf<T>(screen: Screen<T>): ComponentType {
   if (component === undefined) {
     const Page = screen.Page;
     component = function ScreenPage() {
-      return <Page data={useScreenData(screen)} />;
+      const shown = useScreenData(screen);
+      return <Page data={shown?.data} state={shown?.state} />;
     };
     made.set(key, component);
   }
@@ -215,7 +286,7 @@ function FramePart<T>(props: {
   part: 'back' | 'subheader';
   context: FrameContext;
 }): ReactNode {
-  const data = useScreenData(props.screen) ?? props.frame.placeholder;
+  const data = useScreenData(props.screen)?.data ?? props.frame.placeholder;
   return props.part === 'back'
     ? props.frame.back(data, props.context)
     : props.frame.subheader?.(data, props.context);

@@ -52,9 +52,53 @@ function nullableNamed(
   if (inner !== undefined && refId !== undefined && !found.has(refId)) found.set(refId, inner);
 }
 
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** A schema that lets null through: of type null among others, or null as one of its options. */
+function allowsNull(schema: unknown): boolean {
+  if (!isObject(schema)) return false;
+  const { type, anyOf, oneOf } = schema;
+  if (type === 'null' || (Array.isArray(type) && type.includes('null'))) return true;
+  return [anyOf, oneOf].some((parts) => Array.isArray(parts) && parts.some(allowsNull));
+}
+
+/** `{ $ref }` alone. */
+const isRef = (value: unknown) =>
+  isObject(value) && Object.keys(value).length === 1 && typeof value.$ref === 'string';
+
+/**
+ * zod-to-openapi 7 writes a named schema reached as `.nullable()` as `allOf: [{ $ref }, companion]`,
+ * the companion repeating the schema's type or options with null added, and holding whatever else
+ * was said there (a description, a default). Null never passes it: `allOf` needs both, and the
+ * component itself is not null. Each, anywhere in `node`, becomes
+ * `anyOf: [{ $ref }, { type: 'null' }]` in the key's own place, with what else the companion said
+ * beside it.
+ */
+function letNullThrough(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(letNullThrough);
+  if (!isObject(node)) return node;
+  return Object.fromEntries(
+    Object.entries(node).flatMap(([key, value]) => {
+      const [ref, companion] = Array.isArray(value) ? value : [];
+      const nullableRef =
+        key === 'allOf' &&
+        Array.isArray(value) &&
+        value.length === 2 &&
+        isRef(ref) &&
+        isObject(companion) &&
+        allowsNull(companion);
+      if (!nullableRef) return [[key, letNullThrough(value)]];
+      const { type: _type, anyOf: _anyOf, oneOf: _oneOf, ...said } = companion;
+      return [['anyOf', [ref, { type: 'null' }]], ...Object.entries(said)];
+    }),
+  );
+}
+
 /**
  * The OpenAPI 3.1 document for these routes; every `.openapi('Name')` schema becomes a component,
- * and so does each of [constants], one literal value both clients name, marked `const`.
+ * and so does each of [constants], one literal value both clients name, marked `const`. A named
+ * schema reached as `.nullable()` is that schema or null.
  * A route that is not public asks for the session cookie or an app's bearer token, and may answer
  * 401 or 403 with `error`. A route that parses its input may answer 400; a rate-limited one, 429;
  * a streamed audio one answers audio, 206 to a range and 416 to a range past the end; a streamed
@@ -165,10 +209,12 @@ export function buildOpenApiDocument(
       });
     }
   }
-  const doc = new OpenApiGeneratorV31(registry.definitions).generateDocument({
-    openapi: '3.1.0',
-    info: { title: 'Auralis API', version: '0.0.0' },
-  });
+  const doc = letNullThrough(
+    new OpenApiGeneratorV31(registry.definitions).generateDocument({
+      openapi: '3.1.0',
+      info: { title: 'Auralis API', version: '0.0.0' },
+    }),
+  ) as ReturnType<OpenApiGeneratorV31['generateDocument']>;
   for (const name of Object.keys(constants)) {
     const schema = doc.components?.schemas?.[name];
     if (!schema || !('enum' in schema) || schema.enum?.length !== 1) {

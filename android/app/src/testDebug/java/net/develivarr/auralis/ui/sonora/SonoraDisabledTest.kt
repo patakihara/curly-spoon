@@ -147,6 +147,21 @@ class SonoraDisabledTest {
     }
 
     @Test
+    fun `M2_search a ResultRow draws its art action only when given one, as the web does`() {
+        var plays = 0
+        composeRule.setContent {
+            Column {
+                ResultRow(ResultRowProps(title = "Opens", onClick = {}))
+                ResultRow(ResultRowProps(title = "Plays", onClick = {}, onAction = { plays++ }))
+            }
+        }
+        val action = composeRule.onAllNodes(hasText("Action") and hasClickAction(), useUnmergedTree = true)
+        assertEquals("a row without onAction drew an action", 1, action.fetchSemanticsNodes().size)
+        composeRule.onNode(hasText("Action") and hasClickAction() and enabled, useUnmergedTree = true).performClick()
+        assertEquals(1, plays)
+    }
+
+    @Test
     fun `M0_states_c an ExpandableText keeping its own state is enabled and folds on a press`() {
         composeRule.setContent { ExpandableText(ExpandableTextProps(text = "Text")) }
         composeRule.onNode(hasText("More") and hasClickAction() and enabled).performClick()

@@ -193,6 +193,7 @@ describe('[M1.shell] Play', () => {
   it('[M1.shell] has no handler for a ref that names no playable item, so its Play stays disabled', () => {
     const { store } = fakeStore(IDLE);
     expect(playOf(store)('shadows-and-sighs', 'spoken', 'now')).toBeUndefined();
+    expect(playOf(store)('', 'music', 'now')).toBeUndefined();
   });
 
   it('[M1.shell] plays an item now, or from its source, and puts it next in its queue', () => {
