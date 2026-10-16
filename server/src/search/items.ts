@@ -31,7 +31,7 @@ export interface SearchName {
   words: string;
 }
 
-export interface SearchText {
+interface SearchText {
   kind: IndexKind;
   /** The title's words, space-joined. */
   title: string;

@@ -389,9 +389,10 @@ export const migrations: readonly Migration[] = [
       if (fts5 === undefined) throw new Error('search needs SQLite built with FTS5');
       db.exec(`
         -- Each indexed row's searchable text: the words of its title, people and series, its
-        -- kind, and the artists, authors and series it names (JSON), written by the index's own code (search/items.ts), which also fills in rows
-        -- missing or written by an older fold when the database opens. Its own id is the
-        -- full-text row id: index_items' rowid can change on VACUUM. It goes with its index row.
+        -- kind, and the artists, authors and series it names (JSON), written by the index's own
+        -- code (search/items.ts), which also fills in rows missing or written by an older fold
+        -- when the database opens. Its own id is the full-text row id: index_items' rowid can
+        -- change on VACUUM. It goes with its index row.
         CREATE TABLE search_items (
           id           INTEGER PRIMARY KEY,
           source       TEXT NOT NULL,

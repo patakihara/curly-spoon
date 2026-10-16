@@ -29,7 +29,7 @@ type Row = SearchData['top'];
 type SuggestionRow = SearchData['suggestions'][number];
 
 /** What each kind of result or suggestion is called. */
-export const KIND_LABELS: Record<SuggestionKind, string> = {
+const KIND_LABELS: Record<SuggestionKind, string> = {
   track: 'Song',
   album: 'Album',
   artist: 'Artist',
@@ -107,10 +107,10 @@ export function emptySearch(page: SearchData): SearchData {
 }
 
 /** What Search asks the server for: suggestions for some text, or the results of a search. */
-export type SearchAsk = { suggest: string } | { q: string };
+type SearchAsk = { suggest: string } | { q: string };
 
 /** What Search draws: its state, what it asks for (null: nothing yet), and the field's text. */
-export interface SearchView {
+interface SearchView {
   state: 'suggest' | 'full';
   asks: SearchAsk | null;
   query: string;

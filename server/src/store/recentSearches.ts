@@ -9,7 +9,7 @@ import type { Db } from './connection.js';
 /** How many recent searches a person keeps. */
 export const RECENT_KEPT = 20;
 
-export interface RecentSearch {
+interface RecentSearch {
   /** As last typed, trimmed. */
   query: string;
   /** Its search words, space-joined. */

@@ -10,7 +10,7 @@ import type { SearchKind, SearchResult } from '@auralis/schema';
 export const RESULT_LIMIT = 100;
 
 /** What was searched for: the text as typed, and the kinds to keep, all when absent. */
-export interface SourceQuery {
+interface SourceQuery {
   q: string;
   kinds?: readonly SearchKind[];
 }

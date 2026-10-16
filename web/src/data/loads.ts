@@ -14,8 +14,9 @@ import { SignedOut } from './store';
 
 /**
  * What the pages read from the API, each answer parsed with the schema's zod: a library list, one
- * book, show or album, this device's queues, and search's suggestions and results. A refusal for want of a sign-in throws
- * `SignedOut`; any other failure throws too, and the page keeps what it had.
+ * book, show or album, this device's queues, and search's suggestions and results. A refusal for
+ * want of a sign-in throws `SignedOut`; any other failure throws too, and the page keeps what it
+ * had.
  */
 
 /** The answer's data parsed, or why there is none. */

@@ -57,10 +57,10 @@ import { answerFrom, type Answer, pageKey } from './store';
  * `GET /api/library/{medium}`, a book, show, episode or album from `GET /api/items/{ref}`, the
  * queue from `GET /api/queues/{active}`, Search from what is typed into it (`../query`) and
  * `GET /api/search/suggest` or `GET /api/search`, sign in from the address. Now Playing reads the
- * player itself. Every other page draws empty, keeping only its own words, until its milestone serves it:
- * a member never sees the canvas's samples. A page loading shows its lists empty; on a server
- * nobody can sign in to, every page keeps its canvas placeholder (`access.ts`); a request refused
- * for want of a sign-in goes to sign in.
+ * player itself. Every other page draws empty, keeping only its own words, until its milestone
+ * serves it: a member never sees the canvas's samples. A page loading shows its lists empty; on a
+ * server nobody can sign in to, every page keeps its canvas placeholder (`access.ts`); a request
+ * refused for want of a sign-in goes to sign in.
  */
 
 /** A page's address: its path's params and the query values its route declares. */

@@ -13,7 +13,7 @@ import type { FastifyBaseLogger, FastifyReply, FastifyRequest } from 'fastify';
  * routes name the same statuses (`bad_request`, `forbidden`, `not_found`,
  * `range_not_satisfiable`).
  */
-export function refusalCode(status: number): string {
+function refusalCode(status: number): string {
   return (STATUS_CODES[status] ?? 'Bad Request').toLowerCase().replace(/[^a-z]+/g, '_');
 }
 

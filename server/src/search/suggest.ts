@@ -10,7 +10,7 @@ import { searchTokens } from '../text/fold.js';
 import { suggestFromIndex } from './library.js';
 
 /** How many suggestions are offered. */
-export const SUGGESTION_LIMIT = 8;
+const SUGGESTION_LIMIT = 8;
 /** How many recent searches come first once the index is asked too. */
 const RECENT_FIRST = 3;
 /** How long one word of a query must be to ask the index: one letter matches too much. */
