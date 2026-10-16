@@ -20,7 +20,8 @@ export const PLACEHOLDER_HOME_USER = 'user';
 
 /**
  * The only headers a recording keeps, in either direction: a range request's and its answer's
- * among them. `content-length` is not kept: a scrubbed or stand-in body has another length.
+ * among them, and the User-Agent a client names itself with to a public service (LRCLIB).
+ * `content-length` is not kept: a scrubbed or stand-in body has another length.
  */
 export const KEPT_HEADERS = [
   'accept',
@@ -29,6 +30,7 @@ export const KEPT_HEADERS = [
   'range',
   'accept-ranges',
   'content-range',
+  'user-agent',
 ] as const;
 /** A query parameter or header name that carries a credential. `auth` spares `author`. */
 export const SECRET_QUERY_KEY = /token|key|secret|pass|pash|auth(?!or)|cookie|signature/i;

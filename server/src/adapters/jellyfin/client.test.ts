@@ -138,6 +138,43 @@ describe('the Jellyfin client', () => {
     expect(sent[0]?.headers.get('authorization')).not.toContain('Token=');
   });
 
+  it("a track's lyrics are its Lyrics lines, each with its start in ticks where it has one", async () => {
+    const answer = {
+      Metadata: {},
+      Lyrics: [
+        { Text: 'first', Start: 24700000, Cues: [] },
+        { Text: '', Start: 30000000, Cues: [] },
+      ],
+    };
+    const { fetch, sent } = fake(answer);
+    const jf = new JellyfinClient({ baseUrl: 'http://upstream.invalid', token: 'theirs', fetch });
+    expect(await jf.getLyrics('t1')).toEqual({
+      Lyrics: [
+        { Text: 'first', Start: 24700000 },
+        { Text: '', Start: 30000000 },
+      ],
+    });
+    expect(sent[0]?.url).toBe('http://upstream.invalid/Audio/t1/Lyrics');
+    expect(sent[0]?.headers.get('authorization')).toContain('Token="theirs"');
+  });
+
+  it('a track Jellyfin has no lyrics for answers null; any other refusal fails as its status', async () => {
+    let status = 404;
+    const fetch: FetchLike = async () =>
+      new Response(JSON.stringify({ title: 'Not Found', status }), {
+        status,
+        headers: { 'content-type': 'application/problem+json; charset=utf-8' },
+      });
+    const jf = new JellyfinClient({ baseUrl: 'http://upstream.invalid', token: 'k', fetch });
+    expect(await jf.getLyrics('t1')).toBeNull();
+    for (status of [400, 401, 500, 503]) {
+      const failure = (await jf.getLyrics('t1').catch((e: unknown) => e)) as AdapterError;
+      expect(failure).toBeInstanceOf(AdapterError);
+      expect([failure.kind, failure.status]).toEqual(['status', status]);
+      expect(failure.message).toContain('GET /Audio/t1/Lyrics');
+    }
+  });
+
   it('a response that does not match the schema fails as a parse error naming the call', async () => {
     const { fetch } = fake({ Items: 'nope' });
     const jf = new JellyfinClient({ baseUrl: 'http://upstream.invalid', token: 'k', fetch });

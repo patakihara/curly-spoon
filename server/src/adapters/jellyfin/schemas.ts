@@ -98,6 +98,16 @@ export type PlayableItem = z.infer<typeof playableItemSchema>;
 /** An album's tracks, as playing reads them. */
 export const playableQueryResultSchema = z.object({ Items: z.array(playableItemSchema) });
 
+/**
+ * A track's lyrics: `GET /Audio/{id}/Lyrics` (Jellyfin 10.11, checked live). Each line's `Start`
+ * is in 100 ns ticks; a synced file gives every line one, a plain file none. A line with empty
+ * `Text` is an instrumental break. `Metadata` and each line's `Cues` are not read.
+ */
+export const jellyfinLyricsSchema = z.object({
+  Lyrics: z.array(z.object({ Text: z.string(), Start: z.number().int().nonnegative().nullish() })),
+});
+export type JellyfinLyrics = z.infer<typeof jellyfinLyricsSchema>;
+
 /** `POST /Sessions/Playing`, `/Progress` and `/Stopped` answer 204 with no body. */
 export const noContentSchema = z.undefined();
 

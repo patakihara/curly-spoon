@@ -5,7 +5,7 @@
  * reads the environment: `new JellyfinClient({ baseUrl, token, fetch })`.
  */
 import { type z, type ZodType } from 'zod';
-import { type FetchLike, requestJson } from '../http/fetch.js';
+import { AdapterError, type FetchLike, requestJson } from '../http/fetch.js';
 import {
   fileHeadersSchema,
   type ImageHeaders,
@@ -20,6 +20,8 @@ import {
   type IndexItem,
   type IndexQueryResult,
   indexQueryResultSchema,
+  type JellyfinLyrics,
+  jellyfinLyricsSchema,
   noContentSchema,
   type PlayableItem,
   playableItemSchema,
@@ -233,6 +235,21 @@ export class JellyfinClient {
       PlaySessionId: report.playSessionId,
     };
     await this.post('Sessions/Playing/Stopped', json, noContentSchema);
+  }
+
+  /**
+   * A track's lyrics, from its lyrics file: `GET /Audio/{id}/Lyrics`. Null when Jellyfin has none
+   * for it, which it answers 404 (checked live). The API key needs no user here.
+   */
+  async getLyrics(itemId: string): Promise<JellyfinLyrics | null> {
+    try {
+      return await this.get(`Audio/${encodeURIComponent(itemId)}/Lyrics`, jellyfinLyricsSchema);
+    } catch (error) {
+      if (error instanceof AdapterError && error.kind === 'status' && error.status === 404) {
+        return null;
+      }
+      throw error;
+    }
   }
 
   /** The token's own user's state on one item: `GET /UserItems/{id}/UserData`. */
