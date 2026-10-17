@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { recordingSchema } from '../adapters/http/recording.js';
 import { lrclibRecordSchema } from '../adapters/lrclib/schemas.js';
-import { parseLrc, plainLines } from './lrc.js';
+import { lyricLineSchema, parseLrc, plainLines } from './lrc.js';
 
 function recordedLrclib(call: string) {
   const file = fileURLToPath(
@@ -78,6 +78,56 @@ describe('reading LRC', () => {
     expect(parseLrc('[offset:-250]\n[00:01.00] a')).toEqual([{ start: 1.25, text: 'a' }]);
   });
 
+  it("takes enhanced LRC's word tags out of a line, which keeps its own start", () => {
+    expect(parseLrc('[00:01.00]<00:01.00>Hel <00:01.50>lo')).toEqual([
+      { start: 1, text: 'Hel lo' },
+    ]);
+  });
+
+  it('drops a time past a day, before or after the offset, and the line left with no time', () => {
+    const huge = `[${'9'.repeat(400)}:00.00] infinite\n[99999999999999999999:00.00] far`;
+    expect(parseLrc(`${huge}\n[1441:00.00] past a day\n[00:02.00][1441:00.00] kept`)).toEqual([
+      { start: 2, text: 'kept' },
+    ]);
+    expect(parseLrc('[offset:-86400000]\n[00:00.00] a day\n[00:01.00] past')).toEqual([
+      { start: 86400, text: 'a day' },
+    ]);
+  });
+
+  it('ignores an offset of more than a day', () => {
+    expect(parseLrc('[offset:-100000000000000000000]\n[00:01.00] a')).toEqual([
+      { start: 1, text: 'a' },
+    ]);
+    expect(parseLrc('[offset:+86400001]\n[00:01.00] a')).toEqual([{ start: 1, text: 'a' }]);
+  });
+
+  it('splits on a lone CR and on Unicode line and paragraph separators', () => {
+    expect(parseLrc('[00:01.00]a\r[00:02.00]b\u2028[00:03.00]c\u2029[00:04.00]d')).toEqual([
+      { start: 1, text: 'a' },
+      { start: 2, text: 'b' },
+      { start: 3, text: 'c' },
+      { start: 4, text: 'd' },
+    ]);
+  });
+
+  it('reads one-digit minutes and seconds, and tags with space between them', () => {
+    expect(parseLrc('[0:5.00] five\n[00:03.00] [00:01.00]x')).toEqual([
+      { start: 1, text: 'x' },
+      { start: 3, text: 'x' },
+      { start: 5, text: 'five' },
+    ]);
+  });
+
+  it('never shows tag-shaped text it cannot read', () => {
+    expect(parseLrc('[00:01.00] a [00:02.0000] b [1:2:3]\n[00:01.0000] untimed')).toEqual([
+      { start: 1, text: 'a b' },
+    ]);
+  });
+
+  it('reads past a leading byte order mark', () => {
+    expect(parseLrc('\uFEFF[00:01.00] a')).toEqual([{ start: 1, text: 'a' }]);
+  });
+
   it('finds no lines in empty text or text with no time tag', () => {
     expect(parseLrc('')).toEqual([]);
     expect(parseLrc('just words\nmore words')).toEqual([]);
@@ -101,5 +151,23 @@ describe('reading plain lyrics', () => {
       { start: null, text: '' },
       { start: null, text: 'two' },
     ]);
+  });
+
+  it('drops a leading byte order mark', () => {
+    expect(plainLines('\uFEFFone\ntwo')).toEqual([
+      { start: null, text: 'one' },
+      { start: null, text: 'two' },
+    ]);
+  });
+
+  it('splits on a lone CR and on Unicode line and paragraph separators', () => {
+    expect(plainLines('a\rb\u2028c\u2029d').map((l) => l.text)).toEqual(['a', 'b', 'c', 'd']);
+  });
+});
+
+describe('a lyric line', () => {
+  it('refuses a start that is not a finite number of seconds', () => {
+    expect(lyricLineSchema.safeParse({ start: Infinity, text: 'x' }).success).toBe(false);
+    expect(lyricLineSchema.safeParse({ start: Number.NaN, text: 'x' }).success).toBe(false);
   });
 });

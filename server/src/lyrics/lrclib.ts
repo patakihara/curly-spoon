@@ -1,6 +1,6 @@
 /**
  * LRCLIB's record as lyric lines: instrumental when it says so, else synced when its
- * `syncedLyrics` holds a timed line (an empty string holds none), else plain when its
+ * `syncedLyrics` holds a timed line with words (breaks alone hold none), else plain when its
  * `plainLyrics` holds text, else none. No record (LRCLIB's 404) is none.
  */
 import { type LrclibRecord } from '../adapters/lrclib/schemas.js';

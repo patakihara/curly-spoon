@@ -38,4 +38,13 @@ describe("reading LRCLIB's record", () => {
     expect(fromLrclib({ ...record, plainLyrics: '' })).toEqual({ status: 'none', lines: [] });
     expect(fromLrclib({ ...record, plainLyrics: null, syncedLyrics: null }).status).toBe('none');
   });
+
+  it('takes synced lyrics of breaks only as no synced lyrics, falling back to plain, then none', () => {
+    const record = {
+      ...recordedLrclib('lrclib-get-synced'),
+      syncedLyrics: '[00:01.00]\n[00:05.00] \n[00:09.00]',
+    };
+    expect(fromLrclib(record).status).toBe('plain');
+    expect(fromLrclib({ ...record, plainLyrics: null })).toEqual({ status: 'none', lines: [] });
+  });
 });

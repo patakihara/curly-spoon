@@ -6,17 +6,27 @@
 import { z } from 'zod';
 
 export const lyricLineSchema = z.object({
-  start: z.number().nonnegative().nullable(),
+  start: z.number().finite().nonnegative().nullable(),
   text: z.string(),
 });
 export type LyricLine = z.infer<typeof lyricLineSchema>;
 
-/** Minutes may pass 59; a fraction's one to three digits are tenths, hundredths or thousandths. */
-const TIME_TAG = /^\[(\d+):(\d{2})(?:\.(\d{1,3}))?\]/;
+/**
+ * Minutes may pass 59 and take one digit or more, seconds one or two; a fraction's one to three
+ * digits are tenths, hundredths or thousandths. Space may sit between a line's leading tags.
+ */
+const TIME_TAG = /^\s*\[(\d+):(\d{1,2})(?:\.(\d{1,3}))?\]/;
 const OFFSET_TAG = /^\[offset:\s*([+-]?\d+)\s*\]$/i;
+/** Anything shaped like a time tag left in a line's text, read or not, is never shown. */
+const TAG_SHAPED = /\[\d+:[\d.:]*\]/g;
+/** Enhanced LRC's word tags (`<mm:ss.xx>word`); the line keeps its own start. */
+const WORD_TAG = /<\d+:[\d.:]*>/g;
+/** No song runs a day: a start or an offset past this is not a time. */
+const MAX_MS = 24 * 60 * 60 * 1000;
+const BOM = /^\uFEFF/;
 
 function lines(text: string): string[] {
-  return text.split(/\r?\n/);
+  return text.replace(BOM, '').split(/\r\n|[\n\r\u2028\u2029]/);
 }
 
 /** Seconds, to the millisecond. */
@@ -24,10 +34,27 @@ function seconds(ms: number): number {
   return Math.round(ms) / 1000;
 }
 
+/** A time tag's milliseconds; null when it names no time a song could have. */
+function tagMs(tag: RegExpExecArray): number | null {
+  const fraction = tag[3] ?? '';
+  const fractionMs = fraction === '' ? 0 : Number(fraction) * 10 ** (3 - fraction.length);
+  const ms = (Number(tag[1]) * 60 + Number(tag[2])) * 1000 + fractionMs;
+  return Number.isFinite(ms) && ms <= MAX_MS ? ms : null;
+}
+
+/** A line's words with word tags and tag-shaped text taken out, and the gaps they leave closed. */
+function untagged(rest: string): string {
+  const words = rest.replace(TAG_SHAPED, '').replace(WORD_TAG, '');
+  return (words === rest ? words : words.replace(/\s+/g, ' ')).trim();
+}
+
 /**
- * The timed lines of LRC text, by start. A line with several time tags is sung at each of them.
- * A line with no time tag (`[ar:...]`, `[length:...]`, stray text) is dropped. `[offset:+ms]`
- * makes every line that many milliseconds earlier, never before 0. No timed line gives `[]`.
+ * The timed lines of LRC text, by start. A line with several time tags is sung at each of them;
+ * a tag naming no sane time (past a day, before or after the offset) is dropped, and a line left with none is dropped too.
+ * A line with no time tag (`[ar:...]`, `[length:...]`, stray text) is dropped. Word tags and any
+ * leftover tag-shaped text are taken out of a line's text. `[offset:+ms]` makes every line that
+ * many milliseconds earlier, never before 0; an offset past a day is ignored. No timed line
+ * gives `[]`.
  */
 export function parseLrc(text: string): LyricLine[] {
   let offsetMs = 0;
@@ -36,21 +63,23 @@ export function parseLrc(text: string): LyricLine[] {
     const line = raw.trim();
     const offset = OFFSET_TAG.exec(line);
     if (offset) {
-      offsetMs = Number(offset[1]);
+      const ms = Number(offset[1]);
+      if (Math.abs(ms) <= MAX_MS) offsetMs = ms;
       continue;
     }
     const at: number[] = [];
     let rest = line;
     for (let tag = TIME_TAG.exec(rest); tag; tag = TIME_TAG.exec(rest)) {
-      const fraction = tag[3] ?? '';
-      const fractionMs = fraction === '' ? 0 : Number(fraction) * 10 ** (3 - fraction.length);
-      at.push((Number(tag[1]) * 60 + Number(tag[2])) * 1000 + fractionMs);
+      const ms = tagMs(tag);
+      if (ms !== null) at.push(ms);
       rest = rest.slice(tag[0].length);
     }
-    for (const ms of at) timed.push({ ms, text: rest.trim() });
+    const words = untagged(rest);
+    for (const ms of at) timed.push({ ms, text: words });
   }
   return timed
     .map((l) => ({ ms: Math.max(0, l.ms - offsetMs), text: l.text }))
+    .filter((l) => l.ms <= MAX_MS)
     .sort((a, b) => a.ms - b.ms)
     .map((l) => ({ start: seconds(l.ms), text: l.text }));
 }
