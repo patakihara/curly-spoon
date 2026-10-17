@@ -38,15 +38,17 @@ export function lyricsRoutes(
     const user = signedIn(request);
     const ref = parseMediaRefKey(params.ref);
     if (ref?.source !== 'jellyfin') throw notFound();
-    const { libraryId } = indexedTrack(db, ref.id);
+    indexedTrack(db, ref.id);
     const jellyfin = upstreams === null ? null : upstreamFor({ db, ...upstreams }, user).jellyfin;
     if (jellyfin === null) throw notFound();
     const views = await viewsAccess(`${user.id}:jellyfin`, () => jellyfinViews(jellyfin)).catch(
       refusalFor,
     );
-    if (libraryId === null || !views.has(libraryId)) throw notFound();
-    // Read again after the wait: an answer is kept only for the track's current index version.
-    const answer = await lyrics.forTrack(indexedTrack(db, ref.id), jellyfin).catch(refusalFor);
+    // Read again after the wait: the track may have moved library, and an answer is kept only
+    // for the track's current index version.
+    const track = indexedTrack(db, ref.id);
+    if (track.libraryId === null || !views.has(track.libraryId)) throw notFound();
+    const answer = await lyrics.forTrack(track, jellyfin).catch(refusalFor);
     return { ref, ...answer };
   });
 }

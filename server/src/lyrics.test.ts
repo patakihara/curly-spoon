@@ -9,6 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { Lyrics as LyricsBody } from '@auralis/schema';
+import { Ajv2020 } from 'ajv/dist/2020.js';
 import { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { type FetchLike } from './adapters/http/fetch.js';
@@ -140,9 +141,18 @@ afterEach(async () => {
 
 /**
  * The app on the recordings. `jellyfinAsked` and `lrclibAsked` list each call's path, and
- * LRCLIB's by the track it names; `lrclib` and `jellyfinLyricsFetch` replace either side.
+ * LRCLIB's by the track it names; `lrclib`, `jellyfinLyricsFetch` and `viewsFetch` replace one
+ * side's answers.
  */
-async function server(options: { lrclib?: FetchLike; jellyfinLyricsFetch?: FetchLike } = {}) {
+async function server(
+  options: {
+    lrclib?: FetchLike;
+    jellyfinLyricsFetch?: FetchLike;
+    viewsFetch?: FetchLike;
+    /** Runs while a person's views are being asked for, before Jellyfin answers. */
+    duringViews?: () => void;
+  } = {},
+) {
   const jellyfinAsked: string[] = [];
   const lrclibAsked: string[] = [];
   const kara = replayFetch([userViews, ...jellyfinLyrics]);
@@ -152,6 +162,10 @@ async function server(options: { lrclib?: FetchLike; jellyfinLyricsFetch?: Fetch
     jellyfinAsked.push(`${pathname}${search}`);
     if (options.jellyfinLyricsFetch && pathname.endsWith('/Lyrics')) {
       return options.jellyfinLyricsFetch(url, init);
+    }
+    if (pathname === '/UserViews') {
+      options.duringViews?.();
+      if (options.viewsFetch) return options.viewsFetch(url, init);
     }
     const authorization = new Headers(init?.headers).get('authorization') ?? '';
     return (authorization.includes('otto') ? otto : kara)(url, init);
@@ -191,6 +205,28 @@ async function server(options: { lrclib?: FetchLike; jellyfinLyricsFetch?: Fetch
     return LyricsBody.parse(body);
   };
   return { get, lyricsOf, jellyfinAsked, lrclibAsked };
+}
+
+/** The committed OpenAPI document, as the clients are generated from it. */
+const openApi = new Ajv2020({ strict: false, allErrors: true }).addSchema(
+  JSON.parse(
+    readFileSync(
+      fileURLToPath(new URL('../../schema/generated/openapi.json', import.meta.url)),
+      'utf8',
+    ),
+  ) as object,
+  'openapi',
+);
+/** How `body` fails the document's 200 answer to `GET /api/lyrics/{ref}`: nothing when it fits. */
+function againstOpenApi(body: unknown): string[] {
+  const pointer = ['paths', '/api/lyrics/{ref}', 'get', 'responses', '200', 'content']
+    .concat(['application/json', 'schema'])
+    .map((part) => part.replaceAll('~', '~0').replaceAll('/', '~1'))
+    .join('/');
+  const validate = openApi.compile({ $ref: `openapi#/${pointer}` });
+  return validate(body)
+    ? []
+    : (validate.errors ?? []).map((e) => `${e.instancePath} ${e.message ?? ''}`);
 }
 
 describe("[M2.lrclib] a track's lyrics, from the recordings", () => {
@@ -310,5 +346,66 @@ describe("[M2.lrclib] a track's lyrics, from the recordings", () => {
     expect((await s.get('jellyfin:not-hex')).status).toBe(400);
     expect((await s.get(`jellyfin:${SECOND_HAND_NEWS}`, null)).status).toBe(401);
     expect(s.jellyfinAsked).toEqual([]);
+  });
+
+  it('answers in the shape the OpenAPI document gives clients: synced from either source, and none', async () => {
+    const s = await server();
+    for (const id of [SECOND_HAND_NEWS, GET_LUCKY, YEAR_OF_THE_RAT]) {
+      const { status, body } = await s.get(`jellyfin:${id}`);
+      expect(status).toBe(200);
+      expect(againstOpenApi(body)).toEqual([]);
+    }
+  });
+
+  it("keeps each person's views their own: a track one person may see is still 404 to the next, on one app", async () => {
+    const s = await server();
+    expect((await s.get(`jellyfin:${SECOND_HAND_NEWS}`, 'kara')).status).toBe(200);
+    expect(await s.get(`jellyfin:${SECOND_HAND_NEWS}`, 'otto')).toEqual({
+      status: 404,
+      body: { error: 'not_found' },
+    });
+  });
+
+  it('answers 502 when Jellyfin fails to give the person their views', async () => {
+    const s = await server({ viewsFetch: rejecting });
+    expect(await s.get(`jellyfin:${SECOND_HAND_NEWS}`)).toEqual({
+      status: 502,
+      body: { error: 'upstream_failed' },
+    });
+    expect(s.lrclibAsked).toEqual([]);
+  });
+
+  it('answers 404 when the track moves to a library the person cannot see while their views are asked for', async () => {
+    // The album and its tracks, as recorded, but in another library than Music.
+    const moved = () => {
+      const album = indexItemSchema.parse(lyricsAlbum(1));
+      const listed = json<{ Items: ListedTrack[] }>(recording('jellyfin', 'lyrics-album-1-tracks'));
+      const tracks = listed.Items.map((t) => indexItemSchema.parse(t));
+      const other = 'f'.repeat(32);
+      applyTree(
+        db,
+        { top: albumRow(album, other), children: trackRows(album.Id, other, tracks) },
+        T0 + 1,
+        emptyCounts(),
+      );
+    };
+    const moving = await server({ duringViews: moved });
+    expect(await moving.get(`jellyfin:${GET_LUCKY}`)).toEqual({
+      status: 404,
+      body: { error: 'not_found' },
+    });
+    expect(moving.lrclibAsked).toEqual([]);
+  });
+
+  it('resolves the track as the index holds it once the views are in, not as it was before', async () => {
+    const s = await server({
+      duringViews: () =>
+        indexAlbum(db, lyricsAlbum(1), 'lyrics-album-1-tracks', T0 + 1, (tracks) => {
+          tracks.find((t) => t.Id === GET_LUCKY)!.Genres = ['Disco'];
+        }),
+    });
+    await s.lyricsOf(GET_LUCKY);
+    expect(indexedRow(db, 'jellyfin', GET_LUCKY)!.version).toBe(2);
+    expect(cachedLyrics(db, 'jellyfin', GET_LUCKY)?.itemVersion).toBe(2);
   });
 });

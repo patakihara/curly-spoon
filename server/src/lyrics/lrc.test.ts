@@ -150,6 +150,19 @@ describe('reading LRC', () => {
     ]);
   });
 
+  it('takes a word tag with no fraction as a word tag', () => {
+    expect(parseLrc('[00:01.00]<00:01>Hel <00:05>lo')).toEqual([{ start: 1, text: 'Hel lo' }]);
+  });
+
+  it('reads no tag with 60 seconds or more, so the line it starts is dropped', () => {
+    expect(
+      parseLrc('[00:75.00] too many seconds\n[00:60] still too many\n[00:59.99] kept'),
+    ).toEqual([{ start: 59.99, text: 'kept' }]);
+    expect(parseLrc('[00:01.00]one <00:75.00>two')).toEqual([
+      { start: 1, text: 'one <00:75.00>two' },
+    ]);
+  });
+
   it('drops a line whose leading tag it cannot read', () => {
     expect(parseLrc('[00:01.0000] untimed\n[00:02.00] timed')).toEqual([
       { start: 2, text: 'timed' },

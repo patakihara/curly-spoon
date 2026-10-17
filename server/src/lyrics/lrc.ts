@@ -12,17 +12,22 @@ export const lyricLineSchema = z.object({
 export type LyricLine = z.infer<typeof lyricLineSchema>;
 
 /**
- * Minutes may pass 59 and take one digit or more, seconds one or two; a fraction's one to three
- * digits are tenths, hundredths or thousandths. Space may sit between a line's leading tags.
+ * Minutes may pass 59 and take one digit or more, seconds one or two, under 60; a fraction's one
+ * to three digits are tenths, hundredths or thousandths. Space may sit between a line's leading
+ * tags.
  */
-const TIME_TAG = /^\s*\[(\d+):(\d{1,2})(?:\.(\d{1,3}))?\]/;
+const TIME_TAG = /^\s*\[(\d+):([0-5]?\d)(?:\.(\d{1,3}))?\]/;
 const OFFSET_TAG = /^\[offset:\s*([+-]?\d+)\s*\]$/i;
 /**
- * Enhanced LRC's word tags (`<mm:ss.xx>word`), with the space either side; the line keeps its own
- * start. Anything else in angle or square brackets after the leading tags is the song's text.
+ * Enhanced LRC's word tags (`<mm:ss.xx>word`, the fraction optional, seconds under 60), with the
+ * space either side; the line keeps its own start. Anything else in angle or square brackets
+ * after the leading tags is the song's text.
  */
-const WORD_TAG = /(\s?)<\d+:\d{2}\.\d{1,3}>(\s?)/g;
-/** No song runs a day: a start past this is not a time, and an offset of a day or more is ignored. */
+const WORD_TAG = /(\s?)<\d+:[0-5]\d(?:\.\d{1,3})?>(\s?)/g;
+/**
+ * No song runs a day: a start past this is not a time, and an offset of a day or more is
+ * ignored.
+ */
 const MAX_MS = 24 * 60 * 60 * 1000;
 const BOM = /^\uFEFF/;
 
@@ -50,7 +55,8 @@ function untagged(rest: string): string {
 
 /**
  * The timed lines of LRC text, by start. A line with several time tags is sung at each of them;
- * a tag naming no sane time (past a day, before or after the offset) is dropped, and a line left with none is dropped too.
+ * a tag naming no sane time (past a day, before or after the offset) is dropped, and a line left
+ * with none is dropped too.
  * A line with no time tag (`[ar:...]`, `[length:...]`, stray text) is dropped. Only the leading
  * run of time tags and well-formed word tags are taken out of a line's text; other bracketed text
  * (`[Chorus]`, `John [3:16] says`) stays as written. `[offset:+ms]` makes every line that many
