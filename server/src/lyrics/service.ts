@@ -6,9 +6,11 @@
  * failing when Jellyfin has no lines, fails the call and caches nothing; LRCLIB failing when
  * Jellyfin has plain lines answers those, uncached. Two calls for one track at one index version
  * at once share one resolution, so the route and the job never ask LRCLIB twice for it; a call at
- * a newer version never joins an older one. A cached answer that no longer reads is forgotten,
+ * a newer version never joins an older one; one that joins waits at most its own LRCLIB limit,
+ * failing as a timeout past it while the lookup carries on for the first. A cached answer that no longer reads is forgotten,
  * logged, and resolved again.
  */
+import { AdapterError } from '../adapters/http/fetch.js';
 import type { JellyfinLyrics } from '../adapters/jellyfin/schemas.js';
 import type { LrclibClient } from '../adapters/lrclib/client.js';
 import type { LrclibRecord } from '../adapters/lrclib/schemas.js';
@@ -42,7 +44,7 @@ export interface LyricsLog {
 
 /** How one caller asks: the route with a short LRCLIB limit, the job hearing of each lookup. */
 export interface ForTrackOptions {
-  /** LRCLIB's limit for this call; the client's own when not given. */
+  /** LRCLIB's limit for this call, and the longest it waits on a lookup it joins; the client's own when not given. */
   lrclibTimeoutMs?: number;
   /** Told after each LRCLIB lookup this call makes, whether LRCLIB answered or failed. */
   onLrclib?: (answered: boolean) => void;
@@ -56,6 +58,17 @@ export interface LyricsOptions {
   now: () => number;
   /** How long plain lyrics or none stay fresh; `LYRICS_RECHECK_MS` when not given. */
   recheckMs?: number;
+}
+
+/** `running`, or a timeout once `ms` pass first; `running` itself carries on either way. */
+function within(running: Promise<LyricsAnswer>, ms: number | undefined): Promise<LyricsAnswer> {
+  if (ms === undefined) return running;
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new AdapterError('timeout', 'lyrics', `the lookup joined gave no answer in ${ms} ms`));
+    }, ms);
+    void running.then(resolve, reject).finally(() => clearTimeout(timer));
+  });
 }
 
 export class Lyrics {
@@ -79,7 +92,7 @@ export class Lyrics {
     }
     const key = `${track.source}:${track.id}:${track.version}`;
     const running = this.inFlight.get(key);
-    if (running) return running;
+    if (running) return within(running, how.lrclibTimeoutMs);
     const resolving = this.resolve(track, jellyfin, how).finally(() => this.inFlight.delete(key));
     this.inFlight.set(key, resolving);
     return resolving;

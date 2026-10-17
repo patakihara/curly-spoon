@@ -4,8 +4,9 @@
  * is read, so the cache never answers past access. Anything else answers 404. The lyrics come from
  * the household's cache when it holds a fresh answer, else from Jellyfin's file, read with the
  * person's own token, then LRCLIB, as `Lyrics.forTrack` resolves them for the track as the index
- * holds it now, waiting at most `LRCLIB_ROUTE_TIMEOUT_MS` on LRCLIB. An upstream failure answers
- * 502, with nothing kept.
+ * holds it now, waiting at most `LRCLIB_ROUTE_TIMEOUT_MS` on LRCLIB, or on a lookup the backfill
+ * already started for the track. An upstream failure, or that wait running out, answers 502, with
+ * nothing kept.
  */
 import { getLyrics, type Lyrics as LyricsBody, parseMediaRefKey } from '@auralis/schema';
 import type { FastifyInstance } from 'fastify';

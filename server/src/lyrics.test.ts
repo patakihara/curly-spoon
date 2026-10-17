@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { Lyrics as LyricsBody } from '@auralis/schema';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { type FastifyInstance } from 'fastify';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type FetchLike } from './adapters/http/fetch.js';
 import { type Recording, recordingSchema } from './adapters/http/recording.js';
 import { replayFetch } from './adapters/http/replay.js';
@@ -212,7 +212,7 @@ async function server(
     expect(status).toBe(200);
     return LyricsBody.parse(body);
   };
-  return { get, lyricsOf, jellyfinAsked, lrclibAsked, lrclibLimits };
+  return { get, lyricsOf, lyrics, jellyfinAsked, lrclibAsked, lrclibLimits };
 }
 
 /** The committed OpenAPI document, as the clients are generated from it. */
@@ -422,5 +422,53 @@ describe("[M2.lrclib] a track's lyrics, from the recordings", () => {
     await s.lyricsOf(GET_LUCKY);
     expect(LRCLIB_ROUTE_TIMEOUT_MS).toBe(5_000);
     expect(s.lrclibLimits).toEqual([LRCLIB_ROUTE_TIMEOUT_MS]);
+  });
+
+  it('still answers within 5 seconds when it joins a slow lookup the backfill started, which carries on for the job', async () => {
+    let answer: () => void = () => undefined;
+    const answered = new Promise<void>((resolve) => (answer = resolve));
+    const recorded = replayFetch(lrclibRecordings.map((c) => recording('lrclib', c)));
+    const slowLrclib: FetchLike = async (url, init) => {
+      await answered;
+      return recorded(url, init);
+    };
+    let viewsAsked = false;
+    const s = await server({ lrclib: slowLrclib, duringViews: () => (viewsAsked = true) });
+    const ticks = async (until: () => boolean = () => false, most = 50) => {
+      for (let i = 0; i < most && !until(); i += 1) {
+        await new Promise((resolve) => setImmediate(resolve));
+      }
+    };
+    // The backfill asks first, with no limit of its own.
+    const forJob = s.lyrics.forTrack(indexedRow(db, 'jellyfin', GET_LUCKY)!, {
+      getLyrics: () => Promise.reject(new Error('Get Lucky has no lyrics file')),
+    });
+    await ticks(() => s.lrclibAsked.length === 1);
+    expect(s.lrclibAsked).toEqual(['Get Lucky']);
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      let settled = false;
+      const asking = s.get(`jellyfin:${GET_LUCKY}`).finally(() => (settled = true));
+      await ticks(() => viewsAsked);
+      await ticks();
+      vi.advanceTimersByTime(LRCLIB_ROUTE_TIMEOUT_MS - 1);
+      await ticks();
+      expect(settled).toBe(false);
+      vi.advanceTimersByTime(1);
+      await ticks(() => settled);
+
+      expect(settled).toBe(true);
+      expect(await asking).toEqual({ status: 502, body: { error: 'upstream_failed' } });
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(cachedLyrics(db, 'jellyfin', GET_LUCKY)).toBeUndefined();
+
+    answer();
+
+    expect(await forJob).toMatchObject({ status: 'synced', source: 'lrclib' });
+    expect(s.lrclibAsked).toEqual(['Get Lucky']);
+    expect(cachedLyrics(db, 'jellyfin', GET_LUCKY)).toMatchObject({ source: 'lrclib' });
   });
 });
