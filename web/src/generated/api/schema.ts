@@ -484,6 +484,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lyrics/{ref}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One track's lyrics, for a signed-in person who may open its album */
+        get: operations["getLyrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -546,6 +563,8 @@ export interface components {
             ref: components["schemas"]["MediaRef"];
             title: string;
         };
+        /** @enum {string} */
+        LyricsSource: "jellyfin" | "lrclib";
         HealthResponse: {
             /** @enum {string} */
             status: "ok";
@@ -852,6 +871,18 @@ export interface components {
         SearchResults: {
             query: string;
             results: components["schemas"]["SearchResult"][];
+        };
+        /** @enum {string} */
+        LyricsStatus: "synced" | "plain" | "instrumental" | "none";
+        LyricLine: {
+            start: number | null;
+            text: string;
+        };
+        Lyrics: {
+            ref: components["schemas"]["MediaRef"];
+            status: components["schemas"]["LyricsStatus"];
+            source: components["schemas"]["LyricsSource"] | null;
+            lines: components["schemas"]["LyricLine"][];
         };
     };
     responses: never;
@@ -2490,6 +2521,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchResults"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getLyrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ref: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Jellyfin's own synced lines, else LRCLIB's, else plain lines, an instrumental or none, kept once found. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Lyrics"];
                 };
             };
             /** @description The request does not parse, or was refused. */

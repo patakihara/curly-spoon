@@ -23,6 +23,7 @@ import {
   CreateBookmarkBody,
 } from './bookmarks.js';
 import { HealthResponse } from './health.js';
+import { Lyrics } from './lyrics.js';
 import {
   ArtQuery,
   ImageBytes,
@@ -458,6 +459,18 @@ export const getSearch = {
   query: SearchQuery,
 } as const satisfies Route;
 
+export const getLyrics = {
+  method: 'GET',
+  path: '/api/lyrics/{ref}',
+  operationId: 'getLyrics',
+  summary: "One track's lyrics, for a signed-in person who may open its album",
+  responseDescription:
+    "Jellyfin's own synced lines, else LRCLIB's, else plain lines, an instrumental or none, kept once found.",
+  response: Lyrics,
+  access: 'member',
+  params: ItemParams,
+} as const satisfies Route;
+
 /** Every route the API has. The generator and the server's route test both read this list. */
 export const routes: readonly Route[] = [
   health,
@@ -492,4 +505,5 @@ export const routes: readonly Route[] = [
   mediaArt,
   getSearchSuggest,
   getSearch,
+  getLyrics,
 ];

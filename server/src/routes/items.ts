@@ -33,6 +33,7 @@ import { albumTracks, episodesInOrder, indexedRow, type StoredRow } from '../lib
 import { Refusal, serve, serveStream, type StreamAnswer } from '../route.js';
 import type { Db } from '../store/connection.js';
 import { type Upstreams, upstreamFor } from '../upstream/links.js';
+import { accessCache } from './accessCache.js';
 import { PAGE_KINDS } from './art.js';
 import { signedIn } from './auth.js';
 import { type AbsAccess, absAccess, entry, jellyfinViews } from './library.js';
@@ -53,29 +54,6 @@ type Openable =
   | { row: StoredRow; kind: 'album'; jellyfin: NonNullable<Upstreams['jellyfin']> };
 
 const notFound = () => new Refusal(404, 'not_found');
-
-/** How long the art route keeps a person's access check. */
-const ART_ACCESS_MS = 60_000;
-
-/**
- * One answer per key, kept for `ART_ACCESS_MS`: a person's Audiobookshelf access or Jellyfin
- * views. A failed check is not kept. Expired answers are dropped as new ones are kept.
- */
-function accessCache() {
-  const kept = new Map<string, { until: number; answer: Promise<unknown> }>();
-  return <T>(key: string, check: () => Promise<T>): Promise<T> => {
-    const now = Date.now();
-    const hit = kept.get(key);
-    if (hit !== undefined && hit.until > now) return hit.answer as Promise<T>;
-    for (const [k, v] of kept) if (v.until <= now) kept.delete(k);
-    const answer = check();
-    kept.set(key, { until: now + ART_ACCESS_MS, answer });
-    answer.catch(() => {
-      if (kept.get(key)?.answer === answer) kept.delete(key);
-    });
-    return answer;
-  };
-}
 
 /** Who an album's track names under its title: its own artists. */
 function trackSub(row: StoredRow): string | null {

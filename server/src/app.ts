@@ -17,7 +17,9 @@ import { bookmarkRoutes } from './routes/bookmarks.js';
 import { deviceRoutes } from './routes/devices.js';
 import { itemRoutes } from './routes/items.js';
 import { libraryRoutes } from './routes/library.js';
+import { lyricsRoutes } from './routes/lyrics.js';
 import { type PlaybackOptions, playRoutes, type UpstreamAccess } from './routes/play.js';
+import { Lyrics } from './lyrics/service.js';
 import { IndexLookup } from './queues/lookup.js';
 import { Sessions } from './queues/sessions.js';
 import { searchRoutes } from './routes/search.js';
@@ -45,6 +47,8 @@ export interface BuildAppOptions {
   linker?: Linker | null;
   /** Acts upstream as each person; without it, playing answers 409. */
   upstreams?: UpstreamAccess | null;
+  /** Tracks' lyrics, shared with the lyrics job; by default Jellyfin's alone, LRCLIB off. */
+  lyrics?: Lyrics;
   /** How transcodes are held open and their segments waited for. */
   playback?: PlaybackOptions;
   random?: Random;
@@ -148,6 +152,15 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   bookmarkRoutes(app, { db, upstreams: options.upstreams ?? null });
   libraryRoutes(app, { db, upstreams });
   itemRoutes(app, { db, upstreams });
+  const lyrics =
+    options.lyrics ??
+    new Lyrics({
+      db,
+      log: { warn: (details, message) => app.log.warn(details, message) },
+      lrclib: null,
+      now: options.now ?? Date.now,
+    });
+  lyricsRoutes(app, { db, upstreams, lyrics });
   searchRoutes(app, { db, now: options.now ?? Date.now });
 
   const distDir = options.webDistDir;
