@@ -289,6 +289,20 @@ describe("a track's lyrics", () => {
     expect(warnings).toHaveLength(1);
   });
 
+  it('forgets a cached answer it cannot read even when resolving it again fails', async () => {
+    const { lyrics, jf } = setUp();
+    await lyrics.forTrack(track(GET_LUCKY), jf);
+    db.prepare(`UPDATE lyrics SET lines = 'not json'`).run();
+    const failing = setUp(rejecting, rejecting);
+    await expect(failing.lyrics.forTrack(track(GET_LUCKY), failing.jf)).rejects.toThrow();
+    const rows = db
+      .prepare('SELECT count(*) AS n FROM lyrics WHERE upstream_id = ?')
+      .get(GET_LUCKY);
+    expect(rows).toEqual({ n: 0 });
+    await expect(failing.lyrics.forTrack(track(GET_LUCKY), failing.jf)).rejects.toThrow();
+    expect(warnings).toHaveLength(1);
+  });
+
   it('answers a failure as a rejected promise, never by throwing', async () => {
     const { lyrics, jf } = setUp();
     const getLucky = track(GET_LUCKY);

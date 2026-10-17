@@ -89,8 +89,14 @@ describe('reading LRC', () => {
     expect(parseLrc(`${huge}\n[1441:00.00] past a day\n[00:02.00][1441:00.00] kept`)).toEqual([
       { start: 2, text: 'kept' },
     ]);
-    expect(parseLrc('[offset:-86400000]\n[00:00.00] a day\n[00:01.00] past')).toEqual([
-      { start: 86400, text: 'a day' },
+    expect(parseLrc('[offset:-86399999]\n[00:00.00] a day\n[00:01.00] past')).toEqual([
+      { start: 86399.999, text: 'a day' },
+    ]);
+  });
+
+  it('drops a time past a day even when the offset would bring it back', () => {
+    expect(parseLrc('[offset:+1000]\n[1440:00.50] late\n[00:02.00] kept')).toEqual([
+      { start: 1, text: 'kept' },
     ]);
   });
 
@@ -99,6 +105,11 @@ describe('reading LRC', () => {
       { start: 1, text: 'a' },
     ]);
     expect(parseLrc('[offset:+86400001]\n[00:01.00] a')).toEqual([{ start: 1, text: 'a' }]);
+  });
+
+  it('ignores an offset of exactly a day, either way', () => {
+    expect(parseLrc('[offset:+86400000]\n[00:01.00] a')).toEqual([{ start: 1, text: 'a' }]);
+    expect(parseLrc('[offset:-86400000]\n[00:01.00] a')).toEqual([{ start: 1, text: 'a' }]);
   });
 
   it('splits on a lone CR and on Unicode line and paragraph separators', () => {
@@ -118,9 +129,30 @@ describe('reading LRC', () => {
     ]);
   });
 
-  it('never shows tag-shaped text it cannot read', () => {
-    expect(parseLrc('[00:01.00] a [00:02.0000] b [1:2:3]\n[00:01.0000] untimed')).toEqual([
-      { start: 1, text: 'a b' },
+  it('takes out only the time tags at the start of a line, and keeps bracketed words after them', () => {
+    expect(
+      parseLrc(
+        '[00:01.00] John [3:16] says\n[00:02.00]at [10:30] tonight\n[00:03.00] [12:34:56]\n' +
+          '[00:04.00] [Chorus] sing [x2]\n[00:05.00] I <3 you <1:2> a  b',
+      ),
+    ).toEqual([
+      { start: 1, text: 'John [3:16] says' },
+      { start: 2, text: 'at [10:30] tonight' },
+      { start: 3, text: '[12:34:56]' },
+      { start: 4, text: '[Chorus] sing [x2]' },
+      { start: 5, text: 'I <3 you <1:2> a  b' },
+    ]);
+  });
+
+  it('closes only the double space a word tag leaves, never other spacing', () => {
+    expect(parseLrc('[00:01.00]one <00:01.50> two  three')).toEqual([
+      { start: 1, text: 'one two  three' },
+    ]);
+  });
+
+  it('drops a line whose leading tag it cannot read', () => {
+    expect(parseLrc('[00:01.0000] untimed\n[00:02.00] timed')).toEqual([
+      { start: 2, text: 'timed' },
     ]);
   });
 

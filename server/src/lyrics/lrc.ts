@@ -17,11 +17,12 @@ export type LyricLine = z.infer<typeof lyricLineSchema>;
  */
 const TIME_TAG = /^\s*\[(\d+):(\d{1,2})(?:\.(\d{1,3}))?\]/;
 const OFFSET_TAG = /^\[offset:\s*([+-]?\d+)\s*\]$/i;
-/** Anything shaped like a time tag left in a line's text, read or not, is never shown. */
-const TAG_SHAPED = /\[\d+:[\d.:]*\]/g;
-/** Enhanced LRC's word tags (`<mm:ss.xx>word`); the line keeps its own start. */
-const WORD_TAG = /<\d+:[\d.:]*>/g;
-/** No song runs a day: a start or an offset past this is not a time. */
+/**
+ * Enhanced LRC's word tags (`<mm:ss.xx>word`), with the space either side; the line keeps its own
+ * start. Anything else in angle or square brackets after the leading tags is the song's text.
+ */
+const WORD_TAG = /(\s?)<\d+:\d{2}\.\d{1,3}>(\s?)/g;
+/** No song runs a day: a start past this is not a time, and an offset of a day or more is ignored. */
 const MAX_MS = 24 * 60 * 60 * 1000;
 const BOM = /^\uFEFF/;
 
@@ -42,18 +43,18 @@ function tagMs(tag: RegExpExecArray): number | null {
   return Number.isFinite(ms) && ms <= MAX_MS ? ms : null;
 }
 
-/** A line's words with word tags and tag-shaped text taken out, and the gaps they leave closed. */
+/** A line's words with its word tags taken out, a tag between two spaces leaving one. */
 function untagged(rest: string): string {
-  const words = rest.replace(TAG_SHAPED, '').replace(WORD_TAG, '');
-  return (words === rest ? words : words.replace(/\s+/g, ' ')).trim();
+  return rest.replace(WORD_TAG, (_tag, before: string, after: string) => before || after).trim();
 }
 
 /**
  * The timed lines of LRC text, by start. A line with several time tags is sung at each of them;
  * a tag naming no sane time (past a day, before or after the offset) is dropped, and a line left with none is dropped too.
- * A line with no time tag (`[ar:...]`, `[length:...]`, stray text) is dropped. Word tags and any
- * leftover tag-shaped text are taken out of a line's text. `[offset:+ms]` makes every line that
- * many milliseconds earlier, never before 0; an offset past a day is ignored. No timed line
+ * A line with no time tag (`[ar:...]`, `[length:...]`, stray text) is dropped. Only the leading
+ * run of time tags and well-formed word tags are taken out of a line's text; other bracketed text
+ * (`[Chorus]`, `John [3:16] says`) stays as written. `[offset:+ms]` makes every line that many
+ * milliseconds earlier, never before 0; an offset of a day or more is ignored. No timed line
  * gives `[]`.
  */
 export function parseLrc(text: string): LyricLine[] {
@@ -64,7 +65,7 @@ export function parseLrc(text: string): LyricLine[] {
     const offset = OFFSET_TAG.exec(line);
     if (offset) {
       const ms = Number(offset[1]);
-      if (Math.abs(ms) <= MAX_MS) offsetMs = ms;
+      if (Math.abs(ms) < MAX_MS) offsetMs = ms;
       continue;
     }
     const at: number[] = [];
