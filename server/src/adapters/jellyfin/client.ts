@@ -38,6 +38,12 @@ export const INSTANT_MIX_LIMIT = 20;
 /** Jellyfin counts time in 100 ns ticks. */
 export const TICKS_PER_SECOND = 10_000_000;
 
+/**
+ * A lyrics answer larger than this is refused rather than read: a long song's lines with a cue
+ * per word stay well under it.
+ */
+export const JELLYFIN_LYRICS_MAX_BYTES = 1024 * 1024;
+
 /** One report of a track playing: where it is, in seconds, and whether it is paused. */
 export interface PlaybackReport {
   itemId: string;
@@ -80,7 +86,13 @@ export class JellyfinClient {
     return url.toString();
   }
 
-  private get<T>(path: string, schema: ZodType<T>, query?: Record<string, string>, token = true) {
+  private get<T>(
+    path: string,
+    schema: ZodType<T>,
+    query?: Record<string, string>,
+    token = true,
+    maxBytes?: number,
+  ) {
     const authorization = buildAuthorizationHeader(
       this.device,
       token ? this.opts.token : undefined,
@@ -88,7 +100,7 @@ export class JellyfinClient {
     return requestJson(
       this.opts.fetch,
       this.url(path, query),
-      { headers: { authorization } },
+      { headers: { authorization }, ...(maxBytes === undefined ? {} : { maxBytes }) },
       schema,
     );
   }
@@ -243,7 +255,13 @@ export class JellyfinClient {
    */
   async getLyrics(itemId: string): Promise<JellyfinLyrics | null> {
     try {
-      return await this.get(`Audio/${encodeURIComponent(itemId)}/Lyrics`, jellyfinLyricsSchema);
+      return await this.get(
+        `Audio/${encodeURIComponent(itemId)}/Lyrics`,
+        jellyfinLyricsSchema,
+        undefined,
+        true,
+        JELLYFIN_LYRICS_MAX_BYTES,
+      );
     } catch (error) {
       if (error instanceof AdapterError && error.kind === 'status' && error.status === 404) {
         return null;

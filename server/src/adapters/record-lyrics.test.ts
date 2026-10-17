@@ -1,10 +1,12 @@
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { type FetchLike } from './http/fetch.js';
 import { type Recording, recordingSchema } from './http/recording.js';
 import { LRCLIB_USER_AGENT } from './lrclib/client.js';
 import { runRecord } from './record-cli.js';
-import { LYRICS_TRIMMED, trimLyricsExchange } from './record-lyrics.js';
+import { LYRICS_TRIMMED, recordLyrics, trimLyricsExchange } from './record-lyrics.js';
 import { type RawExchange } from './http/scrub.js';
 
 const JF = 'http://jellyfin.invalid:8096';
@@ -82,6 +84,12 @@ interface FakeOptions {
   busy?: number;
   /** What Jellyfin answers for the plain track's lyrics. */
   plainLyrics?: unknown;
+  /** The status LRCLIB's busy answers carry; 503 when not given. */
+  busyStatus?: number;
+  /** What LRCLIB answers for the instrumental track, in place of its instrumental record. */
+  wake?: unknown;
+  /** Jellyfin's logout fails with a network error. */
+  logoutFails?: boolean;
 }
 
 function fakeUpstreams(options: FakeOptions = {}) {
@@ -110,7 +118,7 @@ function fakeUpstreams(options: FakeOptions = {}) {
           busy -= 1;
           return json(
             { message: 'The server is busy, please retry in a moment', statusCode: 503 },
-            503,
+            options.busyStatus ?? 503,
           );
         }
         return json({
@@ -128,6 +136,7 @@ function fakeUpstreams(options: FakeOptions = {}) {
         });
       }
       if (track === 'Wake') {
+        if (options.wake !== undefined) return json(options.wake);
         return json({
           id: 12,
           name: 'Wake',
@@ -170,7 +179,10 @@ function fakeUpstreams(options: FakeOptions = {}) {
         return json(options.plainLyrics ?? { Metadata: {}, Lyrics: lines(6, false) });
       }
       if (p === '/Audio/lucky/Lyrics') return notFound();
-      if (p === '/Sessions/Logout') return new Response(null, { status: 204 });
+      if (p === '/Sessions/Logout') {
+        if (options.logoutFails) throw new TypeError('fetch failed');
+        return new Response(null, { status: 204 });
+      }
     }
     return new Response('Not Found', { status: 404 });
   };
@@ -183,7 +195,7 @@ const FLAGS = [
   ...['--lrclib-missing', 'rat', '--lrclib-instrumental', 'wake', '--dry-run'],
 ];
 
-async function run(options: FakeOptions = {}, argv = FLAGS) {
+async function run(options: FakeOptions = {}, argv = FLAGS, names?: string[]) {
   const fake = fakeUpstreams(options);
   const out: string[] = [];
   const err: string[] = [];
@@ -197,10 +209,44 @@ async function run(options: FakeOptions = {}, argv = FLAGS) {
     sleep: async (ms) => {
       slept.push(ms);
     },
+    ...(names ? { names } : {}),
   }).catch((error: unknown) => error);
   const files = out.filter((l) => l.startsWith('wrote ')).map((l) => l.slice(6));
   const byCall = Object.fromEntries(files.map((f) => [read(f).call, read(f)]));
   return { code, out, err, files, byCall, slept, ...fake };
+}
+
+/** Runs the recorder itself into a fresh folder, and lists every file it left there. */
+async function recordInto(options: FakeOptions = {}) {
+  const fake = fakeUpstreams(options);
+  const root = mkdtempSync(join(tmpdir(), 'auralis-lyrics-test-'));
+  const out: string[] = [];
+  const failure = await recordLyrics({
+    fetch: fake.fetch,
+    out: (l) => out.push(l),
+    sleep: async () => undefined,
+    root,
+    jellyfinUrl: JF,
+    jellyfinKey: 'jfkey',
+    lrclibUrl: LRCLIB,
+    albums: ['ram', 'eyr', 'mtm'],
+    tracks: {
+      jellyfinSynced: 'synced',
+      jellyfinPlain: 'plain',
+      lrclibSynced: 'lucky',
+      lrclibMissing: 'rat',
+      lrclibInstrumental: 'wake',
+    },
+  }).then(
+    () => undefined,
+    (error: unknown) => error,
+  );
+  const left = (readdirSync(root, { recursive: true }) as string[])
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => f.split('/').at(-1))
+    .sort();
+  rmSync(root, { recursive: true, force: true });
+  return { failure, out, left, ...fake };
 }
 
 const read = (file: string): Recording =>
@@ -322,6 +368,79 @@ describe("record mode for M2.lrclib's lyrics", () => {
     expect(String(code)).toMatch(/plain/);
     expect(asked.at(-1)).toMatch(/^POST jf \/Sessions\/Logout /);
     expect(asked.filter((a) => a.includes(' lrclib '))).toEqual([]);
+  });
+
+  it('asks LRCLIB only once when it fails with any status but 503', async () => {
+    const { code, asked, slept } = await run({ busy: 1, busyStatus: 500 });
+    expect(String(code)).toMatch(/500/);
+    expect(asked.filter((a) => a.includes('track_name=Lucky'))).toHaveLength(1);
+    expect(slept).toEqual([]);
+  });
+
+  it("fails when LRCLIB's answer for a track is not of the kind it was chosen for, and leaves no file for it", async () => {
+    const { failure, left } = await recordInto({
+      wake: {
+        id: 12,
+        name: 'Wake',
+        trackName: 'Wake',
+        artistName: 'Park',
+        albumName: 'Midnight (Deluxe Edition)',
+        duration: 101,
+        instrumental: false,
+        hasWordSync: false,
+        plainLyrics: 'a',
+        syncedLyrics: '[00:01.00] a',
+      },
+    });
+    expect(String(failure)).toMatch(/the instrumental track's LRCLIB answer is synced/);
+    expect(left).not.toContain('lrclib-get-instrumental.json');
+    expect(left).toContain('lrclib-get-missing.json');
+  });
+
+  it('leaves no file for a Jellyfin answer of the wrong kind', async () => {
+    const { failure, left } = await recordInto({ plainLyrics: { Metadata: {}, Lyrics: lines(3) } });
+    expect(String(failure)).toMatch(/plain track's Jellyfin lyrics are synced/);
+    expect(left).not.toContain('jf-lyrics-plain.json');
+  });
+
+  it('fails on a scan finding before writing that recording', async () => {
+    const leaky = [{ Text: 'mirror at lyrics.someband.net', Cues: [] }];
+    const { failure, left } = await recordInto({ plainLyrics: { Metadata: {}, Lyrics: leaky } });
+    expect(String(failure)).toMatch(/jf-lyrics-plain: host at \$\.response\.body\.json\.Lyrics/);
+    expect(left).toContain('jf-lyrics-synced.json');
+    expect(left).not.toContain('jf-lyrics-plain.json');
+  });
+
+  it('fails the run when a name seen while recording is in a recording', async () => {
+    const { code, err } = await run({}, FLAGS, ['Rabbit Band']);
+    expect(code).toBe(1);
+    expect(err.join('\n')).toMatch(/lyrics-album-2\.json: name at/);
+    expect(err.join('\n')).toMatch(/do not commit these recordings/);
+  });
+
+  it('takes Jellyfin lines whose Start is null or missing as plain', async () => {
+    const plain = [
+      { Text: 'one', Start: null, Cues: [] },
+      { Text: 'two', Cues: [] },
+    ];
+    const { code, err, byCall } = await run({ plainLyrics: { Metadata: {}, Lyrics: plain } });
+    expect(err).toEqual([]);
+    expect(code).toBe(0);
+    expect(json(byCall['jf-lyrics-plain']).Lyrics).toHaveLength(2);
+  });
+
+  it('keeps the first failure when logging out fails too, and reports both', async () => {
+    const { failure, out } = await recordInto({
+      plainLyrics: { Metadata: {}, Lyrics: lines(3) },
+      logoutFails: true,
+    });
+    expect(String(failure)).toMatch(/plain track's Jellyfin lyrics are synced/);
+    expect(out.join('\n')).toMatch(/logging out the minted Jellyfin token failed: .*fetch failed/);
+  });
+
+  it('fails when logging out fails after everything else went well', async () => {
+    const { failure } = await recordInto({ logoutFails: true });
+    expect(String(failure)).toMatch(/fetch failed/);
   });
 
   it('fails before asking anything when an LRCLIB track is not on a recorded album', async () => {

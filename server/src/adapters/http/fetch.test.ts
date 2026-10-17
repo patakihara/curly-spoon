@@ -38,6 +38,26 @@ describe('an upstream call’s time limit', () => {
     });
   }
 
+  it('answers a refusal by its status even when its body is past the byte cap', async () => {
+    for (const status of [404, 503]) {
+      const fetch: FetchLike = async () =>
+        new Response('x'.repeat(2048), { status, headers: { 'content-type': 'text/html' } });
+      const failure = await requestJson(
+        fetch,
+        'https://upstream.invalid/x',
+        { maxBytes: 1024 },
+        z.string(),
+      ).catch((e: unknown) => e);
+      expect(failure).toMatchObject({ kind: 'status', status });
+    }
+  });
+
+  it('still fails a successful answer past the byte cap as a parse error', async () => {
+    const fetch: FetchLike = async () => new Response('x'.repeat(2048), { status: 200 });
+    const call = requestJson(fetch, 'https://upstream.invalid/x', { maxBytes: 1024 }, z.string());
+    await expect(call).rejects.toMatchObject({ kind: 'parse' });
+  });
+
   it('still reads a body that arrives in time', async () => {
     const fetch: FetchLike = async () =>
       new Response('{"ok":true}', { headers: { 'content-type': 'application/json' } });

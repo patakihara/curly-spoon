@@ -13,12 +13,16 @@
  *   never recorded as a missing one.
  *
  * Song lyrics are copyrighted and the repo is public: every recorded lyrics answer keeps only its
- * first four lines of each kind, and says so (`trimLyricsExchange`). Each chosen track's answer is
- * checked to be of the kind it was chosen for; the run fails otherwise.
+ * first four lines of each kind, and says so (`trimLyricsExchange`). Each answer is scanned, and
+ * each chosen track's answer checked to be of the kind it was chosen for, before its recording is
+ * written: the run fails otherwise, leaving no unscanned file behind. A failed logout never hides
+ * the failure before it; both are reported.
  */
 import { join } from 'node:path';
 import { AdapterError, type FetchLike } from './http/fetch.js';
-import { createRecorder } from './http/record.js';
+import { createRecorder, withCleanup } from './http/record.js';
+import { type Recording } from './http/recording.js';
+import { scanRecording } from './http/scan.js';
 import { type RawExchange } from './http/scrub.js';
 import { buildAuthorizationHeader } from './jellyfin/auth.js';
 import { JellyfinClient } from './jellyfin/client.js';
@@ -116,6 +120,16 @@ function url(base: string, path: string): string {
   return new URL(path, base.endsWith('/') ? base : `${base}/`).toString();
 }
 
+/** Fails on any scan finding, before the recording is written. */
+function scanned(recording: Recording) {
+  const findings = scanRecording(recording);
+  if (findings.length > 0) {
+    const found = findings.map((f) => `${f.kind} at ${f.path}`).join(', ');
+    throw new Error(`${recording.call}: ${found}; not written`);
+  }
+}
+const scanOnly = { verify: (_: unknown, recording: Recording) => scanned(recording) };
+
 const timed = (l: JellyfinLyrics) => l.Lyrics.filter((line) => line.Start != null).length;
 
 /** Fails unless Jellyfin's answer for the track is of the kind it was chosen for. */
@@ -171,10 +185,14 @@ export async function recordLyrics(input: LyricsRecordInput): Promise<{ written:
   const rows = new Map<string, { track: IndexRow; album: IndexRow }>();
   for (const [n, albumId] of input.albums.entries()) {
     const call = `lyrics-album-${n + 1}`;
-    const album = await indexRec.capture(call, () => jfIndex.findAlbum(albumId));
+    const album = await indexRec.capture(call, () => jfIndex.findAlbum(albumId), scanOnly);
     if (!album) throw new Error(`Jellyfin has no album ${albumId}`);
     written.push(join(jellyfinDir, `${call}.json`));
-    const listed = await indexRec.capture(`${call}-tracks`, () => jfIndex.getAlbumTracks(albumId));
+    const listed = await indexRec.capture(
+      `${call}-tracks`,
+      () => jfIndex.getAlbumTracks(albumId),
+      scanOnly,
+    );
     written.push(join(jellyfinDir, `${call}-tracks.json`));
     const albumIndexRow = albumRow(album, NO_LIBRARY);
     for (const track of trackRows(album.Id, NO_LIBRARY, listed)) {
@@ -204,35 +222,46 @@ export async function recordLyrics(input: LyricsRecordInput): Promise<{ written:
   if (!identity) throw new Error(`Jellyfin has no user ${TEST_IDENTITY}`);
   const device = personDevice(RECORD_USER_ID);
   const { token } = await provisioner.mint(identity.id, RECORD_USER_ID);
-  try {
-    const jfRec = createRecorder({
-      fetch: input.fetch,
-      dir: jellyfinDir,
-      upstream: 'jellyfin',
-      upstreamVersion: jellyfinVersion,
-      secrets: [jellyfinKey, token],
-      baseUrl: jellyfinUrl,
-      prepare: trimLyricsExchange,
-    });
-    const jf = new JellyfinClient({ baseUrl: jellyfinUrl, token, device, fetch: jfRec.fetch });
-    const jellyfinCalls = [
-      ['jf-lyrics-synced', 'synced', tracks.jellyfinSynced],
-      ['jf-lyrics-plain', 'plain', tracks.jellyfinPlain],
-      ['jf-lyrics-none', 'none', tracks.lrclibSynced],
-    ] as const;
-    for (const [call, kind, id] of jellyfinCalls) {
-      const answer = await jfRec.capture(call, () => jf.getLyrics(id));
-      written.push(join(jellyfinDir, `${call}.json`));
-      expectJellyfin(kind, answer);
-      out(`${call}: ${answer === null ? 'no lyrics' : `${answer.Lyrics.length} lines`}`);
-    }
-  } finally {
+  const logOut = async () => {
     const res = await input.fetch(url(jellyfinUrl, 'Sessions/Logout'), {
       method: 'POST',
       headers: { authorization: buildAuthorizationHeader(device, token) },
     });
     out(`logged out the minted Jellyfin token: ${res.status}`);
-  }
+  };
+  const failedLogOut = (error: unknown) =>
+    out(`logging out the minted Jellyfin token failed: ${String(error)}`);
+  await withCleanup(
+    async () => {
+      const jfRec = createRecorder({
+        fetch: input.fetch,
+        dir: jellyfinDir,
+        upstream: 'jellyfin',
+        upstreamVersion: jellyfinVersion,
+        secrets: [jellyfinKey, token],
+        baseUrl: jellyfinUrl,
+        prepare: trimLyricsExchange,
+      });
+      const jf = new JellyfinClient({ baseUrl: jellyfinUrl, token, device, fetch: jfRec.fetch });
+      const jellyfinCalls = [
+        ['jf-lyrics-synced', 'synced', tracks.jellyfinSynced],
+        ['jf-lyrics-plain', 'plain', tracks.jellyfinPlain],
+        ['jf-lyrics-none', 'none', tracks.lrclibSynced],
+      ] as const;
+      for (const [call, kind, id] of jellyfinCalls) {
+        const answer = await jfRec.capture(call, () => jf.getLyrics(id), {
+          verify: (found, recording) => {
+            expectJellyfin(kind, found);
+            scanned(recording);
+          },
+        });
+        written.push(join(jellyfinDir, `${call}.json`));
+        out(`${call}: ${answer === null ? 'no lyrics' : `${answer.Lyrics.length} lines`}`);
+      }
+    },
+    logOut,
+    failedLogOut,
+  );
 
   const lrclibRec = createRecorder({
     fetch: input.fetch,
@@ -252,10 +281,14 @@ export async function recordLyrics(input: LyricsRecordInput): Promise<{ written:
     if (n > 0) await input.sleep(LRCLIB_GAP_MS);
     const call = `lrclib-get-${kind}`;
     const answer = await askPatiently(input, () =>
-      lrclibRec.capture(call, () => lrclib.get(query)),
+      lrclibRec.capture(call, () => lrclib.get(query), {
+        verify: (found, recording) => {
+          expectLrclib(kind, found);
+          scanned(recording);
+        },
+      }),
     );
     written.push(join(lrclibDir, `${call}.json`));
-    expectLrclib(kind, answer);
     out(`${call}: ${answer === null ? 'not found' : `record ${answer.id}`}`);
   }
   return { written };

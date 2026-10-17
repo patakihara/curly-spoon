@@ -52,13 +52,9 @@ export interface Finding {
 /**
  * Public hosts that published metadata carries: an album's `ExternalUrls` on Jellyfin, a
  * podcast's feed, episode enclosures and directory page on Audiobookshelf, and the iTunes
- * namespace a feed declares. `github.com`: Auralis's public homepage, which its User-Agent names
- * to LRCLIB, as LRCLIB asks of every client. `tools.ietf.org`: the HTTP RFC a Jellyfin 404's
- * problem details name as its `type` (recorded).
+ * namespace a feed declares.
  */
 export const PUBLIC_HOSTS: readonly string[] = [
-  'github.com',
-  'tools.ietf.org',
   'musicbrainz.org',
   'www.itunes.com',
   'www.theaudiodb.com',
@@ -66,6 +62,20 @@ export const PUBLIC_HOSTS: readonly string[] = [
   'podtrac.com',
   'podcasts.apple.com',
 ];
+/**
+ * Whole public addresses allowed where their host is not: Auralis's public homepage, which its
+ * User-Agent names to LRCLIB as LRCLIB asks of every client, and the HTTP RFC section a Jellyfin
+ * 404's problem details name as its `type` (recorded). Only the exact address passes; anything
+ * longer, or anywhere else on the same host, is still a host finding.
+ */
+export const PUBLIC_URLS: readonly string[] = [
+  'https://github.com/patakihara/curly-spoon',
+  'https://tools.ietf.org/html/rfc9110#section-15.5.5',
+];
+const PUBLIC_URL = new RegExp(
+  `(?:${PUBLIC_URLS.map((u) => u.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')).join('|')})(?![\\w/.#?=&%+-])`,
+  'g',
+);
 const ALLOWED_HOSTS = new Set(PUBLIC_HOSTS);
 
 const JWT = /eyJ[\w-]+\.[\w-]+\.[\w-]+/g;
@@ -138,7 +148,7 @@ function scanString(
     fields && key !== undefined && HOST_FIELD.test(key) && HOSTNAME_VALUE.test(value);
   const bare = value.replace(/:\d+$/, '');
   if (
-    hosts(value).some((h) => !ALLOWED_HOSTS.has(h)) ||
+    hosts(value.replace(PUBLIC_URL, ' ')).some((h) => !ALLOWED_HOSTS.has(h)) ||
     (hostValue && !isPlaceholderHost(bare) && !/^[\d.]+$/.test(bare))
   ) {
     add('host');

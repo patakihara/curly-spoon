@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AdapterError, type FetchLike } from '../http/fetch.js';
-import { JellyfinClient } from './client.js';
+import { JELLYFIN_LYRICS_MAX_BYTES, JellyfinClient } from './client.js';
 
 function fake(answer: unknown) {
   const sent: { url: string; headers: Headers }[] = [];
@@ -173,6 +173,16 @@ describe('the Jellyfin client', () => {
       expect([failure.kind, failure.status]).toEqual(['status', status]);
       expect(failure.message).toContain('GET /Audio/t1/Lyrics');
     }
+  });
+
+  it('refuses a lyrics answer larger than the lyrics cap instead of reading it whole', async () => {
+    const huge = { Lyrics: [{ Text: 'x'.repeat(JELLYFIN_LYRICS_MAX_BYTES), Start: 0 }] };
+    const { fetch } = fake(huge);
+    const jf = new JellyfinClient({ baseUrl: 'http://upstream.invalid', token: 'k', fetch });
+    const failure = (await jf.getLyrics('t1').catch((e: unknown) => e)) as AdapterError;
+    expect(failure).toBeInstanceOf(AdapterError);
+    expect(failure.kind).toBe('parse');
+    expect(failure.message).toMatch(/larger than/);
   });
 
   it('a response that does not match the schema fails as a parse error naming the call', async () => {
