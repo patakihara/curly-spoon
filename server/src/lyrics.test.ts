@@ -9,11 +9,11 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { Lyrics as LyricsBody } from '@auralis/schema';
-import { Ajv2020 } from 'ajv/dist/2020.js';
 import { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type FetchLike } from './adapters/http/fetch.js';
 import { type Recording, recordingSchema } from './adapters/http/recording.js';
+import { againstOpenApi } from './adapters/http/openApi.js';
 import { replayFetch } from './adapters/http/replay.js';
 import { indexItemSchema, indexQueryResultSchema } from './adapters/jellyfin/schemas.js';
 import { LRCLIB_USER_AGENT, LrclibClient } from './adapters/lrclib/client.js';
@@ -215,28 +215,6 @@ async function server(
   return { get, lyricsOf, lyrics, jellyfinAsked, lrclibAsked, lrclibLimits };
 }
 
-/** The committed OpenAPI document, as the clients are generated from it. */
-const openApi = new Ajv2020({ strict: false, allErrors: true }).addSchema(
-  JSON.parse(
-    readFileSync(
-      fileURLToPath(new URL('../../schema/generated/openapi.json', import.meta.url)),
-      'utf8',
-    ),
-  ) as object,
-  'openapi',
-);
-/** How `body` fails the document's 200 answer to `GET /api/lyrics/{ref}`: nothing when it fits. */
-function againstOpenApi(body: unknown): string[] {
-  const pointer = ['paths', '/api/lyrics/{ref}', 'get', 'responses', '200', 'content']
-    .concat(['application/json', 'schema'])
-    .map((part) => part.replaceAll('~', '~0').replaceAll('/', '~1'))
-    .join('/');
-  const validate = openApi.compile({ $ref: `openapi#/${pointer}` });
-  return validate(body)
-    ? []
-    : (validate.errors ?? []).map((e) => `${e.instancePath} ${e.message ?? ''}`);
-}
-
 describe("[M2.lrclib] a track's lyrics, from the recordings", () => {
   it("[M2.lrclib/a] answers Jellyfin's recorded synced lyrics with each line's time in seconds and its text, in order", async () => {
     const s = await server();
@@ -361,7 +339,7 @@ describe("[M2.lrclib] a track's lyrics, from the recordings", () => {
     for (const id of [SECOND_HAND_NEWS, GET_LUCKY, YEAR_OF_THE_RAT]) {
       const { status, body } = await s.get(`jellyfin:${id}`);
       expect(status).toBe(200);
-      expect(againstOpenApi(body)).toEqual([]);
+      expect(againstOpenApi('get', '/api/lyrics/{ref}', body)).toEqual([]);
     }
   });
 

@@ -11,7 +11,6 @@ import { type AddressInfo, connect } from 'node:net';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LibraryList, SearchResults, SuggestionList } from '@auralis/schema';
-import { Ajv2020 } from 'ajv/dist/2020.js';
 import { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AbsClient } from './adapters/audiobookshelf/client.js';
@@ -19,6 +18,7 @@ import { itemSummarySchema } from './adapters/audiobookshelf/schemas.js';
 import { readFeed } from './adapters/feed/client.js';
 import { type FetchLike } from './adapters/http/fetch.js';
 import { type Recording, recordingSchema } from './adapters/http/recording.js';
+import { againstOpenApi } from './adapters/http/openApi.js';
 import { replayFetch } from './adapters/http/replay.js';
 import { JellyfinClient } from './adapters/jellyfin/client.js';
 import { buildApp } from './app.js';
@@ -211,36 +211,6 @@ async function server() {
 
 const q = (text: string) => `q=${encodeURIComponent(text)}`;
 const shown = (results: { kind: string; title: string }[]) => results.map((r) => [r.kind, r.title]);
-
-/** The committed OpenAPI document, as the clients are generated from it. */
-const openApi = new Ajv2020({ strict: false, allErrors: true }).addSchema(
-  JSON.parse(
-    readFileSync(
-      fileURLToPath(new URL('../../schema/generated/openapi.json', import.meta.url)),
-      'utf8',
-    ),
-  ) as object,
-  'openapi',
-);
-/** How `body` fails the document's 200 answer to `method path`: nothing when it fits. */
-function againstOpenApi(method: string, path: string, body: unknown) {
-  const pointer = [
-    'paths',
-    path,
-    method,
-    'responses',
-    '200',
-    'content',
-    'application/json',
-    'schema',
-  ]
-    .map((part) => part.replaceAll('~', '~0').replaceAll('/', '~1'))
-    .join('/');
-  const validate = openApi.compile({ $ref: `openapi#/${pointer}` });
-  return validate(body)
-    ? []
-    : (validate.errors ?? []).map((e) => `${e.instancePath} ${e.message ?? ''}`);
-}
 
 describe('the answers the OpenAPI document describes, for the clients generated from it', () => {
   it('a search, with and without a parent, suggestions from recents and the index, and an empty queue fit it', async () => {
