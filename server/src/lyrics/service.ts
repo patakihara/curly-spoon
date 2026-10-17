@@ -40,6 +40,14 @@ export interface LyricsLog {
   warn: (details: Record<string, unknown>, message: string) => void;
 }
 
+/** How one caller asks: the route with a short LRCLIB limit, the job hearing of each lookup. */
+export interface ForTrackOptions {
+  /** LRCLIB's limit for this call; the client's own when not given. */
+  lrclibTimeoutMs?: number;
+  /** Told after each LRCLIB lookup this call makes, whether LRCLIB answered or failed. */
+  onLrclib?: (answered: boolean) => void;
+}
+
 export interface LyricsOptions {
   db: Db;
   log: LyricsLog;
@@ -60,7 +68,11 @@ export class Lyrics {
   }
 
   /** An indexed Jellyfin track's lyrics. Never throws: a failure rejects. */
-  async forTrack(track: StoredRow, jellyfin: JellyfinLyricsReader): Promise<LyricsAnswer> {
+  async forTrack(
+    track: StoredRow,
+    jellyfin: JellyfinLyricsReader,
+    how: ForTrackOptions = {},
+  ): Promise<LyricsAnswer> {
     const cached = this.cached(track);
     if (cached && isFresh(cached, track.version, this.freshness())) {
       return { status: cached.status, source: cached.source, lines: cached.lines };
@@ -68,7 +80,7 @@ export class Lyrics {
     const key = `${track.source}:${track.id}:${track.version}`;
     const running = this.inFlight.get(key);
     if (running) return running;
-    const resolving = this.resolve(track, jellyfin).finally(() => this.inFlight.delete(key));
+    const resolving = this.resolve(track, jellyfin, how).finally(() => this.inFlight.delete(key));
     this.inFlight.set(key, resolving);
     return resolving;
   }
@@ -96,7 +108,11 @@ export class Lyrics {
     });
   }
 
-  private async resolve(track: StoredRow, jellyfin: JellyfinLyricsReader): Promise<LyricsAnswer> {
+  private async resolve(
+    track: StoredRow,
+    jellyfin: JellyfinLyricsReader,
+    how: ForTrackOptions,
+  ): Promise<LyricsAnswer> {
     const fromJf = track.hasLyrics
       ? fromJellyfin(await jellyfin.getLyrics(track.id))
       : NOTHING_FOUND;
@@ -104,7 +120,7 @@ export class Lyrics {
     if (this.opts.lrclib === null) return chooseLyrics(fromJf, null);
     let record: LrclibRecord | null;
     try {
-      record = await this.askLrclib(this.opts.lrclib, track);
+      record = await this.askLrclib(this.opts.lrclib, track, how);
     } catch (error) {
       if (fromJf.status === 'plain') return chooseLyrics(fromJf, null);
       throw error;
@@ -117,11 +133,21 @@ export class Lyrics {
   private async askLrclib(
     lrclib: Pick<LrclibClient, 'get'>,
     track: StoredRow,
+    how: ForTrackOptions,
   ): Promise<LrclibRecord | null> {
     const album =
       track.parentId === null ? undefined : indexedRow(this.opts.db, track.source, track.parentId);
     const query = album ? lyricsQuery(track, album) : null;
-    return query === null ? null : lrclib.get(query);
+    if (query === null) return null;
+    const call = how.lrclibTimeoutMs === undefined ? {} : { timeoutMs: how.lrclibTimeoutMs };
+    try {
+      const record = await lrclib.get(query, call);
+      how.onLrclib?.(true);
+      return record;
+    } catch (error) {
+      how.onLrclib?.(false);
+      throw error;
+    }
   }
 
   private keep(track: StoredRow, answer: LyricsAnswer, lrclibId: number | null): LyricsAnswer {

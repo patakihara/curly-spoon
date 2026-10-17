@@ -51,6 +51,10 @@ const envSchema = z.object({
   // listen-only Audiobookshelf key, which it reads the libraries with. Jellyfin's key is above.
   INDEX_EVERY_MINUTES: z.coerce.number().int().min(0).default(60),
   ABS_API_KEY_FILE: z.string().min(1).optional(),
+  // The lyrics backfill: how often it runs (0 turns it off), and LRCLIB, the public lyrics
+  // service it and the lyrics route ask, keyless; empty turns LRCLIB off.
+  LYRICS_EVERY_MINUTES: z.coerce.number().int().min(0).default(60),
+  LRCLIB_URL: z.union([z.literal(''), z.string().url()]).default('https://lrclib.net'),
   // How long a transcode may go unasked-for before Auralis closes it upstream.
   PLAY_IDLE_MINUTES: z.coerce.number().int().min(1).default(10),
   // The key that encrypts each person's upstream tokens: base64 here, or a 0600 file.
@@ -78,6 +82,7 @@ export interface AppConfig {
   abs: UpstreamConfig | null;
   jellyfin: UpstreamConfig | null;
   index: IndexConfig;
+  lyrics: LyricsConfig;
   /** Minutes a transcode may go unasked-for before it is closed upstream. */
   playIdleMinutes: number;
   secretKey: string | undefined;
@@ -97,6 +102,13 @@ export interface IndexConfig {
   everyMinutes: number;
   /** The listen-only Audiobookshelf key's file; without it, Audiobookshelf is not indexed. */
   absKeyFile: string | null;
+}
+
+export interface LyricsConfig {
+  /** 0 when the lyrics backfill is off. */
+  everyMinutes: number;
+  /** Null when LRCLIB is switched off. */
+  lrclibUrl: string | null;
 }
 
 export interface UpstreamConfig {
@@ -161,6 +173,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         parsed.ABS_API_KEY_FILE === undefined
           ? null
           : (required(parsed.ABS_URL, 'ABS_URL', 'with ABS_API_KEY_FILE'), parsed.ABS_API_KEY_FILE),
+    },
+    lyrics: {
+      everyMinutes: parsed.LYRICS_EVERY_MINUTES,
+      lrclibUrl: parsed.LRCLIB_URL === '' ? null : parsed.LRCLIB_URL,
     },
     playIdleMinutes: parsed.PLAY_IDLE_MINUTES,
     secretKey: parsed.SECRET_KEY,

@@ -1,6 +1,6 @@
 /**
  * The whole server from its configuration: the database, the sign-on, each upstream's
- * provisioner, the app and the library index job, wired as they run. `main.ts` starts it with the network's `fetch`;
+ * provisioner, the app, the library index job and the lyrics backfill, wired as they run. `main.ts` starts it with the network's `fetch`;
  * anything else that runs the server (a harness on recordings) passes its own `fetch` here and
  * changes nothing else.
  */
@@ -16,6 +16,7 @@ import { createProxyTrust } from './auth/proxy.js';
 import type { AppConfig } from './config.js';
 import { loadSecretKey } from './crypto/secretBox.js';
 import { startIndexJob } from './libraryIndex/start.js';
+import { lyricsService, startLyricsJob } from './lyrics/start.js';
 import { readSecretFile } from './secretFile.js';
 import { openDatabase } from './store/connection.js';
 import { startSessionSweep } from './store/sessions.js';
@@ -26,7 +27,7 @@ import { Linker, type Provisioner } from './upstream/links.js';
 export interface Server {
   /** Built and ready, not yet listening. */
   app: FastifyInstance;
-  /** Closes the app, stops the session sweep and the index job, and closes the database. */
+  /** Closes the app, stops the session sweep and both jobs, and closes the database. */
   close(): Promise<void>;
 }
 
@@ -76,6 +77,13 @@ export async function assembleServer(
   }
   const linker = new Linker({ db, key: secretKey, provisioners });
 
+  // One lyrics service for the route and the backfill; it logs through the app once built.
+  const lyrics = lyricsService(config, {
+    db,
+    fetch,
+    log: { warn: (details, message) => app.log.warn(details, message) },
+  });
+
   const setupCodeFile = join(config.dataDir, 'setup-code');
   const app = await buildApp({
     webDistDir: config.webDistDir,
@@ -94,6 +102,7 @@ export async function assembleServer(
       linker,
     },
     playback: { idleMs: config.playIdleMinutes * 60_000 },
+    lyrics,
     logger: deps.logger ?? true,
   });
 
@@ -103,6 +112,7 @@ export async function assembleServer(
   }
 
   const stopIndexJob = startIndexJob(config, { db, fetch, log: app.log });
+  const stopLyricsJob = startLyricsJob(config, { db, fetch, lyrics, log: app.log });
 
   return {
     app,
@@ -110,6 +120,7 @@ export async function assembleServer(
       await app.close();
       stopSessionSweep();
       stopIndexJob();
+      stopLyricsJob();
       db.close();
       app.log.info('Database closed');
     },

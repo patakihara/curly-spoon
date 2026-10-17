@@ -126,4 +126,21 @@ describe('the LRCLIB client', () => {
     const failure = (await client.get(QUERY).catch((e: unknown) => e)) as AdapterError;
     expect(failure.kind).toBe('timeout');
   });
+
+  it("gives up after one call's own time limit, over the client's", async () => {
+    const fetch: FetchLike = (_url, init) =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+      });
+    const client = new LrclibClient({
+      baseUrl: 'http://upstream.invalid',
+      fetch,
+      userAgent: LRCLIB_USER_AGENT,
+      timeoutMs: 60_000,
+    });
+    const failure = (await client
+      .get(QUERY, { timeoutMs: 5 })
+      .catch((e: unknown) => e)) as AdapterError;
+    expect(failure.kind).toBe('timeout');
+  });
 });

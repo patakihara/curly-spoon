@@ -116,3 +116,18 @@ export function staleTrackIds(db: Db, limit: number, at: Freshness): string[] {
   ).all({ now: at.now, recheck: at.recheckMs, limit }) as { upstream_id: string }[];
   return rows.map((r) => r.upstream_id);
 }
+
+/**
+ * Whether a whole Jellyfin index pass has run since migration 12 added `has_lyrics`: until then
+ * every track reads as having no lyrics file, and asking LRCLIB for each would be wasted.
+ */
+export function jellyfinIndexedForLyrics(db: Db): boolean {
+  const row = statement(
+    db,
+    `SELECT 1 FROM index_runs
+     WHERE source = 'jellyfin' AND complete = 1
+       AND started_at >= (SELECT applied_at FROM _migrations WHERE id = 12)
+     LIMIT 1`,
+  ).get();
+  return row !== undefined;
+}

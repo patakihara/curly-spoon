@@ -368,6 +368,17 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ ABS_API_KEY_FILE: '/keys/index' })).toThrow(/ABS_URL/);
   });
 
+  it('runs the lyrics backfill hourly by default, not at all at 0, and asks LRCLIB unless its URL is empty', () => {
+    expect(loadConfig({}).lyrics).toEqual({ everyMinutes: 60, lrclibUrl: 'https://lrclib.net' });
+    expect(loadConfig({ LYRICS_EVERY_MINUTES: '0' }).lyrics.everyMinutes).toBe(0);
+    expect(() => loadConfig({ LYRICS_EVERY_MINUTES: '-1' })).toThrow();
+    expect(loadConfig({ LRCLIB_URL: '' }).lyrics.lrclibUrl).toBeNull();
+    expect(loadConfig({ LRCLIB_URL: 'http://lyrics.invalid' }).lyrics.lrclibUrl).toBe(
+      'http://lyrics.invalid',
+    );
+    expect(() => loadConfig({ LRCLIB_URL: 'lrclib' })).toThrow();
+  });
+
   it('reads AURALIS_COMMIT as the full commit the image was built from, empty as none', () => {
     expect(loadConfig({}).commit).toBeNull();
     expect(loadConfig({ AURALIS_COMMIT: '' }).commit).toBeNull();

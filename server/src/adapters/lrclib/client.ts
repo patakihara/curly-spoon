@@ -3,7 +3,7 @@
  * a length a second or two off (checked live). LRCLIB is a public service with no key; it asks
  * each client to name itself, its version and its homepage in the User-Agent. It answers 404 for
  * a track it cannot find and, when busy, 503 with no `Retry-After` (checked live).
- * `new LrclibClient({ baseUrl, fetch, userAgent, timeoutMs? })`.
+ * `new LrclibClient({ baseUrl, fetch, userAgent, timeoutMs? })`; one call may set its own limit.
  */
 import { AdapterError, type FetchLike, requestJson } from '../http/fetch.js';
 import { type LrclibRecord, lrclibRecordSchema } from './schemas.js';
@@ -35,7 +35,8 @@ export class LrclibClient {
   constructor(private readonly opts: LrclibClientOptions) {}
 
   /** The record LRCLIB matches to the track, or null when it finds none. */
-  async get(query: LrclibQuery): Promise<LrclibRecord | null> {
+  async get(query: LrclibQuery, call: { timeoutMs?: number } = {}): Promise<LrclibRecord | null> {
+    const timeoutMs = call.timeoutMs ?? this.opts.timeoutMs;
     const base = this.opts.baseUrl.endsWith('/') ? this.opts.baseUrl : `${this.opts.baseUrl}/`;
     const url = new URL('api/get', base);
     url.searchParams.set('artist_name', query.artistName);
@@ -49,7 +50,7 @@ export class LrclibClient {
         {
           headers: { 'user-agent': this.opts.userAgent },
           maxBytes: LRCLIB_MAX_BYTES,
-          ...(this.opts.timeoutMs === undefined ? {} : { timeoutMs: this.opts.timeoutMs }),
+          ...(timeoutMs === undefined ? {} : { timeoutMs }),
         },
         lrclibRecordSchema,
       );

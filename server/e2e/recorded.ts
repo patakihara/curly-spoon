@@ -370,6 +370,9 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     JELLYFIN_API_KEY_FILE: secret('jellyfin-api-key'),
     // The recordings hold a few pages of each library, not the first a real run starts from.
     INDEX_EVERY_MINUTES: '0',
+    // Nothing here answers for LRCLIB, and the backfill would ask it of every recorded track.
+    LYRICS_EVERY_MINUTES: '0',
+    LRCLIB_URL: '',
   });
 
   const signOn = standInSignOn({

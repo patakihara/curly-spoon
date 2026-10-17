@@ -18,6 +18,7 @@ import { replayFetch } from './adapters/http/replay.js';
 import { indexItemSchema, indexQueryResultSchema } from './adapters/jellyfin/schemas.js';
 import { LRCLIB_USER_AGENT, LrclibClient } from './adapters/lrclib/client.js';
 import { buildApp } from './app.js';
+import { LRCLIB_ROUTE_TIMEOUT_MS } from './routes/lyrics.js';
 import { albumRow, trackRows } from './libraryIndex/rows.js';
 import { applyTree, emptyCounts, indexedRow } from './libraryIndex/store.js';
 import { parseLrc } from './lyrics/lrc.js';
@@ -176,14 +177,21 @@ async function server(
     lrclibAsked.push(new URL(url).searchParams.get('track_name') ?? new URL(url).pathname);
     return lrclibFetch(url, init);
   };
+  const client = new LrclibClient({
+    baseUrl: UPSTREAM,
+    fetch: countedLrclib,
+    userAgent: LRCLIB_USER_AGENT,
+  });
+  const lrclibLimits: (number | undefined)[] = [];
   const lyrics = new Lyrics({
     db,
     log: { warn: () => undefined },
-    lrclib: new LrclibClient({
-      baseUrl: UPSTREAM,
-      fetch: countedLrclib,
-      userAgent: LRCLIB_USER_AGENT,
-    }),
+    lrclib: {
+      get: (query, call) => {
+        lrclibLimits.push(call?.timeoutMs);
+        return client.get(query, call);
+      },
+    },
     now: () => T0,
   });
   const app = await buildApp({
@@ -204,7 +212,7 @@ async function server(
     expect(status).toBe(200);
     return LyricsBody.parse(body);
   };
-  return { get, lyricsOf, jellyfinAsked, lrclibAsked };
+  return { get, lyricsOf, jellyfinAsked, lrclibAsked, lrclibLimits };
 }
 
 /** The committed OpenAPI document, as the clients are generated from it. */
@@ -407,5 +415,12 @@ describe("[M2.lrclib] a track's lyrics, from the recordings", () => {
     await s.lyricsOf(GET_LUCKY);
     expect(indexedRow(db, 'jellyfin', GET_LUCKY)!.version).toBe(2);
     expect(cachedLyrics(db, 'jellyfin', GET_LUCKY)?.itemVersion).toBe(2);
+  });
+
+  it('waits on LRCLIB at most 5 seconds for a person asking', async () => {
+    const s = await server();
+    await s.lyricsOf(GET_LUCKY);
+    expect(LRCLIB_ROUTE_TIMEOUT_MS).toBe(5_000);
+    expect(s.lrclibLimits).toEqual([LRCLIB_ROUTE_TIMEOUT_MS]);
   });
 });

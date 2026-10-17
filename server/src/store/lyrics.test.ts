@@ -1,10 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { type IndexRow } from '../libraryIndex/rows.js';
-import { applyTree, emptyCounts, indexedRow, removeItem } from '../libraryIndex/store.js';
+import {
+  applyTree,
+  emptyCounts,
+  indexedRow,
+  recordRun,
+  removeItem,
+} from '../libraryIndex/store.js';
 import type { LyricsAnswer } from '../lyrics/choose.js';
 import { openDatabase, type Db } from './connection.js';
 import {
   cachedLyrics,
+  jellyfinIndexedForLyrics,
   forgetLyrics,
   isFresh,
   LYRICS_RECHECK_MS,
@@ -163,5 +170,30 @@ describe('the lyrics cache', () => {
   it('refuses a source on none, and no source on lyrics', () => {
     expect(() => writeLyrics(db, track('a'), { ...none, source: 'lrclib' }, null, T0)).toThrow();
     expect(() => writeLyrics(db, track('a'), { ...synced, source: null }, null, T0)).toThrow();
+  });
+});
+
+describe("whether the index knows each track's lyrics flag", () => {
+  const run = (source: 'abs' | 'jellyfin', startedAt: number, complete: boolean) =>
+    recordRun(db, {
+      source,
+      startedAt,
+      finishedAt: startedAt + 1,
+      complete,
+      error: null,
+      counts: emptyCounts(),
+    });
+  const appliedAt = () =>
+    (db.prepare('SELECT applied_at FROM _migrations WHERE id = 12').get() as { applied_at: number })
+      .applied_at;
+
+  it('knows only once a whole Jellyfin pass has run since the flag was added', () => {
+    expect(jellyfinIndexedForLyrics(db)).toBe(false);
+    run('jellyfin', appliedAt() - 1, true);
+    run('jellyfin', appliedAt(), false);
+    run('abs', appliedAt(), true);
+    expect(jellyfinIndexedForLyrics(db)).toBe(false);
+    run('jellyfin', appliedAt(), true);
+    expect(jellyfinIndexedForLyrics(db)).toBe(true);
   });
 });

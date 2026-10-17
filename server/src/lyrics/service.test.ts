@@ -337,4 +337,28 @@ describe("a track's lyrics", () => {
     expect(lr.calls).toEqual(['Get Lucky', 'Get Lucky']);
     expect(cachedLyrics(db, 'jellyfin', GET_LUCKY)?.itemVersion).toBe(2);
   });
+
+  it('tells its caller of each LRCLIB lookup, answered or failed, and of none when LRCLIB is not asked', async () => {
+    const heard: boolean[] = [];
+    const onLrclib = (answered: boolean) => heard.push(answered);
+    await setUp().lyrics.forTrack(track(GET_LUCKY), setUp().jf, { onLrclib });
+    await setUp().lyrics.forTrack(track(SECOND_HAND_NEWS), setUp().jf, { onLrclib });
+    await setUp(rejecting)
+      .lyrics.forTrack(track(YEAR_OF_THE_RAT), setUp().jf, { onLrclib })
+      .catch(() => undefined);
+    expect(heard).toEqual([true, false]);
+  });
+
+  it("asks LRCLIB with the caller's own time limit", async () => {
+    const limits: (number | undefined)[] = [];
+    const lyrics = new Lyrics({
+      db,
+      log,
+      lrclib: { get: async (_query, call) => (limits.push(call?.timeoutMs), null) },
+      now: () => now,
+    });
+    await lyrics.forTrack(track(GET_LUCKY), setUp().jf, { lrclibTimeoutMs: 1234 });
+    await lyrics.forTrack(track(YEAR_OF_THE_RAT), setUp().jf);
+    expect(limits).toEqual([1234, undefined]);
+  });
 });
