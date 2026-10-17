@@ -57,6 +57,11 @@ export interface Freshness {
   recheckMs: number;
 }
 
+/** Forgets what the cache holds for a track. */
+export function forgetLyrics(db: Db, source: IndexSource, id: string): void {
+  statement(db, 'DELETE FROM lyrics WHERE source = ? AND upstream_id = ?').run(source, id);
+}
+
 /** Whether a cached answer still stands for the track at `version`. */
 export function isFresh(cached: CachedLyrics, version: number, at: Freshness): boolean {
   if (cached.itemVersion !== version) return false;
@@ -66,7 +71,8 @@ export function isFresh(cached: CachedLyrics, version: number, at: Freshness): b
 
 /**
  * Stores a track's answer, resolved for its index `version`, in place of any older one. Nothing is
- * written when the index no longer holds the track.
+ * written when the index no longer holds the track, or holds it at another version: an answer
+ * resolved for an older version never overwrites one for the version now indexed.
  */
 export function writeLyrics(
   db: Db,
@@ -80,7 +86,8 @@ export function writeLyrics(
     `INSERT INTO lyrics (source, upstream_id, status, origin, lines, lrclib_id, item_version,
        resolved_at)
      SELECT @source, @id, @status, @origin, @lines, @lrclib_id, @version, @now
-     WHERE EXISTS (SELECT 1 FROM index_items WHERE source = @source AND upstream_id = @id)
+     WHERE EXISTS (SELECT 1 FROM index_items
+       WHERE source = @source AND upstream_id = @id AND version = @version)
      ON CONFLICT (source, upstream_id) DO UPDATE SET status = excluded.status,
        origin = excluded.origin, lines = excluded.lines, lrclib_id = excluded.lrclib_id,
        item_version = excluded.item_version, resolved_at = excluded.resolved_at`,

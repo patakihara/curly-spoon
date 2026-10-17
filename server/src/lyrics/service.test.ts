@@ -102,13 +102,20 @@ let now: number;
 beforeEach(() => {
   db = openDatabase(':memory:');
   now = T0;
+  warnings = [];
   indexRecorded(db);
 });
 afterEach(() => db.close());
 
+let warnings: { details: Record<string, unknown>; message: string }[];
+const log = {
+  warn: (details: Record<string, unknown>, message: string) => warnings.push({ details, message }),
+};
+
 function setUp(lrclib: FetchLike | null = lrclibFetch().fetch, jellyfin = jellyfinFetch().fetch) {
   const lyrics = new Lyrics({
     db,
+    log,
     lrclib:
       lrclib === null
         ? null
@@ -260,5 +267,60 @@ describe("a track's lyrics", () => {
     expect(stale).toHaveLength(all.length - 1);
     expect(stale).not.toContain(GET_LUCKY);
     expect(lyrics.staleTracks(5)).toHaveLength(5);
+  });
+
+  it('takes a cached answer it cannot read as none cached: forgets it, says so once, and resolves again', async () => {
+    const lr = lrclibFetch();
+    const { lyrics, jf } = setUp(lr.fetch);
+    await lyrics.forTrack(track(GET_LUCKY), jf);
+    db.prepare(`UPDATE lyrics SET lines = '[{"start":null,"text":1}]'`).run();
+    const answer = await lyrics.forTrack(track(GET_LUCKY), jf);
+    expect(answer).toMatchObject({ status: 'synced', source: 'lrclib' });
+    expect(lr.calls).toEqual(['Get Lucky', 'Get Lucky']);
+    expect(warnings).toEqual([
+      {
+        details: expect.objectContaining({ track: GET_LUCKY }),
+        message: 'unreadable lyrics forgotten',
+      },
+    ]);
+    expect(cachedLyrics(db, 'jellyfin', GET_LUCKY)).toMatchObject(answer);
+    await lyrics.forTrack(track(GET_LUCKY), jf);
+    expect(lr.calls).toHaveLength(2);
+    expect(warnings).toHaveLength(1);
+  });
+
+  it('answers a failure as a rejected promise, never by throwing', async () => {
+    const { lyrics, jf } = setUp();
+    const getLucky = track(GET_LUCKY);
+    db.close();
+    let answer: Promise<unknown> | undefined;
+    expect(() => (answer = lyrics.forTrack(getLucky, jf))).not.toThrow();
+    await expect(answer).rejects.toThrow();
+    db = openDatabase(':memory:');
+  });
+
+  it('resolves afresh for a newer version of a track while an older one is still resolving', async () => {
+    const lr = lrclibFetch();
+    let release = () => undefined as void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    let first = true;
+    const slowFirst: FetchLike = async (input, init) => {
+      if (first) {
+        first = false;
+        await held;
+      }
+      return lr.fetch(input, init);
+    };
+    const { lyrics, jf } = setUp(slowFirst);
+    const older = lyrics.forTrack(track(GET_LUCKY), jf);
+    indexAlbum(db, lyricsAlbum(1), 'lyrics-album-1-tracks', T0 + 1, (tracks) => {
+      (tracks.find((t) => t.Id === GET_LUCKY) as { Genres?: string[] }).Genres = ['Disco'];
+    });
+    await lyrics.forTrack(track(GET_LUCKY), jf);
+    expect(lr.calls).toEqual(['Get Lucky']);
+    release();
+    await older;
+    expect(lr.calls).toEqual(['Get Lucky', 'Get Lucky']);
+    expect(cachedLyrics(db, 'jellyfin', GET_LUCKY)?.itemVersion).toBe(2);
   });
 });

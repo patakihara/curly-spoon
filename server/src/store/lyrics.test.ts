@@ -3,7 +3,14 @@ import { type IndexRow } from '../libraryIndex/rows.js';
 import { applyTree, emptyCounts, indexedRow, removeItem } from '../libraryIndex/store.js';
 import type { LyricsAnswer } from '../lyrics/choose.js';
 import { openDatabase, type Db } from './connection.js';
-import { cachedLyrics, isFresh, LYRICS_RECHECK_MS, staleTrackIds, writeLyrics } from './lyrics.js';
+import {
+  cachedLyrics,
+  forgetLyrics,
+  isFresh,
+  LYRICS_RECHECK_MS,
+  staleTrackIds,
+  writeLyrics,
+} from './lyrics.js';
 
 const DAY = 24 * 60 * 60 * 1000;
 const T0 = Date.UTC(2026, 9, 17);
@@ -131,6 +138,20 @@ describe('the lyrics cache', () => {
     removeItem(db, 'jellyfin', 'album', emptyCounts());
     writeLyrics(db, gone, synced, 1, T0);
     expect(db.prepare('SELECT COUNT(*) AS n FROM lyrics').get()).toEqual({ n: 0 });
+  });
+
+  it('writes nothing for a version of the track the index no longer holds', () => {
+    writeLyrics(db, track('a'), none, null, T0);
+    writeLyrics(db, { ...track('a'), version: track('a').version - 1 }, synced, 1, T0);
+    expect(cachedLyrics(db, 'jellyfin', 'a')?.status).toBe('none');
+  });
+
+  it("forgets a track's answer", () => {
+    writeLyrics(db, track('a'), synced, 1, T0);
+    writeLyrics(db, track('b'), synced, 1, T0);
+    forgetLyrics(db, 'jellyfin', 'a');
+    expect(cachedLyrics(db, 'jellyfin', 'a')).toBeUndefined();
+    expect(cachedLyrics(db, 'jellyfin', 'b')).toBeDefined();
   });
 
   it('refuses to read lines that are not lyric lines', () => {

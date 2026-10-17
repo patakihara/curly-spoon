@@ -4,16 +4,21 @@
  * `chooseLyrics`. Only an answer every source that should be asked did give is cached; with
  * LRCLIB switched off (null), only Jellyfin's synced lines are. A failing Jellyfin, or LRCLIB
  * failing when Jellyfin has no lines, fails the call and caches nothing; LRCLIB failing when
- * Jellyfin has plain lines answers those, uncached. Two calls for one track at once share one
- * resolution, so the route and the job never ask LRCLIB twice for it.
+ * Jellyfin has plain lines answers those, uncached. Two calls for one track at one index version
+ * at once share one resolution, so the route and the job never ask LRCLIB twice for it; a call at
+ * a newer version never joins an older one. A cached answer that no longer reads is forgotten,
+ * logged, and resolved again.
  */
 import type { JellyfinLyrics } from '../adapters/jellyfin/schemas.js';
 import type { LrclibClient } from '../adapters/lrclib/client.js';
 import type { LrclibRecord } from '../adapters/lrclib/schemas.js';
 import { indexedRow, type StoredRow } from '../libraryIndex/store.js';
 import type { Db } from '../store/connection.js';
+import { ZodError } from 'zod';
 import {
+  type CachedLyrics,
   cachedLyrics,
+  forgetLyrics,
   type Freshness,
   isFresh,
   LYRICS_RECHECK_MS,
@@ -30,8 +35,14 @@ export interface JellyfinLyricsReader {
   getLyrics(itemId: string): Promise<JellyfinLyrics | null>;
 }
 
+/** Where an unreadable cached answer is reported. */
+export interface LyricsLog {
+  warn: (details: Record<string, unknown>, message: string) => void;
+}
+
 export interface LyricsOptions {
   db: Db;
+  log: LyricsLog;
   /** Null when LRCLIB is switched off. */
   lrclib: Pick<LrclibClient, 'get'> | null;
   now: () => number;
@@ -48,18 +59,33 @@ export class Lyrics {
     return { now: this.opts.now(), recheckMs: this.opts.recheckMs ?? LYRICS_RECHECK_MS };
   }
 
-  /** An indexed Jellyfin track's lyrics. */
-  forTrack(track: StoredRow, jellyfin: JellyfinLyricsReader): Promise<LyricsAnswer> {
-    const cached = cachedLyrics(this.opts.db, track.source, track.id);
+  /** An indexed Jellyfin track's lyrics. Never throws: a failure rejects. */
+  async forTrack(track: StoredRow, jellyfin: JellyfinLyricsReader): Promise<LyricsAnswer> {
+    const cached = this.cached(track);
     if (cached && isFresh(cached, track.version, this.freshness())) {
-      return Promise.resolve({ status: cached.status, source: cached.source, lines: cached.lines });
+      return { status: cached.status, source: cached.source, lines: cached.lines };
     }
-    const key = `${track.source}:${track.id}`;
+    const key = `${track.source}:${track.id}:${track.version}`;
     const running = this.inFlight.get(key);
     if (running) return running;
     const resolving = this.resolve(track, jellyfin).finally(() => this.inFlight.delete(key));
     this.inFlight.set(key, resolving);
     return resolving;
+  }
+
+  /** The cached answer; one that no longer reads is forgotten, logged, and taken as none. */
+  private cached(track: StoredRow): CachedLyrics | undefined {
+    try {
+      return cachedLyrics(this.opts.db, track.source, track.id);
+    } catch (error) {
+      if (!(error instanceof ZodError || error instanceof SyntaxError)) throw error;
+      forgetLyrics(this.opts.db, track.source, track.id);
+      this.opts.log.warn(
+        { source: track.source, track: track.id, err: error },
+        'unreadable lyrics forgotten',
+      );
+      return undefined;
+    }
   }
 
   /** Up to `limit` indexed Jellyfin tracks with no fresh answer cached, in random order. */
