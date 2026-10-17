@@ -90,6 +90,9 @@ interface FakeOptions {
   wake?: unknown;
   /** Jellyfin's logout fails with a network error. */
   logoutFails?: boolean;
+  /** Text Jellyfin puts in the first album's overview, or in its first track's. */
+  albumOverview?: string;
+  trackOverview?: string;
 }
 
 function fakeUpstreams(options: FakeOptions = {}) {
@@ -160,11 +163,20 @@ function fakeUpstreams(options: FakeOptions = {}) {
       if (p === '/System/Info/Public') return json({ Version: '10.11.11' });
       if (p === '/Items' && q.get('Ids')) {
         const album = Object.values(ALBUMS).find((a) => a.album.Id === q.get('Ids'));
-        return json({ Items: album ? [album.album] : [], TotalRecordCount: album ? 1 : 0 });
+        const overview =
+          album === ALBUMS.ram && options.albumOverview ? { Overview: options.albumOverview } : {};
+        return json({
+          Items: album ? [{ ...album.album, ...overview }] : [],
+          TotalRecordCount: album ? 1 : 0,
+        });
       }
       if (p === '/Items' && q.get('ParentId')) {
         const album = Object.values(ALBUMS).find((a) => a.album.Id === q.get('ParentId'));
-        const tracks = album?.tracks ?? [];
+        const tracks = (album?.tracks ?? []).map((t, i) =>
+          album === ALBUMS.ram && i === 0 && options.trackOverview
+            ? { ...t, Overview: options.trackOverview }
+            : t,
+        );
         return json({ Items: tracks, TotalRecordCount: tracks.length });
       }
       if (p === '/Users')
@@ -409,6 +421,18 @@ describe("record mode for M2.lrclib's lyrics", () => {
     expect(String(failure)).toMatch(/jf-lyrics-plain: host at \$\.response\.body\.json\.Lyrics/);
     expect(left).toContain('jf-lyrics-synced.json');
     expect(left).not.toContain('jf-lyrics-plain.json');
+  });
+
+  it("fails on a scan finding in an album's answer before writing it", async () => {
+    const { failure, left } = await recordInto({ albumOverview: 'more at fans.someband.net' });
+    expect(String(failure)).toMatch(/lyrics-album-1: host at \$\.response\.body\.json\.Items/);
+    expect(left).toEqual([]);
+  });
+
+  it("fails on a scan finding in an album's tracks before writing them", async () => {
+    const { failure, left } = await recordInto({ trackOverview: 'more at fans.someband.net' });
+    expect(String(failure)).toMatch(/lyrics-album-1-tracks: host at \$\.response\.body\.json/);
+    expect(left).toEqual(['lyrics-album-1.json']);
   });
 
   it('fails the run when a name seen while recording is in a recording', async () => {

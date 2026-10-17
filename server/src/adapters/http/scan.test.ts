@@ -313,6 +313,55 @@ describe('[M0.record/c] scanning recordings for leaks', () => {
     expect(scanRecording(named)).toEqual([]);
   });
 
+  it('an allowed address ends only at whitespace, a double quote, the end of the string, or the bracket of its own User-Agent comment', () => {
+    for (const ended of [
+      'https://github.com/patakihara/curly-spoon',
+      'see https://github.com/patakihara/curly-spoon for the source',
+      'link "https://github.com/patakihara/curly-spoon" here',
+      'https://github.com/patakihara/curly-spoon\tnext',
+      'Auralis/0.0.0 (+https://github.com/patakihara/curly-spoon)',
+      'Auralis/0.0.0 (+https://github.com/patakihara/curly-spoon) node',
+      'https://tools.ietf.org/html/rfc9110#section-15.5.5\n',
+    ]) {
+      const r = leak((rec) => {
+        body(rec).Link = ended;
+      });
+      expect(scanRecording(r), ended).toEqual([]);
+    }
+  });
+
+  it('any character that can carry on a URL or a token after an allowed address makes it a host finding', () => {
+    const base = 'https://github.com/patakihara/curly-spoon';
+    const continuations = [...":~!$(),*';\\\0@[]{}|^`<>"];
+    for (const c of continuations) {
+      for (const tail of ['', 'alice', 's3cr3tPassw0rdXYZ123']) {
+        const value = `${base}${c}${tail}`;
+        const r = leak((rec) => {
+          body(rec).Link = value;
+        });
+        expect(
+          scanRecording(r).map((f) => f.kind),
+          JSON.stringify(value),
+        ).toContain('host');
+      }
+    }
+    for (const value of [
+      `${base}:s3cr3tPassw0rdXYZ123`,
+      `${base}~alice`,
+      'Auralis/0.0.0 (+https://github.com/patakihara/curly-spoon)secret',
+      'Auralis/0.0.0 (https://github.com/patakihara/curly-spoon)x',
+      'https://tools.ietf.org/html/rfc9110#section-15.5.5;x',
+    ]) {
+      const r = leak((rec) => {
+        body(rec).Link = value;
+      });
+      expect(
+        scanRecording(r).map((f) => f.kind),
+        value,
+      ).toContain('host');
+    }
+  });
+
   it('anywhere else on github.com or tools.ietf.org is still a host finding', () => {
     for (const elsewhere of [
       'https://github.com/someone-else',

@@ -72,8 +72,17 @@ export const PUBLIC_URLS: readonly string[] = [
   'https://github.com/patakihara/curly-spoon',
   'https://tools.ietf.org/html/rfc9110#section-15.5.5',
 ];
+const PUBLIC_URL_ALTERNATIVES = PUBLIC_URLS.map((u) =>
+  u.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&'),
+).join('|');
+/**
+ * An allowed address, bare or as a User-Agent comment's `(+address)`, counts only when whitespace,
+ * a double quote or the string's end follows it. Any other character could carry the URL or a
+ * token on (`:password`, `~user`, `'`, `;param`, a NUL), so the address is then left for the host
+ * check.
+ */
 const PUBLIC_URL = new RegExp(
-  `(?:${PUBLIC_URLS.map((u) => u.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')).join('|')})(?![\\w/.#?=&%+-])`,
+  `(?:\\(\\+?(?:${PUBLIC_URL_ALTERNATIVES})\\)|(?:${PUBLIC_URL_ALTERNATIVES}))(?=[\\s"]|$)`,
   'g',
 );
 const ALLOWED_HOSTS = new Set(PUBLIC_HOSTS);
