@@ -379,6 +379,43 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ LRCLIB_URL: 'lrclib' })).toThrow();
   });
 
+  it('asks LRCLIB only over http or https', () => {
+    expect(loadConfig({ LRCLIB_URL: 'https://lyrics.invalid' }).lyrics.lrclibUrl).toBe(
+      'https://lyrics.invalid',
+    );
+    expect(() => loadConfig({ LRCLIB_URL: 'file:///etc/passwd' })).toThrow(/http or https/);
+    expect(() => loadConfig({ LRCLIB_URL: 'ftp://lyrics.invalid' })).toThrow(/http or https/);
+  });
+
+  it('reads each minutes setting as a plain whole number, blank as 0', () => {
+    for (const name of ['INDEX_EVERY_MINUTES', 'LYRICS_EVERY_MINUTES', 'PLAY_IDLE_MINUTES']) {
+      expect(() => loadConfig({ [name]: '0x10' }), name).toThrow(/whole number of minutes/);
+      expect(() => loadConfig({ [name]: '1e3' }), name).toThrow(/whole number of minutes/);
+      expect(() => loadConfig({ [name]: '1.5' }), name).toThrow(/whole number of minutes/);
+      expect(() => loadConfig({ [name]: 'abc' }), name).toThrow(/whole number of minutes/);
+    }
+    expect(loadConfig({ INDEX_EVERY_MINUTES: ' 30 ' }).index.everyMinutes).toBe(30);
+    expect(loadConfig({ INDEX_EVERY_MINUTES: '' }).index.everyMinutes).toBe(0);
+    expect(loadConfig({ INDEX_EVERY_MINUTES: '  ' }).index.everyMinutes).toBe(0);
+    expect(loadConfig({ LYRICS_EVERY_MINUTES: '' }).lyrics.everyMinutes).toBe(0);
+    expect(loadConfig({ LYRICS_EVERY_MINUTES: ' ' }).lyrics.everyMinutes).toBe(0);
+    expect(() => loadConfig({ PLAY_IDLE_MINUTES: ' ' })).toThrow();
+  });
+
+  it("refuses a job interval longer than Node's longest timer, naming the limit", () => {
+    // Node's timers hold at most 2^31 - 1 ms; a longer one fires after 1 ms instead.
+    const longest = Math.floor((2 ** 31 - 1) / 60_000);
+    expect(longest).toBe(35_791);
+    for (const name of ['INDEX_EVERY_MINUTES', 'LYRICS_EVERY_MINUTES']) {
+      expect(() => loadConfig({ [name]: String(longest + 1) }), name).toThrow(
+        /at most 35791 minutes/,
+      );
+      expect(() => loadConfig({ [name]: '100000' }), name).toThrow(/at most 35791 minutes/);
+    }
+    expect(loadConfig({ INDEX_EVERY_MINUTES: String(longest) }).index.everyMinutes).toBe(longest);
+    expect(loadConfig({ LYRICS_EVERY_MINUTES: String(longest) }).lyrics.everyMinutes).toBe(longest);
+  });
+
   it('reads AURALIS_COMMIT as the full commit the image was built from, empty as none', () => {
     expect(loadConfig({}).commit).toBeNull();
     expect(loadConfig({ AURALIS_COMMIT: '' }).commit).toBeNull();
