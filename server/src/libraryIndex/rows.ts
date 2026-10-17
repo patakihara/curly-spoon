@@ -60,6 +60,8 @@ export interface IndexRow {
    * image. False on episodes and tracks, whose art is their show's or album's.
    */
   hasArt: boolean;
+  /** Whether the upstream holds lyrics for a track: Jellyfin's `HasLyrics`. False on every other row. */
+  hasLyrics: boolean;
 }
 
 /** Apple's default for a feed that names no order, and for a show with no feed: newest first. */
@@ -129,6 +131,7 @@ const base = {
   ids: {},
   episodeOrder: null,
   hasArt: false,
+  hasLyrics: false,
 } satisfies Partial<IndexRow>;
 
 function bookTree(item: BookSummary): IndexTree {
@@ -261,6 +264,7 @@ function jellyfinRow(
     publishedAt: Number.isNaN(premiere) ? null : premiere,
     upstreamVersion: item.Etag ?? null,
     hasArt: kind === 'album' && present(item.ImageTags?.Primary),
+    hasLyrics: kind === 'track' && item.HasLyrics === true,
     ids: idsOf(Object.entries(item.ProviderIds ?? {}).map(([k, v]) => [providerScheme(k), v])),
   };
 }

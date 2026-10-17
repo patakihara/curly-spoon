@@ -122,6 +122,7 @@ const row0 = (kind: 'album' | 'track', id: string, title: string): IndexRow => (
   ids: {},
   episodeOrder: null,
   hasArt: false,
+  hasLyrics: false,
 });
 
 describe('library search', () => {

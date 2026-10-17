@@ -58,6 +58,8 @@ export const indexItemSchema = z.object({
   AlbumArtists: z.array(namedIdSchema).nullable().optional(),
   /** The item's images by type; `Primary` is its cover (recorded). */
   ImageTags: z.record(z.string()).nullable().optional(),
+  /** Whether Jellyfin holds a lyrics file for a track: a default field on Audio (checked live). */
+  HasLyrics: z.boolean().optional(),
 });
 export type IndexItem = z.infer<typeof indexItemSchema>;
 
