@@ -3,7 +3,8 @@
  * backfill job so the two make one lookup per track, asking LRCLIB at `LRCLIB_URL` (none when
  * empty) as Auralis by name. The backfill runs on the server's schedule with the Jellyfin API key,
  * as the index does; it is off when `LYRICS_EVERY_MINUTES` is 0, with no Jellyfin, or with LRCLIB
- * off, since then it would only read again what Jellyfin already gave.
+ * off, since then it would only read again what Jellyfin already gave. Until a whole Jellyfin
+ * index pass has run, each run asks nothing; the first such run says so once.
  */
 import type { FetchLike } from '../adapters/http/fetch.js';
 import { JellyfinClient } from '../adapters/jellyfin/client.js';
@@ -56,13 +57,14 @@ export function startLyricsJob(
     fetch: deps.fetch,
   });
   let stopped = false;
+  let saidWaiting = false;
   const schedule = deps.schedule ?? scheduleJob;
   const stop = schedule(
     {
       name: 'lyrics',
       everyMs: everyMinutes * 60_000,
       run: async () => {
-        await runLyrics({
+        const run = await runLyrics({
           db: deps.db,
           lyrics: deps.lyrics,
           jellyfin,
@@ -70,6 +72,10 @@ export function startLyricsJob(
           log: deps.log,
           stopped: () => stopped,
         });
+        if (run.waiting && !saidWaiting) {
+          saidWaiting = true;
+          deps.log.info({ job: 'lyrics' }, 'lyrics waiting on a whole Jellyfin index pass');
+        }
       },
     },
     deps.log,

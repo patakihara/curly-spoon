@@ -121,6 +121,25 @@ describe('starting the lyrics backfill with the server', () => {
     expect(answer).toEqual({ status: 'none', source: null, lines: [] });
   });
 
+  it('says once, not every run, that it is waiting on a whole Jellyfin index pass', async () => {
+    const said: string[] = [];
+    const config = { jellyfin: jellyfin(), lyrics: { everyMinutes: 60, lrclibUrl: LRCLIB } };
+    const jobs: Job[] = [];
+    startLyricsJob(config, {
+      db,
+      fetch: nothing,
+      lyrics: lyricsService(config, { db, fetch: nothing, log }),
+      log: { ...log, info: (_details, message) => said.push(message) },
+      schedule: (job) => (jobs.push(job), () => undefined),
+      sleep: async () => undefined,
+    });
+
+    await jobs[0]!.run();
+    await jobs[0]!.run();
+
+    expect(said).toEqual(['lyrics waiting on a whole Jellyfin index pass']);
+  });
+
   it('ends a run before its next track once stopped', async () => {
     indexGetLucky();
     const asked: string[] = [];

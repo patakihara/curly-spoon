@@ -17,7 +17,7 @@ import { albumRow, trackRows } from '../libraryIndex/rows.js';
 import { applyTree, emptyCounts, indexedRow, recordRun } from '../libraryIndex/store.js';
 import { openDatabase, type Db } from '../store/connection.js';
 import { cachedLyrics } from '../store/lyrics.js';
-import { LRCLIB_GAP_MS, LYRICS_STOP_AFTER, runLyrics } from './job.js';
+import { LRCLIB_GAP_MS, LYRICS_BATCH, LYRICS_STOP_AFTER, runLyrics } from './job.js';
 import { Lyrics } from './service.js';
 
 const ADAPTERS = new URL('../adapters/', import.meta.url);
@@ -119,7 +119,11 @@ beforeEach(() => {
 afterEach(() => db.close());
 
 /** The job's pieces on `lrclib`; `sleep` records each wait and runs `onSleep`. */
-function job(lrclib: FetchLike = lrclibRecorded(), onSleep: () => void = () => undefined) {
+function job(
+  lrclib: FetchLike = lrclibRecorded(),
+  onSleep: () => void = () => undefined,
+  jfFetch: FetchLike = jellyfinRecorded(),
+) {
   const lrclibAsked: string[] = [];
   const jellyfinAsked: string[] = [];
   const sleeps: number[] = [];
@@ -137,13 +141,12 @@ function job(lrclib: FetchLike = lrclibRecorded(), onSleep: () => void = () => u
     }),
     now: () => T0,
   });
-  const jfReplay = jellyfinRecorded();
   const jellyfin = new JellyfinClient({
     baseUrl: UPSTREAM,
     token: '<token>',
     fetch: (url, init) => {
       jellyfinAsked.push(new URL(url).pathname);
-      return jfReplay(url, init);
+      return jfFetch(url, init);
     },
   });
   const run = (extra: { batch?: number; stopped?: () => boolean } = {}) =>
@@ -193,6 +196,23 @@ describe('the lyrics backfill job', () => {
     expect(cachedIds()).toHaveLength(2);
   });
 
+  it('takes 100 tracks a run when no batch is given', async () => {
+    indexPassRan(db);
+    const asked: number[] = [];
+    await runLyrics({
+      db,
+      lyrics: {
+        staleTracks: (limit) => (asked.push(limit), []),
+        forTrack: () => Promise.reject(new Error('no track was listed')),
+      },
+      jellyfin: { getLyrics: () => Promise.reject(new Error('no track was listed')) },
+      sleep: async () => undefined,
+      log: { info: () => undefined, warn: () => undefined },
+    });
+    expect(LYRICS_BATCH).toBe(100);
+    expect(asked).toEqual([100]);
+  });
+
   it('waits a second after each LRCLIB lookup, and only then', async () => {
     indexRecorded(db, (id) => RECORDED.includes(id));
     indexPassRan(db);
@@ -219,6 +239,54 @@ describe('the lyrics backfill job', () => {
 
     expect(run).toMatchObject({ resolved: 0, failed: 3, lookups: 3, ended: 'failures' });
     expect(j.lrclibAsked).toHaveLength(3);
+    expect(j.warnings).toEqual(['lyrics run ended on failures']);
+  });
+
+  it('counts failures only in a row: a success between them starts the count again', async () => {
+    indexRecorded(
+      db,
+      () => true,
+      T0,
+      (tracks) => {
+        for (const t of tracks) Object.assign(t, { HasLyrics: false });
+      },
+    );
+    indexPassRan(db);
+    // Two failures, then LRCLIB finds nothing (an answer), over and over.
+    let calls = 0;
+    const twoFailThenOne: FetchLike = () => {
+      calls += 1;
+      return calls % 3 === 0
+        ? Promise.resolve(new Response('{"message":"not found"}', { status: 404 }))
+        : Promise.reject(new TypeError('fetch failed'));
+    };
+    const j = job(twoFailThenOne);
+
+    const run = await j.run();
+
+    expect(run.lookups).toBeGreaterThan(LYRICS_STOP_AFTER * 3);
+    expect(run).toMatchObject({ ended: null, failed: run.lookups - run.resolved });
+    expect(run.failed).toBeGreaterThanOrEqual(run.lookups / 2);
+    expect(j.warnings).toEqual([]);
+  });
+
+  it(`ends the run after ${LYRICS_STOP_AFTER} Jellyfin failures in a row too, asking LRCLIB nothing`, async () => {
+    indexRecorded(
+      db,
+      () => true,
+      T0,
+      (tracks) => {
+        for (const t of tracks) Object.assign(t, { HasLyrics: true });
+      },
+    );
+    indexPassRan(db);
+    const j = job(lrclibRecorded(), () => undefined, rejecting);
+
+    const run = await j.run();
+
+    expect(run).toMatchObject({ resolved: 0, failed: 3, lookups: 0, ended: 'failures' });
+    expect(j.jellyfinAsked).toHaveLength(3);
+    expect(j.lrclibAsked).toEqual([]);
     expect(j.warnings).toEqual(['lyrics run ended on failures']);
   });
 
