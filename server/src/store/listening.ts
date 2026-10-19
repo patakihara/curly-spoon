@@ -156,6 +156,28 @@ export class PositionWithoutItem extends Error {
   }
 }
 
+/** A spoken digest or saved queue owner that is not one of this person's digests. */
+export class NotYourDigest extends Error {
+  constructor(
+    readonly deviceId: string,
+    readonly listId: string,
+  ) {
+    super(`listening session ${deviceId}: ${listId} is not one of its person's digests`);
+    this.name = 'NotYourDigest';
+  }
+}
+
+/** Two saved queues of one owner (null: your own queue). */
+export class DuplicateSavedQueue extends Error {
+  constructor(
+    readonly deviceId: string,
+    readonly owner: string | null,
+  ) {
+    super(`listening session ${deviceId}: two saved queues of ${owner ?? 'its own'}`);
+    this.name = 'DuplicateSavedQueue';
+  }
+}
+
 const SessionRow = z.object({
   device_id: z.string(),
   user_id: z.string(),
@@ -441,7 +463,9 @@ export function listSessions(db: Db, userId: string): SessionSummary[] {
 /**
  * Writes this device's session whole, made from revision `rev`, and answers it at the next
  * revision. Throws `StaleRevision` when the session has moved past `rev`; null when the device
- * is not this user's or has no session yet. History keeps its newest `HISTORY_KEPT` plays.
+ * is not this user's or has no session yet. History keeps its newest `HISTORY_KEPT` plays. A
+ * spoken digest or saved queue owner that is not this user's digest is refused with
+ * `NotYourDigest`, two saved queues of one owner with `DuplicateSavedQueue`.
  */
 export function saveSession(
   db: Db,
@@ -452,6 +476,7 @@ export function saveSession(
   now: number = Date.now(),
 ): StoredSession | null {
   return db.transaction(() => {
+    checkDigests(db, userId, deviceId, value);
     const changed = db
       .prepare(
         `UPDATE listening_sessions
@@ -625,16 +650,60 @@ function writeAutoplay(
   radio?.tracks.forEach((track, ord) => insertTrack.run(deviceId, ord, track.source, track.id));
 }
 
+/** Every digest a session names, as its spoken queue's or a saved queue's, is its person's own. */
+function checkDigests(db: Db, userId: string, deviceId: string, value: SessionValue): void {
+  const digests = new Set(
+    z
+      .array(z.object({ id: z.string() }))
+      .parse(db.prepare("SELECT id FROM lists WHERE user_id = ? AND kind = 'digest'").all(userId))
+      .map((r) => r.id),
+  );
+  const named = [value.spokenDigest, ...value.saved.map((q) => q.owner)];
+  for (const id of named) {
+    if (id !== null && !digests.has(id)) throw new NotYourDigest(deviceId, id);
+  }
+}
+
+/** One entry as `writeQueues` keeps it in `segment`: the marks only that segment has. */
+function kept(item: SessionItem, segment: 'current' | 'user' | 'context'): SessionItem {
+  return {
+    itemId: item.itemId,
+    ref: item.ref,
+    ...chapterOf(item.chapter ?? null),
+    ...(segment === 'user' && item.walk !== undefined ? { walk: item.walk } : {}),
+    ...(segment !== 'context' && item.replayOf !== undefined ? { replayOf: item.replayOf } : {}),
+    ...(segment === 'current' && item.after !== undefined ? { after: item.after } : {}),
+    ...(segment === 'user' && item.position !== undefined ? { position: item.position } : {}),
+  };
+}
+
+/** A saved queue as a live one is kept, refused on what `writeQueues` refuses. */
+function keptQueue(deviceId: string, q: SessionQueue): SessionQueue {
+  if (q.current === null && q.position !== null) throw new PositionWithoutItem(deviceId, 'spoken');
+  return {
+    current: q.current === null ? null : kept(q.current, 'current'),
+    position: q.position,
+    user: q.user.map((item) => kept(item, 'user')),
+    context:
+      q.context === null
+        ? null
+        : { from: q.context.from, items: q.context.items.map((item) => kept(item, 'context')) },
+  };
+}
+
 function writeSaved(db: Db, deviceId: string, saved: readonly SavedQueue[]): void {
   db.prepare('DELETE FROM saved_queues WHERE device_id = ?').run(deviceId);
   const insert = db.prepare(
     'INSERT INTO saved_queues (device_id, owner, queue, autoplay, saved_at) VALUES (?, ?, ?, ?, ?)',
   );
+  const owners = new Set<string | null>();
   for (const { owner, queue, autoplay, savedAt } of saved) {
+    if (owners.has(owner)) throw new DuplicateSavedQueue(deviceId, owner);
+    owners.add(owner);
     insert.run(
       deviceId,
       owner ?? '',
-      JSON.stringify(queue),
+      JSON.stringify(keptQueue(deviceId, queue)),
       autoplay === null ? null : JSON.stringify(autoplay),
       savedAt,
     );

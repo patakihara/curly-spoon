@@ -8,15 +8,19 @@ import { openDatabase, type Db } from './connection.js';
 import { createDevice, deleteDevice } from './devices.js';
 import {
   HISTORY_KEPT,
+  DuplicateSavedQueue,
   HistoryRewritten,
   listSessions,
+  NotYourDigest,
   openSession,
   PositionWithoutItem,
   saveAutoplay,
   savePosition,
   saveSession,
   StaleRevision,
+  type SessionItem,
   type SessionPlay,
+  type SessionQueue,
   type SessionValue,
   type StoredSession,
 } from './listening.js';
@@ -577,6 +581,88 @@ describe('a digest’s queue in a listening session', () => {
       ).toThrow(HistoryRewritten);
     }
     expect(openSession(db, user.id, phone.id)).toEqual(saved);
+  });
+
+  it('refuses a digest or saved queue owner that is not one of this person’s digests', () => {
+    const { user, phone, saved } = inDigest();
+    const other = upsertUser(db, { username: 'otto', role: 'member' });
+    const theirs = createList(db, other.id, { kind: 'digest', name: 'Otto’s' });
+    const playlist = createList(db, user.id, { kind: 'playlist', name: 'Commute' });
+    const own = saved.saved[0]!;
+
+    for (const id of [theirs.id, playlist.id, 'no-such-list']) {
+      expect(() =>
+        saveSession(db, user.id, phone.id, saved.rev, { ...value(saved), spokenDigest: id }),
+      ).toThrow(NotYourDigest);
+      expect(() =>
+        saveSession(db, user.id, phone.id, saved.rev, {
+          ...value(saved),
+          saved: [{ ...own, owner: id }],
+        }),
+      ).toThrow(NotYourDigest);
+    }
+    expect(openSession(db, user.id, phone.id)).toEqual(saved);
+  });
+
+  it('refuses two saved queues of one owner', () => {
+    const { user, phone, saved } = inDigest();
+    const own = saved.saved[0]!;
+
+    expect(() =>
+      saveSession(db, user.id, phone.id, saved.rev, {
+        ...value(saved),
+        saved: [own, { ...own, savedAt: 9000 }],
+      }),
+    ).toThrow(DuplicateSavedQueue);
+    expect(openSession(db, user.id, phone.id)).toEqual(saved);
+  });
+
+  it('refuses a saved queue with a position but no current item, as a live queue does', () => {
+    const { user, phone, saved } = inDigest();
+    const own = saved.saved[0]!;
+
+    expect(() =>
+      saveSession(db, user.id, phone.id, saved.rev, {
+        ...value(saved),
+        saved: [{ ...own, queue: { ...own.queue, current: null } }],
+      }),
+    ).toThrow(PositionWithoutItem);
+    expect(openSession(db, user.id, phone.id)).toEqual(saved);
+  });
+
+  it('keeps only what a live queue keeps of a saved queue’s entries', () => {
+    const { user, phone, saved } = inDigest();
+    const own = saved.saved[0]!;
+    const marked = { walk: 1, after: 0 };
+    const queue: SessionQueue = {
+      ...own.queue,
+      current: { ...own.queue.current!, walk: 2 },
+      user: [{ ...own.queue.user[0]!, ...marked }],
+      context: { from: own.queue.context!.from, items: [{ ...entry(book, 5), ...marked }] },
+    };
+
+    const resaved = saveSession(db, user.id, phone.id, saved.rev, {
+      ...value(saved),
+      saved: [{ ...own, queue }],
+    })!;
+
+    const { walk: _walk, ...current } = queue.current!;
+    const { after: _after, ...userItem } = queue.user[0]!;
+    const { walk: _w, after: _a, ...contextItem } = queue.context!.items[0]! as SessionItem;
+    expect(resaved.saved[0]!.queue).toEqual({
+      ...queue,
+      current,
+      user: [userItem],
+      context: { from: queue.context!.from, items: [contextItem] },
+    });
+  });
+
+  it('goes with its device, saved queues and all', () => {
+    const { user, phone } = inDigest();
+
+    deleteDevice(db, user.id, phone.id);
+
+    expect(db.prepare('SELECT COUNT(*) AS n FROM saved_queues').get()).toEqual({ n: 0 });
   });
 
   it('refuses a saved queue whose JSON no longer reads as one', () => {

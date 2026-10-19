@@ -205,6 +205,31 @@ describe('deleting a digest a device holds a queue for', () => {
   });
 });
 
+describe('deleting a digest, for another person', () => {
+  it('leaves their sessions alone, even one naming the digest', () => {
+    const kara = person();
+    const otto = person('otto');
+    const digest = createList(db, kara, { kind: 'digest', name: 'Science' });
+    const device = createDevice(db, { userId: otto, kind: 'web', name: 'Laptop' }).id;
+    const s = openSession(db, otto, device)!;
+    const theirs = saveSession(db, otto, device, s.rev, {
+      ...s,
+      saved: [{ owner: null, queue: queueOf(episode1), autoplay: null, savedAt: 500 }],
+    })!;
+    // Only a write past the store's checks can do this; deleting must not reach it regardless.
+    db.prepare('UPDATE listening_sessions SET spoken_digest = ? WHERE device_id = ?').run(
+      digest.id,
+      device,
+    );
+
+    deleteList(db, kara, digest.id, 2000);
+
+    const after = openSession(db, otto, device)!;
+    expect(after.rev).toBe(theirs.rev);
+    expect(after.saved).toEqual(theirs.saved);
+  });
+});
+
 describe('played marks', () => {
   it('keep the newest time each episode was marked played, per person', () => {
     const kara = person();
