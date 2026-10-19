@@ -9,7 +9,7 @@ Calls you left open in your notes.
 
 | Call | Options | Needed by |
 |---|---|---|
-| Getting back to a paused queue | How to return to a paused queue, beyond a digest's saved one (by playing its episode); you're thinking it over | It plays |
+| Getting back to a paused queue | How to return to a paused queue, beyond a digest's saved one (by playing its episode); you're thinking it over | My library |
 | In-library marking | Mark in-library items (your lean), or mark the ones not in the library | Both apps, everywhere, polished |
 | User-created queues | Two queues for now; any number later | Not scheduled |
 | Mixed-content playlists | Parked, as you said | Not scheduled |
