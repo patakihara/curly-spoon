@@ -32,6 +32,7 @@ export {
   CreateBookmarkBody,
 } from './bookmarks.js';
 export { CommitId, HealthResponse } from './health.js';
+export { DigestOrder, ListKind } from './lists.js';
 export { LyricLine, Lyrics, LyricsSource, LyricsStatus } from './lyrics.js';
 export {
   ArtQuery,

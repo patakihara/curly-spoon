@@ -16,9 +16,11 @@ import {
   savePosition,
   saveSession,
   StaleRevision,
+  type SessionPlay,
   type SessionValue,
   type StoredSession,
 } from './listening.js';
+import { createList } from './lists.js';
 import { upsertUser } from './users.js';
 
 const song: MediaRef = { source: 'jellyfin', id: '0123456789abcdef0123456789abcdef' };
@@ -40,6 +42,8 @@ const value = (session: StoredSession): SessionValue => ({
   autoplay: session.autoplay,
   radio: session.radio,
   autoplayAt: session.autoplayAt,
+  spokenDigest: session.spokenDigest,
+  saved: session.saved,
 });
 
 let dir: string;
@@ -150,6 +154,8 @@ describe('a listening session in the store', () => {
       autoplay: { music: null, spoken: null },
       radio: null,
       autoplayAt: null,
+      spokenDigest: null,
+      saved: [],
       rev: 0,
       updatedAt: 1000,
     });
@@ -190,6 +196,8 @@ describe('a listening session in the store', () => {
       },
       radio: { seed: song, tracks: [album, song] },
       autoplayAt: 1500,
+      spokenDigest: null,
+      saved: [],
     };
 
     const saved = saveSession(db, user.id, phone.id, session.rev, written, 2000);
@@ -485,5 +493,96 @@ describe('a listening session in the store', () => {
     expect(openSession(db, user.id, phone.id)).toEqual(moved);
     const other = upsertUser(db, { username: 'otto', role: 'member' });
     expect(saveAutoplay(db, other.id, phone.id, moved.rev, stale)).toBe(false);
+  });
+});
+
+describe('a digest’s queue in a listening session', () => {
+  function inDigest() {
+    const { user, phone } = twoDevices();
+    const digest = createList(db, user.id, { kind: 'digest', name: 'Science' });
+    const start = openSession(db, user.id, phone.id, 1000)!;
+    const own = {
+      current: { ...entry(book, 2), after: 0 },
+      position: { ms: 61_000, takenAt: 900 },
+      user: [{ ...entry(book, 3), walk: 0, position: { ms: 2_000, takenAt: 800 } }, entry(book, 4)],
+      context: { from: { kind: 'book' as const, ref: book }, items: [entry(book, 5)] },
+    };
+    const written: SessionValue = {
+      ...value(start),
+      active: 'spoken',
+      spokenDigest: digest.id,
+      queues: {
+        ...start.queues,
+        spoken: { current: entry(song), position: null, user: [entry(album)], context: null },
+      },
+      history: [
+        { seq: 0, queue: 'spoken', ref: book, chapter: 1, playedAt: 10 },
+        { seq: 1, queue: 'spoken', ref: album, playedAt: 20, after: 0, list: digest.id },
+      ],
+      saved: [
+        {
+          owner: null,
+          queue: own,
+          autoplay: { after: { ref: book, chapter: 2 }, next: { ref: book, chapter: 6 } },
+          savedAt: 1500,
+        },
+        { owner: digest.id, queue: own, autoplay: null, savedAt: 1600 },
+      ],
+    };
+    const saved = saveSession(db, user.id, phone.id, start.rev, written, 2000)!;
+    return { user, phone, digest, start, written, saved };
+  }
+
+  it('keeps the digest it plays, the queues it saved and the plays made in it, across a reopen', () => {
+    const { user, phone, written, saved } = inDigest();
+
+    expect(saved).toMatchObject({
+      spokenDigest: written.spokenDigest,
+      saved: written.saved,
+      history: written.history,
+      queues: written.queues,
+      rev: 1,
+    });
+    expect(openSession(db, user.id, phone.id)).toEqual(saved);
+  });
+
+  it('still refuses a write from an older revision, keeping the digest and saved queues', () => {
+    const { user, phone, start, saved } = inDigest();
+
+    expect(() =>
+      saveSession(db, user.id, phone.id, start.rev, { ...value(start), saved: [] }),
+    ).toThrow(StaleRevision);
+    expect(openSession(db, user.id, phone.id)).toEqual(saved);
+  });
+
+  it('refuses a save that changes which digest a stored play was played in', () => {
+    const { user, phone, saved } = inDigest();
+    const [first, second] = saved.history as [SessionPlay, SessionPlay];
+
+    for (const history of [
+      [{ ...first, list: second.list! }, second],
+      [
+        first,
+        {
+          seq: second.seq,
+          queue: second.queue,
+          ref: second.ref,
+          playedAt: second.playedAt,
+          after: 0,
+        },
+      ],
+    ]) {
+      expect(() =>
+        saveSession(db, user.id, phone.id, saved.rev, { ...value(saved), history }),
+      ).toThrow(HistoryRewritten);
+    }
+    expect(openSession(db, user.id, phone.id)).toEqual(saved);
+  });
+
+  it('refuses a saved queue whose JSON no longer reads as one', () => {
+    const { user, phone } = inDigest();
+    db.prepare('UPDATE saved_queues SET queue = \'{"current":7}\'').run();
+
+    expect(() => openSession(db, user.id, phone.id)).toThrow();
   });
 });

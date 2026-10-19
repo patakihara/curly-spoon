@@ -11,9 +11,9 @@ import {
   type MediaRef,
   MediaSource,
   PlayingFromKind,
-  type QueueContext,
-  type QueueItem,
-  type QueuePosition,
+  QueueContext,
+  QueueItem,
+  QueuePosition,
   QueueStyle,
   QueueType,
 } from '@auralis/schema';
@@ -58,10 +58,12 @@ export interface RadioRun {
 
 /**
  * A play as the session keeps it: `after` is the play it followed, absent for one that followed
- * none. Back walks plays in the order this gives, not in `seq` order.
+ * none. Back walks plays in the order this gives, not in `seq` order. `list` is the digest it was
+ * played in, absent for a play of your own queue.
  */
 export interface SessionPlay extends HistoryEntry {
   after?: number;
+  list?: string;
 }
 
 /**
@@ -73,6 +75,18 @@ export interface SessionQueue {
   position: QueuePosition | null;
   user: SessionItem[];
   context: QueueContext | null;
+}
+
+/**
+ * A spoken queue put aside on entering a digest's queue, with its autoplay pick: `owner` is null
+ * for your own queue, or the digest's id for a digest's. Playing its current item, or its next
+ * once that ended, brings it back.
+ */
+export interface SavedQueue {
+  owner: string | null;
+  queue: SessionQueue;
+  autoplay: AutoplayPick | null;
+  savedAt: number;
 }
 
 /**
@@ -90,6 +104,10 @@ export interface SessionValue {
   radio: RadioRun | null;
   /** When autoplay was last worked out for the session (ms), or null when it never was. */
   autoplayAt: number | null;
+  /** The digest whose queue the spoken queue is now, or null when it is your own. */
+  spokenDigest: string | null;
+  /** The spoken queues put aside, at most one per owner, oldest first. */
+  saved: SavedQueue[];
 }
 
 export interface StoredSession extends SessionValue {
@@ -150,6 +168,7 @@ const SessionRow = z.object({
   radio_seed_source: MediaSource.nullable(),
   radio_seed_id: z.string().nullable(),
   autoplay_at: z.number().nullable(),
+  spoken_digest: z.string().nullable(),
 });
 type SessionRow = z.infer<typeof SessionRow>;
 
@@ -195,6 +214,7 @@ const HistoryRow = z
     chapter: z.number().int().nonnegative().nullable(),
     played_at: z.number().int(),
     after: z.number().int().nonnegative().nullable(),
+    list_id: z.string().nullable(),
   })
   .transform((row): SessionPlay => ({
     seq: row.seq,
@@ -203,6 +223,7 @@ const HistoryRow = z
     ...chapterOf(row.chapter),
     playedAt: row.played_at,
     ...(row.after === null ? {} : { after: row.after }),
+    ...(row.list_id === null ? {} : { list: row.list_id }),
   }));
 
 const entryOf = (source: MediaSource, id: string, chapter: number | null): QueueEntry => ({
@@ -229,6 +250,37 @@ const PickRow = z
           ? null
           : entryOf(row.source, row.upstream_id, row.chapter),
     } satisfies AutoplayPick,
+  }));
+
+/** A saved queue's JSON, as `writeSaved` writes it; the store's own, so a misread throws. */
+const SavedItem = QueueItem.extend({
+  walk: z.number().int().optional(),
+  replayOf: z.number().int().nonnegative().optional(),
+  after: z.number().int().nonnegative().optional(),
+  position: QueuePosition.optional(),
+});
+const SavedQueueJson = z.object({
+  current: SavedItem.nullable(),
+  position: QueuePosition.nullable(),
+  user: z.array(SavedItem),
+  context: QueueContext.nullable(),
+});
+const SavedEntry = QueueItem.omit({ itemId: true });
+const SavedPickJson = z.object({ after: SavedEntry, next: SavedEntry.nullable() });
+const json = (text: string): unknown => JSON.parse(text);
+
+const SavedRow = z
+  .object({
+    owner: z.string(),
+    queue: z.string().transform(json).pipe(SavedQueueJson),
+    autoplay: z.string().transform(json).pipe(SavedPickJson).nullable(),
+    saved_at: z.number().int(),
+  })
+  .transform((row): SavedQueue => ({
+    owner: row.owner === '' ? null : row.owner,
+    queue: row.queue,
+    autoplay: row.autoplay,
+    savedAt: row.saved_at,
   }));
 
 const RadioTrackRow = z
@@ -304,6 +356,16 @@ function readAutoplay(db: Db, deviceId: string): Record<QueueType, AutoplayPick 
   return autoplay;
 }
 
+function readSaved(db: Db, deviceId: string): SavedQueue[] {
+  return z
+    .array(SavedRow)
+    .parse(
+      db
+        .prepare('SELECT * FROM saved_queues WHERE device_id = ? ORDER BY saved_at, owner')
+        .all(deviceId),
+    );
+}
+
 function readRadio(db: Db, row: SessionRow): RadioRun | null {
   if (row.radio_seed_source === null || row.radio_seed_id === null) return null;
   const tracks = z
@@ -326,6 +388,8 @@ function stored(db: Db, row: SessionRow): StoredSession {
     autoplay: readAutoplay(db, row.device_id),
     radio: readRadio(db, row),
     autoplayAt: row.autoplay_at,
+    spokenDigest: row.spoken_digest,
+    saved: readSaved(db, row.device_id),
     rev: row.rev,
     updatedAt: row.updated_at,
   };
@@ -392,7 +456,8 @@ export function saveSession(
       .prepare(
         `UPDATE listening_sessions
          SET active = ?, switch_after_current = ?, queue_style = ?, rev = rev + 1,
-           updated_at = ?, radio_seed_source = ?, radio_seed_id = ?, autoplay_at = ?
+           updated_at = ?, radio_seed_source = ?, radio_seed_id = ?, autoplay_at = ?,
+           spoken_digest = ?
          WHERE device_id = ? AND user_id = ? AND rev = ?`,
       )
       .run(
@@ -403,6 +468,7 @@ export function saveSession(
         value.radio?.seed.source ?? null,
         value.radio?.seed.id ?? null,
         value.autoplayAt,
+        value.spokenDigest,
         deviceId,
         userId,
         rev,
@@ -414,6 +480,7 @@ export function saveSession(
     writeQueues(db, deviceId, value.queues);
     writeHistory(db, deviceId, value.history);
     writeAutoplay(db, deviceId, value.autoplay, value.radio);
+    writeSaved(db, deviceId, value.saved);
     const row = readRow(db, userId, deviceId);
     if (row === null) throw new Error('invariant: the session just written is missing');
     return stored(db, row);
@@ -558,6 +625,22 @@ function writeAutoplay(
   radio?.tracks.forEach((track, ord) => insertTrack.run(deviceId, ord, track.source, track.id));
 }
 
+function writeSaved(db: Db, deviceId: string, saved: readonly SavedQueue[]): void {
+  db.prepare('DELETE FROM saved_queues WHERE device_id = ?').run(deviceId);
+  const insert = db.prepare(
+    'INSERT INTO saved_queues (device_id, owner, queue, autoplay, saved_at) VALUES (?, ?, ?, ?, ?)',
+  );
+  for (const { owner, queue, autoplay, savedAt } of saved) {
+    insert.run(
+      deviceId,
+      owner ?? '',
+      JSON.stringify(queue),
+      autoplay === null ? null : JSON.stringify(autoplay),
+      savedAt,
+    );
+  }
+}
+
 /** A play as stored: an absent chapter and an undefined one are the same play. */
 const samePlay = (a: SessionPlay, b: SessionPlay) =>
   a.seq === b.seq &&
@@ -566,7 +649,8 @@ const samePlay = (a: SessionPlay, b: SessionPlay) =>
   a.ref.id === b.ref.id &&
   (a.chapter ?? null) === (b.chapter ?? null) &&
   a.playedAt === b.playedAt &&
-  (a.after ?? null) === (b.after ?? null);
+  (a.after ?? null) === (b.after ?? null) &&
+  (a.list ?? null) === (b.list ?? null);
 
 /**
  * History is append-only, and callers number the plays they append (the store does not). A save
@@ -599,8 +683,8 @@ function writeHistory(db: Db, deviceId: string, history: readonly SessionPlay[])
   }
   const insert = db.prepare(
     `INSERT INTO play_history (device_id, seq, queue, source, upstream_id, chapter, played_at,
-       after)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       after, list_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   for (const h of added.slice(-HISTORY_KEPT)) {
     insert.run(
@@ -612,6 +696,7 @@ function writeHistory(db: Db, deviceId: string, history: readonly SessionPlay[])
       h.chapter ?? null,
       h.playedAt,
       h.after ?? null,
+      h.list ?? null,
     );
   }
   db.prepare(

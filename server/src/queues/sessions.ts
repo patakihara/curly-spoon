@@ -142,6 +142,8 @@ const valueOf = ({
   autoplay,
   radio,
   autoplayAt,
+  spokenDigest,
+  saved,
 }: StoredSession): SessionValue => ({
   active,
   switchAfterCurrent,
@@ -151,6 +153,8 @@ const valueOf = ({
   autoplay,
   radio,
   autoplayAt,
+  spokenDigest,
+  saved,
 });
 
 const currentOf = (s: SessionValue) => s.queues[s.active].current;

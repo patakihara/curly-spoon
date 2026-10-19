@@ -178,6 +178,8 @@ function playing(
     autoplay: { music: null, spoken: null },
     radio: null,
     autoplayAt: null,
+    spokenDigest: null,
+    saved: [],
   };
 }
 
