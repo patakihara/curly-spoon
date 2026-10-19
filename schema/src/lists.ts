@@ -131,7 +131,8 @@ export type PutListItemsBody = z.infer<typeof PutListItemsBody>;
 
 /**
  * Play a listening list or playlist now, in its order: its unplayed entries from `start` (one of
- * them; else the first) onwards. `rev`, when given, must be the session's revision, else 409.
+ * its entries, played from its beginning if finished; else the first unplayed) onwards. `rev`,
+ * when given, must be the session's revision, else 409.
  */
 export const PlayListBody = z
   .object({ start: MediaRef.optional(), rev: Revision.optional() })

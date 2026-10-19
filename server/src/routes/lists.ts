@@ -41,7 +41,7 @@ import {
   shown,
   wrongKind,
 } from '../lists/reader.js';
-import { listPlay } from '../lists/play.js';
+import { listExpansion, listRun } from '../lists/play.js';
 import { addEntries } from '../queues/engine.js';
 import type { Sessions } from '../queues/sessions.js';
 import { Refusal, serve } from '../route.js';
@@ -173,11 +173,16 @@ export function listRoutes(
     const r = await readerFor(context, caller);
     const list = owned(r, params.id);
     if (list.kind === 'digest') throw new Refusal(400, 'digest_play_pending');
-    await sessions.load(caller, list.items);
-    const expansion = listPlay(r, list, body.start, sessions.deps.expand);
+    const run = listRun(r, list, body.start);
+    await sessions.load(caller, run.refs);
+    const expansion = listExpansion(run, sessions.deps.expand);
     const saved = sessions.change(caller, body.rev, (s) => {
       const played = addEntries(s, expansion, 'now', sessions.deps);
       if (played === null) throw new Error('invariant: a list play has entries');
+      const spoken = played.queues.spoken;
+      spoken.context = null;
+      // Started over a finished entry, it plays from its beginning, not its upstream end.
+      if (run.again) spoken.position = { ms: 0, takenAt: r.now };
       return played;
     });
     return sessions.queueOf(saved, 'spoken');

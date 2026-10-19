@@ -13,6 +13,7 @@ import {
   LIST_ENTRIES_MAX,
   ListDetail,
   ListeningSession,
+  ListeningSessionList,
   Queue,
   type ListItem,
   type MediaRef,
@@ -158,7 +159,11 @@ async function server(options: { now?: number; me?: Recording } = {}) {
     kara = replayFetch([me, ...PLAYS]);
   };
   const otto = replayFetch([ottoMe]);
+  /** Every upstream call made, as `METHOD path?query`. */
+  const sent: string[] = [];
   const fetch: FetchLike = async (url, init) => {
+    const { pathname, search } = new URL(url);
+    sent.push(`${init?.method ?? 'GET'} ${pathname}${search}`);
     const authorization = new Headers(init?.headers).get('authorization') ?? '';
     return (authorization.includes('otto') ? otto : kara)(url, init);
   };
@@ -214,7 +219,7 @@ async function server(options: { now?: number; me?: Recording } = {}) {
   const create = async (body: object, name = 'kara') =>
     ok(await call('POST', '/lists', body, name), ListDetail);
   const refs = (items: ListItem[]) => items.map((i) => i.ref);
-  return { clock, users, karaAnswers, call, ok, lists, theDigest, detail, create, refs };
+  return { clock, sent, users, karaAnswers, call, ok, lists, theDigest, detail, create, refs };
 }
 
 const refused = (status: number, error: string) => ({ status, body: { error } });
@@ -625,7 +630,82 @@ describe('[M2.lists/a] Playing a listening list or a podcast playlist, in order'
 
     expect(entries(queue)).toEqual([two, four].map(episode));
     expect(await s.call('POST', '/play', { ref: two })).toMatchObject({ status: 200 });
+    const after = s.ok(await s.call('GET', '/queues/spoken'), Queue);
+    expect([after.current, ...after.user].map((i) => i!.itemId)).toEqual(
+      [queue.current, ...queue.user].map((i) => i!.itemId),
+    );
     expect(await next(s)).toEqual(episode(four));
+  });
+
+  it('[M2.lists/a] skips a finished book, and plays it from its beginning when started on', async () => {
+    const me = karaMe([{ libraryItemId: book.id, episodeId: null, isFinished: true, progress: 1 }]);
+    const listed = async () => {
+      const s = await server({ me });
+      const list = await s.create({ kind: 'listening', name: 'Again' });
+      await s.call('PUT', `/lists/${list.id}/items`, { refs: [bookRef, show1] });
+      return { s, list };
+    };
+
+    const first = await listed();
+    const skipped = await played(first.s, first.list.id);
+    expect(entries(skipped)).toEqual([one, two, three, four].map(episode));
+
+    // Started on, from a new device with nothing queued, so the queue is the list's alone.
+    const { s, list } = await listed();
+    const again = await played(s, list.id, { start: bookRef });
+    expect(entries(again)).toEqual([
+      ...[0, 1, 2, 3].map(chapter),
+      ...[one, two, three, four].map(episode),
+    ]);
+    expect(again.position).toEqual({ ms: 0, takenAt: s.clock.now });
+  });
+
+  it('[M2.lists/a] plays a finished episode started on, then the playlist’s unplayed ones after it', async () => {
+    const s = await server();
+    const list = await s.create({ kind: 'playlist', name: 'Again' });
+    await s.call('PUT', `/lists/${list.id}/items`, { refs: [two, one, three] });
+
+    const queue = await played(s, list.id, { start: one });
+
+    // kara finished Part One.
+    expect(entries(queue)).toEqual([one, three].map(episode));
+    expect(queue.position).toEqual({ ms: 0, takenAt: s.clock.now });
+  });
+
+  it('plays from no item: a list play sets no playing-from, over the one before it too', async () => {
+    const s = await server();
+    await s.call('POST', '/queues/spoken/items', { ref: four, how: 'now' });
+    const list = await s.create({ kind: 'listening', name: 'Road trip' });
+    await s.call('PUT', `/lists/${list.id}/items`, { refs: [bookRef, show1] });
+
+    const queue = await played(s, list.id);
+
+    expect(queue.context).toBeNull();
+  });
+
+  it('reads the chapters of only the books that will play', async () => {
+    const s = await server();
+    const list = await s.create({ kind: 'listening', name: 'Road trip' });
+    await s.call('PUT', `/lists/${list.id}/items`, { refs: [bookRef, show1] });
+
+    await played(s, list.id, { start: show1 });
+
+    expect(s.sent.filter((call) => call.includes(book.id))).toEqual([]);
+  });
+
+  it('pauses music with its current item kept, and drives the spoken queue', async () => {
+    const s = await server();
+    const song: MediaRef = { source: 'jellyfin', id: '0'.repeat(32) };
+    await s.call('POST', '/queues/music/items', { ref: song, how: 'now' });
+    const list = await s.create({ kind: 'playlist', name: 'Commute' });
+    await s.call('PUT', `/lists/${list.id}/items`, { refs: [two] });
+
+    await played(s, list.id);
+
+    const session = s.ok(await s.call('GET', '/sessions'), ListeningSessionList).sessions[0]!;
+    expect(session.active).toBe('spoken');
+    expect(session.currents.music?.ref).toEqual(song);
+    expect(session.currents.spoken?.ref).toEqual(two);
   });
 
   it('[M2.lists/a] a playlist played from one of its episodes leaves out the ones before it', async () => {
