@@ -325,7 +325,8 @@ export function setQueueStyle(session: SessionValue, style: QueueStyle): Session
 /**
  * Ends `type`'s current item and answers its play: it goes to history, unless it is a replay
  * Back brought back, which is there already. (Replays are never recorded twice, however their
- * walk ends.) With no current item, what it answers is the newest play.
+ * walk ends.) A play in a digest's queue names its digest. With no current item, what it answers
+ * is the newest play.
  */
 function retire(s: SessionValue, type: QueueType, deps: EngineDeps): number | undefined {
   const queue = s.queues[type];
@@ -340,6 +341,7 @@ function retire(s: SessionValue, type: QueueType, deps: EngineDeps): number | un
     ...(item.chapter === undefined ? {} : { chapter: item.chapter }),
     playedAt: deps.now(),
     ...(item.after === undefined ? {} : { after: item.after }),
+    ...(type === 'spoken' && s.spokenDigest !== null ? { list: s.spokenDigest } : {}),
   });
   return seq;
 }

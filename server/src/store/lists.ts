@@ -2,7 +2,8 @@
  * Each person's lists that aren't queues: listening lists of books and shows, podcast playlists of
  * episodes, and digests over shows. The Digest, over every subscription, is made once per person
  * and stays: it cannot be renamed, given shows or deleted, only turned to play newest first. Also
- * the episodes Auralis marked played for a person, newest mark kept. Only the store's rules live
+ * the episodes Auralis marked played for a person, newest mark kept, and whether Audiobookshelf
+ * took it. Only the store's rules live
  * here; which entries a list may hold, and what its digest rule picks, are the lists code's.
  */
 import { randomUUID } from 'node:crypto';
@@ -234,19 +235,49 @@ export function deleteList(db: Db, userId: string, id: string, now: number = Dat
   })();
 }
 
-/** Marks an episode played for this person at `at`, keeping the newer of two marks. */
+/** An episode Auralis marked played: when, and whether the upstream has taken the mark. */
+export interface PlayedMark {
+  at: number;
+  confirmed: boolean;
+}
+
+/**
+ * Marks an episode played for this person at `at`, keeping the newer of two marks. A newer mark
+ * waits to be confirmed afresh.
+ */
 export function markPlayed(db: Db, userId: string, ref: MediaRef, at: number): void {
   db.prepare(
     `INSERT INTO played_marks (user_id, source, upstream_id, marked_at) VALUES (?, ?, ?, ?)
      ON CONFLICT (user_id, source, upstream_id)
-       DO UPDATE SET marked_at = max(marked_at, excluded.marked_at)`,
+       DO UPDATE SET marked_at = excluded.marked_at, confirmed = 0
+       WHERE excluded.marked_at > marked_at`,
   ).run(userId, ref.source, ref.id, at);
 }
 
-/** When each episode this person had marked played was last marked, by `source:id`. */
-export function playedMarks(db: Db, userId: string): Map<string, number> {
+/** Notes that the upstream took the mark made at `at`; a newer mark since is left waiting. */
+export function confirmMark(db: Db, userId: string, ref: MediaRef, at: number): void {
+  db.prepare(
+    `UPDATE played_marks SET confirmed = 1
+     WHERE user_id = ? AND source = ? AND upstream_id = ? AND marked_at = ?`,
+  ).run(userId, ref.source, ref.id, at);
+}
+
+/** Each episode this person had marked played, by `source:id`: its newest mark. */
+export function playedMarks(db: Db, userId: string): Map<string, PlayedMark> {
   const rows = z
-    .array(z.object({ source: MediaSource, upstream_id: z.string(), marked_at: z.number().int() }))
+    .array(
+      z.object({
+        source: MediaSource,
+        upstream_id: z.string(),
+        marked_at: z.number().int(),
+        confirmed: z.union([z.literal(0), z.literal(1)]),
+      }),
+    )
     .parse(db.prepare('SELECT * FROM played_marks WHERE user_id = ?').all(userId));
-  return new Map(rows.map((r) => [`${r.source}:${r.upstream_id}`, r.marked_at]));
+  return new Map(
+    rows.map((r) => [
+      `${r.source}:${r.upstream_id}`,
+      { at: r.marked_at, confirmed: r.confirmed === 1 },
+    ]),
+  );
 }

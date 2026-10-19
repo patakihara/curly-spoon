@@ -25,6 +25,11 @@
  * A track a queue is on plays on through the rest of its album as one plan, as far as stepping
  * next reaches the album's following tracks in order (`albumRun`), so a Next or Back inside an
  * album keeps it gapless.
+ *
+ * An episode that a Next, or a play stepping on to what follows, moves out of a digest's queue
+ * (it ended, or was skipped) is marked played: at once in Auralis, and on Audiobookshelf in the
+ * background, as the person. A failure there is logged, and the mark Auralis keeps still holds.
+ * Play now of anything else, and the switch, mark nothing.
  */
 import { randomUUID } from 'node:crypto';
 import {
@@ -38,6 +43,7 @@ import {
 } from '@auralis/schema';
 import type { AbsClient } from '../adapters/audiobookshelf/client.js';
 import { albumTracks, indexedRow } from '../libraryIndex/store.js';
+import { confirmMark, markPlayed } from '../store/lists.js';
 import { Refusal } from '../route.js';
 import type { Db } from '../store/connection.js';
 import {
@@ -49,6 +55,7 @@ import {
   type QueueEntry,
   type SavedQueue,
   type SessionItem,
+  type SessionPlay,
   type SessionValue,
   StaleRevision,
   type StoredSession,
@@ -100,6 +107,10 @@ export const FINISHED_WITHIN_S = 30;
 
 /** How long a play, or a Next at a queue's end, waits for autoplay being worked out. */
 export const AUTOPLAY_WAIT_MS = 3_000;
+
+/** What is logged when Audiobookshelf did not take an episode marked played in a digest. */
+export const MARK_FAILED =
+  'an episode played in a digest could not be marked finished on Audiobookshelf; Auralis keeps its mark';
 
 /** What is logged when autoplay's picks are worked out twice for a session that moved on. */
 export const AUTOPLAY_MISSED =
@@ -162,6 +173,12 @@ const valueOf = ({
 });
 
 const currentOf = (s: SessionValue) => s.queues[s.active].current;
+
+/** The plays `after` recorded that `before` did not hold, played in a digest's queue. */
+const leftDigest = (before: SessionValue, after: SessionValue): SessionPlay[] => {
+  const newest = before.history.at(-1)?.seq ?? -1;
+  return after.history.filter((h) => h.seq > newest && h.list !== undefined);
+};
 
 /** What the controls drive: the active queue and its current entry. */
 const controlled = (s: SessionValue) => `${s.active} ${currentOf(s)?.itemId ?? ''}`;
@@ -242,6 +259,44 @@ export class Sessions {
     return saved;
   }
 
+  /**
+   * Next or Back on this device. An episode a Next moves out of a digest's queue is marked played.
+   * A `rev` that is not the session's answers 409 `stale_revision`.
+   */
+  step(caller: Caller, rev: number | undefined, direction: 'next' | 'back'): StoredSession {
+    let left: SessionPlay[] = [];
+    const saved = this.change(caller, rev, (s) => {
+      const stepped = step(s, direction, this.deps);
+      left = leftDigest(s, stepped);
+      return stepped;
+    });
+    this.markPlayed(caller, left);
+    return saved;
+  }
+
+  /**
+   * Marks each episode of `plays` played: at once in Auralis, then on Audiobookshelf in the
+   * background, as the person, noting there that it took the mark. A failure there is logged.
+   */
+  private markPlayed(caller: Caller, plays: readonly SessionPlay[]): void {
+    const { db, log } = this.options;
+    for (const { ref } of plays) {
+      const row = indexedRow(db, ref.source, ref.id);
+      if (ref.source !== 'abs' || row?.kind !== 'episode' || row.parentId === null) continue;
+      const at = this.options.now();
+      markPlayed(db, caller.id, ref, at);
+      const abs = this.options.clients(caller).abs;
+      const marked =
+        abs === null
+          ? Promise.reject(new Error('no Audiobookshelf account is linked'))
+          : abs.markEpisodeFinished(row.parentId, ref.id);
+      void marked.then(
+        () => confirmMark(db, caller.id, ref, at),
+        (err: unknown) => log.warn({ err, ref }, MARK_FAILED),
+      );
+    }
+  }
+
   private save(caller: Caller, from: StoredSession, value: SessionValue): StoredSession {
     try {
       const saved = saveSession(
@@ -293,13 +348,15 @@ export class Sessions {
     let saved = s;
     if (holding !== s.active) {
       const value = valueOf(s);
+      const advanced = holding === undefined ? this.advancedTo(value, ref, heldBefore) : null;
       const changed =
         holding !== undefined
           ? switchTo(value, holding, this.deps)
-          : (this.advancedTo(value, ref, heldBefore) ??
-            this.resumed(value, covered) ??
-            add(value, ref, 'now', this.deps));
+          : (advanced ?? this.resumed(value, covered) ?? add(value, ref, 'now', this.deps));
       if (changed !== null) saved = this.save(caller, s, changed);
+      // Stepping on to what follows moves the episode it leaves out of a digest's queue; a Play
+      // now leaves it unmarked.
+      if (advanced !== null) this.markPlayed(caller, leftDigest(value, advanced));
     }
     const running = this.refreshAutoplay(caller);
     // An item the session could not take (one the index does not hold) has nothing after it.

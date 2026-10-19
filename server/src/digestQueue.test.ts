@@ -2,9 +2,11 @@
  * A digest's own queue, through the real routes, on the recorded index and upstreams of
  * adapters/http/listsServer.ts: playing a digest saves the spoken queue and puts the digest's in its
  * place, playing the saved queue's current episode (or its next, once that finished) brings it
- * back, and playing the digest, or one of its episodes, brings back the digest's queue. The clock
- * stands just past 14 days after show 1's Part Two came out, so The Digest holds Parts Three and
- * Four; Part Two is the episode the recordings play.
+ * back, and playing the digest, or one of its episodes, brings back the digest's queue. An episode
+ * finished or skipped in a digest's queue is marked played, there and on Audiobookshelf, while your
+ * own place in its show stays where it was. The clock stands just past 14 days after show 1's Part
+ * Two came out, so The Digest holds Parts Three and Four; Part Two is the episode the recordings
+ * play, and Parts One and Three the ones they mark finished.
  */
 import {
   ListeningSession,
@@ -16,6 +18,7 @@ import {
 } from '@auralis/schema';
 import { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Recording } from './adapters/http/recording.js';
 import { indexedRow } from './libraryIndex/store.js';
 import { DIGEST_NEW_DAYS } from './lists/rules.js';
 import {
@@ -25,17 +28,23 @@ import {
   DAY,
   four,
   index,
+  karaMe,
   listsServer,
+  markCall,
   one,
   ref,
   refused,
+  SEPT_15,
   show1,
   shows,
   three,
   two,
 } from './adapters/http/listsServer.js';
+import { ownPlays } from './queues/autoplay.js';
+import { MARK_FAILED } from './queues/sessions.js';
 import { openDatabase, type Db } from './store/connection.js';
 import { openSession, savePosition } from './store/listening.js';
+import { playedMarks } from './store/lists.js';
 
 let apps: FastifyInstance[] = [];
 let db: Db;
@@ -56,8 +65,8 @@ const AFTER_TWO = at(two) + 1;
 /** One of show 2's episodes, in no digest at either time. */
 const elsewhere = ref(shows[1]!.media.episodes[0]!.id);
 
-async function server(now = PAST_TWO) {
-  const s = await listsServer(db, { now });
+async function server(now = PAST_TWO, me?: Recording) {
+  const s = await listsServer(db, { now, ...(me === undefined ? {} : { me }) });
   apps.push(s.app);
   /** Each call is made from kara's device `device` (her first, unless named). */
   const queue = async (device = 'kara') =>
@@ -85,7 +94,11 @@ async function server(now = PAST_TWO) {
   };
   const stored = (device = 'kara') =>
     openSession(db, s.users.kara!, s.devices[device]!, s.clock.now)!;
-  return { ...s, queue, session, add, playList, play, next, at, stored };
+  /** The episodes kara has marked played, by ref key. */
+  const marked = () => [...playedMarks(db, s.users.kara!).keys()];
+  /** Every call made to mark an episode finished. */
+  const marks = () => s.sent.filter((c) => c.startsWith('PATCH /api/me/progress/'));
+  return { ...s, queue, session, add, playList, play, next, at, stored, marked, marks };
 }
 
 const refsOf = (q: { current: { ref: MediaRef } | null; user: { ref: MediaRef }[] }) => [
@@ -93,6 +106,111 @@ const refsOf = (q: { current: { ref: MediaRef } | null; user: { ref: MediaRef }[
   ...q.user.map((i) => i.ref),
 ];
 const ms = (p: QueuePosition | null) => p?.ms ?? null;
+const keyOf = (r: MediaRef) => `${r.source}:${r.id}`;
+
+describe('[M2.lists/d] an episode finished or skipped in a digest is marked played, and your place stays', () => {
+  it('[M2.lists/d] finishing one and skipping another marks each played and takes it out of the digest, while your own place in the show stays on its episode', async () => {
+    // Part Two was played in your own queue, and Audiobookshelf has it finished; Part One is not.
+    const s = await server(SEPT_15, karaMe([{ episodeId: two.id }]));
+    const digest = await s.theDigest();
+    expect(s.refs((await s.detail(digest.id)).items)).toEqual([one, three, four]);
+    await s.add(two, 'now');
+    await s.add(bookRef, 'end');
+    await s.next();
+    const own = s.stored();
+    expect(ownPlays(own).map((p) => p.ref)).toEqual([two]);
+
+    await s.playList(digest.id);
+    const length = indexedRow(db, 'abs', one.id)!.duration!;
+    await s.at(Math.round((length - 1) * 1000));
+    // Part One ends: the player steps on.
+    await s.next();
+    await s.at(60_000);
+    // Part Three is skipped a minute in.
+    await s.next();
+
+    expect((await s.queue()).current?.ref).toEqual(four);
+    await vi.waitFor(() => expect(s.marks()).toEqual([markCall(one), markCall(three)]));
+    expect(s.marked().sort()).toEqual([keyOf(one), keyOf(three)].sort());
+    expect(s.refs((await s.detail(digest.id)).items)).toEqual([four]);
+    const after = s.stored();
+    expect(after.history.filter((p) => p.list === digest.id).map((p) => p.ref)).toEqual([
+      one,
+      three,
+    ]);
+    // Up next reads your own plays: they still end on Part Two.
+    expect(ownPlays(after).map((p) => p.ref)).toEqual([two]);
+    // Your own queue waits as it was, with its autoplay pick.
+    const { after: _after, ...current } = own.queues.spoken.current!;
+    expect(after.saved).toEqual([
+      expect.objectContaining({
+        owner: null,
+        queue: { ...own.queues.spoken, current },
+        autoplay: own.autoplay.spoken,
+      }),
+    ]);
+  });
+});
+
+describe('marking a digest’s episodes played', () => {
+  it('marks an episode the device’s plan played through to the next one', async () => {
+    const s = await server(AFTER_TWO);
+    const digest = await s.create({ kind: 'digest', name: 'Show 1', shows: [show1] });
+    await s.playList(digest.id);
+    await s.add(bookRef, 'next');
+    await s.play(two);
+
+    // Part Two's plan ends, and the player plays what follows it.
+    await s.play(bookRef);
+
+    expect((await s.queue()).current).toMatchObject({ ref: bookRef, chapter: 0 });
+    expect(s.marked()).toEqual([keyOf(two)]);
+    await vi.waitFor(() => expect(s.marks()).toEqual([markCall(two)]));
+    expect((await s.detail(digest.id)).items).toEqual([]);
+  });
+
+  it('marks nothing it leaves on Play now of another item, or on the switch', async () => {
+    const s = await server();
+    const digest = await s.theDigest();
+    await s.playList(digest.id);
+    await s.add(elsewhere, 'now');
+    await s.playList(digest.id);
+    expect(await s.call('PUT', '/sessions/this/active', { queue: 'music' })).toMatchObject({
+      status: 200,
+    });
+    await s.playList(digest.id);
+    // Play now of the digest's other episode, from within its queue.
+    await s.add(four, 'now');
+
+    expect((await s.queue()).current?.ref).toEqual(four);
+    expect(s.marked()).toEqual([]);
+    expect(s.marks()).toEqual([]);
+    expect(s.refs((await s.detail(digest.id)).items)).toEqual([three, four]);
+  });
+
+  it('logs a mark Audiobookshelf refused, and holds it when a later sync there moves the episode on; a mark it took gives way', async () => {
+    const s = await server();
+    const digest = await s.theDigest();
+    await s.playList(digest.id);
+    // Part Three is marked on Audiobookshelf; marking Part Four fails there.
+    await s.next();
+    await s.next();
+    await vi.waitFor(() => expect(s.marks()).toEqual([markCall(three), markCall(four)]));
+    await vi.waitFor(() => expect(s.logs.map((l) => l.msg)).toContain(MARK_FAILED));
+    expect(s.refs((await s.detail(digest.id)).items)).toEqual([]);
+
+    // Later, the play sessions' close reaches Audiobookshelf: neither episode is finished there,
+    // and both changed after their marks.
+    s.clock.now += 60_000;
+    const later = { isFinished: false, progress: 0.5, lastUpdate: s.clock.now };
+    s.karaAnswers(
+      karaMe([{}, { ...later, episodeId: three.id }, { ...later, episodeId: four.id }]),
+    );
+
+    // Part Four's mark never reached Audiobookshelf, so it holds; Part Three's did, and gives way.
+    expect(s.refs((await s.detail(digest.id)).items)).toEqual([three]);
+  });
+});
 
 describe('[M2.lists/e] a digest plays in its own queue, and the queue it replaced comes back', () => {
   it('[M2.lists/e] saves the queue playing, and playing its current episode brings it back with its entries and position', async () => {
@@ -303,7 +421,7 @@ describe('a digest’s queue', () => {
 
     await s.playList(theDigest.id);
     await s.next();
-    await s.playList(custom.id, { start: three });
+    await s.playList(custom.id, { start: four });
 
     expect(s.stored().saved.map((q) => [q.owner, q.queue.current?.ref])).toEqual([
       [null, two],

@@ -6,6 +6,9 @@
  * every change to a session, when a play starts, and after a progress report once the last run
  * is over `AUTOPLAY_STALE_MS` old, so a pick is never more than about two minutes stale.
  *
+ * The play a queue follows is its current item, else its newest play of your own: one played in
+ * a digest's queue never moves your place (`ownPlays`).
+ *
  * Spoken: the next chapter of the book, then the first unfinished book after it in its series;
  * for an episode, the first episode after it in its show's order (older to newer for serial
  * shows, newer to older for episodic and unknown ones) that is neither finished nor played in
@@ -75,8 +78,17 @@ const sameEntry = (a: QueueEntry, b: QueueEntry) =>
 const inDigest = (queue: QueueType, s: SessionValue): boolean =>
   queue === 'spoken' && s.spokenDigest !== null;
 
+/**
+ * The session's plays that are your own, in history order: every play but those in a digest's
+ * queue. A digest marks what it plays played, but never moves your place in a show; Up next and
+ * autoplay find that place here.
+ */
+export const ownPlays = (s: SessionValue): SessionPlay[] =>
+  s.history.filter((h) => h.list === undefined);
+
+/** The newest of your own plays on `queue`. */
 const newestPlay = (s: SessionValue, queue: QueueType): SessionPlay | undefined =>
-  s.history.reduce<SessionPlay | undefined>(
+  ownPlays(s).reduce<SessionPlay | undefined>(
     (newest, h) => (h.queue === queue && (newest === undefined || h.seq > newest.seq) ? h : newest),
     undefined,
   );

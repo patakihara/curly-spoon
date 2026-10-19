@@ -39,7 +39,7 @@ import {
   two,
 } from './adapters/http/listsServer.js';
 import { openDatabase, type Db } from './store/connection.js';
-import { listLists, markPlayed, setListItems } from './store/lists.js';
+import { confirmMark, listLists, markPlayed, setListItems } from './store/lists.js';
 let apps: FastifyInstance[] = [];
 let db: Db;
 beforeEach(() => {
@@ -114,13 +114,18 @@ describe('[M2.lists/b] The Digest: subscribed shows’ unplayed episodes of the 
     const lastUpdate = finishedEpisode.lastUpdate!;
     const me = karaMe([{ episodeId: three.id, isFinished: false, progress: 0.3, lastUpdate }]);
     const s = await server({ me });
-    markPlayed(db, s.users.kara!, four, 1);
-    markPlayed(db, s.users.kara!, three, lastUpdate - 1);
+    // Marks Audiobookshelf took: one before its last change there gives way to it.
+    const mark = (episode: MediaRef, at: number) => {
+      markPlayed(db, s.users.kara!, episode, at);
+      confirmMark(db, s.users.kara!, episode, at);
+    };
+    mark(four, 1);
+    mark(three, lastUpdate - 1);
 
     const opened = await s.detail((await s.theDigest()).id);
 
     expect(s.refs(opened.items)).toEqual([one, two, three]);
-    markPlayed(db, s.users.kara!, three, lastUpdate + 1);
+    mark(three, lastUpdate + 1);
     expect(s.refs((await s.detail(opened.id)).items)).toEqual([one, two]);
   });
 

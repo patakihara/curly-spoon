@@ -4,7 +4,9 @@
  * person's own Audiobookshelf `GET /api/me` says which libraries they may open and what they
  * finished: kara's is `me-finished` (show 1's Part One finished) unless a test hands her another,
  * and otto's is the recorded `me` granted no library. The clock is injected, so "new" is measured
- * from a time inside the recorded episodes' dates. Show 1's Part Two plays (`episode-play`).
+ * from a time inside the recorded episodes' dates. Show 1's Part Two plays (`episode-play`), and
+ * Parts One and Three can be marked finished (`episode-mark-finished`, `-2`); marking any other
+ * episode fails, as an unrecorded call. What the server logs is kept, one entry per line.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -112,8 +114,19 @@ export function grantedOnly(libraries: string[]): Recording {
 }
 export const booksLibrary = book.libraryId;
 
-/** The book's chapters and a listen to it, and show 1's Part Two played. */
-const PLAYS = ['multi-detail', 'progress-play', 'progress-read', 'episode-play'].map(abs);
+/** The book's chapters and a listen to it, show 1's Part Two played, Parts One and Three marked. */
+const PLAYS = [
+  'multi-detail',
+  'progress-play',
+  'progress-read',
+  'episode-play',
+  'episode-mark-finished',
+  'episode-mark-finished-2',
+].map(abs);
+
+/** The path marking a show 1 episode finished calls, as `METHOD path`. */
+export const markCall = (episode: MediaRef) =>
+  `PATCH /api/me/progress/${shows[0]!.id}/${episode.id}`;
 
 const KEY = Buffer.alloc(32, 7);
 const UPSTREAM = 'http://upstream.invalid';
@@ -178,9 +191,12 @@ export async function listsServer(db: Db, options: { now?: number; me?: Recordin
     deviceId: phone.id,
     kind: 'bearer',
   }).token;
+  /** What the server logged, one parsed entry per line. */
+  const logs: { msg?: string }[] = [];
   const app = await buildApp({
     webDistDir: null,
     db,
+    logger: { stream: { write: (line) => logs.push(JSON.parse(line) as { msg?: string }) } },
     now: () => clock.now,
     upstreams: { key: KEY, config: { absUrl: UPSTREAM, jellyfinUrl: UPSTREAM }, fetch },
   });
@@ -214,6 +230,7 @@ export async function listsServer(db: Db, options: { now?: number; me?: Recordin
     app,
     clock,
     sent,
+    logs,
     users,
     devices,
     karaAnswers,

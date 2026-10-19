@@ -52,7 +52,7 @@ export interface Reader {
   db: Db;
   userId: string;
   access: AbsAccess | null;
-  marks: Map<string, number>;
+  marks: Map<string, store.PlayedMark>;
   now: number;
 }
 

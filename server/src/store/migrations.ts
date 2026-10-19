@@ -528,12 +528,14 @@ export const migrations: readonly Migration[] = [
         );
 
         -- Episodes Auralis marked played for a person (a digest's, as it moves on), and when:
-        -- one newer than the upstream's own progress hides the episode from lists.
+        -- one newer than the upstream's own progress hides the episode from lists. Until the
+        -- upstream has taken the mark (confirmed), it hides the episode whatever the upstream says.
         CREATE TABLE played_marks (
           user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
           source      TEXT NOT NULL CHECK (source IN ('abs', 'jellyfin')),
           upstream_id TEXT NOT NULL,
           marked_at   INTEGER NOT NULL,
+          confirmed   INTEGER NOT NULL DEFAULT 0 CHECK (confirmed IN (0, 1)),
           PRIMARY KEY (user_id, source, upstream_id)
         );
 

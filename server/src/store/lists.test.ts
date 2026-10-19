@@ -11,6 +11,7 @@ import {
   FixedList,
   getList,
   listLists,
+  confirmMark,
   markPlayed,
   playedMarks,
   setListItems,
@@ -249,12 +250,26 @@ describe('played marks', () => {
     markPlayed(db, kara, episode2, 3000);
     markPlayed(db, otto, episode3, 4000);
 
+    const waiting = (at: number) => ({ at, confirmed: false });
     expect(playedMarks(db, kara)).toEqual(
       new Map([
-        ['abs:episode-1', 2000],
-        ['abs:episode-2', 3000],
+        ['abs:episode-1', waiting(2000)],
+        ['abs:episode-2', waiting(3000)],
       ]),
     );
-    expect(playedMarks(db, otto)).toEqual(new Map([['abs:episode-3', 4000]]));
+    expect(playedMarks(db, otto)).toEqual(new Map([['abs:episode-3', waiting(4000)]]));
+  });
+
+  it('note the upstream took a mark, until a newer mark waits to be taken afresh', () => {
+    const kara = person();
+    markPlayed(db, kara, episode1, 1000);
+
+    confirmMark(db, kara, episode1, 1000);
+    expect(playedMarks(db, kara).get('abs:episode-1')).toEqual({ at: 1000, confirmed: true });
+
+    markPlayed(db, kara, episode1, 2000);
+    // Taking the older mark late changes nothing on the newer one.
+    confirmMark(db, kara, episode1, 1000);
+    expect(playedMarks(db, kara).get('abs:episode-1')).toEqual({ at: 2000, confirmed: false });
   });
 });

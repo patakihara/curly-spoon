@@ -2,7 +2,7 @@
  * What a list holds now, by its rules. A digest holds its shows' new, unplayed episodes: new is
  * published within the last `DIGEST_NEW_DAYS` days, and unplayed is neither finished on
  * Audiobookshelf nor marked played by Auralis since Audiobookshelf last changed it, so marking an
- * episode unplayed there brings it back. An episode in progress stays in. A digest plays across
+ * episode unplayed there brings it back; a mark Audiobookshelf never took holds regardless. An episode in progress stays in. A digest plays across
  * its shows by when each episode came out, oldest or newest first; episodes of one moment follow
  * show id, then the show's own order. The Digest's shows, until subscriptions arrive with
  * M3.podcasts, are every indexed show in an Audiobookshelf library the person may open.
@@ -10,6 +10,7 @@
 import type { DigestOrder } from '@auralis/schema';
 import { episodesInOrder, type StoredRow, topLevelOfKind } from '../libraryIndex/store.js';
 import type { Db } from '../store/connection.js';
+import type { PlayedMark } from '../store/lists.js';
 import type { AbsAccess, Standing } from '../routes/library.js';
 
 /** How many days an episode stays new. */
@@ -24,12 +25,15 @@ export function isNew(publishedAt: number | null, now: number): boolean {
 
 /**
  * Whether an episode counts as played: finished on Audiobookshelf, or marked played by Auralis
- * (`mark`, when) no earlier than Audiobookshelf last changed it, or with no change there at all.
- * A mark at the very moment of the change wins: only a later change there unmarks it.
+ * (`mark`) no earlier than Audiobookshelf last changed it, or with no change there at all. A mark
+ * at the very moment of the change wins: only a later change there unmarks it. A mark
+ * Audiobookshelf never took holds whatever it says later: a later change there, such as a play
+ * session's close, cannot have meant to unmark what it never heard of.
  */
-export function isPlayed(standing: Standing, mark: number | undefined): boolean {
+export function isPlayed(standing: Standing, mark: PlayedMark | undefined): boolean {
   if (standing.finished) return true;
-  return mark !== undefined && (standing.updatedAt === null || mark >= standing.updatedAt);
+  if (mark === undefined) return false;
+  return !mark.confirmed || standing.updatedAt === null || mark.at >= standing.updatedAt;
 }
 
 /** The shows The Digest covers: every indexed Audiobookshelf show in a library the person may open. */

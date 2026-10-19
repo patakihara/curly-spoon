@@ -69,13 +69,20 @@ const ids = (rows: StoredRow[]) => rows.map((r) => r.id);
 describe('played', () => {
   it('counts a mark made at the moment Audiobookshelf last changed the episode, as well as a later one', () => {
     const unfinished = { progress: 0.3, finished: false, updatedAt: 1000 };
+    const taken = (at: number) => ({ at, confirmed: true });
 
-    expect(isPlayed(unfinished, 999)).toBe(false);
-    expect(isPlayed(unfinished, 1000)).toBe(true);
-    expect(isPlayed(unfinished, 1001)).toBe(true);
-    expect(isPlayed({ ...unfinished, updatedAt: null }, 1)).toBe(true);
+    expect(isPlayed(unfinished, taken(999))).toBe(false);
+    expect(isPlayed(unfinished, taken(1000))).toBe(true);
+    expect(isPlayed(unfinished, taken(1001))).toBe(true);
+    expect(isPlayed({ ...unfinished, updatedAt: null }, taken(1))).toBe(true);
     expect(isPlayed(unfinished, undefined)).toBe(false);
     expect(isPlayed({ ...unfinished, finished: true }, undefined)).toBe(true);
+  });
+
+  it('holds a mark Audiobookshelf never took, whatever changed there later', () => {
+    const unfinished = { progress: 0.3, finished: false, updatedAt: 1000 };
+
+    expect(isPlayed(unfinished, { at: 999, confirmed: false })).toBe(true);
   });
 });
 
