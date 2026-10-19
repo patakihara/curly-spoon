@@ -75,6 +75,8 @@ function canvasSamples(): string[] {
     (JSON.parse(readFileSync(`${appDir}shell.json`, 'utf8')) as { playing: unknown }).playing,
     null,
   );
+  // The Digest's name is the app's own, which every member's Podcasts page lists; not a sample.
+  found.delete('The Digest');
   return [...found];
 }
 

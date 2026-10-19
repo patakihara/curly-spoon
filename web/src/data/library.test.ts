@@ -44,14 +44,15 @@ describe('[M1.shell] the library homes from GET /api/library/{medium}', () => {
     expect(card!.sub).toBe('');
   });
 
-  it('lists each show by its host, with no lists while none are served', () => {
+  it('lists each show by its host, then the lists given', () => {
     const show = entry({
       ref: { source: 'abs', id: 's1' },
       kind: 'show',
       title: 'Megacorp',
       art: '/api/media/abs:s1/art',
     });
-    const data = podcastsData(list(show), podcasts.placeholder);
+    const lists = [{ title: 'The Digest', ref: 'l1', sub: 'Digest · 0 episodes', covers: [] }];
+    const data = podcastsData(list(show), lists, podcasts.placeholder);
     expect(data.library).toEqual([
       {
         title: 'Megacorp',
@@ -61,7 +62,7 @@ describe('[M1.shell] the library homes from GET /api/library/{medium}', () => {
         unplayed: false,
       },
     ]);
-    expect(data.lists).toEqual([]);
+    expect(data.lists).toEqual(lists);
   });
 
   it('lists each album by its artist', () => {

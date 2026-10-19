@@ -2,6 +2,8 @@ import {
   ItemDetail,
   LibraryList,
   type LibraryMedium,
+  ListDetail,
+  ListSummaryList,
   ListeningSessionList,
   parseMediaRefKey,
   type QueueType,
@@ -14,7 +16,7 @@ import { SignedOut } from './store';
 
 /**
  * What the pages read from the API, each answer parsed with the schema's zod: a library list, one
- * book, show or album, this device's queues, and search's suggestions and results. A refusal for
+ * book, show or album, your lists, this device's queues, and search's suggestions and results. A refusal for
  * want of a sign-in throws `SignedOut`; any other failure throws too, and the page keeps what it
  * had.
  */
@@ -57,6 +59,26 @@ export const loadItem = (api: ApiClient, ref: string | undefined): Promise<ItemD
     ItemDetail.parse(d),
   );
 };
+
+/** The list `id` names, as it sits in the page's address; else none. */
+export const loadList = (api: ApiClient, id: string | undefined): Promise<ListDetail> => {
+  if (id === undefined || id === '') return Promise.reject(new Error('no list'));
+  return answer(api.GET('/api/lists/{id}', { params: { path: { id } } }), (d) =>
+    ListDetail.parse(d),
+  );
+};
+
+/**
+ * Each of your lists opened, The Digest first: one that fails is left out, but a refusal for want
+ * of a sign-in still throws.
+ */
+export async function loadLists(api: ApiClient): Promise<ListDetail[]> {
+  const { lists } = await answer(api.GET('/api/lists'), (d) => ListSummaryList.parse(d));
+  const settled = await Promise.allSettled(lists.map((list) => loadList(api, list.id)));
+  const refused = settled.find((s) => s.status === 'rejected' && s.reason instanceof SignedOut);
+  if (refused !== undefined) throw new SignedOut();
+  return settled.flatMap((s) => (s.status === 'fulfilled' ? [s.value] : []));
+}
 
 const loadQueue = (api: ApiClient, type: QueueType) =>
   answer(api.GET('/api/queues/{type}', { params: { path: { type } } }), (d) => QueueView.parse(d));

@@ -1,5 +1,5 @@
 import { parseMediaRefKey } from '@auralis/schema';
-import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import { useDeps } from '../data/deps';
 import { useAccessOf } from '../data/access';
 import { placeholder, type Loaded } from '../generated/nav/playing';
@@ -16,7 +16,9 @@ import { createPlayerStore, heardAt, type PlayerState, type PlayerStore } from '
  * placeholders, does it show the canvas's picture, with no transport. Music is named by the song
  * playing, and its seek bar spans that song; a book or an episode is named, and spans, whole.
  * Once a member is known, the player restores what this device's session plays; a request the
- * player makes that is refused for want of a sign-in sends them to sign in. The full-screen player
+ * player makes that is refused for want of a sign-in sends them to sign in. A list's page hands its
+ * own Play down (`PlayContext`, `listPlayOf`), so the list and its entries play through the list's
+ * route, in its order. The full-screen player
  * with nothing to show leaves for the page under it (`useLeaveIdle`), rather than stand empty.
  */
 
@@ -139,6 +141,26 @@ export function playOf(store: PlayerStore): Play {
   };
 }
 
+/**
+ * `store`'s Play on list `id`'s page: the list itself, and an entry played now, play through the
+ * list's route, the entry as where it starts; the list has no Play next, and an entry goes next as
+ * it does anywhere else.
+ */
+export function listPlayOf(store: PlayerStore, id: string): Play {
+  const elsewhere = playOf(store);
+  return (ref, queue, mode) => {
+    if (ref === id && ref !== '') {
+      return mode === 'next' ? undefined : () => void store.playList(id);
+    }
+    if (mode === 'next') return elsewhere(ref, queue, mode);
+    const item = parseMediaRefKey(ref);
+    return item === null ? undefined : () => void store.playList(id, item);
+  };
+}
+
+/** The Play a page hands the generated page it draws, in place of the player's own. */
+export const PlayContext = createContext<Play | null>(null);
+
 let shared: PlayerStore | null = null;
 
 /** Who hears that the player was refused for want of a sign-in. */
@@ -174,10 +196,18 @@ export function usePlayId(): string {
   return useSyncExternalStore(playerStore().subscribe, playIdOf, playIdOf);
 }
 
-/** The player's Play. */
+/** The player's Play, or the one the page drawing it hands down. */
 export function usePlay(): Play {
   const store = playerStore();
-  return useMemo(() => playOf(store), [store]);
+  const given = useContext(PlayContext);
+  const own = useMemo(() => playOf(store), [store]);
+  return given ?? own;
+}
+
+/** List `id`'s Play, for its page to hand down. */
+export function useListPlay(id: string): Play {
+  const store = playerStore();
+  return useMemo(() => listPlayOf(store, id), [store, id]);
 }
 
 const restoredOf = () => playerStore().getState().restored;

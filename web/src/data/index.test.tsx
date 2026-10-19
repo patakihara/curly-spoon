@@ -7,6 +7,8 @@ import { pages, routes } from '../generated/nav/routes';
 import { type ShellHandle, type ShellTabs } from '../generated/nav/Shell';
 import Book, { frame as bookFrame } from '../generated/pages/Book';
 import { frame as booksFrame } from '../generated/pages/Books';
+import { frame as listFrame } from '../generated/pages/List';
+import { frame as podcastsFrame } from '../generated/pages/Podcasts';
 import Music from '../generated/pages/Music';
 import Queue from '../generated/pages/Queue';
 import { frame as searchFrame } from '../generated/pages/Search';
@@ -134,6 +136,58 @@ describe('[M1.shell] the pages given their data', () => {
   it('draws sign in from its address, as before', () => {
     const html = renderAt('/sign-in?error=not_household', deps('signedOut').given);
     expect(html).toMatch(/one of the household/);
+  });
+});
+
+describe('[M2.lists] the list pages given their data', () => {
+  const commute = {
+    ...listFrame.placeholder,
+    title: 'Commute',
+    ref: 'l1',
+    kind: 'Playlist',
+    meta: '1 episode',
+    menu: [],
+    shows: [],
+    order: '',
+    items: [
+      {
+        title: 'Part One',
+        ref: 'abs:ep-1',
+        description: '',
+        meta: ['Megacorp'],
+        image: '',
+        progress: null,
+      },
+    ],
+  };
+
+  it("[M2.lists] draws a list's page from its data, its Play live and its Play next left out", () => {
+    const html = renderAt('/lists/l1', deps('member', { list: commute }).given);
+    expect(html).toContain('Commute');
+    expect(html).toContain('Part One');
+    expect(html).not.toContain(listFrame.placeholder.title);
+    // Each button's opening tag, by the words it ends on.
+    const button = (label: string) =>
+      html
+        .split('<button')
+        .map((part) => part.slice(0, part.indexOf('</button>')))
+        .find((part) => part.replace(/<[^>]*>/g, '').endsWith(label))
+        ?.split('>')[0] ?? '';
+    expect(button('Play')).not.toBe('');
+    expect(button('Play')).not.toContain('disabled');
+    expect(button('Play next')).toContain('disabled');
+  });
+
+  it('[M2.lists] lists your lists on the Podcasts page after your shows', () => {
+    const podcasts = {
+      ...podcastsFrame.placeholder,
+      library: [],
+      lists: [{ title: 'Night drives', ref: 'l1', sub: 'Playlist · 1 episode', covers: [] }],
+    };
+    const html = renderAt('/podcasts', deps('member', { podcasts }).given);
+    expect(html).toContain('Night drives');
+    expect(html).toContain('Playlist · 1 episode');
+    expect(html).not.toContain(podcastsFrame.placeholder.lists[1]!.title);
   });
 });
 

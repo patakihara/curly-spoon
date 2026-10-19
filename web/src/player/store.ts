@@ -23,6 +23,7 @@ import {
   type MediaRef,
   PlaybackPlan,
   ProgressAnswer,
+  Queue,
   type QueueType,
 } from '@auralis/schema';
 import { type ApiClient, createApiClient } from '../api/client';
@@ -103,6 +104,11 @@ export interface PlayerStore {
   /** Plans `ref` and plays it. */
   play(ref: MediaRef): Promise<void>;
   /**
+   * Plays list `id` in its order, from `start`, one of its entries, when given: the list's route
+   * makes the spoken queue, and its current item is planned and played.
+   */
+  playList(id: string, start?: MediaRef): Promise<void>;
+  /**
    * Plans what this device's session plays, paused where it stopped, unless something is loaded
    * already: what a reload left. Once only, however often it is asked; nothing where no one is
    * signed in.
@@ -126,7 +132,7 @@ type Sleep = { kind: 'off' } | { kind: 'timer'; endsAt: number } | { kind: 'chap
 const logClose = (error: unknown) => console.warn('closing a play failed', error);
 
 /** Logs an item that could not be planned: the shell binds no status to show it in. */
-const logPlay = (ref: MediaRef) => console.warn('playing failed', ref);
+const logPlay = (ref: MediaRef | string) => console.warn('playing failed', ref);
 
 const lengthOf = (plan: PlaybackPlan | null) => {
   const last = plan?.tracks.at(-1);
@@ -524,6 +530,48 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     await report();
   };
 
+  /**
+   * Closes what plays, then plays `pick`'s answer, the item to plan: on none, or one that cannot
+   * be planned, the player stays on what it had, planned again where the close left it, or idle.
+   * A pick refused for want of a sign-in has stopped everything already.
+   */
+  const playInstead = async (
+    pick: () => Promise<MediaRef | null | 'signedOut'>,
+    failed: MediaRef | string,
+  ): Promise<void> => {
+    const was = ref;
+    const playOn = playing;
+    await closeCurrent();
+    const to = await pick();
+    if (to === 'signedOut') return;
+    if (to !== null && (await start(to, true))) return;
+    logPlay(to ?? failed);
+    // Decision (M1.shell): an item that cannot be planned leaves the player on what it had,
+    // planned again where the close left it, or idle. The play it had is closed first, so its
+    // last place and listening reach the server before anything else plans.
+    if (was === null) unload();
+    else await load(was, playOn);
+  };
+
+  /** The item list `id`'s play makes current, from `start` when given; null when it has none. */
+  const listCurrent = async (
+    id: string,
+    start: MediaRef | undefined,
+  ): Promise<MediaRef | null | 'signedOut'> => {
+    const answered = await api
+      .POST('/api/lists/{id}/play', {
+        params: { path: { id } },
+        body: start === undefined ? {} : { start },
+      })
+      .catch(() => null);
+    if (answered?.response.status === 401) {
+      await signOut();
+      return 'signedOut';
+    }
+    const queue = Queue.safeParse(answered?.data);
+    return queue.success ? (queue.data.current?.ref ?? null) : null;
+  };
+
   /** Plans what this device's session plays, paused where it stopped, unless something is loaded. */
   const restoreOnce = async () => {
     if (plan !== null) return;
@@ -544,19 +592,8 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
       return () => listeners.delete(listener);
     },
     getState: () => state,
-    play: (to) =>
-      run(async () => {
-        const was = ref;
-        const playOn = playing;
-        await closeCurrent();
-        if (await start(to, true)) return;
-        logPlay(to);
-        // Decision (M1.shell): an item that cannot be planned leaves the player on what it had,
-        // planned again where the close left it, or idle. The play it had is closed first, so its
-        // last place and listening reach the server before anything else plans.
-        if (was === null) unload();
-        else await load(was, playOn);
-      }),
+    play: (to) => run(() => playInstead(async () => to, to)),
+    playList: (id, from) => run(() => playInstead(() => listCurrent(id, from), id)),
     restore: () =>
       (restoring ??= run(async () => {
         try {

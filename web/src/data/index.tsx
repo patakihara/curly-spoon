@@ -36,7 +36,7 @@ import Shelf, { frame as shelfFrame } from '../generated/pages/Shelf';
 import ShelfReview, { frame as shelfReviewFrame } from '../generated/pages/ShelfReview';
 import Show, { frame as showFrame } from '../generated/pages/Show';
 import SignIn from '../generated/pages/SignIn';
-import { usePlayId } from '../player';
+import { PlayContext, useListPlay, usePlayId } from '../player';
 import { type Draft, useTabDraft } from '../query';
 import { useAccessOf } from './access';
 import { useDeps } from './deps';
@@ -46,7 +46,8 @@ import { booksData, browseData, musicData, podcastsData } from './library';
 import { emptyQueue, queueData } from './queue';
 import { emptySearch, loadSearchPage, searchLive, type SearchLoaded } from './search';
 import { SignInScreen } from './sign-in';
-import { loadItem, loadLibraries, loadLibrary, loadQueues } from './loads';
+import { listCards, listData } from './lists';
+import { loadItem, loadLibraries, loadLibrary, loadList, loadLists, loadQueues } from './loads';
 import { answerFrom, type Answer, pageKey } from './store';
 
 /**
@@ -54,8 +55,9 @@ import { answerFrom, type Answer, pageKey } from './store';
  * wherever the route table draws it: a route's page, the page a player sheet is drawn over, a
  * player tab's page in the side panel, and the back layer and subheader the page's frame hands
  * the shell. One screen per page: Browse's first shelf and the library homes from
- * `GET /api/library/{medium}`, a book, show, episode or album from `GET /api/items/{ref}`, the
- * queue from `GET /api/queues/{active}`, Search from what is typed into it (`../query`) and
+ * `GET /api/library/{medium}`, Podcasts' lists from `GET /api/lists`, a book, show, episode or
+ * album from `GET /api/items/{ref}`, a list from `GET /api/lists/{id}`, whose Play plays it through
+ * its own route (`listPlayOf`), the queue from `GET /api/queues/{active}`, Search from what is typed into it (`../query`) and
  * `GET /api/search/suggest` or `GET /api/search`, sign in from the address. Now Playing reads the
  * player itself. Every other page draws empty, keeping only its own words, until its milestone
  * serves it: a member never sees the canvas's samples. A page loading shows its lists empty; on a
@@ -88,6 +90,8 @@ interface Screen<T, L = T> {
   empty: T;
   /** Whether its data changes with what the player plays. */
   followsPlayer?: boolean;
+  /** For a list's page, the list its Play plays, by its address. */
+  playsList?(params: Params): string;
   /** How it loads; a page nothing serves yet draws `empty` and loads nothing. */
   load?(api: ApiClient, params: Params): Promise<L>;
   /**
@@ -130,8 +134,10 @@ const screens: Screen<never>[] = [
     Page: Podcasts,
     frame: podcastsFrame,
     empty: { ...podcastsFrame.placeholder, library: [], lists: [] },
-    load: async (api) =>
-      podcastsData(await loadLibrary(api, 'podcasts'), podcastsFrame.placeholder),
+    load: async (api) => {
+      const [library, lists] = await Promise.all([loadLibrary(api, 'podcasts'), loadLists(api)]);
+      return podcastsData(library, listCards(lists), podcastsFrame.placeholder);
+    },
   } satisfies Screen<typeof podcastsFrame.placeholder>,
   {
     name: 'music',
@@ -205,7 +211,14 @@ const screens: Screen<never>[] = [
   unserved('favourites', Favourites, favouritesFrame),
   unserved('author', Author, authorFrame, ['kind']),
   unserved('series', Series, seriesFrame, ['kind']),
-  unserved('list', List, listFrame, ['kind']),
+  {
+    name: 'list',
+    Page: List,
+    frame: listFrame,
+    empty: emptied(listFrame.placeholder),
+    playsList: (params) => params.ref ?? '',
+    load: async (api, params) => listData(await loadList(api, params.ref), listFrame.placeholder),
+  } satisfies Screen<typeof listFrame.placeholder>,
 ] as Screen<never>[];
 
 /** The page's address: its path's params, and the query values its route declares. */
@@ -270,10 +283,22 @@ function pageOf<T>(screen: Screen<T>): ComponentType {
   let component = made.get(key);
   if (component === undefined) {
     const Page = screen.Page;
-    component = function ScreenPage() {
-      const shown = useScreenData(screen);
-      return <Page data={shown?.data} state={shown?.state} />;
-    };
+    const playsList = screen.playsList;
+    component =
+      playsList === undefined
+        ? function ScreenPage() {
+            const shown = useScreenData(screen);
+            return <Page data={shown?.data} state={shown?.state} />;
+          }
+        : function ListScreenPage() {
+            const shown = useScreenData(screen);
+            const play = useListPlay(playsList(useParams()));
+            return (
+              <PlayContext.Provider value={play}>
+                <Page data={shown?.data} state={shown?.state} />
+              </PlayContext.Provider>
+            );
+          };
     made.set(key, component);
   }
   return component;
