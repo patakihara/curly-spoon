@@ -110,14 +110,12 @@ export class IndexLookup {
   }
 
   /**
-   * How long an entry plays, in seconds: a book chapter's span as last read, else the indexed
-   * duration; null when neither is known.
+   * Where an entry ends, in seconds, in the frame a queue keeps its position in: a book chapter's
+   * end from the start of the book, as last read; else the indexed duration. Null when neither is
+   * known.
    */
-  length(entry: QueueEntry): number | null {
-    if (entry.chapter !== undefined) {
-      const chapter = this.chapters(entry.ref)?.[entry.chapter];
-      return chapter === undefined ? null : chapter.end - chapter.start;
-    }
+  endOf(entry: QueueEntry): number | null {
+    if (entry.chapter !== undefined) return this.chapters(entry.ref)?.[entry.chapter]?.end ?? null;
     return indexedRow(this.db, entry.ref.source, entry.ref.id)?.duration ?? null;
   }
 

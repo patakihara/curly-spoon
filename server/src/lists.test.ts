@@ -1,6 +1,6 @@
 /**
  * The lists routes and the digest rule, through the real routes, on the recorded index and
- * upstreams of lists/testServer.ts.
+ * upstreams of adapters/http/listsServer.ts.
  */
 import {
   LIST_ENTRIES_MAX,
@@ -37,7 +37,7 @@ import {
   shows,
   three,
   two,
-} from './lists/testServer.js';
+} from './adapters/http/listsServer.js';
 import { openDatabase, type Db } from './store/connection.js';
 import { listLists, markPlayed, setListItems } from './store/lists.js';
 let apps: FastifyInstance[] = [];

@@ -1,6 +1,6 @@
 /**
  * A digest's own queue, through the real routes, on the recorded index and upstreams of
- * lists/testServer.ts: playing a digest saves the spoken queue and puts the digest's in its
+ * adapters/http/listsServer.ts: playing a digest saves the spoken queue and puts the digest's in its
  * place, playing the saved queue's current episode (or its next, once that finished) brings it
  * back, and playing the digest, or one of its episodes, brings back the digest's queue. The clock
  * stands just past 14 days after show 1's Part Two came out, so The Digest holds Parts Three and
@@ -20,6 +20,8 @@ import { indexedRow } from './libraryIndex/store.js';
 import { DIGEST_NEW_DAYS } from './lists/rules.js';
 import {
   at,
+  bookChapters,
+  bookRef,
   DAY,
   four,
   index,
@@ -31,7 +33,7 @@ import {
   shows,
   three,
   two,
-} from './lists/testServer.js';
+} from './adapters/http/listsServer.js';
 import { openDatabase, type Db } from './store/connection.js';
 import { openSession, savePosition } from './store/listening.js';
 
@@ -57,27 +59,32 @@ const elsewhere = ref(shows[1]!.media.episodes[0]!.id);
 async function server(now = PAST_TWO) {
   const s = await listsServer(db, { now });
   apps.push(s.app);
-  const queue = async () => s.ok(await s.call('GET', '/queues/spoken'), QueueView);
+  /** Each call is made from kara's device `device` (her first, unless named). */
+  const queue = async (device = 'kara') =>
+    s.ok(await s.call('GET', '/queues/spoken', undefined, device), QueueView);
   const session = async () =>
-    s.ok(await s.call('GET', '/sessions'), ListeningSessionList).sessions[0]!;
-  const add = async (ref: MediaRef, how: 'now' | 'next' | 'end') =>
-    s.ok(await s.call('POST', '/queues/spoken/items', { ref, how }), Queue);
-  const playList = async (id: string, body: object = {}) =>
-    s.ok(await s.call('POST', `/lists/${id}/play`, body), Queue);
+    s
+      .ok(await s.call('GET', '/sessions'), ListeningSessionList)
+      .sessions.find((x) => x.thisDevice)!;
+  const add = async (ref: MediaRef, how: 'now' | 'next' | 'end', device = 'kara') =>
+    s.ok(await s.call('POST', '/queues/spoken/items', { ref, how }, device), Queue);
+  const playList = async (id: string, body: object = {}, device = 'kara') =>
+    s.ok(await s.call('POST', `/lists/${id}/play`, body, device), Queue);
   /** A play started on the device, as the player sends it. */
-  const play = async (ref: MediaRef) =>
-    expect(await s.call('POST', '/play', { ref })).toMatchObject({ status: 200 });
+  const play = async (ref: MediaRef, device = 'kara') =>
+    expect(await s.call('POST', '/play', { ref }, device)).toMatchObject({ status: 200 });
   const next = async () =>
     s.ok(await s.call('POST', '/sessions/this/step', { direction: 'next' }), ListeningSession);
   /** Keeps a position in the spoken queue's current item, as a progress report does. */
-  const at = async (ms: number) => {
-    const { current } = await queue();
-    savePosition(db, s.users.kara!, s.devices.kara!, 'spoken', current!.itemId, {
+  const at = async (ms: number, device = 'kara') => {
+    const { current } = await queue(device);
+    savePosition(db, s.users.kara!, s.devices[device]!, 'spoken', current!.itemId, {
       ms,
       takenAt: s.clock.now,
     });
   };
-  const stored = () => openSession(db, s.users.kara!, s.devices.kara!, s.clock.now)!;
+  const stored = (device = 'kara') =>
+    openSession(db, s.users.kara!, s.devices[device]!, s.clock.now)!;
   return { ...s, queue, session, add, playList, play, next, at, stored };
 }
 
@@ -123,13 +130,13 @@ describe('[M2.lists/e] a digest plays in its own queue, and the queue it replace
     ]);
   });
 
-  it('[M2.lists/e] with the saved current at its end, playing its next entry brings the queue back and steps on to it', async () => {
+  it('[M2.lists/e] with the saved current at its end, 29 s from its end, playing its next entry brings the queue back and steps on to it', async () => {
     const s = await server();
     const digest = await s.theDigest();
     await s.add(one, 'now');
     await s.add(two, 'end');
     const length = indexedRow(db, 'abs', one.id)!.duration!;
-    await s.at(Math.round((length - 10) * 1000));
+    await s.at(Math.round((length - 29) * 1000));
 
     await s.playList(digest.id);
     await s.play(two);
@@ -140,13 +147,13 @@ describe('[M2.lists/e] a digest plays in its own queue, and the queue it replace
     expect(back.played.map((p) => p.ref)).toEqual([one]);
   });
 
-  it('[M2.lists/e] does not step on from a saved current short of its end', async () => {
+  it('[M2.lists/e] does not step on from a saved current 31 s from its end', async () => {
     const s = await server();
     const digest = await s.theDigest();
     await s.add(one, 'now');
     await s.add(two, 'end');
     const length = indexedRow(db, 'abs', one.id)!.duration!;
-    await s.at(Math.round((length - 60) * 1000));
+    await s.at(Math.round((length - 31) * 1000));
 
     await s.playList(digest.id);
     await s.play(two);
@@ -317,5 +324,85 @@ describe('a digest’s queue', () => {
     expect(await s.call('POST', `/lists/${empty.id}/play`, {})).toEqual(
       refused(400, 'nothing_to_play'),
     );
+  });
+
+  it('Play now of the saved queue’s current, from inside a digest, resumes it as playing it does', async () => {
+    const s = await server();
+    const digest = await s.theDigest();
+    await s.add(two, 'now');
+    await s.add(one, 'end');
+    await s.at(61_000);
+    const own = await s.queue();
+    await s.playList(digest.id);
+
+    await s.add(two, 'now');
+
+    const back = await s.queue();
+    expect(back.digest).toBeNull();
+    expect(back.current).toMatchObject({ itemId: own.current!.itemId, ref: two });
+    expect(ms(back.position)).toBe(61_000);
+    expect(refsOf(back)).toEqual([two, one]);
+    expect(back.played).toEqual([]);
+  });
+
+  it('counts a book chapter finished by where the chapter ends in the book, not by its length', async () => {
+    const s = await server();
+    const digest = await s.theDigest();
+    await s.add(bookRef, 'now');
+    await s.add(two, 'end');
+    for (let n = 0; n < 3; n += 1) await s.next();
+    const last = (await s.queue()).current!;
+    expect(last).toMatchObject({ ref: bookRef, chapter: 3 });
+    const chapter = bookChapters[3]!;
+    // 5 s into the last chapter: past its own length from the book's start, far from its end.
+    expect(chapter.end - chapter.start).toBeLessThan(chapter.start + 5);
+    await s.at(Math.round((chapter.start + 5) * 1000));
+
+    await s.playList(digest.id);
+    await s.play(two);
+
+    expect(refsOf(await s.queue())).toEqual([two, two]);
+  });
+
+  it('never counts a saved current with no known length as finished', async () => {
+    const s = await server();
+    const digest = await s.theDigest();
+    db.prepare('UPDATE index_items SET duration = NULL WHERE upstream_id = ?').run(one.id);
+    await s.add(one, 'now');
+    await s.add(two, 'end');
+    await s.at(10_000_000);
+
+    await s.playList(digest.id);
+    await s.play(two);
+
+    expect(refsOf(await s.queue())).toEqual([two, two]);
+  });
+
+  it('refuses a digest play from a stale revision', async () => {
+    const s = await server();
+    const digest = await s.theDigest();
+
+    expect(await s.call('POST', `/lists/${digest.id}/play`, { rev: 99 })).toEqual(
+      refused(409, 'stale_revision'),
+    );
+  });
+
+  it('keeps each device’s own saved queue', async () => {
+    const s = await server();
+    const digest = await s.theDigest();
+    await s.add(two, 'now');
+    await s.add(one, 'now', 'kara-phone');
+    await s.playList(digest.id);
+    await s.playList(digest.id, {}, 'kara-phone');
+
+    await s.play(two);
+
+    expect((await s.queue()).digest).toBeNull();
+    expect(refsOf(await s.queue())).toEqual([two]);
+    const phone = await s.queue('kara-phone');
+    expect(phone.digest).toBe(digest.id);
+    expect(s.stored('kara-phone').saved.map((q) => [q.owner, q.queue.current?.ref])).toEqual([
+      [null, one],
+    ]);
   });
 });

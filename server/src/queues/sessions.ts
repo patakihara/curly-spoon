@@ -429,6 +429,15 @@ export class Sessions {
   }
 
   /**
+   * Play now of `ref` on `s`: a saved spoken queue it resumes comes back as a play of it would
+   * bring it (`resumed`), whole and unrecorded; otherwise it plays now. Null when the index does
+   * not hold it.
+   */
+  playNow(s: SessionValue, ref: MediaRef): SessionValue | null {
+    return this.resumed(s, this.options.lookup.covered(ref)) ?? add(s, ref, 'now', this.deps);
+  }
+
+  /**
    * `s` with the saved spoken queue the play resumes brought back: the one whose current item is
    * the plan's, else one whose current finished (or that has none) and whose next entry is the
    * plan's, stepped on to it. Null when no saved queue holds the plan's item that way.
@@ -455,9 +464,11 @@ export class Sessions {
   private savedNext(saved: SavedQueue): QueueEntry | null {
     const { current, position, user, context } = saved.queue;
     if (current !== null) {
-      const length = this.options.lookup.length(current);
-      if (length === null || position === null) return null;
-      if (position.ms < (length - FINISHED_WITHIN_S) * 1000) return null;
+      // A chapter's position runs from the start of its book, so it is measured to the chapter's
+      // end in the book.
+      const end = this.options.lookup.endOf(current);
+      if (end === null || position === null) return null;
+      if (position.ms < (end - FINISHED_WITHIN_S) * 1000) return null;
     }
     const queued = user[0] ?? context?.items[0];
     if (queued !== undefined) return queued;

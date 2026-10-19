@@ -63,7 +63,10 @@ export function sessionRoutes(app: FastifyInstance, options: { sessions: Session
     if (expansion === null || expansion.entries.length === 0) throw new Refusal(404, 'not_found');
     if (queueFor(expansion.kind) !== params.type) throw new Refusal(400, 'wrong_queue');
     const saved = sessions.change(caller, body.rev, (s) => {
-      const added = add(s, body.ref, body.how, sessions.deps);
+      const added =
+        body.how === 'now'
+          ? sessions.playNow(s, body.ref)
+          : add(s, body.ref, body.how, sessions.deps);
       if (added === null) throw new Refusal(404, 'not_found');
       return added;
     });

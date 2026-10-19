@@ -11,21 +11,21 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ListDetail, type ListItem, type MediaRef, ListSummaryList } from '@auralis/schema';
 import { expect } from 'vitest';
-import { itemSummarySchema, type ShowSummary } from '../adapters/audiobookshelf/schemas.js';
-import { parseFeed } from '../adapters/feed/client.js';
-import { type FetchLike } from '../adapters/http/fetch.js';
-import { type Recording, recordingSchema } from '../adapters/http/recording.js';
-import { replayFetch } from '../adapters/http/replay.js';
-import { buildApp } from '../app.js';
-import { absTree, orderingFromFeed } from '../libraryIndex/rows.js';
-import { applyTree, emptyCounts } from '../libraryIndex/store.js';
-import { type Db } from '../store/connection.js';
-import { createDevice } from '../store/devices.js';
-import { createSession } from '../store/sessions.js';
-import { saveLink } from '../store/upstreamLinks.js';
-import { upsertUser } from '../store/users.js';
+import { itemSummarySchema, type ShowSummary } from '../audiobookshelf/schemas.js';
+import { parseFeed } from '../feed/client.js';
+import { type FetchLike } from './fetch.js';
+import { type Recording, recordingSchema } from './recording.js';
+import { replayFetch } from './replay.js';
+import { buildApp } from '../../app.js';
+import { absTree, orderingFromFeed } from '../../libraryIndex/rows.js';
+import { applyTree, emptyCounts } from '../../libraryIndex/store.js';
+import { type Db } from '../../store/connection.js';
+import { createDevice } from '../../store/devices.js';
+import { createSession } from '../../store/sessions.js';
+import { saveLink } from '../../store/upstreamLinks.js';
+import { upsertUser } from '../../store/users.js';
 
-const adapters = join(dirname(fileURLToPath(import.meta.url)), '..', 'adapters');
+const adapters = join(dirname(fileURLToPath(import.meta.url)), '..');
 const recording = (upstream: string, call: string) =>
   recordingSchema.parse(
     JSON.parse(readFileSync(join(adapters, upstream, 'recordings', `${call}.json`), 'utf8')),
@@ -49,6 +49,10 @@ export interface AbsMe {
 }
 
 export const book = itemSummarySchema.parse(json(abs('multi-detail')));
+/** The book's chapters, in seconds from its start, as its recorded detail answers them. */
+export const bookChapters = json<{ media: { chapters: { start: number; end: number }[] } }>(
+  abs('multi-detail'),
+).media.chapters;
 export const shows = (['index-show-1', 'index-show-2'] as const)
   .map((c) => itemSummarySchema.parse(json(abs(c))))
   .filter((item): item is ShowSummary => item.mediaType === 'podcast');
@@ -125,7 +129,10 @@ export interface Answer {
   body: unknown;
 }
 
-/** kara, granted every library, and otto, granted none; the clock starts at `now`. */
+/**
+ * kara, granted every library, on two devices (`kara` and `kara-phone`), and otto, granted none;
+ * the clock starts at `now`.
+ */
 export async function listsServer(db: Db, options: { now?: number; me?: Recording } = {}) {
   const clock = { now: options.now ?? SEPT_15 };
   let kara = replayFetch([options.me ?? meFinished, ...PLAYS]);
@@ -163,6 +170,14 @@ export async function listsServer(db: Db, options: { now?: number; me?: Recordin
       kind: 'bearer',
     }).token;
   }
+  // kara's second device, called as `kara-phone`.
+  const phone = createDevice(db, { userId: users.kara!, kind: 'web' });
+  devices['kara-phone'] = phone.id;
+  bearer['kara-phone'] = createSession(db, {
+    userId: users.kara!,
+    deviceId: phone.id,
+    kind: 'bearer',
+  }).token;
   const app = await buildApp({
     webDistDir: null,
     db,
