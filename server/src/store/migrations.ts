@@ -558,6 +558,10 @@ export const migrations: readonly Migration[] = [
         -- The digest a play was played in, or null. It outlives the digest: a digest's plays
         -- never move your place in a show, even once the digest is gone.
         ALTER TABLE play_history ADD COLUMN list_id TEXT;
+
+        -- The digest whose rule put a queue entry there, or null: only those entries play as
+        -- the digest's. Cleared when the digest is deleted.
+        ALTER TABLE queue_items ADD COLUMN list_id TEXT;
       `);
     },
   },

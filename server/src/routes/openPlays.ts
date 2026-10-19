@@ -91,6 +91,20 @@ export class OpenPlays {
     }
   }
 
+  /**
+   * Closes the play a device holds of `ref` (a ref key), as `closeDevice` closes one, once every
+   * plan that device asked for before is taken. Never fails.
+   */
+  closeHeld(owner: Owner, ref: string): Promise<void> {
+    return this.planOn(owner, async () => {
+      for (const held of [...this.held.values()]) {
+        if (held.userId === owner.userId && held.deviceId === owner.deviceId && held.ref === ref) {
+          await this.end(held);
+        }
+      }
+    });
+  }
+
   /** The plan this person's device holds under `playId`: its id, ref key and entries; or null. */
   planOf(playId: string, owner: Owner): HeldPlan | null {
     const held = this.owned(playId, owner);

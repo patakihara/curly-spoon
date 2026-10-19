@@ -26,15 +26,18 @@
  * next reaches the album's following tracks in order (`albumRun`), so a Next or Back inside an
  * album keeps it gapless.
  *
- * An episode that a Next, or a play stepping on to what follows, moves out of a digest's queue
- * (it ended, or was skipped) is marked played: at once in Auralis, and on Audiobookshelf in the
- * background, as the person. A failure there is logged, and the mark Auralis keeps still holds.
- * Play now of anything else, and the switch, mark nothing.
+ * An episode of a digest's own (one its rule put in its queue) that a Next, or a play stepping on
+ * to what follows, moves out of that queue (it ended, or was skipped) is marked played: at once in
+ * Auralis, then on Audiobookshelf in the background, as the person, once the episode's play
+ * session there is closed, so nothing Auralis sends after the mark undoes it. A failure there is
+ * logged, the mark Auralis keeps still holds, and the next step or play sends it again. Play now
+ * of anything else, and the switch, mark nothing.
  */
 import { randomUUID } from 'node:crypto';
 import {
   type ListeningSession,
   type MediaRef,
+  parseMediaRefKey,
   PLAYED_SHOWN,
   type QueueItem,
   type QueuePosition,
@@ -43,7 +46,7 @@ import {
 } from '@auralis/schema';
 import type { AbsClient } from '../adapters/audiobookshelf/client.js';
 import { albumTracks, indexedRow } from '../libraryIndex/store.js';
-import { confirmMark, markPlayed } from '../store/lists.js';
+import { confirmMark, markPlayed, playedMarks } from '../store/lists.js';
 import { Refusal } from '../route.js';
 import type { Db } from '../store/connection.js';
 import {
@@ -191,6 +194,8 @@ export class Sessions {
    * so a restart forgets both together.
    */
   private readonly plays = new Map<string, CurrentPlay>();
+  /** Marks being sent to Audiobookshelf, by `userId source:id`. */
+  private readonly marking = new Map<string, Promise<void>>();
 
   constructor(
     private readonly options: {
@@ -202,6 +207,8 @@ export class Sessions {
       log: Log;
       /** How long a play or a Next waits for autoplay; `AUTOPLAY_WAIT_MS` when not given. */
       autoplayWaitMs?: number;
+      /** Closes the device's play of `ref` upstream, with its last report; never fails. */
+      closePlay?: (caller: Caller, ref: MediaRef) => Promise<void>;
     },
   ) {}
 
@@ -270,31 +277,58 @@ export class Sessions {
       left = leftDigest(s, stepped);
       return stepped;
     });
+    this.resendMarks(caller);
     this.markPlayed(caller, left);
     return saved;
   }
 
-  /**
-   * Marks each episode of `plays` played: at once in Auralis, then on Audiobookshelf in the
-   * background, as the person, noting there that it took the mark. A failure there is logged.
-   */
+  /** Waits for every mark being sent to Audiobookshelf, when the server stops. */
+  async settled(): Promise<void> {
+    await Promise.all(this.marking.values());
+  }
+
+  /** Marks each episode of `plays` played, now, and sends the mark to Audiobookshelf. */
   private markPlayed(caller: Caller, plays: readonly SessionPlay[]): void {
-    const { db, log } = this.options;
-    for (const { ref } of plays) {
-      const row = indexedRow(db, ref.source, ref.id);
-      if (ref.source !== 'abs' || row?.kind !== 'episode' || row.parentId === null) continue;
-      const at = this.options.now();
-      markPlayed(db, caller.id, ref, at);
-      const abs = this.options.clients(caller).abs;
-      const marked =
-        abs === null
-          ? Promise.reject(new Error('no Audiobookshelf account is linked'))
-          : abs.markEpisodeFinished(row.parentId, ref.id);
-      void marked.then(
-        () => confirmMark(db, caller.id, ref, at),
-        (err: unknown) => log.warn({ err, ref }, MARK_FAILED),
-      );
+    for (const { ref } of plays) this.mark(caller, ref);
+  }
+
+  /**
+   * Sends again each of the person's marks Audiobookshelf has not taken, and is not being sent:
+   * as made now, so a change there since it was first made does not unmark it once taken.
+   */
+  private resendMarks(caller: Caller): void {
+    for (const [refKey, { confirmed }] of playedMarks(this.options.db, caller.id)) {
+      const ref = parseMediaRefKey(refKey);
+      if (confirmed || ref === null || this.marking.has(`${caller.id} ${refKey}`)) continue;
+      this.mark(caller, ref);
     }
+  }
+
+  /**
+   * Marks an episode played at once in Auralis, then on Audiobookshelf in the background, as the
+   * person: after its play session there closes, so the session's last sync lands before the mark
+   * and never undoes it. Notes that Audiobookshelf took it; a failure is logged.
+   */
+  private mark(caller: Caller, ref: MediaRef): void {
+    const { db, log } = this.options;
+    const row = indexedRow(db, ref.source, ref.id);
+    if (ref.source !== 'abs' || row?.kind !== 'episode' || row.parentId === null) return;
+    const show = row.parentId;
+    const at = this.options.now();
+    markPlayed(db, caller.id, ref, at);
+    const sending = `${caller.id} ${key(ref)}`;
+    const abs = this.options.clients(caller).abs;
+    const sent = (async () => {
+      if (abs === null) throw new Error('no Audiobookshelf account is linked');
+      await this.options.closePlay?.(caller, ref);
+      await abs.markEpisodeFinished(show, ref.id);
+      confirmMark(db, caller.id, ref, at);
+    })()
+      .catch((err: unknown) => log.warn({ err, ref }, MARK_FAILED))
+      .finally(() => {
+        if (this.marking.get(sending) === sent) this.marking.delete(sending);
+      });
+    this.marking.set(sending, sent);
   }
 
   private save(caller: Caller, from: StoredSession, value: SessionValue): StoredSession {
@@ -356,7 +390,10 @@ export class Sessions {
       if (changed !== null) saved = this.save(caller, s, changed);
       // Stepping on to what follows moves the episode it leaves out of a digest's queue; a Play
       // now leaves it unmarked.
-      if (advanced !== null) this.markPlayed(caller, leftDigest(value, advanced));
+      if (advanced !== null) {
+        this.resendMarks(caller);
+        this.markPlayed(caller, leftDigest(value, advanced));
+      }
     }
     const running = this.refreshAutoplay(caller);
     // An item the session could not take (one the index does not hold) has nothing after it.

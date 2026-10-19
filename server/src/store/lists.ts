@@ -219,6 +219,9 @@ export function deleteList(db: Db, userId: string, id: string, now: number = Dat
          AND device_id IN (SELECT device_id FROM listening_sessions WHERE spoken_digest = ?)`,
     );
     const dropDigest = db.prepare('DELETE FROM saved_queues WHERE device_id = ? AND owner = ?');
+    const ownEntries = db.prepare(
+      'UPDATE queue_items SET list_id = NULL WHERE device_id = ? AND list_id = ?',
+    );
     const moveOn = db.prepare(
       `UPDATE listening_sessions
        SET spoken_digest = CASE WHEN spoken_digest = ? THEN NULL ELSE spoken_digest END,
@@ -228,6 +231,7 @@ export function deleteList(db: Db, userId: string, id: string, now: number = Dat
     for (const device of devices) {
       dropOwn.run(device, id);
       dropDigest.run(device, id);
+      ownEntries.run(device, id);
       moveOn.run(id, now, device);
     }
     db.prepare('DELETE FROM lists WHERE id = ?').run(id);

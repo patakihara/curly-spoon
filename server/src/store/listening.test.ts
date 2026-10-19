@@ -517,7 +517,13 @@ describe('a digest’s queue in a listening session', () => {
       spokenDigest: digest.id,
       queues: {
         ...start.queues,
-        spoken: { current: entry(song), position: null, user: [entry(album)], context: null },
+        // The entries the digest's rule put there name it; the one put next does not.
+        spoken: {
+          current: { ...entry(song), list: digest.id },
+          position: null,
+          user: [entry(book), { ...entry(album), list: digest.id }],
+          context: null,
+        },
       },
       history: [
         { seq: 0, queue: 'spoken', ref: book, chapter: 1, playedAt: 10 },
@@ -530,14 +536,19 @@ describe('a digest’s queue in a listening session', () => {
           autoplay: { after: { ref: book, chapter: 2 }, next: { ref: book, chapter: 6 } },
           savedAt: 1500,
         },
-        { owner: digest.id, queue: own, autoplay: null, savedAt: 1600 },
+        {
+          owner: digest.id,
+          queue: { ...own, current: { ...own.current, list: digest.id } },
+          autoplay: null,
+          savedAt: 1600,
+        },
       ],
     };
     const saved = saveSession(db, user.id, phone.id, start.rev, written, 2000)!;
     return { user, phone, digest, start, written, saved };
   }
 
-  it('keeps the digest it plays, the queues it saved and the plays made in it, across a reopen', () => {
+  it('keeps the digest it plays, its entries, the queues it saved and the plays made in it, across a reopen', () => {
     const { user, phone, written, saved } = inDigest();
 
     expect(saved).toMatchObject({

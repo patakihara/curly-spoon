@@ -29,13 +29,15 @@ export const HISTORY_KEPT = 500;
  * is the play (its `seq`) the entry plays again: it is already in history, so ending it records
  * nothing. `after`, on a current item that is no replay, is the play that played immediately
  * before it, where Back returns. `position` is where the device was in an entry of your queue
- * when it was last current.
+ * when it was last current. `list` is the digest whose rule put the entry in its queue; anything
+ * else in that queue plays as your own.
  */
 export interface SessionItem extends QueueItem {
   walk?: number;
   replayOf?: number;
   after?: number;
   position?: QueuePosition;
+  list?: string;
 }
 
 /** A queue entry before it has an id: an item, and which chapter when it is a book's. */
@@ -209,6 +211,7 @@ const ItemRow = z
     walk: z.number().int().nullable(),
     replay_of: z.number().int().nonnegative().nullable(),
     after: z.number().int().nonnegative().nullable(),
+    list_id: z.string().nullable(),
   })
   .transform((row) => ({
     queue: row.queue,
@@ -225,6 +228,7 @@ const ItemRow = z
     walk: row.walk,
     replayOf: row.replay_of,
     after: row.after,
+    list: row.list_id,
   }));
 
 const HistoryRow = z
@@ -280,6 +284,7 @@ const SavedItem = QueueItem.extend({
   replayOf: z.number().int().nonnegative().optional(),
   after: z.number().int().nonnegative().optional(),
   position: QueuePosition.optional(),
+  list: z.string().optional(),
 });
 const SavedQueueJson = z.object({
   current: SavedItem.nullable(),
@@ -346,12 +351,13 @@ function readQueues(db: Db, deviceId: string): Record<QueueType, SessionQueue> {
     .array(PlayingFromRow)
     .parse(db.prepare('SELECT * FROM playing_from WHERE device_id = ?').all(deviceId));
   for (const { queue, from } of froms) queues[queue].context = { from, items: [] };
-  for (const { queue, segment, position, item, walk, replayOf, after } of rows) {
+  for (const { queue, segment, position, item, walk, replayOf, after, list } of rows) {
     const q = queues[queue];
     const marks = {
       ...(walk === null ? {} : { walk }),
       ...(replayOf === null ? {} : { replayOf }),
       ...(after === null ? {} : { after }),
+      ...(list === null ? {} : { list }),
     };
     if (segment === 'current') {
       q.current = { ...item, ...marks };
@@ -574,8 +580,8 @@ function writeQueues(db: Db, deviceId: string, queues: Record<QueueType, Session
   db.prepare('DELETE FROM playing_from WHERE device_id = ?').run(deviceId);
   const insert = db.prepare(
     `INSERT INTO queue_items (device_id, queue, segment, ord, item_id, source, upstream_id,
-       chapter, position_ms, position_at, walk, replay_of, after)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       chapter, position_ms, position_at, walk, replay_of, after, list_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   const insertFrom = db.prepare(
     `INSERT INTO playing_from (device_id, queue, kind, source, upstream_id) VALUES (?, ?, ?, ?, ?)`,
@@ -601,6 +607,7 @@ function writeQueues(db: Db, deviceId: string, queues: Record<QueueType, Session
         segment === 'user' ? (item.walk ?? null) : null,
         segment === 'context' ? null : (item.replayOf ?? null),
         segment === 'current' ? (item.after ?? null) : null,
+        segment === 'context' ? null : (item.list ?? null),
       ),
     );
   for (const type of QueueType.options) {
@@ -674,6 +681,7 @@ function kept(item: SessionItem, segment: 'current' | 'user' | 'context'): Sessi
     ...(segment !== 'context' && item.replayOf !== undefined ? { replayOf: item.replayOf } : {}),
     ...(segment === 'current' && item.after !== undefined ? { after: item.after } : {}),
     ...(segment === 'user' && item.position !== undefined ? { position: item.position } : {}),
+    ...(segment !== 'context' && item.list !== undefined ? { list: item.list } : {}),
   };
 }
 

@@ -4,9 +4,10 @@
  * person's own Audiobookshelf `GET /api/me` says which libraries they may open and what they
  * finished: kara's is `me-finished` (show 1's Part One finished) unless a test hands her another,
  * and otto's is the recorded `me` granted no library. The clock is injected, so "new" is measured
- * from a time inside the recorded episodes' dates. Show 1's Part Two plays (`episode-play`), and
- * Parts One and Three can be marked finished (`episode-mark-finished`, `-2`); marking any other
- * episode fails, as an unrecorded call. What the server logs is kept, one entry per line.
+ * from a time inside the recorded episodes' dates. Show 1's Part Two plays (`episode-play`) and its
+ * play session closes (`episode-close`), and Parts One and Three can be marked finished
+ * (`episode-mark-finished`, `-2`); marking any other episode fails, as an unrecorded call, unless
+ * a test hands kara `markRecording`'s copy for it. What the server logs is kept, one entry per line.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -120,9 +121,17 @@ const PLAYS = [
   'progress-play',
   'progress-read',
   'episode-play',
+  'episode-close',
   'episode-mark-finished',
   'episode-mark-finished-2',
 ].map(abs);
+
+/** The recorded marking of Part One finished, re-pointed at another episode of show 1. */
+export function markRecording(episode: MediaRef): Recording {
+  const copy = structuredClone(abs('episode-mark-finished'));
+  copy.request.path = copy.request.path.replace(/[^/]+$/, episode.id);
+  return copy;
+}
 
 /** The path marking a show 1 episode finished calls, as `METHOD path`. */
 export const markCall = (episode: MediaRef) =>
@@ -146,12 +155,16 @@ export interface Answer {
  * kara, granted every library, on two devices (`kara` and `kara-phone`), and otto, granted none;
  * the clock starts at `now`.
  */
-export async function listsServer(db: Db, options: { now?: number; me?: Recording } = {}) {
+export async function listsServer(
+  db: Db,
+  options: { now?: number; me?: Recording; abs?: Recording[] } = {},
+) {
   const clock = { now: options.now ?? SEPT_15 };
-  let kara = replayFetch([options.me ?? meFinished, ...PLAYS]);
-  /** Hands kara another `GET /api/me` from the next call on. */
-  const karaAnswers = (me: Recording) => {
-    kara = replayFetch([me, ...PLAYS]);
+  const extra = options.abs ?? [];
+  let kara = replayFetch([options.me ?? meFinished, ...PLAYS, ...extra]);
+  /** Hands kara another `GET /api/me`, and the other answers given, from the next call on. */
+  const karaAnswers = (me: Recording, more: Recording[] = extra) => {
+    kara = replayFetch([me, ...PLAYS, ...more]);
   };
   const otto = replayFetch([ottoMe]);
   /** Every upstream call made, as `METHOD path?query`. */

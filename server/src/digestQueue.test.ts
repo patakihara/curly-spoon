@@ -31,10 +31,10 @@ import {
   karaMe,
   listsServer,
   markCall,
+  markRecording,
   one,
   ref,
   refused,
-  SEPT_15,
   show1,
   shows,
   three,
@@ -65,8 +65,12 @@ const AFTER_TWO = at(two) + 1;
 /** One of show 2's episodes, in no digest at either time. */
 const elsewhere = ref(shows[1]!.media.episodes[0]!.id);
 
-async function server(now = PAST_TWO, me?: Recording) {
-  const s = await listsServer(db, { now, ...(me === undefined ? {} : { me }) });
+async function server(now = PAST_TWO, me?: Recording, abs?: Recording[]) {
+  const s = await listsServer(db, {
+    now,
+    ...(me === undefined ? {} : { me }),
+    ...(abs === undefined ? {} : { abs }),
+  });
   apps.push(s.app);
   /** Each call is made from kara's device `device` (her first, unless named). */
   const queue = async (device = 'kara') =>
@@ -107,52 +111,67 @@ const refsOf = (q: { current: { ref: MediaRef } | null; user: { ref: MediaRef }[
 ];
 const ms = (p: QueuePosition | null) => p?.ms ?? null;
 const keyOf = (r: MediaRef) => `${r.source}:${r.id}`;
+/** The play session Audiobookshelf opened for Part Two, as `episode-play` recorded it. */
+const playSession = 'a74dcbb8-7c0f-4f5b-a654-a8bac8c508fa';
 
 describe('[M2.lists/d] an episode finished or skipped in a digest is marked played, and your place stays', () => {
-  it('[M2.lists/d] finishing one and skipping another marks each played and takes it out of the digest, while your own place in the show stays on its episode', async () => {
-    // Part Two was played in your own queue, and Audiobookshelf has it finished; Part One is not.
-    const s = await server(SEPT_15, karaMe([{ episodeId: two.id }]));
-    const digest = await s.theDigest();
-    expect(s.refs((await s.detail(digest.id)).items)).toEqual([one, three, four]);
-    await s.add(two, 'now');
-    await s.add(bookRef, 'end');
+  it('[M2.lists/d] finishing one and skipping another marks each played and takes it out of the digest, while that show’s Up next and autoplay stay on your own place', async () => {
+    const s = await server(PAST_TWO, undefined, [markRecording(four)]);
+    // Your own place in show 1: Part One played (Audiobookshelf has it finished), so Part Two
+    // follows it.
+    await s.add(one, 'now');
     await s.next();
-    const own = s.stored();
-    expect(ownPlays(own).map((p) => p.ref)).toEqual([two]);
+    expect((await s.queue()).current?.ref).toEqual(two);
+    const digest = await s.create({ kind: 'digest', name: 'Show 1', shows: [show1] });
+    expect(s.refs((await s.detail(digest.id)).items)).toEqual([three, four]);
 
     await s.playList(digest.id);
-    const length = indexedRow(db, 'abs', one.id)!.duration!;
+    const length = indexedRow(db, 'abs', three.id)!.duration!;
     await s.at(Math.round((length - 1) * 1000));
-    // Part One ends: the player steps on.
+    // Part Three ends: the player steps on.
     await s.next();
     await s.at(60_000);
-    // Part Three is skipped a minute in.
+    // Part Four is skipped a minute in.
     await s.next();
 
-    expect((await s.queue()).current?.ref).toEqual(four);
-    await vi.waitFor(() => expect(s.marks()).toEqual([markCall(one), markCall(three)]));
-    expect(s.marked().sort()).toEqual([keyOf(one), keyOf(three)].sort());
-    expect(s.refs((await s.detail(digest.id)).items)).toEqual([four]);
-    const after = s.stored();
-    expect(after.history.filter((p) => p.list === digest.id).map((p) => p.ref)).toEqual([
-      one,
-      three,
-    ]);
-    // Up next reads your own plays: they still end on Part Two.
-    expect(ownPlays(after).map((p) => p.ref)).toEqual([two]);
-    // Your own queue waits as it was, with its autoplay pick.
-    const { after: _after, ...current } = own.queues.spoken.current!;
-    expect(after.saved).toEqual([
-      expect.objectContaining({
-        owner: null,
-        queue: { ...own.queues.spoken, current },
-        autoplay: own.autoplay.spoken,
-      }),
-    ]);
+    await vi.waitFor(() => expect(s.marks()).toEqual([markCall(three), markCall(four)]));
+    await vi.waitFor(() =>
+      expect(playedMarks(db, s.users.kara!)).toEqual(
+        new Map([
+          [keyOf(three), expect.objectContaining({ confirmed: true })],
+          [keyOf(four), expect.objectContaining({ confirmed: true })],
+        ]),
+      ),
+    );
+    expect((await s.detail(digest.id)).items).toEqual([]);
+    // Up next reads your own plays: they still end on Part One.
+    expect(ownPlays(s.stored()).map((p) => p.ref)).toEqual([one]);
+
+    // With the digest gone, its queue plays on as your own: autoplay follows your own place.
+    expect(await s.call('DELETE', `/lists/${digest.id}`)).toMatchObject({ status: 200 });
+    await vi.waitFor(async () => expect((await s.queue()).autoplay?.ref).toEqual(two));
   });
 });
 
 describe('marking a digest’s episodes played', () => {
+  it('closes the episode’s play session before marking it, so nothing Auralis sends after the mark undoes it', async () => {
+    const s = await server(AFTER_TWO, undefined, [markRecording(two)]);
+    const digest = await s.create({ kind: 'digest', name: 'Show 1', shows: [show1] });
+    await s.playList(digest.id);
+    await s.add(bookRef, 'next');
+    await s.play(two);
+
+    await s.next();
+    await vi.waitFor(() => expect(s.marks()).toEqual([markCall(two)]));
+    // The next plan closes nothing more of Part Two's.
+    await s.play(bookRef);
+
+    const close = `POST /api/session/${playSession}/close`;
+    expect(s.sent.filter((c) => c === close)).toHaveLength(1);
+    expect(s.sent.indexOf(close)).toBeLessThan(s.sent.indexOf(markCall(two)));
+    expect((await s.detail(digest.id)).items).toEqual([]);
+  });
+
   it('marks an episode the device’s plan played through to the next one', async () => {
     const s = await server(AFTER_TWO);
     const digest = await s.create({ kind: 'digest', name: 'Show 1', shows: [show1] });
@@ -188,27 +207,49 @@ describe('marking a digest’s episodes played', () => {
     expect(s.refs((await s.detail(digest.id)).items)).toEqual([three, four]);
   });
 
-  it('logs a mark Audiobookshelf refused, and holds it when a later sync there moves the episode on; a mark it took gives way', async () => {
+  it('plays what was put next in a digest’s queue as your own: unmarked, and it moves your place', async () => {
     const s = await server();
     const digest = await s.theDigest();
     await s.playList(digest.id);
-    // Part Three is marked on Audiobookshelf; marking Part Four fails there.
-    await s.next();
-    await s.next();
-    await vi.waitFor(() => expect(s.marks()).toEqual([markCall(three), markCall(four)]));
-    await vi.waitFor(() => expect(s.logs.map((l) => l.msg)).toContain(MARK_FAILED));
-    expect(s.refs((await s.detail(digest.id)).items)).toEqual([]);
+    await s.add(elsewhere, 'next');
+    await s.add(bookRef, 'next');
 
-    // Later, the play sessions' close reaches Audiobookshelf: neither episode is finished there,
-    // and both changed after their marks.
+    // Part Three, the book's chapters and show 2's episode, each stepped past.
+    while ((await s.queue()).current?.ref.id !== four.id) await s.next();
+
+    await vi.waitFor(() => expect(s.marks()).toEqual([markCall(three)]));
+    expect(s.marked()).toEqual([keyOf(three)]);
+    const plays = s.stored().history;
+    expect(plays.filter((p) => p.list !== undefined).map((p) => p.ref)).toEqual([three]);
+    expect(ownPlays(s.stored()).map((p) => p.ref)).toEqual([
+      ...bookChapters.map(() => bookRef),
+      elsewhere,
+    ]);
+  });
+
+  it('logs a mark Audiobookshelf refused and holds it, then sends it again on the next step', async () => {
+    const s = await server();
+    const digest = await s.theDigest();
+    await s.playList(digest.id, { start: four });
+    // Marking Part Four fails on Audiobookshelf.
+    await s.next();
+    await vi.waitFor(() => expect(s.logs.map((l) => l.msg)).toContain(MARK_FAILED));
+    expect(s.refs((await s.detail(digest.id)).items)).toEqual([three]);
+
+    // Later Audiobookshelf has Part Four changed since, unfinished: the mark it never took holds.
     s.clock.now += 60_000;
     const later = { isFinished: false, progress: 0.5, lastUpdate: s.clock.now };
-    s.karaAnswers(
-      karaMe([{}, { ...later, episodeId: three.id }, { ...later, episodeId: four.id }]),
-    );
-
-    // Part Four's mark never reached Audiobookshelf, so it holds; Part Three's did, and gives way.
+    s.karaAnswers(karaMe([{}, { ...later, episodeId: four.id }]), [markRecording(four)]);
     expect(s.refs((await s.detail(digest.id)).items)).toEqual([three]);
+
+    // On the next step it is sent again, and taken.
+    s.clock.now += 60_000;
+    await s.next();
+    await vi.waitFor(() =>
+      expect(playedMarks(db, s.users.kara!).get(keyOf(four))).toMatchObject({ confirmed: true }),
+    );
+    expect(s.marks().filter((c) => c === markCall(four))).toHaveLength(2);
+    expect(s.refs((await s.detail(digest.id)).items)).toEqual([]);
   });
 });
 

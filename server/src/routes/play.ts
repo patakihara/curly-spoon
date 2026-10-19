@@ -70,7 +70,7 @@ import {
   planJellyfin,
   planRun,
 } from './jellyfinPlay.js';
-import { OpenPlays, type UpstreamReport } from './openPlays.js';
+import { type OpenPlays, type UpstreamReport } from './openPlays.js';
 import { type z } from 'zod';
 
 /** What the server needs to act upstream as a person: their tokens' key and the upstreams. */
@@ -245,6 +245,8 @@ export function playRoutes(
     upstreams: UpstreamAccess | null;
     /** This device's listening session, which every play and progress report keeps. */
     sessions: Sessions;
+    /** The playback sessions held open, shared with the listening sessions that close them. */
+    open: OpenPlays;
     playback?: PlaybackOptions;
     now?: () => number;
   },
@@ -253,7 +255,7 @@ export function playRoutes(
   const segmentWait = options.playback?.segmentWait ?? DEFAULT_SEGMENT_WAIT;
   const transcodeIdleMs = options.playback?.idleMs ?? DEFAULT_IDLE_MS;
   const directIdleMs = options.playback?.directIdleMs ?? DEFAULT_DIRECT_IDLE_MS;
-  const open = new OpenPlays({ now: options.now ?? Date.now });
+  const { open } = options;
   /** Each device's line to Jellyfin, by `userId deviceId`, kept for every play it makes. */
   const lines = new Map<string, JellyfinLine>();
   const lineFor = (userId: string, deviceId: string) => {
