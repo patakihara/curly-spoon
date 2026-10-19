@@ -27,6 +27,7 @@ const view = {
   position: { ms: 12_000, takenAt: 1_760_000_000_000 },
   user: [entry(2)],
   context: { from: { kind: 'album', ref: album }, items: [entry(3)] },
+  digest: null,
   rev: 4,
   autoplay: { ref: next, title: 'Next up', sub: null, duration: null },
   played: [played(0), played(1)],

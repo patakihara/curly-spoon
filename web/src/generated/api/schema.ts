@@ -501,6 +501,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in person's listening lists, podcast playlists and digests */
+        get: operations["listLists"];
+        put?: never;
+        /** Make a listening list, a podcast playlist or a custom digest */
+        post: operations["createList"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lists/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One of the signed-in person's lists, with its entries as they stand now */
+        get: operations["getList"];
+        put?: never;
+        post?: never;
+        /** Delete one of the signed-in person's lists */
+        delete: operations["deleteList"];
+        options?: never;
+        head?: never;
+        /** Rename a list, change a digest's order, or choose a custom digest's shows */
+        patch: operations["updateList"];
+        trace?: never;
+    };
+    "/api/lists/{id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set a listening list's or playlist's entries, whole and in order */
+        put: operations["setListItems"];
+        /** Add a book or show to the end of a listening list, or an episode to a playlist */
+        post: operations["addListItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -565,6 +620,8 @@ export interface components {
         };
         /** @enum {string} */
         LyricsSource: "jellyfin" | "lrclib";
+        /** @enum {string} */
+        DigestOrder: "oldest" | "newest";
         HealthResponse: {
             /** @enum {string} */
             status: "ok";
@@ -739,6 +796,7 @@ export interface components {
             position: components["schemas"]["QueuePosition"] | null;
             user: components["schemas"]["QueueViewItem"][];
             context: components["schemas"]["QueueViewContext"] | null;
+            digest: string | null;
             rev: number;
             autoplay: components["schemas"]["QueueViewAutoplay"] | null;
             played: components["schemas"]["QueueViewPlayed"][];
@@ -749,6 +807,7 @@ export interface components {
             position: components["schemas"]["QueuePosition"] | null;
             user: components["schemas"]["QueueItem"][];
             context: components["schemas"]["QueueContext"] | null;
+            digest: string | null;
             rev: number;
         };
         PutQueueBody: {
@@ -883,6 +942,59 @@ export interface components {
             status: components["schemas"]["LyricsStatus"];
             source: components["schemas"]["LyricsSource"] | null;
             lines: components["schemas"]["LyricLine"][];
+        };
+        /** @enum {string} */
+        ListKind: "listening" | "playlist" | "digest";
+        ListSummary: {
+            id: string;
+            kind: components["schemas"]["ListKind"];
+            name: string;
+            theDigest: boolean;
+            order: components["schemas"]["DigestOrder"] | null;
+            count: number;
+        };
+        ListSummaryList: {
+            lists: components["schemas"]["ListSummary"][];
+        };
+        /** @enum {string} */
+        ListItemKind: "book" | "show" | "episode";
+        ListItem: {
+            ref: components["schemas"]["MediaRef"];
+            kind: components["schemas"]["ListItemKind"];
+            title: string;
+            sub: string | null;
+            art: string | null;
+            publishedAt: number | null;
+            duration: number | null;
+            progress: number | null;
+            finished: boolean;
+        };
+        ListDetail: {
+            id: string;
+            kind: components["schemas"]["ListKind"];
+            name: string;
+            theDigest: boolean;
+            order: components["schemas"]["DigestOrder"] | null;
+            count: number;
+            shows: components["schemas"]["LibraryEntry"][];
+            items: components["schemas"]["ListItem"][];
+        };
+        CreateListBody: {
+            kind: components["schemas"]["ListKind"];
+            name: string;
+            shows?: components["schemas"]["MediaRef"][];
+            order?: components["schemas"]["DigestOrder"];
+        };
+        UpdateListBody: {
+            name?: string;
+            order?: components["schemas"]["DigestOrder"];
+            shows?: components["schemas"]["MediaRef"][];
+        };
+        AddListItemBody: {
+            ref: components["schemas"]["MediaRef"];
+        };
+        PutListItemsBody: {
+            refs: components["schemas"]["MediaRef"][];
         };
     };
     responses: never;
@@ -2570,6 +2682,352 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Lyrics"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listLists: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The Digest first, made on the first ask, then the others, oldest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListSummaryList"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CreateListBody"];
+            };
+        };
+        responses: {
+            /** @description The list made; 400 `wrong_kind` for shows or an order on a list that is not a digest, or a show that is not one, 404 for a show not indexed or outside your libraries. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListDetail"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Its summary, a digest's shows, and its entries: a digest's by its rule, a playlist's unplayed ones, a listening list's with finished ones crossed off; 404 for a list not yours. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListDetail"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    deleteList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The list is gone; 400 `fixed_list` for The Digest, 404 for a list not yours. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["UpdateListBody"];
+            };
+        };
+        responses: {
+            /** @description The list as it now is; 400 `fixed_list` for a new name or shows on The Digest, `wrong_kind` for an order or shows on a list that is not a digest, and nothing changed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListDetail"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    setListItems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PutListItemsBody"];
+            };
+        };
+        responses: {
+            /** @description The list as it now is; refused as adding one entry is, and nothing changed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListDetail"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    addListItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AddListItemBody"];
+            };
+        };
+        responses: {
+            /** @description The list as it now is; 400 `wrong_kind` for an entry the list does not take or any digest, 404 for one not indexed or outside your libraries. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListDetail"];
                 };
             };
             /** @description The request does not parse, or was refused. */

@@ -695,6 +695,7 @@ export class Sessions {
       user: q.user.map(plain),
       context:
         q.context === null ? null : { from: q.context.from, items: q.context.items.map(plain) },
+      digest: type === 'spoken' ? s.spokenDigest : null,
       rev: s.rev,
     };
   }

@@ -17,6 +17,7 @@ import { bookmarkRoutes } from './routes/bookmarks.js';
 import { deviceRoutes } from './routes/devices.js';
 import { itemRoutes } from './routes/items.js';
 import { libraryRoutes } from './routes/library.js';
+import { listRoutes } from './routes/lists.js';
 import { lyricsRoutes } from './routes/lyrics.js';
 import { type PlaybackOptions, playRoutes, type UpstreamAccess } from './routes/play.js';
 import { Lyrics } from './lyrics/service.js';
@@ -152,6 +153,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   bookmarkRoutes(app, { db, upstreams: options.upstreams ?? null });
   libraryRoutes(app, { db, upstreams });
   itemRoutes(app, { db, upstreams });
+  listRoutes(app, { db, upstreams, now: options.now ?? Date.now });
   const lyrics =
     options.lyrics ??
     new Lyrics({

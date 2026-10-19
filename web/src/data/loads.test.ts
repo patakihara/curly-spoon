@@ -27,6 +27,7 @@ const queue = (type: string) => ({
   position: null,
   user: [],
   context: null,
+  digest: null,
   rev: 0,
   autoplay: null,
   played: [],

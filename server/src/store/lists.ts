@@ -112,13 +112,13 @@ export function createList(
   })();
 }
 
-/** This person's lists: The Digest first, then the rest, oldest first. */
+/** This person's lists: The Digest first, then the rest, oldest first; made at one moment, in the order made. */
 export function listLists(db: Db, userId: string): StoredList[] {
   const rows = z
     .array(ListRow)
     .parse(
       db
-        .prepare('SELECT * FROM lists WHERE user_id = ? ORDER BY all_shows DESC, created_at, id')
+        .prepare('SELECT * FROM lists WHERE user_id = ? ORDER BY all_shows DESC, created_at, rowid')
         .all(userId),
     );
   return rows.map((row) => stored(db, row));

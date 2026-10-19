@@ -62,6 +62,15 @@ describe('The Digest', () => {
     expect(listLists(db, otto)).toHaveLength(1);
   });
 
+  it('lists lists made at one moment in the order they were made', () => {
+    const kara = person();
+    const names = ['a', 'b', 'c', 'd', 'e', 'f'];
+
+    for (const name of names) createList(db, kara, { kind: 'playlist', name }, 1000);
+
+    expect(listLists(db, kara).map((l) => l.name)).toEqual(names);
+  });
+
   it('cannot be renamed, given shows or deleted, but its order can change', () => {
     const kara = person();
     const digest = ensureTheDigest(db, kara, 1000);

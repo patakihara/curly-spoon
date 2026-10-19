@@ -60,6 +60,8 @@ export interface Standing {
   /** From 0 to 1; null when not started, or begun but still at 0. Finished is 1. */
   progress: number | null;
   finished: boolean;
+  /** When Audiobookshelf last changed it, in milliseconds since the epoch; null if never. */
+  updatedAt: number | null;
 }
 
 /** What the person's own Audiobookshelf `GET /api/me` says: what they may open, how far they are. */
@@ -79,7 +81,11 @@ export async function absAccess(abs: AbsClient): Promise<AbsAccess> {
       const share = p.isFinished ? 1 : Math.min(1, p.progress);
       return [
         p.episodeId ?? p.libraryItemId,
-        { progress: share > 0 ? share : null, finished: p.isFinished },
+        {
+          progress: share > 0 ? share : null,
+          finished: p.isFinished,
+          updatedAt: p.lastUpdate ?? null,
+        },
       ];
     }),
   );
@@ -87,7 +93,7 @@ export async function absAccess(abs: AbsClient): Promise<AbsAccess> {
     open: (libraryId) =>
       permissions.accessAllLibraries ||
       (libraryId !== null && librariesAccessible.includes(libraryId)),
-    standing: (id) => standings.get(id) ?? { progress: null, finished: false },
+    standing: (id) => standings.get(id) ?? { progress: null, finished: false, updatedAt: null },
   };
 }
 

@@ -23,6 +23,15 @@ import {
   CreateBookmarkBody,
 } from './bookmarks.js';
 import { HealthResponse } from './health.js';
+import {
+  AddListItemBody,
+  CreateListBody,
+  ListDetail,
+  ListParams,
+  ListSummaryList,
+  PutListItemsBody,
+  UpdateListBody,
+} from './lists.js';
 import { Lyrics } from './lyrics.js';
 import {
   ArtQuery,
@@ -471,6 +480,91 @@ export const getLyrics = {
   params: ItemParams,
 } as const satisfies Route;
 
+export const listLists = {
+  method: 'GET',
+  path: '/api/lists',
+  operationId: 'listLists',
+  summary: "The signed-in person's listening lists, podcast playlists and digests",
+  responseDescription: 'The Digest first, made on the first ask, then the others, oldest first.',
+  response: ListSummaryList,
+  access: 'member',
+} as const satisfies Route;
+
+export const createList = {
+  method: 'POST',
+  path: '/api/lists',
+  operationId: 'createList',
+  summary: 'Make a listening list, a podcast playlist or a custom digest',
+  responseDescription:
+    'The list made; 400 `wrong_kind` for shows or an order on a list that is not a digest, or a show that is not one, 404 for a show not indexed or outside your libraries.',
+  response: ListDetail,
+  access: 'member',
+  body: CreateListBody,
+} as const satisfies Route;
+
+export const getList = {
+  method: 'GET',
+  path: '/api/lists/{id}',
+  operationId: 'getList',
+  summary: "One of the signed-in person's lists, with its entries as they stand now",
+  responseDescription:
+    "Its summary, a digest's shows, and its entries: a digest's by its rule, a playlist's unplayed ones, a listening list's with finished ones crossed off; 404 for a list not yours.",
+  response: ListDetail,
+  access: 'member',
+  params: ListParams,
+} as const satisfies Route;
+
+export const updateList = {
+  method: 'PATCH',
+  path: '/api/lists/{id}',
+  operationId: 'updateList',
+  summary: "Rename a list, change a digest's order, or choose a custom digest's shows",
+  responseDescription:
+    'The list as it now is; 400 `fixed_list` for a new name or shows on The Digest, `wrong_kind` for an order or shows on a list that is not a digest, and nothing changed.',
+  response: ListDetail,
+  access: 'member',
+  params: ListParams,
+  body: UpdateListBody,
+} as const satisfies Route;
+
+export const deleteList = {
+  method: 'DELETE',
+  path: '/api/lists/{id}',
+  operationId: 'deleteList',
+  summary: "Delete one of the signed-in person's lists",
+  responseDescription:
+    'The list is gone; 400 `fixed_list` for The Digest, 404 for a list not yours.',
+  response: Ok,
+  access: 'member',
+  params: ListParams,
+} as const satisfies Route;
+
+export const addListItem = {
+  method: 'POST',
+  path: '/api/lists/{id}/items',
+  operationId: 'addListItem',
+  summary: 'Add a book or show to the end of a listening list, or an episode to a playlist',
+  responseDescription:
+    'The list as it now is; 400 `wrong_kind` for an entry the list does not take or any digest, 404 for one not indexed or outside your libraries.',
+  response: ListDetail,
+  access: 'member',
+  params: ListParams,
+  body: AddListItemBody,
+} as const satisfies Route;
+
+export const setListItems = {
+  method: 'PUT',
+  path: '/api/lists/{id}/items',
+  operationId: 'setListItems',
+  summary: "Set a listening list's or playlist's entries, whole and in order",
+  responseDescription:
+    'The list as it now is; refused as adding one entry is, and nothing changed.',
+  response: ListDetail,
+  access: 'member',
+  params: ListParams,
+  body: PutListItemsBody,
+} as const satisfies Route;
+
 /** Every route the API has. The generator and the server's route test both read this list. */
 export const routes: readonly Route[] = [
   health,
@@ -506,4 +600,11 @@ export const routes: readonly Route[] = [
   getSearchSuggest,
   getSearch,
   getLyrics,
+  listLists,
+  createList,
+  getList,
+  updateList,
+  deleteList,
+  addListItem,
+  setListItems,
 ];
