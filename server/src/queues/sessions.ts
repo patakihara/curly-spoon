@@ -30,7 +30,8 @@
  * to what follows, moves out of that queue (it ended, or was skipped) is marked played: at once in
  * Auralis, then on Audiobookshelf in the background, as the person, once the episode's play
  * session there is closed, so nothing Auralis sends after the mark undoes it. A failure there is
- * logged, the mark Auralis keeps still holds, and the next step or play sends it again. Play now
+ * logged, the mark Auralis keeps still holds, and a step or play sends it again, at most once in
+ * ten minutes and five times in all. Play now
  * of anything else, and the switch, mark nothing.
  */
 import { randomUUID } from 'node:crypto';
@@ -46,7 +47,7 @@ import {
 } from '@auralis/schema';
 import type { AbsClient } from '../adapters/audiobookshelf/client.js';
 import { albumTracks, indexedRow } from '../libraryIndex/store.js';
-import { confirmMark, markPlayed, playedMarks } from '../store/lists.js';
+import { confirmMark, markPlayed, markRefused, playedMarks, sendingMark } from '../store/lists.js';
 import { Refusal } from '../route.js';
 import type { Db } from '../store/connection.js';
 import {
@@ -114,6 +115,12 @@ export const AUTOPLAY_WAIT_MS = 3_000;
 /** What is logged when Audiobookshelf did not take an episode marked played in a digest. */
 export const MARK_FAILED =
   'an episode played in a digest could not be marked finished on Audiobookshelf; Auralis keeps its mark';
+
+/** How long a mark Audiobookshelf has not taken waits before it is sent again. */
+export const MARK_RESEND_MS = 10 * 60_000;
+
+/** How many refused sends of a mark it takes to stop sending it; the local mark still holds. */
+export const MARK_TRIES = 5;
 
 /** What is logged when autoplay's picks are worked out twice for a session that moved on. */
 export const AUTOPLAY_MISSED =
@@ -207,8 +214,11 @@ export class Sessions {
       log: Log;
       /** How long a play or a Next waits for autoplay; `AUTOPLAY_WAIT_MS` when not given. */
       autoplayWaitMs?: number;
-      /** Closes the device's play of `ref` upstream, with its last report; never fails. */
-      closePlay?: (caller: Caller, ref: MediaRef) => Promise<void>;
+      /**
+       * Closes upstream, with its last report, every play of `ref` the person holds on any device
+       * that was opened no later than `before`; never fails.
+       */
+      closePlay?: (caller: Caller, ref: MediaRef, before: number) => Promise<void>;
     },
   ) {}
 
@@ -293,35 +303,59 @@ export class Sessions {
   }
 
   /**
-   * Sends again each of the person's marks Audiobookshelf has not taken, and is not being sent:
-   * as made now, so a change there since it was first made does not unmark it once taken.
+   * Sends again each of the person's marks Audiobookshelf has not taken and is not being sent:
+   * at most once in `MARK_RESEND_MS`, and no more once it refused `MARK_TRIES` sends. The local
+   * mark holds either way.
    */
   private resendMarks(caller: Caller): void {
-    for (const [refKey, { confirmed }] of playedMarks(this.options.db, caller.id)) {
+    const now = this.options.now();
+    for (const [refKey, mark] of playedMarks(this.options.db, caller.id)) {
       const ref = parseMediaRefKey(refKey);
-      if (confirmed || ref === null || this.marking.has(`${caller.id} ${refKey}`)) continue;
-      this.mark(caller, ref);
+      if (mark.confirmed || ref === null || this.marking.has(`${caller.id} ${refKey}`)) continue;
+      if (mark.failures >= MARK_TRIES) continue;
+      if (mark.sentAt !== null && now - mark.sentAt < MARK_RESEND_MS) continue;
+      this.send(caller, ref, mark.at);
     }
   }
 
-  /**
-   * Marks an episode played at once in Auralis, then on Audiobookshelf in the background, as the
-   * person: after its play session there closes, so the session's last sync lands before the mark
-   * and never undoes it. Notes that Audiobookshelf took it; a failure is logged.
-   */
+  /** Marks an episode played at once in Auralis, then sends the mark to Audiobookshelf. */
   private mark(caller: Caller, ref: MediaRef): void {
-    const { db, log } = this.options;
-    const row = indexedRow(db, ref.source, ref.id);
-    if (ref.source !== 'abs' || row?.kind !== 'episode' || row.parentId === null) return;
-    const show = row.parentId;
+    if (this.showOf(ref) === null) return;
     const at = this.options.now();
-    markPlayed(db, caller.id, ref, at);
+    markPlayed(this.options.db, caller.id, ref, at);
+    this.send(caller, ref, at);
+  }
+
+  /** The show an Audiobookshelf episode is of, as the index holds it; null for anything else. */
+  private showOf(ref: MediaRef): string | null {
+    const row = indexedRow(this.options.db, ref.source, ref.id);
+    return ref.source === 'abs' && row?.kind === 'episode' ? row.parentId : null;
+  }
+
+  /**
+   * Sends a mark made at `markedAt` to Audiobookshelf in the background, as the person, dated now:
+   * after every play of the episode they started before the mark is closed there, on any device,
+   * so a play's last sync lands before the mark and never undoes it. Notes whether Audiobookshelf
+   * took it; a refusal is logged.
+   */
+  private send(caller: Caller, ref: MediaRef, markedAt: number): void {
+    const { db, log } = this.options;
+    const show = this.showOf(ref);
+    if (show === null) return;
+    const at = this.options.now();
+    sendingMark(db, caller.id, ref, at);
     const sending = `${caller.id} ${key(ref)}`;
     const abs = this.options.clients(caller).abs;
     const sent = (async () => {
-      if (abs === null) throw new Error('no Audiobookshelf account is linked');
-      await this.options.closePlay?.(caller, ref);
-      await abs.markEpisodeFinished(show, ref.id);
+      try {
+        if (abs === null) throw new Error('no Audiobookshelf account is linked');
+        await this.options.closePlay?.(caller, ref, markedAt);
+        await abs.markEpisodeFinished(show, ref.id);
+      } catch (err) {
+        markRefused(db, caller.id, ref, at);
+        log.warn({ err, ref }, MARK_FAILED);
+        return;
+      }
       confirmMark(db, caller.id, ref, at);
     })()
       .catch((err: unknown) => log.warn({ err, ref }, MARK_FAILED))

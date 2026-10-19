@@ -69,7 +69,7 @@ const ids = (rows: StoredRow[]) => rows.map((r) => r.id);
 describe('played', () => {
   it('counts a mark made at the moment Audiobookshelf last changed the episode, as well as a later one', () => {
     const unfinished = { progress: 0.3, finished: false, updatedAt: 1000 };
-    const taken = (at: number) => ({ at, confirmed: true });
+    const taken = (at: number) => ({ at, confirmed: true, sentAt: at, failures: 0 });
 
     expect(isPlayed(unfinished, taken(999))).toBe(false);
     expect(isPlayed(unfinished, taken(1000))).toBe(true);
@@ -82,7 +82,9 @@ describe('played', () => {
   it('holds a mark Audiobookshelf never took, whatever changed there later', () => {
     const unfinished = { progress: 0.3, finished: false, updatedAt: 1000 };
 
-    expect(isPlayed(unfinished, { at: 999, confirmed: false })).toBe(true);
+    expect(isPlayed(unfinished, { at: 999, confirmed: false, sentAt: 999, failures: 1 })).toBe(
+      true,
+    );
   });
 });
 

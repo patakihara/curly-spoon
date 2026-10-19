@@ -169,9 +169,20 @@ export async function listsServer(
   const otto = replayFetch([ottoMe]);
   /** Every upstream call made, as `METHOD path?query`. */
   const sent: string[] = [];
+  /** While set, marking an episode finished waits for it before Audiobookshelf answers. */
+  let marksHeld: Promise<void> | null = null;
+  /** Holds every mark's answer until the function answered is called. */
+  const holdMarks = () => {
+    let release = () => {};
+    marksHeld = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    return release;
+  };
   const fetch: FetchLike = async (url, init) => {
     const { pathname, search } = new URL(url);
     sent.push(`${init?.method ?? 'GET'} ${pathname}${search}`);
+    if (init?.method === 'PATCH' && marksHeld !== null) await marksHeld;
     const authorization = new Headers(init?.headers).get('authorization') ?? '';
     return (authorization.includes('otto') ? otto : kara)(url, init);
   };
@@ -243,6 +254,7 @@ export async function listsServer(
     app,
     clock,
     sent,
+    holdMarks,
     logs,
     users,
     devices,

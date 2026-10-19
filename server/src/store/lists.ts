@@ -239,23 +239,39 @@ export function deleteList(db: Db, userId: string, id: string, now: number = Dat
   })();
 }
 
-/** An episode Auralis marked played: when, and whether the upstream has taken the mark. */
+/**
+ * An episode Auralis marked played: when, whether the upstream has taken the mark, when it was
+ * last sent there (null: never), and how many sends the upstream refused.
+ */
 export interface PlayedMark {
   at: number;
   confirmed: boolean;
+  sentAt: number | null;
+  failures: number;
 }
 
 /**
  * Marks an episode played for this person at `at`, keeping the newer of two marks. A newer mark
- * waits to be confirmed afresh.
+ * waits to be sent and confirmed afresh.
  */
 export function markPlayed(db: Db, userId: string, ref: MediaRef, at: number): void {
   db.prepare(
     `INSERT INTO played_marks (user_id, source, upstream_id, marked_at) VALUES (?, ?, ?, ?)
      ON CONFLICT (user_id, source, upstream_id)
-       DO UPDATE SET marked_at = excluded.marked_at, confirmed = 0
+       DO UPDATE SET marked_at = excluded.marked_at, confirmed = 0, sent_at = NULL, failures = 0
        WHERE excluded.marked_at > marked_at`,
   ).run(userId, ref.source, ref.id, at);
+}
+
+/**
+ * Notes that the mark is being sent to the upstream at `at`, and dates it then: a change there
+ * before the send cannot unmark it once taken. Unchanged when it is taken already.
+ */
+export function sendingMark(db: Db, userId: string, ref: MediaRef, at: number): void {
+  db.prepare(
+    `UPDATE played_marks SET marked_at = max(marked_at, @at), sent_at = @at
+     WHERE user_id = @user AND source = @source AND upstream_id = @id AND confirmed = 0`,
+  ).run({ user: userId, source: ref.source, id: ref.id, at });
 }
 
 /** Notes that the upstream took the mark made at `at`; a newer mark since is left waiting. */
@@ -263,6 +279,14 @@ export function confirmMark(db: Db, userId: string, ref: MediaRef, at: number): 
   db.prepare(
     `UPDATE played_marks SET confirmed = 1
      WHERE user_id = ? AND source = ? AND upstream_id = ? AND marked_at = ?`,
+  ).run(userId, ref.source, ref.id, at);
+}
+
+/** Notes that the upstream refused the mark made at `at`. */
+export function markRefused(db: Db, userId: string, ref: MediaRef, at: number): void {
+  db.prepare(
+    `UPDATE played_marks SET failures = failures + 1
+     WHERE user_id = ? AND source = ? AND upstream_id = ? AND marked_at = ? AND confirmed = 0`,
   ).run(userId, ref.source, ref.id, at);
 }
 
@@ -275,13 +299,15 @@ export function playedMarks(db: Db, userId: string): Map<string, PlayedMark> {
         upstream_id: z.string(),
         marked_at: z.number().int(),
         confirmed: z.union([z.literal(0), z.literal(1)]),
+        sent_at: z.number().int().nullable(),
+        failures: z.number().int().nonnegative(),
       }),
     )
     .parse(db.prepare('SELECT * FROM played_marks WHERE user_id = ?').all(userId));
   return new Map(
     rows.map((r) => [
       `${r.source}:${r.upstream_id}`,
-      { at: r.marked_at, confirmed: r.confirmed === 1 },
+      { at: r.marked_at, confirmed: r.confirmed === 1, sentAt: r.sent_at, failures: r.failures },
     ]),
   );
 }

@@ -13,7 +13,9 @@ import {
   listLists,
   confirmMark,
   markPlayed,
+  markRefused,
   playedMarks,
+  sendingMark,
   setListItems,
   updateList,
 } from './lists.js';
@@ -250,7 +252,7 @@ describe('played marks', () => {
     markPlayed(db, kara, episode2, 3000);
     markPlayed(db, otto, episode3, 4000);
 
-    const waiting = (at: number) => ({ at, confirmed: false });
+    const waiting = (at: number) => ({ at, confirmed: false, sentAt: null, failures: 0 });
     expect(playedMarks(db, kara)).toEqual(
       new Map([
         ['abs:episode-1', waiting(2000)],
@@ -265,11 +267,36 @@ describe('played marks', () => {
     markPlayed(db, kara, episode1, 1000);
 
     confirmMark(db, kara, episode1, 1000);
-    expect(playedMarks(db, kara).get('abs:episode-1')).toEqual({ at: 1000, confirmed: true });
+    expect(playedMarks(db, kara).get('abs:episode-1')).toMatchObject({ at: 1000, confirmed: true });
 
     markPlayed(db, kara, episode1, 2000);
     // Taking the older mark late changes nothing on the newer one.
     confirmMark(db, kara, episode1, 1000);
-    expect(playedMarks(db, kara).get('abs:episode-1')).toEqual({ at: 2000, confirmed: false });
+    expect(playedMarks(db, kara).get('abs:episode-1')).toMatchObject({
+      at: 2000,
+      confirmed: false,
+    });
+  });
+
+  it('date a mark when it is sent, count the sends refused, and start a newer mark afresh', () => {
+    const kara = person();
+    markPlayed(db, kara, episode1, 1000);
+
+    sendingMark(db, kara, episode1, 5000);
+    markRefused(db, kara, episode1, 5000);
+    expect(playedMarks(db, kara).get('abs:episode-1')).toEqual({
+      at: 5000,
+      confirmed: false,
+      sentAt: 5000,
+      failures: 1,
+    });
+
+    markPlayed(db, kara, episode1, 6000);
+    expect(playedMarks(db, kara).get('abs:episode-1')).toEqual({
+      at: 6000,
+      confirmed: false,
+      sentAt: null,
+      failures: 0,
+    });
   });
 });

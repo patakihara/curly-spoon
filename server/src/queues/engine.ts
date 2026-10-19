@@ -117,7 +117,13 @@ export function addEntries(
   const s = structuredClone(session);
   const type = queueFor(expansion.kind);
   const queue = s.queues[type];
-  const items = expansion.entries.map((e): QueueItem => ({ ...e, itemId: deps.newId() }));
+  // An entry for an episode the digest playing holds, added in its queue, is the digest's too.
+  const digest = type === 'spoken' ? s.spokenDigest : null;
+  const items = expansion.entries.map((e): SessionItem => ({
+    ...e,
+    itemId: deps.newId(),
+    ...(digest !== null && digestHolds(queue, e) ? { list: digest } : {}),
+  }));
   const action = how === 'default' ? defaultAction(session, expansion.kind) : how;
 
   if (action === 'end') queue.user.push(...items);
@@ -147,7 +153,7 @@ export function addEntries(
     const ended = retire(s, type, deps);
     const after = type === s.active ? ended : followed(s, left);
     endWalk(s);
-    const [current, ...rest] = items as [QueueItem, ...QueueItem[]];
+    const [current, ...rest] = items as [SessionItem, ...SessionItem[]];
     const into = s.queues[type];
     start(into, current, after);
     if (type === 'music' && s.queueStyle === 'spotify' && expansion.from !== null) {
@@ -477,6 +483,12 @@ const entryOf = (e: QueueEntry): QueueEntry => ({
   ref: e.ref,
   ...(e.chapter === undefined ? {} : { chapter: e.chapter }),
 });
+
+/** Whether `queue` holds `entry` as one its digest's rule put there. */
+const digestHolds = (queue: SessionQueue, entry: QueueEntry): boolean =>
+  [queue.current, ...queue.user].some(
+    (item) => item !== null && item.list !== undefined && sameEntry(item, entry),
+  );
 
 /** Whether `queue` holds any of `entries`: as its current item, or queued after it. */
 const holds = (queue: SessionQueue, entries: readonly QueueEntry[]): boolean =>

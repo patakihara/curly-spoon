@@ -44,7 +44,7 @@ import { ownPlays } from './queues/autoplay.js';
 import { MARK_FAILED } from './queues/sessions.js';
 import { openDatabase, type Db } from './store/connection.js';
 import { openSession, savePosition } from './store/listening.js';
-import { playedMarks } from './store/lists.js';
+import { markPlayed, playedMarks } from './store/lists.js';
 
 let apps: FastifyInstance[] = [];
 let db: Db;
@@ -227,7 +227,7 @@ describe('marking a digest’s episodes played', () => {
     ]);
   });
 
-  it('logs a mark Audiobookshelf refused and holds it, then sends it again on the next step', async () => {
+  it('logs a mark Audiobookshelf refused and holds it, then sends it again on a step, at most once in 10 minutes', async () => {
     const s = await server();
     const digest = await s.theDigest();
     await s.playList(digest.id, { start: four });
@@ -241,15 +241,133 @@ describe('marking a digest’s episodes played', () => {
     const later = { isFinished: false, progress: 0.5, lastUpdate: s.clock.now };
     s.karaAnswers(karaMe([{}, { ...later, episodeId: four.id }]), [markRecording(four)]);
     expect(s.refs((await s.detail(digest.id)).items)).toEqual([three]);
+    // Within 10 minutes of the first try, a step sends nothing again.
+    await s.next();
+    await vi.waitFor(() => expect(s.marks()).toEqual([markCall(four), markCall(three)]));
 
-    // On the next step it is sent again, and taken.
-    s.clock.now += 60_000;
+    // Past 10 minutes the next step sends it again, and it is taken.
+    s.clock.now += 10 * 60_000;
     await s.next();
     await vi.waitFor(() =>
       expect(playedMarks(db, s.users.kara!).get(keyOf(four))).toMatchObject({ confirmed: true }),
     );
-    expect(s.marks().filter((c) => c === markCall(four))).toHaveLength(2);
+    expect(s.marks()).toEqual([markCall(four), markCall(three), markCall(four)]);
     expect(s.refs((await s.detail(digest.id)).items)).toEqual([]);
+  });
+
+  it('stops sending a mark again after five failures, and keeps holding it', async () => {
+    const s = await server();
+    const digest = await s.theDigest();
+    await s.playList(digest.id, { start: four });
+    await s.next();
+    for (let n = 1; n < 8; n += 1) {
+      await vi.waitFor(() =>
+        expect(s.logs.filter((l) => l.msg === MARK_FAILED)).toHaveLength(Math.min(n, 5)),
+      );
+      s.clock.now += 10 * 60_000;
+      await s.next();
+    }
+
+    expect(s.marks().filter((c) => c === markCall(four))).toHaveLength(5);
+    expect(playedMarks(db, s.users.kara!).get(keyOf(four))).toMatchObject({
+      confirmed: false,
+      failures: 5,
+    });
+    // Part Three went with the second step; Part Four's mark holds.
+    expect((await s.detail(digest.id)).items).toEqual([]);
+  });
+
+  it('sends a waiting mark again when a play steps on to what follows', async () => {
+    const s = await server(AFTER_TWO, undefined, [markRecording(two), markRecording(four)]);
+    markPlayed(db, s.users.kara!, four, s.clock.now - 60 * 60_000);
+    const digest = await s.create({ kind: 'digest', name: 'Show 1', shows: [show1] });
+    await s.playList(digest.id);
+    await s.add(bookRef, 'next');
+    await s.play(two);
+
+    await s.play(bookRef);
+
+    await vi.waitFor(() =>
+      expect([...s.marks()].sort()).toEqual([markCall(two), markCall(four)].sort()),
+    );
+  });
+
+  it('marks an episode played now from within the digest’s queue as the digest’s', async () => {
+    const s = await server(PAST_TWO, undefined, [markRecording(four)]);
+    const digest = await s.theDigest();
+    await s.playList(digest.id);
+
+    await s.add(four, 'now');
+    await s.next();
+
+    await vi.waitFor(() => expect(s.marks()).toEqual([markCall(four)]));
+    expect(ownPlays(s.stored()).map((p) => p.ref)).toEqual([]);
+  });
+
+  it('closes the episode’s play on every device of the person before marking it; that play then sends nothing more', async () => {
+    const s = await server(AFTER_TWO, undefined, [markRecording(two)]);
+    const digest = await s.create({ kind: 'digest', name: 'Show 1', shows: [show1] });
+    // kara's phone plays Part Two in her own queue there.
+    await s.play(two, 'kara-phone');
+    await s.playList(digest.id);
+
+    await s.next();
+    await vi.waitFor(() => expect(s.marks()).toEqual([markCall(two)]));
+
+    const close = `POST /api/session/${playSession}/close`;
+    expect(s.sent.filter((c) => c === close)).toHaveLength(1);
+    expect(s.sent.indexOf(close)).toBeLessThan(s.sent.indexOf(markCall(two)));
+    // The phone's player reports on, and closes: nothing reaches Audiobookshelf.
+    const upstream = s.sent.length;
+    const report = { seq: 1, position: 120, listened: 5, paused: false };
+    await s.call('POST', '/progress', { playId: playSession, ...report }, 'kara-phone');
+    await s.call('POST', `/play/${playSession}/close`, { ...report, seq: 2 }, 'kara-phone');
+    expect(s.sent.slice(upstream)).toEqual([]);
+  });
+
+  it('leaves another episode’s play open when it marks one', async () => {
+    const s = await server();
+    const digest = await s.theDigest();
+    await s.play(two, 'kara-phone');
+    await s.playList(digest.id);
+
+    await s.next();
+    await vi.waitFor(() => expect(s.marks()).toEqual([markCall(three)]));
+
+    expect(s.sent).not.toContain(`POST /api/session/${playSession}/close`);
+  });
+
+  it('waits for marks being sent before the server closes', async () => {
+    const s = await server();
+    const digest = await s.theDigest();
+    await s.playList(digest.id);
+    const release = s.holdMarks();
+    await s.next();
+    await vi.waitFor(() => expect(s.marks()).toEqual([markCall(three)]));
+
+    let closed = false;
+    const closing = s.app.close().then(() => {
+      closed = true;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(closed).toBe(false);
+    release();
+    await closing;
+
+    expect(playedMarks(db, s.users.kara!).get(keyOf(three))).toMatchObject({ confirmed: true });
+  });
+
+  it('plays a deleted digest’s queue on as your own: its entries no longer name it', async () => {
+    const s = await server(AFTER_TWO);
+    const digest = await s.create({ kind: 'digest', name: 'Show 1', shows: [show1] });
+    await s.playList(digest.id);
+
+    expect(await s.call('DELETE', `/lists/${digest.id}`)).toMatchObject({ status: 200 });
+
+    expect(s.stored().queues.spoken.current).toMatchObject({ ref: two });
+    expect(s.stored().queues.spoken.current).not.toHaveProperty('list');
+    await s.next();
+    expect(s.marked()).toEqual([]);
   });
 });
 

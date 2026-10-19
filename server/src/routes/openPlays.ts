@@ -39,6 +39,8 @@ export interface OpenPlay {
 }
 
 interface Held extends OpenPlay {
+  /** When it was opened. */
+  openedAt: number;
   lastSeen: number;
   /** When the last report was taken, or the play opened; listening is counted from here. */
   lastReportAt: number;
@@ -79,7 +81,13 @@ export class OpenPlays {
   async open(play: OpenPlay): Promise<void> {
     await this.closeDevice(play.userId, play.deviceId, play.playId);
     const now = this.options.now();
-    this.held.set(play.playId, { ...play, lastSeen: now, lastReportAt: now, ahead: 0 });
+    this.held.set(play.playId, {
+      ...play,
+      openedAt: now,
+      lastSeen: now,
+      lastReportAt: now,
+      ahead: 0,
+    });
   }
 
   /** Closes what a device holds, when it plans something new; `keep` is the new plan's own id. */
@@ -92,17 +100,21 @@ export class OpenPlays {
   }
 
   /**
-   * Closes the play a device holds of `ref` (a ref key), as `closeDevice` closes one, once every
-   * plan that device asked for before is taken. Never fails.
+   * Closes every play of `ref` (a ref key) this person holds, on any device, opened no later than
+   * `before`, as `closeDevice` closes one: each once the plans its device asked for before are
+   * taken. A late report or close for it then reaches nothing. Never fails.
    */
-  closeHeld(owner: Owner, ref: string): Promise<void> {
-    return this.planOn(owner, async () => {
-      for (const held of [...this.held.values()]) {
-        if (held.userId === owner.userId && held.deviceId === owner.deviceId && held.ref === ref) {
-          await this.end(held);
-        }
-      }
-    });
+  async closeHeld(userId: string, ref: string, before: number): Promise<void> {
+    const plays = [...this.held.values()].filter(
+      (held) => held.userId === userId && held.ref === ref && held.openedAt <= before,
+    );
+    await Promise.all(
+      plays.map((play) =>
+        this.planOn(play, async () => {
+          if (this.held.get(play.playId) === play) await this.end(play);
+        }),
+      ),
+    );
   }
 
   /** The plan this person's device holds under `playId`: its id, ref key and entries; or null. */

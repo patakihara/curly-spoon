@@ -142,8 +142,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     log: app.log,
     // Decision (M2.lists): an episode marked played has its play session closed first, so the
     // session's last sync never lands after the mark and undoes it.
-    closePlay: (caller, ref) =>
-      plays.closeHeld({ userId: caller.id, deviceId: caller.deviceId }, mediaRefKey(ref)),
+    closePlay: (caller, ref, before) => plays.closeHeld(caller.id, mediaRefKey(ref), before),
     ...(options.playback?.autoplayWaitMs === undefined
       ? {}
       : { autoplayWaitMs: options.playback.autoplayWaitMs }),
