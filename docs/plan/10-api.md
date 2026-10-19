@@ -58,7 +58,7 @@ Each takes `?refresh` (pull to refresh)
 #### Library actions
 
 `POST/DELETE /favorites/{ref}`\
-`/playlists` (CRUD)\
+`/playlists` · `/lists` (CRUD) · `POST /lists/{id}/play`\
 `POST/DELETE /subscriptions` (a podcast feed, or a YouTube channel)\
 `GET /feeds/youtube/{channel}.xml` · `/feeds/youtube/{channel}/{video}` (audio only)\
 `PUT /items/{ref}/played`
@@ -85,7 +85,7 @@ Each takes `?refresh` (pull to refresh)
 ::: card
 #### Settings
 
-`GET/PUT /settings` (theme, autoplay rules, queue style (YouTube Music or Spotify), artist-page catalogue, show everyone's library)\
+`GET/PUT /settings` (theme, autoplay rules, queue style, artist-page catalogue, show everyone's library)\
 `PUT/DELETE /settings/youtube-account` (connect or disconnect YouTube sync) · `GET /settings/youtube-account` (status, last sync, expired)\
 `GET/PUT /shows/{ref}/youtube` (SponsorBlock categories, Shorts and livestreams)
 :::
