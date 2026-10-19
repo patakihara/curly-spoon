@@ -1,0 +1,29 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.1",
+  "call": "episode-mark-finished-2",
+  "request": {
+    "method": "PATCH",
+    "path": "/api/me/progress/e6751961-22eb-4064-8987-b75bfe655929/fef398e0-ce0f-48ad-86fe-9b45c96c1911",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "isFinished": true
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "text/plain; charset=utf-8"
+    },
+    "body": {
+      "text": "OK"
+    }
+  }
+}

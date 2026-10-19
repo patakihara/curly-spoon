@@ -23,6 +23,10 @@ export interface FinishedEpisode {
   during?: () => Promise<unknown>;
 }
 
+/** What a run whose undo did not read back as before says, and why it is not committed. */
+export const UNDO_UNCONFIRMED =
+  "the test user's episode progress is not as it was before the run: do not commit";
+
 function url(base: string, path: string): string {
   return new URL(path, base.endsWith('/') ? base : `${base}/`).toString();
 }
@@ -36,7 +40,8 @@ const describe = (p: MediaProgress | null) =>
 /**
  * Marks the episode finished, runs `during`, then undoes the mark whatever failed: it deletes the
  * progress the mark made, or writes the old values back. Resolves to whether the progress read
- * back matches the progress read before.
+ * back matches the progress read before. When the mark or the undo fails, it throws every error
+ * it met, and `UNDO_UNCONFIRMED` too unless the read-back matched.
  */
 export async function withEpisodeFinished(input: FinishedEpisode): Promise<boolean> {
   const { abs, absUrl, absKey, showId, episodeId, out } = input;
@@ -45,11 +50,15 @@ export async function withEpisodeFinished(input: FinishedEpisode): Promise<boole
   const read = () => abs.findMyEpisodeProgress(showId, episodeId);
   const before = await read();
   out(`before the run: ${describe(before)} on the episode`);
-  let matches = false;
+  const errors: unknown[] = [];
   try {
     await input.mark();
     await input.during?.();
-  } finally {
+  } catch (error) {
+    errors.push(error);
+  }
+  let matches = false;
+  try {
     const now = await read();
     if (before === null && now !== null) {
       await requestJson(
@@ -70,6 +79,14 @@ export async function withEpisodeFinished(input: FinishedEpisode): Promise<boole
     const after = await read();
     out(`after the revert: ${describe(after)} on the episode`);
     matches = comparable(after) === comparable(before);
+  } catch (error) {
+    errors.push(error);
+  }
+  if (errors.length === 1 && matches) throw errors[0];
+  if (errors.length > 0) {
+    const lines = errors.map((e) => (e instanceof Error ? e.message : String(e)));
+    if (!matches) lines.push(UNDO_UNCONFIRMED);
+    throw new Error(lines.join('\n'), { cause: errors[0] });
   }
   if (matches) out("reverted: the episode's progress reads back as before");
   return matches;

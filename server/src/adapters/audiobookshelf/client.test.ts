@@ -337,30 +337,30 @@ describe('the Audiobookshelf client', () => {
   });
 
   it('marks an episode finished as the person, sending only isFinished, as recorded for M2.lists', async () => {
-    const recorded = recordingSchema.parse(
-      JSON.parse(
-        readFileSync(new URL('./recordings/episode-mark-finished.json', import.meta.url), 'utf8'),
-      ),
-    );
-    const [, , , , show, episode] = recorded.request.path.split('/');
-    const replay = replayFetch([recorded]);
-    const sent: Sent[] = [];
-    const fetch: FetchLike = (url, init) => {
-      sent.push({
-        url,
-        method: init?.method ?? 'GET',
-        headers: new Headers(init?.headers),
-        body: typeof init?.body === 'string' ? init.body : undefined,
-      });
-      return replay(url, init);
-    };
-    const abs = new AbsClient({ baseUrl: 'http://upstream.invalid', token: '<token>', fetch });
-    await expect(abs.markEpisodeFinished(show!, episode!)).resolves.toBeUndefined();
-    expect(sent[0]?.method).toBe('PATCH');
-    expect(sent[0]?.url).toBe(`http://upstream.invalid/api/me/progress/${show}/${episode}`);
-    expect(sent[0]?.headers.get('authorization')).toBe('Bearer <token>');
-    expect(JSON.parse(sent[0]?.body ?? 'null')).toEqual({ isFinished: true });
-    expect(recorded.request.body).toEqual({ json: { isFinished: true } });
-    expect(recorded.response).toMatchObject({ status: 200, body: { text: 'OK' } });
+    for (const call of ['episode-mark-finished', 'episode-mark-finished-2']) {
+      const recorded = recordingSchema.parse(
+        JSON.parse(readFileSync(new URL(`./recordings/${call}.json`, import.meta.url), 'utf8')),
+      );
+      const [, , , , show, episode] = recorded.request.path.split('/');
+      const replay = replayFetch([recorded]);
+      const sent: Sent[] = [];
+      const fetch: FetchLike = (url, init) => {
+        sent.push({
+          url,
+          method: init?.method ?? 'GET',
+          headers: new Headers(init?.headers),
+          body: typeof init?.body === 'string' ? init.body : undefined,
+        });
+        return replay(url, init);
+      };
+      const abs = new AbsClient({ baseUrl: 'http://upstream.invalid', token: '<token>', fetch });
+      await expect(abs.markEpisodeFinished(show!, episode!)).resolves.toBeUndefined();
+      expect(sent[0]?.method).toBe('PATCH');
+      expect(sent[0]?.url).toBe(`http://upstream.invalid/api/me/progress/${show}/${episode}`);
+      expect(sent[0]?.headers.get('authorization')).toBe('Bearer <token>');
+      expect(JSON.parse(sent[0]?.body ?? 'null')).toEqual({ isFinished: true });
+      expect(recorded.request.body).toEqual({ json: { isFinished: true } });
+      expect(recorded.response).toMatchObject({ status: 200, body: { text: 'OK' } });
+    }
   });
 });

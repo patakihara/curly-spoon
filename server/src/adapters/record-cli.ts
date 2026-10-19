@@ -45,9 +45,9 @@
  * apart, every lyrics answer trimmed to four lines (record-lyrics.ts). It needs only
  * JELLYFIN_API_KEY.
  *
- * `--only lists --play-item <show> --episode <id>` records M2.lists' played mark as the service
- * identity `auralis`: the episode marked finished, then the mark undone and read back; the run
- * fails unless the read-back matches (record-lists.ts). It reads the show by id only and needs
+ * `--only lists --play-item <show> --episodes <a,b,..>` records M2.lists' played mark as the service
+ * identity `auralis`: each episode marked finished (`episode-mark-finished`, then `-2`, `-3`, ..),
+ * then the mark undone and read back; the run fails unless each read-back matches (record-lists.ts). It reads the show by id only and needs
  * only ABS_API_KEY.
  *
  * `--dry-run` makes the same calls but writes into a fresh temporary folder instead of the
@@ -69,6 +69,7 @@ import { buildAuthorizationHeader } from './jellyfin/auth.js';
 import { JellyfinClient } from './jellyfin/client.js';
 import { JellyfinProvisioner, personDevice } from './jellyfin/quickConnect.js';
 import { RECORD_USER_ID, recordOidc, TEST_IDENTITY } from './record-oidc.js';
+import { UNDO_UNCONFIRMED } from './record-finished.js';
 import { recordLists } from './record-lists.js';
 import { recordLyrics } from './record-lyrics.js';
 import { recordProgress } from './record-progress.js';
@@ -108,8 +109,8 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
   --shows <a,b>      for --only sessions, two shows, the first serial
   --play-item <id>   the multi-file book --only play, progress and shell record; for
                      --only episode and lists, the show
-  --episode <id>     for --only episode, the episode played; for --only lists, the one
-                     marked finished and put back
+  --episode <id>     for --only episode, the episode played
+  --episodes <a,b,..> for --only lists, the episodes of the show marked finished and put back
   --index-page <n>   the page of two the index calls record, from 0 (default ${INDEX_PAGE})
   --oidc <url>       the sign-on's issuer, for --only oidc
   --oidc-version <v> the sign-on's version, for --only oidc
@@ -618,6 +619,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'jellyfin-item': { type: 'string' },
       'play-item': { type: 'string' },
       episode: { type: 'string' },
+      episodes: { type: 'string' },
       books: { type: 'string' },
       shows: { type: 'string' },
       'index-page': { type: 'string' },
@@ -938,7 +940,7 @@ async function runSessions(
   });
   const scanned = scanWritten(io, written, []);
   if (!matches) {
-    io.err("the test user's episode progress is not as it was before the run: do not commit");
+    io.err(UNDO_UNCONFIRMED);
     return 1;
   }
   return scanned;
@@ -1032,10 +1034,14 @@ async function runLists(
   keys: Record<string, string>,
   root: string,
 ): Promise<number> {
+  const episodes =
+    typeof values.episodes === 'string'
+      ? values.episodes.split(',').map((v) => v.trim())
+      : undefined;
   const need = {
     '--abs': values.abs,
     '--play-item': values['play-item'],
-    '--episode': values.episode,
+    '--episodes': episodes?.every((e) => e !== '') ? 'ok' : undefined,
     'ABS_API_KEY on stdin': keys.ABS_API_KEY,
   };
   const missing = Object.entries(need)
@@ -1052,11 +1058,11 @@ async function runLists(
     absUrl: values.abs as string,
     absKey: keys.ABS_API_KEY as string,
     showId: values['play-item'] as string,
-    episodeId: values.episode as string,
+    episodeIds: episodes!,
   });
   const scanned = scanWritten(io, written, []);
   if (!matches) {
-    io.err("the test user's episode progress is not as it was before the run: do not commit");
+    io.err(UNDO_UNCONFIRMED);
     return 1;
   }
   return scanned;
