@@ -1,0 +1,102 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "lyrics-album-3",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "Fields": "ProviderIds,Genres,Etag",
+      "Ids": "492af77ac70e1a2171125144cd4c10e3",
+      "IncludeItemTypes": "MusicAlbum",
+      "Recursive": "true"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [
+          {
+            "Name": "Minutes to Midnight (Deluxe Edition)",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "492af77ac70e1a2171125144cd4c10e3",
+            "Etag": "109543dc897c93ff0b90aa1ae87e48a2",
+            "PremiereDate": "2022-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Metal"
+            ],
+            "RunTimeTicks": 34448457120,
+            "ProductionYear": 2007,
+            "ProviderIds": {
+              "AudioDbAlbum": "2111329",
+              "AudioDbArtist": "111358",
+              "MusicBrainzAlbum": "9fbac2b3-e2ef-4536-bf15-19973eec146b",
+              "MusicBrainzAlbumArtist": "f59c5520-5f46-4d2c-b2c4-822eabf53419",
+              "MusicBrainzReleaseGroup": "a4201f5c-f0d7-319c-ba9d-ba0bac38da7a"
+            },
+            "IsFolder": true,
+            "Type": "MusicAlbum",
+            "GenreItems": [
+              {
+                "Name": "Metal",
+                "Id": "33d11d78bbbbeb5e61ff7d88cebca709"
+              }
+            ],
+            "ParentLogoItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropItemId": "887d27f9178d7358920fc66a189dd19c",
+            "ParentBackdropImageTags": [
+              "da3e8a3059bd2995ae3f2fa3e5b0b5d9"
+            ],
+            "Artists": [
+              "Linkin Park"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "AlbumArtist": "Linkin Park",
+            "AlbumArtists": [
+              {
+                "Name": "Linkin Park",
+                "Id": "887d27f9178d7358920fc66a189dd19c"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "b6e3adc8ef60d4f3cd18c711315fd752"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "92250e4cb0b9691d0006b9b05e320a89",
+            "ImageBlurHashes": {
+              "Primary": {
+                "b6e3adc8ef60d4f3cd18c711315fd752": "egQck.-;%M-pWB~qfR-:xuM{9FWBt7WBWB?bofWBfQof-;j[M{j[of"
+              },
+              "Logo": {
+                "92250e4cb0b9691d0006b9b05e320a89": "OjI}-QofRjj[M{ofWBRjayM{j[j[ayof00ayofayxuayt7"
+              },
+              "Backdrop": {
+                "da3e8a3059bd2995ae3f2fa3e5b0b5d9": "WB8ga9%MShR.RkjG~pt7M|RkRPae_2tQNHR+f5ax%Mt7NGR*xaoL"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown",
+            "NormalizationGain": -9.9
+          }
+        ],
+        "TotalRecordCount": 1,
+        "StartIndex": 0
+      }
+    }
+  }
+}

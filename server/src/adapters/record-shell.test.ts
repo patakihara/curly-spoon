@@ -12,7 +12,14 @@ const BOOK = 'book-5';
 const ALBUM = 'album-3';
 
 /** Both upstreams: seven books and a podcasts library in ABS, two music libraries in Jellyfin. */
-function fakeUpstreams(username = 'auralis') {
+interface FakeOptions {
+  /** Jellyfin answers the views with a 500. */
+  viewsFail?: boolean;
+  /** Jellyfin's logout fails with a network error. */
+  logoutFails?: boolean;
+}
+
+function fakeUpstreams(username = 'auralis', options: FakeOptions = {}) {
   const asked: string[] = [];
   const json = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -96,6 +103,7 @@ function fakeUpstreams(username = 'auralis') {
         return json({ AccessToken: 'minted', User: { Id: 'jfu' } });
       }
       if (p === '/UserViews') {
+        if (options.viewsFail) return json({ title: 'Server Error' }, 500);
         return json({ Items: [{ Id: 'music', Name: 'Music', CollectionType: 'music' }] });
       }
       if (p === `/Items/${ALBUM}/Images/Primary`) {
@@ -103,15 +111,18 @@ function fakeUpstreams(username = 'auralis') {
           headers: { 'content-type': 'image/jpeg', 'content-length': '2' },
         });
       }
-      if (p === '/Sessions/Logout') return new Response(null, { status: 204 });
+      if (p === '/Sessions/Logout') {
+        if (options.logoutFails) throw new TypeError('fetch failed');
+        return new Response(null, { status: 204 });
+      }
     }
     return new Response('Not Found', { status: 404 });
   };
   return { fetch, asked };
 }
 
-async function run(username?: string) {
-  const fake = fakeUpstreams(username);
+async function run(username?: string, options: FakeOptions = {}) {
+  const fake = fakeUpstreams(username, options);
   const out: string[] = [];
   const err: string[] = [];
   const argv = [
@@ -205,6 +216,19 @@ describe("record mode for M1.shell's reads", () => {
     for (const file of [files[7]!, files[8]!, files[9]!]) {
       expect(read(file).request.headers.authorization).toContain('DeviceId="auralis-recorder"');
     }
+  });
+
+  it('keeps the views failure when logging out fails too, and reports the logout failure', async () => {
+    const { code, out, asked } = await run(undefined, { viewsFail: true, logoutFails: true });
+    expect(String(code)).toMatch(/500/);
+    expect(String(code)).not.toMatch(/fetch failed/);
+    expect(out.join('\n')).toMatch(/logging out the minted Jellyfin token failed: .*fetch failed/);
+    expect(asked.at(-1)).toBe('POST jf /Sessions/Logout');
+  });
+
+  it('fails when logging out fails after everything else went well', async () => {
+    const { code } = await run(undefined, { logoutFails: true });
+    expect(String(code)).toMatch(/fetch failed/);
   });
 
   it("refuses an Audiobookshelf key that is not the test user's", async () => {

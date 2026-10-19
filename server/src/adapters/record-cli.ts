@@ -38,6 +38,13 @@
  * the views and the album's primary image, each image as stored and at the art route's medium
  * width (record-shell.ts).
  *
+ * `--only lyrics --lrclib <url> --albums <a,b,c> --jellyfin-synced <track> --jellyfin-plain <track>
+ * --lrclib-synced <track> --lrclib-missing <track> --lrclib-instrumental <track>` records M2.lrclib's
+ * reads: the albums holding the three LRCLIB tracks and their tracks, Jellyfin's synced, plain and
+ * missing lyrics as `auralis`, and LRCLIB's synced, missing and instrumental answers, ten seconds
+ * apart, every lyrics answer trimmed to four lines (record-lyrics.ts). It needs only
+ * JELLYFIN_API_KEY.
+ *
  * `--dry-run` makes the same calls but writes into a fresh temporary folder instead of the
  * committed recordings, and says where.
  */
@@ -57,6 +64,7 @@ import { buildAuthorizationHeader } from './jellyfin/auth.js';
 import { JellyfinClient } from './jellyfin/client.js';
 import { JellyfinProvisioner, personDevice } from './jellyfin/quickConnect.js';
 import { RECORD_USER_ID, recordOidc, TEST_IDENTITY } from './record-oidc.js';
+import { recordLyrics } from './record-lyrics.js';
 import { recordProgress } from './record-progress.js';
 import { recordSessions } from './record-sessions.js';
 import { recordShell } from './record-shell.js';
@@ -81,8 +89,15 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
                      jfplay and shell, the album; for --only progress, the track; for
                      --only sessions, the track Instant Mix is asked for
   --only <name>      record only abs, jellyfin, index, play, episode, jfplay, progress,
-                     sessions or shell; or
+                     sessions, shell or lyrics; or
                      oidc, a sign-in and its links
+  --lrclib <url>     LRCLIB's base URL, for --only lyrics
+  --albums <a,b,..>  for --only lyrics, the albums holding the three LRCLIB tracks
+  --jellyfin-synced <id>, --jellyfin-plain <id>
+                     for --only lyrics, a track with a synced and one with a plain lyrics file
+  --lrclib-synced <id>, --lrclib-missing <id>, --lrclib-instrumental <id>
+                     for --only lyrics, a track with no Jellyfin lyrics that LRCLIB has synced,
+                     one LRCLIB cannot find, and one it knows as instrumental
   --books <a,b>      for --only sessions, two books of one series, in series order
   --shows <a,b>      for --only sessions, two shows, the first serial
   --play-item <id>   the multi-file book --only play, progress and shell record; for
@@ -94,7 +109,7 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
   --dry-run          write into a temporary folder, not the committed recordings
   --help             show this
 
-stdin carries ABS_API_KEY=... and JELLYFIN_API_KEY=... lines (jfplay needs only the latter;
+stdin carries ABS_API_KEY=... and JELLYFIN_API_KEY=... lines (jfplay and lyrics need only the latter;
 progress, sessions and shell need both); for --only oidc,
 OIDC_CLIENT_SECRET, OIDC_TEST_PASSWORD, ABS_PROVISION_KEY and JELLYFIN_API_KEY.
 `;
@@ -599,6 +614,13 @@ export async function runRecord(io: RecordIo): Promise<number> {
       books: { type: 'string' },
       shows: { type: 'string' },
       'index-page': { type: 'string' },
+      lrclib: { type: 'string' },
+      albums: { type: 'string' },
+      'jellyfin-synced': { type: 'string' },
+      'jellyfin-plain': { type: 'string' },
+      'lrclib-synced': { type: 'string' },
+      'lrclib-missing': { type: 'string' },
+      'lrclib-instrumental': { type: 'string' },
       only: { type: 'string' },
       oidc: { type: 'string' },
       'oidc-version': { type: 'string' },
@@ -623,11 +645,12 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'progress',
       'sessions',
       'shell',
+      'lyrics',
       'oidc',
     ].includes(only)
   ) {
     io.err(
-      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell or oidc, not ${only}`,
+      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics or oidc, not ${only}`,
     );
     return 2;
   }
@@ -644,6 +667,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
   if (only === 'progress') return runProgress(io, values, parseKeys(io.stdin), root);
   if (only === 'sessions') return runSessions(io, values, parseKeys(io.stdin), root);
   if (only === 'shell') return runShell(io, values, parseKeys(io.stdin), root);
+  if (only === 'lyrics') return runLyrics(io, values, parseKeys(io.stdin), root);
   const wantIndex = only === undefined || only === 'index';
   const wantAbs = only !== 'jellyfin';
   const wantJellyfin = only !== 'abs';
@@ -943,6 +967,52 @@ async function runShell(
     bookId: values['play-item'] as string,
     albumId: values['jellyfin-item'] as string,
     pageSize: INDEX_PAGE_SIZE,
+  });
+  return scanWritten(io, written, []);
+}
+
+async function runLyrics(
+  io: RecordIo,
+  values: Record<string, string | boolean | undefined>,
+  keys: Record<string, string>,
+  root: string,
+): Promise<number> {
+  const albums =
+    typeof values.albums === 'string' ? values.albums.split(',').map((v) => v.trim()) : undefined;
+  const need = {
+    '--jellyfin': values.jellyfin,
+    '--lrclib': values.lrclib,
+    '--albums': albums?.every((a) => a !== '') ? 'ok' : undefined,
+    '--jellyfin-synced': values['jellyfin-synced'],
+    '--jellyfin-plain': values['jellyfin-plain'],
+    '--lrclib-synced': values['lrclib-synced'],
+    '--lrclib-missing': values['lrclib-missing'],
+    '--lrclib-instrumental': values['lrclib-instrumental'],
+    'JELLYFIN_API_KEY on stdin': keys.JELLYFIN_API_KEY,
+  };
+  const missing = Object.entries(need)
+    .filter(([, v]) => typeof v !== 'string' || v === '')
+    .map(([k]) => k);
+  if (missing.length > 0) {
+    io.err(`missing ${missing.join(', ')}\n\n${USAGE}`);
+    return 2;
+  }
+  const { written } = await recordLyrics({
+    fetch: io.fetch,
+    out: io.out,
+    sleep: io.sleep ?? sleep,
+    root,
+    jellyfinUrl: values.jellyfin as string,
+    jellyfinKey: keys.JELLYFIN_API_KEY as string,
+    lrclibUrl: values.lrclib as string,
+    albums: albums!,
+    tracks: {
+      jellyfinSynced: values['jellyfin-synced'] as string,
+      jellyfinPlain: values['jellyfin-plain'] as string,
+      lrclibSynced: values['lrclib-synced'] as string,
+      lrclibMissing: values['lrclib-missing'] as string,
+      lrclibInstrumental: values['lrclib-instrumental'] as string,
+    },
   });
   return scanWritten(io, written, []);
 }

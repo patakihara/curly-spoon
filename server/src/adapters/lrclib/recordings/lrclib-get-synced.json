@@ -1,0 +1,41 @@
+{
+  "upstream": "lrclib",
+  "upstreamVersion": "LRCLIB API, unversioned",
+  "call": "lrclib-get-synced",
+  "request": {
+    "method": "GET",
+    "path": "/api/get",
+    "query": {
+      "album_name": "Random Access Memories",
+      "artist_name": "Daft Punk feat. Pharrell Williams",
+      "duration": "370",
+      "track_name": "Get Lucky"
+    },
+    "headers": {
+      "accept": "application/json",
+      "user-agent": "Auralis/0.0.0 (+https://github.com/patakihara/curly-spoon)"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "id": 8988585,
+        "name": "Get Lucky",
+        "trackName": "Get Lucky",
+        "artistName": "Daft Punk feat. Pharrell Williams",
+        "albumName": "Random Access Memories",
+        "duration": 370,
+        "instrumental": false,
+        "hasWordSync": false,
+        "plainLyrics": "Like the legend of the phoenix, huh\nOur ends were beginnings\nWhat keeps the planet spinning? Ah\nThe force from the beginning",
+        "syncedLyrics": "[00:32.19] Like the legend of the phoenix, huh\n[00:36.22] Our ends were beginnings\n[00:40.43] What keeps the planet spinning? Ah\n[00:44.68] The force from the beginning",
+        "trimmed": "Trimmed by the recorder: song lyrics are copyrighted, so only the first four lines of each are kept, and LRCLIB's lyricsfile copy is dropped."
+      }
+    }
+  }
+}

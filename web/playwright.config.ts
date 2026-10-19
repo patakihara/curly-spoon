@@ -36,6 +36,9 @@ export default defineConfig({
         HOST: '127.0.0.1',
         DATA_DIR: mkdtempSync(join(tmpdir(), 'auralis-e2e-')),
         WEB_DIST_DIR: join(webDir, 'dist'),
+        // No browser test asks LRCLIB, and the lyrics backfill never starts.
+        LYRICS_EVERY_MINUTES: '0',
+        LRCLIB_URL: '',
       },
     },
   }),

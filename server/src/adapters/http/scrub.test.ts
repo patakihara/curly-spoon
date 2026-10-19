@@ -262,7 +262,7 @@ describe('[M0.record/c] scrubbing a recording', () => {
     });
   });
 
-  it("[M0.record/c] only accept, content-type, authorization and a range's headers are kept", () => {
+  it("[M0.record/c] only accept, content-type, authorization, user-agent and a range's headers are kept", () => {
     const r = scrub(
       exchange({
         request: {
@@ -274,6 +274,7 @@ describe('[M0.record/c] scrubbing a recording', () => {
             Cookie: 'connect.sid=abc',
             'X-Emby-Token': KEY,
             Range: 'bytes=0-1',
+            'User-Agent': 'Auralis/0.0.0 (+https://github.com/x/y)',
           },
           body: null,
         },
@@ -298,6 +299,7 @@ describe('[M0.record/c] scrubbing a recording', () => {
       accept: 'application/json',
       authorization: 'Bearer <token>',
       range: 'bytes=0-1',
+      'user-agent': 'Auralis/0.0.0 (+https://github.com/x/y)',
     });
     expect(r.response.headers).toEqual({
       'accept-ranges': 'bytes',

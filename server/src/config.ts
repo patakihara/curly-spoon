@@ -7,6 +7,25 @@ import { isProxyEntry } from './auth/proxy.js';
 /** web's build sits next to server/ in both the repo and the image. */
 const DEFAULT_WEB_DIST_DIR = fileURLToPath(new URL('../../web/dist', import.meta.url));
 
+/** The longest interval a Node timer holds, in whole minutes; a longer one fires after 1 ms. */
+const LONGEST_TIMER_MINUTES = Math.floor((2 ** 31 - 1) / 60_000);
+
+/** A whole number of minutes, digits only; blank reads as 0, unset as `fallback`. */
+function minutes(fallback: number, limits: { min: number; max?: number }) {
+  const atLeast = z.number().int().min(limits.min);
+  const number =
+    limits.max === undefined
+      ? atLeast
+      : atLeast.max(limits.max, `at most ${limits.max} minutes (Node's longest timer)`);
+  return z
+    .string()
+    .trim()
+    .regex(/^\d*$/, 'a whole number of minutes, in digits')
+    .transform((value) => (value === '' ? 0 : Number(value)))
+    .pipe(number)
+    .default(String(fallback));
+}
+
 const envSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(8787),
   HOST: z.string().min(1).default('0.0.0.0'),
@@ -49,10 +68,22 @@ const envSchema = z.object({
   JELLYFIN_API_KEY_FILE: z.string().min(1).optional(),
   // The library index: how often it runs (0 turns it off), and the file holding Auralis's own
   // listen-only Audiobookshelf key, which it reads the libraries with. Jellyfin's key is above.
-  INDEX_EVERY_MINUTES: z.coerce.number().int().min(0).default(60),
+  INDEX_EVERY_MINUTES: minutes(60, { min: 0, max: LONGEST_TIMER_MINUTES }),
   ABS_API_KEY_FILE: z.string().min(1).optional(),
+  // The lyrics backfill: how often it runs (0 turns it off), and LRCLIB, the public lyrics
+  // service it and the lyrics route ask, keyless; empty turns LRCLIB off.
+  LYRICS_EVERY_MINUTES: minutes(60, { min: 0, max: LONGEST_TIMER_MINUTES }),
+  LRCLIB_URL: z
+    .union([
+      z.literal(''),
+      z
+        .string()
+        .url()
+        .refine((value) => /^https?:$/.test(new URL(value).protocol), 'an http or https URL'),
+    ])
+    .default('https://lrclib.net'),
   // How long a transcode may go unasked-for before Auralis closes it upstream.
-  PLAY_IDLE_MINUTES: z.coerce.number().int().min(1).default(10),
+  PLAY_IDLE_MINUTES: minutes(10, { min: 1 }),
   // The key that encrypts each person's upstream tokens: base64 here, or a 0600 file.
   SECRET_KEY: z.string().min(1).optional(),
   SECRET_KEY_FILE: z.string().min(1).optional(),
@@ -78,6 +109,7 @@ export interface AppConfig {
   abs: UpstreamConfig | null;
   jellyfin: UpstreamConfig | null;
   index: IndexConfig;
+  lyrics: LyricsConfig;
   /** Minutes a transcode may go unasked-for before it is closed upstream. */
   playIdleMinutes: number;
   secretKey: string | undefined;
@@ -97,6 +129,13 @@ export interface IndexConfig {
   everyMinutes: number;
   /** The listen-only Audiobookshelf key's file; without it, Audiobookshelf is not indexed. */
   absKeyFile: string | null;
+}
+
+export interface LyricsConfig {
+  /** 0 when the lyrics backfill is off. */
+  everyMinutes: number;
+  /** Null when LRCLIB is switched off. */
+  lrclibUrl: string | null;
 }
 
 export interface UpstreamConfig {
@@ -161,6 +200,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         parsed.ABS_API_KEY_FILE === undefined
           ? null
           : (required(parsed.ABS_URL, 'ABS_URL', 'with ABS_API_KEY_FILE'), parsed.ABS_API_KEY_FILE),
+    },
+    lyrics: {
+      everyMinutes: parsed.LYRICS_EVERY_MINUTES,
+      lrclibUrl: parsed.LRCLIB_URL === '' ? null : parsed.LRCLIB_URL,
     },
     playIdleMinutes: parsed.PLAY_IDLE_MINUTES,
     secretKey: parsed.SECRET_KEY,

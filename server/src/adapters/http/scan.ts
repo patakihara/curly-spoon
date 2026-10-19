@@ -62,6 +62,29 @@ export const PUBLIC_HOSTS: readonly string[] = [
   'podtrac.com',
   'podcasts.apple.com',
 ];
+/**
+ * Whole public addresses allowed where their host is not: Auralis's public homepage, which its
+ * User-Agent names to LRCLIB as LRCLIB asks of every client, and the HTTP RFC section a Jellyfin
+ * 404's problem details name as its `type` (recorded). Only the exact address passes; anything
+ * longer, or anywhere else on the same host, is still a host finding.
+ */
+export const PUBLIC_URLS: readonly string[] = [
+  'https://github.com/patakihara/curly-spoon',
+  'https://tools.ietf.org/html/rfc9110#section-15.5.5',
+];
+const PUBLIC_URL_ALTERNATIVES = PUBLIC_URLS.map((u) =>
+  u.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&'),
+).join('|');
+/**
+ * An allowed address, bare or as a User-Agent comment's `(+address)`, counts only when whitespace,
+ * a double quote or the string's end follows it. Any other character could carry the URL or a
+ * token on (`:password`, `~user`, `'`, `;param`, a NUL), so the address is then left for the host
+ * check.
+ */
+const PUBLIC_URL = new RegExp(
+  `(?:\\(\\+?(?:${PUBLIC_URL_ALTERNATIVES})\\)|(?:${PUBLIC_URL_ALTERNATIVES}))(?=[\\s"]|$)`,
+  'g',
+);
 const ALLOWED_HOSTS = new Set(PUBLIC_HOSTS);
 
 const JWT = /eyJ[\w-]+\.[\w-]+\.[\w-]+/g;
@@ -134,7 +157,7 @@ function scanString(
     fields && key !== undefined && HOST_FIELD.test(key) && HOSTNAME_VALUE.test(value);
   const bare = value.replace(/:\d+$/, '');
   if (
-    hosts(value).some((h) => !ALLOWED_HOSTS.has(h)) ||
+    hosts(value.replace(PUBLIC_URL, ' ')).some((h) => !ALLOWED_HOSTS.has(h)) ||
     (hostValue && !isPlaceholderHost(bare) && !/^[\d.]+$/.test(bare))
   ) {
     add('host');

@@ -1,0 +1,33 @@
+{
+  "upstream": "lrclib",
+  "upstreamVersion": "LRCLIB API, unversioned",
+  "call": "lrclib-get-missing",
+  "request": {
+    "method": "GET",
+    "path": "/api/get",
+    "query": {
+      "album_name": "Enjoy Your Rabbit",
+      "artist_name": "Sufjan Stevens",
+      "duration": "503",
+      "track_name": "Year Of The Rat"
+    },
+    "headers": {
+      "accept": "application/json",
+      "user-agent": "Auralis/0.0.0 (+https://github.com/patakihara/curly-spoon)"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "message": "Failed to find specified track",
+        "name": "TrackNotFound",
+        "statusCode": 404
+      }
+    }
+  }
+}

@@ -32,6 +32,7 @@ export {
   CreateBookmarkBody,
 } from './bookmarks.js';
 export { CommitId, HealthResponse } from './health.js';
+export { LyricLine, Lyrics, LyricsSource, LyricsStatus } from './lyrics.js';
 export {
   ArtQuery,
   ArtSize,
@@ -84,6 +85,7 @@ export {
   deleteBookmark,
   deleteDevice,
   getItem,
+  getLyrics,
   getMe,
   getQueue,
   getSearch,

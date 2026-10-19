@@ -3,9 +3,10 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { itemSummarySchema } from '../adapters/audiobookshelf/schemas.js';
+import { indexItemSchema, indexQueryResultSchema } from '../adapters/jellyfin/schemas.js';
 import { recordingSchema } from '../adapters/http/recording.js';
 import { openDatabase, type Db } from '../store/connection.js';
-import { absTree } from './rows.js';
+import { absTree, albumRow, trackRows } from './rows.js';
 import {
   applyTree,
   emptyCounts,
@@ -42,6 +43,29 @@ function counting(target: Db) {
   return { db, prepared: () => prepared };
 }
 
+function recordedJellyfin(call: string): unknown {
+  const file = join(ADAPTERS, 'jellyfin', 'recordings', `${call}.json`);
+  const { response } = recordingSchema.parse(JSON.parse(readFileSync(file, 'utf8')));
+  if (response.body === null || !('json' in response.body)) throw new Error(call);
+  return response.body.json;
+}
+
+/** Minutes to Midnight (Deluxe Edition) as recorded for M2.lrclib, in a library named here. */
+function recordedLyricsAlbum(
+  edit: (tracks: { Id: string; HasLyrics?: boolean }[]) => void = () => undefined,
+) {
+  const album = indexQueryResultSchema.parse(recordedJellyfin('lyrics-album-3')).Items[0]!;
+  const listed = structuredClone(recordedJellyfin('lyrics-album-3-tracks')) as {
+    Items: { Id: string; HasLyrics?: boolean }[];
+  };
+  edit(listed.Items);
+  const tracks = listed.Items.map((t) => indexItemSchema.parse(t));
+  return { top: albumRow(album, 'music'), children: trackRows(album.Id, 'music', tracks) };
+}
+
+const WAKE = '541003a096929c913a036ab427d4563e';
+const IN_PIECES = 'eb4b9844fa0fbdfb9b39de71b0ce200f';
+
 let db: Db;
 beforeEach(() => {
   db = openDatabase(':memory:');
@@ -71,6 +95,34 @@ describe('the index store', () => {
 
     expect([counts.inserted, counts.updated]).toEqual([998, 2]);
     expect(counted.prepared()).toBe(prepared);
+  });
+
+  it('keeps whether Jellyfin holds lyrics for each recorded track, and never for an album', () => {
+    applyTree(db, recordedLyricsAlbum(), 1, emptyCounts());
+    const rows = listIndexed(db, { source: 'jellyfin' });
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    expect(byId.get(WAKE)?.hasLyrics).toBe(false);
+    expect(byId.get(IN_PIECES)?.hasLyrics).toBe(true);
+    expect(rows.filter((r) => r.kind === 'album').map((r) => r.hasLyrics)).toEqual([false]);
+    expect(rows.filter((r) => r.hasLyrics)).toHaveLength(15);
+  });
+
+  it('moves a track to a new version when it gains or loses lyrics', () => {
+    applyTree(db, recordedLyricsAlbum(), 1, emptyCounts());
+    const counts = emptyCounts();
+    applyTree(
+      db,
+      recordedLyricsAlbum((tracks) => {
+        tracks.find((t) => t.Id === WAKE)!.HasLyrics = true;
+        tracks.find((t) => t.Id === IN_PIECES)!.HasLyrics = false;
+      }),
+      2,
+      counts,
+    );
+    expect(counts.updated).toBe(2);
+    const byId = new Map(listIndexed(db).map((r) => [r.id, r]));
+    expect([byId.get(WAKE)?.hasLyrics, byId.get(WAKE)?.version]).toEqual([true, 2]);
+    expect([byId.get(IN_PIECES)?.hasLyrics, byId.get(IN_PIECES)?.version]).toEqual([false, 2]);
   });
 
   it('names the shows a pass did not see, only in the library it paged', () => {

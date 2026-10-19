@@ -255,6 +255,40 @@ data class ListeningSessionList(
 )
 
 @Serializable
+data class LyricLine(
+    val start: Double?,
+    val text: String,
+)
+
+@Serializable
+data class Lyrics(
+    val ref: MediaRef,
+    val status: LyricsStatus,
+    val source: LyricsSource?,
+    val lines: List<LyricLine>,
+)
+
+@Serializable
+enum class LyricsSource {
+    @SerialName("jellyfin")
+    JELLYFIN,
+    @SerialName("lrclib")
+    LRCLIB,
+}
+
+@Serializable
+enum class LyricsStatus {
+    @SerialName("synced")
+    SYNCED,
+    @SerialName("plain")
+    PLAIN,
+    @SerialName("instrumental")
+    INSTRUMENTAL,
+    @SerialName("none")
+    NONE,
+}
+
+@Serializable
 data class Me(
     val username: String,
     val role: Role,

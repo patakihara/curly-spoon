@@ -115,11 +115,12 @@ export async function requestJson<T>(
     clearTimeout(timer);
   }
 
-  if (text === null) {
-    throw new AdapterError('parse', call, `the body is larger than ${init.maxBytes} bytes`);
-  }
+  // The status first: a refusal is a refusal whatever its body's size.
   if (!response.ok) {
     throw new AdapterError('status', call, `answered ${response.status}`, response.status);
+  }
+  if (text === null) {
+    throw new AdapterError('parse', call, `the body is larger than ${init.maxBytes} bytes`);
   }
 
   let value: unknown = text.length > 0 ? text : undefined;

@@ -49,6 +49,7 @@ function item(
     ids: {},
     episodeOrder: kind === 'show' ? 'unknown' : null,
     hasArt: false,
+    hasLyrics: false,
   };
 }
 

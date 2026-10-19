@@ -239,6 +239,13 @@
           "title"
         ]
       },
+      "LyricsSource": {
+        "type": "string",
+        "enum": [
+          "jellyfin",
+          "lrclib"
+        ]
+      },
       "HealthResponse": {
         "type": "object",
         "properties": {
@@ -1676,6 +1683,67 @@
         "required": [
           "query",
           "results"
+        ]
+      },
+      "LyricsStatus": {
+        "type": "string",
+        "enum": [
+          "synced",
+          "plain",
+          "instrumental",
+          "none"
+        ]
+      },
+      "LyricLine": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "text"
+        ]
+      },
+      "Lyrics": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "status": {
+            "$ref": "#/components/schemas/LyricsStatus"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LyricsSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LyricLine"
+            }
+          }
+        },
+        "required": [
+          "ref",
+          "status",
+          "source",
+          "lines"
         ]
       }
     },
@@ -3845,6 +3913,73 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SearchResults"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lyrics/{ref}": {
+      "get": {
+        "summary": "One track's lyrics, for a signed-in person who may open its album",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getLyrics",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+            },
+            "required": true,
+            "name": "ref",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Jellyfin's own synced lines, else LRCLIB's, else plain lines, an instrumental or none, kept once found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lyrics"
                 }
               }
             }

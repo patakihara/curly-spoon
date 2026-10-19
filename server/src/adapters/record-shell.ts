@@ -19,7 +19,7 @@
 import { join } from 'node:path';
 import { AbsClient } from './audiobookshelf/client.js';
 import { type FetchLike } from './http/fetch.js';
-import { createRecorder } from './http/record.js';
+import { createRecorder, withCleanup } from './http/record.js';
 import { buildAuthorizationHeader } from './jellyfin/auth.js';
 import { JellyfinClient } from './jellyfin/client.js';
 import { JellyfinProvisioner, personDevice } from './jellyfin/quickConnect.js';
@@ -187,36 +187,43 @@ export async function recordShell(input: ShellRecordInput): Promise<{ written: s
   if (!identity) throw new Error(`Jellyfin has no user ${TEST_IDENTITY}`);
   const device = personDevice(RECORD_USER_ID);
   const { token } = await provisioner.mint(identity.id, RECORD_USER_ID);
-  try {
-    const jfRec = createRecorder({
-      fetch: input.fetch,
-      dir: jellyfinDir,
-      upstream: 'jellyfin',
-      upstreamVersion: jellyfinVersion,
-      secrets: [jellyfinKey, token],
-      baseUrl: jellyfinUrl,
-    });
-    const jf = new JellyfinClient({ baseUrl: jellyfinUrl, token, device, fetch: jfRec.fetch });
-    await jfRec.capture('jf-user-views', () => jf.getUserViews());
-    written.push(join(jellyfinDir, 'jf-user-views.json'));
-    const image = await jfRec.capture('jf-primary-image', () => jf.openImage(input.albumId), {
-      standIn: PRIMARY_IMAGE_STAND_IN,
-    });
-    await image.body.cancel();
-    written.push(join(jellyfinDir, 'jf-primary-image.json'));
-    const sizedImage = await jfRec.capture(
-      'jf-primary-image-medium',
-      () => jf.openImage(input.albumId, ART_WIDTH.medium),
-      { standIn: PRIMARY_IMAGE_STAND_IN },
-    );
-    await sizedImage.body.cancel();
-    written.push(join(jellyfinDir, 'jf-primary-image-medium.json'));
-  } finally {
+  const logOut = async () => {
     const res = await input.fetch(url(jellyfinUrl, 'Sessions/Logout'), {
       method: 'POST',
       headers: { authorization: buildAuthorizationHeader(device, token) },
     });
     out(`logged out the minted Jellyfin token: ${res.status}`);
-  }
+  };
+  const failedLogOut = (error: unknown) =>
+    out(`logging out the minted Jellyfin token failed: ${String(error)}`);
+  await withCleanup(
+    async () => {
+      const jfRec = createRecorder({
+        fetch: input.fetch,
+        dir: jellyfinDir,
+        upstream: 'jellyfin',
+        upstreamVersion: jellyfinVersion,
+        secrets: [jellyfinKey, token],
+        baseUrl: jellyfinUrl,
+      });
+      const jf = new JellyfinClient({ baseUrl: jellyfinUrl, token, device, fetch: jfRec.fetch });
+      await jfRec.capture('jf-user-views', () => jf.getUserViews());
+      written.push(join(jellyfinDir, 'jf-user-views.json'));
+      const image = await jfRec.capture('jf-primary-image', () => jf.openImage(input.albumId), {
+        standIn: PRIMARY_IMAGE_STAND_IN,
+      });
+      await image.body.cancel();
+      written.push(join(jellyfinDir, 'jf-primary-image.json'));
+      const sizedImage = await jfRec.capture(
+        'jf-primary-image-medium',
+        () => jf.openImage(input.albumId, ART_WIDTH.medium),
+        { standIn: PRIMARY_IMAGE_STAND_IN },
+      );
+      await sizedImage.body.cancel();
+      written.push(join(jellyfinDir, 'jf-primary-image-medium.json'));
+    },
+    logOut,
+    failedLogOut,
+  );
   return { written };
 }

@@ -8,7 +8,7 @@ part: Delivery
 ::: small
 - Where audiobook previews come from (a retail sample URL keyed by ASIN) (M4.browse).
 - How well YouTube Music and Deezer fill MusicBrainz's gaps for your artists (M3.catalog).
-- Jellyfin's real lyrics response (M2.lrclib) and the qBittorrent cookie name (M3.books).
+- The qBittorrent cookie name (M3.books).
 - MusicBrainz ids in Jellyfin's `ProviderIds`: every recorded track carries none (M4.identity).
 - How reliably YouTube Music extraction works from this server's IP; a canary comes first (M3.ytmusic).
 - Which step of the book pipeline is slow; the four `audiobook-*` commands show what needs hand fixes, not where time goes (M3.timing).

@@ -1,0 +1,49 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "jf-lyrics-synced",
+  "request": {
+    "method": "GET",
+    "path": "/Audio/e8f41d8c866537d45dcb8bdd002516ca/Lyrics",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis\", DeviceId=\"auralis-recorder\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Metadata": {},
+        "Lyrics": [
+          {
+            "Text": "I know there's nothing to say",
+            "Start": 58900000,
+            "Cues": []
+          },
+          {
+            "Text": "Someone has taken my place",
+            "Start": 100700000,
+            "Cues": []
+          },
+          {
+            "Text": "When times go bad, when times go rough",
+            "Start": 133900000,
+            "Cues": []
+          },
+          {
+            "Text": "Won't you lay me down in the tall grass",
+            "Start": 173400000,
+            "Cues": []
+          }
+        ],
+        "trimmed": "Trimmed by the recorder: song lyrics are copyrighted, so only the first four lines of each are kept, and LRCLIB's lyricsfile copy is dropped."
+      }
+    }
+  }
+}

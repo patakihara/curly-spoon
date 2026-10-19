@@ -154,6 +154,44 @@ describe('the art migration', () => {
   });
 });
 
+describe('the lyrics migrations', () => {
+  it('has every indexed item read again to learn whether it has lyrics, adds the cache, and applies once', () => {
+    const db = new Database(':memory:');
+    db.pragma('foreign_keys = ON');
+    runMigrations(
+      db,
+      migrations.filter((m) => m.id <= 11),
+    );
+    db.prepare(
+      `INSERT INTO index_items (source, upstream_id, kind, title, creators, series, genres,
+         content_hash, version, created_at, updated_at)
+       VALUES ('jellyfin', 'track-1', 'track', 't', '[]', '[]', '[]', 'h', 1, 1, 1)`,
+    ).run();
+    db.prepare(
+      `INSERT INTO index_sync (source, upstream_id, upstream_version, checked_at)
+       VALUES ('jellyfin', 'track-1', '1', 1)`,
+    ).run();
+
+    runMigrations(db);
+
+    expect(appliedIds(db).slice(-2)).toEqual([12, 13]);
+    expect(db.prepare('SELECT COUNT(*) AS n FROM index_sync').get()).toEqual({ n: 0 });
+    expect(db.prepare('SELECT upstream_id, has_lyrics FROM index_items').all()).toEqual([
+      { upstream_id: 'track-1', has_lyrics: 0 },
+    ]);
+    expect(db.prepare('SELECT COUNT(*) AS n FROM lyrics').get()).toEqual({ n: 0 });
+    db.prepare(
+      `INSERT INTO lyrics (source, upstream_id, status, origin, lines, item_version, resolved_at)
+       VALUES ('jellyfin', 'track-1', 'none', NULL, '[]', 1, 1)`,
+    ).run();
+    const applied = appliedIds(db);
+    runMigrations(db);
+    expect(appliedIds(db)).toEqual(applied);
+    expect(db.prepare('SELECT COUNT(*) AS n FROM lyrics').get()).toEqual({ n: 1 });
+    db.close();
+  });
+});
+
 describe('the search index migration', () => {
   it('creates the search tables on a SQLite with FTS5, and reopening applies nothing', () => {
     const db = new Database(':memory:');

@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AbsClient } from '../audiobookshelf/client.js';
-import { createRecorder } from './record.js';
+import { createRecorder, withCleanup } from './record.js';
 import { recordingSchema } from './recording.js';
 
 const KEY = 'test-key-5e1f0c2a';
@@ -170,5 +170,42 @@ describe('[M0.record/a] recording an adapter call', () => {
     });
     expect(recording.response.body).toEqual(standIn);
     expect(text).not.toContain(REAL_BYTES.toString());
+  });
+});
+
+describe('cleaning up after a recording run', () => {
+  it('throws the work’s own failure when the cleanup fails too, and reports the cleanup’s', async () => {
+    const reported: unknown[] = [];
+    const run = withCleanup(
+      async () => {
+        throw new Error('the work failed');
+      },
+      async () => {
+        throw new Error('the cleanup failed');
+      },
+      (e) => reported.push(e),
+    );
+    await expect(run).rejects.toThrow('the work failed');
+    expect(String(reported[0])).toMatch(/the cleanup failed/);
+  });
+
+  it('throws a failing cleanup after work that succeeded, and returns the result otherwise', async () => {
+    const failing = withCleanup(
+      async () => 1,
+      async () => {
+        throw new Error('the cleanup failed');
+      },
+      () => undefined,
+    );
+    await expect(failing).rejects.toThrow('the cleanup failed');
+    let cleaned = false;
+    const ok = await withCleanup(
+      async () => 2,
+      async () => {
+        cleaned = true;
+      },
+      () => undefined,
+    );
+    expect([ok, cleaned]).toEqual([2, true]);
   });
 });

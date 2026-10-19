@@ -33,12 +33,14 @@ export interface Recorder {
    * Runs `fn`, requires exactly one request inside it, writes its recording, returns fn's result.
    * With `standIn`, the response body is never read: the recording names the stand-in instead.
    */
-  capture<T>(call: string, fn: () => Promise<T>, options?: CaptureOptions): Promise<T>;
+  capture<T>(call: string, fn: () => Promise<T>, options?: CaptureOptions<T>): Promise<T>;
 }
 
-export interface CaptureOptions {
+export interface CaptureOptions<T = unknown> {
   /** A committed file that stands in for a body that must not be kept (household audio). */
   standIn?: BytesBody;
+  /** Runs on fn's result and the scrubbed recording before it is written; a throw writes none. */
+  verify?: (result: T, recording: Recording) => void;
 }
 
 type Captured = Pick<RawExchange, 'request' | 'response'>;
@@ -89,7 +91,7 @@ export function createRecorder(opts: RecorderOptions): Recorder {
   async function capture<T>(
     call: string,
     fn: () => Promise<T>,
-    options: CaptureOptions = {},
+    options: CaptureOptions<T> = {},
   ): Promise<T> {
     if (active) throw new Error(`capture ${call}: another capture is already running`);
     const captured: Captured[] = [];
@@ -114,10 +116,32 @@ export function createRecorder(opts: RecorderOptions): Recorder {
       secrets: opts.secrets,
       baseUrl: opts.baseUrl,
     });
+    options.verify?.(result, recording);
     await mkdir(opts.dir, { recursive: true });
     await writeFile(join(opts.dir, `${call}.json`), serializeRecording(recording));
     return result;
   }
 
   return { fetch, capture };
+}
+
+/**
+ * Runs `work`, then `cleanup` whatever happened. A failing cleanup never hides work's own
+ * failure: it goes to `report` and work's error is the one thrown. After work that succeeded, a
+ * failing cleanup is thrown.
+ */
+export async function withCleanup<T>(
+  work: () => Promise<T>,
+  cleanup: () => Promise<void>,
+  report: (error: unknown) => void,
+): Promise<T> {
+  let result: T;
+  try {
+    result = await work();
+  } catch (error) {
+    await cleanup().catch(report);
+    throw error;
+  }
+  await cleanup();
+  return result;
 }

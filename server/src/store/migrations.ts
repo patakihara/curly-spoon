@@ -456,6 +456,44 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 12,
+    name: 'index_has_lyrics',
+    up: (db) => {
+      db.exec(`
+        -- Whether Jellyfin holds lyrics for a track, so lyrics are asked of it only then. Every
+        -- item is read again on the next run to fill it in.
+        ALTER TABLE index_items ADD COLUMN has_lyrics INTEGER NOT NULL DEFAULT 0;
+        DELETE FROM index_sync;
+      `);
+    },
+  },
+  {
+    id: 13,
+    name: 'lyrics',
+    up: (db) => {
+      db.exec(`
+        -- Each track's lyrics as last resolved, shared by the household like the index
+        -- (store/lyrics.ts). origin is null exactly when status is none; lines is JSON
+        -- [{start: seconds | null, text}], [] for instrumental and none. item_version is the
+        -- track's index version the answer was resolved for.
+        CREATE TABLE lyrics (
+          source       TEXT NOT NULL,
+          upstream_id  TEXT NOT NULL,
+          status       TEXT NOT NULL CHECK (status IN ('synced', 'plain', 'instrumental', 'none')),
+          origin       TEXT CHECK (origin IN ('jellyfin', 'lrclib')),
+          lines        TEXT NOT NULL,
+          lrclib_id    INTEGER,
+          item_version INTEGER NOT NULL,
+          resolved_at  INTEGER NOT NULL,
+          PRIMARY KEY (source, upstream_id),
+          FOREIGN KEY (source, upstream_id)
+            REFERENCES index_items (source, upstream_id) ON DELETE CASCADE,
+          CHECK ((origin IS NULL) = (status = 'none'))
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

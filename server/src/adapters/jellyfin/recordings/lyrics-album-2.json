@@ -1,0 +1,102 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "lyrics-album-2",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "Fields": "ProviderIds,Genres,Etag",
+      "Ids": "6c95141be1efb36c34694c98a821c5f5",
+      "IncludeItemTypes": "MusicAlbum",
+      "Recursive": "true"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [
+          {
+            "Name": "Enjoy Your Rabbit",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "6c95141be1efb36c34694c98a821c5f5",
+            "Etag": "0f3b8fdab19fbab3ee0d57173e6e3c3d",
+            "PremiereDate": "2001-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Electronic"
+            ],
+            "RunTimeTicks": 47508208000,
+            "ProductionYear": 2001,
+            "ProviderIds": {
+              "AudioDbAlbum": "2126510",
+              "AudioDbArtist": "113747",
+              "MusicBrainzAlbum": "4a181ba2-0a56-44c1-ae80-7dd39a92bcac",
+              "MusicBrainzAlbumArtist": "01d3c51b-9b98-418a-8d8e-37f6fab59d8c",
+              "MusicBrainzReleaseGroup": "a59571bd-1930-3bda-b335-aa91a3b0ff23"
+            },
+            "IsFolder": true,
+            "Type": "MusicAlbum",
+            "GenreItems": [
+              {
+                "Name": "Electronic",
+                "Id": "8204660f9178d6add224c5719016f2de"
+              }
+            ],
+            "ParentLogoItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropItemId": "82ad0ea1fbb0f9c3a4541c7ee8becb08",
+            "ParentBackdropImageTags": [
+              "f04e2ea7fbd6e7eccc438f19652ca7db"
+            ],
+            "Artists": [
+              "Sufjan Stevens"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "AlbumArtist": "Sufjan Stevens",
+            "AlbumArtists": [
+              {
+                "Name": "Sufjan Stevens",
+                "Id": "82ad0ea1fbb0f9c3a4541c7ee8becb08"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "8ecf8468ecf1322a6d3d6382a5bc9914"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "95a63064210cd06dc01981f7e0f474cb",
+            "ImageBlurHashes": {
+              "Primary": {
+                "8ecf8468ecf1322a6d3d6382a5bc9914": "e,OXOQkENb%gSh~AjZWCt7ofI[bIWBRje.?bozWBV@WBt7kCofayn%"
+              },
+              "Logo": {
+                "95a63064210cd06dc01981f7e0f474cb": "OXRp8-j[t7ayWBoft7%Mj[ofayWBj[ay~qayRjofofj[WB"
+              },
+              "Backdrop": {
+                "f04e2ea7fbd6e7eccc438f19652ca7db": "WdONg{-p.9?wZ~V@_N%1s.X9S5V@RjoexZRkRkWX%hj[oft8t6WV"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Unknown",
+            "NormalizationGain": -8.1
+          }
+        ],
+        "TotalRecordCount": 1,
+        "StartIndex": 0
+      }
+    }
+  }
+}

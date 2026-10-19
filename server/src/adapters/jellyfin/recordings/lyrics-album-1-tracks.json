@@ -1,0 +1,996 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "lyrics-album-1-tracks",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "Fields": "ProviderIds,Genres,Etag",
+      "IncludeItemTypes": "Audio",
+      "ParentId": "8dcbf3aa770d450e1988ccf23dca8a9b",
+      "SortBy": "ParentIndexNumber,IndexNumber,SortName"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [
+          {
+            "Name": "Give Life Back to Music",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "940984b93f045512d80ca147bac67e53",
+            "Etag": "7086fbae42ddf3460734c508553f3a8d",
+            "HasLyrics": false,
+            "Container": "flac",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Pop",
+              "Rock"
+            ],
+            "RunTimeTicks": 2744078340,
+            "ProductionYear": 2021,
+            "IndexNumber": 1,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Pop",
+                "Id": "5b0e2941bb91463ff6d8393b390e6cab"
+              },
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "Artists": [
+              "Daft Punk"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "Album": "Random Access Memories",
+            "AlbumId": "8dcbf3aa770d450e1988ccf23dca8a9b",
+            "AlbumPrimaryImageTag": "dba55e29d1ddd798793ef23ea8f2cdd1",
+            "AlbumArtist": "Daft Punk",
+            "AlbumArtists": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "6138b24cecf2a06947046e3ad82f37a3"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "3eb714b69b6dd29a122a1c2e659d0325",
+            "ImageBlurHashes": {
+              "Primary": {
+                "6138b24cecf2a06947046e3ad82f37a3": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*",
+                "dba55e29d1ddd798793ef23ea8f2cdd1": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              },
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -5.8999996
+          },
+          {
+            "Name": "The Game of Love",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "032e9a3a150f0362803a215713a4dfe8",
+            "Etag": "52a914232205c83ea64242aa1cf67d26",
+            "HasLyrics": false,
+            "Container": "flac",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Pop",
+              "Rock"
+            ],
+            "RunTimeTicks": 3221478910,
+            "ProductionYear": 2021,
+            "IndexNumber": 2,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Pop",
+                "Id": "5b0e2941bb91463ff6d8393b390e6cab"
+              },
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "Artists": [
+              "Daft Punk"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "Album": "Random Access Memories",
+            "AlbumId": "8dcbf3aa770d450e1988ccf23dca8a9b",
+            "AlbumPrimaryImageTag": "dba55e29d1ddd798793ef23ea8f2cdd1",
+            "AlbumArtist": "Daft Punk",
+            "AlbumArtists": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "bc99ecf5a5149c76e455832bcad0f267"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "3eb714b69b6dd29a122a1c2e659d0325",
+            "ImageBlurHashes": {
+              "Primary": {
+                "bc99ecf5a5149c76e455832bcad0f267": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*",
+                "dba55e29d1ddd798793ef23ea8f2cdd1": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              },
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -5.8
+          },
+          {
+            "Name": "Giorgio by Moroder",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "d82bb97995f5077934ec4eac652cf295",
+            "Etag": "47797c39acff43fb92832c42080ca1a8",
+            "HasLyrics": false,
+            "Container": "flac",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Pop",
+              "Rock"
+            ],
+            "RunTimeTicks": 5446945580,
+            "ProductionYear": 2021,
+            "IndexNumber": 3,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Pop",
+                "Id": "5b0e2941bb91463ff6d8393b390e6cab"
+              },
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "Artists": [
+              "Daft Punk"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "Album": "Random Access Memories",
+            "AlbumId": "8dcbf3aa770d450e1988ccf23dca8a9b",
+            "AlbumPrimaryImageTag": "dba55e29d1ddd798793ef23ea8f2cdd1",
+            "AlbumArtist": "Daft Punk",
+            "AlbumArtists": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "adb0f70ffda469ef5aab1dab1bf44139"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "3eb714b69b6dd29a122a1c2e659d0325",
+            "ImageBlurHashes": {
+              "Primary": {
+                "adb0f70ffda469ef5aab1dab1bf44139": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*",
+                "dba55e29d1ddd798793ef23ea8f2cdd1": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              },
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -7.3
+          },
+          {
+            "Name": "Within",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "0b2729081acb08f62feda05cf7157d8f",
+            "Etag": "93a96da69650cd40766c4be39eccbefa",
+            "HasLyrics": false,
+            "Container": "flac",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Pop",
+              "Rock"
+            ],
+            "RunTimeTicks": 2284012240,
+            "ProductionYear": 2021,
+            "IndexNumber": 4,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Pop",
+                "Id": "5b0e2941bb91463ff6d8393b390e6cab"
+              },
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "Artists": [
+              "Daft Punk"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "Album": "Random Access Memories",
+            "AlbumId": "8dcbf3aa770d450e1988ccf23dca8a9b",
+            "AlbumPrimaryImageTag": "dba55e29d1ddd798793ef23ea8f2cdd1",
+            "AlbumArtist": "Daft Punk",
+            "AlbumArtists": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "9585eaa4a79891db7dcd10462e367b0a"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "3eb714b69b6dd29a122a1c2e659d0325",
+            "ImageBlurHashes": {
+              "Primary": {
+                "9585eaa4a79891db7dcd10462e367b0a": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*",
+                "dba55e29d1ddd798793ef23ea8f2cdd1": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              },
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -5.7
+          },
+          {
+            "Name": "Instant Crush",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "33f86fd6a989aa8235b2f51b2ac2dda4",
+            "Etag": "eeeeaffb0177ddd32f7c83fa345cc108",
+            "HasLyrics": false,
+            "Container": "flac",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Pop",
+              "Rock"
+            ],
+            "RunTimeTicks": 3375478910,
+            "ProductionYear": 2021,
+            "IndexNumber": 5,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Pop",
+                "Id": "5b0e2941bb91463ff6d8393b390e6cab"
+              },
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "Artists": [
+              "Daft Punk feat. Julian Casablancas"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Daft Punk feat. Julian Casablancas",
+                "Id": "0858917077f0724dd500779aa9b706f2"
+              }
+            ],
+            "Album": "Random Access Memories",
+            "AlbumId": "8dcbf3aa770d450e1988ccf23dca8a9b",
+            "AlbumPrimaryImageTag": "dba55e29d1ddd798793ef23ea8f2cdd1",
+            "AlbumArtist": "Daft Punk",
+            "AlbumArtists": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "856417d903319fcb57cc3a36c167464b"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "3eb714b69b6dd29a122a1c2e659d0325",
+            "ImageBlurHashes": {
+              "Primary": {
+                "856417d903319fcb57cc3a36c167464b": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*",
+                "dba55e29d1ddd798793ef23ea8f2cdd1": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              },
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -7.5
+          },
+          {
+            "Name": "Lose Yourself to Dance",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "375a02a101a23c1547704192613eab2b",
+            "Etag": "a3ef925ca00b6c9c5a0ea97d54c42eca",
+            "HasLyrics": false,
+            "Container": "flac",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Pop",
+              "Rock"
+            ],
+            "RunTimeTicks": 3538678910,
+            "ProductionYear": 2021,
+            "IndexNumber": 6,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Pop",
+                "Id": "5b0e2941bb91463ff6d8393b390e6cab"
+              },
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "Artists": [
+              "Daft Punk feat. Pharrell Williams"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Daft Punk feat. Pharrell Williams",
+                "Id": "6de99c4d085ed9aa3d2de6b4f00cdf80"
+              }
+            ],
+            "Album": "Random Access Memories",
+            "AlbumId": "8dcbf3aa770d450e1988ccf23dca8a9b",
+            "AlbumPrimaryImageTag": "dba55e29d1ddd798793ef23ea8f2cdd1",
+            "AlbumArtist": "Daft Punk",
+            "AlbumArtists": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "88a65dc60af6e95c2ab6baa851f7d93b"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "3eb714b69b6dd29a122a1c2e659d0325",
+            "ImageBlurHashes": {
+              "Primary": {
+                "88a65dc60af6e95c2ab6baa851f7d93b": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*",
+                "dba55e29d1ddd798793ef23ea8f2cdd1": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              },
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -7.6000004
+          },
+          {
+            "Name": "Touch",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "e45a3cc421dc44bbcfc341293dc013dd",
+            "Etag": "e3dd544e4a330380aa2d87e9d1884710",
+            "HasLyrics": false,
+            "Container": "flac",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Pop",
+              "Rock"
+            ],
+            "RunTimeTicks": 4990145580,
+            "ProductionYear": 2021,
+            "IndexNumber": 7,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Pop",
+                "Id": "5b0e2941bb91463ff6d8393b390e6cab"
+              },
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "Artists": [
+              "Daft Punk feat. Paul Williams"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Daft Punk feat. Paul Williams",
+                "Id": "6a4ca5cc43ccde053d271dfd2ab89724"
+              }
+            ],
+            "Album": "Random Access Memories",
+            "AlbumId": "8dcbf3aa770d450e1988ccf23dca8a9b",
+            "AlbumPrimaryImageTag": "dba55e29d1ddd798793ef23ea8f2cdd1",
+            "AlbumArtist": "Daft Punk",
+            "AlbumArtists": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "8a08c38f9ec9f6e41dd7b2603ee5aa26"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "3eb714b69b6dd29a122a1c2e659d0325",
+            "ImageBlurHashes": {
+              "Primary": {
+                "8a08c38f9ec9f6e41dd7b2603ee5aa26": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*",
+                "dba55e29d1ddd798793ef23ea8f2cdd1": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              },
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -6.3
+          },
+          {
+            "Name": "Get Lucky",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "484fcbfff6efe11cfeb2028d3a7babc7",
+            "Etag": "737e9ad736c148faaf7baf6592c4f8fa",
+            "HasLyrics": false,
+            "Container": "flac",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Pop",
+              "Rock"
+            ],
+            "RunTimeTicks": 3696145580,
+            "ProductionYear": 2021,
+            "IndexNumber": 8,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Pop",
+                "Id": "5b0e2941bb91463ff6d8393b390e6cab"
+              },
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "Artists": [
+              "Daft Punk feat. Pharrell Williams"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Daft Punk feat. Pharrell Williams",
+                "Id": "6de99c4d085ed9aa3d2de6b4f00cdf80"
+              }
+            ],
+            "Album": "Random Access Memories",
+            "AlbumId": "8dcbf3aa770d450e1988ccf23dca8a9b",
+            "AlbumPrimaryImageTag": "dba55e29d1ddd798793ef23ea8f2cdd1",
+            "AlbumArtist": "Daft Punk",
+            "AlbumArtists": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "5381fb444a794b65f00181bb1e3d6449"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "3eb714b69b6dd29a122a1c2e659d0325",
+            "ImageBlurHashes": {
+              "Primary": {
+                "5381fb444a794b65f00181bb1e3d6449": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*",
+                "dba55e29d1ddd798793ef23ea8f2cdd1": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              },
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -7.1000004
+          },
+          {
+            "Name": "Beyond",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "abfad6dd7501d23cdbbf9ecefbc0006f",
+            "Etag": "bee1d9a43c3da4ef522d6ac1e9b35d73",
+            "HasLyrics": false,
+            "Container": "flac",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Pop",
+              "Rock"
+            ],
+            "RunTimeTicks": 2902145580,
+            "ProductionYear": 2021,
+            "IndexNumber": 9,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Pop",
+                "Id": "5b0e2941bb91463ff6d8393b390e6cab"
+              },
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "Artists": [
+              "Daft Punk"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "Album": "Random Access Memories",
+            "AlbumId": "8dcbf3aa770d450e1988ccf23dca8a9b",
+            "AlbumPrimaryImageTag": "dba55e29d1ddd798793ef23ea8f2cdd1",
+            "AlbumArtist": "Daft Punk",
+            "AlbumArtists": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "858439d3b592b1eab75d82bab704bd00"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "3eb714b69b6dd29a122a1c2e659d0325",
+            "ImageBlurHashes": {
+              "Primary": {
+                "858439d3b592b1eab75d82bab704bd00": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*",
+                "dba55e29d1ddd798793ef23ea8f2cdd1": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              },
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -6.5
+          },
+          {
+            "Name": "Motherboard",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "d891eea01d53af8010f76bdb76732348",
+            "Etag": "707463d14d29f819b3a9cc8663e441a5",
+            "HasLyrics": false,
+            "Container": "flac",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Pop",
+              "Rock"
+            ],
+            "RunTimeTicks": 3416945579,
+            "ProductionYear": 2021,
+            "IndexNumber": 10,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Pop",
+                "Id": "5b0e2941bb91463ff6d8393b390e6cab"
+              },
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "Artists": [
+              "Daft Punk"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "Album": "Random Access Memories",
+            "AlbumId": "8dcbf3aa770d450e1988ccf23dca8a9b",
+            "AlbumPrimaryImageTag": "dba55e29d1ddd798793ef23ea8f2cdd1",
+            "AlbumArtist": "Daft Punk",
+            "AlbumArtists": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "8b6b26f12dff54612788b928a3d09fb0"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "3eb714b69b6dd29a122a1c2e659d0325",
+            "ImageBlurHashes": {
+              "Primary": {
+                "8b6b26f12dff54612788b928a3d09fb0": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*",
+                "dba55e29d1ddd798793ef23ea8f2cdd1": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              },
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -4.8
+          },
+          {
+            "Name": "Fragments of Time",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "a313245d53b693a93fe832104f9d76fc",
+            "Etag": "c86ba79e4236e88d78f16308bb3a92d3",
+            "HasLyrics": false,
+            "Container": "flac",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Pop",
+              "Rock"
+            ],
+            "RunTimeTicks": 2797478910,
+            "ProductionYear": 2021,
+            "IndexNumber": 11,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Pop",
+                "Id": "5b0e2941bb91463ff6d8393b390e6cab"
+              },
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "Artists": [
+              "Daft Punk feat. Todd Edwards"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Daft Punk feat. Todd Edwards",
+                "Id": "a0f1b34888c93ef81cd5e85aa16f7a6a"
+              }
+            ],
+            "Album": "Random Access Memories",
+            "AlbumId": "8dcbf3aa770d450e1988ccf23dca8a9b",
+            "AlbumPrimaryImageTag": "dba55e29d1ddd798793ef23ea8f2cdd1",
+            "AlbumArtist": "Daft Punk",
+            "AlbumArtists": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "65a7c942a89638f3fcf5c8ebaa95d39d"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "3eb714b69b6dd29a122a1c2e659d0325",
+            "ImageBlurHashes": {
+              "Primary": {
+                "65a7c942a89638f3fcf5c8ebaa95d39d": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*",
+                "dba55e29d1ddd798793ef23ea8f2cdd1": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              },
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -7.5
+          },
+          {
+            "Name": "Doin' it Right",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "30ee41101064a23e57e3667ba6560429",
+            "Etag": "b90b144a88c6b1600e381983ee2075b9",
+            "HasLyrics": false,
+            "Container": "flac",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Pop",
+              "Rock"
+            ],
+            "RunTimeTicks": 2513171090,
+            "ProductionYear": 2021,
+            "IndexNumber": 12,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Pop",
+                "Id": "5b0e2941bb91463ff6d8393b390e6cab"
+              },
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "Artists": [
+              "Daft Punk feat. Panda Bear"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Daft Punk feat. Panda Bear",
+                "Id": "69b6d0286bf2b823656e7bf80910f6bf"
+              }
+            ],
+            "Album": "Random Access Memories",
+            "AlbumId": "8dcbf3aa770d450e1988ccf23dca8a9b",
+            "AlbumPrimaryImageTag": "dba55e29d1ddd798793ef23ea8f2cdd1",
+            "AlbumArtist": "Daft Punk",
+            "AlbumArtists": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "fd28db21b8e7e5be4e42e86e2a346f34"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "3eb714b69b6dd29a122a1c2e659d0325",
+            "ImageBlurHashes": {
+              "Primary": {
+                "fd28db21b8e7e5be4e42e86e2a346f34": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*",
+                "dba55e29d1ddd798793ef23ea8f2cdd1": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              },
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -7.3
+          },
+          {
+            "Name": "Contact",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "938e5244cce65cdf77c31e56f3ad0ed1",
+            "Etag": "cb54d267bfbb6c7fd156e4d4f65fb2e3",
+            "HasLyrics": false,
+            "Container": "flac",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "ChannelId": null,
+            "Genres": [
+              "Pop",
+              "Rock"
+            ],
+            "RunTimeTicks": 3815211790,
+            "ProductionYear": 2021,
+            "IndexNumber": 13,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "GenreItems": [
+              {
+                "Name": "Pop",
+                "Id": "5b0e2941bb91463ff6d8393b390e6cab"
+              },
+              {
+                "Name": "Rock",
+                "Id": "e000ec236f37232ba518ce3c69930f01"
+              }
+            ],
+            "ParentLogoItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "Artists": [
+              "Daft Punk"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "Album": "Random Access Memories",
+            "AlbumId": "8dcbf3aa770d450e1988ccf23dca8a9b",
+            "AlbumPrimaryImageTag": "dba55e29d1ddd798793ef23ea8f2cdd1",
+            "AlbumArtist": "Daft Punk",
+            "AlbumArtists": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "316cb52ac55788e6c2d60c4888a224f3"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "3eb714b69b6dd29a122a1c2e659d0325",
+            "ImageBlurHashes": {
+              "Primary": {
+                "316cb52ac55788e6c2d60c4888a224f3": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*",
+                "dba55e29d1ddd798793ef23ea8f2cdd1": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              },
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -8.7
+          }
+        ],
+        "TotalRecordCount": 13,
+        "StartIndex": 0
+      }
+    }
+  }
+}
