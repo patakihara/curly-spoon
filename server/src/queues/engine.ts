@@ -89,7 +89,20 @@ export function add(
   deps: EngineDeps,
 ): SessionValue | null {
   const expansion = deps.expand(ref);
-  if (expansion === null || expansion.entries.length === 0) return null;
+  return expansion === null ? null : addEntries(session, expansion, how, deps);
+}
+
+/**
+ * Puts entries already expanded into their queue, as `add` does an item's: a list's entries, in
+ * order, enter as one item. Null when there are none.
+ */
+export function addEntries(
+  session: SessionValue,
+  expansion: Expansion,
+  how: How | 'default',
+  deps: EngineDeps,
+): SessionValue | null {
+  if (expansion.entries.length === 0) return null;
   const s = structuredClone(session);
   const type = queueFor(expansion.kind);
   const queue = s.queues[type];

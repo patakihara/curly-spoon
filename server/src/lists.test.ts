@@ -12,8 +12,11 @@ import { fileURLToPath } from 'node:url';
 import {
   LIST_ENTRIES_MAX,
   ListDetail,
+  ListeningSession,
+  Queue,
   type ListItem,
   type MediaRef,
+  type QueueItem,
   ListSummaryList,
 } from '@auralis/schema';
 import { type FastifyInstance } from 'fastify';
@@ -117,6 +120,9 @@ function grantedOnly(libraries: string[]): Recording {
 }
 const booksLibrary = book.libraryId;
 
+/** The book's chapters and a listen to it, and show 1's Part Two played. */
+const PLAYS = ['multi-detail', 'progress-play', 'progress-read', 'episode-play'].map(abs);
+
 const KEY = Buffer.alloc(32, 7);
 const UPSTREAM = 'http://upstream.invalid';
 
@@ -146,10 +152,10 @@ interface Answer {
 /** kara, granted every library, and otto, granted none; the clock starts at `now`. */
 async function server(options: { now?: number; me?: Recording } = {}) {
   const clock = { now: options.now ?? SEPT_15 };
-  let kara = replayFetch([options.me ?? meFinished]);
+  let kara = replayFetch([options.me ?? meFinished, ...PLAYS]);
   /** Hands kara another `GET /api/me` from the next call on. */
   const karaAnswers = (me: Recording) => {
-    kara = replayFetch([me]);
+    kara = replayFetch([me, ...PLAYS]);
   };
   const otto = replayFetch([ottoMe]);
   const fetch: FetchLike = async (url, init) => {
@@ -568,5 +574,109 @@ describe('the lists routes', () => {
     await s.create({ kind: 'playlist', name: 'Drive' });
 
     expect(listLists(db, s.users.kara!).map((l) => l.theDigest)).toEqual([true, false]);
+  });
+});
+
+describe('[M2.lists/a] Playing a listening list or a podcast playlist, in order', () => {
+  /** What the spoken queue plays, in order, from its current entry: refs, a book's chapters. */
+  const entries = (q: Queue) =>
+    [q.current!, ...q.user].map(({ ref, chapter }: QueueItem) => ({ ref, chapter }));
+  type Entry = { ref: MediaRef; chapter: number | undefined };
+  const chapter = (n: number): Entry => ({ ref: bookRef, chapter: n });
+  const episode = (e: MediaRef): Entry => ({ ref: e, chapter: undefined });
+
+  async function played(s: Awaited<ReturnType<typeof server>>, id: string, body: object = {}) {
+    return s.ok(await s.call('POST', `/lists/${id}/play`, body), Queue);
+  }
+  /** Next, as the end of an entry or the button sends it, answering what the spoken queue is on. */
+  async function next(s: Awaited<ReturnType<typeof server>>) {
+    const session = s.ok(
+      await s.call('POST', '/sessions/this/step', { direction: 'next' }),
+      ListeningSession,
+    );
+    const { ref, chapter } = session.currents.spoken!;
+    return { ref, chapter };
+  }
+
+  it('[M2.lists/a] a listening list of a book and a show plays the book’s chapters, then the show’s unplayed episodes in its order', async () => {
+    const s = await server();
+    const list = await s.create({ kind: 'listening', name: 'Road trip' });
+    await s.call('PUT', `/lists/${list.id}/items`, { refs: [bookRef, show1] });
+
+    const queue = await played(s, list.id);
+
+    // kara finished Part One; the serial show plays the rest from the oldest.
+    const order = [...[0, 1, 2, 3].map(chapter), ...[two, three, four].map(episode)];
+    expect(entries(queue)).toEqual(order);
+    expect(queue.digest).toBeNull();
+    // The client then plays the current entry: the session keeps the list's queue.
+    expect(await s.call('POST', '/play', { ref: bookRef })).toMatchObject({ status: 200 });
+    const walked = [];
+    for (let n = 1; n < order.length; n += 1) walked.push(await next(s));
+    expect(walked).toEqual(order.slice(1));
+  });
+
+  it('[M2.lists/a] a podcast playlist plays its episodes in the order picked, leaving out the played one', async () => {
+    const s = await server();
+    const list = await s.create({ kind: 'playlist', name: 'Commute' });
+    await s.call('PUT', `/lists/${list.id}/items`, { refs: [two, one, four] });
+
+    const queue = await played(s, list.id);
+
+    expect(entries(queue)).toEqual([two, four].map(episode));
+    expect(await s.call('POST', '/play', { ref: two })).toMatchObject({ status: 200 });
+    expect(await next(s)).toEqual(episode(four));
+  });
+
+  it('[M2.lists/a] a playlist played from one of its episodes leaves out the ones before it', async () => {
+    const s = await server();
+    const list = await s.create({ kind: 'playlist', name: 'Commute' });
+    await s.call('PUT', `/lists/${list.id}/items`, { refs: [two, three, four] });
+
+    const queue = await played(s, list.id, { start: three });
+
+    expect(entries(queue)).toEqual([three, four].map(episode));
+  });
+
+  it('plays the list in place of what the spoken queue held, keeping what was queued after it', async () => {
+    const s = await server();
+    const list = await s.create({ kind: 'playlist', name: 'Commute' });
+    await s.call('PUT', `/lists/${list.id}/items`, { refs: [four] });
+    await s.call('POST', '/queues/spoken/items', { ref: two, how: 'now' });
+    await s.call('POST', '/queues/spoken/items', { ref: three, how: 'end' });
+
+    const queue = await played(s, list.id);
+
+    expect(entries(queue)).toEqual([four, three].map(episode));
+  });
+
+  it('refuses a start not on the list, a list with nothing left, someone else’s list, a stale revision, and a digest for now', async () => {
+    const s = await server();
+    const list = await s.create({ kind: 'playlist', name: 'Commute' });
+    await s.call('PUT', `/lists/${list.id}/items`, { refs: [two] });
+    const empty = await s.create({ kind: 'listening', name: 'Later' });
+    const digest = await s.theDigest();
+
+    expect(await s.call('POST', `/lists/${list.id}/play`, { start: three })).toEqual(
+      refused(404, 'not_found'),
+    );
+    expect(await s.call('POST', `/lists/${empty.id}/play`, {})).toEqual(
+      refused(400, 'nothing_to_play'),
+    );
+    // Part One is the one kara finished.
+    const finished = await s.create({ kind: 'playlist', name: 'Done' });
+    await s.call('PUT', `/lists/${finished.id}/items`, { refs: [one] });
+    expect(await s.call('POST', `/lists/${finished.id}/play`, {})).toEqual(
+      refused(400, 'nothing_to_play'),
+    );
+    expect(await s.call('POST', `/lists/${list.id}/play`, {}, 'otto')).toEqual(
+      refused(404, 'not_found'),
+    );
+    expect(await s.call('POST', `/lists/${list.id}/play`, { rev: 99 })).toEqual(
+      refused(409, 'stale_revision'),
+    );
+    expect(await s.call('POST', `/lists/${digest.id}/play`, {})).toEqual(
+      refused(400, 'digest_play_pending'),
+    );
   });
 });

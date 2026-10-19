@@ -7,6 +7,7 @@
  */
 import { LibraryEntry } from './library.js';
 import { ArtUrl, MediaRef } from './play.js';
+import { Revision } from './sessions.js';
 import { z } from './zod.js';
 
 /** A share of a whole, from 0 to 1: how far through an item. */
@@ -127,3 +128,12 @@ export type AddListItemBody = z.infer<typeof AddListItemBody>;
 /** A listening list's or playlist's entries, whole and in order: reorders and removes. */
 export const PutListItemsBody = z.object({ refs: Refs }).openapi('PutListItemsBody');
 export type PutListItemsBody = z.infer<typeof PutListItemsBody>;
+
+/**
+ * Play a listening list or playlist now, in its order: its unplayed entries from `start` (one of
+ * them; else the first) onwards. `rev`, when given, must be the session's revision, else 409.
+ */
+export const PlayListBody = z
+  .object({ start: MediaRef.optional(), rev: Revision.optional() })
+  .openapi('PlayListBody');
+export type PlayListBody = z.infer<typeof PlayListBody>;

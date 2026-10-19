@@ -12,6 +12,9 @@
  * - A list holds at most `LIST_ENTRIES_MAX` entries: 400 `list_full` past that.
  * - An entry named twice is kept once, where first named; adding one already on a list keeps it
  *   where it is.
+ *
+ * Playing a listening list or playlist (lists/play.ts) plays it now on this device's spoken
+ * queue. A digest plays in a queue of its own, which is not built yet: 400 `digest_play_pending`.
  */
 import {
   addListItem,
@@ -21,6 +24,7 @@ import {
   LIST_ENTRIES_MAX,
   listLists,
   mediaRefKey,
+  playList,
   setListItems,
   updateList,
 } from '@auralis/schema';
@@ -37,12 +41,18 @@ import {
   shown,
   wrongKind,
 } from '../lists/reader.js';
-import { serve } from '../route.js';
+import { listPlay } from '../lists/play.js';
+import { addEntries } from '../queues/engine.js';
+import type { Sessions } from '../queues/sessions.js';
+import { Refusal, serve } from '../route.js';
 import * as store from '../store/lists.js';
 import { signedIn } from './auth.js';
 
-export function listRoutes(app: FastifyInstance, context: ListsContext): void {
-  const { db } = context;
+export function listRoutes(
+  app: FastifyInstance,
+  context: ListsContext & { sessions: Sessions },
+): void {
+  const { db, sessions } = context;
   const reader = (request: FastifyRequest) => readerFor(context, signedIn(request));
 
   /** A store write, its `FixedList` answered as a refusal, and a list gone since as 404. */
@@ -156,5 +166,20 @@ export function listRoutes(app: FastifyInstance, context: ListsContext): void {
       r,
       written(() => store.setListItems(db, r.userId, list.id, refs, r.now)),
     );
+  });
+
+  serve(app, playList, async (request, _reply, body, { params }) => {
+    const caller = signedIn(request);
+    const r = await readerFor(context, caller);
+    const list = owned(r, params.id);
+    if (list.kind === 'digest') throw new Refusal(400, 'digest_play_pending');
+    await sessions.load(caller, list.items);
+    const expansion = listPlay(r, list, body.start, sessions.deps.expand);
+    const saved = sessions.change(caller, body.rev, (s) => {
+      const played = addEntries(s, expansion, 'now', sessions.deps);
+      if (played === null) throw new Error('invariant: a list play has entries');
+      return played;
+    });
+    return sessions.queueOf(saved, 'spoken');
   });
 }

@@ -556,6 +556,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/lists/{id}/play": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Play a listening list or playlist now, in its order, on this device's spoken queue */
+        post: operations["playList"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -995,6 +1012,10 @@ export interface components {
         };
         PutListItemsBody: {
             refs: components["schemas"]["MediaRef"][];
+        };
+        PlayListBody: {
+            start?: components["schemas"]["MediaRef"];
+            rev?: number;
         };
     };
     responses: never;
@@ -3028,6 +3049,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ListDetail"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    playList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PlayListBody"];
+            };
+        };
+        responses: {
+            /** @description The spoken queue: the list's unplayed entries from `start` onwards, a book as its chapters and a show as its unplayed episodes, the first current; 404 for a list not yours or a `start` not among them, 400 `nothing_to_play` when none is left, `digest_play_pending` for a digest, which plays in its own queue, 409 `stale_revision`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Queue"];
                 };
             };
             /** @description The request does not parse, or was refused. */

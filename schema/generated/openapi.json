@@ -2022,6 +2022,18 @@
         "required": [
           "refs"
         ]
+      },
+      "PlayListBody": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "rev": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
       }
     },
     "parameters": {}
@@ -4727,6 +4739,83 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ListDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lists/{id}/play": {
+      "post": {
+        "summary": "Play a listening list or playlist now, in its order, on this device's spoken queue",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "playList",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayListBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The spoken queue: the list's unplayed entries from `start` onwards, a book as its chapters and a show as its unplayed episodes, the first current; 404 for a list not yours or a `start` not among them, 400 `nothing_to_play` when none is left, `digest_play_pending` for a digest, which plays in its own queue, 409 `stale_revision`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Queue"
                 }
               }
             }

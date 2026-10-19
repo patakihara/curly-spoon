@@ -29,6 +29,7 @@ import {
   ListDetail,
   ListParams,
   ListSummaryList,
+  PlayListBody,
   PutListItemsBody,
   UpdateListBody,
 } from './lists.js';
@@ -565,6 +566,19 @@ export const setListItems = {
   body: PutListItemsBody,
 } as const satisfies Route;
 
+export const playList = {
+  method: 'POST',
+  path: '/api/lists/{id}/play',
+  operationId: 'playList',
+  summary: "Play a listening list or playlist now, in its order, on this device's spoken queue",
+  responseDescription:
+    "The spoken queue: the list's unplayed entries from `start` onwards, a book as its chapters and a show as its unplayed episodes, the first current; 404 for a list not yours or a `start` not among them, 400 `nothing_to_play` when none is left, `digest_play_pending` for a digest, which plays in its own queue, 409 `stale_revision`.",
+  response: Queue,
+  access: 'member',
+  params: ListParams,
+  body: PlayListBody,
+} as const satisfies Route;
+
 /** Every route the API has. The generator and the server's route test both read this list. */
 export const routes: readonly Route[] = [
   health,
@@ -607,4 +621,5 @@ export const routes: readonly Route[] = [
   deleteList,
   addListItem,
   setListItems,
+  playList,
 ];

@@ -44,6 +44,7 @@ export {
   ListParams,
   ListSummary,
   ListSummaryList,
+  PlayListBody,
   PutListItemsBody,
   UpdateListBody,
 } from './lists.js';
@@ -124,6 +125,7 @@ export {
   mediaHls,
   mediaTrack,
   play,
+  playList,
   postSetup,
   putQueue,
   renameDevice,

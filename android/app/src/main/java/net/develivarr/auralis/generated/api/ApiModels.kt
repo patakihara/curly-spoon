@@ -400,6 +400,12 @@ data class PlayBody(
 )
 
 @Serializable
+data class PlayListBody(
+    val start: MediaRef? = null,
+    val rev: Long? = null,
+)
+
+@Serializable
 data class PlaybackChapter(
     val title: String,
     val start: Double,

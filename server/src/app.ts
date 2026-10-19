@@ -153,7 +153,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   bookmarkRoutes(app, { db, upstreams: options.upstreams ?? null });
   libraryRoutes(app, { db, upstreams });
   itemRoutes(app, { db, upstreams });
-  listRoutes(app, { db, upstreams, now: options.now ?? Date.now });
+  listRoutes(app, { db, upstreams, sessions, now: options.now ?? Date.now });
   const lyrics =
     options.lyrics ??
     new Lyrics({
