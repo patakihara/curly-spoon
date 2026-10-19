@@ -16,13 +16,13 @@ import { join } from 'node:path';
 import { z } from 'zod';
 import { AbsClient } from './audiobookshelf/client.js';
 import { FEED_MAX_BYTES, type FeedEpisode, parseFeed } from './feed/client.js';
-import { type MediaProgress } from './audiobookshelf/schemas.js';
 import { type FetchLike, requestJson } from './http/fetch.js';
 import { createRecorder } from './http/record.js';
 import { type RawExchange } from './http/scrub.js';
 import { buildAuthorizationHeader } from './jellyfin/auth.js';
 import { INSTANT_MIX_LIMIT, JellyfinClient } from './jellyfin/client.js';
 import { JellyfinProvisioner, personDevice } from './jellyfin/quickConnect.js';
+import { withEpisodeFinished } from './record-finished.js';
 import { RECORD_USER_ID, TEST_IDENTITY } from './record-oidc.js';
 
 /** A feed has no server version; the recording names the format it was read as. */
@@ -125,9 +125,6 @@ function url(base: string, path: string): string {
   return new URL(path, base.endsWith('/') ? base : `${base}/`).toString();
 }
 
-const comparable = (p: MediaProgress | null) =>
-  JSON.stringify(p && [p.id, p.currentTime, p.duration, p.progress, p.isFinished]);
-
 export async function recordSessions(
   input: SessionsRecordInput,
 ): Promise<{ written: string[]; matches: boolean }> {
@@ -205,48 +202,21 @@ export async function recordSessions(
   const oldest = oldestEnclosure(feeds[0] ?? '');
   const episode = serial.media.episodes.find((e) => e.enclosure?.url === oldest);
   if (!episode) throw new Error("no episode of the first show has the feed's oldest enclosure");
-  const progressPath = `api/me/progress/${encodeURIComponent(serial.id)}/${encodeURIComponent(episode.id)}`;
-  const bearer = { authorization: `Bearer ${absKey}` };
-  const readProgress = () => absPlain.findMyEpisodeProgress(serial.id, episode.id);
-  const before = await readProgress();
-  out(
-    `before the run: ${before ? `progress ${before.currentTime} s` : 'no progress'} on the episode`,
-  );
-  let matches = false;
-  try {
-    await requestJson(
-      input.fetch,
-      url(absUrl, progressPath),
-      { method: 'PATCH', headers: bearer, json: { isFinished: true } },
-      z.unknown(),
-    );
-    const read = await absCapture('me-finished', () => abs.getMe());
-    const mark = read.mediaProgress.find((p) => p.episodeId === episode.id);
-    if (!mark?.isFinished) throw new Error('GET /api/me does not list the episode as finished');
-  } finally {
-    const now = await readProgress();
-    if (before === null && now !== null) {
-      await requestJson(
-        input.fetch,
-        url(absUrl, `api/me/progress/${encodeURIComponent(now.id)}`),
-        { method: 'DELETE', headers: bearer },
-        z.unknown(),
-      );
-    } else if (before !== null) {
-      const { currentTime, duration, progress, isFinished } = before;
-      await requestJson(
-        input.fetch,
-        url(absUrl, progressPath),
-        { method: 'PATCH', headers: bearer, json: { currentTime, duration, progress, isFinished } },
-        z.unknown(),
-      );
-    }
-    const after = await readProgress();
-    matches = comparable(after) === comparable(before);
-    out(
-      `after the revert: ${after ? `progress ${after.currentTime} s` : 'no progress'} on the episode`,
-    );
-  }
+  const matches = await withEpisodeFinished({
+    fetch: input.fetch,
+    out,
+    abs: absPlain,
+    absUrl,
+    absKey,
+    showId: serial.id,
+    episodeId: episode.id,
+    mark: () => absPlain.markEpisodeFinished(serial.id, episode.id),
+    during: async () => {
+      const read = await absCapture('me-finished', () => abs.getMe());
+      const mark = read.mediaProgress.find((p) => p.episodeId === episode.id);
+      if (!mark?.isFinished) throw new Error('GET /api/me does not list the episode as finished');
+    },
+  });
 
   const jellyfinVersion = await new JellyfinClient({
     baseUrl: jellyfinUrl,
@@ -284,6 +254,5 @@ export async function recordSessions(
     });
     out(`logged out the minted Jellyfin token: ${res.status}`);
   }
-  if (matches) out("reverted: the episode's progress reads back as before");
   return { written, matches };
 }
