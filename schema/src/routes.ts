@@ -545,7 +545,7 @@ export const addListItem = {
   operationId: 'addListItem',
   summary: 'Add a book or show to the end of a listening list, or an episode to a playlist',
   responseDescription:
-    'The list as it now is; 400 `wrong_kind` for an entry the list does not take or any digest, 404 for one not indexed or outside your libraries.',
+    'The list as it now is; 404 for an entry not indexed or outside your libraries, whatever its kind, 400 `wrong_kind` for one the list does not take or any digest, `list_full` past the most a list holds.',
   response: ListDetail,
   access: 'member',
   params: ListParams,

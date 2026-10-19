@@ -9,7 +9,13 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ListDetail, type ListItem, type MediaRef, ListSummaryList } from '@auralis/schema';
+import {
+  LIST_ENTRIES_MAX,
+  ListDetail,
+  type ListItem,
+  type MediaRef,
+  ListSummaryList,
+} from '@auralis/schema';
 import { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { itemSummarySchema, type ShowSummary } from './adapters/audiobookshelf/schemas.js';
@@ -23,7 +29,7 @@ import { applyTree, emptyCounts } from './libraryIndex/store.js';
 import { DIGEST_NEW_DAYS } from './lists/rules.js';
 import { openDatabase, type Db } from './store/connection.js';
 import { createDevice } from './store/devices.js';
-import { markPlayed } from './store/lists.js';
+import { listLists, markPlayed, setListItems } from './store/lists.js';
 import { createSession } from './store/sessions.js';
 import { saveLink } from './store/upstreamLinks.js';
 import { upsertUser } from './store/users.js';
@@ -100,6 +106,17 @@ Object.assign(json<AbsMe>(ottoMe), {
   mediaProgress: [],
 });
 
+/** kara's `me-finished`, granted only the libraries named. */
+function grantedOnly(libraries: string[]): Recording {
+  const copy = structuredClone(meFinished);
+  Object.assign(json<AbsMe>(copy), {
+    permissions: { ...json<AbsMe>(copy).permissions, accessAllLibraries: false },
+    librariesAccessible: libraries,
+  });
+  return copy;
+}
+const booksLibrary = book.libraryId;
+
 const KEY = Buffer.alloc(32, 7);
 const UPSTREAM = 'http://upstream.invalid';
 
@@ -129,7 +146,11 @@ interface Answer {
 /** kara, granted every library, and otto, granted none; the clock starts at `now`. */
 async function server(options: { now?: number; me?: Recording } = {}) {
   const clock = { now: options.now ?? SEPT_15 };
-  const kara = replayFetch([options.me ?? meFinished]);
+  let kara = replayFetch([options.me ?? meFinished]);
+  /** Hands kara another `GET /api/me` from the next call on. */
+  const karaAnswers = (me: Recording) => {
+    kara = replayFetch([me]);
+  };
   const otto = replayFetch([ottoMe]);
   const fetch: FetchLike = async (url, init) => {
     const authorization = new Headers(init?.headers).get('authorization') ?? '';
@@ -187,7 +208,7 @@ async function server(options: { now?: number; me?: Recording } = {}) {
   const create = async (body: object, name = 'kara') =>
     ok(await call('POST', '/lists', body, name), ListDetail);
   const refs = (items: ListItem[]) => items.map((i) => i.ref);
-  return { clock, users, call, ok, lists, theDigest, detail, create, refs };
+  return { clock, users, karaAnswers, call, ok, lists, theDigest, detail, create, refs };
 }
 
 const refused = (status: number, error: string) => ({ status, body: { error } });
@@ -488,5 +509,64 @@ describe('the lists routes', () => {
     );
 
     expect(filled.items.map((i) => i.finished)).toEqual([true]);
+  });
+
+  it('answers 404 for an entry outside the person’s libraries, whatever its kind', async () => {
+    const s = await server();
+    const ottos = await s.create({ kind: 'listening', name: 'Books' }, 'otto');
+    const missing = refused(404, 'not_found');
+
+    expect(await s.call('POST', `/lists/${ottos.id}/items`, { ref: two }, 'otto')).toEqual(missing);
+    expect(await s.call('PUT', `/lists/${ottos.id}/items`, { refs: [show1] }, 'otto')).toEqual(
+      missing,
+    );
+    expect(
+      await s.call('POST', '/lists', { kind: 'digest', name: 'X', shows: [two] }, 'otto'),
+    ).toEqual(missing);
+  });
+
+  it('leaves out entries of a library the person may no longer open, and brings them back with access', async () => {
+    const s = await server();
+    const books = await s.create({ kind: 'listening', name: 'Books' });
+    const drive = await s.create({ kind: 'playlist', name: 'Drive' });
+    const work = await s.create({ kind: 'digest', name: 'Work', shows: [show1] });
+    s.ok(await s.call('PUT', `/lists/${books.id}/items`, { refs: [bookRef, show1] }), ListDetail);
+    s.ok(await s.call('PUT', `/lists/${drive.id}/items`, { refs: [two, three] }), ListDetail);
+
+    s.karaAnswers(grantedOnly([booksLibrary]));
+
+    expect(s.refs((await s.detail(books.id)).items)).toEqual([bookRef]);
+    expect((await s.detail(drive.id)).items).toEqual([]);
+    expect(await s.detail(work.id)).toMatchObject({ shows: [], items: [] });
+    const digest = await s.detail((await s.theDigest()).id);
+    expect(digest).toMatchObject({ shows: [], items: [] });
+    expect((await s.lists()).map((l) => l.count)).toEqual([0, 1, 0, 0]);
+
+    s.karaAnswers(meFinished);
+    expect(s.refs((await s.detail(drive.id)).items)).toEqual([two, three]);
+    expect(s.refs((await s.detail(books.id)).items)).toEqual([bookRef, show1]);
+  });
+
+  it('refuses an entry past the most a list holds', async () => {
+    const s = await server();
+    const list = await s.create({ kind: 'playlist', name: 'Long' });
+    const full = Array.from({ length: LIST_ENTRIES_MAX }, (_, i) => ref(`gone-${i}`));
+    setListItems(db, s.users.kara!, list.id, full);
+
+    expect(await s.call('POST', `/lists/${list.id}/items`, { ref: two })).toEqual(
+      refused(400, 'list_full'),
+    );
+    setListItems(db, s.users.kara!, list.id, full.slice(1));
+    expect(
+      s.refs(s.ok(await s.call('POST', `/lists/${list.id}/items`, { ref: two }), ListDetail).items),
+    ).toEqual([two]);
+  });
+
+  it('makes The Digest on any call to the lists, not only on listing them', async () => {
+    const s = await server();
+
+    await s.create({ kind: 'playlist', name: 'Drive' });
+
+    expect(listLists(db, s.users.kara!).map((l) => l.theDigest)).toEqual([true, false]);
   });
 });

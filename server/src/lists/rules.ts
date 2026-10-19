@@ -24,11 +24,12 @@ export function isNew(publishedAt: number | null, now: number): boolean {
 
 /**
  * Whether an episode counts as played: finished on Audiobookshelf, or marked played by Auralis
- * (`mark`, when) after Audiobookshelf last changed it, or with no change there at all.
+ * (`mark`, when) no earlier than Audiobookshelf last changed it, or with no change there at all.
+ * A mark at the very moment of the change wins: only a later change there unmarks it.
  */
 export function isPlayed(standing: Standing, mark: number | undefined): boolean {
   if (standing.finished) return true;
-  return mark !== undefined && (standing.updatedAt === null || mark > standing.updatedAt);
+  return mark !== undefined && (standing.updatedAt === null || mark >= standing.updatedAt);
 }
 
 /** The shows The Digest covers: every indexed Audiobookshelf show in a library the person may open. */
@@ -39,7 +40,10 @@ export function subscribedShows(db: Db, access: AbsAccess | null): StoredRow[] {
   );
 }
 
-/** A digest's episodes over `shows` at `now`, in its order, leaving out the played ones. */
+/**
+ * A digest's episodes over `shows` at `now`, in its order, leaving out the played ones. Only the
+ * dates turn round for newest first: episodes of one moment keep show id, then the show's order.
+ */
 export function digestEpisodes(
   db: Db,
   shows: readonly StoredRow[],
@@ -47,16 +51,16 @@ export function digestEpisodes(
   now: number,
   played: (episode: StoredRow) => boolean,
 ): StoredRow[] {
-  const ranked = [...shows]
+  const direction = order === 'newest' ? -1 : 1;
+  return [...shows]
     .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
     .flatMap((show, s) =>
       episodesInOrder(db, show.id)
         .map((row, e) => ({ row, s, e }))
         .filter(({ row }) => isNew(row.publishedAt, now) && !played(row)),
     )
-    .sort((a, b) => a.row.publishedAt! - b.row.publishedAt! || a.s - b.s || a.e - b.e)
+    .sort((a, b) => direction * (a.row.publishedAt! - b.row.publishedAt!) || a.s - b.s || a.e - b.e)
     .map(({ row }) => row);
-  return order === 'newest' ? ranked.reverse() : ranked;
 }
 
 /** Whether a show on a listening list is finished: it has episodes, and every one is finished. */
