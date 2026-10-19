@@ -110,6 +110,18 @@ export class IndexLookup {
   }
 
   /**
+   * How long an entry plays, in seconds: a book chapter's span as last read, else the indexed
+   * duration; null when neither is known.
+   */
+  length(entry: QueueEntry): number | null {
+    if (entry.chapter !== undefined) {
+      const chapter = this.chapters(entry.ref)?.[entry.chapter];
+      return chapter === undefined ? null : chapter.end - chapter.start;
+    }
+    return indexedRow(this.db, entry.ref.source, entry.ref.id)?.duration ?? null;
+  }
+
+  /**
    * The books autoplay on the spoken queue may need chapters of: the book it follows (its current
    * item, else its newest play) and every book of that book's series.
    */

@@ -565,7 +565,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Play a listening list or playlist now, in its order, on this device's spoken queue */
+        /** Play a list now, in its order, on this device's spoken queue */
         post: operations["playList"];
         delete?: never;
         options?: never;
@@ -3095,7 +3095,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The spoken queue: the list's unplayed entries from `start` onwards, a book as its chapters and a show as its unplayed episodes, the first current and no playing-from; a finished `start` plays from its beginning; 404 for a list not yours or a `start` not on it, 400 `nothing_to_play` when none is left, `digest_play_pending` for a digest, which plays in its own queue, 409 `stale_revision`. */
+            /** @description The spoken queue: a listening list's or playlist's unplayed entries from `start` onwards, a book as its chapters and a show as its unplayed episodes, the first current and no playing-from; a finished `start` plays from its beginning. A digest plays in its own queue (`digest` names it), from `start` or the episode it was left on, at its position, then its other episodes; the spoken queue it replaces is saved, and comes back when its current item, or its next once that finished, is played. 404 for a list not yours or a `start` not on it, 400 `nothing_to_play` when none is left, 409 `stale_revision`. */
             200: {
                 headers: {
                     [name: string]: unknown;

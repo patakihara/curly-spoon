@@ -47,6 +47,7 @@ import {
   savePosition,
   saveSession,
   type QueueEntry,
+  type SavedQueue,
   type SessionItem,
   type SessionValue,
   StaleRevision,
@@ -61,7 +62,7 @@ import {
   prepareAutoplay,
   storedAutoplay,
 } from './autoplay.js';
-import { add, type EngineDeps, step, switchTo } from './engine.js';
+import { add, type EngineDeps, resumeSaved, step, switchTo } from './engine.js';
 import { labelled } from './labels.js';
 import type { IndexLookup } from './lookup.js';
 
@@ -93,6 +94,9 @@ export interface HeldPlan {
   ref: string;
   entries: readonly PlanEntry[];
 }
+
+/** How near its end, in seconds, a saved queue's current item counts as finished. */
+export const FINISHED_WITHIN_S = 30;
 
 /** How long a play, or a Next at a queue's end, waits for autoplay being worked out. */
 export const AUTOPLAY_WAIT_MS = 3_000;
@@ -265,7 +269,9 @@ export class Sessions {
    * position and the upstream's, when the session holds one. With nothing queued after the plan
    * and no autoplay pick kept for its end, it waits for the run this play starts, up to the wait;
    * past it, it answers nothing next and the run goes on (the client reads the pick on its Next).
-   * `playId` becomes the device's current play.
+   * When `ref` is a saved spoken queue's current item, or what follows it once that finished, that
+   * queue comes back instead, stepping on in the second case. `playId` becomes the device's
+   * current play.
    */
   async played(
     caller: Caller,
@@ -290,7 +296,9 @@ export class Sessions {
       const changed =
         holding !== undefined
           ? switchTo(value, holding, this.deps)
-          : (this.advancedTo(value, ref, heldBefore) ?? add(value, ref, 'now', this.deps));
+          : (this.advancedTo(value, ref, heldBefore) ??
+            this.resumed(value, covered) ??
+            add(value, ref, 'now', this.deps));
       if (changed !== null) saved = this.save(caller, s, changed);
     }
     const running = this.refreshAutoplay(caller);
@@ -418,6 +426,44 @@ export class Sessions {
       if (!before.has(key(c.ref))) return null;
     }
     return null;
+  }
+
+  /**
+   * `s` with the saved spoken queue the play resumes brought back: the one whose current item is
+   * the plan's, else one whose current finished (or that has none) and whose next entry is the
+   * plan's, stepped on to it. Null when no saved queue holds the plan's item that way.
+   */
+  private resumed(s: SessionValue, covered: Set<string>): SessionValue | null {
+    const held = s.saved.find(
+      (q) => q.queue.current !== null && covered.has(key(q.queue.current.ref)),
+    );
+    if (held !== undefined) return resumeSaved(s, held.owner, this.deps);
+    const next = s.saved.find((q) => {
+      const following = this.savedNext(q);
+      return following !== null && covered.has(key(following.ref));
+    });
+    return next === undefined
+      ? null
+      : step(resumeSaved(s, next.owner, this.deps), 'next', this.deps);
+  }
+
+  /**
+   * What a saved queue plays next, when its current item finished (its position is within
+   * `FINISHED_WITHIN_S` of the entry's end) or it has none: its next entry, else the autoplay pick
+   * it kept for that item. Null when its current has not finished, or nothing follows.
+   */
+  private savedNext(saved: SavedQueue): QueueEntry | null {
+    const { current, position, user, context } = saved.queue;
+    if (current !== null) {
+      const length = this.options.lookup.length(current);
+      if (length === null || position === null) return null;
+      if (position.ms < (length - FINISHED_WITHIN_S) * 1000) return null;
+    }
+    const queued = user[0] ?? context?.items[0];
+    if (queued !== undefined) return queued;
+    const pick = saved.autoplay;
+    if (pick === null || current === null || !sameEntry(pick.after, current)) return null;
+    return pick.next;
   }
 
   /**

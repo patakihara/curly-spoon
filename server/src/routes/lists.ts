@@ -14,7 +14,10 @@
  *   where it is.
  *
  * Playing a listening list or playlist (lists/play.ts) plays it now on this device's spoken
- * queue. A digest plays in a queue of its own, which is not built yet: 400 `digest_play_pending`.
+ * queue. A digest plays in a queue of its own, from `start` (one of its episodes) or where its
+ * queue was left: the spoken queue it replaces is saved, and comes back when its current item, or
+ * its next once that finished, is played. Deleting a digest leaves its queue playing as your own,
+ * so autoplay is worked out again for each of the person's devices.
  */
 import {
   addListItem,
@@ -31,6 +34,7 @@ import {
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import {
   checked,
+  digestRows,
   fixedList,
   listFull,
   type ListsContext,
@@ -41,10 +45,10 @@ import {
   shown,
   wrongKind,
 } from '../lists/reader.js';
-import { listExpansion, listRun } from '../lists/play.js';
-import { addEntries } from '../queues/engine.js';
+import { listExpansion, listRun, nothingToPlay } from '../lists/play.js';
+import { addEntries, enterDigest } from '../queues/engine.js';
 import type { Sessions } from '../queues/sessions.js';
-import { Refusal, serve } from '../route.js';
+import { serve } from '../route.js';
 import * as store from '../store/lists.js';
 import { signedIn } from './auth.js';
 
@@ -134,6 +138,10 @@ export function listRoutes(
     const list = owned(r, params.id);
     if (list.theDigest) throw fixedList();
     written(() => (store.deleteList(db, r.userId, list.id, r.now) ? true : null));
+    const caller = signedIn(request);
+    for (const { deviceId } of sessions.list(caller)) {
+      void sessions.refreshAutoplay({ ...caller, deviceId });
+    }
     return { ok: true };
   });
 
@@ -172,7 +180,28 @@ export function listRoutes(
     const caller = signedIn(request);
     const r = await readerFor(context, caller);
     const list = owned(r, params.id);
-    if (list.kind === 'digest') throw new Refusal(400, 'digest_play_pending');
+    if (list.kind === 'digest') {
+      const episodes = digestRows(r, list).map((row) => ({
+        ref: { source: row.source, id: row.id },
+      }));
+      const start = body.start;
+      if (start !== undefined && !episodes.some((e) => mediaRefKey(e.ref) === mediaRefKey(start))) {
+        throw notFound();
+      }
+      if (episodes.length === 0) throw nothingToPlay();
+      const saved = sessions.change(caller, body.rev, (s) => {
+        const played = enterDigest(
+          s,
+          list.id,
+          episodes,
+          start === undefined ? undefined : { ref: start },
+          sessions.deps,
+        );
+        if (played === null) throw new Error('invariant: a digest play has episodes');
+        return played;
+      });
+      return sessions.queueOf(saved, 'spoken');
+    }
     const run = listRun(r, list, body.start);
     await sessions.load(caller, run.refs);
     const expansion = listExpansion(run, sessions.deps.expand);

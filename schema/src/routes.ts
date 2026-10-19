@@ -570,9 +570,9 @@ export const playList = {
   method: 'POST',
   path: '/api/lists/{id}/play',
   operationId: 'playList',
-  summary: "Play a listening list or playlist now, in its order, on this device's spoken queue",
+  summary: "Play a list now, in its order, on this device's spoken queue",
   responseDescription:
-    "The spoken queue: the list's unplayed entries from `start` onwards, a book as its chapters and a show as its unplayed episodes, the first current and no playing-from; a finished `start` plays from its beginning; 404 for a list not yours or a `start` not on it, 400 `nothing_to_play` when none is left, `digest_play_pending` for a digest, which plays in its own queue, 409 `stale_revision`.",
+    "The spoken queue: a listening list's or playlist's unplayed entries from `start` onwards, a book as its chapters and a show as its unplayed episodes, the first current and no playing-from; a finished `start` plays from its beginning. A digest plays in its own queue (`digest` names it), from `start` or the episode it was left on, at its position, then its other episodes; the spoken queue it replaces is saved, and comes back when its current item, or its next once that finished, is played. 404 for a list not yours or a `start` not on it, 400 `nothing_to_play` when none is left, 409 `stale_revision`.",
   response: Queue,
   access: 'member',
   params: ListParams,
