@@ -1,25 +1,29 @@
 /**
  * How a library list is put in order. By title: title, then `sub`, then the ref. By artist: `sub`
- * (a book's authors, a show's host, an album's artists), then title, then the ref, with no `sub`
- * last. Names compare ignoring case and accents, numbers as numbers; no leading article is
- * dropped, since the index holds no sort names. Random puts the entries in ref order first, so
+ * (a book's authors, a show's host, an album's artists), then title, then the ref, with no `sub`,
+ * or an empty one, last. Names compare as the household reads them, in Finnish, so Å, Ä and Ö
+ * come after Z; case is ignored and numbers read as numbers. No leading article is dropped, since
+ * the index holds no sort names. Random puts the entries in ref order first, so
  * the index's own row order never shows, then shuffles them by a seed: the same seed over the same
  * entries always gives the same order.
  */
 import { type LibraryEntry, type LibrarySort, mediaRefKey } from '@auralis/schema';
 
-const names = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
+const names = new Intl.Collator('fi', { sensitivity: 'base', numeric: true });
 
 const byRef = (a: LibraryEntry, b: LibraryEntry) => {
   const [x, y] = [mediaRefKey(a.ref), mediaRefKey(b.ref)];
   return x < y ? -1 : x > y ? 1 : 0;
 };
 
+/** An entry's sub, or null when it has none or only blanks. */
+const subOf = (e: LibraryEntry) => (e.sub === null || e.sub.trim() === '' ? null : e.sub);
+
 /** Two subs in order, an absent one last. */
-const bySub = (a: LibraryEntry, b: LibraryEntry) =>
-  a.sub === null || b.sub === null
-    ? Number(a.sub === null) - Number(b.sub === null)
-    : names.compare(a.sub, b.sub);
+const bySub = (a: LibraryEntry, b: LibraryEntry) => {
+  const [x, y] = [subOf(a), subOf(b)];
+  return x === null || y === null ? Number(x === null) - Number(y === null) : names.compare(x, y);
+};
 
 const byTitle = (a: LibraryEntry, b: LibraryEntry) => names.compare(a.title, b.title);
 

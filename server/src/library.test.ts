@@ -342,6 +342,16 @@ describe('[M2.sorting/a] sorting the library: by title, by author, host or artis
     expect(titles(replayed.items)).toEqual(titles(drawn.items));
   });
 
+  it('[M2.sorting/a] draws a fresh seed each time Random is asked without one', async () => {
+    await index(db);
+    const s = await server();
+
+    const seeds = new Set<number | null>();
+    for (let i = 0; i < 5; i++) seeds.add((await sorted(s, 'books?sort=random')).seed);
+
+    expect(seeds.size).toBeGreaterThan(1);
+  });
+
   it('[M2.sorting/a] ignores a seed with any sort but Random, so an address may keep it', async () => {
     await index(db);
     const s = await server();

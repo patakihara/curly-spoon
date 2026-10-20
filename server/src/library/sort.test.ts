@@ -42,6 +42,34 @@ describe('[M2.sorting/a] sorting a library list', () => {
     expect(ids(sortEntries(entries, 'artist', null))).toEqual(['a', 'b', 'c', 'd', 'e']);
   });
 
+  it('[M2.sorting/a] by title breaks a tie by sub even when the refs run the other way', () => {
+    const entries = [
+      entry('a', 'Powers', 'Zadie Smith'),
+      entry('b', 'Powers', 'Ursula K. Le Guin'),
+    ];
+
+    expect(ids(sortEntries(entries, 'title', null))).toEqual(['b', 'a']);
+  });
+
+  it('[M2.sorting/a] reads names as the household does, in Finnish: Å, Ä and Ö come after Z', () => {
+    const entries = [
+      entry('a', 'Öljy', 'Östen'),
+      entry('b', 'Äiti', 'Ärrä'),
+      entry('c', 'Åland', 'Åke'),
+      entry('d', 'Zebra', 'Zorro'),
+      entry('e', 'Alpha', 'Aino'),
+    ];
+
+    expect(ids(sortEntries(entries, 'title', null))).toEqual(['e', 'd', 'c', 'b', 'a']);
+    expect(ids(sortEntries(entries, 'artist', null))).toEqual(['e', 'd', 'c', 'b', 'a']);
+  });
+
+  it('[M2.sorting/a] by artist counts an empty or blank sub as none, so it goes last', () => {
+    const entries = [entry('a', 'Alpha', ''), entry('b', 'Beta', '  '), entry('c', 'Gamma', 'Zed')];
+
+    expect(ids(sortEntries(entries, 'artist', null))).toEqual(['c', 'a', 'b']);
+  });
+
   it('[M2.sorting/a] leaves the entries it was given as they were', () => {
     const entries = [entry('b', 'B', null), entry('a', 'A', null)];
 
