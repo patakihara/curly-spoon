@@ -246,6 +246,13 @@
           "lrclib"
         ]
       },
+      "DigestOrder": {
+        "type": "string",
+        "enum": [
+          "oldest",
+          "newest"
+        ]
+      },
       "HealthResponse": {
         "type": "object",
         "properties": {
@@ -1005,6 +1012,12 @@
               }
             ]
           },
+          "digest": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "rev": {
             "type": "integer",
             "minimum": 0
@@ -1033,6 +1046,7 @@
           "position",
           "user",
           "context",
+          "digest",
           "rev",
           "autoplay",
           "played"
@@ -1080,6 +1094,12 @@
               }
             ]
           },
+          "digest": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "rev": {
             "type": "integer",
             "minimum": 0
@@ -1091,6 +1111,7 @@
           "position",
           "user",
           "context",
+          "digest",
           "rev"
         ]
       },
@@ -1745,6 +1766,320 @@
           "source",
           "lines"
         ]
+      },
+      "ListKind": {
+        "type": "string",
+        "enum": [
+          "listening",
+          "playlist",
+          "digest"
+        ]
+      },
+      "ListCounts": {
+        "type": "object",
+        "properties": {
+          "book": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "show": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "episode": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "book",
+          "show",
+          "episode"
+        ]
+      },
+      "ListSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ListKind"
+          },
+          "name": {
+            "type": "string"
+          },
+          "theDigest": {
+            "type": "boolean"
+          },
+          "order": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DigestOrder"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "counts": {
+            "$ref": "#/components/schemas/ListCounts"
+          },
+          "covers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 4
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "theDigest",
+          "order",
+          "count",
+          "counts",
+          "covers"
+        ]
+      },
+      "ListSummaryList": {
+        "type": "object",
+        "properties": {
+          "lists": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListSummary"
+            }
+          }
+        },
+        "required": [
+          "lists"
+        ]
+      },
+      "ListItemKind": {
+        "type": "string",
+        "enum": [
+          "book",
+          "show",
+          "episode"
+        ]
+      },
+      "ListItem": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ListItemKind"
+          },
+          "title": {
+            "type": "string"
+          },
+          "sub": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "art": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "publishedAt": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "duration": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "progress": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          },
+          "finished": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ref",
+          "kind",
+          "title",
+          "sub",
+          "art",
+          "publishedAt",
+          "duration",
+          "progress",
+          "finished"
+        ]
+      },
+      "ListDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ListKind"
+          },
+          "name": {
+            "type": "string"
+          },
+          "theDigest": {
+            "type": "boolean"
+          },
+          "order": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DigestOrder"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "counts": {
+            "$ref": "#/components/schemas/ListCounts"
+          },
+          "covers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 4
+          },
+          "shows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LibraryEntry"
+            }
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListItem"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "theDigest",
+          "order",
+          "count",
+          "counts",
+          "covers",
+          "shows",
+          "items"
+        ]
+      },
+      "CreateListBody": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ListKind"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "shows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaRef"
+            },
+            "maxItems": 1000
+          },
+          "order": {
+            "$ref": "#/components/schemas/DigestOrder"
+          }
+        },
+        "required": [
+          "kind",
+          "name"
+        ]
+      },
+      "UpdateListBody": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "order": {
+            "$ref": "#/components/schemas/DigestOrder"
+          },
+          "shows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaRef"
+            },
+            "maxItems": 1000
+          }
+        }
+      },
+      "AddListItemBody": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          }
+        },
+        "required": [
+          "ref"
+        ]
+      },
+      "PutListItemsBody": {
+        "type": "object",
+        "properties": {
+          "refs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaRef"
+            },
+            "maxItems": 1000
+          }
+        },
+        "required": [
+          "refs"
+        ]
+      },
+      "PlayListBody": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "rev": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
       }
     },
     "parameters": {}
@@ -3980,6 +4315,553 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Lyrics"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lists": {
+      "get": {
+        "summary": "The signed-in person's listening lists, podcast playlists and digests",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "listLists",
+        "responses": {
+          "200": {
+            "description": "The Digest first, made on the first ask, then the others, oldest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListSummaryList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Make a listening list, a podcast playlist or a custom digest",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "createList",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateListBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The list made; 400 `wrong_kind` for shows or an order on a list that is not a digest, or a show that is not one, 404 for a show not indexed or outside your libraries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lists/{id}": {
+      "get": {
+        "summary": "One of the signed-in person's lists, with its entries as they stand now",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getList",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Its summary, a digest's shows, and its entries: a digest's by its rule, a playlist's unplayed ones, a listening list's with finished ones crossed off; 404 for a list not yours.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Rename a list, change a digest's order, or choose a custom digest's shows",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "updateList",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateListBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The list as it now is; 400 `fixed_list` for a new name or shows on The Digest, `wrong_kind` for an order or shows on a list that is not a digest, and nothing changed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete one of the signed-in person's lists",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "deleteList",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The list is gone; 400 `fixed_list` for The Digest, 404 for a list not yours.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lists/{id}/items": {
+      "post": {
+        "summary": "Add a book or show to the end of a listening list, or an episode to a playlist",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "addListItem",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddListItemBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The list as it now is; 404 for an entry not indexed or outside your libraries, whatever its kind, 400 `wrong_kind` for one the list does not take or any digest, `list_full` past the most a list holds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Set a listening list's or playlist's entries, whole and in order",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "setListItems",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutListItemsBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The list as it now is; refused as adding one entry is, and nothing changed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lists/{id}/play": {
+      "post": {
+        "summary": "Play a list now, in its order, on this device's spoken queue",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "playList",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayListBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The spoken queue: a listening list's or playlist's unplayed entries from `start` onwards, a book as its chapters and a show as its unplayed episodes, the first current and no playing-from; a finished `start` plays from its beginning. A digest plays in its own queue (`digest` names it), from `start` or the episode it was left on, at its position, then its other episodes; the spoken queue it replaces is saved, and comes back when its current item, or its next once that finished, is played. 404 for a list not yours or a `start` not on it, 400 `nothing_to_play` when none is left, 409 `stale_revision`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Queue"
                 }
               }
             }

@@ -1,7 +1,7 @@
 import { type MediaRef, type PlaybackPlan } from '@auralis/schema';
 import { describe, expect, it } from 'vitest';
 import { placeholder } from '../generated/nav/playing';
-import { playingOf, playOf } from './index';
+import { listPlayOf, playingOf, playOf } from './index';
 import { type PlayerState, type PlayerStore } from './store';
 
 /** A store stand-in: its state, and each call made on it. */
@@ -11,6 +11,10 @@ function fakeStore(state: PlayerState) {
     subscribe: () => () => undefined,
     getState: () => state,
     play: async (ref) => void calls.push(`play ${ref.source}:${ref.id}`),
+    playList: async (id, start) =>
+      void calls.push(
+        `list ${id}${start === undefined ? '' : ` from ${start.source}:${start.id}`}`,
+      ),
     restore: async () => void calls.push('restore'),
     queueNext: async (ref, queue) => void calls.push(`next ${ref.source}:${ref.id} ${queue}`),
     resume: async () => void calls.push('resume'),
@@ -203,5 +207,29 @@ describe('[M1.shell] Play', () => {
     play('abs:book-1', 'spoken', 'source')!();
     play(`${ref.source}:${ref.id}`, 'spoken', 'next')!();
     expect(calls).toEqual(['play abs:book-1', 'play abs:book-1', 'next abs:book-1 spoken']);
+  });
+});
+
+describe("[M2.lists] a list page's Play", () => {
+  it('[M2.lists] plays the list through its own route, and its entries from where they stand on it', () => {
+    const { store, calls } = fakeStore(IDLE);
+    const play = listPlayOf(store, 'list-1');
+    play('list-1', 'spoken', 'source')!();
+    play('abs:ep-2', 'spoken', 'now')!();
+    expect(calls).toEqual(['list list-1', 'list list-1 from abs:ep-2']);
+  });
+
+  it('[M2.lists] offers no Play next of the list itself, and puts an entry next as anywhere else', () => {
+    const { store, calls } = fakeStore(IDLE);
+    const play = listPlayOf(store, 'list-1');
+    expect(play('list-1', 'spoken', 'next')).toBeUndefined();
+    play('abs:ep-2', 'spoken', 'next')!();
+    expect(calls).toEqual(['next abs:ep-2 spoken']);
+  });
+
+  it('[M2.lists] has no Play while the list has not loaded, nor for a ref that names nothing', () => {
+    const { store } = fakeStore(IDLE);
+    expect(listPlayOf(store, 'list-1')('', 'spoken', 'source')).toBeUndefined();
+    expect(listPlayOf(store, 'list-1')('nothing', 'spoken', 'now')).toBeUndefined();
   });
 });

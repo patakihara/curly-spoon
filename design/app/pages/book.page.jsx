@@ -18,7 +18,7 @@ export default function Book({ data }) {
             nextLabel="Play next"
             lastLabel={null}
             download={data.download}
-            menu={<OverflowMenu items={data.menu} />}
+            menu={<OverflowMenu items={data.menu} onSelect={<Choose ref={data.ref} />} />}
           />
         </Section>
         <Section title="Chapters">

@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import fastifyCookie from '@fastify/cookie';
 import fastifyStatic from '@fastify/static';
-import { health } from '@auralis/schema';
+import { health, mediaRefKey } from '@auralis/schema';
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import { registerAccess } from './auth/access.js';
 import type { SignOn } from './auth/oidc.js';
@@ -17,7 +17,9 @@ import { bookmarkRoutes } from './routes/bookmarks.js';
 import { deviceRoutes } from './routes/devices.js';
 import { itemRoutes } from './routes/items.js';
 import { libraryRoutes } from './routes/library.js';
+import { listRoutes } from './routes/lists.js';
 import { lyricsRoutes } from './routes/lyrics.js';
+import { OpenPlays } from './routes/openPlays.js';
 import { type PlaybackOptions, playRoutes, type UpstreamAccess } from './routes/play.js';
 import { Lyrics } from './lyrics/service.js';
 import { IndexLookup } from './queues/lookup.js';
@@ -128,6 +130,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   deviceRoutes(app, { db, cookieSecure });
   adminRoutes(app, { db });
   const upstreams = options.upstreams ?? null;
+  const plays = new OpenPlays({ now: options.now ?? Date.now });
   const sessions = new Sessions({
     db,
     lookup: new IndexLookup(db, app.log),
@@ -137,21 +140,28 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         : upstreamFor({ db, ...upstreams }, caller),
     now: options.now ?? Date.now,
     log: app.log,
+    // Decision (M2.lists): an episode marked played has its play session closed first, so the
+    // session's last sync never lands after the mark and undoes it.
+    closePlay: (caller, ref, before) => plays.closeHeld(caller.id, mediaRefKey(ref), before),
     ...(options.playback?.autoplayWaitMs === undefined
       ? {}
       : { autoplayWaitMs: options.playback.autoplayWaitMs }),
   });
+  // Marks still being sent finish before the server's store closes.
+  app.addHook('onClose', () => sessions.settled());
   sessionRoutes(app, { sessions });
   playRoutes(app, {
     db,
     upstreams,
     sessions,
+    open: plays,
     ...(options.playback ? { playback: options.playback } : {}),
     ...(options.now ? { now: options.now } : {}),
   });
   bookmarkRoutes(app, { db, upstreams: options.upstreams ?? null });
   libraryRoutes(app, { db, upstreams });
   itemRoutes(app, { db, upstreams });
+  listRoutes(app, { db, upstreams, sessions, now: options.now ?? Date.now });
   const lyrics =
     options.lyrics ??
     new Lyrics({

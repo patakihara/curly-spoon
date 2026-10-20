@@ -74,7 +74,8 @@ export type QueuePosition = z.infer<typeof QueuePosition>;
  * One queue of this device's session. `current` is what plays, or would play again once this
  * queue is active: switching away pauses a queue and keeps its current item, and `position`, the
  * device's last position in it. Then `user`, your queue, in order, and `context`, playing-from,
- * which only Spotify style fills.
+ * which only Spotify style fills. `digest` names the digest whose own queue the spoken queue is
+ * while one plays; null otherwise, and always on the music queue.
  */
 export const Queue = z
   .object({
@@ -83,6 +84,7 @@ export const Queue = z
     position: QueuePosition.nullable(),
     user: z.array(QueueItem),
     context: QueueContext.nullable(),
+    digest: z.string().nullable(),
     rev: Revision,
   })
   .openapi('Queue');
@@ -245,6 +247,7 @@ export const QueueView = z
     position: QueuePosition.nullable(),
     user: z.array(QueueViewItem),
     context: QueueViewContext.nullable(),
+    digest: z.string().nullable(),
     rev: Revision,
     autoplay: QueueViewAutoplay.nullable(),
     played: z.array(QueueViewPlayed).max(PLAYED_SHOWN),

@@ -45,15 +45,20 @@ const playsOf = (tree: PageTree): PropValue[] =>
   elements(tree).flatMap((e) => Object.values(e.props).filter((v) => v.kind === 'play'));
 
 /**
- * Every episode row opens its episode's page and plays it on the spoken queue, never the music
- * one (docs/plan/04-play.md), and shows how far you are into it.
+ * Every episode row opens its episode's page, or on a list each entry its own kind's page, and
+ * plays it on the spoken queue, never the music one (docs/plan/04-play.md), and shows how far you
+ * are into it.
  */
-function episodeRows(tree: PageTree) {
+function episodeRows(tree: PageTree, ownPage = false) {
   const rows = all(tree, 'EpisodeRow');
   expect(rows.length).toBeGreaterThan(0);
   for (const row of rows) {
     const item = itemOf(row);
-    expect(row.props.onClick, `${item} at line ${row.line}`).toEqual(opens('episode', item, 'ref'));
+    expect(row.props.onClick, `${item} at line ${row.line}`).toEqual(
+      ownPage
+        ? { kind: 'open', page: { path: [item, 'page'] }, params: { ref: [item, 'ref'] } }
+        : opens('episode', item, 'ref'),
+    );
     expect(row.props.onPlay).toEqual(plays(false, item, 'ref'));
     expect(row.props.progress).toEqual(bound(item, 'progress'));
   }
@@ -64,7 +69,7 @@ describe('Show', () => {
   const header = one(tree, 'MediaHeader');
   const episodes = data.episodes as Episode[];
 
-  it('[M0.canvas] binds only the show: name, kind, host, meta, art, subscription, menu, sort, episodes, about and related shows', () => {
+  it('[M0.canvas] binds only the show: name, kind, host, meta, art, subscription, menu and the ref it acts on, sort, episodes, about and related shows', () => {
     expect(dataRoots(tree)).toEqual([
       'about',
       'episodes',
@@ -74,6 +79,7 @@ describe('Show', () => {
       'kind',
       'menu',
       'meta',
+      'ref',
       'related',
       'sort',
       'subscribe',
@@ -239,7 +245,8 @@ describe('List', () => {
   });
 
   it('[M0.canvas] lists a digest in chronological order from its shows, each episode naming its show', () => {
-    episodeRows(tree);
+    episodeRows(tree, true);
+    for (const e of items) expect((e as Episode & { page: string }).page, e.title).toBe('episode');
     const shows = (data.shows as { title: string }[]).map((s) => s.title);
     for (const e of items) expect(shows, e.title).toContain(e.meta[0]);
     const dates = items.map((e) => Date.parse(e.meta[1]!));

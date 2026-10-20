@@ -286,7 +286,10 @@ class PageWriter extends KotlinValues {
 
   /** A handler node as the lambda a Kotlin handler prop takes. */
   handler(
-    value: Exclude<PropValue, { kind: 'literal' | 'binding' | 'slot' | 'request' | 'query' }>,
+    value: Exclude<
+      PropValue,
+      { kind: 'literal' | 'binding' | 'slot' | 'request' | 'query' | 'choose' }
+    >,
     scope: Scope,
   ): Expr {
     const bound = (params: Record<string, string[]>) =>
@@ -339,6 +342,10 @@ class PageWriter extends KotlinValues {
       // Android has no search draft until M5.searchui. A field typing into nothing would seem to
       // work, so the prop is left out and Sonora draws the field disabled.
       case 'query':
+        return undefined;
+      // Android has no lists to act on until M5. A menu doing nothing would seem to work, so the
+      // prop is left out and Sonora draws the menu's button disabled.
+      case 'choose':
         return undefined;
       case 'literal':
         return this.value(type, value.value, where);

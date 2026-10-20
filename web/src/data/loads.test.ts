@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { createApiClient } from '../api/client';
-import { loadItem, loadLibrary, loadQueues, loadSearch, loadSuggest } from './loads';
+import {
+  loadItem,
+  loadLibrary,
+  loadList,
+  loadLists,
+  loadPodcasts,
+  loadQueues,
+  loadSearch,
+  loadSuggest,
+} from './loads';
 import { SignedOut } from './store';
 
 /** An API answering each path from `answers` (anything else 404), recording each ask. */
@@ -27,6 +36,7 @@ const queue = (type: string) => ({
   position: null,
   user: [],
   context: null,
+  digest: null,
   rev: 0,
   autoplay: null,
   played: [],
@@ -133,5 +143,77 @@ describe('what search reads from the API', () => {
   it('refuses suggestions that do not parse', async () => {
     const { client } = answering({ suggestions: [{ kind: 'nope', text: 'x', ref: null }] });
     await expect(loadSuggest(client, 'x')).rejects.toThrow();
+  });
+});
+
+const listOf = (id: string, name: string) => ({
+  id,
+  kind: 'playlist',
+  name,
+  theDigest: false,
+  order: null,
+  count: 0,
+  counts: { book: 0, show: 0, episode: 0 },
+  covers: [],
+});
+
+describe('[M2.lists] what the list pages read from the API', () => {
+  it('[M2.lists] reads one list by its id, parsed', async () => {
+    const { client, asked } = api({
+      '/api/lists/l1': [200, { ...listOf('l1', 'Commute'), shows: [], items: [] }],
+    });
+    expect((await loadList(client, 'l1')).name).toBe('Commute');
+    expect(asked).toEqual(['/api/lists/l1']);
+  });
+
+  it('[M2.lists] reads no list for an address that names none', async () => {
+    const { client, asked } = api({});
+    await expect(loadList(client, undefined)).rejects.toThrow();
+    expect(asked).toEqual([]);
+  });
+
+  it('[M2.lists] reads your lists, The Digest first, in one ask, opening none of them', async () => {
+    const { client, asked } = api({
+      '/api/lists': [200, { lists: [listOf('d', 'The Digest'), listOf('l1', 'Commute')] }],
+    });
+    expect((await loadLists(client)).map((l) => l.name)).toEqual(['The Digest', 'Commute']);
+    expect(asked).toEqual(['/api/lists']);
+  });
+
+  it('[M2.lists] throws SignedOut when your lists are refused for want of a sign-in', async () => {
+    const { client } = api({ '/api/lists': [401, { error: 'signed_out' }] });
+    await expect(loadLists(client)).rejects.toBeInstanceOf(SignedOut);
+  });
+});
+
+describe('[M2.lists] what the Podcasts page reads from the API', () => {
+  const shows = { items: [] };
+
+  it('[M2.lists] reads your shows and your lists', async () => {
+    const { client } = api({
+      '/api/library/podcasts': [200, shows],
+      '/api/lists': [200, { lists: [listOf('d', 'The Digest')] }],
+    });
+    const loaded = await loadPodcasts(client);
+    expect(loaded.library.items).toEqual([]);
+    expect(loaded.lists?.map((l) => l.name)).toEqual(['The Digest']);
+  });
+
+  it('[M2.lists] still reads your shows when your lists fail, saying the lists failed', async () => {
+    const { client } = api({
+      '/api/library/podcasts': [200, shows],
+      '/api/lists': [500, { error: 'internal' }],
+    });
+    expect(await loadPodcasts(client)).toEqual({ library: { items: [] }, lists: null });
+  });
+
+  it('[M2.lists] throws SignedOut when your lists are refused for want of a sign-in, and fails when your shows do', async () => {
+    const signedOut = api({
+      '/api/library/podcasts': [200, shows],
+      '/api/lists': [401, { error: 'signed_out' }],
+    });
+    await expect(loadPodcasts(signedOut.client)).rejects.toBeInstanceOf(SignedOut);
+    const noShows = api({ '/api/lists': [200, { lists: [] }] });
+    await expect(loadPodcasts(noShows.client)).rejects.toThrow();
   });
 });

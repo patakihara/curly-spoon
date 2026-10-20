@@ -147,6 +147,21 @@ fun ShowPage(navController: NavController, actions: PageActions) {
                                                                     label = "Add to a digest",
                                                                     icon = "playlist_add",
                                                                 ),
+                                                                OverflowMenuItem(
+                                                                    key = "new:digest",
+                                                                    label = "New digest",
+                                                                    icon = "add",
+                                                                ),
+                                                                OverflowMenuItem(
+                                                                    key = "add:weekend-reads",
+                                                                    label = "Add to Weekend reads",
+                                                                    icon = "playlist_add",
+                                                                ),
+                                                                OverflowMenuItem(
+                                                                    key = "new:listening",
+                                                                    label = "New listening list",
+                                                                    icon = "add",
+                                                                ),
                                                             ),
                                                             platform = Platform.MOBILE,
                                                         ),

@@ -11,6 +11,8 @@ import type { QueueEntry, SessionValue } from '../store/listening.js';
 import {
   add,
   defaultAction,
+  enterDigest,
+  resumeSaved,
   setQueueStyle,
   step,
   switchTo,
@@ -107,6 +109,8 @@ const empty = (queueStyle: SessionValue['queueStyle'] = 'youtube'): SessionValue
   autoplay: { music: null, spoken: null },
   radio: null,
   autoplayAt: null,
+  spokenDigest: null,
+  saved: [],
 });
 
 /** Runs each change in turn, failing on a ref the index does not hold. */
@@ -629,5 +633,68 @@ describe('[M1.sessions/c] default button actions', () => {
 
   it('adds nothing for a ref the index does not hold', () => {
     expect(add(empty(), { source: 'abs', id: 'not-indexed' }, 'default', deps())).toBeNull();
+  });
+});
+
+describe('a digest’s own queue', () => {
+  const digest = 'digest-1';
+  const episodeG = episodes[2]!;
+
+  it('ends a walk Back started, on entering a digest and on coming back', () => {
+    const d = deps();
+    const walking = run(
+      empty(),
+      (s) => add(s, episodeE, 'now', d),
+      (s) => add(s, episodeF, 'now', d),
+      (s) => step(s, 'back', d),
+    );
+    expect(walking.queues.spoken.user.some((i) => i.walk !== undefined)).toBe(true);
+
+    const entered = enterDigest(walking, digest, [{ ref: episodeG }], undefined, d)!;
+    const saved = entered.saved[0]!.queue;
+    expect(saved.user.some((i) => i.walk !== undefined)).toBe(false);
+    const back = resumeSaved(entered, null, d);
+    expect(back.queues.spoken.user.some((i) => i.walk !== undefined)).toBe(false);
+    expect(order(back, 'spoken')).toEqual(order(walking, 'spoken'));
+  });
+
+  it('gives an entry brought back a new id when its id is already taken', () => {
+    const d = deps();
+    const s = run(
+      empty(),
+      (s) => add(s, trackX, 'now', d),
+      (s) => add(s, episodeE, 'next', d),
+    );
+    const taken = s.queues.music.current!.itemId;
+    const clashing: SessionValue = {
+      ...s,
+      spokenDigest: digest,
+      saved: [
+        {
+          owner: null,
+          queue: {
+            current: { itemId: taken, ref: episodeE },
+            position: null,
+            user: [
+              { itemId: 'twice', ref: episodeF },
+              { itemId: 'twice', ref: episodeG },
+            ],
+            context: null,
+          },
+          autoplay: null,
+          savedAt: 0,
+        },
+      ],
+    };
+
+    const back = resumeSaved(clashing, null, d);
+
+    const ids = [
+      back.queues.music.current,
+      back.queues.spoken.current,
+      ...back.queues.spoken.user,
+    ].map((i) => i!.itemId);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(order(back, 'spoken')).toEqual([episodeE, episodeF, episodeG]);
   });
 });

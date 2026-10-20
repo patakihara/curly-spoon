@@ -16,9 +16,20 @@
  * (`walk`) at the front of its queue. Forward plays the walk before the rest of the queue, in
  * queue order: across the two queues, the one whose next walk entry Back stepped over last goes
  * first. Ending a replay records nothing.
+ *
+ * A digest plays in a queue of its own, which stands in for the spoken queue (`spokenDigest`
+ * names its digest): playing it puts the spoken queue aside, saved whole with its position and
+ * autoplay pick, and nothing autoplays when it runs out. A saved queue comes back whole when it
+ * is played again, and Play now of anything outside a digest's queue goes back to your own first.
  */
 import type { MediaRef, PlayingFrom, QueueItem, QueueStyle, QueueType } from '@auralis/schema';
-import type { QueueEntry, SessionItem, SessionQueue, SessionValue } from '../store/listening.js';
+import type {
+  QueueEntry,
+  SavedQueue,
+  SessionItem,
+  SessionQueue,
+  SessionValue,
+} from '../store/listening.js';
 
 /** What the index says an item is: a song, an album, a podcast episode or a book. */
 export type ItemKind = 'track' | 'album' | 'episode' | 'book';
@@ -89,11 +100,30 @@ export function add(
   deps: EngineDeps,
 ): SessionValue | null {
   const expansion = deps.expand(ref);
-  if (expansion === null || expansion.entries.length === 0) return null;
+  return expansion === null ? null : addEntries(session, expansion, how, deps);
+}
+
+/**
+ * Puts entries already expanded into their queue, as `add` does an item's: a list's entries, in
+ * order, enter as one item. Null when there are none.
+ */
+export function addEntries(
+  session: SessionValue,
+  expansion: Expansion,
+  how: How | 'default',
+  deps: EngineDeps,
+): SessionValue | null {
+  if (expansion.entries.length === 0) return null;
   const s = structuredClone(session);
   const type = queueFor(expansion.kind);
   const queue = s.queues[type];
-  const items = expansion.entries.map((e): QueueItem => ({ ...e, itemId: deps.newId() }));
+  // An entry for an episode the digest playing holds, added in its queue, is the digest's too.
+  const digest = type === 'spoken' ? s.spokenDigest : null;
+  const items = expansion.entries.map((e): SessionItem => ({
+    ...e,
+    itemId: deps.newId(),
+    ...(digest !== null && digestHolds(queue, e) ? { list: digest } : {}),
+  }));
   const action = how === 'default' ? defaultAction(session, expansion.kind) : how;
 
   if (action === 'end') queue.user.push(...items);
@@ -111,24 +141,101 @@ export function add(
       s.switchAfterCurrent = type;
     } else queue.user.unshift(...items);
   } else {
+    // Decision (M2.lists): Play now of anything outside a digest's queue leaves the digest first,
+    // keeping its queue, and plays in your own queue.
+    if (type === 'spoken' && s.spokenDigest !== null && !holds(queue, expansion.entries)) {
+      const after = followed(s, s.queues[s.active].current);
+      endWalk(s);
+      swapSpoken(s, null, after, deps);
+    }
     // What played immediately before it: the item the controls leave, ended or paused.
     const left = s.queues[s.active].current;
     const ended = retire(s, type, deps);
     const after = type === s.active ? ended : followed(s, left);
     endWalk(s);
-    const [current, ...rest] = items as [QueueItem, ...QueueItem[]];
-    start(queue, current, after);
+    const [current, ...rest] = items as [SessionItem, ...SessionItem[]];
+    const into = s.queues[type];
+    start(into, current, after);
     if (type === 'music' && s.queueStyle === 'spotify' && expansion.from !== null) {
       // Nothing is discarded: the new album is what music plays from, and the unplayed rest of
       // the one before follows it, ahead of autoplay. Your queue keeps its place ahead of both.
-      queue.context = { from: expansion.from, items: [...rest, ...(queue.context?.items ?? [])] };
+      into.context = { from: expansion.from, items: [...rest, ...(into.context?.items ?? [])] };
     } else {
-      queue.user.unshift(...rest);
-      if (expansion.from !== null) queue.context = { from: expansion.from, items: [] };
+      into.user.unshift(...rest);
+      if (expansion.from !== null) into.context = { from: expansion.from, items: [] };
     }
     s.active = type;
     if (s.switchAfterCurrent === type) s.switchAfterCurrent = null;
   }
+  return s;
+}
+
+/**
+ * Plays `digest` in its own queue: its episodes now, in its order, with `start` current, else
+ * the episode its queue was left on while that is still one of them, else its first. That episode
+ * keeps the position it was left at; the rest follow it in the digest's order. The spoken queue
+ * it stands in for is put aside, saved under its owner, unless it is this digest's already. The
+ * spoken queue becomes active; music pauses. Null when the digest has no episodes.
+ */
+export function enterDigest(
+  session: SessionValue,
+  digest: string,
+  episodes: readonly QueueEntry[],
+  startOn: QueueEntry | undefined,
+  deps: EngineDeps,
+): SessionValue | null {
+  const s = structuredClone(session);
+  const left: SessionQueue | undefined =
+    s.spokenDigest === digest ? s.queues.spoken : s.saved.find((q) => q.owner === digest)?.queue;
+  const was = left?.current ?? null;
+  const first =
+    startOn ?? (was !== null && episodes.some((e) => sameEntry(e, was)) ? was : episodes[0]);
+  if (first === undefined) return null;
+  const after = followed(s, s.queues[s.active].current);
+  endWalk(s);
+  const same = was !== null && sameEntry(was, first);
+  const current: SessionItem = {
+    itemId: same ? was.itemId : deps.newId(),
+    ref: first.ref,
+    ...(first.chapter === undefined ? {} : { chapter: first.chapter }),
+    ...(after === undefined ? {} : { after }),
+    list: digest,
+  };
+  const queue: SessionQueue = {
+    current,
+    position: same ? (left?.position ?? null) : null,
+    user: episodes
+      .filter((e) => !sameEntry(e, first))
+      .map((e): SessionItem => ({ ...entryOf(e), itemId: deps.newId(), list: digest })),
+    context: null,
+  };
+  if (s.spokenDigest !== digest) putAside(s, deps);
+  s.saved = s.saved.filter((q) => q.owner !== digest);
+  s.queues.spoken = distinct(s, queue, deps);
+  s.spokenDigest = digest;
+  s.autoplay.spoken = null;
+  s.active = 'spoken';
+  if (s.switchAfterCurrent === 'spoken') s.switchAfterCurrent = null;
+  return s;
+}
+
+/**
+ * Brings back the spoken queue saved for `owner` (null: your own), whole, with its position and
+ * autoplay pick, and makes it active; the spoken queue it replaces is put aside in its turn. A
+ * walk Back started ends first. Unchanged when no queue is saved for `owner`.
+ */
+export function resumeSaved(
+  session: SessionValue,
+  owner: string | null,
+  deps: EngineDeps,
+): SessionValue {
+  if (!session.saved.some((q) => q.owner === owner)) return session;
+  const s = structuredClone(session);
+  const after = followed(s, s.queues[s.active].current);
+  endWalk(s);
+  swapSpoken(s, owner, after, deps);
+  s.active = 'spoken';
+  if (s.switchAfterCurrent === 'spoken') s.switchAfterCurrent = null;
   return s;
 }
 
@@ -225,7 +332,8 @@ export function setQueueStyle(session: SessionValue, style: QueueStyle): Session
 /**
  * Ends `type`'s current item and answers its play: it goes to history, unless it is a replay
  * Back brought back, which is there already. (Replays are never recorded twice, however their
- * walk ends.) With no current item, what it answers is the newest play.
+ * walk ends.) A play of an entry a digest's rule put in its queue names that digest. With no
+ * current item, what it answers is the newest play.
  */
 function retire(s: SessionValue, type: QueueType, deps: EngineDeps): number | undefined {
   const queue = s.queues[type];
@@ -240,6 +348,7 @@ function retire(s: SessionValue, type: QueueType, deps: EngineDeps): number | un
     ...(item.chapter === undefined ? {} : { chapter: item.chapter }),
     playedAt: deps.now(),
     ...(item.after === undefined ? {} : { after: item.after }),
+    ...(item.list === undefined ? {} : { list: item.list }),
   });
   return seq;
 }
@@ -363,4 +472,82 @@ function endWalk(s: SessionValue): void {
       delete item.replayOf;
     }
   }
+}
+
+const sameEntry = (a: QueueEntry, b: QueueEntry) =>
+  a.ref.source === b.ref.source &&
+  a.ref.id === b.ref.id &&
+  (a.chapter ?? null) === (b.chapter ?? null);
+
+const entryOf = (e: QueueEntry): QueueEntry => ({
+  ref: e.ref,
+  ...(e.chapter === undefined ? {} : { chapter: e.chapter }),
+});
+
+/** Whether `queue` holds `entry` as one its digest's rule put there. */
+const digestHolds = (queue: SessionQueue, entry: QueueEntry): boolean =>
+  [queue.current, ...queue.user].some(
+    (item) => item !== null && item.list !== undefined && sameEntry(item, entry),
+  );
+
+/** Whether `queue` holds any of `entries`: as its current item, or queued after it. */
+const holds = (queue: SessionQueue, entries: readonly QueueEntry[]): boolean =>
+  [queue.current, ...queue.user, ...(queue.context?.items ?? [])].some(
+    (item) => item !== null && entries.some((e) => sameEntry(e, item)),
+  );
+
+/** Saves the spoken queue under its owner, whole, replacing what that owner had saved. */
+function putAside(s: SessionValue, deps: EngineDeps): void {
+  const owner = s.spokenDigest;
+  const queue = structuredClone(s.queues.spoken);
+  if (queue.current !== null) delete queue.current.after;
+  const saved: SavedQueue = { owner, queue, autoplay: s.autoplay.spoken, savedAt: deps.now() };
+  s.saved = [...s.saved.filter((q) => q.owner !== owner), saved];
+}
+
+/**
+ * Puts the spoken queue aside and brings back `owner`'s saved queue in its place, or an empty one
+ * when it has none; its current item follows play `after`.
+ */
+function swapSpoken(
+  s: SessionValue,
+  owner: string | null,
+  after: number | undefined,
+  deps: EngineDeps,
+): void {
+  const back = s.saved.find((q) => q.owner === owner);
+  putAside(s, deps);
+  s.saved = s.saved.filter((q) => q.owner !== owner);
+  const queue = back?.queue ?? { current: null, position: null, user: [], context: null };
+  if (queue.current !== null) follow(queue.current, after);
+  s.queues.spoken = distinct(s, queue, deps);
+  s.spokenDigest = owner;
+  s.autoplay.spoken = back?.autoplay ?? null;
+}
+
+/**
+ * `queue` with every entry id its own: an entry whose id the music queue, or an entry before it,
+ * already holds is given a new one, so a queue brought back never clashes.
+ */
+function distinct(s: SessionValue, queue: SessionQueue, deps: EngineDeps): SessionQueue {
+  const music = s.queues.music;
+  const seen = new Set(
+    [music.current, ...music.user, ...(music.context?.items ?? [])].flatMap((i) =>
+      i === null ? [] : [i.itemId],
+    ),
+  );
+  const own = <T extends QueueItem>(item: T): T => {
+    const id = seen.has(item.itemId) ? deps.newId() : item.itemId;
+    seen.add(id);
+    return { ...item, itemId: id };
+  };
+  return {
+    ...queue,
+    current: queue.current === null ? null : own(queue.current),
+    user: queue.user.map(own),
+    context:
+      queue.context === null
+        ? null
+        : { from: queue.context.from, items: queue.context.items.map(own) },
+  };
 }

@@ -110,6 +110,16 @@ export class IndexLookup {
   }
 
   /**
+   * Where an entry ends, in seconds, in the frame a queue keeps its position in: a book chapter's
+   * end from the start of the book, as last read; else the indexed duration. Null when neither is
+   * known.
+   */
+  endOf(entry: QueueEntry): number | null {
+    if (entry.chapter !== undefined) return this.chapters(entry.ref)?.[entry.chapter]?.end ?? null;
+    return indexedRow(this.db, entry.ref.source, entry.ref.id)?.duration ?? null;
+  }
+
+  /**
    * The books autoplay on the spoken queue may need chapters of: the book it follows (its current
    * item, else its newest play) and every book of that book's series.
    */

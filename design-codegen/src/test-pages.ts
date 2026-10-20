@@ -35,7 +35,7 @@ export function bindings(tree: PageTree, into: string[] = []): string[] {
     if (v.kind === 'slot') bindings(v.tree, into);
     if (v.kind === 'open' && typeof v.page !== 'string') into.push(v.page.path.join('.'));
     if (v.kind === 'play' && typeof v.queue !== 'string') into.push(v.queue.path.join('.'));
-    if (v.kind === 'open' || v.kind === 'request' || v.kind === 'play')
+    if (v.kind === 'open' || v.kind === 'request' || v.kind === 'play' || v.kind === 'choose')
       Object.values(v.params).forEach((path) => into.push(path.join('.')));
   };
   if (tree.kind === 'binding') into.push(tree.path.join('.'));

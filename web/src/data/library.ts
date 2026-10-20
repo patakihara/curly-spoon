@@ -8,7 +8,7 @@ import { artAt, emptied } from './format';
 /**
  * The library homes' data from `GET /api/library/{medium}`: each book, show or album as the
  * page's card, opening its page by its ref. The page's own words (its tabs, its sort) stay as the
- * canvas has them. A show's card names its host, and lists are not served yet, so none shows.
+ * canvas has them. A show's card names its host; Podcasts' lists are given (`lists.ts`).
  */
 
 /** What a card says beside its art of where you stand with it: nothing for what you own. */
@@ -56,9 +56,15 @@ export function booksData(list: LibraryList, page: BooksData): BooksData {
   };
 }
 
-export function podcastsData(list: LibraryList, page: PodcastsData): PodcastsData {
+/** Your shows, then your lists; lists that failed, null, leave their section out. */
+export function podcastsData(
+  list: LibraryList,
+  lists: PodcastsData['lists'] | null,
+  page: PodcastsData,
+): PodcastsData {
   return {
     ...page,
+    sections: lists === null ? page.sections.filter((s) => s !== 'Lists') : page.sections,
     library: list.items.map((show) => ({
       title: show.title,
       ref: mediaRefKey(show.ref),
@@ -66,7 +72,7 @@ export function podcastsData(list: LibraryList, page: PodcastsData): PodcastsDat
       image: artAt(show.art, 'medium'),
       unplayed: false,
     })),
-    lists: [],
+    lists: lists ?? [],
   };
 }
 

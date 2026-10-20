@@ -23,6 +23,16 @@ import {
   CreateBookmarkBody,
 } from './bookmarks.js';
 import { HealthResponse } from './health.js';
+import {
+  AddListItemBody,
+  CreateListBody,
+  ListDetail,
+  ListParams,
+  ListSummaryList,
+  PlayListBody,
+  PutListItemsBody,
+  UpdateListBody,
+} from './lists.js';
 import { Lyrics } from './lyrics.js';
 import {
   ArtQuery,
@@ -471,6 +481,104 @@ export const getLyrics = {
   params: ItemParams,
 } as const satisfies Route;
 
+export const listLists = {
+  method: 'GET',
+  path: '/api/lists',
+  operationId: 'listLists',
+  summary: "The signed-in person's listening lists, podcast playlists and digests",
+  responseDescription: 'The Digest first, made on the first ask, then the others, oldest first.',
+  response: ListSummaryList,
+  access: 'member',
+} as const satisfies Route;
+
+export const createList = {
+  method: 'POST',
+  path: '/api/lists',
+  operationId: 'createList',
+  summary: 'Make a listening list, a podcast playlist or a custom digest',
+  responseDescription:
+    'The list made; 400 `wrong_kind` for shows or an order on a list that is not a digest, or a show that is not one, 404 for a show not indexed or outside your libraries.',
+  response: ListDetail,
+  access: 'member',
+  body: CreateListBody,
+} as const satisfies Route;
+
+export const getList = {
+  method: 'GET',
+  path: '/api/lists/{id}',
+  operationId: 'getList',
+  summary: "One of the signed-in person's lists, with its entries as they stand now",
+  responseDescription:
+    "Its summary, a digest's shows, and its entries: a digest's by its rule, a playlist's unplayed ones, a listening list's with finished ones crossed off; 404 for a list not yours.",
+  response: ListDetail,
+  access: 'member',
+  params: ListParams,
+} as const satisfies Route;
+
+export const updateList = {
+  method: 'PATCH',
+  path: '/api/lists/{id}',
+  operationId: 'updateList',
+  summary: "Rename a list, change a digest's order, or choose a custom digest's shows",
+  responseDescription:
+    'The list as it now is; 400 `fixed_list` for a new name or shows on The Digest, `wrong_kind` for an order or shows on a list that is not a digest, and nothing changed.',
+  response: ListDetail,
+  access: 'member',
+  params: ListParams,
+  body: UpdateListBody,
+} as const satisfies Route;
+
+export const deleteList = {
+  method: 'DELETE',
+  path: '/api/lists/{id}',
+  operationId: 'deleteList',
+  summary: "Delete one of the signed-in person's lists",
+  responseDescription:
+    'The list is gone; 400 `fixed_list` for The Digest, 404 for a list not yours.',
+  response: Ok,
+  access: 'member',
+  params: ListParams,
+} as const satisfies Route;
+
+export const addListItem = {
+  method: 'POST',
+  path: '/api/lists/{id}/items',
+  operationId: 'addListItem',
+  summary: 'Add a book or show to the end of a listening list, or an episode to a playlist',
+  responseDescription:
+    'The list as it now is; 404 for an entry not indexed or outside your libraries, whatever its kind, 400 `wrong_kind` for one the list does not take or any digest, `list_full` past the most a list holds.',
+  response: ListDetail,
+  access: 'member',
+  params: ListParams,
+  body: AddListItemBody,
+} as const satisfies Route;
+
+export const setListItems = {
+  method: 'PUT',
+  path: '/api/lists/{id}/items',
+  operationId: 'setListItems',
+  summary: "Set a listening list's or playlist's entries, whole and in order",
+  responseDescription:
+    'The list as it now is; refused as adding one entry is, and nothing changed.',
+  response: ListDetail,
+  access: 'member',
+  params: ListParams,
+  body: PutListItemsBody,
+} as const satisfies Route;
+
+export const playList = {
+  method: 'POST',
+  path: '/api/lists/{id}/play',
+  operationId: 'playList',
+  summary: "Play a list now, in its order, on this device's spoken queue",
+  responseDescription:
+    "The spoken queue: a listening list's or playlist's unplayed entries from `start` onwards, a book as its chapters and a show as its unplayed episodes, the first current and no playing-from; a finished `start` plays from its beginning. A digest plays in its own queue (`digest` names it), from `start` or the episode it was left on, at its position, then its other episodes; the spoken queue it replaces is saved, and comes back when its current item, or its next once that finished, is played. 404 for a list not yours or a `start` not on it, 400 `nothing_to_play` when none is left, 409 `stale_revision`.",
+  response: Queue,
+  access: 'member',
+  params: ListParams,
+  body: PlayListBody,
+} as const satisfies Route;
+
 /** Every route the API has. The generator and the server's route test both read this list. */
 export const routes: readonly Route[] = [
   health,
@@ -506,4 +614,12 @@ export const routes: readonly Route[] = [
   getSearchSuggest,
   getSearch,
   getLyrics,
+  listLists,
+  createList,
+  getList,
+  updateList,
+  deleteList,
+  addListItem,
+  setListItems,
+  playList,
 ];

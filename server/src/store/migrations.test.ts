@@ -174,7 +174,7 @@ describe('the lyrics migrations', () => {
 
     runMigrations(db);
 
-    expect(appliedIds(db).slice(-2)).toEqual([12, 13]);
+    expect(appliedIds(db)).toEqual(expect.arrayContaining([12, 13]));
     expect(db.prepare('SELECT COUNT(*) AS n FROM index_sync').get()).toEqual({ n: 0 });
     expect(db.prepare('SELECT upstream_id, has_lyrics FROM index_items').all()).toEqual([
       { upstream_id: 'track-1', has_lyrics: 0 },
@@ -229,6 +229,68 @@ describe('the search index migration', () => {
     expect(db.prepare("SELECT name FROM sqlite_master WHERE name LIKE 'search%'").all()).toEqual(
       [],
     );
+    db.close();
+  });
+});
+
+describe('the lists migration', () => {
+  it('adds lists, played marks and saved queues on top of 13, keeping every session and play', () => {
+    const db = new Database(':memory:');
+    db.pragma('foreign_keys = ON');
+    runMigrations(
+      db,
+      migrations.filter((m) => m.id <= 13),
+    );
+    db.exec(`
+      INSERT INTO users (id, username, role, created_at, updated_at)
+        VALUES ('user-1', 'kara', 'member', 1, 1);
+      INSERT INTO devices (id, user_id, kind, name, created_at, last_seen_at)
+        VALUES ('device-1', 'user-1', 'web', 'Laptop', 1, 1);
+      INSERT INTO listening_sessions (device_id, user_id, active, rev, updated_at)
+        VALUES ('device-1', 'user-1', 'spoken', 3, 1);
+      INSERT INTO play_history (device_id, seq, queue, source, upstream_id, played_at)
+        VALUES ('device-1', 0, 'spoken', 'abs', 'episode-1', 1);
+    `);
+
+    runMigrations(db);
+
+    expect(appliedIds(db).at(-1)).toBe(14);
+    expect(db.prepare('SELECT rev, spoken_digest FROM listening_sessions').all()).toEqual([
+      { rev: 3, spoken_digest: null },
+    ]);
+    expect(db.prepare('SELECT upstream_id, list_id FROM play_history').all()).toEqual([
+      { upstream_id: 'episode-1', list_id: null },
+    ]);
+    for (const table of ['lists', 'list_items', 'played_marks', 'saved_queues']) {
+      expect(db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get()).toEqual({ n: 0 });
+    }
+    const applied = appliedIds(db);
+    runMigrations(db);
+    expect(appliedIds(db)).toEqual(applied);
+    db.close();
+  });
+
+  it('allows one The Digest per person, and an order only on a digest', () => {
+    const db = new Database(':memory:');
+    db.pragma('foreign_keys = ON');
+    runMigrations(db);
+    db.exec(`
+      INSERT INTO users (id, username, role, created_at, updated_at)
+        VALUES ('user-1', 'kara', 'member', 1, 1);
+    `);
+    const add = db.prepare(
+      `INSERT INTO lists (id, user_id, kind, name, all_shows, play_order, created_at, updated_at)
+       VALUES (?, 'user-1', ?, 'n', ?, ?, 1, 1)`,
+    );
+
+    add.run('digest-1', 'digest', 1, 'oldest');
+    add.run('digest-2', 'digest', 0, 'newest');
+    add.run('list-1', 'listening', 0, null);
+
+    expect(() => add.run('digest-3', 'digest', 1, 'oldest')).toThrow(/UNIQUE/);
+    expect(() => add.run('playlist-1', 'playlist', 0, 'oldest')).toThrow(/CHECK/);
+    expect(() => add.run('digest-4', 'digest', 0, null)).toThrow(/CHECK/);
+    expect(() => add.run('list-2', 'listening', 1, null)).toThrow(/CHECK/);
     db.close();
   });
 });

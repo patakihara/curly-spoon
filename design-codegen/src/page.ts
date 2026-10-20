@@ -9,7 +9,8 @@
  * names, `onPlay={<Play ref={episode.ref} queue="spoken" />}` (or `queue={item.queue}`, each item
  * naming its own), `next` for Play next, `source` for a list played on its own; or start signing
  * in, `onClick={<SignIn />}`; or hold the search query a field types and submits,
- * `onChange={<Query />}`. An Open may also bind any of its route's query names,
+ * `onChange={<Query />}`; or do a menu's chosen verb to the item its ref binds,
+ * `onSelect={<Choose ref={data.ref} />}`. An Open may also bind any of its route's query names,
  * `<Open page="search" q={s.query} />`. It is read into a page
  * tree, never run, so both platforms can generate from the same file: the web as a navigation to
  * the route, Android as one to the nav graph's destination with the same arguments.
@@ -45,7 +46,12 @@ export type PropValue =
   /** A handler that starts signing in through the household sign-on: the app's own sign-in. */
   | { kind: 'signIn' }
   /** A field's handler holding the search query: what it types, on `onChange`, and submits. */
-  | { kind: 'query' };
+  | { kind: 'query' }
+  /** A menu's handler doing its chosen verb, by its key, to the item its `ref` binds. */
+  | { kind: 'choose'; params: Record<string, string[]> };
+
+/** The handler props a `<Choose />` goes on: a menu's choice. */
+export const CHOOSE_PROPS = ['onSelect'] as const;
 
 /** The handler props a `<Query />` goes on: a text field's typing and its submitting. */
 export const QUERY_PROPS = ['onChange', 'onSubmit'] as const;
@@ -94,11 +100,13 @@ function memberPath(node: t.Node): string[] {
 const TAKEN = new Set([
   // The canvas board's.
   ...['data', 'shell', 'slots', 'lists', 'when', 'chrome', 'platform', 'state', 'placeholder'],
+  'choose',
   ...['i', 'layout', 'detected', 'given'],
   // The web page's: what it declares, the hooks it imports, what its handlers take, globals it reads.
   ...['frame', 'routes', 'generatePath', 'navigate', 'query', 'play', 'playing', 'go', 'inPanel'],
   ...['context', 'leading', 'key', 'tab', 'window', 'undefined'],
   ...['useContext', 'useLayout', 'useNavigate', 'usePlay', 'usePlaying', 'useQuery', 'useShellNav'],
+  'useChoose',
 ]);
 
 /** `value`, if it is a plain lower-case name a page may give an Each item or a When state. */
@@ -134,6 +142,7 @@ function propValue(value: t.JSXAttribute['value']): PropValue {
     if (name.type === 'JSXIdentifier' && name.name === 'Play') return play(e);
     if (name.type === 'JSXIdentifier' && name.name === 'SignIn') return signIn(e);
     if (name.type === 'JSXIdentifier' && name.name === 'Query') return query(e);
+    if (name.type === 'JSXIdentifier' && name.name === 'Choose') return choose(e);
     const tree = element(e);
     if (tree.kind !== 'element') return fail(e, 'Each and When go in children, not in a prop');
     return { kind: 'slot', tree };
@@ -160,6 +169,7 @@ function handlerAttrs(node: t.JSXElement, what: string) {
     if (attr.name.type !== 'JSXIdentifier') return fail(attr, 'namespaced props are not allowed');
     const name = attr.name.name;
     const value = attr.value;
+    if (what === 'Choose' && name !== 'ref') return fail(attr, `Choose takes ref, not ${name}`);
     if (what === 'Play' && !['ref', 'queue', 'next', 'source'].includes(name)) {
       return fail(attr, `Play takes ref, queue, next and source, not ${name}`);
     }
@@ -236,6 +246,11 @@ function play(node: t.JSXElement): PropValue {
   return { kind: 'play', queue: queue as Queue | { path: string[] }, next, source, params };
 }
 
+/** `<Choose ref={data.ref} />`: a menu's chosen verb, by its key, done to the item its ref binds. */
+function choose(node: t.JSXElement): PropValue {
+  return { kind: 'choose', params: handlerAttrs(node, 'Choose').params };
+}
+
 /** A handler that takes nothing, `<SignIn />` or `<Query />`: each app knows what it does. */
 function bare(node: t.JSXElement, what: string) {
   if (node.children.length > 0) return fail(node, `${what} takes no children`);
@@ -300,6 +315,8 @@ function element(node: t.JSXElement): PageTree {
     return fail(node, 'SignIn goes in a handler prop, onClick={<SignIn />}');
   if (name.name === 'Query')
     return fail(node, 'Query goes in a handler prop, onChange={<Query />}');
+  if (name.name === 'Choose')
+    return fail(node, 'Choose goes in a handler prop, onSelect={<Choose … />}');
   const props: Record<string, PropValue> = {};
   for (const attr of node.openingElement.attributes) {
     if (attr.type === 'JSXSpreadAttribute') return fail(attr, 'spread props are not allowed');
@@ -485,19 +502,26 @@ export function checkPage(
       }
     }
   };
-  /** A Request or a Play: a handler prop, its one parameter a bound ref. */
+  /** A Request, a Play or a Choose: a handler prop, its one parameter a bound ref. */
   const checkItem = (
     line: number,
     component: string,
     prop: string,
-    value: Extract<PropValue, { kind: 'request' | 'play' }>,
+    value: Extract<PropValue, { kind: 'request' | 'play' | 'choose' }>,
     check: (line: number, path: string[]) => Json[],
   ) => {
     const at = `line ${line}: ${component}.${prop}`;
-    const [noun, verb] = value.kind === 'play' ? ['play', 'play'] : ['request', 'request'];
+    const [noun, verb] =
+      value.kind === 'play'
+        ? ['play', 'play']
+        : value.kind === 'choose'
+          ? ['choice', 'act on']
+          : ['request', 'request'];
     const handlers = opens?.handlers.get(component);
     if (handlers !== undefined && !handlers.has(prop)) {
       errors.push(`${at} takes no handler, so it cannot ${verb} an item`);
+    } else if (value.kind === 'choose' && !(CHOOSE_PROPS as readonly string[]).includes(prop)) {
+      errors.push(`${at} cannot take a menu's choice: Choose goes on ${listed([...CHOOSE_PROPS])}`);
     }
     const given = Object.keys(value.params);
     if (given.join() !== 'ref') {
@@ -587,7 +611,7 @@ export function checkPage(
             checkOpen(node.line, node.component, prop, value, check);
             continue;
           }
-          if (value.kind === 'request' || value.kind === 'play') {
+          if (value.kind === 'request' || value.kind === 'play' || value.kind === 'choose') {
             checkItem(node.line, node.component, prop, value, check);
             continue;
           }

@@ -2,6 +2,9 @@ import {
   ItemDetail,
   LibraryList,
   type LibraryMedium,
+  ListDetail,
+  type ListSummary,
+  ListSummaryList,
   ListeningSessionList,
   parseMediaRefKey,
   type QueueType,
@@ -14,13 +17,13 @@ import { SignedOut } from './store';
 
 /**
  * What the pages read from the API, each answer parsed with the schema's zod: a library list, one
- * book, show or album, this device's queues, and search's suggestions and results. A refusal for
+ * book, show or album, your lists, this device's queues, and search's suggestions and results. A refusal for
  * want of a sign-in throws `SignedOut`; any other failure throws too, and the page keeps what it
  * had.
  */
 
 /** The answer's data parsed, or why there is none. */
-async function answer<T>(
+export async function answer<T>(
   asked: Promise<{ data?: unknown; response: Response }>,
   parse: (data: unknown) => T,
 ): Promise<T> {
@@ -57,6 +60,41 @@ export const loadItem = (api: ApiClient, ref: string | undefined): Promise<ItemD
     ItemDetail.parse(d),
   );
 };
+
+/** The list `id` names, as it sits in the page's address; else none. */
+export const loadList = (api: ApiClient, id: string | undefined): Promise<ListDetail> => {
+  if (id === undefined || id === '') return Promise.reject(new Error('no list'));
+  return answer(api.GET('/api/lists/{id}', { params: { path: { id } } }), (d) =>
+    ListDetail.parse(d),
+  );
+};
+
+/** Your lists, The Digest first, each with what its card draws. */
+export const loadLists = async (api: ApiClient): Promise<ListSummary[]> =>
+  (await answer(api.GET('/api/lists'), (d) => ListSummaryList.parse(d))).lists;
+
+/** Your lists, or null when they could not be read; a refusal for want of a sign-in still throws. */
+export const listsOrNone = (api: ApiClient): Promise<ListSummary[] | null> =>
+  loadLists(api).catch((error: unknown) => {
+    if (error instanceof SignedOut) throw error;
+    return null;
+  });
+
+/**
+ * The Podcasts page's shows and lists. Lists that fail are null, so the shows still draw; a
+ * refusal for want of a sign-in still throws, and so do shows that fail.
+ */
+export async function loadPodcasts(
+  api: ApiClient,
+): Promise<{ library: LibraryList; lists: ListSummary[] | null }> {
+  const [library, lists] = await Promise.allSettled([
+    loadLibrary(api, 'podcasts'),
+    listsOrNone(api),
+  ]);
+  if (lists.status === 'rejected') throw lists.reason;
+  if (library.status === 'rejected') throw library.reason;
+  return { library: library.value, lists: lists.value };
+}
 
 const loadQueue = (api: ApiClient, type: QueueType) =>
   answer(api.GET('/api/queues/{type}', { params: { path: { type } } }), (d) => QueueView.parse(d));

@@ -23,6 +23,7 @@ import {
   type MediaRef,
   PlaybackPlan,
   ProgressAnswer,
+  Queue,
   type QueueType,
 } from '@auralis/schema';
 import { type ApiClient, createApiClient } from '../api/client';
@@ -103,6 +104,11 @@ export interface PlayerStore {
   /** Plans `ref` and plays it. */
   play(ref: MediaRef): Promise<void>;
   /**
+   * Plays list `id` in its order, from `start`, one of its entries, when given: the list's route
+   * makes the spoken queue, and its current item is planned and played.
+   */
+  playList(id: string, start?: MediaRef): Promise<void>;
+  /**
    * Plans what this device's session plays, paused where it stopped, unless something is loaded
    * already: what a reload left. Once only, however often it is asked; nothing where no one is
    * signed in.
@@ -126,7 +132,7 @@ type Sleep = { kind: 'off' } | { kind: 'timer'; endsAt: number } | { kind: 'chap
 const logClose = (error: unknown) => console.warn('closing a play failed', error);
 
 /** Logs an item that could not be planned: the shell binds no status to show it in. */
-const logPlay = (ref: MediaRef) => console.warn('playing failed', ref);
+const logPlay = (ref: MediaRef | string) => console.warn('playing failed', ref);
 
 const lengthOf = (plan: PlaybackPlan | null) => {
   const last = plan?.tracks.at(-1);
@@ -524,6 +530,57 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     await report();
   };
 
+  /**
+   * Closes what plays, then plays `pick`'s answer, the item to plan, and whether picking it moved
+   * the server's queue. An item that cannot be planned leaves the player on what it had, planned
+   * again where the close left it, or idle; but once the queue moved, as a list's play moves it,
+   * the player goes idle, since planning what it had would put that back on the new queue. A pick
+   * refused for want of a sign-in has stopped everything already.
+   */
+  const playInstead = async (
+    pick: () => Promise<{ to: MediaRef | null; moved: boolean } | 'signedOut'>,
+    failed: MediaRef | string,
+  ): Promise<void> => {
+    const was = ref;
+    const playOn = playing;
+    await closeCurrent();
+    const picked = await pick();
+    if (picked === 'signedOut') return;
+    const { to, moved } = picked;
+    if (to !== null && (await start(to, true))) return;
+    logPlay(to ?? failed);
+    // Decision (M1.shell): an item that cannot be planned leaves the player on what it had,
+    // planned again where the close left it, or idle. The play it had is closed first, so its
+    // last place and listening reach the server before anything else plans.
+    // Decision (M2.lists): after a list's play moved the queue, the player goes idle instead, so
+    // the queue stays as the list made it.
+    if (was === null || moved) unload();
+    else await load(was, playOn);
+  };
+
+  /**
+   * The item list `id`'s play makes current, from `start` when given, and whether the play moved
+   * the queue: it did when the route answered with the queue, whatever its current.
+   */
+  const listCurrent = async (
+    id: string,
+    start: MediaRef | undefined,
+  ): Promise<{ to: MediaRef | null; moved: boolean } | 'signedOut'> => {
+    const answered = await api
+      .POST('/api/lists/{id}/play', {
+        params: { path: { id } },
+        body: start === undefined ? {} : { start },
+      })
+      .catch(() => null);
+    if (answered?.response.status === 401) {
+      await signOut();
+      return 'signedOut';
+    }
+    const queue = Queue.safeParse(answered?.data);
+    if (!queue.success) return { to: null, moved: false };
+    return { to: queue.data.current?.ref ?? null, moved: true };
+  };
+
   /** Plans what this device's session plays, paused where it stopped, unless something is loaded. */
   const restoreOnce = async () => {
     if (plan !== null) return;
@@ -544,19 +601,8 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
       return () => listeners.delete(listener);
     },
     getState: () => state,
-    play: (to) =>
-      run(async () => {
-        const was = ref;
-        const playOn = playing;
-        await closeCurrent();
-        if (await start(to, true)) return;
-        logPlay(to);
-        // Decision (M1.shell): an item that cannot be planned leaves the player on what it had,
-        // planned again where the close left it, or idle. The play it had is closed first, so its
-        // last place and listening reach the server before anything else plans.
-        if (was === null) unload();
-        else await load(was, playOn);
-      }),
+    play: (to) => run(() => playInstead(async () => ({ to, moved: false }), to)),
+    playList: (id, from) => run(() => playInstead(() => listCurrent(id, from), id)),
     restore: () =>
       (restoring ??= run(async () => {
         try {

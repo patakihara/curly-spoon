@@ -12,7 +12,7 @@ export default function List({ data }) {
             nextLabel="Play next"
             onPlayNext={<Play ref={data.ref} queue="spoken" next />}
             lastLabel={null}
-            menu={<OverflowMenu items={data.menu} />}
+            menu={<OverflowMenu items={data.menu} onSelect={<Choose ref={data.ref} />} />}
           />
         </Section>
         <Section title="Shows">
@@ -37,7 +37,7 @@ export default function List({ data }) {
               meta={item.meta}
               image={item.image}
               progress={item.progress}
-              onClick={<Open page="episode" ref={item.ref} />}
+              onClick={<Open page={item.page} ref={item.ref} />}
               onPlay={<Play ref={item.ref} queue="spoken" />}
               divider
             />

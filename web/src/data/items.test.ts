@@ -113,6 +113,7 @@ describe('[M1.shell] a show’s page from GET /api/items/{ref}', () => {
   it('heads the page with the show, its host, art and how many episodes are unplayed', () => {
     expect(data).toMatchObject({
       title: 'Megacorp',
+      ref: 'abs:s1',
       kind: show.placeholder.kind,
       host: 'Rosa Elin',
       image: '/api/media/abs:s1/art?size=medium',

@@ -23,6 +23,16 @@
       "key": "author",
       "label": "Go to author",
       "icon": "person"
+    },
+    {
+      "key": "add:weekend-reads",
+      "label": "Add to Weekend reads",
+      "icon": "playlist_add"
+    },
+    {
+      "key": "new:listening",
+      "label": "New listening list",
+      "icon": "add"
     }
   ],
   "chapters": [

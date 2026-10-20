@@ -20,6 +20,7 @@ import {
   AUTOPLAY_STALE_MS,
   type AutoplayDeps,
   autoplayStale,
+  ownPlays,
   prepareAutoplay,
   storedAutoplay,
 } from './autoplay.js';
@@ -178,6 +179,8 @@ function playing(
     autoplay: { music: null, spoken: null },
     radio: null,
     autoplayAt: null,
+    spokenDigest: null,
+    saved: [],
   };
 }
 
@@ -321,6 +324,24 @@ describe('[M1.sessions/e] autoplay on the spoken queue', () => {
     );
 
     expect(s.autoplay.spoken).toEqual({ after: { ref: partTwo }, next: { ref: partThree } });
+  });
+});
+
+describe('[M2.lists/d] autoplay keeps your place in a show past what a digest played', () => {
+  it('[M2.lists/d] follows your own newest play, not a later episode played in a digest', async () => {
+    const [e1, e2, e3] = episodesInOrder(db, show1.id).map((e) => abs(e.id)) as [
+      MediaRef,
+      MediaRef,
+      MediaRef,
+    ];
+    const s = playing('spoken', null, [{ ref: e1 }]);
+    s.history.push({ seq: 1, queue: 'spoken', ref: e3, playedAt: 2000, list: 'a-digest' });
+
+    const done = await prepareAutoplay(s, resolver([ME]).deps);
+
+    expect(ownPlays(done).map((p) => p.ref)).toEqual([e1]);
+    expect(done.autoplay.spoken).toEqual({ after: { ref: e1 }, next: { ref: e2 } });
+    expect(storedAutoplay('spoken', done)).toEqual({ ref: e2 });
   });
 });
 

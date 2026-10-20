@@ -32,6 +32,24 @@ export {
   CreateBookmarkBody,
 } from './bookmarks.js';
 export { CommitId, HealthResponse } from './health.js';
+export {
+  AddListItemBody,
+  CreateListBody,
+  DigestOrder,
+  LIST_COVERS_MAX,
+  LIST_ENTRIES_MAX,
+  ListCounts,
+  ListDetail,
+  ListItem,
+  ListItemKind,
+  ListKind,
+  ListParams,
+  ListSummary,
+  ListSummaryList,
+  PlayListBody,
+  PutListItemsBody,
+  UpdateListBody,
+} from './lists.js';
 export { LyricLine, Lyrics, LyricsSource, LyricsStatus } from './lyrics.js';
 export {
   ArtQuery,
@@ -78,13 +96,17 @@ export {
   ProgressTarget,
 } from './play.js';
 export {
+  addListItem,
   addToQueue,
   appToken,
   closePlay,
   createBookmark,
+  createList,
   deleteBookmark,
   deleteDevice,
+  deleteList,
   getItem,
+  getList,
   getLyrics,
   getMe,
   getQueue,
@@ -95,6 +117,7 @@ export {
   listBookmarks,
   listDevices,
   listLibrary,
+  listLists,
   listSessions,
   listUsers,
   login,
@@ -104,15 +127,18 @@ export {
   mediaHls,
   mediaTrack,
   play,
+  playList,
   postSetup,
   putQueue,
   renameDevice,
   reportProgress,
   routes,
   setActiveQueue,
+  setListItems,
   setQueueStyle,
   stepSession,
   type Access,
+  updateList,
   type Route,
 } from './routes.js';
 export {

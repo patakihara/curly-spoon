@@ -19,6 +19,11 @@ data class ActiveQueueBody(
 )
 
 @Serializable
+data class AddListItemBody(
+    val ref: MediaRef,
+)
+
+@Serializable
 data class AddToQueueBody(
     val ref: MediaRef,
     val how: QueueHow,
@@ -91,6 +96,14 @@ data class CreateBookmarkBody(
 )
 
 @Serializable
+data class CreateListBody(
+    val kind: ListKind,
+    val name: String,
+    val shows: List<MediaRef>? = null,
+    val order: DigestOrder? = null,
+)
+
+@Serializable
 data class Device(
     val id: String,
     val kind: ClientKind,
@@ -104,6 +117,14 @@ data class Device(
 data class DeviceList(
     val devices: List<Device>,
 )
+
+@Serializable
+enum class DigestOrder {
+    @SerialName("oldest")
+    OLDEST,
+    @SerialName("newest")
+    NEWEST,
+}
 
 @Serializable
 data class ErrorResponse(
@@ -237,6 +258,77 @@ data class LinkStatus(
 )
 
 @Serializable
+data class ListCounts(
+    val book: Long,
+    val show: Long,
+    val episode: Long,
+)
+
+@Serializable
+data class ListDetail(
+    val id: String,
+    val kind: ListKind,
+    val name: String,
+    val theDigest: Boolean,
+    val order: DigestOrder?,
+    val count: Long,
+    val counts: ListCounts,
+    val covers: List<String>,
+    val shows: List<LibraryEntry>,
+    val items: List<ListItem>,
+)
+
+@Serializable
+data class ListItem(
+    val ref: MediaRef,
+    val kind: ListItemKind,
+    val title: String,
+    val sub: String?,
+    val art: String?,
+    val publishedAt: Long?,
+    val duration: Double?,
+    val progress: Double?,
+    val finished: Boolean,
+)
+
+@Serializable
+enum class ListItemKind {
+    @SerialName("book")
+    BOOK,
+    @SerialName("show")
+    SHOW,
+    @SerialName("episode")
+    EPISODE,
+}
+
+@Serializable
+enum class ListKind {
+    @SerialName("listening")
+    LISTENING,
+    @SerialName("playlist")
+    PLAYLIST,
+    @SerialName("digest")
+    DIGEST,
+}
+
+@Serializable
+data class ListSummary(
+    val id: String,
+    val kind: ListKind,
+    val name: String,
+    val theDigest: Boolean,
+    val order: DigestOrder?,
+    val count: Long,
+    val counts: ListCounts,
+    val covers: List<String>,
+)
+
+@Serializable
+data class ListSummaryList(
+    val lists: List<ListSummary>,
+)
+
+@Serializable
 data class ListeningSession(
     val deviceId: String,
     val deviceName: String,
@@ -316,6 +408,12 @@ data class Ok(
 @Serializable
 data class PlayBody(
     val ref: MediaRef,
+)
+
+@Serializable
+data class PlayListBody(
+    val start: MediaRef? = null,
+    val rev: Long? = null,
 )
 
 @Serializable
@@ -409,6 +507,11 @@ data class ProgressTarget(
 )
 
 @Serializable
+data class PutListItemsBody(
+    val refs: List<MediaRef>,
+)
+
+@Serializable
 data class PutQueueBody(
     val rev: Long,
     val user: List<String>,
@@ -422,6 +525,7 @@ data class Queue(
     val position: QueuePosition?,
     val user: List<QueueItem>,
     val context: QueueContext?,
+    val digest: String?,
     val rev: Long,
 )
 
@@ -491,6 +595,7 @@ data class QueueView(
     val position: QueuePosition?,
     val user: List<QueueViewItem>,
     val context: QueueViewContext?,
+    val digest: String?,
     val rev: Long,
     val autoplay: QueueViewAutoplay?,
     val played: List<QueueViewPlayed>,
@@ -675,6 +780,13 @@ data class SuggestionList(
 data class TokenBody(
     val code: String,
     val codeVerifier: String,
+)
+
+@Serializable
+data class UpdateListBody(
+    val name: String? = null,
+    val order: DigestOrder? = null,
+    val shows: List<MediaRef>? = null,
 )
 
 @Serializable

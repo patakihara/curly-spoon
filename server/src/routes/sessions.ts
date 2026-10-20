@@ -15,7 +15,7 @@ import {
   stepSession,
 } from '@auralis/schema';
 import type { FastifyInstance } from 'fastify';
-import { add, queueFor, setQueueStyle as styled, step, switchTo } from '../queues/engine.js';
+import { add, queueFor, setQueueStyle as styled, switchTo } from '../queues/engine.js';
 import type { Sessions } from '../queues/sessions.js';
 import { Refusal, serve } from '../route.js';
 import type { SessionItem } from '../store/listening.js';
@@ -63,7 +63,10 @@ export function sessionRoutes(app: FastifyInstance, options: { sessions: Session
     if (expansion === null || expansion.entries.length === 0) throw new Refusal(404, 'not_found');
     if (queueFor(expansion.kind) !== params.type) throw new Refusal(400, 'wrong_queue');
     const saved = sessions.change(caller, body.rev, (s) => {
-      const added = add(s, body.ref, body.how, sessions.deps);
+      const added =
+        body.how === 'now'
+          ? sessions.playNow(s, body.ref)
+          : add(s, body.ref, body.how, sessions.deps);
       if (added === null) throw new Refusal(404, 'not_found');
       return added;
     });
@@ -74,7 +77,7 @@ export function sessionRoutes(app: FastifyInstance, options: { sessions: Session
     const caller = signedIn(request);
     // A Next at a queue's end plays autoplay's pick, so it waits for one being worked out.
     if (body.direction === 'next') await sessions.beforeNext(caller);
-    sessions.change(caller, body.rev, (s) => step(s, body.direction, sessions.deps));
+    sessions.step(caller, body.rev, body.direction);
     return sessions.summary(caller);
   });
 

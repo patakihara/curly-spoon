@@ -494,6 +494,80 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 14,
+    name: 'lists',
+    up: (db) => {
+      db.exec(`
+        -- Each person's lists that aren't queues (store/lists.ts): listening lists, podcast
+        -- playlists and digests. all_shows marks The Digest, the one digest over every
+        -- subscription, one per person; play_order is a digest's, oldest or newest first.
+        CREATE TABLE lists (
+          id         TEXT PRIMARY KEY,
+          user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          kind       TEXT NOT NULL CHECK (kind IN ('listening', 'playlist', 'digest')),
+          name       TEXT NOT NULL,
+          all_shows  INTEGER NOT NULL DEFAULT 0 CHECK (all_shows IN (0, 1)),
+          play_order TEXT CHECK (play_order IN ('oldest', 'newest')),
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          CHECK ((play_order IS NOT NULL) = (kind = 'digest')),
+          CHECK (all_shows = 0 OR kind = 'digest')
+        );
+        CREATE INDEX idx_lists_user_id ON lists(user_id);
+        CREATE UNIQUE INDEX idx_lists_the_digest ON lists(user_id) WHERE all_shows = 1;
+
+        -- A list's entries in order, or a custom digest's shows. No key into the index: an entry
+        -- the index no longer holds is left out on read, so a re-index never loses it.
+        CREATE TABLE list_items (
+          list_id     TEXT NOT NULL REFERENCES lists(id) ON DELETE CASCADE,
+          ord         INTEGER NOT NULL CHECK (ord >= 0),
+          source      TEXT NOT NULL CHECK (source IN ('abs', 'jellyfin')),
+          upstream_id TEXT NOT NULL,
+          PRIMARY KEY (list_id, ord)
+        );
+
+        -- Episodes Auralis marked played for a person (a digest's, as it moves on), and when:
+        -- one newer than the upstream's own progress hides the episode from lists. Until the
+        -- upstream has taken the mark (confirmed), it hides the episode whatever the upstream says.
+        -- sent_at is when it was last sent there, and failures how many sends it refused.
+        CREATE TABLE played_marks (
+          user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          source      TEXT NOT NULL CHECK (source IN ('abs', 'jellyfin')),
+          upstream_id TEXT NOT NULL,
+          marked_at   INTEGER NOT NULL,
+          confirmed   INTEGER NOT NULL DEFAULT 0 CHECK (confirmed IN (0, 1)),
+          sent_at     INTEGER,
+          failures    INTEGER NOT NULL DEFAULT 0 CHECK (failures >= 0),
+          PRIMARY KEY (user_id, source, upstream_id)
+        );
+
+        -- The spoken queues a device put aside on entering a digest's queue: owner is '' for
+        -- your own queue, or the digest's id for a digest's. queue is a SessionQueue and
+        -- autoplay the queue's autoplay pick or null, both JSON, read back through zod.
+        CREATE TABLE saved_queues (
+          device_id TEXT NOT NULL REFERENCES listening_sessions(device_id) ON DELETE CASCADE,
+          owner     TEXT NOT NULL,
+          queue     TEXT NOT NULL,
+          autoplay  TEXT,
+          saved_at  INTEGER NOT NULL,
+          PRIMARY KEY (device_id, owner)
+        );
+
+        -- The digest whose queue the spoken queue is now, or null for your own.
+        ALTER TABLE listening_sessions ADD COLUMN spoken_digest TEXT
+          REFERENCES lists(id) ON DELETE SET NULL;
+
+        -- The digest a play was played in, or null. It outlives the digest: a digest's plays
+        -- never move your place in a show, even once the digest is gone.
+        ALTER TABLE play_history ADD COLUMN list_id TEXT;
+
+        -- The digest whose rule put a queue entry there, or null: only those entries play as
+        -- the digest's. Cleared when the digest is deleted.
+        ALTER TABLE queue_items ADD COLUMN list_id TEXT;
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

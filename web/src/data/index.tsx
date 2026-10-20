@@ -2,13 +2,20 @@ import {
   createElement,
   isValidElement,
   useEffect,
+  useMemo,
   useRef,
   useSyncExternalStore,
   type ComponentType,
   type ReactElement,
   type ReactNode,
 } from 'react';
-import { type RouteObject, useMatches, useSearchParams } from 'react-router';
+import {
+  generatePath,
+  type RouteObject,
+  useMatches,
+  useNavigate,
+  useSearchParams,
+} from 'react-router';
 import { type ApiClient } from '../api/client';
 import { type FrameContext, type PageFrame } from '../generated/nav/platform';
 import { pages as routePages } from '../generated/nav/routes';
@@ -36,7 +43,8 @@ import Shelf, { frame as shelfFrame } from '../generated/pages/Shelf';
 import ShelfReview, { frame as shelfReviewFrame } from '../generated/pages/ShelfReview';
 import Show, { frame as showFrame } from '../generated/pages/Show';
 import SignIn from '../generated/pages/SignIn';
-import { usePlayId } from '../player';
+import { type Choose, ChooseContext } from '../choose';
+import { PlayContext, useListPlay, usePlayId } from '../player';
 import { type Draft, useTabDraft } from '../query';
 import { useAccessOf } from './access';
 import { useDeps } from './deps';
@@ -46,16 +54,28 @@ import { booksData, browseData, musicData, podcastsData } from './library';
 import { emptyQueue, queueData } from './queue';
 import { emptySearch, loadSearchPage, searchLive, type SearchLoaded } from './search';
 import { SignInScreen } from './sign-in';
-import { loadItem, loadLibraries, loadLibrary, loadQueues } from './loads';
-import { answerFrom, type Answer, pageKey } from './store';
+import { listCards, listData } from './lists';
+import {
+  listsOrNone,
+  loadItem,
+  loadLibraries,
+  loadLibrary,
+  loadList,
+  loadPodcasts,
+  loadQueues,
+} from './loads';
+import { addMenu, browserAsk, itemVerb, listVerb } from './menus';
+import { answerFrom, type Answer, pageKey, SignedOut } from './store';
 
 /**
  * The generated pages given their data. `withPageData(routes)` swaps each page for its screen,
  * wherever the route table draws it: a route's page, the page a player sheet is drawn over, a
  * player tab's page in the side panel, and the back layer and subheader the page's frame hands
  * the shell. One screen per page: Browse's first shelf and the library homes from
- * `GET /api/library/{medium}`, a book, show, episode or album from `GET /api/items/{ref}`, the
- * queue from `GET /api/queues/{active}`, Search from what is typed into it (`../query`) and
+ * `GET /api/library/{medium}`, Podcasts' lists from `GET /api/lists`, a book, show, episode or
+ * album from `GET /api/items/{ref}`, a list from `GET /api/lists/{id}`, whose Play plays it through
+ * its own route (`listPlayOf`) and whose menu renames, turns round or deletes it, a book's, show's or
+ * episode's menu adding it to your lists (`./menus`), the queue from `GET /api/queues/{active}`, Search from what is typed into it (`../query`) and
  * `GET /api/search/suggest` or `GET /api/search`, sign in from the address. Now Playing reads the
  * player itself. Every other page draws empty, keeping only its own words, until its milestone
  * serves it: a member never sees the canvas's samples. A page loading shows its lists empty; on a
@@ -88,6 +108,17 @@ interface Screen<T, L = T> {
   empty: T;
   /** Whether its data changes with what the player plays. */
   followsPlayer?: boolean;
+  /** For a list's page, the list its Play plays, by its address. */
+  playsList?(params: Params): string;
+  /**
+   * For a page whose menu acts on its item, verb `key` done to the item `ref` names: the page to
+   * open after, or whether to load this one again.
+   */
+  verbs?(
+    api: ApiClient,
+    ref: string,
+    key: string,
+  ): Promise<{ open?: string; replace?: boolean; reload?: boolean }>;
   /** How it loads; a page nothing serves yet draws `empty` and loads nothing. */
   load?(api: ApiClient, params: Params): Promise<L>;
   /**
@@ -110,6 +141,15 @@ function unserved<T>(
 
 const searchEmpty = emptySearch(searchFrame.placeholder);
 
+const listPath = routePages.find((page) => page.id === 'list')!.path;
+const podcastsPath = routePages.find((page) => page.id === 'podcasts')!.path;
+
+/** An item's verbs: adding it to a list, opening a new list made with it. */
+const itemVerbs = async (api: ApiClient, ref: string, key: string) => {
+  const made = await itemVerb(api, browserAsk, ref, key);
+  return made === null ? {} : { open: generatePath(listPath, { ref: made }) };
+};
+
 const screens: Screen<never>[] = [
   {
     name: 'browse',
@@ -130,8 +170,14 @@ const screens: Screen<never>[] = [
     Page: Podcasts,
     frame: podcastsFrame,
     empty: { ...podcastsFrame.placeholder, library: [], lists: [] },
-    load: async (api) =>
-      podcastsData(await loadLibrary(api, 'podcasts'), podcastsFrame.placeholder),
+    load: async (api) => {
+      const { library, lists } = await loadPodcasts(api);
+      return podcastsData(
+        library,
+        lists === null ? null : listCards(lists),
+        podcastsFrame.placeholder,
+      );
+    },
   } satisfies Screen<typeof podcastsFrame.placeholder>,
   {
     name: 'music',
@@ -145,22 +191,36 @@ const screens: Screen<never>[] = [
     Page: Book,
     frame: bookFrame,
     empty: emptied(bookFrame.placeholder),
-    load: async (api, params) => bookData(await loadItem(api, params.ref), bookFrame.placeholder),
+    load: async (api, params) => {
+      const [item, lists] = await Promise.all([loadItem(api, params.ref), listsOrNone(api)]);
+      return { ...bookData(item, bookFrame.placeholder), menu: addMenu(lists, ['listening']) };
+    },
+    verbs: itemVerbs,
   } satisfies Screen<typeof bookFrame.placeholder>,
   {
     name: 'show',
     Page: Show,
     frame: showFrame,
     empty: emptied(showFrame.placeholder),
-    load: async (api, params) => showData(await loadItem(api, params.ref), showFrame.placeholder),
+    load: async (api, params) => {
+      const [item, lists] = await Promise.all([loadItem(api, params.ref), listsOrNone(api)]);
+      return {
+        ...showData(item, showFrame.placeholder),
+        menu: addMenu(lists, ['digest', 'listening']),
+      };
+    },
+    verbs: itemVerbs,
   } satisfies Screen<typeof showFrame.placeholder>,
   {
     name: 'episode',
     Page: Episode,
     frame: episodeFrame,
     empty: { ...emptied(episodeFrame.placeholder), kind: episodeFrame.placeholder.kind },
-    load: async (api, params) =>
-      episodeData(await loadItem(api, params.ref), episodeFrame.placeholder),
+    load: async (api, params) => {
+      const [item, lists] = await Promise.all([loadItem(api, params.ref), listsOrNone(api)]);
+      return { ...episodeData(item, episodeFrame.placeholder), menu: addMenu(lists, ['playlist']) };
+    },
+    verbs: itemVerbs,
   } satisfies Screen<typeof episodeFrame.placeholder>,
   {
     name: 'album',
@@ -205,7 +265,20 @@ const screens: Screen<never>[] = [
   unserved('favourites', Favourites, favouritesFrame),
   unserved('author', Author, authorFrame, ['kind']),
   unserved('series', Series, seriesFrame, ['kind']),
-  unserved('list', List, listFrame, ['kind']),
+  {
+    name: 'list',
+    Page: List,
+    frame: listFrame,
+    empty: emptied(listFrame.placeholder),
+    playsList: (params) => params.ref ?? '',
+    load: async (api, params) => listData(await loadList(api, params.ref), listFrame.placeholder),
+    verbs: async (api, ref, key) => {
+      const done = await listVerb(api, browserAsk, ref, key);
+      return done === 'gone'
+        ? { open: podcastsPath, replace: true }
+        : { reload: done === 'changed' };
+    },
+  } satisfies Screen<typeof listFrame.placeholder>,
 ] as Screen<never>[];
 
 /** The page's address: its path's params, and the query values its route declares. */
@@ -262,6 +335,41 @@ function useScreenData<T, L>(screen: Screen<T, L>): Drawn<T> | undefined {
   return drawn;
 }
 
+/**
+ * The verbs of `screen`'s menu, for the page to hand down: none on the canvas, or while its menu
+ * holds none. A verb's page opens after it, replacing a list deleted; a list changed loads again;
+ * a refusal for want of a sign-in goes to sign in, and any other failure is logged, the shell
+ * binding no status to show it in.
+ */
+function useVerbs<T>(screen: Screen<T>, drawn: Drawn<T> | undefined): Choose | null {
+  const { api, access, pages } = useDeps();
+  const navigate = useNavigate();
+  const params = useParams();
+  const verbs = screen.verbs;
+  const load = screen.load;
+  const menu = (drawn?.data as { menu?: unknown[] } | undefined)?.menu ?? [];
+  const live = drawn !== undefined && menu.length > 0;
+  return useMemo(() => {
+    if (verbs === undefined) return null;
+    return (ref: string) =>
+      !live
+        ? undefined
+        : (key: string) =>
+            void verbs(api, ref, key)
+              .then((done) => {
+                if (done.open !== undefined)
+                  navigate(done.open, { replace: done.replace === true });
+                else if (done.reload === true && load !== undefined) {
+                  void pages.load(pageKey(screen.name, params), () => load(api, params));
+                }
+              })
+              .catch((error: unknown) => {
+                if (error instanceof SignedOut) access.refused();
+                else console.warn('the menu failed', key, error);
+              });
+  }, [verbs, live, api, navigate, pages, load, access, screen.name, params]);
+}
+
 const made = new Map<Screen<never>, ComponentType>();
 
 /** The page `screen` draws, given its data. */
@@ -270,10 +378,31 @@ function pageOf<T>(screen: Screen<T>): ComponentType {
   let component = made.get(key);
   if (component === undefined) {
     const Page = screen.Page;
-    component = function ScreenPage() {
-      const shown = useScreenData(screen);
-      return <Page data={shown?.data} state={shown?.state} />;
-    };
+    const playsList = screen.playsList;
+    component =
+      playsList === undefined
+        ? function ScreenPage() {
+            const shown = useScreenData(screen);
+            const choose = useVerbs(screen, shown);
+            const page = <Page data={shown?.data} state={shown?.state} />;
+            return choose === null ? (
+              page
+            ) : (
+              <ChooseContext.Provider value={choose}>{page}</ChooseContext.Provider>
+            );
+          }
+        : function ListScreenPage() {
+            const shown = useScreenData(screen);
+            const play = useListPlay(playsList(useParams()));
+            const choose = useVerbs(screen, shown);
+            return (
+              <PlayContext.Provider value={play}>
+                <ChooseContext.Provider value={choose}>
+                  <Page data={shown?.data} state={shown?.state} />
+                </ChooseContext.Provider>
+              </PlayContext.Provider>
+            );
+          };
     made.set(key, component);
   }
   return component;

@@ -18,6 +18,7 @@ const view = (type: QueueType, over: Partial<QueueView>): QueueView =>
     position: null,
     user: [],
     context: null,
+    digest: null,
     rev: 3,
     autoplay: null,
     played: [],

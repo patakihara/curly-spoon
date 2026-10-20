@@ -34,6 +34,7 @@ import {
   mediaProgressSchema,
   meSchema,
   libraryItemsSchema,
+  markFinishedSchema,
   type PlayRequest,
   playSessionSchema,
   showNotesSchema,
@@ -245,6 +246,12 @@ export class AbsClient {
       if (error instanceof AdapterError && error.status === 404) return null;
       throw error;
     }
+  }
+
+  /** Marks one episode of a show finished for the person: `PATCH /api/me/progress/:item/:episode`. */
+  async markEpisodeFinished(itemId: string, episodeId: string): Promise<void> {
+    const path = `api/me/progress/${encodeURIComponent(itemId)}/${encodeURIComponent(episodeId)}`;
+    await this.call(path, markFinishedSchema, { method: 'PATCH', json: { isFinished: true } });
   }
 
   /** Makes a bookmark on a library item, at whole seconds `time`. */

@@ -9,7 +9,7 @@ export default function Show({ data }) {
             meta={data.meta}
             image={data.image}
             actions={<FollowButton following={data.following} labels={data.subscribe} />}
-            menu={<OverflowMenu items={data.menu} />}
+            menu={<OverflowMenu items={data.menu} onSelect={<Choose ref={data.ref} />} />}
           />
         </Section>
         <Section title="Episodes">

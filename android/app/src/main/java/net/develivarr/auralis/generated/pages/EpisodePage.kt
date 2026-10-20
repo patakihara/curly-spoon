@@ -138,6 +138,16 @@ fun EpisodePage(navController: NavController, actions: PageActions) {
                                                                     label = "Go to show",
                                                                     icon = "podcasts",
                                                                 ),
+                                                                OverflowMenuItem(
+                                                                    key = "add:commute",
+                                                                    label = "Add to Commute",
+                                                                    icon = "playlist_add",
+                                                                ),
+                                                                OverflowMenuItem(
+                                                                    key = "new:playlist",
+                                                                    label = "New playlist",
+                                                                    icon = "add",
+                                                                ),
                                                             ),
                                                             platform = Platform.MOBILE,
                                                         ),

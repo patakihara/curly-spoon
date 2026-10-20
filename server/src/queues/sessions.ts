@@ -25,11 +25,20 @@
  * A track a queue is on plays on through the rest of its album as one plan, as far as stepping
  * next reaches the album's following tracks in order (`albumRun`), so a Next or Back inside an
  * album keeps it gapless.
+ *
+ * An episode of a digest's own (one its rule put in its queue) that a Next, or a play stepping on
+ * to what follows, moves out of that queue (it ended, or was skipped) is marked played: at once in
+ * Auralis, then on Audiobookshelf in the background, as the person, once the episode's play
+ * session there is closed, so nothing Auralis sends after the mark undoes it. A failure there is
+ * logged, the mark Auralis keeps still holds, and a step or play sends it again, at most once in
+ * ten minutes and five times in all. Play now
+ * of anything else, and the switch, mark nothing.
  */
 import { randomUUID } from 'node:crypto';
 import {
   type ListeningSession,
   type MediaRef,
+  parseMediaRefKey,
   PLAYED_SHOWN,
   type QueueItem,
   type QueuePosition,
@@ -38,6 +47,7 @@ import {
 } from '@auralis/schema';
 import type { AbsClient } from '../adapters/audiobookshelf/client.js';
 import { albumTracks, indexedRow } from '../libraryIndex/store.js';
+import { confirmMark, markPlayed, markRefused, playedMarks, sendingMark } from '../store/lists.js';
 import { Refusal } from '../route.js';
 import type { Db } from '../store/connection.js';
 import {
@@ -47,7 +57,9 @@ import {
   savePosition,
   saveSession,
   type QueueEntry,
+  type SavedQueue,
   type SessionItem,
+  type SessionPlay,
   type SessionValue,
   StaleRevision,
   type StoredSession,
@@ -61,7 +73,7 @@ import {
   prepareAutoplay,
   storedAutoplay,
 } from './autoplay.js';
-import { add, type EngineDeps, step, switchTo } from './engine.js';
+import { add, type EngineDeps, resumeSaved, step, switchTo } from './engine.js';
 import { labelled } from './labels.js';
 import type { IndexLookup } from './lookup.js';
 
@@ -94,8 +106,21 @@ export interface HeldPlan {
   entries: readonly PlanEntry[];
 }
 
+/** How near its end, in seconds, a saved queue's current item counts as finished. */
+export const FINISHED_WITHIN_S = 30;
+
 /** How long a play, or a Next at a queue's end, waits for autoplay being worked out. */
 export const AUTOPLAY_WAIT_MS = 3_000;
+
+/** What is logged when Audiobookshelf did not take an episode marked played in a digest. */
+export const MARK_FAILED =
+  'an episode played in a digest could not be marked finished on Audiobookshelf; Auralis keeps its mark';
+
+/** How long a mark Audiobookshelf has not taken waits before it is sent again. */
+export const MARK_RESEND_MS = 10 * 60_000;
+
+/** How many refused sends of a mark it takes to stop sending it; the local mark still holds. */
+export const MARK_TRIES = 5;
 
 /** What is logged when autoplay's picks are worked out twice for a session that moved on. */
 export const AUTOPLAY_MISSED =
@@ -142,6 +167,8 @@ const valueOf = ({
   autoplay,
   radio,
   autoplayAt,
+  spokenDigest,
+  saved,
 }: StoredSession): SessionValue => ({
   active,
   switchAfterCurrent,
@@ -151,9 +178,17 @@ const valueOf = ({
   autoplay,
   radio,
   autoplayAt,
+  spokenDigest,
+  saved,
 });
 
 const currentOf = (s: SessionValue) => s.queues[s.active].current;
+
+/** The plays `after` recorded that `before` did not hold, played in a digest's queue. */
+const leftDigest = (before: SessionValue, after: SessionValue): SessionPlay[] => {
+  const newest = before.history.at(-1)?.seq ?? -1;
+  return after.history.filter((h) => h.seq > newest && h.list !== undefined);
+};
 
 /** What the controls drive: the active queue and its current entry. */
 const controlled = (s: SessionValue) => `${s.active} ${currentOf(s)?.itemId ?? ''}`;
@@ -166,6 +201,8 @@ export class Sessions {
    * so a restart forgets both together.
    */
   private readonly plays = new Map<string, CurrentPlay>();
+  /** Marks being sent to Audiobookshelf, by `userId source:id`. */
+  private readonly marking = new Map<string, Promise<void>>();
 
   constructor(
     private readonly options: {
@@ -177,6 +214,11 @@ export class Sessions {
       log: Log;
       /** How long a play or a Next waits for autoplay; `AUTOPLAY_WAIT_MS` when not given. */
       autoplayWaitMs?: number;
+      /**
+       * Closes upstream, with its last report, every play of `ref` the person holds on any device
+       * that was opened no later than `before`; never fails.
+       */
+      closePlay?: (caller: Caller, ref: MediaRef, before: number) => Promise<void>;
     },
   ) {}
 
@@ -234,6 +276,95 @@ export class Sessions {
     return saved;
   }
 
+  /**
+   * Next or Back on this device. An episode a Next moves out of a digest's queue is marked played.
+   * A `rev` that is not the session's answers 409 `stale_revision`.
+   */
+  step(caller: Caller, rev: number | undefined, direction: 'next' | 'back'): StoredSession {
+    let left: SessionPlay[] = [];
+    const saved = this.change(caller, rev, (s) => {
+      const stepped = step(s, direction, this.deps);
+      left = leftDigest(s, stepped);
+      return stepped;
+    });
+    this.resendMarks(caller);
+    this.markPlayed(caller, left);
+    return saved;
+  }
+
+  /** Waits for every mark being sent to Audiobookshelf, when the server stops. */
+  async settled(): Promise<void> {
+    await Promise.all(this.marking.values());
+  }
+
+  /** Marks each episode of `plays` played, now, and sends the mark to Audiobookshelf. */
+  private markPlayed(caller: Caller, plays: readonly SessionPlay[]): void {
+    for (const { ref } of plays) this.mark(caller, ref);
+  }
+
+  /**
+   * Sends again each of the person's marks Audiobookshelf has not taken and is not being sent:
+   * at most once in `MARK_RESEND_MS`, and no more once it refused `MARK_TRIES` sends. The local
+   * mark holds either way.
+   */
+  private resendMarks(caller: Caller): void {
+    const now = this.options.now();
+    for (const [refKey, mark] of playedMarks(this.options.db, caller.id)) {
+      const ref = parseMediaRefKey(refKey);
+      if (mark.confirmed || ref === null || this.marking.has(`${caller.id} ${refKey}`)) continue;
+      if (mark.failures >= MARK_TRIES) continue;
+      if (mark.sentAt !== null && now - mark.sentAt < MARK_RESEND_MS) continue;
+      this.send(caller, ref, mark.at);
+    }
+  }
+
+  /** Marks an episode played at once in Auralis, then sends the mark to Audiobookshelf. */
+  private mark(caller: Caller, ref: MediaRef): void {
+    if (this.showOf(ref) === null) return;
+    const at = this.options.now();
+    markPlayed(this.options.db, caller.id, ref, at);
+    this.send(caller, ref, at);
+  }
+
+  /** The show an Audiobookshelf episode is of, as the index holds it; null for anything else. */
+  private showOf(ref: MediaRef): string | null {
+    const row = indexedRow(this.options.db, ref.source, ref.id);
+    return ref.source === 'abs' && row?.kind === 'episode' ? row.parentId : null;
+  }
+
+  /**
+   * Sends a mark made at `markedAt` to Audiobookshelf in the background, as the person, dated now:
+   * after every play of the episode they started before the mark is closed there, on any device,
+   * so a play's last sync lands before the mark and never undoes it. Notes whether Audiobookshelf
+   * took it; a refusal is logged.
+   */
+  private send(caller: Caller, ref: MediaRef, markedAt: number): void {
+    const { db, log } = this.options;
+    const show = this.showOf(ref);
+    if (show === null) return;
+    const at = this.options.now();
+    sendingMark(db, caller.id, ref, at);
+    const sending = `${caller.id} ${key(ref)}`;
+    const abs = this.options.clients(caller).abs;
+    const sent = (async () => {
+      try {
+        if (abs === null) throw new Error('no Audiobookshelf account is linked');
+        await this.options.closePlay?.(caller, ref, markedAt);
+        await abs.markEpisodeFinished(show, ref.id);
+      } catch (err) {
+        markRefused(db, caller.id, ref, at);
+        log.warn({ err, ref }, MARK_FAILED);
+        return;
+      }
+      confirmMark(db, caller.id, ref, at);
+    })()
+      .catch((err: unknown) => log.warn({ err, ref }, MARK_FAILED))
+      .finally(() => {
+        if (this.marking.get(sending) === sent) this.marking.delete(sending);
+      });
+    this.marking.set(sending, sent);
+  }
+
   private save(caller: Caller, from: StoredSession, value: SessionValue): StoredSession {
     try {
       const saved = saveSession(
@@ -261,7 +392,9 @@ export class Sessions {
    * position and the upstream's, when the session holds one. With nothing queued after the plan
    * and no autoplay pick kept for its end, it waits for the run this play starts, up to the wait;
    * past it, it answers nothing next and the run goes on (the client reads the pick on its Next).
-   * `playId` becomes the device's current play.
+   * When `ref` is a saved spoken queue's current item, or what follows it once that finished, that
+   * queue comes back instead, stepping on in the second case. `playId` becomes the device's
+   * current play.
    */
   async played(
     caller: Caller,
@@ -283,11 +416,18 @@ export class Sessions {
     let saved = s;
     if (holding !== s.active) {
       const value = valueOf(s);
+      const advanced = holding === undefined ? this.advancedTo(value, ref, heldBefore) : null;
       const changed =
         holding !== undefined
           ? switchTo(value, holding, this.deps)
-          : (this.advancedTo(value, ref, heldBefore) ?? add(value, ref, 'now', this.deps));
+          : (advanced ?? this.resumed(value, covered) ?? add(value, ref, 'now', this.deps));
       if (changed !== null) saved = this.save(caller, s, changed);
+      // Stepping on to what follows moves the episode it leaves out of a digest's queue; a Play
+      // now leaves it unmarked.
+      if (advanced !== null) {
+        this.resendMarks(caller);
+        this.markPlayed(caller, leftDigest(value, advanced));
+      }
     }
     const running = this.refreshAutoplay(caller);
     // An item the session could not take (one the index does not hold) has nothing after it.
@@ -414,6 +554,55 @@ export class Sessions {
       if (!before.has(key(c.ref))) return null;
     }
     return null;
+  }
+
+  /**
+   * Play now of `ref` on `s`: a saved spoken queue it resumes comes back as a play of it would
+   * bring it (`resumed`), whole and unrecorded; otherwise it plays now. Null when the index does
+   * not hold it.
+   */
+  playNow(s: SessionValue, ref: MediaRef): SessionValue | null {
+    return this.resumed(s, this.options.lookup.covered(ref)) ?? add(s, ref, 'now', this.deps);
+  }
+
+  /**
+   * `s` with the saved spoken queue the play resumes brought back: the one whose current item is
+   * the plan's, else one whose current finished (or that has none) and whose next entry is the
+   * plan's, stepped on to it. Null when no saved queue holds the plan's item that way.
+   */
+  private resumed(s: SessionValue, covered: Set<string>): SessionValue | null {
+    const held = s.saved.find(
+      (q) => q.queue.current !== null && covered.has(key(q.queue.current.ref)),
+    );
+    if (held !== undefined) return resumeSaved(s, held.owner, this.deps);
+    const next = s.saved.find((q) => {
+      const following = this.savedNext(q);
+      return following !== null && covered.has(key(following.ref));
+    });
+    return next === undefined
+      ? null
+      : step(resumeSaved(s, next.owner, this.deps), 'next', this.deps);
+  }
+
+  /**
+   * What a saved queue plays next, when its current item finished (its position is within
+   * `FINISHED_WITHIN_S` of the entry's end) or it has none: its next entry, else the autoplay pick
+   * it kept for that item. Null when its current has not finished, or nothing follows.
+   */
+  private savedNext(saved: SavedQueue): QueueEntry | null {
+    const { current, position, user, context } = saved.queue;
+    if (current !== null) {
+      // A chapter's position runs from the start of its book, so it is measured to the chapter's
+      // end in the book.
+      const end = this.options.lookup.endOf(current);
+      if (end === null || position === null) return null;
+      if (position.ms < (end - FINISHED_WITHIN_S) * 1000) return null;
+    }
+    const queued = user[0] ?? context?.items[0];
+    if (queued !== undefined) return queued;
+    const pick = saved.autoplay;
+    if (pick === null || current === null || !sameEntry(pick.after, current)) return null;
+    return pick.next;
   }
 
   /**
@@ -691,6 +880,7 @@ export class Sessions {
       user: q.user.map(plain),
       context:
         q.context === null ? null : { from: q.context.from, items: q.context.items.map(plain) },
+      digest: type === 'spoken' ? s.spokenDigest : null,
       rev: s.rev,
     };
   }

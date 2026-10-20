@@ -216,6 +216,9 @@ export interface SessionSync {
 /** `POST /api/session/:id/sync` answers a bare 200 (`OK` as text, recorded); nothing is read. */
 export const syncSessionSchema = z.unknown();
 
+/** `PATCH /api/me/progress/:item/:episode` answers a bare 200 (`OK` as text, recorded); nothing is read. */
+export const markFinishedSchema = z.unknown();
+
 /** One person's progress on one item: `GET /api/me/progress/:id`, and each of `GET /api/me`'s. */
 export const mediaProgressSchema = z
   .object({

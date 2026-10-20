@@ -6,6 +6,9 @@
  * every change to a session, when a play starts, and after a progress report once the last run
  * is over `AUTOPLAY_STALE_MS` old, so a pick is never more than about two minutes stale.
  *
+ * The play a queue follows is its current item, else its newest play of your own: one played in
+ * a digest's queue never moves your place (`ownPlays`).
+ *
  * Spoken: the next chapter of the book, then the first unfinished book after it in its series;
  * for an episode, the first episode after it in its show's order (older to newer for serial
  * shows, newer to older for episodic and unknown ones) that is neither finished nor played in
@@ -19,6 +22,9 @@
  *
  * An upstream that fails or times out leaves the queue with no pick for this step, logged; the
  * next pass asks again.
+ *
+ * A digest's queue autoplays nothing: it already holds all of the digest's episodes, so when it
+ * runs out it stops, with nothing to wait for.
  */
 import type { MediaRef, QueueType } from '@auralis/schema';
 import type { AbsMe } from '../adapters/audiobookshelf/schemas.js';
@@ -68,8 +74,21 @@ const entryOf = (item: QueueEntry): QueueEntry => ({
 const sameEntry = (a: QueueEntry, b: QueueEntry) =>
   key(a.ref) === key(b.ref) && (a.chapter ?? null) === (b.chapter ?? null);
 
+/** Whether `queue` is a digest's, which autoplays nothing. */
+const inDigest = (queue: QueueType, s: SessionValue): boolean =>
+  queue === 'spoken' && s.spokenDigest !== null;
+
+/**
+ * The session's plays that are your own, in history order: every play but those in a digest's
+ * queue. A digest marks what it plays played, but never moves your place in a show; Up next and
+ * autoplay find that place here.
+ */
+export const ownPlays = (s: SessionValue): SessionPlay[] =>
+  s.history.filter((h) => h.list === undefined);
+
+/** The newest of your own plays on `queue`. */
 const newestPlay = (s: SessionValue, queue: QueueType): SessionPlay | undefined =>
-  s.history.reduce<SessionPlay | undefined>(
+  ownPlays(s).reduce<SessionPlay | undefined>(
     (newest, h) => (h.queue === queue && (newest === undefined || h.seq > newest.seq) ? h : newest),
     undefined,
   );
@@ -98,7 +117,7 @@ export async function prepareAutoplay(
   // episode or book since. Both queues read their upstreams at once, so a hang costs one timeout.
   await Promise.all(
     QUEUES.map(async (queue) => {
-      const after = followed(s, queue);
+      const after = inDigest(queue, s) ? null : followed(s, queue);
       if (after === null) {
         s.autoplay[queue] = null;
         return;
@@ -122,14 +141,17 @@ export async function prepareAutoplay(
  * ended there (its newest). Never reads an upstream.
  */
 export function storedAutoplay(queue: QueueType, session: SessionValue): QueueEntry | null {
+  if (inDigest(queue, session)) return null;
   return autoplayKept(queue, session) ? session.autoplay[queue]!.next : null;
 }
 
 /**
  * True when the session keeps a pick for `queue` worked out for the play that just ended there
- * (its newest), even one saying nothing follows; false when that pick is yet to be worked out.
+ * (its newest), even one saying nothing follows, or `queue` is a digest's, which autoplays
+ * nothing; false when that pick is yet to be worked out.
  */
 export function autoplayKept(queue: QueueType, session: SessionValue): boolean {
+  if (inDigest(queue, session)) return true;
   const pick = session.autoplay[queue];
   const last = newestPlay(session, queue);
   return pick !== null && last !== undefined && sameEntry(pick.after, entryOf(last));
@@ -141,6 +163,7 @@ export function autoplayKept(queue: QueueType, session: SessionValue): boolean {
  * upstream.
  */
 export function pendingAutoplay(queue: QueueType, session: SessionValue): QueueEntry | null {
+  if (inDigest(queue, session)) return null;
   const pick = session.autoplay[queue];
   const after = followed(session, queue);
   return pick !== null && after !== null && sameEntry(pick.after, after) ? pick.next : null;

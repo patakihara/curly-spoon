@@ -17,7 +17,7 @@ export default function Episode({ data }) {
             lastLabel={null}
             addLabel="Add to a list"
             download={data.download}
-            menu={<OverflowMenu items={data.menu} />}
+            menu={<OverflowMenu items={data.menu} onSelect={<Choose ref={data.ref} />} />}
           />
         </Section>
         <Section title="Show notes">

@@ -5,6 +5,7 @@ import { generatePath, useNavigate } from 'react-router';
 import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
 import type { ShellNav } from '../../shell-nav';
 import { usePlay, type Playing } from '../../player';
+import { useChoose } from '../../choose';
 import { BackLayer, BottomNav, ExpandableText, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, OverflowMenu, PageBody, Rating, ResultRow, Section, Shelf } from '../ui/index.js';
 
 const placeholder = {
@@ -35,6 +36,16 @@ const placeholder = {
       "key": "author",
       "label": "Go to author",
       "icon": "person"
+    },
+    {
+      "key": "add:weekend-reads",
+      "label": "Add to Weekend reads",
+      "icon": "playlist_add"
+    },
+    {
+      "key": "new:listening",
+      "label": "New listening list",
+      "icon": "add"
     }
   ],
   "chapters": [
@@ -427,6 +438,7 @@ export default function Book({ data = placeholder, state = 'full' }: BookProps) 
   const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   const play = usePlay();
+  const choose = useChoose();
   return (
     <PageBody width="list" platform={platform}>
       <Section platform={platform}>
@@ -445,7 +457,7 @@ export default function Book({ data = placeholder, state = 'full' }: BookProps) 
           nextLabel="Play next"
           lastLabel={null}
           download={data.download as Exclude<ComponentProps<typeof MediaHeader>['download'], undefined>}
-          menu={<OverflowMenu items={data.menu} platform={platform} />}
+          menu={<OverflowMenu items={data.menu} onSelect={choose(data.ref)} platform={platform} />}
           platform={platform}
         />
       </Section>

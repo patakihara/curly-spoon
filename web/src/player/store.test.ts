@@ -176,6 +176,8 @@ function rig(
   /** What the session plays after a step, by direction. */
   const after: Record<'next' | 'back', MediaRef | null> = { next: episode, back: book };
   const startAts: number[] = [];
+  /** What a list's play makes current, and the lists with nothing left to play. */
+  const lists: { current: MediaRef; refuses: string[] } = { current: episode, refuses: [] };
   const controls: string[] = [];
   const media: MediaControls = {
     show: (m, _t, track) => controls.push(`show ${track?.title ?? m.title} ${m.variant}`),
@@ -240,6 +242,21 @@ function rig(
           updatedAt: 0,
         });
       }
+      const listPlay = /^\/api\/lists\/([^/]+)\/play$/.exec(path);
+      if (listPlay !== null) {
+        if (lists.refuses.includes(listPlay[1]!)) {
+          return Response.json({ error: 'nothing_to_play' }, { status: 400 });
+        }
+        return Response.json({
+          type: 'spoken',
+          current: { itemId: crypto.randomUUID(), ref: lists.current },
+          position: null,
+          user: [],
+          context: null,
+          digest: null,
+          rev: 2,
+        });
+      }
       if (path.startsWith('/api/queues/')) {
         return Response.json({
           type: 'spoken',
@@ -282,6 +299,7 @@ function rig(
     controls,
     keptAlive,
     saved,
+    lists,
     hide: () => hidden.forEach((send) => send()),
     signedOut: () => signedOut,
   };
@@ -755,5 +773,64 @@ describe('[M1.shell] the web player store', () => {
     engine().at(320);
     expect(controls).toContain('show Song 2 music');
     expect(controls.at(-1)).toBe('position 20/300@1');
+  });
+});
+
+describe('[M2.lists] playing a list from its page', () => {
+  it('[M2.lists] plays a list through its own route, then plans the item it made current', async () => {
+    const { store, sent, engine, lists } = rig();
+    lists.current = book;
+    await store.playList('list-1');
+    expect(sent.map((s) => s.path)).toEqual(['/api/lists/list-1/play', '/api/play']);
+    expect(sent[0]!.body).toEqual({});
+    expect(sent[1]!.body).toEqual({ ref: book });
+    expect(engine().calls).toContain('play');
+    expect(store.getState().ref).toEqual(book);
+  });
+
+  it('[M2.lists] starts a list at the entry asked for', async () => {
+    const { store, sent } = rig();
+    await store.playList('list-1', episode);
+    expect(sent[0]).toEqual({ path: '/api/lists/list-1/play', body: { start: episode } });
+  });
+
+  it('[M2.lists] closes what played before the list takes over the queue', async () => {
+    const { store, sent, engines } = rig();
+    await store.play(book);
+    await store.playList('list-1');
+    expect(engines[0]!.closedWith).not.toBeNull();
+    expect(sent.map((s) => s.path).slice(-2)).toEqual(['/api/lists/list-1/play', '/api/play']);
+  });
+
+  it('[M2.lists] keeps what played, planned again, when the list has nothing to play', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { store, sent, lists } = rig();
+    lists.refuses.push('empty');
+    await store.play(book);
+    await store.playList('empty');
+    expect(sent.map((s) => s.path).slice(-2)).toEqual(['/api/lists/empty/play', '/api/play']);
+    expect(sent.at(-1)!.body).toEqual({ ref: book });
+    expect(store.getState().ref).toEqual(book);
+  });
+
+  it("[M2.lists] leaves the queue as the list made it when the list's current cannot be planned, playing nothing", async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { store, sent, lists } = rig({ unplannable: [episode.id] });
+    lists.current = episode;
+    await store.play(book);
+    await store.playList('list-1');
+    // Planning the item played before would put it back on the list's queue.
+    expect(sent.map((s) => s.path).slice(-2)).toEqual(['/api/lists/list-1/play', '/api/play']);
+    expect(sent.at(-1)!.body).toEqual({ ref: episode });
+    expect(store.getState()).toMatchObject({ ref: null, plan: null, playing: false });
+    expect(warn).toHaveBeenCalledWith('playing failed', episode);
+  });
+
+  it('[M2.lists] stops everything when the list is refused for want of a sign-in', async () => {
+    const { store, sent, signedOut } = rig({ refuses: ['/api/lists/list-1/play'] });
+    await store.playList('list-1');
+    expect(signedOut()).toBe(1);
+    expect(sent.map((s) => s.path)).toEqual(['/api/lists/list-1/play']);
+    expect(store.getState().plan).toBeNull();
   });
 });

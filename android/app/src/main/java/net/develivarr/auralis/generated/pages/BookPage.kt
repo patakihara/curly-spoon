@@ -157,6 +157,16 @@ fun BookPage(navController: NavController, actions: PageActions) {
                                                                     label = "Go to author",
                                                                     icon = "person",
                                                                 ),
+                                                                OverflowMenuItem(
+                                                                    key = "add:weekend-reads",
+                                                                    label = "Add to Weekend reads",
+                                                                    icon = "playlist_add",
+                                                                ),
+                                                                OverflowMenuItem(
+                                                                    key = "new:listening",
+                                                                    label = "New listening list",
+                                                                    icon = "add",
+                                                                ),
                                                             ),
                                                             platform = Platform.MOBILE,
                                                         ),

@@ -5,6 +5,7 @@ import { generatePath, useNavigate } from 'react-router';
 import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
 import type { ShellNav } from '../../shell-nav';
 import { usePlay, type Playing } from '../../player';
+import { useChoose } from '../../choose';
 import { BackLayer, BottomNav, EpisodeRow, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, OverflowMenu, PageBody, Section, Shelf, SortFilterBar } from '../ui/index.js';
 
 const placeholder = {
@@ -30,6 +31,11 @@ const placeholder = {
       "key": "shows",
       "label": "Choose shows",
       "icon": "podcasts"
+    },
+    {
+      "key": "drop:sonic-tales",
+      "label": "Remove Sonic Tales",
+      "icon": "remove"
     },
     {
       "key": "rename",
@@ -73,6 +79,7 @@ const placeholder = {
     {
       "title": "The Night Ferry",
       "ref": "the-night-ferry",
+      "page": "episode",
       "description": "A crossing that should take forty minutes is logged at six hours, and nobody aboard remembers the wait.",
       "meta": [
         "The Long Read",
@@ -86,6 +93,7 @@ const placeholder = {
     {
       "title": "Why Radios Hum",
       "ref": "why-radios-hum",
+      "page": "episode",
       "description": "Mains hum, ground loops and the one fix every engineer learns twice.",
       "meta": [
         "Signal & Noise",
@@ -98,6 +106,7 @@ const placeholder = {
     {
       "title": "Wednesday, 14 August",
       "ref": "deep-inertia-radio-2026-08-14",
+      "page": "episode",
       "description": "New releases from the harbour scene, and an hour of slow electronics for the late shift.",
       "meta": [
         "Deep Inertia Radio",
@@ -110,6 +119,7 @@ const placeholder = {
     {
       "title": "Thursday, 15 August",
       "ref": "deep-inertia-radio-2026-08-15",
+      "page": "episode",
       "description": "A live set from the pier, recorded as the tide came in.",
       "meta": [
         "Deep Inertia Radio",
@@ -122,6 +132,7 @@ const placeholder = {
     {
       "title": "The Tape Nobody Played",
       "ref": "the-tape-nobody-played",
+      "page": "episode",
       "description": "A reel found in a studio wall, labelled in a hand nobody recognises, and the song on it that was never released.",
       "meta": [
         "Sonic Tales",
@@ -134,6 +145,7 @@ const placeholder = {
     {
       "title": "The Quiet Band",
       "ref": "the-quiet-band",
+      "page": "episode",
       "description": "The one stretch of spectrum nobody is allowed to use, and the telescope that needs it that way.",
       "meta": [
         "Signal & Noise",
@@ -144,6 +156,14 @@ const placeholder = {
       "progress": null
     }
   ]
+};
+
+/** The route of each page this page may open: its structure links, and its own. */
+const routes: Record<string, string> = {
+  "book": "/books/:ref",
+  "show": "/podcasts/:ref",
+  "episode": "/podcasts/episodes/:ref",
+  "list": "/lists/:ref"
 };
 
 /** What the shell shows around the page: shell.json, and each layout’s destinations in its order. */
@@ -355,6 +375,7 @@ export default function List({ data = placeholder, state = 'full' }: ListProps) 
   const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   const play = usePlay();
+  const choose = useChoose();
   return (
     <PageBody width="list" platform={platform}>
       <Section platform={platform}>
@@ -367,7 +388,7 @@ export default function List({ data = placeholder, state = 'full' }: ListProps) 
           nextLabel="Play next"
           onPlayNext={play(data.ref, 'spoken', 'next')}
           lastLabel={null}
-          menu={<OverflowMenu items={data.menu} platform={platform} />}
+          menu={<OverflowMenu items={data.menu} onSelect={choose(data.ref)} platform={platform} />}
           platform={platform}
         />
       </Section>
@@ -384,7 +405,7 @@ export default function List({ data = placeholder, state = 'full' }: ListProps) 
         <SortFilterBar icon="swap_vert" label={data.order} platform={platform} />
         {data.items.map((item, i) => (
           <Fragment key={i}>
-            <EpisodeRow title={item.title} description={item.description} meta={item.meta} image={item.image} progress={item.progress} onClick={item.ref ? () => navigate(generatePath('/podcasts/episodes/:ref', { ref: item.ref })) : undefined} onPlay={play(item.ref, 'spoken', 'now')} divider={true} platform={platform} />
+            <EpisodeRow title={item.title} description={item.description} meta={item.meta} image={item.image} progress={item.progress} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} onPlay={play(item.ref, 'spoken', 'now')} divider={true} platform={platform} />
           </Fragment>
         ))}
       </Section>

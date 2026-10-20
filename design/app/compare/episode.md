@@ -1,6 +1,6 @@
 ---
 page: episode
-pageHash: a6c968dca5f4a840d71c79ab91a1e6995804f6d6346bbc5e9b3198da17231e55
+pageHash: d5cbe174ea96eb526fae9eb15e786c31b4f53daeaca06123aa4fd30424a90de1
 sonora: [card:episode-rows]
 spotify: [S35]
 ---
@@ -27,7 +27,7 @@ The heading is the episode's title, bound from its data, led by the close contro
 with the show's art, "EPISODE", the show as an accent link to its page, "12 Aug 2026 · 52 min ·
 31 min left" and the bar under it; then Resume, Play next, both on the spoken queue, a round "Add to
 a list" button (`addLabel`), on the phone the download control, and the menu (Mark as played, Go to
-show). Then "Show notes" in an `ExpandableText` clamped at four lines with "see more", then "More
+show, Add to Commute, New playlist), whose verbs act on the episode. Then "Show notes" in an `ExpandableText` clamped at four lines with "see more", then "More
 from the show", three `EpisodeRow`s, each opening its page and playing on the spoken queue.
 
 **An episode of a show you don't follow**, per nav.json, in data only: Resume reads Play, and
