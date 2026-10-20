@@ -962,6 +962,11 @@ export interface components {
         };
         /** @enum {string} */
         ListKind: "listening" | "playlist" | "digest";
+        ListCounts: {
+            book: number;
+            show: number;
+            episode: number;
+        };
         ListSummary: {
             id: string;
             kind: components["schemas"]["ListKind"];
@@ -969,6 +974,8 @@ export interface components {
             theDigest: boolean;
             order: components["schemas"]["DigestOrder"] | null;
             count: number;
+            counts: components["schemas"]["ListCounts"];
+            covers: string[];
         };
         ListSummaryList: {
             lists: components["schemas"]["ListSummary"][];
@@ -993,6 +1000,8 @@ export interface components {
             theDigest: boolean;
             order: components["schemas"]["DigestOrder"] | null;
             count: number;
+            counts: components["schemas"]["ListCounts"];
+            covers: string[];
             shows: components["schemas"]["LibraryEntry"][];
             items: components["schemas"]["ListItem"][];
         };

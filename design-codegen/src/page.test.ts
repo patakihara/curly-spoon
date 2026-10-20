@@ -893,3 +893,51 @@ describe('a page playing each item on the queue its data names', () => {
     ).toThrow(/line 3: Play's queue is written queue="spoken" or queue="music"/);
   });
 });
+
+describe('[M2.lists] a menu whose verbs act on an item', () => {
+  const props = new Map([['OverflowMenu', new Set(['items', 'onSelect', 'onOpenChange'])]]);
+  const handlers = new Map([['OverflowMenu', new Set(['onSelect', 'onOpenChange'])]]);
+  const opens = { pages: new Map<string, string[]>(), links: [], handlers };
+  const data = { ref: 'list-1', count: 3, menu: [{ key: 'rename', label: 'Rename' }] };
+  const check = (menu: string) =>
+    checkPage(parsePage(page(menu), 'book'), data, props, undefined, undefined, undefined, opens);
+
+  it('[M2.lists] reads <Choose ref> on a menu as its chosen verb acting on the item its ref binds', () => {
+    const tree = parsePage(
+      page('<OverflowMenu items={data.menu} onSelect={<Choose ref={data.ref} />} />'),
+      'book',
+    );
+    expect(tree.kind === 'element' && tree.props.onSelect).toEqual({
+      kind: 'choose',
+      params: { ref: ['data', 'ref'] },
+    });
+    expect(
+      check('<OverflowMenu items={data.menu} onSelect={<Choose ref={data.ref} />} />'),
+    ).toEqual([]);
+  });
+
+  it('[M2.lists] refuses a Choose off a menu’s onSelect, or for anything but a bound ref', () => {
+    expect(
+      check('<OverflowMenu items={data.menu} onOpenChange={<Choose ref={data.ref} />} />'),
+    ).toEqual([
+      "line 3: OverflowMenu.onOpenChange cannot take a menu's choice: Choose goes on onSelect",
+    ]);
+    expect(check('<OverflowMenu items={<Choose ref={data.ref} />} />')).toEqual([
+      'line 3: OverflowMenu.items takes no handler, so it cannot act on an item',
+    ]);
+    expect(
+      check('<OverflowMenu items={data.menu} onSelect={<Choose ref={data.count} />} />'),
+    ).toEqual([
+      "line 3: OverflowMenu.onSelect: the choice's ref (data.count) is not a non-empty string",
+    ]);
+    expect(() =>
+      parsePage(
+        page('<OverflowMenu onSelect={<Choose ref={data.ref} key={data.ref} />} />'),
+        'book',
+      ),
+    ).toThrow(/Choose takes ref, not key/);
+    expect(() => parsePage(page('<Choose ref={data.ref} />'), 'book')).toThrow(
+      /Choose goes in a handler prop, onSelect=\{<Choose … \/>\}/,
+    );
+  });
+});

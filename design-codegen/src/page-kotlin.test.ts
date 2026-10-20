@@ -371,3 +371,19 @@ describe('[M2.search] an Android page searching', () => {
     );
   });
 });
+
+describe('[M2.lists] an Android menu whose verbs act on an item', () => {
+  const book = gen(
+    `export default function Book({ data }) {
+  return <PageBody><OverflowMenu items={data.menu} onSelect={<Choose ref={data.ref} />} /></PageBody>;
+}
+`,
+    'book',
+    { ref: 'b1', menu: [{ key: 'rename', label: 'Rename', icon: 'edit' }] },
+  );
+
+  it('[M2.lists] leaves the choice unbound, Android having no lists until M5, so the menu draws disabled', () => {
+    expect(book).toContain('OverflowMenu');
+    expect(book).not.toContain('onSelect');
+  });
+});

@@ -23,6 +23,11 @@
       "icon": "podcasts"
     },
     {
+      "key": "drop:sonic-tales",
+      "label": "Remove Sonic Tales",
+      "icon": "remove"
+    },
+    {
       "key": "rename",
       "label": "Rename",
       "icon": "edit"
@@ -64,6 +69,7 @@
     {
       "title": "The Night Ferry",
       "ref": "the-night-ferry",
+      "page": "episode",
       "description": "A crossing that should take forty minutes is logged at six hours, and nobody aboard remembers the wait.",
       "meta": ["The Long Read", "12 Aug 2026", "52 min", "31 min left"],
       "image": "/art/the-long-read.jpg",
@@ -72,6 +78,7 @@
     {
       "title": "Why Radios Hum",
       "ref": "why-radios-hum",
+      "page": "episode",
       "description": "Mains hum, ground loops and the one fix every engineer learns twice.",
       "meta": ["Signal & Noise", "13 Aug 2026", "36 min"],
       "image": "/art/signal-noise.jpg",
@@ -80,6 +87,7 @@
     {
       "title": "Wednesday, 14 August",
       "ref": "deep-inertia-radio-2026-08-14",
+      "page": "episode",
       "description": "New releases from the harbour scene, and an hour of slow electronics for the late shift.",
       "meta": ["Deep Inertia Radio", "14 Aug 2026", "1 h"],
       "image": "/art/deep-inertia-radio.jpg",
@@ -88,6 +96,7 @@
     {
       "title": "Thursday, 15 August",
       "ref": "deep-inertia-radio-2026-08-15",
+      "page": "episode",
       "description": "A live set from the pier, recorded as the tide came in.",
       "meta": ["Deep Inertia Radio", "15 Aug 2026", "1 h 5 min"],
       "image": "/art/deep-inertia-radio.jpg",
@@ -96,6 +105,7 @@
     {
       "title": "The Tape Nobody Played",
       "ref": "the-tape-nobody-played",
+      "page": "episode",
       "description": "A reel found in a studio wall, labelled in a hand nobody recognises, and the song on it that was never released.",
       "meta": ["Sonic Tales", "17 Aug 2026", "48 min"],
       "image": "/art/sonic-tales.jpg",
@@ -104,6 +114,7 @@
     {
       "title": "The Quiet Band",
       "ref": "the-quiet-band",
+      "page": "episode",
       "description": "The one stretch of spectrum nobody is allowed to use, and the telescope that needs it that way.",
       "meta": ["Signal & Noise", "20 Aug 2026", "41 min"],
       "image": "/art/signal-noise.jpg",

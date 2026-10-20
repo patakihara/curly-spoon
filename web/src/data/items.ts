@@ -63,6 +63,7 @@ export function showData(detail: ItemDetail, page: ShowData): ShowData {
   const count = detail.episodes.length;
   return {
     ...emptied(page),
+    ref: mediaRefKey(detail.ref),
     title: detail.title,
     kind: page.kind,
     host: detail.sub ?? '',

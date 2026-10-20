@@ -5,10 +5,12 @@ import { generatePath, useNavigate } from 'react-router';
 import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
 import type { ShellNav } from '../../shell-nav';
 import { usePlay, type Playing } from '../../player';
+import { useChoose } from '../../choose';
 import { BackLayer, BottomNav, EpisodeRow, ExpandableText, FollowButton, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, OverflowMenu, PageBody, Section, Shelf, SortFilterBar } from '../ui/index.js';
 
 const placeholder = {
   "title": "The Long Read",
+  "ref": "the-long-read",
   "kind": "Podcast",
   "host": "Nadia Berg",
   "meta": "Weekly · 212 episodes · 5 unplayed",
@@ -28,6 +30,21 @@ const placeholder = {
       "key": "digest",
       "label": "Add to a digest",
       "icon": "playlist_add"
+    },
+    {
+      "key": "new:digest",
+      "label": "New digest",
+      "icon": "add"
+    },
+    {
+      "key": "add:weekend-reads",
+      "label": "Add to Weekend reads",
+      "icon": "playlist_add"
+    },
+    {
+      "key": "new:listening",
+      "label": "New listening list",
+      "icon": "add"
     }
   ],
   "sort": "Newest first",
@@ -337,6 +354,7 @@ export default function Show({ data = placeholder, state = 'full' }: ShowProps) 
   const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   const play = usePlay();
+  const choose = useChoose();
   return (
     <PageBody width="list" platform={platform}>
       <Section platform={platform}>
@@ -346,7 +364,7 @@ export default function Show({ data = placeholder, state = 'full' }: ShowProps) 
           meta={data.meta}
           image={data.image}
           actions={<FollowButton following={data.following} labels={data.subscribe} platform={platform} />}
-          menu={<OverflowMenu items={data.menu} platform={platform} />}
+          menu={<OverflowMenu items={data.menu} onSelect={choose(data.ref)} platform={platform} />}
           platform={platform}
         />
       </Section>

@@ -7,6 +7,7 @@
  * in a change is 404 whatever its kind: nobody learns what sits in a library they cannot open.
  */
 import {
+  LIST_COVERS_MAX,
   LIST_ENTRIES_MAX,
   type ListDetail,
   type ListItem,
@@ -192,6 +193,8 @@ export function shown(r: Reader, list: store.StoredList): ListDetail {
         ? rows.filter((row) => !played(r, row)).map((row) => episodeItem(r, row))
         : rows.map((row) => listeningItem(r, row));
   }
+  const showEntries = shows.map((row) => entry(row, 'show', null));
+  const counted = (kind: ListItem['kind']) => items.filter((item) => item.kind === kind).length;
   return {
     id: list.id,
     kind: list.kind,
@@ -199,7 +202,11 @@ export function shown(r: Reader, list: store.StoredList): ListDetail {
     theDigest: list.theDigest,
     order: list.order,
     count: items.length,
-    shows: shows.map((row) => entry(row, 'show', null)),
+    counts: { book: counted('book'), show: counted('show'), episode: counted('episode') },
+    covers: [
+      ...new Set((list.kind === 'digest' ? showEntries : items).flatMap((e) => e.art ?? [])),
+    ].slice(0, LIST_COVERS_MAX),
+    shows: showEntries,
     items,
   };
 }

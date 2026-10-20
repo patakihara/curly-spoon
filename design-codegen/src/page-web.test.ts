@@ -892,3 +892,25 @@ describe('[M2.search] a page playing each item on the queue its data names, on t
     );
   });
 });
+
+describe('[M2.lists] a menu whose verbs act on an item, on the web', () => {
+  const out = generateWebPage(
+    parsePage(
+      `export default function Book({ data }) {
+  return <PageBody><OverflowMenu items={data.menu} onSelect={<Choose ref={data.ref} />} /></PageBody>;
+}
+`,
+      'book',
+    ),
+    'book',
+    { ref: 'b1', menu: [{ key: 'rename', label: 'Rename' }] },
+    { platformed: new Set(['OverflowMenu']) },
+    shellOf('book'),
+  );
+
+  it("[M2.lists] hands the chosen verb to the page's own Choose, which gives none while nothing acts", () => {
+    expect(out).toContain("import { useChoose } from '../../choose';");
+    expect(out).toContain('  const choose = useChoose();');
+    expect(out).toContain('onSelect={choose(data.ref)}');
+  });
+});

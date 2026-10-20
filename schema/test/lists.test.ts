@@ -10,6 +10,8 @@ import {
   getList,
   LIST_ENTRIES_MAX,
   ListDetail,
+  ListSummary,
+  ListSummaryList,
   listLists,
   PutListItemsBody,
   Queue,
@@ -59,6 +61,26 @@ describe('a new list', () => {
   });
 });
 
+describe('your lists', () => {
+  it('give each list the covers its card draws and how many of each kind it shows, without opening it', () => {
+    const summary = {
+      id: 'l2',
+      kind: 'listening',
+      name: 'Books',
+      theDigest: false,
+      order: null,
+      count: 3,
+      covers: ['/api/media/abs:b1/art', '/api/media/abs:s1/art'],
+      counts: { book: 2, show: 1, episode: 0 },
+    };
+    expect(ListSummaryList.parse({ lists: [summary] }).lists).toEqual([summary]);
+    expect(ListSummary.safeParse({ ...summary, covers: ['https://elsewhere/art'] }).success).toBe(
+      false,
+    );
+    expect(ListSummary.safeParse({ ...summary, counts: { book: 2, show: 1 } }).success).toBe(false);
+  });
+});
+
 describe('a list opened', () => {
   it('holds its summary, a digest’s shows, and its entries with when each was published and whether you finished it', () => {
     const detail = {
@@ -68,6 +90,8 @@ describe('a list opened', () => {
       theDigest: true,
       order: 'oldest',
       count: 1,
+      covers: [`/api/media/abs:${show.id}/art`],
+      counts: { book: 0, show: 0, episode: 1 },
       shows: [
         {
           ref: show,

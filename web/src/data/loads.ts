@@ -3,6 +3,7 @@ import {
   LibraryList,
   type LibraryMedium,
   ListDetail,
+  type ListSummary,
   ListSummaryList,
   ListeningSessionList,
   parseMediaRefKey,
@@ -22,7 +23,7 @@ import { SignedOut } from './store';
  */
 
 /** The answer's data parsed, or why there is none. */
-async function answer<T>(
+export async function answer<T>(
   asked: Promise<{ data?: unknown; response: Response }>,
   parse: (data: unknown) => T,
 ): Promise<T> {
@@ -68,16 +69,31 @@ export const loadList = (api: ApiClient, id: string | undefined): Promise<ListDe
   );
 };
 
+/** Your lists, The Digest first, each with what its card draws. */
+export const loadLists = async (api: ApiClient): Promise<ListSummary[]> =>
+  (await answer(api.GET('/api/lists'), (d) => ListSummaryList.parse(d))).lists;
+
+/** Your lists, or null when they could not be read; a refusal for want of a sign-in still throws. */
+export const listsOrNone = (api: ApiClient): Promise<ListSummary[] | null> =>
+  loadLists(api).catch((error: unknown) => {
+    if (error instanceof SignedOut) throw error;
+    return null;
+  });
+
 /**
- * Each of your lists opened, The Digest first: one that fails is left out, but a refusal for want
- * of a sign-in still throws.
+ * The Podcasts page's shows and lists. Lists that fail are null, so the shows still draw; a
+ * refusal for want of a sign-in still throws, and so do shows that fail.
  */
-export async function loadLists(api: ApiClient): Promise<ListDetail[]> {
-  const { lists } = await answer(api.GET('/api/lists'), (d) => ListSummaryList.parse(d));
-  const settled = await Promise.allSettled(lists.map((list) => loadList(api, list.id)));
-  const refused = settled.find((s) => s.status === 'rejected' && s.reason instanceof SignedOut);
-  if (refused !== undefined) throw new SignedOut();
-  return settled.flatMap((s) => (s.status === 'fulfilled' ? [s.value] : []));
+export async function loadPodcasts(
+  api: ApiClient,
+): Promise<{ library: LibraryList; lists: ListSummary[] | null }> {
+  const [library, lists] = await Promise.allSettled([
+    loadLibrary(api, 'podcasts'),
+    listsOrNone(api),
+  ]);
+  if (lists.status === 'rejected') throw lists.reason;
+  if (library.status === 'rejected') throw library.reason;
+  return { library: library.value, lists: lists.value };
 }
 
 const loadQueue = (api: ApiClient, type: QueueType) =>

@@ -146,6 +146,11 @@ fun ListPage(navController: NavController, actions: PageActions) {
                                                                     icon = "podcasts",
                                                                 ),
                                                                 OverflowMenuItem(
+                                                                    key = "drop:sonic-tales",
+                                                                    label = "Remove Sonic Tales",
+                                                                    icon = "remove",
+                                                                ),
+                                                                OverflowMenuItem(
                                                                     key = "rename",
                                                                     label = "Rename",
                                                                     icon = "edit",

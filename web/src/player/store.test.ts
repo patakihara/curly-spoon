@@ -813,6 +813,19 @@ describe('[M2.lists] playing a list from its page', () => {
     expect(store.getState().ref).toEqual(book);
   });
 
+  it("[M2.lists] leaves the queue as the list made it when the list's current cannot be planned, playing nothing", async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { store, sent, lists } = rig({ unplannable: [episode.id] });
+    lists.current = episode;
+    await store.play(book);
+    await store.playList('list-1');
+    // Planning the item played before would put it back on the list's queue.
+    expect(sent.map((s) => s.path).slice(-2)).toEqual(['/api/lists/list-1/play', '/api/play']);
+    expect(sent.at(-1)!.body).toEqual({ ref: episode });
+    expect(store.getState()).toMatchObject({ ref: null, plan: null, playing: false });
+    expect(warn).toHaveBeenCalledWith('playing failed', episode);
+  });
+
   it('[M2.lists] stops everything when the list is refused for want of a sign-in', async () => {
     const { store, sent, signedOut } = rig({ refuses: ['/api/lists/list-1/play'] });
     await store.playList('list-1');

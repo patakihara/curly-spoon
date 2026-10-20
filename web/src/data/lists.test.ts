@@ -1,4 +1,4 @@
-import { ListDetail, type ListItem } from '@auralis/schema';
+import { ListDetail, type ListItem, type ListSummary } from '@auralis/schema';
 import { describe, expect, it } from 'vitest';
 import { frame as list } from '../generated/pages/List';
 import { listCards, listData } from './lists';
@@ -24,6 +24,8 @@ const detail = (over: Partial<ListDetail> = {}): ListDetail =>
     theDigest: false,
     order: null,
     count: 1,
+    counts: { book: 0, show: 0, episode: 1 },
+    covers: ['/api/media/abs:s1/art'],
     shows: [],
     items: [episode()],
     ...over,
@@ -38,7 +40,10 @@ describe('[M2.lists] a list page from GET /api/lists/{id}', () => {
       kind: 'Playlist',
       meta: '1 episode',
       covers: ['/api/media/abs:s1/art?size=medium'],
-      menu: [],
+      menu: [
+        { key: 'rename', label: 'Rename', icon: 'edit' },
+        { key: 'delete', label: 'Delete playlist', icon: 'delete' },
+      ],
       shows: [],
       order: '',
     });
@@ -46,6 +51,7 @@ describe('[M2.lists] a list page from GET /api/lists/{id}', () => {
       {
         title: 'Part One',
         ref: 'abs:ep-1',
+        page: 'episode',
         description: '',
         meta: ['Megacorp', '12 Aug 2026', '52 min'],
         image: '/api/media/abs:s1/art?size=small',
@@ -71,6 +77,8 @@ describe('[M2.lists] a list page from GET /api/lists/{id}', () => {
         theDigest: true,
         order: 'newest',
         count: 2,
+        counts: { book: 0, show: 0, episode: 2 },
+        covers: ['/api/media/abs:s1/art'],
         shows: [
           {
             ref: { source: 'abs', id: 's1' },
@@ -105,6 +113,7 @@ describe('[M2.lists] a list page from GET /api/lists/{id}', () => {
       detail({
         kind: 'listening',
         count: 2,
+        counts: { book: 1, show: 1, episode: 0 },
         items: [
           episode({
             ref: { source: 'abs', id: 'b1' },
@@ -130,6 +139,38 @@ describe('[M2.lists] a list page from GET /api/lists/{id}', () => {
     expect(data.items.map((i) => i.meta)).toEqual([['Rosa Elin', '10 h 0 m'], ['A Host']]);
   });
 
+  it("[M2.lists] opens each entry's own page: a book's, a show's or an episode's", () => {
+    const data = listData(
+      detail({
+        kind: 'listening',
+        count: 3,
+        counts: { book: 1, show: 1, episode: 1 },
+        items: [
+          episode({ ref: { source: 'abs', id: 'b1' }, kind: 'book' }),
+          episode({ ref: { source: 'abs', id: 's1' }, kind: 'show' }),
+          episode(),
+        ],
+      }),
+      list.placeholder,
+    );
+    expect(data.items.map((i) => [i.page, i.ref])).toEqual([
+      ['book', 'abs:b1'],
+      ['show', 'abs:s1'],
+      ['episode', 'abs:ep-1'],
+    ]);
+  });
+
+  it('[M2.lists] covers a list by the covers it is given', () => {
+    const data = listData(
+      detail({ covers: ['/api/media/abs:s1/art', '/api/media/abs:s2/art'] }),
+      list.placeholder,
+    );
+    expect(data.covers).toEqual([
+      '/api/media/abs:s1/art?size=medium',
+      '/api/media/abs:s2/art?size=medium',
+    ]);
+  });
+
   it('[M2.lists] draws an entry with no art and no show without a broken image or a stray word', () => {
     const [item] = listData(
       detail({ items: [episode({ art: null, sub: null, publishedAt: null, duration: null })] }),
@@ -141,24 +182,50 @@ describe('[M2.lists] a list page from GET /api/lists/{id}', () => {
 });
 
 describe("[M2.lists] the Podcasts page's lists from GET /api/lists", () => {
-  it('[M2.lists] draws each list as a card naming its kind and size, covered by its entries, opening its page', () => {
+  it('[M2.lists] draws each list as a card naming its kind and size, with the covers it is given, opening its page', () => {
+    const summary = (over: Partial<ListSummary>): ListSummary => ({
+      id: 'list-1',
+      kind: 'playlist',
+      name: 'Commute',
+      theDigest: false,
+      order: null,
+      count: 1,
+      counts: { book: 0, show: 0, episode: 1 },
+      covers: ['/api/media/abs:s1/art'],
+      ...over,
+    });
     const cards = listCards([
-      detail({
+      summary({
+        id: 'd',
         kind: 'digest',
         name: 'The Digest',
         theDigest: true,
         order: 'oldest',
         count: 0,
-        items: [],
+        counts: { book: 0, show: 0, episode: 0 },
+        covers: [],
       }),
-      detail({ count: 1 }),
+      summary({}),
+      summary({
+        id: 'l2',
+        kind: 'listening',
+        name: 'Books',
+        count: 3,
+        counts: { book: 2, show: 1, episode: 0 },
+      }),
     ]);
     expect(cards).toEqual([
-      { title: 'The Digest', ref: 'list-1', sub: 'Digest · 0 episodes', covers: [] },
+      { title: 'The Digest', ref: 'd', sub: 'Digest · 0 episodes', covers: [] },
       {
         title: 'Commute',
         ref: 'list-1',
         sub: 'Playlist · 1 episode',
+        covers: ['/api/media/abs:s1/art?size=medium'],
+      },
+      {
+        title: 'Books',
+        ref: 'l2',
+        sub: 'List · 2 books · 1 show',
         covers: ['/api/media/abs:s1/art?size=medium'],
       },
     ]);

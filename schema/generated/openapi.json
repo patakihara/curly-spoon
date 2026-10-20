@@ -1775,6 +1775,28 @@
           "digest"
         ]
       },
+      "ListCounts": {
+        "type": "object",
+        "properties": {
+          "book": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "show": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "episode": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "book",
+          "show",
+          "episode"
+        ]
+      },
       "ListSummary": {
         "type": "object",
         "properties": {
@@ -1803,6 +1825,16 @@
           "count": {
             "type": "integer",
             "minimum": 0
+          },
+          "counts": {
+            "$ref": "#/components/schemas/ListCounts"
+          },
+          "covers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 4
           }
         },
         "required": [
@@ -1811,7 +1843,9 @@
           "name",
           "theDigest",
           "order",
-          "count"
+          "count",
+          "counts",
+          "covers"
         ]
       },
       "ListSummaryList": {
@@ -1926,6 +1960,16 @@
             "type": "integer",
             "minimum": 0
           },
+          "counts": {
+            "$ref": "#/components/schemas/ListCounts"
+          },
+          "covers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 4
+          },
           "shows": {
             "type": "array",
             "items": {
@@ -1946,6 +1990,8 @@
           "theDigest",
           "order",
           "count",
+          "counts",
+          "covers",
           "shows",
           "items"
         ]

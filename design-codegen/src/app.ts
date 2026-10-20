@@ -84,7 +84,10 @@ function readsData(tree: PageTree): boolean {
         return true;
       }
       if (
-        (value.kind === 'open' || value.kind === 'request' || value.kind === 'play') &&
+        (value.kind === 'open' ||
+          value.kind === 'request' ||
+          value.kind === 'play' ||
+          value.kind === 'choose') &&
         Object.values(value.params).some(data)
       ) {
         return true;

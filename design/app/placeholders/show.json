@@ -1,5 +1,6 @@
 {
   "title": "The Long Read",
+  "ref": "the-long-read",
   "kind": "Podcast",
   "host": "Nadia Berg",
   "meta": "Weekly · 212 episodes · 5 unplayed",
@@ -8,7 +9,10 @@
   "subscribe": { "on": "Subscribed", "off": "Subscribe" },
   "menu": [
     { "key": "played", "label": "Mark all as played", "icon": "done_all" },
-    { "key": "digest", "label": "Add to a digest", "icon": "playlist_add" }
+    { "key": "digest", "label": "Add to a digest", "icon": "playlist_add" },
+    { "key": "new:digest", "label": "New digest", "icon": "add" },
+    { "key": "add:weekend-reads", "label": "Add to Weekend reads", "icon": "playlist_add" },
+    { "key": "new:listening", "label": "New listening list", "icon": "add" }
   ],
   "sort": "Newest first",
   "episodes": [

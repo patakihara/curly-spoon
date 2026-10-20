@@ -65,6 +65,17 @@ describe('[M1.shell] the library homes from GET /api/library/{medium}', () => {
     expect(data.lists).toEqual(lists);
   });
 
+  it('[M2.lists] draws your shows and leaves the Lists section out when your lists failed', () => {
+    const data = podcastsData(list(entry({ kind: 'show' })), null, podcasts.placeholder);
+    expect(data.library).toHaveLength(1);
+    expect(data.lists).toEqual([]);
+    expect(data.sections).toEqual(podcasts.placeholder.sections.filter((s) => s !== 'Lists'));
+    expect(
+      podcastsData(list(), [], podcasts.placeholder).sections,
+      'no lists is not a failure: the section stays',
+    ).toEqual(podcasts.placeholder.sections);
+  });
+
   it('lists each album by its artist', () => {
     const id = '65de8562c54b89ceef199f91bacd8709';
     const album = entry({

@@ -258,6 +258,13 @@ data class LinkStatus(
 )
 
 @Serializable
+data class ListCounts(
+    val book: Long,
+    val show: Long,
+    val episode: Long,
+)
+
+@Serializable
 data class ListDetail(
     val id: String,
     val kind: ListKind,
@@ -265,6 +272,8 @@ data class ListDetail(
     val theDigest: Boolean,
     val order: DigestOrder?,
     val count: Long,
+    val counts: ListCounts,
+    val covers: List<String>,
     val shows: List<LibraryEntry>,
     val items: List<ListItem>,
 )
@@ -310,6 +319,8 @@ data class ListSummary(
     val theDigest: Boolean,
     val order: DigestOrder?,
     val count: Long,
+    val counts: ListCounts,
+    val covers: List<String>,
 )
 
 @Serializable

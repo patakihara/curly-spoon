@@ -1,6 +1,6 @@
 ---
 page: book
-pageHash: 82fd7abc06feb2356a2dc067bb4435a3325276d6fd4e979a06ef2a9320e15971
+pageHash: 40e6ab69edca051cf0aee42a1355a61b9baab30397f05a2eebf00c7323912656
 sonora: [kit:mobile/album, kit:desktop/album]
 spotify: [S35]
 ---
@@ -34,7 +34,8 @@ number, "The Harbour Quartet · Book 2", a second accent link, to the series' pa
 `partOf`). The meta line: "Read by Ada Quill · 11 h 40 m · 4 h 12 m left", the narrator
 named because you own a second narration; the resume bar under it. Resume (rose) and Play next, on
 the phone a download control (Sonora's new `download`, never drawn on a desktop), then an
-`OverflowMenu` with Mark as finished and Go to author. "Chapters": twelve numbered `ResultRow`s,
+`OverflowMenu` with Mark as finished, Go to author, Add to Weekend reads and New listening list,
+whose verbs act on the book. "Chapters": twelve numbered `ResultRow`s,
 each with its start on the book's one timeline and its length, the one you are in marked "23 min
 left". "About": the description in `ExpandableText`, three lines and "see more". "Other
 narrations": cards read by other narrators, each opening its own book page: Jonas Vale's full cast,

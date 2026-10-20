@@ -531,33 +531,41 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
   };
 
   /**
-   * Closes what plays, then plays `pick`'s answer, the item to plan: on none, or one that cannot
-   * be planned, the player stays on what it had, planned again where the close left it, or idle.
-   * A pick refused for want of a sign-in has stopped everything already.
+   * Closes what plays, then plays `pick`'s answer, the item to plan, and whether picking it moved
+   * the server's queue. An item that cannot be planned leaves the player on what it had, planned
+   * again where the close left it, or idle; but once the queue moved, as a list's play moves it,
+   * the player goes idle, since planning what it had would put that back on the new queue. A pick
+   * refused for want of a sign-in has stopped everything already.
    */
   const playInstead = async (
-    pick: () => Promise<MediaRef | null | 'signedOut'>,
+    pick: () => Promise<{ to: MediaRef | null; moved: boolean } | 'signedOut'>,
     failed: MediaRef | string,
   ): Promise<void> => {
     const was = ref;
     const playOn = playing;
     await closeCurrent();
-    const to = await pick();
-    if (to === 'signedOut') return;
+    const picked = await pick();
+    if (picked === 'signedOut') return;
+    const { to, moved } = picked;
     if (to !== null && (await start(to, true))) return;
     logPlay(to ?? failed);
     // Decision (M1.shell): an item that cannot be planned leaves the player on what it had,
     // planned again where the close left it, or idle. The play it had is closed first, so its
     // last place and listening reach the server before anything else plans.
-    if (was === null) unload();
+    // Decision (M2.lists): after a list's play moved the queue, the player goes idle instead, so
+    // the queue stays as the list made it.
+    if (was === null || moved) unload();
     else await load(was, playOn);
   };
 
-  /** The item list `id`'s play makes current, from `start` when given; null when it has none. */
+  /**
+   * The item list `id`'s play makes current, from `start` when given, and whether the play moved
+   * the queue: it did when the route answered with the queue, whatever its current.
+   */
   const listCurrent = async (
     id: string,
     start: MediaRef | undefined,
-  ): Promise<MediaRef | null | 'signedOut'> => {
+  ): Promise<{ to: MediaRef | null; moved: boolean } | 'signedOut'> => {
     const answered = await api
       .POST('/api/lists/{id}/play', {
         params: { path: { id } },
@@ -569,7 +577,8 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
       return 'signedOut';
     }
     const queue = Queue.safeParse(answered?.data);
-    return queue.success ? (queue.data.current?.ref ?? null) : null;
+    if (!queue.success) return { to: null, moved: false };
+    return { to: queue.data.current?.ref ?? null, moved: true };
   };
 
   /** Plans what this device's session plays, paused where it stopped, unless something is loaded. */
@@ -592,7 +601,7 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
       return () => listeners.delete(listener);
     },
     getState: () => state,
-    play: (to) => run(() => playInstead(async () => to, to)),
+    play: (to) => run(() => playInstead(async () => ({ to, moved: false }), to)),
     playList: (id, from) => run(() => playInstead(() => listCurrent(id, from), id)),
     restore: () =>
       (restoring ??= run(async () => {

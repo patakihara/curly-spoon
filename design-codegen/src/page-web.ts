@@ -8,7 +8,8 @@
  * What is loaded, `shell.playing` on the canvas, is the web player's (`web/src/player`):
  * `usePlaying()` in a page, the `playing` the shell hands each layout's parts, the mini-player
  * drawn only once something is loaded. A `<Play>` plays through `usePlay()`, and a `<Query />` is
- * the search draft's `useQuery()` (`web/src/query`); a back layer or subheader holding one, or an
+ * the search draft's `useQuery()` (`web/src/query`); a `<Choose ref>` hands a menu's chosen verb to
+ * `useChoose()` (`web/src/choose`), the page's own verbs, which give none while nothing acts; a back layer or subheader holding one, or an
  * `<Open>` and so the router's `useNavigate()`, is drawn as a component of its own, since the
  * shell calls the frame's parts outside any page.
  */
@@ -101,6 +102,10 @@ const plays = (node: PageTree) =>
 const playsBound = (node: PageTree) =>
   node.kind === 'element' &&
   Object.values(node.props).some((v) => v.kind === 'play' && typeof v.queue !== 'string');
+
+/** Whether an element hands a menu's choice on, a `<Choose>` in one of its handler props. */
+const chooses = (node: PageTree) =>
+  node.kind === 'element' && Object.values(node.props).some((v) => v.kind === 'choose');
 
 /** Whether an element holds the search query, a `<Query />` in one of its handler props. */
 const queries = (node: PageTree) =>
@@ -237,6 +242,12 @@ function propLines(
     if (handler === undefined)
       throw new Error(`${owner}.${name}: Query goes on onChange or onSubmit`);
     return [`${name}={${handler}}`];
+  }
+  // A menu's choice goes to the verbs the page is given, none while nothing acts on the item.
+  if (value.kind === 'choose') {
+    const ref = value.params['ref'];
+    if (ref === undefined) throw new Error(`${owner}.${name}: Choose needs ref={…}`);
+    return [`${name}={choose(${pathCode(ref)})}`];
   }
   // No request endpoint exists yet. A handler doing nothing would draw a dead control as
   // enabled, so the prop is left out and Sonora draws the control disabled.
@@ -598,6 +609,12 @@ export function generateWebPage(
     ...(sheet ? [] : ['type Playing']),
   ];
   const usesQuery = inPage(queries);
+  for (const part of [back, subheader]) {
+    if (part !== undefined && some(part, chooses)) {
+      throw new Error(`${id}: Choose goes in the page's content, not its back layer or subheader`);
+    }
+  }
+  const usesChoose = some(root, chooses);
   const used = new Set<string>();
   for (const t of own) drawn(t, used);
   for (const [, parts] of chromes) {
@@ -670,6 +687,7 @@ export function generateWebPage(
         ? [`import type { ${fromPlayer.map((n) => n.slice(5)).join(', ')} } from '../../player';`]
         : [`import { ${fromPlayer.join(', ')} } from '../../player';`]),
     ...(usesQuery ? ["import { useQuery } from '../../query';"] : []),
+    ...(usesChoose ? ["import { useChoose } from '../../choose';"] : []),
     `import { ${[...used].sort().join(', ')} } from '../ui/index.js';`,
     '',
     `const placeholder = ${JSON.stringify(placeholder, null, 2)};`,
@@ -736,6 +754,7 @@ export function generateWebPage(
     ...(sheet && goes ? ['  const go = useShellNav();'] : []),
     ...(usesPlay ? ['  const play = usePlay();'] : []),
     ...(some(root, queries) ? ['  const query = useQuery();'] : []),
+    ...(usesChoose ? ['  const choose = useChoose();'] : []),
     ...(usesPlaying
       ? ['  const playing = usePlaying();', '  if (playing === null) return null;']
       : []),

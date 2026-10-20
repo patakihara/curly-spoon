@@ -1,6 +1,6 @@
 ---
 page: list
-pageHash: 01eb36a2fa0533b6381136e82c55495c87edff0622777dd7d498c13fe509c72e
+pageHash: fa16ce2d66b7a4a1f4ee582d5840a49b31d5562cdc6840627f466ef4fa191e79
 sonora: [kit:mobile/collection, kit:desktop/collection]
 spotify: []
 ---
@@ -24,10 +24,12 @@ Rows card and the drawn Show page.
 One kind, a digest. The heading is its name, "Morning", led by the close control. A `MediaHeader`
 over a 2×2 mosaic of its episodes' covers, with "DIGEST" and "4 shows · 6 episodes · oldest first",
 Play, which plays the digest on its own, and Play next, which puts it after what is playing, and
-the menu (Play newest first, Choose shows, Rename, Delete digest). Then "Shows", a shelf of its
+the menu (Play newest first, Choose shows, Remove Sonic Tales, Rename, Delete digest), whose verbs
+act on the digest. Then "Shows", a shelf of its
 four shows, each opening its page, then "Episodes": a `SortFilterBar` "Oldest first" and six
 `EpisodeRow`s in date order, each naming its show, one part-played with the time left, each
-opening its page and playing on the spoken queue.
+opening its own kind's page (on a listening list a book's or a show's) and playing on the spoken
+queue.
 
 **The other kinds**, in data only, the same page: a **podcast playlist** has no Shows section and
 lists its episodes in your order, dropping each once played; a **listening list** holds books and

@@ -56,13 +56,15 @@ export function booksData(list: LibraryList, page: BooksData): BooksData {
   };
 }
 
+/** Your shows, then your lists; lists that failed, null, leave their section out. */
 export function podcastsData(
   list: LibraryList,
-  lists: PodcastsData['lists'],
+  lists: PodcastsData['lists'] | null,
   page: PodcastsData,
 ): PodcastsData {
   return {
     ...page,
+    sections: lists === null ? page.sections.filter((s) => s !== 'Lists') : page.sections,
     library: list.items.map((show) => ({
       title: show.title,
       ref: mediaRefKey(show.ref),
@@ -70,7 +72,7 @@ export function podcastsData(
       image: artAt(show.art, 'medium'),
       unplayed: false,
     })),
-    lists,
+    lists: lists ?? [],
   };
 }
 

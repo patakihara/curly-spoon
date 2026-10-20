@@ -68,6 +68,13 @@ Play on an item not begun. A page whose subheader's section bar binds its titles
 placeholder names only while the data names it too, so the data can leave out a section it has
 nothing for; a section the bar never names always draws.
 
+`onSelect={<Choose ref={data.ref} />}` hands a menu's chosen verb, by its item's key, to the item
+its ref binds: what each key does is the app's, so the items are the page's data. It goes only on
+a menu's `onSelect`, and the check refuses it elsewhere. The web gives it to the verbs the page is
+handed, `useChoose()` in `web/src/choose`, which give none on the canvas or while the menu holds
+no item, so the menu's button draws disabled; Android leaves it unbound until it has lists to act
+on, and its menu draws disabled too.
+
 `onRequest={<Request ref={book.ref} />}` asks for an item the library lacks; no request endpoint
 exists yet, so both apps leave it unbound and the card draws its Request disabled. A generated
 page never binds a handler that does nothing: a control that seems to work must work. The web

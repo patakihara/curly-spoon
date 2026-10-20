@@ -178,6 +178,24 @@ describe('[M2.lists] the list pages given their data', () => {
     expect(button('Play next')).toContain('disabled');
   });
 
+  it("[M2.lists] binds a list's menu to its verbs while it holds some, and draws it disabled while it holds none", () => {
+    const menuButton = (html: string) =>
+      html
+        .split('<button')
+        .find((part) => part.includes('aria-label="More options"'))
+        ?.split('>')[0] ?? '';
+    const withVerbs = renderAt(
+      '/lists/l1',
+      deps('member', {
+        list: { ...commute, menu: [{ key: 'rename', label: 'Rename', icon: 'edit' }] },
+      }).given,
+    );
+    expect(menuButton(withVerbs)).not.toBe('');
+    expect(menuButton(withVerbs)).not.toContain('disabled');
+    const without = renderAt('/lists/l1', deps('member', { list: commute }).given);
+    expect(menuButton(without)).toContain('disabled');
+  });
+
   it('[M2.lists] lists your lists on the Podcasts page after your shows', () => {
     const podcasts = {
       ...podcastsFrame.placeholder,

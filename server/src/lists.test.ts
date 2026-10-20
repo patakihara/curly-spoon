@@ -211,6 +211,33 @@ describe('the lists routes', () => {
     expect((await s.lists()).map((l) => l.name)).toEqual(['The Digest']);
   });
 
+  it("lists each list with its card's covers, each once, and how many of each kind it shows, as opening it would", async () => {
+    const s = await server({ now: DEC_20 });
+    const drive = await s.create({ kind: 'playlist', name: 'Drive' });
+    s.ok(await s.call('PUT', `/lists/${drive.id}/items`, { refs: [two, four] }), ListDetail);
+    const books = await s.create({ kind: 'listening', name: 'Books' });
+    s.ok(await s.call('PUT', `/lists/${books.id}/items`, { refs: [bookRef, show1] }), ListDetail);
+
+    const [digest, playlist, listening] = await s.lists();
+
+    // Both episodes are show 1's: its art once.
+    expect(playlist).toMatchObject({
+      count: 2,
+      counts: { book: 0, show: 0, episode: 2 },
+      covers: [`/api/media/abs:${show1.id}/art`],
+    });
+    expect(listening!.counts).toEqual({ book: 1, show: 1, episode: 0 });
+    const opened = await s.detail(books.id);
+    expect(listening!.covers).toEqual(opened.items.flatMap((i) => (i.art === null ? [] : [i.art])));
+    expect(listening!.covers).toContain(`/api/media/abs:${show1.id}/art`);
+    // A digest's covers are its shows', not its episodes'.
+    const theDigest = await s.detail(digest!.id);
+    expect(digest!.covers).toEqual(theDigest.shows.flatMap((e) => (e.art === null ? [] : [e.art])));
+    expect(digest!.covers.length).toBeGreaterThan(0);
+    expect(digest!.counts.episode).toBe(digest!.count);
+    expect(theDigest).toMatchObject({ covers: digest!.covers, counts: digest!.counts });
+  });
+
   it('keeps an entry or show named twice once, where first named', async () => {
     const s = await server();
     const list = await s.create({ kind: 'playlist', name: 'Drive' });

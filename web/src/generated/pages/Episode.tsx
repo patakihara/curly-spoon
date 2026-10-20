@@ -5,6 +5,7 @@ import { generatePath, useNavigate } from 'react-router';
 import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
 import type { ShellNav } from '../../shell-nav';
 import { usePlay, type Playing } from '../../player';
+import { useChoose } from '../../choose';
 import { BackLayer, BottomNav, EpisodeRow, ExpandableText, IconButton, MediaHeader, MiniPlayer, NavRail, OverflowMenu, PageBody, Section } from '../ui/index.js';
 
 const placeholder = {
@@ -27,6 +28,16 @@ const placeholder = {
       "key": "show",
       "label": "Go to show",
       "icon": "podcasts"
+    },
+    {
+      "key": "add:commute",
+      "label": "Add to Commute",
+      "icon": "playlist_add"
+    },
+    {
+      "key": "new:playlist",
+      "label": "New playlist",
+      "icon": "add"
     }
   ],
   "notes": "A crossing that should take forty minutes is logged at six hours, and nobody aboard remembers the wait. This week we follow the paper trail from a single line in a harbour-master's logbook to the office that issued the ferry's licence, the crew who signed off that night, and the passenger who kept the ticket. With readings from the logbook itself, and a walk along the old pier at low tide. Music by Deep Inertia. The Long Read is reported and produced by Nadia Berg; episodes arrive every Wednesday.",
@@ -279,6 +290,7 @@ export default function Episode({ data = placeholder, state = 'full' }: EpisodeP
   const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   const play = usePlay();
+  const choose = useChoose();
   return (
     <PageBody width="list" platform={platform}>
       <Section platform={platform}>
@@ -296,7 +308,7 @@ export default function Episode({ data = placeholder, state = 'full' }: EpisodeP
           lastLabel={null}
           addLabel="Add to a list"
           download={data.download as Exclude<ComponentProps<typeof MediaHeader>['download'], undefined>}
-          menu={<OverflowMenu items={data.menu} platform={platform} />}
+          menu={<OverflowMenu items={data.menu} onSelect={choose(data.ref)} platform={platform} />}
           platform={platform}
         />
       </Section>

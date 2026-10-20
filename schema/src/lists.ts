@@ -30,9 +30,26 @@ const ListName = z.string().trim().min(1).max(200);
 /** Entries or shows, at most `LIST_ENTRIES_MAX`; one named twice is kept once, where first named. */
 const Refs = z.array(MediaRef).max(LIST_ENTRIES_MAX);
 
+/** What a list's entry is: a book or show on a listening list, or an episode. */
+export const ListItemKind = z.enum(['book', 'show', 'episode']).openapi('ListItemKind');
+export type ListItemKind = z.infer<typeof ListItemKind>;
+
+/** The most covers a list's card draws: a 2×2 mosaic. */
+export const LIST_COVERS_MAX = 4;
+
+const Count = z.number().int().nonnegative();
+
+/** How many of a list's entries it shows now are books, shows and episodes. */
+export const ListCounts = z
+  .object({ book: Count, show: Count, episode: Count })
+  .openapi('ListCounts');
+export type ListCounts = z.infer<typeof ListCounts>;
+
 /**
  * One list as your lists show it: its kind, its name, whether it is The Digest, a digest's order
- * (null on any other list), and how many entries it shows now.
+ * (null on any other list), how many entries it shows now and how many of each kind, and the
+ * covers its card draws: its entries' art, a digest's its shows', each once, at most
+ * `LIST_COVERS_MAX`.
  */
 export const ListSummary = z
   .object({
@@ -41,7 +58,9 @@ export const ListSummary = z
     name: z.string(),
     theDigest: z.boolean(),
     order: DigestOrder.nullable(),
-    count: z.number().int().nonnegative(),
+    count: Count,
+    counts: ListCounts,
+    covers: z.array(ArtUrl).max(LIST_COVERS_MAX),
   })
   .openapi('ListSummary');
 export type ListSummary = z.infer<typeof ListSummary>;
@@ -49,10 +68,6 @@ export type ListSummary = z.infer<typeof ListSummary>;
 /** Your lists: The Digest first, then the others, oldest first. */
 export const ListSummaryList = z.object({ lists: z.array(ListSummary) }).openapi('ListSummaryList');
 export type ListSummaryList = z.infer<typeof ListSummaryList>;
-
-/** What a list's entry is: a book or show on a listening list, or an episode. */
-export const ListItemKind = z.enum(['book', 'show', 'episode']).openapi('ListItemKind');
-export type ListItemKind = z.infer<typeof ListItemKind>;
 
 /**
  * One entry of a list: its title, its author or host, or an episode's show (`sub`), its art (an

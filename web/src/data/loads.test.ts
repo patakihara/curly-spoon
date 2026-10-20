@@ -5,6 +5,7 @@ import {
   loadLibrary,
   loadList,
   loadLists,
+  loadPodcasts,
   loadQueues,
   loadSearch,
   loadSuggest,
@@ -152,6 +153,8 @@ const listOf = (id: string, name: string) => ({
   theDigest: false,
   order: null,
   count: 0,
+  counts: { book: 0, show: 0, episode: 0 },
+  covers: [],
 });
 
 describe('[M2.lists] what the list pages read from the API', () => {
@@ -169,24 +172,48 @@ describe('[M2.lists] what the list pages read from the API', () => {
     expect(asked).toEqual([]);
   });
 
-  it('[M2.lists] reads each of your lists opened, in their order, leaving out one that fails', async () => {
+  it('[M2.lists] reads your lists, The Digest first, in one ask, opening none of them', async () => {
     const { client, asked } = api({
-      '/api/lists': [
-        200,
-        { lists: [listOf('d', 'The Digest'), listOf('l1', 'Commute'), listOf('l2', 'Gone')] },
-      ],
-      '/api/lists/d': [200, { ...listOf('d', 'The Digest'), shows: [], items: [] }],
-      '/api/lists/l1': [200, { ...listOf('l1', 'Commute'), shows: [], items: [] }],
+      '/api/lists': [200, { lists: [listOf('d', 'The Digest'), listOf('l1', 'Commute')] }],
     });
     expect((await loadLists(client)).map((l) => l.name)).toEqual(['The Digest', 'Commute']);
-    expect(asked.slice(1).sort()).toEqual(['/api/lists/d', '/api/lists/l1', '/api/lists/l2']);
+    expect(asked).toEqual(['/api/lists']);
   });
 
-  it('[M2.lists] throws SignedOut when a list is refused for want of a sign-in', async () => {
-    const { client } = api({
-      '/api/lists': [200, { lists: [listOf('l1', 'Commute')] }],
-      '/api/lists/l1': [401, { error: 'signed_out' }],
-    });
+  it('[M2.lists] throws SignedOut when your lists are refused for want of a sign-in', async () => {
+    const { client } = api({ '/api/lists': [401, { error: 'signed_out' }] });
     await expect(loadLists(client)).rejects.toBeInstanceOf(SignedOut);
+  });
+});
+
+describe('[M2.lists] what the Podcasts page reads from the API', () => {
+  const shows = { items: [] };
+
+  it('[M2.lists] reads your shows and your lists', async () => {
+    const { client } = api({
+      '/api/library/podcasts': [200, shows],
+      '/api/lists': [200, { lists: [listOf('d', 'The Digest')] }],
+    });
+    const loaded = await loadPodcasts(client);
+    expect(loaded.library.items).toEqual([]);
+    expect(loaded.lists?.map((l) => l.name)).toEqual(['The Digest']);
+  });
+
+  it('[M2.lists] still reads your shows when your lists fail, saying the lists failed', async () => {
+    const { client } = api({
+      '/api/library/podcasts': [200, shows],
+      '/api/lists': [500, { error: 'internal' }],
+    });
+    expect(await loadPodcasts(client)).toEqual({ library: { items: [] }, lists: null });
+  });
+
+  it('[M2.lists] throws SignedOut when your lists are refused for want of a sign-in, and fails when your shows do', async () => {
+    const signedOut = api({
+      '/api/library/podcasts': [200, shows],
+      '/api/lists': [401, { error: 'signed_out' }],
+    });
+    await expect(loadPodcasts(signedOut.client)).rejects.toBeInstanceOf(SignedOut);
+    const noShows = api({ '/api/lists': [200, { lists: [] }] });
+    await expect(loadPodcasts(noShows.client)).rejects.toThrow();
   });
 });
