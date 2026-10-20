@@ -56,7 +56,7 @@ _Done when:_ (a) Sofia's sign-off.
 - **[M1.release]** Releases, before "It plays" ships, as "How the work runs" says; M0.staging's live check follows the newest release.
   _Done when:_ (a) a test asserts a push to `main` publishes `:edge` and never `:latest`, and a release tag publishes `:latest`; (b) a live test asserts the mediaserver container reports the commit of the newest release.
 
-**[M1.exit] Done when** you listen for a week through the web app, as the PWA on your phone and in the browser on desktop, and resume across both without thinking about it. This also replaces the ABS app for you.
+**[M1.exit] Done when** you listen for a week through the web app, as the PWA on your phone and in the browser on desktop, and resume across both without thinking about it. It replaces the ABS app.
 _Done when:_ (a) Sofia's sign-off.
 
 ### M2 · My library
@@ -67,8 +67,8 @@ _Done when:_ (a) Sofia's sign-off.
   _Done when:_ (a) a test on Jellyfin's recorded lyrics asserts `GET /lyrics/{ref}` returns synced lines with their times; (b) a test on an LRCLIB recording asserts a track without Jellyfin lyrics gets synced lyrics stored in the cache; (c) a test asserts a second request for those lyrics makes no LRCLIB call.
 - **[M2.lists]** Listening lists, podcast playlists, The Digest and custom digests.
   _Done when:_ (a) a test creates a listening list and a podcast playlist through the API and plays each in order; (b) a test asserts The Digest holds subscribed shows' unplayed episodes from the last 14 days and no older ones; (c) a test creates a custom digest from chosen shows and asserts its episodes; (d) a test finishes one digest episode and skips another, and asserts each is marked played and leaves the digest, and that show's Up next and autoplay stay put; (e) a test plays a digest and asserts the previous queue is saved, playing its current or next episode resumes it, and playing the digest or an episode from its page resumes the digest's queue.
-- **[M2.sorting]** Library sorts, Random among them; Up next and second-most-recent on Browse (from owned content).
-  _Done when:_ (a) a test asserts `GET /library/{medium}` sorts by title, artist and Random, and Random with a fixed seed gives that seed's order; (b) a test asserts Browse's Up next and second-most-recent shelves hold only owned items from the user's history, ignoring digest plays.
+- **[M2.sorting]** Library sorts, Random among them; Browse's Up next and second-most-recent from owned content, through `GET /feed` (its full composer stays M4.browse).
+  _Done when:_ (a) a test asserts `GET /library/{medium}` sorts by title, artist and Random, and Random with a fixed seed gives that seed's order; (b) a test asserts Browse's Up next and second-most-recent book and show each hold only owned items from the user's history, ignoring digest plays.
 - **[M2.settings]** Settings stored per user in `GET/PUT /settings`: theme, autoplay switches, first-run setup, and queue style, which retires `PUT /sessions/this/style`.
   _Done when:_ (a) a test round-trips every setting through `GET/PUT /settings`.
 
@@ -102,7 +102,7 @@ _Done when:_ (a) Sofia's sign-off.
 - **[M3.catalog]** Search's global ranking across every outside source; artist and author catalogue with unowned titles; lyrics search.
   _Done when:_ (a) a test on recorded sources asserts search returns one list ranked across library and outside sources, an outside result above a weaker library match, each row's availability, and owned titles never requestable; (b) a test on recorded sources asserts `GET /people/{ref}` returns owned and unowned titles, the unowned requestable, and leaves them out with the setting off; (c) a test on an LRCLIB recording finds a track from a line of its lyrics; (d) a test delays one recorded source and asserts `GET /search` answers only once it answers or times out, with the same top result either way; (e) a test on recorded YouTube results asserts a matching channel ranks like a podcast, flagged as YouTube, and says whether it is followed.
 
-**[M3.exit] Done when** any song you think of plays within a couple of seconds, your Spotify playlists are imported and play from your lists, and a lossless album you add arrives and replaces any songs you kept from it. Five books you request and two shows you subscribe to also turn into playable cards without you touching anything else.
+**[M3.exit] Done when** any song you think of plays within a couple of seconds, your Spotify playlists are imported and play from your lists, and a lossless album you add arrives and replaces any songs you kept from it. Five books you request and two shows you subscribe to turn into playable cards without you touching anything else.
 _Done when:_ (a) Sofia's sign-off.
 
 ### M4 · Browse like Spotify
