@@ -30,16 +30,11 @@ import type { MediaRef, QueueType } from '@auralis/schema';
 import type { AbsMe } from '../adapters/audiobookshelf/schemas.js';
 import { INSTANT_MIX_LIMIT } from '../adapters/jellyfin/client.js';
 import type { IndexItem } from '../adapters/jellyfin/schemas.js';
-import {
-  albumTracks,
-  booksInSeries,
-  episodesInOrder,
-  indexedRow,
-  type StoredRow,
-} from '../libraryIndex/store.js';
+import { albumTracks, indexedRow, type StoredRow } from '../libraryIndex/store.js';
 import type { Db } from '../store/connection.js';
 import type { QueueEntry, SessionPlay, SessionValue } from '../store/listening.js';
 import type { Expansion } from './engine.js';
+import { episodeAfter, laterInSeries } from './next.js';
 
 export interface AutoplayDeps {
   /** The library index. */
@@ -78,13 +73,15 @@ const sameEntry = (a: QueueEntry, b: QueueEntry) =>
 const inDigest = (queue: QueueType, s: SessionValue): boolean =>
   queue === 'spoken' && s.spokenDigest !== null;
 
+/** Whether `play` is your own: any play but one made in a digest's queue. */
+export const isOwnPlay = (play: SessionPlay): boolean => play.list === undefined;
+
 /**
  * The session's plays that are your own, in history order: every play but those in a digest's
  * queue. A digest marks what it plays played, but never moves your place in a show; Up next and
  * autoplay find that place here.
  */
-export const ownPlays = (s: SessionValue): SessionPlay[] =>
-  s.history.filter((h) => h.list === undefined);
+export const ownPlays = (s: SessionValue): SessionPlay[] => s.history.filter(isOwnPlay);
 
 /** The newest of your own plays on `queue`. */
 const newestPlay = (s: SessionValue, queue: QueueType): SessionPlay | undefined =>
@@ -194,40 +191,41 @@ async function spokenPick(
   return row?.kind === 'book' ? nextBook(row, deps) : null;
 }
 
+/** `finishedSet`, read from Audiobookshelf only once something first asks it. */
+function finishedOnce(deps: AutoplayDeps): () => Promise<Set<string>> {
+  let finished: Promise<Set<string>> | undefined;
+  return () => (finished ??= finishedSet(deps));
+}
+
 async function nextEpisode(
   s: SessionValue,
   episode: StoredRow,
   deps: AutoplayDeps,
 ): Promise<QueueEntry | null> {
-  if (episode.parentId === null) return null;
-  const show = episode.parentId;
-  const order = episodesInOrder(deps.db, show);
-  // Only episodes after this one in the show's own order; never jump back to an earlier one.
-  const later = order.slice(order.findIndex((e) => e.id === episode.id) + 1 || order.length);
-  if (later.length === 0) return null;
   // Played here counts as done, even before Audiobookshelf says it is finished.
   const played = new Set(s.history.map((h) => key(h.ref)));
-  const finished = await finishedSet(deps);
-  const next = later.find(
-    (e) => !finished.has(`${show}/${e.id}`) && !played.has(key({ source: 'abs', id: e.id })),
+  const finished = finishedOnce(deps);
+  const next = await episodeAfter(
+    deps.db,
+    episode,
+    async (e) =>
+      (await finished()).has(`${e.parentId}/${e.id}`) ||
+      played.has(key({ source: 'abs', id: e.id })),
   );
-  return next === undefined ? null : { ref: { source: 'abs', id: next.id } };
+  return next === null ? null : { ref: { source: 'abs', id: next.id } };
 }
 
 async function nextBook(book: StoredRow, deps: AutoplayDeps): Promise<QueueEntry | null> {
-  let finished: Set<string> | undefined;
-  for (const series of book.series) {
-    const books = booksInSeries(deps.db, series.id);
-    const at = books.findIndex((b) => b.id === book.id);
-    if (at === -1) continue;
-    for (const later of books.slice(at + 1)) {
-      finished ??= await finishedSet(deps);
-      if (finished.has(later.id)) continue;
-      const first = deps.expand({ source: later.source, id: later.id })?.entries[0];
-      if (first !== undefined) return entryOf(first);
-    }
-  }
-  return null;
+  const finished = finishedOnce(deps);
+  const firstChapter = (b: StoredRow) => deps.expand({ source: b.source, id: b.id })?.entries[0];
+  // A book with no chapters to play counts as done too, so the series rolls on past it.
+  const next = await laterInSeries(
+    deps.db,
+    book,
+    async (b) => (await finished()).has(b.id) || firstChapter(b) === undefined,
+  );
+  const first = next === null ? undefined : firstChapter(next);
+  return first === undefined ? null : entryOf(first);
 }
 
 /** The track after `after` on the album the music queue plays from, or null at its end. */

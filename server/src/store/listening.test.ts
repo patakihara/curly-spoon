@@ -18,6 +18,7 @@ import {
   savePosition,
   saveSession,
   StaleRevision,
+  userPlays,
   type SessionItem,
   type SessionPlay,
   type SessionQueue,
@@ -681,5 +682,77 @@ describe('a digest’s queue in a listening session', () => {
     db.prepare('UPDATE saved_queues SET queue = \'{"current":7}\'').run();
 
     expect(() => openSession(db, user.id, phone.id)).toThrow();
+  });
+});
+
+describe('[M2.sorting] a user’s plays across devices', () => {
+  it('holds every play on each of the user’s devices, newest first, with its device and digest', () => {
+    const { user, phone, laptop } = twoDevices();
+    const other = upsertUser(db, { username: 'otto', role: 'member' });
+    const tablet = createDevice(db, { userId: other.id, kind: 'web', name: 'Tablet' });
+    const digest = createList(db, user.id, { kind: 'digest', name: 'Science' });
+    const write = (userId: string, deviceId: string, history: SessionPlay[]) => {
+      const start = openSession(db, userId, deviceId)!;
+      saveSession(db, userId, deviceId, start.rev, { ...value(start), history });
+    };
+    write(user.id, phone.id, [
+      { seq: 0, queue: 'spoken', ref: book, chapter: 1, playedAt: 10 },
+      { seq: 1, queue: 'spoken', ref: album, playedAt: 40, after: 0, list: digest.id },
+    ]);
+    write(user.id, laptop.id, [
+      { seq: 0, queue: 'music', ref: song, playedAt: 20 },
+      { seq: 1, queue: 'spoken', ref: book, chapter: 2, playedAt: 30, after: 0 },
+    ]);
+    write(other.id, tablet.id, [{ seq: 0, queue: 'music', ref: song, playedAt: 50 }]);
+
+    expect(userPlays(db, user.id)).toEqual([
+      {
+        deviceId: phone.id,
+        seq: 1,
+        queue: 'spoken',
+        ref: album,
+        playedAt: 40,
+        after: 0,
+        list: digest.id,
+      },
+      {
+        deviceId: laptop.id,
+        seq: 1,
+        queue: 'spoken',
+        ref: book,
+        chapter: 2,
+        playedAt: 30,
+        after: 0,
+      },
+      { deviceId: laptop.id, seq: 0, queue: 'music', ref: song, playedAt: 20 },
+      { deviceId: phone.id, seq: 0, queue: 'spoken', ref: book, chapter: 1, playedAt: 10 },
+    ]);
+    expect(userPlays(db, other.id).map((p) => p.deviceId)).toEqual([tablet.id]);
+  });
+
+  it('orders plays made at the same moment by device, then newest play first', () => {
+    const { user, phone, laptop } = twoDevices();
+    for (const device of [laptop, phone]) {
+      const start = openSession(db, user.id, device.id)!;
+      saveSession(db, user.id, device.id, start.rev, {
+        ...value(start),
+        history: [
+          { seq: 0, queue: 'music', ref: song, playedAt: 10 },
+          { seq: 1, queue: 'music', ref: song, playedAt: 10, after: 0 },
+        ],
+      });
+    }
+    const [first, second] = [phone.id, laptop.id].sort();
+    expect(userPlays(db, user.id).map((p) => [p.deviceId, p.seq])).toEqual([
+      [first, 1],
+      [first, 0],
+      [second, 1],
+      [second, 0],
+    ]);
+  });
+
+  it('is empty for a user with no device', () => {
+    const user = upsertUser(db, { username: 'nell', role: 'member' });
+    expect(userPlays(db, user.id)).toEqual([]);
   });
 });

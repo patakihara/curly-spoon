@@ -20,6 +20,7 @@ import {
   AUTOPLAY_STALE_MS,
   type AutoplayDeps,
   autoplayStale,
+  isOwnPlay,
   ownPlays,
   prepareAutoplay,
   storedAutoplay,
@@ -552,5 +553,13 @@ describe('[M1.sessions/e] an upstream that fails', () => {
 
     expect(done?.autoplay).toEqual({ music: null, spoken: null });
     expect(warnings).toHaveLength(2);
+  });
+});
+
+describe('[M2.sorting] a play of your own', () => {
+  it('is any play but one made in a digest’s queue', () => {
+    const own: SessionPlay = { seq: 0, queue: 'spoken', ref: abs('episode'), playedAt: 1 };
+    expect(isOwnPlay(own)).toBe(true);
+    expect(isOwnPlay({ ...own, list: 'digest' })).toBe(false);
   });
 });

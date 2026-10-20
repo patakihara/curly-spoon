@@ -466,6 +466,28 @@ export function listSessions(db: Db, userId: string): SessionSummary[] {
   });
 }
 
+/** A play as `userPlays` answers it: one of the user's plays, with the device it was made on. */
+export interface UserPlay extends SessionPlay {
+  deviceId: string;
+}
+
+/**
+ * Every play on each of this user's devices, newest first: by when it was played, then by
+ * device, then newest play of the device first.
+ */
+export function userPlays(db: Db, userId: string): UserPlay[] {
+  const rows = z.array(z.object({ device_id: z.string() }).and(HistoryRow)).parse(
+    db
+      .prepare(
+        `SELECT play_history.* FROM play_history
+         JOIN devices ON devices.id = play_history.device_id
+         WHERE devices.user_id = ? ORDER BY played_at DESC, device_id, seq DESC`,
+      )
+      .all(userId),
+  );
+  return rows.map(({ device_id, ...play }) => ({ deviceId: device_id, ...play }));
+}
+
 /**
  * Writes this device's session whole, made from revision `rev`, and answers it at the next
  * revision. Throws `StaleRevision` when the session has moved past `rev`; null when the device
