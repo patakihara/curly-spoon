@@ -158,6 +158,7 @@ One verb in an OverflowMenu.
 | `onSelect` | `(key: string) => void` | Called with the chosen item's key: the menu's action. Without it the button is drawn disabled. |
 | `align` | `'start' \| 'end'` | Which edge of the button the menu lines up with. Default 'end'. |
 | `tone` | `'surface' \| 'scrim'` |  The button's own look: 'surface' (default) is a plain icon button in surface ink; 'scrim' is a small round button on a scrim in on-scrim ink, for a menu that sits over artwork.  |
+| `anchor` | `ReactNode` |  The control that opens the menu, drawn in place of the three-dot button, such as SortFilterBar's label: the menu drops from it, and it may shrink to truncate its text. Its own press opens the menu, so pass `open` and `onOpenChange` with it; `tone` then has nothing to draw.  |
 | `platform` | `'desktop' \| 'mobile'` |  |
 
 ### PreviewButton
@@ -268,13 +269,15 @@ Seek slider plus the elapsed / remaining readouts. Pass duration in seconds; val
 
 ### SortFilterBar
 
-Reports the active sort/filter state and opens its picker in one control — the label is data ("All episodes • Newest"), not a fixed name, so a plain button can't stand in for it.
+Reports the active sort/filter state and opens its picker in one control — the label is data ("All episodes • Newest"), not a fixed name, so a plain button can't stand in for it. Given `items`, its picker is an OverflowMenu of them, dropping from the label on desktop and a bottom sheet on a phone.
 
 | prop | type | notes |
 | --- | --- | --- |
 | `icon` | `string` | Leading glyph. |
 | `label` *(required)* | `string` | The current state, rendered as the control's own label — e.g. "All episodes • Newest". |
-| `onClick` | `() => void` | Opens the sort/filter picker. Without it the control is drawn disabled. |
+| `onClick` | `() => void` | Opens the sort/filter picker. Without it the control is drawn disabled. Unused with `items`. |
+| `items` | `OverflowMenuItem[]` |  The sorts or filters to choose from, e.g. Title, Artist and Random. Given them, the label's press opens their menu instead of calling `onClick`.  |
+| `onSelect` | `(key: string) => void` |  Called with the chosen item's key, the current one included, so choosing Random again can reshuffle. Given `items` but not this, the control is drawn disabled.  |
 | `trailing` | `ReactNode` | Right-aligned slot, hard right against the bar's full width — the library puts a ViewToggle here. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 

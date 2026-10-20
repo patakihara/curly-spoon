@@ -141,8 +141,8 @@
         "message": "<OverflowMenuItem> doesn't accept that prop. Declared props: key, label, icon, sub."
       },
       {
-        "selector": "JSXOpeningElement[name.name='OverflowMenu'] > JSXAttribute > JSXIdentifier[name!=/^(?:items|label|open|onOpenChange|onSelect|align|tone|platform|key|ref|className|style|children)$/]",
-        "message": "<OverflowMenu> doesn't accept that prop. Declared props: items, label, open, onOpenChange, onSelect, align, tone, platform."
+        "selector": "JSXOpeningElement[name.name='OverflowMenu'] > JSXAttribute > JSXIdentifier[name!=/^(?:items|label|open|onOpenChange|onSelect|align|tone|anchor|platform|key|ref|className|style|children)$/]",
+        "message": "<OverflowMenu> doesn't accept that prop. Declared props: items, label, open, onOpenChange, onSelect, align, tone, anchor, platform."
       },
       {
         "selector": "JSXOpeningElement[name.name='OverflowMenu'] > JSXAttribute[name.name='align'] > Literal[value!=/^(?:start|end)$/]",
@@ -217,8 +217,8 @@
         "message": "<Slider> tone must be one of 'accent' | 'play'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='SortFilterBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:icon|label|onClick|trailing|platform|key|ref|className|style|children)$/]",
-        "message": "<SortFilterBar> doesn't accept that prop. Declared props: icon, label, onClick, trailing, platform."
+        "selector": "JSXOpeningElement[name.name='SortFilterBar'] > JSXAttribute > JSXIdentifier[name!=/^(?:icon|label|onClick|items|onSelect|trailing|platform|key|ref|className|style|children)$/]",
+        "message": "<SortFilterBar> doesn't accept that prop. Declared props: icon, label, onClick, items, onSelect, trailing, platform."
       },
       {
         "selector": "JSXOpeningElement[name.name='SortFilterBar'] > JSXAttribute[name.name='platform'] > Literal[value!=/^(?:desktop|mobile)$/]",
@@ -405,8 +405,8 @@
         "message": "<QuickPick> platform must be one of 'desktop' | 'mobile'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='ResultRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|meta|detail|status|progress|tone|actionGlyph|image|platform|onClick|onAction|divider|number|trailing|key|ref|className|style|children)$/]",
-        "message": "<ResultRow> doesn't accept that prop. Declared props: title, meta, detail, status, progress, tone, actionGlyph, image, platform, onClick, onAction, divider, number, trailing."
+        "selector": "JSXOpeningElement[name.name='ResultRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|meta|detail|status|progress|tone|actionGlyph|image|icon|platform|onClick|onAction|divider|number|trailing|key|ref|className|style|children)$/]",
+        "message": "<ResultRow> doesn't accept that prop. Declared props: title, meta, detail, status, progress, tone, actionGlyph, image, icon, platform, onClick, onAction, divider, number, trailing."
       },
       {
         "selector": "JSXOpeningElement[name.name='ResultRow'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:library|request|progress|error)$/]",

@@ -390,6 +390,70 @@ test('[M0.states/c] the queue offers no edit mode when it can be neither removed
   await expect(edit, 'a press leaves it as it was').toHaveAccessibleName('Edit queue');
 });
 
+const choices = (page: Page, key: string) =>
+  page.evaluate((k) => window.__choices[k] ?? [], key) as Promise<string[]>;
+
+test('[M2.sorting] a control given items opens their menu from its own press, and choosing the current item still calls onSelect', async ({
+  page,
+}) => {
+  const menus = STATE_ENTRIES.filter((e) => e.menu);
+  expect(
+    menus.map((e) => e.name),
+    'the controls drawn as menus',
+  ).toEqual(['SortFilterBar']);
+  for (const entry of menus) {
+    await open(page, entry);
+    const cell = page.locator(`[data-states="${entry.name}"][data-variant="menu"]`);
+    const key = pressKey(entry.name, 'menu');
+    const anchor = cell.getByRole('button', { name: 'Random' });
+    const shown = cell.getByRole('menu');
+    await expect(anchor, `${entry.name} starts shut`).toHaveAttribute('aria-expanded', 'false');
+    await expect(shown).toHaveCount(0);
+
+    // Random is the current sort, and choosing it again is how a reshuffle is asked for.
+    for (const round of [1, 2]) {
+      await anchor.click();
+      await expect(anchor, `${entry.name} opens on its press`).toHaveAttribute(
+        'aria-expanded',
+        'true',
+      );
+      await expect(shown.getByRole('menuitem')).toHaveText(['Title', 'Artist', 'Random']);
+      await shown.getByRole('menuitem', { name: 'Random' }).click();
+      await expect(shown, `${entry.name} shuts once a sort is chosen`).toHaveCount(0);
+      expect(await choices(page, key), `${entry.name} round ${round}`).toEqual(
+        Array(round).fill('random'),
+      );
+    }
+
+    // From the keyboard too: Enter on the label opens it, Enter on a sort chooses it.
+    await anchor.focus();
+    await page.keyboard.press('Enter');
+    await shown.getByRole('menuitem', { name: 'Title' }).focus();
+    await page.keyboard.press('Enter');
+    await expect(shown).toHaveCount(0);
+    expect(await choices(page, key)).toEqual(['random', 'random', 'title']);
+
+    // The label opening the menu wears Material's states: a hover wash, and a ripple on a press.
+    const layer = anchor.locator('[data-sn-state-layer]');
+    await page.mouse.move(0, 0);
+    await expect.poll(() => level(layer), `${entry.name}'s label at rest`).toBe(0);
+    await anchor.hover();
+    await expect.poll(() => level(layer), `${entry.name}'s label hovered`).toBeCloseTo(0.08, 3);
+    const at = await box(anchor);
+    await page.mouse.move(at.x + at.width / 2, at.y + at.height / 2);
+    await page.mouse.down();
+    await expect.poll(() => ripples(layer), `${entry.name}'s label ripples`).toBeGreaterThan(0);
+    await page.mouse.up();
+
+    // With items and no choice to make, the label is drawn disabled and opens nothing.
+    const none = page.locator(`[data-states="${entry.name}"][data-variant="menuNone"]`);
+    const off = none.getByRole('button', { name: 'Random' });
+    await expect(off, `${entry.name} with no onSelect is disabled`).toBeDisabled();
+    await off.click({ force: true });
+    await expect(none.getByRole('menu')).toHaveCount(0);
+  }
+});
+
 test('[M0.states/c] every component with an action, and every disabled prop, is in the states fixture', () => {
   const declared = readdirSync(sonora, { withFileTypes: true })
     .filter((e) => e.isDirectory() && LEVELS.includes(e.name))

@@ -6,9 +6,10 @@ const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{}
  * The three-dot button and the menu it opens: the verbs an item offers that are not worth a button
  * of their own. On desktop the menu drops below the button on a raised card, lined up with the
  * button's end (or start) edge, and lies over what follows rather than pushing it down. On a phone
- * it is a modal bottom sheet over the whole window.
+ * it is a modal bottom sheet over the whole window. Given an `anchor`, that control opens it in place
+ * of the three-dot button, and the menu drops from the anchor.
  */
-export function OverflowMenu({ items = [], label = 'More options', open, onOpenChange, onSelect, align = 'end', tone = 'surface', platform = 'desktop' }) {
+export function OverflowMenu({ items = [], label = 'More options', open, onOpenChange, onSelect, align = 'end', tone = 'surface', anchor, platform = 'desktop' }) {
   const { IconButton, StateLayer } = NS();
   // The menu's verbs are its action: with nothing to select, the button is drawn disabled.
   const off = !onSelect;
@@ -49,18 +50,21 @@ export function OverflowMenu({ items = [], label = 'More options', open, onOpenC
       {rows}
     </div>
   );
+  /* Over artwork the button sits on a scrim in on-scrim ink, as a card's corner button does:
+     surface ink would vanish on a dark or a light cover. */
+  const button = tone === 'scrim'
+    ? <button className="sn-int sn-filled" aria-label={label} title={label} aria-expanded={shown} disabled={off}
+        onClick={off ? undefined : (e) => { if (e && e.stopPropagation) e.stopPropagation(); set(!shown); }}
+        style={sx('width:30px;height:30px;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--scrim-soft);color:var(--on-scrim)')}>
+        {glyph('more_vert')}
+        {StateLayer && <StateLayer disabled={off} />}
+      </button>
+    : IconButton && <IconButton icon="more_vert" label={label} active={shown} onClick={off ? undefined : () => set(!shown)} />;
   return (
-    <div style={sx('position:relative;display:inline-flex;flex-shrink:0')}>
-      {/* Over artwork the button sits on a scrim in on-scrim ink, as a card's corner button does:
-          surface ink would vanish on a dark or a light cover. */}
-      {tone === 'scrim'
-        ? <button className="sn-int sn-filled" aria-label={label} title={label} aria-expanded={shown} disabled={off}
-            onClick={off ? undefined : (e) => { if (e && e.stopPropagation) e.stopPropagation(); set(!shown); }}
-            style={sx('width:30px;height:30px;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--scrim-soft);color:var(--on-scrim)')}>
-            {glyph('more_vert')}
-            {StateLayer && <StateLayer disabled={off} />}
-          </button>
-        : IconButton && <IconButton icon="more_vert" label={label} active={shown} onClick={off ? undefined : () => set(!shown)} />}
+    // An anchor carries text of its own, such as a sort's label, so it may shrink and truncate;
+    // the three-dot button keeps its size.
+    <div style={sx('position:relative;display:inline-flex;' + (anchor ? 'min-width:0' : 'flex-shrink:0'))}>
+      {anchor || button}
       {mobile ? sheet : menu}
     </div>
   );

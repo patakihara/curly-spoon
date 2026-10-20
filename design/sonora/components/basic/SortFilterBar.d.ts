@@ -1,16 +1,29 @@
 import { ReactNode } from 'react';
+import { OverflowMenuItem } from './OverflowMenu';
 
 /**
  * Reports the active sort/filter state and opens its picker in one control — the label is data
- * ("All episodes • Newest"), not a fixed name, so a plain button can't stand in for it.
+ * ("All episodes • Newest"), not a fixed name, so a plain button can't stand in for it. Given
+ * `items`, its picker is an OverflowMenu of them, dropping from the label on desktop and a bottom
+ * sheet on a phone.
  */
 export interface SortFilterBarProps {
   /** Leading glyph. */
   icon?: string;
   /** The current state, rendered as the control's own label — e.g. "All episodes • Newest". */
   label: string;
-  /** Opens the sort/filter picker. Without it the control is drawn disabled. */
+  /** Opens the sort/filter picker. Without it the control is drawn disabled. Unused with `items`. */
   onClick?: () => void;
+  /**
+   * The sorts or filters to choose from, e.g. Title, Artist and Random. Given them, the label's
+   * press opens their menu instead of calling `onClick`.
+   */
+  items?: OverflowMenuItem[];
+  /**
+   * Called with the chosen item's key, the current one included, so choosing Random again can
+   * reshuffle. Given `items` but not this, the control is drawn disabled.
+   */
+  onSelect?: (key: string) => void;
   /** Right-aligned slot, hard right against the bar's full width — the library puts a ViewToggle here. */
   trailing?: ReactNode;
   platform?: 'desktop' | 'mobile';

@@ -5,7 +5,7 @@
  * keep its own state is drawn a fourth way, keeping it with no action (`own`).
  */
 
-export type Variant = 'action' | 'none' | 'disabled' | 'own';
+export type Variant = 'action' | 'none' | 'disabled' | 'own' | 'menu' | 'menuNone';
 
 export interface StateEntry {
   name: string;
@@ -25,6 +25,12 @@ export interface StateEntry {
    * and a press changes what it shows. The `action` and `none` drawings are controlled.
    */
   owns?: boolean;
+  /**
+   * Given items, its press opens a menu of them instead of calling its action. It is drawn twice
+   * more: `menu`, whose choices are recorded in `window.__choices`, and `menuNone`, with the items
+   * and no choice to make.
+   */
+  menu?: boolean;
 }
 
 /** Every interactive Sonora component, at each level. */
@@ -71,7 +77,7 @@ export const STATE_ENTRIES: readonly StateEntry[] = [
   { name: 'SettingRow', disabled: false, ripple: true },
   { name: 'SideSheet', disabled: false, ripple: true, omits: true },
   { name: 'Slider', disabled: false, ripple: false },
-  { name: 'SortFilterBar', disabled: false, ripple: true },
+  { name: 'SortFilterBar', disabled: false, ripple: true, menu: true },
   { name: 'SpeedControl', disabled: false, ripple: true },
   { name: 'StatusBanner', disabled: false, ripple: true },
   { name: 'Switch', disabled: false, ripple: true },
@@ -86,6 +92,8 @@ declare global {
   interface Window {
     /** Presses of each drawing's bound action, by `pressKey`. */
     __presses: Record<string, number>;
+    /** The keys chosen from each menu drawing, in order, by `pressKey`. */
+    __choices: Record<string, string[]>;
   }
 }
 

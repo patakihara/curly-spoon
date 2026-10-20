@@ -102,13 +102,20 @@ settings value, not a transparent inline control above a list.
 ```ts
 icon?: string            // leading glyph, default 'tune'
 label: string            // the current state, e.g. "All episodes • Newest"
-onClick?: () => void
+onClick?: () => void     // unused with items
+items?: OverflowMenuItem[]          // the sorts to choose from, e.g. Title, Artist, Random
+onSelect?: (key: string) => void    // the chosen key, the current one included
 trailing?: ReactNode     // right-aligned slot — the library puts a ViewToggle here
 platform?: 'desktop' | 'mobile'
 ```
 
 Transparent background, `--surface-fg` label at `--text-md`/700, glyph at `--icon-sm` muted.
 Full width, so `trailing` sits hard right.
+
+Given `items`, the picker is an `OverflowMenu` of them with the label as its `anchor`: the label's
+press opens it, dropping from the label's start edge on desktop and a bottom sheet on a phone, and
+the bar draws no menu styles of its own. Choosing the current item still calls `onSelect`, which is
+how choosing Random again reshuffles. With items and no `onSelect`, the label is drawn disabled.
 
 ## `core/StatusBanner.jsx`
 

@@ -2,7 +2,8 @@
  * The states fixture, `/states.html`: each interactive Sonora component drawn with its action
  * bound, with none, with `disabled` set, and keeping its own state (src/states-list.ts), for the
  * browser test of Material's states (web/e2e/states.spec.ts). Its own entry beside the app and
- * the gallery, linked from nowhere. A bound action counts its presses in `window.__presses`.
+ * the gallery, linked from nowhere. A bound action counts its presses in `window.__presses`, and a
+ * menu drawing records its choices in `window.__choices`.
  * `?theme=light` draws it in the light theme, and `?only=<Name>` draws one entry.
  */
 import { StrictMode, useEffect, useRef, type ReactNode } from 'react';
@@ -66,6 +67,7 @@ import {
 import { pressKey, STATE_ENTRIES, type Variant } from './states-list';
 
 window.__presses = {};
+window.__choices = {};
 
 /** How one drawing is pressed: its action for `action` and `disabled`, nothing for `none`. */
 type Act = (() => void) | undefined;
@@ -283,6 +285,17 @@ const DRAW: Record<string, (act: Act, disabled: boolean) => ReactNode> = {
   ViewToggle: (act) => <ViewToggle onChange={act} />,
 };
 
+const SORTS = [
+  { key: 'title', label: 'Title' },
+  { key: 'artist', label: 'Artist' },
+  { key: 'random', label: 'Random' },
+];
+
+/** Each `menu` entry drawn with items, given the choice to record or none. */
+const MENU: Record<string, (choose: ((key: string) => void) | undefined) => ReactNode> = {
+  SortFilterBar: (choose) => <SortFilterBar label="Random" items={SORTS} onSelect={choose} />,
+};
+
 /** Each `owns` entry's drawing left uncontrolled, with no action. */
 const OWN: Record<string, () => ReactNode> = {
   ExpandableText: () => <ExpandableText text={LONG} lines={1} />,
@@ -291,6 +304,16 @@ const OWN: Record<string, () => ReactNode> = {
 const press = (key: string) => () => {
   window.__presses[key] = (window.__presses[key] ?? 0) + 1;
 };
+
+const choose = (key: string) => (chosen: string) => {
+  (window.__choices[key] ??= []).push(chosen);
+};
+
+function menu(name: string, variant: Variant) {
+  const draw = MENU[name];
+  if (draw === undefined) throw new Error(`the states fixture draws no ${name} menu`);
+  return draw(variant === 'menu' ? choose(pressKey(name, variant)) : undefined);
+}
 
 function own(name: string) {
   const draw = OWN[name];
@@ -314,7 +337,11 @@ function Cell({ name, variant }: { name: string; variant: Variant }) {
         data-variant={variant}
         style={{ padding: 24, width: 256, boxSizing: 'border-box' }}
       >
-        {variant === 'own' ? own(name) : draw(act, variant === 'disabled')}
+        {variant === 'own'
+          ? own(name)
+          : variant === 'menu' || variant === 'menuNone'
+            ? menu(name, variant)
+            : draw(act, variant === 'disabled')}
       </div>
     </div>
   );
@@ -335,6 +362,8 @@ function States() {
           <Cell name={entry.name} variant="none" />
           {entry.disabled && <Cell name={entry.name} variant="disabled" />}
           {entry.owns === true && <Cell name={entry.name} variant="own" />}
+          {entry.menu === true && <Cell name={entry.name} variant="menu" />}
+          {entry.menu === true && <Cell name={entry.name} variant="menuNone" />}
         </section>
       ))}
     </div>

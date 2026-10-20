@@ -1,3 +1,5 @@
+import { ReactNode } from 'react';
+
 /** One verb in an OverflowMenu. */
 export interface OverflowMenuItem {
   key: string;
@@ -15,7 +17,7 @@ export interface OverflowMenuItem {
  * (`platform="mobile"`) it is a modal bottom sheet instead: fixed to the window's foot, over a
  * scrim that covers everything, the bottom bar and mini-player included, with a drag handle and
  * 56px rows; tapping the scrim closes it. Pass it where a row, a card or a header takes a
- * trailing control.
+ * trailing control. Given an `anchor`, that control opens it instead of the three-dot button.
  */
 export interface OverflowMenuProps {
   items: OverflowMenuItem[];
@@ -34,6 +36,12 @@ export interface OverflowMenuProps {
    * a small round button on a scrim in on-scrim ink, for a menu that sits over artwork.
    */
   tone?: 'surface' | 'scrim';
+  /**
+   * The control that opens the menu, drawn in place of the three-dot button, such as
+   * SortFilterBar's label: the menu drops from it, and it may shrink to truncate its text. Its own
+   * press opens the menu, so pass `open` and `onOpenChange` with it; `tone` then has nothing to draw.
+   */
+  anchor?: ReactNode;
   platform?: 'desktop' | 'mobile';
 }
 export declare function OverflowMenu(props: OverflowMenuProps): JSX.Element;

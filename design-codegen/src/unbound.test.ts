@@ -99,6 +99,9 @@ const DRAWN_WHEN: Readonly<Record<string, (props: Props) => boolean>> = {
   'StatusBanner.onDismiss': () => false,
   'SearchField.onSubmit': () => false,
   'SearchField.onClose': () => false,
+  // Given items, the bar's label opens their menu: onSelect is its action, and onClick unused.
+  'SortFilterBar.onSelect': (props) => has(props, 'items'),
+  'SortFilterBar.onClick': (props) => !has(props, 'items'),
   // A player tab's close shows only when given; the panel's only on the phone's sheet.
   'PlayerSubPage.onClose': () => false,
   'LyricsPage.onClose': () => false,
