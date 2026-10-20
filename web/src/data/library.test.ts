@@ -17,7 +17,7 @@ const entry = (over: Partial<LibraryEntry>): LibraryEntry => ({
   ...over,
 });
 
-const list = (...items: LibraryEntry[]) => LibraryList.parse({ items });
+const list = (...items: LibraryEntry[]) => LibraryList.parse({ items, sort: 'title', seed: null });
 
 describe('[M1.shell] the library homes from GET /api/library/{medium}', () => {
   it('lists each book as a card that opens its page by its ref, with its author, art and progress', () => {

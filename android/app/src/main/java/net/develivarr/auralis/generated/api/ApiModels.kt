@@ -226,6 +226,8 @@ enum class LibraryEntryKind {
 @Serializable
 data class LibraryList(
     val items: List<LibraryEntry>,
+    val sort: LibrarySort,
+    val seed: Long?,
 )
 
 @Serializable
@@ -236,6 +238,16 @@ enum class LibraryMedium {
     PODCASTS,
     @SerialName("music")
     MUSIC,
+}
+
+@Serializable
+enum class LibrarySort {
+    @SerialName("title")
+    TITLE,
+    @SerialName("artist")
+    ARTIST,
+    @SerialName("random")
+    RANDOM,
 }
 
 @Serializable

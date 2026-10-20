@@ -68,6 +68,9 @@ export {
   LibraryList,
   LibraryMedium,
   LibraryParams,
+  LibraryQuery,
+  LIBRARY_SEED_MAX,
+  LibrarySort,
   RequestStatus,
 } from './library.js';
 export {

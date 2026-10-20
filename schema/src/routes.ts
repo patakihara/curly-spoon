@@ -41,6 +41,7 @@ import {
   ItemParams,
   LibraryList,
   LibraryParams,
+  LibraryQuery,
 } from './library.js';
 import {
   AudioBytes,
@@ -415,10 +416,11 @@ export const listLibrary = {
   operationId: 'listLibrary',
   summary: "The signed-in person's books, podcast shows or albums",
   responseDescription:
-    'Every indexed book, show or album in the libraries this person may open, by title.',
+    'Every indexed book, show or album in the libraries this person may open: by title, by author, host or artist, or shuffled by a seed.',
   response: LibraryList,
   access: 'member',
   params: LibraryParams,
+  query: LibraryQuery,
 } as const satisfies Route;
 
 export const getItem = {

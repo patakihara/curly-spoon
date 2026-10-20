@@ -80,8 +80,44 @@ export const LibraryEntry = z
   .openapi('LibraryEntry');
 export type LibraryEntry = z.infer<typeof LibraryEntry>;
 
-/** The signed-in person's books, shows or albums: those in the libraries they may open. */
-export const LibraryList = z.object({ items: z.array(LibraryEntry) }).openapi('LibraryList');
+/**
+ * How a library list is ordered: by title; by `artist`, meaning each list's `sub` (a book's
+ * authors, a show's host, an album's artists); or `random`, shuffled by a seed.
+ */
+export const LibrarySort = z.enum(['title', 'artist', 'random']).openapi('LibrarySort');
+export type LibrarySort = z.infer<typeof LibrarySort>;
+
+/** The largest seed: a shuffle's seed is an unsigned 32-bit whole number. */
+export const LIBRARY_SEED_MAX = 2 ** 32 - 1;
+
+/** A shuffle's seed, a whole number from 0 to 2^32-1. */
+const LibrarySeed = z.number().int().min(0).max(LIBRARY_SEED_MAX);
+
+/**
+ * How to order a library list, title when absent, and, for `random`, the seed to shuffle by. A
+ * query value arrives as text, so only plain digits read as a seed. The seed is ignored with any
+ * other sort, so an address may keep it; with `random` and no seed, the server draws one.
+ */
+export const LibraryQuery = z.object({
+  sort: LibrarySort.default('title'),
+  seed: z
+    .preprocess((v) => (typeof v === 'string' && /^\d+$/.test(v) ? Number(v) : v), LibrarySeed)
+    .optional(),
+});
+export type LibraryQuery = z.infer<typeof LibraryQuery>;
+
+/**
+ * The signed-in person's books, shows or albums, those in the libraries they may open, in the
+ * order asked: the sort used, and the seed it shuffled by, null unless random.
+ */
+export const LibraryList = z
+  .object({ items: z.array(LibraryEntry), sort: LibrarySort, seed: LibrarySeed.nullable() })
+  .superRefine((value, ctx) => {
+    if ((value.sort === 'random') !== (value.seed !== null)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['seed'], message: 'only random has' });
+    }
+  })
+  .openapi('LibraryList');
 export type LibraryList = z.infer<typeof LibraryList>;
 
 /** One book, show, episode or album, by its ref as it sits in a path. */

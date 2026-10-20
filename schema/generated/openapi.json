@@ -1317,6 +1317,14 @@
           "availability"
         ]
       },
+      "LibrarySort": {
+        "type": "string",
+        "enum": [
+          "title",
+          "artist",
+          "random"
+        ]
+      },
       "LibraryList": {
         "type": "object",
         "properties": {
@@ -1325,10 +1333,23 @@
             "items": {
               "$ref": "#/components/schemas/LibraryEntry"
             }
+          },
+          "sort": {
+            "$ref": "#/components/schemas/LibrarySort"
+          },
+          "seed": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 4294967295
           }
         },
         "required": [
-          "items"
+          "items",
+          "sort",
+          "seed"
         ]
       },
       "LibraryMedium": {
@@ -3904,11 +3925,36 @@
             "required": true,
             "name": "medium",
             "in": "path"
+          },
+          {
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/LibrarySort"
+                },
+                {
+                  "default": "title"
+                }
+              ]
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4294967295
+            },
+            "required": false,
+            "name": "seed",
+            "in": "query"
           }
         ],
         "responses": {
           "200": {
-            "description": "Every indexed book, show or album in the libraries this person may open, by title.",
+            "description": "Every indexed book, show or album in the libraries this person may open: by title, by author, host or artist, or shuffled by a seed.",
             "content": {
               "application/json": {
                 "schema": {

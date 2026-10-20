@@ -240,6 +240,132 @@ async function server(karaMe = me) {
 const byTitle = (a: { title: string }, b: { title: string }) =>
   a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
 
+const POWERS = 'Powers [Sandvold]';
+const STORM = 'The Storm Before the Storm - The Beginning of the End of the Roman Republic';
+const POEMS = 'Three Poems from “Wild Angels”';
+const WEIGHT = 'You Just Need to Lose Weight';
+const MARSHALL = 'Marshall Islands: After the Bomb Dropped';
+const MEGACORP = 'Megacorp';
+const RUMOURS = 'Rumours';
+const PRINCESS = 'The Rise and Fall of a Midwest Princess';
+
+describe('[M2.sorting/a] sorting the library: by title, by author, host or artist, or Random by a seed', () => {
+  const titles = (items: { title: string }[]) => items.map((e) => e.title);
+  const sorted = async (s: Awaited<ReturnType<typeof server>>, url: string) => {
+    const { status, body } = await s.list(url);
+    expect(status).toBe(200);
+    return LibraryList.parse(body);
+  };
+
+  it('[M2.sorting/a] sorts by title when no sort is asked for, and answers that with no seed', async () => {
+    await index(db);
+    const s = await server();
+
+    const list = await sorted(s, 'books');
+
+    expect(titles(list.items)).toEqual([POWERS, STORM, POEMS, WEIGHT]);
+    expect(list).toMatchObject({ sort: 'title', seed: null });
+    expect(titles((await sorted(s, 'books?sort=title')).items)).toEqual(titles(list.items));
+  });
+
+  it('[M2.sorting/a] sorts books by author, by the name as shown, Le Guin’s two broken by title', async () => {
+    await index(db);
+    const s = await server();
+
+    const list = await sorted(s, 'books?sort=artist');
+
+    expect(list.items.map((e) => [e.sub, e.title])).toEqual([
+      ['Aubrey Gordon', WEIGHT],
+      ['Mike Duncan', STORM],
+      ['Ursula K. Le Guin', POWERS],
+      ['Ursula K. Le Guin', POEMS],
+    ]);
+    expect(list).toMatchObject({ sort: 'artist', seed: null });
+  });
+
+  it('[M2.sorting/a] sorts podcasts by host, both shows’ one host broken by title', async () => {
+    await index(db);
+    const s = await server();
+
+    const list = await sorted(s, 'podcasts?sort=artist');
+
+    expect(list.items.map((e) => [e.sub, e.title])).toEqual([
+      ['Cool Zone Media and iHeartPodcasts', MARSHALL],
+      ['Cool Zone Media and iHeartPodcasts', MEGACORP],
+    ]);
+  });
+
+  it('[M2.sorting/a] sorts music by title, with no article dropped, and by album artist', async () => {
+    await index(db);
+    const s = await server();
+
+    expect(titles((await sorted(s, 'music?sort=title')).items)).toEqual([RUMOURS, PRINCESS]);
+    expect((await sorted(s, 'music?sort=artist')).items.map((e) => [e.sub, e.title])).toEqual([
+      ['Chappell Roan', PRINCESS],
+      ['Fleetwood Mac', RUMOURS],
+    ]);
+  });
+
+  it('[M2.sorting/a] shuffles by the seed it is given: seed 42 gives its own order, every time', async () => {
+    await index(db);
+    const s = await server();
+
+    const once = await sorted(s, 'books?sort=random&seed=42');
+    const again = await sorted(s, 'books?sort=random&seed=42');
+
+    expect(titles(once.items)).toEqual([POWERS, STORM, WEIGHT, POEMS]);
+    expect(titles(again.items)).toEqual(titles(once.items));
+    expect(once).toMatchObject({ sort: 'random', seed: 42 });
+  });
+
+  it('[M2.sorting/a] gives another seed its own order', async () => {
+    await index(db);
+    const s = await server();
+
+    const list = await sorted(s, 'books?sort=random&seed=7');
+
+    expect(titles(list.items)).toEqual([POEMS, WEIGHT, STORM, POWERS]);
+    expect(list.seed).toBe(7);
+  });
+
+  it('[M2.sorting/a] draws a seed for Random asked without one, and answers it, so asking with it gives the same order', async () => {
+    await index(db);
+    const s = await server();
+
+    const drawn = await sorted(s, 'books?sort=random');
+
+    expect(drawn.sort).toBe('random');
+    expect(Number.isInteger(drawn.seed)).toBe(true);
+    expect(drawn.seed).toBeGreaterThanOrEqual(0);
+    expect(drawn.seed).toBeLessThanOrEqual(2 ** 32 - 1);
+    const replayed = await sorted(s, `books?sort=random&seed=${String(drawn.seed)}`);
+    expect(titles(replayed.items)).toEqual(titles(drawn.items));
+  });
+
+  it('[M2.sorting/a] ignores a seed with any sort but Random, so an address may keep it', async () => {
+    await index(db);
+    const s = await server();
+
+    const list = await sorted(s, 'books?sort=artist&seed=42');
+
+    expect(list).toMatchObject({ sort: 'artist', seed: null });
+    expect(titles(list.items)).toEqual([WEIGHT, STORM, POWERS, POEMS]);
+  });
+
+  it('[M2.sorting/a] refuses a sort it does not know, and a seed that is not a whole number from 0 to 2^32-1, with 400, asking no upstream', async () => {
+    await index(db);
+    const s = await server();
+
+    for (const query of ['sort=size', 'sort=random&seed=-1', 'sort=random&seed=4294967296']) {
+      expect(await s.list(`books?${query}`)).toEqual({
+        status: 400,
+        body: { error: 'bad_request' },
+      });
+    }
+    expect(s.asked).toEqual([]);
+  });
+});
+
 describe('[M1.shell/a] the signed-in person’s library, from the index on the recordings', () => {
   it('[M1.shell/a] lists every indexed book with its authors, art and progress from the person’s own Audiobookshelf, each owned', async () => {
     await index(db);
@@ -362,7 +488,10 @@ describe('the library route', () => {
     const s = await server();
 
     for (const medium of ['books', 'podcasts', 'music']) {
-      expect(await s.list(medium)).toEqual({ status: 200, body: { items: [] } });
+      expect(await s.list(medium)).toEqual({
+        status: 200,
+        body: { items: [], sort: 'title', seed: null },
+      });
     }
   });
 

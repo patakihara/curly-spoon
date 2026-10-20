@@ -6,9 +6,13 @@
  * home screen or not. An unfinished book at 0 is listed as not started. A person not linked
  * to an upstream may open none of its libraries, so its lists are empty. Everything listed is in
  * the household's own libraries, so it is `owned`. An entry links art only when its upstream has
- * art for it, as the index read: a cover, or a primary image.
+ * art for it, as the index read: a cover, or a primary image. A list comes by title, by author,
+ * host or artist, or shuffled by a seed (`../library/sort.ts`); Random asked without a seed draws
+ * one and answers it, so the same order can be asked for again.
  */
+import { randomInt } from 'node:crypto';
 import {
+  LIBRARY_SEED_MAX,
   type LibraryEntry,
   type LibraryEntryKind,
   listLibrary,
@@ -18,6 +22,7 @@ import type { FastifyInstance } from 'fastify';
 import type { AbsClient } from '../adapters/audiobookshelf/client.js';
 import { libraryAccessSchema } from '../adapters/audiobookshelf/schemas.js';
 import type { JellyfinClient } from '../adapters/jellyfin/client.js';
+import { sortEntries } from '../library/sort.js';
 import type { Creator } from '../libraryIndex/rows.js';
 import { type StoredRow, topLevelOfKind } from '../libraryIndex/store.js';
 import { Refusal, serve } from '../route.js';
@@ -33,8 +38,6 @@ const SUB_ROLE: Record<LibraryEntryKind, Creator['role']> = {
   show: 'host',
   album: 'album-artist',
 };
-
-const byTitle = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
 
 /** A list's entry for an indexed book, show or album: also the head of its page. */
 export function entry(
@@ -124,7 +127,7 @@ export function libraryRoutes(
 ): void {
   const { db, upstreams } = options;
 
-  serve(app, listLibrary, async (request, _reply, _body, { params }) => {
+  serve(app, listLibrary, async (request, _reply, _body, { params, query }) => {
     const user = signedIn(request);
     const clients =
       upstreams === null ? { abs: null, jellyfin: null } : upstreamFor({ db, ...upstreams }, user);
@@ -139,6 +142,8 @@ export function libraryRoutes(
       if (error instanceof Refusal) throw error;
       refusalFor(error);
     }
-    return { items: items.sort((a, b) => byTitle.compare(a.title, b.title)) };
+    const seed =
+      query.sort === 'random' ? (query.seed ?? randomInt(0, LIBRARY_SEED_MAX + 1)) : null;
+    return { items: sortEntries(items, query.sort, seed), sort: query.sort, seed };
   });
 }

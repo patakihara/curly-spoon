@@ -57,8 +57,9 @@ const session = (over: object) => ({
 
 describe('[M1.shell] what the pages read from the API', () => {
   it('reads a library list by its medium, parsed', async () => {
-    const { client, asked } = api({ '/api/library/podcasts': [200, { items: [] }] });
-    expect(await loadLibrary(client, 'podcasts')).toEqual({ items: [] });
+    const empty = { items: [], sort: 'title', seed: null };
+    const { client, asked } = api({ '/api/library/podcasts': [200, empty] });
+    expect(await loadLibrary(client, 'podcasts')).toEqual(empty);
     expect(asked).toEqual(['/api/library/podcasts']);
   });
 
@@ -187,7 +188,7 @@ describe('[M2.lists] what the list pages read from the API', () => {
 });
 
 describe('[M2.lists] what the Podcasts page reads from the API', () => {
-  const shows = { items: [] };
+  const shows = { items: [], sort: 'title', seed: null };
 
   it('[M2.lists] reads your shows and your lists', async () => {
     const { client } = api({
@@ -204,7 +205,7 @@ describe('[M2.lists] what the Podcasts page reads from the API', () => {
       '/api/library/podcasts': [200, shows],
       '/api/lists': [500, { error: 'internal' }],
     });
-    expect(await loadPodcasts(client)).toEqual({ library: { items: [] }, lists: null });
+    expect(await loadPodcasts(client)).toEqual({ library: shows, lists: null });
   });
 
   it('[M2.lists] throws SignedOut when your lists are refused for want of a sign-in, and fails when your shows do', async () => {

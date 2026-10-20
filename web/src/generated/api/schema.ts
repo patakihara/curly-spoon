@@ -875,8 +875,12 @@ export interface components {
             progress: number | null;
             availability: components["schemas"]["Availability"];
         };
+        /** @enum {string} */
+        LibrarySort: "title" | "artist" | "random";
         LibraryList: {
             items: components["schemas"]["LibraryEntry"][];
+            sort: components["schemas"]["LibrarySort"];
+            seed: number | null;
         };
         /** @enum {string} */
         LibraryMedium: "books" | "podcasts" | "music";
@@ -2405,7 +2409,10 @@ export interface operations {
     };
     listLibrary: {
         parameters: {
-            query?: never;
+            query?: {
+                sort?: components["schemas"]["LibrarySort"] & unknown;
+                seed?: number;
+            };
             header?: never;
             path: {
                 medium: components["schemas"]["LibraryMedium"];
@@ -2414,7 +2421,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Every indexed book, show or album in the libraries this person may open, by title. */
+            /** @description Every indexed book, show or album in the libraries this person may open: by title, by author, host or artist, or shuffled by a seed. */
             200: {
                 headers: {
                     [name: string]: unknown;

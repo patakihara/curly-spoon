@@ -10,6 +10,7 @@ import {
   ItemParams,
   LibraryList,
   LibraryParams,
+  LibraryQuery,
   listLibrary,
   mediaArt,
   type Route,
@@ -115,8 +116,44 @@ describe('a library list', () => {
           availability: owned,
         },
       ],
+      sort: 'title',
+      seed: null,
     };
     expect(LibraryList.parse(list)).toEqual(list);
+  });
+
+  it('[M2.sorting/a] sorts by title unless asked for artist or random, and takes a seed only as a whole number from 0 to 2^32-1', () => {
+    expect(LibraryQuery.parse({})).toEqual({ sort: 'title' });
+    for (const sort of ['title', 'artist', 'random']) {
+      expect(LibraryQuery.parse({ sort })).toEqual({ sort });
+    }
+    expect(LibraryQuery.parse({ sort: 'random', seed: '42' })).toEqual({
+      sort: 'random',
+      seed: 42,
+    });
+    expect(LibraryQuery.parse({ seed: '0' })).toEqual({ sort: 'title', seed: 0 });
+    expect(LibraryQuery.parse({ seed: '4294967295' }).seed).toBe(4294967295);
+    for (const query of [
+      { sort: 'size' },
+      { seed: '-1' },
+      { seed: '4294967296' },
+      { seed: '1.5' },
+      { seed: '' },
+      { seed: '0x10' },
+      { seed: 'abc' },
+    ]) {
+      expect(LibraryQuery.safeParse(query).success, JSON.stringify(query)).toBe(false);
+    }
+  });
+
+  it('[M2.sorting/a] answers the sort it used, and the seed only for random', () => {
+    const answered = (sort: string, seed: number | null) =>
+      LibraryList.safeParse({ items: [], sort, seed }).success;
+    expect(answered('title', null)).toBe(true);
+    expect(answered('artist', null)).toBe(true);
+    expect(answered('random', 7)).toBe(true);
+    expect(answered('random', null)).toBe(false);
+    expect(answered('title', 7)).toBe(false);
   });
 
   it('refuses progress outside 0 to 1, a kind no list holds, and art not served by this server', () => {
@@ -129,10 +166,11 @@ describe('a library list', () => {
       progress: null,
       availability: owned,
     };
-    expect(LibraryList.safeParse({ items: [{ ...entry, progress: 1.5 }] }).success).toBe(false);
-    expect(LibraryList.safeParse({ items: [{ ...entry, kind: 'episode' }] }).success).toBe(false);
+    const list = (item: object) => ({ items: [item], sort: 'title', seed: null });
+    expect(LibraryList.safeParse(list({ ...entry, progress: 1.5 })).success).toBe(false);
+    expect(LibraryList.safeParse(list({ ...entry, kind: 'episode' })).success).toBe(false);
     expect(
-      LibraryList.safeParse({ items: [{ ...entry, art: 'http://elsewhere/cover.jpg' }] }).success,
+      LibraryList.safeParse(list({ ...entry, art: 'http://elsewhere/cover.jpg' })).success,
     ).toBe(false);
   });
 });
@@ -280,20 +318,25 @@ describe('the shell’s shapes in the generated clients', () => {
 });
 
 describe('the library route', () => {
-  it('lists one medium for a signed-in member, at /api/library/{medium}', () => {
+  it('[M2.sorting/a] lists one medium for a signed-in member, at /api/library/{medium}?sort&seed', () => {
     expect(routes).toContain(listLibrary);
     expect(listLibrary).toMatchObject({
       method: 'GET',
       path: '/api/library/{medium}',
       access: 'member',
       params: LibraryParams,
+      query: LibraryQuery,
       response: LibraryList,
     });
     const doc = buildOpenApiDocument([listLibrary], ErrorResponse) as {
       paths: Record<string, { get: { parameters: { name: string; in: string }[] } }>;
     };
     const parameters = doc.paths['/api/library/{medium}']?.get.parameters ?? [];
-    expect(parameters.map((p) => [p.name, p.in])).toEqual([['medium', 'path']]);
+    expect(parameters.map((p) => [p.name, p.in])).toEqual([
+      ['medium', 'path'],
+      ['sort', 'query'],
+      ['seed', 'query'],
+    ]);
   });
 });
 
