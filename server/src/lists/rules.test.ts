@@ -62,7 +62,9 @@ afterEach(() => db.close());
 const all: AbsAccess = {
   open: () => true,
   standing: () => ({ progress: null, finished: false, updatedAt: null }),
-  started: [],
+  heard: [],
+  hidden: () => false,
+  seriesHidden: () => false,
 };
 const row = (id: string) => indexedRow(db, 'abs', id)!;
 const ids = (rows: StoredRow[]) => rows.map((r) => r.id);

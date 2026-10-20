@@ -67,8 +67,8 @@ export interface Standing {
   updatedAt: number | null;
 }
 
-/** A book or episode the person has begun on Audiobookshelf and not finished. */
-export interface Started {
+/** A book or episode the person has begun or finished on Audiobookshelf. */
+export interface Heard {
   /** The book's id, or the episode's own id. */
   id: string;
   /** When Audiobookshelf last changed it, in milliseconds since the epoch; null if never. */
@@ -80,8 +80,15 @@ export interface AbsAccess {
   open(libraryId: string | null): boolean;
   /** A book's standing by its id, or an episode's by its own id. */
   standing(id: string): Standing;
-  /** Every book and episode in progress: begun, by time or share, and not finished. */
-  started: readonly Started[];
+  /**
+   * Every book and episode begun, by time or share, or finished, that the person has not removed
+   * from Continue Listening.
+   */
+  heard: readonly Heard[];
+  /** Whether the person removed a book or episode from Continue Listening, by its id. */
+  hidden(id: string): boolean;
+  /** Whether the person removed a series from Continue Series, by its id. */
+  seriesHidden(seriesId: string): boolean;
 }
 
 export async function absAccess(abs: AbsClient): Promise<AbsAccess> {
@@ -102,14 +109,26 @@ export async function absAccess(abs: AbsClient): Promise<AbsAccess> {
       ];
     }),
   );
+  const hiddenIds = new Set(
+    me.mediaProgress
+      .filter((p) => p.hideFromContinueListening === true)
+      .map((p) => p.episodeId ?? p.libraryItemId),
+  );
+  const hiddenSeries = new Set(me.seriesHideFromContinueListening ?? []);
   return {
     open: (libraryId) =>
       permissions.accessAllLibraries ||
       (libraryId !== null && librariesAccessible.includes(libraryId)),
     standing: (id) => standings.get(id) ?? { progress: null, finished: false, updatedAt: null },
-    started: me.mediaProgress
-      .filter((p) => !p.isFinished && (p.progress > 0 || p.currentTime > 0))
+    heard: me.mediaProgress
+      .filter(
+        (p) =>
+          p.hideFromContinueListening !== true &&
+          (p.isFinished || p.progress > 0 || p.currentTime > 0),
+      )
       .map((p) => ({ id: p.episodeId ?? p.libraryItemId, updatedAt: p.lastUpdate ?? null })),
+    hidden: (id) => hiddenIds.has(id),
+    seriesHidden: (seriesId) => hiddenSeries.has(seriesId),
   };
 }
 

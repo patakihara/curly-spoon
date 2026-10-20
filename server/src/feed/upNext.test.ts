@@ -65,8 +65,11 @@ beforeEach(() => {
 });
 afterEach(() => db.close());
 
-/** One progress row of `GET /api/me`, over `me-finished`'s; its recorded rows carry `currentTime` too. */
-type Progress = Partial<AbsMe['mediaProgress'][number]> & { currentTime?: number };
+/** One progress row of `GET /api/me`, over `me-finished`'s, whose recorded rows carry these too. */
+type Progress = Partial<AbsMe['mediaProgress'][number]> & {
+  currentTime?: number;
+  hideFromContinueListening?: boolean;
+};
 /** An episode of show 1 or 2 in progress on Audiobookshelf, last changed at `lastUpdate`. */
 const episodeStarted = (episode: MediaRef, show: MediaRef, lastUpdate = 1): Progress => ({
   libraryItemId: show.id,
@@ -101,14 +104,16 @@ const bookFinished = (b: MediaRef, lastUpdate = 1): Progress => ({
  */
 async function reader(
   rows: Progress[] = [],
-  options: { libraries?: string[]; marks?: [MediaRef, number][] } = {},
+  options: { libraries?: string[]; marks?: [MediaRef, number][]; hiddenSeries?: string[] } = {},
 ): Promise<Reader> {
   const me = karaMe(rows);
+  const body = (me.response.body as { json: AbsMe & { seriesHideFromContinueListening: string[] } })
+    .json;
   if (options.libraries !== undefined) {
-    const body = (me.response.body as { json: AbsMe }).json;
     body.permissions = { ...body.permissions, accessAllLibraries: false };
     body.librariesAccessible = options.libraries;
   }
+  body.seriesHideFromContinueListening = options.hiddenSeries ?? [];
   const abs = new AbsClient({
     baseUrl: 'http://upstream.invalid',
     token: '<token>',
@@ -176,6 +181,52 @@ describe('[M2.sorting] Up next ranks what you listened to', () => {
     // The newer of the Auralis play and the Audiobookshelf change ranks it.
     const feed = await composeFeed(r, [play(three, 6000)]);
     expect(upNext(feed)).toEqual([three.id, bookRef.id]);
+  });
+
+  it('counts an item begun by time alone, before Audiobookshelf counts any share of it', async () => {
+    const r = await reader([{ ...bookStarted(bookRef), progress: 0, currentTime: 120 }]);
+    expect(upNext(await composeFeed(r, []))).toEqual([bookRef.id]);
+  });
+
+  it('counts what you finished in the Audiobookshelf app, moving on past it', async () => {
+    const book = await reader([bookFinished(book1, 2000)]);
+    expect(upNext(await composeFeed(book, []))).toEqual([book2.id]);
+
+    const episode = await reader([episodeFinished(two, show1, 2000)]);
+    expect(upNext(await composeFeed(episode, []))).toEqual([three.id]);
+  });
+
+  it('leaves out what you hid from Continue Listening on Audiobookshelf', async () => {
+    const hidden = { ...bookStarted(bookRef, 3000), hideFromContinueListening: true };
+    const r = await reader([hidden, episodeStarted(two, show1, 2000)]);
+    expect(await composeFeed(r, [])).toEqual([
+      expect.objectContaining({ id: 'up-next', items: [expect.objectContaining({ ref: two })] }),
+    ]);
+    // Played in Auralis too, it still never shows as a card.
+    expect(upNext(await composeFeed(r, [play(bookRef, 4000)]))).toEqual([two.id]);
+
+    // Nor does it lead on to what follows it.
+    const episode = { ...episodeStarted(two, show1), hideFromContinueListening: true };
+    expect(await composeFeed(await reader([episode]), [])).toEqual([]);
+  });
+
+  it('moves on in no series you hid from Continue Series on Audiobookshelf', async () => {
+    const [earthsea] = series1.mediaType === 'book' ? series1.media.metadata.series : [];
+    const r = await reader([bookFinished(book1, 2000)], { hiddenSeries: [earthsea!.id] });
+    expect(await composeFeed(r, [])).toEqual([]);
+  });
+
+  it('skips a later book of a series in a library you may not open', async () => {
+    const elsewhere = structuredClone(series2);
+    elsewhere.libraryId = 'a-library-kara-may-not-open';
+    const third = structuredClone(series2);
+    if (third.mediaType !== 'book') throw new Error('expected a book');
+    third.id = `third-${third.id}`;
+    third.media.metadata.series = third.media.metadata.series.map((x) => ({ ...x, sequence: '3' }));
+    const counts = emptyCounts();
+    for (const b of [elsewhere, third]) applyTree(db, absTree(b), 2, counts);
+    const r = await reader([bookFinished(book1, 2000)], { libraries: [booksLibrary] });
+    expect(upNext(await composeFeed(r, []))).toEqual([third.id]);
   });
 
   it('holds one card per book or show, from its newest episode', async () => {
@@ -279,9 +330,13 @@ describe('[M2.sorting/b] Up next holds only owned items from your own history', 
 
   it('[M2.sorting/b] leaves out progress on Audiobookshelf that a digest play made', async () => {
     const [newest] = episodesInOrder(db, show2.id);
-    const r = await reader([episodeStarted(newest!, show2, 9500), bookStarted(bookRef, 1)]);
-    const fromDigest = await composeFeed(r, [play(newest!, 9000, { list: 'the-digest' })]);
-    expect(upNext(fromDigest)).toEqual([bookRef.id]);
+    const r = await reader([episodeStarted(newest!, show2, 9000), bookStarted(bookRef, 1)]);
+    const digestAt = (at: number) => composeFeed(r, [play(newest!, at, { list: 'the-digest' })]);
+    // The digest's play came no earlier than Audiobookshelf's last change: the digest made it.
+    expect(upNext(await digestAt(9000))).toEqual([bookRef.id]);
+    expect(upNext(await digestAt(9500))).toEqual([bookRef.id]);
+    // Changed after the digest's play: listening in the Audiobookshelf app since.
+    expect(upNext(await digestAt(8500))).toEqual([newest!.id, bookRef.id]);
 
     // Played as your own after the digest: your progress again.
     const ownAfter = await composeFeed(r, [
@@ -327,6 +382,32 @@ describe('[M2.sorting/b] Up next holds only owned items from your own history', 
     expect(upNext(feed)).toEqual([newest!.id, two.id, bookRef.id, book1.id]);
     // However many shows came after it, the paused book stays.
     expect(secondRecent(feed)).toEqual([two.id, book1.id]);
+  });
+
+  it('[M2.sorting/b] gives the second shelf a card Up next leads with only once', async () => {
+    const [copy] = bookCopies(1);
+    applyTree(db, absTree(copy!), 1, emptyCounts());
+    const r = await reader([
+      bookStarted(book2),
+      bookFinished(bookRef),
+      bookFinished(book1),
+      bookStarted(ref(copy!.id)),
+    ]);
+    const feed = await composeFeed(r, [
+      play(book2, 4000),
+      play(bookRef, 3000),
+      play(book1, 2000),
+      play(ref(copy!.id), 1000),
+    ]);
+    expect(upNext(feed)).toEqual([book2.id, copy!.id]);
+    // The used-up book and the one leading to the same card as the newest fall through.
+    expect(secondRecent(feed)).toEqual([copy!.id]);
+
+    const twoBooks = await composeFeed(await reader([bookStarted(book2), bookFinished(book1)]), [
+      play(book2, 4000),
+      play(book1, 2000),
+    ]);
+    expect(secondRecent(twoBooks)).toBeNull();
   });
 
   it('[M2.sorting/b] leaves the second shelf out when there is no second book or show', async () => {

@@ -3,9 +3,12 @@
  *
  * What you listened to is the union of two histories: your own spoken plays in Auralis on every
  * one of your devices (never music, and never a play made in a digest's queue), and the books and
- * episodes in progress on Audiobookshelf, so listening in its own app counts too. Progress on an
- * episode whose newest Auralis play was a digest's is left out: the digest made it, not you. Each
- * book or episode was heard at the newer of its own play and Audiobookshelf's last change to it.
+ * episodes begun or finished on Audiobookshelf, so listening in its own app counts too. Progress
+ * on an episode whose newest Auralis play was a digest's, no earlier than Audiobookshelf last
+ * changed it, is left out: the digest made it, not you. Each book or episode was heard at the
+ * newer of its own play and Audiobookshelf's last change to it. Whatever you removed from
+ * Audiobookshelf's Continue Listening is never a card, and a series you removed from its Continue
+ * Series is never moved on in.
  *
  * Each book, and each show by its newest episode heard, is ranked by when it was last heard.
  * Only what the index holds, in a library the person may open, is kept, so every card is owned.
@@ -13,8 +16,10 @@
  * series. A show's card is its newest episode heard while that is unplayed (it resumes), else
  * the first unplayed episode after it in the show's order. Played is finished on Audiobookshelf
  * or marked played by Auralis, as for a list, so a digest's finish is skipped too. Up next holds
- * each card once, newest first, at most `UP_NEXT_MAX`; the second shelf holds the cards of your
- * second most recent book and of your second most recent show. An empty shelf is left out.
+ * each card once, newest first, at most `UP_NEXT_MAX`. The second shelf holds, for books and for
+ * shows apart, the card of the most recent one after the newest whose card is there and differs
+ * from the newest one's, so it never repeats the card Up next leads that kind with. An empty
+ * shelf is left out.
  */
 import { type MediaRef, mediaRefKey, UP_NEXT_MAX } from '@auralis/schema';
 import { indexedRow, type StoredRow } from '../libraryIndex/store.js';
@@ -70,11 +75,11 @@ function heardItems(r: Reader, plays: readonly UserPlay[]): { ref: MediaRef; at:
     if (!newest.has(key)) newest.set(key, p);
     if (isOwnPlay(p) && !heard.has(key)) heard.set(key, { ref: p.ref, at: p.playedAt });
   }
-  for (const s of r.access?.started ?? []) {
+  for (const s of r.access?.heard ?? []) {
     const ref: MediaRef = { source: 'abs', id: s.id };
     const key = mediaRefKey(ref);
     const last = newest.get(key);
-    if (last !== undefined && !isOwnPlay(last)) continue;
+    if (last !== undefined && !isOwnPlay(last) && last.playedAt >= (s.updatedAt ?? 0)) continue;
     const at = Math.max(heard.get(key)?.at ?? -Infinity, s.updatedAt ?? 0);
     heard.set(key, { ref, at });
   }
@@ -98,14 +103,16 @@ function ranked(r: Reader, plays: readonly UserPlay[]): Heard[] {
   return out;
 }
 
-const done = (r: Reader) => (row: StoredRow) => played(r, row) || !opens(r, row);
+/** Whether a row is no card: played, in a library the person may not open, or hidden. */
+const done = (r: Reader) => (row: StoredRow) =>
+  played(r, row) || !opens(r, row) || r.access?.hidden(row.id) === true;
 
 /** What plays next for a book or show heard: the row itself while unplayed, else what follows. */
 async function nextOf(r: Reader, heard: Heard): Promise<StoredRow | null> {
   if (!done(r)(heard.row)) return heard.row;
-  return heard.kind === 'book'
-    ? laterInSeries(r.db, heard.row, done(r))
-    : episodeAfter(r.db, heard.row, done(r));
+  if (heard.kind === 'show') return episodeAfter(r.db, heard.row, done(r));
+  const series = heard.row.series.filter((x) => r.access?.seriesHidden(x.id) !== true);
+  return laterInSeries(r.db, { ...heard.row, series }, done(r));
 }
 
 function cardOf(r: Reader, row: StoredRow): FeedCard {
@@ -148,15 +155,22 @@ export async function composeFeed(r: Reader, plays: readonly UserPlay[]): Promis
     upNext.push(c);
   }
 
-  const second = (kind: Heard['kind']) => heard.filter((h) => h.kind === kind)[1];
-  const seconds = [second('book'), second('show')]
-    .filter((h): h is Heard => h !== undefined)
-    .sort((a, b) => b.at - a.at);
-  const secondRecent: FeedCard[] = [];
-  for (const h of seconds) {
-    const c = await card(h);
-    if (c !== null) secondRecent.push(c);
-  }
+  /** The second shelf's card of one kind, and when its book or show was heard. */
+  const second = async (kind: Heard['kind']) => {
+    const [newest, ...rest] = heard.filter((h) => h.kind === kind);
+    const lead = newest === undefined ? null : await card(newest);
+    for (const h of rest) {
+      const c = await card(h);
+      if (c !== null && (lead === null || mediaRefKey(c.ref) !== mediaRefKey(lead.ref))) {
+        return { card: c, at: h.at };
+      }
+    }
+    return null;
+  };
+  const secondRecent = [await second('book'), await second('show')]
+    .filter((s) => s !== null)
+    .sort((a, b) => b.at - a.at)
+    .map((s) => s.card);
 
   const shelves: FeedShelf[] = [
     { id: 'up-next', items: upNext },

@@ -231,6 +231,8 @@ export const mediaProgressSchema = z
     isFinished: z.boolean(),
     /** When it last changed, in milliseconds since the epoch (recorded). */
     lastUpdate: z.number().optional(),
+    /** Removed from the person's Continue Listening shelf (recorded). */
+    hideFromContinueListening: z.boolean().optional(),
   })
   .passthrough();
 export type MediaProgress = z.infer<typeof mediaProgressSchema>;
@@ -256,6 +258,11 @@ export const meSchema = z
     username: z.string(),
     mediaProgress: z.array(mediaProgressSchema),
     bookmarks: z.array(bookmarkSchema),
+    /**
+     * The series removed from the person's Continue Series shelf, by id. Recorded only empty; the
+     * ids are Audiobookshelf's own reading of it.
+     */
+    seriesHideFromContinueListening: z.array(z.string()).optional(),
   })
   .passthrough();
 export type AbsMe = z.infer<typeof meSchema>;
