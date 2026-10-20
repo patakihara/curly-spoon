@@ -11,6 +11,12 @@ data class OverflowMenuItem(
     val icon: String? = null,
     /** One muted line under the label, saying what the verb does, e.g. "A lossless copy, by torrent". */
     val sub: String? = null,
+    /**
+     * Whether this is the current choice, for a menu of choices such as the sorts: an item that sets
+     * it, true or false, is announced as a checkable item, and a selected one is checked and drawn
+     * with a check mark at its end. Omit it for a verb.
+     */
+    val selected: Boolean? = null,
 )
 
 /**
@@ -21,6 +27,10 @@ data class OverflowMenuItem(
  * scrim that covers everything, the bottom bar and mini-player included, with a drag handle and
  * 56px rows; tapping the scrim closes it. Pass it where a row, a card or a header takes a
  * trailing control. Given an `anchor`, that control opens it instead of the three-dot button.
+ *
+ * As Material's menu: opening it by a press moves focus to the selected item or else the first,
+ * the arrow keys move between items (Home and End to the ends), and choosing one, Escape or Tab
+ * closes it with focus back on the control that opened it. A press outside it closes it too.
  */
 data class OverflowMenuProps(
     val items: List<OverflowMenuItem>,
@@ -28,7 +38,10 @@ data class OverflowMenuProps(
     val label: String? = null,
     /** Shows the menu open (true) or shut (false), for a still. Omit to let the button decide. */
     val open: Boolean? = null,
-    /** Called with the next open state when the button is pressed or a verb is chosen. */
+    /**
+     * Called with the next open state when the button is pressed, a verb is chosen, Escape is pressed
+     * or a press lands outside the menu.
+     */
     val onOpenChange: ((Boolean) -> Unit)? = null,
     /** Called with the chosen item's key: the menu's action. Without it the button is drawn disabled. */
     val onSelect: ((String) -> Unit)? = null,

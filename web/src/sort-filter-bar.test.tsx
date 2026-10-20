@@ -90,3 +90,38 @@ describe("[M2.sorting] Sonora's SortFilterBar with a menu of sorts", () => {
     expect(labelButton(bar({}))).toContain('disabled');
   });
 });
+
+describe('[M2.sorting] an OverflowMenu item that can be selected', () => {
+  const menu = (items: Parameters<typeof OverflowMenu>[0]['items']) =>
+    renderToString(createElement(OverflowMenu, { items, onSelect: () => {}, open: true }));
+
+  it('is a radio item, checked and marked with a check when selected', () => {
+    const html = menu([
+      { key: 'title', label: 'Title', selected: true },
+      { key: 'random', label: 'Random', selected: false },
+    ]);
+    expect(html).toMatch(/role="menuitemradio" aria-checked="true"[^>]*>.*?Title.*?>check</);
+    expect(html).toMatch(/role="menuitemradio" aria-checked="false"/);
+    expect([...html.matchAll(/>check</g)]).toHaveLength(1);
+  });
+
+  it('stays a plain verb when it says nothing of selection', () => {
+    const html = menu([{ key: 'share', label: 'Share' }]);
+    expect(html).toContain('role="menuitem"');
+    expect(html).not.toContain('aria-checked');
+    expect(html).not.toContain('>check<');
+  });
+
+  it('is reached by the arrow keys, not by Tab', () => {
+    expect(menu([{ key: 'share', label: 'Share' }])).toMatch(/role="menuitem" tabindex="-1"/);
+  });
+});
+
+describe('[M2.sorting] a SortFilterBar given no items', () => {
+  it('is the plain control, its onClick the press, when items is empty', () => {
+    const plain = labelButton(bar({ items: [], onSelect: () => {}, onClick: () => {} }));
+    expect(plain).not.toContain('aria-haspopup');
+    expect(plain).not.toContain('disabled');
+    expect(labelButton(bar({ items: [], onSelect: () => {} }))).toContain('disabled');
+  });
+});

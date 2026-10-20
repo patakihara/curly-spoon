@@ -393,6 +393,11 @@ test('[M0.states/c] the queue offers no edit mode when it can be neither removed
 const choices = (page: Page, key: string) =>
   page.evaluate((k) => window.__choices[k] ?? [], key) as Promise<string[]>;
 
+/** Focus the drawing's first stop by Tab from the sentinel before it, as a keyboard user would. */
+async function tabTo(page: Page, cell: Locator, target: Locator) {
+  expect(await tabInto(page, cell, target), 'Tab reaches it').toBe(true);
+}
+
 test('[M2.sorting] a control given items opens their menu from its own press, and choosing the current item still calls onSelect', async ({
   page,
 }) => {
@@ -407,6 +412,7 @@ test('[M2.sorting] a control given items opens their menu from its own press, an
     const key = pressKey(entry.name, 'menu');
     const anchor = cell.getByRole('button', { name: 'Random' });
     const shown = cell.getByRole('menu');
+    const sort = (name: string) => shown.getByRole('menuitemradio', { name });
     await expect(anchor, `${entry.name} starts shut`).toHaveAttribute('aria-expanded', 'false');
     await expect(shown).toHaveCount(0);
 
@@ -417,25 +423,79 @@ test('[M2.sorting] a control given items opens their menu from its own press, an
         'aria-expanded',
         'true',
       );
-      await expect(shown.getByRole('menuitem')).toHaveText(['Title', 'Artist', 'Random']);
-      await shown.getByRole('menuitem', { name: 'Random' }).click();
+      await expect(shown, 'the menu is named for its purpose').toHaveAccessibleName('Sort');
+      // Each sort's text, a selected one's ending in its check glyph's name.
+      await expect(shown.getByRole('menuitemradio')).toHaveText([/^Title/, /^Artist/, /^Random/]);
+      await expect(sort('Random'), 'the current sort is checked').toHaveAttribute(
+        'aria-checked',
+        'true',
+      );
+      await expect(sort('Title')).toHaveAttribute('aria-checked', 'false');
+      await expect(sort('Random').getByText('check'), 'with a check mark').toHaveCount(1);
+      await expect(sort('Title').getByText('check')).toHaveCount(0);
+      await sort('Random').click();
       await expect(shown, `${entry.name} shuts once a sort is chosen`).toHaveCount(0);
+      await expect(anchor, 'focus goes back to the label').toBeFocused();
       expect(await choices(page, key), `${entry.name} round ${round}`).toEqual(
         Array(round).fill('random'),
       );
     }
 
-    // From the keyboard too: Enter on the label opens it, Enter on a sort chooses it.
-    await anchor.focus();
+    // On desktop the menu drops from the label, lined up with its start edge.
+    await anchor.click();
+    const [a, m] = [await box(anchor), await box(shown)];
+    expect(Math.abs(m.x - a.x), 'the menu starts where the label starts').toBeLessThan(1);
+    expect(m.y, 'the menu drops below the label').toBeGreaterThanOrEqual(a.y + a.height);
+    expect(m.y + m.height, 'it lies over the page, not at its foot').toBeLessThan(
+      page.viewportSize()!.height,
+    );
+    await anchor.click();
+    await expect(shown).toHaveCount(0);
+
+    // By keyboard alone: Tab to the label, Enter opens it on the current sort, arrows move.
+    await tabTo(page, cell, anchor);
     await page.keyboard.press('Enter');
-    await shown.getByRole('menuitem', { name: 'Title' }).focus();
+    await expect(sort('Random'), 'opening focuses the current sort').toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(sort('Title'), 'ArrowDown wraps to the first').toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(sort('Artist')).toBeFocused();
+    await page.keyboard.press('ArrowUp');
+    await expect(sort('Title')).toBeFocused();
+    await page.keyboard.press('ArrowUp');
+    await expect(sort('Random'), 'ArrowUp wraps to the last').toBeFocused();
+    await page.keyboard.press('Home');
+    await expect(sort('Title')).toBeFocused();
+    await page.keyboard.press('End');
+    await expect(sort('Random')).toBeFocused();
+    await page.keyboard.press('Home');
     await page.keyboard.press('Enter');
     await expect(shown).toHaveCount(0);
+    await expect(anchor, 'choosing returns focus to the label').toBeFocused();
     expect(await choices(page, key)).toEqual(['random', 'random', 'title']);
+
+    // Escape closes it without choosing, and focus goes back to the label.
+    await page.keyboard.press('Enter');
+    await expect(sort('Random')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(shown, 'Escape closes it').toHaveCount(0);
+    await expect(anchor, 'Escape returns focus to the label').toBeFocused();
+
+    // A press anywhere outside closes it, choosing nothing.
+    await anchor.click();
+    await expect(shown).toHaveCount(1);
+    await page.mouse.click(2, 2);
+    await expect(shown, 'an outside press closes it').toHaveCount(0);
+    expect(await choices(page, key), 'closing chose nothing').toEqual([
+      'random',
+      'random',
+      'title',
+    ]);
 
     // The label opening the menu wears Material's states: a hover wash, and a ripple on a press.
     const layer = anchor.locator('[data-sn-state-layer]');
     await page.mouse.move(0, 0);
+    await anchor.blur();
     await expect.poll(() => level(layer), `${entry.name}'s label at rest`).toBe(0);
     await anchor.hover();
     await expect.poll(() => level(layer), `${entry.name}'s label hovered`).toBeCloseTo(0.08, 3);
@@ -444,6 +504,7 @@ test('[M2.sorting] a control given items opens their menu from its own press, an
     await page.mouse.down();
     await expect.poll(() => ripples(layer), `${entry.name}'s label ripples`).toBeGreaterThan(0);
     await page.mouse.up();
+    await page.keyboard.press('Escape');
 
     // With items and no choice to make, the label is drawn disabled and opens nothing.
     const none = page.locator(`[data-states="${entry.name}"][data-variant="menuNone"]`);
@@ -451,7 +512,50 @@ test('[M2.sorting] a control given items opens their menu from its own press, an
     await expect(off, `${entry.name} with no onSelect is disabled`).toBeDisabled();
     await off.click({ force: true });
     await expect(none.getByRole('menu')).toHaveCount(0);
+
+    // On a phone the sorts are a modal bottom sheet across the window's foot.
+    const phone = page.locator(`[data-states="${entry.name}"][data-variant="menuPhone"]`);
+    await phone.getByRole('button', { name: 'Random' }).click();
+    const sheet = phone.getByRole('menu');
+    await expect(sheet).toHaveAttribute('aria-modal', 'true');
+    const s = await box(sheet);
+    const view = page.viewportSize()!;
+    expect(
+      { left: s.x, width: s.width, bottom: Math.round(s.y + s.height) },
+      'the sheet spans the window at its foot',
+    ).toEqual({ left: 0, width: view.width, bottom: view.height });
+    await sheet.getByRole('menuitemradio', { name: 'Artist' }).click();
+    await expect(sheet).toHaveCount(0);
+    expect(await choices(page, pressKey(entry.name, 'menuPhone'))).toEqual(['artist']);
   }
+});
+
+test('[M2.sorting] every OverflowMenu closes on Escape or a press outside, and moves focus in and back out', async ({
+  page,
+}) => {
+  const entry = STATE_ENTRIES.find((e) => e.name === 'OverflowMenu')!;
+  await open(page, entry);
+  const cell = page.locator('[data-states="OverflowMenu"][data-variant="action"]');
+  const trigger = cell.getByRole('button', { name: 'More options' });
+  const shown = cell.getByRole('menu');
+  const verb = shown.getByRole('menuitem', { name: 'Add to playlist' });
+
+  await tabTo(page, cell, trigger);
+  await page.keyboard.press('Enter');
+  await expect(verb, 'opening focuses the first verb').toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(shown, 'Escape closes it').toHaveCount(0);
+  await expect(trigger, 'and focus goes back to the button').toBeFocused();
+
+  await trigger.click();
+  await expect(shown).toHaveCount(1);
+  await page.mouse.click(2, 2);
+  await expect(shown, 'a press outside closes it').toHaveCount(0);
+
+  await trigger.click();
+  await verb.click();
+  await expect(shown).toHaveCount(0);
+  await expect(trigger, 'choosing returns focus to the button').toBeFocused();
 });
 
 test('[M0.states/c] every component with an action, and every disabled prop, is in the states fixture', () => {

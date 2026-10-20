@@ -105,6 +105,7 @@ label: string            // the current state, e.g. "All episodes • Newest"
 onClick?: () => void     // unused with items
 items?: OverflowMenuItem[]          // the sorts to choose from, e.g. Title, Artist, Random
 onSelect?: (key: string) => void    // the chosen key, the current one included
+menuLabel?: string                  // the menu's name, its purpose; default 'Sort'
 trailing?: ReactNode     // right-aligned slot — the library puts a ViewToggle here
 platform?: 'desktop' | 'mobile'
 ```
@@ -115,7 +116,14 @@ Full width, so `trailing` sits hard right.
 Given `items`, the picker is an `OverflowMenu` of them with the label as its `anchor`: the label's
 press opens it, dropping from the label's start edge on desktop and a bottom sheet on a phone, and
 the bar draws no menu styles of its own. Choosing the current item still calls `onSelect`, which is
-how choosing Random again reshuffles. With items and no `onSelect`, the label is drawn disabled.
+how choosing Random again reshuffles. The item whose label is the bar's `label` is the current one,
+checked in the menu (`menuitemradio`, a check mark at its end), unless an item sets `selected`
+itself. The menu is named `menuLabel`, never the current value. With items and no `onSelect`, the
+label is drawn disabled; an empty `items` is no menu, the plain control.
+
+The menu behaves as Material's, as every `OverflowMenu` does: opening it by a press focuses the
+selected item or else the first, the arrow keys move between items (Home and End to the ends), and
+choosing, Escape or Tab closes it with focus back on the label. A press outside it closes it too.
 
 ## `core/StatusBanner.jsx`
 

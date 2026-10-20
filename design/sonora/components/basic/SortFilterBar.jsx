@@ -5,12 +5,15 @@ const NS=()=>(typeof window!=='undefined'&&window.SonoraDesignSystem_6c1435)||{}
 /**
  * States the active sort/filter and opens its picker in one control — the label is data ("All
  * episodes • Newest"), not a fixed name. Given `items`, the picker is an OverflowMenu of them,
- * opened from the label itself.
+ * opened from the label itself, the current one checked.
  */
-export function SortFilterBar({ icon = 'tune', label, onClick, items, onSelect, trailing, platform = 'desktop' }) {
+export function SortFilterBar({ icon = 'tune', label, onClick, items, onSelect, menuLabel = 'Sort', trailing, platform = 'desktop' }) {
   const { OverflowMenu, StateLayer } = NS();
   const [open, setOpen] = React.useState(false);
-  const picks = items !== undefined && Boolean(OverflowMenu);
+  // An empty list is no menu: the bar stays the plain control.
+  const picks = Array.isArray(items) && items.length > 0 && Boolean(OverflowMenu);
+  // The item whose label is the bar's own is the current one, unless the item says otherwise.
+  const marked = picks ? items.map((item) => (item.selected === undefined ? { ...item, selected: item.label === label } : item)) : items;
   // With items the label's press opens their menu, and choosing one is the action.
   const off = picks ? !onSelect : !onClick;
   const press = off ? undefined : picks ? () => setOpen(!open) : onClick;
@@ -25,7 +28,7 @@ export function SortFilterBar({ icon = 'tune', label, onClick, items, onSelect, 
   return (
     <div style={sx('display:flex;align-items:center;justify-content:space-between;gap:var(--spacing-md);width:100%;background:transparent')}>
       {picks
-        ? <OverflowMenu items={items} label={label} open={open} onOpenChange={setOpen} onSelect={onSelect} align="start" anchor={button} platform={platform} />
+        ? <OverflowMenu items={marked} label={menuLabel} open={open} onOpenChange={setOpen} onSelect={onSelect} align="start" anchor={button} platform={platform} />
         : button}
       {trailing && <div style={sx('flex-shrink:0')}>{trailing}</div>}
     </div>

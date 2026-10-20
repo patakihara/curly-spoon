@@ -15,8 +15,10 @@ export interface SortFilterBarProps {
   /** Opens the sort/filter picker. Without it the control is drawn disabled. Unused with `items`. */
   onClick?: () => void;
   /**
-   * The sorts or filters to choose from, e.g. Title, Artist and Random. Given them, the label's
-   * press opens their menu instead of calling `onClick`.
+   * The sorts or filters to choose from, e.g. Title, Artist and Random. Given one or more, the
+   * label's press opens their menu instead of calling `onClick`; an empty list is no menu. The item
+   * whose label is the bar's `label` is the current one, checked in the menu, unless an item sets
+   * `selected` itself.
    */
   items?: OverflowMenuItem[];
   /**
@@ -24,6 +26,8 @@ export interface SortFilterBarProps {
    * reshuffle. Given `items` but not this, the control is drawn disabled.
    */
   onSelect?: (key: string) => void;
+  /** The menu's accessible name, saying what it chooses rather than the current choice. Default "Sort". */
+  menuLabel?: string;
   /** Right-aligned slot, hard right against the bar's full width — the library puts a ViewToggle here. */
   trailing?: ReactNode;
   platform?: 'desktop' | 'mobile';

@@ -5,7 +5,7 @@
  * keep its own state is drawn a fourth way, keeping it with no action (`own`).
  */
 
-export type Variant = 'action' | 'none' | 'disabled' | 'own' | 'menu' | 'menuNone';
+export type Variant = 'action' | 'none' | 'disabled' | 'own' | 'menu' | 'menuNone' | 'menuPhone';
 
 export interface StateEntry {
   name: string;
@@ -26,9 +26,9 @@ export interface StateEntry {
    */
   owns?: boolean;
   /**
-   * Given items, its press opens a menu of them instead of calling its action. It is drawn twice
-   * more: `menu`, whose choices are recorded in `window.__choices`, and `menuNone`, with the items
-   * and no choice to make.
+   * Given items, its press opens a menu of them instead of calling its action. It is drawn three
+   * times more: `menu` on desktop and `menuPhone` on a phone, whose choices are recorded in
+   * `window.__choices`, and `menuNone`, with the items and no choice to make.
    */
   menu?: boolean;
 }

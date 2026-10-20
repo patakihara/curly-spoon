@@ -7,7 +7,8 @@ import net.develivarr.auralis.generated.ui.SortFilterBarProps
 @Composable
 fun SortFilterBar(props: SortFilterBarProps) {
     val items = props.items
-    if (items == null) {
+    if (items.isNullOrEmpty()) {
+        // No items, or an empty list, is no menu: the bar is the plain control.
         SonoraStub(
             "SortFilterBar",
             texts = listOf(props.label),
@@ -16,12 +17,16 @@ fun SortFilterBar(props: SortFilterBarProps) {
             label = props.label,
         )
     } else {
-        // Given items, the bar is their menu: each is a tap that chooses it, disabled without onSelect.
+        // Given items, the bar is their menu: each is a tap that chooses it, disabled without
+        // onSelect, and the one whose label is the bar's is the current one unless an item says.
+        val marked = items.map { item ->
+            if (item.selected == null) item.copy(selected = item.label == props.label) else item
+        }
         SonoraStub(
             "SortFilterBar",
-            texts = listOf(props.label),
+            texts = listOf(props.menuLabel ?: "Sort", props.label),
             slots = listOf(props.trailing),
-            taps = items.map { item -> item.label to props.onSelect?.let { select -> { select(item.key) } } },
+            taps = menuTaps(marked, props.onSelect),
         )
     }
 }

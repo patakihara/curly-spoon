@@ -154,7 +154,7 @@ One verb in an OverflowMenu.
 | `items` *(required)* | `OverflowMenuItem[]` |  |
 | `label` | `string` | The button's accessible name and the menu's. Default "More options". |
 | `open` | `boolean` | Shows the menu open (true) or shut (false), for a still. Omit to let the button decide. |
-| `onOpenChange` | `(next: boolean) => void` | Called with the next open state when the button is pressed or a verb is chosen. |
+| `onOpenChange` | `(next: boolean) => void` |  Called with the next open state when the button is pressed, a verb is chosen, Escape is pressed or a press lands outside the menu.  |
 | `onSelect` | `(key: string) => void` | Called with the chosen item's key: the menu's action. Without it the button is drawn disabled. |
 | `align` | `'start' \| 'end'` | Which edge of the button the menu lines up with. Default 'end'. |
 | `tone` | `'surface' \| 'scrim'` |  The button's own look: 'surface' (default) is a plain icon button in surface ink; 'scrim' is a small round button on a scrim in on-scrim ink, for a menu that sits over artwork.  |
@@ -276,8 +276,9 @@ Reports the active sort/filter state and opens its picker in one control — the
 | `icon` | `string` | Leading glyph. |
 | `label` *(required)* | `string` | The current state, rendered as the control's own label — e.g. "All episodes • Newest". |
 | `onClick` | `() => void` | Opens the sort/filter picker. Without it the control is drawn disabled. Unused with `items`. |
-| `items` | `OverflowMenuItem[]` |  The sorts or filters to choose from, e.g. Title, Artist and Random. Given them, the label's press opens their menu instead of calling `onClick`.  |
+| `items` | `OverflowMenuItem[]` |  The sorts or filters to choose from, e.g. Title, Artist and Random. Given one or more, the label's press opens their menu instead of calling `onClick`; an empty list is no menu. The item whose label is the bar's `label` is the current one, checked in the menu, unless an item sets `selected` itself.  |
 | `onSelect` | `(key: string) => void` |  Called with the chosen item's key, the current one included, so choosing Random again can reshuffle. Given `items` but not this, the control is drawn disabled.  |
+| `menuLabel` | `string` | The menu's accessible name, saying what it chooses rather than the current choice. Default "Sort". |
 | `trailing` | `ReactNode` | Right-aligned slot, hard right against the bar's full width — the library puts a ViewToggle here. |
 | `platform` | `'desktop' \| 'mobile'` |  |
 

@@ -19,26 +19,72 @@ export function OverflowMenu({ items = [], label = 'More options', open, onOpenC
   const shown = open === undefined ? own : open;
   const set = (next) => { if (open === undefined) setOwn(next); if (onOpenChange) onOpenChange(next); };
   const glyph = (name) => React.createElement('span', { 'aria-hidden': 'true', style: sx("font-family:'Material Symbols Rounded';font-size:var(--icon-sm);line-height:1;font-variation-settings:'FILL' 0,'wght' 400") }, name);
-  const rows = items.map((item) => (
-    <div key={item.key} role="menuitem" tabIndex={0} className="sn-int"
-      onClick={() => { if (onSelect) onSelect(item.key); set(false); }}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (onSelect) onSelect(item.key); set(false); } }}
-      style={sx('display:flex;align-items:center;gap:var(--spacing-' + (mobile ? 'lg' : 'md') + ');padding:var(--spacing-sm) var(--spacing-' + (mobile ? 'xl' : 'lg') + ');min-height:' + (mobile ? '56px' : '44px') + ';box-sizing:border-box;cursor:pointer;color:var(--surface-fg);font-family:var(--font-body)')}>
-      {item.icon && <span style={sx('display:flex;color:var(--surface-fg-muted)')}>{glyph(item.icon)}</span>}
-      <div style={sx('display:flex;flex-direction:column;gap:2px;min-width:0')}>
-        <div style={sx('font-size:var(--text-md);font-weight:var(--weight-medium);line-height:1.3')}>{item.label}</div>
-        {item.sub && <div style={sx('font-size:var(--text-sm);line-height:1.3;color:var(--surface-fg-muted)')}>{item.sub}</div>}
+  const root = React.useRef(null);
+  const list = React.useRef(null);
+  // The control that opens the menu: the anchor, or the three-dot button.
+  const trigger = () => {
+    const first = root.current && root.current.firstElementChild;
+    return first && (first.matches('button') ? first : first.querySelector('button'));
+  };
+  const close = (refocus) => { set(false); if (refocus && trigger()) trigger().focus(); };
+  const choose = (key) => { if (onSelect) onSelect(key); close(true); };
+  /* Opened by a press, the menu takes focus: the selected item, or else the first. A menu drawn open
+     from the start (a still) leaves focus alone. */
+  const was = React.useRef(shown);
+  React.useEffect(() => {
+    if (shown && !was.current && list.current) {
+      const all = [...list.current.querySelectorAll('[data-sn-menu-item]')];
+      const at = all.find((el) => el.getAttribute('aria-checked') === 'true') || all[0];
+      if (at) at.focus();
+    }
+    was.current = shown;
+  }, [shown]);
+  /* Material's menu closes on Escape, focus going back to its trigger, and on a press anywhere
+     outside it. Escape is taken first, so a sheet the menu sits in does not close with it. */
+  React.useEffect(() => {
+    if (!shown || typeof document === 'undefined') return undefined;
+    const key = (e) => { if (e.key === 'Escape') { e.stopPropagation(); close(true); } };
+    const press = (e) => { if (root.current && !root.current.contains(e.target)) close(false); };
+    document.addEventListener('keydown', key, true);
+    document.addEventListener('pointerdown', press, true);
+    return () => {
+      document.removeEventListener('keydown', key, true);
+      document.removeEventListener('pointerdown', press, true);
+    };
+  });
+  // The arrow keys move between items, wrapping; Home and End go to the ends; Tab leaves the menu.
+  const move = (e) => {
+    const all = list.current ? [...list.current.querySelectorAll('[data-sn-menu-item]')] : [];
+    const at = all.indexOf(document.activeElement);
+    const to = { ArrowDown: (at + 1) % all.length, ArrowUp: (at - 1 + all.length) % all.length, Home: 0, End: all.length - 1 }[e.key];
+    if (to !== undefined && all.length > 0) { e.preventDefault(); all[to].focus(); }
+    if (e.key === 'Tab') close(true);
+  };
+  const rows = items.map((item) => {
+    // An item that says whether it is selected is one of a set of choices, such as the sorts.
+    const radio = item.selected !== undefined;
+    return (
+      <div key={item.key} role={radio ? 'menuitemradio' : 'menuitem'} aria-checked={radio ? Boolean(item.selected) : undefined} tabIndex={-1} className="sn-int" data-sn-menu-item=""
+        onClick={() => choose(item.key)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(item.key); } else move(e); }}
+        style={sx('display:flex;align-items:center;gap:var(--spacing-' + (mobile ? 'lg' : 'md') + ');padding:var(--spacing-sm) var(--spacing-' + (mobile ? 'xl' : 'lg') + ');min-height:' + (mobile ? '56px' : '44px') + ';box-sizing:border-box;cursor:pointer;color:var(--surface-fg);font-family:var(--font-body)')}>
+        {item.icon && <span style={sx('display:flex;color:var(--surface-fg-muted)')}>{glyph(item.icon)}</span>}
+        <div style={sx('display:flex;flex-direction:column;gap:2px;min-width:0')}>
+          <div style={sx('font-size:var(--text-md);font-weight:var(--weight-medium);line-height:1.3')}>{item.label}</div>
+          {item.sub && <div style={sx('font-size:var(--text-sm);line-height:1.3;color:var(--surface-fg-muted)')}>{item.sub}</div>}
+        </div>
+        {item.selected && <span style={sx('display:flex;margin-left:auto;color:var(--accent)')}>{glyph('check')}</span>}
+        {StateLayer && <StateLayer />}
       </div>
-      {StateLayer && <StateLayer />}
-    </div>
-  ));
+    );
+  });
   /* On a phone the verbs are a modal bottom sheet, not a menu: fixed to the window, so it covers
      the bottom bar and the mini-player too, over a scrim that closes it when tapped. */
   const sheet = shown && (
     <React.Fragment>
       <div aria-hidden="true" onClick={() => set(false)}
         style={sx('position:fixed;inset:0;z-index:40;background:var(--scrim)')} />
-      <div role="menu" aria-label={label} aria-modal="true"
+      <div role="menu" aria-label={label} aria-modal="true" ref={list}
         style={sx('position:fixed;left:0;right:0;bottom:0;z-index:41;max-height:80%;overflow-y:auto;box-sizing:border-box;padding:0 0 var(--spacing-lg);border-radius:var(--radius-lg) var(--radius-lg) 0 0;background:var(--surface-card);box-shadow:var(--shadow-lg);text-align:left')}>
         <div aria-hidden="true" style={sx('width:32px;height:4px;margin:var(--spacing-lg) auto var(--spacing-sm);border-radius:var(--radius-pill);background:var(--surface-fg-muted);opacity:.4')} />
         {rows}
@@ -46,7 +92,7 @@ export function OverflowMenu({ items = [], label = 'More options', open, onOpenC
     </React.Fragment>
   );
   const menu = shown && (
-    <div role="menu" aria-label={label}
+    <div role="menu" aria-label={label} ref={list}
       style={sx('position:absolute;top:calc(100% + var(--spacing-xs));' + (align === 'start' ? 'left:0' : 'right:0') + ';z-index:20;min-width:260px;max-width:320px;padding:var(--spacing-xs) 0;border-radius:var(--radius-xs);background:var(--surface-card);border:1px solid var(--surface-border);box-shadow:var(--shadow-lg);text-align:left')}>
       {rows}
     </div>
@@ -64,7 +110,7 @@ export function OverflowMenu({ items = [], label = 'More options', open, onOpenC
   return (
     // An anchor carries text of its own, such as a sort's label, so it may shrink and truncate;
     // the three-dot button keeps its size.
-    <div style={sx('position:relative;display:inline-flex;' + (anchor ? 'min-width:0' : 'flex-shrink:0'))}>
+    <div ref={root} style={sx('position:relative;display:inline-flex;' + (anchor ? 'min-width:0' : 'flex-shrink:0'))}>
       {anchor || button}
       {mobile ? sheet : menu}
     </div>

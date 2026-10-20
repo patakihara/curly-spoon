@@ -17,8 +17,10 @@ data class SortFilterBarProps(
     /** Opens the sort/filter picker. Without it the control is drawn disabled. Unused with `items`. */
     val onClick: (() -> Unit)? = null,
     /**
-     * The sorts or filters to choose from, e.g. Title, Artist and Random. Given them, the label's
-     * press opens their menu instead of calling `onClick`.
+     * The sorts or filters to choose from, e.g. Title, Artist and Random. Given one or more, the
+     * label's press opens their menu instead of calling `onClick`; an empty list is no menu. The item
+     * whose label is the bar's `label` is the current one, checked in the menu, unless an item sets
+     * `selected` itself.
      */
     val items: List<OverflowMenuItem>? = null,
     /**
@@ -26,6 +28,8 @@ data class SortFilterBarProps(
      * reshuffle. Given `items` but not this, the control is drawn disabled.
      */
     val onSelect: ((String) -> Unit)? = null,
+    /** The menu's accessible name, saying what it chooses rather than the current choice. Default "Sort". */
+    val menuLabel: String? = null,
     /** Right-aligned slot, hard right against the bar's full width — the library puts a ViewToggle here. */
     val trailing: (@Composable () -> Unit)? = null,
     val platform: Platform? = null,

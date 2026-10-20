@@ -292,8 +292,13 @@ const SORTS = [
 ];
 
 /** Each `menu` entry drawn with items, given the choice to record or none. */
-const MENU: Record<string, (choose: ((key: string) => void) | undefined) => ReactNode> = {
-  SortFilterBar: (choose) => <SortFilterBar label="Random" items={SORTS} onSelect={choose} />,
+const MENU: Record<
+  string,
+  (choose: ((key: string) => void) | undefined, platform: 'desktop' | 'mobile') => ReactNode
+> = {
+  SortFilterBar: (choose, platform) => (
+    <SortFilterBar label="Random" items={SORTS} onSelect={choose} platform={platform} />
+  ),
 };
 
 /** Each `owns` entry's drawing left uncontrolled, with no action. */
@@ -312,7 +317,10 @@ const choose = (key: string) => (chosen: string) => {
 function menu(name: string, variant: Variant) {
   const draw = MENU[name];
   if (draw === undefined) throw new Error(`the states fixture draws no ${name} menu`);
-  return draw(variant === 'menu' ? choose(pressKey(name, variant)) : undefined);
+  return draw(
+    variant === 'menuNone' ? undefined : choose(pressKey(name, variant)),
+    variant === 'menuPhone' ? 'mobile' : 'desktop',
+  );
 }
 
 function own(name: string) {
@@ -339,7 +347,7 @@ function Cell({ name, variant }: { name: string; variant: Variant }) {
       >
         {variant === 'own'
           ? own(name)
-          : variant === 'menu' || variant === 'menuNone'
+          : variant === 'menu' || variant === 'menuNone' || variant === 'menuPhone'
             ? menu(name, variant)
             : draw(act, variant === 'disabled')}
       </div>
@@ -364,6 +372,7 @@ function States() {
           {entry.owns === true && <Cell name={entry.name} variant="own" />}
           {entry.menu === true && <Cell name={entry.name} variant="menu" />}
           {entry.menu === true && <Cell name={entry.name} variant="menuNone" />}
+          {entry.menu === true && <Cell name={entry.name} variant="menuPhone" />}
         </section>
       ))}
     </div>

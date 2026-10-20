@@ -1,4 +1,4 @@
-<!-- @dsCard group="Components" viewport="1200x880" name="Contextual Headers & Controls" subtitle="Extended SectionHeader (eyebrow/image/round/actionText/trailing), SortFilterBar, Rating, FollowButton and PreviewButton" -->
+<!-- @dsCard group="Components" viewport="1200x1480" name="Contextual Headers & Controls" subtitle="Extended SectionHeader (eyebrow/image/round/actionText/trailing), SortFilterBar, Rating, FollowButton and PreviewButton" -->
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
@@ -16,7 +16,9 @@ const SORTS = [
   { key: 'artist', label: 'Artist' },
   { key: 'random', label: 'Random' },
 ];
-const { SectionHeader, SortFilterBar, Rating, FollowButton, PreviewButton, ViewToggle } = window.SonoraDesignSystem_6c1435;
+// The sort menu as SortFilterBar draws it open: its label as the anchor, Random the current sort.
+const MARKED = SORTS.map((s) => ({ ...s, selected: s.key === 'random' }));
+const { OverflowMenu, SectionHeader, SortFilterBar, Rating, FollowButton, PreviewButton, ViewToggle } = window.SonoraDesignSystem_6c1435;
 
 function Caption({ children }) {
   return <div style={{fontSize:'var(--text-sm)',color:'var(--surface-fg-muted)',marginBottom:'var(--spacing-md)',maxWidth:640}}>{children}</div>;
@@ -44,6 +46,19 @@ function Demo(){
     <div>
       <Caption>SortFilterBar given items: pressing its label opens an OverflowMenu of the sorts, a bottom sheet on a phone. The current sort is among them, since choosing Random again reshuffles.</Caption>
       <SortFilterBar icon="swap_vert" label="Random" items={SORTS} onSelect={() => {}} trailing={ViewToggle && <ViewToggle value="grid" onChange={() => {}} />} />
+    </div>
+    <div style={{paddingBottom:150}}>
+      <Caption>The sort menu open on desktop, named Sort: it drops from the label, lined up with its start edge, the current sort checked.</Caption>
+      <OverflowMenu label="Sort" platform="desktop" align="start" items={MARKED} onSelect={() => {}} open anchor={<SortFilterBar icon="swap_vert" label="Random" onClick={() => {}} />} />
+    </div>
+    <div>
+      <Caption>The same menu on a phone: a modal bottom sheet over a scrim.</Caption>
+      {/* The sheet is fixed to the window; the frame's transform makes it the window here. */}
+      <div style={{position:'relative',transform:'translateZ(0)',overflow:'hidden',width:360,maxWidth:'100%',height:300,borderRadius:'var(--radius-md)',border:'1px solid var(--surface-border)',background:'var(--surface-bg)'}}>
+        <div style={{padding:'var(--spacing-md)'}}>
+          <OverflowMenu label="Sort" platform="mobile" align="start" items={MARKED} onSelect={() => {}} open anchor={<SortFilterBar icon="swap_vert" label="Random" platform="mobile" onClick={() => {}} />} />
+        </div>
+      </div>
     </div>
     <div>
       <Caption>Rating states the value and the population, not five glyphs. FollowButton's label states the current state, not the action.</Caption>
