@@ -67,11 +67,21 @@ export interface Standing {
   updatedAt: number | null;
 }
 
+/** A book or episode the person has begun on Audiobookshelf and not finished. */
+export interface Started {
+  /** The book's id, or the episode's own id. */
+  id: string;
+  /** When Audiobookshelf last changed it, in milliseconds since the epoch; null if never. */
+  updatedAt: number | null;
+}
+
 /** What the person's own Audiobookshelf `GET /api/me` says: what they may open, how far they are. */
 export interface AbsAccess {
   open(libraryId: string | null): boolean;
   /** A book's standing by its id, or an episode's by its own id. */
   standing(id: string): Standing;
+  /** Every book and episode in progress: begun, by time or share, and not finished. */
+  started: readonly Started[];
 }
 
 export async function absAccess(abs: AbsClient): Promise<AbsAccess> {
@@ -97,6 +107,9 @@ export async function absAccess(abs: AbsClient): Promise<AbsAccess> {
       permissions.accessAllLibraries ||
       (libraryId !== null && librariesAccessible.includes(libraryId)),
     standing: (id) => standings.get(id) ?? { progress: null, finished: false, updatedAt: null },
+    started: me.mediaProgress
+      .filter((p) => !p.isFinished && (p.progress > 0 || p.currentTime > 0))
+      .map((p) => ({ id: p.episodeId ?? p.libraryItemId, updatedAt: p.lastUpdate ?? null })),
   };
 }
 

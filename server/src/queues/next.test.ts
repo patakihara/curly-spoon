@@ -87,6 +87,20 @@ describe('[M2.sorting] the next book in a series', () => {
     expect(await laterInSeries(db, row(second), none)).toBeNull();
   });
 
+  it('moves on to its next series once the first has nothing left after it', async () => {
+    // The first recorded book, edited into a series of its own ahead of the one it shares.
+    const twoSeries = structuredClone(seriesBooks[0]!);
+    if (twoSeries.mediaType !== 'book') throw new Error('expected a book');
+    twoSeries.media.metadata.series = [
+      { id: 'a-series-of-one', name: 'Alone', sequence: '1' },
+      ...twoSeries.media.metadata.series,
+    ];
+    applyTree(db, absTree(twoSeries), 2, emptyCounts());
+    expect(row(first).series.map((s) => s.id)[0]).toBe('a-series-of-one');
+
+    expect((await laterInSeries(db, row(first), none))?.id).toBe(second);
+  });
+
   it('asks nothing about a book that is in no series', async () => {
     const asked: string[] = [];
     const lone = row(bookRef.id);

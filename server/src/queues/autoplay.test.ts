@@ -317,6 +317,30 @@ describe('[M1.sessions/e] autoplay on the spoken queue', () => {
     expect(done.autoplay.spoken).toEqual({ after: lastOf(book1), next: null });
   });
 
+  it('rolls on past a later book with no chapters to play, to the one after it', async () => {
+    // The second recorded book, copied as a third of the series.
+    const copy = structuredClone(books[1]!);
+    if (copy.mediaType !== 'book') throw new Error('expected a book');
+    copy.id = `third-${copy.id}`;
+    copy.media.metadata.series = copy.media.metadata.series.map((s) => ({ ...s, sequence: '3' }));
+    applyTree(db, absTree(copy), 1, emptyCounts());
+    const book3 = abs(copy.id);
+    const { deps } = resolver();
+    const chapterless: AutoplayDeps = {
+      ...deps,
+      expand: (ref) =>
+        ref.id === book2.id
+          ? { kind: 'book', entries: [], from: { kind: 'book', ref } }
+          : ref.id === book3.id
+            ? { kind: 'book', entries: [{ ref, chapter: 0 }], from: { kind: 'book', ref } }
+            : expand(ref),
+    };
+    const last = chapters.get(book1.id)! - 1;
+    const s = await prepareAutoplay(playing('spoken', { ref: book1, chapter: last }), chapterless);
+
+    expect(pick(s, 'spoken')).toEqual({ ref: book3, chapter: 0 });
+  });
+
   it('follows the newest spoken play when the queue has no current item', async () => {
     const [, partTwo, partThree] = serial();
     const s = await prepareAutoplay(
