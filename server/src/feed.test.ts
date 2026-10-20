@@ -19,10 +19,13 @@ import {
   index,
   karaMe,
   listsServer,
+  meFinished,
   ref,
+  refused,
   show1,
   show2,
   shows,
+  three,
   two,
 } from './adapters/http/listsServer.js';
 import { DIGEST_SYNC_MS } from './feed/upNext.js';
@@ -155,6 +158,15 @@ describe('[M2.sorting/b] Browse’s shelves hold only owned items from your own 
     for (const card of feed.shelves.flatMap((x) => x.items)) {
       expect(card.availability).toEqual({ kind: 'owned' });
     }
+
+    // Back to your own queue: Play now of its current, Part Three, puts the digest's aside. The
+    // second episode's progress, a day after the digest last played, is your own listening now.
+    s.clock.now = T.digestPlay + 1000;
+    await s.add(three, 'now');
+    expect(openSession(db, s.users.kara!, s.devices.kara!, s.clock.now)!.saved).toMatchObject([
+      { owner: digest.id, queue: { current: { ref: second } } },
+    ]);
+    expect(refs(shelf(await s.feed(), 'up-next'))[0]).toEqual(second);
   });
 
   it('[M2.sorting/b] leaves out a play of what the index no longer holds, or of a library you may not open', async () => {
@@ -182,6 +194,16 @@ describe('[M2.sorting/b] Browse’s shelves hold only owned items from your own 
     expect(await s.feed()).toEqual({
       shelves: [{ id: 'up-next', items: [expect.objectContaining({ ref: bookRef })] }],
     });
+  });
+
+  it('answers 502 upstream_failed when Audiobookshelf fails or cannot find the person', async () => {
+    for (const status of [500, 404]) {
+      const s = await server();
+      const failing = structuredClone(meFinished);
+      failing.response.status = status;
+      s.karaAnswers(failing);
+      expect(await s.call('GET', '/feed')).toEqual(refused(502, 'upstream_failed'));
+    }
   });
 
   it('is empty for someone who listened to nothing, and 401 to a caller not signed in', async () => {

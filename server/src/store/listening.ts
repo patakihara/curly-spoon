@@ -489,12 +489,12 @@ export function userPlays(db: Db, userId: string): UserPlay[] {
 }
 
 /**
- * The current and queued entries of every digest's queue on each of this user's devices: the
- * spoken queue while it is a digest's, and each digest's queue put aside. Only entries a digest's
- * rule put there count; anything else in that queue plays as your own.
+ * The current and queued entries of the digest's queue each of this user's devices plays now, as
+ * its spoken queue. A digest's queue put aside does not count, and only entries a digest's rule put
+ * there do: anything else in that queue plays as your own.
  */
 export function digestQueued(db: Db, userId: string): MediaRef[] {
-  const spoken = z
+  return z
     .array(ItemRow)
     .parse(
       db
@@ -509,22 +509,6 @@ export function digestQueued(db: Db, userId: string): MediaRef[] {
         .all(userId),
     )
     .map((row) => row.item.ref);
-  const saved = z
-    .array(SavedRow)
-    .parse(
-      db
-        .prepare(
-          `SELECT saved_queues.* FROM saved_queues
-           JOIN listening_sessions ON listening_sessions.device_id = saved_queues.device_id
-           WHERE listening_sessions.user_id = ? AND saved_queues.owner != ''
-           ORDER BY saved_queues.device_id, saved_at`,
-        )
-        .all(userId),
-    )
-    .flatMap(({ queue }) => [queue.current, ...queue.user])
-    .filter((item) => item !== null && item.list !== undefined)
-    .map((item) => item!.ref);
-  return [...spoken, ...saved];
 }
 
 /**

@@ -256,6 +256,47 @@ describe('[M2.sorting] Up next ranks what you listened to', () => {
     );
   });
 
+  it('reads only as much of a long history as fills both shelves', async () => {
+    const [newest] = episodesInOrder(db, show2.id);
+    const copies = bookCopies(40);
+    const counts = emptyCounts();
+    for (const copy of copies) applyTree(db, absTree(copy), 1, counts);
+    const refs = copies.map((c) => ref(c.id));
+    /** The feed over the newest `count` book copies, after two shows, and the store reads it made. */
+    const feedOver = async (count: number) => {
+      const books = refs.slice(0, count);
+      const r = await reader([
+        episodeStarted(two, show1),
+        episodeStarted(newest!, show2),
+        ...books.map((b) => bookStarted(b)),
+      ]);
+      let reads = 0;
+      const counted = new Proxy(db, {
+        get(target, key) {
+          if (key === 'prepare') reads += 1;
+          const value: unknown = Reflect.get(target, key, target);
+          return typeof value === 'function' ? (value as () => unknown).bind(target) : value;
+        },
+      });
+      const feed = await composeFeed({ ...r, db: counted }, [
+        play(two, 9000),
+        play(newest!, 8000),
+        ...books.map((b, i) => play(b, 5000 - i)),
+      ]);
+      return { feed, reads };
+    };
+    const short = await feedOver(UP_NEXT_MAX);
+    const long = await feedOver(40);
+    expect(upNext(long.feed)).toEqual([
+      two.id,
+      newest!.id,
+      ...refs.slice(0, UP_NEXT_MAX - 2).map((b) => b.id),
+    ]);
+    expect(secondRecent(long.feed)).toEqual([newest!.id, refs[1]!.id]);
+    expect(long.feed).toEqual(short.feed);
+    expect(long.reads).toBe(short.reads);
+  });
+
   it('never holds music', async () => {
     const r = await reader([bookStarted(bookRef)]);
     const track: MediaRef = { source: 'jellyfin', id: 'a-track' };

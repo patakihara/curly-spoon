@@ -5,12 +5,12 @@
  * one of your devices (never music, and never a play made in a digest's queue), and the books and
  * episodes begun or finished on Audiobookshelf, so listening in its own app counts too. Progress
  * on an episode is left out when the digest made it, not you: while the episode is the current or
- * a queued entry of a digest's queue on any of your devices, or when its newest Auralis play was
- * a digest's, no more than `DIGEST_SYNC_MS` before Audiobookshelf last changed it (a play is
- * written once it stops being current, so the digest's sync can land after it). Each book or
- * episode was heard at the newer of its own play and Audiobookshelf's last change to it. Whatever
- * you removed from Audiobookshelf's Continue Listening is never a card, and a series you removed
- * from its Continue Series is never moved on in.
+ * a queued entry of the digest's queue one of your devices plays now (not one put aside), or when
+ * its newest Auralis play was a digest's, no more than `DIGEST_SYNC_MS` before Audiobookshelf last
+ * changed it (a play is written once it stops being current, so the digest's sync can land after
+ * it). Each book or episode was heard at the newer of its own play and Audiobookshelf's last
+ * change to it. Whatever you removed from Audiobookshelf's Continue Listening is never a card,
+ * and a series you removed from its Continue Series is never moved on in.
  *
  * Each book, and each show by its newest episode heard, is ranked by when it was last heard.
  * Only what the index holds, in a library the person may open, is kept, so every card is owned.
@@ -41,6 +41,12 @@ import type { UserPlay } from '../store/listening.js';
 /** How long after a digest's play Audiobookshelf's last change still counts as the digest's. */
 export const DIGEST_SYNC_MS = 10 * 60 * 1000;
 
+/** A second shelf's card, and when its book or show was heard. */
+interface Second {
+  card: FeedCard;
+  at: number;
+}
+
 /** A book, or a show by the newest of its episodes heard, and when it was last heard. */
 interface Heard {
   kind: 'book' | 'show';
@@ -57,7 +63,7 @@ const newestFirst = (a: UserPlay, b: UserPlay) =>
 
 /**
  * Each book and episode heard, with when it was last heard, newest first. `inDigests` holds the
- * entries of every digest's queue on the person's devices.
+ * entries of the digest's queue each of the person's devices plays now.
  */
 function heardItems(
   r: Reader,
@@ -88,10 +94,16 @@ function heardItems(
   return [...heard.values()].sort((a, b) => b.at - a.at);
 }
 
-/** The books and shows heard, each once, newest first, kept only where the person may open it. */
-function ranked(r: Reader, plays: readonly UserPlay[], inDigests: readonly MediaRef[]): Heard[] {
+/**
+ * The books and shows heard, each once, newest first, kept only where the person may open it.
+ * Each is looked up in the index only as it is asked for.
+ */
+function* ranked(
+  r: Reader,
+  plays: readonly UserPlay[],
+  inDigests: readonly MediaRef[],
+): Generator<Heard> {
   const seen = new Set<string>();
-  const out: Heard[] = [];
   for (const { ref, at } of heardItems(r, plays, inDigests)) {
     const row = indexedRow(r.db, ref.source, ref.id);
     if (row === undefined || (row.kind !== 'book' && row.kind !== 'episode') || !opens(r, row)) {
@@ -100,9 +112,8 @@ function ranked(r: Reader, plays: readonly UserPlay[], inDigests: readonly Media
     const holder = row.kind === 'book' ? row.id : row.parentId!;
     if (seen.has(holder)) continue;
     seen.add(holder);
-    out.push({ kind: row.kind === 'book' ? 'book' : 'show', row, at });
+    yield { kind: row.kind === 'book' ? 'book' : 'show', row, at };
   }
-  return out;
 }
 
 /** Whether a row is no card: played, in a library the person may not open, or hidden. */
@@ -140,7 +151,8 @@ function cardOf(r: Reader, row: StoredRow): FeedCard {
 
 /**
  * Browse's shelves for the person, from their plays across devices (`userPlays`) and the entries
- * of every digest's queue on them (`digestQueued`).
+ * of the digest's queue each of their devices plays now (`digestQueued`). Each book or show heard
+ * has its card worked out once, newest first, until both shelves are full.
  */
 export async function composeFeed(
   r: Reader,
@@ -148,42 +160,44 @@ export async function composeFeed(
   inDigests: readonly MediaRef[] = [],
 ): Promise<FeedShelf[]> {
   if (r.access === null) return [];
-  const heard = ranked(r, plays, inDigests);
-  const card = async (h: Heard) => {
-    const next = await nextOf(r, h);
-    return next === null ? null : cardOf(r, next);
-  };
 
   const upNext: FeedCard[] = [];
   const shown = new Set<string>();
-  for (const h of heard) {
-    if (upNext.length === UP_NEXT_MAX) break;
-    const c = await card(h);
-    if (c === null || shown.has(mediaRefKey(c.ref))) continue;
-    shown.add(mediaRefKey(c.ref));
-    upNext.push(c);
+  /**
+   * Per kind, the card of the newest one heard (null when it has none), and the second shelf's:
+   * the first card after it that differs from it, with when its book or show was heard.
+   */
+  const slots: Record<Heard['kind'], { lead?: FeedCard | null; second?: Second }> = {
+    book: {},
+    show: {},
+  };
+  for (const h of ranked(r, plays, inDigests)) {
+    const next = await nextOf(r, h);
+    const c = next === null ? null : cardOf(r, next);
+    if (c !== null && upNext.length < UP_NEXT_MAX && !shown.has(mediaRefKey(c.ref))) {
+      shown.add(mediaRefKey(c.ref));
+      upNext.push(c);
+    }
+    const slot = slots[h.kind];
+    if (slot.lead === undefined) slot.lead = c;
+    else if (
+      slot.second === undefined &&
+      c !== null &&
+      (slot.lead === null || mediaRefKey(c.ref) !== mediaRefKey(slot.lead.ref))
+    ) {
+      slot.second = { card: c, at: h.at };
+    }
+    const full = upNext.length === UP_NEXT_MAX;
+    if (full && slots.book.second !== undefined && slots.show.second !== undefined) break;
   }
 
-  /** The second shelf's card of one kind, and when its book or show was heard. */
-  const second = async (kind: Heard['kind']) => {
-    const [newest, ...rest] = heard.filter((h) => h.kind === kind);
-    const lead = newest === undefined ? null : await card(newest);
-    for (const h of rest) {
-      const c = await card(h);
-      if (c !== null && (lead === null || mediaRefKey(c.ref) !== mediaRefKey(lead.ref))) {
-        return { card: c, at: h.at };
-      }
-    }
-    return null;
-  };
-  const secondRecent = [await second('book'), await second('show')]
-    .filter((s) => s !== null)
+  const secondRecent = [slots.book.second, slots.show.second]
+    .filter((x) => x !== undefined)
     .sort((a, b) => b.at - a.at)
-    .map((s) => s.card);
-
+    .map((x) => x.card);
   const shelves: FeedShelf[] = [
     { id: 'up-next', items: upNext },
     { id: 'second-recent', items: secondRecent },
   ];
-  return shelves.filter((s) => s.items.length > 0);
+  return shelves.filter((x) => x.items.length > 0);
 }

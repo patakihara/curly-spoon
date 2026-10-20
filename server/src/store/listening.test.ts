@@ -761,7 +761,7 @@ describe('[M2.sorting] a user’s plays across devices', () => {
 describe('[M2.sorting/b] what every digest’s queue holds, across a user’s devices', () => {
   const episode = (n: number): MediaRef => ({ source: 'abs', id: `episode-${n}` });
 
-  it('holds the current and queued entries a digest’s rule put in the spoken queue or a digest’s queue put aside, never your own', () => {
+  it('holds the current and queued entries a digest’s rule put in the queue a device plays now, never a digest’s put aside or your own', () => {
     const { user, phone, laptop } = twoDevices();
     const other = upsertUser(db, { username: 'otto', role: 'member' });
     const tablet = createDevice(db, { userId: other.id, kind: 'web', name: 'Tablet' });
@@ -791,10 +791,14 @@ describe('[M2.sorting/b] what every digest’s queue holds, across a user’s de
       },
       saved: [{ owner: null, queue: queue(entry(episode(4))), autoplay: null, savedAt: 1 }],
     });
-    // The laptop plays your own queue, another digest's put aside.
+    // The laptop plays your own queue, another digest's put aside. An entry of your own queue
+    // that still names a digest plays as your own.
     write(user.id, laptop.id, {
       active: 'spoken',
-      queues: { music: queue(null), spoken: queue(entry(episode(5))) },
+      queues: {
+        music: queue(null),
+        spoken: queue(entry(episode(5)), [{ ...entry(episode(10)), list: news.id }]),
+      },
       saved: [
         {
           owner: news.id,
@@ -820,7 +824,7 @@ describe('[M2.sorting/b] what every digest’s queue holds, across a user’s de
       digestQueued(db, user.id)
         .map((r) => r.id)
         .sort(),
-    ).toEqual([1, 3, 6, 7].map((n) => episode(n).id));
+    ).toEqual([1, 3].map((n) => episode(n).id));
     expect(digestQueued(db, other.id)).toEqual([episode(9)]);
   });
 });
