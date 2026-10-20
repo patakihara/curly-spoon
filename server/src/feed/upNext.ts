@@ -4,11 +4,13 @@
  * What you listened to is the union of two histories: your own spoken plays in Auralis on every
  * one of your devices (never music, and never a play made in a digest's queue), and the books and
  * episodes begun or finished on Audiobookshelf, so listening in its own app counts too. Progress
- * on an episode whose newest Auralis play was a digest's, no earlier than Audiobookshelf last
- * changed it, is left out: the digest made it, not you. Each book or episode was heard at the
- * newer of its own play and Audiobookshelf's last change to it. Whatever you removed from
- * Audiobookshelf's Continue Listening is never a card, and a series you removed from its Continue
- * Series is never moved on in.
+ * on an episode is left out when the digest made it, not you: while the episode is the current or
+ * a queued entry of a digest's queue on any of your devices, or when its newest Auralis play was
+ * a digest's, no more than `DIGEST_SYNC_MS` before Audiobookshelf last changed it (a play is
+ * written once it stops being current, so the digest's sync can land after it). Each book or
+ * episode was heard at the newer of its own play and Audiobookshelf's last change to it. Whatever
+ * you removed from Audiobookshelf's Continue Listening is never a card, and a series you removed
+ * from its Continue Series is never moved on in.
  *
  * Each book, and each show by its newest episode heard, is ranked by when it was last heard.
  * Only what the index holds, in a library the person may open, is kept, so every card is owned.
@@ -21,7 +23,13 @@
  * from the newest one's, so it never repeats the card Up next leads that kind with. An empty
  * shelf is left out.
  */
-import { type MediaRef, mediaRefKey, UP_NEXT_MAX } from '@auralis/schema';
+import {
+  type FeedCard,
+  type FeedShelf,
+  type MediaRef,
+  mediaRefKey,
+  UP_NEXT_MAX,
+} from '@auralis/schema';
 import { indexedRow, type StoredRow } from '../libraryIndex/store.js';
 import { opens, played, type Reader } from '../lists/reader.js';
 import { isOwnPlay } from '../queues/autoplay.js';
@@ -30,26 +38,8 @@ import { artUrl } from '../routes/art.js';
 import { entry } from '../routes/library.js';
 import type { UserPlay } from '../store/listening.js';
 
-/** One card on a Browse shelf: a book or an episode to play next. */
-export interface FeedCard {
-  ref: MediaRef;
-  kind: 'book' | 'episode';
-  title: string;
-  /** A book's authors, or an episode's show. */
-  sub: string | null;
-  /** A book's art, or an episode's show's. */
-  art: string | null;
-  progress: number | null;
-  availability: { kind: 'owned' };
-}
-
-/** The shelves the composer fills, in the order Browse draws them. */
-export type FeedShelfId = 'up-next' | 'second-recent';
-
-export interface FeedShelf {
-  id: FeedShelfId;
-  items: FeedCard[];
-}
+/** How long after a digest's play Audiobookshelf's last change still counts as the digest's. */
+export const DIGEST_SYNC_MS = 10 * 60 * 1000;
 
 /** A book, or a show by the newest of its episodes heard, and when it was last heard. */
 interface Heard {
@@ -65,8 +55,16 @@ const newestFirst = (a: UserPlay, b: UserPlay) =>
   (a.deviceId < b.deviceId ? -1 : a.deviceId > b.deviceId ? 1 : 0) ||
   b.seq - a.seq;
 
-/** Each book and episode heard, with when it was last heard, newest first. */
-function heardItems(r: Reader, plays: readonly UserPlay[]): { ref: MediaRef; at: number }[] {
+/**
+ * Each book and episode heard, with when it was last heard, newest first. `inDigests` holds the
+ * entries of every digest's queue on the person's devices.
+ */
+function heardItems(
+  r: Reader,
+  plays: readonly UserPlay[],
+  inDigests: readonly MediaRef[],
+): { ref: MediaRef; at: number }[] {
+  const queued = new Set(inDigests.map(mediaRefKey));
   const spoken = [...plays].filter((p) => p.queue === 'spoken').sort(newestFirst);
   const newest = new Map<string, UserPlay>();
   const heard = new Map<string, { ref: MediaRef; at: number }>();
@@ -79,7 +77,11 @@ function heardItems(r: Reader, plays: readonly UserPlay[]): { ref: MediaRef; at:
     const ref: MediaRef = { source: 'abs', id: s.id };
     const key = mediaRefKey(ref);
     const last = newest.get(key);
-    if (last !== undefined && !isOwnPlay(last) && last.playedAt >= (s.updatedAt ?? 0)) continue;
+    if (queued.has(key)) continue;
+    const lastUpdate = s.updatedAt ?? 0;
+    if (last !== undefined && !isOwnPlay(last) && last.playedAt >= lastUpdate - DIGEST_SYNC_MS) {
+      continue;
+    }
     const at = Math.max(heard.get(key)?.at ?? -Infinity, s.updatedAt ?? 0);
     heard.set(key, { ref, at });
   }
@@ -87,10 +89,10 @@ function heardItems(r: Reader, plays: readonly UserPlay[]): { ref: MediaRef; at:
 }
 
 /** The books and shows heard, each once, newest first, kept only where the person may open it. */
-function ranked(r: Reader, plays: readonly UserPlay[]): Heard[] {
+function ranked(r: Reader, plays: readonly UserPlay[], inDigests: readonly MediaRef[]): Heard[] {
   const seen = new Set<string>();
   const out: Heard[] = [];
-  for (const { ref, at } of heardItems(r, plays)) {
+  for (const { ref, at } of heardItems(r, plays, inDigests)) {
     const row = indexedRow(r.db, ref.source, ref.id);
     if (row === undefined || (row.kind !== 'book' && row.kind !== 'episode') || !opens(r, row)) {
       continue;
@@ -136,10 +138,17 @@ function cardOf(r: Reader, row: StoredRow): FeedCard {
   };
 }
 
-/** Browse's shelves for the person, from their plays across devices (`userPlays`). */
-export async function composeFeed(r: Reader, plays: readonly UserPlay[]): Promise<FeedShelf[]> {
+/**
+ * Browse's shelves for the person, from their plays across devices (`userPlays`) and the entries
+ * of every digest's queue on them (`digestQueued`).
+ */
+export async function composeFeed(
+  r: Reader,
+  plays: readonly UserPlay[],
+  inDigests: readonly MediaRef[] = [],
+): Promise<FeedShelf[]> {
   if (r.access === null) return [];
-  const heard = ranked(r, plays);
+  const heard = ranked(r, plays, inDigests);
   const card = async (h: Heard) => {
     const next = await nextOf(r, h);
     return next === null ? null : cardOf(r, next);

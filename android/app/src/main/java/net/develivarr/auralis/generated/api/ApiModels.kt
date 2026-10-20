@@ -132,6 +132,44 @@ data class ErrorResponse(
 )
 
 @Serializable
+data class Feed(
+    val shelves: List<FeedShelf>,
+)
+
+@Serializable
+data class FeedCard(
+    val ref: MediaRef,
+    val kind: FeedCardKind,
+    val title: String,
+    val sub: String?,
+    val art: String?,
+    val progress: Double?,
+    val availability: Availability,
+)
+
+@Serializable
+enum class FeedCardKind {
+    @SerialName("book")
+    BOOK,
+    @SerialName("episode")
+    EPISODE,
+}
+
+@Serializable
+data class FeedShelf(
+    val id: FeedShelfId,
+    val items: List<FeedCard>,
+)
+
+@Serializable
+enum class FeedShelfId {
+    @SerialName("up-next")
+    UP_NEXT,
+    @SerialName("second-recent")
+    SECOND_RECENT,
+}
+
+@Serializable
 data class HealthResponse(
     val status: HealthResponseStatus,
     val commit: String?,

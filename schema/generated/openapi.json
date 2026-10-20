@@ -1360,6 +1360,100 @@
           "music"
         ]
       },
+      "FeedShelfId": {
+        "type": "string",
+        "enum": [
+          "up-next",
+          "second-recent"
+        ]
+      },
+      "FeedCardKind": {
+        "type": "string",
+        "enum": [
+          "book",
+          "episode"
+        ]
+      },
+      "FeedCard": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/FeedCardKind"
+          },
+          "title": {
+            "type": "string"
+          },
+          "sub": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "art": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "progress": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          },
+          "availability": {
+            "$ref": "#/components/schemas/Availability"
+          }
+        },
+        "required": [
+          "ref",
+          "kind",
+          "title",
+          "sub",
+          "art",
+          "progress",
+          "availability"
+        ]
+      },
+      "FeedShelf": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/FeedShelfId"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeedCard"
+            },
+            "minItems": 1,
+            "maxItems": 10
+          }
+        },
+        "required": [
+          "id",
+          "items"
+        ]
+      },
+      "Feed": {
+        "type": "object",
+        "properties": {
+          "shelves": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeedShelf"
+            }
+          }
+        },
+        "required": [
+          "shelves"
+        ]
+      },
       "ItemKind": {
         "type": "string",
         "enum": [
@@ -3969,6 +4063,52 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/feed": {
+      "get": {
+        "summary": "Browse's Up next and second-most-recent shelves for the signed-in person",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getFeed",
+        "responses": {
+          "200": {
+            "description": "Up next, then your second most recent book and show, each card what plays next of what you listened to, only what you own; an empty shelf is left out, and all are for someone not linked to Audiobookshelf.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Feed"
                 }
               }
             }

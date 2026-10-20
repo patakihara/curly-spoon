@@ -31,7 +31,7 @@ export {
   BookmarksQuery,
   CreateBookmarkBody,
 } from './bookmarks.js';
-export { UP_NEXT_MAX } from './feed.js';
+export { Feed, FeedCard, FeedCardKind, FeedShelf, FeedShelfId, UP_NEXT_MAX } from './feed.js';
 export { CommitId, HealthResponse } from './health.js';
 export {
   AddListItemBody,
@@ -112,6 +112,7 @@ export {
   getItem,
   getList,
   getLyrics,
+  getFeed,
   getMe,
   getQueue,
   getSearch,

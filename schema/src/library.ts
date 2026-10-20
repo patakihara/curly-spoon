@@ -8,7 +8,7 @@ import { ArtUrl, MediaRef, MediaRefKey, PlaybackChapter } from './play.js';
 import { z } from './zod.js';
 
 /** A share of a whole, from 0 to 1: how far through an item, or a download. */
-const Fraction = z.number().min(0).max(1);
+export const Fraction = z.number().min(0).max(1);
 
 /** Which list: books, podcast shows, or music albums. */
 export const LibraryMedium = z.enum(['books', 'podcasts', 'music']).openapi('LibraryMedium');

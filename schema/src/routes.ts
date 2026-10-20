@@ -22,6 +22,7 @@ import {
   BookmarksQuery,
   CreateBookmarkBody,
 } from './bookmarks.js';
+import { Feed } from './feed.js';
 import { HealthResponse } from './health.js';
 import {
   AddListItemBody,
@@ -423,6 +424,17 @@ export const listLibrary = {
   query: LibraryQuery,
 } as const satisfies Route;
 
+export const getFeed = {
+  method: 'GET',
+  path: '/api/feed',
+  operationId: 'getFeed',
+  summary: "Browse's Up next and second-most-recent shelves for the signed-in person",
+  responseDescription:
+    'Up next, then your second most recent book and show, each card what plays next of what you listened to, only what you own; an empty shelf is left out, and all are for someone not linked to Audiobookshelf.',
+  response: Feed,
+  access: 'member',
+} as const satisfies Route;
+
 export const getItem = {
   method: 'GET',
   path: '/api/items/{ref}',
@@ -611,6 +623,7 @@ export const routes: readonly Route[] = [
   setActiveQueue,
   setQueueStyle,
   listLibrary,
+  getFeed,
   getItem,
   mediaArt,
   getSearchSuggest,

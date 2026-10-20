@@ -489,6 +489,45 @@ export function userPlays(db: Db, userId: string): UserPlay[] {
 }
 
 /**
+ * The current and queued entries of every digest's queue on each of this user's devices: the
+ * spoken queue while it is a digest's, and each digest's queue put aside. Only entries a digest's
+ * rule put there count; anything else in that queue plays as your own.
+ */
+export function digestQueued(db: Db, userId: string): MediaRef[] {
+  const spoken = z
+    .array(ItemRow)
+    .parse(
+      db
+        .prepare(
+          `SELECT queue_items.* FROM queue_items
+           JOIN listening_sessions ON listening_sessions.device_id = queue_items.device_id
+           WHERE listening_sessions.user_id = ? AND listening_sessions.spoken_digest IS NOT NULL
+             AND queue_items.queue = 'spoken' AND queue_items.segment IN ('current', 'user')
+             AND queue_items.list_id IS NOT NULL
+           ORDER BY queue_items.device_id, queue_items.segment, queue_items.ord`,
+        )
+        .all(userId),
+    )
+    .map((row) => row.item.ref);
+  const saved = z
+    .array(SavedRow)
+    .parse(
+      db
+        .prepare(
+          `SELECT saved_queues.* FROM saved_queues
+           JOIN listening_sessions ON listening_sessions.device_id = saved_queues.device_id
+           WHERE listening_sessions.user_id = ? AND saved_queues.owner != ''
+           ORDER BY saved_queues.device_id, saved_at`,
+        )
+        .all(userId),
+    )
+    .flatMap(({ queue }) => [queue.current, ...queue.user])
+    .filter((item) => item !== null && item.list !== undefined)
+    .map((item) => item!.ref);
+  return [...spoken, ...saved];
+}
+
+/**
  * Writes this device's session whole, made from revision `rev`, and answers it at the next
  * revision. Throws `StaleRevision` when the session has moved past `rev`; null when the device
  * is not this user's or has no session yet. History keeps its newest `HISTORY_KEPT` plays. A

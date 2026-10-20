@@ -8,6 +8,7 @@ import { openDatabase, type Db } from './connection.js';
 import { createDevice, deleteDevice } from './devices.js';
 import {
   HISTORY_KEPT,
+  digestQueued,
   DuplicateSavedQueue,
   HistoryRewritten,
   listSessions,
@@ -754,5 +755,72 @@ describe('[M2.sorting] a user’s plays across devices', () => {
   it('is empty for a user with no device', () => {
     const user = upsertUser(db, { username: 'nell', role: 'member' });
     expect(userPlays(db, user.id)).toEqual([]);
+  });
+});
+
+describe('[M2.sorting/b] what every digest’s queue holds, across a user’s devices', () => {
+  const episode = (n: number): MediaRef => ({ source: 'abs', id: `episode-${n}` });
+
+  it('holds the current and queued entries a digest’s rule put in the spoken queue or a digest’s queue put aside, never your own', () => {
+    const { user, phone, laptop } = twoDevices();
+    const other = upsertUser(db, { username: 'otto', role: 'member' });
+    const tablet = createDevice(db, { userId: other.id, kind: 'web', name: 'Tablet' });
+    const digest = createList(db, user.id, { kind: 'digest', name: 'Science' });
+    const news = createList(db, user.id, { kind: 'digest', name: 'News' });
+    const otherDigest = createList(db, other.id, { kind: 'digest', name: 'Mine' });
+    const queue = (current: SessionItem | null, user: SessionItem[] = []): SessionQueue => ({
+      current,
+      position: null,
+      user,
+      context: null,
+    });
+    const write = (userId: string, deviceId: string, change: Partial<SessionValue>) => {
+      const start = openSession(db, userId, deviceId)!;
+      saveSession(db, userId, deviceId, start.rev, { ...value(start), ...change });
+    };
+    // The phone plays a digest's queue, one entry of it your own; your own queue is put aside.
+    write(user.id, phone.id, {
+      active: 'spoken',
+      spokenDigest: digest.id,
+      queues: {
+        music: queue(null),
+        spoken: queue({ ...entry(episode(1)), list: digest.id }, [
+          entry(episode(2)),
+          { ...entry(episode(3)), list: digest.id },
+        ]),
+      },
+      saved: [{ owner: null, queue: queue(entry(episode(4))), autoplay: null, savedAt: 1 }],
+    });
+    // The laptop plays your own queue, another digest's put aside.
+    write(user.id, laptop.id, {
+      active: 'spoken',
+      queues: { music: queue(null), spoken: queue(entry(episode(5))) },
+      saved: [
+        {
+          owner: news.id,
+          queue: queue({ ...entry(episode(6)), list: news.id }, [
+            { ...entry(episode(7)), list: news.id },
+            entry(episode(8)),
+          ]),
+          autoplay: null,
+          savedAt: 2,
+        },
+      ],
+    });
+    write(other.id, tablet.id, {
+      active: 'spoken',
+      spokenDigest: otherDigest.id,
+      queues: {
+        music: queue(null),
+        spoken: queue({ ...entry(episode(9)), list: otherDigest.id }),
+      },
+    });
+
+    expect(
+      digestQueued(db, user.id)
+        .map((r) => r.id)
+        .sort(),
+    ).toEqual([1, 3, 6, 7].map((n) => episode(n).id));
+    expect(digestQueued(db, other.id)).toEqual([episode(9)]);
   });
 });

@@ -415,6 +415,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Browse's Up next and second-most-recent shelves for the signed-in person */
+        get: operations["getFeed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/items/{ref}": {
         parameters: {
             query?: never;
@@ -884,6 +901,26 @@ export interface components {
         };
         /** @enum {string} */
         LibraryMedium: "books" | "podcasts" | "music";
+        /** @enum {string} */
+        FeedShelfId: "up-next" | "second-recent";
+        /** @enum {string} */
+        FeedCardKind: "book" | "episode";
+        FeedCard: {
+            ref: components["schemas"]["MediaRef"];
+            kind: components["schemas"]["FeedCardKind"];
+            title: string;
+            sub: string | null;
+            art: string | null;
+            progress: number | null;
+            availability: components["schemas"]["Availability"];
+        };
+        FeedShelf: {
+            id: components["schemas"]["FeedShelfId"];
+            items: components["schemas"]["FeedCard"][];
+        };
+        Feed: {
+            shelves: components["schemas"]["FeedShelf"][];
+        };
         /** @enum {string} */
         ItemKind: "book" | "show" | "episode" | "album";
         ItemEpisode: {
@@ -2437,6 +2474,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getFeed: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Up next, then your second most recent book and show, each card what plays next of what you listened to, only what you own; an empty shelf is left out, and all are for someone not linked to Audiobookshelf. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Feed"];
                 };
             };
             /** @description No session. */

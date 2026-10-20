@@ -31,7 +31,8 @@ import { absAccess } from '../routes/library.js';
 import { openDatabase, type Db } from '../store/connection.js';
 import type { PlayedMark } from '../store/lists.js';
 import type { UserPlay } from '../store/listening.js';
-import { composeFeed, type FeedShelf } from './upNext.js';
+import type { FeedShelf } from '@auralis/schema';
+import { composeFeed, DIGEST_SYNC_MS } from './upNext.js';
 
 const ADAPTERS = fileURLToPath(new URL('../adapters/', import.meta.url));
 const absRecording = (call: string): Recording =>
@@ -127,6 +128,8 @@ async function reader(
   );
   return { db, userId: 'kara', access: await absAccess(abs), marks, now: SEPT_15 };
 }
+
+const MINUTE = 60_000;
 
 let seq = 0;
 /** One spoken play of `r` on `device` at `playedAt`, made in digest `list` when named. */
@@ -328,22 +331,42 @@ describe('[M2.sorting/b] Up next holds only owned items from your own history', 
     expect(feed.flatMap((s) => s.items).map((c) => c.ref.id)).not.toContain(newest!.id);
   });
 
-  it('[M2.sorting/b] leaves out progress on Audiobookshelf that a digest play made', async () => {
+  it('[M2.sorting/b] leaves out progress on Audiobookshelf that a digest play made, synced up to ten minutes after it', async () => {
     const [newest] = episodesInOrder(db, show2.id);
-    const r = await reader([episodeStarted(newest!, show2, 9000), bookStarted(bookRef, 1)]);
+    const synced = 50 * MINUTE;
+    const r = await reader([episodeStarted(newest!, show2, synced), bookStarted(bookRef, 1)]);
     const digestAt = (at: number) => composeFeed(r, [play(newest!, at, { list: 'the-digest' })]);
-    // The digest's play came no earlier than Audiobookshelf's last change: the digest made it.
-    expect(upNext(await digestAt(9000))).toEqual([bookRef.id]);
-    expect(upNext(await digestAt(9500))).toEqual([bookRef.id]);
-    // Changed after the digest's play: listening in the Audiobookshelf app since.
-    expect(upNext(await digestAt(8500))).toEqual([newest!.id, bookRef.id]);
+    // Audiobookshelf changed it no later than ten minutes after the digest's play: the digest
+    // made it, its sync landing once the play stopped being current.
+    expect(upNext(await digestAt(synced))).toEqual([bookRef.id]);
+    expect(upNext(await digestAt(synced + MINUTE))).toEqual([bookRef.id]);
+    expect(upNext(await digestAt(synced - DIGEST_SYNC_MS))).toEqual([bookRef.id]);
+    // Changed later than that: listening in the Audiobookshelf app since.
+    expect(upNext(await digestAt(synced - DIGEST_SYNC_MS - 1))).toEqual([newest!.id, bookRef.id]);
 
     // Played as your own after the digest: your progress again.
     const ownAfter = await composeFeed(r, [
-      play(newest!, 9200),
-      play(newest!, 9000, { list: 'the-digest' }),
+      play(newest!, synced - 1),
+      play(newest!, synced - 2, { list: 'the-digest' }),
     ]);
     expect(upNext(ownAfter)).toEqual([newest!.id, bookRef.id]);
+  });
+
+  it('[M2.sorting/b] leaves out progress on Audiobookshelf on an episode a digest’s queue holds, whenever it changed', async () => {
+    const [newest] = episodesInOrder(db, show2.id);
+    const r = await reader([
+      episodeStarted(newest!, show2, 600 * MINUTE),
+      bookStarted(bookRef, 2 * MINUTE),
+    ]);
+    // With no Auralis play of it, it is not heard at all.
+    expect(upNext(await composeFeed(r, [], [newest!]))).toEqual([bookRef.id]);
+    // Your own play of it before still counts, at when you played it, not at the digest's sync.
+    expect(upNext(await composeFeed(r, [play(newest!, MINUTE)], [newest!]))).toEqual([
+      bookRef.id,
+      newest!.id,
+    ]);
+    // Out of every digest's queue, the progress is yours.
+    expect(upNext(await composeFeed(r, []))).toEqual([newest!.id, bookRef.id]);
   });
 
   it('[M2.sorting/b] skips an episode a digest finished as played', async () => {
