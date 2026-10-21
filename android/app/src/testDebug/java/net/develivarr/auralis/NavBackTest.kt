@@ -102,7 +102,7 @@ class NavBackTest {
     @Test
     fun closingAnAlbumLeftOpenInMusicReturnsToTheArtistItWasOpenedFrom() {
         leaveMusicOnAnAlbumAndComeBack()
-        close(Route.Music)
+        close(Route.Music())
         assertEquals("Artist deep-inertia", showing())
     }
 
@@ -124,7 +124,7 @@ class NavBackTest {
     @Test
     fun closeOnAPageWithNothingUnderItGoesToItsDestinationsHome() {
         start(Route.Album(ref = "tears-of-ice"))
-        close(Route.Music)
+        close(Route.Music())
         assertEquals("Music", showing())
         assertEquals(null, nav.previousBackStackEntry)
     }
@@ -193,7 +193,7 @@ class NavBackTest {
     @Test
     fun aDeepLinkedPageClosedToItsHomeMakesThatHomeTheBottomEachDestinationOpensOver() {
         start(Route.Album(ref = "tears-of-ice"))
-        close(Route.Music)
+        close(Route.Music())
         act { openDestination(nav, "books") }
         act { openDestination(nav, "browse") }
         assertEquals(listOf("Music", "Browse"), stack())

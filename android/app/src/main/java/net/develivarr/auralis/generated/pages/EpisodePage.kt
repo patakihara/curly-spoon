@@ -43,7 +43,7 @@ import net.develivarr.auralis.ui.sonora.Section
 /** Episode, as design/app/pages/episode.page.jsx draws it on the phone, with its placeholder data. */
 @Composable
 fun EpisodePage(navController: NavController, actions: PageActions) {
-    BackHandler { closePage(navController, Route.Podcasts) }
+    BackHandler { closePage(navController, Route.Podcasts()) }
     BackdropShell(
         BackdropShellProps(
             back = {
@@ -55,7 +55,7 @@ fun EpisodePage(navController: NavController, actions: PageActions) {
                                 IconButtonProps(
                                     icon = "close",
                                     label = "Close",
-                                    onClick = { closePage(navController, Route.Podcasts) },
+                                    onClick = { closePage(navController, Route.Podcasts()) },
                                 ),
                             )
                         },

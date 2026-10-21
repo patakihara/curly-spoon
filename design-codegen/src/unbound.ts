@@ -77,11 +77,11 @@ export const UNBOUND: Readonly<Record<string, string>> = {
   'list/SortFilterBar.onClick': 'M2.lists',
   'playlist/IconButton.onClick': 'M2.lists',
   // The library grid: view and sort.
-  'books/SortFilterBar.onClick': 'M5.library',
+  'books/SortFilterBar.onSelect': 'M5.library',
   'books/ViewToggle.onChange': 'M5.library',
-  'music/SortFilterBar.onClick': 'M5.library',
+  'music/SortFilterBar.onSelect': 'M5.library',
   'music/ViewToggle.onChange': 'M5.library',
-  'podcasts/SortFilterBar.onClick': 'M5.library',
+  'podcasts/SortFilterBar.onSelect': 'M5.library',
   'podcasts/ViewToggle.onChange': 'M5.library',
   'shelf/ViewToggle.onChange': 'M5.library',
   // Settings and first-run setup.

@@ -5,6 +5,7 @@ import { generatePath, useNavigate } from 'react-router';
 import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
 import type { ShellNav } from '../../shell-nav';
 import type { Playing } from '../../player';
+import { useChoose } from '../../choose';
 import { AccountButton, BackLayer, BottomNav, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, PageBody, Section, SortFilterBar, TabBar, ViewToggle } from '../ui/index.js';
 
 const placeholder = {
@@ -31,11 +32,21 @@ const placeholder = {
     }
   ],
   "sort": {
+    "ref": "books",
     "value": "Title",
     "options": [
-      "Title",
-      "Author",
-      "Random"
+      {
+        "key": "title",
+        "label": "Title"
+      },
+      {
+        "key": "artist",
+        "label": "Author"
+      },
+      {
+        "key": "random",
+        "label": "Random"
+      }
     ]
   },
   "library": [
@@ -309,12 +320,15 @@ export interface BooksProps {
 export default function Books({ data = placeholder, state = 'full' }: BooksProps) {
   const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
+  const choose = useChoose();
   return (
     <PageBody platform={platform}>
       <Section platform={platform}>
         <SortFilterBar
           icon="swap_vert"
           label={data.sort.value}
+          items={data.sort.options}
+          onSelect={choose(data.sort.ref)}
           trailing={<ViewToggle value="grid" platform={platform} />}
           platform={platform}
         />

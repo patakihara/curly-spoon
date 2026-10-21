@@ -5,6 +5,7 @@ import { generatePath, useNavigate } from 'react-router';
 import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
 import type { ShellNav } from '../../shell-nav';
 import type { Playing } from '../../player';
+import { useChoose } from '../../choose';
 import { AccountButton, BackLayer, BottomNav, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, PageBody, Section, SortFilterBar, TabBar, ViewToggle } from '../ui/index.js';
 
 const placeholder = {
@@ -26,11 +27,21 @@ const placeholder = {
     }
   ],
   "sort": {
+    "ref": "music",
     "value": "Title",
     "options": [
-      "Title",
-      "Artist",
-      "Random"
+      {
+        "key": "title",
+        "label": "Title"
+      },
+      {
+        "key": "artist",
+        "label": "Artist"
+      },
+      {
+        "key": "random",
+        "label": "Random"
+      }
     ]
   },
   "library": [
@@ -289,12 +300,15 @@ export interface MusicProps {
 export default function Music({ data = placeholder, state = 'full' }: MusicProps) {
   const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
+  const choose = useChoose();
   return (
     <PageBody platform={platform}>
       <Section platform={platform}>
         <SortFilterBar
           icon="swap_vert"
           label={data.sort.value}
+          items={data.sort.options}
+          onSelect={choose(data.sort.ref)}
           trailing={<ViewToggle value="grid" platform={platform} />}
           platform={platform}
         />

@@ -116,7 +116,11 @@
           },
           {
             "name": "Up next",
-            "holds": "The next episode or chapter, like Jellyfin's Next Up, with your second most recent book or show kept visible."
+            "holds": "The next episode or chapter of each book and show you have been playing, like Jellyfin's Next Up, newest first."
+          },
+          {
+            "name": "Still listening",
+            "holds": "Your second most recent book and your second most recent show, each as its next chapter or episode, so a paused one stays visible however much came after it."
           },
           {
             "name": "Context shelves",
@@ -216,7 +220,7 @@
     },
     {
       "id": "music",
-      "route": "/music",
+      "route": "/music?sort&seed",
       "lights": "music",
       "close": "none",
       "presentation": "screen",
@@ -402,7 +406,7 @@
     },
     {
       "id": "books",
-      "route": "/books",
+      "route": "/books?sort&seed",
       "lights": "books",
       "close": "none",
       "presentation": "screen",
@@ -555,7 +559,7 @@
     },
     {
       "id": "podcasts",
-      "route": "/podcasts",
+      "route": "/podcasts?sort&seed",
       "lights": "podcasts",
       "close": "none",
       "presentation": "screen",

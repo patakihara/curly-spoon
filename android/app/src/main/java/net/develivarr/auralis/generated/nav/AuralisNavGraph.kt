@@ -54,16 +54,16 @@ sealed interface Route {
     @Serializable data object Browse : Route
     @Serializable data object Requests : Route
     @Serializable data class Shelf(val id: String) : Route
-    @Serializable data object Music : Route
+    @Serializable data class Music(val sort: String? = null, val seed: String? = null) : Route
     @Serializable data class Album(val ref: String) : Route
     @Serializable data class Artist(val ref: String) : Route
     @Serializable data class Playlist(val ref: String) : Route
     @Serializable data object Favourites : Route
-    @Serializable data object Books : Route
+    @Serializable data class Books(val sort: String? = null, val seed: String? = null) : Route
     @Serializable data class Book(val ref: String) : Route
     @Serializable data class Author(val ref: String) : Route
     @Serializable data class Series(val ref: String) : Route
-    @Serializable data object Podcasts : Route
+    @Serializable data class Podcasts(val sort: String? = null, val seed: String? = null) : Route
     @Serializable data class Show(val ref: String) : Route
     @Serializable data class Episode(val ref: String) : Route
     @Serializable data class List(val ref: String) : Route
@@ -263,9 +263,9 @@ fun homeOf(destination: NavDestination): String? = when {
 /** The home of the destination `id` names. */
 fun destinationRoute(id: String): Route = when (id) {
     "browse" -> Route.Browse
-    "music" -> Route.Music
-    "books" -> Route.Books
-    "podcasts" -> Route.Podcasts
+    "music" -> Route.Music()
+    "books" -> Route.Books()
+    "podcasts" -> Route.Podcasts()
     "search" -> Route.Search()
     else -> throw IllegalArgumentException("$id is not a destination")
 }

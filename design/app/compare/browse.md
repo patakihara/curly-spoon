@@ -1,6 +1,6 @@
 ---
 page: browse
-pageHash: bfbd0a182b2519df79ac9d3f34f837f59d3fba8faf3209dd25a3daa09d72e80f
+pageHash: 1f253d6d5668e18fd28b36e6ec8cadb6d32f3d7c00ea5b4bed146d73ed1aacd1
 sonora: [kit:mobile/browse, kit:desktop/browse]
 ---
 
@@ -37,10 +37,12 @@ what the front layer shows, so it sits on the back layer, as in the Backdrop Ana
 choices are All, Music, Podcasts, Books: nav.json's filter for Browse, labelled by the destinations
 (`shell.filters.browse`), so they cannot drift from them. The front layer has a scroll-spy
 `FrontLayerHeader`, which shows only once a section title has scrolled under it and then carries
-the title that last passed; at rest there is no band. Under it, `PageBody`: "Jump back in" as an auto-filled grid of wide `QuickPick`s, one
+the title that last passed; at rest there is no band. Under it, `PageBody`: "Jump back in" as an auto-filled grid of wide `QuickPick`s, then two
+shelves of `MediaCard`s with their resume bars, "Up next" (the next chapter or episode of each book
+and show you have been playing) and "Still listening" (your second most recent book and show), one
 `FeatureCard` with its `PreviewButton`, then the "Recently added", "Artists & authors" and "Picked for you" shelves and the "Recently played"
 rows, in the mobile kit's order and with its titles and art. Every tile and card opens its own item's page,
-an album, a book, a show, an artist or an author, named by the item (`<Open page={item.page}>`), so
+an album, a book, a show, an episode, an artist or an author, named by the item (`<Open page={item.page}>`), so
 the shelves stay mixed, their kinds interleaved. Around it: the bottom bar and the
 mini-player on the phone; on desktop the labelled rail (Search first, Settings at its foot), the
 docked transport bar and the Now Playing panel.
@@ -64,6 +66,9 @@ stay put, the document never scrolls, and the front layer is the one scroller.
   of its action row and the rose play at its end. S15 draws the same card in Spotify's grey with
   an add button; here it is `--surface-card` and saving is left out until Browse has a save verb.
   On desktop it is capped at the form width, so the blurb reads in two lines.
+- Changed on purpose, from the plan's Discovery section: "Up next" and "Still listening" follow
+  "Jump back in", which neither kit draws. Each is a `Shelf` of the kit's large `MediaCard`s, as
+  "Recently added" is, with no "See all": the second one's title is a name still open (outbox).
 
 - Matches, after the one-accent change: the filter's selected segment is the play rose with
   white ink, and the resume bars on "Recently added" cards are rose, in both kits and on the

@@ -70,7 +70,9 @@ nothing for; a section the bar never names always draws.
 
 `onSelect={<Choose ref={data.ref} />}` hands a menu's chosen verb, by its item's key, to the item
 its ref binds: what each key does is the app's, so the items are the page's data. It goes only on
-a menu's `onSelect`, and the check refuses it elsewhere. The web gives it to the verbs the page is
+a menu's `onSelect`, and the check refuses it elsewhere. A `SortFilterBar` given `items` is such
+a menu, its sorts the items: `items={data.sort.options} onSelect={<Choose ref={data.sort.ref} />}`
+hands the chosen sort's key to the library its ref names. The web gives it to the verbs the page is
 handed, `useChoose()` in `web/src/choose`, which give none on the canvas or while the menu holds
 no item, so the menu's button draws disabled; Android leaves it unbound until it has lists to act
 on, and its menu draws disabled too.

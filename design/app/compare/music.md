@@ -1,6 +1,6 @@
 ---
 page: music
-pageHash: 6e9b4490b0624d75cb8168eb0e5d770d59357e7dcea7106d769f1ead0f225d1d
+pageHash: c4905e0a27b31b5e38be5a4754559bd4c02d25db80b16df0265fd0135ec39e6b
 sonora: [kit:mobile/music, kit:desktop/music]
 spotify: [S31]
 ---
@@ -34,7 +34,7 @@ without focus; tapped, it comes out with focus. It searches only this library an
 There is no filter row: nav.json's only Music filter is Downloaded, which is Android's. The front
 layer's subheader is the `TabBar` (Albums, Artists, Songs, opening on Albums, its first tab) with its
 static hairline.
-Then `PageBody`: a `SortFilterBar` reading "Title" with the `ViewToggle` opposite it, as in S31,
+Then `PageBody`: a `SortFilterBar` reading "Title", whose label opens a menu of Title, Artist, Random, with the `ViewToggle` opposite it, as in S31,
 and a `LayoutGrid` of `MediaCard`s filling their cells: 3 across on the phone, and on desktop
 filling the front layer (4 across here, beside the panel). Albums are in title order. Two
 are requests: "Paper Lanterns" with a "Needs choice" pill in the request tone, "Salt and Static"

@@ -35,7 +35,7 @@ import net.develivarr.auralis.ui.sonora.Section
 /** Playlist, as design/app/pages/playlist.page.jsx draws it on the phone, with its placeholder data. */
 @Composable
 fun PlaylistPage(navController: NavController, actions: PageActions) {
-    BackHandler { closePage(navController, Route.Music) }
+    BackHandler { closePage(navController, Route.Music()) }
     BackdropShell(
         BackdropShellProps(
             back = {
@@ -47,7 +47,7 @@ fun PlaylistPage(navController: NavController, actions: PageActions) {
                                 IconButtonProps(
                                     icon = "close",
                                     label = "Close",
-                                    onClick = { closePage(navController, Route.Music) },
+                                    onClick = { closePage(navController, Route.Music()) },
                                 ),
                             )
                         },

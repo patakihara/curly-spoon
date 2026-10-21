@@ -1,6 +1,6 @@
 ---
 page: books
-pageHash: c69d15581df0f55574808b44a2f4a167a45bbcc1892829754a2844d1a706e720
+pageHash: 807e28c8a4fa7c6566fe6d48913e4dc4d5161afcf6761d1111aa47ad3f9630df
 sonora: [kit:desktop/books, kit:mobile/books]
 spotify: [S31]
 ---
@@ -27,7 +27,7 @@ Artist Cards and Backdrop Local Search cards, the page scrolled on the phone, an
 The back layer holds the heading "Books" ending in the local search's button (`BackLayer
 search="Search your books and requests"`: out as the front layer scrolls, as on Music), and no
 filter row: requests sit among the books, greyed with their status, as the plan says. The subheader
-is the `TabBar` Books, Authors, Series, Narrators, opening on Books, its first tab. The body: the `SortFilterBar` "Title" with the `ViewToggle` opposite, then a `LayoutGrid`
+is the `TabBar` Books, Authors, Series, Narrators, opening on Books, its first tab. The body: the `SortFilterBar` "Title", whose label opens a menu of Title, Author, Random, with the `ViewToggle` opposite, then a `LayoutGrid`
 of `MediaCard`s in title order: 3 across on the phone, filling the front layer on desktop. Owned books carry
 their rose resume bar (Foggy Trails, The Quiet Lodger, The Long Meridian). Three are requests, their
 art greyed and a pill in their tone: "Downloading · 64%" and "Downloading · 18%" in the accent

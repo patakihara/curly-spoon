@@ -21,6 +21,32 @@ export default function Browse({ data }) {
             </Each>
           </LayoutGrid>
         </Section>
+        <Section title="Up next">
+          <Shelf>
+            <Each of={data.upNext} as="item">
+              <MediaCard
+                title={item.title}
+                sub={item.sub}
+                image={item.image}
+                progress={item.progress}
+                onClick={<Open page={item.page} ref={item.ref} />}
+              />
+            </Each>
+          </Shelf>
+        </Section>
+        <Section title="Still listening">
+          <Shelf>
+            <Each of={data.stillListening} as="item">
+              <MediaCard
+                title={item.title}
+                sub={item.sub}
+                image={item.image}
+                progress={item.progress}
+                onClick={<Open page={item.page} ref={item.ref} />}
+              />
+            </Each>
+          </Shelf>
+        </Section>
         <Section>
           <LayoutGrid columns={1} maxWidth="var(--grid-max-width-form)">
             <FeatureCard

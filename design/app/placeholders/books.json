@@ -22,8 +22,22 @@
     }
   ],
   "sort": {
+    "ref": "books",
     "value": "Title",
-    "options": ["Title", "Author", "Random"]
+    "options": [
+      {
+        "key": "title",
+        "label": "Title"
+      },
+      {
+        "key": "artist",
+        "label": "Author"
+      },
+      {
+        "key": "random",
+        "label": "Random"
+      }
+    ]
   },
   "library": [
     {

@@ -39,7 +39,7 @@ import net.develivarr.auralis.ui.sonora.Shelf
 /** Author, as design/app/pages/author.page.jsx draws it on the phone, with its placeholder data. */
 @Composable
 fun AuthorPage(navController: NavController, actions: PageActions) {
-    BackHandler { closePage(navController, Route.Books) }
+    BackHandler { closePage(navController, Route.Books()) }
     BackdropShell(
         BackdropShellProps(
             back = {
@@ -51,7 +51,7 @@ fun AuthorPage(navController: NavController, actions: PageActions) {
                                 IconButtonProps(
                                     icon = "close",
                                     label = "Close",
-                                    onClick = { closePage(navController, Route.Books) },
+                                    onClick = { closePage(navController, Route.Books()) },
                                 ),
                             )
                         },

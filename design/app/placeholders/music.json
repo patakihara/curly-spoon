@@ -17,8 +17,22 @@
     }
   ],
   "sort": {
+    "ref": "music",
     "value": "Title",
-    "options": ["Title", "Artist", "Random"]
+    "options": [
+      {
+        "key": "title",
+        "label": "Title"
+      },
+      {
+        "key": "artist",
+        "label": "Artist"
+      },
+      {
+        "key": "random",
+        "label": "Random"
+      }
+    ]
   },
   "library": [
     {
