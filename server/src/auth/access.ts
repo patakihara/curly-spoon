@@ -34,6 +34,8 @@ export interface AccessOptions {
   cookieSecure: CookieSecure;
   /** Where browsers load the app from; `undefined` allows the request's own origin. */
   publicOrigin: string | undefined;
+  /** The clock sessions are checked against, the same one sign-in mints them on. */
+  now?: () => number;
 }
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
@@ -68,6 +70,7 @@ function bearerToken(header: string | undefined): string | undefined {
 
 export function registerAccess(app: FastifyInstance, options: AccessOptions): void {
   const { db, proxy, cookieSecure, publicOrigin } = options;
+  const now = options.now ?? Date.now;
   app.decorateRequest('user', null);
   app.decorateRequest('sessionToken', null);
   app.decorateRequest('deviceId', null);
@@ -89,7 +92,7 @@ export function registerAccess(app: FastifyInstance, options: AccessOptions): vo
     if (hasCookie && bearer !== undefined) return refuse(reply, 400, 'ambiguous_credentials');
 
     if (bearer !== undefined) {
-      const session = validateSession(db, bearer, 'bearer');
+      const session = validateSession(db, bearer, 'bearer', now());
       const user = session ? getUserById(db, session.userId) : null;
       if (session !== null && user !== null) {
         request.user = user;
@@ -100,7 +103,7 @@ export function registerAccess(app: FastifyInstance, options: AccessOptions): vo
       if (UNSAFE_METHODS.has(request.method) && !fromOwnSite(request, publicOrigin)) {
         return refuse(reply, 403, 'cross_origin');
       }
-      const session = validateSession(db, token, 'cookie');
+      const session = validateSession(db, token, 'cookie', now());
       const user = session ? getUserById(db, session.userId) : null;
       if (session === null || user === null) {
         clearSessionCookie(request, reply, cookieSecure);
@@ -109,7 +112,7 @@ export function registerAccess(app: FastifyInstance, options: AccessOptions): vo
         request.sessionToken = token;
         request.deviceId = session.deviceId;
         if (session.shouldRotate) {
-          const rotated = rotateSession(db, token);
+          const rotated = rotateSession(db, token, now());
           if (rotated) {
             request.sessionToken = rotated.token;
             setSessionCookie(request, reply, cookieSecure, rotated.token, rotated.expiresAt);

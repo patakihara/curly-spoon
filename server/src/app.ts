@@ -112,7 +112,13 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   });
   app.setErrorHandler(answerFailure);
   await app.register(fastifyCookie);
-  registerAccess(app, { db, proxy, cookieSecure, publicOrigin: options.publicOrigin });
+  registerAccess(app, {
+    db,
+    proxy,
+    cookieSecure,
+    publicOrigin: options.publicOrigin,
+    now: options.now ?? Date.now,
+  });
 
   const commit = options.commit ?? null;
   const signOn = (options.signOn ?? null) !== null;
