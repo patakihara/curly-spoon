@@ -1,4 +1,4 @@
-import { type LibraryEntry, LibraryList } from '@auralis/schema';
+import { type FeedCard, type LibraryEntry, LibraryList } from '@auralis/schema';
 import { describe, expect, it } from 'vitest';
 import { frame as books } from '../generated/pages/Books';
 import { frame as browse } from '../generated/pages/Browse';
@@ -18,6 +18,7 @@ const entry = (over: Partial<LibraryEntry>): LibraryEntry => ({
 });
 
 const list = (...items: LibraryEntry[]) => LibraryList.parse({ items, sort: 'title', seed: null });
+const noFeed = { shelves: [] };
 
 describe('[M1.shell] the library homes from GET /api/library/{medium}', () => {
   it('lists each book as a card that opens its page by its ref, with its author, art and progress', () => {
@@ -35,7 +36,7 @@ describe('[M1.shell] the library homes from GET /api/library/{medium}', () => {
     ]);
     // The page's own words stay as the canvas has them.
     expect(data.tabs).toEqual(books.placeholder.tabs);
-    expect(data.sort).toEqual(books.placeholder.sort);
+    expect(data.sort).toEqual({ ...books.placeholder.sort, value: 'Title' });
   });
 
   it('draws a card with no art and no author without a broken image or a stray word', () => {
@@ -146,6 +147,7 @@ describe('[M1.shell] Browse, the home page, from the library lists', () => {
         }),
       ),
     ],
+    noFeed,
     browse.placeholder,
   );
 
@@ -163,7 +165,9 @@ describe('[M1.shell] Browse, the home page, from the library lists', () => {
   });
 
   it('shows nothing else, none of the canvas’s samples, and names every section it draws', () => {
-    expect(data.sections).toEqual(browse.placeholder.sections);
+    expect(data.sections).toEqual(
+      browse.placeholder.sections.filter((s) => s !== 'Up next' && s !== 'Still listening'),
+    );
     expect(data.recentlyAdded).toEqual([]);
     expect(data.people).toEqual([]);
     expect(data.pickedForYou).toEqual([]);
@@ -175,9 +179,101 @@ describe('[M1.shell] Browse, the home page, from the library lists', () => {
   it('leaves its first shelf out when you are part way through nothing', () => {
     const none = browseData(
       [list(entry({ title: 'Unstarted', progress: null }))],
+      noFeed,
       browse.placeholder,
     );
     expect(none.jumpBackIn).toEqual([]);
-    expect(none.sections).toEqual(browse.placeholder.sections.slice(1));
+    expect(none.sections).not.toContain('Jump back in');
+  });
+});
+
+describe('[M2.sorting] the library homes say the order they are in', () => {
+  const sorted = (sort: 'title' | 'artist' | 'random') =>
+    LibraryList.parse({ items: [], sort, seed: sort === 'random' ? 7 : null });
+
+  it('[M2.sorting] names the sort the server answered with, in each page’s own words', () => {
+    expect(booksData(sorted('artist'), books.placeholder).sort.value).toBe('Author');
+    expect(podcastsData(sorted('artist'), [], podcasts.placeholder).sort.value).toBe('Host');
+    expect(musicData(sorted('artist'), music.placeholder).sort.value).toBe('Artist');
+    expect(musicData(sorted('random'), music.placeholder).sort.value).toBe('Random');
+    expect(booksData(sorted('title'), books.placeholder).sort.value).toBe('Title');
+  });
+
+  it('[M2.sorting] keeps every sort to choose from, by the key the server takes', () => {
+    const { sort } = booksData(sorted('random'), books.placeholder);
+    expect(sort.ref).toBe('books');
+    expect(sort.options.map((o) => o.key)).toEqual(['title', 'artist', 'random']);
+  });
+});
+
+describe("[M2.sorting] Browse's Up next and Still listening, from GET /api/feed", () => {
+  const card = (over: Partial<FeedCard>): FeedCard => ({
+    ref: { source: 'abs', id: 'e1' },
+    kind: 'episode',
+    title: 'Part Two',
+    sub: 'A Show',
+    art: '/api/media/abs:s1/art',
+    progress: 0.25,
+    availability: { kind: 'owned' },
+    ...over,
+  });
+  const book = card({
+    ref: { source: 'abs', id: 'b1' },
+    kind: 'book',
+    title: 'The Salt Road',
+    sub: 'Rosa Elin',
+    art: null,
+    progress: null,
+  });
+
+  it('[M2.sorting/b] shows each Up next card opening its book or episode, named by its kind', () => {
+    const data = browseData(
+      [],
+      { shelves: [{ id: 'up-next', items: [card({}), book] }] },
+      browse.placeholder,
+    );
+    expect(data.upNext).toEqual([
+      {
+        title: 'Part Two',
+        page: 'episode',
+        ref: 'abs:e1',
+        sub: 'Episode · A Show',
+        image: '/api/media/abs:s1/art?size=medium',
+        progress: 0.25,
+      },
+      {
+        title: 'The Salt Road',
+        page: 'book',
+        ref: 'abs:b1',
+        sub: 'Book · Rosa Elin',
+        image: '',
+        progress: null,
+      },
+    ]);
+    expect(data.stillListening).toEqual([]);
+    expect(data.sections).toContain('Up next');
+    expect(data.sections, 'no titled empty shelf').not.toContain('Still listening');
+  });
+
+  it('[M2.sorting/b] fills Still listening from the second shelf, and draws a card with no sub as its kind alone', () => {
+    const data = browseData(
+      [],
+      {
+        shelves: [
+          { id: 'up-next', items: [card({})] },
+          { id: 'second-recent', items: [card({ sub: null })] },
+        ],
+      },
+      browse.placeholder,
+    );
+    expect(data.stillListening.map((c) => c.sub)).toEqual(['Episode']);
+    expect(data.sections.slice(0, 2)).toEqual(['Up next', 'Still listening']);
+  });
+
+  it('[M2.sorting/b] leaves both shelves out, unnamed, while the feed holds none', () => {
+    const data = browseData([], noFeed, browse.placeholder);
+    expect(data.upNext).toEqual([]);
+    expect(data.sections).not.toContain('Up next');
+    expect(data.sections).not.toContain('Still listening');
   });
 });

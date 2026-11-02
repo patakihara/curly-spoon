@@ -56,6 +56,8 @@ import { emptySearch, loadSearchPage, searchLive, type SearchLoaded } from './se
 import { SignInScreen } from './sign-in';
 import { listCards, listData } from './lists';
 import {
+  feedOrNone,
+  libraryAsk,
   listsOrNone,
   loadItem,
   loadLibraries,
@@ -72,7 +74,8 @@ import { answerFrom, type Answer, pageKey, SignedOut } from './store';
  * wherever the route table draws it: a route's page, the page a player sheet is drawn over, a
  * player tab's page in the side panel, and the back layer and subheader the page's frame hands
  * the shell. One screen per page: Browse's first shelf and the library homes from
- * `GET /api/library/{medium}`, Podcasts' lists from `GET /api/lists`, a book, show, episode or
+ * `GET /api/library/{medium}`, in the order their address asks, which their sort menu replaces,
+ * Browse's Up next and Still listening from `GET /api/feed`, Podcasts' lists from `GET /api/lists`, a book, show, episode or
  * album from `GET /api/items/{ref}`, a list from `GET /api/lists/{id}`, whose Play plays it through
  * its own route (`listPlayOf`) and whose menu renames, turns round or deletes it, a book's, show's or
  * episode's menu adding it to your lists (`./menus`), the queue from `GET /api/queues/{active}`, Search from what is typed into it (`../query`) and
@@ -141,8 +144,22 @@ function unserved<T>(
 
 const searchEmpty = emptySearch(searchFrame.placeholder);
 
-const listPath = routePages.find((page) => page.id === 'list')!.path;
-const podcastsPath = routePages.find((page) => page.id === 'podcasts')!.path;
+const pathOf = (id: string) => routePages.find((page) => page.id === id)!.path;
+const listPath = pathOf('list');
+const podcastsPath = pathOf('podcasts');
+
+/** A seed for a fresh shuffle: any unsigned 32-bit whole number. */
+const freshSeed = () => crypto.getRandomValues(new Uint32Array(1))[0]!;
+
+/**
+ * A library home's sort menu: the chosen sort replaces the page's address, which loads the list in
+ * that order. Random draws a fresh seed each time it is chosen, even while already shuffled, which
+ * is the reshuffle; the seed in the address keeps that order through a reload or going back.
+ */
+const sortVerbs = (path: string) => async (_api: ApiClient, _ref: string, key: string) => ({
+  open: `${path}?${new URLSearchParams(key === 'random' ? { sort: key, seed: String(freshSeed()) } : { sort: key })}`,
+  replace: true,
+});
 
 /** An item's verbs: adding it to a list, opening a new list made with it. */
 const itemVerbs = async (api: ApiClient, ref: string, key: string) => {
@@ -155,36 +172,44 @@ const screens: Screen<never>[] = [
     name: 'browse',
     Page: Browse,
     frame: browseFrame,
-    empty: browseData([], browseFrame.placeholder),
-    load: async (api) => browseData(await loadLibraries(api), browseFrame.placeholder),
+    empty: browseData([], { shelves: [] }, browseFrame.placeholder),
+    load: async (api) => {
+      const [lists, feed] = await Promise.all([loadLibraries(api), feedOrNone(api)]);
+      return browseData(lists, feed, browseFrame.placeholder);
+    },
   } satisfies Screen<typeof browseFrame.placeholder>,
   {
     name: 'books',
     Page: Books,
     frame: booksFrame,
     empty: { ...booksFrame.placeholder, library: [] },
-    load: async (api) => booksData(await loadLibrary(api, 'books'), booksFrame.placeholder),
+    load: async (api, params) =>
+      booksData(await loadLibrary(api, 'books', libraryAsk(params)), booksFrame.placeholder),
+    verbs: sortVerbs(pathOf('books')),
   } satisfies Screen<typeof booksFrame.placeholder>,
   {
     name: 'podcasts',
     Page: Podcasts,
     frame: podcastsFrame,
     empty: { ...podcastsFrame.placeholder, library: [], lists: [] },
-    load: async (api) => {
-      const { library, lists } = await loadPodcasts(api);
+    load: async (api, params) => {
+      const { library, lists } = await loadPodcasts(api, libraryAsk(params));
       return podcastsData(
         library,
         lists === null ? null : listCards(lists),
         podcastsFrame.placeholder,
       );
     },
+    verbs: sortVerbs(podcastsPath),
   } satisfies Screen<typeof podcastsFrame.placeholder>,
   {
     name: 'music',
     Page: Music,
     frame: musicFrame,
     empty: { ...musicFrame.placeholder, library: [] },
-    load: async (api) => musicData(await loadLibrary(api, 'music'), musicFrame.placeholder),
+    load: async (api, params) =>
+      musicData(await loadLibrary(api, 'music', libraryAsk(params)), musicFrame.placeholder),
+    verbs: sortVerbs(pathOf('music')),
   } satisfies Screen<typeof musicFrame.placeholder>,
   {
     name: 'book',
@@ -336,8 +361,8 @@ function useScreenData<T, L>(screen: Screen<T, L>): Drawn<T> | undefined {
 }
 
 /**
- * The verbs of `screen`'s menu, for the page to hand down: none on the canvas, or while its menu
- * holds none. A verb's page opens after it, replacing a list deleted; a list changed loads again;
+ * The verbs of `screen`'s menu (a library home's: its sorts), for the page to hand down: none on
+ * the canvas, or while its menu holds none. A verb's page opens after it, replacing a list deleted; a list changed loads again;
  * a refusal for want of a sign-in goes to sign in, and any other failure is logged, the shell
  * binding no status to show it in.
  */
@@ -347,7 +372,8 @@ function useVerbs<T>(screen: Screen<T>, drawn: Drawn<T> | undefined): Choose | n
   const params = useParams();
   const verbs = screen.verbs;
   const load = screen.load;
-  const menu = (drawn?.data as { menu?: unknown[] } | undefined)?.menu ?? [];
+  const data = drawn?.data as { menu?: unknown[]; sort?: { options: unknown[] } } | undefined;
+  const menu = data?.menu ?? data?.sort?.options ?? [];
   const live = drawn !== undefined && menu.length > 0;
   return useMemo(() => {
     if (verbs === undefined) return null;

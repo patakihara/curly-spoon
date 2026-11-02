@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { createApiClient } from '../api/client';
 import {
+  feedOrNone,
+  libraryAsk,
+  loadFeed,
   loadItem,
   loadLibrary,
   loadList,
@@ -216,5 +219,88 @@ describe('[M2.lists] what the Podcasts page reads from the API', () => {
     await expect(loadPodcasts(signedOut.client)).rejects.toBeInstanceOf(SignedOut);
     const noShows = api({ '/api/lists': [200, { lists: [] }] });
     await expect(loadPodcasts(noShows.client)).rejects.toThrow();
+  });
+});
+
+describe('[M2.sorting] the order a library home asks for, from its address', () => {
+  it('[M2.sorting] asks for title, artist or random, and a seed only with random', () => {
+    expect(libraryAsk({})).toEqual({});
+    expect(libraryAsk({ sort: 'artist' })).toEqual({ sort: 'artist' });
+    expect(libraryAsk({ sort: 'random', seed: '42' })).toEqual({ sort: 'random', seed: 42 });
+    expect(libraryAsk({ sort: 'title', seed: '42' }), 'a kept seed is dropped').toEqual({
+      sort: 'title',
+    });
+  });
+
+  it('[M2.sorting] ignores a sort or seed the server would refuse, so the page still loads', () => {
+    expect(libraryAsk({ sort: 'size' })).toEqual({});
+    expect(libraryAsk({ sort: 'random', seed: '-1' })).toEqual({ sort: 'random' });
+    expect(libraryAsk({ sort: 'random', seed: '1.5' })).toEqual({ sort: 'random' });
+    expect(libraryAsk({ sort: 'random', seed: 'abc' })).toEqual({ sort: 'random' });
+    expect(libraryAsk({ sort: 'random', seed: String(2 ** 32) })).toEqual({ sort: 'random' });
+    expect(libraryAsk({ sort: 'random', seed: String(2 ** 32 - 1) })).toEqual({
+      sort: 'random',
+      seed: 2 ** 32 - 1,
+    });
+  });
+});
+
+describe('[M2.sorting] what the library homes and Browse read from the API', () => {
+  /** An API answering each path from `answers`, recording each path asked for and its query. */
+  function asking(answers: Record<string, [number, unknown]>) {
+    const asked: string[] = [];
+    const client = createApiClient({
+      baseUrl: 'http://auralis.test',
+      fetch: async (request) => {
+        const url = new URL(request.url);
+        asked.push(`${url.pathname}${url.search}`);
+        const [status, body] = answers[url.pathname] ?? [404, { error: 'not_found' }];
+        return new Response(JSON.stringify(body), {
+          status,
+          headers: { 'content-type': 'application/json' },
+        });
+      },
+    });
+    return { client, asked };
+  }
+
+  it('[M2.sorting] asks for a library list in the order asked, with its seed', async () => {
+    const shuffled = { items: [], sort: 'random', seed: 7 };
+    const { client, asked } = asking({ '/api/library/books': [200, shuffled] });
+    expect(await loadLibrary(client, 'books', { sort: 'random', seed: 7 })).toEqual(shuffled);
+    await loadLibrary(client, 'books', {}).catch(() => undefined);
+    expect(asked).toEqual(['/api/library/books?sort=random&seed=7', '/api/library/books']);
+  });
+
+  const card = {
+    ref: { source: 'abs', id: 'e1' },
+    kind: 'episode',
+    title: 'Part Two',
+    sub: 'A Show',
+    art: '/api/media/abs:s1/art',
+    progress: null,
+    availability: { kind: 'owned' },
+  };
+
+  it("[M2.sorting] reads Browse's shelves, parsed", async () => {
+    const feed = { shelves: [{ id: 'up-next', items: [card] }] };
+    const { client, asked } = asking({ '/api/feed': [200, feed] });
+    expect(await loadFeed(client)).toEqual(feed);
+    expect(asked).toEqual(['/api/feed']);
+  });
+
+  it('[M2.sorting] reads no shelves when the feed fails, but a refusal for want of a sign-in still throws', async () => {
+    expect(await feedOrNone(asking({ '/api/feed': [500, { error: 'internal' }] }).client)).toEqual({
+      shelves: [],
+    });
+    expect(
+      await feedOrNone(
+        asking({ '/api/feed': [200, { shelves: [{ id: 'x', items: [] }] }] }).client,
+      ),
+      'an answer that does not parse is a failure',
+    ).toEqual({ shelves: [] });
+    await expect(
+      feedOrNone(asking({ '/api/feed': [401, { error: 'signed_out' }] }).client),
+    ).rejects.toBeInstanceOf(SignedOut);
   });
 });
