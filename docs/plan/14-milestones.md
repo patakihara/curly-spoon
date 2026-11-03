@@ -5,7 +5,7 @@ part: Delivery
 ---
 ## Milestones
 
-**Backend first**, as you asked: _"Forget the frontend for now. Go straight to the backend."_ M0 keeps the design system, canvas and Android foundations it already built; new frontend work waits for M5, where both apps catch up, with parity. M1 to M4 build the server against your real servers, each slice exercised through a minimal web shell, the PWA on your phone. The shell grows with each milestone by the plain pages its exit needs: generated Sonora pages wired to real endpoints by hand-written code, plus bindings a page lacks, added on its canvas page and republished with a fresh comparison: no new design, no screenshot matching. A milestone ends when **you** have used it, not when CI is green.
+**Backend first**, as you asked: _"Forget the frontend for now. Go straight to the backend."_ New frontend work waits for M5, where both apps catch up, with parity. M1 to M4 build the server against your real servers, each slice exercised through a minimal web shell, the PWA on your phone. The shell grows with each milestone by the plain pages its exit needs: generated Sonora pages wired to real endpoints by hand-written code, plus bindings a page lacks, added on its canvas page and republished with a fresh comparison: no new design, no screenshot matching. A milestone ends when **you** have used it, not when CI is green.
 
 ### M0 · Foundations
 
@@ -67,8 +67,8 @@ _Done when:_ (a) Sofia's sign-off.
   _Done when:_ (a) a test on Jellyfin's recorded lyrics asserts `GET /lyrics/{ref}` returns synced lines with their times; (b) a test on an LRCLIB recording asserts a track without Jellyfin lyrics gets synced lyrics stored in the cache; (c) a test asserts a second request for those lyrics makes no LRCLIB call.
 - **[M2.lists]** Listening lists, podcast playlists, The Digest and custom digests.
   _Done when:_ (a) a test creates a listening list and a podcast playlist through the API and plays each in order; (b) a test asserts The Digest holds subscribed shows' unplayed episodes from the last 14 days and no older ones; (c) a test creates a custom digest from chosen shows and asserts its episodes; (d) a test finishes one digest episode and skips another, and asserts each is marked played and leaves the digest, and that show's Up next and autoplay stay put; (e) a test plays a digest and asserts the previous queue is saved, playing its current or next episode resumes it, and playing the digest or an episode from its page resumes the digest's queue.
-- **[M2.sorting]** Library sorts, Random among them; Browse's Up next and second-most-recent from owned content, through `GET /feed` (its full composer stays M4.browse).
-  _Done when:_ (a) a test asserts `GET /library/{medium}` sorts by title, artist and Random, and Random with a fixed seed gives that seed's order; (b) a test asserts Browse's Up next and second-most-recent book and show each hold only owned items from the user's history, ignoring digest plays.
+- **[M2.sorting]** Library sorts, Random among them, and a show's episodes oldest or newest first; Browse's Up next and second-most-recent from owned content, through `GET /feed` (its full composer stays M4.browse).
+  _Done when:_ (a) a test asserts `GET /library/{medium}` sorts by title, artist and Random, and Random with a fixed seed gives that seed's order; (b) a test asserts Browse's Up next and second-most-recent book and show each hold only owned items from the user's history, ignoring digest plays; (c) a Playwright test asserts a serial and an episodic show's sort bars name their order, and flipping one reverses its episodes, not autoplay's next.
 - **[M2.settings]** Settings stored per user in `GET/PUT /settings`: theme, autoplay switches, first-run setup, and queue style, which every device follows.
   _Done when:_ (a) a test round-trips every setting through `GET/PUT /settings`.
 

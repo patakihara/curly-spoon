@@ -16,6 +16,5 @@ part: Delivery
 - Watched-state and position sync on your account: reading watch history and marking videos watched with sign-in cookies works in the extractor but is untried here; no known tool sets YouTube's resume position to a real position rather than "the end"; exported cookies' lifetime is unknown (M3.ytsync).
 - Cutting SponsorBlock segments without re-encoding is only as precise as the audio's frame size (tens of milliseconds on YouTube), which should be inaudible; and whether Audiobookshelf takes a re-cut file of an unstarted episode cleanly, new length and no stale progress (M3.ytshows).
 - Whether Auralis's container can catch Audiobookshelf opening a stub; today's daemon needs a filesystem-wide watch and admin capability (M3.stubs).
-- That suggestions answer within about 50&nbsp;ms on mediaserver's index and hardware (M2.search).
 - Recommendation quality, measured by the held-out replay score on your history; YouTube's watch history, missing from the first takeout, and whether it tells music from video (M4.reco).
 :::
