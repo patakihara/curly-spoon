@@ -1101,6 +1101,26 @@ describe('[M1.shell/e] Play now on an episode while another show plays, as the w
   });
 });
 
+describe('[M1.shell/e] Play now after a Back while another show plays', () => {
+  it('[M1.shell/e] plays the next episode of the show played now, not the episode Back left', async () => {
+    const s = await server();
+    const eps = (json(abs('index-show-2')) as { media: { episodes: { id: string }[] } }).media
+      .episodes;
+    const left = ref('abs', eps[0]!.id);
+    await s.ok(s.put('kara-phone', ref('abs', eps[1]!.id), 'now'));
+    await s.ok(s.put('kara-phone', left, 'now'));
+    await s.stepped('kara-phone', 'back');
+
+    const plan = await s.play('kara-phone', episode);
+    expect(plan.next).toEqual(nextEpisode);
+    expect(s.stored('kara-phone').queues.spoken.user).toEqual([]);
+    expect(s.stored('kara-phone').history.map((h) => h.ref)).toContainEqual(left);
+
+    const next = await s.stepped('kara-phone', 'next');
+    expect(next.currents.spoken?.ref).toEqual(nextEpisode);
+  });
+});
+
 describe('an episode plays through its show', () => {
   it('opens the episode’s session on its show, and streams the episode’s own file', async () => {
     const s = await server();

@@ -425,7 +425,7 @@ describe('[M1.sessions/d] Back and Forward', () => {
     expect(s.history.map((h) => h.ref)).toEqual([first.tracks[0], episodeE, trackX]);
   });
 
-  it('never takes a play out of history, and a new play ends the walk', () => {
+  it('never takes a play out of history, and a new play ends the walk without queuing its plays', () => {
     const d = deps();
     let s = run(empty(), (s) => add(s, first.album, 'now', d));
     s = step(s, 'next', d);
@@ -435,14 +435,24 @@ describe('[M1.sessions/d] Back and Forward', () => {
     s = step(s, 'back', d);
     s = step(s, 'back', d);
     expect(s.history).toEqual(history);
+    // Put next during the walk: queued by you, so it stays queued once the walk ends.
+    s = run(s, (s) => add(s, trackY, 'next', d));
 
     s = run(s, (s) => add(s, trackX, 'now', d));
-    expect(s.history).toEqual(history);
-    expect(order(s, 'music')).toEqual([trackX, ...first.tracks.slice(1)]);
+    // The track Back first left goes to history as played; the replays it stepped over are there.
+    expect(s.history.map((h) => h.ref)).toEqual([...history.map((h) => h.ref), first.tracks[2]]);
+    expect(order(s, 'music')).toEqual([trackX, trackY, ...first.tracks.slice(3)]);
 
     s = step(s, 'next', d);
-    expect(refOf(s.queues.music.current)).toEqual(first.tracks[1]);
-    expect(s.history.map((h) => h.ref)).toEqual([...history.map((h) => h.ref), trackX]);
+    expect(refOf(s.queues.music.current)).toEqual(trackY);
+    s = step(s, 'next', d);
+    expect(refOf(s.queues.music.current)).toEqual(first.tracks[3]);
+    expect(s.history.map((h) => h.ref)).toEqual([
+      ...history.map((h) => h.ref),
+      first.tracks[2],
+      trackX,
+      trackY,
+    ]);
   });
 
   it('plays a song put next during a walk right after the replay, and records each play once', () => {
@@ -575,10 +585,12 @@ describe('[M1.sessions/d] Back and Forward', () => {
     expect(switched.history.map((h) => h.ref)).toEqual(history);
 
     s = run(s, (s) => add(s, episodeF, 'now', d));
+    // Play now ends the walk: the song Back first left is recorded, the replay is not again.
+    expect(s.history.map((h) => h.ref)).toEqual([...history, trackX]);
     s = switchTo(s, 'music', d);
     s = step(s, 'next', d);
-    expect(refOf(s.queues.music.current)).toEqual(trackX);
-    expect(s.history.map((h) => h.ref)).toEqual(history);
+    expect(refOf(s.queues.music.current)).toEqual(first.tracks[1]);
+    expect(s.history.map((h) => h.ref)).toEqual([...history, trackX]);
   });
 });
 
@@ -655,7 +667,9 @@ describe('a digest’s own queue', () => {
     expect(saved.user.some((i) => i.walk !== undefined)).toBe(false);
     const back = resumeSaved(entered, null, d);
     expect(back.queues.spoken.user.some((i) => i.walk !== undefined)).toBe(false);
-    expect(order(back, 'spoken')).toEqual(order(walking, 'spoken'));
+    // Entering the digest is a new play: the episode Back left is played, not queued again.
+    expect(order(back, 'spoken')).toEqual([episodeE]);
+    expect(back.history.map((h) => h.ref)).toEqual([episodeE, episodeF]);
   });
 
   it('gives an entry brought back a new id when its id is already taken', () => {

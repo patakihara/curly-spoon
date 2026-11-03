@@ -15,7 +15,9 @@
  * earlier play current again as a replay (`replayOf`), and the item it leaves joins the walk
  * (`walk`) at the front of its queue. Forward plays the walk before the rest of the queue, in
  * queue order: across the two queues, the one whose next walk entry Back stepped over last goes
- * first. Ending a replay records nothing.
+ * first. Ending a replay records nothing. A new play ends the walk and its plays go back to
+ * history, never into the queue, so nothing plays after it that only a Back put there; the switch
+ * ends it leaving them queued.
  *
  * A digest plays in a queue of its own, which stands in for the spoken queue (`spokenDigest`
  * names its digest): playing it puts the spoken queue aside, saved whole with its position and
@@ -145,14 +147,14 @@ export function addEntries(
     // keeping its queue, and plays in your own queue.
     if (type === 'spoken' && s.spokenDigest !== null && !holds(queue, expansion.entries)) {
       const after = followed(s, s.queues[s.active].current);
-      endWalk(s);
+      endWalk(s, deps);
       swapSpoken(s, null, after, deps);
     }
     // What played immediately before it: the item the controls leave, ended or paused.
     const left = s.queues[s.active].current;
     const ended = retire(s, type, deps);
     const after = type === s.active ? ended : followed(s, left);
-    endWalk(s);
+    endWalk(s, deps);
     const [current, ...rest] = items as [SessionItem, ...SessionItem[]];
     const into = s.queues[type];
     start(into, current, after);
@@ -192,7 +194,7 @@ export function enterDigest(
     startOn ?? (was !== null && episodes.some((e) => sameEntry(e, was)) ? was : episodes[0]);
   if (first === undefined) return null;
   const after = followed(s, s.queues[s.active].current);
-  endWalk(s);
+  endWalk(s, deps);
   const same = was !== null && sameEntry(was, first);
   const current: SessionItem = {
     itemId: same ? was.itemId : deps.newId(),
@@ -232,7 +234,7 @@ export function resumeSaved(
   if (!session.saved.some((q) => q.owner === owner)) return session;
   const s = structuredClone(session);
   const after = followed(s, s.queues[s.active].current);
-  endWalk(s);
+  endWalk(s, deps);
   swapSpoken(s, owner, after, deps);
   s.active = 'spoken';
   if (s.switchAfterCurrent === 'spoken') s.switchAfterCurrent = null;
@@ -308,7 +310,7 @@ export function switchTo(session: SessionValue, queue: QueueType, deps: EngineDe
   if (queue === session.active) return session;
   const s = structuredClone(session);
   const after = followed(s, s.queues[s.active].current);
-  endWalk(s);
+  endWalk(s, deps, 'queued');
   s.switchAfterCurrent = null;
   play(s, queue, deps, after);
   return s;
@@ -368,11 +370,17 @@ function followed(s: SessionValue, item: SessionItem | null): number | undefined
  * during a walk included.
  */
 function before(s: SessionValue, seq: number): number | undefined {
+  const played = playedOrder(s);
+  return played[played.indexOf(seq) - 1];
+}
+
+/** Every play's seq, in the order things actually played. */
+function playedOrder(s: SessionValue): number[] {
   const played: number[] = [];
   for (const h of s.history) {
     played.splice(h.after === undefined ? 0 : played.indexOf(h.after) + 1, 0, h.seq);
   }
-  return played[played.indexOf(seq) - 1];
+  return played;
 }
 
 /**
@@ -461,16 +469,40 @@ function takeWalked(s: SessionValue): { queue: QueueType; item: SessionItem } | 
 }
 
 /**
- * Ends a walk: what it held stays queued as ordinary entries, played and recorded anew when
- * reached. A replay that is current stays one.
+ * Ends a walk. On a new play, its plays go back to history, not into the queue: a replay Back stepped over is
+ * already there and leaves the queue, and the item Back first left (walk place 0, never a replay)
+ * is recorded as played, after the last play so far, as Play now records the item it leaves.
+ * What was put next during the walk stays queued as ordinary entries, played and recorded when
+ * reached. The switch is no new play: what the walk held stays queued as ordinary entries
+ * (`queued`). A replay that is current stays one.
  */
-function endWalk(s: SessionValue): void {
+function endWalk(s: SessionValue, deps: EngineDeps, ends: 'history' | 'queued' = 'history'): void {
   for (const queue of QUEUES) {
-    for (const item of s.queues[queue].user) {
-      if (item.walk === undefined) continue;
+    const q = s.queues[queue];
+    q.user = q.user.filter((item) => {
+      if (item.walk === undefined) return true;
+      if (ends === 'queued') {
+        delete item.walk;
+        delete item.replayOf;
+        return true;
+      }
+      if (item.replayOf !== undefined) return false;
+      if (item.walk === 0) {
+        const last = playedOrder(s).at(-1);
+        s.history.push({
+          seq: (s.history.at(-1)?.seq ?? -1) + 1,
+          queue,
+          ref: item.ref,
+          ...(item.chapter === undefined ? {} : { chapter: item.chapter }),
+          playedAt: deps.now(),
+          ...(last === undefined ? {} : { after: last }),
+          ...(item.list === undefined ? {} : { list: item.list }),
+        });
+        return false;
+      }
       delete item.walk;
-      delete item.replayOf;
-    }
+      return true;
+    });
   }
 }
 
