@@ -1,4 +1,7 @@
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { readNav } from './nav.js';
+import { APP_DIR, REPO_ROOT } from './outputs.js';
 import type { PageTree, PropValue } from './page.js';
 import { framePage } from './shell.js';
 import { dataRoots, elements, readPage, shown, type Element } from './test-pages.js';
@@ -68,6 +71,7 @@ describe('Show', () => {
   const { tree, data } = readPage('show');
   const header = one(tree, 'MediaHeader');
   const episodes = data.episodes as Episode[];
+  const sort = data.sort as { ref: string; value: string; options: unknown[] };
 
   it('[M0.canvas] binds only the show: name, kind, host, meta, art, subscription, menu and the ref it acts on, sort, episodes, about and related shows', () => {
     expect(dataRoots(tree)).toEqual([
@@ -120,12 +124,32 @@ describe('Show', () => {
 
   it('[M0.canvas] sorts its episodes newest or oldest first, and lists them in that order', () => {
     const bar = one(tree, 'SortFilterBar');
-    expect(bar.props.label).toEqual(bound('data', 'sort'));
-    expect(['Newest first', 'Oldest first']).toContain(data.sort);
+    expect(bar.props.label).toEqual({ kind: 'binding', path: ['data', 'sort', 'value'] });
+    expect(['Newest first', 'Oldest first']).toContain(sort.value);
     const dates = episodes.map((e) => Date.parse(e.meta[0]!));
     expect(dates.every((d) => !Number.isNaN(d))).toBe(true);
     const newest = [...dates].sort((a, b) => b - a);
-    expect(dates).toEqual(data.sort === 'Newest first' ? newest : newest.reverse());
+    expect(dates).toEqual(sort.value === 'Newest first' ? newest : newest.reverse());
+  });
+
+  it('[M2.sorting] opens oldest and newest first as a menu from the bar, handing the choice to the show', () => {
+    const bar = one(tree, 'SortFilterBar');
+    expect(bar.props.items).toEqual({ kind: 'binding', path: ['data', 'sort', 'options'] });
+    expect(bar.props.onSelect).toEqual({
+      kind: 'choose',
+      params: { ref: ['data', 'sort', 'ref'] },
+    });
+    expect(sort.ref).toBe(data.ref);
+    expect(sort.options).toEqual([
+      { key: 'oldest', label: 'Oldest first' },
+      { key: 'newest', label: 'Newest first' },
+    ]);
+  });
+
+  it("[M2.sorting] keeps the episodes' sort in the address", () => {
+    expect(readNav(join(REPO_ROOT, APP_DIR)).pages.find((p) => p.id === 'show')?.route).toBe(
+      '/podcasts/:ref?sort',
+    );
   });
 
   it('[M0.canvas] marks the episodes you have played and the one you are part-way through', () => {

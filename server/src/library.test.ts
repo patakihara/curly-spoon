@@ -573,6 +573,7 @@ describe('[M1.shell] a book, show or album page, from the index and the personâ€
       progress: null,
       chapters: [],
       tracks: [],
+      sort: 'newest',
     });
     expect(page.episodes).toEqual(
       order.map((e) => ({
@@ -586,6 +587,37 @@ describe('[M1.shell] a book, show or album page, from the index and the personâ€
       })),
     );
     expect(page.episodes.filter((e) => e.finished)).toHaveLength(1);
+  });
+
+  it("[M2.sorting] names a show's own order, newest first unless serial, and lists it reversed when asked the other", async () => {
+    await index(db);
+    const s = await server();
+    const show = shows.find((sh) => sh.id === finished.libraryItemId)!;
+    const refs = (page: ItemDetail) => page.episodes.map((e) => e.ref.id);
+
+    const own = await s.page(`abs:${show.id}`);
+    expect(own.sort, 'a show whose feed was never read').toBe('newest');
+    expect(refs(own)).toEqual(episodesInOrder(db, show.id).map((e) => e.id));
+    expect(refs(own).length).toBeGreaterThan(1);
+    expect(await s.page(`abs:${show.id}?sort=newest`)).toEqual(own);
+    const flipped = await s.page(`abs:${show.id}?sort=oldest`);
+    expect(flipped.sort).toBe('oldest');
+    expect(refs(flipped)).toEqual(refs(own).reverse());
+
+    db.prepare(`UPDATE index_items SET episode_order = 'serial' WHERE upstream_id = ?`).run(
+      show.id,
+    );
+    const serial = await s.page(`abs:${show.id}`);
+    expect(serial.sort).toBe('oldest');
+    expect(refs(serial)).toEqual(episodesInOrder(db, show.id).map((e) => e.id));
+    expect(refs(await s.page(`abs:${show.id}?sort=newest`))).toEqual(refs(serial).reverse());
+  });
+
+  it('[M2.sorting] refuses a show page asked any order but oldest or newest first', async () => {
+    await index(db);
+    const s = await server();
+    const show = shows.find((sh) => sh.id === finished.libraryItemId)!;
+    expect((await s.item(`abs:${show.id}?sort=title`)).status).toBe(400);
   });
 
   it('[M1.shell] opens an album with its album artists and art, and its tracks in disc and track order', async () => {

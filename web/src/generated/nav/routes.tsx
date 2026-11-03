@@ -142,7 +142,7 @@ export const pages: readonly PageRoute[] = [
   { id: 'author', path: '/books/authors/:ref', query: [], title: 'Author', lights: 'books', close: 'opener', presentation: 'screen' },
   { id: 'series', path: '/books/series/:ref', query: [], title: 'Series', lights: 'books', close: 'opener', presentation: 'screen' },
   { id: 'podcasts', path: '/podcasts', query: ['sort','seed'], title: 'Podcasts', lights: 'podcasts', close: 'none', presentation: 'screen' },
-  { id: 'show', path: '/podcasts/:ref', query: [], title: 'Show', lights: 'podcasts', close: 'opener', presentation: 'screen' },
+  { id: 'show', path: '/podcasts/:ref', query: ['sort'], title: 'Show', lights: 'podcasts', close: 'opener', presentation: 'screen' },
   { id: 'episode', path: '/podcasts/episodes/:ref', query: [], title: 'Episode', lights: 'podcasts', close: 'opener', presentation: 'screen' },
   { id: 'list', path: '/lists/:ref', query: [], title: 'List', lights: 'podcasts', close: 'opener', presentation: 'screen' },
   { id: 'search', path: '/search', query: ['q'], title: 'Search', lights: 'search', close: 'none', presentation: 'screen' },

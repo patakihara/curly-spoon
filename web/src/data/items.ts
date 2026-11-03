@@ -1,4 +1,4 @@
-import { type ItemDetail, mediaRefKey } from '@auralis/schema';
+import { type EpisodeOrder, type ItemDetail, mediaRefKey } from '@auralis/schema';
 import { type AlbumData } from '../generated/pages/Album';
 import { type BookData } from '../generated/pages/Book';
 import { type EpisodeData } from '../generated/pages/Episode';
@@ -12,7 +12,8 @@ import { artAt, clock, day, emptied, span } from './format';
  * other episodes, an album's editions and more by the artist, every About) stays empty, so its
  * section draws with nothing in it. An author's or artist's ref stays empty too: there is no
  * such page to open yet, so the name draws as plain text. The page's own words (its kind, a
- * show's subscribe labels and sort) stay as the canvas has them.
+ * show's subscribe labels and its sorts) stay as the canvas has them; a show's sort bar names, in
+ * those words, the order its episodes came in, and chooses by the show's ref.
  */
 
 /** Where you are in the item, in seconds, from how far through it you are. */
@@ -58,6 +59,20 @@ export function bookData(detail: ItemDetail, page: BookData): BookData {
   };
 }
 
+/** A show's sort, in the page's words, naming `order`'s, or none. */
+function sortNamed(sort: ShowData['sort'], order: EpisodeOrder | undefined): string {
+  return sort.options.find((o) => o.key === order)?.label ?? '';
+}
+
+/**
+ * A show's page while its episodes load, or when they failed: drawn empty, its sort bar naming the
+ * order its address asks (`?sort`), and none when it asks none, the show's own order not yet known.
+ */
+export function showAwaited(page: ShowData, order: EpisodeOrder | undefined): ShowData {
+  const empty = emptied(page);
+  return { ...empty, sort: { ...empty.sort, value: sortNamed(page.sort, order) } };
+}
+
 export function showData(detail: ItemDetail, page: ShowData): ShowData {
   const unplayed = detail.episodes.filter((e) => !e.finished && e.progress === null).length;
   const count = detail.episodes.length;
@@ -71,7 +86,11 @@ export function showData(detail: ItemDetail, page: ShowData): ShowData {
     image: artAt(detail.art, 'medium'),
     following: true,
     subscribe: page.subscribe,
-    sort: page.sort,
+    sort: {
+      ref: mediaRefKey(detail.ref),
+      value: sortNamed(page.sort, detail.sort),
+      options: page.sort.options,
+    },
     episodes: detail.episodes.map((episode) => ({
       title: episode.title,
       ref: mediaRefKey(episode.ref),

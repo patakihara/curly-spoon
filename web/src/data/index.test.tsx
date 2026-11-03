@@ -226,6 +226,8 @@ describe('[M2.sorting] a library home before its list answers', () => {
       expect(at('/music?sort=artist'), `failed: ${failed}`).toBe('Artist');
       expect(at('/music?sort=random'), `failed: ${failed}`).toBe('Random');
       expect(at('/books'), `failed: ${failed}`).toBe('Title');
+      expect(at('/podcasts/abs:s1?sort=oldest'), `failed: ${failed}`).toBe('Oldest first');
+      expect(at('/podcasts/abs:s1?sort=newest'), `failed: ${failed}`).toBe('Newest first');
     }
   });
 });

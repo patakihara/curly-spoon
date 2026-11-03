@@ -5,8 +5,8 @@
  *
  * Before it starts, one index pass reads every library page the recordings hold, each page on
  * its own (the four-file book is on the books library's page 15, the show and the albums on page
- * 4), so the library lists hold the recorded books, shows and albums, the recorded show ordered by
- * its recorded feed. The scheduled index job stays
+ * 4), so the library lists hold the recorded books, shows and albums, each recorded show ordered
+ * by its recorded feed. The scheduled index job stays
  * off: a real run starts from the first page, which is not recorded.
  *
  * The sign-on is replayed from its recordings (discovery, keys, token exchange, userinfo) by a
@@ -199,13 +199,14 @@ async function indexRecordedPages(
   });
   const db = openDatabase(file);
   const passes: Parameters<typeof runIndex>[0][] = [];
-  // The recorded show's feed, so the index orders it as the serial show it is; any other show's
-  // feed is not read, and keeps the default order.
-  const showFeed = recordingsOf('feed').find((r) => r.call === 'show-1-feed')!;
+  // The recorded shows' feeds, so the index orders each as its feed says: the first serial, the
+  // second episodic. Any other feed is not read, and keeps the default order.
+  const showFeeds = recordingsOf('feed').filter((r) => /^show-\d+-feed$/.test(r.call));
   const feeds = async (url: string) => {
-    if (new URL(url).pathname !== showFeed.request.path) throw new Error(`no feed for ${url}`);
-    const { body } = showFeed.response;
-    if (body === null || !('text' in body)) throw new Error('show-1-feed has no text body');
+    const feed = showFeeds.find((r) => r.request.path === new URL(url).pathname);
+    if (feed === undefined) throw new Error(`no feed for ${url}`);
+    const { body } = feed.response;
+    if (body === null || !('text' in body)) throw new Error(`${feed.call} has no text body`);
     return parseFeed(body.text);
   };
   try {

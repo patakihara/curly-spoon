@@ -656,7 +656,7 @@ export interface components {
         /** @enum {string} */
         LyricsSource: "jellyfin" | "lrclib";
         /** @enum {string} */
-        DigestOrder: "oldest" | "newest";
+        EpisodeOrder: "oldest" | "newest";
         HealthResponse: {
             /** @enum {string} */
             status: "ok";
@@ -976,6 +976,7 @@ export interface components {
             episodes: components["schemas"]["ItemEpisode"][];
             tracks: components["schemas"]["ItemTrack"][];
             episode?: components["schemas"]["ItemEpisodeAbout"];
+            sort?: components["schemas"]["EpisodeOrder"];
         };
         /** @enum {string} */
         ArtSize: "small" | "medium" | "large";
@@ -1031,7 +1032,7 @@ export interface components {
             kind: components["schemas"]["ListKind"];
             name: string;
             theDigest: boolean;
-            order: components["schemas"]["DigestOrder"] | null;
+            order: components["schemas"]["EpisodeOrder"] | null;
             count: number;
             counts: components["schemas"]["ListCounts"];
             covers: string[];
@@ -1057,7 +1058,7 @@ export interface components {
             kind: components["schemas"]["ListKind"];
             name: string;
             theDigest: boolean;
-            order: components["schemas"]["DigestOrder"] | null;
+            order: components["schemas"]["EpisodeOrder"] | null;
             count: number;
             counts: components["schemas"]["ListCounts"];
             covers: string[];
@@ -1068,11 +1069,11 @@ export interface components {
             kind: components["schemas"]["ListKind"];
             name: string;
             shows?: components["schemas"]["MediaRef"][];
-            order?: components["schemas"]["DigestOrder"];
+            order?: components["schemas"]["EpisodeOrder"];
         };
         UpdateListBody: {
             name?: string;
-            order?: components["schemas"]["DigestOrder"];
+            order?: components["schemas"]["EpisodeOrder"];
             shows?: components["schemas"]["MediaRef"][];
         };
         AddListItemBody: {
@@ -2592,7 +2593,9 @@ export interface operations {
     };
     getItem: {
         parameters: {
-            query?: never;
+            query?: {
+                sort?: components["schemas"]["EpisodeOrder"];
+            };
             header?: never;
             path: {
                 ref: string;
@@ -2601,7 +2604,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Its header, then a book's chapters, a show's episodes in its order, an album's tracks, or an episode's show, notes and standing. */
+            /** @description Its header, then a book's chapters, a show's episodes oldest or newest first as asked (the show's own order when not), an album's tracks, or an episode's show, notes and standing. */
             200: {
                 headers: {
                     [name: string]: unknown;

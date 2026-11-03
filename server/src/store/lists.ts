@@ -7,7 +7,7 @@
  * here; which entries a list may hold, and what its digest rule picks, are the lists code's.
  */
 import { randomUUID } from 'node:crypto';
-import { DigestOrder, ListKind, type MediaRef, MediaSource } from '@auralis/schema';
+import { EpisodeOrder, ListKind, type MediaRef, MediaSource } from '@auralis/schema';
 import { z } from 'zod';
 import type { Db } from './connection.js';
 
@@ -22,7 +22,7 @@ export interface StoredList {
   /** True for The Digest alone. */
   theDigest: boolean;
   /** A digest's play order; null on every other list. */
-  order: DigestOrder | null;
+  order: EpisodeOrder | null;
   /** A list's entries in order, or a custom digest's shows; The Digest's are always empty. */
   items: MediaRef[];
   createdAt: number;
@@ -43,7 +43,7 @@ const ListRow = z.object({
   kind: ListKind,
   name: z.string(),
   all_shows: z.union([z.literal(0), z.literal(1)]),
-  play_order: DigestOrder.nullable(),
+  play_order: EpisodeOrder.nullable(),
   created_at: z.number().int(),
   updated_at: z.number().int(),
 });
@@ -98,7 +98,7 @@ export function ensureTheDigest(db: Db, userId: string, now: number = Date.now()
 export function createList(
   db: Db,
   userId: string,
-  list: { kind: ListKind; name: string; order?: DigestOrder; items?: readonly MediaRef[] },
+  list: { kind: ListKind; name: string; order?: EpisodeOrder; items?: readonly MediaRef[] },
   now: number = Date.now(),
 ): StoredList {
   const id = randomUUID();
@@ -139,7 +139,7 @@ export function updateList(
   db: Db,
   userId: string,
   id: string,
-  change: { name?: string; order?: DigestOrder },
+  change: { name?: string; order?: EpisodeOrder },
   now: number = Date.now(),
 ): StoredList | null {
   return db.transaction(() => {

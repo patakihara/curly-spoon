@@ -4,7 +4,7 @@ import { frame as album } from '../generated/pages/Album';
 import { frame as book } from '../generated/pages/Book';
 import { frame as episodePage } from '../generated/pages/Episode';
 import { frame as show } from '../generated/pages/Show';
-import { albumData, bookData, episodeData, showData } from './items';
+import { albumData, bookData, episodeData, showAwaited, showData } from './items';
 
 const detail = (over: Partial<ItemDetail>): ItemDetail =>
   ItemDetail.parse({
@@ -86,6 +86,7 @@ describe('[M1.shell] a show’s page from GET /api/items/{ref}', () => {
       kind: 'show',
       title: 'Megacorp',
       art: '/api/media/abs:s1/art',
+      sort: 'newest',
       episodes: [
         {
           ref: { source: 'abs', id: 'e2' },
@@ -148,6 +149,31 @@ describe('[M1.shell] a show’s page from GET /api/items/{ref}', () => {
     ]);
     expect(data.related).toEqual([]);
     expect(data.about).toBe('');
+  });
+
+  it('[M2.sorting] names the order its episodes came in on its sort bar, whose menu offers both', () => {
+    expect(data.sort).toEqual({
+      ref: 'abs:s1',
+      value: 'Newest first',
+      options: show.placeholder.sort.options,
+    });
+    const serial = showData(
+      detail({ ref: { source: 'abs', id: 's1' }, kind: 'show', sort: 'oldest' }),
+      show.placeholder,
+    );
+    expect(serial.sort.value).toBe('Oldest first');
+  });
+});
+
+describe('[M2.sorting] a show’s page before its episodes answer', () => {
+  it('names the order its address asks on the sort bar, and none when it asks none', () => {
+    expect(showAwaited(show.placeholder, 'oldest').sort).toEqual({
+      ref: '',
+      value: 'Oldest first',
+      options: [],
+    });
+    expect(showAwaited(show.placeholder, undefined).sort.value).toBe('');
+    expect(showAwaited(show.placeholder, 'newest').episodes).toEqual([]);
   });
 });
 

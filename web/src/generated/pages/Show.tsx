@@ -47,7 +47,20 @@ const placeholder = {
       "icon": "add"
     }
   ],
-  "sort": "Newest first",
+  "sort": {
+    "ref": "the-long-read",
+    "value": "Newest first",
+    "options": [
+      {
+        "key": "oldest",
+        "label": "Oldest first"
+      },
+      {
+        "key": "newest",
+        "label": "Newest first"
+      }
+    ]
+  },
   "episodes": [
     {
       "title": "The Night Ferry",
@@ -369,7 +382,7 @@ export default function Show({ data = placeholder, state = 'full' }: ShowProps) 
         />
       </Section>
       <Section title="Episodes" platform={platform}>
-        <SortFilterBar icon="swap_vert" label={data.sort} platform={platform} />
+        <SortFilterBar icon="swap_vert" label={data.sort.value} items={data.sort.options} onSelect={choose(data.sort.ref)} platform={platform} />
         {data.episodes.map((episode, i) => (
           <Fragment key={i}>
             <EpisodeRow title={episode.title} description={episode.description} meta={episode.meta} image={episode.image} progress={episode.progress} finished={episode.finished} absent={episode.absent} onClick={episode.ref ? () => navigate(generatePath('/podcasts/episodes/:ref', { ref: episode.ref })) : undefined} onPlay={play(episode.ref, 'spoken', 'now')} divider={true} platform={platform} />

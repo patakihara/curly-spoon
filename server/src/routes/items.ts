@@ -5,8 +5,10 @@
  * show. Anything else, a track included, answers 404 before any image or detail is asked for.
  *
  * - A book's page: its header, its length and its chapters from its own expanded answer.
- * - A show's page: its episodes in the show's order as the index holds it, each with how far
- *   through the person is and whether they finished it, from their `GET /api/me`.
+ * - A show's page: its episodes in the show's order as the index holds it (oldest first when
+ *   serial, newest first otherwise), or exactly reversed when the other order is asked (`?sort`),
+ *   each with how far through the person is and whether they finished it, from their
+ *   `GET /api/me`. The order asked is the page's alone: autoplay and every list keep the show's.
  * - An album's page: its tracks as the index holds them, in disc and track order.
  * - An episode's page: its show's title and art, its length and published date as the index
  *   holds them, how far through the person is and whether they finished it, from their
@@ -19,6 +21,7 @@
  */
 import {
   type ArtSize,
+  type EpisodeOrder,
   getItem,
   type ItemDetail,
   type ItemEpisode,
@@ -76,8 +79,14 @@ function bookChapters(
     .sort((a, b) => a.start - b.start);
 }
 
-function episodes(db: Db, show: StoredRow, access: AbsAccess): ItemEpisode[] {
-  return episodesInOrder(db, show.id).map((row) => {
+/** A show's own order: oldest first when its feed says serial, newest first otherwise. */
+const ownOrder = (show: StoredRow): EpisodeOrder =>
+  show.episodeOrder === 'serial' ? 'oldest' : 'newest';
+
+function episodes(db: Db, show: StoredRow, access: AbsAccess, sort: EpisodeOrder): ItemEpisode[] {
+  const own = episodesInOrder(db, show.id);
+  const listed = sort === ownOrder(show) ? own : own.reverse();
+  return listed.map((row) => {
     const { progress, finished } = access.standing(row.id);
     return {
       ref: { source: 'abs', id: row.id },
@@ -197,7 +206,7 @@ export function itemRoutes(
     };
   };
 
-  serve(app, getItem, async (request, _reply, _body, { params }): Promise<ItemDetail> => {
+  serve(app, getItem, async (request, _reply, _body, { params, query }): Promise<ItemDetail> => {
     const item = await openable(request, params.ref);
     const { row } = item;
     const none = { chapters: [], episodes: [], tracks: [] };
@@ -210,8 +219,9 @@ export function itemRoutes(
       };
     }
     if (item.kind === 'show') {
-      const list = episodes(db, row, item.access);
-      return { ...entry(row, 'show', null), duration: null, ...none, episodes: list };
+      const sort = query.sort ?? ownOrder(row);
+      const list = episodes(db, row, item.access, sort);
+      return { ...entry(row, 'show', null), duration: null, ...none, episodes: list, sort };
     }
     if (item.kind === 'episode') return episodePage(item);
     const detail = await item.abs.getBookDetail(row.id).catch(refusalFor);

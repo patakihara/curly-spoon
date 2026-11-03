@@ -181,6 +181,16 @@ fun ShowPage(navController: NavController, actions: PageActions) {
                                             SortFilterBarProps(
                                                 icon = "swap_vert",
                                                 label = "Newest first",
+                                                items = listOf(
+                                                    OverflowMenuItem(
+                                                        key = "oldest",
+                                                        label = "Oldest first",
+                                                    ),
+                                                    OverflowMenuItem(
+                                                        key = "newest",
+                                                        label = "Newest first",
+                                                    ),
+                                                ),
                                                 platform = Platform.MOBILE,
                                             ),
                                         )

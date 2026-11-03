@@ -36,7 +36,6 @@ export { CommitId, HealthResponse } from './health.js';
 export {
   AddListItemBody,
   CreateListBody,
-  DigestOrder,
   LIST_COVERS_MAX,
   LIST_ENTRIES_MAX,
   ListCounts,
@@ -62,7 +61,9 @@ export {
   ItemEpisode,
   ItemEpisodeAbout,
   ItemKind,
+  EpisodeOrder,
   ItemParams,
+  ItemQuery,
   ItemTrack,
   LibraryEntry,
   LibraryEntryKind,

@@ -13,7 +13,12 @@ export default function Show({ data }) {
           />
         </Section>
         <Section title="Episodes">
-          <SortFilterBar icon="swap_vert" label={data.sort} />
+          <SortFilterBar
+            icon="swap_vert"
+            label={data.sort.value}
+            items={data.sort.options}
+            onSelect={<Choose ref={data.sort.ref} />}
+          />
           <Each of={data.episodes} as="episode">
             <EpisodeRow
               title={episode.title}

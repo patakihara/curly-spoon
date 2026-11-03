@@ -49,13 +49,14 @@ import { type Draft, useTabDraft } from '../query';
 import { useAccessOf } from './access';
 import { useDeps } from './deps';
 import { emptied } from './format';
-import { albumData, bookData, episodeData, showData } from './items';
+import { albumData, bookData, episodeData, showAwaited, showData } from './items';
 import { booksData, browseData, libraryAwaited, musicData, podcastsData } from './library';
 import { emptyQueue, queueData } from './queue';
 import { emptySearch, loadSearchPage, searchLive, type SearchLoaded } from './search';
 import { SignInScreen } from './sign-in';
 import { listCards, listData } from './lists';
 import {
+  episodeAsk,
   feedOrNone,
   libraryAsk,
   listsOrNone,
@@ -77,14 +78,15 @@ import { answerFrom, type Answer, pageKey, SignedOut } from './store';
  * the shell. One screen per page: Browse's first shelf and the library homes from
  * `GET /api/library/{medium}`, in the order their address asks, which their sort menu replaces,
  * Browse's Up next and Still listening from `GET /api/feed`, Podcasts' lists from
- * `GET /api/lists`, a book, show, episode or album from `GET /api/items/{ref}`, a list from
+ * `GET /api/lists`, a book, show, episode or album from `GET /api/items/{ref}`, a show's episodes
+ * in the order its address asks, which its sort menu replaces, a list from
  * `GET /api/lists/{id}`, whose Play plays it through its own route (`listPlayOf`) and whose menu
  * renames, turns round or deletes it, a book's, show's or episode's menu adding it to your lists
  * (`./menus`), the queue from `GET /api/queues/{active}`, Search from what is typed into it
  * (`../query`) and `GET /api/search/suggest` or `GET /api/search`, sign in from the address. Now
  * Playing reads the player itself. Every other page draws empty, keeping only its own words,
  * until its milestone serves it: a member never sees the canvas's samples. A page loading shows
- * its lists empty, a library home's sort bar naming the sort its address asks; on a server nobody
+ * its lists empty, a library home's or show's sort bar naming the sort its address asks; on a server nobody
  * can sign in to, every page keeps its canvas placeholder (`access.ts`); a request refused for
  * want of a sign-in goes to sign in.
  */
@@ -174,6 +176,7 @@ const settleOrder = <T,>(params: Params, loaded: Ordered<T>) => ({
 const pathOf = (id: string) => routePages.find((page) => page.id === id)!.path;
 const listPath = pathOf('list');
 const podcastsPath = pathOf('podcasts');
+const showPath = pathOf('show');
 
 /** A seed for a fresh shuffle: any unsigned 32-bit whole number. */
 const freshSeed = () => crypto.getRandomValues(new Uint32Array(1))[0]!;
@@ -194,6 +197,19 @@ const sortVerbs = (path: string) => async (_api: ApiClient, _ref: string, key: s
 const itemVerbs = async (api: ApiClient, ref: string, key: string) => {
   const made = await itemVerb(api, browserAsk, ref, key);
   return made === null ? {} : { open: generatePath(listPath, { ref: made }) };
+};
+
+/**
+ * A show's verbs: its sort menu's order replaces the page's address, which loads its episodes in
+ * that order; any other key is its menu's, an item's verb.
+ */
+const showVerbs = async (api: ApiClient, ref: string, key: string) => {
+  const sort = episodeAsk({ sort: key }).sort;
+  if (sort === undefined) return itemVerbs(api, ref, key);
+  return {
+    open: `${generatePath(showPath, { ref })}?${new URLSearchParams({ sort })}`,
+    replace: true,
+  };
 };
 
 const screens: Screen<never>[] = [
@@ -266,15 +282,18 @@ const screens: Screen<never>[] = [
     name: 'show',
     Page: Show,
     frame: showFrame,
-    empty: fixed(emptied(showFrame.placeholder)),
+    empty: (params) => showAwaited(showFrame.placeholder, episodeAsk(params).sort),
     load: async (api, params) => {
-      const [item, lists] = await Promise.all([loadItem(api, params.ref), listsOrNone(api)]);
+      const [item, lists] = await Promise.all([
+        loadItem(api, params.ref, episodeAsk(params)),
+        listsOrNone(api),
+      ]);
       return {
         ...showData(item, showFrame.placeholder),
         menu: addMenu(lists, ['digest', 'listening']),
       };
     },
-    verbs: itemVerbs,
+    verbs: showVerbs,
   } satisfies Screen<typeof showFrame.placeholder>,
   {
     name: 'episode',

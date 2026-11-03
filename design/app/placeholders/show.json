@@ -14,7 +14,14 @@
     { "key": "add:weekend-reads", "label": "Add to Weekend reads", "icon": "playlist_add" },
     { "key": "new:listening", "label": "New listening list", "icon": "add" }
   ],
-  "sort": "Newest first",
+  "sort": {
+    "ref": "the-long-read",
+    "value": "Newest first",
+    "options": [
+      { "key": "oldest", "label": "Oldest first" },
+      { "key": "newest", "label": "Newest first" }
+    ]
+  },
   "episodes": [
     {
       "title": "The Night Ferry",
