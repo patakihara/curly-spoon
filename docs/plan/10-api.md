@@ -40,7 +40,7 @@ Each takes `?refresh` (pull to refresh)
 `POST /play` → PlaybackPlan\
 `POST /progress` · `POST /play/{id}/close`\
 `GET/PUT /queues/{type}` · `POST /queues/{type}/items` (now, next, end, default)\
-`POST /sessions/this/step` (next, back) · `PUT /sessions/this/active` (the meta-queue switch) · `PUT /sessions/this/style` (until M2.settings)\
+`POST /sessions/this/step` (next, back) · `PUT /sessions/this/active` (the meta-queue switch)\
 `GET/POST/DELETE /bookmarks`\
 `GET /lyrics/{ref}`
 :::
@@ -85,7 +85,7 @@ Each takes `?refresh` (pull to refresh)
 ::: card
 #### Settings
 
-`GET/PUT /settings` (theme, autoplay rules, queue style, artist-page catalogue, show everyone's library)\
+`GET/PUT /settings` (theme, autoplay rules, queue style, first-run setup, artist-page catalogue, show everyone's library)\
 `PUT/DELETE /settings/youtube-account` (connect or disconnect YouTube sync) · `GET /settings/youtube-account` (status, last sync, expired)\
 `GET/PUT /shows/{ref}/youtube` (SponsorBlock categories, Shorts and livestreams)
 :::

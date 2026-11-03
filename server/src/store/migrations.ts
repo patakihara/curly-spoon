@@ -250,7 +250,7 @@ export const migrations: readonly Migration[] = [
       db.exec(`
         -- What plays on one device, made on its first use and gone with the device. ('sessions'
         -- are sign-in sessions.) The queue the controls drive, the queue to land on once the
-        -- current item ends, and the queue style, set here until settings are kept per user.
+        -- current item ends, and the queue style, which migration 15 moves to user_settings.
         -- rev goes up on every write; a write from an older rev is refused.
         CREATE TABLE listening_sessions (
           device_id            TEXT PRIMARY KEY REFERENCES devices(id) ON DELETE CASCADE,
@@ -574,18 +574,29 @@ export const migrations: readonly Migration[] = [
     up: (db) => {
       db.exec(`
         -- Each person's settings (store/settings.ts), one row per person, none until they change
-        -- one: a person with no row has the defaults. The autoplay switches are per queue.
+        -- one: a person with no row has the defaults. The autoplay switches are per queue. The
+        -- queue style is always written, so it has no default here.
         CREATE TABLE user_settings (
           user_id         TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
           theme           TEXT NOT NULL DEFAULT 'system'
                             CHECK (theme IN ('system', 'light', 'dark')),
-          queue_style     TEXT NOT NULL DEFAULT 'youtube'
-                            CHECK (queue_style IN ('youtube', 'spotify')),
+          queue_style     TEXT NOT NULL CHECK (queue_style IN ('youtube', 'spotify')),
           autoplay_music  INTEGER NOT NULL DEFAULT 1 CHECK (autoplay_music IN (0, 1)),
           autoplay_spoken INTEGER NOT NULL DEFAULT 1 CHECK (autoplay_spoken IN (0, 1)),
           first_run_done  INTEGER NOT NULL DEFAULT 0 CHECK (first_run_done IN (0, 1)),
           updated_at      INTEGER NOT NULL
         );
+
+        -- The queue style was each device's own: each person keeps the one of the session they
+        -- changed last, and the sessions read it from here from now on.
+        INSERT INTO user_settings (user_id, queue_style, updated_at)
+          SELECT user_id, queue_style, updated_at FROM (
+            SELECT user_id, queue_style, updated_at, row_number() OVER (
+              PARTITION BY user_id ORDER BY updated_at DESC, device_id
+            ) AS newest
+            FROM listening_sessions
+          ) WHERE newest = 1;
+        ALTER TABLE listening_sessions DROP COLUMN queue_style;
       `);
     },
   },

@@ -350,7 +350,7 @@ describe('[M1.sessions/a] one listening session per device, through the API', ()
     expect((await s.queue('otto-phone', 'music')).current).toBeNull();
     await s.stepped('otto-phone', 'next');
     await s.ok(s.call('otto-phone', 'PUT', '/api/sessions/this/active', { queue: 'spoken' }));
-    await s.ok(s.call('otto-phone', 'PUT', '/api/sessions/this/style', { queueStyle: 'spotify' }));
+    await s.ok(s.call('otto-phone', 'PUT', '/api/settings', { queueStyle: 'spotify' }));
 
     const after = s.stored('kara-phone');
     expect({ ...after, autoplay: null, autoplayAt: null, radio: null }).toEqual({
@@ -362,9 +362,63 @@ describe('[M1.sessions/a] one listening session per device, through the API', ()
     const ottos = await s.ok<{ sessions: ListeningSession[] }>(
       s.call('otto-phone', 'GET', '/api/sessions'),
     );
-    expect(ottos.sessions.map((x) => [x.deviceName, x.thisDevice, x.queueStyle])).toEqual([
-      ['phone', true, 'spotify'],
-    ]);
+    expect(ottos.sessions.map((x) => [x.deviceName, x.thisDevice])).toEqual([['phone', true]]);
+    expect(await s.ok(s.call('kara-phone', 'GET', '/api/settings'))).toMatchObject({
+      queueStyle: 'youtube',
+    });
+  });
+});
+
+describe('[M2.settings] the queue style, one per person in PUT /api/settings', () => {
+  it('[M2.settings] has every device of the person follow a change: an album played now plays from it on each', async () => {
+    const s = await server();
+    await s.ok(s.call('kara-phone', 'PUT', '/api/settings', { queueStyle: 'spotify' }));
+
+    for (const who of ['kara-phone', 'kara-laptop']) {
+      await s.ok(s.put(who, album, 'now'));
+      const q = await s.queue(who, 'music');
+      expect(q.current?.ref, who).toEqual(tracks[0]);
+      expect(q.user, who).toEqual([]);
+      expect(q.context?.from, who).toEqual({ kind: 'album', ref: album });
+      expect(s.stored(who).queueStyle, who).toBe('spotify');
+    }
+    expect(s.stored('otto-phone').queueStyle).toBe('youtube');
+  });
+
+  it('[M2.settings] folds what is left of each device’s album after its queue on a move back to YouTube Music style, at a new revision', async () => {
+    const s = await server();
+    await s.ok(s.call('kara-laptop', 'PUT', '/api/settings', { queueStyle: 'spotify' }));
+    await s.ok(s.put('kara-phone', album, 'now'));
+    await s.ok(s.put('kara-phone', lone, 'end'));
+    await s.ok(s.put('kara-laptop', album, 'now'));
+    const before = {
+      phone: await s.queue('kara-phone', 'music'),
+      laptop: await s.queue('kara-laptop', 'music'),
+    };
+    expect(before.phone.user.map((e) => e.ref)).toEqual([lone]);
+
+    await s.ok(s.call('kara-laptop', 'PUT', '/api/settings', { queueStyle: 'youtube' }));
+
+    const phone = await s.queue('kara-phone', 'music');
+    expect(phone.context).toEqual({ from: { kind: 'album', ref: album }, items: [] });
+    expect(phone.user.map((e) => e.ref)).toEqual([lone, ...tracks.slice(1)]);
+    expect(phone.rev).toBe(before.phone.rev + 1);
+    const laptop = await s.queue('kara-laptop', 'music');
+    expect(laptop.context?.items).toEqual([]);
+    expect(laptop.user.map((e) => e.ref)).toEqual(tracks.slice(1));
+    expect(laptop.rev).toBe(before.laptop.rev + 1);
+  });
+
+  it('[M2.settings] leaves every session alone when a change keeps the queue style', async () => {
+    const s = await server();
+    await s.ok(s.put('kara-phone', album, 'now'));
+    const before = await s.queue('kara-phone', 'music');
+
+    await s.ok(
+      s.call('kara-laptop', 'PUT', '/api/settings', { queueStyle: 'youtube', theme: 'dark' }),
+    );
+
+    expect((await s.queue('kara-phone', 'music')).rev).toBe(before.rev);
   });
 });
 
@@ -386,7 +440,6 @@ describe('changing a queue through the API', () => {
       ['POST', '/api/queues/music/items', { ref: lone, how: 'next', rev: seen.rev }],
       ['POST', '/api/sessions/this/step', { direction: 'next', rev: seen.rev }],
       ['PUT', '/api/sessions/this/active', { queue: 'spoken', rev: seen.rev }],
-      ['PUT', '/api/sessions/this/style', { queueStyle: 'spotify', rev: seen.rev }],
     ] as const) {
       expect((await s.call('kara-phone', method, url, payload)).statusCode, url).toBe(409);
     }
@@ -460,7 +513,7 @@ describe('stepping through the API', () => {
     expect(back.currents.music?.ref).toEqual(tracks[0]);
   });
 
-  it('switches the controls to the other queue, pausing this one, and sets the queue style', async () => {
+  it('switches the controls to the other queue, pausing this one', async () => {
     const s = await server();
     await s.ok(s.put('kara-phone', album, 'now'));
     await s.ok(s.put('kara-phone', bookRef, 'end'));
@@ -470,10 +523,6 @@ describe('stepping through the API', () => {
     expect(switched.active).toBe('spoken');
     expect(switched.currents.music?.ref).toEqual(tracks[0]);
     expect(switched.currents.spoken).toMatchObject({ ref: bookRef, chapter: 0 });
-    const styled = await s.ok<ListeningSession>(
-      s.call('kara-phone', 'PUT', '/api/sessions/this/style', { queueStyle: 'spotify' }),
-    );
-    expect(styled.queueStyle).toBe('spotify');
   });
 });
 
@@ -888,9 +937,9 @@ describe('autoplay, as a play or a Next meets it', () => {
     const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
     await s.ok(s.put('kara-phone', tracks[13]!, 'now'));
     await wait(100);
-    await s.ok(s.call('kara-phone', 'PUT', '/api/sessions/this/style', { queueStyle: 'spotify' }));
+    await s.ok(s.call('kara-phone', 'PUT', '/api/sessions/this/active', { queue: 'spoken' }));
     await wait(350);
-    await s.ok(s.call('kara-phone', 'PUT', '/api/sessions/this/style', { queueStyle: 'youtube' }));
+    await s.ok(s.call('kara-phone', 'PUT', '/api/sessions/this/active', { queue: 'music' }));
 
     await vi.waitFor(() => expect(s.logs).toContain(AUTOPLAY_MISSED), { timeout: 2_000 });
     await vi.waitFor(() =>

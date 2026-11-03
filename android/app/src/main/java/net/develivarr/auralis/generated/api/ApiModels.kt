@@ -397,7 +397,6 @@ data class ListeningSession(
     val thisDevice: Boolean,
     val active: QueueType,
     val switchAfterCurrent: QueueType?,
-    val queueStyle: QueueStyle,
     val currents: QueueCurrents,
     val rev: Long,
     val updatedAt: Long,
@@ -635,12 +634,6 @@ enum class QueueStyle {
     @SerialName("spotify")
     SPOTIFY,
 }
-
-@Serializable
-data class QueueStyleBody(
-    val queueStyle: QueueStyle,
-    val rev: Long? = null,
-)
 
 @Serializable
 enum class QueueType {

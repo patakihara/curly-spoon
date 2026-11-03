@@ -300,3 +300,70 @@ describe('the lists migration', () => {
     db.close();
   });
 });
+
+describe('the settings migration', () => {
+  it("keeps each person's queue style from the session they changed last, then drops it from sessions", () => {
+    const db = new Database(':memory:');
+    db.pragma('foreign_keys = ON');
+    runMigrations(
+      db,
+      migrations.filter((m) => m.id <= 14),
+    );
+    db.exec(`
+      INSERT INTO users (id, username, role, created_at, updated_at) VALUES
+        ('user-1', 'kara', 'member', 1, 1),
+        ('user-2', 'otto', 'member', 1, 1),
+        ('user-3', 'ilse', 'member', 1, 1);
+      INSERT INTO devices (id, user_id, kind, name, created_at, last_seen_at) VALUES
+        ('device-1', 'user-1', 'web', 'Laptop', 1, 1),
+        ('device-2', 'user-1', 'android', 'Phone', 1, 1),
+        ('device-3', 'user-2', 'web', 'Laptop', 1, 1);
+      INSERT INTO listening_sessions (device_id, user_id, active, queue_style, rev, updated_at) VALUES
+        ('device-1', 'user-1', 'music', 'youtube', 1, 10),
+        ('device-2', 'user-1', 'music', 'spotify', 4, 20),
+        ('device-3', 'user-2', 'spoken', 'youtube', 2, 30);
+    `);
+
+    runMigrations(db);
+
+    expect(
+      db
+        .prepare(
+          `SELECT user_id, theme, queue_style, autoplay_music, autoplay_spoken, first_run_done,
+             updated_at FROM user_settings ORDER BY user_id`,
+        )
+        .all(),
+    ).toEqual([
+      {
+        user_id: 'user-1',
+        theme: 'system',
+        queue_style: 'spotify',
+        autoplay_music: 1,
+        autoplay_spoken: 1,
+        first_run_done: 0,
+        updated_at: 20,
+      },
+      {
+        user_id: 'user-2',
+        theme: 'system',
+        queue_style: 'youtube',
+        autoplay_music: 1,
+        autoplay_spoken: 1,
+        first_run_done: 0,
+        updated_at: 30,
+      },
+    ]);
+    const columns = (
+      db.prepare('PRAGMA table_info(listening_sessions)').all() as { name: string }[]
+    ).map((c) => c.name);
+    expect(columns).not.toContain('queue_style');
+    expect(
+      db.prepare('SELECT device_id, rev FROM listening_sessions ORDER BY device_id').all(),
+    ).toEqual([
+      { device_id: 'device-1', rev: 1 },
+      { device_id: 'device-2', rev: 4 },
+      { device_id: 'device-3', rev: 2 },
+    ]);
+    db.close();
+  });
+});

@@ -381,23 +381,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/sessions/this/style": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** This device's queue style: YouTube Music or Spotify */
-        put: operations["setQueueStyle"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/settings": {
         parameters: {
             query?: never;
@@ -812,8 +795,6 @@ export interface components {
             time: number;
             title: string;
         };
-        /** @enum {string} */
-        QueueStyle: "youtube" | "spotify";
         QueueCurrents: {
             music: components["schemas"]["QueueItem"] | null;
             spoken: components["schemas"]["QueueItem"] | null;
@@ -824,7 +805,6 @@ export interface components {
             thisDevice: boolean;
             active: components["schemas"]["QueueType"];
             switchAfterCurrent: components["schemas"]["QueueType"] | null;
-            queueStyle: components["schemas"]["QueueStyle"];
             currents: components["schemas"]["QueueCurrents"];
             rev: number;
             updatedAt: number;
@@ -885,16 +865,14 @@ export interface components {
             queue: components["schemas"]["QueueType"];
             rev?: number;
         };
-        QueueStyleBody: {
-            queueStyle: components["schemas"]["QueueStyle"];
-            rev?: number;
-        };
         /** @enum {string} */
         Theme: "system" | "light" | "dark";
         AutoplaySwitches: {
             music: boolean;
             spoken: boolean;
         };
+        /** @enum {string} */
+        QueueStyle: "youtube" | "spotify";
         Settings: {
             theme: components["schemas"]["Theme"];
             autoplay: components["schemas"]["AutoplaySwitches"];
@@ -2392,57 +2370,6 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": components["schemas"]["ActiveQueueBody"];
-            };
-        };
-        responses: {
-            /** @description This device's session, with each queue's current item. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListeningSession"];
-                };
-            };
-            /** @description The request does not parse, or was refused. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description No session. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Without the role this route needs, or sent from another site. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    setQueueStyle: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["QueueStyleBody"];
             };
         };
         responses: {

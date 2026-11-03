@@ -65,7 +65,6 @@ import {
   PutQueueBody,
   Queue,
   QueueParams,
-  QueueStyleBody,
   QueueView,
   StepBody,
 } from './sessions.js';
@@ -401,17 +400,6 @@ export const setActiveQueue = {
   body: ActiveQueueBody,
 } as const satisfies Route;
 
-export const setQueueStyle = {
-  method: 'PUT',
-  path: '/api/sessions/this/style',
-  operationId: 'setQueueStyle',
-  summary: "This device's queue style: YouTube Music or Spotify",
-  responseDescription: "This device's session, with each queue's current item.",
-  response: ListeningSession,
-  access: 'member',
-  body: QueueStyleBody,
-} as const satisfies Route;
-
 export const getSettings = {
   method: 'GET',
   path: '/api/settings',
@@ -643,7 +631,6 @@ export const routes: readonly Route[] = [
   addToQueue,
   stepSession,
   setActiveQueue,
-  setQueueStyle,
   getSettings,
   putSettings,
   listLibrary,

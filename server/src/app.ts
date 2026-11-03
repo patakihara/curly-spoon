@@ -181,7 +181,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     });
   lyricsRoutes(app, { db, upstreams, lyrics });
   searchRoutes(app, { db, now: options.now ?? Date.now });
-  settingsRoutes(app, { db, now: options.now ?? Date.now });
+  settingsRoutes(app, { db, sessions, now: options.now ?? Date.now });
 
   const distDir = options.webDistDir;
   if (distDir !== null && existsSync(distDir)) {

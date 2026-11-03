@@ -822,13 +822,6 @@
           "title"
         ]
       },
-      "QueueStyle": {
-        "type": "string",
-        "enum": [
-          "youtube",
-          "spotify"
-        ]
-      },
       "QueueCurrents": {
         "type": "object",
         "properties": {
@@ -883,9 +876,6 @@
               }
             ]
           },
-          "queueStyle": {
-            "$ref": "#/components/schemas/QueueStyle"
-          },
           "currents": {
             "$ref": "#/components/schemas/QueueCurrents"
           },
@@ -903,7 +893,6 @@
           "thisDevice",
           "active",
           "switchAfterCurrent",
-          "queueStyle",
           "currents",
           "rev",
           "updatedAt"
@@ -1208,21 +1197,6 @@
           "queue"
         ]
       },
-      "QueueStyleBody": {
-        "type": "object",
-        "properties": {
-          "queueStyle": {
-            "$ref": "#/components/schemas/QueueStyle"
-          },
-          "rev": {
-            "type": "integer",
-            "minimum": 0
-          }
-        },
-        "required": [
-          "queueStyle"
-        ]
-      },
       "Theme": {
         "type": "string",
         "enum": [
@@ -1244,6 +1218,13 @@
         "required": [
           "music",
           "spoken"
+        ]
+      },
+      "QueueStyle": {
+        "type": "string",
+        "enum": [
+          "youtube",
+          "spotify"
         ]
       },
       "Settings": {
@@ -3962,71 +3943,6 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ActiveQueueBody"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "This device's session, with each queue's current item.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListeningSession"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "The request does not parse, or was refused.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "No session.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Without the role this route needs, or sent from another site.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/sessions/this/style": {
-      "put": {
-        "summary": "This device's queue style: YouTube Music or Spotify",
-        "security": [
-          {
-            "session": []
-          },
-          {
-            "bearer": []
-          }
-        ],
-        "operationId": "setQueueStyle",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/QueueStyleBody"
               }
             }
           }

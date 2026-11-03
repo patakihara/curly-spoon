@@ -42,6 +42,7 @@ import {
   PLAYED_SHOWN,
   type QueueItem,
   type QueuePosition,
+  type QueueStyle,
   type QueueType,
   type QueueView,
 } from '@auralis/schema';
@@ -73,7 +74,7 @@ import {
   prepareAutoplay,
   storedAutoplay,
 } from './autoplay.js';
-import { add, type EngineDeps, resumeSaved, step, switchTo } from './engine.js';
+import { add, type EngineDeps, resumeSaved, setQueueStyle, step, switchTo } from './engine.js';
 import { labelled } from './labels.js';
 import type { IndexLookup } from './lookup.js';
 
@@ -274,6 +275,17 @@ export class Sessions {
     if (controlled(saved) !== controlled(s)) this.plays.delete(this.device(caller));
     this.refreshAutoplay(caller);
     return saved;
+  }
+
+  /**
+   * The person's queue style changed in their settings: each of their devices' sessions follows
+   * it as the engine's `setQueueStyle` says, whatever revision it is at, and works autoplay out
+   * again. Call it once the new style is stored, since a session reads its style from there.
+   */
+  restyle(user: User, style: QueueStyle): void {
+    for (const { deviceId } of listSessions(this.options.db, user.id)) {
+      this.change({ ...user, deviceId }, undefined, (s) => setQueueStyle(s, style));
+    }
   }
 
   /**

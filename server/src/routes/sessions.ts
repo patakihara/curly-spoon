@@ -11,11 +11,10 @@ import {
   putQueue,
   type QueueItem,
   setActiveQueue,
-  setQueueStyle,
   stepSession,
 } from '@auralis/schema';
 import type { FastifyInstance } from 'fastify';
-import { add, queueFor, setQueueStyle as styled, switchTo } from '../queues/engine.js';
+import { add, queueFor, switchTo } from '../queues/engine.js';
 import type { Sessions } from '../queues/sessions.js';
 import { Refusal, serve } from '../route.js';
 import type { SessionItem } from '../store/listening.js';
@@ -84,12 +83,6 @@ export function sessionRoutes(app: FastifyInstance, options: { sessions: Session
   serve(app, setActiveQueue, (request, _reply, body) => {
     const caller = signedIn(request);
     sessions.change(caller, body.rev, (s) => switchTo(s, body.queue, sessions.deps));
-    return sessions.summary(caller);
-  });
-
-  serve(app, setQueueStyle, (request, _reply, body) => {
-    const caller = signedIn(request);
-    sessions.change(caller, body.rev, (s) => styled(s, body.queueStyle));
     return sessions.summary(caller);
   });
 }
