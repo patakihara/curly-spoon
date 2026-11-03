@@ -10,14 +10,16 @@
  * unrecoverably.
  *
  * An item enters history exactly once per time it is played, with the play it followed
- * (`after`); a current item carries that play too, so Back always returns to whatever played
- * immediately before it, replays and items put next during a walk included. Back makes an
- * earlier play current again as a replay (`replayOf`), and the item it leaves joins the walk
- * (`walk`) at the front of its queue. Forward plays the walk before the rest of the queue, in
- * queue order: across the two queues, the one whose next walk entry Back stepped over last goes
- * first. Ending a replay records nothing. A new play ends the walk in the queue it plays in: its
+ * (`after`); a current item carries that play too. Back walks history in play order, where each
+ * play sits right after the play it came after, so an item played during a walk sits where it was
+ * played: after the replay it followed, ahead of the plays Back had stepped over. History is never
+ * rewritten, so a later play cannot move it. Back makes an earlier play current again as a
+ * replay (`replayOf`), and the item it leaves joins the walk (`walk`) at the front of its queue.
+ * Forward plays the walk before the rest of the queue, in queue order: across the two queues, the
+ * one whose next walk entry Back stepped over last goes first. Ending a replay records nothing. A new play ends the walk in the queue it plays in: its
  * plays go back to history, never into the queue, so nothing plays after it that only a Back put
- * there. The switch, and a queue paused or put aside, end it leaving them queued.
+ * there: the item Back first left is recorded after the last play so far, and the new play follows
+ * it. The switch, and a queue paused or put aside, end it leaving them queued.
  *
  * A digest plays in a queue of its own, which stands in for the spoken queue (`spokenDigest`
  * names its digest): playing it puts the spoken queue aside, saved whole with its position and

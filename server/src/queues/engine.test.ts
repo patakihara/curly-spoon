@@ -549,6 +549,25 @@ describe('[M1.sessions/d] Back and Forward', () => {
     expect(forward).toEqual([first.tracks[1], first.tracks[2], trackX]);
   });
 
+  it('Back from a play now after a walk walks history in play order: a song played during the walk sits where it played', () => {
+    const d = deps();
+    let s = run(empty(), (s) => add(s, first.album, 'now', d));
+    s = step(s, 'next', d);
+    s = step(s, 'next', d);
+    s = step(s, 'back', d);
+    s = step(s, 'back', d);
+    s = run(s, (s) => add(s, trackY, 'next', d));
+    s = step(s, 'next', d);
+    expect(refOf(s.queues.music.current)).toEqual(trackY);
+    s = run(s, (s) => add(s, trackX, 'now', d));
+
+    const walked = [1, 2, 3, 4].map(() => refOf((s = step(s, 'back', d)).queues.music.current));
+
+    // trackY followed the replay of the first track, so it sits right after it.
+    expect(walked).toEqual([first.tracks[2], first.tracks[1], trackY, first.tracks[0]]);
+    expect(step(s, 'back', d)).toEqual(s);
+  });
+
   it('Back from an episode played now during a walk over another show walks that show back', () => {
     const d = deps();
     let s = run(
