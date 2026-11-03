@@ -42,7 +42,7 @@ The rule: **the server works out how to play something; the clients just play th
 | Queue runs out | What autoplay does |
 |---|---|
 | Music | The rest of the album, then similar music you own (Jellyfin's Instant Mix); from M3, YouTube Music's radio for the last track (not personalised) joins it. Then the recommendation algorithm under Discovery takes over. |
-| Spoken | The next unplayed episode of the same show (oldest first for serial shows, newest first for episodic ones, from the feed's `itunes:type`), or the next chapter or book in the series. Later, the next entry of your listening list. |
+| Spoken | The show's next unplayed episode, whatever its page's sort (oldest first for serial shows, newest first for episodic ones, from the feed's `itunes:type`), or the next chapter or book in the series. Later, the next entry of your listening list. |
 
 ### Lists that aren't queues
 
