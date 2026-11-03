@@ -1029,6 +1029,78 @@ describe('[M1.shell/e] Play now on an episode while another show plays', () => {
   });
 });
 
+/**
+ * [recorded], the episode play recorded for the serial show, as Audiobookshelf would answer it
+ * for `episodeId` of `showId` under session `id`; with its close and a sync under that session.
+ */
+function episodePlayOf(showId: string, episodeId: string, id: string): Recording[] {
+  const played = structuredClone(abs('episode-play'));
+  played.call = `episode-play-${id}`;
+  played.request.path = `/api/items/${showId}/play/${episodeId}`;
+  Object.assign((played.response.body as { json: object }).json, {
+    id,
+    libraryItemId: showId,
+    episodeId,
+  });
+  const closed = structuredClone(abs('episode-close'));
+  closed.call = `episode-close-${id}`;
+  closed.request.path = `/api/session/${id}/close`;
+  return [played, closed, ...syncsFor([id])];
+}
+
+/** The recorded sync, answered under each of `ids`' sessions. */
+function syncsFor(ids: string[]): Recording[] {
+  return ids.map((id) => {
+    const synced = structuredClone(abs('progress-sync'));
+    synced.call = `sync-${id}`;
+    synced.request.path = `/api/session/${id}/sync`;
+    return synced;
+  });
+}
+
+describe('[M1.shell/e] Play now on an episode while another show plays, as the web shell sends it', () => {
+  const otherEpisode = ref(
+    'abs',
+    (json(abs('index-show-2')) as { media: { episodes: { id: string }[] } }).media.episodes[0]!.id,
+  );
+  const OTHER_SESSION = '00000000-0000-4000-8000-000000000002';
+  const recordings = [
+    ...episodePlayOf(otherShow.id, otherEpisode.id, OTHER_SESSION),
+    ...syncsFor([(json(abs('episode-play')) as { id: string }).id]),
+  ];
+  const report = (seq: number, position: number, paused = false) => ({
+    seq,
+    position,
+    listened: 1,
+    paused,
+  });
+
+  it('[M1.shell/e] plays the next episode of the show played now once it ends, whatever lands late from the play it replaced', async () => {
+    const s = await server({ recordings });
+    const other = await s.play('kara-phone', otherEpisode);
+    const otherId = other.progressTarget.playId;
+    await s.progress('kara-phone', otherId, 0, 10);
+    await s.progress('kara-phone', otherId, 1, 20);
+
+    // Play now: the store closes the play it had, with a last report, then plans the episode.
+    await s.ok(s.call('kara-phone', 'POST', `/api/play/${otherId}/close`, report(2, 21, true)));
+    const plan = await s.play('kara-phone', episode);
+    const playId = plan.progressTarget.playId;
+    expect(plan.next).toEqual(nextEpisode);
+
+    // A report from the replaced play, landing late, changes nothing.
+    await s.call('kara-phone', 'POST', '/api/progress', { playId: otherId, ...report(3, 22) });
+    await s.progress('kara-phone', playId, 0, 3);
+    expect(s.stored('kara-phone').queues.spoken.current?.ref).toEqual(episode);
+
+    // The episode ends: the store closes its play at its end, then steps on.
+    const end = plan.tracks[0]!.duration;
+    await s.ok(s.call('kara-phone', 'POST', `/api/play/${playId}/close`, report(1, end, true)));
+    const next = await s.stepped('kara-phone', 'next');
+    expect(next.currents.spoken?.ref).toEqual(nextEpisode);
+  });
+});
+
 describe('an episode plays through its show', () => {
   it('opens the episode’s session on its show, and streams the episode’s own file', async () => {
     const s = await server();
