@@ -3,6 +3,7 @@
  * `updated_at` say which rows a run really touched.
  */
 import { createHash } from 'node:crypto';
+import type { EpisodeOrder } from '@auralis/schema';
 import { searchText, writeSearchItem } from '../search/items.js';
 import type { Db } from '../store/connection.js';
 import { statement } from '../store/statements.js';
@@ -412,13 +413,15 @@ export function albumTracks(db: Db, albumId: string): StoredRow[] {
  * order is unknown (no feed read has succeeded yet; Apple's default). Episodes of one date, and
  * undated ones, which come last, follow season and episode number in the same direction, with
  * unnumbered ones after the numbered. An episode with no season is in the show's season when the
- * show has only one; otherwise it follows those that have one.
+ * show has only one; otherwise it follows those that have one. `order` asks the other direction
+ * instead: the same keys turned round, undated and unnumbered episodes still last.
  */
-export function episodesInOrder(db: Db, showId: string): StoredRow[] {
+export function episodesInOrder(db: Db, showId: string, order?: EpisodeOrder): StoredRow[] {
   const show = db
     .prepare(`SELECT episode_order FROM index_items WHERE source = 'abs' AND upstream_id = ?`)
     .get(showId) as { episode_order: ShowEpisodeOrder | null } | undefined;
-  const direction = show?.episode_order === 'serial' ? 'ASC' : 'DESC';
+  const oldest = (order ?? (show?.episode_order === 'serial' ? 'oldest' : 'newest')) === 'oldest';
+  const direction = oldest ? 'ASC' : 'DESC';
   const rows = db
     .prepare(
       `WITH only_season AS (

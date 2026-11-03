@@ -6,8 +6,8 @@
  *
  * - A book's page: its header, its length and its chapters from its own expanded answer.
  * - A show's page: its episodes in the show's order as the index holds it (oldest first when
- *   serial, newest first otherwise), or exactly reversed when the other order is asked (`?sort`),
- *   each with how far through the person is and whether they finished it, from their
+ *   serial, newest first otherwise), or the other way round when that order is asked (`?sort`),
+ *   undated and unnumbered episodes last either way, each with how far through the person is and whether they finished it, from their
  *   `GET /api/me`. The order asked is the page's alone: autoplay and every list keep the show's.
  * - An album's page: its tracks as the index holds them, in disc and track order.
  * - An episode's page: its show's title and art, its length and published date as the index
@@ -84,9 +84,7 @@ const ownOrder = (show: StoredRow): EpisodeOrder =>
   show.episodeOrder === 'serial' ? 'oldest' : 'newest';
 
 function episodes(db: Db, show: StoredRow, access: AbsAccess, sort: EpisodeOrder): ItemEpisode[] {
-  const own = episodesInOrder(db, show.id);
-  const listed = sort === ownOrder(show) ? own : own.reverse();
-  return listed.map((row) => {
+  return episodesInOrder(db, show.id, sort).map((row) => {
     const { progress, finished } = access.standing(row.id);
     return {
       ref: { source: 'abs', id: row.id },

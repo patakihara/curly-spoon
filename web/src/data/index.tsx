@@ -609,6 +609,11 @@ const bind = (route: RouteObject): RouteObject =>
     ...(route.children === undefined ? {} : { children: route.children.map(bind) }),
   }) as RouteObject;
 
+/** What page `name` loads at an address that gives `params`, as its screen asks the API. */
+export const loadPage = (name: string, api: ApiClient, params: Params): Promise<unknown> =>
+  screens.find((s) => s.name === name)?.load?.(api, params) ??
+  Promise.reject(new Error(`page ${name} loads nothing`));
+
 /** The generated routes, every page with data drawn as its screen. */
 export function withPageData(routes: RouteObject[]): RouteObject[] {
   return routes.map(bind);

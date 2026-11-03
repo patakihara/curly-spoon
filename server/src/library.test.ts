@@ -613,6 +613,21 @@ describe('[M1.shell] a book, show or album page, from the index and the personâ€
     expect(refs(await s.page(`abs:${show.id}?sort=newest`))).toEqual(refs(serial).reverse());
   });
 
+  it('[M2.sorting] keeps an undated episode last in either order', async () => {
+    await index(db);
+    const s = await server();
+    const show = shows.find((sh) => sh.id === finished.libraryItemId)!;
+    const refs = (page: ItemDetail) => page.episodes.map((e) => e.ref.id);
+    const [undated, ...dated] = episodesInOrder(db, show.id).map((e) => e.id);
+    expect(dated.length).toBeGreaterThan(1);
+    db.prepare(
+      `UPDATE index_items SET published_at = NULL, disc = NULL, position = NULL WHERE upstream_id = ?`,
+    ).run(undated);
+
+    expect(refs(await s.page(`abs:${show.id}`))).toEqual([...dated, undated]);
+    expect(refs(await s.page(`abs:${show.id}?sort=oldest`))).toEqual([...dated.reverse(), undated]);
+  });
+
   it('[M2.sorting] refuses a show page asked any order but oldest or newest first', async () => {
     await index(db);
     const s = await server();

@@ -90,6 +90,8 @@ export interface RecordedServer {
   episode: MediaRef;
   /** The recorded album the music list holds, which plays. */
   album: MediaRef;
+  /** The database file the server and its index share. */
+  database: string;
   listen(): Promise<void>;
   close(): Promise<void>;
 }
@@ -181,7 +183,8 @@ function queryNumber(recording: Recording, name: string): number {
 /**
  * Indexes every library page the recordings hold into the database at `file`, one pass a page,
  * each over that page's own library only: an Audiobookshelf items page by its `page` and `limit`,
- * a Jellyfin albums page by its `StartIndex`, `Limit` and `ParentId`. Throws if a pass fails.
+ * a Jellyfin albums page by its `StartIndex`, `Limit` and `ParentId`. Throws if a pass fails or
+ * fails to read any show's feed, so no recorded show is left in the unknown order.
  */
 async function indexRecordedPages(
   file: string,
@@ -247,6 +250,9 @@ async function indexRecordedPages(
     for (const pass of passes) {
       for (const [source, run] of Object.entries(await runIndex(pass))) {
         if (run.error !== null) throw new Error(`indexing ${source}: ${run.error}`);
+        if (run.counts.feedsFailed > 0) {
+          throw new Error(`indexing ${source}: ${run.counts.feedsFailed} feed(s) not read`);
+        }
       }
     }
   } finally {
@@ -417,7 +423,8 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
   const absFetch = replayFetch(abs, { readBytes: standInsBeside(ADAPTERS) });
   const jellyfinFetch = replayFetch(jellyfin, { readBytes: standInsBeside(ADAPTERS) });
   mkdirSync(config.dataDir, { recursive: true });
-  await indexRecordedPages(join(config.dataDir, 'auralis.sqlite'), {
+  const database = join(config.dataDir, 'auralis.sqlite');
+  await indexRecordedPages(database, {
     abs: { recordings: abs, fetch: absFetch },
     jellyfin: { recordings: jellyfin, fetch: jellyfinFetch },
   });
@@ -453,6 +460,7 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     show: { source: 'abs', id: showId },
     episode: { source: 'abs', id: episodeId },
     album: { source: 'jellyfin', id: albumId },
+    database,
     async listen() {
       await new Promise<void>((resolve, reject) => {
         signOnHttp.once('error', reject).listen(signOnPort, LISTEN_HOST, resolve);

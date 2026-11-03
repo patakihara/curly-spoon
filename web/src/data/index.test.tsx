@@ -15,7 +15,7 @@ import { frame as searchFrame } from '../generated/pages/Search';
 import { drafts, SETTLE_MS } from '../query';
 import { type Access, type AccessStore } from './access';
 import { PageDepsContext, type PageDeps } from './deps';
-import { withPageData } from '.';
+import { loadPage, withPageData } from '.';
 import { emptySearch } from './search';
 import { type PageStore } from './store';
 
@@ -229,6 +229,45 @@ describe('[M2.sorting] a library home before its list answers', () => {
       expect(at('/podcasts/abs:s1?sort=oldest'), `failed: ${failed}`).toBe('Oldest first');
       expect(at('/podcasts/abs:s1?sort=newest'), `failed: ${failed}`).toBe('Newest first');
     }
+  });
+});
+
+describe('[M2.sorting] a show asked an order it does not know', () => {
+  it('[M2.sorting] asks the API for none and names the show’s own order', async () => {
+    const asked: URL[] = [];
+    const api = createApiClient({
+      baseUrl: 'http://auralis.test',
+      fetch: async (request) => {
+        const url = new URL(request.url);
+        asked.push(url);
+        const show = {
+          ref: { source: 'abs', id: 's1' },
+          kind: 'show',
+          title: 'Night Shift Radio',
+          sub: 'A Host',
+          art: null,
+          progress: null,
+          duration: null,
+          availability: { kind: 'owned' },
+          chapters: [],
+          episodes: [],
+          tracks: [],
+          sort: 'newest',
+        };
+        return url.pathname.startsWith('/api/items/')
+          ? Response.json(show)
+          : Response.json({ error: 'not_found' }, { status: 404 });
+      },
+    });
+
+    const loaded = await loadPage('show', api, { ref: 'abs:s1', sort: 'bogus' });
+    const item = asked.find((u) => u.pathname.startsWith('/api/items/'))!;
+    expect(decodeURIComponent(item.pathname)).toBe('/api/items/abs:s1');
+    expect(item.searchParams.has('sort')).toBe(false);
+
+    const { given } = deps('member', { show: loaded });
+    const html = renderAt('/podcasts/abs:s1?sort=bogus', given);
+    expect(sortLabel(html)).toBe('Newest first');
   });
 });
 
