@@ -5,7 +5,8 @@
  *
  * Before it starts, one index pass reads every library page the recordings hold, each page on
  * its own (the four-file book is on the books library's page 15, the show and the albums on page
- * 4), so the library lists hold the recorded books, shows and albums. The scheduled index job stays
+ * 4), so the library lists hold the recorded books, shows and albums, the recorded show ordered by
+ * its recorded feed. The scheduled index job stays
  * off: a real run starts from the first page, which is not recorded.
  *
  * The sign-on is replayed from its recordings (discovery, keys, token exchange, userinfo) by a
@@ -39,6 +40,7 @@ import { type Recording, recordingSchema } from '../src/adapters/http/recording.
 import { replayFetch, standInsBeside } from '../src/adapters/http/replay.js';
 import { PLACEHOLDER, PLACEHOLDER_ORIGIN } from '../src/adapters/http/scrub.js';
 import { decodePart, signWithTestKey } from '../src/adapters/http/testSigningKey.js';
+import { parseFeed } from '../src/adapters/feed/client.js';
 import { JellyfinClient } from '../src/adapters/jellyfin/client.js';
 import { type BuildAppOptions } from '../src/app.js';
 import { loadConfig } from '../src/config.js';
@@ -197,6 +199,15 @@ async function indexRecordedPages(
   });
   const db = openDatabase(file);
   const passes: Parameters<typeof runIndex>[0][] = [];
+  // The recorded show's feed, so the index orders it as the serial show it is; any other show's
+  // feed is not read, and keeps the default order.
+  const showFeed = recordingsOf('feed').find((r) => r.call === 'show-1-feed')!;
+  const feeds = async (url: string) => {
+    if (new URL(url).pathname !== showFeed.request.path) throw new Error(`no feed for ${url}`);
+    const { body } = showFeed.response;
+    if (body === null || !('text' in body)) throw new Error('show-1-feed has no text body');
+    return parseFeed(body.text);
+  };
   try {
     for (const page of upstreams.abs.recordings) {
       const library = /^\/api\/libraries\/([^/]+)\/items$/.exec(page.request.path)?.[1];
@@ -205,6 +216,7 @@ async function indexRecordedPages(
         db,
         pageSize: queryNumber(page, 'limit'),
         pages: { first: queryNumber(page, 'page'), count: 1 },
+        feeds,
         abs: {
           getLibraries: async () => (await abs.getLibraries()).filter((l) => l.id === library),
           getLibraryItems: abs.getLibraryItems.bind(abs),
