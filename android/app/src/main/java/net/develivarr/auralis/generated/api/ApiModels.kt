@@ -703,10 +703,18 @@ data class RenameDeviceBody(
 enum class RequestStatus {
     @SerialName("requested")
     REQUESTED,
+    @SerialName("searching")
+    SEARCHING,
     @SerialName("needsChoice")
     NEEDS_CHOICE,
+    @SerialName("queued")
+    QUEUED,
     @SerialName("downloading")
     DOWNLOADING,
+    @SerialName("importing")
+    IMPORTING,
+    @SerialName("inLibrary")
+    IN_LIBRARY,
     @SerialName("failed")
     FAILED,
 }

@@ -73,7 +73,6 @@ export {
   LibraryQuery,
   LIBRARY_SEED_MAX,
   LibrarySort,
-  RequestStatus,
 } from './library.js';
 export {
   ArtUrl,
@@ -148,6 +147,15 @@ export {
   updateList,
   type Route,
 } from './routes.js';
+export {
+  REQUEST_ID_KEYS,
+  RequestFailure,
+  RequestIds,
+  RequestMedium,
+  RequestRef,
+  RequestStatus,
+  RequestTarget,
+} from './requests.js';
 export {
   QUERY_MAX,
   SearchKind,

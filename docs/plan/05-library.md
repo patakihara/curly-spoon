@@ -33,6 +33,6 @@ part: The product
 
 - **Files are stored once, for the whole household**, as today: one Music library in Jellyfin, one Books and one Podcasts library in Audiobookshelf.
 - **Auralis shows each person their own library**: what they added, requested, subscribed to or played, from M3.requests; things already on the server count as yours once played. Until then it lists everything your own accounts reach.
-- **Everyone else's things stay findable**: search covers the household, and those results play at once, not as requests.
+- **Everyone else's things stay findable**: search covers the household, and those results play at once through Auralis's own account, not as requests.
 - **"Show everyone's library" is a setting**, off by default, only in Settings, never a toggle on library screens.
 - The Audiobookshelf and Jellyfin apps are unchanged and still show everything.

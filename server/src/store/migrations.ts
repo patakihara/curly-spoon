@@ -600,6 +600,60 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 16,
+    name: 'requests',
+    up: (db) => {
+      db.exec(`
+        -- Requests (store/requests.ts): what is being got onto the household's servers, where
+        -- it stands, and what its medium's steps keep. One live request per medium and
+        -- catalogue id: a second person's request for the same thing joins it. The release,
+        -- candidates and download handle stay on the server; a client sees a candidate's id.
+        CREATE TABLE requests (
+          id            TEXT PRIMARY KEY,
+          medium        TEXT NOT NULL CHECK (medium IN ('book', 'album', 'song', 'podcast')),
+          catalogue_key TEXT NOT NULL,
+          target        TEXT NOT NULL,
+          status        TEXT NOT NULL CHECK (status IN ('requested', 'searching', 'needsChoice',
+                          'queued', 'downloading', 'importing', 'inLibrary', 'failed')),
+          failed_step   TEXT CHECK (failed_step IN ('requested', 'searching', 'needsChoice',
+                          'queued', 'downloading', 'importing')),
+          reason        TEXT CHECK (reason IN ('noRelease', 'searchFailed', 'downloadFailed',
+                          'importFailed', 'notIndexed', 'cancelledUpstream')),
+          progress      REAL CHECK (progress BETWEEN 0 AND 1),
+          release       TEXT,
+          candidates    TEXT NOT NULL DEFAULT '[]',
+          handle        TEXT,
+          result_source TEXT CHECK (result_source IN ('abs', 'jellyfin')),
+          result_id     TEXT,
+          created_at    INTEGER NOT NULL,
+          updated_at    INTEGER NOT NULL,
+          CHECK ((failed_step IS NOT NULL) = (status = 'failed')),
+          CHECK ((reason IS NOT NULL) = (status = 'failed')),
+          CHECK ((progress IS NOT NULL) = (status = 'downloading')),
+          CHECK ((result_source IS NULL) = (result_id IS NULL)),
+          CHECK (status <> 'inLibrary' OR result_id IS NOT NULL)
+        );
+        CREATE UNIQUE INDEX idx_requests_live ON requests(medium, catalogue_key)
+          WHERE status <> 'inLibrary';
+        CREATE INDEX idx_requests_working ON requests(status)
+          WHERE status NOT IN ('inLibrary', 'failed');
+
+        -- Everyone on a request: who made it and who joined it. A request nobody is on any
+        -- longer goes with its last person.
+        CREATE TABLE request_people (
+          request_id TEXT NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+          user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          joined_at  INTEGER NOT NULL,
+          PRIMARY KEY (request_id, user_id)
+        );
+        CREATE INDEX idx_request_people_user ON request_people(user_id);
+        CREATE TRIGGER request_people_last_left AFTER DELETE ON request_people
+          WHEN NOT EXISTS (SELECT 1 FROM request_people WHERE request_id = OLD.request_id)
+          BEGIN DELETE FROM requests WHERE id = OLD.request_id; END;
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

@@ -1301,8 +1301,12 @@
         "type": "string",
         "enum": [
           "requested",
+          "searching",
           "needsChoice",
+          "queued",
           "downloading",
+          "importing",
+          "inLibrary",
           "failed"
         ]
       },

@@ -894,7 +894,7 @@ export interface components {
         /** @enum {string} */
         AvailabilityKind: "owned" | "streamable" | "requested" | "external";
         /** @enum {string} */
-        RequestStatus: "requested" | "needsChoice" | "downloading" | "failed";
+        RequestStatus: "requested" | "searching" | "needsChoice" | "queued" | "downloading" | "importing" | "inLibrary" | "failed";
         Availability: {
             kind: components["schemas"]["AvailabilityKind"];
             status?: components["schemas"]["RequestStatus"];

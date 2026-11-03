@@ -5,6 +5,7 @@
  * is one object with its kind, and the details only that kind has.
  */
 import { ArtUrl, MediaRef, MediaRefKey, PlaybackChapter } from './play.js';
+import { RequestStatus } from './requests.js';
 import { z } from './zod.js';
 
 /** A share of a whole, from 0 to 1: how far through an item, or a download. */
@@ -17,12 +18,6 @@ export type LibraryMedium = z.infer<typeof LibraryMedium>;
 /** One library list, by its medium, as it sits in a path. */
 export const LibraryParams = z.object({ medium: LibraryMedium });
 export type LibraryParams = z.infer<typeof LibraryParams>;
-
-/** Where a request stands: made, waiting for a release to be chosen, downloading, or failed. */
-export const RequestStatus = z
-  .enum(['requested', 'needsChoice', 'downloading', 'failed'])
-  .openapi('RequestStatus');
-export type RequestStatus = z.infer<typeof RequestStatus>;
 
 /**
  * Where you stand with an item: `owned`, in your library; `streamable`, playing straight away

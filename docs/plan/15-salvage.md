@@ -13,7 +13,7 @@ Each carried-over part is taken from the tag `legacy` when its plan item starts.
 
 - Session and crypto: `db/crypto.ts`, `sessionsRepo`, `auth/*` (fix the cookie flags)
 - `packages/jellyfin-client`, the most complete module; re-record its fixtures
-- Request building blocks: `requestStatus`, `torrentId`, `downloadPoller`, `prowlarr`, `qbittorrent`/`transmission` (check the cookie name live)
+- Request building blocks: `requestStatus`, `torrentId`, `prowlarr`, `qbittorrent`/`transmission` (check the cookie name live)
 - Recommendation core: `profile`, `score`, `shelves`, `ownership` (pure functions), `listenbrainz.ts`
 - Self-hosted Inter, Archivo and Sonora's icon font; the legacy icons and Roboto Flex stay behind
 - Android: `ApiClient` cookie jar, DownloadManager wiring, Auto `BrowseTree`, the service skeleton

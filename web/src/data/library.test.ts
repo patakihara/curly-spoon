@@ -123,6 +123,22 @@ describe('[M1.shell] the library homes from GET /api/library/{medium}', () => {
       status: 'Requested',
       tone: 'request',
     });
+    expect(statusOf({ kind: 'requested', status: 'searching' })).toEqual({
+      status: 'Searching…',
+      tone: 'progress',
+    });
+    expect(statusOf({ kind: 'requested', status: 'queued' })).toEqual({
+      status: 'Queued',
+      tone: 'progress',
+    });
+    expect(statusOf({ kind: 'requested', status: 'importing' })).toEqual({
+      status: 'Importing',
+      tone: 'progress',
+    });
+    expect(statusOf({ kind: 'requested', status: 'inLibrary' })).toEqual({
+      status: 'In library',
+      tone: 'library',
+    });
   });
 });
 

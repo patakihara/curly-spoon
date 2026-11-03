@@ -1,0 +1,170 @@
+import type { RequestRef } from '@auralis/schema';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { standInRelease } from '../requests/standIn.js';
+import { openDatabase, type Db } from './connection.js';
+import {
+  createRequest,
+  deleteRequest,
+  getRequest,
+  peopleOn,
+  requestsOf,
+  saveRequest,
+  workingRequests,
+} from './requests.js';
+import { upsertUser } from './users.js';
+
+const book: RequestRef = {
+  medium: 'book',
+  target: { title: 'Powers', creator: 'Ursula K. Le Guin', ids: { asin: 'B0036S4B76' } },
+};
+const album: RequestRef = {
+  medium: 'album',
+  target: {
+    title: 'Fragments',
+    creator: 'Fleeting Verses',
+    ids: { mbid: '3f8a5e7c-1b2d-4e6f-9a0b-c1d2e3f4a5b6' },
+  },
+};
+
+let db: Db;
+let ana: string;
+let ben: string;
+beforeEach(() => {
+  db = openDatabase(':memory:');
+  ana = upsertUser(db, { username: 'ana', role: 'member' }).id;
+  ben = upsertUser(db, { username: 'ben', role: 'member' }).id;
+});
+
+describe('the requests store', () => {
+  it('keeps a new request as requested, with its target, and the person who made it', () => {
+    const { request, joined } = createRequest(db, ana, book, 1_000);
+    expect(joined).toBe(false);
+    expect(request).toEqual({
+      id: expect.any(String),
+      medium: 'book',
+      target: book.target,
+      state: { status: 'requested' },
+      release: null,
+      candidates: [],
+      handle: null,
+      result: null,
+      createdAt: 1_000,
+      updatedAt: 1_000,
+    });
+    expect(getRequest(db, request.id)).toEqual(request);
+    expect(peopleOn(db, request.id)).toEqual([ana]);
+  });
+
+  it('saves where a request stands with its release, candidates, download and result, and reads them back', () => {
+    const { request } = createRequest(db, ana, album, 1_000);
+    const candidates = [standInRelease('a'), standInRelease('b')];
+    saveRequest(db, request.id, { state: { status: 'needsChoice' }, candidates }, 2_000);
+    expect(getRequest(db, request.id)).toMatchObject({
+      state: { status: 'needsChoice' },
+      candidates,
+    });
+    saveRequest(
+      db,
+      request.id,
+      {
+        state: { status: 'downloading', progress: 0.4 },
+        release: candidates[1],
+        handle: { hash: 'abc' },
+      },
+      3_000,
+    );
+    saveRequest(
+      db,
+      request.id,
+      {
+        state: { status: 'failed', failedStep: 'importing', reason: 'importFailed' },
+        result: { source: 'jellyfin', id: 'a'.repeat(32) },
+      },
+      4_000,
+    );
+    expect(getRequest(db, request.id)).toEqual({
+      ...request,
+      state: { status: 'failed', failedStep: 'importing', reason: 'importFailed' },
+      release: candidates[1],
+      candidates,
+      handle: { hash: 'abc' },
+      result: { source: 'jellyfin', id: 'a'.repeat(32) },
+      updatedAt: 4_000,
+    });
+  });
+
+  it('joins a second person’s request for the same thing to the first, never a second download', () => {
+    const first = createRequest(db, ana, book, 1_000).request;
+    const same = {
+      ...book,
+      target: { ...book.target, title: 'Powers (Annals of the Western Shore)' },
+    };
+    const second = createRequest(db, ben, same, 2_000);
+    expect(second).toEqual({ request: first, joined: true });
+    expect(peopleOn(db, first.id).sort()).toEqual([ana, ben].sort());
+    expect(requestsOf(db, ben).map((r) => r.id)).toEqual([first.id]);
+    expect(createRequest(db, ana, book, 3_000)).toEqual({ request: first, joined: true });
+    expect(peopleOn(db, first.id)).toHaveLength(2);
+  });
+
+  it('makes a new request for something already in the library, and for the same id in another medium', () => {
+    const first = createRequest(db, ana, book, 1_000).request;
+    saveRequest(
+      db,
+      first.id,
+      { state: { status: 'inLibrary' }, result: { source: 'abs', id: 'li-1' } },
+      2_000,
+    );
+    expect(createRequest(db, ben, book, 3_000).joined).toBe(false);
+    expect(createRequest(db, ben, album, 3_000).joined).toBe(false);
+  });
+
+  it('lists only a person’s own requests, and the working ones for the job, leaving out failed and finished', () => {
+    const a = createRequest(db, ana, book, 1_000).request;
+    const b = createRequest(db, ben, album, 2_000).request;
+    expect(requestsOf(db, ana).map((r) => r.id)).toEqual([a.id]);
+    expect(workingRequests(db).map((r) => r.id)).toEqual([a.id, b.id]);
+    saveRequest(
+      db,
+      a.id,
+      { state: { status: 'failed', failedStep: 'searching', reason: 'noRelease' } },
+      3_000,
+    );
+    saveRequest(
+      db,
+      b.id,
+      { state: { status: 'inLibrary' }, result: { source: 'jellyfin', id: 'b'.repeat(32) } },
+      3_000,
+    );
+    expect(workingRequests(db)).toEqual([]);
+  });
+
+  it('deletes a cancelled request, and a person’s requests with them, keeping one another still holds', () => {
+    const shared = createRequest(db, ana, book, 1_000).request;
+    createRequest(db, ben, book, 1_000);
+    const own = createRequest(db, ana, album, 1_000).request;
+    db.prepare('DELETE FROM users WHERE id = ?').run(ana);
+    expect(getRequest(db, own.id)).toBeNull();
+    expect(peopleOn(db, shared.id)).toEqual([ben]);
+    deleteRequest(db, shared.id);
+    expect(getRequest(db, shared.id)).toBeNull();
+    expect(requestsOf(db, ben)).toEqual([]);
+  });
+
+  it('refuses a status outside the vocabulary, a failure without its step and reason, and progress off a download', () => {
+    const { request } = createRequest(db, ana, book, 1_000);
+    const set = (sql: string) => () =>
+      db.prepare(`UPDATE requests SET ${sql} WHERE id = ?`).run(request.id);
+    expect(set("status = 'approved'")).toThrow(/CHECK/);
+    expect(set("status = 'failed'")).toThrow(/CHECK/);
+    expect(set("status = 'failed', failed_step = 'searching'")).toThrow(/CHECK/);
+    expect(set("status = 'failed', failed_step = 'inLibrary', reason = 'noRelease'")).toThrow(
+      /CHECK/,
+    );
+    expect(set("status = 'failed', failed_step = 'searching', reason = 'oops'")).toThrow(/CHECK/);
+    expect(set('progress = 0.5')).toThrow(/CHECK/);
+    expect(set("status = 'downloading', progress = 1.5")).toThrow(/CHECK/);
+    expect(set("status = 'inLibrary'")).toThrow(/CHECK/);
+    expect(set("medium = 'video'")).toThrow(/CHECK/);
+  });
+});

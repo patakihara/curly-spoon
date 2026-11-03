@@ -57,12 +57,21 @@ export function statusOf(availability: Availability): {
         status: `Downloading · ${Math.round((availability.progress ?? 0) * 100)}%`,
         tone: 'progress',
       };
+    case 'requested':
+    case undefined:
+      return { status: 'Requested', tone: 'request' };
+    case 'searching':
+      return { status: 'Searching…', tone: 'progress' };
     case 'needsChoice':
       return { status: 'Needs choice', tone: 'request' };
+    case 'queued':
+      return { status: 'Queued', tone: 'progress' };
+    case 'importing':
+      return { status: 'Importing', tone: 'progress' };
+    case 'inLibrary':
+      return { status: 'In library', tone: 'library' };
     case 'failed':
       return { status: 'Failed', tone: 'error' };
-    default:
-      return { status: 'Requested', tone: 'request' };
   }
 }
 
