@@ -35,14 +35,14 @@ The rule: **the server works out how to play something; the clients just play th
 
 - **YouTube Music style, the default.** No "playing from": an album goes into the queue whole. _Play next_ inserts after the current item; _Add to queue_ appends after everything, album included. Then autoplay.
 - **Spotify style.** Current → your queue → the "playing from" album or playlist → autoplay. **Play** on a second album makes it "playing from", the first's unplayed rest after it.
-- Default button actions: with nothing playing, any item's button plays it. While music plays, a **song → Play next** and an **album → Add to queue**; while a podcast or book plays, a song or album → **Play**. Either way, an episode or book → **Play next**. Tapping an episode or book opens its page. Long-press or double-tap for the other action (to be tried in design). Buttons never move.
+- Default button actions: with nothing playing, any item's button plays it. While music plays, a **song → Play next** and an **album → Add to queue**; while a podcast or book plays, a song or album → **Play**. Either way, an episode or book → **Play next**. Tapping an episode or book opens its page. Long-press or double-tap for the other action (to be tried in design). Buttons never move, and name their action.
 :::
 :::
 
 | Queue runs out | What autoplay does |
 |---|---|
 | Music | The rest of the album, then similar music you own (Jellyfin's Instant Mix); from M3, YouTube Music's radio for the last track (not personalised) joins it. Then the recommendation algorithm under Discovery takes over. |
-| Spoken | The next unplayed episode of the same show (oldest first for serial shows, newest first for episodic ones, from the feed's `itunes:type`), or the next chapter or book in the series. Later, the next entry of your listening list. |
+| Spoken | The show's next unplayed episode, whatever its page's sort (oldest first for serial shows, newest first for episodic ones, from the feed's `itunes:type`), or the next chapter or book in the series. Later, the next entry of your listening list. |
 
 ### Lists that aren't queues
 
