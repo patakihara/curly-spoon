@@ -1,10 +1,11 @@
 /**
  * Listening sessions: what plays on one device. Each of a user's devices keeps its own session,
  * never mixed with another's: a music queue and a spoken queue that podcasts and books share, the
- * queue the controls drive, the queue style and the play history. A session's `rev` goes up on
- * every change to what it queues, and a write naming an older one is refused, so two tabs on one
- * device cannot overwrite each other. Where playback is in the current item, and autoplay's pick,
- * are kept as playback goes and leave `rev` alone, so a progress report never makes a view stale.
+ * queue the controls drive and the play history; the queue style is the person's own setting. A
+ * session's `rev` goes up on every change to what it queues, and a write naming an older one is
+ * refused, so two tabs on one device cannot overwrite each other. Where playback is in the
+ * current item, and autoplay's pick, are kept as playback goes and leave `rev` alone, so a
+ * progress report never makes a view stale.
  */
 import { MediaRef } from './play.js';
 import { z } from './zod.js';
@@ -114,7 +115,7 @@ export type QueueCurrents = z.infer<typeof QueueCurrents>;
 /**
  * One device's listening session, as the session list shows it: the device, whether it is the
  * one asking, the queue the controls drive, the queue to land on after the current item when one
- * is pending, the queue style, and each queue's current item.
+ * is pending, and each queue's current item.
  */
 export const ListeningSession = z
   .object({
@@ -123,7 +124,6 @@ export const ListeningSession = z
     thisDevice: z.boolean(),
     active: QueueType,
     switchAfterCurrent: QueueType.nullable(),
-    queueStyle: QueueStyle,
     currents: QueueCurrents,
     rev: Revision,
     updatedAt: z.number().int(),
@@ -187,12 +187,6 @@ export const ActiveQueueBody = z
   .object({ queue: QueueType, rev: Revision.optional() })
   .openapi('ActiveQueueBody');
 export type ActiveQueueBody = z.infer<typeof ActiveQueueBody>;
-
-/** This device's queue style, until settings keep one per person. */
-export const QueueStyleBody = z
-  .object({ queueStyle: QueueStyle, rev: Revision.optional() })
-  .openapi('QueueStyleBody');
-export type QueueStyleBody = z.infer<typeof QueueStyleBody>;
 
 /**
  * What a queue row shows of its entry: its title, its artist, author or show (`sub`), and its

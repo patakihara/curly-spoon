@@ -27,6 +27,7 @@ import { IndexLookup } from './queues/lookup.js';
 import { Sessions } from './queues/sessions.js';
 import { searchRoutes } from './routes/search.js';
 import { sessionRoutes } from './routes/sessions.js';
+import { settingsRoutes } from './routes/settings.js';
 import { setupRoutes } from './routes/setup.js';
 import { SIGN_IN_PAGE, signOnRoutes } from './routes/signOn.js';
 import type { Db } from './store/connection.js';
@@ -180,6 +181,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     });
   lyricsRoutes(app, { db, upstreams, lyrics });
   searchRoutes(app, { db, now: options.now ?? Date.now });
+  settingsRoutes(app, { db, sessions, now: options.now ?? Date.now });
 
   const distDir = options.webDistDir;
   if (distDir !== null && existsSync(distDir)) {

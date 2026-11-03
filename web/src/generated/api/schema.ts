@@ -381,16 +381,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/sessions/this/style": {
+    "/api/settings": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        /** This device's queue style: YouTube Music or Spotify */
-        put: operations["setQueueStyle"];
+        /** The signed-in person's settings, the same on every device of theirs */
+        get: operations["getSettings"];
+        /** Change the signed-in person's settings: only those named change */
+        put: operations["putSettings"];
         post?: never;
         delete?: never;
         options?: never;
@@ -794,8 +795,6 @@ export interface components {
             time: number;
             title: string;
         };
-        /** @enum {string} */
-        QueueStyle: "youtube" | "spotify";
         QueueCurrents: {
             music: components["schemas"]["QueueItem"] | null;
             spoken: components["schemas"]["QueueItem"] | null;
@@ -806,7 +805,6 @@ export interface components {
             thisDevice: boolean;
             active: components["schemas"]["QueueType"];
             switchAfterCurrent: components["schemas"]["QueueType"] | null;
-            queueStyle: components["schemas"]["QueueStyle"];
             currents: components["schemas"]["QueueCurrents"];
             rev: number;
             updatedAt: number;
@@ -867,9 +865,29 @@ export interface components {
             queue: components["schemas"]["QueueType"];
             rev?: number;
         };
-        QueueStyleBody: {
+        /** @enum {string} */
+        Theme: "system" | "light" | "dark";
+        AutoplaySwitches: {
+            music: boolean;
+            spoken: boolean;
+        };
+        /** @enum {string} */
+        QueueStyle: "youtube" | "spotify";
+        Settings: {
+            theme: components["schemas"]["Theme"];
+            autoplay: components["schemas"]["AutoplaySwitches"];
             queueStyle: components["schemas"]["QueueStyle"];
-            rev?: number;
+            firstRunDone: boolean;
+        };
+        AutoplaySwitchesChange: {
+            music?: boolean;
+            spoken?: boolean;
+        };
+        SettingsBody: {
+            theme?: components["schemas"]["Theme"];
+            autoplay?: components["schemas"]["AutoplaySwitchesChange"];
+            queueStyle?: components["schemas"]["QueueStyle"];
+            firstRunDone?: boolean;
         };
         /** @enum {string} */
         LibraryEntryKind: "book" | "show" | "album";
@@ -2393,7 +2411,45 @@ export interface operations {
             };
         };
     };
-    setQueueStyle: {
+    getSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every setting, a default for each one never changed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Settings"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    putSettings: {
         parameters: {
             query?: never;
             header?: never;
@@ -2402,17 +2458,17 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["QueueStyleBody"];
+                "application/json": components["schemas"]["SettingsBody"];
             };
         };
         responses: {
-            /** @description This device's session, with each queue's current item. */
+            /** @description Every setting, as it stands after the change. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ListeningSession"];
+                    "application/json": components["schemas"]["Settings"];
                 };
             };
             /** @description The request does not parse, or was refused. */

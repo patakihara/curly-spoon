@@ -48,6 +48,18 @@ enum class ArtSize {
 }
 
 @Serializable
+data class AutoplaySwitches(
+    val music: Boolean,
+    val spoken: Boolean,
+)
+
+@Serializable
+data class AutoplaySwitchesChange(
+    val music: Boolean? = null,
+    val spoken: Boolean? = null,
+)
+
+@Serializable
 data class Availability(
     val kind: AvailabilityKind,
     val status: RequestStatus? = null,
@@ -385,7 +397,6 @@ data class ListeningSession(
     val thisDevice: Boolean,
     val active: QueueType,
     val switchAfterCurrent: QueueType?,
-    val queueStyle: QueueStyle,
     val currents: QueueCurrents,
     val rev: Long,
     val updatedAt: Long,
@@ -625,12 +636,6 @@ enum class QueueStyle {
 }
 
 @Serializable
-data class QueueStyleBody(
-    val queueStyle: QueueStyle,
-    val rev: Long? = null,
-)
-
-@Serializable
 enum class QueueType {
     @SerialName("music")
     MUSIC,
@@ -768,6 +773,22 @@ enum class Service {
 }
 
 @Serializable
+data class Settings(
+    val theme: Theme,
+    val autoplay: AutoplaySwitches,
+    val queueStyle: QueueStyle,
+    val firstRunDone: Boolean,
+)
+
+@Serializable
+data class SettingsBody(
+    val theme: Theme? = null,
+    val autoplay: AutoplaySwitchesChange? = null,
+    val queueStyle: QueueStyle? = null,
+    val firstRunDone: Boolean? = null,
+)
+
+@Serializable
 data class SetupBody(
     val code: String? = null,
     val username: String,
@@ -825,6 +846,16 @@ enum class SuggestionKind {
 data class SuggestionList(
     val suggestions: List<Suggestion>,
 )
+
+@Serializable
+enum class Theme {
+    @SerialName("system")
+    SYSTEM,
+    @SerialName("light")
+    LIGHT,
+    @SerialName("dark")
+    DARK,
+}
 
 @Serializable
 data class TokenBody(

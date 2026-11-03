@@ -27,6 +27,7 @@ import {
   type StoredSession,
 } from './listening.js';
 import { createList } from './lists.js';
+import { writeSettings } from './settings.js';
 import { upsertUser } from './users.js';
 
 const song: MediaRef = { source: 'jellyfin', id: '0123456789abcdef0123456789abcdef' };
@@ -169,6 +170,7 @@ describe('a listening session in the store', () => {
 
   it('keeps everything a session holds, in order, and goes up one revision per write', () => {
     const { user, phone } = twoDevices();
+    writeSettings(db, user.id, { queueStyle: 'spotify' }, 900);
     const session = openSession(db, user.id, phone.id, 1000)!;
     const written: SessionValue = {
       active: 'spoken',
@@ -222,7 +224,6 @@ describe('a listening session in the store', () => {
         deviceName: 'Phone',
         active: 'spoken',
         switchAfterCurrent: 'music',
-        queueStyle: 'spotify',
         currents: {
           music: { itemId: written.queues.music.current!.itemId, ref: song },
           spoken: { itemId: written.queues.spoken.current!.itemId, ref: book, chapter: 2 },
@@ -231,6 +232,23 @@ describe('a listening session in the store', () => {
         updatedAt: 2000,
       },
     ]);
+  });
+
+  it('reads the queue style from its person’s settings, on every device, and a save leaves it alone', () => {
+    const { user, phone, laptop } = twoDevices();
+    const start = openSession(db, user.id, phone.id)!;
+    openSession(db, user.id, laptop.id);
+
+    const saved = saveSession(db, user.id, phone.id, start.rev, {
+      ...value(start),
+      queueStyle: 'spotify',
+    });
+    expect(saved!.queueStyle).toBe('youtube');
+
+    writeSettings(db, user.id, { queueStyle: 'spotify' }, 2000);
+    expect(openSession(db, user.id, phone.id)!.queueStyle).toBe('spotify');
+    expect(openSession(db, user.id, laptop.id)!.queueStyle).toBe('spotify');
+    expect(openSession(db, user.id, phone.id)!.rev).toBe(saved!.rev);
   });
 
   it('refuses a write made from an older revision, and keeps the newer one', () => {
@@ -242,7 +260,10 @@ describe('a listening session in the store', () => {
     });
 
     expect(() =>
-      saveSession(db, user.id, phone.id, start.rev, { ...value(start), queueStyle: 'spotify' }),
+      saveSession(db, user.id, phone.id, start.rev, {
+        ...value(start),
+        switchAfterCurrent: 'music',
+      }),
     ).toThrow(StaleRevision);
     expect(openSession(db, user.id, phone.id)).toEqual(first);
   });
@@ -378,7 +399,6 @@ describe('a listening session in the store', () => {
     const from = { kind: 'album' as const, ref: album };
     const playing = saveSession(db, user.id, phone.id, start.rev, {
       ...value(start),
-      queueStyle: 'spotify',
       queues: {
         ...start.queues,
         music: {

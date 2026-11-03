@@ -6,6 +6,7 @@
  */
 
 import {
+  DEFAULT_SETTINGS,
   type HistoryEntry,
   type ListeningSession,
   type MediaRef,
@@ -98,6 +99,7 @@ export interface SavedQueue {
 export interface SessionValue {
   active: QueueType;
   switchAfterCurrent: QueueType | null;
+  /** The person's queue style, read from their settings; saving a session leaves it alone. */
   queueStyle: QueueStyle;
   queues: Record<QueueType, SessionQueue>;
   history: SessionPlay[];
@@ -186,7 +188,8 @@ const SessionRow = z.object({
   device_name: z.string(),
   active: QueueType,
   switch_after_current: QueueType.nullable(),
-  queue_style: QueueStyle,
+  /** The person's queue style; null when they never changed a setting. */
+  queue_style: QueueStyle.nullable(),
   rev: z.number().int().nonnegative(),
   updated_at: z.number(),
   radio_seed_source: MediaSource.nullable(),
@@ -314,9 +317,11 @@ const RadioTrackRow = z
   .object({ source: MediaSource, upstream_id: z.string() })
   .transform((row): MediaRef => ({ source: row.source, id: row.upstream_id }));
 
+/** A session with its device's name and its person's queue style (store/settings.ts). */
 const SESSION_SELECT = `
-  SELECT listening_sessions.*, devices.name AS device_name
-  FROM listening_sessions JOIN devices ON devices.id = listening_sessions.device_id`;
+  SELECT listening_sessions.*, devices.name AS device_name, user_settings.queue_style
+  FROM listening_sessions JOIN devices ON devices.id = listening_sessions.device_id
+  LEFT JOIN user_settings ON user_settings.user_id = listening_sessions.user_id`;
 
 const PlayingFromRow = z
   .object({ queue: QueueType, kind: PlayingFromKind, source: MediaSource, upstream_id: z.string() })
@@ -410,7 +415,7 @@ function stored(db: Db, row: SessionRow): StoredSession {
     deviceId: row.device_id,
     active: row.active,
     switchAfterCurrent: row.switch_after_current,
-    queueStyle: row.queue_style,
+    queueStyle: row.queue_style ?? DEFAULT_SETTINGS.queueStyle,
     queues: readQueues(db, row.device_id),
     history: readHistory(db, row.device_id),
     autoplay: readAutoplay(db, row.device_id),
@@ -458,7 +463,6 @@ export function listSessions(db: Db, userId: string): SessionSummary[] {
       deviceName: row.device_name,
       active: row.active,
       switchAfterCurrent: row.switch_after_current,
-      queueStyle: row.queue_style,
       currents: { music: plain(queues.music.current), spoken: plain(queues.spoken.current) },
       rev: row.rev,
       updatedAt: row.updated_at,
@@ -531,7 +535,7 @@ export function saveSession(
     const changed = db
       .prepare(
         `UPDATE listening_sessions
-         SET active = ?, switch_after_current = ?, queue_style = ?, rev = rev + 1,
+         SET active = ?, switch_after_current = ?, rev = rev + 1,
            updated_at = ?, radio_seed_source = ?, radio_seed_id = ?, autoplay_at = ?,
            spoken_digest = ?
          WHERE device_id = ? AND user_id = ? AND rev = ?`,
@@ -539,7 +543,6 @@ export function saveSession(
       .run(
         value.active,
         value.switchAfterCurrent,
-        value.queueStyle,
         now,
         value.radio?.seed.source ?? null,
         value.radio?.seed.id ?? null,

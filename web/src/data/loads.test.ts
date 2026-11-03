@@ -52,7 +52,6 @@ const session = (over: object) => ({
   thisDevice: true,
   active: 'spoken',
   switchAfterCurrent: null,
-  queueStyle: 'youtube',
   currents: { music: null, spoken: null },
   rev: 0,
   updatedAt: 1,
