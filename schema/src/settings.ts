@@ -29,8 +29,10 @@ export const Settings = z
   .openapi('Settings');
 export type Settings = z.infer<typeof Settings>;
 
-/** The settings of a person who never changed one. */
-// user_settings' column DEFAULTs (migration 15) repeat all but the queue style, for its copied rows.
+/**
+ * The settings of a person who never changed one. user_settings' column DEFAULTs (migration 15)
+ * repeat all but the queue style, for its copied rows.
+ */
 export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   autoplay: { music: true, spoken: true },

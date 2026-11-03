@@ -366,4 +366,30 @@ describe('the settings migration', () => {
     ]);
     db.close();
   });
+
+  it('keeps the queue style of the lowest device id when two sessions changed at the same time', () => {
+    const db = new Database(':memory:');
+    db.pragma('foreign_keys = ON');
+    runMigrations(
+      db,
+      migrations.filter((m) => m.id <= 14),
+    );
+    db.exec(`
+      INSERT INTO users (id, username, role, created_at, updated_at) VALUES
+        ('user-1', 'kara', 'member', 1, 1);
+      INSERT INTO devices (id, user_id, kind, name, created_at, last_seen_at) VALUES
+        ('device-b', 'user-1', 'android', 'Phone', 1, 1),
+        ('device-a', 'user-1', 'web', 'Laptop', 1, 1);
+      INSERT INTO listening_sessions (device_id, user_id, active, queue_style, rev, updated_at) VALUES
+        ('device-b', 'user-1', 'music', 'spotify', 3, 20),
+        ('device-a', 'user-1', 'music', 'youtube', 1, 20);
+    `);
+
+    runMigrations(db);
+
+    expect(db.prepare('SELECT user_id, queue_style, updated_at FROM user_settings').all()).toEqual([
+      { user_id: 'user-1', queue_style: 'youtube', updated_at: 20 },
+    ]);
+    db.close();
+  });
 });

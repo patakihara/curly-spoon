@@ -31,7 +31,7 @@ import { PLACEHOLDER_ORIGIN } from './adapters/http/scrub.js';
 import { parseFeed } from './adapters/feed/client.js';
 import { indexQueryResultSchema } from './adapters/jellyfin/schemas.js';
 import { buildApp } from './app.js';
-import { AUTOPLAY_MISSED } from './queues/sessions.js';
+import { AUTOPLAY_MISSED, Sessions } from './queues/sessions.js';
 import { absTree, albumRow, orderingFromFeed, trackRows } from './libraryIndex/rows.js';
 import { applyTree, emptyCounts, removeItem } from './libraryIndex/store.js';
 import { openDatabase, type Db } from './store/connection.js';
@@ -386,6 +386,7 @@ describe('[M2.settings] the queue style, one per person in PUT /api/settings', (
   });
 
   it('[M2.settings] folds what is left of each device’s album after its queue on a move back to YouTube Music style, at a new revision', async () => {
+    const refreshes = vi.spyOn(Sessions.prototype, 'refreshAutoplay');
     const s = await server();
     await s.ok(s.call('kara-laptop', 'PUT', '/api/settings', { queueStyle: 'spotify' }));
     await s.ok(s.put('kara-phone', album, 'now'));
@@ -396,8 +397,14 @@ describe('[M2.settings] the queue style, one per person in PUT /api/settings', (
       laptop: await s.queue('kara-laptop', 'music'),
     };
     expect(before.phone.user.map((e) => e.ref)).toEqual([lone]);
+    // Every autoplay run so far is over, and none is on record: a run on record now is the move's.
+    await Promise.all(refreshes.mock.results.map((r) => r.value as Promise<void>));
+    refreshes.mockClear();
+    s.db.prepare('UPDATE listening_sessions SET autoplay_at = NULL').run();
 
     await s.ok(s.call('kara-laptop', 'PUT', '/api/settings', { queueStyle: 'youtube' }));
+    await Promise.all(refreshes.mock.results.map((r) => r.value as Promise<void>));
+    refreshes.mockRestore();
 
     const phone = await s.queue('kara-phone', 'music');
     expect(phone.context).toEqual({ from: { kind: 'album', ref: album }, items: [] });
@@ -407,6 +414,53 @@ describe('[M2.settings] the queue style, one per person in PUT /api/settings', (
     expect(laptop.context?.items).toEqual([]);
     expect(laptop.user.map((e) => e.ref)).toEqual(tracks.slice(1));
     expect(laptop.rev).toBe(before.laptop.rev + 1);
+    // Worked out again at the new revision: the folded album leaves the queue nothing to run out.
+    for (const who of ['kara-phone', 'kara-laptop']) {
+      expect(s.stored(who).autoplayAt, who).toBe(NOW);
+      expect(s.stored(who).autoplay.music, who).toBeNull();
+    }
+
+    const stale = await s.call('kara-phone', 'PUT', '/api/queues/music', {
+      rev: before.phone.rev,
+      user: [],
+    });
+    expect(stale.statusCode, stale.body).toBe(409);
+    expect(await s.queue('kara-phone', 'music')).toEqual(phone);
+  });
+
+  it('[M2.settings] keeps the stored style and every session as they were when a device fails to follow a change', async () => {
+    const s = await server();
+    await s.ok(s.put('kara-phone', album, 'now'));
+    await s.ok(s.put('kara-laptop', album, 'now'));
+    const before = {
+      phone: await s.queue('kara-phone', 'music'),
+      laptop: await s.queue('kara-laptop', 'music'),
+    };
+    const change = Sessions.prototype.change;
+    let calls = 0;
+    const failing = vi.spyOn(Sessions.prototype, 'change').mockImplementation(function (
+      this: Sessions,
+      ...args: Parameters<Sessions['change']>
+    ) {
+      calls += 1;
+      if (calls === 2) throw new Error('the second device fails to follow');
+      return change.apply(this, args);
+    });
+
+    const failed = await s.call('kara-phone', 'PUT', '/api/settings', { queueStyle: 'spotify' });
+    failing.mockRestore();
+
+    expect(failed.statusCode).toBe(500);
+    expect(calls).toBe(2);
+    expect(await s.ok(s.call('kara-phone', 'GET', '/api/settings'))).toMatchObject({
+      queueStyle: 'youtube',
+    });
+    for (const who of ['kara-phone', 'kara-laptop'] as const) {
+      expect(s.stored(who).queueStyle, who).toBe('youtube');
+      expect(await s.queue(who, 'music'), who).toEqual(
+        before[who === 'kara-phone' ? 'phone' : 'laptop'],
+      );
+    }
   });
 
   it('[M2.settings] leaves every session alone when a change keeps the queue style', async () => {

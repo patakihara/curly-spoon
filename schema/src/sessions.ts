@@ -1,10 +1,11 @@
 /**
  * Listening sessions: what plays on one device. Each of a user's devices keeps its own session,
  * never mixed with another's: a music queue and a spoken queue that podcasts and books share, the
- * queue the controls drive and the play history; the queue style is the person's own setting. A session's `rev` goes up on
- * every change to what it queues, and a write naming an older one is refused, so two tabs on one
- * device cannot overwrite each other. Where playback is in the current item, and autoplay's pick,
- * are kept as playback goes and leave `rev` alone, so a progress report never makes a view stale.
+ * queue the controls drive and the play history; the queue style is the person's own setting. A
+ * session's `rev` goes up on every change to what it queues, and a write naming an older one is
+ * refused, so two tabs on one device cannot overwrite each other. Where playback is in the
+ * current item, and autoplay's pick, are kept as playback goes and leave `rev` alone, so a
+ * progress report never makes a view stale.
  */
 import { MediaRef } from './play.js';
 import { z } from './zod.js';
