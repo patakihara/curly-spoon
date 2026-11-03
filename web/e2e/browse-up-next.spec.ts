@@ -15,9 +15,9 @@ import {
  * episode played from its own page is on Browse's Up next shelf, opening its page, and Still
  * listening, which needs a second book or show heard, is left out, unnamed, while only one show
  * and one book have been. A play is written to your history once it stops being current, and the
- * recorded Audiobookshelf keeps no progress sent to it, so the book is played after the episode. The book, still playing, was last heard when the
- * recording's Audiobookshelf last changed it, so the episode leads Up next.
- * Its own server, so its sign-ins count against their own rate limit.
+ * recorded Audiobookshelf keeps no progress sent to it, so the book is played after the episode.
+ * The book, still playing, was last heard when the recording's Audiobookshelf last changed it, so
+ * the episode leads Up next. Its own server, so its sign-ins count against their own rate limit.
  */
 
 test.use({ launchOptions: { args: ['--autoplay-policy=no-user-gesture-required'] } });

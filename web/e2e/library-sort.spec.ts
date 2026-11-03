@@ -6,7 +6,8 @@ import { signIn as signInAt } from './shell-steps';
  * A library home's sorts in the web shell, on the server with recorded upstreams (M2.sorting): the
  * sort menu replaces the page's address, which asks `GET /api/library/{medium}` for that order.
  * Books by Author draws the author order, Random the order of the seed in the address, and
- * choosing Random again draws a fresh seed and asks again. Its own server, so its sign-ins count
+ * choosing Random again draws a fresh seed and asks again; Random with no seed, or a bad one, takes
+ * the seed the server drew into the address. Its own server, so its sign-ins count
  * against their own rate limit.
  */
 
@@ -108,15 +109,47 @@ test.describe('[M2.sorting/a] a library home in the order chosen', () => {
     await expect.poll(() => cardsShown(page, titles)).toEqual(byTitle);
   });
 
-  test('a bad seed in the address is ignored, and the page still draws a shuffle', async ({
+  test('Random with no seed keeps the order the server drew through a reload, its seed in the address', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    const asked = page
-      .waitForRequest((r) => new URL(r.url()).pathname === '/api/library/books')
-      .then((r) => new URL(r.url()).search);
-    await signIn(page, '/books?sort=random&seed=-3');
-    expect(await asked).toBe('?sort=random');
+    await signIn(page, '/books');
+    const answered = page.waitForResponse(
+      (r) => new URL(r.url()).pathname === '/api/library/books' && r.url().includes('random'),
+    );
+    await page.goto(`${recorded.origin}/books?sort=random`);
+    const drawn = (await (await answered).json()) as { items: Listed[]; seed: number };
+    expect(new URL((await answered).url()).search).toBe('?sort=random');
+    const titles = drawn.items.map((b) => b.title);
+    await expect(page).toHaveURL(`${recorded.origin}/books?sort=random&seed=${drawn.seed}`);
+    await expect.poll(() => cardsShown(page, titles)).toEqual(titles);
+
+    const again = nextAsk(page);
+    await page.reload();
+    expect(await again).toBe(`?sort=random&seed=${drawn.seed}`);
+    await expect.poll(() => cardsShown(page, titles)).toEqual(titles);
+    await expect(page, 'the seed settles once').toHaveURL(
+      `${recorded.origin}/books?sort=random&seed=${drawn.seed}`,
+    );
+
+    await page.goBack();
+    await expect(page, 'the seed replaced the address, no new entry').toHaveURL(
+      `${recorded.origin}/books`,
+    );
+  });
+
+  test('a bad seed in the address is ignored, and the page settles on the shuffle drawn', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signIn(page, '/books');
+    const answered = page.waitForResponse(
+      (r) => new URL(r.url()).pathname === '/api/library/books' && r.url().includes('random'),
+    );
+    await page.goto(`${recorded.origin}/books?sort=random&seed=-3`);
+    expect(new URL((await answered).url()).search).toBe('?sort=random');
+    const { seed } = (await (await answered).json()) as { seed: number };
+    await expect(page).toHaveURL(`${recorded.origin}/books?sort=random&seed=${seed}`);
     await expect(sortButton(page, 'Random')).toBeVisible();
   });
 });

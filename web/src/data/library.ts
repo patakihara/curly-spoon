@@ -4,6 +4,7 @@ import {
   type FeedCard,
   type FeedShelfId,
   type LibraryList,
+  type LibrarySort,
   mediaRefKey,
 } from '@auralis/schema';
 import { type BooksData } from '../generated/pages/Books';
@@ -25,9 +26,23 @@ interface SortWords {
   options: { key: string; label: string }[];
 }
 
-/** The page's sort, naming the one the list is in by its option's label. */
-function sortOf<S extends SortWords>(sort: S, list: LibraryList): S {
-  return { ...sort, value: sort.options.find((o) => o.key === list.sort)?.label ?? sort.value };
+/** The page's sort, naming `key`'s by its option's label. */
+function sortNamed<S extends SortWords>(sort: S, key: string): S {
+  return { ...sort, value: sort.options.find((o) => o.key === key)?.label ?? sort.value };
+}
+
+/** The page's sort, naming the one the list is in. */
+const sortOf = <S extends SortWords>(sort: S, list: LibraryList): S => sortNamed(sort, list.sort);
+
+/**
+ * A library home while its list loads, or when it failed: no cards, its sort naming `sort`, the
+ * one its address asks (`libraryAsk`), title when it asks none.
+ */
+export function libraryAwaited<P extends { sort: SortWords; library: unknown[] }>(
+  page: P,
+  sort: LibrarySort | undefined,
+): P {
+  return { ...page, sort: sortNamed(page.sort, sort ?? 'title'), library: [] };
 }
 
 /** What a card says beside its art of where you stand with it: nothing for what you own. */
@@ -148,9 +163,10 @@ const feedCard = (card: FeedCard): FeedCardData =>
 /**
  * Browse, the home page. Its first shelf, from the three library lists, holds what you are part
  * way through (a book, show or album with progress between 0 and 1). Up next and Still listening
- * come from `GET /api/feed`, each card opening its book or episode. A shelf with nothing on it is
- * left out, unnamed in the page's section bar. The shelves later milestones serve (recently added,
- * people, picks, recently played), the feature and the shelves' ids stay empty.
+ * come from `GET /api/feed`, each card opening its book or episode. Only Jump back in, Up next and
+ * Still listening are left out when empty, unnamed in the page's section bar. The feature, the
+ * shelves' ids and the shelves later milestones serve (recently added, people, picks, recently
+ * played) stay empty, those shelves still named in the section bar.
  */
 export function browseData(lists: LibraryList[], feed: Feed, page: BrowseData): BrowseData {
   const begun = lists

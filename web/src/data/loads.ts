@@ -20,9 +20,9 @@ import { SignedOut } from './store';
 
 /**
  * What the pages read from the API, each answer parsed with the schema's zod: a library list, one
- * book, show or album, Browse's shelves, your lists, this device's queues, and search's suggestions and results. A refusal for
- * want of a sign-in throws `SignedOut`; any other failure throws too, and the page keeps what it
- * had.
+ * book, show or album, Browse's shelves, your lists, this device's queues, and search's suggestions
+ * and results. A refusal for want of a sign-in throws `SignedOut`; any other failure throws too,
+ * and the page keeps what it had.
  */
 
 /** The answer's data parsed, or why there is none. */
@@ -54,6 +54,21 @@ export function libraryAsk(params: Readonly<Record<string, string | undefined>>)
   return sort.data === 'random' && seed <= LIBRARY_SEED_MAX
     ? { sort: sort.data, seed }
     : { sort: sort.data };
+}
+
+/**
+ * The query values a library home's address settles on once the server answers in `seed`'s
+ * shuffle (null unless random): random with that seed, when the address asked for random without
+ * a seed it takes, so a reload keeps the order; else null, which leaves the address as it is. An
+ * address holding the seed answered gives null, so it settles once.
+ */
+export function settledAddress(
+  params: Readonly<Record<string, string | undefined>>,
+  seed: number | null,
+): { sort: 'random'; seed: string } | null {
+  return seed === null || libraryAsk(params).seed === seed
+    ? null
+    : { sort: 'random', seed: String(seed) };
 }
 
 export const loadLibrary = (

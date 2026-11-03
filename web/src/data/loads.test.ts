@@ -12,6 +12,7 @@ import {
   loadQueues,
   loadSearch,
   loadSuggest,
+  settledAddress,
 } from './loads';
 import { SignedOut } from './store';
 
@@ -242,6 +243,22 @@ describe('[M2.sorting] the order a library home asks for, from its address', () 
       sort: 'random',
       seed: 2 ** 32 - 1,
     });
+  });
+});
+
+describe('[M2.sorting] the address a shuffle settles on, once the server answers', () => {
+  it('[M2.sorting] adds the seed the server drew to an address that asked for random without one', () => {
+    expect(settledAddress({ sort: 'random' }, 7)).toEqual({ sort: 'random', seed: '7' });
+    expect(settledAddress({ sort: 'random', seed: '-3' }, 9), 'a bad seed is replaced').toEqual({
+      sort: 'random',
+      seed: '9',
+    });
+  });
+
+  it('[M2.sorting] leaves an address that already names the order answered, so it settles once', () => {
+    expect(settledAddress({ sort: 'random', seed: '7' }, 7)).toBeNull();
+    expect(settledAddress({ sort: 'artist' }, null)).toBeNull();
+    expect(settledAddress({}, null)).toBeNull();
   });
 });
 

@@ -4,7 +4,14 @@ import { frame as books } from '../generated/pages/Books';
 import { frame as browse } from '../generated/pages/Browse';
 import { frame as music } from '../generated/pages/Music';
 import { frame as podcasts } from '../generated/pages/Podcasts';
-import { booksData, browseData, musicData, podcastsData, statusOf } from './library';
+import {
+  booksData,
+  browseData,
+  libraryAwaited,
+  musicData,
+  podcastsData,
+  statusOf,
+} from './library';
 
 const entry = (over: Partial<LibraryEntry>): LibraryEntry => ({
   ref: { source: 'abs', id: 'b1' },
@@ -199,6 +206,18 @@ describe('[M2.sorting] the library homes say the order they are in', () => {
     expect(booksData(sorted('title'), books.placeholder).sort.value).toBe('Title');
   });
 
+  it('[M2.sorting] names the sort the address asks, with no cards, until its list answers', () => {
+    expect(libraryAwaited(books.placeholder, 'artist')).toEqual({
+      ...books.placeholder,
+      sort: { ...books.placeholder.sort, value: 'Author' },
+      library: [],
+    });
+    expect(libraryAwaited(podcasts.placeholder, 'artist').sort.value).toBe('Host');
+    expect(libraryAwaited(music.placeholder, 'artist').sort.value).toBe('Artist');
+    expect(libraryAwaited(music.placeholder, 'random').sort.value).toBe('Random');
+    expect(libraryAwaited(books.placeholder, undefined).sort.value).toBe('Title');
+  });
+
   it('[M2.sorting] keeps every sort to choose from, by the key the server takes', () => {
     const { sort } = booksData(sorted('random'), books.placeholder);
     expect(sort.ref).toBe('books');
@@ -226,7 +245,7 @@ describe("[M2.sorting] Browse's Up next and Still listening, from GET /api/feed"
     progress: null,
   });
 
-  it('[M2.sorting/b] shows each Up next card opening its book or episode, named by its kind', () => {
+  it('[M2.sorting] shows each Up next card opening its book or episode, named by its kind', () => {
     const data = browseData(
       [],
       { shelves: [{ id: 'up-next', items: [card({}), book] }] },
@@ -255,7 +274,7 @@ describe("[M2.sorting] Browse's Up next and Still listening, from GET /api/feed"
     expect(data.sections, 'no titled empty shelf').not.toContain('Still listening');
   });
 
-  it('[M2.sorting/b] fills Still listening from the second shelf, and draws a card with no sub as its kind alone', () => {
+  it('[M2.sorting] fills Still listening from the second shelf, and draws a card with no sub as its kind alone', () => {
     const data = browseData(
       [],
       {
@@ -270,7 +289,7 @@ describe("[M2.sorting] Browse's Up next and Still listening, from GET /api/feed"
     expect(data.sections.slice(0, 2)).toEqual(['Up next', 'Still listening']);
   });
 
-  it('[M2.sorting/b] leaves both shelves out, unnamed, while the feed holds none', () => {
+  it('[M2.sorting] leaves both shelves out, unnamed, while the feed holds none', () => {
     const data = browseData([], noFeed, browse.placeholder);
     expect(data.upNext).toEqual([]);
     expect(data.sections).not.toContain('Up next');
