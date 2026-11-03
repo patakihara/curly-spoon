@@ -532,7 +532,7 @@ describe('[M1.sessions/d] Back and Forward', () => {
     expect(step(s, 'back', d)).toEqual(s);
   });
 
-  it('Back from a song played now during a walk returns to the replay it replaced', () => {
+  it('Back from a song played now during a walk walks the track Back first left, then what played before it', () => {
     const d = deps();
     let s = run(empty(), (s) => add(s, first.album, 'now', d));
     s = step(s, 'next', d);
@@ -541,10 +541,56 @@ describe('[M1.sessions/d] Back and Forward', () => {
     s = step(s, 'back', d);
     s = run(s, (s) => add(s, trackX, 'now', d));
 
-    s = step(s, 'back', d);
+    const walked = [1, 2, 3].map(() => refOf((s = step(s, 'back', d)).queues.music.current));
 
-    expect(refOf(s.queues.music.current)).toEqual(first.tracks[0]);
+    expect(walked).toEqual([first.tracks[2], first.tracks[1], first.tracks[0]]);
     expect(step(s, 'back', d)).toEqual(s);
+    const forward = [1, 2, 3].map(() => refOf((s = step(s, 'next', d)).queues.music.current));
+    expect(forward).toEqual([first.tracks[1], first.tracks[2], trackX]);
+  });
+
+  it('Back from an episode played now during a walk over another show walks that show back', () => {
+    const d = deps();
+    let s = run(
+      empty(),
+      (s) => add(s, episodeE, 'now', d),
+      (s) => add(s, episodeF, 'now', d),
+    );
+    s = step(s, 'back', d);
+    const other = episodes[2]!;
+    s = run(s, (s) => add(s, other, 'now', d));
+    expect(order(s, 'spoken')).toEqual([other]);
+
+    const walked = [1, 2].map(() => refOf((s = step(s, 'back', d)).queues.spoken.current));
+
+    expect(walked).toEqual([episodeF, episodeE]);
+  });
+
+  it('pauses the other queue’s walk whole when a new play starts in one queue, either way', () => {
+    const d = deps();
+    // A walk in the spoken queue, then a song played now: the episode Back left waits, unrecorded.
+    let spoken = run(
+      empty(),
+      (s) => add(s, episodeE, 'now', d),
+      (s) => add(s, episodeF, 'now', d),
+    );
+    spoken = step(spoken, 'back', d);
+    const heard = spoken.history.map((h) => h.ref);
+    spoken = run(spoken, (s) => add(s, trackX, 'now', d));
+    expect(spoken.history.map((h) => h.ref)).toEqual(heard);
+    expect(order(spoken, 'spoken')).toEqual([episodeE, episodeF]);
+
+    // A walk in the music queue, then an episode played now: the track Back left waits too.
+    let music = run(
+      empty(),
+      (s) => add(s, trackX, 'now', d),
+      (s) => add(s, trackY, 'now', d),
+    );
+    music = step(music, 'back', d);
+    const played = music.history.map((h) => h.ref);
+    music = run(music, (s) => add(s, episodeE, 'now', d));
+    expect(music.history.map((h) => h.ref)).toEqual(played);
+    expect(order(music, 'music')).toEqual([trackX, trackY]);
   });
 
   it('Forward follows the queue: a walk reordered in the queue plays in its new order', () => {
@@ -585,12 +631,11 @@ describe('[M1.sessions/d] Back and Forward', () => {
     expect(switched.history.map((h) => h.ref)).toEqual(history);
 
     s = run(s, (s) => add(s, episodeF, 'now', d));
-    // Play now ends the walk: the song Back first left is recorded, the replay is not again.
-    expect(s.history.map((h) => h.ref)).toEqual([...history, trackX]);
+    // An episode played now pauses music: its walk stays queued, nothing recorded.
     s = switchTo(s, 'music', d);
     s = step(s, 'next', d);
-    expect(refOf(s.queues.music.current)).toEqual(first.tracks[1]);
-    expect(s.history.map((h) => h.ref)).toEqual([...history, trackX]);
+    expect(refOf(s.queues.music.current)).toEqual(trackX);
+    expect(s.history.map((h) => h.ref)).toEqual(history);
   });
 });
 
@@ -667,9 +712,7 @@ describe('a digest’s own queue', () => {
     expect(saved.user.some((i) => i.walk !== undefined)).toBe(false);
     const back = resumeSaved(entered, null, d);
     expect(back.queues.spoken.user.some((i) => i.walk !== undefined)).toBe(false);
-    // Entering the digest is a new play: the episode Back left is played, not queued again.
-    expect(order(back, 'spoken')).toEqual([episodeE]);
-    expect(back.history.map((h) => h.ref)).toEqual([episodeE, episodeF]);
+    expect(order(back, 'spoken')).toEqual(order(walking, 'spoken'));
   });
 
   it('gives an entry brought back a new id when its id is already taken', () => {

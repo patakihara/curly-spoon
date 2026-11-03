@@ -22,27 +22,58 @@ test.afterAll(() => recorded?.stop());
 
 const signIn = (page: Page, path: string) => signInAt(page, recorded.origin, path);
 
+const PLAY = /^play_arrow\s*(Play|Resume)$/;
+const PLAY_NEXT = /^arrow_top_right\s*Play next$/;
+
 test.describe('[M1.shell/e] each Play button names its action', () => {
   test("names an episode page's Play and Play next apart, and a show's rows Play episode", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await signIn(page, `/podcasts/episodes/${keyOf(recorded.episode)}`);
-    await expect(page.getByRole('button', { name: /^play_arrow\s*(Play|Resume)$/ })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Play next$/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: PLAY })).toBeVisible();
+    await expect(page.getByRole('button', { name: PLAY_NEXT })).toBeEnabled();
 
     await goWithin(page, `/podcasts/${keyOf(recorded.show)}`);
-    const rows = page.getByRole('button', { name: 'Play episode', exact: true });
-    await expect(rows.first()).toBeVisible();
-    expect(await rows.count()).toBeGreaterThan(0);
+    await expect(
+      page.getByRole('button', { name: 'Play episode', exact: true }).first(),
+    ).toBeVisible();
   });
 
-  test("names a book's and an album's Play as Play or Resume", async ({ page }) => {
+  test("names a list's Play and its rows' Play episode, its Play next disabled", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signIn(page, '/podcasts');
+    // A playlist holding the recorded episode, made through the API as the shell would.
+    const write = (path: string, data: object) =>
+      page.request.post(`${recorded.origin}${path}`, {
+        data,
+        headers: { origin: recorded.origin },
+      });
+    const made = await write('/api/lists', { kind: 'playlist', name: 'Labels' });
+    expect(made.status()).toBe(200);
+    const { id } = (await made.json()) as { id: string };
+    expect((await write(`/api/lists/${id}/items`, { ref: recorded.episode })).status()).toBe(200);
+    await page.goto(`${recorded.origin}/lists/${id}`);
+    await expect(page.getByRole('button', { name: /^play_arrow\s*Play$/ })).toBeEnabled();
+    // A list has no Play next of its own (it plays through its own route), so it stays disabled.
+    await expect(page.getByRole('button', { name: PLAY_NEXT })).toBeDisabled();
+    await expect(
+      page.getByRole('button', { name: 'Play episode', exact: true }).first(),
+    ).toBeVisible();
+  });
+
+  test("names a book's and an album's Play; what the minimal shell does not bind is disabled", async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await signIn(page, `/books/${keyOf(recorded.multiFile)}`);
-    await expect(page.getByRole('button', { name: /^play_arrow\s*(Play|Resume)$/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: PLAY })).toBeEnabled();
+    await expect(page.getByRole('button', { name: PLAY_NEXT })).toBeDisabled();
     await goWithin(page, `/music/albums/${keyOf(recorded.album)}`);
-    await expect(page.getByRole('button', { name: /^play_arrow\s*(Play|Resume)$/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: PLAY })).toBeEnabled();
+    await expect(page.getByRole('button', { name: /Add to queue$/ })).toBeDisabled();
   });
 });
 
@@ -70,6 +101,15 @@ test.describe('[M1.shell/e] Play now on an episode while another show plays', ()
     const other = shows.items.map((i) => i.ref).find((r) => keyOf(r) !== keyOf(recorded.show))!;
     const [otherEpisode, earlier] = await episodesOf(other);
     const ownEpisodes = (await episodesOf(recorded.show)).map(keyOf);
+    // The show's next episode: the first after the one played, in the show's own order (as its
+    // page lists them), that the person has not finished.
+    const own = (
+      await api<{ episodes: { ref: Ref; finished: boolean }[] }>(
+        `/api/items/${encodeURIComponent(keyOf(recorded.show))}`,
+      )
+    ).episodes;
+    const playedAt = own.findIndex((e) => keyOf(e.ref) === keyOf(recorded.episode));
+    const showNext = own.slice(playedAt + 1).find((e) => !e.finished)!.ref;
 
     // The other show plays: one episode, then another, then Back to the first, as Sofia may
     // have pressed it (Back parks the episode it leaves ahead in the queue).
@@ -99,7 +139,6 @@ test.describe('[M1.shell/e] Play now on an episode while another show plays', ()
       .toEqual([keyOf(recorded.episode), expect.any(String)]);
     const queue = await api<{ user: { ref: Ref }[]; autoplay: { ref: Ref } }>('/api/queues/spoken');
     expect(queue.user).toEqual([]);
-    expect(ownEpisodes).toContain(keyOf(queue.autoplay.ref));
-    expect(keyOf(queue.autoplay.ref)).not.toBe(keyOf(recorded.episode));
+    expect(queue.autoplay.ref).toEqual(showNext);
   });
 });
