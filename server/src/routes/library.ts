@@ -6,9 +6,13 @@
  * home screen or not. An unfinished book at 0 is listed as not started. A person not linked
  * to an upstream may open none of its libraries, so its lists are empty. Everything listed is in
  * the household's own libraries, so it is `owned`. An entry links art only when its upstream has
- * art for it, as the index read: a cover, or a primary image.
+ * art for it, as the index read: a cover, or a primary image. A list comes by title, by author,
+ * host or artist, or shuffled by a seed (`../library/sort.ts`); Random asked without a seed draws
+ * one and answers it, so the same order can be asked for again.
  */
+import { randomInt } from 'node:crypto';
 import {
+  LIBRARY_SEED_MAX,
   type LibraryEntry,
   type LibraryEntryKind,
   listLibrary,
@@ -18,6 +22,7 @@ import type { FastifyInstance } from 'fastify';
 import type { AbsClient } from '../adapters/audiobookshelf/client.js';
 import { libraryAccessSchema } from '../adapters/audiobookshelf/schemas.js';
 import type { JellyfinClient } from '../adapters/jellyfin/client.js';
+import { sortEntries } from '../library/sort.js';
 import type { Creator } from '../libraryIndex/rows.js';
 import { type StoredRow, topLevelOfKind } from '../libraryIndex/store.js';
 import { Refusal, serve } from '../route.js';
@@ -33,8 +38,6 @@ const SUB_ROLE: Record<LibraryEntryKind, Creator['role']> = {
   show: 'host',
   album: 'album-artist',
 };
-
-const byTitle = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
 
 /** A list's entry for an indexed book, show or album: also the head of its page. */
 export function entry(
@@ -64,11 +67,28 @@ export interface Standing {
   updatedAt: number | null;
 }
 
+/** A book or episode the person has begun or finished on Audiobookshelf. */
+export interface Heard {
+  /** The book's id, or the episode's own id. */
+  id: string;
+  /** When Audiobookshelf last changed it, in milliseconds since the epoch; null if never. */
+  updatedAt: number | null;
+}
+
 /** What the person's own Audiobookshelf `GET /api/me` says: what they may open, how far they are. */
 export interface AbsAccess {
   open(libraryId: string | null): boolean;
   /** A book's standing by its id, or an episode's by its own id. */
   standing(id: string): Standing;
+  /**
+   * Every book and episode begun, by time or share, or finished, that the person has not removed
+   * from Continue Listening.
+   */
+  heard: readonly Heard[];
+  /** Whether the person removed a book or episode from Continue Listening, by its id. */
+  hidden(id: string): boolean;
+  /** Whether the person removed a series from Continue Series, by its id. */
+  seriesHidden(seriesId: string): boolean;
 }
 
 export async function absAccess(abs: AbsClient): Promise<AbsAccess> {
@@ -89,11 +109,26 @@ export async function absAccess(abs: AbsClient): Promise<AbsAccess> {
       ];
     }),
   );
+  const hiddenIds = new Set(
+    me.mediaProgress
+      .filter((p) => p.hideFromContinueListening === true)
+      .map((p) => p.episodeId ?? p.libraryItemId),
+  );
+  const hiddenSeries = new Set(me.seriesHideFromContinueListening ?? []);
   return {
     open: (libraryId) =>
       permissions.accessAllLibraries ||
       (libraryId !== null && librariesAccessible.includes(libraryId)),
     standing: (id) => standings.get(id) ?? { progress: null, finished: false, updatedAt: null },
+    heard: me.mediaProgress
+      .filter(
+        (p) =>
+          p.hideFromContinueListening !== true &&
+          (p.isFinished || p.progress > 0 || p.currentTime > 0),
+      )
+      .map((p) => ({ id: p.episodeId ?? p.libraryItemId, updatedAt: p.lastUpdate ?? null })),
+    hidden: (id) => hiddenIds.has(id),
+    seriesHidden: (seriesId) => hiddenSeries.has(seriesId),
   };
 }
 
@@ -124,7 +159,7 @@ export function libraryRoutes(
 ): void {
   const { db, upstreams } = options;
 
-  serve(app, listLibrary, async (request, _reply, _body, { params }) => {
+  serve(app, listLibrary, async (request, _reply, _body, { params, query }) => {
     const user = signedIn(request);
     const clients =
       upstreams === null ? { abs: null, jellyfin: null } : upstreamFor({ db, ...upstreams }, user);
@@ -139,6 +174,8 @@ export function libraryRoutes(
       if (error instanceof Refusal) throw error;
       refusalFor(error);
     }
-    return { items: items.sort((a, b) => byTitle.compare(a.title, b.title)) };
+    const seed =
+      query.sort === 'random' ? (query.seed ?? randomInt(0, LIBRARY_SEED_MAX + 1)) : null;
+    return { items: sortEntries(items, query.sort, seed), sort: query.sort, seed };
   });
 }

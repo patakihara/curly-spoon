@@ -71,11 +71,12 @@ function handlersPassed(): Map<string, Set<string>> {
 
 /**
  * Whether a stub hands `handler` to a tappable element: SonoraStub's `press`, one of its
- * `taps` (`label to props.onX`), or a tap per item for a handler that takes the item's key.
+ * `taps` (`label to props.onX`), or a tap per item for a handler that takes the item's key,
+ * directly or through `menuTaps`, the menus' shared taps.
  */
 const tappable = (stub: string, handler: string) =>
   new RegExp(
-    `Press\\(props\\.${handler}\\b|to props\\.${handler}\\b|props\\.${handler}\\?\\.let`,
+    `Press\\(props\\.${handler}\\b|to props\\.${handler}\\b|props\\.${handler}\\?\\.let|menuTaps\\([^)]*props\\.${handler}\\b`,
   ).test(stub);
 
 describe('the Android Sonora composables', () => {
@@ -131,5 +132,7 @@ describe('the Android Sonora composables', () => {
     expect(tappable('taps = listOf(props.subtitle to props.onSubtitle)', 'onSubtitle')).toBe(true);
     expect(tappable('SonoraStub("X", texts = listOf(props.title))', 'onClick')).toBe(false);
     expect(tappable('press = Press(props.onClickTwice)', 'onClick')).toBe(false);
+    expect(tappable('taps = menuTaps(props.items, props.onSelect)', 'onSelect')).toBe(true);
+    expect(tappable('taps = menuTaps(props.items, props.onSelectAll)', 'onSelect')).toBe(false);
   });
 });

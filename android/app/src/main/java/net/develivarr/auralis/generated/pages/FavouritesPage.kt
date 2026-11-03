@@ -36,7 +36,7 @@ import net.develivarr.auralis.ui.sonora.Section
 /** Favourites, as design/app/pages/favourites.page.jsx draws it on the phone, with its placeholder data. */
 @Composable
 fun FavouritesPage(navController: NavController, actions: PageActions) {
-    BackHandler { closePage(navController, Route.Music) }
+    BackHandler { closePage(navController, Route.Music()) }
     BackdropShell(
         BackdropShellProps(
             back = {
@@ -48,7 +48,7 @@ fun FavouritesPage(navController: NavController, actions: PageActions) {
                                 IconButtonProps(
                                     icon = "close",
                                     label = "Close",
-                                    onClick = { closePage(navController, Route.Music) },
+                                    onClick = { closePage(navController, Route.Music()) },
                                 ),
                             )
                         },

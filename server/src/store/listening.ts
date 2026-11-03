@@ -466,6 +466,51 @@ export function listSessions(db: Db, userId: string): SessionSummary[] {
   });
 }
 
+/** A play as `userPlays` answers it: one of the user's plays, with the device it was made on. */
+export interface UserPlay extends SessionPlay {
+  deviceId: string;
+}
+
+/**
+ * Every play on each of this user's devices, newest first: by when it was played, then by
+ * device, then newest play of the device first.
+ */
+export function userPlays(db: Db, userId: string): UserPlay[] {
+  const rows = z.array(z.object({ device_id: z.string() }).and(HistoryRow)).parse(
+    db
+      .prepare(
+        `SELECT play_history.* FROM play_history
+         JOIN devices ON devices.id = play_history.device_id
+         WHERE devices.user_id = ? ORDER BY played_at DESC, device_id, seq DESC`,
+      )
+      .all(userId),
+  );
+  return rows.map(({ device_id, ...play }) => ({ deviceId: device_id, ...play }));
+}
+
+/**
+ * The current and queued entries of the digest's queue each of this user's devices plays now, as
+ * its spoken queue. A digest's queue put aside does not count, and only entries a digest's rule put
+ * there do: anything else in that queue plays as your own.
+ */
+export function digestQueued(db: Db, userId: string): MediaRef[] {
+  return z
+    .array(ItemRow)
+    .parse(
+      db
+        .prepare(
+          `SELECT queue_items.* FROM queue_items
+           JOIN listening_sessions ON listening_sessions.device_id = queue_items.device_id
+           WHERE listening_sessions.user_id = ? AND listening_sessions.spoken_digest IS NOT NULL
+             AND queue_items.queue = 'spoken' AND queue_items.segment IN ('current', 'user')
+             AND queue_items.list_id IS NOT NULL
+           ORDER BY queue_items.device_id, queue_items.segment, queue_items.ord`,
+        )
+        .all(userId),
+    )
+    .map((row) => row.item.ref);
+}
+
 /**
  * Writes this device's session whole, made from revision `rev`, and answers it at the next
  * revision. Throws `StaleRevision` when the session has moved past `rev`; null when the device

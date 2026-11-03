@@ -47,7 +47,7 @@ import net.develivarr.auralis.ui.sonora.SortFilterBar
 /** List, as design/app/pages/list.page.jsx draws it on the phone, with its placeholder data. */
 @Composable
 fun ListPage(navController: NavController, actions: PageActions) {
-    BackHandler { closePage(navController, Route.Podcasts) }
+    BackHandler { closePage(navController, Route.Podcasts()) }
     BackdropShell(
         BackdropShellProps(
             back = {
@@ -59,7 +59,7 @@ fun ListPage(navController: NavController, actions: PageActions) {
                                 IconButtonProps(
                                     icon = "close",
                                     label = "Close",
-                                    onClick = { closePage(navController, Route.Podcasts) },
+                                    onClick = { closePage(navController, Route.Podcasts()) },
                                 ),
                             )
                         },

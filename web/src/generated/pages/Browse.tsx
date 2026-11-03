@@ -10,6 +10,8 @@ import { AccountButton, ArtistCard, BackLayer, BottomNav, ButtonGroup, FeatureCa
 const placeholder = {
   "sections": [
     "Jump back in",
+    "Up next",
+    "Still listening",
     "Recently added",
     "Artists & authors",
     "Picked for you",
@@ -43,6 +45,66 @@ const placeholder = {
       "ref": "the-long-meridian",
       "sub": "Book · 21 h 40 m left",
       "image": "/art/the-long-meridian.jpg"
+    }
+  ],
+  "upNext": [
+    {
+      "title": "The Night Ferry",
+      "page": "episode",
+      "ref": "the-night-ferry",
+      "sub": "Episode · The Long Read",
+      "image": "/art/the-long-read.jpg",
+      "progress": 0.4
+    },
+    {
+      "title": "The Quiet Lodger",
+      "page": "book",
+      "ref": "the-quiet-lodger",
+      "sub": "Book · Iris Calloway",
+      "image": "/art/the-quiet-lodger.jpg",
+      "progress": 0.55
+    },
+    {
+      "title": "Static Between Stations",
+      "page": "episode",
+      "ref": "static-between-stations",
+      "sub": "Episode · Signal & Noise",
+      "image": "/art/signal-noise.jpg",
+      "progress": null
+    },
+    {
+      "title": "The Long Meridian",
+      "page": "book",
+      "ref": "the-long-meridian",
+      "sub": "Book · Adam Rivers",
+      "image": "/art/the-long-meridian.jpg",
+      "progress": 0.18
+    },
+    {
+      "title": "Meltwater",
+      "page": "episode",
+      "ref": "meltwater",
+      "sub": "Episode · Tears of Ice",
+      "image": "/art/tears-of-ice.jpg",
+      "progress": null
+    }
+  ],
+  "stillListening": [
+    {
+      "title": "Static Between Stations",
+      "page": "episode",
+      "ref": "static-between-stations",
+      "sub": "Episode · Signal & Noise",
+      "image": "/art/signal-noise.jpg",
+      "progress": null
+    },
+    {
+      "title": "The Long Meridian",
+      "page": "book",
+      "ref": "the-long-meridian",
+      "sub": "Book · Adam Rivers",
+      "image": "/art/the-long-meridian.jpg",
+      "progress": 0.18
     }
   ],
   "feature": {
@@ -464,6 +526,28 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
               </Fragment>
             ))}
           </LayoutGrid>
+        </Section>
+      )}
+      {data.sections.includes('Up next') && (
+        <Section title="Up next" platform={platform}>
+          <Shelf platform={platform}>
+            {data.upNext.map((item, i) => (
+              <Fragment key={i}>
+                <MediaCard title={item.title} sub={item.sub} image={item.image} progress={item.progress} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} platform={platform} />
+              </Fragment>
+            ))}
+          </Shelf>
+        </Section>
+      )}
+      {data.sections.includes('Still listening') && (
+        <Section title="Still listening" platform={platform}>
+          <Shelf platform={platform}>
+            {data.stillListening.map((item, i) => (
+              <Fragment key={i}>
+                <MediaCard title={item.title} sub={item.sub} image={item.image} progress={item.progress} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} platform={platform} />
+              </Fragment>
+            ))}
+          </Shelf>
         </Section>
       )}
       <Section platform={platform}>

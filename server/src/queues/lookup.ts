@@ -10,6 +10,7 @@ import type { MediaRef, QueueType } from '@auralis/schema';
 import { albumTracks, booksInSeries, indexedRow, type StoredRow } from '../libraryIndex/store.js';
 import type { Db } from '../store/connection.js';
 import type { QueueEntry, SessionValue } from '../store/listening.js';
+import { ownPlays } from './autoplay.js';
 import type { Expansion } from './engine.js';
 
 /** One chapter of a book, in seconds from the start of the book. */
@@ -121,11 +122,14 @@ export class IndexLookup {
 
   /**
    * The books autoplay on the spoken queue may need chapters of: the book it follows (its current
-   * item, else its newest play) and every book of that book's series.
+   * item, else its newest play of your own, as autoplay follows) and every book of that book's
+   * series.
    */
   autoplayBooks(session: SessionValue): MediaRef[] {
     const queue: QueueType = 'spoken';
-    const newest = session.history.filter((h) => h.queue === queue).at(-1);
+    const newest = ownPlays(session)
+      .filter((h) => h.queue === queue)
+      .at(-1);
     const followed = session.queues[queue].current?.ref ?? newest?.ref;
     const row = followed === undefined ? null : this.book(followed);
     if (row === null) return [];

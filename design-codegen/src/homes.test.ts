@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { APP_DIR, REPO_ROOT } from './outputs.js';
+import { readNav } from './nav.js';
 import { framePage } from './shell.js';
 import type { PageTree } from './page.js';
 import { bindings, elements, readPage as read, type Element } from './test-pages.js';
@@ -33,6 +34,7 @@ const HOMES = [
 ] as const;
 
 const browse = read('browse').data;
+const nav = readNav(join(REPO_ROOT, APP_DIR));
 
 describe('the library homes', () => {
   for (const home of HOMES) {
@@ -45,9 +47,25 @@ describe('the library homes', () => {
       const trailing = sort?.props.trailing;
       expect(trailing?.kind === 'slot' && trailing.tree.kind === 'element').toBe(true);
       expect((trailing as { tree: Element }).tree.component).toBe('ViewToggle');
-      const { value, options } = data.sort as { value: string; options: string[] };
-      expect(options).toEqual(['Title', home.person, 'Random']);
-      expect(options).toContain(value);
+      const { value, options } = data.sort as { value: string; options: { label: string }[] };
+      expect(options.map((o) => o.label)).toEqual(['Title', home.person, 'Random']);
+      expect(options.map((o) => o.label)).toContain(value);
+    });
+
+    it(`[M2.sorting] ${home.id} opens its sorts as a menu from the bar, keyed title, artist and random, handing the choice to the library`, () => {
+      const sort = all.find((e) => e.component === 'SortFilterBar');
+      expect(sort?.props.items).toEqual({ kind: 'binding', path: ['data', 'sort', 'options'] });
+      expect(sort?.props.onSelect).toEqual({
+        kind: 'choose',
+        params: { ref: ['data', 'sort', 'ref'] },
+      });
+      const { ref, options } = data.sort as { ref: string; options: { key: string }[] };
+      expect(ref).toBe(home.id);
+      expect(options.map((o) => o.key)).toEqual(['title', 'artist', 'random']);
+    });
+
+    it(`[M2.sorting] ${home.id}'s route keeps its sort and Random's seed in the address`, () => {
+      expect(nav.pages.find((p) => p.id === home.id)?.route).toBe(`/${home.id}?sort&seed`);
     });
 
     it(`[M0.canvas] ${home.id} binds only its own library (${home.binds.join(', ')}), never Browse's feed, Browse's filter or search results`, () => {
@@ -162,6 +180,7 @@ describe('a card on a library home', () => {
     Album: 'album',
     Book: 'book',
     Podcast: 'show',
+    Episode: 'episode',
     Artist: 'artist',
     Author: 'author',
   };
@@ -251,5 +270,56 @@ describe('a card on a library home', () => {
     for (const { card } of cards(tree)) {
       expect(card.props.onRequest).toEqual({ kind: 'request', params: { ref: ['book', 'ref'] } });
     }
+  });
+});
+
+describe("[M2.sorting] Browse's Up next and second-most-recent shelves", () => {
+  const { tree, data } = read('browse');
+  const SHELVES = [
+    { title: 'Up next', of: 'upNext' },
+    { title: 'Still listening', of: 'stillListening' },
+  ] as const;
+  const titled = elements(tree)
+    .filter((e) => e.component === 'Section' && e.props.title?.kind === 'literal')
+    .map((e) => ({ section: e, title: (e.props.title as { value: string }).value }));
+
+  it('names both in its structure, Up next and then the second-most-recent one', () => {
+    const names = nav.pages.find((p) => p.id === 'browse')!.structure.sections.map((s) => s.name);
+    const at = names.indexOf('Up next');
+    expect(at).toBeGreaterThan(-1);
+    expect(names[at + 1]).toBe('Still listening');
+  });
+
+  it('draws them right after Jump back in, and its section bar names them there', () => {
+    const titles = titled.map((t) => t.title);
+    expect(titles.slice(0, 3)).toEqual(['Jump back in', 'Up next', 'Still listening']);
+    expect((data.sections as string[]).slice(0, 3)).toEqual(titles.slice(0, 3));
+  });
+
+  for (const { title, of } of SHELVES) {
+    it(`draws ${title} as a shelf of cards over data.${of}, each with its progress, opening its own book or episode`, () => {
+      const { section } = titled.find((t) => t.title === title)!;
+      const [shelf] = section.children;
+      expect(shelf?.kind === 'element' && shelf.component).toBe('Shelf');
+      const [each] = (shelf as Element).children;
+      expect(each?.kind === 'each' && each.of).toEqual(['data', of]);
+      const card = (each as { children: PageTree[] }).children[0] as Element;
+      expect(card.component).toBe('MediaCard');
+      for (const prop of ['title', 'sub', 'image', 'progress'])
+        expect(card.props[prop], prop).toEqual({ kind: 'binding', path: ['item', prop] });
+      expect(card.props.onClick).toEqual({
+        kind: 'open',
+        page: { path: ['item', 'page'] },
+        params: { ref: ['item', 'ref'] },
+      });
+      const items = data[of] as { page: string }[];
+      expect(items.length).toBeGreaterThan(0);
+      for (const item of items) expect(['book', 'episode']).toContain(item.page);
+    });
+  }
+
+  it('holds at most one book and one show in the second-most-recent shelf', () => {
+    const pages = (data.stillListening as { page: string }[]).map((i) => i.page).sort();
+    expect(pages).toEqual(['book', 'episode']);
   });
 });

@@ -9,6 +9,8 @@ export default function Podcasts({ data }) {
           <SortFilterBar
             icon="swap_vert"
             label={data.sort.value}
+            items={data.sort.options}
+            onSelect={<Choose ref={data.sort.ref} />}
             trailing={<ViewToggle value="grid" />}
           />
         </Section>

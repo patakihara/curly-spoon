@@ -13,6 +13,8 @@ export default function Books({ data }) {
           <SortFilterBar
             icon="swap_vert"
             label={data.sort.value}
+            items={data.sort.options}
+            onSelect={<Choose ref={data.sort.ref} />}
             trailing={<ViewToggle value="grid" />}
           />
         </Section>

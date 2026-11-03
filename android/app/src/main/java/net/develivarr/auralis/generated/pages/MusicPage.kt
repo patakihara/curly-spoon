@@ -17,6 +17,7 @@ import net.develivarr.auralis.generated.ui.LayoutGridProps
 import net.develivarr.auralis.generated.ui.MediaCardProps
 import net.develivarr.auralis.generated.ui.MediaCardTone
 import net.develivarr.auralis.generated.ui.MiniPlayerProps
+import net.develivarr.auralis.generated.ui.OverflowMenuItem
 import net.develivarr.auralis.generated.ui.PageBodyProps
 import net.develivarr.auralis.generated.ui.Platform
 import net.develivarr.auralis.generated.ui.SectionProps
@@ -136,6 +137,17 @@ fun MusicPage(navController: NavController, actions: PageActions) {
                                             SortFilterBarProps(
                                                 icon = "swap_vert",
                                                 label = "Title",
+                                                items = listOf(
+                                                    OverflowMenuItem(key = "title", label = "Title"),
+                                                    OverflowMenuItem(
+                                                        key = "artist",
+                                                        label = "Artist",
+                                                    ),
+                                                    OverflowMenuItem(
+                                                        key = "random",
+                                                        label = "Random",
+                                                    ),
+                                                ),
                                                 trailing = {
                                                     ViewToggle(
                                                         ViewToggleProps(

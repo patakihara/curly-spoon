@@ -146,7 +146,7 @@ function androidWiring(source: string): string[] {
   const handler = (call: string) => new RegExp(`(\\w+) = \\{\\s*(?:\\w+ ->\\s*)?${call}`, 'g');
   return [
     ...new Set([
-      ...[...body.matchAll(handler('closePage\\(navController, Route\\.(\\w+)\\)'))].map(
+      ...[...body.matchAll(handler('closePage\\(navController, Route\\.(\\w+)(?:\\(\\))?\\)'))].map(
         (m) => `${m[1]}:close:${lower(m[2]!)}`,
       ),
       ...[...body.matchAll(handler('openDestination\\(navController, key\\)'))].map(
@@ -216,6 +216,13 @@ describe("the shell's controls, on the web and on Android", () => {
     );
     expect(web).toEqual(['onClick:close:music']);
     expect(android).toEqual([]);
+  });
+
+  it('[M2.sorting] reads a close to a home whose route takes query names, built with ()', () => {
+    const android = androidWiring(
+      '    BackHandler { closePage(navController, Route.Music()) }\n    IconButton(IconButtonProps(onClick = { closePage(navController, Route.Music()) }))',
+    );
+    expect(android).toEqual(['onClick:close:music']);
   });
 
   it('names a control whose handler is on a different prop on the two', () => {

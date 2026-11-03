@@ -22,6 +22,7 @@ import {
   BookmarksQuery,
   CreateBookmarkBody,
 } from './bookmarks.js';
+import { Feed } from './feed.js';
 import { HealthResponse } from './health.js';
 import {
   AddListItemBody,
@@ -41,6 +42,7 @@ import {
   ItemParams,
   LibraryList,
   LibraryParams,
+  LibraryQuery,
 } from './library.js';
 import {
   AudioBytes,
@@ -415,10 +417,22 @@ export const listLibrary = {
   operationId: 'listLibrary',
   summary: "The signed-in person's books, podcast shows or albums",
   responseDescription:
-    'Every indexed book, show or album in the libraries this person may open, by title.',
+    'Every indexed book, show or album in the libraries this person may open: by title, by author, host or artist, or shuffled by a seed.',
   response: LibraryList,
   access: 'member',
   params: LibraryParams,
+  query: LibraryQuery,
+} as const satisfies Route;
+
+export const getFeed = {
+  method: 'GET',
+  path: '/api/feed',
+  operationId: 'getFeed',
+  summary: "Browse's Up next and second-most-recent shelves for the signed-in person",
+  responseDescription:
+    'Up next, then your second most recent book and show: each card is what plays next of something you listened to, and only what you own. An empty shelf is left out; someone not linked to Audiobookshelf gets no shelves, and its failure answers 502 `upstream_failed`.',
+  response: Feed,
+  access: 'member',
 } as const satisfies Route;
 
 export const getItem = {
@@ -609,6 +623,7 @@ export const routes: readonly Route[] = [
   setActiveQueue,
   setQueueStyle,
   listLibrary,
+  getFeed,
   getItem,
   mediaArt,
   getSearchSuggest,

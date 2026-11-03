@@ -916,6 +916,31 @@ describe('[M2.lists] a menu whose verbs act on an item', () => {
     ).toEqual([]);
   });
 
+  it('[M2.sorting] takes a Choose on a sort bar’s onSelect, its items a menu of sorts', () => {
+    const bar = new Map([['SortFilterBar', new Set(['label', 'items', 'onSelect', 'onClick'])]]);
+    const barHandlers = new Map([['SortFilterBar', new Set(['onSelect', 'onClick'])]]);
+    const sorts = {
+      sort: { ref: 'books', value: 'Title', options: [{ key: 'title', label: 'Title' }] },
+    };
+    const sortCheck = (jsx: string) =>
+      checkPage(parsePage(page(jsx), 'book'), sorts, bar, undefined, undefined, undefined, {
+        ...opens,
+        handlers: barHandlers,
+      });
+    expect(
+      sortCheck(
+        '<SortFilterBar label={data.sort.value} items={data.sort.options} onSelect={<Choose ref={data.sort.ref} />} />',
+      ),
+    ).toEqual([]);
+    expect(
+      sortCheck(
+        '<SortFilterBar label={data.sort.value} onClick={<Choose ref={data.sort.ref} />} />',
+      ),
+    ).toEqual([
+      "line 3: SortFilterBar.onClick cannot take a menu's choice: Choose goes on onSelect",
+    ]);
+  });
+
   it('[M2.lists] refuses a Choose off a menu’s onSelect, or for anything but a bound ref', () => {
     expect(
       check('<OverflowMenu items={data.menu} onOpenChange={<Choose ref={data.ref} />} />'),

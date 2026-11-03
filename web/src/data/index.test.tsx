@@ -71,6 +71,9 @@ const books = {
 };
 
 /** The canvas's sample books, and its player's sample track. */
+/** The sort bar's label: the text after its glyph. */
+const sortLabel = (html: string) => /swap_vert<\/span><span[^>]*>([^<]*)</.exec(html)?.[1];
+
 const SAMPLE_BOOK = booksFrame.placeholder.library[1]!.title;
 const SAMPLE_TRACK = 'Heartbeats in Silence';
 
@@ -96,7 +99,7 @@ const SAMPLES = [
 
 describe('[M1.shell] the pages given their data', () => {
   it('lists a member’s own books, with no player while nothing is loaded', () => {
-    const html = renderAt('/books', deps('member', { books }).given);
+    const html = renderAt('/books', deps('member', { books: { data: books, seed: null } }).given);
     expect(html).toContain('Three Poems');
     expect(html).not.toContain(SAMPLE_BOOK);
     expect(html).not.toContain(SAMPLE_TRACK);
@@ -111,7 +114,7 @@ describe('[M1.shell] the pages given their data', () => {
   });
 
   it('keeps the canvas’s placeholders, pages and player alike, on a server nobody can sign in to', () => {
-    const html = renderAt('/books', deps('canvas', { books }).given);
+    const html = renderAt('/books', deps('canvas', { books: { data: books, seed: null } }).given);
     expect(html).toContain(SAMPLE_BOOK);
     expect(html).not.toContain('Three Poems');
     expect(html).toContain(SAMPLE_TRACK);
@@ -202,10 +205,28 @@ describe('[M2.lists] the list pages given their data', () => {
       library: [],
       lists: [{ title: 'Night drives', ref: 'l1', sub: 'Playlist · 1 episode', covers: [] }],
     };
-    const html = renderAt('/podcasts', deps('member', { podcasts }).given);
+    const html = renderAt(
+      '/podcasts',
+      deps('member', { podcasts: { data: podcasts, seed: null } }).given,
+    );
     expect(html).toContain('Night drives');
     expect(html).toContain('Playlist · 1 episode');
     expect(html).not.toContain(podcastsFrame.placeholder.lists[1]!.title);
+  });
+});
+
+describe('[M2.sorting] a library home before its list answers', () => {
+  it('[M2.sorting] names the sort its address asks while that list loads, or when it fails', () => {
+    for (const failed of [false, true]) {
+      const { given } = deps('member');
+      const pages = { ...given.pages, failed: () => failed };
+      const at = (url: string) => sortLabel(renderAt(url, { ...given, pages }));
+      expect(at('/books?sort=artist'), `failed: ${failed}`).toBe('Author');
+      expect(at('/podcasts?sort=artist'), `failed: ${failed}`).toBe('Host');
+      expect(at('/music?sort=artist'), `failed: ${failed}`).toBe('Artist');
+      expect(at('/music?sort=random'), `failed: ${failed}`).toBe('Random');
+      expect(at('/books'), `failed: ${failed}`).toBe('Title');
+    }
   });
 });
 

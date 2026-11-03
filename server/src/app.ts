@@ -15,6 +15,7 @@ import { adminRoutes } from './routes/admin.js';
 import { authRoutes } from './routes/auth.js';
 import { bookmarkRoutes } from './routes/bookmarks.js';
 import { deviceRoutes } from './routes/devices.js';
+import { feedRoutes } from './routes/feed.js';
 import { itemRoutes } from './routes/items.js';
 import { libraryRoutes } from './routes/library.js';
 import { listRoutes } from './routes/lists.js';
@@ -111,7 +112,13 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   });
   app.setErrorHandler(answerFailure);
   await app.register(fastifyCookie);
-  registerAccess(app, { db, proxy, cookieSecure, publicOrigin: options.publicOrigin });
+  registerAccess(app, {
+    db,
+    proxy,
+    cookieSecure,
+    publicOrigin: options.publicOrigin,
+    now: options.now ?? Date.now,
+  });
 
   const commit = options.commit ?? null;
   const signOn = (options.signOn ?? null) !== null;
@@ -162,6 +169,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   libraryRoutes(app, { db, upstreams });
   itemRoutes(app, { db, upstreams });
   listRoutes(app, { db, upstreams, sessions, now: options.now ?? Date.now });
+  feedRoutes(app, { db, upstreams, now: options.now ?? Date.now });
   const lyrics =
     options.lyrics ??
     new Lyrics({

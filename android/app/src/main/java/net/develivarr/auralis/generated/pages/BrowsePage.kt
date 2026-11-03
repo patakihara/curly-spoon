@@ -95,6 +95,8 @@ fun BrowsePage(navController: NavController, actions: PageActions) {
                         spy = true,
                         sections = listOf(
                             FrontLayerHeaderSection(title = "Jump back in"),
+                            FrontLayerHeaderSection(title = "Up next"),
+                            FrontLayerHeaderSection(title = "Still listening"),
                             FrontLayerHeaderSection(title = "Recently added"),
                             FrontLayerHeaderSection(title = "Artists & authors"),
                             FrontLayerHeaderSection(title = "Picked for you"),
@@ -191,6 +193,120 @@ fun BrowsePage(navController: NavController, actions: PageActions) {
                                                             sub = "Book · 21 h 40 m left",
                                                             image = "/art/the-long-meridian.jpg",
                                                             platform = Platform.MOBILE,
+                                                            onClick = {
+                                                                navController.navigate(Route.Book(ref = "the-long-meridian"))
+                                                            },
+                                                        ),
+                                                    )
+                                                },
+                                            ),
+                                        )
+                                    },
+                                ),
+                            )
+                            Section(
+                                SectionProps(
+                                    title = "Up next",
+                                    platform = Platform.MOBILE,
+                                    children = {
+                                        Shelf(
+                                            ShelfProps(
+                                                platform = Platform.MOBILE,
+                                                children = {
+                                                    MediaCard(
+                                                        MediaCardProps(
+                                                            title = "The Night Ferry",
+                                                            sub = "Episode · The Long Read",
+                                                            platform = Platform.MOBILE,
+                                                            progress = 0.4f,
+                                                            image = "/art/the-long-read.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Episode(ref = "the-night-ferry"))
+                                                            },
+                                                        ),
+                                                    )
+                                                    MediaCard(
+                                                        MediaCardProps(
+                                                            title = "The Quiet Lodger",
+                                                            sub = "Book · Iris Calloway",
+                                                            platform = Platform.MOBILE,
+                                                            progress = 0.55f,
+                                                            image = "/art/the-quiet-lodger.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Book(ref = "the-quiet-lodger"))
+                                                            },
+                                                        ),
+                                                    )
+                                                    MediaCard(
+                                                        MediaCardProps(
+                                                            title = "Static Between Stations",
+                                                            sub = "Episode · Signal & Noise",
+                                                            platform = Platform.MOBILE,
+                                                            progress = null,
+                                                            image = "/art/signal-noise.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Episode(ref = "static-between-stations"))
+                                                            },
+                                                        ),
+                                                    )
+                                                    MediaCard(
+                                                        MediaCardProps(
+                                                            title = "The Long Meridian",
+                                                            sub = "Book · Adam Rivers",
+                                                            platform = Platform.MOBILE,
+                                                            progress = 0.18f,
+                                                            image = "/art/the-long-meridian.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Book(ref = "the-long-meridian"))
+                                                            },
+                                                        ),
+                                                    )
+                                                    MediaCard(
+                                                        MediaCardProps(
+                                                            title = "Meltwater",
+                                                            sub = "Episode · Tears of Ice",
+                                                            platform = Platform.MOBILE,
+                                                            progress = null,
+                                                            image = "/art/tears-of-ice.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Episode(ref = "meltwater"))
+                                                            },
+                                                        ),
+                                                    )
+                                                },
+                                            ),
+                                        )
+                                    },
+                                ),
+                            )
+                            Section(
+                                SectionProps(
+                                    title = "Still listening",
+                                    platform = Platform.MOBILE,
+                                    children = {
+                                        Shelf(
+                                            ShelfProps(
+                                                platform = Platform.MOBILE,
+                                                children = {
+                                                    MediaCard(
+                                                        MediaCardProps(
+                                                            title = "Static Between Stations",
+                                                            sub = "Episode · Signal & Noise",
+                                                            platform = Platform.MOBILE,
+                                                            progress = null,
+                                                            image = "/art/signal-noise.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Episode(ref = "static-between-stations"))
+                                                            },
+                                                        ),
+                                                    )
+                                                    MediaCard(
+                                                        MediaCardProps(
+                                                            title = "The Long Meridian",
+                                                            sub = "Book · Adam Rivers",
+                                                            platform = Platform.MOBILE,
+                                                            progress = 0.18f,
+                                                            image = "/art/the-long-meridian.jpg",
                                                             onClick = {
                                                                 navController.navigate(Route.Book(ref = "the-long-meridian"))
                                                             },

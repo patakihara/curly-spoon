@@ -1,3 +1,5 @@
+import { ReactNode } from 'react';
+
 /** One verb in an OverflowMenu. */
 export interface OverflowMenuItem {
   key: string;
@@ -6,6 +8,12 @@ export interface OverflowMenuItem {
   icon?: string;
   /** One muted line under the label, saying what the verb does, e.g. "A lossless copy, by torrent". */
   sub?: string;
+  /**
+   * Whether this is the current choice, for a menu of choices such as the sorts: an item that sets
+   * it, true or false, is announced as a checkable item, and a selected one is checked and drawn
+   * with a check mark at its end. Omit it for a verb.
+   */
+  selected?: boolean;
 }
 
 /**
@@ -15,7 +23,11 @@ export interface OverflowMenuItem {
  * (`platform="mobile"`) it is a modal bottom sheet instead: fixed to the window's foot, over a
  * scrim that covers everything, the bottom bar and mini-player included, with a drag handle and
  * 56px rows; tapping the scrim closes it. Pass it where a row, a card or a header takes a
- * trailing control.
+ * trailing control. Given an `anchor`, that control opens it instead of the three-dot button.
+ *
+ * As Material's menu: opening it by a press moves focus to the selected item or else the first,
+ * the arrow keys move between items (Home and End to the ends), and choosing one, Escape or Tab
+ * closes it with focus back on the control that opened it. A press outside it closes it too.
  */
 export interface OverflowMenuProps {
   items: OverflowMenuItem[];
@@ -23,7 +35,10 @@ export interface OverflowMenuProps {
   label?: string;
   /** Shows the menu open (true) or shut (false), for a still. Omit to let the button decide. */
   open?: boolean;
-  /** Called with the next open state when the button is pressed or a verb is chosen. */
+  /**
+   * Called with the next open state when the button is pressed, a verb is chosen, Escape is pressed
+   * or a press lands outside the menu.
+   */
   onOpenChange?: (next: boolean) => void;
   /** Called with the chosen item's key: the menu's action. Without it the button is drawn disabled. */
   onSelect?: (key: string) => void;
@@ -34,6 +49,12 @@ export interface OverflowMenuProps {
    * a small round button on a scrim in on-scrim ink, for a menu that sits over artwork.
    */
   tone?: 'surface' | 'scrim';
+  /**
+   * The control that opens the menu, drawn in place of the three-dot button, such as
+   * SortFilterBar's label: the menu drops from it, and it may shrink to truncate its text. Its own
+   * press opens the menu, so pass `open` and `onOpenChange` with it; `tone` then has nothing to draw.
+   */
+  anchor?: ReactNode;
   platform?: 'desktop' | 'mobile';
 }
 export declare function OverflowMenu(props: OverflowMenuProps): JSX.Element;

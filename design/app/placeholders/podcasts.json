@@ -1,8 +1,22 @@
 {
   "sections": ["", "Shows", "Lists"],
   "sort": {
+    "ref": "podcasts",
     "value": "Title",
-    "options": ["Title", "Host", "Random"]
+    "options": [
+      {
+        "key": "title",
+        "label": "Title"
+      },
+      {
+        "key": "artist",
+        "label": "Host"
+      },
+      {
+        "key": "random",
+        "label": "Random"
+      }
+    ]
   },
   "library": [
     {

@@ -1,6 +1,6 @@
 ---
 page: podcasts
-pageHash: ea0b2b98384263adfc3baac22c002b4ed8b67f4a63bc3ea3281da6245c5bd33a
+pageHash: 7058847e9410dfbbca671504667ec731e55313c63ba8256d404fd5a1db5f12e5
 sonora: [kit:desktop/podcasts, kit:mobile/podcasts]
 spotify: [S20, S31]
 ---
@@ -24,7 +24,7 @@ scrolled on the phone (the local search out, the spy band on "Shows", the Lists)
 The back layer holds "Podcasts" ending in the local search's button (`BackLayer search="Search your
 shows and their episodes"`). No filter row. The front layer has a scroll-spy subheader: no band at
 rest, then the section title that last passed ("Shows" in the scrolled look). The body: the
-`SortFilterBar` "Title" with the `ViewToggle` opposite (the picker holds Title, Host, Random), then
+`SortFilterBar` "Title" with the `ViewToggle` opposite (its label opens a menu of Title, Host, Random, the current one checked), then
 "Shows", every subscribed show in title order as a `MediaCard` with its unplayed count as the
 caption and, when there are unplayed episodes, Sonora's accent dot on the art, as S20 marks them.
 "Fleeting Verses" is a YouTube channel, captioned "YouTube · 2 unplayed". Each show opens its Show

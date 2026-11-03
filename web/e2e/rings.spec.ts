@@ -171,7 +171,6 @@ for (const width of WIDTHS) {
       const owned = await ownControls(page);
 
       const faults: string[] = [];
-      const seen = new Set<string>();
       let mine = 0;
       /** Tab presses that landed on no Sonora control of the page's own. */
       let elsewhere = 0;
@@ -186,15 +185,18 @@ for (const width of WIDTHS) {
           elsewhere++;
           continue;
         }
-        const key = `${stop.desc}@${await page.evaluate(() => {
-          const r = document.activeElement!.getBoundingClientRect();
-          return `${Math.round(r.x + scrollX)},${Math.round(r.y + scrollY)}`;
-        })}`;
-        if (seen.has(key)) {
+        // The walk marks each control it stops on, so Tab coming round again is the same element,
+        // not one that shares a label and a spot once the page's layer has scrolled.
+        const again = await page.evaluate(() => {
+          const el = document.activeElement!;
+          if (el.hasAttribute('data-ring-walked')) return true;
+          el.setAttribute('data-ring-walked', '');
+          return false;
+        });
+        if (again) {
           cycled = true;
           break;
         }
-        seen.add(key);
         if (stop.own) mine++;
         else elsewhere++;
         if (stop.hidden !== undefined) faults.push(`${stop.desc} takes focus but ${stop.hidden}`);

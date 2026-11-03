@@ -50,12 +50,14 @@ import { useAccessOf } from './access';
 import { useDeps } from './deps';
 import { emptied } from './format';
 import { albumData, bookData, episodeData, showData } from './items';
-import { booksData, browseData, musicData, podcastsData } from './library';
+import { booksData, browseData, libraryAwaited, musicData, podcastsData } from './library';
 import { emptyQueue, queueData } from './queue';
 import { emptySearch, loadSearchPage, searchLive, type SearchLoaded } from './search';
 import { SignInScreen } from './sign-in';
 import { listCards, listData } from './lists';
 import {
+  feedOrNone,
+  libraryAsk,
   listsOrNone,
   loadItem,
   loadLibraries,
@@ -63,6 +65,7 @@ import {
   loadList,
   loadPodcasts,
   loadQueues,
+  settledAddress,
 } from './loads';
 import { addMenu, browserAsk, itemVerb, listVerb } from './menus';
 import { answerFrom, type Answer, pageKey, SignedOut } from './store';
@@ -72,15 +75,18 @@ import { answerFrom, type Answer, pageKey, SignedOut } from './store';
  * wherever the route table draws it: a route's page, the page a player sheet is drawn over, a
  * player tab's page in the side panel, and the back layer and subheader the page's frame hands
  * the shell. One screen per page: Browse's first shelf and the library homes from
- * `GET /api/library/{medium}`, Podcasts' lists from `GET /api/lists`, a book, show, episode or
- * album from `GET /api/items/{ref}`, a list from `GET /api/lists/{id}`, whose Play plays it through
- * its own route (`listPlayOf`) and whose menu renames, turns round or deletes it, a book's, show's or
- * episode's menu adding it to your lists (`./menus`), the queue from `GET /api/queues/{active}`, Search from what is typed into it (`../query`) and
- * `GET /api/search/suggest` or `GET /api/search`, sign in from the address. Now Playing reads the
- * player itself. Every other page draws empty, keeping only its own words, until its milestone
- * serves it: a member never sees the canvas's samples. A page loading shows its lists empty; on a
- * server nobody can sign in to, every page keeps its canvas placeholder (`access.ts`); a request
- * refused for want of a sign-in goes to sign in.
+ * `GET /api/library/{medium}`, in the order their address asks, which their sort menu replaces,
+ * Browse's Up next and Still listening from `GET /api/feed`, Podcasts' lists from
+ * `GET /api/lists`, a book, show, episode or album from `GET /api/items/{ref}`, a list from
+ * `GET /api/lists/{id}`, whose Play plays it through its own route (`listPlayOf`) and whose menu
+ * renames, turns round or deletes it, a book's, show's or episode's menu adding it to your lists
+ * (`./menus`), the queue from `GET /api/queues/{active}`, Search from what is typed into it
+ * (`../query`) and `GET /api/search/suggest` or `GET /api/search`, sign in from the address. Now
+ * Playing reads the player itself. Every other page draws empty, keeping only its own words,
+ * until its milestone serves it: a member never sees the canvas's samples. A page loading shows
+ * its lists empty, a library home's sort bar naming the sort its address asks; on a server nobody
+ * can sign in to, every page keeps its canvas placeholder (`access.ts`); a request refused for
+ * want of a sign-in goes to sign in.
  */
 
 /** A page's address: its path's params and the query values its route declares. */
@@ -105,7 +111,8 @@ interface Screen<T, L = T> {
   name: string;
   Page: ComponentType<{ data?: T; state?: string }>;
   frame?: PageFrame<T>;
-  empty: T;
+  /** What it draws while it loads, or when its request fails, at its address. */
+  empty(params: Params): T;
   /** Whether its data changes with what the player plays. */
   followsPlayer?: boolean;
   /** For a list's page, the list its Play plays, by its address. */
@@ -122,11 +129,22 @@ interface Screen<T, L = T> {
   /** How it loads; a page nothing serves yet draws `empty` and loads nothing. */
   load?(api: ApiClient, params: Params): Promise<L>;
   /**
+   * For a page loaded with more than it draws (a library home, with the seed its shuffle
+   * answered): what it draws, and the query values its address settles on, null to leave it.
+   */
+  settle?(params: Params, loaded: L): { data: T; address: Params | null };
+  /**
    * For a page drawn from more than its address, the tab's search draft too: what it loads and
    * draws. Not a hook: the hooks it reads from are called for every page alike.
    */
   live?(params: Params, draft: Draft | null): Live<T, L>;
 }
+
+/** An `empty` the same at every address. */
+const fixed =
+  <T,>(empty: T) =>
+  (): T =>
+    empty;
 
 /** A page nothing serves yet: drawn empty, with `words`, the page's own, as the canvas has them. */
 function unserved<T>(
@@ -136,13 +154,41 @@ function unserved<T>(
   words: (keyof T)[] = [],
 ): Screen<T> {
   const kept = Object.fromEntries(words.map((word) => [word, frame.placeholder[word]]));
-  return { name, Page, frame, empty: { ...emptied(frame.placeholder), ...kept } };
+  return { name, Page, frame, empty: fixed({ ...emptied(frame.placeholder), ...kept }) };
 }
 
 const searchEmpty = emptySearch(searchFrame.placeholder);
 
-const listPath = routePages.find((page) => page.id === 'list')!.path;
-const podcastsPath = routePages.find((page) => page.id === 'podcasts')!.path;
+/** A library home's page, and the seed its shuffle answered, null unless random. */
+interface Ordered<T> {
+  data: T;
+  seed: number | null;
+}
+
+/** A library home's answer: its page, its address settling on the seed the server drew. */
+const settleOrder = <T,>(params: Params, loaded: Ordered<T>) => ({
+  data: loaded.data,
+  address: settledAddress(params, loaded.seed),
+});
+
+const pathOf = (id: string) => routePages.find((page) => page.id === id)!.path;
+const listPath = pathOf('list');
+const podcastsPath = pathOf('podcasts');
+
+/** A seed for a fresh shuffle: any unsigned 32-bit whole number. */
+const freshSeed = () => crypto.getRandomValues(new Uint32Array(1))[0]!;
+
+/**
+ * A library home's sort menu: the chosen sort replaces the page's address, which loads the list in
+ * that order. Random draws a fresh seed each time it is chosen, even while already shuffled, which
+ * is the reshuffle; the seed in the address keeps that order through a reload or going back. An
+ * address asking for random without a seed settles on the one the server drew (`settleOrder`).
+ */
+const sortVerbs = (path: string) => async (_api: ApiClient, _ref: string, key: string) => {
+  const query: Record<string, string> =
+    key === 'random' ? { sort: key, seed: String(freshSeed()) } : { sort: key };
+  return { open: `${path}?${new URLSearchParams(query)}`, replace: true };
+};
 
 /** An item's verbs: adding it to a list, opening a new list made with it. */
 const itemVerbs = async (api: ApiClient, ref: string, key: string) => {
@@ -155,42 +201,61 @@ const screens: Screen<never>[] = [
     name: 'browse',
     Page: Browse,
     frame: browseFrame,
-    empty: browseData([], browseFrame.placeholder),
-    load: async (api) => browseData(await loadLibraries(api), browseFrame.placeholder),
+    empty: fixed(browseData([], { shelves: [] }, browseFrame.placeholder)),
+    load: async (api) => {
+      const [lists, feed] = await Promise.all([loadLibraries(api), feedOrNone(api)]);
+      return browseData(lists, feed, browseFrame.placeholder);
+    },
   } satisfies Screen<typeof browseFrame.placeholder>,
   {
     name: 'books',
     Page: Books,
     frame: booksFrame,
-    empty: { ...booksFrame.placeholder, library: [] },
-    load: async (api) => booksData(await loadLibrary(api, 'books'), booksFrame.placeholder),
-  } satisfies Screen<typeof booksFrame.placeholder>,
+    empty: (params) => libraryAwaited(booksFrame.placeholder, libraryAsk(params).sort),
+    load: async (api, params) => {
+      const list = await loadLibrary(api, 'books', libraryAsk(params));
+      return { data: booksData(list, booksFrame.placeholder), seed: list.seed };
+    },
+    settle: settleOrder,
+    verbs: sortVerbs(pathOf('books')),
+  } satisfies Screen<typeof booksFrame.placeholder, Ordered<typeof booksFrame.placeholder>>,
   {
     name: 'podcasts',
     Page: Podcasts,
     frame: podcastsFrame,
-    empty: { ...podcastsFrame.placeholder, library: [], lists: [] },
-    load: async (api) => {
-      const { library, lists } = await loadPodcasts(api);
-      return podcastsData(
+    empty: (params) => ({
+      ...libraryAwaited(podcastsFrame.placeholder, libraryAsk(params).sort),
+      lists: [],
+    }),
+    load: async (api, params) => {
+      const { library, lists } = await loadPodcasts(api, libraryAsk(params));
+      const data = podcastsData(
         library,
         lists === null ? null : listCards(lists),
         podcastsFrame.placeholder,
       );
+      return { data, seed: library.seed };
     },
-  } satisfies Screen<typeof podcastsFrame.placeholder>,
+    settle: settleOrder,
+    verbs: sortVerbs(podcastsPath),
+  } satisfies Screen<typeof podcastsFrame.placeholder, Ordered<typeof podcastsFrame.placeholder>>,
   {
     name: 'music',
     Page: Music,
     frame: musicFrame,
-    empty: { ...musicFrame.placeholder, library: [] },
-    load: async (api) => musicData(await loadLibrary(api, 'music'), musicFrame.placeholder),
-  } satisfies Screen<typeof musicFrame.placeholder>,
+    empty: (params) => libraryAwaited(musicFrame.placeholder, libraryAsk(params).sort),
+    load: async (api, params) => {
+      const list = await loadLibrary(api, 'music', libraryAsk(params));
+      return { data: musicData(list, musicFrame.placeholder), seed: list.seed };
+    },
+    settle: settleOrder,
+    verbs: sortVerbs(pathOf('music')),
+  } satisfies Screen<typeof musicFrame.placeholder, Ordered<typeof musicFrame.placeholder>>,
   {
     name: 'book',
     Page: Book,
     frame: bookFrame,
-    empty: emptied(bookFrame.placeholder),
+    empty: fixed(emptied(bookFrame.placeholder)),
     load: async (api, params) => {
       const [item, lists] = await Promise.all([loadItem(api, params.ref), listsOrNone(api)]);
       return { ...bookData(item, bookFrame.placeholder), menu: addMenu(lists, ['listening']) };
@@ -201,7 +266,7 @@ const screens: Screen<never>[] = [
     name: 'show',
     Page: Show,
     frame: showFrame,
-    empty: emptied(showFrame.placeholder),
+    empty: fixed(emptied(showFrame.placeholder)),
     load: async (api, params) => {
       const [item, lists] = await Promise.all([loadItem(api, params.ref), listsOrNone(api)]);
       return {
@@ -215,7 +280,7 @@ const screens: Screen<never>[] = [
     name: 'episode',
     Page: Episode,
     frame: episodeFrame,
-    empty: { ...emptied(episodeFrame.placeholder), kind: episodeFrame.placeholder.kind },
+    empty: fixed({ ...emptied(episodeFrame.placeholder), kind: episodeFrame.placeholder.kind }),
     load: async (api, params) => {
       const [item, lists] = await Promise.all([loadItem(api, params.ref), listsOrNone(api)]);
       return { ...episodeData(item, episodeFrame.placeholder), menu: addMenu(lists, ['playlist']) };
@@ -226,13 +291,13 @@ const screens: Screen<never>[] = [
     name: 'album',
     Page: Album,
     frame: albumFrame,
-    empty: emptied(albumFrame.placeholder),
+    empty: fixed(emptied(albumFrame.placeholder)),
     load: async (api, params) => albumData(await loadItem(api, params.ref), albumFrame.placeholder),
   } satisfies Screen<typeof albumFrame.placeholder>,
   {
     name: 'queue',
     Page: Queue,
-    empty: emptyQueue('music'),
+    empty: fixed(emptyQueue('music')),
     followsPlayer: true,
     load: async (api) => {
       const queues = await loadQueues(api);
@@ -242,13 +307,13 @@ const screens: Screen<never>[] = [
   {
     name: 'lyrics',
     Page: Lyrics,
-    empty: { lines: [], activeIndex: 0, syncMode: 'dot' },
+    empty: fixed({ lines: [], activeIndex: 0, syncMode: 'dot' }),
   } satisfies Screen<LyricsData>,
   {
     name: 'search',
     Page: Search,
     frame: searchFrame,
-    empty: searchEmpty,
+    empty: fixed(searchEmpty),
     live: (params, draft) => {
       const q = params.q ?? '';
       return searchLive(q, draft?.over === q ? draft : null, searchEmpty);
@@ -269,7 +334,7 @@ const screens: Screen<never>[] = [
     name: 'list',
     Page: List,
     frame: listFrame,
-    empty: emptied(listFrame.placeholder),
+    empty: fixed(emptied(listFrame.placeholder)),
     playsList: (params) => params.ref ?? '',
     load: async (api, params) => listData(await loadList(api, params.ref), listFrame.placeholder),
     verbs: async (api, ref, key) => {
@@ -279,7 +344,7 @@ const screens: Screen<never>[] = [
         : { reload: done === 'changed' };
     },
   } satisfies Screen<typeof listFrame.placeholder>,
-] as Screen<never>[];
+] as unknown as Screen<never>[];
 
 /** The page's address: its path's params, and the query values its route declares. */
 function useParams(): Params {
@@ -294,19 +359,24 @@ function useParams(): Params {
 
 /**
  * The data `screen` shows here, and its state: undefined on the canvas, which draws the page's
- * placeholder.
+ * placeholder. A page whose answer settles its address (`settle`) replaces it, no new history
+ * entry, once that page is the one open; the answer is kept for the address replaced to, whose
+ * answer then names that address, so it settles once.
  */
 function useScreenData<T, L>(screen: Screen<T, L>): Drawn<T> | undefined {
   const { api, access, pages } = useDeps();
   const who = useAccessOf(access);
   const params = useParams();
+  const open = useMatches().at(-1)?.id === screen.name;
+  const [search, setSearch] = useSearchParams();
   // The same hooks on every draw, whichever screen: the shell's back layer keeps one FramePart
   // from page to page, handing it each page's screen in turn.
   const draft = useTabDraft(screen.live !== undefined);
   const live = screen.live?.(params, draft);
   const asks = live === undefined ? params : live.asks;
   const playId = usePlayId();
-  const key = asks === null ? null : pageKey(screen.name, asks, screen.followsPlayer ? playId : '');
+  const playing = screen.followsPlayer ? playId : '';
+  const key = asks === null ? null : pageKey(screen.name, asks, playing);
   const kept = useSyncExternalStore(
     pages.subscribe,
     () => (key === null ? undefined : pages.peek(key)),
@@ -325,8 +395,25 @@ function useScreenData<T, L>(screen: Screen<T, L>): Drawn<T> | undefined {
     } else if (who === 'signedOut') access.signIn();
     // `asks` is in `key`.
   }, [who, key, screen, api, pages, access]);
+  const settled =
+    live === undefined && kept !== undefined && screen.settle !== undefined
+      ? screen.settle(params, kept as L)
+      : null;
+  const address = open && who === 'member' ? (settled?.address ?? null) : null;
+  const settledKey =
+    address === null ? null : pageKey(screen.name, { ...params, ...address }, playing);
+  const settledSearch = address === null ? null : searchWith(search, address);
+  useEffect(() => {
+    if (settledKey === null || settledSearch === null || key === null) return;
+    const answered = pages.peek(key);
+    void pages.load(settledKey, () => Promise.resolve(answered));
+    setSearch(settledSearch, { replace: true });
+  }, [settledKey, settledSearch, key, pages, setSearch]);
   if (who === 'canvas') return undefined;
-  if (live === undefined) return { data: (kept as T | undefined) ?? screen.empty };
+  if (live === undefined) {
+    if (settled !== null) return { data: settled.data };
+    return { data: (kept as T | undefined) ?? screen.empty(params) };
+  }
   const drawn = live.draw(
     answerFrom(kept as L | undefined, failed),
     last.current?.screen === screen.name ? last.current.drawn : null,
@@ -335,11 +422,20 @@ function useScreenData<T, L>(screen: Screen<T, L>): Drawn<T> | undefined {
   return drawn;
 }
 
+/** `search` with `values` set in it, as the text of an address's query. */
+function searchWith(search: URLSearchParams, values: Params): string {
+  const next = new URLSearchParams(search);
+  for (const [name, value] of Object.entries(values)) {
+    if (value !== undefined) next.set(name, value);
+  }
+  return next.toString();
+}
+
 /**
- * The verbs of `screen`'s menu, for the page to hand down: none on the canvas, or while its menu
- * holds none. A verb's page opens after it, replacing a list deleted; a list changed loads again;
- * a refusal for want of a sign-in goes to sign in, and any other failure is logged, the shell
- * binding no status to show it in.
+ * The verbs of `screen`'s menu (a library home's: its sorts), for the page to hand down: none on
+ * the canvas, or while its menu holds none. A verb's page opens after it, replacing a list
+ * deleted; a list changed loads again; a refusal for want of a sign-in goes to sign in, and any
+ * other failure is logged, the shell binding no status to show it in.
  */
 function useVerbs<T>(screen: Screen<T>, drawn: Drawn<T> | undefined): Choose | null {
   const { api, access, pages } = useDeps();
@@ -347,7 +443,8 @@ function useVerbs<T>(screen: Screen<T>, drawn: Drawn<T> | undefined): Choose | n
   const params = useParams();
   const verbs = screen.verbs;
   const load = screen.load;
-  const menu = (drawn?.data as { menu?: unknown[] } | undefined)?.menu ?? [];
+  const data = drawn?.data as { menu?: unknown[]; sort?: { options: unknown[] } } | undefined;
+  const menu = data?.menu ?? data?.sort?.options ?? [];
   const live = drawn !== undefined && menu.length > 0;
   return useMemo(() => {
     if (verbs === undefined) return null;
