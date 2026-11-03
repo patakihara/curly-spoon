@@ -69,7 +69,7 @@ _Done when:_ (a) Sofia's sign-off.
   _Done when:_ (a) a test creates a listening list and a podcast playlist through the API and plays each in order; (b) a test asserts The Digest holds subscribed shows' unplayed episodes from the last 14 days and no older ones; (c) a test creates a custom digest from chosen shows and asserts its episodes; (d) a test finishes one digest episode and skips another, and asserts each is marked played and leaves the digest, and that show's Up next and autoplay stay put; (e) a test plays a digest and asserts the previous queue is saved, playing its current or next episode resumes it, and playing the digest or an episode from its page resumes the digest's queue.
 - **[M2.sorting]** Library sorts, Random among them; Browse's Up next and second-most-recent from owned content, through `GET /feed` (its full composer stays M4.browse).
   _Done when:_ (a) a test asserts `GET /library/{medium}` sorts by title, artist and Random, and Random with a fixed seed gives that seed's order; (b) a test asserts Browse's Up next and second-most-recent book and show each hold only owned items from the user's history, ignoring digest plays.
-- **[M2.settings]** Settings stored per user in `GET/PUT /settings`: theme, autoplay switches, first-run setup, and queue style, which retires `PUT /sessions/this/style`.
+- **[M2.settings]** Settings stored per user in `GET/PUT /settings`: theme, autoplay switches, first-run setup, and queue style, which every device follows.
   _Done when:_ (a) a test round-trips every setting through `GET/PUT /settings`.
 
 **[M2.exit] Done when** the minimal shell finds and plays anything you own, and your lists and The Digest play as you expect.
