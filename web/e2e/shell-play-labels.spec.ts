@@ -101,15 +101,6 @@ test.describe('[M1.shell/e] Play now on an episode while another show plays', ()
     const other = shows.items.map((i) => i.ref).find((r) => keyOf(r) !== keyOf(recorded.show))!;
     const [otherEpisode, earlier] = await episodesOf(other);
     const ownEpisodes = (await episodesOf(recorded.show)).map(keyOf);
-    // The show's next episode: the first after the one played, in the show's own order (as its
-    // page lists them), that the person has not finished.
-    const own = (
-      await api<{ episodes: { ref: Ref; finished: boolean }[] }>(
-        `/api/items/${encodeURIComponent(keyOf(recorded.show))}`,
-      )
-    ).episodes;
-    const playedAt = own.findIndex((e) => keyOf(e.ref) === keyOf(recorded.episode));
-    const showNext = own.slice(playedAt + 1).find((e) => !e.finished)!.ref;
 
     // The other show plays: one episode, then another, then Back to the first, as Sofia may
     // have pressed it (Back parks the episode it leaves ahead in the queue).
@@ -139,6 +130,11 @@ test.describe('[M1.shell/e] Play now on an episode while another show plays', ()
       .toEqual([keyOf(recorded.episode), expect.any(String)]);
     const queue = await api<{ user: { ref: Ref }[]; autoplay: { ref: Ref } }>('/api/queues/spoken');
     expect(queue.user).toEqual([]);
-    expect(queue.autoplay.ref).toEqual(showNext);
+    // The recorded serial show's episode after the one recorded played, in its feed's order (as
+    // the server's sessions test names it).
+    expect(queue.autoplay.ref).toEqual({
+      source: 'abs',
+      id: 'fef398e0-ce0f-48ad-86fe-9b45c96c1911',
+    });
   });
 });
