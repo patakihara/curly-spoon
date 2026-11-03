@@ -40,6 +40,7 @@ import {
   ImageBytes,
   ItemDetail,
   ItemParams,
+  ItemQuery,
   LibraryList,
   LibraryParams,
   LibraryQuery,
@@ -451,10 +452,11 @@ export const getItem = {
   operationId: 'getItem',
   summary: 'One book, show, episode or album the signed-in person may open',
   responseDescription:
-    "Its header, then a book's chapters, a show's episodes in its order, an album's tracks, or an episode's show, notes and standing.",
+    "Its header, then a book's chapters, a show's episodes oldest or newest first as asked (the show's own order when not), an album's tracks, or an episode's show, notes and standing.",
   response: ItemDetail,
   access: 'member',
   params: ItemParams,
+  query: ItemQuery,
 } as const satisfies Route;
 
 export const mediaArt = {

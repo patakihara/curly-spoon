@@ -5,8 +5,8 @@
  *
  * Before it starts, one index pass reads every library page the recordings hold, each page on
  * its own (the four-file book is on the books library's page 15, the show and the albums on page
- * 4), so the library lists hold the recorded books, shows and albums, the recorded show ordered by
- * its recorded feed. The scheduled index job stays
+ * 4), so the library lists hold the recorded books, shows and albums, each recorded show ordered
+ * by its recorded feed. The scheduled index job stays
  * off: a real run starts from the first page, which is not recorded.
  *
  * The sign-on is replayed from its recordings (discovery, keys, token exchange, userinfo) by a
@@ -90,6 +90,8 @@ export interface RecordedServer {
   episode: MediaRef;
   /** The recorded album the music list holds, which plays. */
   album: MediaRef;
+  /** The database file the server and its index share. */
+  database: string;
   listen(): Promise<void>;
   close(): Promise<void>;
 }
@@ -181,7 +183,8 @@ function queryNumber(recording: Recording, name: string): number {
 /**
  * Indexes every library page the recordings hold into the database at `file`, one pass a page,
  * each over that page's own library only: an Audiobookshelf items page by its `page` and `limit`,
- * a Jellyfin albums page by its `StartIndex`, `Limit` and `ParentId`. Throws if a pass fails.
+ * a Jellyfin albums page by its `StartIndex`, `Limit` and `ParentId`. Throws if a pass fails or
+ * fails to read any show's feed, so no recorded show is left in the unknown order.
  */
 async function indexRecordedPages(
   file: string,
@@ -199,13 +202,14 @@ async function indexRecordedPages(
   });
   const db = openDatabase(file);
   const passes: Parameters<typeof runIndex>[0][] = [];
-  // The recorded show's feed, so the index orders it as the serial show it is; any other show's
-  // feed is not read, and keeps the default order.
-  const showFeed = recordingsOf('feed').find((r) => r.call === 'show-1-feed')!;
+  // The recorded shows' feeds, so the index orders each as its feed says: the first serial, the
+  // second episodic. Any other feed is not read, and keeps the default order.
+  const showFeeds = recordingsOf('feed').filter((r) => /^show-\d+-feed$/.test(r.call));
   const feeds = async (url: string) => {
-    if (new URL(url).pathname !== showFeed.request.path) throw new Error(`no feed for ${url}`);
-    const { body } = showFeed.response;
-    if (body === null || !('text' in body)) throw new Error('show-1-feed has no text body');
+    const feed = showFeeds.find((r) => r.request.path === new URL(url).pathname);
+    if (feed === undefined) throw new Error(`no feed for ${url}`);
+    const { body } = feed.response;
+    if (body === null || !('text' in body)) throw new Error(`${feed.call} has no text body`);
     return parseFeed(body.text);
   };
   try {
@@ -246,6 +250,9 @@ async function indexRecordedPages(
     for (const pass of passes) {
       for (const [source, run] of Object.entries(await runIndex(pass))) {
         if (run.error !== null) throw new Error(`indexing ${source}: ${run.error}`);
+        if (run.counts.feedsFailed > 0) {
+          throw new Error(`indexing ${source}: ${run.counts.feedsFailed} feed(s) not read`);
+        }
       }
     }
   } finally {
@@ -416,7 +423,8 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
   const absFetch = replayFetch(abs, { readBytes: standInsBeside(ADAPTERS) });
   const jellyfinFetch = replayFetch(jellyfin, { readBytes: standInsBeside(ADAPTERS) });
   mkdirSync(config.dataDir, { recursive: true });
-  await indexRecordedPages(join(config.dataDir, 'auralis.sqlite'), {
+  const database = join(config.dataDir, 'auralis.sqlite');
+  await indexRecordedPages(database, {
     abs: { recordings: abs, fetch: absFetch },
     jellyfin: { recordings: jellyfin, fetch: jellyfinFetch },
   });
@@ -452,6 +460,7 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     show: { source: 'abs', id: showId },
     episode: { source: 'abs', id: episodeId },
     album: { source: 'jellyfin', id: albumId },
+    database,
     async listen() {
       await new Promise<void>((resolve, reject) => {
         signOnHttp.once('error', reject).listen(signOnPort, LISTEN_HOST, resolve);

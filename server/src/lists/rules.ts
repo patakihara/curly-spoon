@@ -7,7 +7,7 @@
  * show id, then the show's own order. The Digest's shows, until subscriptions arrive with
  * M3.podcasts, are every indexed show in an Audiobookshelf library the person may open.
  */
-import type { DigestOrder } from '@auralis/schema';
+import type { EpisodeOrder } from '@auralis/schema';
 import { episodesInOrder, type StoredRow, topLevelOfKind } from '../libraryIndex/store.js';
 import type { Db } from '../store/connection.js';
 import type { PlayedMark } from '../store/lists.js';
@@ -51,7 +51,7 @@ export function subscribedShows(db: Db, access: AbsAccess | null): StoredRow[] {
 export function digestEpisodes(
   db: Db,
   shows: readonly StoredRow[],
-  order: DigestOrder,
+  order: EpisodeOrder,
   now: number,
   played: (episode: StoredRow) => boolean,
 ): StoredRow[] {

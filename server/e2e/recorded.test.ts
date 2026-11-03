@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { type ItemDetail, type LibraryList, type PlaybackPlan } from '@auralis/schema';
 import { afterEach, describe, expect, it } from 'vitest';
+import { openDatabase } from '../src/store/connection.js';
 import { type RecordedServer, recordedServer } from './recorded.js';
 
 const tone = readFileSync(
@@ -133,6 +134,42 @@ describe('the recorded-upstreams server', () => {
       payload: { ref: server.episode },
     });
     expect(planned.statusCode, planned.body).toBe(200);
+  });
+
+  it('[M2.sorting] orders each recorded show as its recorded feed says: the serial one oldest first, the episodic one newest first', async () => {
+    const server = await boot();
+    const headers = { authorization: `Bearer ${await bearerFor(server)}` };
+    const shows = await server.app.inject({ url: '/api/library/podcasts', headers });
+    const sorts = await Promise.all(
+      shows.json<LibraryList>().items.map(async ({ ref }) => {
+        const page = await server.app.inject({
+          url: `/api/items/${ref.source}:${ref.id}`,
+          headers,
+        });
+        return [ref.id, page.json<ItemDetail>().sort] as const;
+      }),
+    );
+    expect(sorts).toHaveLength(2);
+    expect(Object.fromEntries(sorts)[server.show.id]).toBe('oldest');
+    expect(sorts.find(([id]) => id !== server.show.id)?.[1]).toBe('newest');
+  });
+
+  it("[M2.sorting] stores each recorded show's order as read from its feed, never left unknown", async () => {
+    const server = await boot();
+    const db = openDatabase(server.database);
+    try {
+      const orders = db
+        .prepare(
+          `SELECT upstream_id AS id, episode_order AS episodeOrder FROM index_items
+           WHERE source = 'abs' AND kind = 'show'`,
+        )
+        .all() as { id: string; episodeOrder: string | null }[];
+      expect(orders).toHaveLength(2);
+      expect(orders.find((o) => o.id === server.show.id)?.episodeOrder).toBe('serial');
+      expect(orders.find((o) => o.id !== server.show.id)?.episodeOrder).toBe('episodic');
+    } finally {
+      db.close();
+    }
   });
 
   it('plans the recorded item, and its track answers a range request with 206 audio', async () => {

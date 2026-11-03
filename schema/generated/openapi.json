@@ -246,7 +246,7 @@
           "lrclib"
         ]
       },
-      "DigestOrder": {
+      "EpisodeOrder": {
         "type": "string",
         "enum": [
           "oldest",
@@ -1699,6 +1699,9 @@
           },
           "episode": {
             "$ref": "#/components/schemas/ItemEpisodeAbout"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/EpisodeOrder"
           }
         },
         "required": [
@@ -1987,7 +1990,7 @@
           "order": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DigestOrder"
+                "$ref": "#/components/schemas/EpisodeOrder"
               },
               {
                 "type": "null"
@@ -2121,7 +2124,7 @@
           "order": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/DigestOrder"
+                "$ref": "#/components/schemas/EpisodeOrder"
               },
               {
                 "type": "null"
@@ -2187,7 +2190,7 @@
             "maxItems": 1000
           },
           "order": {
-            "$ref": "#/components/schemas/DigestOrder"
+            "$ref": "#/components/schemas/EpisodeOrder"
           }
         },
         "required": [
@@ -2204,7 +2207,7 @@
             "maxLength": 200
           },
           "order": {
-            "$ref": "#/components/schemas/DigestOrder"
+            "$ref": "#/components/schemas/EpisodeOrder"
           },
           "shows": {
             "type": "array",
@@ -4258,11 +4261,19 @@
             "required": true,
             "name": "ref",
             "in": "path"
+          },
+          {
+            "schema": {
+              "$ref": "#/components/schemas/EpisodeOrder"
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
           }
         ],
         "responses": {
           "200": {
-            "description": "Its header, then a book's chapters, a show's episodes in its order, an album's tracks, or an episode's show, notes and standing.",
+            "description": "Its header, then a book's chapters, a show's episodes oldest or newest first as asked (the show's own order when not), an album's tracks, or an episode's show, notes and standing.",
             "content": {
               "application/json": {
                 "schema": {

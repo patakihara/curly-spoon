@@ -51,7 +51,7 @@ export const UNBOUND: Readonly<Record<string, string>> = {
   'album/ExpanderRow.onToggle': 'M5.screens',
   'books/TabBar.onChange': 'M5.screens',
   'music/TabBar.onChange': 'M5.screens',
-  'show/SortFilterBar.onClick': 'M5.screens',
+  'show/SortFilterBar.onSelect': 'M5.screens',
   // Search, and the context menus.
   'album/OverflowMenu.onSelect': 'M5.searchui',
   'artist/OverflowMenu.onSelect': 'M5.searchui',

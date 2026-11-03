@@ -1,4 +1,5 @@
 import {
+  EpisodeOrder,
   Feed,
   ItemDetail,
   LIBRARY_SEED_MAX,
@@ -104,12 +105,30 @@ export async function loadLibraries(api: ApiClient): Promise<LibraryList[]> {
   return settled.flatMap((s) => (s.status === 'fulfilled' ? [s.value] : []));
 }
 
-/** The book, show, episode or album `ref` names, as it sits in the page's address; else none. */
-export const loadItem = (api: ApiClient, ref: string | undefined): Promise<ItemDetail> => {
+/**
+ * The order a show's address asks its episodes in (`?sort`): oldest or newest first, else none,
+ * the show's own; anything else is ignored rather than refused, so a stale address still draws.
+ */
+export function episodeAsk(params: Readonly<Record<string, string | undefined>>): {
+  sort?: EpisodeOrder;
+} {
+  const sort = EpisodeOrder.safeParse(params.sort);
+  return sort.success ? { sort: sort.data } : {};
+}
+
+/**
+ * The book, show, episode or album `ref` names, as it sits in the page's address, a show's
+ * episodes in the order `ask` names; else none.
+ */
+export const loadItem = (
+  api: ApiClient,
+  ref: string | undefined,
+  ask: { sort?: EpisodeOrder } = {},
+): Promise<ItemDetail> => {
   if (ref === undefined || parseMediaRefKey(ref) === null) {
     return Promise.reject(new Error(`no item ${ref}`));
   }
-  return answer(api.GET('/api/items/{ref}', { params: { path: { ref } } }), (d) =>
+  return answer(api.GET('/api/items/{ref}', { params: { path: { ref }, query: ask } }), (d) =>
     ItemDetail.parse(d),
   );
 };

@@ -171,6 +171,6 @@ describe('the list routes', () => {
     const kotlin = generateKotlin(JSON.parse(JSON.stringify(doc)) as object, 'test');
     expect(kotlin).toContain('data class ListDetail(');
     expect(kotlin).toContain('data class ListItem(');
-    expect(kotlin).toContain('enum class DigestOrder');
+    expect(kotlin).toContain('enum class EpisodeOrder');
   });
 });

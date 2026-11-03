@@ -596,7 +596,7 @@
     },
     {
       "id": "show",
-      "route": "/podcasts/:ref",
+      "route": "/podcasts/:ref?sort",
       "params": {
         "ref": "ItemRef"
       },

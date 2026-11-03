@@ -23,7 +23,7 @@ All under `/api`. Route names avoid "browse", so the UI name can change.
 
 `GET /feed` · `/feed/shelves/{id}`\
 `GET /library/{medium}?sort&seed`\
-`GET /items/{ref}` · `/people/{ref}` · `/series/{ref}`\
+`GET /items/{ref}?sort` · `/people/{ref}` · `/series/{ref}`\
 Each takes `?refresh` (pull to refresh)
 :::
 

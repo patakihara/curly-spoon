@@ -64,7 +64,7 @@ sealed interface Route {
     @Serializable data class Author(val ref: String) : Route
     @Serializable data class Series(val ref: String) : Route
     @Serializable data class Podcasts(val sort: String? = null, val seed: String? = null) : Route
-    @Serializable data class Show(val ref: String) : Route
+    @Serializable data class Show(val ref: String, val sort: String? = null) : Route
     @Serializable data class Episode(val ref: String) : Route
     @Serializable data class List(val ref: String) : Route
     @Serializable data class Search(val q: String? = null) : Route

@@ -124,6 +124,17 @@ export type LibraryList = z.infer<typeof LibraryList>;
 export const ItemParams = z.object({ ref: MediaRefKey });
 export type ItemParams = z.infer<typeof ItemParams>;
 
+/** Episodes by when each was published: oldest first or newest first. */
+export const EpisodeOrder = z.enum(['oldest', 'newest']).openapi('EpisodeOrder');
+export type EpisodeOrder = z.infer<typeof EpisodeOrder>;
+
+/**
+ * How a show's page lists its episodes: oldest or newest first, its own order when absent (oldest
+ * first for a serial show, newest first otherwise). Any other page ignores it.
+ */
+export const ItemQuery = z.object({ sort: EpisodeOrder.optional() });
+export type ItemQuery = z.infer<typeof ItemQuery>;
+
 /**
  * How large art is drawn: `small` in a list's row, `medium` on a card or a page's header, `large`
  * on Now Playing. The upstream scales it down to fit; with no size, art comes as it is stored.
@@ -188,8 +199,10 @@ export type ItemEpisodeAbout = z.infer<typeof ItemEpisodeAbout>;
 /**
  * A book, show, episode or album page: its header (title, author, host, show or artist, art, how
  * far through it you are, its length in seconds, where you stand with it), then a book's
- * chapters, a show's episodes in the show's own order, or an album's tracks. The other two lists
- * are empty. An episode's page lists none and carries `episode`; no other page does.
+ * chapters, a show's episodes in the order asked (`sort`, which a show's page alone carries:
+ * the show's own order unless the other was asked, the episodes then exactly reversed), or an
+ * album's tracks. The other two lists are empty. An episode's page lists none and carries
+ * `episode`; no other page does.
  */
 export const ItemDetail = z
   .object({
@@ -205,6 +218,7 @@ export const ItemDetail = z
     episodes: z.array(ItemEpisode),
     tracks: z.array(ItemTrack),
     episode: ItemEpisodeAbout.optional(),
+    sort: EpisodeOrder.optional(),
   })
   .superRefine((value, ctx) => {
     const owner = { chapters: 'book', episodes: 'show', tracks: 'album' } as const;
@@ -212,6 +226,9 @@ export const ItemDetail = z
       if (value.kind !== kind && value[list].length > 0) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: [list], message: `only a ${kind} has` });
       }
+    }
+    if ((value.kind === 'show') !== (value.sort !== undefined)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['sort'], message: 'only a show has' });
     }
     if ((value.kind === 'episode') !== (value.episode !== undefined)) {
       ctx.addIssue({

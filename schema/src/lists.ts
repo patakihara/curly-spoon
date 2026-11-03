@@ -5,7 +5,7 @@
  * episodes of the last 14 days, oldest or newest first; a playlist leaves out the episodes you
  * played; a listening list crosses off what you finished but keeps it.
  */
-import { LibraryEntry } from './library.js';
+import { EpisodeOrder, LibraryEntry } from './library.js';
 import { ArtUrl, MediaRef } from './play.js';
 import { Revision } from './sessions.js';
 import { z } from './zod.js';
@@ -16,10 +16,6 @@ const Fraction = z.number().min(0).max(1);
 /** A listening list, a podcast playlist, or a digest. */
 export const ListKind = z.enum(['listening', 'playlist', 'digest']).openapi('ListKind');
 export type ListKind = z.infer<typeof ListKind>;
-
-/** The order a digest plays its episodes in, by when each was published. */
-export const DigestOrder = z.enum(['oldest', 'newest']).openapi('DigestOrder');
-export type DigestOrder = z.infer<typeof DigestOrder>;
 
 /** The most entries, or shows, a list holds. */
 export const LIST_ENTRIES_MAX = 1000;
@@ -57,7 +53,7 @@ export const ListSummary = z
     kind: ListKind,
     name: z.string(),
     theDigest: z.boolean(),
-    order: DigestOrder.nullable(),
+    order: EpisodeOrder.nullable(),
     count: Count,
     counts: ListCounts,
     covers: z.array(ArtUrl).max(LIST_COVERS_MAX),
@@ -118,7 +114,7 @@ export const CreateListBody = z
     kind: ListKind,
     name: ListName,
     shows: Refs.optional(),
-    order: DigestOrder.optional(),
+    order: EpisodeOrder.optional(),
   })
   .openapi('CreateListBody');
 export type CreateListBody = z.infer<typeof CreateListBody>;
@@ -130,7 +126,7 @@ export type CreateListBody = z.infer<typeof CreateListBody>;
 export const UpdateListBody = z
   .object({
     name: ListName.optional(),
-    order: DigestOrder.optional(),
+    order: EpisodeOrder.optional(),
     shows: Refs.optional(),
   })
   .openapi('UpdateListBody');

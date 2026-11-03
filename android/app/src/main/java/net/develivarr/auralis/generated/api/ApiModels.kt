@@ -112,7 +112,7 @@ data class CreateListBody(
     val kind: ListKind,
     val name: String,
     val shows: List<MediaRef>? = null,
-    val order: DigestOrder? = null,
+    val order: EpisodeOrder? = null,
 )
 
 @Serializable
@@ -131,7 +131,7 @@ data class DeviceList(
 )
 
 @Serializable
-enum class DigestOrder {
+enum class EpisodeOrder {
     @SerialName("oldest")
     OLDEST,
     @SerialName("newest")
@@ -210,6 +210,7 @@ data class ItemDetail(
     val episodes: List<ItemEpisode>,
     val tracks: List<ItemTrack>,
     val episode: ItemEpisodeAbout? = null,
+    val sort: EpisodeOrder? = null,
 )
 
 @Serializable
@@ -332,7 +333,7 @@ data class ListDetail(
     val kind: ListKind,
     val name: String,
     val theDigest: Boolean,
-    val order: DigestOrder?,
+    val order: EpisodeOrder?,
     val count: Long,
     val counts: ListCounts,
     val covers: List<String>,
@@ -379,7 +380,7 @@ data class ListSummary(
     val kind: ListKind,
     val name: String,
     val theDigest: Boolean,
-    val order: DigestOrder?,
+    val order: EpisodeOrder?,
     val count: Long,
     val counts: ListCounts,
     val covers: List<String>,
@@ -866,7 +867,7 @@ data class TokenBody(
 @Serializable
 data class UpdateListBody(
     val name: String? = null,
-    val order: DigestOrder? = null,
+    val order: EpisodeOrder? = null,
     val shows: List<MediaRef>? = null,
 )
 

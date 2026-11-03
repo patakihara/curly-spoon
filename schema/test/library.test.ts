@@ -7,6 +7,7 @@ import {
   ErrorResponse,
   getItem,
   ItemDetail,
+  ItemQuery,
   ItemParams,
   LibraryList,
   LibraryParams,
@@ -196,10 +197,11 @@ describe('an item page', () => {
     expect(ItemDetail.parse(page)).toEqual(page);
   });
 
-  it("holds a show's episodes in its order, each with its own progress", () => {
+  it("holds a show's episodes in the order it names, each with its own progress", () => {
     const page = {
       ref: show,
       kind: 'show',
+      sort: 'oldest',
       ...header,
       progress: null,
       duration: null,
@@ -256,6 +258,23 @@ describe('an item page', () => {
       const page = { ref: book, kind, ...header, ...empty, episode: about };
       expect(ItemDetail.safeParse(page).success, kind).toBe(false);
     }
+  });
+
+  it('[M2.sorting] refuses a show page without its order, and an order on any other page', () => {
+    const empty = { chapters: [], episodes: [], tracks: [] };
+    expect(ItemDetail.safeParse({ ref: show, kind: 'show', ...header, ...empty }).success).toBe(
+      false,
+    );
+    for (const kind of ['book', 'episode', 'album'] as const) {
+      const page = { ref: book, kind, ...header, ...empty, sort: 'newest' };
+      expect(ItemDetail.safeParse(page).success, kind).toBe(false);
+    }
+  });
+
+  it('[M2.sorting] takes a show page asked oldest or newest first, its own order when not', () => {
+    expect(ItemQuery.parse({})).toEqual({});
+    expect(ItemQuery.parse({ sort: 'oldest' })).toEqual({ sort: 'oldest' });
+    expect(ItemQuery.safeParse({ sort: 'title' }).success).toBe(false);
   });
 
   it('refuses chapters on anything but a book, episodes on anything but a show, and tracks on anything but an album', () => {
