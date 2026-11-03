@@ -1,7 +1,8 @@
 /**
  * Listening sessions and their queues through the real routes. The library index holds the
  * recorded album (its fourteen tracks), a track of the second recorded album, the recorded
- * four-file book and the recorded serial show (its four episodes, ordered by its recorded feed).
+ * four-file book, the recorded serial show (its four episodes, ordered by its recorded feed) and
+ * the second recorded show.
  * Audiobookshelf answers from the recordings of that book (its chapters, its direct-play session,
  * a sync, a close and a progress read), of one episode played and its file, and of what the user
  * has finished; Jellyfin from the recordings of the album and its first track played, and of
@@ -62,6 +63,10 @@ const book = itemSummarySchema.parse(json(abs('multi-detail')));
 const show = itemSummarySchema.parse(json(abs('index-show-1')));
 const showFeed = parseFeed(
   (recording('feed', 'show-1-feed').response.body as { text: string }).text,
+);
+const otherShow = itemSummarySchema.parse(json(abs('index-show-2')));
+const otherFeed = parseFeed(
+  (recording('feed', 'show-2-feed').response.body as { text: string }).text,
 );
 const progressRead = json(abs('progress-read')) as { currentTime: number; lastUpdate: number };
 
@@ -146,6 +151,8 @@ function indexed(db: Db): void {
   applyTree(db, absTree(book), 1, counts);
   if (show.mediaType === 'podcast')
     applyTree(db, absTree(show, orderingFromFeed(show, showFeed)), 1, counts);
+  if (otherShow.mediaType === 'podcast')
+    applyTree(db, absTree(otherShow, orderingFromFeed(otherShow, otherFeed)), 1, counts);
 }
 
 /** kara on her phone and her laptop, and otto on his phone, each linked to both upstreams. */
@@ -999,6 +1006,26 @@ describe('autoplay, as a play or a Next meets it', () => {
     await vi.waitFor(() =>
       expect(s.stored('kara-phone').autoplay.music?.next).toEqual({ ref: mixPick }),
     );
+  });
+});
+
+describe('[M1.shell/e] Play now on an episode while another show plays', () => {
+  it('[M1.shell/e] autoplays the next episode of the show played now, not the show it replaced', async () => {
+    const s = await server();
+    const other = ref(
+      'abs',
+      (json(abs('index-show-2')) as { media: { episodes: { id: string }[] } }).media.episodes[0]!
+        .id,
+    );
+    await s.ok(s.put('kara-phone', other, 'now'));
+    await vi.waitFor(() => expect(s.stored('kara-phone').autoplay.spoken).toBeTruthy());
+
+    const plan = await s.play('kara-phone', episode);
+    expect(plan.next).toEqual(nextEpisode);
+    expect(s.stored('kara-phone').queues.spoken.current?.ref).toEqual(episode);
+
+    const next = await s.stepped('kara-phone', 'next');
+    expect(next.currents.spoken?.ref).toEqual(nextEpisode);
   });
 });
 
