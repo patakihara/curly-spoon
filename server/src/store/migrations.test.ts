@@ -252,7 +252,10 @@ describe('the lists migration', () => {
         VALUES ('device-1', 0, 'spoken', 'abs', 'episode-1', 1);
     `);
 
-    runMigrations(db);
+    runMigrations(
+      db,
+      migrations.filter((m) => m.id <= 14),
+    );
 
     expect(appliedIds(db).at(-1)).toBe(14);
     expect(db.prepare('SELECT rev, spoken_digest FROM listening_sessions').all()).toEqual([
@@ -265,7 +268,10 @@ describe('the lists migration', () => {
       expect(db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get()).toEqual({ n: 0 });
     }
     const applied = appliedIds(db);
-    runMigrations(db);
+    runMigrations(
+      db,
+      migrations.filter((m) => m.id <= 14),
+    );
     expect(appliedIds(db)).toEqual(applied);
     db.close();
   });

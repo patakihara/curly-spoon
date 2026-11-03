@@ -1223,6 +1223,82 @@
           "queueStyle"
         ]
       },
+      "Theme": {
+        "type": "string",
+        "enum": [
+          "system",
+          "light",
+          "dark"
+        ]
+      },
+      "AutoplaySwitches": {
+        "type": "object",
+        "properties": {
+          "music": {
+            "type": "boolean"
+          },
+          "spoken": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "music",
+          "spoken"
+        ]
+      },
+      "Settings": {
+        "type": "object",
+        "properties": {
+          "theme": {
+            "$ref": "#/components/schemas/Theme"
+          },
+          "autoplay": {
+            "$ref": "#/components/schemas/AutoplaySwitches"
+          },
+          "queueStyle": {
+            "$ref": "#/components/schemas/QueueStyle"
+          },
+          "firstRunDone": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "theme",
+          "autoplay",
+          "queueStyle",
+          "firstRunDone"
+        ]
+      },
+      "AutoplaySwitchesChange": {
+        "type": "object",
+        "properties": {
+          "music": {
+            "type": "boolean"
+          },
+          "spoken": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SettingsBody": {
+        "type": "object",
+        "properties": {
+          "theme": {
+            "$ref": "#/components/schemas/Theme"
+          },
+          "autoplay": {
+            "$ref": "#/components/schemas/AutoplaySwitchesChange"
+          },
+          "queueStyle": {
+            "$ref": "#/components/schemas/QueueStyle"
+          },
+          "firstRunDone": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "LibraryEntryKind": {
         "type": "string",
         "enum": [
@@ -3962,6 +4038,115 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ListeningSession"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings": {
+      "get": {
+        "summary": "The signed-in person's settings, the same on every device of theirs",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getSettings",
+        "responses": {
+          "200": {
+            "description": "Every setting, a default for each one never changed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Settings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Change the signed-in person's settings: only those named change",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "putSettings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Every setting, as it stands after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Settings"
                 }
               }
             }

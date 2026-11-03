@@ -56,6 +56,7 @@ import {
   ProgressReport,
 } from './play.js';
 import { SearchQuery, SearchResults, SuggestionList, SuggestQuery } from './search.js';
+import { Settings, SettingsBody } from './settings.js';
 import {
   ActiveQueueBody,
   AddToQueueBody,
@@ -411,6 +412,27 @@ export const setQueueStyle = {
   body: QueueStyleBody,
 } as const satisfies Route;
 
+export const getSettings = {
+  method: 'GET',
+  path: '/api/settings',
+  operationId: 'getSettings',
+  summary: "The signed-in person's settings, the same on every device of theirs",
+  responseDescription: 'Every setting, a default for each one never changed.',
+  response: Settings,
+  access: 'member',
+} as const satisfies Route;
+
+export const putSettings = {
+  method: 'PUT',
+  path: '/api/settings',
+  operationId: 'putSettings',
+  summary: "Change the signed-in person's settings: only those named change",
+  responseDescription: 'Every setting, as it stands after the change.',
+  response: Settings,
+  access: 'member',
+  body: SettingsBody,
+} as const satisfies Route;
+
 export const listLibrary = {
   method: 'GET',
   path: '/api/library/{medium}',
@@ -622,6 +644,8 @@ export const routes: readonly Route[] = [
   stepSession,
   setActiveQueue,
   setQueueStyle,
+  getSettings,
+  putSettings,
   listLibrary,
   getFeed,
   getItem,

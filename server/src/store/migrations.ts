@@ -568,6 +568,27 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 15,
+    name: 'user_settings',
+    up: (db) => {
+      db.exec(`
+        -- Each person's settings (store/settings.ts), one row per person, none until they change
+        -- one: a person with no row has the defaults. The autoplay switches are per queue.
+        CREATE TABLE user_settings (
+          user_id         TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+          theme           TEXT NOT NULL DEFAULT 'system'
+                            CHECK (theme IN ('system', 'light', 'dark')),
+          queue_style     TEXT NOT NULL DEFAULT 'youtube'
+                            CHECK (queue_style IN ('youtube', 'spotify')),
+          autoplay_music  INTEGER NOT NULL DEFAULT 1 CHECK (autoplay_music IN (0, 1)),
+          autoplay_spoken INTEGER NOT NULL DEFAULT 1 CHECK (autoplay_spoken IN (0, 1)),
+          first_run_done  INTEGER NOT NULL DEFAULT 0 CHECK (first_run_done IN (0, 1)),
+          updated_at      INTEGER NOT NULL
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

@@ -117,6 +117,7 @@ export {
   getQueue,
   getSearch,
   getSearchSuggest,
+  getSettings,
   getSetup,
   health,
   listBookmarks,
@@ -135,6 +136,7 @@ export {
   playList,
   postSetup,
   putQueue,
+  putSettings,
   renameDevice,
   reportProgress,
   routes,
@@ -158,6 +160,14 @@ export {
   SuggestionList,
   SuggestQuery,
 } from './search.js';
+export {
+  AutoplaySwitches,
+  AutoplaySwitchesChange,
+  DEFAULT_SETTINGS,
+  Settings,
+  SettingsBody,
+  Theme,
+} from './settings.js';
 export {
   ActiveQueueBody,
   AddToQueueBody,

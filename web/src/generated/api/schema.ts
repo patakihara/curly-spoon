@@ -398,6 +398,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in person's settings, the same on every device of theirs */
+        get: operations["getSettings"];
+        /** Change the signed-in person's settings: only those named change */
+        put: operations["putSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/library/{medium}": {
         parameters: {
             query?: never;
@@ -870,6 +888,28 @@ export interface components {
         QueueStyleBody: {
             queueStyle: components["schemas"]["QueueStyle"];
             rev?: number;
+        };
+        /** @enum {string} */
+        Theme: "system" | "light" | "dark";
+        AutoplaySwitches: {
+            music: boolean;
+            spoken: boolean;
+        };
+        Settings: {
+            theme: components["schemas"]["Theme"];
+            autoplay: components["schemas"]["AutoplaySwitches"];
+            queueStyle: components["schemas"]["QueueStyle"];
+            firstRunDone: boolean;
+        };
+        AutoplaySwitchesChange: {
+            music?: boolean;
+            spoken?: boolean;
+        };
+        SettingsBody: {
+            theme?: components["schemas"]["Theme"];
+            autoplay?: components["schemas"]["AutoplaySwitchesChange"];
+            queueStyle?: components["schemas"]["QueueStyle"];
+            firstRunDone?: boolean;
         };
         /** @enum {string} */
         LibraryEntryKind: "book" | "show" | "album";
@@ -2413,6 +2453,95 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ListeningSession"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every setting, a default for each one never changed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Settings"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    putSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SettingsBody"];
+            };
+        };
+        responses: {
+            /** @description Every setting, as it stands after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Settings"];
                 };
             };
             /** @description The request does not parse, or was refused. */
