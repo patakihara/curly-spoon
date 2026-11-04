@@ -1,6 +1,6 @@
 ---
 page: requests
-pageHash: 63ec0fbbdf859a5556fee66773b3bd040d95d24ba03f35f3ac6c5c44271c9720
+pageHash: d60865a2039828c04a30861ce4c9cbf328215a11a37e8b39d8f318ededb812cc
 sonora: [none]
 ---
 
@@ -27,9 +27,9 @@ the list width:
 - **In flight**: every album and book on its way, one `ResultRow` each, its meta naming type,
   creator, source and size ("Album · Soul Vertex · Prowlarr · 412 MB"), its status in the plan's
   vocabulary and tone (Downloading at 38%, 64% and 18%, Importing, Searching…, Failed), and at its end an
-  `IconButton` bound to that request's verb: ✕ Cancel, or ↻ Retry on the failed one. A failed row
-  with other releases left carries a row under it, "Pick another release", which takes the next
-  one in one tap.
+  `IconButton` that cancels it. A failed row keeps ↻ Retry drawn on its art, at every width, in place
+  of the error glyph, and the same ✕ at its end. One with other releases left carries a row under it,
+  "Pick another release", which takes the next one in one tap.
 - **Needs choice**: each album torrent where no release clearly wins, with its status pill and ✕, then
   its candidates as rows naming format, track fit, size and seeders ("FLAC · 12 of 12 tracks ·
   1.1 GB · 41 seeders"), each with a "Choose" button: one tap on the row or the button picks it. One album with three
@@ -46,9 +46,8 @@ where things are requested, with one way on, "Go to Search".
   card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
   disabled state). Part C of the states item binds each such control or leaves it deliberately
   disabled.
-- Changed on purpose: a row ends in its action (Cancel or Retry) as an `IconButton`, bound to the
-  request's verb, where the card's rows act only through the art's hover overlay, which a phone's
-  `ResultRow` hides while it draws a ring or a failure.
+- Changed on purpose: every row ends in ✕ Cancel as an `IconButton`, where the card's rows act only
+  through the art's hover overlay. A failed row's retry stays on the art, drawn at every width.
 - Changed on purpose: the statuses follow the plan's vocabulary: "Downloading · 38%" rather than
   the card's "Requested · 87%", and "Importing", which the card lacks.
 - Open: the candidates repeat the request's art, since a release has none of its own; they are not

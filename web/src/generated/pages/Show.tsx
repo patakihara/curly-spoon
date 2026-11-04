@@ -392,15 +392,17 @@ export default function Show({ data = placeholder, state = 'full' }: ShowProps) 
       <Section title="About" platform={platform}>
         <ExpandableText text={data.about} lines={3} />
       </Section>
-      <Section title="You might also like" last={true} platform={platform}>
-        <Shelf platform={platform}>
-          {data.related.map((other, i) => (
-            <Fragment key={i}>
-              <MediaCard title={other.title} sub={other.sub} image={other.image} onClick={other.ref ? () => navigate(generatePath('/podcasts/:ref', { ref: other.ref })) : undefined} platform={platform} />
-            </Fragment>
-          ))}
-        </Shelf>
-      </Section>
+      {data.related.length > 0 && (
+        <Section title="You might also like" last={true} platform={platform}>
+          <Shelf platform={platform}>
+            {data.related.map((other, i) => (
+              <Fragment key={i}>
+                <MediaCard title={other.title} sub={other.sub} image={other.image} onClick={other.ref ? () => navigate(generatePath('/podcasts/:ref', { ref: other.ref })) : undefined} platform={platform} />
+              </Fragment>
+            ))}
+          </Shelf>
+        </Section>
+      )}
     </PageBody>
   );
 }

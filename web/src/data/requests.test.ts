@@ -42,9 +42,6 @@ describe('[M3.requests] the Requests page from GET /api/requests', () => {
         image: '',
         status: 'Downloading · 64%',
         tone: 'progress',
-        action: 'Cancel',
-        actionIcon: 'close',
-        verb: 'cancel',
       },
     ]);
   });
@@ -61,16 +58,22 @@ describe('[M3.requests] the Requests page from GET /api/requests', () => {
     expect(row).toMatchObject({ meta: 'Book', status: 'Searching…' });
   });
 
-  it('offers a failed row a retry, and says why it failed', () => {
-    const [row] = requestsData(list([failed()]), frame.placeholder).inFlight;
-    expect(row).toMatchObject({
-      status: 'Failed',
-      tone: 'error',
-      meta: 'Book · Linnea Frost · AudiobookBay · 286 MB · The download failed',
-      action: 'Retry',
-      actionIcon: 'refresh',
-      verb: 'retry',
-    });
+  it('offers a failed row a retry and a cancel, and says why it failed', () => {
+    const data = requestsData(list([failed()]), frame.placeholder);
+    expect(data.inFlight).toEqual([]);
+    expect(data.failed).toEqual([
+      expect.objectContaining({
+        status: 'Failed',
+        tone: 'error',
+        meta: 'Book · Linnea Frost · AudiobookBay · 286 MB · The download failed',
+      }),
+    ]);
+  });
+
+  it('offers only the cancel on a failed row it cannot retry, as its verbs say', () => {
+    const data = requestsData(list([failed({ verbs: ['cancel'] })]), frame.placeholder);
+    expect(data.failed).toEqual([]);
+    expect(data.inFlight).toEqual([expect.objectContaining({ status: 'Failed' })]);
   });
 
   it('draws a failed row with other releases left apart, offering the next in a tap', () => {
@@ -84,9 +87,9 @@ describe('[M3.requests] the Requests page from GET /api/requests', () => {
       frame.placeholder,
     );
     expect(data.inFlight).toEqual([]);
+    expect(data.failed).toEqual([]);
     expect(data.pickable).toEqual([
       expect.objectContaining({
-        verb: 'retry',
         others: 'The download failed; 2 releases left',
         next: 'c1',
       }),

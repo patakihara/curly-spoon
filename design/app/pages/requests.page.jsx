@@ -26,9 +26,27 @@ export default function Requests({ data }) {
                 divider
                 trailing={
                   <IconButton
-                    icon={request.actionIcon}
-                    label={request.action}
-                    onClick={<Act ref={request.id} verb={request.verb} />}
+                    icon="close"
+                    label="Cancel"
+                    onClick={<Act ref={request.id} verb="cancel" />}
+                  />
+                }
+              />
+            </Each>
+            <Each of={data.failed} as="request">
+              <ResultRow
+                title={request.title}
+                meta={request.meta}
+                image={request.image}
+                status={request.status}
+                tone={request.tone}
+                divider
+                onAction={<Act ref={request.id} verb="retry" />}
+                trailing={
+                  <IconButton
+                    icon="close"
+                    label="Cancel"
+                    onClick={<Act ref={request.id} verb="cancel" />}
                   />
                 }
               />
@@ -40,11 +58,12 @@ export default function Requests({ data }) {
                 image={request.image}
                 status={request.status}
                 tone={request.tone}
+                onAction={<Act ref={request.id} verb="retry" />}
                 trailing={
                   <IconButton
-                    icon={request.actionIcon}
-                    label={request.action}
-                    onClick={<Act ref={request.id} verb={request.verb} />}
+                    icon="close"
+                    label="Cancel"
+                    onClick={<Act ref={request.id} verb="cancel" />}
                   />
                 }
               />

@@ -315,13 +315,15 @@ export default function Episode({ data = placeholder, state = 'full' }: EpisodeP
       <Section title="Show notes" platform={platform}>
         <ExpandableText text={data.notes} lines={4} />
       </Section>
-      <Section title="More from the show" last={true} platform={platform}>
-        {data.more.map((other, i) => (
-          <Fragment key={i}>
-            <EpisodeRow title={other.title} description={other.description} meta={other.meta} image={other.image} progress={other.progress} finished={other.finished} onClick={other.ref ? () => navigate(generatePath('/podcasts/episodes/:ref', { ref: other.ref })) : undefined} onPlay={play(other.ref, 'spoken', 'now')} divider={true} platform={platform} />
-          </Fragment>
-        ))}
-      </Section>
+      {data.more.length > 0 && (
+        <Section title="More from the show" last={true} platform={platform}>
+          {data.more.map((other, i) => (
+            <Fragment key={i}>
+              <EpisodeRow title={other.title} description={other.description} meta={other.meta} image={other.image} progress={other.progress} finished={other.finished} onClick={other.ref ? () => navigate(generatePath('/podcasts/episodes/:ref', { ref: other.ref })) : undefined} onPlay={play(other.ref, 'spoken', 'now')} divider={true} platform={platform} />
+            </Fragment>
+          ))}
+        </Section>
+      )}
     </PageBody>
   );
 }

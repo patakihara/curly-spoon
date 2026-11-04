@@ -57,14 +57,11 @@ const requestRow = (page: Page, title: string, action: string) =>
   page
     .getByText(title, { exact: true })
     .first()
-    .locator(`xpath=ancestor::*[.//button[@aria-label="${action}"]][1]`);
+    .locator(`xpath=ancestor::*[.//*[@role="button" or self::button][@aria-label="${action}"]][1]`);
 
-/**
- * Presses a row's action. A row with no tap of its own marks itself `aria-disabled`, and Playwright
- * takes a button inside it as disabled too; its action works all the same.
- */
+/** Presses a row's action: a row with no tap of its own is no control, and never disabled. */
 const press = (row: ReturnType<typeof requestRow>, name: string) =>
-  row.getByRole('button', { name, exact: true }).click({ force: true });
+  row.getByRole('button', { name, exact: true }).click();
 
 const LOOKING_AGAIN = { timeout: 15_000 };
 
@@ -128,6 +125,98 @@ test('[M3.requests] opens Requests from Search, chooses, retries, picks another,
   await expect(page.getByText('Nothing requested', { exact: true })).toBeVisible();
 });
 
+test('[M3.requests] a failed request offers retry and cancel on a phone and a desktop, and cancelling removes it', async ({
+  page,
+}) => {
+  await open(page, '/requests');
+  await request(page, 'book', 'Alone Stand-in', 1);
+  await request(page, 'book', 'Spare Stand-in', 2);
+  await page.reload();
+  await fontsLoaded(page);
+  const alone = requestRow(page, 'Alone Stand-in', 'Retry');
+  const spare = requestRow(page, 'Spare Stand-in', 'Retry');
+  await expect(alone).toContainText('The download failed', LOOKING_AGAIN);
+  await expect(page.getByText('The download failed; 1 release left')).toBeVisible(LOOKING_AGAIN);
+
+  // No control of a failed row is off, and each has room, at either width.
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    for (const row of [alone, spare]) {
+      for (const name of ['Retry', 'Cancel']) {
+        const control = row.getByRole('button', { name, exact: true });
+        await expect(control, `${name} at ${width}`).toBeEnabled();
+        await expect(control, `${name} at ${width}`).toBeInViewport({ ratio: 1 });
+        const { opacity } = await control.evaluate((el) => getComputedStyle(el));
+        expect(opacity, `${name} at ${width}`).toBe('1');
+      }
+    }
+  }
+
+  // The verbs the row draws come from the server's.
+  const { inFlight } = (await (await page.request.get(api('/requests'))).json()) as {
+    inFlight: { title: string; verbs: string[] }[];
+  };
+  expect(inFlight.map((r) => [r.title, r.verbs]).sort()).toEqual([
+    ['Alone Stand-in', ['retry', 'cancel']],
+    ['Spare Stand-in', ['retry', 'pickAnother', 'cancel']],
+  ]);
+
+  await press(alone, 'Cancel');
+  await expect(page.getByText('Alone Stand-in', { exact: true })).toHaveCount(0);
+  await press(spare, 'Cancel');
+  await expect(page.getByText('Spare Stand-in', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Pick another release', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Nothing requested', { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText('Nothing requested', { exact: true })).toBeVisible();
+});
+
+test('[M3.requests] Requests draws no title over a section with nothing in it', async ({
+  page,
+}) => {
+  await open(page, '/requests');
+  await request(page, 'book', 'Steady Stand-in', 1);
+  await page.reload();
+  await expect(page.getByText('Steady Stand-in', { exact: true })).toBeVisible();
+  await expect(page.getByText('In flight', { exact: true })).toBeVisible();
+  await expect(page.getByText('Needs choice', { exact: true })).toHaveCount(0);
+
+  await press(requestRow(page, 'Steady Stand-in', 'Cancel'), 'Cancel');
+  await expect(page.getByText('Nothing requested', { exact: true })).toBeVisible();
+  await request(page, 'album', 'Paper Stand-in', 2);
+  await page.reload();
+  await expect(page.getByText('Paper Stand-in [FLAC]', { exact: true })).toBeVisible(LOOKING_AGAIN);
+  await expect(page.getByText('Needs choice', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('In flight', { exact: true })).toHaveCount(0);
+});
+
+test('[M3.requests] Search draws no title over a section with nothing in it, and no blank row', async ({
+  page,
+}) => {
+  await open(page, '/search');
+  // Every result but the top one is the household's, so nothing lands in the person's library.
+  await page.goto(`${recorded.origin}/search?q=the`);
+  await fontsLoaded(page);
+  await expect(page.getByText('Top result', { exact: true })).toBeVisible(LOOKING_AGAIN);
+  await expect(page.getByText('Not in your library', { exact: true })).toBeVisible();
+  await expect(page.getByText('In your library', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Show all', { exact: true })).toHaveCount(0);
+
+  // The same answer with every result the person's own: nothing is left outside.
+  await page.route('**/api/search?*', async (route) => {
+    const answered = await route.fetch();
+    const { results, ...rest } = (await answered.json()) as { results: object[] };
+    await route.fulfill({
+      response: answered,
+      json: { ...rest, results: results.map((r) => ({ ...r, inYourLibrary: true })) },
+    });
+  });
+  await page.reload();
+  await fontsLoaded(page);
+  await expect(page.getByText('In your library', { exact: true })).toBeVisible(LOOKING_AGAIN);
+  await expect(page.getByText('Not in your library', { exact: true })).toHaveCount(0);
+});
+
 test('[M3.requests/c] the homes say they are empty, then draw a request among the items', async ({
   page,
 }) => {
@@ -188,7 +277,7 @@ test('[M3.requests/d] on a person who has played nothing, Search puts the househ
   await fontsLoaded(page);
   await expect(page.getByText('Top result', { exact: true })).toBeVisible();
   await expect.poll(() => between(page, 'Not in your library')).toContain(item.title);
-  expect(await between(page, 'In your library', 'Not in your library')).not.toContain(item.title);
+  await expect(page.getByText('In your library', { exact: true })).toHaveCount(0);
 
   const row = page
     .getByRole('button', { name: item.title, exact: true })

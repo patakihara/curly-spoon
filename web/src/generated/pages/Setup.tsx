@@ -236,24 +236,28 @@ export default function Setup({ data = placeholder, state = 'full' }: SetupProps
       <Section eyebrow="Step 1 of 4" title="One-time code" platform={platform}>
         <FieldRow label="Code" placeholder={data.codeHint} platform={platform} />
       </Section>
-      <Section eyebrow="Step 2 of 4" title="Services" platform={platform}>
-        <LayoutGrid columns={1} gap="10px" platform={platform}>
-          {data.services.map((service, i) => (
-            <Fragment key={i}>
-              <FieldRow label={service.label} value={service.address} platform={platform} />
-            </Fragment>
-          ))}
-        </LayoutGrid>
-      </Section>
-      <Section eyebrow="Step 3 of 4" title="Providers" platform={platform}>
-        <LayoutGrid columns={1} gap="10px" platform={platform}>
-          {data.providers.map((provider, i) => (
-            <Fragment key={i}>
-              <SettingRow title={provider.title} sub={provider.sub} checked={provider.checked} platform={platform} />
-            </Fragment>
-          ))}
-        </LayoutGrid>
-      </Section>
+      {data.services.length > 0 && (
+        <Section eyebrow="Step 2 of 4" title="Services" platform={platform}>
+          <LayoutGrid columns={1} gap="10px" platform={platform}>
+            {data.services.map((service, i) => (
+              <Fragment key={i}>
+                <FieldRow label={service.label} value={service.address} platform={platform} />
+              </Fragment>
+            ))}
+          </LayoutGrid>
+        </Section>
+      )}
+      {data.providers.length > 0 && (
+        <Section eyebrow="Step 3 of 4" title="Providers" platform={platform}>
+          <LayoutGrid columns={1} gap="10px" platform={platform}>
+            {data.providers.map((provider, i) => (
+              <Fragment key={i}>
+                <SettingRow title={provider.title} sub={provider.sub} checked={provider.checked} platform={platform} />
+              </Fragment>
+            ))}
+          </LayoutGrid>
+        </Section>
+      )}
       <Section eyebrow="Step 4 of 4" title="Requests" platform={platform}>
         <SettingRow title={data.approval.title} sub={data.approval.sub} checked={data.approval.checked} platform={platform} />
       </Section>

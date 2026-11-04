@@ -96,6 +96,7 @@ export const UNBOUND: Readonly<Record<string, string>> = {
   'requests/Button.onClick': 'M5.library',
   'requests/IconButton.onClick': 'M5.library',
   'requests/ResultRow.onClick': 'M5.library',
+  'requests/ResultRow.onAction': 'M5.library',
   'series/MediaCard.onRequest': 'M3.requests',
   'shelfReview/ResultRow.onClick': 'M3.requests',
   // Search's outside results.

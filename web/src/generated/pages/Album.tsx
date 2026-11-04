@@ -440,15 +440,17 @@ export default function Album({ data = placeholder, state = 'full' }: AlbumProps
       <Section platform={platform}>
         <ExpanderRow label={data.editions.label} image={data.image} />
       </Section>
-      <Section title={data.more.title} last={true} platform={platform}>
-        <Shelf platform={platform}>
-          {data.more.items.map((album, i) => (
-            <Fragment key={i}>
-              <MediaCard title={album.title} sub={album.sub} image={album.image} onClick={album.ref ? () => navigate(generatePath('/music/albums/:ref', { ref: album.ref })) : undefined} platform={platform} />
-            </Fragment>
-          ))}
-        </Shelf>
-      </Section>
+      {data.more.items.length > 0 && (
+        <Section title={data.more.title} last={true} platform={platform}>
+          <Shelf platform={platform}>
+            {data.more.items.map((album, i) => (
+              <Fragment key={i}>
+                <MediaCard title={album.title} sub={album.sub} image={album.image} onClick={album.ref ? () => navigate(generatePath('/music/albums/:ref', { ref: album.ref })) : undefined} platform={platform} />
+              </Fragment>
+            ))}
+          </Shelf>
+        </Section>
+      )}
     </PageBody>
   );
 }

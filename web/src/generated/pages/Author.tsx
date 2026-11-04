@@ -375,26 +375,30 @@ export default function Author({ data = placeholder, state = 'full' }: AuthorPro
       </Section>
       {data.series.map((series, i) => (
         <Fragment key={i}>
-          <Section title={series.title} eyebrow="Series" onSubject={series.ref ? () => navigate(generatePath('/books/series/:ref', { ref: series.ref })) : undefined} platform={platform}>
-            <Shelf platform={platform}>
-              {series.books.map((entry, i) => (
-                <Fragment key={i}>
-                  <MediaCard title={entry.title} sub={entry.sub} image={entry.image} progress={entry.progress} absent={entry.absent} status={entry.status} tone={entry.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={entry.ref ? () => navigate(generatePath('/books/:ref', { ref: entry.ref })) : undefined} platform={platform} />
-                </Fragment>
-              ))}
-            </Shelf>
-          </Section>
+          {series.books.length > 0 && (
+            <Section title={series.title} eyebrow="Series" onSubject={series.ref ? () => navigate(generatePath('/books/series/:ref', { ref: series.ref })) : undefined} platform={platform}>
+              <Shelf platform={platform}>
+                {series.books.map((entry, i) => (
+                  <Fragment key={i}>
+                    <MediaCard title={entry.title} sub={entry.sub} image={entry.image} progress={entry.progress} absent={entry.absent} status={entry.status} tone={entry.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={entry.ref ? () => navigate(generatePath('/books/:ref', { ref: entry.ref })) : undefined} platform={platform} />
+                  </Fragment>
+                ))}
+              </Shelf>
+            </Section>
+          )}
         </Fragment>
       ))}
-      <Section title="Books" last={true} platform={platform}>
-        <LayoutGrid platform={platform}>
-          {data.books.map((book, i) => (
-            <Fragment key={i}>
-              <MediaCard width="100%" title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={book.ref ? () => navigate(generatePath('/books/:ref', { ref: book.ref })) : undefined} platform={platform} />
-            </Fragment>
-          ))}
-        </LayoutGrid>
-      </Section>
+      {data.books.length > 0 && (
+        <Section title="Books" last={true} platform={platform}>
+          <LayoutGrid platform={platform}>
+            {data.books.map((book, i) => (
+              <Fragment key={i}>
+                <MediaCard width="100%" title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={book.ref ? () => navigate(generatePath('/books/:ref', { ref: book.ref })) : undefined} platform={platform} />
+              </Fragment>
+            ))}
+          </LayoutGrid>
+        </Section>
+      )}
     </PageBody>
   );
 }

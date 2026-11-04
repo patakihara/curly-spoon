@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { ResultRow } from './generated/ui/index.js';
+import { IconButton, ResultRow } from './generated/ui/index.js';
 
 const row = (props: Partial<Parameters<typeof ResultRow>[0]>) =>
   renderToString(
@@ -36,6 +36,24 @@ describe("Sonora's ResultRow art action", () => {
       expect(html, platform).not.toContain('aria-label="Play"');
       expect(html, platform).not.toContain('rr-act');
       expect(html, platform).toContain('aria-disabled="false"');
+    }
+  });
+
+  it("keeps a failed row's retry drawn on the art at every width, in place of the error glyph", () => {
+    for (const platform of ['desktop', 'mobile'] as const) {
+      const html = row({ platform, status: 'Failed', tone: 'error', onAction: plays });
+      expect(html, platform).toContain('aria-label="Retry"');
+      expect(html, platform).toContain('data-always="true"');
+      expect(html, platform).toContain('>refresh<');
+      expect(html, platform).not.toContain('>error<');
+    }
+  });
+
+  it('keeps the error glyph on a failed row with no retry to offer', () => {
+    for (const platform of ['desktop', 'mobile'] as const) {
+      const html = row({ platform, status: 'Failed', tone: 'error' });
+      expect(html, platform).toContain('>error<');
+      expect(html, platform).not.toContain('aria-label="Retry"');
     }
   });
 
@@ -94,6 +112,30 @@ describe("Sonora's ResultRow as a control", () => {
       expect(html, platform).not.toContain('aria-disabled');
       expect(html, platform).not.toContain('tabindex="-1"');
       expect(html.slice(0, html.indexOf('>')), platform).not.toContain('cursor:pointer');
+    }
+  });
+
+  it('is no control at all when only its trailing control acts: no row button, nothing disabled', () => {
+    const trailing = <IconButton icon="close" label="Cancel" onClick={plays} />;
+    for (const platform of ['desktop', 'mobile'] as const) {
+      const html = row({ platform, trailing });
+      expect(
+        buttons(html).map((b) => /aria-label="([^"]*)"/.exec(b.attrs)?.[1]),
+        platform,
+      ).toEqual(['Cancel']);
+      expect(html, platform).not.toContain('aria-disabled');
+      expect(html, platform).not.toContain('tabindex="-1"');
+      expect(html.slice(0, html.indexOf('>')), platform).not.toContain('cursor:pointer');
+    }
+  });
+
+  it('stays a disabled row when its trailing control has no action either', () => {
+    for (const trailing of [
+      <IconButton key="none" icon="close" label="Cancel" />,
+      <IconButton key="off" icon="close" label="Cancel" onClick={plays} disabled />,
+    ]) {
+      const [own] = buttons(row({ trailing }));
+      expect(own!.attrs).toMatch(/tabindex="-1" aria-disabled="true"/);
     }
   });
 

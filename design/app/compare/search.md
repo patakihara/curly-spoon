@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: 9a6962659223868b58cc7c698e6fac0d05d61bc21eb0250f3455eabcbd0cebc5
+pageHash: 20080a9c939a9910e43df1fffcbba0930234cd5c187d75fdeed4e54643860a0e
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---
@@ -122,3 +122,4 @@ chooses the state. The canvas draws each on its own phone artboard, `search.phon
 ## M3.requests
 
 - Changed on purpose: "Not in your library" opens with what the household has that you have not played, each row opening its page and playing from its art as a library row does: "Salt Roads". The catalogue's rows follow, unbound as before.
+- Changed on purpose: a section with nothing in it draws no title, and an expander row with no words is not drawn; with nothing outside the library, "Your requests" goes with its section.

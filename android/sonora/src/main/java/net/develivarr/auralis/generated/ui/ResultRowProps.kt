@@ -37,15 +37,16 @@ data class ResultRowProps(
     val icon: String? = null,
     val platform: Platform? = null,
     /**
-     * Without it the row is drawn disabled, unless it has `onAction`: then the row is no control,
-     * and only its art acts. A row holding another control (`onAction`, `trailing`) takes its tap
+     * Without it the row is drawn disabled, unless its `onAction` or its `trailing` control has an
+     * action: then the row is no control, and only they act. A row holding another control (`onAction`, `trailing`) takes its tap
      * on the title for the keyboard and a screen reader, so no control sits inside another; a
      * pointer taps it anywhere.
      */
     val onClick: (() -> Unit)? = null,
     /**
      * The art's action: play, or cancel or retry a request, as the status says. Without it the art
-     * draws no action; the row's `onClick` never stands in for it.
+     * draws no action; the row's `onClick` never stands in for it. A failed row's retry is drawn at
+     * every width, in place of the error glyph.
      */
     val onAction: (() -> Unit)? = null,
     /** Hairline separator along the bottom, inset to the text column. Set on all but the last row of a list. */

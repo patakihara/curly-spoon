@@ -6,10 +6,7 @@
       "meta": "Album · Soul Vertex · Prowlarr · 412 MB",
       "image": "/art/salt-and-static.jpg",
       "status": "Downloading · 38%",
-      "tone": "progress",
-      "action": "Cancel",
-      "actionIcon": "close",
-      "verb": "cancel"
+      "tone": "progress"
     },
     {
       "id": "request-2",
@@ -17,10 +14,7 @@
       "meta": "Book · Linnea Frost · AudiobookBay · 286 MB",
       "image": "/art/the-ink-orchard.jpg",
       "status": "Downloading · 64%",
-      "tone": "progress",
-      "action": "Cancel",
-      "actionIcon": "close",
-      "verb": "cancel"
+      "tone": "progress"
     },
     {
       "id": "request-3",
@@ -28,10 +22,7 @@
       "meta": "Book · Rosa Elin · AudiobookBay · 612 MB",
       "image": "/art/the-salt-cartographer.jpg",
       "status": "Downloading · 18%",
-      "tone": "progress",
-      "action": "Cancel",
-      "actionIcon": "close",
-      "verb": "cancel"
+      "tone": "progress"
     },
     {
       "id": "request-4",
@@ -39,10 +30,7 @@
       "meta": "Album · Fleeting Verses · Prowlarr · 1.1 GB",
       "image": "/art/fragments-of-the-wind.jpg",
       "status": "Importing",
-      "tone": "progress",
-      "action": "Cancel",
-      "actionIcon": "close",
-      "verb": "cancel"
+      "tone": "progress"
     },
     {
       "id": "request-5",
@@ -50,21 +38,17 @@
       "meta": "Book · Rosa Elin · Prowlarr, then AudiobookBay",
       "image": "/art/the-long-read.jpg",
       "status": "Searching…",
-      "tone": "progress",
-      "action": "Cancel",
-      "actionIcon": "close",
-      "verb": "cancel"
-    },
+      "tone": "progress"
+    }
+  ],
+  "failed": [
     {
       "id": "request-6",
       "title": "Between Two Worlds",
       "meta": "Book · Maya Lind · AudiobookBay · 298 MB",
       "image": "/art/between-two-worlds.jpg",
       "status": "Failed",
-      "tone": "error",
-      "action": "Retry",
-      "actionIcon": "refresh",
-      "verb": "retry"
+      "tone": "error"
     }
   ],
   "pickable": [
@@ -75,9 +59,6 @@
       "image": "/art/shadows-and-sighs.jpg",
       "status": "Failed",
       "tone": "error",
-      "action": "Retry",
-      "actionIcon": "refresh",
-      "verb": "retry",
       "others": "The download failed; 2 other releases are left",
       "next": "release-4"
     }

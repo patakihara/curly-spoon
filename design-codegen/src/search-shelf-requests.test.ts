@@ -337,16 +337,28 @@ describe('[M3.requests] a request’s verbs on Requests', () => {
   const named = (title: string) =>
     rows(tree).filter(({ row }) => JSON.stringify(row.props.title).includes(title));
 
-  it('[M3.requests] binds each row in flight’s own verb to its trailing control', () => {
-    for (const { row } of rows(tree).filter(({ of }) => of === 'data.inFlight')) {
-      expect(act(slotted(row, 'trailing'))).toEqual({
-        kind: 'act',
-        verb: { path: ['request', 'verb'] },
-        params: { ref: ['request', 'id'] },
-      });
+  const cancels = { kind: 'act', verb: 'cancel', params: { ref: ['request', 'id'] } };
+  const retries = { kind: 'act', verb: 'retry', params: { ref: ['request', 'id'] } };
+
+  it('[M3.requests] cancels each row in flight from its trailing control', () => {
+    const shown = rows(tree).filter(({ of }) => of === 'data.inFlight');
+    expect(shown).toHaveLength(1);
+    expect(act(slotted(shown[0]!.row, 'trailing'))).toEqual(cancels);
+    expect(shown[0]!.row.props.onAction).toBeUndefined();
+    for (const r of data.inFlight as Row[]) expect(r.status).not.toBe('Failed');
+  });
+
+  it('[M3.requests] offers a failed row a retry on its art and a cancel at its end', () => {
+    for (const list of ['data.failed', 'data.pickable']) {
+      const row = rows(tree).find(
+        ({ of, row: r }) => of === list && !JSON.stringify(r.props.title).includes('Pick another'),
+      )!.row;
+      expect(act(row, 'onAction'), list).toEqual(retries);
+      expect(act(slotted(row, 'trailing')), list).toEqual(cancels);
     }
-    const verbs = (data.inFlight as Row[]).map((r) => [r.status === 'Failed', r.verb]);
-    for (const [failed, verb] of verbs) expect(verb).toBe(failed ? 'retry' : 'cancel');
+    for (const r of [...(data.failed as Row[]), ...(data.pickable as Row[])]) {
+      expect(r.status).toBe('Failed');
+    }
   });
 
   it('[M3.requests] chooses a candidate with one tap on its row or its button', () => {
@@ -433,8 +445,8 @@ describe('Requests', () => {
   const inFlight = data.inFlight as Row[];
   const needsChoice = data.needsChoice as (Row & { candidates: Row[] })[];
 
-  it('[M0.canvas] binds only the requests in flight and those that need a choice', () => {
-    expect(dataRoots(tree)).toEqual(['inFlight', 'needsChoice', 'pickable']);
+  it('[M0.canvas] binds only the requests in flight, those that failed and those that need a choice', () => {
+    expect(dataRoots(tree)).toEqual(['failed', 'inFlight', 'needsChoice', 'pickable']);
     expect(bindings(tree).filter((p) => p.startsWith('shell.'))).toEqual([]);
   });
 
@@ -459,15 +471,6 @@ describe('Requests', () => {
     const shown = inFlight.map((r) => /(\d+)%$/.exec(r.status as string)?.[1]).filter(Boolean);
     expect(shown.length).toBeGreaterThanOrEqual(2);
     expect(new Set(shown).size).toBe(shown.length);
-  });
-
-  it('[M0.canvas] retries a failed request and cancels any other', () => {
-    for (const request of inFlight) {
-      const failed = request.status === 'Failed';
-      expect([request.action, request.actionIcon]).toEqual(
-        failed ? ['Retry', 'refresh'] : ['Cancel', 'close'],
-      );
-    }
   });
 
   it('[M0.canvas] lists a Needs choice request with its candidates, each chosen in one tap', () => {

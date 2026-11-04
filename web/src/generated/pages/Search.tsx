@@ -429,60 +429,66 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
           <Section title="Top result" platform={platform}>
             <ResultRow title={data.top.title} meta={data.top.meta} image={data.top.image} onClick={data.top.ref ? () => navigate(generatePath(routes[data.top.page]!, { ref: data.top.ref })) : undefined} onAction={play(data.top.playRef, data.top.queue as PlayQueue, 'now')} platform={platform} />
           </Section>
-          <Section title="In your library" platform={platform}>
-            {data.library.map((item, i) => (
-              <Fragment key={i}>
-                <ResultRow title={item.title} meta={item.meta} image={item.image} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} onAction={play(item.playRef, item.queue as PlayQueue, 'now')} divider={true} platform={platform} />
-              </Fragment>
-            ))}
-          </Section>
-          <Section title="Not in your library" actionText="Your requests" onAction={() => navigate('/requests')} last={true} platform={platform}>
-            {data.outside.household.map((item, i) => (
-              <Fragment key={i}>
-                <ResultRow title={item.title} meta={item.meta} image={item.image} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} onAction={play(item.playRef, item.queue as PlayQueue, 'now')} divider={true} platform={platform} />
-              </Fragment>
-            ))}
-            {data.outside.music.map((song, i) => (
-              <Fragment key={i}>
-                <ResultRow title={song.title} meta={song.meta} image={song.image} divider={true} platform={platform} />
-              </Fragment>
-            ))}
-            <ExpanderRow label={data.outside.moreReleases} />
-            {data.outside.books.map((book, i) => (
-              <Fragment key={i}>
-                <ResultRow
-                  title={book.title}
-                  meta={book.meta}
-                  image={book.image}
-                  status={book.status}
-                  tone={book.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
-                  divider={true}
-                  trailing={
-                    <Button variant="secondary" size="sm" pressed={book.requested} platform={platform}>
-                      {book.action}
-                    </Button>
-                  }
-                  platform={platform}
-                />
-              </Fragment>
-            ))}
-            {data.outside.podcasts.map((show, i) => (
-              <Fragment key={i}>
-                <ResultRow
-                  title={show.title}
-                  meta={show.meta}
-                  image={show.image}
-                  divider={true}
-                  trailing={
-                    <Button variant="secondary" size="sm" platform={platform}>
-                      {show.action}
-                    </Button>
-                  }
-                  platform={platform}
-                />
-              </Fragment>
-            ))}
-          </Section>
+          {data.library.length > 0 && (
+            <Section title="In your library" platform={platform}>
+              {data.library.map((item, i) => (
+                <Fragment key={i}>
+                  <ResultRow title={item.title} meta={item.meta} image={item.image} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} onAction={play(item.playRef, item.queue as PlayQueue, 'now')} divider={true} platform={platform} />
+                </Fragment>
+              ))}
+            </Section>
+          )}
+          {(data.outside.household.length > 0 || data.outside.music.length > 0 || data.outside.moreReleases !== '' || data.outside.books.length > 0 || data.outside.podcasts.length > 0) && (
+            <Section title="Not in your library" actionText="Your requests" onAction={() => navigate('/requests')} last={true} platform={platform}>
+              {data.outside.household.map((item, i) => (
+                <Fragment key={i}>
+                  <ResultRow title={item.title} meta={item.meta} image={item.image} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} onAction={play(item.playRef, item.queue as PlayQueue, 'now')} divider={true} platform={platform} />
+                </Fragment>
+              ))}
+              {data.outside.music.map((song, i) => (
+                <Fragment key={i}>
+                  <ResultRow title={song.title} meta={song.meta} image={song.image} divider={true} platform={platform} />
+                </Fragment>
+              ))}
+              {data.outside.moreReleases !== '' && (
+                <ExpanderRow label={data.outside.moreReleases} />
+              )}
+              {data.outside.books.map((book, i) => (
+                <Fragment key={i}>
+                  <ResultRow
+                    title={book.title}
+                    meta={book.meta}
+                    image={book.image}
+                    status={book.status}
+                    tone={book.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
+                    divider={true}
+                    trailing={
+                      <Button variant="secondary" size="sm" pressed={book.requested} platform={platform}>
+                        {book.action}
+                      </Button>
+                    }
+                    platform={platform}
+                  />
+                </Fragment>
+              ))}
+              {data.outside.podcasts.map((show, i) => (
+                <Fragment key={i}>
+                  <ResultRow
+                    title={show.title}
+                    meta={show.meta}
+                    image={show.image}
+                    divider={true}
+                    trailing={
+                      <Button variant="secondary" size="sm" platform={platform}>
+                        {show.action}
+                      </Button>
+                    }
+                    platform={platform}
+                  />
+                </Fragment>
+              ))}
+            </Section>
+          )}
         </>
       )}
     </PageBody>

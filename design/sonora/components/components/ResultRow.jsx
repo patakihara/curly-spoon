@@ -11,6 +11,9 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-resultro
   document.head.appendChild(el);
 }
 
+// Whether a control handed to the row can be pressed: an action of its own, in it or in what it holds.
+const acts=(node)=>{if(Array.isArray(node))return node.some(acts);const p=node&&node.props;if(!p||p.disabled)return false;return Object.keys(p).some(k=>/^on[A-Z]/.test(k)&&typeof p[k]==='function')||acts(p.children);};
+
 /** One row of a track / search / request list. Replaces the old TrackRow. */
 export function ResultRow({ title, meta, detail, status, progress = null, tone = 'library', actionGlyph, image, icon, platform = 'desktop', onClick, onAction, divider = false, trailing, number = null }) {
   const mobile = platform === 'mobile';
@@ -29,7 +32,8 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
   // No scrim without something to put on it — a bare dark square reads as a broken cover, not as work in flight.
   const ring = (pct !== null || spinning) && !!ProgressRing;
   const dimmed = ring || queued || failed;
-  const showAction = !!act && !(mobile && dimmed);
+  // A phone keeps the ring or the clock over the art, but a failure's retry is what the row is for.
+  const showAction = !!act && (failed || !(mobile && dimmed));
   const badgeTone = { library: 'accent', request: 'warning', progress: 'warning', error: 'error' }[tone || 'library'] || 'accent';
   const nowPlaying = st === 'playing';
   // On a phone the title shares its line with the pill and any trailing control, so a status
@@ -44,13 +48,14 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
   const glyphed = !numbered && !!icon;
   const lead = numbered || glyphed ? (mobile ? 28 : 32) : 52;
   // The art's action as drawn: only on the art, so never beside a number or a glyph.
-  const acts = showAction && !numbered && !glyphed;
-  // With only the art's action the row itself is no control, and nothing of it is drawn disabled.
-  const loose = off && acts;
+  const artActs = showAction && !numbered && !glyphed;
+  // With no tap of its own and a control that acts, the row itself is no control, and nothing of
+  // it is drawn disabled.
+  const loose = off && (artActs || acts(trailing));
   // A row that opens and holds another control (the art's action, a trailing one) takes its tap
   // on the title for the keyboard and a screen reader, so no button sits inside another; a pointer
   // still taps it anywhere, and the row still draws the state.
-  const split = !off && (acts || trailing != null);
+  const split = !off && (artActs || trailing != null);
   const rowStyle = sx('position:relative;display:flex;align-items:center;gap:' + (mobile ? '12px' : '16px') + ';padding:' + (mobile ? '8px 4px' : '10px 12px') + ';border-radius:var(--radius-xs)' + (loose ? '' : ';cursor:pointer'));
   const titleStyle = sx('flex:1;min-width:0;font-size:var(--text-md);font-weight:var(--weight-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + fg + (split ? ';outline:none' : ''));
   const whole = !loose && !split;
@@ -65,11 +70,11 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
       ) : glyphed ? (
         <span aria-hidden="true" style={sx("width:" + lead + "px;flex-shrink:0;text-align:center;font-family:'Material Symbols Rounded';font-size:var(--icon-sm);line-height:1;font-variation-settings:'FILL' 0,'wght' 400;color:" + muted)}>{icon}</span>
       ) : (
-      <div className="rr-art" data-always={mobile ? 'true' : 'false'} style={sx('position:relative;width:52px;height:52px;flex-shrink:0')}>
+      <div className="rr-art" data-always={mobile || (failed && artActs) ? 'true' : 'false'} style={sx('position:relative;width:52px;height:52px;flex-shrink:0')}>
         <div style={sx('position:relative;overflow:hidden;width:52px;height:52px;border-radius:' + (mobile ? '8px' : '6px'))}>
           {CoverArt && <CoverArt src={image} />}
         </div>
-        {acts && (
+        {artActs && (
           <div className="rr-act sn-int" role="button" tabIndex={0} onClick={(e) => { if (e && e.stopPropagation) e.stopPropagation(); act(e); }}
             onKeyDown={keys((e) => { e.stopPropagation(); act(e); })}
             aria-label={failed ? 'Retry' : (spinning || queued ? 'Cancel request' : 'Play')}
@@ -81,7 +86,7 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
             {StateLayer && <StateLayer />}
           </div>
         )}
-        {dimmed && (
+        {dimmed && !(failed && artActs) && (
           <div style={sx('position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:' + (mobile ? '8px' : '6px') + ';background:var(--scrim)')}>
             {pct !== null && ProgressRing && <ProgressRing size={ringSize} value={pct} />}
             {spinning && ProgressRing && <ProgressRing size={ringSize} />}

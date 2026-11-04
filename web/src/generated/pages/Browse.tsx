@@ -517,7 +517,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
   const play = usePlay();
   return (
     <PageBody platform={platform}>
-      {data.sections.includes('Jump back in') && (
+      {data.sections.includes('Jump back in') && data.jumpBackIn.length > 0 && (
         <Section title="Jump back in" platform={platform}>
           <LayoutGrid item="wide" maxWidth="var(--grid-max-width-tiles)" platform={platform}>
             {data.jumpBackIn.map((pick, i) => (
@@ -528,7 +528,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           </LayoutGrid>
         </Section>
       )}
-      {data.sections.includes('Up next') && (
+      {data.sections.includes('Up next') && data.upNext.length > 0 && (
         <Section title="Up next" platform={platform}>
           <Shelf platform={platform}>
             {data.upNext.map((item, i) => (
@@ -539,7 +539,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           </Shelf>
         </Section>
       )}
-      {data.sections.includes('Still listening') && (
+      {data.sections.includes('Still listening') && data.stillListening.length > 0 && (
         <Section title="Still listening" platform={platform}>
           <Shelf platform={platform}>
             {data.stillListening.map((item, i) => (
@@ -564,7 +564,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           />
         </LayoutGrid>
       </Section>
-      {data.sections.includes('Recently added') && (
+      {data.sections.includes('Recently added') && data.recentlyAdded.length > 0 && (
         <Section title="Recently added" action="arrow_forward" actionLabel="See all" onAction={data.shelves.recentlyAdded ? () => navigate(generatePath('/shelves/:id', { id: data.shelves.recentlyAdded })) : undefined} platform={platform}>
           <Shelf platform={platform}>
             {data.recentlyAdded.map((item, i) => (
@@ -575,7 +575,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           </Shelf>
         </Section>
       )}
-      {data.sections.includes('Artists & authors') && (
+      {data.sections.includes('Artists & authors') && data.people.length > 0 && (
         <Section title="Artists & authors" action="arrow_forward" actionLabel="See all" onAction={data.shelves.people ? () => navigate(generatePath('/shelves/:id', { id: data.shelves.people })) : undefined} platform={platform}>
           <Shelf platform={platform}>
             {data.people.map((person, i) => (
@@ -586,7 +586,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           </Shelf>
         </Section>
       )}
-      {data.sections.includes('Picked for you') && (
+      {data.sections.includes('Picked for you') && data.pickedForYou.length > 0 && (
         <Section title="Picked for you" action="arrow_forward" actionLabel="See all" onAction={data.shelves.pickedForYou ? () => navigate(generatePath('/shelves/:id', { id: data.shelves.pickedForYou })) : undefined} platform={platform}>
           <Shelf platform={platform}>
             {data.pickedForYou.map((item, i) => (
@@ -597,7 +597,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           </Shelf>
         </Section>
       )}
-      {data.sections.includes('Recently played') && (
+      {data.sections.includes('Recently played') && data.recentlyPlayed.length > 0 && (
         <Section title="Recently played" last={true} platform={platform}>
           {data.recentlyPlayed.map((track, i) => (
             <Fragment key={i}>

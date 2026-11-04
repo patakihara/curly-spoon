@@ -536,6 +536,58 @@ function barred(
   });
 }
 
+/**
+ * What a node holds, as the code saying it holds something: a list while it has items, an
+ * `ExpanderRow` while it has the words naming what it folds, anything else made of these. Null for
+ * what is always there. `rows`, the expander rows it met, each with its code.
+ */
+function holds(node: PageTree, placeholder: unknown, rows: Map<PageTree, string>): string[] | null {
+  const all = (nodes: PageTree[]) => {
+    const each = nodes.map((n) => holds(n, placeholder, rows));
+    return nodes.length === 0 || each.includes(null) ? null : (each as string[][]).flat();
+  };
+  switch (node.kind) {
+    case 'each':
+      return [`${pathCode(node.of)}.length > 0`];
+    case 'fragment':
+      return all(node.children);
+    case 'element': {
+      if (node.component !== 'ExpanderRow') return all(node.children);
+      const label = node.props.label;
+      if (label?.kind !== 'binding' || typeof valueAt(placeholder, label.path) !== 'string') {
+        return null;
+      }
+      const code = `${pathCode(label.path)} !== ''`;
+      rows.set(node, code);
+      return [code];
+    }
+    default:
+      return null;
+  }
+}
+
+/**
+ * A titled section made only of lists and expander rows draws only while one of them holds
+ * something, so no title stands over nothing, beside whatever else already gates it. Its expander
+ * rows draw only with their words.
+ */
+function holding(root: PageTree, placeholder: unknown, gated: Map<PageTree, string>) {
+  some(root, (n) => {
+    if (n.kind !== 'element' || n.component !== 'Section' || n.props.title === undefined) {
+      return false;
+    }
+    const rows = new Map<PageTree, string>();
+    const held = n.children.map((child) => holds(child, placeholder, rows));
+    if (n.children.length === 0 || held.includes(null)) return false;
+    const conditions = (held as string[][]).flat();
+    const holdsAny = conditions.length === 1 ? conditions[0]! : `(${conditions.join(' || ')})`;
+    const named = gated.get(n);
+    gated.set(n, named === undefined ? holdsAny : `${named} && ${holdsAny}`);
+    for (const [row, code] of rows) gated.set(row, code);
+    return false;
+  });
+}
+
 export function generateWebPage(
   tree: PageTree,
   id: string,
@@ -621,6 +673,7 @@ export function generateWebPage(
       });
   resumes(root, components.wired);
   if (subheader !== undefined) barred(root, subheader, placeholder, components.gated);
+  holding(root, placeholder, components.gated);
   const body = render(root, '    ', components);
   const own = [root, back, subheader].filter((t): t is PageTree => t !== undefined);
   const inPage = (test: (node: PageTree) => boolean) => own.some((t) => some(t, test));

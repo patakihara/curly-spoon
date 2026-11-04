@@ -15,8 +15,8 @@ import { SignedOut } from './store';
 /**
  * The Requests page's data from `GET /api/requests`, and its verbs. Each row names what it is, who
  * by, and its release's source and size once it has one, and says where it stands in the words a
- * library card uses. A failed row says why, and offers to retry, or, with other releases left, the
- * next one in a tap. The words are written here, as the library homes write theirs, until
+ * library card uses. A failed row says why, and offers what its verbs allow: to retry, to cancel,
+ * and, with other releases left, the next one in a tap. The words are written here, as the library homes write theirs, until
  * M5.strings.
  */
 
@@ -60,12 +60,6 @@ const row = (request: RequestView) => ({
   ...statusWords(request),
 });
 
-/** A row's one action: retrying what failed, cancelling anything else. */
-const action = (request: RequestView) =>
-  request.status === 'failed'
-    ? { action: 'Retry', actionIcon: 'refresh', verb: 'retry' }
-    : { action: 'Cancel', actionIcon: 'close', verb: 'cancel' };
-
 const reasonOf = (request: RequestView) =>
   request.reason === null ? null : FAILURES[request.reason];
 
@@ -77,23 +71,27 @@ const candidateRow = (candidate: RequestCandidate) => ({
   meta: line(candidate.source, sizeOf(candidate.size)),
 });
 
-/** The page's data. A failed request with other releases left goes in `pickable`, under its row. */
+/**
+ * The page's data. A failed request it can retry goes in `failed`, or, with other releases left,
+ * in `pickable`, under its row. One it cannot retry only cancels, as any other in flight.
+ */
 export function requestsData(list: RequestList, page: RequestsData): RequestsData {
   const pickable = (request: RequestView) => request.verbs.includes('pickAnother');
+  const retries = (request: RequestView) => request.verbs.includes('retry');
+  const inFlightRow = (request: RequestView) => ({
+    ...row(request),
+    meta: line(...firstLine(request), request.source, sizeOf(request.size), reasonOf(request)),
+  });
   return {
     ...page,
-    inFlight: list.inFlight
-      .filter((request) => !pickable(request))
-      .map((request) => ({
-        ...row(request),
-        ...action(request),
-        meta: line(...firstLine(request), request.source, sizeOf(request.size), reasonOf(request)),
-      })),
+    inFlight: list.inFlight.filter((request) => !retries(request)).map(inFlightRow),
+    failed: list.inFlight
+      .filter((request) => retries(request) && !pickable(request))
+      .map(inFlightRow),
     pickable: list.inFlight.filter(pickable).map((request) => {
       const left = request.candidates.length;
       return {
         ...row(request),
-        ...action(request),
         meta: line(...firstLine(request), request.source, sizeOf(request.size)),
         others: `${reasonOf(request) ?? 'It failed'}; ${releases(left)} left`,
         next: request.candidates[0]?.id ?? '',

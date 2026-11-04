@@ -392,15 +392,17 @@ export default function List({ data = placeholder, state = 'full' }: ListProps) 
           platform={platform}
         />
       </Section>
-      <Section title="Shows" platform={platform}>
-        <Shelf platform={platform}>
-          {data.shows.map((show, i) => (
-            <Fragment key={i}>
-              <MediaCard size="sm" title={show.title} sub={show.sub} image={show.image} onClick={show.ref ? () => navigate(generatePath('/podcasts/:ref', { ref: show.ref })) : undefined} platform={platform} />
-            </Fragment>
-          ))}
-        </Shelf>
-      </Section>
+      {data.shows.length > 0 && (
+        <Section title="Shows" platform={platform}>
+          <Shelf platform={platform}>
+            {data.shows.map((show, i) => (
+              <Fragment key={i}>
+                <MediaCard size="sm" title={show.title} sub={show.sub} image={show.image} onClick={show.ref ? () => navigate(generatePath('/podcasts/:ref', { ref: show.ref })) : undefined} platform={platform} />
+              </Fragment>
+            ))}
+          </Shelf>
+        </Section>
+      )}
       <Section title="Episodes" last={true} platform={platform}>
         <SortFilterBar icon="swap_vert" label={data.order} platform={platform} />
         {data.items.map((item, i) => (

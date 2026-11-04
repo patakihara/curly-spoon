@@ -750,10 +750,73 @@ describe('[M1.shell] what a page draws from its data alone, on the web', () => {
     shellOf('books'),
   );
 
-  it('draws a section its section bar can name only while the data names it there', () => {
-    expect(spied).toMatch(
-      /\{data\.sections\.includes\('Jump back in'\) && \(\n\s+<Section title="Jump back in">/,
+  const holding = (body: string, placeholder: unknown) =>
+    generateWebPage(
+      parsePage(
+        `export default function Books({ data }) {
+  return (
+    <BackdropShell>
+      <PageBody>
+${body}
+      </PageBody>
+    </BackdropShell>
+  );
+}
+`,
+        'books',
+      ),
+      'books',
+      placeholder,
+      { platformed: new Set() },
+      shellOf('books'),
     );
+
+  it('draws a titled section of lists only while one of them holds something', () => {
+    const out = holding(
+      `<Section title="Two lists">
+          <Each of={data.picks} as="pick"><MediaCard title={pick.title} /></Each>
+          <Each of={data.more.rows} as="row"><MediaCard title={row.title} /></Each>
+        </Section>`,
+      { picks: [{ title: 'A' }], more: { rows: [{ title: 'B' }] } },
+    );
+    expect(out).toMatch(
+      /\{\(data\.picks\.length > 0 \|\| data\.more\.rows\.length > 0\) && \(\n\s+<Section title="Two lists">/,
+    );
+  });
+
+  it('counts an expander row as what a section holds, and draws it only with its words', () => {
+    const out = holding(
+      `<Section title="Outside">
+          <Each of={data.picks} as="pick"><MediaCard title={pick.title} /></Each>
+          <ExpanderRow label={data.more} />
+        </Section>`,
+      { picks: [{ title: 'A' }], more: '3 more' },
+    );
+    expect(out).toContain(`{(data.picks.length > 0 || data.more !== '') && (`);
+    expect(out).toMatch(/\{data\.more !== '' && \(\n\s+<ExpanderRow label=\{data\.more\} \/>/);
+  });
+
+  it('always draws a section holding anything but lists, and one with no title', () => {
+    const out = holding(
+      `<Section title="Mixed">
+          <MediaCard title={data.feature} />
+          <Each of={data.picks} as="pick"><MediaCard title={pick.title} /></Each>
+        </Section>
+        <Section>
+          <Each of={data.picks} as="pick"><MediaCard title={pick.title} /></Each>
+        </Section>`,
+      { picks: [{ title: 'A' }], feature: 'A' },
+    );
+    expect(out).not.toContain('length > 0');
+  });
+
+  it('asks both of a section the bar names: that the data names it, and that it holds something', () => {
+    expect(spied).toMatch(
+      /\{data\.sections\.includes\('Jump back in'\) && data\.picks\.length > 0 && \(\n\s+<Section title="Jump back in">/,
+    );
+  });
+
+  it('draws a section its section bar can name only while the data names it there', () => {
     expect(spied).toMatch(/\n\s+<Section>\n/);
     expect(spied).toMatch(/\n\s+<Section title="Not in the bar" last=\{true\}>\n/);
     expect(spied.match(/sections\.includes/g)).toHaveLength(1);

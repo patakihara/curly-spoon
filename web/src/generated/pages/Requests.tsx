@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router';
 import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
 import type { ShellNav } from '../../shell-nav';
 import type { Playing } from '../../player';
-import { type RequestVerb, useAct } from '../../act';
+import { useAct } from '../../act';
 import { BackLayer, BottomNav, Button, EmptyState, IconButton, MiniPlayer, NavRail, PageBody, ResultRow, Section } from '../ui/index.js';
 
 const placeholder = {
@@ -16,10 +16,7 @@ const placeholder = {
       "meta": "Album · Soul Vertex · Prowlarr · 412 MB",
       "image": "/art/salt-and-static.jpg",
       "status": "Downloading · 38%",
-      "tone": "progress",
-      "action": "Cancel",
-      "actionIcon": "close",
-      "verb": "cancel"
+      "tone": "progress"
     },
     {
       "id": "request-2",
@@ -27,10 +24,7 @@ const placeholder = {
       "meta": "Book · Linnea Frost · AudiobookBay · 286 MB",
       "image": "/art/the-ink-orchard.jpg",
       "status": "Downloading · 64%",
-      "tone": "progress",
-      "action": "Cancel",
-      "actionIcon": "close",
-      "verb": "cancel"
+      "tone": "progress"
     },
     {
       "id": "request-3",
@@ -38,10 +32,7 @@ const placeholder = {
       "meta": "Book · Rosa Elin · AudiobookBay · 612 MB",
       "image": "/art/the-salt-cartographer.jpg",
       "status": "Downloading · 18%",
-      "tone": "progress",
-      "action": "Cancel",
-      "actionIcon": "close",
-      "verb": "cancel"
+      "tone": "progress"
     },
     {
       "id": "request-4",
@@ -49,10 +40,7 @@ const placeholder = {
       "meta": "Album · Fleeting Verses · Prowlarr · 1.1 GB",
       "image": "/art/fragments-of-the-wind.jpg",
       "status": "Importing",
-      "tone": "progress",
-      "action": "Cancel",
-      "actionIcon": "close",
-      "verb": "cancel"
+      "tone": "progress"
     },
     {
       "id": "request-5",
@@ -60,21 +48,17 @@ const placeholder = {
       "meta": "Book · Rosa Elin · Prowlarr, then AudiobookBay",
       "image": "/art/the-long-read.jpg",
       "status": "Searching…",
-      "tone": "progress",
-      "action": "Cancel",
-      "actionIcon": "close",
-      "verb": "cancel"
-    },
+      "tone": "progress"
+    }
+  ],
+  "failed": [
     {
       "id": "request-6",
       "title": "Between Two Worlds",
       "meta": "Book · Maya Lind · AudiobookBay · 298 MB",
       "image": "/art/between-two-worlds.jpg",
       "status": "Failed",
-      "tone": "error",
-      "action": "Retry",
-      "actionIcon": "refresh",
-      "verb": "retry"
+      "tone": "error"
     }
   ],
   "pickable": [
@@ -85,9 +69,6 @@ const placeholder = {
       "image": "/art/shadows-and-sighs.jpg",
       "status": "Failed",
       "tone": "error",
-      "action": "Retry",
-      "actionIcon": "refresh",
-      "verb": "retry",
       "others": "The download failed; 2 other releases are left",
       "next": "release-4"
     }
@@ -349,80 +330,100 @@ export default function Requests({ data = placeholder, state = 'full' }: Request
       )}
       {state === 'full' && (
         <>
-          <Section title="In flight" platform={platform}>
-            {data.inFlight.map((request, i) => (
-              <Fragment key={i}>
-                <ResultRow
-                  title={request.title}
-                  meta={request.meta}
-                  image={request.image}
-                  status={request.status}
-                  tone={request.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
-                  divider={true}
-                  trailing={<IconButton icon={request.actionIcon} label={request.action} onClick={act(request.id, request.verb as RequestVerb)} />}
-                  platform={platform}
-                />
-              </Fragment>
-            ))}
-            {data.pickable.map((request, i) => (
-              <Fragment key={i}>
-                <ResultRow
-                  title={request.title}
-                  meta={request.meta}
-                  image={request.image}
-                  status={request.status}
-                  tone={request.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
-                  trailing={<IconButton icon={request.actionIcon} label={request.action} onClick={act(request.id, request.verb as RequestVerb)} />}
-                  platform={platform}
-                />
-                <ResultRow
-                  title="Pick another release"
-                  meta={request.others}
-                  image={request.image}
-                  divider={true}
-                  onClick={act(request.id, 'pickAnother', request.next)}
-                  trailing={
-                    <Button variant="secondary" size="sm" onClick={act(request.id, 'pickAnother', request.next)} platform={platform}>
-                      {"Pick another"}
-                    </Button>
-                  }
-                  platform={platform}
-                />
-              </Fragment>
-            ))}
-          </Section>
-          <Section title="Needs choice" last={true} platform={platform}>
-            {data.needsChoice.map((request, i) => (
-              <Fragment key={i}>
-                <ResultRow
-                  title={request.title}
-                  meta={request.meta}
-                  image={request.image}
-                  status={request.status}
-                  tone={request.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
-                  trailing={<IconButton icon="close" label="Cancel" onClick={act(request.id, 'cancel')} />}
-                  platform={platform}
-                />
-                {request.candidates.map((candidate, i) => (
-                  <Fragment key={i}>
-                    <ResultRow
-                      title={candidate.title}
-                      meta={candidate.meta}
-                      image={request.image}
-                      divider={true}
-                      onClick={act(request.id, 'choose', candidate.id)}
-                      trailing={
-                        <Button variant="secondary" size="sm" onClick={act(request.id, 'choose', candidate.id)} platform={platform}>
-                          {"Choose"}
-                        </Button>
-                      }
-                      platform={platform}
-                    />
-                  </Fragment>
-                ))}
-              </Fragment>
-            ))}
-          </Section>
+          {(data.inFlight.length > 0 || data.failed.length > 0 || data.pickable.length > 0) && (
+            <Section title="In flight" platform={platform}>
+              {data.inFlight.map((request, i) => (
+                <Fragment key={i}>
+                  <ResultRow
+                    title={request.title}
+                    meta={request.meta}
+                    image={request.image}
+                    status={request.status}
+                    tone={request.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
+                    divider={true}
+                    trailing={<IconButton icon="close" label="Cancel" onClick={act(request.id, 'cancel')} />}
+                    platform={platform}
+                  />
+                </Fragment>
+              ))}
+              {data.failed.map((request, i) => (
+                <Fragment key={i}>
+                  <ResultRow
+                    title={request.title}
+                    meta={request.meta}
+                    image={request.image}
+                    status={request.status}
+                    tone={request.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
+                    divider={true}
+                    onAction={act(request.id, 'retry')}
+                    trailing={<IconButton icon="close" label="Cancel" onClick={act(request.id, 'cancel')} />}
+                    platform={platform}
+                  />
+                </Fragment>
+              ))}
+              {data.pickable.map((request, i) => (
+                <Fragment key={i}>
+                  <ResultRow
+                    title={request.title}
+                    meta={request.meta}
+                    image={request.image}
+                    status={request.status}
+                    tone={request.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
+                    onAction={act(request.id, 'retry')}
+                    trailing={<IconButton icon="close" label="Cancel" onClick={act(request.id, 'cancel')} />}
+                    platform={platform}
+                  />
+                  <ResultRow
+                    title="Pick another release"
+                    meta={request.others}
+                    image={request.image}
+                    divider={true}
+                    onClick={act(request.id, 'pickAnother', request.next)}
+                    trailing={
+                      <Button variant="secondary" size="sm" onClick={act(request.id, 'pickAnother', request.next)} platform={platform}>
+                        {"Pick another"}
+                      </Button>
+                    }
+                    platform={platform}
+                  />
+                </Fragment>
+              ))}
+            </Section>
+          )}
+          {data.needsChoice.length > 0 && (
+            <Section title="Needs choice" last={true} platform={platform}>
+              {data.needsChoice.map((request, i) => (
+                <Fragment key={i}>
+                  <ResultRow
+                    title={request.title}
+                    meta={request.meta}
+                    image={request.image}
+                    status={request.status}
+                    tone={request.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
+                    trailing={<IconButton icon="close" label="Cancel" onClick={act(request.id, 'cancel')} />}
+                    platform={platform}
+                  />
+                  {request.candidates.map((candidate, i) => (
+                    <Fragment key={i}>
+                      <ResultRow
+                        title={candidate.title}
+                        meta={candidate.meta}
+                        image={request.image}
+                        divider={true}
+                        onClick={act(request.id, 'choose', candidate.id)}
+                        trailing={
+                          <Button variant="secondary" size="sm" onClick={act(request.id, 'choose', candidate.id)} platform={platform}>
+                            {"Choose"}
+                          </Button>
+                        }
+                        platform={platform}
+                      />
+                    </Fragment>
+                  ))}
+                </Fragment>
+              ))}
+            </Section>
+          )}
         </>
       )}
     </PageBody>

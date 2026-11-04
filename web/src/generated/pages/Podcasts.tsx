@@ -366,7 +366,7 @@ export default function Podcasts({ data = placeholder, state = 'full' }: Podcast
               platform={platform}
             />
           </Section>
-          {data.sections.includes('Shows') && (
+          {data.sections.includes('Shows') && data.library.length > 0 && (
             <Section title="Shows" platform={platform}>
               <LayoutGrid platform={platform}>
                 {data.library.map((show, i) => (
@@ -377,7 +377,7 @@ export default function Podcasts({ data = placeholder, state = 'full' }: Podcast
               </LayoutGrid>
             </Section>
           )}
-          {data.sections.includes('Lists') && (
+          {data.sections.includes('Lists') && data.lists.length > 0 && (
             <Section title="Lists" last={true} platform={platform}>
               <LayoutGrid platform={platform}>
                 {data.lists.map((list, i) => (

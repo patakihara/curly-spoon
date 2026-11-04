@@ -209,8 +209,8 @@ fun RequestsPage(navController: NavController, actions: PageActions) {
                                                 trailing = {
                                                     IconButton(
                                                         IconButtonProps(
-                                                            icon = "refresh",
-                                                            label = "Retry",
+                                                            icon = "close",
+                                                            label = "Cancel",
                                                         ),
                                                     )
                                                 },
@@ -227,8 +227,8 @@ fun RequestsPage(navController: NavController, actions: PageActions) {
                                                 trailing = {
                                                     IconButton(
                                                         IconButtonProps(
-                                                            icon = "refresh",
-                                                            label = "Retry",
+                                                            icon = "close",
+                                                            label = "Cancel",
                                                         ),
                                                     )
                                                 },
