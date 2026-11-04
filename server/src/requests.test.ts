@@ -588,6 +588,107 @@ describe('[M3.requests/b] picking another release after a failure', () => {
   });
 });
 
+describe('the windows a crash, a cancel or a second tap can fall into', () => {
+  /** A job whose process dies at the first save after `died` is called: the store never hears. */
+  const dyingJob = (job: RequestJobDeps, died: { yes: boolean }): RequestJobDeps => ({
+    ...job,
+    now: () => {
+      if (died.yes) throw new Error('the process died here');
+      return clock;
+    },
+  });
+
+  it('never starts a second download after a crash between starting one and saving its handle', async () => {
+    const steps = standInSteps('song');
+    const start = steps.download!.start;
+    const one = request('song');
+    await runUntil(deps(steps), one, 'downloading');
+
+    const died = { yes: false };
+    const download = {
+      ...steps.download!,
+      start: async (...args: Parameters<typeof start>) => {
+        const handle = await start(...args);
+        died.yes = true;
+        return handle;
+      },
+    };
+    await advanceRequests(dyingJob(deps({ ...steps, download }), died));
+    expect(reread(one).handle).toBeNull();
+
+    await advanceRequests(deps(steps));
+    expect(steps.calls.start).toBe(1);
+  });
+
+  it('never imports twice after a crash between importing and saving what it named', async () => {
+    const steps = standInSteps('podcast', { imports: show });
+    const imports = steps.import;
+    const one = request('podcast');
+    await runUntil(deps(steps), one, 'importing');
+
+    const died = { yes: false };
+    const dying = async (...args: Parameters<typeof imports>) => {
+      const named = await imports(...args);
+      died.yes = true;
+      return named;
+    };
+    await advanceRequests(dyingJob(deps({ ...steps, import: dying }), died));
+    expect(reread(one).result).toBeNull();
+
+    await advanceRequests(deps(steps));
+    expect(steps.calls.import).toBe(1);
+  });
+
+  it('takes no step for a request cancelled while the run was busy with an earlier one', async () => {
+    const earlier = request('book');
+    clock += 1;
+    const cancelled = request('podcast');
+    saveRequest(db, earlier.id, { state: { status: 'searching' } }, clock);
+    saveRequest(db, cancelled.id, { state: { status: 'importing' } }, clock);
+    const podcast = standInSteps('podcast', { imports: show });
+    const book = {
+      ...standInSteps('book'),
+      search: () => {
+        deleteRequest(db, cancelled.id);
+        return Promise.resolve({ kind: 'none', reason: 'noRelease' } as const);
+      },
+    };
+
+    await advanceRequests(deps(book, podcast));
+    expect(podcast.calls.import).toBe(0);
+  });
+
+  it('keeps the handle of a download started while a second retry was still dropping the old one', async () => {
+    const steps = standInSteps('song', { polls: [{ kind: 'failed', reason: 'downloadFailed' }] });
+    const drops: (() => void)[] = [];
+    const download = {
+      ...steps.download!,
+      cancel: () => new Promise<void>((resolve) => drops.push(resolve)),
+    };
+    const job = deps({ ...steps, download });
+    const one = request('song');
+    await runUntil(job, one, 'failed');
+
+    const firstTap = retryRequest(job, one.id);
+    const secondTap = retryRequest(job, one.id);
+    drops[0]!();
+    await firstTap;
+    await advanceRequests(job);
+    const started = reread(one).handle;
+    expect(started).not.toBeNull();
+
+    drops[1]!();
+    await secondTap;
+    expect(reread(one).handle).toEqual(started);
+  });
+
+  it('lets a person ask for something whose live request cannot be read', () => {
+    const one = request('book');
+    db.prepare('UPDATE requests SET handle = ? WHERE id = ?').run('{', one.id);
+    expect(() => createRequest(db, ana, refs.book, clock)).not.toThrow();
+  });
+});
+
 describe('the advance job in the app', () => {
   it('moves requests on its own turn, and stops with the app', async () => {
     const one = request('podcast');
