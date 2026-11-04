@@ -167,4 +167,49 @@ describe('the requests store', () => {
     expect(set("status = 'inLibrary'")).toThrow(/CHECK/);
     expect(set("medium = 'video'")).toThrow(/CHECK/);
   });
+
+  it('joins a request for the same MusicBrainz release however its id is cased', () => {
+    const first = createRequest(db, ana, album, 1_000).request;
+    const mbid = '3F8A5E7C-1B2D-4E6F-9A0B-C1D2E3F4A5B6';
+    const upper = { ...album, target: { ...album.target, ids: { mbid } } };
+    expect(createRequest(db, ben, upper, 2_000).request.id).toBe(first.id);
+  });
+
+  it('joins a request for the same feed however its host is cased', () => {
+    const feed = (feedUrl: string): RequestRef => ({
+      medium: 'podcast',
+      target: { title: 'A Show', creator: null, ids: { feedUrl } },
+    });
+    const first = createRequest(db, ana, feed('https://feeds.example.com/show'), 1_000).request;
+    const upper = feed('https://FEEDS.example.com/show');
+    expect(createRequest(db, ben, upper, 2_000).request.id).toBe(first.id);
+  });
+
+  it('joins a request that shares any catalogue id with the live one, never a second download', () => {
+    const named = (ids: RequestRef['target']['ids']): RequestRef => ({
+      medium: 'book',
+      target: { title: 'Powers', creator: null, ids },
+    });
+    const asin = 'B0036S4B76';
+    const isbn = '9780547237633';
+    const both = createRequest(db, ana, named({ asin, isbn }), 1_000).request;
+    expect(createRequest(db, ben, named({ isbn }), 2_000).request.id).toBe(both.id);
+
+    const otherIsbn = '9780151014880';
+    const onlyIsbn = createRequest(db, ana, named({ isbn: otherIsbn }), 3_000).request;
+    const wider = named({ asin: 'B000000001', isbn: otherIsbn });
+    expect(createRequest(db, ben, wider, 4_000).request.id).toBe(onlyIsbn.id);
+  });
+
+  it('never lets one request it cannot read hide the others from the job', () => {
+    const bad = createRequest(db, ana, book, 1_000).request;
+    const good = createRequest(db, ben, album, 2_000).request;
+    const release = { ...standInRelease('one'), id: 'not/an/id' };
+    try {
+      saveRequest(db, bad.id, { state: { status: 'queued' }, release }, 3_000);
+    } catch {
+      // Refusing the release at the write is as good as leaving it out of the read.
+    }
+    expect(workingRequests(db).map((r) => r.id)).toContain(good.id);
+  });
 });

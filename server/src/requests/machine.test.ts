@@ -123,4 +123,26 @@ describe('the request machine', () => {
     expect(next('album', at('queued'), { type: 'chose' })).toBeNull();
     expect(next('album', at('needsChoice'), { type: 'moved', to: 'queued' })).toBeNull();
   });
+
+  it('takes no choice of release for a medium whose route has no choice', () => {
+    expect(next('song', at('needsChoice'), { type: 'chose' })).toBeNull();
+    expect(next('podcast', at('needsChoice'), { type: 'chose' })).toBeNull();
+  });
+
+  it('retries only to a step on the medium’s own route', () => {
+    const failedAt = (failedStep: 'downloading' | 'queued'): RequestState => ({
+      status: 'failed',
+      failedStep,
+      reason: 'downloadFailed',
+    });
+    expect(next('podcast', failedAt('downloading'), { type: 'retry' })).toBeNull();
+    expect(next('song', failedAt('queued'), { type: 'retry' })).toBeNull();
+  });
+
+  it('lets a person pick another release after a download fails, as the get diagram says', () => {
+    for (const medium of ['book', 'album'] as const) {
+      const failed = next(medium, downloading(0.7), { type: 'failed', reason: 'downloadFailed' })!;
+      expect(next(medium, failed, { type: 'chose' }), medium).toEqual(at('queued'));
+    }
+  });
 });
