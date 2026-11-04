@@ -4,8 +4,14 @@
  * what each step was asked. Never registered outside tests.
  */
 import type { MediaRef, RequestMedium } from '@auralis/schema';
-import { ROUTES } from './machine.js';
-import type { MediumSteps, PollOutcome, Release, SearchOutcome } from './steps.js';
+import { ROUTES } from '../../requests/machine.js';
+import type {
+  DownloadHandle,
+  MediumSteps,
+  PollOutcome,
+  Release,
+  SearchOutcome,
+} from '../../requests/steps.js';
 
 /** What the stand-in answers: its search, its polls in turn (the last repeats), its import. */
 export interface StandInScript {
@@ -23,12 +29,18 @@ export const standInRelease = (id: string): Release => ({
   details: { url: `stand-in:${id}` },
 });
 
-/** The stand-in's steps, with how many times each was called. */
-export type StandInSteps = MediumSteps & { calls: Record<string, number> };
+/** The stand-in's steps, with how many times each was called and the handles it was asked about. */
+export type StandInSteps = MediumSteps & {
+  calls: Record<string, number>;
+  polled: DownloadHandle[];
+  cancelled: DownloadHandle[];
+};
 
 /** Stand-in steps for a medium, downloading only if its route does. */
 export function standInSteps(medium: RequestMedium, script: StandInScript = {}): StandInSteps {
   const calls: Record<string, number> = { search: 0, start: 0, poll: 0, cancel: 0, import: 0 };
+  const polled: DownloadHandle[] = [];
+  const cancelled: DownloadHandle[] = [];
   const polls = script.polls ?? [{ kind: 'done' }];
   const count = (step: string): number => {
     calls[step] = (calls[step] ?? 0) + 1;
@@ -37,9 +49,13 @@ export function standInSteps(medium: RequestMedium, script: StandInScript = {}):
   const steps: StandInSteps = {
     medium,
     calls,
+    polled,
+    cancelled,
     search: () => {
       count('search');
-      return Promise.resolve(script.search ?? { kind: 'picked', release: standInRelease('one') });
+      return Promise.resolve(
+        script.search ?? { kind: 'picked', release: standInRelease('one'), others: [] },
+      );
     },
     import: () => {
       count('import');
@@ -52,13 +68,15 @@ export function standInSteps(medium: RequestMedium, script: StandInScript = {}):
     download: {
       start: (_request, release) => {
         count('start');
-        return Promise.resolve({ release: release.id });
+        return Promise.resolve({ release: release.id, start: calls.start });
       },
-      poll: () => {
+      poll: (handle) => {
+        polled.push(handle);
         const n = count('poll');
         return Promise.resolve(polls[Math.min(n, polls.length) - 1] ?? { kind: 'done' });
       },
-      cancel: () => {
+      cancel: (handle) => {
+        cancelled.push(handle);
         count('cancel');
         return Promise.resolve();
       },

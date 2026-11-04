@@ -51,6 +51,22 @@ describe('the request vocabulary', () => {
 });
 
 describe('what is requested', () => {
+  it('takes a feed only at an http or https address with no credentials', () => {
+    const feed = (feedUrl: string) =>
+      RequestRef.safeParse({
+        medium: 'podcast',
+        target: { title: 'A Show', creator: null, ids: { feedUrl } },
+      }).success;
+    expect(feed('https://feeds.example.com/show')).toBe(true);
+    expect(feed('http://feeds.example.com/show')).toBe(true);
+    expect(feed('file:///etc/passwd')).toBe(false);
+    expect(feed('ftp://feeds.example.com/show')).toBe(false);
+    expect(feed('gopher://feeds.example.com/show')).toBe(false);
+    expect(feed('https://user:secret@feeds.example.com/show')).toBe(false);
+    expect(feed('https://user@feeds.example.com/show')).toBe(false);
+    expect(feed('https://:secret@feeds.example.com/show')).toBe(false);
+  });
+
   it('names a book by its ASIN or ISBN, an album by its MusicBrainz release, a song by its YouTube Music id, a podcast by its feed', () => {
     for (const ref of [
       {

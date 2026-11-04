@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { standInSteps } from './standIn.js';
+import { standInSteps } from '../adapters/http/standIn.js';
 import { stepsRegistry } from './steps.js';
 
 describe('the per-medium steps registry', () => {

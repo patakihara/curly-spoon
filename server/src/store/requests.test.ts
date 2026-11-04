@@ -1,6 +1,6 @@
 import type { RequestRef } from '@auralis/schema';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { standInRelease } from '../requests/standIn.js';
+import { standInRelease } from '../adapters/http/standIn.js';
 import { openDatabase, type Db } from './connection.js';
 import {
   createRequest,
@@ -211,5 +211,60 @@ describe('the requests store', () => {
       // Refusing the release at the write is as good as leaving it out of the read.
     }
     expect(workingRequests(db).map((r) => r.id)).toContain(good.id);
+    expect(getRequest(db, bad.id)?.state).toEqual({ status: 'requested' });
+  });
+
+  it('leaves a row it cannot read out of the lists and logs it, naming no part of its content', () => {
+    const bad = createRequest(db, ana, book, 1_000).request;
+    const good = createRequest(db, ana, album, 2_000).request;
+    db.prepare('UPDATE requests SET release = ? WHERE id = ?').run('{"secret": ', bad.id);
+    const logged: Record<string, unknown>[] = [];
+    const log = { error: (details: Record<string, unknown>) => logged.push(details) };
+
+    expect(workingRequests(db, log).map((r) => r.id)).toEqual([good.id]);
+    expect(requestsOf(db, ana, log).map((r) => r.id)).toEqual([good.id]);
+    expect(logged).toHaveLength(2);
+    expect(logged[0]).toMatchObject({ request: bad.id });
+    expect(JSON.stringify(logged)).not.toContain('secret');
+  });
+
+  it('refuses to save a status or a failed step off the request’s medium’s route', () => {
+    const podcast = createRequest(
+      db,
+      ana,
+      {
+        medium: 'podcast',
+        target: { title: 'A Show', creator: null, ids: { feedUrl: 'https://example.com/feed' } },
+      },
+      1_000,
+    ).request;
+    expect(() => saveRequest(db, podcast.id, { state: { status: 'queued' } }, 2_000)).toThrow();
+    expect(() =>
+      saveRequest(
+        db,
+        podcast.id,
+        { state: { status: 'failed', failedStep: 'downloading', reason: 'downloadFailed' } },
+        2_000,
+      ),
+    ).toThrow();
+    expect(getRequest(db, podcast.id)?.state).toEqual({ status: 'requested' });
+  });
+
+  it('frees every id of a request once it is in the library, and takes on the ids a joiner adds', () => {
+    const first = createRequest(db, ana, book, 1_000).request;
+    const isbn = '9780547237633';
+    const wider = { ...book, target: { ...book.target, ids: { asin: 'B0036S4B76', isbn } } };
+    expect(createRequest(db, ben, wider, 2_000).request.id).toBe(first.id);
+    const byIsbn = { ...book, target: { ...book.target, ids: { isbn } } };
+    expect(createRequest(db, ana, byIsbn, 3_000).request.id).toBe(first.id);
+    saveRequest(
+      db,
+      first.id,
+      { state: { status: 'inLibrary' }, result: { source: 'abs', id: 'li-1' } },
+      4_000,
+    );
+    const again = createRequest(db, ben, byIsbn, 5_000);
+    expect(again.joined).toBe(false);
+    expect(again.request.id).not.toBe(first.id);
   });
 });

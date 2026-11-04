@@ -145,4 +145,32 @@ describe('the request machine', () => {
       expect(next(medium, failed, { type: 'chose' }), medium).toEqual(at('queued'));
     }
   });
+
+  it('goes back to the choice of release when a release failed at queued, downloading or importing', () => {
+    for (const medium of ['book', 'album'] as const) {
+      for (const failedStep of ['queued', 'downloading', 'importing'] as const) {
+        const failed: RequestState = { status: 'failed', failedStep, reason: 'downloadFailed' };
+        expect(next(medium, failed, { type: 'pickAnother' }), failedStep).toEqual(
+          at('needsChoice'),
+        );
+      }
+    }
+  });
+
+  it('has nothing else to pick when the search itself failed, or on a route with no choice', () => {
+    const searchFailed: RequestState = {
+      status: 'failed',
+      failedStep: 'searching',
+      reason: 'noRelease',
+    };
+    expect(next('book', searchFailed, { type: 'pickAnother' })).toBeNull();
+    const songFailed: RequestState = {
+      status: 'failed',
+      failedStep: 'downloading',
+      reason: 'downloadFailed',
+    };
+    expect(next('song', songFailed, { type: 'pickAnother' })).toBeNull();
+    expect(next('song', songFailed, { type: 'chose' })).toBeNull();
+    expect(next('book', at('queued'), { type: 'pickAnother' })).toBeNull();
+  });
 });

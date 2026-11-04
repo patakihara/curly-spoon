@@ -5,7 +5,9 @@
  * Each medium's route is the one table the moves come from. A step moves a request to the next
  * status on its route, or past a `needsChoice` it does not need; only a choice leaves
  * `needsChoice`. Any working status may fail, keeping the step it failed in, and a retry goes
- * back to that step. `inLibrary` is the end. A cancelled request is deleted, so it has no status.
+ * back to that step. On a route with a choice, a release that failed on its way in may also give
+ * way to another: back to `needsChoice`, or straight on with one picked. `inLibrary` is the end.
+ * A cancelled request is deleted, so it has no status.
  */
 import type { RequestFailure, RequestMedium, RequestStatus } from '@auralis/schema';
 
@@ -20,13 +22,14 @@ export type RequestState =
 
 /**
  * What happened to a request: a step moved it on (with a download's progress), a step failed,
- * the person retried it, or the person chose a release.
+ * the person retried it, chose a release, or asked to pick another after a failure.
  */
 export type RequestEvent =
   | { type: 'moved'; to: RequestStatus; progress?: number }
   | { type: 'failed'; reason: RequestFailure }
   | { type: 'retry' }
-  | { type: 'chose' };
+  | { type: 'chose' }
+  | { type: 'pickAnother' };
 
 /**
  * Each medium's statuses in order. Books and albums may wait for a choice of release; a song
@@ -77,28 +80,57 @@ function movesFrom(medium: RequestMedium, status: RouteStatus): RouteStatus[] {
   return moves;
 }
 
+/** The steps a failure may leave behind for another release: a release was already under way. */
+const PICK_ANOTHER_AFTER: readonly WorkingStatus[] = ['queued', 'downloading', 'importing'];
+
+/** True when a medium's route has this status, and a failure's step. */
+export function onRoute(medium: RequestMedium, state: RequestState): boolean {
+  const route = ROUTES[medium];
+  return state.status === 'failed'
+    ? route.includes(state.failedStep)
+    : route.includes(state.status);
+}
+
+/** Where a search's picked release goes next: on along the route, past any choice. */
+export function afterPicked(medium: RequestMedium): RouteStatus {
+  const route = ROUTES[medium];
+  const found = route.slice(route.indexOf('searching') + 1).find((s) => s !== 'needsChoice');
+  if (found === undefined) throw new Error(`invariant: nothing follows searching for ${medium}`);
+  return found;
+}
+
+/** Where a failed request goes on an event: its failed step, or another release's way in. */
+function fromFailed(
+  medium: RequestMedium,
+  state: Extract<RequestState, { status: 'failed' }>,
+  event: RequestEvent,
+): RequestState | null {
+  if (event.type === 'retry') return enter(state.failedStep);
+  if (event.type !== 'pickAnother' && event.type !== 'chose') return null;
+  const hasChoice = ROUTES[medium].includes('needsChoice');
+  if (!hasChoice || !PICK_ANOTHER_AFTER.includes(state.failedStep)) return null;
+  return enter(event.type === 'pickAnother' ? 'needsChoice' : afterPicked(medium));
+}
+
 /** Where a request goes on an event, or null when its medium's route does not allow the move. */
 export function next(
   medium: RequestMedium,
   state: RequestState,
   event: RequestEvent,
 ): RequestState | null {
-  const route = ROUTES[medium];
-  if (state.status === 'failed') {
-    return event.type === 'retry' ? enter(state.failedStep) : null;
-  }
+  if (!onRoute(medium, state)) return null;
+  if (state.status === 'failed') return fromFailed(medium, state, event);
   switch (event.type) {
     case 'moved':
       if (event.to === 'failed' || !movesFrom(medium, state.status).includes(event.to)) return null;
       return enter(event.to, event.progress);
     case 'failed':
-      if (state.status === 'inLibrary' || !route.includes(state.status)) return null;
+      if (state.status === 'inLibrary') return null;
       return { status: 'failed', failedStep: state.status, reason: event.reason };
-    case 'chose': {
-      const queued = route[route.indexOf('needsChoice') + 1];
-      return state.status === 'needsChoice' && queued !== undefined ? enter(queued) : null;
-    }
+    case 'chose':
+      return state.status === 'needsChoice' ? enter(afterPicked(medium)) : null;
     case 'retry':
+    case 'pickAnother':
       return null;
   }
 }

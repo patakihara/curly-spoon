@@ -606,13 +606,11 @@ export const migrations: readonly Migration[] = [
     up: (db) => {
       db.exec(`
         -- Requests (store/requests.ts): what is being got onto the household's servers, where
-        -- it stands, and what its medium's steps keep. One live request per medium and
-        -- catalogue id: a second person's request for the same thing joins it. The release,
-        -- candidates and download handle stay on the server; a client sees a candidate's id.
+        -- it stands, and what its medium's steps keep. The release, candidates and download
+        -- handle stay on the server; a client sees a candidate's id.
         CREATE TABLE requests (
           id            TEXT PRIMARY KEY,
           medium        TEXT NOT NULL CHECK (medium IN ('book', 'album', 'song', 'podcast')),
-          catalogue_key TEXT NOT NULL,
           target        TEXT NOT NULL,
           status        TEXT NOT NULL CHECK (status IN ('requested', 'searching', 'needsChoice',
                           'queued', 'downloading', 'importing', 'inLibrary', 'failed')),
@@ -634,10 +632,21 @@ export const migrations: readonly Migration[] = [
           CHECK ((result_source IS NULL) = (result_id IS NULL)),
           CHECK (status <> 'inLibrary' OR result_id IS NOT NULL)
         );
-        CREATE UNIQUE INDEX idx_requests_live ON requests(medium, catalogue_key)
-          WHERE status <> 'inLibrary';
         CREATE INDEX idx_requests_working ON requests(status)
           WHERE status NOT IN ('inLibrary', 'failed');
+
+        -- Every catalogue id a live request holds, one row each: a second person's request
+        -- sharing any of them joins it. A request in the library lets go of its ids.
+        CREATE TABLE request_keys (
+          medium     TEXT NOT NULL,
+          key        TEXT NOT NULL,
+          request_id TEXT NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+          PRIMARY KEY (medium, key)
+        );
+        CREATE INDEX idx_request_keys_request ON request_keys(request_id);
+        CREATE TRIGGER requests_in_library AFTER UPDATE OF status ON requests
+          WHEN NEW.status = 'inLibrary'
+          BEGIN DELETE FROM request_keys WHERE request_id = NEW.id; END;
 
         -- Everyone on a request: who made it and who joined it. A request nobody is on any
         -- longer goes with its last person.

@@ -1,8 +1,8 @@
 /**
  * Requests and who is on each (migration 16). A request is made by one person and joined by
- * anyone else who asks for the same thing (the same medium and catalogue id) while it is live;
- * one in the library no longer takes joiners, so asking again makes a new one. Every JSON column
- * is parsed on read.
+ * anyone else who asks for the same thing (the same medium and any one catalogue id) while it is
+ * live; one in the library no longer takes joiners, so asking again makes a new one. Every JSON
+ * column is parsed on read, and every change is parsed before it is written.
  */
 import { randomUUID } from 'node:crypto';
 import {
@@ -16,7 +16,8 @@ import {
   RequestTarget,
 } from '@auralis/schema';
 import { z } from 'zod';
-import type { RequestState, WorkingStatus } from '../requests/machine.js';
+import type { JobLog } from '../jobs/schedule.js';
+import { onRoute, type RequestState, type WorkingStatus } from '../requests/machine.js';
 import { DownloadHandle, Release } from '../requests/steps.js';
 import type { Db } from './connection.js';
 
@@ -63,6 +64,7 @@ const RequestRow = z
     created_at: z.number().int(),
     updated_at: z.number().int(),
   })
+  .refine((row) => onRoute(row.medium, stateOf(row)), 'a status off its medium’s route')
   .transform((row): StoredRequest => ({
     id: row.id,
     medium: row.medium,
@@ -93,20 +95,47 @@ function stateOf(row: {
   return { status: row.status };
 }
 
-/** The key one live request per medium holds: its medium's first catalogue id the target has. */
-function catalogueKey(ref: RequestRef): string {
-  const keys: readonly (keyof RequestIds)[] = REQUEST_ID_KEYS[ref.medium];
-  for (const key of keys) {
-    const value = ref.target.ids[key];
-    if (value !== undefined) return `${key}:${value}`;
-  }
-  throw new Error(`invariant: a ${ref.medium} request names no catalogue id`);
+/** Each catalogue id in the one form the join compares; the rest are one form by their schema. */
+const NORMAL: Partial<Record<keyof RequestIds, (value: string) => string>> = {
+  mbid: (value) => value.toLowerCase(),
+  feedUrl: (value) => new URL(value).href,
+};
+
+/** The keys a request holds while it is live: every catalogue id of its medium the target has. */
+function catalogueKeys(ref: RequestRef): string[] {
+  const names: readonly (keyof RequestIds)[] = REQUEST_ID_KEYS[ref.medium];
+  const keys = names.flatMap((name) => {
+    const value = ref.target.ids[name];
+    return value === undefined ? [] : [`${name}:${NORMAL[name]?.(value) ?? value}`];
+  });
+  if (keys.length === 0)
+    throw new Error(`invariant: a ${ref.medium} request names no catalogue id`);
+  return keys;
 }
 
 const COLUMNS = `r.id, r.medium, r.target, r.status, r.failed_step, r.reason, r.progress, r.release,
   r.candidates, r.handle, r.result_source, r.result_id, r.created_at, r.updated_at`;
 
-const parseRows = (rows: unknown[]): StoredRequest[] => rows.map((row) => RequestRow.parse(row));
+/**
+ * The rows that can be read. One that cannot is left out and logged, so it never hides the others;
+ * the log names where it failed, never what it held, as a release can hold a download's address.
+ */
+function readableRows(rows: unknown[], log?: JobLog): StoredRequest[] {
+  return rows.flatMap((row) => {
+    try {
+      return [RequestRow.parse(row)];
+    } catch (err) {
+      log?.error(
+        {
+          request: (row as { id: string }).id,
+          fields: err instanceof z.ZodError ? err.issues.map((i) => i.path.join('.')) : [],
+        },
+        'request row unreadable',
+      );
+      return [];
+    }
+  });
+}
 
 /** One request by its id, or null. */
 export function getRequest(db: Db, id: string): StoredRequest | null {
@@ -115,8 +144,9 @@ export function getRequest(db: Db, id: string): StoredRequest | null {
 }
 
 /**
- * Makes a request for a person, or joins them to the live one for the same medium and catalogue
- * id. Answers the request and whether it was joined.
+ * Makes a request for a person, or joins them to the live one sharing any catalogue id of the same
+ * medium, the oldest if two do; it takes on any ids it did not have. Answers the request and
+ * whether it was joined.
  */
 export function createRequest(
   db: Db,
@@ -125,19 +155,25 @@ export function createRequest(
   now: number,
 ): { request: StoredRequest; joined: boolean } {
   return db.transaction(() => {
-    const key = catalogueKey(ref);
+    const keys = catalogueKeys(ref);
     const live = db
       .prepare(
-        `SELECT id FROM requests WHERE medium = ? AND catalogue_key = ? AND status <> 'inLibrary'`,
+        `SELECT r.id FROM request_keys k JOIN requests r ON r.id = k.request_id
+         WHERE k.medium = ? AND k.key IN (${keys.map(() => '?').join(', ')})
+         ORDER BY r.created_at, r.id LIMIT 1`,
       )
-      .get(ref.medium, key) as { id: string } | undefined;
+      .get(ref.medium, ...keys) as { id: string } | undefined;
     const id = live?.id ?? randomUUID();
     if (live === undefined) {
       db.prepare(
-        `INSERT INTO requests (id, medium, catalogue_key, target, status, created_at, updated_at)
-         VALUES (?, ?, ?, ?, 'requested', ?, ?)`,
-      ).run(id, ref.medium, key, JSON.stringify(ref.target), now, now);
+        `INSERT INTO requests (id, medium, target, status, created_at, updated_at)
+         VALUES (?, ?, ?, 'requested', ?, ?)`,
+      ).run(id, ref.medium, JSON.stringify(ref.target), now, now);
     }
+    const addKey = db.prepare(
+      'INSERT INTO request_keys (medium, key, request_id) VALUES (?, ?, ?) ON CONFLICT DO NOTHING',
+    );
+    for (const key of keys) addKey.run(ref.medium, key, id);
     db.prepare(
       `INSERT INTO request_people (request_id, user_id, joined_at) VALUES (?, ?, ?)
        ON CONFLICT DO NOTHING`,
@@ -160,26 +196,28 @@ export function peopleOn(db: Db, id: string): string[] {
 }
 
 /** A person's requests, made or joined, oldest first. */
-export function requestsOf(db: Db, userId: string): StoredRequest[] {
-  return parseRows(
+export function requestsOf(db: Db, userId: string, log?: JobLog): StoredRequest[] {
+  return readableRows(
     db
       .prepare(
         `SELECT ${COLUMNS} FROM requests r JOIN request_people p ON p.request_id = r.id
          WHERE p.user_id = ? ORDER BY r.created_at, r.id`,
       )
-      .all(userId),
+      .all(userId) as unknown[],
+    log,
   );
 }
 
 /** Every request the advance job moves: neither in the library nor failed, oldest first. */
-export function workingRequests(db: Db): StoredRequest[] {
-  return parseRows(
+export function workingRequests(db: Db, log?: JobLog): StoredRequest[] {
+  return readableRows(
     db
       .prepare(
         `SELECT ${COLUMNS} FROM requests r WHERE r.status NOT IN ('inLibrary', 'failed')
          ORDER BY r.created_at, r.id`,
       )
-      .all(),
+      .all() as unknown[],
+    log,
   );
 }
 
@@ -192,7 +230,10 @@ export interface RequestChange {
   result?: MediaRef | null;
 }
 
-/** Saves a change to a request; what the change leaves out stays as it was. */
+/**
+ * Saves a change to a request; what the change leaves out stays as it was. Refuses, before writing,
+ * a change the row could not then be read back from, such as a status off its medium's route.
+ */
 export function saveRequest(db: Db, id: string, change: RequestChange, now: number): void {
   const { state } = change;
   const failed = state.status === 'failed' ? state : null;
@@ -210,6 +251,10 @@ export function saveRequest(db: Db, id: string, change: RequestChange, now: numb
     set.result_source = change.result?.source ?? null;
     set.result_id = change.result?.id ?? null;
   }
+  const row = db.prepare('SELECT * FROM requests WHERE id = ?').get(id) as
+    Record<string, unknown> | undefined;
+  if (row === undefined) return;
+  RequestRow.parse({ ...row, ...set });
   const columns = Object.keys(set);
   db.prepare(
     `UPDATE requests SET ${columns.map((c) => `${c} = @${c}`).join(', ')} WHERE id = @id`,

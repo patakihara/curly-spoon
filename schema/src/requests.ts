@@ -54,7 +54,11 @@ export const RequestIds = z
       .string()
       .url()
       .max(2048)
-      .regex(/^https?:\/\//),
+      .regex(/^https?:\/\//)
+      .refine((value) => {
+        const { username, password } = new URL(value);
+        return username === '' && password === '';
+      }, 'a feed address carries no credentials'),
     youtubeMusicId: z.string().regex(/^[\w-]{1,64}$/),
   })
   .partial()

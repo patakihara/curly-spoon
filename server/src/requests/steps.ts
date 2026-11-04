@@ -30,9 +30,12 @@ export type Release = z.infer<typeof Release>;
 export const DownloadHandle = z.record(z.string(), z.unknown());
 export type DownloadHandle = z.infer<typeof DownloadHandle>;
 
-/** A search's answer: one release picked, candidates for the person to choose from, or none. */
+/**
+ * A search's answer: one release picked, with the others it passed over in case that one fails;
+ * candidates for the person to choose from; or none.
+ */
 export type SearchOutcome =
-  | { kind: 'picked'; release: Release }
+  | { kind: 'picked'; release: Release; others: Release[] }
   | { kind: 'choose'; candidates: Release[] }
   | { kind: 'none'; reason: RequestFailure };
 
