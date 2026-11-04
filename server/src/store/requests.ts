@@ -249,6 +249,12 @@ export function requestsOf(db: Db, userId: string, log?: JobLog): StoredRequest[
   );
 }
 
+/** The requests a person's Requests page lists: not a podcast's, which is instant, nor one landed. */
+export const requestsListed = (db: Db, userId: string, log?: JobLog): StoredRequest[] =>
+  requestsOf(db, userId, log).filter(
+    ({ medium, state }) => medium !== 'podcast' && state.status !== 'inLibrary',
+  );
+
 /** One of a person's requests, or null when it is not theirs, or is not there to read. */
 export function requestOf(db: Db, id: string, userId: string, log?: JobLog): StoredRequest | null {
   const row: unknown = db

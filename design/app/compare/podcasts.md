@@ -1,6 +1,6 @@
 ---
 page: podcasts
-pageHash: a0c6f3ba6fcebc387cda6e8255a9e9bee23d0d2c17055368b29e016f225fb807
+pageHash: 81775a2e8c01488e79ba76db66cecb59785aa568da3e6568c216e09244dd6f39
 sonora: [kit:desktop/podcasts, kit:mobile/podcasts]
 spotify: [S20, S31]
 ---
@@ -61,3 +61,7 @@ grid gives way to one line saying there are no subscriptions, pointing to Search
 ## M3.requests
 
 - Changed on purpose: an empty state, Sonora's `EmptyState`, says the library shows the shows you've played, subscribed to or requested, and "Go to Search" opens Search. A show on its way binds `status` and `tone` on its `MediaCard`, greyed as the card draws it: "Tide Tables", Searching….
+
+## M3.requests failure
+
+- Changed on purpose: a list that failed to load draws the page's `failed` state, on its own phone artboard, in place of the sort bar and the grid: Sonora's `EmptyState`, as Search's, with "Try again".

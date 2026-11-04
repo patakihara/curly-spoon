@@ -21,6 +21,18 @@ export default function Music({ data }) {
             }
           />
         </When>
+        <When state="failed">
+          <EmptyState
+            icon="cloud_off"
+            title="Music did not load"
+            body="The server did not answer."
+            action={
+              <Button variant="secondary" onClick={<Retry />}>
+                Try again
+              </Button>
+            }
+          />
+        </When>
         <When state="full">
           <Section>
             <SortFilterBar

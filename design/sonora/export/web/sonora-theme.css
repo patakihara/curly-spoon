@@ -14,7 +14,7 @@
   --tone-library-ink: var(--play-contrast);
   --tone-request-ink: #000;
   --tone-progress-ink: var(--accent-contrast);
-  --tone-error-ink: #fff;
+  --tone-error-ink: #000;
   --surface-now-playing: #462A3D;
   --surface-now-playing-fg: #FFFFFF;
   --surface-now-playing-fg-muted: rgb(255 255 255 / 78%);
@@ -41,7 +41,7 @@
   --tone-library-ink: var(--play-contrast);
   --tone-request-ink: #000;
   --tone-progress-ink: var(--accent-contrast);
-  --tone-error-ink: #fff;
+  --tone-error-ink: #000;
   --surface-now-playing: #E3CADB;
   --surface-now-playing-fg: #1F1219;
   --surface-now-playing-fg-muted: rgb(0 0 0 / 62%);

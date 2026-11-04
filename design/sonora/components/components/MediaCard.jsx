@@ -96,9 +96,10 @@ export function MediaCard({ title, sub, platform = 'desktop', progress = null, a
         {shownStatus && Badge && (() => {
           const pct = /(\d+)\s*%/.exec(shownStatus);
           const glyph = { progress: 'downloading', request: 'checklist', error: 'error' }[shownTone] || 'downloading';
-          const badgeTone = { progress: 'accent', request: 'warning', error: 'error' }[shownTone] || 'accent';
+          // As ResultRow's: white on the violet stops short of 4.5:1, and this pill is what a greyed card still says.
+          const badgeTone = { progress: 'warning', request: 'warning', error: 'error' }[shownTone] || 'warning';
           return (
-            <div title={shownStatus} style={sx('position:absolute;left:8px;right:8px;bottom:8px;display:flex')}>
+            <div data-sn-ink title={shownStatus} style={sx('position:absolute;left:8px;right:8px;bottom:8px;display:flex')}>
               <Badge tone={badgeTone} size={tight ? 'sm' : 'md'} icon={tight && !pct ? undefined : glyph}>{tight && pct ? pct[1] + '%' : shownStatus}</Badge>
             </div>
           );

@@ -6,14 +6,21 @@ import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from 
 import type { ShellNav } from '../../shell-nav';
 import type { Playing } from '../../player';
 import { useAct } from '../../act';
-import { BackLayer, BottomNav, Button, EmptyState, IconButton, MiniPlayer, NavRail, PageBody, ResultRow, Section } from '../ui/index.js';
+import { useRetry } from '../../retry';
+import { BackLayer, BottomNav, Button, EmptyState, IconButton, MiniPlayer, NavRail, PageBody, ResultRow, Section, StatusBanner } from '../ui/index.js';
 
 const placeholder = {
+  "errors": [
+    {
+      "message": "That did not go through, so the request stays as it was. Try it again."
+    }
+  ],
   "inFlight": [
     {
       "id": "request-1",
       "title": "Salt and Static",
       "meta": "Album · Soul Vertex · Prowlarr · 412 MB",
+      "detail": "",
       "image": "/art/salt-and-static.jpg",
       "status": "Downloading · 38%",
       "tone": "progress"
@@ -22,6 +29,7 @@ const placeholder = {
       "id": "request-2",
       "title": "The Ink Orchard",
       "meta": "Book · Linnea Frost · AudiobookBay · 286 MB",
+      "detail": "",
       "image": "/art/the-ink-orchard.jpg",
       "status": "Downloading · 64%",
       "tone": "progress"
@@ -30,6 +38,7 @@ const placeholder = {
       "id": "request-3",
       "title": "The Salt Cartographer",
       "meta": "Book · Rosa Elin · AudiobookBay · 612 MB",
+      "detail": "",
       "image": "/art/the-salt-cartographer.jpg",
       "status": "Downloading · 18%",
       "tone": "progress"
@@ -38,6 +47,7 @@ const placeholder = {
       "id": "request-4",
       "title": "Fragments of the Wind",
       "meta": "Album · Fleeting Verses · Prowlarr · 1.1 GB",
+      "detail": "",
       "image": "/art/fragments-of-the-wind.jpg",
       "status": "Importing",
       "tone": "progress"
@@ -46,6 +56,7 @@ const placeholder = {
       "id": "request-5",
       "title": "The Glass Archivist",
       "meta": "Book · Rosa Elin · Prowlarr, then AudiobookBay",
+      "detail": "",
       "image": "/art/the-long-read.jpg",
       "status": "Searching…",
       "tone": "progress"
@@ -56,6 +67,7 @@ const placeholder = {
       "id": "request-6",
       "title": "Between Two Worlds",
       "meta": "Book · Maya Lind · AudiobookBay · 298 MB",
+      "detail": "The download failed",
       "image": "/art/between-two-worlds.jpg",
       "status": "Failed",
       "tone": "error"
@@ -85,17 +97,17 @@ const placeholder = {
         {
           "id": "release-1",
           "title": "Paper Lanterns (2021) [FLAC 24-96]",
-          "meta": "FLAC · 12 of 12 tracks · 1.1 GB · 41 seeders"
+          "detail": "FLAC · 12 of 12 tracks · 1.1 GB · 41 seeders"
         },
         {
           "id": "release-2",
           "title": "Paper Lanterns (Deluxe) [FLAC]",
-          "meta": "FLAC · 12 of 15 tracks · 486 MB · 18 seeders"
+          "detail": "FLAC · 12 of 15 tracks · 486 MB · 18 seeders"
         },
         {
           "id": "release-3",
           "title": "Paper Lanterns [MP3 320]",
-          "meta": "MP3 320 · 12 of 12 tracks · 136 MB · 96 seeders"
+          "detail": "MP3 320 · 12 of 12 tracks · 136 MB · 96 seeders"
         }
       ]
     }
@@ -311,8 +323,18 @@ export default function Requests({ data = placeholder, state = 'full' }: Request
   const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   const act = useAct();
+  const retry = useRetry();
   return (
     <PageBody width="list" platform={platform}>
+      {data.errors.map((error, i) => (
+        <Fragment key={i}>
+          <Section platform={platform}>
+            <StatusBanner tone="error" icon="error">
+              {error.message}
+            </StatusBanner>
+          </Section>
+        </Fragment>
+      ))}
       {state === 'empty' && (
         <>
           <EmptyState
@@ -328,6 +350,21 @@ export default function Requests({ data = placeholder, state = 'full' }: Request
           />
         </>
       )}
+      {state === 'failed' && (
+        <>
+          <EmptyState
+            icon="cloud_off"
+            title="Requests did not load"
+            body="The server did not answer."
+            action={
+              <Button variant="secondary" onClick={retry} platform={platform}>
+                {"Try again"}
+              </Button>
+            }
+            platform={platform}
+          />
+        </>
+      )}
       {state === 'full' && (
         <>
           {(data.inFlight.length > 0 || data.failed.length > 0 || data.pickable.length > 0) && (
@@ -337,6 +374,7 @@ export default function Requests({ data = placeholder, state = 'full' }: Request
                   <ResultRow
                     title={request.title}
                     meta={request.meta}
+                    detail={request.detail}
                     image={request.image}
                     status={request.status}
                     tone={request.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
@@ -351,6 +389,7 @@ export default function Requests({ data = placeholder, state = 'full' }: Request
                   <ResultRow
                     title={request.title}
                     meta={request.meta}
+                    detail={request.detail}
                     image={request.image}
                     status={request.status}
                     tone={request.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
@@ -375,7 +414,7 @@ export default function Requests({ data = placeholder, state = 'full' }: Request
                   />
                   <ResultRow
                     title="Pick another release"
-                    meta={request.others}
+                    detail={request.others}
                     image={request.image}
                     divider={true}
                     onClick={act(request.id, 'pickAnother', request.next)}
@@ -407,7 +446,7 @@ export default function Requests({ data = placeholder, state = 'full' }: Request
                     <Fragment key={i}>
                       <ResultRow
                         title={candidate.title}
-                        meta={candidate.meta}
+                        detail={candidate.detail}
                         image={request.image}
                         divider={true}
                         onClick={act(request.id, 'choose', candidate.id)}

@@ -236,19 +236,39 @@ describe('[M3.requests/c] a library home with nothing of yours', () => {
 });
 
 describe('[M2.sorting] a library home before its list answers', () => {
-  it('[M2.sorting] names the sort its address asks while that list loads, or when it fails', () => {
-    for (const failed of [false, true]) {
-      const { given } = deps('member');
-      const pages = { ...given.pages, failed: () => failed };
-      const at = (url: string) => sortLabel(renderAt(url, { ...given, pages }));
-      expect(at('/books?sort=artist'), `failed: ${failed}`).toBe('Author');
-      expect(at('/podcasts?sort=artist'), `failed: ${failed}`).toBe('Host');
-      expect(at('/music?sort=artist'), `failed: ${failed}`).toBe('Artist');
-      expect(at('/music?sort=random'), `failed: ${failed}`).toBe('Random');
-      expect(at('/books'), `failed: ${failed}`).toBe('Title');
-      expect(at('/podcasts/abs:s1?sort=oldest'), `failed: ${failed}`).toBe('Oldest first');
-      expect(at('/podcasts/abs:s1?sort=newest'), `failed: ${failed}`).toBe('Newest first');
+  it('[M2.sorting] names the sort its address asks while that list loads', () => {
+    const { given } = deps('member');
+    const at = (url: string) => sortLabel(renderAt(url, given));
+    expect(at('/books?sort=artist')).toBe('Author');
+    expect(at('/podcasts?sort=artist')).toBe('Host');
+    expect(at('/music?sort=artist')).toBe('Artist');
+    expect(at('/music?sort=random')).toBe('Random');
+    expect(at('/books')).toBe('Title');
+    expect(at('/podcasts/abs:s1?sort=oldest')).toBe('Oldest first');
+    expect(at('/podcasts/abs:s1?sort=newest')).toBe('Newest first');
+  });
+
+  it('[M3.requests/c] says its list failed to load, with no sort bar over nothing', () => {
+    const { given } = deps('member');
+    const pages = { ...given.pages, failed: () => true };
+    for (const [url, words] of [
+      ['/books?sort=artist', 'Books did not load'],
+      ['/podcasts', 'Podcasts did not load'],
+      ['/music', 'Music did not load'],
+    ] as const) {
+      const html = renderAt(url, { ...given, pages });
+      expect(html).toContain(words);
+      expect(html).toContain('Try again');
+      expect(sortLabel(html)).toBeUndefined();
     }
+  });
+
+  it('[M2.sorting] a show keeps naming its sort when its episodes failed to load', () => {
+    const { given } = deps('member');
+    const pages = { ...given.pages, failed: () => true };
+    const at = (url: string) => sortLabel(renderAt(url, { ...given, pages }));
+    expect(at('/podcasts/abs:s1?sort=oldest')).toBe('Oldest first');
+    expect(at('/podcasts/abs:s1?sort=newest')).toBe('Newest first');
   });
 });
 

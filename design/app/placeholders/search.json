@@ -40,6 +40,11 @@
     }
   ],
   "activeFilters": "All kinds",
+  "yourRequests": [
+    {
+      "title": "Your requests"
+    }
+  ],
   "suggestions": [
     {
       "title": "Salt and Static",

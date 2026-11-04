@@ -130,17 +130,23 @@ describe('what search reads from the API', () => {
   it('asks for suggestions for what is typed, even nothing, parsed', async () => {
     const { client, asked } = answering({
       suggestions: [{ kind: 'recent', text: 'ri', ref: null }],
+      hasRequests: false,
     });
     expect(await loadSuggest(client, 'ri')).toEqual({
       suggestions: [{ kind: 'recent', text: 'ri', ref: null }],
+      hasRequests: false,
     });
     await loadSuggest(client, '');
     expect(asked).toEqual(['/api/search/suggest [["q","ri"]]', '/api/search/suggest [["q",""]]']);
   });
 
   it('asks for the results of a search, every kind of them, parsed', async () => {
-    const { client, asked } = answering({ query: 'rise and', results: [] });
-    expect(await loadSearch(client, 'rise and')).toEqual({ query: 'rise and', results: [] });
+    const { client, asked } = answering({ query: 'rise and', results: [], hasRequests: false });
+    expect(await loadSearch(client, 'rise and')).toEqual({
+      query: 'rise and',
+      results: [],
+      hasRequests: false,
+    });
     expect(asked).toEqual(['/api/search [["q","rise and"]]']);
   });
 

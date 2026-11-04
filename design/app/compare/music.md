@@ -1,6 +1,6 @@
 ---
 page: music
-pageHash: 4d287c023eecfd84a216b42bd4746ef92b61ec597d3673d88a48d2f19c7e77e7
+pageHash: 8ebdfa51e2161305fa5b1d833eae6714752fdaf6d063cee5bd43bf1c2f06b03e
 sonora: [kit:mobile/music, kit:desktop/music]
 spotify: [S31]
 ---
@@ -83,3 +83,7 @@ Each album card opens its Album page; the Artists tab, not drawn, holds the arti
 ## M3.requests
 
 - Changed on purpose: an empty state, Sonora's `EmptyState`, says the library shows the music you've played, added or requested, and "Go to Search" opens Search. The filled page is unchanged; a request on its way already binds `status` and `tone` on its `MediaCard`, greyed as the card draws it.
+
+## M3.requests failure
+
+- Changed on purpose: a list that failed to load draws the page's `failed` state, on its own phone artboard, in place of the sort bar and the grid: Sonora's `EmptyState`, as Search's, with "Try again".

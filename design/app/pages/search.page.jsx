@@ -24,6 +24,11 @@ export default function Search({ data }) {
       }
     >
       <PageBody width="list">
+        <Each of={data.yourRequests} as="entry">
+          <Section>
+            <ResultRow title={entry.title} icon="downloading" onClick={<Open page="requests" />} />
+          </Section>
+        </Each>
         <When state="suggest">
           <Section last>
             <Each of={data.suggestions} as="s">
@@ -73,12 +78,7 @@ export default function Search({ data }) {
               />
             </Each>
           </Section>
-          <Section
-            title="Not in your library"
-            actionText="Your requests"
-            onAction={<Open page="requests" />}
-            last
-          >
+          <Section title="Not in your library" last>
             <Each of={data.outside.household} as="item">
               <ResultRow
                 title={item.title}

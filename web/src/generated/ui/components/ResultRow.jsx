@@ -44,7 +44,7 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
   const label = mobile && pctMatch ? pctMatch[1] + '%' : status;
   const statusPill = nowPlaying
     ? <div className="rr-bars" role="img" aria-label="Now playing"><i /><i /><i /></div>
-    : (status && Badge ? <div style={sx('flex-shrink:0')}><Badge tone={badgeTone} size="md">{label}</Badge></div> : null);
+    : (status && Badge ? <div data-sn-ink style={sx('flex-shrink:0')}><Badge tone={badgeTone} size="md">{label}</Badge></div> : null);
   // A track number leads an album's rows in place of the art, which would only repeat the cover,
   // and a glyph a row with no cover of its own, such as a search suggestion.
   const numbered = typeof number === 'number';

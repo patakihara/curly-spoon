@@ -82,10 +82,15 @@ export function rowOf(result: SearchResult): Row {
   };
 }
 
+/** The way to Requests, drawn while the person has any request, whatever the search shows. */
+const yourRequests = (has: boolean): SearchData['yourRequests'] =>
+  has ? [{ title: 'Your requests' }] : [];
+
 /** Search while a query is typed: its suggestions, each running its search, and no results. */
 export function suggestData(list: SuggestionList, page: SearchData): SearchData {
   return {
     ...page,
+    yourRequests: yourRequests(list.hasRequests),
     suggestions: list.suggestions.map((s): SuggestionRow => ({
       title: s.text,
       meta: KIND_LABELS[s.kind],
@@ -102,6 +107,7 @@ export function searchData(answer: SearchResults, page: SearchData): SearchData 
     rest.filter((result) => result.inYourLibrary === inYourLibrary).map(rowOf);
   return {
     ...page,
+    yourRequests: yourRequests(answer.hasRequests),
     ...(best === undefined ? {} : { top: rowOf(best) }),
     library: rows(true),
     outside: { ...page.outside, household: rows(false) },
@@ -172,18 +178,20 @@ export interface SearchDrawn {
  * last. Suggestions are drawn only for the text they answer: the last ones stay while the next
  * load, and none are drawn when they fail. Results are drawn once found; a search that found
  * nothing draws the page's empty state, and one that failed its failed state. While a search loads,
- * what was drawn stays, the earlier search's results or the suggestions, never empty rows.
+ * what was drawn stays, the earlier search's results or the suggestions, never empty rows. A failed
+ * answer cannot say whether the person has requests, so the way to them stays as it last was.
  */
 export function searchLive(q: string, draft: Draft | null, page: SearchData) {
   const view = searchView(q, draft);
   const choose = (answer: Answer<SearchLoaded>, last: SearchDrawn | null): SearchDrawn => {
-    const nothing: SearchDrawn = { state: 'suggest', data: page };
+    const offered = { ...page, yourRequests: last?.data.yourRequests ?? page.yourRequests };
+    const nothing: SearchDrawn = { state: 'suggest', data: offered };
     if (view.state === 'suggest') {
       if (answer === 'failed') return nothing;
       if (answer !== undefined) return { state: 'suggest', data: answer.data.data };
       return last?.state === 'suggest' ? last : nothing;
     }
-    if (answer === 'failed') return { state: 'failed', data: page };
+    if (answer === 'failed') return { state: 'failed', data: offered };
     if (answer !== undefined) {
       return { state: answer.data.found ? 'full' : 'empty', data: answer.data.data };
     }

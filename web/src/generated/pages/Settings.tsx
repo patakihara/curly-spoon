@@ -5,9 +5,14 @@ import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from 
 import type { ShellNav } from '../../shell-nav';
 import type { Playing } from '../../player';
 import { useToggle } from '../../toggle';
-import { BackLayer, BottomNav, FieldRow, IconButton, LayoutGrid, MiniPlayer, NavRail, PageBody, Section, SettingRow } from '../ui/index.js';
+import { BackLayer, BottomNav, FieldRow, IconButton, LayoutGrid, MiniPlayer, NavRail, PageBody, Section, SettingRow, StatusBanner } from '../ui/index.js';
 
 const placeholder = {
+  "errors": [
+    {
+      "message": "That setting did not change. The switch shows what the server holds."
+    }
+  ],
   "server": "https://media.example.org",
   "settings": [
     {
@@ -238,6 +243,15 @@ export default function Settings({ data = placeholder, state = 'full' }: Setting
   const toggle = useToggle();
   return (
     <PageBody width="form" platform={platform}>
+      {data.errors.map((error, i) => (
+        <Fragment key={i}>
+          <Section platform={platform}>
+            <StatusBanner tone="error" icon="error">
+              {error.message}
+            </StatusBanner>
+          </Section>
+        </Fragment>
+      ))}
       <Section platform={platform}>
         <FieldRow label="Server" value={data.server} platform={platform} />
       </Section>

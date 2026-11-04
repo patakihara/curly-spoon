@@ -70,13 +70,22 @@ const queryText = () =>
 
 /** A search's results, best first, for the query as it was searched. */
 export const SearchResults = z
-  .object({ query: z.string(), results: z.array(SearchResult) })
+  .object({
+    query: z.string(),
+    results: z.array(SearchResult),
+    /** Whether the person has any request, which Search offers whatever it shows. */
+    hasRequests: z.boolean(),
+  })
   .openapi('SearchResults');
 export type SearchResults = z.infer<typeof SearchResults>;
 
 /** Suggestions for what is typed so far, best first. */
 export const SuggestionList = z
-  .object({ suggestions: z.array(Suggestion) })
+  .object({
+    suggestions: z.array(Suggestion),
+    /** Whether the person has any request, which Search offers whatever it shows. */
+    hasRequests: z.boolean(),
+  })
   .openapi('SuggestionList');
 export type SuggestionList = z.infer<typeof SuggestionList>;
 

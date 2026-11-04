@@ -435,6 +435,46 @@ test('[M3.requests] a verb still on its way shows it is working', async ({ page 
     .toBe(true);
 });
 
+test('[M3.requests] a verb on its way draws its row disabled, and a failed one back as it was', async ({
+  page,
+}) => {
+  await open(page, '/requests');
+  await request(page, 'book', 'Steady Stand-in', 1);
+  await page.reload();
+  await fontsLoaded(page);
+  const row = requestRow(page, 'Steady Stand-in', 'Cancel');
+  await expect(row).toContainText('Downloading · 38%', LOOKING_AGAIN);
+  await page.route('**/api/requests/*/cancel', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1_500));
+    await route.fulfill({ status: 409, json: {} });
+  });
+  const cancel = row.getByRole('button', { name: 'Cancel', exact: true });
+  await cancel.click();
+  await expect(cancel).toBeDisabled();
+  await expect(page.getByRole('status')).toHaveCount(0);
+  await expect(page.getByRole('status')).toContainText('could not be cancelled', LOOKING_AGAIN);
+  await expect(cancel).toBeEnabled();
+  await expect(row).toContainText('Downloading · 38%');
+});
+
+test('[M3.requests/c] a list that failed to load is asked for again, and then draws', async ({
+  page,
+}) => {
+  await open(page, '/requests');
+  await request(page, 'book', 'Steady Stand-in', 1);
+  let answering = false;
+  await page.route('**/api/requests', (route) =>
+    answering ? route.continue() : route.fulfill({ status: 500, body: 'no' }),
+  );
+  await page.reload();
+  await fontsLoaded(page);
+  await expect(page.getByText('Requests did not load', { exact: true })).toBeVisible();
+  answering = true;
+  await page.getByRole('button', { name: 'Try again', exact: true }).click();
+  await expect(page.getByText('Requests did not load', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Steady Stand-in', { exact: true })).toBeVisible();
+});
+
 test('[M3.requests] Requests says so when its list failed to load, rather than drawing nothing', async ({
   page,
 }) => {
@@ -482,7 +522,9 @@ test.describe('on a phone', () => {
     await page.reload();
     await fontsLoaded(page);
     await expect(page.getByText(`${title} [FLAC]`, { exact: true })).toBeAttached(LOOKING_AGAIN);
-    expect(await cutOff(page, `${title} [FLAC]`)).toBe(false);
+    // A row's title stays on one line; what tells a release from the others is the line that wraps.
+    await expect(page.getByText(/^FLAC · /).first()).toBeVisible();
+    expect(await cutOff(page, /^FLAC · /)).toBe(false);
   });
 });
 
@@ -523,33 +565,45 @@ test("[M3.requests/c] a request's card greyed in a home keeps its status readabl
   await page.setViewportSize({ width: 390, height: 844 });
   await open(page, '/books');
   await request(page, 'book', 'Alone Stand-in', 1);
+  await request(page, 'book', 'Steady Stand-in', 2);
   const card = page.getByRole('button', { name: /Alone Stand-in/ });
+  const steady = page.getByRole('button', { name: /Steady Stand-in/ });
   await expect
     .poll(async () => {
       await page.reload();
-      return card.innerText();
+      return `${await card.innerText()} ${await steady.innerText()}`;
     }, LOOKING_AGAIN)
-    .toContain('Failed');
-  const contrast = await card.getByText('Failed', { exact: true }).evaluate((el) => {
-    type Colour = [number, number, number, number];
-    const read = (css: string): Colour => {
-      const [a = 0, b = 0, c = 0, d = 1] = (css.match(/[\d.]+/g) ?? []).map(Number);
-      return css.startsWith('color(') ? [a * 255, b * 255, c * 255, d] : [a, b, c, d];
-    };
-    const light = ([r, g, b]: Colour) => {
-      const part = (v: number) =>
-        v / 255 <= 0.03928 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4;
-      return 0.2126 * part(r) + 0.7152 * part(g) + 0.0722 * part(b);
-    };
-    const back = read(getComputedStyle(el).backgroundColor);
-    const ink = read(getComputedStyle(el).color);
-    const over = ink.map((v, i) =>
-      i === 3 ? 1 : v * ink[3]! + (back[i] ?? 0) * (1 - ink[3]!),
-    ) as Colour;
-    const [high, low] = [light(over), light(back)].sort((x, y) => y - x) as [number, number];
-    return (high + 0.05) / (low + 0.05);
-  });
-  expect(contrast).toBeGreaterThanOrEqual(4.5);
+    .toMatch(/Failed.*38%/s);
+  const contrastIn = (pill: ReturnType<typeof page.getByText>, theme: 'light' | 'dark') =>
+    pill.evaluate((el, theme) => {
+      document.documentElement.setAttribute('data-theme', theme);
+      type Colour = [number, number, number, number];
+      const read = (css: string): Colour => {
+        const [a = 0, b = 0, c = 0, d = 1] = (css.match(/[\d.]+/g) ?? []).map(Number);
+        return css.startsWith('color(') ? [a * 255, b * 255, c * 255, d] : [a, b, c, d];
+      };
+      const light = ([r, g, b]: Colour) => {
+        const part = (v: number) =>
+          v / 255 <= 0.03928 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4;
+        return 0.2126 * part(r) + 0.7152 * part(g) + 0.0722 * part(b);
+      };
+      const back = read(getComputedStyle(el).backgroundColor);
+      const ink = read(getComputedStyle(el).color);
+      const over = ink.map((v, i) =>
+        i === 3 ? 1 : v * ink[3]! + (back[i] ?? 0) * (1 - ink[3]!),
+      ) as Colour;
+      const [high, low] = [light(over), light(back)].sort((x, y) => y - x) as [number, number];
+      return (high + 0.05) / (low + 0.05);
+    }, theme);
+  await expect(card).toBeDisabled();
+  for (const theme of ['light', 'dark'] as const) {
+    for (const [what, pill] of [
+      ['Failed', card.getByText('Failed', { exact: true })],
+      ['Downloading', steady.getByText('38%')],
+    ] as const) {
+      expect(await contrastIn(pill, theme), `${what}, ${theme}`).toBeGreaterThanOrEqual(4.5);
+    }
+  }
 });
 
 test('[M3.requests] Browse draws no blank card for a person with nothing to preview', async ({

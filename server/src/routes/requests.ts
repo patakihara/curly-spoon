@@ -37,7 +37,7 @@ import {
   createRequest,
   joinArrivedRequest,
   requestOf,
-  requestsOf,
+  requestsListed,
   type StoredRequest,
 } from '../store/requests.js';
 import { artUrl } from './art.js';
@@ -132,10 +132,7 @@ export function requestRoutes(app: FastifyInstance, deps: RequestActDeps): void 
   });
 
   serve(app, listRequests, (request) => {
-    const shown = requestsOf(db, signedIn(request).id, log).filter(
-      ({ medium, state }) => medium !== 'podcast' && state.status !== 'inLibrary',
-    );
-    const views = shown.map(viewOf);
+    const views = requestsListed(db, signedIn(request).id, log).map(viewOf);
     return {
       inFlight: views.filter((view) => view.status !== 'needsChoice'),
       needsChoice: views.filter((view) => view.status === 'needsChoice'),

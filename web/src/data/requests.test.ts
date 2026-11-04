@@ -2,7 +2,7 @@ import { RequestList, type RequestView } from '@auralis/schema';
 import { describe, expect, it, vi } from 'vitest';
 import { createApiClient } from '../api/client';
 import { frame } from '../generated/pages/Requests';
-import { requestsData, requestsMoving, requestsState, requestVerb } from './requests';
+import { formatOf, requestsData, requestsMoving, requestsState, requestVerb } from './requests';
 import { SignedOut } from './store';
 
 const request = (over: Partial<RequestView> = {}): RequestView => ({
@@ -39,6 +39,7 @@ describe('[M3.requests] the Requests page from GET /api/requests', () => {
         id: 'r1',
         title: 'The Ink Orchard',
         meta: 'Book · Linnea Frost · AudiobookBay · 286 MB',
+        detail: '',
         image: '',
         status: 'Downloading · 64%',
         tone: 'progress',
@@ -65,7 +66,8 @@ describe('[M3.requests] the Requests page from GET /api/requests', () => {
       expect.objectContaining({
         status: 'Failed',
         tone: 'error',
-        meta: 'Book · Linnea Frost · AudiobookBay · 286 MB · The download failed',
+        meta: 'Book · Linnea Frost · AudiobookBay · 286 MB',
+        detail: 'The download failed',
       }),
     ]);
   });
@@ -117,9 +119,15 @@ describe('[M3.requests] the Requests page from GET /api/requests', () => {
         image: '',
         status: 'Needs choice',
         tone: 'request',
-        candidates: [{ id: 'c1', title: 'A Release [FLAC]', meta: 'Prowlarr · 1.1 GB' }],
+        candidates: [{ id: 'c1', title: 'A Release [FLAC]', detail: 'FLAC · Prowlarr · 1.1 GB' }],
       },
     ]);
+  });
+
+  it('tells releases apart by the format its title names, where one does', () => {
+    expect(formatOf('Paper Lanterns (2021) [flac 24-96]')).toBe('FLAC');
+    expect(formatOf('Paper Lanterns [MP3 320]')).toBe('MP3');
+    expect(formatOf('Paper Lanterns')).toBeNull();
   });
 
   it('is empty once nothing is left, in flight or waiting', () => {

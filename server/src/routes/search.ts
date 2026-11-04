@@ -6,6 +6,7 @@
  * keeps nothing. A search is kept even when its client has left: one that leaves right after
  * asking has its answer written before Node reads the close, and a written answer looks delivered
  * whether or not anyone reads it, so the server cannot tell it from one that read its results.
+ * Either answer also says whether the person has any request, as the page offers them from there.
  */
 import { getSearch, getSearchSuggest, mediaRefKey, type SearchKind } from '@auralis/schema';
 import type { FastifyInstance } from 'fastify';
@@ -16,6 +17,7 @@ import { rank, type SearchSource } from '../search/sources.js';
 import { suggest } from '../search/suggest.js';
 import type { Db } from '../store/connection.js';
 import { recordSearch } from '../store/recentSearches.js';
+import { requestsListed } from '../store/requests.js';
 import { signedIn } from './auth.js';
 
 /** The kinds that name someone or a series, not an item. */
@@ -25,9 +27,13 @@ export function searchRoutes(app: FastifyInstance, options: { db: Db; now: () =>
   const { db, now } = options;
   const sources: readonly SearchSource[] = [librarySource(db)];
 
-  serve(app, getSearchSuggest, (request, _reply, _body, { query }) => ({
-    suggestions: suggest(db, signedIn(request).id, query.q),
-  }));
+  serve(app, getSearchSuggest, (request, _reply, _body, { query }) => {
+    const user = signedIn(request);
+    return {
+      suggestions: suggest(db, user.id, query.q),
+      hasRequests: requestsListed(db, user.id).length > 0,
+    };
+  });
 
   serve(app, getSearch, async (request, reply, _body, { query }) => {
     const user = signedIn(request);
@@ -47,6 +53,7 @@ export function searchRoutes(app: FastifyInstance, options: { db: Db; now: () =>
     const names = results.some((r) => NAME_KINDS.includes(r.kind)) ? view.names() : null;
     return {
       query: query.q,
+      hasRequests: requestsListed(db, user.id).length > 0,
       results: results.map((result) => {
         const top = result.parent?.ref ?? result.ref;
         const inYourLibrary =

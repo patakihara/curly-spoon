@@ -47,19 +47,21 @@ export default function Browse({ data }) {
             </Each>
           </Shelf>
         </Section>
-        <Section>
-          <LayoutGrid columns={1} maxWidth="var(--grid-max-width-form)">
-            <FeatureCard
-              kind={data.feature.kind}
-              title={data.feature.title}
-              meta={data.feature.meta}
-              description={data.feature.description}
-              image={data.feature.image}
-              onPlay={<Play ref={data.feature.ref} queue="spoken" />}
-              preview={<PreviewButton kind="episode" muted />}
-            />
-          </LayoutGrid>
-        </Section>
+        <Each of={data.features} as="feature">
+          <Section>
+            <LayoutGrid columns={1} maxWidth="var(--grid-max-width-form)">
+              <FeatureCard
+                kind={feature.kind}
+                title={feature.title}
+                meta={feature.meta}
+                description={feature.description}
+                image={feature.image}
+                onPlay={<Play ref={feature.ref} queue="spoken" />}
+                preview={<PreviewButton kind="episode" muted />}
+              />
+            </LayoutGrid>
+          </Section>
+        </Each>
         <Section
           title="Recently added"
           action="arrow_forward"

@@ -2,6 +2,13 @@ export default function Settings({ data }) {
   return (
     <BackdropShell>
       <PageBody width="form">
+        <Each of={data.errors} as="error">
+          <Section>
+            <StatusBanner tone="error" icon="error">
+              {error.message}
+            </StatusBanner>
+          </Section>
+        </Each>
         <Section>
           <FieldRow label="Server" value={data.server} />
         </Section>

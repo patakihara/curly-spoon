@@ -875,6 +875,7 @@ data class SearchResult(
 data class SearchResults(
     val query: String,
     val results: List<SearchResult>,
+    val hasRequests: Boolean,
 )
 
 @Serializable
@@ -960,6 +961,7 @@ enum class SuggestionKind {
 @Serializable
 data class SuggestionList(
     val suggestions: List<Suggestion>,
+    val hasRequests: Boolean,
 )
 
 @Serializable

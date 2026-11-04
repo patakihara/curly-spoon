@@ -128,7 +128,7 @@ function bound(element: Element, prop: string, wired: ShellHandlers, platform: P
     return !('expanded' in element.props);
   const value = element.props[prop];
   if (value === undefined) return false;
-  if (value.kind === 'query') return platform === 'web';
+  if (value.kind === 'query' || value.kind === 'retry') return platform === 'web';
   return value.kind === 'open' || value.kind === 'signIn' || value.kind === 'play';
 }
 

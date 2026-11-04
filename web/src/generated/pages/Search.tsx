@@ -50,6 +50,11 @@ const placeholder = {
     }
   ],
   "activeFilters": "All kinds",
+  "yourRequests": [
+    {
+      "title": "Your requests"
+    }
+  ],
   "suggestions": [
     {
       "title": "Salt and Static",
@@ -403,6 +408,13 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
   const play = usePlay();
   return (
     <PageBody width="list" platform={platform}>
+      {data.yourRequests.map((entry, i) => (
+        <Fragment key={i}>
+          <Section platform={platform}>
+            <ResultRow title={entry.title} icon="downloading" onClick={() => navigate('/requests')} platform={platform} />
+          </Section>
+        </Fragment>
+      ))}
       {state === 'suggest' && (
         <>
           <Section last={true} platform={platform}>
@@ -439,7 +451,7 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
             </Section>
           )}
           {(data.outside.household.length > 0 || data.outside.music.length > 0 || data.outside.moreReleases !== '' || data.outside.books.length > 0 || data.outside.podcasts.length > 0) && (
-            <Section title="Not in your library" actionText="Your requests" onAction={() => navigate('/requests')} last={true} platform={platform}>
+            <Section title="Not in your library" last={true} platform={platform}>
               {data.outside.household.map((item, i) => (
                 <Fragment key={i}>
                   <ResultRow title={item.title} meta={item.meta} image={item.image} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} onAction={play(item.playRef, item.queue as PlayQueue, 'now')} divider={true} platform={platform} />

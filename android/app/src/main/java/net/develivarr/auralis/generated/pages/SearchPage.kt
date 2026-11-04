@@ -181,6 +181,21 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                         children = {
                             Section(
                                 SectionProps(
+                                    platform = Platform.MOBILE,
+                                    children = {
+                                        ResultRow(
+                                            ResultRowProps(
+                                                title = "Your requests",
+                                                icon = "downloading",
+                                                platform = Platform.MOBILE,
+                                                onClick = { navController.navigate(Route.Requests) },
+                                            ),
+                                        )
+                                    },
+                                ),
+                            )
+                            Section(
+                                SectionProps(
                                     title = "Top result",
                                     platform = Platform.MOBILE,
                                     children = {
@@ -257,10 +272,8 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                             Section(
                                 SectionProps(
                                     title = "Not in your library",
-                                    onAction = { navController.navigate(Route.Requests) },
                                     platform = Platform.MOBILE,
                                     last = true,
-                                    actionText = "Your requests",
                                     children = {
                                         ResultRow(
                                             ResultRowProps(

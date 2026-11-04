@@ -117,6 +117,10 @@ const acts = (node: PageTree) =>
 const toggles = (node: PageTree) =>
   node.kind === 'element' && Object.values(node.props).some((v) => v.kind === 'toggle');
 
+/** Whether an element asks again for what failed to load, a `<Retry />` in a handler prop. */
+const retries = (node: PageTree) =>
+  node.kind === 'element' && Object.values(node.props).some((v) => v.kind === 'retry');
+
 /** Whether an element holds the search query, a `<Query />` in one of its handler props. */
 const queries = (node: PageTree) =>
   node.kind === 'element' && Object.values(node.props).some((v) => v.kind === 'query');
@@ -271,6 +275,8 @@ function propLines(
     const also = candidate === undefined ? '' : `, ${pathCode(candidate)}`;
     return [`${name}={act(${pathCode(ref)}, ${verb}${also})}`];
   }
+  // Asking again goes to what the page is given, none while nothing failed.
+  if (value.kind === 'retry') return [`${name}={retry}`];
   // A switch's change goes to the toggles the page is given, none while nothing sets the setting.
   if (value.kind === 'toggle') return [`${name}={toggle('${value.setting}')}`];
   // No request endpoint exists yet. A handler doing nothing would draw a dead control as
@@ -704,6 +710,7 @@ export function generateWebPage(
     }
   }
   const usesToggle = some(root, toggles);
+  const usesRetry = some(root, retries);
   const actsBound = some(
     root,
     (node) =>
@@ -787,6 +794,7 @@ export function generateWebPage(
       ? [`import { ${actsBound ? 'type RequestVerb, ' : ''}useAct } from '../../act';`]
       : []),
     ...(usesToggle ? ["import { useToggle } from '../../toggle';"] : []),
+    ...(usesRetry ? ["import { useRetry } from '../../retry';"] : []),
     `import { ${[...used].sort().join(', ')} } from '../ui/index.js';`,
     '',
     `const placeholder = ${JSON.stringify(placeholder, null, 2)};`,
@@ -856,6 +864,7 @@ export function generateWebPage(
     ...(usesChoose ? ['  const choose = useChoose();'] : []),
     ...(usesAct ? ['  const act = useAct();'] : []),
     ...(usesToggle ? ['  const toggle = useToggle();'] : []),
+    ...(usesRetry ? ['  const retry = useRetry();'] : []),
     ...(usesPlaying
       ? ['  const playing = usePlaying();', '  if (playing === null) return null;']
       : []),

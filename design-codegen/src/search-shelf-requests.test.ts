@@ -62,6 +62,7 @@ describe('Search', () => {
       'query',
       'suggestions',
       'top',
+      'yourRequests',
     ]);
     expect(bindings(tree).filter((p) => p.startsWith('shell.'))).toEqual([]);
   });
@@ -102,11 +103,14 @@ describe('Search', () => {
   it('[M0.canvas] shows the single top result first, then your library, then outside it', () => {
     expect(sections(tree)).toEqual([
       undefined,
+      undefined,
       'Top result',
       'In your library',
       'Not in your library',
     ]);
-    const results = found.filter((r) => r.of !== 'data.suggestions');
+    const results = found.filter(
+      (r) => r.of !== 'data.suggestions' && r.of !== 'data.yourRequests',
+    );
     const top = results.filter(({ row }) => JSON.stringify(row.props.title).includes('"top"'));
     expect(top).toHaveLength(1);
     expect(results[0]).toBe(top[0]);
@@ -129,7 +133,7 @@ describe('Search', () => {
   });
 
   it('lists suggestions first while typing, each choice running the search with its text', () => {
-    expect(body()[0]).toMatchObject({ kind: 'when', state: 'suggest' });
+    expect(body()[1]).toMatchObject({ kind: 'when', state: 'suggest' });
     const [suggest] = when('suggest');
     const held = elements(suggest);
     expect(held.map((e) => e.component)).toEqual(['Section', 'ResultRow']);
@@ -154,6 +158,7 @@ describe('Search', () => {
 
   it('draws the results, all three sections of them, only once the search has run', () => {
     expect(body().map((c) => (c.kind === 'when' ? c.state : c.kind))).toEqual([
+      'each',
       'suggest',
       'empty',
       'failed',
@@ -278,19 +283,11 @@ describe('Search', () => {
     for (const show of outside.podcasts) expect(show.action).toBe('Subscribe');
   });
 
-  it('[M0.canvas] leads from outside your library to Requests', () => {
-    const outside = elements(tree).find(
-      (e) =>
-        e.component === 'Section' &&
-        e.props.title?.kind === 'literal' &&
-        e.props.title.value === 'Not in your library',
-    );
-    expect(outside?.props.actionText).toEqual({ kind: 'literal', value: 'Your requests' });
-  });
-
-  it('opens the Requests page from "Your requests"', () => {
-    const outside = elements(tree).find((e) => e.props.actionText !== undefined);
-    expect(outside?.props.onAction).toEqual({ kind: 'open', page: 'requests', params: {} });
+  it('[M3.requests] opens Requests from "Your requests", outside every one of its states', () => {
+    const [entry] = body();
+    expect(entry).toMatchObject({ kind: 'each', of: ['data', 'yourRequests'] });
+    const row = elements(entry!).find((e) => e.component === 'ResultRow');
+    expect(row?.props.onClick).toEqual({ kind: 'open', page: 'requests', params: {} });
   });
 });
 
@@ -393,13 +390,14 @@ describe('[M3.requests] a request’s verbs on Requests', () => {
   });
 
   it('[M3.requests] says nothing is requested when nothing is, and opens Search', () => {
-    const empty = elements(tree).filter((e) => e.component === 'EmptyState');
-    expect(empty).toHaveLength(1);
-    expect(slotted(empty[0]!, 'action')?.props.onClick).toEqual({
+    const [nothing, failed, ...others] = elements(tree).filter((e) => e.component === 'EmptyState');
+    expect(others).toEqual([]);
+    expect(slotted(nothing!, 'action')?.props.onClick).toEqual({
       kind: 'open',
       page: 'search',
       params: {},
     });
+    expect(slotted(failed!, 'action')?.props.onClick).toEqual({ kind: 'retry' });
   });
 });
 
@@ -446,7 +444,7 @@ describe('Requests', () => {
   const needsChoice = data.needsChoice as (Row & { candidates: Row[] })[];
 
   it('[M0.canvas] binds only the requests in flight, those that failed and those that need a choice', () => {
-    expect(dataRoots(tree)).toEqual(['failed', 'inFlight', 'needsChoice', 'pickable']);
+    expect(dataRoots(tree)).toEqual(['errors', 'failed', 'inFlight', 'needsChoice', 'pickable']);
     expect(bindings(tree).filter((p) => p.startsWith('shell.'))).toEqual([]);
   });
 
@@ -482,7 +480,8 @@ describe('Requests', () => {
     for (const request of needsChoice) {
       expect(request.status).toBe('Needs choice');
       expect(request.candidates.length).toBeGreaterThanOrEqual(2);
-      for (const c of request.candidates) expect(c.meta).toMatch(/ · [\d.]+ [MG]B · \d+ seeders$/);
+      for (const c of request.candidates)
+        expect(c.detail).toMatch(/ · [\d.]+ [MG]B · \d+ seeders$/);
     }
   });
 });

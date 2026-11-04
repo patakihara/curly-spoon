@@ -1,6 +1,6 @@
 ---
 page: books
-pageHash: b09b712927133a0b7af5f25b4c03981db5c9eb81407ec2d862a3d33bc44171c2
+pageHash: 44848121647084a34a71fb445a24f40ef28bed75ef5680ac9006786d28128b9e
 sonora: [kit:desktop/books, kit:mobile/books]
 spotify: [S31]
 ---
@@ -76,3 +76,7 @@ Series; the Authors and Series tabs, not drawn, hold those cards.
 ## M3.requests
 
 - Changed on purpose: an empty state, Sonora's `EmptyState`, says the library shows the books you've played, added or requested, and "Go to Search" opens Search. The filled page is unchanged; a request on its way already binds `status` and `tone` on its `MediaCard`, greyed as the card draws it.
+
+## M3.requests failure
+
+- Changed on purpose: a list that failed to load draws the page's `failed` state, on its own phone artboard, in place of the sort bar and the grid: Sonora's `EmptyState`, as Search's, with "Try again".

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
@@ -16,6 +18,17 @@ describe("Sonora's MediaCard for an item you don't own", () => {
       expect(html).toMatch(/color:var\(--surface-fg-muted\)">A Grain of Salt</);
     }
     expect(card({})).not.toContain('grayscale');
+  });
+
+  it('[M3.requests/c] keeps its status pill out of a greyed card’s disabled ink', () => {
+    expect(card({ status: 'Failed', tone: 'error' })).toMatch(
+      /data-sn-ink="true"[^>]*title="Failed"/,
+    );
+    const css = readFileSync(
+      fileURLToPath(new URL('./generated/ui/basic/StateLayer.jsx', import.meta.url)),
+      'utf8',
+    );
+    expect(css).toContain("' :not(' + LIVE + ',' + LIVE + ' *,' + INK + ',' + INK + ' *)");
   });
 
   it('[M0.canvas] offers its page as Open in a corner menu once a tap requests it instead', () => {

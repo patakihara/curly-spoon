@@ -49,6 +49,8 @@ export type PropValue =
   | { kind: 'signIn' }
   /** A field's handler holding the search query: what it types, on `onChange`, and submits. */
   | { kind: 'query' }
+  /** A control's handler asking again for what the page failed to load. */
+  | { kind: 'retry' }
   /** A menu's handler doing its chosen verb, by its key, to the item its `ref` binds. */
   | { kind: 'choose'; params: Record<string, string[]> }
   /**
@@ -129,7 +131,7 @@ const TAKEN = new Set([
   ...['frame', 'routes', 'generatePath', 'navigate', 'query', 'play', 'playing', 'go', 'inPanel'],
   ...['context', 'leading', 'key', 'tab', 'window', 'undefined'],
   ...['useContext', 'useLayout', 'useNavigate', 'usePlay', 'usePlaying', 'useQuery', 'useShellNav'],
-  ...['useChoose', 'act', 'useAct', 'toggle', 'useToggle'],
+  ...['useChoose', 'act', 'useAct', 'toggle', 'useToggle', 'retry', 'useRetry'],
 ]);
 
 /** `value`, if it is a plain lower-case name a page may give an Each item or a When state. */
@@ -165,6 +167,7 @@ function propValue(value: t.JSXAttribute['value']): PropValue {
     if (name.type === 'JSXIdentifier' && name.name === 'Play') return play(e);
     if (name.type === 'JSXIdentifier' && name.name === 'SignIn') return signIn(e);
     if (name.type === 'JSXIdentifier' && name.name === 'Query') return query(e);
+    if (name.type === 'JSXIdentifier' && name.name === 'Retry') return retry(e);
     if (name.type === 'JSXIdentifier' && name.name === 'Choose') return choose(e);
     if (name.type === 'JSXIdentifier' && name.name === 'Act') return act(e);
     if (name.type === 'JSXIdentifier' && name.name === 'Toggle') return toggle(e);
@@ -341,6 +344,12 @@ function bare(node: t.JSXElement, what: string) {
   }
 }
 
+/** `<Retry />`: asking again for what the page failed to load. Each app knows how, so it takes nothing. */
+function retry(node: t.JSXElement): PropValue {
+  bare(node, 'Retry');
+  return { kind: 'retry' };
+}
+
 /** `<SignIn />`: starting sign-in. Each app knows its own way in, so it takes nothing. */
 function signIn(node: t.JSXElement): PropValue {
   bare(node, 'SignIn');
@@ -398,6 +407,7 @@ function element(node: t.JSXElement): PageTree {
   if (name.name === 'Choose')
     return fail(node, 'Choose goes in a handler prop, onSelect={<Choose … />}');
   if (name.name === 'Act') return fail(node, 'Act goes in a handler prop, onClick={<Act … />}');
+  if (name.name === 'Retry') return fail(node, 'Retry goes in a handler prop, onClick={<Retry />}');
   if (name.name === 'Toggle') {
     return fail(node, 'Toggle goes in a handler prop, onChange={<Toggle … />}');
   }
@@ -766,6 +776,14 @@ export function checkPage(
               );
               errors.push(
                 `${at} cannot hold the query: ${node.component} is not a text field. Query goes on a text field, ${listed(fields.sort())}, whose handler is handed the typed text`,
+              );
+            }
+            continue;
+          }
+          if (value.kind === 'retry') {
+            if (!(opens?.handlers.get(node.component)?.has(prop) ?? true)) {
+              errors.push(
+                `line ${node.line}: ${node.component}.${prop} takes no handler, so it cannot ask again`,
               );
             }
             continue;

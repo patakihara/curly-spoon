@@ -107,14 +107,16 @@ const placeholder = {
       "progress": 0.18
     }
   ],
-  "feature": {
-    "kind": "Episode",
-    "title": "Salt in the Ledger",
-    "ref": "salt-in-the-ledger",
-    "meta": "The Long Read · 5 Aug 2026 · 47 min",
-    "description": "How a family of salt merchants kept two sets of books for a hundred years, and what the second set says about the town that trusted them.",
-    "image": "/art/the-long-read.jpg"
-  },
+  "features": [
+    {
+      "kind": "Episode",
+      "title": "Salt in the Ledger",
+      "ref": "salt-in-the-ledger",
+      "meta": "The Long Read · 5 Aug 2026 · 47 min",
+      "description": "How a family of salt merchants kept two sets of books for a hundred years, and what the second set says about the town that trusted them.",
+      "image": "/art/the-long-read.jpg"
+    }
+  ],
   "recentlyAdded": [
     {
       "title": "Between Lines of Light",
@@ -550,20 +552,24 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           </Shelf>
         </Section>
       )}
-      <Section platform={platform}>
-        <LayoutGrid columns={1} maxWidth="var(--grid-max-width-form)" platform={platform}>
-          <FeatureCard
-            kind={data.feature.kind}
-            title={data.feature.title}
-            meta={data.feature.meta}
-            description={data.feature.description}
-            image={data.feature.image}
-            onPlay={play(data.feature.ref, 'spoken', 'now')}
-            preview={<PreviewButton kind="episode" muted={true} platform={platform} />}
-            platform={platform}
-          />
-        </LayoutGrid>
-      </Section>
+      {data.features.map((feature, i) => (
+        <Fragment key={i}>
+          <Section platform={platform}>
+            <LayoutGrid columns={1} maxWidth="var(--grid-max-width-form)" platform={platform}>
+              <FeatureCard
+                kind={feature.kind}
+                title={feature.title}
+                meta={feature.meta}
+                description={feature.description}
+                image={feature.image}
+                onPlay={play(feature.ref, 'spoken', 'now')}
+                preview={<PreviewButton kind="episode" muted={true} platform={platform} />}
+                platform={platform}
+              />
+            </LayoutGrid>
+          </Section>
+        </Fragment>
+      ))}
       {data.sections.includes('Recently added') && data.recentlyAdded.length > 0 && (
         <Section title="Recently added" action="arrow_forward" actionLabel="See all" onAction={data.shelves.recentlyAdded ? () => navigate(generatePath('/shelves/:id', { id: data.shelves.recentlyAdded })) : undefined} platform={platform}>
           <Shelf platform={platform}>

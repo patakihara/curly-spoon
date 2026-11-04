@@ -242,9 +242,10 @@ const feedCard = (card: FeedCard): FeedCardData =>
  * Browse, the home page. Its first shelf, from the three library lists, holds what you are part
  * way through (a book, show or album with progress between 0 and 1). Up next and Still listening
  * come from `GET /api/feed`, each card opening its book or episode. Only Jump back in, Up next and
- * Still listening are left out when empty, unnamed in the page's section bar. The feature, the
+ * Still listening are left out when empty, unnamed in the page's section bar. The features, the
  * shelves' ids and the shelves later milestones serve (recently added, people, picks, recently
- * played) stay empty, those shelves still named in the section bar.
+ * played) stay empty, those shelves still named in the section bar, and a feature with nothing to
+ * argue for is not drawn.
  */
 export function browseData(lists: LibraryList[], feed: Feed, page: BrowseData): BrowseData {
   const begun = lists

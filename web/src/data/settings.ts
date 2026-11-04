@@ -21,6 +21,10 @@ export function settingsData(settings: Settings, page: SettingsData): SettingsDa
   return { ...awaited, everyone: { ...awaited.everyone, checked: settings.showEveryonesLibrary } };
 }
 
+/** What the page says when a switch could not be set. */
+export const settingFailure = (): string =>
+  'That setting did not change. The switch shows what the server holds.';
+
 /** Sets a setting to what its switch says. A change names only what it changes. */
 export async function setSetting(
   api: ApiClient,

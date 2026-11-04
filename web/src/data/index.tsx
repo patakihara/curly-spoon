@@ -4,6 +4,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
   useSyncExternalStore,
   type ComponentType,
   type ReactElement,
@@ -47,6 +48,7 @@ import { type Act, ActContext } from '../act';
 import { type Choose, ChooseContext } from '../choose';
 import { PlayContext, useListPlay, usePlayId } from '../player';
 import { type Draft, useTabDraft } from '../query';
+import { RetryContext } from '../retry';
 import { type RequestList, type RequestVerb } from '@auralis/schema';
 import { type Toggle, ToggleContext, type ToggleSetting } from '../toggle';
 import { useAccessOf } from './access';
@@ -62,9 +64,9 @@ import {
   podcastsData,
 } from './library';
 import { emptyQueue, queueData } from './queue';
-import { requestsData, requestsMoving, requestsState, requestVerb } from './requests';
+import { requestsData, requestsMoving, requestsState, requestVerb, verbFailure } from './requests';
 import { emptySearch, loadSearchPage, searchLive, type SearchLoaded } from './search';
-import { setSetting, settingsData, settingsAwaited } from './settings';
+import { setSetting, settingFailure, settingsData, settingsAwaited } from './settings';
 import { SignInScreen } from './sign-in';
 import { listCards, listData } from './lists';
 import {
@@ -100,7 +102,8 @@ import { answerFrom, type Answer, pageKey, SignedOut } from './store';
  * (`../query`) and `GET /api/search/suggest` or `GET /api/search`, sign in from the address,
  * Requests from `GET /api/requests`, looking again after each verb and while anything moves, and
  * Settings' switch for everyone's library from `GET /api/settings`, setting it through
- * `PUT /api/settings`. A library home with nothing of yours draws its empty state. Now Playing
+ * `PUT /api/settings`. A library home with nothing of yours draws its empty state, and it or
+ * Requests draws its failed state when its list failed to load, with a way to ask again. Now Playing
  * reads the player itself. Every other page draws empty, keeping only its own words,
  * until its milestone serves it: a member never sees the canvas's samples. A page loading shows
  * its lists empty, a library home's or show's sort bar naming the sort its address asks; on a server nobody
@@ -123,6 +126,8 @@ interface Live<T, L> {
 interface Drawn<T> {
   data: T;
   state?: string;
+  /** Whether the server has answered what it draws, so the data is more than what it awaited. */
+  answered?: boolean;
 }
 
 /** One page's data: what it draws while loading, and how it loads (`L`, for a live page). */
@@ -147,12 +152,18 @@ interface Screen<T, L = T> {
   ): Promise<{ open?: string; replace?: boolean; reload?: boolean }>;
   /** For a page that says it is empty, which of its states what it loaded draws. */
   stateOf?(loaded: L): string;
+  /** For a page with a `failed` state: it draws that when its first load failed. */
+  saysFailed?: boolean;
   /** For a page whose data moves by itself, whether what it loaded should be looked at again. */
   polls?(loaded: L): boolean;
   /** For a page of requests, a request's verb: the page loads again after it. */
   acts?(api: ApiClient, ref: string, verb: RequestVerb, candidate?: string): Promise<void>;
+  /** What the page says when a request's verb fails. */
+  actFailure?(verb: RequestVerb): string;
   /** For a page of switches, a setting set to what its switch says: the page loads again after. */
   toggles?(api: ApiClient, setting: ToggleSetting, next: boolean): Promise<void>;
+  /** What the page says when a switch could not be set. */
+  toggleFailure?(setting: ToggleSetting): string;
   /** How it loads; a page nothing serves yet draws `empty` and loads nothing. */
   load?(api: ApiClient, params: Params): Promise<L>;
   /**
@@ -263,6 +274,7 @@ const screens: Screen<never>[] = [
     },
     settle: settleOrder,
     stateOf: ({ data }) => homeState(data.library),
+    saysFailed: true,
     verbs: sortVerbs(pathOf('books')),
   } satisfies Screen<typeof booksFrame.placeholder, Ordered<typeof booksFrame.placeholder>>,
   {
@@ -286,6 +298,7 @@ const screens: Screen<never>[] = [
     },
     settle: settleOrder,
     stateOf: ({ data, holding }) => (holding ? 'full' : homeState(data.library)),
+    saysFailed: true,
     verbs: sortVerbs(podcastsPath),
   } satisfies Screen<
     typeof podcastsFrame.placeholder,
@@ -302,6 +315,7 @@ const screens: Screen<never>[] = [
     },
     settle: settleOrder,
     stateOf: ({ data }) => homeState(data.library),
+    saysFailed: true,
     verbs: sortVerbs(pathOf('music')),
   } satisfies Screen<typeof musicFrame.placeholder, Ordered<typeof musicFrame.placeholder>>,
   {
@@ -383,6 +397,7 @@ const screens: Screen<never>[] = [
     empty: fixed(settingsAwaited(settingsFrame.placeholder)),
     load: async (api) => settingsData(await loadSettings(api), settingsFrame.placeholder),
     toggles: setSetting,
+    toggleFailure: settingFailure,
   } satisfies Screen<typeof settingsFrame.placeholder>,
   unserved('setup', Setup, setupFrame, ['intro', 'codeHint']),
   {
@@ -393,8 +408,10 @@ const screens: Screen<never>[] = [
     load: loadRequests,
     settle: (_params, list) => ({ data: requestsData(list, requestsEmpty), address: null }),
     stateOf: requestsState,
+    saysFailed: true,
     polls: requestsMoving,
     acts: requestVerb,
+    actFailure: verbFailure,
   } satisfies Screen<typeof requestsFrame.placeholder, RequestList>,
   unserved('shelf', Shelf, shelfFrame),
   unserved('shelfReview', ShelfReview, shelfReviewFrame),
@@ -484,8 +501,13 @@ function useScreenData<T, L>(screen: Screen<T, L>): Drawn<T> | undefined {
   }, [settledKey, settledSearch, key, pages, setSearch]);
   if (who === 'canvas') return undefined;
   if (live === undefined) {
-    const state = kept === undefined ? undefined : screen.stateOf?.(kept as L);
-    const inState = state === undefined ? {} : { state };
+    const state =
+      kept !== undefined
+        ? screen.stateOf?.(kept as L)
+        : failed && screen.saysFailed === true
+          ? 'failed'
+          : undefined;
+    const inState = { answered: kept !== undefined, ...(state === undefined ? {} : { state }) };
     if (settled !== null) return { data: settled.data, ...inState };
     return { data: (kept as T | undefined) ?? screen.empty(params), ...inState };
   }
@@ -543,43 +565,93 @@ function useVerbs<T>(screen: Screen<T>, drawn: Drawn<T> | undefined): Choose | n
 }
 
 /**
- * What `screen` does after a change it made: whether the change went through or was refused, loads
- * the page again, to show what the server now holds. A refusal for want of a sign-in goes to sign
- * in, and any other failure is logged, the shell binding no status to show it in.
+ * The changes `screen`'s controls make, a request's verb or a switch set, all in one place. Only one
+ * goes at a time for each request or setting: its controls have no handler, and so draw disabled,
+ * from the tap until the page has loaded again, so a double tap sends it once. Whether it went
+ * through or was refused, the page loads again, to show what the server now holds. A refusal for
+ * want of a sign-in goes to sign in, and any other failure is said on the page (`errors`) until the
+ * next change.
  */
-function useChange<T, L>(screen: Screen<T, L>) {
+function useChanges<T, L>(screen: Screen<T, L>) {
   const { api, access, pages } = useDeps();
   const params = useParams();
-  return (what: string, change: () => Promise<void>) => {
+  const [failure, setFailure] = useState<string | null>(null);
+  const [working, setWorking] = useState<ReadonlySet<string>>(new Set());
+  const going = useRef(new Set<string>());
+  const make = (what: string, failing: string, change: () => Promise<void>) => {
+    if (going.current.has(what)) return;
+    going.current.add(what);
+    setWorking(new Set(going.current));
+    setFailure(null);
+    const load = screen.load;
     void change()
       .catch((error: unknown) => {
         if (error instanceof SignedOut) access.refused();
-        else console.warn('the change failed', what, error);
+        else {
+          console.warn('the change failed', what, error);
+          setFailure(failing);
+        }
       })
+      .then(() =>
+        load === undefined
+          ? undefined
+          : pages.reload(pageKey(screen.name, params), () => load(api, params)),
+      )
       .finally(() => {
-        const load = screen.load;
-        if (load !== undefined)
-          void pages.reload(pageKey(screen.name, params), () => load(api, params));
+        going.current.delete(what);
+        setWorking(new Set(going.current));
       });
   };
+  return { make, working, failure };
 }
+
+type Changes = ReturnType<typeof useChanges>;
 
 /** A request's verbs for the page to hand down: none on the canvas, or for a page of no requests. */
-function useActs<T, L>(screen: Screen<T, L>, drawn: Drawn<T> | undefined): Act | null {
-  const { api } = useDeps();
-  const change = useChange(screen);
+function actsOf<T, L>(
+  screen: Screen<T, L>,
+  drawn: Drawn<T> | undefined,
+  api: ApiClient,
+  { make, working }: Changes,
+): Act | null {
   const acts = screen.acts;
   if (acts === undefined || drawn === undefined) return null;
-  return (ref, verb, candidate) => () => change(verb, () => acts(api, ref, verb, candidate));
+  return (ref, verb, candidate) =>
+    working.has(ref)
+      ? undefined
+      : () => make(ref, screen.actFailure?.(verb) ?? '', () => acts(api, ref, verb, candidate));
 }
 
-/** A page's switches for it to hand down: none on the canvas, or for a page with none that work. */
-function useToggles<T, L>(screen: Screen<T, L>, drawn: Drawn<T> | undefined): Toggle | null {
-  const { api } = useDeps();
-  const change = useChange(screen);
+/**
+ * A page's switches for it to hand down: none on the canvas, or for a page with none that work. A
+ * switch takes no tap until the server has said what it holds.
+ */
+function togglesOf<T, L>(
+  screen: Screen<T, L>,
+  drawn: Drawn<T> | undefined,
+  api: ApiClient,
+  { make, working }: Changes,
+): Toggle | null {
   const toggles = screen.toggles;
   if (toggles === undefined || drawn === undefined) return null;
-  return (setting) => (next) => change(setting, () => toggles(api, setting, next));
+  return (setting) =>
+    drawn.answered !== true || working.has(setting)
+      ? undefined
+      : (next) =>
+          make(setting, screen.toggleFailure?.(setting) ?? '', () => toggles(api, setting, next));
+}
+
+/** What asks again for `screen`'s data while its load has failed: none on the canvas. */
+function useRetries<T, L>(screen: Screen<T, L>, drawn: Drawn<T> | undefined) {
+  const { pages } = useDeps();
+  const key = pageKey(screen.name, useParams());
+  return drawn?.state === 'failed' ? () => void pages.retry(key) : undefined;
+}
+
+/** `drawn`'s data saying what failed, for a page whose controls change something. */
+function sayingFailure<T>(drawn: Drawn<T> | undefined, failure: string | null): T | undefined {
+  if (drawn === undefined) return undefined;
+  return { ...drawn.data, errors: failure === null ? [] : [{ message: failure }] };
 }
 
 /** Looks at `screen` again every so often while it is open and what it holds moves by itself. */
@@ -619,14 +691,23 @@ function pageOf<T>(screen: Screen<T>): ComponentType {
         ? function ScreenPage() {
             const shown = useScreenData(screen);
             const choose = useVerbs(screen, shown);
-            const act = useActs(screen, shown);
-            const toggle = useToggles(screen, shown);
+            const { api } = useDeps();
+            const changes = useChanges(screen);
+            const act = actsOf(screen, shown, api, changes);
+            const toggle = togglesOf(screen, shown, api, changes);
+            const retry = useRetries(screen, shown);
             usePolling(screen);
-            const page = <Page data={shown?.data} state={shown?.state} />;
+            const data =
+              screen.acts === undefined && screen.toggles === undefined
+                ? shown?.data
+                : sayingFailure(shown, changes.failure);
+            const page = <Page data={data} state={shown?.state} />;
             return (
               <ChooseContext.Provider value={choose}>
                 <ActContext.Provider value={act}>
-                  <ToggleContext.Provider value={toggle}>{page}</ToggleContext.Provider>
+                  <ToggleContext.Provider value={toggle}>
+                    <RetryContext.Provider value={retry}>{page}</RetryContext.Provider>
+                  </ToggleContext.Provider>
                 </ActContext.Provider>
               </ChooseContext.Provider>
             );

@@ -1,4 +1,9 @@
 {
+  "errors": [
+    {
+      "message": "That setting did not change. The switch shows what the server holds."
+    }
+  ],
   "server": "https://media.example.org",
   "settings": [
     {

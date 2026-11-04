@@ -282,7 +282,7 @@ describe('[M1.shell] Browse, the home page, from the library lists', () => {
     expect(data.people).toEqual([]);
     expect(data.pickedForYou).toEqual([]);
     expect(data.recentlyPlayed).toEqual([]);
-    expect(data.feature.title).toBe('');
+    expect(data.features).toEqual([]);
     expect(data.shelves.recentlyAdded).toBe('');
   });
 

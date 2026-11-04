@@ -6,6 +6,7 @@ import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from 
 import type { ShellNav } from '../../shell-nav';
 import type { Playing } from '../../player';
 import { useChoose } from '../../choose';
+import { useRetry } from '../../retry';
 import { AccountButton, BackLayer, BottomNav, Button, EmptyState, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, PageBody, Section, SortFilterBar, TabBar, ViewToggle } from '../ui/index.js';
 
 const placeholder = {
@@ -321,6 +322,7 @@ export default function Books({ data = placeholder, state = 'full' }: BooksProps
   const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   const choose = useChoose();
+  const retry = useRetry();
   return (
     <PageBody platform={platform}>
       {state === 'empty' && (
@@ -332,6 +334,21 @@ export default function Books({ data = placeholder, state = 'full' }: BooksProps
             action={
               <Button variant="secondary" onClick={() => navigate('/search')} platform={platform}>
                 {"Go to Search"}
+              </Button>
+            }
+            platform={platform}
+          />
+        </>
+      )}
+      {state === 'failed' && (
+        <>
+          <EmptyState
+            icon="cloud_off"
+            title="Books did not load"
+            body="The server did not answer."
+            action={
+              <Button variant="secondary" onClick={retry} platform={platform}>
+                {"Try again"}
               </Button>
             }
             platform={platform}

@@ -252,11 +252,11 @@ describe('a card on a library home', () => {
     const { tree, data } = read('browse');
     const [card, ...more] = elements(tree).filter((e) => e.component === 'FeatureCard');
     expect(more).toEqual([]);
-    const feature = data.feature as Record<string, string>;
-    expect(feature.description!.length).toBeGreaterThan(80);
+    const [feature] = data.features as Record<string, string>[];
+    expect(feature!.description!.length).toBeGreaterThan(80);
     expect(card!.props.description).toEqual({
       kind: 'binding',
-      path: ['data', 'feature', 'description'],
+      path: ['feature', 'description'],
     });
     const preview = card!.props.preview;
     expect(

@@ -2061,10 +2061,14 @@
             "items": {
               "$ref": "#/components/schemas/Suggestion"
             }
+          },
+          "hasRequests": {
+            "type": "boolean"
           }
         },
         "required": [
-          "suggestions"
+          "suggestions",
+          "hasRequests"
         ]
       },
       "SearchKind": {
@@ -2165,11 +2169,15 @@
             "items": {
               "$ref": "#/components/schemas/SearchResult"
             }
+          },
+          "hasRequests": {
+            "type": "boolean"
           }
         },
         "required": [
           "query",
-          "results"
+          "results",
+          "hasRequests"
         ]
       },
       "LyricsStatus": {

@@ -2,6 +2,13 @@ export default function Requests({ data }) {
   return (
     <BackdropShell>
       <PageBody width="list">
+        <Each of={data.errors} as="error">
+          <Section>
+            <StatusBanner tone="error" icon="error">
+              {error.message}
+            </StatusBanner>
+          </Section>
+        </Each>
         <When state="empty">
           <EmptyState
             icon="downloading"
@@ -14,12 +21,25 @@ export default function Requests({ data }) {
             }
           />
         </When>
+        <When state="failed">
+          <EmptyState
+            icon="cloud_off"
+            title="Requests did not load"
+            body="The server did not answer."
+            action={
+              <Button variant="secondary" onClick={<Retry />}>
+                Try again
+              </Button>
+            }
+          />
+        </When>
         <When state="full">
           <Section title="In flight">
             <Each of={data.inFlight} as="request">
               <ResultRow
                 title={request.title}
                 meta={request.meta}
+                detail={request.detail}
                 image={request.image}
                 status={request.status}
                 tone={request.tone}
@@ -37,6 +57,7 @@ export default function Requests({ data }) {
               <ResultRow
                 title={request.title}
                 meta={request.meta}
+                detail={request.detail}
                 image={request.image}
                 status={request.status}
                 tone={request.tone}
@@ -69,7 +90,7 @@ export default function Requests({ data }) {
               />
               <ResultRow
                 title="Pick another release"
-                meta={request.others}
+                detail={request.others}
                 image={request.image}
                 divider
                 onClick={<Act ref={request.id} verb="pickAnother" candidate={request.next} />}
@@ -104,7 +125,7 @@ export default function Requests({ data }) {
               <Each of={request.candidates} as="candidate">
                 <ResultRow
                   title={candidate.title}
-                  meta={candidate.meta}
+                  detail={candidate.detail}
                   image={request.image}
                   divider
                   onClick={<Act ref={request.id} verb="choose" candidate={candidate.id} />}

@@ -1134,6 +1134,7 @@ export interface components {
         };
         SuggestionList: {
             suggestions: components["schemas"]["Suggestion"][];
+            hasRequests: boolean;
         };
         /** @enum {string} */
         SearchKind: "track" | "album" | "artist" | "book" | "author" | "series" | "show" | "episode";
@@ -1153,6 +1154,7 @@ export interface components {
         SearchResults: {
             query: string;
             results: components["schemas"]["SearchResult"][];
+            hasRequests: boolean;
         };
         /** @enum {string} */
         LyricsStatus: "synced" | "plain" | "instrumental" | "none";

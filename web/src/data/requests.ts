@@ -65,22 +65,29 @@ const reasonOf = (request: RequestView) =>
 
 const releases = (count: number) => (count === 1 ? '1 release' : `${count} releases`);
 
+/** The audio format a release's title names, or null: `Paper Lanterns [FLAC]`. */
+export const formatOf = (title: string): string | null =>
+  /\b(FLAC|ALAC|MP3|AAC|OPUS|OGG|M4A|M4B|WAV)\b/i.exec(title)?.[1]?.toUpperCase() ?? null;
+
+/** A release's row: what tells it from the others goes in its detail, which wraps on a phone. */
 const candidateRow = (candidate: RequestCandidate) => ({
   id: candidate.id,
   title: candidate.title,
-  meta: line(candidate.source, sizeOf(candidate.size)),
+  detail: line(formatOf(candidate.title), candidate.source, sizeOf(candidate.size)),
 });
 
 /**
  * The page's data. A failed request it can retry goes in `failed`, or, with other releases left,
- * in `pickable`, under its row. One it cannot retry only cancels, as any other in flight.
+ * in `pickable`, under its row. One it cannot retry only cancels, as any other in flight. Why one
+ * failed goes in its detail, which wraps on a phone where its meta is cut off.
  */
 export function requestsData(list: RequestList, page: RequestsData): RequestsData {
   const pickable = (request: RequestView) => request.verbs.includes('pickAnother');
   const retries = (request: RequestView) => request.verbs.includes('retry');
   const inFlightRow = (request: RequestView) => ({
     ...row(request),
-    meta: line(...firstLine(request), request.source, sizeOf(request.size), reasonOf(request)),
+    meta: line(...firstLine(request), request.source, sizeOf(request.size)),
+    detail: reasonOf(request) ?? '',
   });
   return {
     ...page,
@@ -107,6 +114,16 @@ export function requestsData(list: RequestList, page: RequestsData): RequestsDat
     })),
   };
 }
+
+const VERB_FAILURES: Record<RequestVerb, string> = {
+  cancel: 'The request could not be cancelled. It stays as the server has it.',
+  retry: 'The request could not be retried. It stays as the server has it.',
+  choose: 'That release could not be chosen. The request stays as the server has it.',
+  pickAnother: 'Another release could not be picked. The request stays as the server has it.',
+};
+
+/** What the page says when a verb fails. */
+export const verbFailure = (verb: RequestVerb): string => VERB_FAILURES[verb];
 
 /** What the page draws: empty once nothing is left, in flight or waiting. */
 export const requestsState = (list: RequestList): 'empty' | 'full' =>
