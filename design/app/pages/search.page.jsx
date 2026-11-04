@@ -79,6 +79,16 @@ export default function Search({ data }) {
             onAction={<Open page="requests" />}
             last
           >
+            <Each of={data.outside.household} as="item">
+              <ResultRow
+                title={item.title}
+                meta={item.meta}
+                image={item.image}
+                onClick={<Open page={item.page} ref={item.ref} />}
+                onAction={<Play ref={item.playRef} queue={item.queue} />}
+                divider
+              />
+            </Each>
             <Each of={data.outside.music} as="song">
               <ResultRow title={song.title} meta={song.meta} image={song.image} divider />
             </Each>

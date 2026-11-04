@@ -1,6 +1,6 @@
 ---
 page: books
-pageHash: 807e28c8a4fa7c6566fe6d48913e4dc4d5161afcf6761d1111aa47ad3f9630df
+pageHash: b09b712927133a0b7af5f25b4c03981db5c9eb81407ec2d862a3d33bc44171c2
 sonora: [kit:desktop/books, kit:mobile/books]
 spotify: [S31]
 ---
@@ -72,3 +72,7 @@ Series; the Authors and Series tabs, not drawn, hold those cards.
   per-platform content yet.
 - Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.
 - Changed on purpose: a greyed card is grey, its cover without colour and its title muted, not only darkened.
+
+## M3.requests
+
+- Changed on purpose: an empty state, Sonora's `EmptyState`, says the library shows the books you've played, added or requested, and "Go to Search" opens Search. The filled page is unchanged; a request on its way already binds `status` and `tone` on its `MediaCard`, greyed as the card draws it.

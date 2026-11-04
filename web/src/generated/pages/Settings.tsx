@@ -18,6 +18,11 @@ const placeholder = {
       "title": "Wi-Fi only",
       "sub": "Pause transfers on mobile data.",
       "checked": true
+    },
+    {
+      "title": "Show everyone’s library",
+      "sub": "List what the whole household has, not only what you’ve played, added or requested.",
+      "checked": false
     }
   ]
 };

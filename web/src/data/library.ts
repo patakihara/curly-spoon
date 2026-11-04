@@ -81,6 +81,7 @@ export function statusOf(availability: Availability): {
  */
 type BookCard = BooksData['library'][number];
 type AlbumCard = MusicData['library'][number];
+type ShowCard = PodcastsData['library'][number];
 
 export function booksData(list: LibraryList, page: BooksData): BooksData {
   return {
@@ -110,13 +111,17 @@ export function podcastsData(
     ...page,
     sort: sortOf(page.sort, list),
     sections: lists === null ? page.sections.filter((s) => s !== 'Lists') : page.sections,
-    library: list.items.map((show) => ({
-      title: show.title,
-      ref: mediaRefKey(show.ref),
-      sub: show.sub ?? '',
-      image: artAt(show.art, 'medium'),
-      unplayed: false,
-    })),
+    library: list.items.map(
+      (show): ShowCard =>
+        ({
+          title: show.title,
+          ref: mediaRefKey(show.ref),
+          sub: show.sub ?? '',
+          image: artAt(show.art, 'medium'),
+          unplayed: false,
+          ...statusOf(show.availability),
+        }) as ShowCard,
+    ),
     lists: lists ?? [],
   };
 }

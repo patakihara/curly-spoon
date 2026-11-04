@@ -77,8 +77,18 @@ handed, `useChoose()` in `web/src/choose`, which give none on the canvas or whil
 no item, so the menu's button draws disabled; Android leaves it unbound until it has lists to act
 on, and its menu draws disabled too.
 
-`onRequest={<Request ref={book.ref} />}` asks for an item the library lacks; no request endpoint
-exists yet, so both apps leave it unbound and the card draws its Request disabled. A generated
+`onRequest={<Request ref={book.ref} />}` asks for an item the library lacks. The endpoint exists,
+but no medium is registered behind it yet, so both apps leave it unbound and the card draws its
+Request disabled, until each medium's item binds it as it registers its steps.
+
+`onClick={<Act ref={request.id} verb={request.verb} />}` does a request's verb to the request its
+ref binds: `retry`, `cancel`, `choose` or `pickAnother`, written or bound from the data, which the
+check holds to those four. `candidate={candidate.id}` binds the release `choose` and `pickAnother`
+take. It goes only on `onAction` or `onClick`, and the check refuses it elsewhere. The web gives it
+to the verbs the page is handed, `useAct()` in `web/src/act`, which give none on the canvas or while
+nothing acts, so the control draws disabled; Android leaves it unbound until M5 and it draws disabled
+too. A row in flight acts through a trailing `IconButton`, since a phone's `ResultRow` hides the art's
+action while it draws a ring. A generated
 page never binds a handler that does nothing: a control that seems to work must work. The web
 page navigates to the route through the router; the Android generator reads the same node as a
 navigation to the nav graph's destination.

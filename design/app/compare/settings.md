@@ -1,6 +1,6 @@
 ---
 page: settings
-pageHash: b655f0f0c2dad4d99857536a4c63d5d4ff026a6636a23b9454482ab112ec080f
+pageHash: 5c9b44607cce367e70495b6992c022b866b9fc6341f90772569144897c4dbbd5
 sonora: [kit:mobile/settings, kit:desktop/settings]
 ---
 
@@ -70,3 +70,7 @@ Measured in the browser (`getBoundingClientRect`), kit against page: page margin
   folder on the device. Its value is a placeholder address, not a real host.
 - Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Settings lit at the rail's foot.
 - Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.
+
+## M3.requests
+
+- Changed on purpose: "Show everyone's library" joins the switches, off by default, bound as they are: `title`, `sub` and `checked` from the data.

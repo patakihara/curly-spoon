@@ -6,7 +6,7 @@ import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from 
 import type { ShellNav } from '../../shell-nav';
 import type { Playing } from '../../player';
 import { useChoose } from '../../choose';
-import { AccountButton, BackLayer, BottomNav, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, PageBody, Section, SortFilterBar, TabBar, ViewToggle } from '../ui/index.js';
+import { AccountButton, BackLayer, BottomNav, Button, EmptyState, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, PageBody, Section, SortFilterBar, TabBar, ViewToggle } from '../ui/index.js';
 
 const placeholder = {
   "tabs": [
@@ -303,25 +303,44 @@ export default function Music({ data = placeholder, state = 'full' }: MusicProps
   const choose = useChoose();
   return (
     <PageBody platform={platform}>
-      <Section platform={platform}>
-        <SortFilterBar
-          icon="swap_vert"
-          label={data.sort.value}
-          items={data.sort.options}
-          onSelect={choose(data.sort.ref)}
-          trailing={<ViewToggle value="grid" platform={platform} />}
-          platform={platform}
-        />
-      </Section>
-      <Section last={true} platform={platform}>
-        <LayoutGrid platform={platform}>
-          {data.library.map((item, i) => (
-            <Fragment key={i}>
-              <MediaCard width="100%" title={item.title} sub={item.sub} image={item.image} status={item.status} tone={item.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={item.ref ? () => navigate(generatePath('/music/albums/:ref', { ref: item.ref })) : undefined} platform={platform} />
-            </Fragment>
-          ))}
-        </LayoutGrid>
-      </Section>
+      {state === 'empty' && (
+        <>
+          <EmptyState
+            icon="library_music"
+            title="No music yet"
+            body="Your library shows the music you’ve played, added or requested. Search is where to find, play and add more."
+            action={
+              <Button variant="secondary" onClick={() => navigate('/search')} platform={platform}>
+                {"Go to Search"}
+              </Button>
+            }
+            platform={platform}
+          />
+        </>
+      )}
+      {state === 'full' && (
+        <>
+          <Section platform={platform}>
+            <SortFilterBar
+              icon="swap_vert"
+              label={data.sort.value}
+              items={data.sort.options}
+              onSelect={choose(data.sort.ref)}
+              trailing={<ViewToggle value="grid" platform={platform} />}
+              platform={platform}
+            />
+          </Section>
+          <Section last={true} platform={platform}>
+            <LayoutGrid platform={platform}>
+              {data.library.map((item, i) => (
+                <Fragment key={i}>
+                  <MediaCard width="100%" title={item.title} sub={item.sub} image={item.image} status={item.status} tone={item.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={item.ref ? () => navigate(generatePath('/music/albums/:ref', { ref: item.ref })) : undefined} platform={platform} />
+                </Fragment>
+              ))}
+            </LayoutGrid>
+          </Section>
+        </>
+      )}
     </PageBody>
   );
 }

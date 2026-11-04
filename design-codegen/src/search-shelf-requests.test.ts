@@ -3,6 +3,7 @@ import type { PageTree } from './page.js';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { readNav } from './nav.js';
+import { checkPage, parsePage } from './page.js';
 import { APP_DIR, REPO_ROOT } from './outputs.js';
 import { framePage, framed } from './shell.js';
 import { bindings, dataRoots, elements, readPage, type Element } from './test-pages.js';
@@ -225,8 +226,17 @@ describe('Search', () => {
     expect(song.ref).not.toBe(song.playRef);
   });
 
-  it('leaves the rows outside your library, the kind filters and the results header unbound', () => {
-    for (const { of, row } of found.filter((r) => String(r.of).startsWith('data.outside'))) {
+  it('[M3.requests/d] plays a household item outside your library, and opens its page', () => {
+    const [row] = found.filter((r) => r.of === 'data.outside.household');
+    expect(row!.row.props.onAction?.kind).toBe('play');
+    expect(row!.row.props.onClick?.kind).toBe('open');
+  });
+
+  it('leaves the catalogue’s rows outside your library, the kind filters and the results header unbound', () => {
+    const catalogue = found.filter(
+      (r) => String(r.of).startsWith('data.outside') && r.of !== 'data.outside.household',
+    );
+    for (const { of, row } of catalogue) {
       expect(row.props.onClick, String(of)).toBeUndefined();
       expect(row.props.onAction, String(of)).toBeUndefined();
     }
@@ -321,13 +331,110 @@ describe('Shelf', () => {
   });
 });
 
+describe('[M3.requests] a request’s verbs on Requests', () => {
+  const { tree, data } = readPage('requests');
+  const act = (e: Element | undefined, prop = 'onClick') => e?.props[prop];
+  const named = (title: string) =>
+    rows(tree).filter(({ row }) => JSON.stringify(row.props.title).includes(title));
+
+  it('[M3.requests] binds each row in flight’s own verb to its trailing control', () => {
+    for (const { row } of rows(tree).filter(({ of }) => of === 'data.inFlight')) {
+      expect(act(slotted(row, 'trailing'))).toEqual({
+        kind: 'act',
+        verb: { path: ['request', 'verb'] },
+        params: { ref: ['request', 'id'] },
+      });
+    }
+    const verbs = (data.inFlight as Row[]).map((r) => [r.status === 'Failed', r.verb]);
+    for (const [failed, verb] of verbs) expect(verb).toBe(failed ? 'retry' : 'cancel');
+  });
+
+  it('[M3.requests] chooses a candidate with one tap on its row or its button', () => {
+    const candidates = rows(tree).filter(({ of }) => of === 'request.candidates');
+    const choose = {
+      kind: 'act',
+      verb: 'choose',
+      params: { ref: ['request', 'id'], candidate: ['candidate', 'id'] },
+    };
+    expect(act(candidates[0]!.row)).toEqual(choose);
+    expect(act(slotted(candidates[0]!.row, 'trailing'))).toEqual(choose);
+  });
+
+  it('[M3.requests] cancels a request waiting for a choice', () => {
+    const waiting = rows(tree).filter(({ of }) => of === 'data.needsChoice');
+    expect(act(slotted(waiting[0]!.row, 'trailing'))).toEqual({
+      kind: 'act',
+      verb: 'cancel',
+      params: { ref: ['request', 'id'] },
+    });
+  });
+
+  it('[M3.requests] offers another release only on a failed row with others left', () => {
+    const [pick] = named('Pick another release');
+    expect(pick!.of).toBe('data.pickable');
+    expect(act(pick!.row)).toEqual({
+      kind: 'act',
+      verb: 'pickAnother',
+      params: { ref: ['request', 'id'], candidate: ['request', 'next'] },
+    });
+    for (const request of data.pickable as Row[]) expect(request.status).toBe('Failed');
+  });
+
+  it('[M3.requests] says nothing is requested when nothing is, and opens Search', () => {
+    const empty = elements(tree).filter((e) => e.component === 'EmptyState');
+    expect(empty).toHaveLength(1);
+    expect(slotted(empty[0]!, 'action')?.props.onClick).toEqual({
+      kind: 'open',
+      page: 'search',
+      params: {},
+    });
+  });
+});
+
+describe('[M3.requests] the check on Act', () => {
+  const nav = readNav(join(REPO_ROOT, APP_DIR));
+  const props = new Map([['ResultRow', new Set(['onClick', 'onAction', 'onRequest'])]]);
+  const handlers = new Map([['ResultRow', new Set(['onClick', 'onAction', 'onRequest'])]]);
+  const pages = new Map(nav.pages.map((p) => [p.id, []] as [string, string[]]));
+  const errorsOf = (source: string, data: object = { id: 'r', verb: 'retry' }) =>
+    checkPage(parsePage(source, 'p'), data as never, props, undefined, undefined, undefined, {
+      pages,
+      handlers,
+    } as never);
+  const page = (handler: string) =>
+    `export default function P({ data }) { return <ResultRow ${handler} />; }`;
+
+  it('[M3.requests] takes each of the four verbs, written or bound', () => {
+    for (const verb of ['retry', 'cancel', 'choose', 'pickAnother']) {
+      expect(errorsOf(page(`onClick={<Act ref={data.id} verb="${verb}" />}`))).toEqual([]);
+    }
+    expect(errorsOf(page('onAction={<Act ref={data.id} verb={data.verb} />}'))).toEqual([]);
+  });
+
+  it('[M3.requests] refuses another verb, written or bound', () => {
+    expect(() => errorsOf(page('onClick={<Act ref={data.id} verb="delete" />}'))).toThrow(/verb/);
+    expect(
+      errorsOf(page('onClick={<Act ref={data.id} verb={data.verb} />}'), {
+        id: 'r',
+        verb: 'delete',
+      }),
+    ).toEqual([expect.stringContaining('verb')]);
+  });
+
+  it('[M3.requests] refuses it on any prop but a row’s art or a tap', () => {
+    expect(errorsOf(page('onRequest={<Act ref={data.id} verb="retry" />}'))).toEqual([
+      expect.stringContaining('Act goes on'),
+    ]);
+  });
+});
+
 describe('Requests', () => {
   const { tree, data } = readPage('requests');
   const inFlight = data.inFlight as Row[];
   const needsChoice = data.needsChoice as (Row & { candidates: Row[] })[];
 
   it('[M0.canvas] binds only the requests in flight and those that need a choice', () => {
-    expect(dataRoots(tree)).toEqual(['inFlight', 'needsChoice']);
+    expect(dataRoots(tree)).toEqual(['inFlight', 'needsChoice', 'pickable']);
     expect(bindings(tree).filter((p) => p.startsWith('shell.'))).toEqual([]);
   });
 

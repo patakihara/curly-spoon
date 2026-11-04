@@ -216,6 +216,43 @@ fun RequestsPage(navController: NavController, actions: PageActions) {
                                                 },
                                             ),
                                         )
+                                        ResultRow(
+                                            ResultRowProps(
+                                                title = "A Grain of Salt",
+                                                meta = "Book · Evelyn Harper · Prowlarr · 340 MB",
+                                                status = "Failed",
+                                                tone = ResultRowTone.ERROR,
+                                                image = "/art/shadows-and-sighs.jpg",
+                                                platform = Platform.MOBILE,
+                                                trailing = {
+                                                    IconButton(
+                                                        IconButtonProps(
+                                                            icon = "refresh",
+                                                            label = "Retry",
+                                                        ),
+                                                    )
+                                                },
+                                            ),
+                                        )
+                                        ResultRow(
+                                            ResultRowProps(
+                                                title = "Pick another release",
+                                                meta = "The download failed; 2 other releases are left",
+                                                image = "/art/shadows-and-sighs.jpg",
+                                                platform = Platform.MOBILE,
+                                                divider = true,
+                                                trailing = {
+                                                    Button(
+                                                        ButtonProps(
+                                                            variant = ButtonVariant.SECONDARY,
+                                                            size = SizeSmMdLg.SM,
+                                                            platform = Platform.MOBILE,
+                                                            children = { BasicText("Pick another") },
+                                                        ),
+                                                    )
+                                                },
+                                            ),
+                                        )
                                     },
                                 ),
                             )

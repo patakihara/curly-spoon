@@ -135,6 +135,14 @@ fun SettingsPage(navController: NavController, actions: PageActions) {
                                                             platform = Platform.MOBILE,
                                                         ),
                                                     )
+                                                    SettingRow(
+                                                        SettingRowProps(
+                                                            title = "Show everyone’s library",
+                                                            sub = "List what the whole household has, not only what you’ve played, added or requested.",
+                                                            checked = false,
+                                                            platform = Platform.MOBILE,
+                                                        ),
+                                                    )
                                                 },
                                             ),
                                         )

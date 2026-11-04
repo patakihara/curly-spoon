@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: ab7c5aff597e5c20b75e22fd42afc0ef3fbd97745a54c44f34ac5ea0b29650ff
+pageHash: 9a6962659223868b58cc7c698e6fac0d05d61bc21eb0250f3455eabcbd0cebc5
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---
@@ -118,3 +118,7 @@ chooses the state. The canvas draws each on its own phone artboard, `search.phon
   never standing in for the row's tap, so a row that only opens shows no Play.
 - Changed on purpose: no library scope and no Lyrics chip: songs match on their lyrics anyway, a song found by a line showing it in its row, and the sections already split your library from outside it.
 - Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.
+
+## M3.requests
+
+- Changed on purpose: "Not in your library" opens with what the household has that you have not played, each row opening its page and playing from its art as a library row does: "Salt Roads". The catalogue's rows follow, unbound as before.

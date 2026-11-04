@@ -115,6 +115,17 @@ const placeholder = {
     }
   ],
   "outside": {
+    "household": [
+      {
+        "title": "Salt Roads",
+        "meta": "Book · Maya Lind",
+        "image": "/art/between-two-worlds.jpg",
+        "page": "book",
+        "ref": "salt-roads",
+        "playRef": "salt-roads",
+        "queue": "spoken"
+      }
+    ],
     "music": [
       {
         "title": "Salt",
@@ -426,6 +437,11 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
             ))}
           </Section>
           <Section title="Not in your library" actionText="Your requests" onAction={() => navigate('/requests')} last={true} platform={platform}>
+            {data.outside.household.map((item, i) => (
+              <Fragment key={i}>
+                <ResultRow title={item.title} meta={item.meta} image={item.image} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} onAction={play(item.playRef, item.queue as PlayQueue, 'now')} divider={true} platform={platform} />
+              </Fragment>
+            ))}
             {data.outside.music.map((song, i) => (
               <Fragment key={i}>
                 <ResultRow title={song.title} meta={song.meta} image={song.image} divider={true} platform={platform} />

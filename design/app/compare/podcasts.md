@@ -1,6 +1,6 @@
 ---
 page: podcasts
-pageHash: 7058847e9410dfbbca671504667ec731e55313c63ba8256d404fd5a1db5f12e5
+pageHash: a0c6f3ba6fcebc387cda6e8255a9e9bee23d0d2c17055368b29e016f225fb807
 sonora: [kit:desktop/podcasts, kit:mobile/podcasts]
 spotify: [S20, S31]
 ---
@@ -57,3 +57,7 @@ grid gives way to one line saying there are no subscriptions, pointing to Search
 - Open: the Host sort is this page's reading of "Title, Artist or Author, Random" for shows.
 - Open: the Downloaded filter is Android's alone and not drawn.
 - Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.
+
+## M3.requests
+
+- Changed on purpose: an empty state, Sonora's `EmptyState`, says the library shows the shows you've played, subscribed to or requested, and "Go to Search" opens Search. A show on its way binds `status` and `tone` on its `MediaCard`, greyed as the card draws it: "Tide Tables", Searching….

@@ -10,7 +10,8 @@
  * naming its own), `next` for Play next, `source` for a list played on its own; or start signing
  * in, `onClick={<SignIn />}`; or hold the search query a field types and submits,
  * `onChange={<Query />}`; or do a menu's chosen verb to the item its ref binds,
- * `onSelect={<Choose ref={data.ref} />}`. An Open may also bind any of its route's query names,
+ * `onSelect={<Choose ref={data.ref} />}`; or do a request's verb to the request its ref binds,
+ * `onClick={<Act ref={request.id} verb={request.verb} />}`. An Open may also bind any of its route's query names,
  * `<Open page="search" q={s.query} />`. It is read into a page
  * tree, never run, so both platforms can generate from the same file: the web as a navigation to
  * the route, Android as one to the nav graph's destination with the same arguments.
@@ -48,7 +49,19 @@ export type PropValue =
   /** A field's handler holding the search query: what it types, on `onChange`, and submits. */
   | { kind: 'query' }
   /** A menu's handler doing its chosen verb, by its key, to the item its `ref` binds. */
-  | { kind: 'choose'; params: Record<string, string[]> };
+  | { kind: 'choose'; params: Record<string, string[]> }
+  /**
+   * A handler doing a request's verb to the request its `ref` binds; the verb is one of `ACT_VERBS`,
+   * or `{ path }`, the one each item's data names. `candidate` binds the release chosen.
+   */
+  | { kind: 'act'; verb: ActVerb | { path: string[] }; params: Record<string, string[]> };
+
+/** The handler props an `<Act />` goes on: a row's art, and a control's or a row's tap. */
+export const ACT_PROPS = ['onAction', 'onClick'] as const;
+
+/** What can be done to a request (docs/plan/06-get.md), as schema's `RequestVerb` names them. */
+export const ACT_VERBS = ['retry', 'cancel', 'choose', 'pickAnother'] as const;
+export type ActVerb = (typeof ACT_VERBS)[number];
 
 /** The handler props a `<Choose />` goes on: a menu's choice. */
 export const CHOOSE_PROPS = ['onSelect'] as const;
@@ -106,7 +119,7 @@ const TAKEN = new Set([
   ...['frame', 'routes', 'generatePath', 'navigate', 'query', 'play', 'playing', 'go', 'inPanel'],
   ...['context', 'leading', 'key', 'tab', 'window', 'undefined'],
   ...['useContext', 'useLayout', 'useNavigate', 'usePlay', 'usePlaying', 'useQuery', 'useShellNav'],
-  'useChoose',
+  ...['useChoose', 'act', 'useAct'],
 ]);
 
 /** `value`, if it is a plain lower-case name a page may give an Each item or a When state. */
@@ -143,6 +156,7 @@ function propValue(value: t.JSXAttribute['value']): PropValue {
     if (name.type === 'JSXIdentifier' && name.name === 'SignIn') return signIn(e);
     if (name.type === 'JSXIdentifier' && name.name === 'Query') return query(e);
     if (name.type === 'JSXIdentifier' && name.name === 'Choose') return choose(e);
+    if (name.type === 'JSXIdentifier' && name.name === 'Act') return act(e);
     const tree = element(e);
     if (tree.kind !== 'element') return fail(e, 'Each and When go in children, not in a prop');
     return { kind: 'slot', tree };
@@ -161,6 +175,7 @@ function handlerAttrs(node: t.JSXElement, what: string) {
   if (node.children.length > 0) return fail(node, `${what} takes no children`);
   let page: string | { path: string[] } | undefined;
   let queue: string | { path: string[] } | undefined;
+  let verb: string | { path: string[] } | undefined;
   let next = false;
   let source = false;
   const params: Record<string, string[]> = {};
@@ -170,6 +185,24 @@ function handlerAttrs(node: t.JSXElement, what: string) {
     const name = attr.name.name;
     const value = attr.value;
     if (what === 'Choose' && name !== 'ref') return fail(attr, `Choose takes ref, not ${name}`);
+    if (what === 'Act' && !['ref', 'verb', 'candidate'].includes(name)) {
+      return fail(attr, `Act takes ref, verb and candidate, not ${name}`);
+    }
+    if (what === 'Act' && name === 'verb') {
+      if (value?.type === 'StringLiteral') verb = value.value;
+      else if (
+        value?.type === 'JSXExpressionContainer' &&
+        (value.expression.type === 'Identifier' || value.expression.type === 'MemberExpression')
+      ) {
+        verb = { path: memberPath(value.expression) };
+      } else {
+        return fail(
+          attr,
+          `Act's verb is written verb="retry", or bound from the data, verb={item.verb}, not as an expression`,
+        );
+      }
+      continue;
+    }
     if (what === 'Play' && !['ref', 'queue', 'next', 'source'].includes(name)) {
       return fail(attr, `Play takes ref, queue, next and source, not ${name}`);
     }
@@ -214,7 +247,7 @@ function handlerAttrs(node: t.JSXElement, what: string) {
     }
     params[name] = memberPath(e as t.Expression);
   }
-  return { page, queue, next, source, params };
+  return { page, queue, verb, next, source, params };
 }
 
 /**
@@ -249,6 +282,19 @@ function play(node: t.JSXElement): PropValue {
 /** `<Choose ref={data.ref} />`: a menu's chosen verb, by its key, done to the item its ref binds. */
 function choose(node: t.JSXElement): PropValue {
   return { kind: 'choose', params: handlerAttrs(node, 'Choose').params };
+}
+
+/**
+ * `<Act ref={request.id} verb="retry" />`: a request's verb, done to the request its ref binds. The
+ * verb is one of `ACT_VERBS`, or `verb={item.verb}`, the one each item's data names; `candidate`
+ * binds the release a choice takes.
+ */
+function act(node: t.JSXElement): PropValue {
+  const { verb, params } = handlerAttrs(node, 'Act');
+  if (typeof verb !== 'object' && !ACT_VERBS.includes(verb as ActVerb)) {
+    return fail(node, `Act needs verb=${listed([...ACT_VERBS])}, or one bound from the data`);
+  }
+  return { kind: 'act', verb: verb as ActVerb | { path: string[] }, params };
 }
 
 /** A handler that takes nothing, `<SignIn />` or `<Query />`: each app knows what it does. */
@@ -317,6 +363,7 @@ function element(node: t.JSXElement): PageTree {
     return fail(node, 'Query goes in a handler prop, onChange={<Query />}');
   if (name.name === 'Choose')
     return fail(node, 'Choose goes in a handler prop, onSelect={<Choose … />}');
+  if (name.name === 'Act') return fail(node, 'Act goes in a handler prop, onClick={<Act … />}');
   const props: Record<string, PropValue> = {};
   for (const attr of node.openingElement.attributes) {
     if (attr.type === 'JSXSpreadAttribute') return fail(attr, 'spread props are not allowed');
@@ -502,6 +549,40 @@ export function checkPage(
       }
     }
   };
+  /** A request's verb: on a handler prop that acts, its ref and any candidate bound, its verb known. */
+  const checkAct = (
+    line: number,
+    component: string,
+    prop: string,
+    value: Extract<PropValue, { kind: 'act' }>,
+    check: (line: number, path: string[]) => Json[],
+  ) => {
+    const at = `line ${line}: ${component}.${prop}`;
+    const handlers = opens?.handlers.get(component);
+    if (
+      (handlers !== undefined && !handlers.has(prop)) ||
+      !(ACT_PROPS as readonly string[]).includes(prop)
+    ) {
+      errors.push(`${at} cannot act on a request: Act goes on ${listed([...ACT_PROPS])}`);
+    }
+    const given = Object.keys(value.params).sort();
+    if (given.join() !== 'ref' && given.join() !== 'candidate,ref') {
+      errors.push(`${at} gives an act [${given}], and an act takes [ref] and perhaps [candidate]`);
+      return;
+    }
+    for (const [name, path] of Object.entries(value.params)) {
+      for (const v of check(line, path)) {
+        if (typeof v !== 'string' || v === '') {
+          errors.push(`${at}: the act's ${name} (${path.join('.')}) is not a non-empty string`);
+        }
+      }
+    }
+    if (typeof value.verb === 'string') return;
+    const verb = value.verb.path;
+    if (check(line, verb).some((v) => !ACT_VERBS.includes(v as ActVerb))) {
+      errors.push(`${at}: the act's verb (${verb.join('.')}) is not ${listed([...ACT_VERBS])}`);
+    }
+  };
   /** A Request, a Play or a Choose: a handler prop, its one parameter a bound ref. */
   const checkItem = (
     line: number,
@@ -613,6 +694,10 @@ export function checkPage(
           }
           if (value.kind === 'request' || value.kind === 'play' || value.kind === 'choose') {
             checkItem(node.line, node.component, prop, value, check);
+            continue;
+          }
+          if (value.kind === 'act') {
+            checkAct(node.line, node.component, prop, value, check);
             continue;
           }
           if (value.kind === 'query') {

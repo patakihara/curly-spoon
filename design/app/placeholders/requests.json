@@ -1,62 +1,90 @@
 {
   "inFlight": [
     {
+      "id": "request-1",
       "title": "Salt and Static",
       "meta": "Album · Soul Vertex · Prowlarr · 412 MB",
       "image": "/art/salt-and-static.jpg",
       "status": "Downloading · 38%",
       "tone": "progress",
       "action": "Cancel",
-      "actionIcon": "close"
+      "actionIcon": "close",
+      "verb": "cancel"
     },
     {
+      "id": "request-2",
       "title": "The Ink Orchard",
       "meta": "Book · Linnea Frost · AudiobookBay · 286 MB",
       "image": "/art/the-ink-orchard.jpg",
       "status": "Downloading · 64%",
       "tone": "progress",
       "action": "Cancel",
-      "actionIcon": "close"
+      "actionIcon": "close",
+      "verb": "cancel"
     },
     {
+      "id": "request-3",
       "title": "The Salt Cartographer",
       "meta": "Book · Rosa Elin · AudiobookBay · 612 MB",
       "image": "/art/the-salt-cartographer.jpg",
       "status": "Downloading · 18%",
       "tone": "progress",
       "action": "Cancel",
-      "actionIcon": "close"
+      "actionIcon": "close",
+      "verb": "cancel"
     },
     {
+      "id": "request-4",
       "title": "Fragments of the Wind",
       "meta": "Album · Fleeting Verses · Prowlarr · 1.1 GB",
       "image": "/art/fragments-of-the-wind.jpg",
       "status": "Importing",
       "tone": "progress",
       "action": "Cancel",
-      "actionIcon": "close"
+      "actionIcon": "close",
+      "verb": "cancel"
     },
     {
+      "id": "request-5",
       "title": "The Glass Archivist",
       "meta": "Book · Rosa Elin · Prowlarr, then AudiobookBay",
       "image": "/art/the-long-read.jpg",
       "status": "Searching…",
       "tone": "progress",
       "action": "Cancel",
-      "actionIcon": "close"
+      "actionIcon": "close",
+      "verb": "cancel"
     },
     {
+      "id": "request-6",
       "title": "Between Two Worlds",
       "meta": "Book · Maya Lind · AudiobookBay · 298 MB",
       "image": "/art/between-two-worlds.jpg",
       "status": "Failed",
       "tone": "error",
       "action": "Retry",
-      "actionIcon": "refresh"
+      "actionIcon": "refresh",
+      "verb": "retry"
+    }
+  ],
+  "pickable": [
+    {
+      "id": "request-7",
+      "title": "A Grain of Salt",
+      "meta": "Book · Evelyn Harper · Prowlarr · 340 MB",
+      "image": "/art/shadows-and-sighs.jpg",
+      "status": "Failed",
+      "tone": "error",
+      "action": "Retry",
+      "actionIcon": "refresh",
+      "verb": "retry",
+      "others": "The download failed; 2 other releases are left",
+      "next": "release-4"
     }
   ],
   "needsChoice": [
     {
+      "id": "request-8",
       "title": "Paper Lanterns",
       "meta": "Album · Sonic Tales · 3 releases, none clearly best",
       "image": "/art/paper-lanterns.jpg",
@@ -64,14 +92,17 @@
       "tone": "request",
       "candidates": [
         {
+          "id": "release-1",
           "title": "Paper Lanterns (2021) [FLAC 24-96]",
           "meta": "FLAC · 12 of 12 tracks · 1.1 GB · 41 seeders"
         },
         {
+          "id": "release-2",
           "title": "Paper Lanterns (Deluxe) [FLAC]",
           "meta": "FLAC · 12 of 15 tracks · 486 MB · 18 seeders"
         },
         {
+          "id": "release-3",
           "title": "Paper Lanterns [MP3 320]",
           "meta": "MP3 320 · 12 of 12 tracks · 136 MB · 96 seeders"
         }

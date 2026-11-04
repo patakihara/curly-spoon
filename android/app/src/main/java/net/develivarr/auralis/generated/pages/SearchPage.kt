@@ -264,6 +264,21 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                     children = {
                                         ResultRow(
                                             ResultRowProps(
+                                                title = "Salt Roads",
+                                                meta = "Book · Maya Lind",
+                                                image = "/art/between-two-worlds.jpg",
+                                                platform = Platform.MOBILE,
+                                                onClick = {
+                                                    navController.navigate(Route.Book(ref = "salt-roads"))
+                                                },
+                                                onAction = {
+                                                    actions.onPlay("salt-roads", PlayQueue.SPOKEN, PlayMode.NOW)
+                                                },
+                                                divider = true,
+                                            ),
+                                        )
+                                        ResultRow(
+                                            ResultRowProps(
                                                 title = "Salt",
                                                 meta = "Song · Fleeting Verses · YouTube Music",
                                                 image = "/art/fragments-of-the-wind.jpg",

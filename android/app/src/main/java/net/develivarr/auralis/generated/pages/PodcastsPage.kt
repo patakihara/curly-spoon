@@ -16,6 +16,7 @@ import net.develivarr.auralis.generated.ui.FrontLayerHeaderProps
 import net.develivarr.auralis.generated.ui.FrontLayerHeaderSection
 import net.develivarr.auralis.generated.ui.LayoutGridProps
 import net.develivarr.auralis.generated.ui.MediaCardProps
+import net.develivarr.auralis.generated.ui.MediaCardTone
 import net.develivarr.auralis.generated.ui.MiniPlayerProps
 import net.develivarr.auralis.generated.ui.OverflowMenuItem
 import net.develivarr.auralis.generated.ui.PageBodyProps
@@ -160,6 +161,23 @@ fun PodcastsPage(navController: NavController, actions: PageActions) {
                                                                 navController.navigate(Route.Show(ref = "deep-inertia-radio"))
                                                             },
                                                             unplayed = true,
+                                                            status = null,
+                                                            tone = null,
+                                                        ),
+                                                    )
+                                                    MediaCard(
+                                                        MediaCardProps(
+                                                            title = "Tide Tables",
+                                                            sub = "Subscribing",
+                                                            platform = Platform.MOBILE,
+                                                            width = "100%",
+                                                            image = "/art/deep-inertia-radio.jpg",
+                                                            onClick = {
+                                                                navController.navigate(Route.Show(ref = "tide-tables"))
+                                                            },
+                                                            unplayed = false,
+                                                            status = "Searching…",
+                                                            tone = MediaCardTone.PROGRESS,
                                                         ),
                                                     )
                                                     MediaCard(
@@ -173,6 +191,8 @@ fun PodcastsPage(navController: NavController, actions: PageActions) {
                                                                 navController.navigate(Route.Show(ref = "fleeting-verses"))
                                                             },
                                                             unplayed = true,
+                                                            status = null,
+                                                            tone = null,
                                                         ),
                                                     )
                                                     MediaCard(
@@ -186,6 +206,8 @@ fun PodcastsPage(navController: NavController, actions: PageActions) {
                                                                 navController.navigate(Route.Show(ref = "signal-noise"))
                                                             },
                                                             unplayed = false,
+                                                            status = null,
+                                                            tone = null,
                                                         ),
                                                     )
                                                     MediaCard(
@@ -199,6 +221,8 @@ fun PodcastsPage(navController: NavController, actions: PageActions) {
                                                                 navController.navigate(Route.Show(ref = "sonic-tales"))
                                                             },
                                                             unplayed = true,
+                                                            status = null,
+                                                            tone = null,
                                                         ),
                                                     )
                                                     MediaCard(
@@ -212,6 +236,8 @@ fun PodcastsPage(navController: NavController, actions: PageActions) {
                                                                 navController.navigate(Route.Show(ref = "tears-of-ice"))
                                                             },
                                                             unplayed = false,
+                                                            status = null,
+                                                            tone = null,
                                                         ),
                                                     )
                                                     MediaCard(
@@ -225,6 +251,8 @@ fun PodcastsPage(navController: NavController, actions: PageActions) {
                                                                 navController.navigate(Route.Show(ref = "the-long-read"))
                                                             },
                                                             unplayed = true,
+                                                            status = null,
+                                                            tone = null,
                                                         ),
                                                     )
                                                 },

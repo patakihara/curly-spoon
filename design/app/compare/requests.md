@@ -1,6 +1,6 @@
 ---
 page: requests
-pageHash: 40626eb47f5da3d5ea2f06c6805dfb5991dc70a244f84117405b87c784881ee1
+pageHash: 63ec0fbbdf859a5556fee66773b3bd040d95d24ba03f35f3ac6c5c44271c9720
 sonora: [none]
 ---
 
@@ -27,16 +27,18 @@ the list width:
 - **In flight**: every album and book on its way, one `ResultRow` each, its meta naming type,
   creator, source and size ("Album · Soul Vertex · Prowlarr · 412 MB"), its status in the plan's
   vocabulary and tone (Downloading at 38%, 64% and 18%, Importing, Searching…, Failed), and at its end an
-  `IconButton`: ✕ Cancel, or ↻ Retry on the failed one.
+  `IconButton` bound to that request's verb: ✕ Cancel, or ↻ Retry on the failed one. A failed row
+  with other releases left carries a row under it, "Pick another release", which takes the next
+  one in one tap.
 - **Needs choice**: each album torrent where no release clearly wins, with its status pill and ✕, then
   its candidates as rows naming format, track fit, size and seeders ("FLAC · 12 of 12 tracks ·
-  1.1 GB · 41 seeders"), each with a "Choose" button: one tap picks it. One album with three
+  1.1 GB · 41 seeders"), each with a "Choose" button: one tap on the row or the button picks it. One album with three
   candidates; a book never waits here, since its release is picked automatically.
 
 No podcasts: subscribing is instant.
 
-**Empty state**, per nav.json (not drawn): one line saying nothing is requested, and that Search
-is where things are requested, as Sonora's `EmptyState`.
+**Empty state**, per nav.json: Sonora's `EmptyState`, saying nothing is requested and that Search is
+where things are requested, with one way on, "Go to Search".
 
 ## Differences
 
@@ -44,8 +46,9 @@ is where things are requested, as Sonora's `EmptyState`.
   card or row as much as a button: its ink at 38% and a filled one's container at 12% (Material's
   disabled state). Part C of the states item binds each such control or leaves it deliberately
   disabled.
-- Changed on purpose: a row ends in its action (Cancel or Retry) as an `IconButton`, where the
-  card's rows act only through the art's hover overlay, which a phone does not have.
+- Changed on purpose: a row ends in its action (Cancel or Retry) as an `IconButton`, bound to the
+  request's verb, where the card's rows act only through the art's hover overlay, which a phone's
+  `ResultRow` hides while it draws a ring or a failure.
 - Changed on purpose: the statuses follow the plan's vocabulary: "Downloading · 38%" rather than
   the card's "Requested · 87%", and "Importing", which the card lacks.
 - Open: the candidates repeat the request's art, since a release has none of its own; they are not

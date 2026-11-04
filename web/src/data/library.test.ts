@@ -106,6 +106,8 @@ describe('[M1.shell] the library homes from GET /api/library/{medium}', () => {
         sub: 'Rosa Elin',
         image: '/api/media/abs:s1/art?size=medium',
         unplayed: false,
+        status: null,
+        tone: null,
       },
     ]);
     expect(data.lists).toEqual(lists);
