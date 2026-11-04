@@ -1303,4 +1303,128 @@ describe('the requests routes', () => {
     expect((await list()).inFlight.map((one) => one.id)).toEqual([good.id]);
     expect((await call('GET', `/${bad.id}`, 'ana')).statusCode).toBe(404);
   });
+
+  describe('what a fresh test of the routes found', () => {
+    it('refuses a target whose title is only spaces, which would list as a blank row', async () => {
+      await serving(standInSteps('book'));
+      const target = { ...refs.book.target, title: '   ' };
+      const res = await call('POST', '', 'ana', { ref: { ...refs.book, target } });
+      expect(res.statusCode).toBe(400);
+      expect(db.prepare('SELECT id FROM requests').all()).toEqual([]);
+    });
+
+    it('answers 409 medium_unavailable on a retry once its medium has no steps', async () => {
+      const failing = standInSteps('song', {
+        polls: [{ kind: 'failed', reason: 'downloadFailed' }],
+      });
+      const job = await serving(failing);
+      const { id } = await ask('song');
+      await until(job, id, 'failed');
+      await app!.close();
+      app = await buildApp({ webDistDir: null, db, publicOrigin: PUBLIC, now: () => clock });
+      const res = await call('POST', `/${id}/retry`, 'ana');
+      expect(res.statusCode).toBe(409);
+      expect(res.json()).toEqual({ error: 'medium_unavailable' });
+      expect(stored(id).state.status).toBe('failed');
+    });
+
+    it('offers no choice to take once its medium has no steps', async () => {
+      const job = await serving(standInSteps('album', { search: { kind: 'choose', candidates } }));
+      const { id } = await ask('album');
+      await until(job, id, 'needsChoice');
+      await app!.close();
+      app = await buildApp({ webDistDir: null, db, publicOrigin: PUBLIC, now: () => clock });
+      const res = await call('POST', `/${id}/choose`, 'ana', { candidate: 'a' });
+      expect(res.statusCode).toBe(409);
+      expect(res.json()).toEqual({ error: 'medium_unavailable' });
+      expect(stored(id).state.status).toBe('needsChoice');
+    });
+
+    it('finds what arrived by a catalogue id a person joined with, starting nothing', async () => {
+      const steps = standInSteps('book', { imports: book });
+      const job = await serving(steps);
+      const { asin } = refs.book.target.ids;
+      const isbn = '9780000000002';
+      const { id } = await ask('book', 'ana');
+      const joined = await call('POST', '', 'ben', {
+        ref: { ...refs.book, target: { ...refs.book.target, ids: { asin, isbn } } },
+      });
+      expect(RequestView.parse(joined.json()).id).toBe(id);
+      await until(job, id, 'importing');
+      await advanceRequests(job);
+      await indexRecordings(db, clock);
+      await until(job, id, 'inLibrary');
+
+      const res = await call('POST', '', 'ana', {
+        ref: { ...refs.book, target: { ...refs.book.target, ids: { isbn } } },
+      });
+      expect(RequestView.parse(res.json())).toMatchObject({ id, status: 'inLibrary' });
+      expect(db.prepare('SELECT id FROM requests').all()).toEqual([{ id }]);
+    });
+
+    it('drops a download that started but whose answer was lost, when the request is cancelled', async () => {
+      const steps = standInSteps('song', { polls: [{ kind: 'downloading', progress: 0.5 }] });
+      const job = await serving(steps);
+      const { id } = await ask('song');
+      await until(job, id, 'downloading');
+      const at = stored(id);
+      saveRequest(db, id, { state: at.state, stepKey: 'lost-answer' }, clock);
+      const upstream = await steps.download!.start(stored(id), at.release!, 'lost-answer');
+
+      expect((await call('POST', `/${id}/cancel`, 'ana')).statusCode).toBe(200);
+      expect(steps.cancelled).toEqual([upstream]);
+    });
+
+    it('a double-tapped retry never drops the download the first tap started again', async () => {
+      const hash = { hash: 'same-info-hash' };
+      const live = new Set<string>(['same-info-hash']);
+      const held: (() => void)[] = [];
+      const steps: MediumSteps = {
+        medium: 'song',
+        search: () =>
+          Promise.resolve({ kind: 'picked', release: standInRelease('one'), others: [] }),
+        import: () => Promise.resolve({ ref: songsAlbum }),
+        download: {
+          start: () => {
+            live.add(hash.hash);
+            return Promise.resolve(hash);
+          },
+          poll: () => Promise.resolve({ kind: 'downloading', progress: 0.5 }),
+          cancel: () =>
+            new Promise<void>((resolve) => {
+              held.push(() => {
+                live.delete(hash.hash);
+                resolve();
+              });
+            }),
+        },
+      };
+      const job = await serving(steps);
+      const { id } = await ask('song');
+      await until(job, id, 'downloading');
+      await advanceRequests(job);
+      const at = stored(id);
+      saveRequest(
+        db,
+        id,
+        { state: { status: 'failed', failedStep: 'downloading', reason: 'downloadFailed' } },
+        clock,
+        at.version,
+      );
+
+      const first = call('POST', `/${id}/retry`, 'ana');
+      const second = call('POST', `/${id}/retry`, 'ana');
+      await vi.waitFor(() => expect(held.length).toBeGreaterThan(0));
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      held.shift()!();
+      await first;
+      await advanceRequests(job);
+      expect(live.has(hash.hash)).toBe(true);
+      for (const release of held) release();
+      await second;
+
+      expect(stored(id).handle).toEqual(hash);
+      expect(live.has(hash.hash)).toBe(true);
+    });
+  });
 });
