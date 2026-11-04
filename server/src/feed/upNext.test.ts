@@ -27,7 +27,7 @@ import type { Reader } from '../lists/reader.js';
 import { absTree } from '../libraryIndex/rows.js';
 import { applyTree, emptyCounts, episodesInOrder } from '../libraryIndex/store.js';
 import { artUrl } from '../routes/art.js';
-import { absAccess } from '../routes/library.js';
+import { absAccess } from '../upstream/reach.js';
 import { openDatabase, type Db } from '../store/connection.js';
 import type { PlayedMark } from '../store/lists.js';
 import type { UserPlay } from '../store/listening.js';

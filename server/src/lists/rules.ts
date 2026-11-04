@@ -5,13 +5,14 @@
  * episode unplayed there brings it back; a mark Audiobookshelf never took holds regardless. An episode in progress stays in. A digest plays across
  * its shows by when each episode came out, oldest or newest first; episodes of one moment follow
  * show id, then the show's own order. The Digest's shows, until subscriptions arrive with
- * M3.podcasts, are every indexed show in an Audiobookshelf library the person may open.
+ * M3.podcasts, are the Audiobookshelf shows in the person's own library.
  */
 import type { EpisodeOrder } from '@auralis/schema';
-import { episodesInOrder, type StoredRow, topLevelOfKind } from '../libraryIndex/store.js';
+import { personalRows } from '../library/personal.js';
+import { episodesInOrder, type StoredRow } from '../libraryIndex/store.js';
 import type { Db } from '../store/connection.js';
 import type { PlayedMark } from '../store/lists.js';
-import type { AbsAccess, Standing } from '../routes/library.js';
+import type { AbsAccess, Standing } from '../upstream/reach.js';
 
 /** How many days an episode stays new. */
 export const DIGEST_NEW_DAYS = 14;
@@ -36,12 +37,9 @@ export function isPlayed(standing: Standing, mark: PlayedMark | undefined): bool
   return !mark.confirmed || standing.updatedAt === null || mark.at >= standing.updatedAt;
 }
 
-/** The shows The Digest covers: every indexed Audiobookshelf show in a library the person may open. */
-export function subscribedShows(db: Db, access: AbsAccess | null): StoredRow[] {
-  if (access === null) return [];
-  return topLevelOfKind(db, 'show').filter(
-    (row) => row.source === 'abs' && access.open(row.libraryId),
-  );
+/** The shows The Digest covers: the Audiobookshelf shows in the person's own library. */
+export function subscribedShows(db: Db, userId: string): StoredRow[] {
+  return personalRows(db, userId, 'show').filter((row) => row.source === 'abs');
 }
 
 /**

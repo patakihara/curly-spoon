@@ -162,6 +162,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       upstreams === null
         ? { abs: null, jellyfin: null }
         : upstreamFor({ db, ...upstreams }, caller),
+    householdAbs: upstreams?.household?.abs ?? null,
     now: options.now ?? Date.now,
     log: app.log,
     // Decision (M2.lists): an episode marked played has its play session closed first, so the

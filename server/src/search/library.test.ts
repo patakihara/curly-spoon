@@ -322,7 +322,7 @@ describe('library search', () => {
       ...(await search('megacorp')),
       ...(await search('powers')),
       ...(await search('ursula')),
-    ].map((r) => SearchResult.parse(r.result));
+    ].map((r) => SearchResult.omit({ inYourLibrary: true }).parse(r.result));
     const of = (title: string) => results.find((r) => r.title === title)!;
     const rumours = refOf(row('Rumours'));
     const chain = row('The Chain');
@@ -423,7 +423,7 @@ describe('library search', () => {
   it('merges the sources’ lists by tier, each list in its own order within a tier', async () => {
     await index(db);
     const [a, b, c, d, e] = (await search('the')).map((r) => r.result);
-    const ranked = (tier: number, result: SearchResult): Ranked => ({ result, tier, score: 0 });
+    const ranked = (tier: number, result: Ranked['result']): Ranked => ({ result, tier, score: 0 });
 
     expect(
       rank([

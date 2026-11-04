@@ -57,6 +57,7 @@ describe('a search', () => {
           year: 1977,
           publishedAt: null,
           availability: { kind: 'owned' },
+          inYourLibrary: true,
         },
         {
           ref: track,
@@ -69,6 +70,7 @@ describe('a search', () => {
           year: null,
           publishedAt: null,
           availability: { kind: 'owned' },
+          inYourLibrary: true,
         },
       ],
     };

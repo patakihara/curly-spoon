@@ -868,6 +868,7 @@ data class SearchResult(
     val year: Long?,
     val publishedAt: Long?,
     val availability: Availability,
+    val inYourLibrary: Boolean,
 )
 
 @Serializable

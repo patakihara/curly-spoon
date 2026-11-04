@@ -9,6 +9,9 @@ import type { SearchKind, SearchResult } from '@auralis/schema';
 /** The most results a search answers. */
 export const RESULT_LIMIT = 100;
 
+/** A result as a source finds it: whether it is in a person's own library is theirs to say. */
+export type SourceResult = Omit<SearchResult, 'inYourLibrary'>;
+
 /** What was searched for: the text as typed, and the kinds to keep, all when absent. */
 interface SourceQuery {
   q: string;
@@ -21,7 +24,7 @@ interface SourceQuery {
  * series).
  */
 export interface Ranked {
-  result: SearchResult;
+  result: SourceResult;
   tier: number;
   score: number;
 }
@@ -35,7 +38,7 @@ export interface SearchSource {
  * The sources' lists as one: by tier, and within a tier in the order of the lists, each list's
  * results in its own order; at most `RESULT_LIMIT`.
  */
-export function rank(lists: readonly (readonly Ranked[])[]): SearchResult[] {
+export function rank(lists: readonly (readonly Ranked[])[]): SourceResult[] {
   return lists
     .flat()
     .sort((a, b) => a.tier - b.tier)

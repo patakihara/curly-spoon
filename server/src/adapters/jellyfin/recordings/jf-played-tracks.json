@@ -11,7 +11,7 @@
       "IncludeItemTypes": "Audio",
       "Limit": "3",
       "Recursive": "true",
-      "SortBy": "SortName",
+      "SortBy": "Album,ParentIndexNumber,IndexNumber,SortName,DateCreated",
       "StartIndex": "0"
     },
     "headers": {
@@ -50,7 +50,7 @@
               "PlaybackPositionTicks": 0,
               "PlayCount": 1,
               "IsFavorite": false,
-              "LastPlayedDate": "2026-11-04T00:59:13.6908521Z",
+              "LastPlayedDate": "2026-11-04T01:45:43.4629628Z",
               "Played": true,
               "Key": "<token>",
               "ItemId": "7c8b8e35e6ec0f40736aadee1f8979bb"

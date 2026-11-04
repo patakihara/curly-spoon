@@ -1148,6 +1148,7 @@ export interface components {
             year: number | null;
             publishedAt: number | null;
             availability: components["schemas"]["Availability"];
+            inYourLibrary: boolean;
         };
         SearchResults: {
             query: string;
@@ -3000,7 +3001,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Up next, then your second most recent book and show: each card is what plays next of something you listened to, and only what you own. An empty shelf is left out; someone not linked to Audiobookshelf gets no shelves, and its failure answers 502 `upstream_failed`. */
+            /** @description Up next, then your second most recent book and show: each card is what plays next of something you listened to, and only what you own. An empty shelf is left out; someone with no Audiobookshelf link and no household account to play through gets no shelves, and its failure answers 502 `upstream_failed`. */
             200: {
                 headers: {
                     [name: string]: unknown;

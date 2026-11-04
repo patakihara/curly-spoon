@@ -27,6 +27,7 @@ const result = (over: Partial<SearchResult>): SearchResult => ({
   year: 2023,
   publishedAt: null,
   availability: { kind: 'owned' },
+  inYourLibrary: true,
   ...over,
 });
 

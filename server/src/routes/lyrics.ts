@@ -14,10 +14,8 @@ import { indexedRow, type StoredRow } from '../libraryIndex/store.js';
 import type { Lyrics } from '../lyrics/service.js';
 import { Refusal, serve } from '../route.js';
 import type { Db } from '../store/connection.js';
-import { upstreamFor } from '../upstream/links.js';
-import { accessCache } from './accessCache.js';
+import { Reach } from '../upstream/reach.js';
 import { signedIn } from './auth.js';
-import { jellyfinViews } from './library.js';
 import { refusalFor, type UpstreamAccess } from './play.js';
 
 /** How long a person waits on LRCLIB for one track; the job, unhurried, takes the default. */
@@ -37,24 +35,21 @@ export function lyricsRoutes(
   options: { db: Db; upstreams: UpstreamAccess | null; lyrics: Lyrics },
 ): void {
   const { db, upstreams, lyrics } = options;
-  const viewsAccess = accessCache();
+  const reach = new Reach(db, upstreams);
 
   serve(app, getLyrics, async (request, _reply, _body, { params }): Promise<LyricsBody> => {
     const user = signedIn(request);
     const ref = parseMediaRefKey(params.ref);
     if (ref?.source !== 'jellyfin') throw notFound();
     indexedTrack(db, ref.id);
-    const jellyfin = upstreams === null ? null : upstreamFor({ db, ...upstreams }, user).jellyfin;
-    if (jellyfin === null) throw notFound();
-    const views = await viewsAccess(`${user.id}:jellyfin`, () => jellyfinViews(jellyfin)).catch(
-      refusalFor,
-    );
+    await reach.ownViews(user).catch(refusalFor);
     // Read again after the wait: the track may have moved library, and an answer is kept only
     // for the track's current index version.
     const track = indexedTrack(db, ref.id);
-    if (track.libraryId === null || !views.has(track.libraryId)) throw notFound();
+    const acting = await reach.pick(user, 'jellyfin', track).catch(refusalFor);
+    if (acting === null) throw notFound();
     const answer = await lyrics
-      .forTrack(track, jellyfin, { lrclibTimeoutMs: LRCLIB_ROUTE_TIMEOUT_MS })
+      .forTrack(track, acting.client, { lrclibTimeoutMs: LRCLIB_ROUTE_TIMEOUT_MS })
       .catch(refusalFor);
     return { ref, ...answer };
   });

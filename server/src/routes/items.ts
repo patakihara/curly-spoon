@@ -1,20 +1,21 @@
 /**
  * One book, show, episode or album opened, and a book's, show's or album's art. Each is one the
- * index holds, in a library the signed-in person may open, as their own upstream says (the same
- * check as the library lists): a book, show or album at the top level, or an episode under its
- * show. Anything else, a track included, answers 404 before any image or detail is asked for.
+ * index holds, read through the person's own account where it reaches, else through Auralis's
+ * (`upstream/reach.ts`), as playing it would: a book, show or album at the top level, or an episode
+ * under its show. Anything else, a track included, or with neither account able to read it, answers
+ * 404 before any image or detail is asked for.
  *
  * - A book's page: its header, its length and its chapters from its own expanded answer.
  * - A show's page: its episodes in the show's order as the index holds it (oldest first when
  *   serial, newest first otherwise), or the other way round when that order is asked (`?sort`),
  *   undated and unnumbered episodes last either way, each with how far through the person is and whether they finished it, from their
- *   `GET /api/me`. The order asked is the page's alone: autoplay and every list keep the show's.
+ *   `GET /api/me` and what Auralis holds for them. The order asked is the page's alone: autoplay and every list keep the show's.
  * - An album's page: its tracks as the index holds them, in disc and track order.
  * - An episode's page: its show's title and art, its length and published date as the index
  *   holds them, how far through the person is and whether they finished it, from their
  *   `GET /api/me`, and its notes from its show's own answer.
- * - Art: the Audiobookshelf cover or the Jellyfin primary image, asked for with the person's own
- *   token and passed on as it streams, at the size asked for. The client only ever sees this
+ * - Art: the Audiobookshelf cover or the Jellyfin primary image, asked for through that account and
+ *   passed on as it streams, at the size asked for. The client only ever sees this
  *   server's own `/api/media/{ref}/art`; it is kept a day, private to the person. Who may see
  *   art is checked once a minute per person, so a grid of covers costs one lookup of each
  *   upstream; a page always checks afresh, since it shows how far through the person is.
@@ -35,11 +36,11 @@ import type { ImageHeaders, UpstreamFile } from '../adapters/stream.js';
 import { albumTracks, episodesInOrder, indexedRow, type StoredRow } from '../libraryIndex/store.js';
 import { Refusal, serve, serveStream, type StreamAnswer } from '../route.js';
 import type { Db } from '../store/connection.js';
-import { type Upstreams, upstreamFor } from '../upstream/links.js';
-import { accessCache } from './accessCache.js';
+import type { Upstreams } from '../upstream/links.js';
+import { type AbsAccess, Reach, withHeld } from '../upstream/reach.js';
 import { PAGE_KINDS } from './art.js';
 import { signedIn } from './auth.js';
-import { type AbsAccess, absAccess, entry, jellyfinViews } from './library.js';
+import { entry } from './library.js';
 import { refusalFor, type UpstreamAccess } from './play.js';
 
 /** Pixel widths the art route asks the upstream for, by size. */
@@ -130,7 +131,7 @@ export function itemRoutes(
   options: { db: Db; upstreams: UpstreamAccess | null },
 ): void {
   const { db, upstreams } = options;
-  const artAccess = accessCache();
+  const reach = new Reach(db, upstreams);
 
   /**
    * The book, show or album `key` names, or for a page an episode, if the person may open it; else
@@ -151,29 +152,17 @@ export function itemRoutes(
         : undefined;
     const topLevel = row?.parentId === null && PAGE_KINDS.includes(row.kind);
     if (row === undefined || !(topLevel || show?.kind === 'show')) throw notFound();
-    const clients =
-      upstreams === null ? { abs: null, jellyfin: null } : upstreamFor({ db, ...upstreams }, user);
     try {
       if (row.kind === 'album') {
-        if (clients.jellyfin === null) throw notFound();
-        const jellyfin = clients.jellyfin;
-        const views = forArt
-          ? await artAccess(`${user.id}:jellyfin`, () => jellyfinViews(jellyfin))
-          : await jellyfinViews(jellyfin);
-        if (row.libraryId === null || !views.has(row.libraryId)) throw notFound();
-        return { row, kind: 'album', jellyfin: clients.jellyfin };
+        const acting = await reach.pick(user, 'jellyfin', row, !forArt);
+        if (acting === null) throw notFound();
+        return { row, kind: 'album', jellyfin: acting.client };
       }
-      if (clients.abs === null) throw notFound();
-      const abs = clients.abs;
-      const access = forArt
-        ? await artAccess(`${user.id}:abs`, () => absAccess(abs))
-        : await absAccess(abs);
-      if (show !== undefined) {
-        if (!access.open(show.libraryId)) throw notFound();
-        return { row, kind: 'episode', show, abs, access };
-      }
-      if (!access.open(row.libraryId)) throw notFound();
-      return { row, kind: row.kind as 'book' | 'show', abs, access };
+      const { acting, own } = await reach.pickAbs(user, show ?? row, !forArt);
+      if (acting === null) throw notFound();
+      const access = withHeld(db, user.id, own, reach.household('abs') !== null)!;
+      if (show !== undefined) return { row, kind: 'episode', show, abs: acting.client, access };
+      return { row, kind: row.kind as 'book' | 'show', abs: acting.client, access };
     } catch (error) {
       if (error instanceof Refusal) throw error;
       return refusalFor(error);

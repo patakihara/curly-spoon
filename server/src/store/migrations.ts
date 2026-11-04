@@ -701,6 +701,26 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 18,
+    name: 'held_progress',
+    up: (db) => {
+      db.exec(`
+        -- Where a person is on a household play, which no upstream account hears of
+        -- (store/heldProgress.ts). item_id is the book's or the episode's own id.
+        CREATE TABLE held_progress (
+          user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          source     TEXT NOT NULL CHECK (source IN ('abs', 'jellyfin')),
+          item_id    TEXT NOT NULL,
+          position   REAL NOT NULL CHECK (position >= 0),
+          duration   REAL NOT NULL CHECK (duration >= 0),
+          finished   INTEGER NOT NULL CHECK (finished IN (0, 1)),
+          updated_at INTEGER NOT NULL,
+          PRIMARY KEY (user_id, source, item_id)
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

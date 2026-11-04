@@ -18,7 +18,7 @@ import {
   type StoredRow,
 } from '../libraryIndex/store.js';
 import { openDatabase, type Db } from '../store/connection.js';
-import type { AbsAccess } from '../routes/library.js';
+import type { AbsAccess } from '../upstream/reach.js';
 import { digestEpisodes, isPlayed, showFinished } from './rules.js';
 
 const adapters = join(dirname(fileURLToPath(import.meta.url)), '..', 'adapters');

@@ -173,9 +173,14 @@ afterEach(async () => {
 /**
  * kara, granted every library and seeing Music, who has begun one book and played one album; otto,
  * granted only Podcasts and seeing no music library, who has begun and played nothing; nora, linked
- * to neither upstream. Set `down` and every upstream call fails.
+ * to neither upstream. Auralis's own accounts act past their reach, unless left out. Set `down` and
+ * every upstream call fails.
  */
-async function server(karaMe = me, karaPlayed = [jf('jf-played-tracks')]) {
+async function server(
+  karaMe = me,
+  karaPlayed = [jf('jf-played-tracks')],
+  { household = true }: { household?: boolean } = {},
+) {
   const asked: string[] = [];
   const upstream = { down: false };
   const reads = [
@@ -204,7 +209,7 @@ async function server(karaMe = me, karaPlayed = [jf('jf-played-tracks')]) {
     const { pathname, search } = new URL(url);
     asked.push(`${pathname}${search}`);
     if (upstream.down) throw new Error('the upstream is down');
-    return (authorization.includes('otto') ? otto : kara)(url, init);
+    return (authorization.includes('kara') ? kara : otto)(url, init);
   };
   const bearer: Record<string, string> = {};
   const userIds: Record<string, string> = {};
@@ -232,7 +237,19 @@ async function server(karaMe = me, karaPlayed = [jf('jf-played-tracks')]) {
   const app = await buildApp({
     webDistDir: null,
     db,
-    upstreams: { key: KEY, config: { absUrl: UPSTREAM, jellyfinUrl: UPSTREAM }, fetch },
+    upstreams: {
+      key: KEY,
+      config: { absUrl: UPSTREAM, jellyfinUrl: UPSTREAM },
+      fetch,
+      ...(household
+        ? {
+            household: {
+              abs: new AbsClient({ baseUrl: UPSTREAM, token: 'household', fetch }),
+              jellyfin: new JellyfinClient({ baseUrl: UPSTREAM, token: 'household', fetch }),
+            },
+          }
+        : {}),
+    },
     playedPageSize: Number(jf('jf-played-tracks').request.query.Limit),
   });
   apps.push(app);
@@ -605,7 +622,7 @@ describe('[M3.requests/c] a person’s own library', () => {
 
   it('[M3.requests/c] claims nothing for a play that is refused', async () => {
     await index(db);
-    const s = await server();
+    const s = await server(me, undefined, { household: false });
     const track = json<{ Id: string }>(jf('jf-track')).Id;
     expect((await s.play(jfRef(track), 'nora')).statusCode).not.toBe(200);
     expect(await s.items('music', 'nora')).toEqual([]);
@@ -1052,7 +1069,7 @@ describe("[M1.shell] an episode's page, from the index, its show and the person'
       permissions: { ...json<AbsMe>(me).permissions, accessAllLibraries: false },
       librariesAccessible: libraries.filter((l) => l.mediaType === 'book').map((l) => l.id),
     });
-    const s = await server(booksOnly);
+    const s = await server(booksOnly, undefined, { household: false });
     const episode = episodesInOrder(db, shows[0]!.id)[0]!;
 
     expect(await s.item(`abs:${episode.id}`)).toEqual({
@@ -1070,7 +1087,7 @@ describe("[M1.shell] an episode's page, from the index, its show and the person'
 describe('an item page no one may open', () => {
   it("answers 404 for a book or album in a library the person can't open, asking only who they are", async () => {
     await index(db);
-    const s = await server();
+    const s = await server(me, undefined, { household: false });
 
     expect(await s.item(`abs:${fourFiles.id}`, 'otto')).toEqual({
       status: 404,
@@ -1085,7 +1102,7 @@ describe('an item page no one may open', () => {
 
   it('answers 404 to a person linked to neither upstream, asking neither', async () => {
     await index(db);
-    const s = await server();
+    const s = await server(me, undefined, { household: false });
 
     for (const key of [`abs:${fourFiles.id}`, `abs:${shows[0]!.id}`, `jellyfin:${album.Id}`]) {
       expect((await s.item(key, 'nora')).status).toBe(404);
@@ -1170,7 +1187,7 @@ describe('[M1.shell] art, passed on from the upstream with the person’s own ac
 
   it("answers 404 for art in a library the person can't open, unknown art, or a track's, asking no image of either upstream", async () => {
     await index(db);
-    const s = await server();
+    const s = await server(me, undefined, { household: false });
     const track = albumTracks(db, album.Id)[0]!;
 
     for (const [key, name] of [
@@ -1188,7 +1205,7 @@ describe('[M1.shell] art, passed on from the upstream with the person’s own ac
 
   it('checks who may see art once a minute per person, so a grid of covers costs one lookup; a page still asks afresh', async () => {
     await index(db);
-    const s = await server();
+    const s = await server(me, undefined, { household: false });
     const urls = [`/api/media/abs:${fourFiles.id}/art`, `/api/media/jellyfin:${album.Id}/art`];
     const lookups = () => s.asked.filter((a) => a === '/api/me' || a.startsWith('/UserViews'));
     vi.useFakeTimers({ toFake: ['Date'] });

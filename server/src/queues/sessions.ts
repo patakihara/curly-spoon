@@ -48,6 +48,7 @@ import {
 } from '@auralis/schema';
 import type { AbsClient } from '../adapters/audiobookshelf/client.js';
 import { albumTracks, indexedRow } from '../libraryIndex/store.js';
+import { heldOf } from '../store/heldProgress.js';
 import { confirmMark, markPlayed, markRefused, playedMarks, sendingMark } from '../store/lists.js';
 import { Refusal } from '../route.js';
 import type { Db } from '../store/connection.js';
@@ -211,6 +212,8 @@ export class Sessions {
       lookup: IndexLookup;
       /** The person's own upstream clients. */
       clients: (user: Caller) => Upstreams;
+      /** Auralis's own Audiobookshelf client, which reads chapters for a household play. */
+      householdAbs?: AbsClient | null;
       now: () => number;
       log: Log;
       /** How long a play or a Next waits for autoplay; `AUTOPLAY_WAIT_MS` when not given. */
@@ -255,7 +258,8 @@ export class Sessions {
 
   /** Reads the chapters of any books among `refs`, as the person, for the engine's lookup. */
   async load(caller: Caller, refs: readonly MediaRef[]): Promise<void> {
-    await this.options.lookup.load(refs, this.options.clients(caller).abs);
+    const abs = this.options.clients(caller).abs ?? this.options.householdAbs ?? null;
+    await this.options.lookup.load(refs, abs);
   }
 
   /**
@@ -898,25 +902,32 @@ export class Sessions {
   }
 
   /**
-   * Where the person is in `ref` on its own server, and when that was: Audiobookshelf's progress
-   * on a book or an episode. Jellyfin keeps no resume point for music. Null when there is none, or
-   * the read fails (logged).
+   * Where the person is in `ref` beyond this device, and when that was: Audiobookshelf's progress
+   * on a book or an episode, or what Auralis holds for a household play, the newer. Jellyfin keeps
+   * no resume point for music. Null when there is none; a failed read (logged) counts for nothing.
    */
   private async upstreamPosition(caller: Caller, ref: MediaRef): Promise<QueuePosition | null> {
     if (ref.source !== 'abs') return null;
+    const { db } = this.options;
+    const kept = heldOf(db, caller.id, ref);
+    const held =
+      kept === undefined || kept.finished
+        ? null
+        : { ms: Math.round(kept.position * 1000), takenAt: kept.updatedAt };
     const abs: AbsClient | null = this.options.clients(caller).abs;
-    if (abs === null) return null;
+    if (abs === null) return held;
     try {
-      const row = indexedRow(this.options.db, ref.source, ref.id);
+      const row = indexedRow(db, ref.source, ref.id);
       const progress =
         row?.kind === 'episode' && row.parentId !== null
           ? await abs.findMyEpisodeProgress(row.parentId, ref.id)
           : await abs.findMyProgress(ref.id);
-      if (progress?.lastUpdate === undefined) return null;
-      return { ms: Math.round(progress.currentTime * 1000), takenAt: progress.lastUpdate };
+      if (progress?.lastUpdate === undefined) return held;
+      const own = { ms: Math.round(progress.currentTime * 1000), takenAt: progress.lastUpdate };
+      return newer(held, own);
     } catch (err) {
       this.options.log.warn({ err, ref }, 'upstream progress could not be read; the device’s wins');
-      return null;
+      return held;
     }
   }
 

@@ -11,7 +11,7 @@
  * What the upstreams say is read with the person's own token, at most once a minute, and saved as
  * played claims. So a failed read costs only what it would have added: the list still answers, from
  * the claims, which hold all that earlier reads found; a book's progress is left out until a read
- * comes back. An entry links art only when its upstream has art for it, as the index read.
+ * comes back; what Auralis holds for a household play shows all the same. An entry links art only when its upstream has art for it, as the index read.
  */
 import { randomInt } from 'node:crypto';
 import {
@@ -27,18 +27,19 @@ import {
 } from '@auralis/schema';
 import type { FastifyInstance } from 'fastify';
 import type { AbsClient } from '../adapters/audiobookshelf/client.js';
-import { libraryAccessSchema } from '../adapters/audiobookshelf/schemas.js';
 import type { JellyfinClient } from '../adapters/jellyfin/client.js';
 import { sortEntries } from '../library/sort.js';
 import type { Creator } from '../libraryIndex/rows.js';
-import { indexedRow, type StoredRow, topLevelOfKind } from '../libraryIndex/store.js';
-import { Refusal, serve } from '../route.js';
+import { personalRows } from '../library/personal.js';
+import { indexedRow, type StoredRow } from '../libraryIndex/store.js';
+import { serve } from '../route.js';
 import { artUrl } from './art.js';
-import { addPlayedClaims, claimsOf } from '../store/claims.js';
+import { addPlayedClaims } from '../store/claims.js';
 import type { Db } from '../store/connection.js';
 import { requestsOf, type StoredRequest } from '../store/requests.js';
 import { readSettings } from '../store/settings.js';
 import { upstreamFor } from '../upstream/links.js';
+import { absAccess, type AbsAccess, withHeld } from '../upstream/reach.js';
 import { accessCache } from './accessCache.js';
 import { signedIn } from './auth.js';
 import { type UpstreamAccess } from './play.js';
@@ -67,88 +68,6 @@ export function entry(
     progress,
     availability: { kind: 'owned' },
   };
-}
-
-/** Where a person stands with one book or episode: how far through, and whether finished. */
-export interface Standing {
-  /** From 0 to 1; null when not started, or begun but still at 0. Finished is 1. */
-  progress: number | null;
-  finished: boolean;
-  /** When Audiobookshelf last changed it, in milliseconds since the epoch; null if never. */
-  updatedAt: number | null;
-}
-
-/** A book or episode the person has begun or finished on Audiobookshelf. */
-export interface Heard {
-  /** The book's id, or the episode's own id. */
-  id: string;
-  /** When Audiobookshelf last changed it, in milliseconds since the epoch; null if never. */
-  updatedAt: number | null;
-}
-
-/** What the person's own Audiobookshelf `GET /api/me` says: what they may open, how far they are. */
-export interface AbsAccess {
-  open(libraryId: string | null): boolean;
-  /** A book's standing by its id, or an episode's by its own id. */
-  standing(id: string): Standing;
-  /**
-   * Every book and episode begun, by time or share, or finished, that the person has not removed
-   * from Continue Listening.
-   */
-  heard: readonly Heard[];
-  /**
-   * The books and shows they have begun or finished any of, removed from Continue Listening or not:
-   * removing it from there does not take it out of their library.
-   */
-  begun: readonly string[];
-  /** Whether the person removed a book or episode from Continue Listening, by its id. */
-  hidden(id: string): boolean;
-  /** Whether the person removed a series from Continue Series, by its id. */
-  seriesHidden(seriesId: string): boolean;
-}
-
-export async function absAccess(abs: AbsClient): Promise<AbsAccess> {
-  const me = await abs.getMe();
-  const access = libraryAccessSchema.safeParse(me);
-  if (!access.success) throw new Refusal(502, 'upstream_failed');
-  const { permissions, librariesAccessible } = access.data;
-  const standings = new Map<string, Standing>(
-    me.mediaProgress.map((p) => {
-      const share = p.isFinished ? 1 : Math.min(1, p.progress);
-      return [
-        p.episodeId ?? p.libraryItemId,
-        {
-          progress: share > 0 ? share : null,
-          finished: p.isFinished,
-          updatedAt: p.lastUpdate ?? null,
-        },
-      ];
-    }),
-  );
-  const hiddenIds = new Set(
-    me.mediaProgress
-      .filter((p) => p.hideFromContinueListening === true)
-      .map((p) => p.episodeId ?? p.libraryItemId),
-  );
-  const hiddenSeries = new Set(me.seriesHideFromContinueListening ?? []);
-  const begun = me.mediaProgress.filter((p) => p.isFinished || p.progress > 0 || p.currentTime > 0);
-  return {
-    open: (libraryId) =>
-      permissions.accessAllLibraries ||
-      (libraryId !== null && librariesAccessible.includes(libraryId)),
-    standing: (id) => standings.get(id) ?? { progress: null, finished: false, updatedAt: null },
-    heard: begun
-      .filter((p) => p.hideFromContinueListening !== true)
-      .map((p) => ({ id: p.episodeId ?? p.libraryItemId, updatedAt: p.lastUpdate ?? null })),
-    begun: [...new Set(begun.map((p) => p.libraryItemId))],
-    hidden: (id) => hiddenIds.has(id),
-    seriesHidden: (seriesId) => hiddenSeries.has(seriesId),
-  };
-}
-
-/** The ids of the Jellyfin libraries the person sees, hidden from their home screen or not. */
-export async function jellyfinViews(jellyfin: JellyfinClient): Promise<Set<string>> {
-  return new Set((await jellyfin.getUserViews()).map((view) => view.Id));
 }
 
 /** How many played tracks one read of Jellyfin asks for. */
@@ -235,21 +154,19 @@ export function libraryRoutes(
     const user = signedIn(request);
     const { kind, requests } = LISTS[params.medium];
     const { showEveryonesLibrary: everyone } = readSettings(db, user.id);
+    const household = upstreams?.household?.abs != null;
     const clients =
       upstreams === null ? { abs: null, jellyfin: null } : upstreamFor({ db, ...upstreams }, user);
 
-    let access: AbsAccess | null = null;
+    let own: AbsAccess | null = null;
     if (kind !== 'album' && clients.abs !== null) {
-      access = await readAbs(user.id, clients.abs);
+      own = await readAbs(user.id, clients.abs);
     } else if (kind === 'album' && !everyone && clients.jellyfin !== null) {
       await readJellyfin(user.id, clients.jellyfin);
     }
 
-    const mine = new Set(claimsOf(db, user.id).map(({ ref }) => mediaRefKey(ref)));
-    const rows = topLevelOfKind(db, kind).filter(
-      (row) => everyone || mine.has(mediaRefKey({ source: row.source, id: row.id })),
-    );
-    const items = rows.map((row) =>
+    const access = withHeld(db, user.id, own, household);
+    const items = personalRows(db, user.id, kind).map((row) =>
       entry(row, kind, kind === 'book' ? (access?.standing(row.id).progress ?? null) : null),
     );
 

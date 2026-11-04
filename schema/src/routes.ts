@@ -514,7 +514,7 @@ export const getFeed = {
   operationId: 'getFeed',
   summary: "Browse's Up next and second-most-recent shelves for the signed-in person",
   responseDescription:
-    'Up next, then your second most recent book and show: each card is what plays next of something you listened to, and only what you own. An empty shelf is left out; someone not linked to Audiobookshelf gets no shelves, and its failure answers 502 `upstream_failed`.',
+    'Up next, then your second most recent book and show: each card is what plays next of something you listened to, and only what you own. An empty shelf is left out; someone with no Audiobookshelf link and no household account to play through gets no shelves, and its failure answers 502 `upstream_failed`.',
   response: Feed,
   access: 'member',
 } as const satisfies Route;

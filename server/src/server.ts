@@ -7,8 +7,10 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { FastifyInstance } from 'fastify';
+import { AbsClient } from './adapters/audiobookshelf/client.js';
 import { AbsProvisioner } from './adapters/audiobookshelf/provision.js';
 import type { FetchLike } from './adapters/http/fetch.js';
+import { JellyfinClient } from './adapters/jellyfin/client.js';
 import { JellyfinProvisioner } from './adapters/jellyfin/quickConnect.js';
 import { type BuildAppOptions, buildApp } from './app.js';
 import { OidcClient } from './auth/oidc.js';
@@ -18,6 +20,7 @@ import { loadSecretKey } from './crypto/secretBox.js';
 import { startIndexJob } from './libraryIndex/start.js';
 import { lyricsService, startLyricsJob } from './lyrics/start.js';
 import { stepsRegistry } from './requests/steps.js';
+import type { Upstreams } from './upstream/links.js';
 import { readSecretFile } from './secretFile.js';
 import { openDatabase } from './store/connection.js';
 import { startSessionSweep } from './store/sessions.js';
@@ -30,6 +33,33 @@ export interface Server {
   app: FastifyInstance;
   /** Closes the app, stops the session sweep and both jobs, and closes the database. */
   close(): Promise<void>;
+}
+
+/**
+ * Auralis's own clients, which act where a person's own account does not reach: the listen-only
+ * Audiobookshelf key, and Jellyfin's API key.
+ */
+function householdClients(config: AppConfig, fetch: FetchLike): Upstreams {
+  const { abs, jellyfin, index } = config;
+  return {
+    abs:
+      abs === null || index.absKeyFile === null
+        ? null
+        : new AbsClient({
+            baseUrl: abs.url,
+            token: readSecretFile(index.absKeyFile, 'ABS_API_KEY'),
+            fetch,
+          }),
+    jellyfin:
+      jellyfin === null
+        ? null
+        : new JellyfinClient({
+            baseUrl: jellyfin.url,
+            token: readSecretFile(jellyfin.keyFile, 'JELLYFIN_API_KEY'),
+            fetch,
+            serverKey: true,
+          }),
+  };
 }
 
 export async function assembleServer(
@@ -101,6 +131,7 @@ export async function assembleServer(
       config: { absUrl: config.abs?.url, jellyfinUrl: config.jellyfin?.url },
       fetch,
       linker,
+      household: householdClients(config, fetch),
     },
     playback: { idleMs: config.playIdleMinutes * 60_000 },
     lyrics,

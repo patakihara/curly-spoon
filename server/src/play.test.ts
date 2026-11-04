@@ -13,14 +13,21 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { HLS_MIME, type PlaybackPlan } from '@auralis/schema';
 import { type FastifyInstance } from 'fastify';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { AbsClient } from './adapters/audiobookshelf/client.js';
+import { itemSummarySchema } from './adapters/audiobookshelf/schemas.js';
 import { type FetchLike } from './adapters/http/fetch.js';
 import { type Recording, recordingSchema } from './adapters/http/recording.js';
 import { replayFetch, standInsBeside } from './adapters/http/replay.js';
 import { PLACEHOLDER_ORIGIN } from './adapters/http/scrub.js';
+import { JellyfinClient } from './adapters/jellyfin/client.js';
+import { indexItemSchema } from './adapters/jellyfin/schemas.js';
 import { buildApp } from './app.js';
+import { absTree, albumRow, trackRows } from './libraryIndex/rows.js';
+import { applyTree, emptyCounts } from './libraryIndex/store.js';
 import { type PlaybackOptions } from './routes/play.js';
 import { openDatabase } from './store/connection.js';
+import { heldOf } from './store/heldProgress.js';
 import { createDevice } from './store/devices.js';
 import { createSession } from './store/sessions.js';
 import { saveLink } from './store/upstreamLinks.js';
@@ -812,5 +819,399 @@ describe('[M1.play/a] the HLS path, for a book Audiobookshelf transcodes', () =>
     const close = await app.inject({ method: 'POST', url: `/api/play/${hlsSession.id}/close` });
     expect(close.statusCode).toBe(401);
     expect(sent).toEqual([]);
+  });
+});
+
+const jfRecording = (call: string) =>
+  recordingSchema.parse(
+    JSON.parse(readFileSync(join(adapters, 'jellyfin', 'recordings', `${call}.json`), 'utf8')),
+  );
+
+/**
+ * Auralis's own account's answers: the recorded calls, each as that account made them, since the
+ * recordings are its own. Its place in the book is moved, the only change, to show that a person
+ * never starts from it.
+ */
+const householdPlay = structuredClone(multi[0]!);
+Object.assign((householdPlay.response.body as { json: object }).json, { currentTime: 99 });
+
+const episodePlay = absRecording('episode-play');
+const episodeId = jsonOf<{ episodeId: string }>(episodePlay).episodeId;
+const showId = jsonOf<{ libraryItemId: string }>(episodePlay).libraryItemId;
+const householdTrack = jsonOf<{ Items: { Id: string; AlbumId: string; Name: string }[] }>(
+  jfRecording('jf-household-track'),
+).Items[0]!;
+
+/** The recorded `GET /api/me`, granted no library unless told otherwise. The only change. */
+function meGranted(all: boolean): Recording {
+  const me = structuredClone(absRecording('me'));
+  const body = jsonOf<{ permissions: Record<string, unknown> }>(me);
+  Object.assign(body, {
+    permissions: { ...body.permissions, accessAllLibraries: all },
+    librariesAccessible: [],
+    mediaProgress: [],
+  });
+  return me;
+}
+
+/**
+ * nora, on two devices, linked to no upstream; kara, linked to an Audiobookshelf that grants her
+ * no library until she is given it. The index holds the recorded four-file book, a recorded show
+ * and a recorded album.
+ */
+async function householdServer() {
+  const db = openDatabase(':memory:');
+  const counts = emptyCounts();
+  const summary = (call: string) => itemSummarySchema.parse(jsonOf(absRecording(call)));
+  applyTree(db, absTree(summary('shell-book-1')), 1, counts);
+  applyTree(db, absTree(summary('index-show-1')), 1, counts);
+  const albums = jsonOf<{ Items: unknown[] }>(jfRecording('jf-library-albums-1')).Items;
+  const album = indexItemSchema.parse(albums[0]);
+  const tracks = jsonOf<{ Items: unknown[] }>(jfRecording('index-album-tracks-1')).Items.map((t) =>
+    indexItemSchema.parse(t),
+  );
+  applyTree(
+    db,
+    { top: albumRow(album, 'music'), children: trackRows(album.Id, 'music', tracks) },
+    1,
+    counts,
+  );
+
+  const sent: Sent[] = [];
+  const readBytes = standInsBeside(adapters);
+  const asHousehold = replayFetch(
+    [
+      householdPlay,
+      ...multi.slice(1),
+      episodePlay,
+      absRecording('episode-close'),
+      absRecording('episode-file'),
+      absRecording('index-show-1'),
+      jfRecording('jf-household-track'),
+      jfRecording('jf-household-album'),
+      jfRecording('jf-album-tracks'),
+      jfRecording('jf-stream'),
+    ],
+    { readBytes },
+  );
+  const karaAnswers = (all: boolean) => [
+    meGranted(all),
+    absRecording('progress-play'),
+    absRecording('progress-sync'),
+    absRecording('progress-close'),
+    absRecording('multi-detail'),
+  ];
+  let asKara = replayFetch(karaAnswers(false));
+  const fetch: FetchLike = async (url, init) => {
+    const headers = new Headers(init?.headers);
+    const authorization = headers.get('authorization') ?? '';
+    sent.push({
+      method: init?.method ?? 'GET',
+      path: new URL(url).pathname,
+      authorization,
+      range: headers.get('range'),
+    });
+    return (authorization.includes('kara') ? asKara : asHousehold)(url, init);
+  };
+  const bearer: Record<string, string> = {};
+  const users: Record<string, string> = {};
+  const person = (name: string, device: string, userId?: string) => {
+    const id = userId ?? upsertUser(db, { username: name, role: 'member' }).id;
+    users[name] = id;
+    const { id: deviceId } = createDevice(db, { userId: id, kind: 'web' });
+    bearer[device] = createSession(db, { userId: id, deviceId, kind: 'bearer' }).token;
+  };
+  person('nora', 'nora');
+  person('nora', 'nora-phone', users.nora);
+  person('kara', 'kara');
+  saveLink(db, KEY, {
+    userId: users.kara!,
+    service: 'abs',
+    upstreamUserId: 'abs-kara',
+    token: 'abs-token-kara',
+    state: 'linked',
+  });
+  const clock = { now: 10_000_000 };
+  const app = await buildApp({
+    webDistDir: null,
+    db,
+    now: () => clock.now,
+    upstreams: {
+      key: KEY,
+      config: { absUrl: PLACEHOLDER_ORIGIN, jellyfinUrl: PLACEHOLDER_ORIGIN },
+      fetch,
+      household: {
+        abs: new AbsClient({ baseUrl: PLACEHOLDER_ORIGIN, token: 'household', fetch }),
+        jellyfin: new JellyfinClient({
+          baseUrl: PLACEHOLDER_ORIGIN,
+          token: 'household',
+          fetch,
+          serverKey: true,
+        }),
+      },
+    },
+  });
+  apps.push(app);
+  const as = (device: string) => ({ authorization: `Bearer ${bearer[device] ?? ''}` });
+  const get = (url: string, device = 'nora', headers = {}) =>
+    app.inject({ method: 'GET', url, headers: { ...as(device), ...headers } });
+  const plan = async (id: string, device = 'nora', source: 'abs' | 'jellyfin' = 'abs') => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/play',
+      headers: as(device),
+      payload: { ref: { source, id } },
+    });
+    expect(res.statusCode, res.body).toBe(200);
+    return res.json<PlaybackPlan>();
+  };
+  const report = async (playId: string, position: number, seq = 1, device = 'nora') => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/progress',
+      headers: as(device),
+      payload: { playId, seq, position, listened: 1, paused: false },
+    });
+    expect(res.statusCode, res.body).toBe(200);
+  };
+  const search = async (q: string, device = 'nora') => {
+    const res = await get(`/api/search?q=${encodeURIComponent(q)}`, device);
+    expect(res.statusCode, res.body).toBe(200);
+    return res.json<{
+      results: {
+        ref: { id: string };
+        kind: string;
+        availability: { kind: string };
+        inYourLibrary: boolean;
+      }[];
+    }>().results;
+  };
+  return {
+    app,
+    db,
+    sent,
+    users,
+    clock,
+    get,
+    plan,
+    report,
+    search,
+    as,
+    grantKara: () => {
+      asKara = replayFetch(karaAnswers(true));
+    },
+  };
+}
+
+const bookRef = { source: 'abs', id: multiId } as const;
+const syncs = (sent: Sent[]) => sent.filter((s) => s.path.endsWith('/sync'));
+
+describe('[M3.requests/d] a household play, for someone whose own accounts do not reach it', () => {
+  it('[M3.requests/d] finds a recorded book through search, and plays it through the server', async () => {
+    const s = await householdServer();
+    const [found] = await s.search('Three Poems');
+    expect(found).toMatchObject({ ref: { id: multiId }, kind: 'book' });
+    expect(found!.availability).toEqual({ kind: 'owned' });
+
+    const plan = await s.plan(multiId);
+
+    expect(plan.tracks.length).toBeGreaterThan(1);
+    for (const track of plan.tracks) expect(track.url).toMatch(/^\/api\/media\/abs:/);
+    expect(plan.startAt).toBe(0);
+    const res = await s.get(plan.tracks[0]!.url, 'nora', { range: 'bytes=0-9' });
+    expect(res.statusCode).toBe(206);
+    for (const call of s.sent) expect(call.authorization).toBe('Bearer household');
+  });
+
+  it('[M3.requests/d] finds a recorded track through search, and it answers a range request with 206', async () => {
+    const s = await householdServer();
+    const [found] = await s.search(householdTrack.Name);
+    expect(found).toMatchObject({ ref: { id: householdTrack.Id }, kind: 'track' });
+
+    const plan = await s.plan(householdTrack.Id, 'nora', 'jellyfin');
+
+    expect(plan.tracks[0]!.url).toBe(`/api/media/jellyfin:${householdTrack.Id}/tracks/0`);
+    const res = await s.get(plan.tracks[0]!.url, 'nora', { range: 'bytes=0-1' });
+    expect(res.statusCode).toBe(206);
+    expect(res.headers['content-range']).toMatch(/^bytes 0-1\//);
+  });
+
+  it('[M3.requests/d] plays a recorded album through Auralis’s Jellyfin key, telling Jellyfin nothing', async () => {
+    const s = await householdServer();
+
+    const plan = await s.plan(householdTrack.AlbumId, 'nora', 'jellyfin');
+    await s.report(plan.progressTarget.playId, 10);
+    await s.app.inject({
+      method: 'POST',
+      url: `/api/play/${plan.progressTarget.playId}/close`,
+      headers: s.as('nora'),
+    });
+
+    expect(plan.tracks.length).toBeGreaterThan(1);
+    expect(s.sent.filter((c) => c.path.startsWith('/Sessions'))).toEqual([]);
+    expect(heldOf(s.db, s.users.nora!, { source: 'jellyfin', id: householdTrack.AlbumId })).toBe(
+      undefined,
+    );
+  });
+
+  it('[M3.requests/d] keeps progress in held_progress, sends no Audiobookshelf sync, and the next plan starts there', async () => {
+    const s = await householdServer();
+    const first = await s.plan(multiId);
+    s.clock.now += 5_000;
+
+    await s.report(first.progressTarget.playId, 60);
+
+    expect(heldOf(s.db, s.users.nora!, bookRef)).toMatchObject({ position: 60, finished: false });
+    expect(syncs(s.sent)).toEqual([]);
+    // Another device has no position of its own: only what Auralis holds can say this.
+    const second = await s.plan(multiId, 'nora-phone');
+    expect(second.startAt).toBe(60);
+    expect(syncs(s.sent)).toEqual([]);
+  });
+
+  it('[M3.requests/d] keeps the last report at the close, with no report in the close it sends', async () => {
+    const s = await householdServer();
+    const { progressTarget } = await s.plan(multiId);
+
+    const res = await s.app.inject({
+      method: 'POST',
+      url: `/api/play/${progressTarget.playId}/close`,
+      headers: s.as('nora'),
+      payload: { seq: 1, position: 70, listened: 1, paused: true },
+    });
+
+    expect(res.statusCode, res.body).toBe(200);
+    expect(heldOf(s.db, s.users.nora!, bookRef)?.position).toBe(70);
+    expect(syncs(s.sent)).toEqual([]);
+  });
+
+  it('[M3.requests/d] starts a finished book over', async () => {
+    const s = await householdServer();
+    const { progressTarget, tracks } = await s.plan(multiId);
+    const end = tracks.at(-1)!.offset + tracks.at(-1)!.duration;
+
+    await s.report(progressTarget.playId, end - 1);
+
+    expect(heldOf(s.db, s.users.nora!, bookRef)?.finished).toBe(true);
+    expect((await s.plan(multiId, 'nora-phone')).startAt).toBe(0);
+  });
+
+  it('[M3.requests/d] shows a held position on the book’s page, its list, Up next and the queue', async () => {
+    const s = await householdServer();
+    const { progressTarget, tracks } = await s.plan(multiId);
+    const length = tracks.at(-1)!.offset + tracks.at(-1)!.duration;
+    await s.report(progressTarget.playId, 60);
+    const share = expect.closeTo(60 / length, 5);
+
+    const page = await s.get(`/api/items/abs:${multiId}`);
+    expect(page.json<{ progress: number }>().progress).toEqual(share);
+
+    const list = await s.get('/api/library/books');
+    expect(list.json<{ items: unknown[] }>().items).toEqual([
+      expect.objectContaining({ ref: bookRef, progress: share }),
+    ]);
+
+    const feed = await s.get('/api/feed');
+    const shelves = feed.json<{ shelves: { id: string; items: unknown[] }[] }>().shelves;
+    expect(shelves.find((x) => x.id === 'up-next')!.items).toEqual([
+      expect.objectContaining({ ref: bookRef, progress: share }),
+    ]);
+
+    await s.plan(multiId, 'nora-phone');
+    const queue = await s.get('/api/queues/spoken', 'nora-phone');
+    expect(queue.json<{ position: { ms: number } | null }>().position?.ms).toBe(60_000);
+  });
+
+  it('[M3.requests/d] shows a held position on an episode’s page, and the show’s', async () => {
+    const s = await householdServer();
+    const { progressTarget, tracks } = await s.plan(episodeId);
+    await s.report(progressTarget.playId, 30);
+    const share = expect.closeTo(30 / (tracks[0]!.offset + tracks[0]!.duration), 5);
+
+    const page = await s.get(`/api/items/abs:${episodeId}`);
+    expect(page.statusCode, page.body).toBe(200);
+    expect(page.json<{ progress: number }>().progress).toEqual(share);
+
+    const show = await s.get(`/api/items/abs:${showId}`);
+    const listed = show.json<{ episodes: { ref: { id: string }; progress: number | null }[] }>();
+    expect(listed.episodes.find((e) => e.ref.id === episodeId)!.progress).toEqual(share);
+  });
+
+  it('[M3.requests/d] holds a place Back returns to: its row keeps its name, and a plan there resumes it on another device', async () => {
+    const s = await householdServer();
+    const book = await s.plan(multiId);
+    await s.report(book.progressTarget.playId, 60);
+    await s.plan(episodeId);
+
+    const queue = await s.get('/api/queues/spoken');
+    const played = queue.json<{ played: { ref: { id: string }; title: string }[] }>().played;
+    expect(played.at(-1)).toMatchObject({ ref: { id: multiId } });
+    expect(played.at(-1)!.title).not.toBe('');
+    expect((await s.plan(multiId, 'nora-phone')).startAt).toBe(60);
+  });
+
+  it('[M3.requests/d] names the chapter a household play is on, read through Auralis’s own account', async () => {
+    const s = await householdServer();
+
+    await s.plan(multiId);
+
+    const queue = await s.get('/api/queues/spoken');
+    const current = queue.json<{ current: { title: string; sub: string | null } | null }>().current;
+    expect(current!.title).toBe(multiSession.chapters[0]!.title);
+  });
+
+  it('[M3.requests/d] when a person’s own account gains the item, the held place carries over to it and then goes', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      const s = await householdServer();
+      const held = await s.plan(multiId, 'kara');
+      expect(s.sent.find((c) => c.path.endsWith('/play'))!.authorization).toBe('Bearer household');
+      await s.report(held.progressTarget.playId, 60, 1, 'kara');
+      expect(syncs(s.sent)).toEqual([]);
+
+      s.grantKara();
+      vi.advanceTimersByTime(61_000);
+      s.sent.length = 0;
+
+      // Their own account now plays it, from where Auralis held them.
+      const own = await s.plan(multiId, 'kara');
+      expect(s.sent.find((c) => c.path.endsWith('/play'))!.authorization).toBe(
+        'Bearer abs-token-kara',
+      );
+      expect(own.startAt).toBe(60);
+      const page = await s.get(`/api/items/abs:${multiId}`, 'kara');
+      expect(page.json<{ progress: number }>().progress).toBeGreaterThan(0);
+
+      // The first sync their account takes has it; Auralis lets go of its copy.
+      await s.report(own.progressTarget.playId, 61, 1, 'kara');
+      expect(syncs(s.sent).map((c) => c.authorization)).toEqual(['Bearer abs-token-kara']);
+      expect(heldOf(s.db, s.users.kara!, bookRef)).toBe(undefined);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('[M3.requests/d] plays as themself anyone whose own account reaches the item', async () => {
+    const s = await householdServer();
+    s.grantKara();
+
+    const plan = await s.plan(multiId, 'kara');
+    await s.report(plan.progressTarget.playId, 61, 1, 'kara');
+
+    expect(s.sent.filter((c) => c.authorization === 'Bearer household')).toEqual([]);
+    expect(syncs(s.sent)).toHaveLength(1);
+    expect(heldOf(s.db, s.users.kara!, bookRef)).toBe(undefined);
+  });
+
+  it('[M3.requests/d] says what is in the person’s own library: a played book, a track by its album', async () => {
+    const s = await householdServer();
+    expect((await s.search('Three Poems'))[0]!.inYourLibrary).toBe(false);
+    expect((await s.search(householdTrack.Name))[0]!.inYourLibrary).toBe(false);
+
+    await s.plan(multiId);
+    await s.plan(householdTrack.Id, 'nora', 'jellyfin');
+
+    expect((await s.search('Three Poems'))[0]!.inYourLibrary).toBe(true);
+    expect((await s.search(householdTrack.Name))[0]!.inYourLibrary).toBe(true);
   });
 });

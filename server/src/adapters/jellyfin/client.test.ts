@@ -20,6 +20,40 @@ function fake(answer: unknown) {
 const album = { Id: 'a1', Name: 'An Album', Type: 'MusicAlbum' };
 
 describe('the Jellyfin client', () => {
+  it('[M3.requests/d] reads a track by id with the API key, which has no user, on the recording', async () => {
+    const track = recordingSchema.parse(
+      JSON.parse(
+        readFileSync(new URL('./recordings/jf-household-track.json', import.meta.url), 'utf8'),
+      ),
+    );
+    const id = track.request.query.Ids!;
+    const jf = new JellyfinClient({
+      baseUrl: 'http://upstream.invalid',
+      token: '<token>',
+      fetch: replayFetch([track]),
+      serverKey: true,
+    });
+
+    expect(await jf.getPlayable(id)).toMatchObject({ Id: id, Type: 'Audio', Container: 'flac' });
+  });
+
+  it('[M3.requests/d] says 404 when the API key finds no such id', async () => {
+    const empty = recordingSchema.parse(
+      JSON.parse(
+        readFileSync(new URL('./recordings/jf-household-track.json', import.meta.url), 'utf8'),
+      ),
+    );
+    (empty.response.body as { json: { Items: unknown[] } }).json.Items = [];
+    const jf = new JellyfinClient({
+      baseUrl: 'http://upstream.invalid',
+      token: '<token>',
+      fetch: replayFetch([empty]),
+      serverKey: true,
+    });
+
+    await expect(jf.getPlayable(empty.request.query.Ids!)).rejects.toMatchObject({ status: 404 });
+  });
+
   it('reads a page of what the person played, as tracks and their albums, on the recording', async () => {
     const played = recordingSchema.parse(
       JSON.parse(
