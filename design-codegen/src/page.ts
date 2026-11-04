@@ -11,7 +11,8 @@
  * in, `onClick={<SignIn />}`; or hold the search query a field types and submits,
  * `onChange={<Query />}`; or do a menu's chosen verb to the item its ref binds,
  * `onSelect={<Choose ref={data.ref} />}`; or do a request's verb to the request its ref binds,
- * `onClick={<Act ref={request.id} verb={request.verb} />}`. An Open may also bind any of its route's query names,
+ * `onClick={<Act ref={request.id} verb={request.verb} />}`; or set a setting from a switch,
+ * `onChange={<Toggle setting="showEveryonesLibrary" />}`. An Open may also bind any of its route's query names,
  * `<Open page="search" q={s.query} />`. It is read into a page
  * tree, never run, so both platforms can generate from the same file: the web as a navigation to
  * the route, Android as one to the nav graph's destination with the same arguments.
@@ -54,7 +55,16 @@ export type PropValue =
    * A handler doing a request's verb to the request its `ref` binds; the verb is one of `ACT_VERBS`,
    * or `{ path }`, the one each item's data names. `candidate` binds the release chosen.
    */
-  | { kind: 'act'; verb: ActVerb | { path: string[] }; params: Record<string, string[]> };
+  | { kind: 'act'; verb: ActVerb | { path: string[] }; params: Record<string, string[]> }
+  /** A switch's handler setting a setting, one of `TOGGLE_SETTINGS`, to what the switch says. */
+  | { kind: 'toggle'; setting: ToggleSetting };
+
+/** The handler props a `<Toggle />` goes on: a switch's change. */
+export const TOGGLE_PROPS = ['onChange'] as const;
+
+/** The settings a switch can set, as schema's `Settings` names them. */
+export const TOGGLE_SETTINGS = ['showEveryonesLibrary'] as const;
+export type ToggleSetting = (typeof TOGGLE_SETTINGS)[number];
 
 /** The handler props an `<Act />` goes on: a row's art, and a control's or a row's tap. */
 export const ACT_PROPS = ['onAction', 'onClick'] as const;
@@ -119,7 +129,7 @@ const TAKEN = new Set([
   ...['frame', 'routes', 'generatePath', 'navigate', 'query', 'play', 'playing', 'go', 'inPanel'],
   ...['context', 'leading', 'key', 'tab', 'window', 'undefined'],
   ...['useContext', 'useLayout', 'useNavigate', 'usePlay', 'usePlaying', 'useQuery', 'useShellNav'],
-  ...['useChoose', 'act', 'useAct'],
+  ...['useChoose', 'act', 'useAct', 'toggle', 'useToggle'],
 ]);
 
 /** `value`, if it is a plain lower-case name a page may give an Each item or a When state. */
@@ -157,6 +167,7 @@ function propValue(value: t.JSXAttribute['value']): PropValue {
     if (name.type === 'JSXIdentifier' && name.name === 'Query') return query(e);
     if (name.type === 'JSXIdentifier' && name.name === 'Choose') return choose(e);
     if (name.type === 'JSXIdentifier' && name.name === 'Act') return act(e);
+    if (name.type === 'JSXIdentifier' && name.name === 'Toggle') return toggle(e);
     const tree = element(e);
     if (tree.kind !== 'element') return fail(e, 'Each and When go in children, not in a prop');
     return { kind: 'slot', tree };
@@ -297,6 +308,29 @@ function act(node: t.JSXElement): PropValue {
   return { kind: 'act', verb: verb as ActVerb | { path: string[] }, params };
 }
 
+/**
+ * `<Toggle setting="showEveryonesLibrary" />`: sets a setting, one of `TOGGLE_SETTINGS`, to what the
+ * switch says. It is always written, never bound, so the check knows every setting a page can set.
+ */
+function toggle(node: t.JSXElement): PropValue {
+  if (node.children.length > 0) return fail(node, 'Toggle takes no children');
+  const attrs = node.openingElement.attributes;
+  const attr = attrs[0];
+  if (
+    attrs.length !== 1 ||
+    attr?.type !== 'JSXAttribute' ||
+    attr.name.name !== 'setting' ||
+    attr.value?.type !== 'StringLiteral'
+  ) {
+    return fail(node, 'Toggle takes one setting, written setting="showEveryonesLibrary"');
+  }
+  const setting = attr.value.value;
+  if (!(TOGGLE_SETTINGS as readonly string[]).includes(setting)) {
+    return fail(node, `Toggle needs setting=${listed([...TOGGLE_SETTINGS])}`);
+  }
+  return { kind: 'toggle', setting: setting as ToggleSetting };
+}
+
 /** A handler that takes nothing, `<SignIn />` or `<Query />`: each app knows what it does. */
 function bare(node: t.JSXElement, what: string) {
   if (node.children.length > 0) return fail(node, `${what} takes no children`);
@@ -364,6 +398,9 @@ function element(node: t.JSXElement): PageTree {
   if (name.name === 'Choose')
     return fail(node, 'Choose goes in a handler prop, onSelect={<Choose … />}');
   if (name.name === 'Act') return fail(node, 'Act goes in a handler prop, onClick={<Act … />}');
+  if (name.name === 'Toggle') {
+    return fail(node, 'Toggle goes in a handler prop, onChange={<Toggle … />}');
+  }
   const props: Record<string, PropValue> = {};
   for (const attr of node.openingElement.attributes) {
     if (attr.type === 'JSXSpreadAttribute') return fail(attr, 'spread props are not allowed');
@@ -698,6 +735,18 @@ export function checkPage(
           }
           if (value.kind === 'act') {
             checkAct(node.line, node.component, prop, value, check);
+            continue;
+          }
+          if (value.kind === 'toggle') {
+            const at = `line ${node.line}: ${node.component}.${prop}`;
+            if (
+              (opens?.handlers.get(node.component)?.has(prop) ?? true) === false ||
+              !(TOGGLE_PROPS as readonly string[]).includes(prop)
+            ) {
+              errors.push(
+                `${at} cannot set a setting: Toggle goes on ${listed([...TOGGLE_PROPS])}`,
+              );
+            }
             continue;
           }
           if (value.kind === 'query') {

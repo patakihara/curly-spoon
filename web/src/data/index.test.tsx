@@ -33,6 +33,7 @@ function deps(who: Access, kept: Record<string, unknown> = {}) {
     peek: (key) => kept[/^[a-z]+/.exec(key)![0]],
     failed: () => false,
     load: async () => undefined,
+    reload: async () => undefined,
     retry: async () => undefined,
   };
   const given: PageDeps = {

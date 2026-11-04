@@ -10,7 +10,8 @@
  * drawn only once something is loaded. A `<Play>` plays through `usePlay()`, and a `<Query />` is
  * the search draft's `useQuery()` (`web/src/query`); a `<Choose ref>` hands a menu's chosen verb to
  * `useChoose()` (`web/src/choose`), the page's own verbs, which give none while nothing acts; an
- * `<Act ref verb>` hands a request's verb to `useAct()` (`web/src/act`) the same way; a back layer or subheader holding one, or an
+ * `<Act ref verb>` hands a request's verb to `useAct()` (`web/src/act`) the same way, and a
+ * `<Toggle setting>` a switch's change to `useToggle()` (`web/src/toggle`); a back layer or subheader holding one, or an
  * `<Open>` and so the router's `useNavigate()`, is drawn as a component of its own, since the
  * shell calls the frame's parts outside any page.
  */
@@ -111,6 +112,10 @@ const chooses = (node: PageTree) =>
 /** Whether an element does a request's verb, an `<Act>` in one of its handler props. */
 const acts = (node: PageTree) =>
   node.kind === 'element' && Object.values(node.props).some((v) => v.kind === 'act');
+
+/** Whether an element sets a setting, a `<Toggle>` in one of its handler props. */
+const toggles = (node: PageTree) =>
+  node.kind === 'element' && Object.values(node.props).some((v) => v.kind === 'toggle');
 
 /** Whether an element holds the search query, a `<Query />` in one of its handler props. */
 const queries = (node: PageTree) =>
@@ -266,6 +271,8 @@ function propLines(
     const also = candidate === undefined ? '' : `, ${pathCode(candidate)}`;
     return [`${name}={act(${pathCode(ref)}, ${verb}${also})}`];
   }
+  // A switch's change goes to the toggles the page is given, none while nothing sets the setting.
+  if (value.kind === 'toggle') return [`${name}={toggle('${value.setting}')}`];
   // No request endpoint exists yet. A handler doing nothing would draw a dead control as
   // enabled, so the prop is left out and Sonora draws the control disabled.
   if (value.kind === 'request') return [];
@@ -638,6 +645,12 @@ export function generateWebPage(
     }
   }
   const usesAct = some(root, acts);
+  for (const part of [back, subheader]) {
+    if (part !== undefined && some(part, toggles)) {
+      throw new Error(`${id}: Toggle goes in the page's content, not its back layer or subheader`);
+    }
+  }
+  const usesToggle = some(root, toggles);
   const actsBound = some(
     root,
     (node) =>
@@ -720,6 +733,7 @@ export function generateWebPage(
     ...(usesAct
       ? [`import { ${actsBound ? 'type RequestVerb, ' : ''}useAct } from '../../act';`]
       : []),
+    ...(usesToggle ? ["import { useToggle } from '../../toggle';"] : []),
     `import { ${[...used].sort().join(', ')} } from '../ui/index.js';`,
     '',
     `const placeholder = ${JSON.stringify(placeholder, null, 2)};`,
@@ -788,6 +802,7 @@ export function generateWebPage(
     ...(some(root, queries) ? ['  const query = useQuery();'] : []),
     ...(usesChoose ? ['  const choose = useChoose();'] : []),
     ...(usesAct ? ['  const act = useAct();'] : []),
+    ...(usesToggle ? ['  const toggle = useToggle();'] : []),
     ...(usesPlaying
       ? ['  const playing = usePlaying();', '  if (playing === null) return null;']
       : []),

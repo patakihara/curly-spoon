@@ -6,6 +6,7 @@ import {
   type LibraryList,
   type LibrarySort,
   mediaRefKey,
+  type RequestedEntry,
 } from '@auralis/schema';
 import { type BooksData } from '../generated/pages/Books';
 import { type BrowseData } from '../generated/pages/Browse';
@@ -17,7 +18,9 @@ import { artAt, emptied } from './format';
  * The library homes' data from `GET /api/library/{medium}`: each book, show or album as the
  * page's card, opening its page by its ref. The page's own words (its tabs, its sorts) stay as the
  * canvas has them; its sort says, in those words, the order the server answered in. A show's card
- * names its host; Podcasts' lists are given (`lists.ts`).
+ * names its host; Podcasts' lists are given (`lists.ts`). Your own requests sit among the cards in
+ * that order, each saying where it stands: with no page to open yet, a card has no ref, and Sonora
+ * draws it greyed. A home with no card of either kind draws its empty state (`homeState`).
  */
 
 interface SortWords {
@@ -83,11 +86,44 @@ type BookCard = BooksData['library'][number];
 type AlbumCard = MusicData['library'][number];
 type ShowCard = PodcastsData['library'][number];
 
+/** What a card is ordered by in `list`'s sort; null when it has no order to keep, a shuffle. */
+function orderKey(list: LibraryList, card: { title: string; sub: string }): string | null {
+  if (list.sort === 'random') return null;
+  return list.sort === 'artist' ? card.sub : card.title;
+}
+
+/**
+ * The cards of `list`: each item as `item` draws it, and each request as `asked` does, placed by the
+ * list's order, or after the items in a shuffle.
+ */
+function cardsOf<C extends { title: string; sub: string }>(
+  list: LibraryList,
+  item: (entry: LibraryList['items'][number]) => C,
+  asked: (entry: RequestedEntry) => C,
+): C[] {
+  const cards = list.items.map(item);
+  for (const entry of list.requested) {
+    const card = asked(entry);
+    const key = orderKey(list, card);
+    const at =
+      key === null
+        ? -1
+        : cards.findIndex((other) => (orderKey(list, other) ?? '').localeCompare(key) > 0);
+    cards.splice(at === -1 ? cards.length : at, 0, card);
+  }
+  return cards;
+}
+
+/** A home's state: empty with nothing of yours in it, and nothing asked for. */
+export const homeState = (cards: readonly unknown[]): 'empty' | 'full' =>
+  cards.length === 0 ? 'empty' : 'full';
+
 export function booksData(list: LibraryList, page: BooksData): BooksData {
   return {
     ...page,
     sort: sortOf(page.sort, list),
-    library: list.items.map(
+    library: cardsOf(
+      list,
       (book): BookCard =>
         ({
           title: book.title,
@@ -96,6 +132,15 @@ export function booksData(list: LibraryList, page: BooksData): BooksData {
           image: artAt(book.art, 'medium'),
           progress: book.progress,
           ...statusOf(book.availability),
+        }) as BookCard,
+      (asked): BookCard =>
+        ({
+          title: asked.title,
+          ref: '',
+          sub: asked.sub ?? '',
+          image: artAt(asked.art, 'medium'),
+          progress: null,
+          ...statusOf(asked.availability),
         }) as BookCard,
     ),
   };
@@ -111,7 +156,8 @@ export function podcastsData(
     ...page,
     sort: sortOf(page.sort, list),
     sections: lists === null ? page.sections.filter((s) => s !== 'Lists') : page.sections,
-    library: list.items.map(
+    library: cardsOf(
+      list,
       (show): ShowCard =>
         ({
           title: show.title,
@@ -120,6 +166,15 @@ export function podcastsData(
           image: artAt(show.art, 'medium'),
           unplayed: false,
           ...statusOf(show.availability),
+        }) as ShowCard,
+      (asked): ShowCard =>
+        ({
+          title: asked.title,
+          ref: '',
+          sub: asked.sub ?? '',
+          image: artAt(asked.art, 'medium'),
+          unplayed: false,
+          ...statusOf(asked.availability),
         }) as ShowCard,
     ),
     lists: lists ?? [],
@@ -130,7 +185,8 @@ export function musicData(list: LibraryList, page: MusicData): MusicData {
   return {
     ...page,
     sort: sortOf(page.sort, list),
-    library: list.items.map(
+    library: cardsOf(
+      list,
       (album): AlbumCard =>
         ({
           title: album.title,
@@ -138,6 +194,14 @@ export function musicData(list: LibraryList, page: MusicData): MusicData {
           sub: album.sub ?? '',
           image: artAt(album.art, 'medium'),
           ...statusOf(album.availability),
+        }) as AlbumCard,
+      (asked): AlbumCard =>
+        ({
+          title: asked.title,
+          ref: '',
+          sub: asked.sub ?? '',
+          image: artAt(asked.art, 'medium'),
+          ...statusOf(asked.availability),
         }) as AlbumCard,
     ),
   };

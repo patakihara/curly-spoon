@@ -44,20 +44,28 @@ export async function fontsLoaded(page: Page) {
 /**
  * Signs in through the household sign-on, from the page `path`, landing back on it laid out. These
  * tests read a library, and the recorded person has begun only one book, so each turns on the
- * setting that shows everyone's, as a person would, and opens the page again.
+ * setting that shows everyone's, as a person would, and opens the page again. A test of the
+ * person's own library passes `{ everyone: false }`, and it stays off.
  */
-export async function signIn(page: Page, origin: string, path: string) {
+export async function signIn(
+  page: Page,
+  origin: string,
+  path: string,
+  options: { everyone?: boolean } = {},
+) {
   await page.addInitScript(spyOnMediaSession);
   await page.goto(`${origin}${path}`);
   await expect(page).toHaveURL(/\/sign-in\?/);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page).toHaveURL(`${origin}${path}`);
-  const changed = await page.request.put(`${origin}/api/settings`, {
-    headers: { origin },
-    data: { showEveryonesLibrary: true },
-  });
-  expect(changed.status()).toBe(200);
-  await page.reload();
+  if (options.everyone !== false) {
+    const changed = await page.request.put(`${origin}/api/settings`, {
+      headers: { origin },
+      data: { showEveryonesLibrary: true },
+    });
+    expect(changed.status()).toBe(200);
+    await page.reload();
+  }
   await fontsLoaded(page);
 }
 

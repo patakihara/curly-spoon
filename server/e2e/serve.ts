@@ -5,7 +5,8 @@
  * episode that plays, the album it lists, then `ready`. Request logs go to stderr.
  *
  * AURALIS_E2E_ADDRESS is the host clients put in URLs (the emulator's `10.0.2.2` in CI);
- * AURALIS_E2E_PORT and AURALIS_E2E_SIGN_ON_PORT are the app's and the sign-on's ports.
+ * AURALIS_E2E_PORT and AURALIS_E2E_SIGN_ON_PORT are the app's and the sign-on's ports;
+ * AURALIS_E2E_NOTHING_PLAYED=1 has the recorded person begin with nothing played.
  */
 import { mediaRefKey } from '@auralis/schema';
 import { z } from 'zod';
@@ -16,6 +17,7 @@ const env = z
     AURALIS_E2E_ADDRESS: z.string().min(1).default('127.0.0.1'),
     AURALIS_E2E_PORT: z.coerce.number().int().min(1).max(65535).default(8787),
     AURALIS_E2E_SIGN_ON_PORT: z.coerce.number().int().min(1).max(65535).default(8788),
+    AURALIS_E2E_NOTHING_PLAYED: z.literal('1').optional(),
   })
   .parse(process.env);
 
@@ -24,6 +26,7 @@ const server = await recordedServer({
   port: env.AURALIS_E2E_PORT,
   signOnPort: env.AURALIS_E2E_SIGN_ON_PORT,
   logger: { stream: process.stderr },
+  nothingPlayed: env.AURALIS_E2E_NOTHING_PLAYED === '1',
 });
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {

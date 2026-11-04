@@ -43,16 +43,28 @@ import Shelf, { frame as shelfFrame } from '../generated/pages/Shelf';
 import ShelfReview, { frame as shelfReviewFrame } from '../generated/pages/ShelfReview';
 import Show, { frame as showFrame } from '../generated/pages/Show';
 import SignIn from '../generated/pages/SignIn';
+import { type Act, ActContext } from '../act';
 import { type Choose, ChooseContext } from '../choose';
 import { PlayContext, useListPlay, usePlayId } from '../player';
 import { type Draft, useTabDraft } from '../query';
+import { type RequestList, type RequestVerb } from '@auralis/schema';
+import { type Toggle, ToggleContext, type ToggleSetting } from '../toggle';
 import { useAccessOf } from './access';
 import { useDeps } from './deps';
 import { emptied } from './format';
 import { albumData, bookData, episodeData, showAwaited, showData } from './items';
-import { booksData, browseData, libraryAwaited, musicData, podcastsData } from './library';
+import {
+  booksData,
+  browseData,
+  homeState,
+  libraryAwaited,
+  musicData,
+  podcastsData,
+} from './library';
 import { emptyQueue, queueData } from './queue';
+import { requestsData, requestsMoving, requestsState, requestVerb } from './requests';
 import { emptySearch, loadSearchPage, searchLive, type SearchLoaded } from './search';
+import { setSetting, settingsData, settingsAwaited } from './settings';
 import { SignInScreen } from './sign-in';
 import { listCards, listData } from './lists';
 import {
@@ -66,6 +78,8 @@ import {
   loadList,
   loadPodcasts,
   loadQueues,
+  loadRequests,
+  loadSettings,
   settledAddress,
 } from './loads';
 import { addMenu, browserAsk, itemVerb, listVerb } from './menus';
@@ -83,8 +97,11 @@ import { answerFrom, type Answer, pageKey, SignedOut } from './store';
  * `GET /api/lists/{id}`, whose Play plays it through its own route (`listPlayOf`) and whose menu
  * renames, turns round or deletes it, a book's, show's or episode's menu adding it to your lists
  * (`./menus`), the queue from `GET /api/queues/{active}`, Search from what is typed into it
- * (`../query`) and `GET /api/search/suggest` or `GET /api/search`, sign in from the address. Now
- * Playing reads the player itself. Every other page draws empty, keeping only its own words,
+ * (`../query`) and `GET /api/search/suggest` or `GET /api/search`, sign in from the address,
+ * Requests from `GET /api/requests`, looking again after each verb and while anything moves, and
+ * Settings' switch for everyone's library from `GET /api/settings`, setting it through
+ * `PUT /api/settings`. A library home with nothing of yours draws its empty state. Now Playing
+ * reads the player itself. Every other page draws empty, keeping only its own words,
  * until its milestone serves it: a member never sees the canvas's samples. A page loading shows
  * its lists empty, a library home's or show's sort bar naming the sort its address asks; on a server nobody
  * can sign in to, every page keeps its canvas placeholder (`access.ts`); a request refused for
@@ -128,6 +145,14 @@ interface Screen<T, L = T> {
     ref: string,
     key: string,
   ): Promise<{ open?: string; replace?: boolean; reload?: boolean }>;
+  /** For a page that says it is empty, which of its states what it loaded draws. */
+  stateOf?(loaded: L): string;
+  /** For a page whose data moves by itself, whether what it loaded should be looked at again. */
+  polls?(loaded: L): boolean;
+  /** For a page of requests, a request's verb: the page loads again after it. */
+  acts?(api: ApiClient, ref: string, verb: RequestVerb, candidate?: string): Promise<void>;
+  /** For a page of switches, a setting set to what its switch says: the page loads again after. */
+  toggles?(api: ApiClient, setting: ToggleSetting, next: boolean): Promise<void>;
   /** How it loads; a page nothing serves yet draws `empty` and loads nothing. */
   load?(api: ApiClient, params: Params): Promise<L>;
   /**
@@ -160,6 +185,10 @@ function unserved<T>(
 }
 
 const searchEmpty = emptySearch(searchFrame.placeholder);
+const requestsEmpty = emptied(requestsFrame.placeholder);
+
+/** How often a page whose data moves by itself looks again. */
+const POLL_MS = 5_000;
 
 /** A library home's page, and the seed its shuffle answered, null unless random. */
 interface Ordered<T> {
@@ -233,6 +262,7 @@ const screens: Screen<never>[] = [
       return { data: booksData(list, booksFrame.placeholder), seed: list.seed };
     },
     settle: settleOrder,
+    stateOf: ({ data }) => homeState(data.library),
     verbs: sortVerbs(pathOf('books')),
   } satisfies Screen<typeof booksFrame.placeholder, Ordered<typeof booksFrame.placeholder>>,
   {
@@ -250,11 +280,17 @@ const screens: Screen<never>[] = [
         lists === null ? null : listCards(lists),
         podcastsFrame.placeholder,
       );
-      return { data, seed: library.seed };
+      // The Digest is always there, so only a list holding something keeps the home from empty.
+      const holding = (lists ?? []).some((list) => list.count > 0);
+      return { data, seed: library.seed, holding };
     },
     settle: settleOrder,
+    stateOf: ({ data, holding }) => (holding ? 'full' : homeState(data.library)),
     verbs: sortVerbs(podcastsPath),
-  } satisfies Screen<typeof podcastsFrame.placeholder, Ordered<typeof podcastsFrame.placeholder>>,
+  } satisfies Screen<
+    typeof podcastsFrame.placeholder,
+    Ordered<typeof podcastsFrame.placeholder> & { holding: boolean }
+  >,
   {
     name: 'music',
     Page: Music,
@@ -265,6 +301,7 @@ const screens: Screen<never>[] = [
       return { data: musicData(list, musicFrame.placeholder), seed: list.seed };
     },
     settle: settleOrder,
+    stateOf: ({ data }) => homeState(data.library),
     verbs: sortVerbs(pathOf('music')),
   } satisfies Screen<typeof musicFrame.placeholder, Ordered<typeof musicFrame.placeholder>>,
   {
@@ -339,9 +376,26 @@ const screens: Screen<never>[] = [
     },
     load: (api, asks) => loadSearchPage(api, asks, searchEmpty),
   } satisfies Screen<SearchData, SearchLoaded>,
-  unserved('settings', Settings, settingsFrame),
+  {
+    name: 'settings',
+    Page: Settings,
+    frame: settingsFrame,
+    empty: fixed(settingsAwaited(settingsFrame.placeholder)),
+    load: async (api) => settingsData(await loadSettings(api), settingsFrame.placeholder),
+    toggles: setSetting,
+  } satisfies Screen<typeof settingsFrame.placeholder>,
   unserved('setup', Setup, setupFrame, ['intro', 'codeHint']),
-  unserved('requests', Requests, requestsFrame),
+  {
+    name: 'requests',
+    Page: Requests,
+    frame: requestsFrame,
+    empty: fixed(requestsEmpty),
+    load: loadRequests,
+    settle: (_params, list) => ({ data: requestsData(list, requestsEmpty), address: null }),
+    stateOf: requestsState,
+    polls: requestsMoving,
+    acts: requestVerb,
+  } satisfies Screen<typeof requestsFrame.placeholder, RequestList>,
   unserved('shelf', Shelf, shelfFrame),
   unserved('shelfReview', ShelfReview, shelfReviewFrame),
   unserved('artist', Artist, artistFrame, ['kind']),
@@ -430,8 +484,10 @@ function useScreenData<T, L>(screen: Screen<T, L>): Drawn<T> | undefined {
   }, [settledKey, settledSearch, key, pages, setSearch]);
   if (who === 'canvas') return undefined;
   if (live === undefined) {
-    if (settled !== null) return { data: settled.data };
-    return { data: (kept as T | undefined) ?? screen.empty(params) };
+    const state = kept === undefined ? undefined : screen.stateOf?.(kept as L);
+    const inState = state === undefined ? {} : { state };
+    if (settled !== null) return { data: settled.data, ...inState };
+    return { data: (kept as T | undefined) ?? screen.empty(params), ...inState };
   }
   const drawn = live.draw(
     answerFrom(kept as L | undefined, failed),
@@ -486,6 +542,69 @@ function useVerbs<T>(screen: Screen<T>, drawn: Drawn<T> | undefined): Choose | n
   }, [verbs, live, api, navigate, pages, load, access, screen.name, params]);
 }
 
+/**
+ * What `screen` does after a change it made: whether the change went through or was refused, loads
+ * the page again, to show what the server now holds. A refusal for want of a sign-in goes to sign
+ * in, and any other failure is logged, the shell binding no status to show it in.
+ */
+function useChange<T, L>(screen: Screen<T, L>) {
+  const { api, access, pages } = useDeps();
+  const params = useParams();
+  return (what: string, change: () => Promise<void>) => {
+    void change()
+      .catch((error: unknown) => {
+        if (error instanceof SignedOut) access.refused();
+        else console.warn('the change failed', what, error);
+      })
+      .finally(() => {
+        const load = screen.load;
+        if (load !== undefined)
+          void pages.reload(pageKey(screen.name, params), () => load(api, params));
+      });
+  };
+}
+
+/** A request's verbs for the page to hand down: none on the canvas, or for a page of no requests. */
+function useActs<T, L>(screen: Screen<T, L>, drawn: Drawn<T> | undefined): Act | null {
+  const { api } = useDeps();
+  const change = useChange(screen);
+  const acts = screen.acts;
+  if (acts === undefined || drawn === undefined) return null;
+  return (ref, verb, candidate) => () => change(verb, () => acts(api, ref, verb, candidate));
+}
+
+/** A page's switches for it to hand down: none on the canvas, or for a page with none that work. */
+function useToggles<T, L>(screen: Screen<T, L>, drawn: Drawn<T> | undefined): Toggle | null {
+  const { api } = useDeps();
+  const change = useChange(screen);
+  const toggles = screen.toggles;
+  if (toggles === undefined || drawn === undefined) return null;
+  return (setting) => (next) => change(setting, () => toggles(api, setting, next));
+}
+
+/** Looks at `screen` again every so often while it is open and what it holds moves by itself. */
+function usePolling<T, L>(screen: Screen<T, L>): void {
+  const { api, access, pages } = useDeps();
+  const who = useAccessOf(access);
+  const params = useParams();
+  const open = useMatches().at(-1)?.id === screen.name;
+  const key = pageKey(screen.name, params);
+  const kept = useSyncExternalStore(
+    pages.subscribe,
+    () => pages.peek(key),
+    () => pages.peek(key),
+  );
+  const moving =
+    who === 'member' && open && kept !== undefined && screen.polls?.(kept as L) === true;
+  useEffect(() => {
+    const load = screen.load;
+    if (!moving || load === undefined) return;
+    const timer = setInterval(() => void pages.load(key, () => load(api, params)), POLL_MS);
+    return () => clearInterval(timer);
+    // `params` is in `key`.
+  }, [moving, key, screen, api, pages]);
+}
+
 const made = new Map<Screen<never>, ComponentType>();
 
 /** The page `screen` draws, given its data. */
@@ -500,11 +619,16 @@ function pageOf<T>(screen: Screen<T>): ComponentType {
         ? function ScreenPage() {
             const shown = useScreenData(screen);
             const choose = useVerbs(screen, shown);
+            const act = useActs(screen, shown);
+            const toggle = useToggles(screen, shown);
+            usePolling(screen);
             const page = <Page data={shown?.data} state={shown?.state} />;
-            return choose === null ? (
-              page
-            ) : (
-              <ChooseContext.Provider value={choose}>{page}</ChooseContext.Provider>
+            return (
+              <ChooseContext.Provider value={choose}>
+                <ActContext.Provider value={act}>
+                  <ToggleContext.Provider value={toggle}>{page}</ToggleContext.Provider>
+                </ActContext.Provider>
+              </ChooseContext.Provider>
             );
           }
         : function ListScreenPage() {

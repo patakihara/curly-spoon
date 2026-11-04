@@ -13,7 +13,9 @@ import {
   parseMediaRefKey,
   type QueueType,
   QueueView,
+  RequestList,
   SearchResults,
+  Settings,
   SuggestionList,
 } from '@auralis/schema';
 import { type ApiClient } from '../api/client';
@@ -36,6 +38,14 @@ export async function answer<T>(
   if (data === undefined) throw new Error(`answered ${response.status}`);
   return parse(data);
 }
+
+/** Your requests: those under way, and those waiting for you to choose a release. */
+export const loadRequests = (api: ApiClient): Promise<RequestList> =>
+  answer(api.GET('/api/requests'), (data) => RequestList.parse(data));
+
+/** Your settings. */
+export const loadSettings = (api: ApiClient): Promise<Settings> =>
+  answer(api.GET('/api/settings'), (data) => Settings.parse(data));
 
 /** The order a library list is asked in: a sort, title when absent, and a seed with random. */
 export interface LibraryAsk {

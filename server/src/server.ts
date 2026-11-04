@@ -19,7 +19,7 @@ import type { AppConfig } from './config.js';
 import { loadSecretKey } from './crypto/secretBox.js';
 import { startIndexJob } from './libraryIndex/start.js';
 import { lyricsService, startLyricsJob } from './lyrics/start.js';
-import { stepsRegistry } from './requests/steps.js';
+import { type MediumSteps, stepsRegistry } from './requests/steps.js';
 import type { Upstreams } from './upstream/links.js';
 import { readSecretFile } from './secretFile.js';
 import { openDatabase } from './store/connection.js';
@@ -64,7 +64,12 @@ function householdClients(config: AppConfig, fetch: FetchLike): Upstreams {
 
 export async function assembleServer(
   config: AppConfig,
-  deps: { fetch: FetchLike; logger?: BuildAppOptions['logger'] },
+  deps: {
+    fetch: FetchLike;
+    logger?: BuildAppOptions['logger'];
+    /** The steps of each medium that can be requested; `main.ts` gives none until each lands. */
+    steps?: readonly MediumSteps[];
+  },
 ): Promise<Server> {
   const { fetch } = deps;
   mkdirSync(config.dataDir, { recursive: true });
@@ -137,7 +142,7 @@ export async function assembleServer(
     lyrics,
     // Each medium's item registers its steps here; until then nothing can be requested.
     requests: {
-      steps: stepsRegistry([]),
+      steps: stepsRegistry(deps.steps ?? []),
       everyMs: config.requests.everySeconds * 1_000,
       notIndexedAfterMs: config.requests.notIndexedAfterHours * 3_600_000,
       stepTimeoutMs: config.requests.stepTimeoutSeconds * 1_000,

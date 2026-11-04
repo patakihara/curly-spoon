@@ -88,7 +88,13 @@ take. It goes only on `onAction` or `onClick`, and the check refuses it elsewher
 to the verbs the page is handed, `useAct()` in `web/src/act`, which give none on the canvas or while
 nothing acts, so the control draws disabled; Android leaves it unbound until M5 and it draws disabled
 too. A row in flight acts through a trailing `IconButton`, since a phone's `ResultRow` hides the art's
-action while it draws a ring. A generated
+action while it draws a ring.
+
+`onChange={<Toggle setting="showEveryonesLibrary" />}` sets a setting to what a switch says. The
+setting is always written, and the check refuses any but that one, and any prop but `onChange`. The
+web gives it to the toggles the page is handed, `useToggle()` in `web/src/toggle`, which give none on
+the canvas or while nothing sets it, so the switch draws disabled; Android leaves it unbound until M5
+and it draws disabled too. A generated
 page never binds a handler that does nothing: a control that seems to work must work. The web
 page navigates to the route through the router; the Android generator reads the same node as a
 navigation to the nav graph's destination.

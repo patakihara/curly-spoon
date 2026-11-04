@@ -11,6 +11,7 @@ import {
   musicData,
   podcastsData,
   statusOf,
+  homeState,
 } from './library';
 
 const entry = (over: Partial<LibraryEntry>): LibraryEntry => ({
@@ -62,6 +63,52 @@ describe('[M3.requests/c] your own requests sit among your items', () => {
         tone: 'progress',
       }),
     ]);
+  });
+});
+
+describe('[M3.requests/c] a request among the items', () => {
+  const asked = (title: string) => ({
+    id: title,
+    kind: 'book',
+    title,
+    sub: 'An Author',
+    art: null,
+    availability: { kind: 'requested', status: 'queued' },
+  });
+  const listed = (sort: 'title' | 'random', ...requested: ReturnType<typeof asked>[]) =>
+    LibraryList.parse({
+      items: [entry({ title: 'Bravo' }), entry({ title: 'Delta' })],
+      requested,
+      sort,
+      seed: sort === 'random' ? 7 : null,
+    });
+  const titles = (list: LibraryList) =>
+    booksData(list, books.placeholder).library.map((c) => c.title);
+
+  it('[M3.requests/c] sits where the list’s order puts it', () => {
+    expect(titles(listed('title', asked('Alpha'), asked('Charlie'), asked('Echo')))).toEqual([
+      'Alpha',
+      'Bravo',
+      'Charlie',
+      'Delta',
+      'Echo',
+    ]);
+  });
+
+  it('[M3.requests/c] goes after the items in a shuffle', () => {
+    expect(titles(listed('random', asked('Alpha')))).toEqual(['Bravo', 'Delta', 'Alpha']);
+  });
+
+  it('[M3.requests/c] opens nothing yet, so its card draws greyed', () => {
+    const cards = booksData(listed('title', asked('Alpha')), books.placeholder).library;
+    expect(cards[0]).toMatchObject({ ref: '', status: 'Queued', tone: 'progress' });
+  });
+
+  it('[M3.requests/c] a home is empty with nothing of yours, and full with a request', () => {
+    expect(homeState([])).toBe('empty');
+    expect(homeState(booksData(listed('title', asked('Alpha')), books.placeholder).library)).toBe(
+      'full',
+    );
   });
 });
 

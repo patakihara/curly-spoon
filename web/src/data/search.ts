@@ -17,10 +17,11 @@ import { type Answer } from './store';
 /**
  * Search's data from `GET /api/search/suggest` and `GET /api/search`: each suggestion as a row
  * that runs its search, and each result as a row that opens its page (a song its album) and whose
- * art plays it. The best result is the top one, the rest are in your library, and nothing is
- * outside it before M3.catalog. The page's own words (its placeholder, its kinds) stay as given;
- * what it says when a search finds nothing or fails is written in the page, which this only
- * chooses the state of.
+ * art plays it. The best result of all is the top one, the rest go in or out of your library as
+ * the server says, and every one of them plays: what the household has that you have not played
+ * or asked for is outside your library, and plays through Auralis's own account. The page's own
+ * words (its placeholder, its kinds) stay as given; what it says when a search finds nothing or
+ * fails is written in the page, which this only chooses the state of.
  * The kinds' names and the meta lines are written here, as the library homes write theirs, until
  * M5.strings and M5.formats.
  */
@@ -94,10 +95,17 @@ export function suggestData(list: SuggestionList, page: SearchData): SearchData 
   };
 }
 
-/** Search's results: the best on top, the rest in your library. */
+/** Search's results: the best of all on top, the rest in or out of your library. */
 export function searchData(answer: SearchResults, page: SearchData): SearchData {
-  const [top, ...rest] = answer.results.map(rowOf);
-  return { ...page, ...(top === undefined ? {} : { top }), library: rest };
+  const [best, ...rest] = answer.results;
+  const rows = (inYourLibrary: boolean) =>
+    rest.filter((result) => result.inYourLibrary === inYourLibrary).map(rowOf);
+  return {
+    ...page,
+    ...(best === undefined ? {} : { top: rowOf(best) }),
+    library: rows(true),
+    outside: { ...page.outside, household: rows(false) },
+  };
 }
 
 /** Search with nothing found yet: its own words as the canvas has them, every row empty. */

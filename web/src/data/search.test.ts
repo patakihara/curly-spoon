@@ -110,6 +110,24 @@ describe('search’s data', () => {
     expect(data.suggestions).toEqual([]);
   });
 
+  it('[M3.requests/d] sorts results in or out of your library as the server says, each one playing', () => {
+    const answer = SearchResults.parse({
+      query: 'o',
+      results: [
+        result({ title: 'Best', inYourLibrary: false, ref: { source: 'abs', id: 'b1' } }),
+        result({ title: 'Mine', inYourLibrary: true, ref: { source: 'abs', id: 'b2' } }),
+        result({ title: 'Theirs', inYourLibrary: false, ref: { source: 'abs', id: 'b3' } }),
+      ],
+    });
+    const data = searchData(answer, empty);
+    expect(data.top.title).toBe('Best');
+    expect(data.library.map((r) => r.title)).toEqual(['Mine']);
+    expect(data.outside.household).toEqual([
+      expect.objectContaining({ title: 'Theirs', playRef: 'abs:b3', ref: 'abs:b3' }),
+    ]);
+    expect(data.top.playRef).toBe('abs:b1');
+  });
+
   it('keeps the page’s own words and nothing of the canvas’s samples while nothing is found', () => {
     const data = searchData(SearchResults.parse({ query: 'zz', results: [] }), empty);
     expect(data.top.title).toBe('');

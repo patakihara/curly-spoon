@@ -10,6 +10,12 @@ export default function Settings({ data }) {
             <Each of={data.settings} as="setting">
               <SettingRow title={setting.title} sub={setting.sub} checked={setting.checked} />
             </Each>
+            <SettingRow
+              title={data.everyone.title}
+              sub={data.everyone.sub}
+              checked={data.everyone.checked}
+              onChange={<Toggle setting="showEveryonesLibrary" />}
+            />
           </LayoutGrid>
         </Section>
       </PageBody>

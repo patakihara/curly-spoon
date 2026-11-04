@@ -1,6 +1,6 @@
 ---
 page: settings
-pageHash: 5c9b44607cce367e70495b6992c022b866b9fc6341f90772569144897c4dbbd5
+pageHash: f346619bdec99a78d95a96eff6f7f35ab1d4ec00c231d128724a0f917a102124
 sonora: [kit:mobile/settings, kit:desktop/settings]
 ---
 
@@ -73,4 +73,4 @@ Measured in the browser (`getBoundingClientRect`), kit against page: page margin
 
 ## M3.requests
 
-- Changed on purpose: "Show everyone's library" joins the switches, off by default, bound as they are: `title`, `sub` and `checked` from the data.
+- Changed on purpose: "Show everyone's library" joins the switches, off by default, its `title`, `sub` and `checked` from the data. It is the one switch that works: `onChange` binds `Toggle`, so a person whose library narrowed can set it now, where the others stay disabled until M5.settings. On the canvas and on Android nothing sets it, so it draws disabled like them.
