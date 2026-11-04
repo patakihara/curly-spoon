@@ -7,7 +7,7 @@ part: The product
 
 ### Your library
 
-- **Library pages stay pure.** External items appear only on Browse, in Search, and on artist or author pages.
+- **Library pages stay pure.** External items appear only on Browse, in Search, and on artist or author pages. Your requests sit among your items, greyed with their status.
 - **Artist and author pages** do what Spotify's do, plus an "In your library" carousel.
 - **Library:** a 3-across grid on phones, bigger on desktop, a grid/list toggle, and sort by title, artist or **Random** (tap again to reshuffle).
 - **In-library marking:** not-playable items are greyed out. Streamable ones stay normal, with a subtle marker. Where the marker goes is still open.

@@ -10,7 +10,7 @@ One pipeline and status vocabulary for all three media, so every request renders
 ::: diagram get
 
 - **"Done" means it plays.** A request reaches <span class="pill t-lib">In library</span> only once the item is in the local index, so the card turns playable by itself.
-- **A Requests view** (opened from global Search) lists every album and book in flight with source, size, status, retry and cancel. Podcasts never appear: subscribing is instant.
+- **A Requests view** (opened from global Search) lists your albums and books in flight with source, size, status, retry and cancel. Podcasts never appear: subscribing is instant.
 
 ### Music
 
