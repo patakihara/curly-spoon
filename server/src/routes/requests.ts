@@ -35,7 +35,7 @@ import { addClaim } from '../store/claims.js';
 import {
   arrivedRequests,
   createRequest,
-  joinRequest,
+  joinArrivedRequest,
   requestOf,
   requestsOf,
   type StoredRequest,
@@ -76,10 +76,22 @@ export function requestRoutes(app: FastifyInstance, deps: RequestActDeps): void 
     return found;
   };
 
+  /** The same, for a move only its medium's steps can carry on from. */
+  const movable = (request: FastifyRequest, id: string) => {
+    const found = own(request, id);
+    if (!steps.has(found.medium)) throw new Refusal(409, 'medium_unavailable');
+    return found;
+  };
+
   const viewOf = (request: StoredRequest): RequestView => {
     const { state, result, release } = request;
     const indexed = result === null ? undefined : indexedRow(db, result.source, result.id);
-    const { verbs, candidates } = actions(request);
+    const { verbs, candidates } = steps.has(request.medium)
+      ? actions(request)
+      : {
+          verbs: request.state.status === 'inLibrary' ? [] : (['cancel'] as const),
+          candidates: [],
+        };
     return {
       id: request.id,
       medium: request.medium,
@@ -91,7 +103,7 @@ export function requestRoutes(app: FastifyInstance, deps: RequestActDeps): void 
       status: state.status,
       progress: state.status === 'downloading' ? state.progress : null,
       reason: state.status === 'failed' ? state.reason : null,
-      verbs,
+      verbs: [...verbs],
       candidates: candidates.map(candidateOf),
     };
   };
@@ -107,7 +119,7 @@ export function requestRoutes(app: FastifyInstance, deps: RequestActDeps): void 
     if (!steps.has(ref.medium)) throw new Refusal(409, 'medium_unavailable');
     const there = arrived(ref);
     if (there?.result != null) {
-      joinRequest(db, there.id, user.id, now());
+      joinArrivedRequest(db, there.id, user.id, ref, now());
       addClaim(db, user.id, there.result, ARRIVAL_CLAIM[there.medium], now());
       return viewOf(there);
     }
@@ -135,7 +147,7 @@ export function requestRoutes(app: FastifyInstance, deps: RequestActDeps): void 
   );
 
   serve(app, retryRequestRoute, async (request, _reply, _body, { params }) => {
-    own(request, params.id);
+    movable(request, params.id);
     const retried = await retryRequest(deps, params.id);
     if (retried === null) throw new Refusal(409, 'not_failed');
     return viewOf(retried);
@@ -151,7 +163,7 @@ export function requestRoutes(app: FastifyInstance, deps: RequestActDeps): void 
   // One tap from a failed row makes both moves: back to the choice, then the choice. The candidate
   // is checked first, so a refused tap drops nothing.
   serve(app, chooseReleaseRoute, async (request, _reply, { candidate }, { params }) => {
-    const found = own(request, params.id);
+    const found = movable(request, params.id);
     if (found.state.status === 'failed') {
       if (!otherReleases(found).some(({ id }) => id === candidate)) {
         throw new Refusal(409, 'not_offered');

@@ -640,7 +640,8 @@ export const migrations: readonly Migration[] = [
           WHERE status NOT IN ('inLibrary', 'failed');
 
         -- Every catalogue id a live request holds, one row each: a second person's request
-        -- sharing any of them joins it. A request in the library lets go of its ids.
+        -- sharing any of them joins it. A request in the library lets go of its ids, which then
+        -- only find it there, as nothing joins what has arrived.
         CREATE TABLE request_keys (
           medium     TEXT NOT NULL,
           key        TEXT NOT NULL,
@@ -648,9 +649,20 @@ export const migrations: readonly Migration[] = [
           PRIMARY KEY (medium, key)
         );
         CREATE INDEX idx_request_keys_request ON request_keys(request_id);
+        CREATE TABLE arrived_keys (
+          medium     TEXT NOT NULL,
+          key        TEXT NOT NULL,
+          request_id TEXT NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+          PRIMARY KEY (medium, key, request_id)
+        );
+        CREATE INDEX idx_arrived_keys_request ON arrived_keys(request_id);
         CREATE TRIGGER requests_in_library AFTER UPDATE OF status ON requests
           WHEN NEW.status = 'inLibrary'
-          BEGIN DELETE FROM request_keys WHERE request_id = NEW.id; END;
+          BEGIN
+            INSERT OR IGNORE INTO arrived_keys (medium, key, request_id)
+              SELECT medium, key, request_id FROM request_keys WHERE request_id = NEW.id;
+            DELETE FROM request_keys WHERE request_id = NEW.id;
+          END;
 
         -- Everyone on a request: who made it and who joined it. A request nobody is on any
         -- longer goes with its last person.

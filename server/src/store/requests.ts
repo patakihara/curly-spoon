@@ -261,22 +261,38 @@ export function requestOf(db: Db, id: string, userId: string, log?: JobLog): Sto
 }
 
 /**
- * The requests for the same thing that have reached the library, newest first. These hold no live
- * keys, so a request for the same thing does not join them.
+ * The requests for the same thing that have reached the library, by any catalogue id anyone on them
+ * brought, newest first. These hold no live keys, so a request for the same thing does not join them.
  */
 export function arrivedRequests(db: Db, ref: RequestRef, log?: JobLog): StoredRequest[] {
-  const keys = new Set(catalogueKeys(ref));
+  const keys = catalogueKeys(ref);
   return readableRows(
     db
       .prepare(
-        `SELECT ${COLUMNS} FROM requests r WHERE r.medium = ? AND r.status = 'inLibrary'
+        `SELECT DISTINCT ${COLUMNS} FROM arrived_keys k JOIN requests r ON r.id = k.request_id
+         WHERE k.medium = ? AND k.key IN (${keys.map(() => '?').join(', ')})
          ORDER BY r.updated_at DESC, r.id`,
       )
-      .all(ref.medium) as unknown[],
+      .all(ref.medium, ...keys) as unknown[],
     log,
-  ).filter((one) =>
-    catalogueKeys({ medium: one.medium, target: one.target }).some((key) => keys.has(key)),
   );
+}
+
+/** Puts a person on what has arrived; any catalogue id they brought finds it from now on. */
+export function joinArrivedRequest(
+  db: Db,
+  id: string,
+  userId: string,
+  ref: RequestRef,
+  now: number,
+): void {
+  db.transaction(() => {
+    const addKey = db.prepare(
+      'INSERT OR IGNORE INTO arrived_keys (medium, key, request_id) VALUES (?, ?, ?)',
+    );
+    for (const key of catalogueKeys(ref)) addKey.run(ref.medium, key, id);
+    joinRequest(db, id, userId, now);
+  })();
 }
 
 /** Every request the advance job moves: neither in the library nor failed, oldest first. */

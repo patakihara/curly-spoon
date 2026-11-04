@@ -83,8 +83,9 @@ export function standInSteps(medium: RequestMedium, script: StandInScript = {}):
         const n = count('poll');
         return Promise.resolve(polls[Math.min(n, polls.length) - 1] ?? { kind: 'done' });
       },
-      cancel: (handle) => {
-        cancelled.push(handle);
+      cancel: (target) => {
+        const handle = 'handle' in target ? target.handle : started.get(target.key);
+        if (handle !== undefined) cancelled.push(handle);
         count('cancel');
         return Promise.resolve();
       },

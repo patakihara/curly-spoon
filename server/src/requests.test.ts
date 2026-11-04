@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import {
   RequestList,
   RequestStatus,
+  type RequestIds,
   RequestView,
   SESSION_COOKIE,
   type MediaRef,
@@ -39,7 +40,7 @@ import {
   type RequestJobDeps,
 } from './requests/job.js';
 import { ROUTES } from './requests/machine.js';
-import { type MediumSteps, stepsRegistry } from './requests/steps.js';
+import { type DownloadHandle, type MediumSteps, stepsRegistry } from './requests/steps.js';
 import { claimsOf } from './store/claims.js';
 import { openDatabase, type Db } from './store/connection.js';
 import { createDevice } from './store/devices.js';
@@ -701,8 +702,8 @@ describe('the windows a crash, a cancel or a second tap can fall into', () => {
     const started = reread(one).handle;
     expect(started).not.toBeNull();
 
-    drops[1]!();
-    await secondTap;
+    expect(await secondTap).toBeNull();
+    expect(drops).toHaveLength(1);
     expect(reread(one).handle).toEqual(started);
   });
 
@@ -1326,6 +1327,7 @@ describe('the requests routes', () => {
       expect(res.statusCode).toBe(409);
       expect(res.json()).toEqual({ error: 'medium_unavailable' });
       expect(stored(id).state.status).toBe('failed');
+      expect((await view(id)).verbs).toEqual(['cancel']);
     });
 
     it('offers no choice to take once its medium has no steps', async () => {
@@ -1338,6 +1340,7 @@ describe('the requests routes', () => {
       expect(res.statusCode).toBe(409);
       expect(res.json()).toEqual({ error: 'medium_unavailable' });
       expect(stored(id).state.status).toBe('needsChoice');
+      expect(await view(id)).toMatchObject({ verbs: ['cancel'], candidates: [] });
     });
 
     it('finds what arrived by a catalogue id a person joined with, starting nothing', async () => {
@@ -1360,6 +1363,86 @@ describe('the requests routes', () => {
       });
       expect(RequestView.parse(res.json())).toMatchObject({ id, status: 'inLibrary' });
       expect(db.prepare('SELECT id FROM requests').all()).toEqual([{ id }]);
+    });
+
+    it('finds what arrived by a new id someone brought when they asked for it there', async () => {
+      const job = await serving(standInSteps('book', { imports: book }));
+      const { asin } = refs.book.target.ids;
+      const isbn = '9780000000002';
+      const { id } = await ask('book', 'ana');
+      await until(job, id, 'importing');
+      await advanceRequests(job);
+      await indexRecordings(db, clock);
+      await until(job, id, 'inLibrary');
+      const asking = (ids: RequestIds) =>
+        call('POST', '', 'ben', { ref: { ...refs.book, target: { ...refs.book.target, ids } } });
+
+      expect(RequestView.parse((await asking({ asin, isbn })).json()).id).toBe(id);
+      expect(RequestView.parse((await asking({ isbn })).json()).id).toBe(id);
+      expect(db.prepare('SELECT id FROM requests').all()).toEqual([{ id }]);
+    });
+
+    it('drops by its key a download whose start threw after it got through, when cancelled', async () => {
+      const steps = standInSteps('song');
+      const start = steps.download!.start;
+      const got: DownloadHandle[] = [];
+      steps.download!.start = async (...args) => {
+        got.push(await start(...args));
+        throw new Error('the answer was lost');
+      };
+      const job = await serving(steps);
+      const { id } = await ask('song');
+      await until(job, id, 'failed');
+      expect(stored(id).handle).toBeNull();
+
+      expect((await call('POST', `/${id}/cancel`, 'ana')).statusCode).toBe(200);
+      expect(steps.cancelled).toEqual(got);
+    });
+
+    it('a start waits for a cancel still out, so a release keyed by hash stays up', async () => {
+      const live = new Set<string>(['same-info-hash']);
+      const held: (() => void)[] = [];
+      const steps: MediumSteps = {
+        medium: 'song',
+        search: () =>
+          Promise.resolve({ kind: 'picked', release: standInRelease('one'), others: [] }),
+        import: () => Promise.resolve({ ref: songsAlbum }),
+        download: {
+          start: () => {
+            live.add('same-info-hash');
+            return Promise.resolve({ hash: 'same-info-hash' });
+          },
+          poll: () => Promise.resolve({ kind: 'downloading', progress: 0.5 }),
+          cancel: () =>
+            new Promise<void>((resolve) => {
+              held.push(() => {
+                live.delete('same-info-hash');
+                resolve();
+              });
+            }),
+        },
+      };
+      const job = await serving(steps);
+      const { id } = await ask('song');
+      await until(job, id, 'downloading');
+      await advanceRequests(job);
+      const at = stored(id);
+      const state = {
+        status: 'failed',
+        failedStep: 'downloading',
+        reason: 'downloadFailed',
+      } as const;
+      saveRequest(db, id, { state }, clock, at.version);
+
+      const retried = call('POST', `/${id}/retry`, 'ana');
+      await vi.waitFor(() => expect(held).toHaveLength(1));
+      const turn = advanceRequests(job);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      held[0]!();
+      await Promise.all([retried, turn]);
+
+      expect(stored(id).handle).toEqual({ hash: 'same-info-hash' });
+      expect(live.has('same-info-hash')).toBe(true);
     });
 
     it('drops a download that started but whose answer was lost, when the request is cancelled', async () => {

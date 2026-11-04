@@ -70,8 +70,8 @@ export type RequestIds = z.infer<typeof RequestIds>;
 /** What is requested: its title, its author, artist or host, and its catalogue ids. */
 export const RequestTarget = z
   .object({
-    title: z.string().min(1).max(500),
-    creator: z.string().min(1).max(500).nullable(),
+    title: z.string().trim().min(1).max(500),
+    creator: z.string().trim().min(1).max(500).nullable(),
     ids: RequestIds,
   })
   .strict()

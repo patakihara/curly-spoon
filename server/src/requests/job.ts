@@ -11,7 +11,8 @@
  * call, which the medium answers the same.
  *
  * What a person does to a request (retry, choose, pick another, cancel) lives here too, as dropping
- * a failed download takes the same steps.
+ * a failed download takes the same steps. Each move is saved first, naming the version it read, so of
+ * two taps only one goes on to drop a download.
  */
 import { randomUUID } from 'node:crypto';
 import type { MediaRef, RequestFailure, RequestMedium } from '@auralis/schema';
@@ -30,7 +31,13 @@ import {
   workingRequests,
 } from '../store/requests.js';
 import { afterPicked, next, type RequestEvent, type WorkingStatus } from './machine.js';
-import type { DownloadSteps, MediumSteps, Release, StepsRegistry } from './steps.js';
+import type {
+  DownloadSteps,
+  DownloadTarget,
+  MediumSteps,
+  Release,
+  StepsRegistry,
+} from './steps.js';
 
 export interface RequestJobDeps {
   db: Db;
@@ -100,6 +107,27 @@ async function search(deps: RequestJobDeps, steps: MediumSteps, request: StoredR
   }
 }
 
+/** The last start or cancel asked of each medium, which the next waits for. */
+const turns = new WeakMap<DownloadSteps, Promise<void>>();
+
+/**
+ * Sends a medium's start or cancel once those asked for before it have answered, at once if none
+ * is out, so a cancel still on its way can never drop a download started after it was asked for.
+ */
+function inTurn<T>(steps: DownloadSteps, call: () => Promise<T>): Promise<T> {
+  const before = turns.get(steps);
+  const answer = before === undefined ? call() : before.then(call);
+  const settled = answer.then(
+    () => undefined,
+    () => undefined,
+  );
+  turns.set(steps, settled);
+  void settled.then(() => {
+    if (turns.get(steps) === settled) turns.delete(steps);
+  });
+  return answer;
+}
+
 /** Starts the release's download, or follows the one the store holds a handle to. */
 async function download(deps: RequestJobDeps, steps: DownloadSteps, request: StoredRequest) {
   const { db, now } = deps;
@@ -107,9 +135,13 @@ async function download(deps: RequestJobDeps, steps: DownloadSteps, request: Sto
     if (request.release === null) throw new Error('invariant: a download with no release');
     const ready = keyed(deps, request);
     if (ready?.stepKey == null) return;
-    const handle = await steps.start(ready, request.release, ready.stepKey);
+    const { release } = request;
+    const { stepKey } = ready;
+    const handle = await inTurn(steps, () => steps.start(ready, release, stepKey));
     const change = { state: ready.state, handle, stepKey: null };
-    if (!saveRequest(db, ready.id, change, now(), ready.version)) await steps.cancel(handle);
+    if (!saveRequest(db, ready.id, change, now(), ready.version)) {
+      await inTurn(steps, () => steps.cancel({ handle }));
+    }
     return;
   }
   const polled = await steps.poll(request.handle);
@@ -222,11 +254,31 @@ export async function advanceRequests(deps: RequestJobDeps): Promise<void> {
   }
 }
 
-/** Asks the medium to drop a request's download, so what follows never leaves two. A refusal is logged. */
-async function dropDownload(deps: RequestActDeps, request: StoredRequest): Promise<void> {
-  if (request.handle === null) return;
+/**
+ * What dropping a request's download asks for. A key at a download step means a start whose answer
+ * was never saved, so only the key can name what it made; a key at the import step is the import's.
+ */
+function dropTarget(request: StoredRequest): DownloadTarget | null {
+  const { state, stepKey, release, handle } = request;
+  const importing =
+    state.status === 'importing' || (state.status === 'failed' && state.failedStep === 'importing');
+  if (!importing && stepKey !== null && release !== null) return { key: stepKey, release };
+  return handle === null ? null : { handle };
+}
+
+/**
+ * Asks the medium to drop a download, so what follows never leaves two. A refusal is logged. Its
+ * turn is taken before the first wait, so a start the job asks for after the move goes behind it.
+ */
+async function dropDownload(
+  deps: RequestActDeps,
+  request: StoredRequest,
+  target: DownloadTarget | null,
+): Promise<void> {
+  const download = deps.steps.get(request.medium)?.download;
+  if (target === null || download === undefined) return;
   try {
-    await deps.steps.get(request.medium)?.download?.cancel(request.handle);
+    await inTurn(download, () => download.cancel(target));
   } catch (err) {
     deps.log.error({ request: request.id, err }, 'download not dropped');
   }
@@ -243,8 +295,9 @@ export function otherReleases(request: StoredRequest): Release[] {
 
 /**
  * A retry: back to the step it failed in. A download starts afresh on the same release; an import
- * that was found wanting by the index keeps what it named and waits again. Null when refused. A
- * step that failed before saving its answer keeps its key, as it may have got through upstream.
+ * that was found wanting by the index keeps what it named and waits again. Null when refused, as a
+ * second tap is. A step that failed before saving its answer keeps its key, as it may have got
+ * through upstream: the start under that key answers the same, so there is nothing to drop.
  */
 export async function retryRequest(
   deps: RequestActDeps,
@@ -254,9 +307,11 @@ export async function retryRequest(
   const state = request && next(request.medium, request.state, { type: 'retry' });
   if (!request || !state) return null;
   const restarts = state.status === 'queued' || state.status === 'downloading';
-  if (restarts) await dropDownload(deps, request);
   const change = { state, ...(restarts ? { handle: null } : {}) };
-  saveRequest(deps.db, id, change, deps.now(), request.version);
+  if (!saveRequest(deps.db, id, change, deps.now(), request.version)) return null;
+  if (restarts && request.handle !== null) {
+    await dropDownload(deps, request, { handle: request.handle });
+  }
   return getRequest(deps.db, id);
 }
 
@@ -273,9 +328,9 @@ export async function pickAnotherRelease(
   if (!request || !state) return null;
   const candidates = otherReleases(request);
   if (candidates.length === 0) return null;
-  await dropDownload(deps, request);
   const change = { state, candidates, release: null, handle: null, stepKey: null, result: null };
-  saveRequest(deps.db, id, change, deps.now(), request.version);
+  if (!saveRequest(deps.db, id, change, deps.now(), request.version)) return null;
+  await dropDownload(deps, request, dropTarget(request));
   return getRequest(deps.db, id);
 }
 
@@ -313,5 +368,5 @@ export async function cancelRequest(
     return;
   }
   deleteRequest(deps.db, request.id);
-  await dropDownload(deps, request);
+  await dropDownload(deps, request, dropTarget(request));
 }
