@@ -208,12 +208,31 @@ describe('[M2.lists] the list pages given their data', () => {
     };
     const html = renderAt(
       '/podcasts',
-      deps('member', { podcasts: { data: podcasts, seed: null } }).given,
+      deps('member', { podcasts: { data: podcasts, seed: null, holding: true } }).given,
     );
     expect(html).toContain('Night drives');
     expect(html).toContain('Playlist · 1 episode');
     expect(html).not.toContain(podcastsFrame.placeholder.lists[1]!.title);
   });
+});
+
+describe('[M3.requests/c] a library home with nothing of yours', () => {
+  it.each([
+    ['/books', 'books', { ...booksFrame.placeholder, library: [] }, 'No books yet'],
+    [
+      '/podcasts',
+      'podcasts',
+      { ...podcastsFrame.placeholder, library: [], lists: [] },
+      'No podcasts yet',
+    ],
+  ])(
+    '[M3.requests/c] %s says so once its list has answered, and not before',
+    (url, name, data, words) => {
+      const answered = { [name]: { data, seed: null, holding: false } };
+      expect(renderAt(url, deps('member', answered).given)).toContain(words);
+      expect(renderAt(url, deps('member').given)).not.toContain(words);
+    },
+  );
 });
 
 describe('[M2.sorting] a library home before its list answers', () => {
