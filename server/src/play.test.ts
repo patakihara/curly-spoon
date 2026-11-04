@@ -859,7 +859,7 @@ function meGranted(all: boolean): Recording {
  * no library until she is given it. The index holds the recorded four-file book, a recorded show
  * and a recorded album.
  */
-async function householdServer() {
+async function householdServer(options: { ownSessionIds?: boolean } = {}) {
   const db = openDatabase(':memory:');
   const counts = emptyCounts();
   const summary = (call: string) => itemSummarySchema.parse(jsonOf(absRecording(call)));
@@ -902,6 +902,7 @@ async function householdServer() {
     absRecording('multi-detail'),
   ];
   let asKara = replayFetch(karaAnswers(false));
+  let opened = 0;
   const fetch: FetchLike = async (url, init) => {
     const headers = new Headers(init?.headers);
     const authorization = headers.get('authorization') ?? '';
@@ -911,7 +912,17 @@ async function householdServer() {
       authorization,
       range: headers.get('range'),
     });
-    return (authorization.includes('kara') ? asKara : asHousehold)(url, init);
+    const answers = authorization.includes('kara') ? asKara : asHousehold;
+    if (options.ownSessionIds !== true) return answers(url, init);
+    // Each play opens its own session, as Audiobookshelf does; the recordings hold one id.
+    const answer = await answers(url.replace(/-opened-\d+/, ''), init);
+    if (!url.endsWith('/play')) return answer;
+    opened += 1;
+    const text = (await answer.text()).replaceAll(
+      multiSession.id,
+      `${multiSession.id}-opened-${opened}`,
+    );
+    return new Response(text, { status: answer.status, headers: answer.headers });
   };
   const bearer: Record<string, string> = {};
   const users: Record<string, string> = {};
@@ -999,6 +1010,14 @@ async function householdServer() {
     as,
     grantKara: () => {
       asKara = replayFetch(karaAnswers(true));
+    },
+    /** kara's own Audiobookshelf refuses every library item, as it does one she is not granted. */
+    karaRefusedItems: () => {
+      const before = asKara;
+      asKara = async (url, init) =>
+        new URL(url).pathname.startsWith('/api/items/')
+          ? new Response('', { status: 403 })
+          : before(url, init);
     },
   };
 }
@@ -1213,5 +1232,54 @@ describe('[M3.requests/d] a household play, for someone whose own accounts do no
 
     expect((await s.search('Three Poems'))[0]!.inYourLibrary).toBe(true);
     expect((await s.search(householdTrack.Name))[0]!.inYourLibrary).toBe(true);
+  });
+});
+
+describe('[M3.requests/d] a household play, tried against what could break it', () => {
+  it('[M3.requests/d] keeps the newer place when an older device’s play closes for going idle', async () => {
+    const s = await householdServer({ ownSessionIds: true });
+    const laptop = await s.plan(multiId, 'nora');
+    const end = laptop.tracks.at(-1)!.offset + laptop.tracks.at(-1)!.duration;
+    s.clock.now += 1_000;
+    await s.report(laptop.progressTarget.playId, end * 0.1, 1, 'nora');
+
+    // The phone carries on from there and gets further; the laptop is left as it was.
+    s.clock.now += 30 * 60_000;
+    const phone = await s.plan(multiId, 'nora-phone');
+    s.clock.now += 1_000;
+    await s.report(phone.progressTarget.playId, end * 0.5, 1, 'nora-phone');
+
+    // Past the laptop's idle time, any request closes its play at the last place it reported.
+    s.clock.now += 40 * 60_000;
+    const res = await s.get(phone.tracks[0]!.url, 'nora-phone', { range: 'bytes=0-1' });
+    expect(res.statusCode).toBe(206);
+
+    expect(heldOf(s.db, s.users.nora!, bookRef)?.position).toBe(end * 0.5);
+  });
+
+  it('[M3.requests/d] names the chapter for a linked person whose own account refuses the book', async () => {
+    const s = await householdServer();
+    s.karaRefusedItems();
+
+    await s.plan(multiId, 'kara');
+
+    const queue = await s.get('/api/queues/spoken', 'kara');
+    const current = queue.json<{ current: { title: string } | null }>().current;
+    expect(current!.title).toBe(multiSession.chapters[0]!.title);
+  });
+
+  it('[M3.requests/d] writes no bookmark to a linked person’s own account on a book it does not reach', async () => {
+    const s = await householdServer();
+    await s.plan(multiId, 'kara');
+    s.sent.length = 0;
+
+    await s.app.inject({
+      method: 'POST',
+      url: '/api/bookmarks',
+      headers: s.as('kara'),
+      payload: { ref: bookRef, time: 5, title: 'Here' },
+    });
+
+    expect(s.sent.filter((call) => call.method !== 'GET')).toEqual([]);
   });
 });
