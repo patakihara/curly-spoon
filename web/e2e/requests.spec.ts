@@ -337,3 +337,227 @@ test("[M3.requests/c] Settings' switch shows everyone's library, then only the p
   await expect(page.getByText('No books yet', { exact: true })).toBeVisible();
   expect(await listed(page, 'books')).toEqual([]);
 });
+
+/** The Search page for a person with one request. */
+async function searchWithARequest(page: Page, q: string, before?: () => Promise<void>) {
+  await open(page, '/search');
+  await request(page, 'book', 'Steady Stand-in', 1);
+  await before?.();
+  await page.goto(`${recorded.origin}/search?q=${q}`);
+  await fontsLoaded(page);
+}
+
+test('[M3.requests] a person with requests reaches them from a Search holding only their library', async ({
+  page,
+}) => {
+  await searchWithARequest(page, 'the', () =>
+    page.route('**/api/search?*', async (route) => {
+      const answered = await route.fetch();
+      const { results, ...rest } = (await answered.json()) as { results: object[] };
+      await route.fulfill({
+        response: answered,
+        json: { ...rest, results: results.map((r) => ({ ...r, inYourLibrary: true })) },
+      });
+    }),
+  );
+  await expect(page.getByText('In your library', { exact: true })).toBeVisible(LOOKING_AGAIN);
+  await page.getByRole('button', { name: 'Your requests', exact: true }).click({ timeout: 5_000 });
+  await expect(page).toHaveURL(`${recorded.origin}/requests`);
+});
+
+test('[M3.requests] a person with requests reaches them from a Search that found nothing', async ({
+  page,
+}) => {
+  await searchWithARequest(page, 'zzzqqq');
+  await expect(page.getByText('Nothing found', { exact: true })).toBeVisible(LOOKING_AGAIN);
+  await page.getByRole('button', { name: 'Your requests', exact: true }).click({ timeout: 5_000 });
+  await expect(page).toHaveURL(`${recorded.origin}/requests`);
+});
+
+test('[M3.requests] a verb that fails says so on the page', async ({ page }) => {
+  await open(page, '/requests');
+  await request(page, 'book', 'Steady Stand-in', 1);
+  await page.reload();
+  await fontsLoaded(page);
+  const row = requestRow(page, 'Steady Stand-in', 'Cancel');
+  await expect(row).toContainText('Downloading · 38%', LOOKING_AGAIN);
+  const before = await page.locator('body').innerText();
+  for (const refuse of ['network', 'refused'] as const) {
+    await page.route('**/api/requests/*/cancel', (route) =>
+      refuse === 'network' ? route.abort() : route.fulfill({ status: 409, json: {} }),
+    );
+    await press(row, 'Cancel');
+    await expect
+      .poll(() => page.locator('body').innerText(), { message: refuse, timeout: 3_000 })
+      .not.toBe(before);
+    await page.unroute('**/api/requests/*/cancel');
+  }
+});
+
+test('[M3.requests] a double tap on a verb sends it once', async ({ page }) => {
+  await open(page, '/requests');
+  await request(page, 'book', 'Steady Stand-in', 1);
+  await page.reload();
+  await fontsLoaded(page);
+  const row = requestRow(page, 'Steady Stand-in', 'Cancel');
+  await expect(row).toContainText('Downloading · 38%', LOOKING_AGAIN);
+  const answers: number[] = [];
+  page.on('response', (response) => {
+    if (response.url().endsWith('/cancel')) answers.push(response.status());
+  });
+  await row.getByRole('button', { name: 'Cancel', exact: true }).dblclick();
+  await expect(page.getByText('Nothing requested', { exact: true })).toBeVisible();
+  await page.waitForTimeout(500);
+  expect(answers).toEqual([200]);
+});
+
+test('[M3.requests] a verb still on its way shows it is working', async ({ page }) => {
+  await open(page, '/requests');
+  await request(page, 'book', 'Steady Stand-in', 1);
+  await page.reload();
+  await fontsLoaded(page);
+  const row = requestRow(page, 'Steady Stand-in', 'Cancel');
+  await expect(row).toContainText('Downloading · 38%', LOOKING_AGAIN);
+  await page.route('**/api/requests/*/cancel', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 3_000));
+    await route.continue();
+  });
+  const cancel = row.getByRole('button', { name: 'Cancel', exact: true });
+  await cancel.click();
+  await expect
+    .poll(
+      async () =>
+        (await page.locator('[aria-busy="true"]').count()) > 0 ||
+        (await cancel.count()) === 0 ||
+        (await cancel.isDisabled()),
+      { timeout: 1_500 },
+    )
+    .toBe(true);
+});
+
+test('[M3.requests] Requests says so when its list failed to load, rather than drawing nothing', async ({
+  page,
+}) => {
+  await open(page, '/requests');
+  await page.route('**/api/requests', (route) => route.fulfill({ status: 500, body: 'no' }));
+  await page.reload();
+  await fontsLoaded(page);
+  await expect(page.getByText(/did not answer|failed/i).first()).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText('Nothing requested', { exact: true })).toHaveCount(0);
+});
+
+test('[M3.requests/c] a library home says so when its list failed to load, rather than drawing nothing', async ({
+  page,
+}) => {
+  await open(page, '/books');
+  await page.route('**/api/library/books*', (route) => route.fulfill({ status: 500, body: 'no' }));
+  await page.reload();
+  await fontsLoaded(page);
+  await expect(page.getByText(/did not answer|failed/i).first()).toBeVisible({ timeout: 5_000 });
+});
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  /** Whether the text `words` names is cut off where it is drawn. */
+  const cutOff = (page: Page, words: string | RegExp) =>
+    page
+      .getByText(words)
+      .first()
+      .evaluate((el) => el.scrollWidth > el.clientWidth);
+
+  test("[M3.requests] a failed request's reason is not cut off", async ({ page }) => {
+    await open(page, '/requests');
+    await request(page, 'book', 'Alone', 1);
+    await page.reload();
+    await fontsLoaded(page);
+    await expect(page.getByText(/The download failed/).first()).toBeAttached(LOOKING_AGAIN);
+    expect(await cutOff(page, /The download failed/)).toBe(false);
+  });
+
+  test("[M3.requests] a long request's candidates can be told apart", async ({ page }) => {
+    const title = 'Paper Stand-in, the Complete Recordings in a Very Long Deluxe Edition';
+    await open(page, '/requests');
+    await request(page, 'album', title, 1);
+    await page.reload();
+    await fontsLoaded(page);
+    await expect(page.getByText(`${title} [FLAC]`, { exact: true })).toBeAttached(LOOKING_AGAIN);
+    expect(await cutOff(page, `${title} [FLAC]`)).toBe(false);
+  });
+});
+
+test('[M3.requests/c] Settings offers no switch saying off when it never read the setting', async ({
+  page,
+}) => {
+  await open(page, '/settings');
+  const toggle = page.getByRole('switch');
+  await expect(toggle).toBeEnabled();
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-checked', 'true');
+  await page.route('**/api/settings', (route) => route.abort());
+  await page.reload();
+  await fontsLoaded(page);
+  await page.waitForTimeout(1_000);
+  // It is on at the server. Unread, the switch may not say off and take a tap as if it knew.
+  expect({
+    says: await toggle.getAttribute('aria-checked'),
+    takesATap: await toggle.isEnabled(),
+  }).not.toEqual({ says: 'false', takesATap: true });
+});
+
+test('[M3.requests/c] a switch that could not be set says so on the page', async ({ page }) => {
+  await open(page, '/settings');
+  const toggle = page.getByRole('switch');
+  await expect(toggle).toBeEnabled();
+  const before = await page.locator('body').innerText();
+  await page.route('**/api/settings', (route) =>
+    route.request().method() === 'PUT' ? route.abort() : route.continue(),
+  );
+  await toggle.click();
+  await expect.poll(() => page.locator('body').innerText(), { timeout: 3_000 }).not.toBe(before);
+});
+
+test("[M3.requests/c] a request's card greyed in a home keeps its status readable", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page, '/books');
+  await request(page, 'book', 'Alone Stand-in', 1);
+  const card = page.getByRole('button', { name: /Alone Stand-in/ });
+  await expect
+    .poll(async () => {
+      await page.reload();
+      return card.innerText();
+    }, LOOKING_AGAIN)
+    .toContain('Failed');
+  const contrast = await card.getByText('Failed', { exact: true }).evaluate((el) => {
+    type Colour = [number, number, number, number];
+    const read = (css: string): Colour => {
+      const [a = 0, b = 0, c = 0, d = 1] = (css.match(/[\d.]+/g) ?? []).map(Number);
+      return css.startsWith('color(') ? [a * 255, b * 255, c * 255, d] : [a, b, c, d];
+    };
+    const light = ([r, g, b]: Colour) => {
+      const part = (v: number) =>
+        v / 255 <= 0.03928 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4;
+      return 0.2126 * part(r) + 0.7152 * part(g) + 0.0722 * part(b);
+    };
+    const back = read(getComputedStyle(el).backgroundColor);
+    const ink = read(getComputedStyle(el).color);
+    const over = ink.map((v, i) =>
+      i === 3 ? 1 : v * ink[3]! + (back[i] ?? 0) * (1 - ink[3]!),
+    ) as Colour;
+    const [high, low] = [light(over), light(back)].sort((x, y) => y - x) as [number, number];
+    return (high + 0.05) / (low + 0.05);
+  });
+  expect(contrast).toBeGreaterThanOrEqual(4.5);
+});
+
+test('[M3.requests] Browse draws no blank card for a person with nothing to preview', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page, '/');
+  await fontsLoaded(page);
+  await page.waitForTimeout(1_500);
+  await expect(page.getByText(/Preview episode/)).toHaveCount(0);
+});
