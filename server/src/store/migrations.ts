@@ -721,6 +721,24 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 19,
+    name: 'held_bookmarks',
+    up: (db) => {
+      db.exec(`
+        -- A person's bookmark on a book their own Audiobookshelf account does not reach, kept
+        -- here until it does (store/heldBookmarks.ts). time is seconds from the item's start.
+        CREATE TABLE held_bookmarks (
+          user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          item_id    TEXT NOT NULL,
+          time       REAL NOT NULL CHECK (time >= 0),
+          title      TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          PRIMARY KEY (user_id, item_id, time)
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

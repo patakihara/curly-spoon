@@ -37,6 +37,7 @@ import { SIGN_IN_PAGE, signOnRoutes } from './routes/signOn.js';
 import type { Db } from './store/connection.js';
 import type { Random } from './store/signIn.js';
 import { type Linker, upstreamFor } from './upstream/links.js';
+import { Reach } from './upstream/reach.js';
 
 export interface BuildAppOptions {
   /** web's build output; `null`, or a path that does not exist, serves no web app. */
@@ -155,6 +156,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   adminRoutes(app, { db });
   const upstreams = options.upstreams ?? null;
   const plays = new OpenPlays({ now: options.now ?? Date.now });
+  const markReach = new Reach(db, upstreams);
   const sessions = new Sessions({
     db,
     lookup: new IndexLookup(db, app.log),
@@ -163,6 +165,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         ? { abs: null, jellyfin: null }
         : upstreamFor({ db, ...upstreams }, caller),
     householdAbs: upstreams?.household?.abs ?? null,
+    ownReaches: (caller, row) => markReach.reaches(caller, row, true),
     now: options.now ?? Date.now,
     log: app.log,
     // Decision (M2.lists): an episode marked played has its play session closed first, so the
@@ -183,7 +186,11 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     ...(options.playback ? { playback: options.playback } : {}),
     ...(options.now ? { now: options.now } : {}),
   });
-  bookmarkRoutes(app, { db, upstreams: options.upstreams ?? null });
+  bookmarkRoutes(app, {
+    db,
+    upstreams,
+    ...(options.now === undefined ? {} : { now: options.now }),
+  });
   libraryRoutes(app, {
     db,
     upstreams,

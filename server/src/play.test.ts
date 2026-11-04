@@ -27,6 +27,7 @@ import { absTree, albumRow, trackRows } from './libraryIndex/rows.js';
 import { applyTree, emptyCounts } from './libraryIndex/store.js';
 import { type PlaybackOptions } from './routes/play.js';
 import { openDatabase } from './store/connection.js';
+import { heldBookmarks } from './store/heldBookmarks.js';
 import { heldOf } from './store/heldProgress.js';
 import { createDevice } from './store/devices.js';
 import { createSession } from './store/sessions.js';
@@ -900,6 +901,8 @@ async function householdServer(options: { ownSessionIds?: boolean } = {}) {
     absRecording('progress-sync'),
     absRecording('progress-close'),
     absRecording('multi-detail'),
+    absRecording('bookmark-create'),
+    absRecording('bookmark-delete'),
   ];
   let asKara = replayFetch(karaAnswers(false));
   let opened = 0;
@@ -1281,5 +1284,99 @@ describe('[M3.requests/d] a household play, tried against what could break it', 
     });
 
     expect(s.sent.filter((call) => call.method !== 'GET')).toEqual([]);
+  });
+});
+
+describe('[M3.requests/d] a bookmark on a book the person’s own account does not reach', () => {
+  const key = `abs:${multiId}`;
+  const made = async (s: Awaited<ReturnType<typeof householdServer>>, who: string, time: number) =>
+    s.app.inject({
+      method: 'POST',
+      url: '/api/bookmarks',
+      headers: s.as(who),
+      payload: { ref: bookRef, time, title: `At ${time}` },
+    });
+  const listed = async (s: Awaited<ReturnType<typeof householdServer>>, who: string) =>
+    (await s.get(`/api/bookmarks?ref=${encodeURIComponent(key)}`, who)).json<{
+      bookmarks: { time: number; title: string }[];
+    }>().bookmarks;
+  const removed = (s: Awaited<ReturnType<typeof householdServer>>, who: string, time: number) =>
+    s.app.inject({
+      method: 'DELETE',
+      url: `/api/bookmarks/${encodeURIComponent(key)}/${time}`,
+      headers: s.as(who),
+    });
+
+  it.each(['nora', 'kara'])(
+    '[M3.requests/d] makes, lists in order and deletes it in Auralis for %s, linked or not',
+    async (who) => {
+      const s = await householdServer();
+      const made_ = await made(s, who, 90);
+      expect(made_.statusCode, made_.body).toBe(200);
+      expect(made_.json()).toEqual({
+        ref: bookRef,
+        time: 90,
+        title: 'At 90',
+        createdAt: s.clock.now,
+      });
+      await made(s, who, 30);
+
+      expect((await listed(s, who)).map((b) => b.time)).toEqual([30, 90]);
+
+      expect((await removed(s, who, 30)).json()).toEqual({ ok: true });
+      expect((await listed(s, who)).map((b) => b.time)).toEqual([90]);
+      const again = await removed(s, who, 30);
+      expect(again.statusCode).toBe(404);
+      expect(again.json()).toEqual({ error: 'not_found' });
+
+      expect(s.sent.filter((call) => call.method !== 'GET')).toEqual([]);
+    },
+  );
+
+  it('[M3.requests/d] shows it to nobody else', async () => {
+    const s = await householdServer();
+    await made(s, 'nora', 30);
+    expect(await listed(s, 'kara')).toEqual([]);
+  });
+
+  it('[M3.requests/d] moves it to their own account once, when that account gains the book', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      const s = await householdServer();
+      await made(s, 'kara', 45);
+      s.grantKara();
+      vi.advanceTimersByTime(61_000);
+      s.sent.length = 0;
+
+      await listed(s, 'kara');
+      await listed(s, 'kara');
+
+      const posted = s.sent.filter((call) => call.method === 'POST');
+      expect(posted.map((call) => [call.path, call.authorization])).toEqual([
+        [`/api/me/item/${multiId}/bookmark`, 'Bearer abs-token-kara'],
+      ]);
+      expect(heldBookmarks(s.db, s.users.kara!, multiId)).toEqual([]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('[M3.requests/d] sends nothing for one their own account already has at that time, and lets go of it', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      const s = await householdServer();
+      // The recorded account holds a bookmark at 30 on this book.
+      await made(s, 'kara', 30);
+      s.grantKara();
+      vi.advanceTimersByTime(61_000);
+      s.sent.length = 0;
+
+      await listed(s, 'kara');
+
+      expect(s.sent.filter((call) => call.method === 'POST')).toEqual([]);
+      expect(heldBookmarks(s.db, s.users.kara!, multiId)).toEqual([]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -520,8 +520,8 @@ export function playRoutes(
       timeListened: listened,
       duration,
     });
-    const hold = ({ position }: UpstreamReport) =>
-      keepHeld(db, userId, body.ref, { position, duration }, (options.now ?? Date.now)());
+    const hold = ({ position }: UpstreamReport, at = (options.now ?? Date.now)()) =>
+      keepHeld(db, userId, body.ref, { position, duration }, at);
     await open.planOn({ userId, deviceId }, () =>
       open.open({
         playId,
@@ -536,9 +536,9 @@ export function playRoutes(
           await abs.syncSession(playId, sync(report));
           dropHeld(db, userId, body.ref);
         },
-        close: async (report) => {
+        close: async (report, reportedAt) => {
           if (household) {
-            if (report !== undefined) hold(report);
+            if (report !== undefined) hold(report, reportedAt);
             return abs.closeSession(playId);
           }
           await abs.closeSession(playId, report && sync(report));

@@ -38,21 +38,25 @@ const HeldRow = z
     },
   ]);
 
-/** Keeps where a person is in `ref`, replacing what was held. */
+/**
+ * Keeps where a person was in `ref` at `at`, replacing what was held unless that is newer: the most
+ * recent listening wins, whichever device's play closes last.
+ */
 export function keepHeld(
   db: Db,
   userId: string,
   ref: MediaRef,
-  at: { position: number; duration: number },
-  now: number,
+  place: { position: number; duration: number },
+  at: number,
 ): void {
-  const finished = at.position >= at.duration - FINISHED_WITHIN_S ? 1 : 0;
+  const finished = place.position >= place.duration - FINISHED_WITHIN_S ? 1 : 0;
   db.prepare(
     `INSERT INTO held_progress (user_id, source, item_id, position, duration, finished, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT (user_id, source, item_id) DO UPDATE SET position = excluded.position,
-       duration = excluded.duration, finished = excluded.finished, updated_at = excluded.updated_at`,
-  ).run(userId, ref.source, ref.id, at.position, at.duration, finished, now);
+       duration = excluded.duration, finished = excluded.finished, updated_at = excluded.updated_at
+     WHERE excluded.updated_at >= held_progress.updated_at`,
+  ).run(userId, ref.source, ref.id, place.position, place.duration, finished, at);
 }
 
 /** What is held for a person on one source, by item id. */
