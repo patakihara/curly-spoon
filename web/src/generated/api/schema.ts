@@ -1014,6 +1014,7 @@ export interface components {
             autoplay: components["schemas"]["AutoplaySwitches"];
             queueStyle: components["schemas"]["QueueStyle"];
             firstRunDone: boolean;
+            showEveryonesLibrary: boolean;
         };
         AutoplaySwitchesChange: {
             music?: boolean;
@@ -1024,6 +1025,7 @@ export interface components {
             autoplay?: components["schemas"]["AutoplaySwitchesChange"];
             queueStyle?: components["schemas"]["QueueStyle"];
             firstRunDone?: boolean;
+            showEveryonesLibrary?: boolean;
         };
         /** @enum {string} */
         LibraryEntryKind: "book" | "show" | "album";
@@ -1044,10 +1046,19 @@ export interface components {
             progress: number | null;
             availability: components["schemas"]["Availability"];
         };
+        RequestedEntry: {
+            id: string;
+            kind: components["schemas"]["LibraryEntryKind"];
+            title: string;
+            sub: string | null;
+            art: string | null;
+            availability: components["schemas"]["Availability"];
+        };
         /** @enum {string} */
         LibrarySort: "title" | "artist" | "random";
         LibraryList: {
             items: components["schemas"]["LibraryEntry"][];
+            requested: components["schemas"]["RequestedEntry"][];
             sort: components["schemas"]["LibrarySort"];
             seed: number | null;
         };

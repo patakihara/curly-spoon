@@ -63,6 +63,17 @@ async function bearerFor(server: RecordedServer) {
   return res.json<{ token: string }>().token;
 }
 
+/** Turns on the setting that shows everyone's library, as a person would. */
+async function seesEveryones(server: RecordedServer, headers: Record<string, string>) {
+  const changed = await server.app.inject({
+    method: 'PUT',
+    url: '/api/settings',
+    headers,
+    payload: { showEveryonesLibrary: true },
+  });
+  expect(changed.statusCode, changed.body).toBe(200);
+}
+
 describe('the recorded-upstreams server', () => {
   it('boots and answers its health check', async () => {
     const server = await boot();
@@ -99,9 +110,10 @@ describe('the recorded-upstreams server', () => {
     await bearerFor(server);
   });
 
-  it('[M1.shell] lists the recorded books, shows and albums once it has started, each owned', async () => {
+  it('[M1.shell] lists the recorded books, shows and albums to a person showing everyone’s library, each owned', async () => {
     const server = await boot();
     const headers = { authorization: `Bearer ${await bearerFor(server)}` };
+    await seesEveryones(server, headers);
     const listed = async (medium: string) => {
       const res = await server.app.inject({ url: `/api/library/${medium}`, headers });
       expect(res.statusCode, res.body).toBe(200);
@@ -139,6 +151,7 @@ describe('the recorded-upstreams server', () => {
   it('[M2.sorting] orders each recorded show as its recorded feed says: the serial one oldest first, the episodic one newest first', async () => {
     const server = await boot();
     const headers = { authorization: `Bearer ${await bearerFor(server)}` };
+    await seesEveryones(server, headers);
     const shows = await server.app.inject({ url: '/api/library/podcasts', headers });
     const sorts = await Promise.all(
       shows.json<LibraryList>().items.map(async ({ ref }) => {

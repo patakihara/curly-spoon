@@ -61,6 +61,8 @@ export interface BuildAppOptions {
    * The advance job: each medium's steps, how often it runs, and how long the index may lag.
    * Without it, no medium can be requested.
    */
+  /** How many of a person's played Jellyfin tracks one read asks for; a default otherwise. */
+  playedPageSize?: number;
   requests?: {
     steps: StepsRegistry;
     everyMs: number;
@@ -181,7 +183,13 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     ...(options.now ? { now: options.now } : {}),
   });
   bookmarkRoutes(app, { db, upstreams: options.upstreams ?? null });
-  libraryRoutes(app, { db, upstreams });
+  libraryRoutes(app, {
+    db,
+    upstreams,
+    log: app.log,
+    now: options.now ?? Date.now,
+    ...(options.playedPageSize === undefined ? {} : { playedPageSize: options.playedPageSize }),
+  });
   itemRoutes(app, { db, upstreams });
   listRoutes(app, { db, upstreams, sessions, now: options.now ?? Date.now });
   feedRoutes(app, { db, upstreams, now: options.now ?? Date.now });

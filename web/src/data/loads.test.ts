@@ -60,7 +60,7 @@ const session = (over: object) => ({
 
 describe('[M1.shell] what the pages read from the API', () => {
   it('reads a library list by its medium, parsed', async () => {
-    const empty = { items: [], sort: 'title', seed: null };
+    const empty = { items: [], requested: [], sort: 'title', seed: null };
     const { client, asked } = api({ '/api/library/podcasts': [200, empty] });
     expect(await loadLibrary(client, 'podcasts')).toEqual(empty);
     expect(asked).toEqual(['/api/library/podcasts']);
@@ -191,7 +191,7 @@ describe('[M2.lists] what the list pages read from the API', () => {
 });
 
 describe('[M2.lists] what the Podcasts page reads from the API', () => {
-  const shows = { items: [], sort: 'title', seed: null };
+  const shows = { items: [], requested: [], sort: 'title', seed: null };
 
   it('[M2.lists] reads your shows and your lists', async () => {
     const { client } = api({
@@ -281,7 +281,7 @@ describe('[M2.sorting] what the library homes and Browse read from the API', () 
   }
 
   it('[M2.sorting] asks for a library list in the order asked, with its seed', async () => {
-    const shuffled = { items: [], sort: 'random', seed: 7 };
+    const shuffled = { items: [], requested: [], sort: 'random', seed: 7 };
     const { client, asked } = asking({ '/api/library/books': [200, shuffled] });
     expect(await loadLibrary(client, 'books', { sort: 'random', seed: 7 })).toEqual(shuffled);
     await loadLibrary(client, 'books', {}).catch(() => undefined);

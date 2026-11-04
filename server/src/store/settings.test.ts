@@ -40,6 +40,7 @@ describe('settings', () => {
       autoplay: { music: false, spoken: false },
       queueStyle: 'youtube',
       firstRunDone: true,
+      showEveryonesLibrary: false,
     });
     expect(readSettings(db, kara)).toEqual(after);
     expect(db.prepare('SELECT updated_at FROM user_settings').get()).toEqual({

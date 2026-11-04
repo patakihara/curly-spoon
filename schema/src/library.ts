@@ -76,6 +76,22 @@ export const LibraryEntry = z
 export type LibraryEntry = z.infer<typeof LibraryEntry>;
 
 /**
+ * A request still on its way, shown beside a person's list until its item arrives. It has no ref
+ * until the index finds it, so it goes by its request's id. Its availability is `requested`.
+ */
+export const RequestedEntry = z
+  .object({
+    id: z.string(),
+    kind: LibraryEntryKind,
+    title: z.string(),
+    sub: z.string().nullable(),
+    art: ArtUrl.nullable(),
+    availability: Availability,
+  })
+  .openapi('RequestedEntry');
+export type RequestedEntry = z.infer<typeof RequestedEntry>;
+
+/**
  * How a library list is ordered: by title; by `artist`, meaning each list's `sub` (a book's
  * authors, a show's host, an album's artists); or `random`, shuffled by a seed.
  */
@@ -106,7 +122,12 @@ export type LibraryQuery = z.infer<typeof LibraryQuery>;
  * order asked: the sort used, and the seed it shuffled by, null unless random.
  */
 export const LibraryList = z
-  .object({ items: z.array(LibraryEntry), sort: LibrarySort, seed: LibrarySeed.nullable() })
+  .object({
+    items: z.array(LibraryEntry),
+    requested: z.array(RequestedEntry),
+    sort: LibrarySort,
+    seed: LibrarySeed.nullable(),
+  })
   .superRefine((value, ctx) => {
     if ((value.sort === 'random') !== (value.seed !== null)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['seed'], message: 'only random has' });

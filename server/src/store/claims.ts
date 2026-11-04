@@ -24,6 +24,13 @@ export function addClaim(
   ).run(userId, ref.source, ref.id, reason, now);
 }
 
+/** Claims many items for a person at once, as played; those they already claimed stay as they were. */
+export function addPlayedClaims(db: Db, userId: string, refs: readonly MediaRef[], now: number) {
+  db.transaction(() => {
+    for (const ref of refs) addClaim(db, userId, ref, 'played', now);
+  })();
+}
+
 const ClaimRow = z
   .object({ source: MediaRef.shape.source, item_id: z.string(), reason: ClaimReason })
   .transform((row) => ({ ref: { source: row.source, id: row.item_id }, reason: row.reason }));

@@ -1,6 +1,7 @@
 /**
  * Each person's settings through the real routes: the theme, the autoplay switches, the queue
- * style and whether first-run setup is done, the same on every device of theirs.
+ * style, whether first-run setup is done and whether the library shows everyone's, the same on
+ * every device of theirs.
  */
 import { DEFAULT_SETTINGS, SESSION_COOKIE, Settings, type SettingsBody } from '@auralis/schema';
 import { type FastifyInstance } from 'fastify';
@@ -65,6 +66,7 @@ const EVERY_CHANGED: Settings = {
   autoplay: { music: false, spoken: false },
   queueStyle: 'spotify',
   firstRunDone: true,
+  showEveryonesLibrary: true,
 };
 
 describe('[M2.settings/a] settings per person through GET/PUT /api/settings', () => {

@@ -24,7 +24,8 @@ const entry = (over: Partial<LibraryEntry>): LibraryEntry => ({
   ...over,
 });
 
-const list = (...items: LibraryEntry[]) => LibraryList.parse({ items, sort: 'title', seed: null });
+const list = (...items: LibraryEntry[]) =>
+  LibraryList.parse({ items, requested: [], sort: 'title', seed: null });
 const noFeed = { shelves: [] };
 
 describe('[M1.shell] the library homes from GET /api/library/{medium}', () => {
@@ -212,7 +213,7 @@ describe('[M1.shell] Browse, the home page, from the library lists', () => {
 
 describe('[M2.sorting] the library homes say the order they are in', () => {
   const sorted = (sort: 'title' | 'artist' | 'random') =>
-    LibraryList.parse({ items: [], sort, seed: sort === 'random' ? 7 : null });
+    LibraryList.parse({ items: [], requested: [], sort, seed: sort === 'random' ? 7 : null });
 
   it('[M2.sorting] names the sort the server answered with, in each page’s own words', () => {
     expect(booksData(sorted('artist'), books.placeholder).sort.value).toBe('Author');

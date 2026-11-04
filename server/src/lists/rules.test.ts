@@ -63,6 +63,7 @@ const all: AbsAccess = {
   open: () => true,
   standing: () => ({ progress: null, finished: false, updatedAt: null }),
   heard: [],
+  begun: [],
   hidden: () => false,
   seriesHidden: () => false,
 };

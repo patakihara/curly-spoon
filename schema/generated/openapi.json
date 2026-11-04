@@ -1486,13 +1486,17 @@
           },
           "firstRunDone": {
             "type": "boolean"
+          },
+          "showEveryonesLibrary": {
+            "type": "boolean"
           }
         },
         "required": [
           "theme",
           "autoplay",
           "queueStyle",
-          "firstRunDone"
+          "firstRunDone",
+          "showEveryonesLibrary"
         ]
       },
       "AutoplaySwitchesChange": {
@@ -1520,6 +1524,9 @@
             "$ref": "#/components/schemas/QueueStyle"
           },
           "firstRunDone": {
+            "type": "boolean"
+          },
+          "showEveryonesLibrary": {
             "type": "boolean"
           }
         },
@@ -1610,6 +1617,43 @@
           "availability"
         ]
       },
+      "RequestedEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/LibraryEntryKind"
+          },
+          "title": {
+            "type": "string"
+          },
+          "sub": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "art": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "availability": {
+            "$ref": "#/components/schemas/Availability"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "sub",
+          "art",
+          "availability"
+        ]
+      },
       "LibrarySort": {
         "type": "string",
         "enum": [
@@ -1627,6 +1671,12 @@
               "$ref": "#/components/schemas/LibraryEntry"
             }
           },
+          "requested": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestedEntry"
+            }
+          },
           "sort": {
             "$ref": "#/components/schemas/LibrarySort"
           },
@@ -1641,6 +1691,7 @@
         },
         "required": [
           "items",
+          "requested",
           "sort",
           "seed"
         ]

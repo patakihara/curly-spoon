@@ -66,6 +66,7 @@ export {
   ItemQuery,
   ItemTrack,
   LibraryEntry,
+  RequestedEntry,
   LibraryEntryKind,
   LibraryList,
   LibraryMedium,

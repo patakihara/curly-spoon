@@ -117,6 +117,16 @@ describe('a library list', () => {
           availability: owned,
         },
       ],
+      requested: [
+        {
+          id: 'request-1',
+          kind: 'book',
+          title: 'On its way',
+          sub: null,
+          art: null,
+          availability: { kind: 'requested', status: 'downloading', progress: 0.5 },
+        },
+      ],
       sort: 'title',
       seed: null,
     };
@@ -149,7 +159,7 @@ describe('a library list', () => {
 
   it('[M2.sorting/a] answers the sort it used, and the seed only for random', () => {
     const answered = (sort: string, seed: number | null) =>
-      LibraryList.safeParse({ items: [], sort, seed }).success;
+      LibraryList.safeParse({ items: [], requested: [], sort, seed }).success;
     expect(answered('title', null)).toBe(true);
     expect(answered('artist', null)).toBe(true);
     expect(answered('random', 7)).toBe(true);
@@ -167,7 +177,7 @@ describe('a library list', () => {
       progress: null,
       availability: owned,
     };
-    const list = (item: object) => ({ items: [item], sort: 'title', seed: null });
+    const list = (item: object) => ({ items: [item], requested: [], sort: 'title', seed: null });
     expect(LibraryList.safeParse(list({ ...entry, progress: 1.5 })).success).toBe(false);
     expect(LibraryList.safeParse(list({ ...entry, kind: 'episode' })).success).toBe(false);
     expect(

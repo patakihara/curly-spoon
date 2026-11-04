@@ -53,6 +53,7 @@ import { RangeNotSatisfiable, type UpstreamFile } from '../adapters/stream.js';
 import { indexedRow } from '../libraryIndex/store.js';
 import type { Caller, HeldPlan, PlanEntry, Sessions } from '../queues/sessions.js';
 import { Refusal, serve, serveStream, type StreamAnswer } from '../route.js';
+import { addClaim } from '../store/claims.js';
 import type { Db } from '../store/connection.js';
 import {
   type Linker,
@@ -387,6 +388,13 @@ export function playRoutes(
     }
   };
 
+  /** Playing a thing makes it the person's own: a track's album, an episode's show, or itself. */
+  const claimPlayed = (ref: MediaRef, userId: string) => {
+    const parent = indexedRow(db, ref.source, ref.id)?.parentId ?? null;
+    const held = parent === null ? ref : { source: ref.source, id: parent };
+    addClaim(db, userId, held, 'played', (options.now ?? Date.now)());
+  };
+
   serve(app, play, async (request, _reply, body) => {
     const ref = mediaRefKey(body.ref);
     const caller = signedIn(request);
@@ -419,6 +427,7 @@ export function playRoutes(
           close: async (report) => reports.close(report),
         });
       });
+      claimPlayed(body.ref, caller.id);
       return inSession(
         caller,
         { ...plan, progressTarget: { playId } },
@@ -466,6 +475,7 @@ export function playRoutes(
         close: (report) => abs.closeSession(playId, report && sync(report)),
       }),
     );
+    claimPlayed(body.ref, caller.id);
     return inSession(caller, plan, body.ref, heldBefore, entries);
   });
 

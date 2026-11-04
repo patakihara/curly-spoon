@@ -277,6 +277,7 @@ enum class LibraryEntryKind {
 @Serializable
 data class LibraryList(
     val items: List<LibraryEntry>,
+    val requested: List<RequestedEntry>,
     val sort: LibrarySort,
     val seed: Long?,
 )
@@ -812,6 +813,16 @@ data class RequestView(
 )
 
 @Serializable
+data class RequestedEntry(
+    val id: String,
+    val kind: LibraryEntryKind,
+    val title: String,
+    val sub: String?,
+    val art: String?,
+    val availability: Availability,
+)
+
+@Serializable
 enum class Role {
     @SerialName("admin")
     ADMIN,
@@ -879,6 +890,7 @@ data class Settings(
     val autoplay: AutoplaySwitches,
     val queueStyle: QueueStyle,
     val firstRunDone: Boolean,
+    val showEveryonesLibrary: Boolean,
 )
 
 @Serializable
@@ -887,6 +899,7 @@ data class SettingsBody(
     val autoplay: AutoplaySwitchesChange? = null,
     val queueStyle: QueueStyle? = null,
     val firstRunDone: Boolean? = null,
+    val showEveryonesLibrary: Boolean? = null,
 )
 
 @Serializable
