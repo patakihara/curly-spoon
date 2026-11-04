@@ -58,6 +58,7 @@ import { upsertUser } from './store/users.js';
 const ADAPTERS = fileURLToPath(new URL('./adapters/', import.meta.url));
 const HOUR = 3_600_000;
 const CAP = 24 * HOUR;
+const STEP_LIMIT = 60_000;
 
 function recording(upstream: string, call: string): Recording {
   const file = join(ADAPTERS, upstream, 'recordings', `${call}.json`);
@@ -155,6 +156,7 @@ const deps = (...steps: MediumSteps[]): RequestJobDeps => ({
   log: { error: (details) => logged.push(details) },
   now: () => clock,
   notIndexedAfterMs: CAP,
+  stepTimeoutMs: STEP_LIMIT,
 });
 
 const request = (medium: RequestMedium) => createRequest(db, ana, refs[medium], clock).request;
@@ -800,6 +802,180 @@ describe('the windows a crash, a cancel or a second tap can fall into', () => {
   });
 });
 
+describe('a step that never answers', () => {
+  const hung = <T>(): Promise<T> => new Promise<T>(() => undefined);
+  /** The job with a limit short enough to wait out. */
+  const impatient = (...steps: MediumSteps[]) => ({ ...deps(...steps), stepTimeoutMs: 5 });
+
+  /** A second request of the same run, on a medium whose steps answer. */
+  const other = () => {
+    const steps = standInSteps('podcast', { imports: show });
+    return { steps, one: request('podcast') };
+  };
+
+  it('fails a search that hangs at searching, moves another request, and the next turn runs', async () => {
+    const steps = { ...standInSteps('book'), search: () => hung<never>() };
+    const stuck = request('book');
+    const answering = other();
+    const job = impatient(steps, answering.steps);
+
+    await advanceRequests(job);
+    await advanceRequests(job);
+    expect(reread(stuck).state).toEqual({
+      status: 'failed',
+      failedStep: 'searching',
+      reason: 'searchFailed',
+    });
+    expect(reread(answering.one).state.status).toBe('importing');
+
+    await advanceRequests(job);
+    expect(reread(answering.one).result).toEqual(show);
+    expect(logged.map((entry) => entry.step)).toEqual(['searching']);
+  });
+
+  it('fails a start that hangs at queued, keeps its key, and a retry cannot double it', async () => {
+    const steps = standInSteps('book');
+    const answers = steps.download!;
+    const keys: string[] = [];
+    let hangs = true;
+    const download = {
+      ...answers,
+      start: (...args: Parameters<typeof answers.start>) => {
+        keys.push(args[2]);
+        return hangs ? hung<DownloadHandle>() : answers.start(...args);
+      },
+    };
+    const job = impatient({ ...steps, download });
+    const one = request('book');
+    await runUntil(job, one, 'failed');
+    expect(reread(one).state).toEqual({
+      status: 'failed',
+      failedStep: 'queued',
+      reason: 'downloadFailed',
+    });
+    const { stepKey } = reread(one);
+    expect(stepKey).toEqual(expect.any(String));
+
+    hangs = false;
+    await retryRequest(job, one.id);
+    await advanceRequests(job);
+    expect(keys).toEqual([stepKey, stepKey]);
+    expect(reread(one).handle).not.toBeNull();
+    expect(steps.calls.start).toBe(1);
+  });
+
+  it('fails a poll that hangs at downloading, moves another request, and keeps the handle', async () => {
+    const steps = standInSteps('song');
+    const download = { ...steps.download!, poll: () => hung<never>() };
+    const stuck = request('song');
+    const answering = other();
+    const job = impatient({ ...steps, download }, answering.steps);
+    await runUntil(job, stuck, 'failed');
+    expect(reread(stuck).state).toEqual({
+      status: 'failed',
+      failedStep: 'downloading',
+      reason: 'downloadFailed',
+    });
+    expect(reread(answering.one).state.status).toBe('importing');
+  });
+
+  it('fails an import that hangs at importing, keeps its key, and a retry cannot double it', async () => {
+    const steps = standInSteps('podcast', { imports: show });
+    const imports = steps.import;
+    const keys: string[] = [];
+    let hangs = true;
+    const job = impatient({
+      ...steps,
+      import: (...args: Parameters<typeof imports>) => {
+        keys.push(args[1]);
+        return hangs ? hung<{ ref: MediaRef }>() : imports(...args);
+      },
+    });
+    const one = request('podcast');
+    await runUntil(job, one, 'failed');
+    expect(reread(one).state).toEqual({
+      status: 'failed',
+      failedStep: 'importing',
+      reason: 'importFailed',
+    });
+    const { stepKey } = reread(one);
+    expect(stepKey).toEqual(expect.any(String));
+
+    hangs = false;
+    await retryRequest(job, one.id);
+    await advanceRequests(job);
+    expect(keys).toEqual([stepKey, stepKey]);
+    expect(reread(one).result).toEqual(show);
+    expect(steps.calls.import).toBe(1);
+  });
+
+  it('frees a medium from a cancel that hangs: the retry answers, logs it, and a start still goes', async () => {
+    const steps = standInSteps('song', { polls: [{ kind: 'failed', reason: 'downloadFailed' }] });
+    const answers = steps.download!;
+    let hangs = false;
+    const download = {
+      ...answers,
+      cancel: (...args: Parameters<typeof answers.cancel>) =>
+        hangs ? hung<void>() : answers.cancel(...args),
+    };
+    const job = impatient({ ...steps, download });
+    const one = request('song');
+    await runUntil(job, one, 'failed');
+
+    hangs = true;
+    const started = steps.calls.start!;
+    await retryRequest(job, one.id);
+    expect(logged.map((entry) => entry.request)).toEqual([one.id]);
+    await advanceRequests(job);
+    expect(steps.calls.start).toBe(started + 1);
+    expect(reread(one).handle).not.toBeNull();
+  });
+
+  it('frees a medium from a start that hangs: a later start is not left behind it', async () => {
+    const steps = standInSteps('song');
+    const answers = steps.download!;
+    let hangs = true;
+    const download = {
+      ...answers,
+      start: (...args: Parameters<typeof answers.start>) =>
+        hangs ? hung<DownloadHandle>() : answers.start(...args),
+    };
+    const job = impatient({ ...steps, download });
+    const first = request('song');
+    await runUntil(job, first, 'failed');
+
+    hangs = false;
+    const second = createRequest(
+      db,
+      ana,
+      { ...refs.song, target: { ...refs.song.target, ids: { youtubeMusicId: 'otherSongId' } } },
+      clock,
+    ).request;
+    await runUntil(job, second, 'downloading');
+    await advanceRequests(job);
+    expect(reread(second).handle).not.toBeNull();
+  });
+
+  it('runs the app job past a hung step, so a request made afterwards still moves', async () => {
+    const steps = { ...standInSteps('book'), search: () => hung<never>() };
+    const stuck = request('book');
+    const app = await buildApp({
+      webDistDir: null,
+      db,
+      requests: {
+        steps: stepsRegistry([steps, standInSteps('podcast', { imports: show })]),
+        everyMs: 5,
+        notIndexedAfterMs: CAP,
+        stepTimeoutMs: 5,
+      },
+    });
+    await vi.waitFor(() => expect(reread(stuck).state.status).toBe('failed'));
+    const later = request('podcast');
+    await vi.waitFor(() => expect(reread(later).result).toEqual(show));
+    await app.close();
+  });
+});
+
 describe('the advance job in the app', () => {
   it('moves requests on its own turn, and stops with the app', async () => {
     const one = request('podcast');
@@ -810,6 +986,7 @@ describe('the advance job in the app', () => {
         steps: stepsRegistry([standInSteps('podcast', { imports: show })]),
         everyMs: 5,
         notIndexedAfterMs: CAP,
+        stepTimeoutMs: STEP_LIMIT,
       },
     });
     await vi.waitFor(() => expect(reread(one).result).toEqual(show));
@@ -842,6 +1019,7 @@ describe('the advance job in the app', () => {
         ]),
         everyMs: 5,
         notIndexedAfterMs: CAP,
+        stepTimeoutMs: STEP_LIMIT,
       },
     });
     saveRequest(db, one.id, { state: { status: 'searching' } }, clock);
@@ -893,7 +1071,12 @@ describe('the requests routes', () => {
       ...(steps.length === 0
         ? {}
         : {
-            requests: { steps: stepsRegistry(steps), everyMs: 3_600_000, notIndexedAfterMs: CAP },
+            requests: {
+              steps: stepsRegistry(steps),
+              everyMs: 3_600_000,
+              notIndexedAfterMs: CAP,
+              stepTimeoutMs: STEP_LIMIT,
+            },
           }),
     });
     await new Promise((resolve) => setTimeout(resolve, 5));

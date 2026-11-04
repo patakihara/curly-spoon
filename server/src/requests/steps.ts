@@ -64,7 +64,8 @@ export type DownloadTarget = { handle: DownloadHandle } | { key: string; release
  * same handle when a retry starts the same release again. It need not tell these attempts apart,
  * as the job keeps a late cancel away from a later start. Of two taps on one request, only the one
  * whose save wins sends a cancel; and each medium's starts and cancels go out one at a time, in the
- * order they were asked for, so a start waits for every cancel asked for before it.
+ * order they were asked for, so a start waits for every cancel asked for before it, or for that
+ * cancel's time limit.
  */
 export interface DownloadSteps {
   start(request: StoredRequest, release: Release, key: string): Promise<DownloadHandle>;

@@ -10,6 +10,11 @@
  * idempotency key first and passes it on, so a crash before its answer is saved repeats the same
  * call, which the medium answers the same.
  *
+ * Every step the job asks of a medium has a time limit, so a hung upstream fails its own request
+ * and nothing else: the run goes on to the next request, and the job's next turn comes. A step past
+ * its limit fails as a step that throws does, so a `start` or `import` keeps its key: it may yet
+ * land upstream, and a retry under that key cannot double it.
+ *
  * What a person does to a request (retry, choose, pick another, cancel) lives here too, as dropping
  * a failed download takes the same steps. Each move is saved first, naming the version it read, so of
  * two taps only one goes on to drop a download.
@@ -46,6 +51,8 @@ export interface RequestJobDeps {
   now: () => number;
   /** How long an imported item may stay out of the index before its request fails. */
   notIndexedAfterMs: number;
+  /** How long any one call to a medium's steps may go unanswered before it counts as failed. */
+  stepTimeoutMs: number;
 }
 
 /** What acting on a request for a person takes. */
@@ -60,6 +67,22 @@ const THROWN: Record<WorkingStatus, RequestFailure> = {
   downloading: 'downloadFailed',
   importing: 'importFailed',
 };
+
+/** A step's answer, or a failure once the limit has passed with none. */
+async function limited<T>(deps: RequestActDeps, name: string, call: () => Promise<T>): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  const limit = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`no answer to ${name} in ${deps.stepTimeoutMs} ms`)),
+      deps.stepTimeoutMs,
+    );
+  });
+  try {
+    return await Promise.race([call(), limit]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 /**
  * Moves a request by an event its route must allow, with what the step keeps. Answers whether it
@@ -90,7 +113,7 @@ function keyed(deps: RequestJobDeps, request: StoredRequest): StoredRequest | nu
 }
 
 async function search(deps: RequestJobDeps, steps: MediumSteps, request: StoredRequest) {
-  const found = await steps.search(request);
+  const found = await limited(deps, 'search', () => steps.search(request));
   if (found.kind === 'none') {
     apply(deps, request, { type: 'failed', reason: found.reason });
   } else if (found.kind === 'picked') {
@@ -111,12 +134,19 @@ async function search(deps: RequestJobDeps, steps: MediumSteps, request: StoredR
 const turns = new WeakMap<DownloadSteps, Promise<void>>();
 
 /**
- * Sends a medium's start or cancel once those asked for before it have answered, at once if none
- * is out, so a cancel still on its way can never drop a download started after it was asked for.
+ * Sends a medium's start or cancel once those asked for before it have answered or passed their
+ * limit, at once if none is out, so a cancel still on its way can never drop a download started
+ * after it was asked for, and a hung one holds up the rest no longer than its limit.
  */
-function inTurn<T>(steps: DownloadSteps, call: () => Promise<T>): Promise<T> {
+function inTurn<T>(
+  deps: RequestActDeps,
+  steps: DownloadSteps,
+  name: string,
+  call: () => Promise<T>,
+): Promise<T> {
   const before = turns.get(steps);
-  const answer = before === undefined ? call() : before.then(call);
+  const send = () => limited(deps, name, call);
+  const answer = before === undefined ? send() : before.then(send);
   const settled = answer.then(
     () => undefined,
     () => undefined,
@@ -137,14 +167,15 @@ async function download(deps: RequestJobDeps, steps: DownloadSteps, request: Sto
     if (ready?.stepKey == null) return;
     const { release } = request;
     const { stepKey } = ready;
-    const handle = await inTurn(steps, () => steps.start(ready, release, stepKey));
+    const handle = await inTurn(deps, steps, 'start', () => steps.start(ready, release, stepKey));
     const change = { state: ready.state, handle, stepKey: null };
     if (!saveRequest(db, ready.id, change, now(), ready.version)) {
-      await inTurn(steps, () => steps.cancel({ handle }));
+      await inTurn(deps, steps, 'cancel', () => steps.cancel({ handle }));
     }
     return;
   }
-  const polled = await steps.poll(request.handle);
+  const { handle } = request;
+  const polled = await limited(deps, 'poll', () => steps.poll(handle));
   const waiting = request.state.status === 'queued';
   switch (polled.kind) {
     case 'queued':
@@ -189,7 +220,8 @@ async function importing(deps: RequestJobDeps, steps: MediumSteps, request: Stor
   if (request.result === null) {
     const ready = keyed(deps, request);
     if (ready?.stepKey == null) return;
-    const { ref } = await steps.import(ready, ready.stepKey);
+    const { stepKey } = ready;
+    const { ref } = await limited(deps, 'import', () => steps.import(ready, stepKey));
     const change = { state: ready.state, result: ref, stepKey: null };
     saveRequest(deps.db, ready.id, change, deps.now(), ready.version);
   } else if (indexedRow(deps.db, request.result.source, request.result.id) !== undefined) {
@@ -278,7 +310,7 @@ async function dropDownload(
   const download = deps.steps.get(request.medium)?.download;
   if (target === null || download === undefined) return;
   try {
-    await inTurn(download, () => download.cancel(target));
+    await inTurn(deps, download, 'cancel', () => download.cancel(target));
   } catch (err) {
     deps.log.error({ request: request.id, err }, 'download not dropped');
   }

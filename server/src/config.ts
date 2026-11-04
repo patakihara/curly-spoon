@@ -88,10 +88,11 @@ const envSchema = z.object({
         .refine((value) => /^https?:$/.test(new URL(value).protocol), 'an http or https URL'),
     ])
     .default('https://lrclib.net'),
-  // The request job: how often it moves each request a step, and how long an imported item may
-  // stay out of the index before its request fails.
+  // The request job: how often it moves each request a step, how long an imported item may stay
+  // out of the index before its request fails, and how long any one upstream step may go unanswered.
   REQUESTS_EVERY_SECONDS: whole('seconds', 30, { min: 1, max: LONGEST_TIMER_SECONDS }),
   REQUEST_NOT_INDEXED_HOURS: whole('hours', 24, { min: 1 }),
+  REQUEST_STEP_TIMEOUT_SECONDS: whole('seconds', 120, { min: 1, max: LONGEST_TIMER_SECONDS }),
   // How long a transcode may go unasked-for before Auralis closes it upstream.
   PLAY_IDLE_MINUTES: minutes(10, { min: 1 }),
   // The key that encrypts each person's upstream tokens: base64 here, or a 0600 file.
@@ -153,6 +154,8 @@ export interface RequestsConfig {
   everySeconds: number;
   /** How long an imported item may stay out of the index before its request fails. */
   notIndexedAfterHours: number;
+  /** How long any one call to a medium's steps may go unanswered before it counts as failed. */
+  stepTimeoutSeconds: number;
 }
 
 export interface UpstreamConfig {
@@ -225,6 +228,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     requests: {
       everySeconds: parsed.REQUESTS_EVERY_SECONDS,
       notIndexedAfterHours: parsed.REQUEST_NOT_INDEXED_HOURS,
+      stepTimeoutSeconds: parsed.REQUEST_STEP_TIMEOUT_SECONDS,
     },
     playIdleMinutes: parsed.PLAY_IDLE_MINUTES,
     secretKey: parsed.SECRET_KEY,

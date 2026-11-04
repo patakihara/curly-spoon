@@ -354,11 +354,20 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ PLAY_IDLE_MINUTES: '0' })).toThrow();
   });
 
-  it('moves requests every 30 seconds by default and gives the index 24 hours, or what is set', () => {
-    expect(loadConfig({}).requests).toEqual({ everySeconds: 30, notIndexedAfterHours: 24 });
+  it('moves requests every 30 seconds by default, gives the index 24 hours and a step 2 minutes, or what is set', () => {
+    expect(loadConfig({}).requests).toEqual({
+      everySeconds: 30,
+      notIndexedAfterHours: 24,
+      stepTimeoutSeconds: 120,
+    });
     expect(
-      loadConfig({ REQUESTS_EVERY_SECONDS: '5', REQUEST_NOT_INDEXED_HOURS: '2' }).requests,
-    ).toEqual({ everySeconds: 5, notIndexedAfterHours: 2 });
+      loadConfig({
+        REQUESTS_EVERY_SECONDS: '5',
+        REQUEST_NOT_INDEXED_HOURS: '2',
+        REQUEST_STEP_TIMEOUT_SECONDS: '9',
+      }).requests,
+    ).toEqual({ everySeconds: 5, notIndexedAfterHours: 2, stepTimeoutSeconds: 9 });
+    expect(() => loadConfig({ REQUEST_STEP_TIMEOUT_SECONDS: '0' })).toThrow();
     expect(() => loadConfig({ REQUESTS_EVERY_SECONDS: '0' })).toThrow();
     expect(() => loadConfig({ REQUEST_NOT_INDEXED_HOURS: '0' })).toThrow();
   });

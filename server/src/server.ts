@@ -109,6 +109,7 @@ export async function assembleServer(
       steps: stepsRegistry([]),
       everyMs: config.requests.everySeconds * 1_000,
       notIndexedAfterMs: config.requests.notIndexedAfterHours * 3_600_000,
+      stepTimeoutMs: config.requests.stepTimeoutSeconds * 1_000,
     },
     logger: deps.logger ?? true,
   });

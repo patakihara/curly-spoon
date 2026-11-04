@@ -61,7 +61,12 @@ export interface BuildAppOptions {
    * The advance job: each medium's steps, how often it runs, and how long the index may lag.
    * Without it, no medium can be requested.
    */
-  requests?: { steps: StepsRegistry; everyMs: number; notIndexedAfterMs: number };
+  requests?: {
+    steps: StepsRegistry;
+    everyMs: number;
+    notIndexedAfterMs: number;
+    stepTimeoutMs: number;
+  };
   /** How transcodes are held open and their segments waited for. */
   playback?: PlaybackOptions;
   random?: Random;
@@ -197,11 +202,13 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     steps: options.requests?.steps ?? new Map(),
     log: app.log,
     now: options.now ?? Date.now,
+    // With no steps registered, no step ever runs against this.
+    stepTimeoutMs: options.requests?.stepTimeoutMs ?? 0,
   });
 
   if (options.requests !== undefined) {
-    const { steps, everyMs, notIndexedAfterMs } = options.requests;
-    const deps = { db, steps, notIndexedAfterMs, log: app.log, now: options.now ?? Date.now };
+    const { everyMs, ...requests } = options.requests;
+    const deps = { db, ...requests, log: app.log, now: options.now ?? Date.now };
     let turn = Promise.resolve();
     const stop = scheduleJob(
       { name: 'requests', everyMs, run: () => (turn = advanceRequests(deps)) },
