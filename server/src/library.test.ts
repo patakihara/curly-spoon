@@ -731,6 +731,17 @@ describe('[M3.requests/c] a person’s own library', () => {
     expect((await s.requested('books', 'nora')).map((e) => e.title)).toEqual(['Asked for 4']);
   });
 
+  it('[M3.requests/c] opens the page and art of whatever a person’s list shows, whatever their own accounts reach', async () => {
+    await index(db);
+    const s = await server();
+    s.seesEveryones('otto');
+    const listed = ids(await s.items('books', 'otto'));
+    expect(listed).toContain(fourFiles.id);
+
+    expect((await s.item(`abs:${fourFiles.id}`, 'otto')).status).toBe(200);
+    expect((await s.get(`/api/media/abs:${fourFiles.id}/art`, 'otto')).statusCode).toBe(200);
+  });
+
   it('[M3.requests/c] lists a request once only when its item is already listed', async () => {
     await index(db);
     const s = await server();

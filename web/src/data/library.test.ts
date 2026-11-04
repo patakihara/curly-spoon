@@ -28,6 +28,43 @@ const list = (...items: LibraryEntry[]) =>
   LibraryList.parse({ items, requested: [], sort: 'title', seed: null });
 const noFeed = { shelves: [] };
 
+describe('[M3.requests/c] your own requests sit among your items', () => {
+  const asked = {
+    id: 'r1',
+    title: 'Asked For',
+    sub: 'An Author',
+    art: null,
+    availability: { kind: 'requested', status: 'downloading', progress: 0.5 },
+  };
+  const withRequest = (kind: 'book' | 'album') =>
+    LibraryList.parse({
+      items: [],
+      requested: [{ ...asked, kind }],
+      sort: 'title',
+      seed: null,
+    });
+
+  it('[M3.requests/c] draws a book on its way among the books, with its status', () => {
+    expect(booksData(withRequest('book'), books.placeholder).library).toEqual([
+      expect.objectContaining({
+        title: 'Asked For',
+        status: 'Downloading · 50%',
+        tone: 'progress',
+      }),
+    ]);
+  });
+
+  it('[M3.requests/c] draws an album on its way among the music, with its status', () => {
+    expect(musicData(withRequest('album'), music.placeholder).library).toEqual([
+      expect.objectContaining({
+        title: 'Asked For',
+        status: 'Downloading · 50%',
+        tone: 'progress',
+      }),
+    ]);
+  });
+});
+
 describe('[M1.shell] the library homes from GET /api/library/{medium}', () => {
   it('lists each book as a card that opens its page by its ref, with its author, art and progress', () => {
     const data = booksData(list(entry({ progress: 0.35 })), books.placeholder);

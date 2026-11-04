@@ -153,6 +153,18 @@ describe('[M2.lists/b] The Digest: subscribed shows’ unplayed episodes of the 
   });
 });
 
+describe('[M3.requests/c] The Digest follows the person’s own library', () => {
+  it('[M3.requests/c] covers only shows the person’s own library lists', async () => {
+    const s = await server();
+    const digest = await s.theDigest();
+    const covered = (await s.detail(digest.id)).shows.map((show) => show.ref.id);
+    const library = await s.call('GET', '/library/podcasts');
+    const mine = (library.body as { items: { ref: { id: string } }[] }).items.map((i) => i.ref.id);
+
+    expect(covered.filter((id) => !mine.includes(id))).toEqual([]);
+  });
+});
+
 describe('[M2.lists/c] a custom digest over the shows you choose', () => {
   it('[M2.lists/c] holds only its shows’ new unplayed episodes, in its order, and follows a change of shows', async () => {
     const s = await server({ now: DEC_20 });
