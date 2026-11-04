@@ -15,6 +15,9 @@
  * and it re-signs the recorded ID token with the test key for that sign-in's nonce and the time of
  * the exchange. Every other claim is the recording's, so the identity is the recorded one.
  *
+ * Requests run on stand-in mediums (`standInMedia.ts`), since a real medium's download is never
+ * recorded, and the job turns every second so a test sees them move.
+ *
  * Nothing here ships: the image copies `server/src` without its tests and recordings, and never
  * this folder (`scripts/guards/image.test.mjs`).
  */
@@ -48,6 +51,7 @@ import { runIndex } from '../src/libraryIndex/job.js';
 import { assembleServer } from '../src/server.js';
 import { openDatabase } from '../src/store/connection.js';
 import { s256 } from '../src/store/signIn.js';
+import { standInMedia } from './standInMedia.js';
 
 const ADAPTERS = fileURLToPath(new URL('../src/adapters/', import.meta.url));
 
@@ -64,6 +68,8 @@ export interface RecordedServerOptions {
   port?: number;
   signOnPort?: number;
   logger?: BuildAppOptions['logger'];
+  /** The recorded person, as if they had begun nothing on Audiobookshelf or Jellyfin. */
+  nothingPlayed?: boolean;
 }
 
 export interface RecordedServer {
@@ -171,6 +177,21 @@ function syncFor(play: Recording, sync: Recording): Recording {
   synced.call = `${play.call}-sync`;
   synced.request.path = `/api/session/${id}/sync`;
   return synced;
+}
+
+/** A recording answered as if its person had played nothing: their own progress, played tracks. */
+function asNothingPlayed(recording: Recording): Recording {
+  const { path, query } = recording.request;
+  const own = path === '/api/me';
+  const played = path === '/Items' && query.Filters === 'IsPlayed';
+  if (!own && !played) return recording;
+  const blank = structuredClone(recording);
+  const json = jsonOf<{ mediaProgress?: unknown[]; Items?: unknown[]; TotalRecordCount?: number }>(
+    blank,
+  );
+  if (own) json.mediaProgress = [];
+  else Object.assign(json, { Items: [], TotalRecordCount: 0 });
+  return blank;
 }
 
 /** A recorded page's query value, as a number. */
@@ -392,6 +413,7 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     // Nothing here answers for LRCLIB, and the backfill would ask it of every recorded track.
     LYRICS_EVERY_MINUTES: '0',
     LRCLIB_URL: '',
+    REQUESTS_EVERY_SECONDS: '1',
   });
 
   const signOn = standInSignOn({
@@ -415,11 +437,12 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
   const absRecorded = recordingsOf('audiobookshelf');
   const replayed = absRecorded.filter((r) => !notReplayed.has(r.call));
   const sync = call(absRecorded, 'progress-sync');
+  const person = (r: Recording) => (options.nothingPlayed ? asNothingPlayed(r) : r);
   const abs = [
     ...replayed.map((r) => (r.call === 'multi-play' ? timedByStandIns(r, 'multi-file.mp3') : r)),
     ...['item-play', 'multi-play'].map((name) => syncFor(call(replayed, name), sync)),
-  ];
-  const jellyfin = recordingsOf('jellyfin');
+  ].map(person);
+  const jellyfin = recordingsOf('jellyfin').map(person);
   const absFetch = replayFetch(abs, { readBytes: standInsBeside(ADAPTERS) });
   const jellyfinFetch = replayFetch(jellyfin, { readBytes: standInsBeside(ADAPTERS) });
   mkdirSync(config.dataDir, { recursive: true });
@@ -435,6 +458,7 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
       [JELLYFIN_ORIGIN]: jellyfinFetch,
     }),
     logger: options.logger,
+    steps: standInMedia(),
   });
 
   const userinfo = jsonOf<{ preferred_username: string; groups: string[] }>(

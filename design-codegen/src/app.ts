@@ -83,11 +83,15 @@ function readsData(tree: PageTree): boolean {
       if (value.kind === 'play' && typeof value.queue !== 'string' && data(value.queue.path)) {
         return true;
       }
+      if (value.kind === 'act' && typeof value.verb !== 'string' && data(value.verb.path)) {
+        return true;
+      }
       if (
         (value.kind === 'open' ||
           value.kind === 'request' ||
           value.kind === 'play' ||
-          value.kind === 'choose') &&
+          value.kind === 'choose' ||
+          value.kind === 'act') &&
         Object.values(value.params).some(data)
       ) {
         return true;

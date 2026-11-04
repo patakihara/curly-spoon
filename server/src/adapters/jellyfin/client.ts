@@ -26,6 +26,7 @@ import {
   type PlayableItem,
   playableItemSchema,
   playableQueryResultSchema,
+  playedTracksSchema,
   publicSystemInfoSchema,
   type UserItemData,
   userItemDataSchema,
@@ -58,6 +59,8 @@ export interface JellyfinClientOptions {
   token: string;
   fetch: FetchLike;
   device?: JellyfinDeviceInfo;
+  /** The token is the API key, with no user behind it: `getPlayable` asks by id, as it needs none. */
+  serverKey?: boolean;
 }
 
 const SERVER_DEVICE: JellyfinDeviceInfo = {
@@ -71,6 +74,9 @@ type BaseItemDto = z.infer<typeof baseItemDtoSchema>;
 
 /** The fields the index reads beyond the defaults: external ids, genres and the change tag. */
 const INDEX_FIELDS = 'ProviderIds,Genres,Etag';
+
+/** The order played tracks page in: album, then disc and track, then name and when added. */
+const PLAYED_ORDER = 'Album,ParentIndexNumber,IndexNumber,SortName,DateCreated';
 
 export class JellyfinClient {
   private readonly device: JellyfinDeviceInfo;
@@ -171,6 +177,31 @@ export class JellyfinClient {
     return (await this.get('UserViews', baseItemQueryResultSchema, query)).Items;
   }
 
+  /**
+   * One page of the tracks the token's own user has played, with each one's album, and how many
+   * there are in all: `GET /Items`, in album and track order so pages hold still and two tracks
+   * that tie sit in one album, which is all a read wants of them. Jellyfin takes `Id` in `SortBy`
+   * with a 200 and ignores it (checked live), so nothing here can sort on it.
+   */
+  async getPlayedTracks(page: {
+    limit: number;
+    startIndex: number;
+  }): Promise<{ tracks: { id: string; albumId: string | null }[]; total: number }> {
+    const answer = await this.get('Items', playedTracksSchema, {
+      Recursive: 'true',
+      IncludeItemTypes: 'Audio',
+      Filters: 'IsPlayed',
+      SortBy: PLAYED_ORDER,
+      Fields: 'AlbumId',
+      StartIndex: String(page.startIndex),
+      Limit: String(page.limit),
+    });
+    return {
+      tracks: answer.Items.map(({ Id, AlbumId }) => ({ id: Id, albumId: AlbumId ?? null })),
+      total: answer.TotalRecordCount,
+    };
+  }
+
   /** Every track of one album, in disc and track order. */
   async getAlbumTracks(albumId: string): Promise<IndexItem[]> {
     const query = {
@@ -207,9 +238,19 @@ export class JellyfinClient {
     return this.get(`Items/${encodeURIComponent(itemId)}`, baseItemDtoSchema, query);
   }
 
-  /** A track or an album as the token's own user sees it: `GET /Items/{id}`. */
-  getPlayable(itemId: string): Promise<PlayableItem> {
-    return this.get(`Items/${encodeURIComponent(itemId)}`, playableItemSchema);
+  /**
+   * A track or an album as the token's own user sees it: `GET /Items/{id}`. The API key has no
+   * user, and that route answers it 400 (checked live), so it asks `GET /Items?Ids=`, which needs
+   * none and answers an empty list for an unknown id (recorded).
+   */
+  async getPlayable(itemId: string): Promise<PlayableItem> {
+    if (this.opts.serverKey !== true) {
+      return this.get(`Items/${encodeURIComponent(itemId)}`, playableItemSchema);
+    }
+    const query = { Ids: itemId, Fields: 'MediaStreams' };
+    const [item] = (await this.get('Items', playableQueryResultSchema, query)).Items;
+    if (item === undefined) throw new AdapterError('status', 'GET Items', 'no such item', 404);
+    return item;
   }
 
   /** An album's tracks as the token's own user sees them, in Jellyfin's disc and track order. */

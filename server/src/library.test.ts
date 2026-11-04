@@ -3,8 +3,8 @@
  * job fills from the recordings:
  * page four of each library (two books, two shows, two albums of the Music library) and the books
  * page holding the four-file book. Each person's own Audiobookshelf `GET /api/me` says which
- * libraries they may open and how far through each book they are; their Jellyfin `GET /UserViews`
- * says which music libraries they see. A book's page reads its length and chapters from its
+ * libraries they may open, what they have begun and how far through each book they are; their
+ * Jellyfin says which music libraries they see and what they have played. A book's page reads its length and chapters from its
  * expanded answer (`multi-detail`), and art passes the recorded covers and primary images on,
  * their bodies synthesized. Replay matches a call by method, path and query, so each person's
  * answers are told apart by the token their call carries.
@@ -12,21 +12,27 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ItemDetail, LibraryList } from '@auralis/schema';
+import { ItemDetail, LibraryList, type MediaRef, type RequestRef } from '@auralis/schema';
 import { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AbsClient } from './adapters/audiobookshelf/client.js';
 import { type FetchLike } from './adapters/http/fetch.js';
 import { type Recording, recordingSchema } from './adapters/http/recording.js';
 import { replayFetch, standInsBeside } from './adapters/http/replay.js';
+import { standInSteps } from './adapters/http/standIn.js';
 import { JellyfinClient } from './adapters/jellyfin/client.js';
 import { buildApp } from './app.js';
 import { runIndex } from './libraryIndex/job.js';
 import { albumTracks, episodesInOrder } from './libraryIndex/store.js';
+import { advanceRequests } from './requests/job.js';
+import { stepsRegistry } from './requests/steps.js';
 import { ART_WIDTH } from './routes/items.js';
+import { addClaim } from './store/claims.js';
 import { openDatabase, type Db } from './store/connection.js';
 import { createDevice } from './store/devices.js';
+import { createRequest, saveRequest } from './store/requests.js';
 import { createSession } from './store/sessions.js';
+import { writeSettings } from './store/settings.js';
 import { saveLink } from './store/upstreamLinks.js';
 import { upsertUser } from './store/users.js';
 
@@ -81,6 +87,11 @@ Object.assign(json<AbsMe>(ottoMe), {
 const ottoViews = structuredClone(jf('jf-user-views'));
 json<{ Items: unknown[]; TotalRecordCount: number }>(ottoViews).Items = [];
 json<{ Items: unknown[]; TotalRecordCount: number }>(ottoViews).TotalRecordCount = 0;
+
+/** otto's played tracks: the recorded answer, with none. The only change. */
+const ottoPlayed = structuredClone(jf('jf-played-tracks'));
+json<{ Items: unknown[]; TotalRecordCount: number }>(ottoPlayed).Items = [];
+json<{ Items: unknown[]; TotalRecordCount: number }>(ottoPlayed).TotalRecordCount = 0;
 
 const KEY = Buffer.alloc(32, 7);
 const UPSTREAM = 'http://upstream.invalid';
@@ -160,11 +171,18 @@ afterEach(async () => {
 });
 
 /**
- * kara, granted every library and seeing Music; otto, granted only Podcasts and seeing no music
- * library; nora, linked to neither upstream.
+ * kara, granted every library and seeing Music, who has begun one book and played one album; otto,
+ * granted only Podcasts and seeing no music library, who has begun and played nothing; nora, linked
+ * to neither upstream. Auralis's own accounts act past their reach, unless left out. Set `down` and
+ * every upstream call fails.
  */
-async function server(karaMe = me) {
+async function server(
+  karaMe = me,
+  karaPlayed = [jf('jf-played-tracks')],
+  { household = true }: { household?: boolean } = {},
+) {
   const asked: string[] = [];
+  const upstream = { down: false };
   const reads = [
     abs('multi-detail'),
     abs('index-show-1'),
@@ -175,17 +193,29 @@ async function server(karaMe = me) {
     jf('jf-primary-image-medium'),
   ];
   const readBytes = standInsBeside(adapters);
-  const kara = replayFetch([karaMe, jf('jf-user-views'), ...reads], { readBytes });
-  const otto = replayFetch([ottoMe, ottoViews, ...reads], { readBytes });
+  const plays = [
+    jf('jf-track'),
+    jf('jf-album-tracks'),
+    jf('jf-playing'),
+    jf('jf-progress'),
+    jf('jf-stopped'),
+    abs('episode-play'),
+    abs('episode-close'),
+  ];
+  const kara = replayFetch([karaMe, jf('jf-user-views'), ...karaPlayed, ...reads], { readBytes });
+  const otto = replayFetch([ottoMe, ottoViews, ottoPlayed, ...reads, ...plays], { readBytes });
   const fetch: FetchLike = async (url, init) => {
     const authorization = new Headers(init?.headers).get('authorization') ?? '';
     const { pathname, search } = new URL(url);
     asked.push(`${pathname}${search}`);
-    return (authorization.includes('otto') ? otto : kara)(url, init);
+    if (upstream.down) throw new Error('the upstream is down');
+    return (authorization.includes('kara') ? kara : otto)(url, init);
   };
   const bearer: Record<string, string> = {};
+  const userIds: Record<string, string> = {};
   for (const name of ['kara', 'otto', 'nora']) {
     const user = upsertUser(db, { username: name, role: 'member' });
+    userIds[name] = user.id;
     if (name !== 'nora') {
       for (const service of ['abs', 'jellyfin'] as const) {
         saveLink(db, KEY, {
@@ -207,7 +237,20 @@ async function server(karaMe = me) {
   const app = await buildApp({
     webDistDir: null,
     db,
-    upstreams: { key: KEY, config: { absUrl: UPSTREAM, jellyfinUrl: UPSTREAM }, fetch },
+    upstreams: {
+      key: KEY,
+      config: { absUrl: UPSTREAM, jellyfinUrl: UPSTREAM },
+      fetch,
+      ...(household
+        ? {
+            household: {
+              abs: new AbsClient({ baseUrl: UPSTREAM, token: 'household', fetch }),
+              jellyfin: new JellyfinClient({ baseUrl: UPSTREAM, token: 'household', fetch }),
+            },
+          }
+        : {}),
+    },
+    playedPageSize: Number(jf('jf-played-tracks').request.query.Limit),
   });
   apps.push(app);
   const list = async (medium: string, name = 'kara') => {
@@ -234,8 +277,53 @@ async function server(karaMe = me) {
     expect(status).toBe(200);
     return ItemDetail.parse(body);
   };
-  return { app, asked, list, items, get, item, page };
+  const person = (name: string) => userIds[name] ?? '';
+  const seesEveryones = (name = 'kara') =>
+    writeSettings(db, person(name), { showEveryonesLibrary: true }, 0);
+  const claim = (refs: MediaRef[], name = 'kara') => {
+    for (const ref of refs) addClaim(db, person(name), ref, 'requested', 0);
+  };
+  const requested = async (medium: string, name = 'kara') => {
+    const { status, body } = await list(medium, name);
+    expect(status).toBe(200);
+    return LibraryList.parse(body).requested;
+  };
+  const play = (ref: MediaRef, name: string) =>
+    app.inject({
+      method: 'POST',
+      url: '/api/play',
+      headers: { authorization: `Bearer ${bearer[name] ?? ''}` },
+      payload: { ref },
+    });
+  return {
+    app,
+    asked,
+    upstream,
+    list,
+    items,
+    requested,
+    get,
+    item,
+    page,
+    person,
+    seesEveryones,
+    claim,
+    play,
+  };
 }
+
+/** The server, with kara's library set to show everything indexed. */
+async function seeingEveryones() {
+  const s = await server();
+  s.seesEveryones();
+  return s;
+}
+
+const absRef = (id: string): MediaRef => ({ source: 'abs', id });
+const jfRef = (id: string): MediaRef => ({ source: 'jellyfin', id });
+const everyBook = books.map((b) => absRef(b.id));
+const everyShow = shows.map((show) => absRef(show.id));
+const everyAlbum = albums.map((a) => jfRef(a.Id));
 
 const byTitle = (a: { title: string }, b: { title: string }) =>
   a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
@@ -259,7 +347,7 @@ describe('[M2.sorting/a] sorting the library: by title, by author, host or artis
 
   it('[M2.sorting/a] sorts by title when no sort is asked for, and answers that with no seed', async () => {
     await index(db);
-    const s = await server();
+    const s = await seeingEveryones();
 
     const list = await sorted(s, 'books');
 
@@ -270,7 +358,7 @@ describe('[M2.sorting/a] sorting the library: by title, by author, host or artis
 
   it('[M2.sorting/a] sorts books by author, by the name as shown, Le Guin’s two broken by title', async () => {
     await index(db);
-    const s = await server();
+    const s = await seeingEveryones();
 
     const list = await sorted(s, 'books?sort=artist');
 
@@ -285,7 +373,7 @@ describe('[M2.sorting/a] sorting the library: by title, by author, host or artis
 
   it('[M2.sorting/a] sorts podcasts by host, both shows’ one host broken by title', async () => {
     await index(db);
-    const s = await server();
+    const s = await seeingEveryones();
 
     const list = await sorted(s, 'podcasts?sort=artist');
 
@@ -297,7 +385,7 @@ describe('[M2.sorting/a] sorting the library: by title, by author, host or artis
 
   it('[M2.sorting/a] sorts music by title, with no article dropped, and by album artist', async () => {
     await index(db);
-    const s = await server();
+    const s = await seeingEveryones();
 
     expect(titles((await sorted(s, 'music?sort=title')).items)).toEqual([RUMOURS, PRINCESS]);
     expect((await sorted(s, 'music?sort=artist')).items.map((e) => [e.sub, e.title])).toEqual([
@@ -308,7 +396,7 @@ describe('[M2.sorting/a] sorting the library: by title, by author, host or artis
 
   it('[M2.sorting/a] shuffles by the seed it is given: seed 42 gives its own order, every time', async () => {
     await index(db);
-    const s = await server();
+    const s = await seeingEveryones();
 
     const once = await sorted(s, 'books?sort=random&seed=42');
     const again = await sorted(s, 'books?sort=random&seed=42');
@@ -320,7 +408,7 @@ describe('[M2.sorting/a] sorting the library: by title, by author, host or artis
 
   it('[M2.sorting/a] gives another seed its own order', async () => {
     await index(db);
-    const s = await server();
+    const s = await seeingEveryones();
 
     const list = await sorted(s, 'books?sort=random&seed=7');
 
@@ -330,7 +418,7 @@ describe('[M2.sorting/a] sorting the library: by title, by author, host or artis
 
   it('[M2.sorting/a] draws a seed for Random asked without one, and answers it, so asking with it gives the same order', async () => {
     await index(db);
-    const s = await server();
+    const s = await seeingEveryones();
 
     const drawn = await sorted(s, 'books?sort=random');
 
@@ -344,7 +432,7 @@ describe('[M2.sorting/a] sorting the library: by title, by author, host or artis
 
   it('[M2.sorting/a] draws a fresh seed each time Random is asked without one', async () => {
     await index(db);
-    const s = await server();
+    const s = await seeingEveryones();
 
     const seeds = new Set<number | null>();
     for (let i = 0; i < 5; i++) seeds.add((await sorted(s, 'books?sort=random')).seed);
@@ -354,7 +442,7 @@ describe('[M2.sorting/a] sorting the library: by title, by author, host or artis
 
   it('[M2.sorting/a] ignores a seed with any sort but Random, so an address may keep it', async () => {
     await index(db);
-    const s = await server();
+    const s = await seeingEveryones();
 
     const list = await sorted(s, 'books?sort=artist&seed=42');
 
@@ -364,7 +452,7 @@ describe('[M2.sorting/a] sorting the library: by title, by author, host or artis
 
   it('[M2.sorting/a] refuses a sort it does not know, and a seed that is not a whole number from 0 to 2^32-1, with 400, asking no upstream', async () => {
     await index(db);
-    const s = await server();
+    const s = await seeingEveryones();
 
     for (const query of ['sort=size', 'sort=random&seed=-1', 'sort=random&seed=4294967296']) {
       expect(await s.list(`books?${query}`)).toEqual({
@@ -377,9 +465,10 @@ describe('[M2.sorting/a] sorting the library: by title, by author, host or artis
 });
 
 describe('[M1.shell/a] the signed-in person’s library, from the index on the recordings', () => {
-  it('[M1.shell/a] lists every indexed book with its authors, art and progress from the person’s own Audiobookshelf, each owned', async () => {
+  it('[M1.shell/a] lists the person’s books with their authors, art and progress from their own Audiobookshelf, each owned', async () => {
     await index(db);
     const s = await server();
+    s.claim(everyBook);
 
     const listed = await s.items('books');
 
@@ -411,9 +500,10 @@ describe('[M1.shell/a] the signed-in person’s library, from the index on the r
     expect(listed.every((e) => e.progress === null)).toBe(true);
   });
 
-  it('[M1.shell/a] lists every indexed podcast show with its host and art, owned, with no progress of its own', async () => {
+  it('[M1.shell/a] lists the person’s podcast shows with their host and art, owned, with no progress of their own', async () => {
     await index(db);
     const s = await server();
+    s.claim(everyShow);
 
     const listed = await s.items('podcasts');
 
@@ -432,9 +522,10 @@ describe('[M1.shell/a] the signed-in person’s library, from the index on the r
     );
   });
 
-  it('[M1.shell/a] lists every indexed album of a music library the person sees, hidden from their home or not, with its album artists and art, owned', async () => {
+  it('[M1.shell/a] lists the person’s albums with their album artists and art, owned', async () => {
     await index(db);
     const s = await server();
+    s.claim(everyAlbum);
 
     const listed = await s.items('music');
 
@@ -451,14 +542,13 @@ describe('[M1.shell/a] the signed-in person’s library, from the index on the r
         }))
         .sort(byTitle),
     );
-    expect(s.asked).toEqual(['/UserViews?includeHidden=true']);
   });
 });
 
 describe('[M1.shell] art links', () => {
   it('[M1.shell] links art only for an item its upstream has art for: a cover, or a primary image', async () => {
     await index(db, true);
-    const s = await server();
+    const s = await seeingEveryones();
     const bare = [books[0]!.id, albums[0]!.Id];
 
     const listed = [...(await s.items('books')), ...(await s.items('music'))];
@@ -469,27 +559,277 @@ describe('[M1.shell] art links', () => {
   });
 });
 
-describe('who sees what', () => {
-  it("leaks no library another person can't open: otto, granted only Podcasts and seeing no music library, gets no books and no albums", async () => {
-    await index(db);
-    const s = await server();
-
-    expect(await s.items('books', 'otto')).toEqual([]);
-    expect(await s.items('music', 'otto')).toEqual([]);
-    expect((await s.items('podcasts', 'otto')).map((e) => e.ref.id).sort()).toEqual(
-      shows.map((show) => show.id).sort(),
-    );
-    expect((await s.items('books', 'kara')).length).toBe(books.length);
+describe('[M3.requests/c] a person’s own library', () => {
+  const MEDIA = ['books', 'podcasts', 'music'] as const;
+  const ids = (entries: { ref: MediaRef }[]) => entries.map((e) => e.ref.id).sort();
+  const askFor = (id: string): RequestRef => ({
+    medium: 'book',
+    target: { title: `Asked for ${id}`, creator: 'An Author', ids: { asin: `B00000000${id}` } },
+  });
+  const jobFor = (...steps: Parameters<typeof stepsRegistry>[0]) => ({
+    db,
+    steps: stepsRegistry(steps),
+    log: { error: () => undefined },
+    now: () => 1,
+    notIndexedAfterMs: 1_000,
+    stepTimeoutMs: 1_000,
   });
 
-  it('gives a person linked to neither upstream empty lists, asking neither', async () => {
+  it('[M3.requests/c] shows empty lists to a person with no claims and no progress, linked or not', async () => {
     await index(db);
     const s = await server();
-
-    for (const medium of ['books', 'podcasts', 'music']) {
-      expect(await s.items(medium, 'nora')).toEqual([]);
+    for (const medium of MEDIA) {
+      for (const name of ['otto', 'nora']) {
+        expect(await s.items(medium, name)).toEqual([]);
+        expect(await s.requested(medium, name)).toEqual([]);
+      }
     }
+  });
+
+  it('[M3.requests/c] asks no upstream for a person linked to neither', async () => {
+    await index(db);
+    const s = await server();
+    for (const medium of MEDIA) await s.items(medium, 'nora');
     expect(s.asked).toEqual([]);
+  });
+
+  it('[M3.requests/c] lists a book once a request for it reaches the library, whoever’s account reaches it', async () => {
+    await index(db);
+    const s = await server();
+    const steps = standInSteps('book', { imports: everyBook[0]! });
+    createRequest(db, s.person('nora'), askFor('1'), 0);
+    for (let turn = 0; turn < 8; turn += 1) await advanceRequests(jobFor(steps));
+
+    expect(ids(await s.items('books', 'nora'))).toEqual([everyBook[0]!.id]);
+    expect(await s.requested('books', 'nora')).toEqual([]);
+  });
+
+  it('[M3.requests/c] lists an album once a track of it has played, and a show once an episode has', async () => {
+    await index(db);
+    const s = await server();
+    expect(await s.items('music', 'otto')).toEqual([]);
+    const track = json<{ Id: string }>(jf('jf-track')).Id;
+    const episode = json<{ episodeId: string }>(abs('episode-play')).episodeId;
+
+    const played = await s.play(jfRef(track), 'otto');
+    expect(played.statusCode, played.body).toBe(200);
+    const heard = await s.play(absRef(episode), 'otto');
+    expect(heard.statusCode, heard.body).toBe(200);
+
+    expect(ids(await s.items('music', 'otto'))).toEqual([everyAlbum[0]!.id]);
+    expect(ids(await s.items('podcasts', 'otto'))).toEqual([everyShow[0]!.id]);
+  });
+
+  it('[M3.requests/c] claims nothing for a play that is refused', async () => {
+    await index(db);
+    const s = await server(me, undefined, { household: false });
+    const track = json<{ Id: string }>(jf('jf-track')).Id;
+    expect((await s.play(jfRef(track), 'nora')).statusCode).not.toBe(200);
+    expect(await s.items('music', 'nora')).toEqual([]);
+  });
+
+  it('[M3.requests/c] counts the books a person began on Audiobookshelf and the albums they played on Jellyfin, from the recordings', async () => {
+    await index(db);
+    const s = await server();
+    expect(ids(await s.items('books'))).toEqual([started.libraryItemId]);
+    expect(ids(await s.items('music'))).toEqual([
+      json<{ Items: { AlbumId: string }[] }>(jf('jf-played-tracks')).Items[0]!.AlbumId,
+    ]);
+    expect(await s.items('podcasts')).toEqual([]);
+  });
+
+  it('[M3.requests/c] counts a show once an episode of it is begun, under the show', async () => {
+    await index(db);
+    const begun = structuredClone(me);
+    json<AbsMe>(begun).mediaProgress.push({
+      ...json<AbsMe>(me).mediaProgress[0]!,
+      libraryItemId: shows[0]!.id,
+      episodeId: 'an-episode',
+    });
+    const s = await server(begun);
+    expect(ids(await s.items('podcasts'))).toEqual([shows[0]!.id]);
+  });
+
+  it('[M3.requests/c] keeps a book in the library after it is removed from Continue Listening', async () => {
+    await index(db);
+    const hidden = structuredClone(me);
+    Object.assign(json<AbsMe>(hidden).mediaProgress[0]!, { hideFromContinueListening: true });
+    const s = await server(hidden);
+    expect(ids(await s.items('books'))).toEqual([started.libraryItemId]);
+  });
+
+  it('[M3.requests/c] reads every page of what a person played', async () => {
+    await index(db);
+    const limit = Number(jf('jf-played-tracks').request.query.Limit);
+    const first = structuredClone(jf('jf-played-tracks'));
+    const page = json<{ Items: { AlbumId: string }[]; TotalRecordCount: number }>(first);
+    page.TotalRecordCount = limit + 1;
+    page.Items = Array.from({ length: limit }, () => page.Items[0]!);
+    const second = structuredClone(jf('jf-played-tracks'));
+    second.request.query.StartIndex = String(limit);
+    const last = json<{ Items: { AlbumId: string }[]; TotalRecordCount: number }>(second);
+    last.TotalRecordCount = limit + 1;
+    last.Items[0]!.AlbumId = albums[1]!.Id;
+
+    const s = await server(me, [first, second]);
+    expect(ids(await s.items('music'))).toEqual(everyAlbum.map((a) => a.id).sort());
+  });
+
+  it('[M3.requests/c] never shows another person’s claims or requests', async () => {
+    await index(db);
+    const s = await server();
+    s.claim(everyBook, 'kara');
+    createRequest(db, s.person('kara'), askFor('2'), 0);
+    expect(await s.items('books', 'otto')).toEqual([]);
+    expect(await s.items('books', 'nora')).toEqual([]);
+    expect(await s.requested('books', 'nora')).toEqual([]);
+  });
+
+  it('[M3.requests/c] shows requests on their way as `requested` with their status, each under its own list', async () => {
+    await index(db);
+    const s = await server();
+    const nora = s.person('nora');
+    const { request } = createRequest(db, nora, askFor('3'), 0);
+    createRequest(
+      db,
+      nora,
+      {
+        medium: 'song',
+        target: { title: 'A Song', creator: null, ids: { youtubeMusicId: 'dQw4w9WgXcQ' } },
+      },
+      0,
+    );
+    createRequest(
+      db,
+      nora,
+      {
+        medium: 'podcast',
+        target: { title: 'A Show', creator: null, ids: { feedUrl: 'https://feeds.example.com/s' } },
+      },
+      0,
+    );
+    expect(await s.requested('books', 'nora')).toEqual([
+      {
+        id: request.id,
+        kind: 'book',
+        title: 'Asked for 3',
+        sub: 'An Author',
+        art: null,
+        availability: { kind: 'requested', status: 'requested' },
+      },
+    ]);
+    expect((await s.requested('music', 'nora')).map((e) => [e.title, e.kind])).toEqual([
+      ['A Song', 'album'],
+    ]);
+    expect((await s.requested('podcasts', 'nora')).map((e) => [e.title, e.kind])).toEqual([
+      ['A Show', 'show'],
+    ]);
+
+    const state = { status: 'downloading', progress: 0.25 } as const;
+    saveRequest(db, request.id, { state }, 1, request.version);
+    expect((await s.requested('books', 'nora'))[0]?.availability).toEqual({
+      kind: 'requested',
+      status: 'downloading',
+      progress: 0.25,
+    });
+  });
+
+  it('[M3.requests/c] lists every indexed item with `showEveryonesLibrary` on, whatever the person’s accounts reach, and their requests beside', async () => {
+    await index(db);
+    const s = await server();
+    s.seesEveryones('nora');
+    s.seesEveryones('otto');
+    createRequest(db, s.person('nora'), askFor('4'), 0);
+    for (const name of ['nora', 'otto']) {
+      expect(ids(await s.items('books', name))).toEqual(everyBook.map((b) => b.id).sort());
+      expect(ids(await s.items('podcasts', name))).toEqual(everyShow.map((b) => b.id).sort());
+      expect(ids(await s.items('music', name))).toEqual(everyAlbum.map((b) => b.id).sort());
+    }
+    expect((await s.requested('books', 'nora')).map((e) => e.title)).toEqual(['Asked for 4']);
+  });
+
+  it('[M3.requests/c] opens the page and art of whatever a person’s list shows, whatever their own accounts reach', async () => {
+    await index(db);
+    const s = await server();
+    s.seesEveryones('otto');
+    const listed = ids(await s.items('books', 'otto'));
+    expect(listed).toContain(fourFiles.id);
+
+    expect((await s.item(`abs:${fourFiles.id}`, 'otto')).status).toBe(200);
+    expect((await s.get(`/api/media/abs:${fourFiles.id}/art`, 'otto')).statusCode).toBe(200);
+  });
+
+  it('[M3.requests/c] lists a request once only when its item is already listed', async () => {
+    await index(db);
+    const s = await server();
+    s.seesEveryones('nora');
+    const { request } = createRequest(db, s.person('nora'), askFor('5'), 0);
+    saveRequest(
+      db,
+      request.id,
+      { state: { status: 'importing' }, result: everyBook[0]! },
+      1,
+      request.version,
+    );
+    expect(await s.requested('books', 'nora')).toEqual([]);
+  });
+
+  describe('when a read of what a person heard or played fails', () => {
+    it('[M3.requests/c] still lists all that earlier reads found, and its claims, leaving progress out', async () => {
+      await index(db);
+      const s = await server();
+      s.claim([everyBook[1]!]);
+      vi.useFakeTimers({ toFake: ['Date'] });
+      try {
+        expect(ids(await s.items('books'))).toContain(started.libraryItemId);
+        expect(ids(await s.items('music'))).toHaveLength(1);
+
+        s.upstream.down = true;
+        vi.advanceTimersByTime(61_000);
+        const books = await s.items('books');
+        expect(ids(books)).toEqual([everyBook[1]!.id, started.libraryItemId].sort());
+        expect(books.every((e) => e.progress === null)).toBe(true);
+        expect(ids(await s.items('music'))).toHaveLength(1);
+
+        s.upstream.down = false;
+        const back = await s.items('books');
+        expect(back.find((e) => e.ref.id === started.libraryItemId)?.progress).toBe(
+          started.progress,
+        );
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('[M3.requests/c] answers from the claims alone when no read has ever worked', async () => {
+      await index(db);
+      const s = await server();
+      s.claim([everyBook[0]!, everyAlbum[1]!]);
+      s.upstream.down = true;
+      expect(ids(await s.items('books'))).toEqual([everyBook[0]!.id]);
+      expect(ids(await s.items('music'))).toEqual([everyAlbum[1]!.id]);
+      expect(await s.items('podcasts')).toEqual([]);
+    });
+  });
+
+  it('[M3.requests/c] reads what a person heard or played once a minute at most', async () => {
+    await index(db);
+    const s = await server();
+    const reads = () => s.asked.filter((a) => a === '/api/me' || a.startsWith('/Items?'));
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      for (let n = 0; n < 3; n += 1) {
+        await s.items('books');
+        await s.items('podcasts');
+        await s.items('music');
+      }
+      expect(reads()).toHaveLength(2);
+      vi.advanceTimersByTime(61_000);
+      await s.items('books');
+      expect(reads()).toHaveLength(3);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
@@ -500,7 +840,7 @@ describe('the library route', () => {
     for (const medium of ['books', 'podcasts', 'music']) {
       expect(await s.list(medium)).toEqual({
         status: 200,
-        body: { items: [], sort: 'title', seed: null },
+        body: { items: [], requested: [], sort: 'title', seed: null },
       });
     }
   });
@@ -729,7 +1069,7 @@ describe("[M1.shell] an episode's page, from the index, its show and the person'
       permissions: { ...json<AbsMe>(me).permissions, accessAllLibraries: false },
       librariesAccessible: libraries.filter((l) => l.mediaType === 'book').map((l) => l.id),
     });
-    const s = await server(booksOnly);
+    const s = await server(booksOnly, undefined, { household: false });
     const episode = episodesInOrder(db, shows[0]!.id)[0]!;
 
     expect(await s.item(`abs:${episode.id}`)).toEqual({
@@ -747,7 +1087,7 @@ describe("[M1.shell] an episode's page, from the index, its show and the person'
 describe('an item page no one may open', () => {
   it("answers 404 for a book or album in a library the person can't open, asking only who they are", async () => {
     await index(db);
-    const s = await server();
+    const s = await server(me, undefined, { household: false });
 
     expect(await s.item(`abs:${fourFiles.id}`, 'otto')).toEqual({
       status: 404,
@@ -762,7 +1102,7 @@ describe('an item page no one may open', () => {
 
   it('answers 404 to a person linked to neither upstream, asking neither', async () => {
     await index(db);
-    const s = await server();
+    const s = await server(me, undefined, { household: false });
 
     for (const key of [`abs:${fourFiles.id}`, `abs:${shows[0]!.id}`, `jellyfin:${album.Id}`]) {
       expect((await s.item(key, 'nora')).status).toBe(404);
@@ -829,7 +1169,7 @@ describe('[M1.shell] art, passed on from the upstream with the person’s own ac
 
   it('keeps every upstream secret out of what the client sees: the URL is this server’s, and no header names the upstream or a token', async () => {
     await index(db);
-    const s = await server();
+    const s = await seeingEveryones();
     const listed = [...(await s.items('books')), ...(await s.items('music'))];
 
     for (const entry of listed) expect(entry.art).toMatch(/^\/api\/media\/[\w:-]+\/art$/);
@@ -847,7 +1187,7 @@ describe('[M1.shell] art, passed on from the upstream with the person’s own ac
 
   it("answers 404 for art in a library the person can't open, unknown art, or a track's, asking no image of either upstream", async () => {
     await index(db);
-    const s = await server();
+    const s = await server(me, undefined, { household: false });
     const track = albumTracks(db, album.Id)[0]!;
 
     for (const [key, name] of [
@@ -865,7 +1205,7 @@ describe('[M1.shell] art, passed on from the upstream with the person’s own ac
 
   it('checks who may see art once a minute per person, so a grid of covers costs one lookup; a page still asks afresh', async () => {
     await index(db);
-    const s = await server();
+    const s = await server(me, undefined, { household: false });
     const urls = [`/api/media/abs:${fourFiles.id}/art`, `/api/media/jellyfin:${album.Id}/art`];
     const lookups = () => s.asked.filter((a) => a === '/api/me' || a.startsWith('/UserViews'));
     vi.useFakeTimers({ toFake: ['Date'] });

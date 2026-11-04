@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { artAt, clock, day, emptied, span } from './format';
+import { artAt, bytes, clock, day, emptied, span } from './format';
 
 describe('[M1.shell] how the pages write times, lengths and dates', () => {
   it('writes a place in an item as a clock: minutes and seconds, with hours once there are any', () => {
@@ -45,5 +45,17 @@ describe('[M1.shell] how the pages write times, lengths and dates', () => {
       following: false,
       status: null,
     });
+  });
+});
+
+describe('[M3.requests] a size', () => {
+  it.each([
+    [512, '512 B'],
+    [286_000_000, '286 MB'],
+    [1_100_000_000, '1.1 GB'],
+    [2_000_000_000, '2 GB'],
+    [1_500, '1.5 KB'],
+  ])('writes %d bytes as %s', (size, words) => {
+    expect(bytes(size)).toBe(words);
   });
 });

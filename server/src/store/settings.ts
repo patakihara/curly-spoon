@@ -15,19 +15,21 @@ const SettingsRow = z
     autoplay_music: Flag,
     autoplay_spoken: Flag,
     first_run_done: Flag,
+    show_everyone: Flag,
   })
   .transform((row): Settings => ({
     theme: row.theme,
     autoplay: { music: row.autoplay_music, spoken: row.autoplay_spoken },
     queueStyle: row.queue_style,
     firstRunDone: row.first_run_done,
+    showEveryonesLibrary: row.show_everyone,
   }));
 
 /** A person's settings: what they stored, or the defaults. */
 export function readSettings(db: Db, userId: string): Settings {
   const row: unknown = db
     .prepare(
-      `SELECT theme, queue_style, autoplay_music, autoplay_spoken, first_run_done
+      `SELECT theme, queue_style, autoplay_music, autoplay_spoken, first_run_done, show_everyone
        FROM user_settings WHERE user_id = ?`,
     )
     .get(userId);
@@ -43,15 +45,18 @@ export function writeSettings(db: Db, userId: string, change: SettingsBody, now:
       autoplay: { ...was.autoplay, ...change.autoplay },
       queueStyle: change.queueStyle ?? was.queueStyle,
       firstRunDone: change.firstRunDone ?? was.firstRunDone,
+      showEveryonesLibrary: change.showEveryonesLibrary ?? was.showEveryonesLibrary,
     });
     db.prepare(
       `INSERT INTO user_settings
-         (user_id, theme, queue_style, autoplay_music, autoplay_spoken, first_run_done, updated_at)
-       VALUES (@user, @theme, @style, @music, @spoken, @done, @now)
+         (user_id, theme, queue_style, autoplay_music, autoplay_spoken, first_run_done,
+          show_everyone, updated_at)
+       VALUES (@user, @theme, @style, @music, @spoken, @done, @everyone, @now)
        ON CONFLICT (user_id) DO UPDATE SET
          theme = excluded.theme, queue_style = excluded.queue_style,
          autoplay_music = excluded.autoplay_music, autoplay_spoken = excluded.autoplay_spoken,
-         first_run_done = excluded.first_run_done, updated_at = excluded.updated_at`,
+         first_run_done = excluded.first_run_done, show_everyone = excluded.show_everyone,
+         updated_at = excluded.updated_at`,
     ).run({
       user: userId,
       theme: next.theme,
@@ -59,6 +64,7 @@ export function writeSettings(db: Db, userId: string, change: SettingsBody, now:
       music: Number(next.autoplay.music),
       spoken: Number(next.autoplay.spoken),
       done: Number(next.firstRunDone),
+      everyone: Number(next.showEveryonesLibrary),
       now,
     });
     return next;

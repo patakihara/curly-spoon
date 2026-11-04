@@ -288,7 +288,18 @@ class PageWriter extends KotlinValues {
   handler(
     value: Exclude<
       PropValue,
-      { kind: 'literal' | 'binding' | 'slot' | 'request' | 'query' | 'choose' }
+      {
+        kind:
+          | 'literal'
+          | 'binding'
+          | 'slot'
+          | 'request'
+          | 'query'
+          | 'choose'
+          | 'act'
+          | 'toggle'
+          | 'retry';
+      }
     >,
     scope: Scope,
   ): Expr {
@@ -346,6 +357,18 @@ class PageWriter extends KotlinValues {
       // Android has no lists to act on until M5. A menu doing nothing would seem to work, so the
       // prop is left out and Sonora draws the menu's button disabled.
       case 'choose':
+        return undefined;
+      // Android has no requests to act on until M5. A control doing nothing would seem to work, so
+      // the prop is left out and Sonora draws the control disabled.
+      case 'act':
+        return undefined;
+      // Android has no settings to set until M5. A switch doing nothing would seem to work, so the
+      // prop is left out and Sonora draws the switch disabled.
+      case 'toggle':
+        return undefined;
+      // Android loads no page's data until M5. A control asking again for nothing would seem to
+      // work, so the prop is left out and Sonora draws the control disabled.
+      case 'retry':
         return undefined;
       case 'literal':
         return this.value(type, value.value, where);

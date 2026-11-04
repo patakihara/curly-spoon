@@ -40,6 +40,11 @@
     }
   ],
   "activeFilters": "All kinds",
+  "yourRequests": [
+    {
+      "title": "Your requests"
+    }
+  ],
   "suggestions": [
     {
       "title": "Salt and Static",
@@ -105,6 +110,17 @@
     }
   ],
   "outside": {
+    "household": [
+      {
+        "title": "Salt Roads",
+        "meta": "Book · Maya Lind",
+        "image": "/art/between-two-worlds.jpg",
+        "page": "book",
+        "ref": "salt-roads",
+        "playRef": "salt-roads",
+        "queue": "spoken"
+      }
+    ],
     "music": [
       {
         "title": "Salt",

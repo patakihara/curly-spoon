@@ -9,6 +9,9 @@ import type { SignOn } from './auth/oidc.js';
 import { createProxyTrust, type ProxyTrust } from './auth/proxy.js';
 import type { CookieSecure } from './config.js';
 import { answerFailure, refuseConnection } from './failures.js';
+import { scheduleJob } from './jobs/schedule.js';
+import { advanceRequests } from './requests/job.js';
+import type { StepsRegistry } from './requests/steps.js';
 import { retiredWorkerRoute } from './retiredWorker.js';
 import { serve } from './route.js';
 import { adminRoutes } from './routes/admin.js';
@@ -25,6 +28,7 @@ import { type PlaybackOptions, playRoutes, type UpstreamAccess } from './routes/
 import { Lyrics } from './lyrics/service.js';
 import { IndexLookup } from './queues/lookup.js';
 import { Sessions } from './queues/sessions.js';
+import { requestRoutes } from './routes/requests.js';
 import { searchRoutes } from './routes/search.js';
 import { sessionRoutes } from './routes/sessions.js';
 import { settingsRoutes } from './routes/settings.js';
@@ -33,6 +37,7 @@ import { SIGN_IN_PAGE, signOnRoutes } from './routes/signOn.js';
 import type { Db } from './store/connection.js';
 import type { Random } from './store/signIn.js';
 import { type Linker, upstreamFor } from './upstream/links.js';
+import { Reach } from './upstream/reach.js';
 
 export interface BuildAppOptions {
   /** web's build output; `null`, or a path that does not exist, serves no web app. */
@@ -53,6 +58,18 @@ export interface BuildAppOptions {
   upstreams?: UpstreamAccess | null;
   /** Tracks' lyrics, shared with the lyrics job; by default Jellyfin's alone, LRCLIB off. */
   lyrics?: Lyrics;
+  /**
+   * The advance job: each medium's steps, how often it runs, and how long the index may lag.
+   * Without it, no medium can be requested.
+   */
+  /** How many of a person's played Jellyfin tracks one read asks for; a default otherwise. */
+  playedPageSize?: number;
+  requests?: {
+    steps: StepsRegistry;
+    everyMs: number;
+    notIndexedAfterMs: number;
+    stepTimeoutMs: number;
+  };
   /** How transcodes are held open and their segments waited for. */
   playback?: PlaybackOptions;
   random?: Random;
@@ -139,6 +156,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   adminRoutes(app, { db });
   const upstreams = options.upstreams ?? null;
   const plays = new OpenPlays({ now: options.now ?? Date.now });
+  const markReach = new Reach(db, upstreams);
   const sessions = new Sessions({
     db,
     lookup: new IndexLookup(db, app.log),
@@ -146,6 +164,8 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       upstreams === null
         ? { abs: null, jellyfin: null }
         : upstreamFor({ db, ...upstreams }, caller),
+    householdAbs: upstreams?.household?.abs ?? null,
+    ownReaches: (caller, row) => markReach.reaches(caller, row, true),
     now: options.now ?? Date.now,
     log: app.log,
     // Decision (M2.lists): an episode marked played has its play session closed first, so the
@@ -166,8 +186,18 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     ...(options.playback ? { playback: options.playback } : {}),
     ...(options.now ? { now: options.now } : {}),
   });
-  bookmarkRoutes(app, { db, upstreams: options.upstreams ?? null });
-  libraryRoutes(app, { db, upstreams });
+  bookmarkRoutes(app, {
+    db,
+    upstreams,
+    ...(options.now === undefined ? {} : { now: options.now }),
+  });
+  libraryRoutes(app, {
+    db,
+    upstreams,
+    log: app.log,
+    now: options.now ?? Date.now,
+    ...(options.playedPageSize === undefined ? {} : { playedPageSize: options.playedPageSize }),
+  });
   itemRoutes(app, { db, upstreams });
   listRoutes(app, { db, upstreams, sessions, now: options.now ?? Date.now });
   feedRoutes(app, { db, upstreams, now: options.now ?? Date.now });
@@ -182,6 +212,30 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   lyricsRoutes(app, { db, upstreams, lyrics });
   searchRoutes(app, { db, now: options.now ?? Date.now });
   settingsRoutes(app, { db, sessions, now: options.now ?? Date.now });
+
+  requestRoutes(app, {
+    db,
+    steps: options.requests?.steps ?? new Map(),
+    log: app.log,
+    now: options.now ?? Date.now,
+    // With no steps registered, no step ever runs against this.
+    stepTimeoutMs: options.requests?.stepTimeoutMs ?? 0,
+  });
+
+  if (options.requests !== undefined) {
+    const { everyMs, ...requests } = options.requests;
+    const deps = { db, ...requests, log: app.log, now: options.now ?? Date.now };
+    let turn = Promise.resolve();
+    const stop = scheduleJob(
+      { name: 'requests', everyMs, run: () => (turn = advanceRequests(deps)) },
+      app.log,
+    );
+    // A turn still going finishes before the server's store closes.
+    app.addHook('onClose', async () => {
+      stop();
+      await turn.catch(() => undefined);
+    });
+  }
 
   const distDir = options.webDistDir;
   if (distDir !== null && existsSync(distDir)) {

@@ -461,43 +461,51 @@ export default function Book({ data = placeholder, state = 'full' }: BookProps) 
           platform={platform}
         />
       </Section>
-      <Section title="Chapters" platform={platform}>
-        {data.chapters.map((chapter, i) => (
-          <Fragment key={i}>
-            <ResultRow number={chapter.number} title={chapter.title} meta={chapter.meta} status={chapter.status} tone={chapter.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>} divider={true} platform={platform} />
-          </Fragment>
-        ))}
-      </Section>
+      {data.chapters.length > 0 && (
+        <Section title="Chapters" platform={platform}>
+          {data.chapters.map((chapter, i) => (
+            <Fragment key={i}>
+              <ResultRow number={chapter.number} title={chapter.title} meta={chapter.meta} status={chapter.status} tone={chapter.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>} divider={true} platform={platform} />
+            </Fragment>
+          ))}
+        </Section>
+      )}
       <Section title="About" platform={platform}>
         <ExpandableText text={data.about} lines={3} />
       </Section>
-      <Section title="Other narrations" platform={platform}>
-        <Shelf platform={platform}>
-          {data.narrations.map((narration, i) => (
-            <Fragment key={i}>
-              <MediaCard eyebrow="Read by" title={narration.narrator} sub={narration.sub} image={narration.image} absent={narration.absent} status={narration.status} tone={narration.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={narration.ref ? () => navigate(generatePath('/books/:ref', { ref: narration.ref })) : undefined} platform={platform} />
-            </Fragment>
-          ))}
-        </Shelf>
-      </Section>
-      <Section title={data.more.series.title} eyebrow="More in" onSubject={data.series.ref ? () => navigate(generatePath('/books/series/:ref', { ref: data.series.ref })) : undefined} platform={platform}>
-        <Shelf platform={platform}>
-          {data.more.series.items.map((book, i) => (
-            <Fragment key={i}>
-              <MediaCard title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={book.ref ? () => navigate(generatePath('/books/:ref', { ref: book.ref })) : undefined} platform={platform} />
-            </Fragment>
-          ))}
-        </Shelf>
-      </Section>
-      <Section title={data.more.author.title} last={true} platform={platform}>
-        <Shelf platform={platform}>
-          {data.more.author.items.map((other, i) => (
-            <Fragment key={i}>
-              <MediaCard title={other.title} sub={other.sub} image={other.image} progress={other.progress} absent={other.absent} status={other.status} tone={other.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={other.ref ? () => navigate(generatePath('/books/:ref', { ref: other.ref })) : undefined} platform={platform} />
-            </Fragment>
-          ))}
-        </Shelf>
-      </Section>
+      {data.narrations.length > 0 && (
+        <Section title="Other narrations" platform={platform}>
+          <Shelf platform={platform}>
+            {data.narrations.map((narration, i) => (
+              <Fragment key={i}>
+                <MediaCard eyebrow="Read by" title={narration.narrator} sub={narration.sub} image={narration.image} absent={narration.absent} status={narration.status} tone={narration.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={narration.ref ? () => navigate(generatePath('/books/:ref', { ref: narration.ref })) : undefined} platform={platform} />
+              </Fragment>
+            ))}
+          </Shelf>
+        </Section>
+      )}
+      {data.more.series.items.length > 0 && (
+        <Section title={data.more.series.title} eyebrow="More in" onSubject={data.series.ref ? () => navigate(generatePath('/books/series/:ref', { ref: data.series.ref })) : undefined} platform={platform}>
+          <Shelf platform={platform}>
+            {data.more.series.items.map((book, i) => (
+              <Fragment key={i}>
+                <MediaCard title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={book.ref ? () => navigate(generatePath('/books/:ref', { ref: book.ref })) : undefined} platform={platform} />
+              </Fragment>
+            ))}
+          </Shelf>
+        </Section>
+      )}
+      {data.more.author.items.length > 0 && (
+        <Section title={data.more.author.title} last={true} platform={platform}>
+          <Shelf platform={platform}>
+            {data.more.author.items.map((other, i) => (
+              <Fragment key={i}>
+                <MediaCard title={other.title} sub={other.sub} image={other.image} progress={other.progress} absent={other.absent} status={other.status} tone={other.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={other.ref ? () => navigate(generatePath('/books/:ref', { ref: other.ref })) : undefined} platform={platform} />
+              </Fragment>
+            ))}
+          </Shelf>
+        </Section>
+      )}
     </PageBody>
   );
 }

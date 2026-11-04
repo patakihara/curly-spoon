@@ -423,51 +423,59 @@ export default function Artist({ data = placeholder, state = 'full' }: ArtistPro
       <Section platform={platform}>
         <MediaHeader round={true} kindLabel={data.kind} meta={data.meta} image={data.image} playLabel={null} nextLabel={null} lastLabel={null} platform={platform} />
       </Section>
-      <Section title="In your library" platform={platform}>
-        <Shelf platform={platform}>
-          {data.library.map((item, i) => (
-            <Fragment key={i}>
-              <MediaCard title={item.title} sub={item.sub} image={item.image} onClick={item.ref ? () => navigate(generatePath('/music/albums/:ref', { ref: item.ref })) : undefined} platform={platform} />
-            </Fragment>
-          ))}
-        </Shelf>
-      </Section>
+      {data.library.length > 0 && (
+        <Section title="In your library" platform={platform}>
+          <Shelf platform={platform}>
+            {data.library.map((item, i) => (
+              <Fragment key={i}>
+                <MediaCard title={item.title} sub={item.sub} image={item.image} onClick={item.ref ? () => navigate(generatePath('/music/albums/:ref', { ref: item.ref })) : undefined} platform={platform} />
+              </Fragment>
+            ))}
+          </Shelf>
+        </Section>
+      )}
       {data.discography.map((group, i) => (
         <Fragment key={i}>
-          <Section title={group.name} platform={platform}>
-            <Shelf platform={platform}>
-              {group.items.map((release, i) => (
-                <Fragment key={i}>
-                  <MediaCard title={release.title} sub={release.sub} image={release.image} size={group.size as Exclude<ComponentProps<typeof MediaCard>['size'], undefined>} absent={release.absent} status={release.status} tone={release.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={release.ref ? () => navigate(generatePath('/music/albums/:ref', { ref: release.ref })) : undefined} platform={platform} />
-                </Fragment>
-              ))}
-            </Shelf>
-          </Section>
+          {group.items.length > 0 && (
+            <Section title={group.name} platform={platform}>
+              <Shelf platform={platform}>
+                {group.items.map((release, i) => (
+                  <Fragment key={i}>
+                    <MediaCard title={release.title} sub={release.sub} image={release.image} size={group.size as Exclude<ComponentProps<typeof MediaCard>['size'], undefined>} absent={release.absent} status={release.status} tone={release.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={release.ref ? () => navigate(generatePath('/music/albums/:ref', { ref: release.ref })) : undefined} platform={platform} />
+                  </Fragment>
+                ))}
+              </Shelf>
+            </Section>
+          )}
         </Fragment>
       ))}
-      <Section title="Popular" platform={platform}>
-        {data.popular.map((song, i) => (
-          <Fragment key={i}>
-            <ResultRow
-              title={song.title}
-              meta={song.meta}
-              image={song.image}
-              divider={true}
-              trailing={<OverflowMenu items={song.menu} platform={platform} />}
-              platform={platform}
-            />
-          </Fragment>
-        ))}
-      </Section>
-      <Section title="Similar artists" last={true} platform={platform}>
-        <Shelf platform={platform}>
-          {data.similar.map((artist, i) => (
+      {data.popular.length > 0 && (
+        <Section title="Popular" platform={platform}>
+          {data.popular.map((song, i) => (
             <Fragment key={i}>
-              <ArtistCard title={artist.title} sub={artist.sub} image={artist.image} onClick={artist.ref ? () => navigate(generatePath('/music/artists/:ref', { ref: artist.ref })) : undefined} platform={platform} />
+              <ResultRow
+                title={song.title}
+                meta={song.meta}
+                image={song.image}
+                divider={true}
+                trailing={<OverflowMenu items={song.menu} platform={platform} />}
+                platform={platform}
+              />
             </Fragment>
           ))}
-        </Shelf>
-      </Section>
+        </Section>
+      )}
+      {data.similar.length > 0 && (
+        <Section title="Similar artists" last={true} platform={platform}>
+          <Shelf platform={platform}>
+            {data.similar.map((artist, i) => (
+              <Fragment key={i}>
+                <ArtistCard title={artist.title} sub={artist.sub} image={artist.image} onClick={artist.ref ? () => navigate(generatePath('/music/artists/:ref', { ref: artist.ref })) : undefined} platform={platform} />
+              </Fragment>
+            ))}
+          </Shelf>
+        </Section>
+      )}
     </PageBody>
   );
 }

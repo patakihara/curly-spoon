@@ -18,7 +18,7 @@ import {
   type StoredRow,
 } from '../libraryIndex/store.js';
 import { openDatabase, type Db } from '../store/connection.js';
-import type { AbsAccess } from '../routes/library.js';
+import type { AbsAccess } from '../upstream/reach.js';
 import { digestEpisodes, isPlayed, showFinished } from './rules.js';
 
 const adapters = join(dirname(fileURLToPath(import.meta.url)), '..', 'adapters');
@@ -63,6 +63,7 @@ const all: AbsAccess = {
   open: () => true,
   standing: () => ({ progress: null, finished: false, updatedAt: null }),
   heard: [],
+  begun: [],
   hidden: () => false,
   seriesHidden: () => false,
 };

@@ -9,12 +9,13 @@ import {
 } from '../src/index.js';
 
 describe('a person’s settings', () => {
-  it('start as the system theme, both autoplay switches on, YouTube Music style, first run not done', () => {
+  it('start as the system theme, both autoplay switches on, YouTube Music style, first run not done, showing only their own library', () => {
     expect(Settings.parse(DEFAULT_SETTINGS)).toEqual({
       theme: 'system',
       autoplay: { music: true, spoken: true },
       queueStyle: 'youtube',
       firstRunDone: false,
+      showEveryonesLibrary: false,
     });
   });
 

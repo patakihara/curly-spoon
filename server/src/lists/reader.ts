@@ -1,10 +1,11 @@
 /**
  * One person's lists as they stand now, for every route that reads them: the lists routes, and
  * playing a list. A reader asks the person's own Audiobookshelf `GET /api/me` once, for the
- * libraries they may open and what they finished, and reads their played marks; it also makes
- * The Digest if they have none yet, so it exists wherever their lists are read. Anything the
- * index no longer holds, or in a library they may not open, is left out of a list, and named
- * in a change is 404 whatever its kind: nobody learns what sits in a library they cannot open.
+ * libraries they may open and what they finished, adds what Auralis holds for them, and reads their
+ * played marks; it also makes The Digest if they have none yet, so it exists wherever their lists
+ * are read. With Auralis's own account set, every library opens, as it plays; without it, anything
+ * in a library they may not open is left out, like what the index no longer holds, and named in a
+ * change is 404 whatever its kind.
  */
 import {
   LIST_COVERS_MAX,
@@ -18,12 +19,14 @@ import {
 import { indexedRow, type StoredRow } from '../libraryIndex/store.js';
 import { Refusal } from '../route.js';
 import { artUrl } from '../routes/art.js';
-import { type AbsAccess, absAccess, entry, type Standing } from '../routes/library.js';
+import { entry } from '../routes/library.js';
 import { refusalFor, type UpstreamAccess } from '../routes/play.js';
+import { addPlayedClaims } from '../store/claims.js';
 import type { Db } from '../store/connection.js';
 import * as store from '../store/lists.js';
 import type { User } from '../store/users.js';
 import { upstreamFor } from '../upstream/links.js';
+import { type AbsAccess, absAccess, type Standing, withHeld } from '../upstream/reach.js';
 import { digestEpisodes, isPlayed, showFinished, subscribedShows } from './rules.js';
 
 /** What each kind of list takes as an entry, by the index's kind. */
@@ -61,17 +64,23 @@ export interface Reader {
 export async function readerFor(context: ListsContext, user: User): Promise<Reader> {
   const { db, upstreams } = context;
   const abs = upstreams === null ? null : upstreamFor({ db, ...upstreams }, user).abs;
-  let access: AbsAccess | null = null;
+  let own: AbsAccess | null = null;
   if (abs !== null) {
     try {
-      access = await absAccess(abs);
+      own = await absAccess(abs);
     } catch (error) {
       if (error instanceof Refusal) throw error;
       refusalFor(error);
     }
   }
   const now = context.now();
+  if (own !== null) {
+    // What they have begun is theirs, as the library lists find it.
+    const begun = own.begun.map((id): MediaRef => ({ source: 'abs', id }));
+    addPlayedClaims(db, user.id, begun, now);
+  }
   store.ensureTheDigest(db, user.id, now);
+  const access = withHeld(db, user.id, own, (upstreams?.household?.abs ?? null) !== null);
   return { db, userId: user.id, access, marks: store.playedMarks(db, user.id), now };
 }
 
@@ -168,7 +177,9 @@ function listeningItem(r: Reader, row: StoredRow): ListItem {
 /** A digest's shows the person may open: every one for The Digest, by title; else its own. */
 export function digestShows(r: Reader, list: store.StoredList): StoredRow[] {
   return list.theDigest
-    ? subscribedShows(r.db, r.access).sort((a, b) => byTitle.compare(a.title, b.title))
+    ? subscribedShows(r.db, r.userId)
+        .filter((row) => opens(r, row))
+        .sort((a, b) => byTitle.compare(a.title, b.title))
     : reachable(r, list.items).filter((row) => row.kind === 'show');
 }
 

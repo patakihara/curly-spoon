@@ -34,8 +34,12 @@ export interface OpenPlay {
   idleMs: number;
   /** Tells the upstream where the person is and how long they listened, as that person. */
   report: (report: UpstreamReport) => Promise<void>;
-  /** Closes the session upstream, as the person who opened it, with a last report when given. */
-  close: (report?: UpstreamReport) => Promise<void>;
+  /**
+   * Closes the session upstream, as the person who opened it, with a last report when given.
+   * `reportedAt` is when that report's place was last listened at: a close that adds no listening
+   * says nothing newer than the report it repeats.
+   */
+  close: (report?: UpstreamReport, reportedAt?: number) => Promise<void>;
 }
 
 interface Held extends OpenPlay {
@@ -185,8 +189,11 @@ export class OpenPlays {
     if (held === null) return false;
     this.held.delete(playId);
     if (report === undefined) await held.close();
-    else if (this.stale(held, report)) await held.close(this.lastTaken(held));
-    else await held.close(this.bounded(held, report).report);
+    else if (this.stale(held, report)) await held.close(this.lastTaken(held), held.lastReportAt);
+    else {
+      const last = this.bounded(held, report).report;
+      await held.close(last, last.listened > 0 ? this.options.now() : held.lastReportAt);
+    }
     return true;
   }
 
@@ -249,6 +256,6 @@ export class OpenPlays {
   private async end(held: Held): Promise<void> {
     this.held.delete(held.playId);
     // A failed close loses nothing more than the upstream's own stale-session sweep cleans up.
-    await held.close(this.lastTaken(held)).catch(() => undefined);
+    await held.close(this.lastTaken(held), held.lastReportAt).catch(() => undefined);
   }
 }

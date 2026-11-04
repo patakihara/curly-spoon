@@ -354,6 +354,24 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ PLAY_IDLE_MINUTES: '0' })).toThrow();
   });
 
+  it('moves requests every 30 seconds by default, gives the index 24 hours and a step 2 minutes, or what is set', () => {
+    expect(loadConfig({}).requests).toEqual({
+      everySeconds: 30,
+      notIndexedAfterHours: 24,
+      stepTimeoutSeconds: 120,
+    });
+    expect(
+      loadConfig({
+        REQUESTS_EVERY_SECONDS: '5',
+        REQUEST_NOT_INDEXED_HOURS: '2',
+        REQUEST_STEP_TIMEOUT_SECONDS: '9',
+      }).requests,
+    ).toEqual({ everySeconds: 5, notIndexedAfterHours: 2, stepTimeoutSeconds: 9 });
+    expect(() => loadConfig({ REQUEST_STEP_TIMEOUT_SECONDS: '0' })).toThrow();
+    expect(() => loadConfig({ REQUESTS_EVERY_SECONDS: '0' })).toThrow();
+    expect(() => loadConfig({ REQUEST_NOT_INDEXED_HOURS: '0' })).toThrow();
+  });
+
   it('runs the library index hourly by default, not at all at 0, and reads ABS with its own key', () => {
     expect(loadConfig({}).index).toEqual({ everyMinutes: 60, absKeyFile: null });
     expect(loadConfig({ INDEX_EVERY_MINUTES: '0' }).index.everyMinutes).toBe(0);

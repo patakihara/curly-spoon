@@ -31,8 +31,9 @@
  * Auralis, then on Audiobookshelf in the background, as the person, once the episode's play
  * session there is closed, so nothing Auralis sends after the mark undoes it. A failure there is
  * logged, the mark Auralis keeps still holds, and a step or play sends it again, at most once in
- * ten minutes and five times in all. Play now
- * of anything else, and the switch, mark nothing.
+ * ten minutes and five times in all. An episode the person's own account does not reach is marked
+ * in Auralis alone: nothing goes to their account until it reaches the episode, when a step or play
+ * sends the mark as any other. Play now of anything else, and the switch, mark nothing.
  */
 import { randomUUID } from 'node:crypto';
 import {
@@ -47,7 +48,9 @@ import {
   type QueueView,
 } from '@auralis/schema';
 import type { AbsClient } from '../adapters/audiobookshelf/client.js';
-import { albumTracks, indexedRow } from '../libraryIndex/store.js';
+import { AdapterError } from '../adapters/http/fetch.js';
+import { albumTracks, indexedRow, type StoredRow } from '../libraryIndex/store.js';
+import { heldOf } from '../store/heldProgress.js';
 import { confirmMark, markPlayed, markRefused, playedMarks, sendingMark } from '../store/lists.js';
 import { Refusal } from '../route.js';
 import type { Db } from '../store/connection.js';
@@ -76,7 +79,7 @@ import {
 } from './autoplay.js';
 import { add, type EngineDeps, resumeSaved, setQueueStyle, step, switchTo } from './engine.js';
 import { labelled } from './labels.js';
-import type { IndexLookup } from './lookup.js';
+import type { ChapterSource, IndexLookup } from './lookup.js';
 
 /** The signed-in person on one of their devices. */
 export type Caller = User & { deviceId: string };
@@ -211,6 +214,10 @@ export class Sessions {
       lookup: IndexLookup;
       /** The person's own upstream clients. */
       clients: (user: Caller) => Upstreams;
+      /** Auralis's own Audiobookshelf client, which reads chapters for a household play. */
+      householdAbs?: AbsClient | null;
+      /** Whether the person's own account reaches an indexed row, now; a failed check throws. */
+      ownReaches?: (user: Caller, row: StoredRow) => Promise<boolean>;
       now: () => number;
       log: Log;
       /** How long a play or a Next waits for autoplay; `AUTOPLAY_WAIT_MS` when not given. */
@@ -253,9 +260,29 @@ export class Sessions {
     return mine;
   }
 
-  /** Reads the chapters of any books among `refs`, as the person, for the engine's lookup. */
+  /** Reads the chapters of any books among `refs`, for the engine's lookup. */
   async load(caller: Caller, refs: readonly MediaRef[]): Promise<void> {
-    await this.options.lookup.load(refs, this.options.clients(caller).abs);
+    await this.options.lookup.load(refs, this.chapterSource(caller));
+  }
+
+  /**
+   * What reads a book's chapters for the person: their own account, and Auralis's on a book their
+   * own refuses, or with no account of their own. The lookup reads only indexed books, and those
+   * are the household's.
+   */
+  private chapterSource(caller: Caller): ChapterSource | null {
+    const own = this.options.clients(caller).abs;
+    const household = this.options.householdAbs ?? null;
+    if (own === null || household === null) return own ?? household;
+    return {
+      getBookDetail: (id) =>
+        own.getBookDetail(id).catch((err: unknown) => {
+          if (err instanceof AdapterError && [401, 403, 404].includes(err.status ?? 0)) {
+            return household.getBookDetail(id);
+          }
+          throw err;
+        }),
+    };
   }
 
   /**
@@ -344,11 +371,20 @@ export class Sessions {
     return ref.source === 'abs' && row?.kind === 'episode' ? row.parentId : null;
   }
 
+  /** Whether a mark on an indexed episode waits in Auralis, since their own account lacks it. */
+  private async markWaits(caller: Caller, ref: MediaRef): Promise<boolean> {
+    const { householdAbs, ownReaches, db } = this.options;
+    const row = indexedRow(db, ref.source, ref.id);
+    if (householdAbs == null || ownReaches === undefined || row === undefined) return false;
+    return !(await ownReaches(caller, row));
+  }
+
   /**
    * Sends a mark made at `markedAt` to Audiobookshelf in the background, as the person, dated now:
    * after every play of the episode they started before the mark is closed there, on any device,
    * so a play's last sync lands before the mark and never undoes it. Notes whether Audiobookshelf
-   * took it; a refusal is logged.
+   * took it; a refusal is logged. One their own account does not reach yet stays unsent, asked again
+   * at the same pace.
    */
   private send(caller: Caller, ref: MediaRef, markedAt: number): void {
     const { db, log } = this.options;
@@ -360,6 +396,7 @@ export class Sessions {
     const abs = this.options.clients(caller).abs;
     const sent = (async () => {
       try {
+        if (await this.markWaits(caller, ref)) return;
         if (abs === null) throw new Error('no Audiobookshelf account is linked');
         await this.options.closePlay?.(caller, ref, markedAt);
         await abs.markEpisodeFinished(show, ref.id);
@@ -898,25 +935,32 @@ export class Sessions {
   }
 
   /**
-   * Where the person is in `ref` on its own server, and when that was: Audiobookshelf's progress
-   * on a book or an episode. Jellyfin keeps no resume point for music. Null when there is none, or
-   * the read fails (logged).
+   * Where the person is in `ref` beyond this device, and when that was: Audiobookshelf's progress
+   * on a book or an episode, or what Auralis holds for a household play, the newer. Jellyfin keeps
+   * no resume point for music. Null when there is none; a failed read (logged) counts for nothing.
    */
   private async upstreamPosition(caller: Caller, ref: MediaRef): Promise<QueuePosition | null> {
     if (ref.source !== 'abs') return null;
+    const { db } = this.options;
+    const kept = heldOf(db, caller.id, ref);
+    const held =
+      kept === undefined || kept.finished
+        ? null
+        : { ms: Math.round(kept.position * 1000), takenAt: kept.updatedAt };
     const abs: AbsClient | null = this.options.clients(caller).abs;
-    if (abs === null) return null;
+    if (abs === null) return held;
     try {
-      const row = indexedRow(this.options.db, ref.source, ref.id);
+      const row = indexedRow(db, ref.source, ref.id);
       const progress =
         row?.kind === 'episode' && row.parentId !== null
           ? await abs.findMyEpisodeProgress(row.parentId, ref.id)
           : await abs.findMyProgress(ref.id);
-      if (progress?.lastUpdate === undefined) return null;
-      return { ms: Math.round(progress.currentTime * 1000), takenAt: progress.lastUpdate };
+      if (progress?.lastUpdate === undefined) return held;
+      const own = { ms: Math.round(progress.currentTime * 1000), takenAt: progress.lastUpdate };
+      return newer(held, own);
     } catch (err) {
       this.options.log.warn({ err, ref }, 'upstream progress could not be read; the device’s wins');
-      return null;
+      return held;
     }
   }
 
@@ -962,7 +1006,7 @@ export class Sessions {
     for (let tries = 0; tries < 2; tries += 1) {
       const s = this.open(caller);
       const clients = this.options.clients(caller);
-      await lookup.load(lookup.autoplayBooks(s), clients.abs);
+      await lookup.load(lookup.autoplayBooks(s), this.chapterSource(caller));
       const unlinked = (service: string) => () =>
         Promise.reject(new Error(`no ${service} account is linked`));
       const done = await prepareAutoplay(valueOf(s), {

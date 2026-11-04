@@ -21,20 +21,14 @@
  * repeated thousands of times is one row to them.
  */
 import { Buffer } from 'node:buffer';
-import {
-  type MediaRef,
-  mediaRefKey,
-  type SearchKind,
-  type SearchResult,
-  type Suggestion,
-} from '@auralis/schema';
+import { type MediaRef, mediaRefKey, type SearchKind, type Suggestion } from '@auralis/schema';
 import type { Creator, IndexKind, IndexSource } from '../libraryIndex/rows.js';
 import { artUrl } from '../routes/art.js';
 import type { Db } from '../store/connection.js';
 import { statement } from '../store/statements.js';
 import { searchTokens } from '../text/fold.js';
 import type { NameKind, SearchName } from './items.js';
-import { RESULT_LIMIT, type Ranked, type SearchSource } from './sources.js';
+import { RESULT_LIMIT, type Ranked, type SearchSource, type SourceResult } from './sources.js';
 
 /** Who an item's result names: a book's authors, a show's or episode's host, an album's or track's artists. */
 const CREATOR_ROLE: Record<IndexKind, Creator['role']> = {
@@ -278,7 +272,7 @@ function ranking(
 
 const owned = { kind: 'owned' } as const;
 
-function itemResult(kind: IndexKind, ref: MediaRef, item: Details): SearchResult {
+function itemResult(kind: IndexKind, ref: MediaRef, item: Details): SourceResult {
   const parentRef: MediaRef | null =
     item.parent_id === null ? null : { source: ref.source, id: item.parent_id };
   const art =
@@ -308,7 +302,7 @@ function itemResult(kind: IndexKind, ref: MediaRef, item: Details): SearchResult
   };
 }
 
-function nameResult(kind: SearchKind, ref: MediaRef, name: string): SearchResult {
+function nameResult(kind: SearchKind, ref: MediaRef, name: string): SourceResult {
   return {
     ref,
     kind,

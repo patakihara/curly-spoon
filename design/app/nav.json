@@ -256,8 +256,8 @@
             "provisional": true
           }
         ],
-        "empty": "No music yet: says so, and points to Search to find, play and add music.",
-        "links": ["album", "artist", "playlist", "favourites", "downloads"]
+        "empty": "No music yet: says the library shows what you've played, added or requested, and points to Search to find, play and add music.",
+        "links": ["album", "artist", "playlist", "favourites", "downloads", "search"]
       }
     },
     {
@@ -436,8 +436,8 @@
             "holds": "Covers with progress. A requested book sits among them, greyed, with its live status and download progress."
           }
         ],
-        "empty": "No books yet: says so, and that books are requested from Search.",
-        "links": ["book", "author", "series", "downloads"]
+        "empty": "No books yet: says the library shows what you've played, added or requested, and that Search finds a book.",
+        "links": ["book", "author", "series", "downloads", "search"]
       }
     },
     {
@@ -590,8 +590,8 @@
             "provisional": true
           }
         ],
-        "empty": "No subscriptions: says so, and points to Search's podcast results.",
-        "links": ["show", "list", "downloads"]
+        "empty": "No podcasts yet: says the library shows the shows you've played, subscribed to or requested, and points to Search.",
+        "links": ["show", "list", "downloads", "search"]
       }
     },
     {

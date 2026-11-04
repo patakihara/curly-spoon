@@ -24,6 +24,11 @@ export default function Search({ data }) {
       }
     >
       <PageBody width="list">
+        <Each of={data.yourRequests} as="entry">
+          <Section>
+            <ResultRow title={entry.title} icon="downloading" onClick={<Open page="requests" />} />
+          </Section>
+        </Each>
         <When state="suggest">
           <Section last>
             <Each of={data.suggestions} as="s">
@@ -73,12 +78,17 @@ export default function Search({ data }) {
               />
             </Each>
           </Section>
-          <Section
-            title="Not in your library"
-            actionText="Your requests"
-            onAction={<Open page="requests" />}
-            last
-          >
+          <Section title="Not in your library" last>
+            <Each of={data.outside.household} as="item">
+              <ResultRow
+                title={item.title}
+                meta={item.meta}
+                image={item.image}
+                onClick={<Open page={item.page} ref={item.ref} />}
+                onAction={<Play ref={item.playRef} queue={item.queue} />}
+                divider
+              />
+            </Each>
             <Each of={data.outside.music} as="song">
               <ResultRow title={song.title} meta={song.meta} image={song.image} divider />
             </Each>

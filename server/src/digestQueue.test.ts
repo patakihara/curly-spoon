@@ -42,6 +42,7 @@ import {
 } from './adapters/http/listsServer.js';
 import { ownPlays } from './queues/autoplay.js';
 import { MARK_FAILED } from './queues/sessions.js';
+import { addClaim } from './store/claims.js';
 import { openDatabase, type Db } from './store/connection.js';
 import { openSession, savePosition } from './store/listening.js';
 import { markPlayed, playedMarks } from './store/lists.js';
@@ -681,5 +682,24 @@ describe('a digest’s queue', () => {
     expect(s.stored('kara-phone').saved.map((q) => [q.owner, q.queue.current?.ref])).toEqual([
       [null, one],
     ]);
+  });
+});
+
+describe('[M3.requests/d] a digest’s episode played past a person’s own reach', () => {
+  it('[M3.requests/d] marks it played in Auralis alone, sending nothing to their own account', async () => {
+    const s = await listsServer(db, { now: AFTER_TWO, household: true });
+    apps.push(s.app);
+    addClaim(db, s.users.otto!, { source: 'abs', id: show1.id }, 'played', 0);
+    const digest = await s.theDigest('otto');
+    await s.call('POST', `/lists/${digest.id}/play`, {}, 'otto');
+    expect(await s.call('POST', '/play', { ref: two }, 'otto')).toMatchObject({ status: 200 });
+    s.sent.length = 0;
+
+    await s.call('POST', '/sessions/this/step', { direction: 'next' }, 'otto');
+    await vi.waitFor(() => expect(s.sent.length).toBeGreaterThan(0));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(playedMarks(db, s.users.otto!).has(`abs:${two.id}`)).toBe(true);
+    expect(s.sent.filter((call) => call.startsWith('PATCH /api/me/progress/'))).toEqual([]);
   });
 });

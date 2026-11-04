@@ -60,7 +60,30 @@ test.describe('[M1.shell/b] what each page offers, from what the server says', (
     await signIn(page, '/');
     await expect(page.getByText('Jump back in', { exact: true })).toBeVisible();
 
-    // The same lists with nothing begun.
+    // The same lists with nothing begun, and one card in Up next: Browse draws its shelves together,
+    // and that card says the lists have been drawn, since a shelf with nothing to show draws nothing.
+    await page.route('**/api/feed', (route) =>
+      route.fulfill({
+        json: {
+          shelves: [
+            {
+              id: 'up-next',
+              items: [
+                {
+                  ref: recorded.episode,
+                  kind: 'episode',
+                  title: 'Next up',
+                  sub: null,
+                  art: null,
+                  progress: null,
+                  availability: { kind: 'owned' },
+                },
+              ],
+            },
+          ],
+        },
+      }),
+    );
     await page.route('**/api/library/*', async (route) => {
       const listed = await route.fetch();
       const body = (await listed.json()) as { items: { progress: number | null }[] };
@@ -72,7 +95,7 @@ test.describe('[M1.shell/b] what each page offers, from what the server says', (
     );
     await page.reload();
     await Promise.all(lists);
-    await expect(page.getByText('Recently added', { exact: true })).toBeVisible();
+    await expect(page.getByText('Up next', { exact: true })).toBeVisible();
     await expect(page.getByText('Jump back in', { exact: true })).toHaveCount(0);
     await page.unrouteAll({ behavior: 'wait' });
   });

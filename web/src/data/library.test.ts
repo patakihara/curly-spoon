@@ -11,6 +11,7 @@ import {
   musicData,
   podcastsData,
   statusOf,
+  homeState,
 } from './library';
 
 const entry = (over: Partial<LibraryEntry>): LibraryEntry => ({
@@ -24,8 +25,92 @@ const entry = (over: Partial<LibraryEntry>): LibraryEntry => ({
   ...over,
 });
 
-const list = (...items: LibraryEntry[]) => LibraryList.parse({ items, sort: 'title', seed: null });
+const list = (...items: LibraryEntry[]) =>
+  LibraryList.parse({ items, requested: [], sort: 'title', seed: null });
 const noFeed = { shelves: [] };
+
+describe('[M3.requests/c] your own requests sit among your items', () => {
+  const asked = {
+    id: 'r1',
+    title: 'Asked For',
+    sub: 'An Author',
+    art: null,
+    availability: { kind: 'requested', status: 'downloading', progress: 0.5 },
+  };
+  const withRequest = (kind: 'book' | 'album') =>
+    LibraryList.parse({
+      items: [],
+      requested: [{ ...asked, kind }],
+      sort: 'title',
+      seed: null,
+    });
+
+  it('[M3.requests/c] draws a book on its way among the books, with its status', () => {
+    expect(booksData(withRequest('book'), books.placeholder).library).toEqual([
+      expect.objectContaining({
+        title: 'Asked For',
+        status: 'Downloading · 50%',
+        tone: 'progress',
+      }),
+    ]);
+  });
+
+  it('[M3.requests/c] draws an album on its way among the music, with its status', () => {
+    expect(musicData(withRequest('album'), music.placeholder).library).toEqual([
+      expect.objectContaining({
+        title: 'Asked For',
+        status: 'Downloading · 50%',
+        tone: 'progress',
+      }),
+    ]);
+  });
+});
+
+describe('[M3.requests/c] a request among the items', () => {
+  const asked = (title: string) => ({
+    id: title,
+    kind: 'book',
+    title,
+    sub: 'An Author',
+    art: null,
+    availability: { kind: 'requested', status: 'queued' },
+  });
+  const listed = (sort: 'title' | 'random', ...requested: ReturnType<typeof asked>[]) =>
+    LibraryList.parse({
+      items: [entry({ title: 'Bravo' }), entry({ title: 'Delta' })],
+      requested,
+      sort,
+      seed: sort === 'random' ? 7 : null,
+    });
+  const titles = (list: LibraryList) =>
+    booksData(list, books.placeholder).library.map((c) => c.title);
+
+  it('[M3.requests/c] sits where the list’s order puts it', () => {
+    expect(titles(listed('title', asked('Alpha'), asked('Charlie'), asked('Echo')))).toEqual([
+      'Alpha',
+      'Bravo',
+      'Charlie',
+      'Delta',
+      'Echo',
+    ]);
+  });
+
+  it('[M3.requests/c] goes after the items in a shuffle', () => {
+    expect(titles(listed('random', asked('Alpha')))).toEqual(['Bravo', 'Delta', 'Alpha']);
+  });
+
+  it('[M3.requests/c] opens nothing yet, so its card draws greyed', () => {
+    const cards = booksData(listed('title', asked('Alpha')), books.placeholder).library;
+    expect(cards[0]).toMatchObject({ ref: '', status: 'Queued', tone: 'progress' });
+  });
+
+  it('[M3.requests/c] a home is empty with nothing of yours, and full with a request', () => {
+    expect(homeState([])).toBe('empty');
+    expect(homeState(booksData(listed('title', asked('Alpha')), books.placeholder).library)).toBe(
+      'full',
+    );
+  });
+});
 
 describe('[M1.shell] the library homes from GET /api/library/{medium}', () => {
   it('lists each book as a card that opens its page by its ref, with its author, art and progress', () => {
@@ -68,6 +153,8 @@ describe('[M1.shell] the library homes from GET /api/library/{medium}', () => {
         sub: 'Rosa Elin',
         image: '/api/media/abs:s1/art?size=medium',
         unplayed: false,
+        status: null,
+        tone: null,
       },
     ]);
     expect(data.lists).toEqual(lists);
@@ -122,6 +209,22 @@ describe('[M1.shell] the library homes from GET /api/library/{medium}', () => {
     expect(statusOf({ kind: 'requested', status: 'requested' })).toEqual({
       status: 'Requested',
       tone: 'request',
+    });
+    expect(statusOf({ kind: 'requested', status: 'searching' })).toEqual({
+      status: 'Searching…',
+      tone: 'progress',
+    });
+    expect(statusOf({ kind: 'requested', status: 'queued' })).toEqual({
+      status: 'Queued',
+      tone: 'progress',
+    });
+    expect(statusOf({ kind: 'requested', status: 'importing' })).toEqual({
+      status: 'Importing',
+      tone: 'progress',
+    });
+    expect(statusOf({ kind: 'requested', status: 'inLibrary' })).toEqual({
+      status: 'In library',
+      tone: 'library',
     });
   });
 });
@@ -179,7 +282,7 @@ describe('[M1.shell] Browse, the home page, from the library lists', () => {
     expect(data.people).toEqual([]);
     expect(data.pickedForYou).toEqual([]);
     expect(data.recentlyPlayed).toEqual([]);
-    expect(data.feature.title).toBe('');
+    expect(data.features).toEqual([]);
     expect(data.shelves.recentlyAdded).toBe('');
   });
 
@@ -196,7 +299,7 @@ describe('[M1.shell] Browse, the home page, from the library lists', () => {
 
 describe('[M2.sorting] the library homes say the order they are in', () => {
   const sorted = (sort: 'title' | 'artist' | 'random') =>
-    LibraryList.parse({ items: [], sort, seed: sort === 'random' ? 7 : null });
+    LibraryList.parse({ items: [], requested: [], sort, seed: sort === 'random' ? 7 : null });
 
   it('[M2.sorting] names the sort the server answered with, in each page’s own words', () => {
     expect(booksData(sorted('artist'), books.placeholder).sort.value).toBe('Author');

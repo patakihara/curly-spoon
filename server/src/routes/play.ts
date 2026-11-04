@@ -22,7 +22,10 @@
  * progress answer says where the plan must stop (`endAt`). Every plan names what it plays (`meta`),
  * as the upstream's own answer names it, with art where this server serves it.
  * The media routes pass a checked `Range` through with the person's own token and send the bytes
- * on as they come, never transcoded or buffered whole. Only the playlist is read whole, parsed,
+ * on as they come, never transcoded or buffered whole. An indexed item the person's own account
+ * does not reach goes through Auralis's own account instead (`upstream/reach.ts`): a household
+ * play. It reports to no upstream. An Audiobookshelf one keeps its position in `held_progress`,
+ * where its next plan starts; a Jellyfin one, like any music, keeps none. Only the playlist is read whole, parsed,
  * and passed on with bare segment names that resolve under the same route.
  */
 import { randomUUID } from 'node:crypto';
@@ -42,7 +45,11 @@ import {
   type PlaybackTrack,
 } from '@auralis/schema';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import { contentUrlParts, hlsSessionOf } from '../adapters/audiobookshelf/client.js';
+import {
+  type AbsClient,
+  contentUrlParts,
+  hlsSessionOf,
+} from '../adapters/audiobookshelf/client.js';
 import {
   type playSessionSchema,
   SUPPORTED_MIME_TYPES,
@@ -53,13 +60,11 @@ import { RangeNotSatisfiable, type UpstreamFile } from '../adapters/stream.js';
 import { indexedRow } from '../libraryIndex/store.js';
 import type { Caller, HeldPlan, PlanEntry, Sessions } from '../queues/sessions.js';
 import { Refusal, serve, serveStream, type StreamAnswer } from '../route.js';
+import { addClaim } from '../store/claims.js';
 import type { Db } from '../store/connection.js';
-import {
-  type Linker,
-  type UpstreamConfig,
-  upstreamFor,
-  type Upstreams,
-} from '../upstream/links.js';
+import { dropHeld, heldOf, keepHeld } from '../store/heldProgress.js';
+import { type Linker, type UpstreamConfig, type Upstreams } from '../upstream/links.js';
+import { absAccess, Reach } from '../upstream/reach.js';
 import { artOf } from './art.js';
 import { signedIn } from './auth.js';
 import {
@@ -79,6 +84,8 @@ export interface UpstreamAccess {
   config: UpstreamConfig;
   fetch: FetchLike;
   linker?: Linker;
+  /** Auralis's own accounts, which act where a person's own does not reach (`upstream/reach.ts`). */
+  household?: Upstreams;
 }
 
 const CLIENT_VERSION = '0.0.0';
@@ -160,8 +167,12 @@ function absMeta(db: Db, session: AbsSession, ref: MediaRef, show: string | null
  * How to play what ABS answered, reporting to its session, or null when the clients cannot play
  * it: neither direct play of files in types they play, nor one transcode.
  */
-function planFor(session: AbsSession, ref: string, meta: PlaybackMeta): PlaybackPlan | null {
-  const startAt = session.currentTime ?? 0;
+function planFor(
+  session: AbsSession,
+  ref: string,
+  meta: PlaybackMeta,
+  startAt: number,
+): PlaybackPlan | null {
   const [first, ...rest] = session.audioTracks;
   const hls = first === undefined || rest.length > 0 ? null : hlsSessionOf(first.contentUrl);
   if (hls !== null && first?.duration !== undefined) {
@@ -271,29 +282,69 @@ export function playRoutes(
     await open.closeAll();
   });
 
-  /** The caller's own upstream client for `source`, after closing any play gone idle. */
+  const reach = new Reach(db, upstreams);
+
+  /**
+   * Who acts for the caller on `ref`, after closing any play gone idle: their own account where it
+   * reaches, Auralis's on an indexed item it does not. Their own stands where the index holds no
+   * such item, or their own check fails (logged): their upstream then says what it says.
+   */
   const personFor = async <S extends keyof Upstreams>(
     request: FastifyRequest,
     source: S,
-  ): Promise<{ client: NonNullable<Upstreams[S]>; userId: string; deviceId: string }> => {
+    ref: MediaRef,
+  ): Promise<{
+    client: NonNullable<Upstreams[S]>;
+    household: boolean;
+    userId: string;
+    deviceId: string;
+  }> => {
     await open.sweep();
     const user = signedIn(request);
-    const client = upstreams === null ? null : upstreamFor({ db, ...upstreams }, user)[source];
-    if (client === null) throw new Refusal(409, 'not_linked');
-    return {
-      client: client as NonNullable<Upstreams[S]>,
-      userId: user.id,
-      deviceId: user.deviceId,
+    const owner = { userId: user.id, deviceId: user.deviceId };
+    const own = reach.own(user)[source];
+    const row = indexedRow(db, ref.source, ref.id);
+    const stayOwn = () => {
+      if (own === null) throw new Refusal(409, 'not_linked');
+      return { client: own as NonNullable<Upstreams[S]>, household: false, ...owner };
     };
+    if (row === undefined || reach.household(source) === null) return stayOwn();
+    try {
+      const acting = await reach.pick(user, source, row);
+      return acting === null ? stayOwn() : { ...acting, ...owner };
+    } catch (err) {
+      app.log.warn({ err }, 'could not check what the person’s own account reaches');
+      return stayOwn();
+    }
   };
   /** The show an Audiobookshelf id is an episode of, as the library index holds it; else null. */
   const showOf = (id: string): string | null => {
     const row = indexedRow(db, 'abs', id);
     return row?.kind === 'episode' ? row.parentId : null;
   };
-  const absFor = async (request: FastifyRequest) => {
-    const { client, ...owner } = await personFor(request, 'abs');
+  const absFor = async (request: FastifyRequest, ref: MediaRef) => {
+    const { client, ...owner } = await personFor(request, 'abs', ref);
     return { abs: client, ...owner };
+  };
+
+  /**
+   * Where a play's plan starts. A household play's own position is what Auralis holds. On the
+   * person's own account, what it held from before their account reached the item counts while it
+   * is the newer; Audiobookshelf says the rest. A finished item starts over.
+   */
+  const startOf = async (
+    abs: AbsClient,
+    household: boolean,
+    userId: string,
+    ref: MediaRef,
+    upstream: number,
+  ): Promise<number> => {
+    const held = heldOf(db, userId, ref);
+    if (household) return held === undefined || held.finished ? 0 : held.position;
+    if (held === undefined) return upstream;
+    const own = await absAccess(abs).catch(() => null);
+    if ((own?.standing(ref.id).updatedAt ?? 0) > held.updatedAt) return upstream;
+    return held.finished ? 0 : held.position;
   };
 
   /**
@@ -387,17 +438,31 @@ export function playRoutes(
     }
   };
 
+  /** Playing a thing makes it the person's own: a track's album, an episode's show, or itself. */
+  const claimPlayed = (ref: MediaRef, userId: string) => {
+    const parent = indexedRow(db, ref.source, ref.id)?.parentId ?? null;
+    const held = parent === null ? ref : { source: ref.source, id: parent };
+    addClaim(db, userId, held, 'played', (options.now ?? Date.now)());
+  };
+
   serve(app, play, async (request, _reply, body) => {
     const ref = mediaRefKey(body.ref);
     const caller = signedIn(request);
     const heldBefore = open.heldBy({ userId: caller.id, deviceId: caller.deviceId });
     if (body.ref.source === 'jellyfin') {
       if (parseMediaRefKey(ref) === null) throw new Refusal(400, 'bad_request');
-      const { client, userId, deviceId } = await personFor(request, 'jellyfin');
+      const { client, household, userId, deviceId } = await personFor(
+        request,
+        'jellyfin',
+        body.ref,
+      );
       const { plan, played } = await jellyfinPlan(client, caller, body.ref);
       // Jellyfin's own play session ids are 32 hex digits (recorded).
       const playId = randomUUID().replace(/-/g, '');
-      const reports = jellyfinReports(client, played, playId, lineFor(userId, deviceId));
+      // A household play tells Jellyfin nothing: no one's account hears of it.
+      const reports = household
+        ? { start: () => undefined, report: () => undefined, close: () => undefined }
+        : jellyfinReports(client, played, playId, lineFor(userId, deviceId));
       const entries = played.map((t): PlanEntry => ({
         entry: { ref: { source: 'jellyfin', id: t.id } },
         start: t.offset,
@@ -419,6 +484,7 @@ export function playRoutes(
           close: async (report) => reports.close(report),
         });
       });
+      claimPlayed(body.ref, caller.id);
       return inSession(
         caller,
         { ...plan, progressTarget: { playId } },
@@ -427,13 +493,14 @@ export function playRoutes(
         entries,
       );
     }
-    const { abs, userId, deviceId } = await absFor(request);
+    const { abs, household, userId, deviceId } = await absFor(request, body.ref);
     const show = showOf(body.ref.id);
     const device = { deviceId, clientVersion: CLIENT_VERSION };
     const session = await (
       show === null ? abs.play(body.ref.id, device) : abs.playEpisode(show, body.ref.id, device)
     ).catch(refusalFor);
-    const plan = planFor(session, ref, absMeta(db, session, body.ref, show));
+    const startAt = await startOf(abs, household, userId, body.ref, session.currentTime ?? 0);
+    const plan = planFor(session, ref, absMeta(db, session, body.ref, show), startAt);
     if (plan === null) {
       // A failed close loses nothing.
       await abs.closeSession(session.id).catch(() => undefined);
@@ -453,6 +520,8 @@ export function playRoutes(
       timeListened: listened,
       duration,
     });
+    const hold = ({ position }: UpstreamReport, at = (options.now ?? Date.now)()) =>
+      keepHeld(db, userId, body.ref, { position, duration }, at);
     await open.planOn({ userId, deviceId }, () =>
       open.open({
         playId,
@@ -462,10 +531,22 @@ export function playRoutes(
         entries,
         duration,
         idleMs: plan.tracks[0]?.mime === HLS_MIME ? transcodeIdleMs : directIdleMs,
-        report: (report) => abs.syncSession(playId, sync(report)),
-        close: (report) => abs.closeSession(playId, report && sync(report)),
+        report: async (report) => {
+          if (household) return hold(report);
+          await abs.syncSession(playId, sync(report));
+          dropHeld(db, userId, body.ref);
+        },
+        close: async (report, reportedAt) => {
+          if (household) {
+            if (report !== undefined) hold(report, reportedAt);
+            return abs.closeSession(playId);
+          }
+          await abs.closeSession(playId, report && sync(report));
+          if (report !== undefined) dropHeld(db, userId, body.ref);
+        },
       }),
     );
+    claimPlayed(body.ref, caller.id);
     return inSession(caller, plan, body.ref, heldBefore, entries);
   });
 
@@ -500,12 +581,12 @@ export function playRoutes(
       // A Jellyfin track is its own ref's only track. Jellyfin streams to anyone with the id, so
       // the person's own lookup decides whether they may have it.
       if (params.n !== '0') throw new Refusal(404, 'not_found');
-      const { client } = await personFor(request, 'jellyfin');
+      const { client } = await personFor(request, 'jellyfin', ref);
       const item = await client.getPlayable(ref.id).catch(refusalFor);
       if (item.Type !== 'Audio') throw new Refusal(404, 'not_found');
       return passOn(await client.openAudio(ref.id, range).catch(refusalFor));
     }
-    const { abs } = await absFor(request);
+    const { abs } = await absFor(request, ref);
     const show = showOf(ref.id);
     if (show !== null) {
       // An episode is one file of its show, read as the index reads the show.
@@ -527,8 +608,9 @@ export function playRoutes(
   });
 
   serveStream(app, mediaHls, async (request, { params, range, signal }) => {
-    if (parseMediaRefKey(params.ref) === null) throw new Refusal(400, 'bad_request');
-    const { abs, userId, deviceId } = await absFor(request);
+    const ref = parseMediaRefKey(params.ref);
+    if (ref === null) throw new Refusal(400, 'bad_request');
+    const { abs, userId, deviceId } = await absFor(request, ref);
     // ABS's HLS route checks no owner: only the device that planned a transcode may reach it.
     if (open.touch(params.playId, { userId, deviceId, ref: params.ref }) === null) {
       throw new Refusal(404, 'not_found');

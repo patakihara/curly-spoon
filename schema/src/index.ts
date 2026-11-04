@@ -66,6 +66,7 @@ export {
   ItemQuery,
   ItemTrack,
   LibraryEntry,
+  RequestedEntry,
   LibraryEntryKind,
   LibraryList,
   LibraryMedium,
@@ -73,7 +74,6 @@ export {
   LibraryQuery,
   LIBRARY_SEED_MAX,
   LibrarySort,
-  RequestStatus,
 } from './library.js';
 export {
   ArtUrl,
@@ -106,6 +106,12 @@ export {
   appToken,
   closePlay,
   createBookmark,
+  createRequest,
+  cancelRequest,
+  chooseRelease,
+  getRequest,
+  listRequests,
+  retryRequest,
   createList,
   deleteBookmark,
   deleteDevice,
@@ -148,6 +154,22 @@ export {
   updateList,
   type Route,
 } from './routes.js';
+export {
+  ChooseReleaseBody,
+  CreateRequestBody,
+  REQUEST_ID_KEYS,
+  RequestCandidate,
+  RequestFailure,
+  RequestIds,
+  RequestList,
+  RequestMedium,
+  RequestParams,
+  RequestRef,
+  RequestStatus,
+  RequestTarget,
+  RequestVerb,
+  RequestView,
+} from './requests.js';
 export {
   QUERY_MAX,
   SearchKind,

@@ -21,6 +21,11 @@ export interface PageStore {
   failed(key: string): boolean;
   /** Loads `key` through `run`, unless it is loading already. */
   load(key: string, run: () => Promise<unknown>): Promise<void>;
+  /**
+   * Loads `key` through `run` once any load under way is done, for what has just changed: the answer
+   * to a load already under way may have been read before the change.
+   */
+  reload(key: string, run: () => Promise<unknown>): Promise<void>;
   /** Loads `key` again as it was last loaded, if that failed; else does nothing. */
   retry(key: string): Promise<void>;
 }
@@ -68,6 +73,10 @@ export function createPageStore(options: { onSignedOut: () => void }): PageStore
         .finally(() => loading.delete(key));
       loading.set(key, done);
       return done;
+    },
+    reload: async (key, run) => {
+      await loading.get(key);
+      return store.load(key, run);
     },
     retry(key) {
       const run = failed.get(key);

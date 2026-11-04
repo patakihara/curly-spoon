@@ -50,6 +50,15 @@
  * then the mark undone and read back; the run fails unless each read-back matches (record-lists.ts). It reads the show by id only and needs
  * only ABS_API_KEY.
  *
+ * `--only played [--jellyfin-item <track>]` records M3.requests' one small page of what the service
+ * identity `auralis` has played, through a Jellyfin token minted by Quick Connect and logged out at
+ * the end. If it has played nothing, the track is marked played for `auralis` only, and the mark is
+ * undone once the page is recorded (record-played.ts). It needs only JELLYFIN_API_KEY.
+ *
+ * `--only household --jellyfin-item <album>` records how the Jellyfin API key, with no user behind it,
+ * reads an album and its first track by id, for M3.requests' household plays (record-household.ts).
+ * It needs only JELLYFIN_API_KEY.
+ *
  * `--dry-run` makes the same calls but writes into a fresh temporary folder instead of the
  * committed recordings, and says where.
  */
@@ -72,6 +81,8 @@ import { RECORD_USER_ID, recordOidc, TEST_IDENTITY } from './record-oidc.js';
 import { UNDO_UNCONFIRMED } from './record-finished.js';
 import { recordLists } from './record-lists.js';
 import { recordLyrics } from './record-lyrics.js';
+import { recordHousehold } from './record-household.js';
+import { recordPlayed } from './record-played.js';
 import { recordProgress } from './record-progress.js';
 import { recordSessions } from './record-sessions.js';
 import { recordShell } from './record-shell.js';
@@ -94,9 +105,10 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
   --jellyfin <url>   Jellyfin base URL
   --jellyfin-item <id> the Jellyfin item to record, instead of the first album; for --only
                      jfplay and shell, the album; for --only progress, the track; for
-                     --only sessions, the track Instant Mix is asked for
+                     --only sessions, the track Instant Mix is asked for; for --only played,
+                     the track to mark if the test user has played nothing
   --only <name>      record only abs, jellyfin, index, play, episode, jfplay, progress,
-                     sessions, shell, lyrics or lists; or
+                     sessions, shell, lyrics, lists or played; or
                      oidc, a sign-in and its links
   --lrclib <url>     LRCLIB's base URL, for --only lyrics
   --albums <a,b,..>  for --only lyrics, the albums holding the three LRCLIB tracks
@@ -117,7 +129,7 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
   --dry-run          write into a temporary folder, not the committed recordings
   --help             show this
 
-stdin carries ABS_API_KEY=... and JELLYFIN_API_KEY=... lines (jfplay and lyrics need only the latter,
+stdin carries ABS_API_KEY=... and JELLYFIN_API_KEY=... lines (jfplay, lyrics and played need only the latter,
 lists only the former; progress, sessions and shell need both); for --only oidc,
 OIDC_CLIENT_SECRET, OIDC_TEST_PASSWORD, ABS_PROVISION_KEY and JELLYFIN_API_KEY.
 `;
@@ -656,11 +668,13 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'shell',
       'lyrics',
       'lists',
+      'played',
+      'household',
       'oidc',
     ].includes(only)
   ) {
     io.err(
-      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists or oidc, not ${only}`,
+      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household or oidc, not ${only}`,
     );
     return 2;
   }
@@ -679,6 +693,8 @@ export async function runRecord(io: RecordIo): Promise<number> {
   if (only === 'shell') return runShell(io, values, parseKeys(io.stdin), root);
   if (only === 'lyrics') return runLyrics(io, values, parseKeys(io.stdin), root);
   if (only === 'lists') return runLists(io, values, parseKeys(io.stdin), root);
+  if (only === 'played') return runPlayed(io, values, parseKeys(io.stdin), root);
+  if (only === 'household') return runHousehold(io, values, parseKeys(io.stdin), root);
   const wantIndex = only === undefined || only === 'index';
   const wantAbs = only !== 'jellyfin';
   const wantJellyfin = only !== 'abs';
@@ -1066,6 +1082,64 @@ async function runLists(
     return 1;
   }
   return scanned;
+}
+
+async function runPlayed(
+  io: RecordIo,
+  values: Record<string, string | boolean | undefined>,
+  keys: Record<string, string>,
+  root: string,
+): Promise<number> {
+  const need = {
+    '--jellyfin': values.jellyfin,
+    'JELLYFIN_API_KEY on stdin': keys.JELLYFIN_API_KEY,
+  };
+  const missing = Object.entries(need)
+    .filter(([, v]) => typeof v !== 'string' || v === '')
+    .map(([k]) => k);
+  if (missing.length > 0) {
+    io.err(`missing ${missing.join(', ')}\n\n${USAGE}`);
+    return 2;
+  }
+  const item = values['jellyfin-item'];
+  const { written } = await recordPlayed({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    jellyfinUrl: values.jellyfin as string,
+    jellyfinKey: keys.JELLYFIN_API_KEY as string,
+    trackId: typeof item === 'string' ? item : undefined,
+  });
+  return scanWritten(io, written, []);
+}
+
+async function runHousehold(
+  io: RecordIo,
+  values: Record<string, string | boolean | undefined>,
+  keys: Record<string, string>,
+  root: string,
+): Promise<number> {
+  const need = {
+    '--jellyfin': values.jellyfin,
+    '--jellyfin-item': values['jellyfin-item'],
+    'JELLYFIN_API_KEY on stdin': keys.JELLYFIN_API_KEY,
+  };
+  const missing = Object.entries(need)
+    .filter(([, v]) => typeof v !== 'string' || v === '')
+    .map(([k]) => k);
+  if (missing.length > 0) {
+    io.err(`missing ${missing.join(', ')}\n\n${USAGE}`);
+    return 2;
+  }
+  const { written } = await recordHousehold({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    jellyfinUrl: values.jellyfin as string,
+    jellyfinKey: keys.JELLYFIN_API_KEY as string,
+    albumId: values['jellyfin-item'] as string,
+  });
+  return scanWritten(io, written, []);
 }
 
 async function runOidc(

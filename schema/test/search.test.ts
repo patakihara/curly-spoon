@@ -45,6 +45,7 @@ describe('a search', () => {
   it('answers the query and its results, each with its kind, creators, parent, art, times and availability', () => {
     const results = {
       query: 'rumours',
+      hasRequests: false,
       results: [
         {
           ref: album,
@@ -57,6 +58,7 @@ describe('a search', () => {
           year: 1977,
           publishedAt: null,
           availability: { kind: 'owned' },
+          inYourLibrary: true,
         },
         {
           ref: track,
@@ -69,6 +71,7 @@ describe('a search', () => {
           year: null,
           publishedAt: null,
           availability: { kind: 'owned' },
+          inYourLibrary: true,
         },
       ],
     };
@@ -91,10 +94,14 @@ describe('suggestions', () => {
         { kind: 'recent', text: 'rumours', ref: null },
         { kind: 'album', text: 'Rumours', ref: album },
       ],
+      hasRequests: true,
     };
     expect(SuggestionList.parse(list)).toEqual(list);
     expect(
-      SuggestionList.safeParse({ suggestions: [{ kind: 'Recent', text: 'x', ref: null }] }).success,
+      SuggestionList.safeParse({
+        suggestions: [{ kind: 'Recent', text: 'x', ref: null }],
+        hasRequests: false,
+      }).success,
     ).toBe(false);
   });
 });

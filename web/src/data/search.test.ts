@@ -27,6 +27,7 @@ const result = (over: Partial<SearchResult>): SearchResult => ({
   year: 2023,
   publishedAt: null,
   availability: { kind: 'owned' },
+  inYourLibrary: true,
   ...over,
 });
 
@@ -92,10 +93,35 @@ describe('search results as rows', () => {
   });
 });
 
+describe('[M3.requests] the way to Requests from Search', () => {
+  const answered = (hasRequests: boolean) =>
+    SearchResults.parse({ query: 'zz', results: [], hasRequests });
+  const said = (hasRequests: boolean) => SuggestionList.parse({ suggestions: [], hasRequests });
+
+  it('is offered while the person has a request, with results or suggestions, and not otherwise', () => {
+    expect(searchData(answered(true), empty).yourRequests).toEqual([{ title: 'Your requests' }]);
+    expect(searchData(answered(false), empty).yourRequests).toEqual([]);
+    expect(suggestData(said(true), empty).yourRequests).toEqual([{ title: 'Your requests' }]);
+    expect(suggestData(said(false), empty).yourRequests).toEqual([]);
+  });
+
+  it('stays as it was over a search that failed', () => {
+    const live = searchLive('zz', null, empty);
+    const before = live.draw(
+      { data: { data: searchData(answered(true), empty), found: false } },
+      null,
+    );
+    const failed = live.draw('failed', before);
+    expect(failed.state).toBe('failed');
+    expect(failed.data.yourRequests).toEqual([{ title: 'Your requests' }]);
+  });
+});
+
 describe('search’s data', () => {
   it('puts the best result on top and the rest in your library, with nothing outside it', () => {
     const answer = SearchResults.parse({
       query: 'ri',
+      hasRequests: false,
       results: [
         result({ title: 'First' }),
         result({ title: 'Second' }),
@@ -109,8 +135,30 @@ describe('search’s data', () => {
     expect(data.suggestions).toEqual([]);
   });
 
+  it('[M3.requests/d] sorts results in or out of your library as the server says, each one playing', () => {
+    const answer = SearchResults.parse({
+      query: 'o',
+      hasRequests: false,
+      results: [
+        result({ title: 'Best', inYourLibrary: false, ref: { source: 'abs', id: 'b1' } }),
+        result({ title: 'Mine', inYourLibrary: true, ref: { source: 'abs', id: 'b2' } }),
+        result({ title: 'Theirs', inYourLibrary: false, ref: { source: 'abs', id: 'b3' } }),
+      ],
+    });
+    const data = searchData(answer, empty);
+    expect(data.top.title).toBe('Best');
+    expect(data.library.map((r) => r.title)).toEqual(['Mine']);
+    expect(data.outside.household).toEqual([
+      expect.objectContaining({ title: 'Theirs', playRef: 'abs:b3', ref: 'abs:b3' }),
+    ]);
+    expect(data.top.playRef).toBe('abs:b1');
+  });
+
   it('keeps the page’s own words and nothing of the canvas’s samples while nothing is found', () => {
-    const data = searchData(SearchResults.parse({ query: 'zz', results: [] }), empty);
+    const data = searchData(
+      SearchResults.parse({ query: 'zz', results: [], hasRequests: false }),
+      empty,
+    );
     expect(data.top.title).toBe('');
     expect(data.library).toEqual([]);
     expect(data.placeholder).toBe(search.placeholder.placeholder);
@@ -124,6 +172,7 @@ describe('search’s data', () => {
         { kind: 'recent', text: 'rise', ref: null },
         { kind: 'album', text: 'The Rise and Fall', ref: { source: 'jellyfin', id: 'a1' } },
       ],
+      hasRequests: false,
     });
     expect(suggestData(list, empty).suggestions).toEqual([
       { title: 'rise', meta: 'Recent', query: 'rise', icon: 'history' },
@@ -206,8 +255,8 @@ describe('what search asks of the server', () => {
         const url = new URL(request.url);
         asked.push(`${url.pathname}?${url.searchParams}`);
         const body = url.pathname.endsWith('/suggest')
-          ? { suggestions: [{ kind: 'recent', text: 'rise', ref: null }] }
-          : { query: url.searchParams.get('q'), results };
+          ? { suggestions: [{ kind: 'recent', text: 'rise', ref: null }], hasRequests: false }
+          : { query: url.searchParams.get('q'), results, hasRequests: false };
         return new Response(JSON.stringify(body), {
           headers: { 'content-type': 'application/json' },
         });

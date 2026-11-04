@@ -1,6 +1,6 @@
 ---
 page: settings
-pageHash: b655f0f0c2dad4d99857536a4c63d5d4ff026a6636a23b9454482ab112ec080f
+pageHash: 7e99b0951cefe51399d5d217e7fbe97b75c4bcdd2fc98a137c5bfffc8147aab5
 sonora: [kit:mobile/settings, kit:desktop/settings]
 ---
 
@@ -70,3 +70,8 @@ Measured in the browser (`getBoundingClientRect`), kit against page: page margin
   folder on the device. Its value is a placeholder address, not a real host.
 - Changed on purpose: the page is not a destination, so on the phone the shell shows it under a top app bar (`BackdropShell appBar`), as the mobile kit's flat detail bar does: the close control and the title, set as a mobile section header in the body face, on the page surface, with no back layer and no rounded front layer behind it; a hairline marks the bar once the content scrolls. The bottom bar and mini-player stay. On desktop it keeps the backdrop, Settings lit at the rail's foot.
 - Changed on purpose: the rail's head carries old Sonora's hamburger (`NavRail toggle`), `menu_open` on this labelled rail, on the heading's line; it collapses the rail to the icon rail and back. The mini-player's play and pause glyph is white (`--play-contrast`) and filled: solid bars, not the icon font's hairline outline.
+
+## M3.requests
+
+- Changed on purpose: "Show everyone's library" joins the switches, off by default, its `title`, `sub` and `checked` from the data. It is the one switch that works: `onChange` binds `Toggle`, so a person whose library narrowed can set it now, where the others stay disabled until M5.settings. On the canvas and on Android nothing sets it, so it draws disabled like them.
+- Changed on purpose: a switch that could not be set says so in a `StatusBanner` over the rows, drawn on this canvas page with its words, and shows the server's value again. Until the server has answered, the switch is off and disabled.

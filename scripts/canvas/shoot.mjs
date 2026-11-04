@@ -101,6 +101,7 @@ function offRoute(page) {
       '  const router = createMemoryRouter([',
       '    {',
       '      element: createElement(Shell),',
+      '      handle: { tabs: {} },',
       `      children: [{ path: '/', element: createElement(Page)${page.presentation === 'sheet' ? '' : ', handle: { frame }'} }],`,
       '    },',
       '  ]);',
@@ -143,6 +144,10 @@ try {
       tab.on(
         'console',
         (m) => m.type() === 'error' && console.error(`${page.id} ${name}: ${m.text()}`),
+      );
+      // The canvas's placeholders are what a server nobody can sign in to draws.
+      await tab.route('**/api/health', (route) =>
+        route.fulfill({ json: { status: 'ok', commit: null, signOn: false } }),
       );
       const mount = page.platforms.includes('web') ? undefined : offRoute(page);
       await tab.goto(web.origin + (path === '*' || mount ? '/no-such-page' : path), {

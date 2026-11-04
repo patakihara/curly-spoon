@@ -277,6 +277,7 @@ enum class LibraryEntryKind {
 @Serializable
 data class LibraryList(
     val items: List<LibraryEntry>,
+    val requested: List<RequestedEntry>,
     val sort: LibrarySort,
     val seed: Long?,
 )
@@ -700,16 +701,126 @@ data class RenameDeviceBody(
 )
 
 @Serializable
+data class RequestCandidate(
+    val id: String,
+    val title: String,
+    val source: String,
+    val size: Long?,
+)
+
+@Serializable
+enum class RequestFailure {
+    @SerialName("noRelease")
+    NO_RELEASE,
+    @SerialName("searchFailed")
+    SEARCH_FAILED,
+    @SerialName("downloadFailed")
+    DOWNLOAD_FAILED,
+    @SerialName("importFailed")
+    IMPORT_FAILED,
+    @SerialName("notIndexed")
+    NOT_INDEXED,
+    @SerialName("cancelledUpstream")
+    CANCELLED_UPSTREAM,
+}
+
+@Serializable
+data class RequestIds(
+    val asin: String? = null,
+    val isbn: String? = null,
+    val mbid: String? = null,
+    val feedUrl: String? = null,
+    val youtubeMusicId: String? = null,
+)
+
+@Serializable
+data class RequestList(
+    val inFlight: List<RequestView>,
+    val needsChoice: List<RequestView>,
+)
+
+@Serializable
+enum class RequestMedium {
+    @SerialName("book")
+    BOOK,
+    @SerialName("album")
+    ALBUM,
+    @SerialName("song")
+    SONG,
+    @SerialName("podcast")
+    PODCAST,
+}
+
+@Serializable
+data class RequestRef(
+    val medium: RequestMedium,
+    val target: RequestTarget,
+)
+
+@Serializable
 enum class RequestStatus {
     @SerialName("requested")
     REQUESTED,
+    @SerialName("searching")
+    SEARCHING,
     @SerialName("needsChoice")
     NEEDS_CHOICE,
+    @SerialName("queued")
+    QUEUED,
     @SerialName("downloading")
     DOWNLOADING,
+    @SerialName("importing")
+    IMPORTING,
+    @SerialName("inLibrary")
+    IN_LIBRARY,
     @SerialName("failed")
     FAILED,
 }
+
+@Serializable
+data class RequestTarget(
+    val title: String,
+    val creator: String?,
+    val ids: RequestIds,
+)
+
+@Serializable
+enum class RequestVerb {
+    @SerialName("retry")
+    RETRY,
+    @SerialName("cancel")
+    CANCEL,
+    @SerialName("choose")
+    CHOOSE,
+    @SerialName("pickAnother")
+    PICK_ANOTHER,
+}
+
+@Serializable
+data class RequestView(
+    val id: String,
+    val medium: RequestMedium,
+    val title: String,
+    val creator: String?,
+    val art: String?,
+    val source: String?,
+    val size: Long?,
+    val status: RequestStatus,
+    val progress: Double?,
+    val reason: RequestFailure?,
+    val verbs: List<RequestVerb>,
+    val candidates: List<RequestCandidate>,
+)
+
+@Serializable
+data class RequestedEntry(
+    val id: String,
+    val kind: LibraryEntryKind,
+    val title: String,
+    val sub: String?,
+    val art: String?,
+    val availability: Availability,
+)
 
 @Serializable
 enum class Role {
@@ -757,12 +868,14 @@ data class SearchResult(
     val year: Long?,
     val publishedAt: Long?,
     val availability: Availability,
+    val inYourLibrary: Boolean,
 )
 
 @Serializable
 data class SearchResults(
     val query: String,
     val results: List<SearchResult>,
+    val hasRequests: Boolean,
 )
 
 @Serializable
@@ -779,6 +892,7 @@ data class Settings(
     val autoplay: AutoplaySwitches,
     val queueStyle: QueueStyle,
     val firstRunDone: Boolean,
+    val showEveryonesLibrary: Boolean,
 )
 
 @Serializable
@@ -787,6 +901,7 @@ data class SettingsBody(
     val autoplay: AutoplaySwitchesChange? = null,
     val queueStyle: QueueStyle? = null,
     val firstRunDone: Boolean? = null,
+    val showEveryonesLibrary: Boolean? = null,
 )
 
 @Serializable
@@ -846,6 +961,7 @@ enum class SuggestionKind {
 @Serializable
 data class SuggestionList(
     val suggestions: List<Suggestion>,
+    val hasRequests: Boolean,
 )
 
 @Serializable

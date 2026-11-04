@@ -295,6 +295,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in person's requests under way; podcasts never show, subscribing is instant */
+        get: operations["listRequests"];
+        put?: never;
+        /** Request something for the household, or join the request already under way for it */
+        post: operations["createRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One of the signed-in person's requests */
+        get: operations["getRequest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/requests/{id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resume a failed request at the step it failed in */
+        post: operations["retryRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/requests/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Leave a request; the last person to leave ends it and drops its download */
+        post: operations["cancelRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/requests/{id}/choose": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Take one of the candidates a request offers, one tap even from a failure */
+        post: operations["chooseRelease"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sessions": {
         parameters: {
             query?: never;
@@ -602,6 +688,8 @@ export interface components {
          */
         HlsMime: "application/vnd.apple.mpegurl";
         /** @enum {string} */
+        RequestFailure: "noRelease" | "searchFailed" | "downloadFailed" | "importFailed" | "notIndexed" | "cancelledUpstream";
+        /** @enum {string} */
         QueueType: "music" | "spoken";
         /** @enum {string} */
         MediaSource: "abs" | "jellyfin";
@@ -795,6 +883,54 @@ export interface components {
             time: number;
             title: string;
         };
+        /** @enum {string} */
+        RequestMedium: "book" | "album" | "song" | "podcast";
+        /** @enum {string} */
+        RequestStatus: "requested" | "searching" | "needsChoice" | "queued" | "downloading" | "importing" | "inLibrary" | "failed";
+        /** @enum {string} */
+        RequestVerb: "retry" | "cancel" | "choose" | "pickAnother";
+        RequestCandidate: {
+            id: string;
+            title: string;
+            source: string;
+            size: number | null;
+        };
+        RequestView: {
+            id: string;
+            medium: components["schemas"]["RequestMedium"];
+            title: string;
+            creator: string | null;
+            art: string | null;
+            source: string | null;
+            size: number | null;
+            status: components["schemas"]["RequestStatus"];
+            progress: number | null;
+            reason: components["schemas"]["RequestFailure"] | null;
+            verbs: components["schemas"]["RequestVerb"][];
+            candidates: components["schemas"]["RequestCandidate"][];
+        };
+        RequestIds: {
+            asin?: string;
+            isbn?: string;
+            /** Format: uuid */
+            mbid?: string;
+            /** Format: uri */
+            feedUrl?: string;
+            youtubeMusicId?: string;
+        };
+        RequestTarget: {
+            title: string;
+            creator: string | null;
+            ids: components["schemas"]["RequestIds"];
+        };
+        RequestRef: {
+            medium: components["schemas"]["RequestMedium"];
+            target: components["schemas"]["RequestTarget"];
+        };
+        RequestList: {
+            inFlight: components["schemas"]["RequestView"][];
+            needsChoice: components["schemas"]["RequestView"][];
+        };
         QueueCurrents: {
             music: components["schemas"]["QueueItem"] | null;
             spoken: components["schemas"]["QueueItem"] | null;
@@ -878,6 +1014,7 @@ export interface components {
             autoplay: components["schemas"]["AutoplaySwitches"];
             queueStyle: components["schemas"]["QueueStyle"];
             firstRunDone: boolean;
+            showEveryonesLibrary: boolean;
         };
         AutoplaySwitchesChange: {
             music?: boolean;
@@ -888,13 +1025,12 @@ export interface components {
             autoplay?: components["schemas"]["AutoplaySwitchesChange"];
             queueStyle?: components["schemas"]["QueueStyle"];
             firstRunDone?: boolean;
+            showEveryonesLibrary?: boolean;
         };
         /** @enum {string} */
         LibraryEntryKind: "book" | "show" | "album";
         /** @enum {string} */
         AvailabilityKind: "owned" | "streamable" | "requested" | "external";
-        /** @enum {string} */
-        RequestStatus: "requested" | "needsChoice" | "downloading" | "failed";
         Availability: {
             kind: components["schemas"]["AvailabilityKind"];
             status?: components["schemas"]["RequestStatus"];
@@ -910,10 +1046,19 @@ export interface components {
             progress: number | null;
             availability: components["schemas"]["Availability"];
         };
+        RequestedEntry: {
+            id: string;
+            kind: components["schemas"]["LibraryEntryKind"];
+            title: string;
+            sub: string | null;
+            art: string | null;
+            availability: components["schemas"]["Availability"];
+        };
         /** @enum {string} */
         LibrarySort: "title" | "artist" | "random";
         LibraryList: {
             items: components["schemas"]["LibraryEntry"][];
+            requested: components["schemas"]["RequestedEntry"][];
             sort: components["schemas"]["LibrarySort"];
             seed: number | null;
         };
@@ -989,6 +1134,7 @@ export interface components {
         };
         SuggestionList: {
             suggestions: components["schemas"]["Suggestion"][];
+            hasRequests: boolean;
         };
         /** @enum {string} */
         SearchKind: "track" | "album" | "artist" | "book" | "author" | "series" | "show" | "episode";
@@ -1003,10 +1149,12 @@ export interface components {
             year: number | null;
             publishedAt: number | null;
             availability: components["schemas"]["Availability"];
+            inYourLibrary: boolean;
         };
         SearchResults: {
             query: string;
             results: components["schemas"]["SearchResult"][];
+            hasRequests: boolean;
         };
         /** @enum {string} */
         LyricsStatus: "synced" | "plain" | "instrumental" | "none";
@@ -2117,6 +2265,299 @@ export interface operations {
             };
         };
     };
+    listRequests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Requests in flight, and those waiting for a choice of release. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestList"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    ref: components["schemas"]["RequestRef"];
+                };
+            };
+        };
+        responses: {
+            /** @description The request, made, joined, or already in the library. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestView"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestView"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    retryRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request, moved back to that step. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestView"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    cancelRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The signed-in person is no longer on the request. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    chooseRelease: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    candidate: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The request, queued with that release. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestView"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     listSessions: {
         parameters: {
             query?: never;
@@ -2562,7 +3003,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Up next, then your second most recent book and show: each card is what plays next of something you listened to, and only what you own. An empty shelf is left out; someone not linked to Audiobookshelf gets no shelves, and its failure answers 502 `upstream_failed`. */
+            /** @description Up next, then your second most recent book and show: each card is what plays next of something you listened to, and only what you own. An empty shelf is left out; someone with no Audiobookshelf link and no household account to play through gets no shelves, and its failure answers 502 `upstream_failed`. */
             200: {
                 headers: {
                     [name: string]: unknown;

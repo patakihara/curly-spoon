@@ -107,14 +107,16 @@ const placeholder = {
       "progress": 0.18
     }
   ],
-  "feature": {
-    "kind": "Episode",
-    "title": "Salt in the Ledger",
-    "ref": "salt-in-the-ledger",
-    "meta": "The Long Read · 5 Aug 2026 · 47 min",
-    "description": "How a family of salt merchants kept two sets of books for a hundred years, and what the second set says about the town that trusted them.",
-    "image": "/art/the-long-read.jpg"
-  },
+  "features": [
+    {
+      "kind": "Episode",
+      "title": "Salt in the Ledger",
+      "ref": "salt-in-the-ledger",
+      "meta": "The Long Read · 5 Aug 2026 · 47 min",
+      "description": "How a family of salt merchants kept two sets of books for a hundred years, and what the second set says about the town that trusted them.",
+      "image": "/art/the-long-read.jpg"
+    }
+  ],
   "recentlyAdded": [
     {
       "title": "Between Lines of Light",
@@ -517,7 +519,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
   const play = usePlay();
   return (
     <PageBody platform={platform}>
-      {data.sections.includes('Jump back in') && (
+      {data.sections.includes('Jump back in') && data.jumpBackIn.length > 0 && (
         <Section title="Jump back in" platform={platform}>
           <LayoutGrid item="wide" maxWidth="var(--grid-max-width-tiles)" platform={platform}>
             {data.jumpBackIn.map((pick, i) => (
@@ -528,7 +530,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           </LayoutGrid>
         </Section>
       )}
-      {data.sections.includes('Up next') && (
+      {data.sections.includes('Up next') && data.upNext.length > 0 && (
         <Section title="Up next" platform={platform}>
           <Shelf platform={platform}>
             {data.upNext.map((item, i) => (
@@ -539,7 +541,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           </Shelf>
         </Section>
       )}
-      {data.sections.includes('Still listening') && (
+      {data.sections.includes('Still listening') && data.stillListening.length > 0 && (
         <Section title="Still listening" platform={platform}>
           <Shelf platform={platform}>
             {data.stillListening.map((item, i) => (
@@ -550,21 +552,25 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           </Shelf>
         </Section>
       )}
-      <Section platform={platform}>
-        <LayoutGrid columns={1} maxWidth="var(--grid-max-width-form)" platform={platform}>
-          <FeatureCard
-            kind={data.feature.kind}
-            title={data.feature.title}
-            meta={data.feature.meta}
-            description={data.feature.description}
-            image={data.feature.image}
-            onPlay={play(data.feature.ref, 'spoken', 'now')}
-            preview={<PreviewButton kind="episode" muted={true} platform={platform} />}
-            platform={platform}
-          />
-        </LayoutGrid>
-      </Section>
-      {data.sections.includes('Recently added') && (
+      {data.features.map((feature, i) => (
+        <Fragment key={i}>
+          <Section platform={platform}>
+            <LayoutGrid columns={1} maxWidth="var(--grid-max-width-form)" platform={platform}>
+              <FeatureCard
+                kind={feature.kind}
+                title={feature.title}
+                meta={feature.meta}
+                description={feature.description}
+                image={feature.image}
+                onPlay={play(feature.ref, 'spoken', 'now')}
+                preview={<PreviewButton kind="episode" muted={true} platform={platform} />}
+                platform={platform}
+              />
+            </LayoutGrid>
+          </Section>
+        </Fragment>
+      ))}
+      {data.sections.includes('Recently added') && data.recentlyAdded.length > 0 && (
         <Section title="Recently added" action="arrow_forward" actionLabel="See all" onAction={data.shelves.recentlyAdded ? () => navigate(generatePath('/shelves/:id', { id: data.shelves.recentlyAdded })) : undefined} platform={platform}>
           <Shelf platform={platform}>
             {data.recentlyAdded.map((item, i) => (
@@ -575,7 +581,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           </Shelf>
         </Section>
       )}
-      {data.sections.includes('Artists & authors') && (
+      {data.sections.includes('Artists & authors') && data.people.length > 0 && (
         <Section title="Artists & authors" action="arrow_forward" actionLabel="See all" onAction={data.shelves.people ? () => navigate(generatePath('/shelves/:id', { id: data.shelves.people })) : undefined} platform={platform}>
           <Shelf platform={platform}>
             {data.people.map((person, i) => (
@@ -586,7 +592,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           </Shelf>
         </Section>
       )}
-      {data.sections.includes('Picked for you') && (
+      {data.sections.includes('Picked for you') && data.pickedForYou.length > 0 && (
         <Section title="Picked for you" action="arrow_forward" actionLabel="See all" onAction={data.shelves.pickedForYou ? () => navigate(generatePath('/shelves/:id', { id: data.shelves.pickedForYou })) : undefined} platform={platform}>
           <Shelf platform={platform}>
             {data.pickedForYou.map((item, i) => (
@@ -597,7 +603,7 @@ export default function Browse({ data = placeholder, state = 'full' }: BrowsePro
           </Shelf>
         </Section>
       )}
-      {data.sections.includes('Recently played') && (
+      {data.sections.includes('Recently played') && data.recentlyPlayed.length > 0 && (
         <Section title="Recently played" last={true} platform={platform}>
           {data.recentlyPlayed.map((track, i) => (
             <Fragment key={i}>

@@ -14,6 +14,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ListDetail, type ListItem, type MediaRef, ListSummaryList } from '@auralis/schema';
 import { expect } from 'vitest';
+import { AbsClient } from '../audiobookshelf/client.js';
 import { itemSummarySchema, type ShowSummary } from '../audiobookshelf/schemas.js';
 import { parseFeed } from '../feed/client.js';
 import { type FetchLike } from './fetch.js';
@@ -157,7 +158,7 @@ export interface Answer {
  */
 export async function listsServer(
   db: Db,
-  options: { now?: number; me?: Recording; abs?: Recording[] } = {},
+  options: { now?: number; me?: Recording; abs?: Recording[]; household?: boolean } = {},
 ) {
   const clock = { now: options.now ?? SEPT_15 };
   const extra = options.abs ?? [];
@@ -222,7 +223,19 @@ export async function listsServer(
     db,
     logger: { stream: { write: (line) => logs.push(JSON.parse(line) as { msg?: string }) } },
     now: () => clock.now,
-    upstreams: { key: KEY, config: { absUrl: UPSTREAM, jellyfinUrl: UPSTREAM }, fetch },
+    upstreams: {
+      key: KEY,
+      config: { absUrl: UPSTREAM, jellyfinUrl: UPSTREAM },
+      fetch,
+      ...(options.household === true
+        ? {
+            household: {
+              abs: new AbsClient({ baseUrl: UPSTREAM, token: 'household', fetch }),
+              jellyfin: null,
+            },
+          }
+        : {}),
+    },
   });
   const call = async (
     method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',

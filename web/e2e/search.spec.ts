@@ -51,6 +51,8 @@ test.describe('[M2.search/d] search on recorded upstreams', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     const asked: URL[] = [];
     page.on('request', (request) => {
+      // Signing in opens the page twice; only what the last opening asked for counts.
+      if (request.isNavigationRequest() && request.frame() === page.mainFrame()) asked.length = 0;
       const url = new URL(request.url());
       if (url.pathname.startsWith('/api/search')) asked.push(url);
     });

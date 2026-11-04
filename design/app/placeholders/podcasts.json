@@ -24,42 +24,63 @@
       "ref": "deep-inertia-radio",
       "sub": "3 unplayed",
       "image": "/art/deep-inertia-radio.jpg",
-      "unplayed": true
+      "unplayed": true,
+      "status": null,
+      "tone": null
+    },
+    {
+      "title": "Tide Tables",
+      "ref": "tide-tables",
+      "sub": "Subscribing",
+      "image": "/art/deep-inertia-radio.jpg",
+      "unplayed": false,
+      "status": "Searching…",
+      "tone": "progress"
     },
     {
       "title": "Fleeting Verses",
       "ref": "fleeting-verses",
       "sub": "YouTube · 2 unplayed",
       "image": "/art/fleeting-verses.jpg",
-      "unplayed": true
+      "unplayed": true,
+      "status": null,
+      "tone": null
     },
     {
       "title": "Signal & Noise",
       "ref": "signal-noise",
       "sub": "All played",
       "image": "/art/signal-noise.jpg",
-      "unplayed": false
+      "unplayed": false,
+      "status": null,
+      "tone": null
     },
     {
       "title": "Sonic Tales",
       "ref": "sonic-tales",
       "sub": "1 unplayed",
       "image": "/art/sonic-tales.jpg",
-      "unplayed": true
+      "unplayed": true,
+      "status": null,
+      "tone": null
     },
     {
       "title": "Tears of Ice",
       "ref": "tears-of-ice",
       "sub": "All played",
       "image": "/art/tears-of-ice.jpg",
-      "unplayed": false
+      "unplayed": false,
+      "status": null,
+      "tone": null
     },
     {
       "title": "The Long Read",
       "ref": "the-long-read",
       "sub": "5 unplayed",
       "image": "/art/the-long-read.jpg",
-      "unplayed": true
+      "unplayed": true,
+      "status": null,
+      "tone": null
     }
   ],
   "lists": [

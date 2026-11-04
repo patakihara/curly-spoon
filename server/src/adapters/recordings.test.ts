@@ -12,6 +12,7 @@ import { LYRICS_KEPT_LINES, LYRICS_TRIMMED } from './record-lyrics.js';
 import { albumRow, trackRows } from '../libraryIndex/rows.js';
 import { lyricsQuery } from '../lyrics/query.js';
 import { ART_WIDTH } from '../routes/items.js';
+import { PLAYED_PAGE } from './record-played.js';
 import { ABS_PROGRESS_CALLS, JELLYFIN_PROGRESS_CALLS, TEST_BOOKMARK } from './record-progress.js';
 
 const adapters = dirname(fileURLToPath(import.meta.url));
@@ -612,6 +613,29 @@ const shell = {
   album: recording('jellyfin', 'jf-album'),
   track: recording('jellyfin', 'jf-track'),
 };
+
+describe("Jellyfin's played tracks, recorded for M3.requests", () => {
+  const played = recording('jellyfin', 'jf-played-tracks');
+
+  it('is one small page, asked for as the test user, of tracks with their albums', async () => {
+    expect(played.request.query).toMatchObject({
+      Filters: 'IsPlayed',
+      IncludeItemTypes: 'Audio',
+      Limit: String(PLAYED_PAGE),
+    });
+    expect(played.request.headers.authorization).toContain('DeviceId="auralis-recorder"');
+    const jf = new JellyfinClient({
+      baseUrl: 'http://upstream.invalid',
+      token: '<token>',
+      fetch: replayFetch([played]),
+    });
+    const { tracks, total } = await jf.getPlayedTracks({ limit: PLAYED_PAGE, startIndex: 0 });
+    expect(tracks.length).toBeGreaterThan(0);
+    expect(tracks.length).toBeLessThanOrEqual(PLAYED_PAGE);
+    expect(total).toBeGreaterThanOrEqual(tracks.length);
+    for (const track of tracks) expect(track.albumId).toEqual(expect.any(String));
+  });
+});
 
 describe("Audiobookshelf's and Jellyfin's answers, recorded for M1.shell", () => {
   const abs = () =>

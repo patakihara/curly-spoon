@@ -24,6 +24,19 @@ describe('[M1.shell] the pages’ kept data', () => {
     expect(store.peek('book{}')).toBe(2);
   });
 
+  it('[M3.requests] after a change, waits for a load under way and asks again', async () => {
+    const store = createPageStore({ onSignedOut: () => undefined });
+    let finish = (_value: string) => undefined as void;
+    const first = store.load(
+      'requests{}',
+      () => new Promise<string>((resolve) => (finish = resolve)),
+    );
+    const after = store.reload('requests{}', async () => 'after the change');
+    finish('read before the change');
+    await Promise.all([first, after]);
+    expect(store.peek('requests{}')).toBe('after the change');
+  });
+
   it('keeps what it had when a request fails, and hands on one refused for want of a sign-in', async () => {
     let signedOut = 0;
     const store = createPageStore({ onSignedOut: () => signedOut++ });

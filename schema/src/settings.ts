@@ -1,6 +1,7 @@
 /**
  * Each person's settings, the same on every device of theirs: the theme, autoplay on or off for
- * each queue, the queue style, and whether they have finished first-run setup. A person who never
+ * each queue, the queue style, whether they have finished first-run setup, and whether their
+ * library shows everything the household has. A person who never
  * changed one has its default. A change names only what it changes, so two devices changing
  * different settings never undo each other; the last write of a setting wins.
  */
@@ -25,19 +26,22 @@ export const Settings = z
     queueStyle: QueueStyle,
     /** Whether this person has finished first-run setup; Setup then goes straight to Browse. */
     firstRunDone: z.boolean(),
+    /** Whether this person's library lists everything indexed, not just their own. */
+    showEveryonesLibrary: z.boolean(),
   })
   .openapi('Settings');
 export type Settings = z.infer<typeof Settings>;
 
 /**
- * The settings of a person who never changed one. user_settings' column DEFAULTs (migration 15)
- * repeat all but the queue style, for its copied rows.
+ * The settings of a person who never changed one. user_settings' column DEFAULTs (migrations 15
+ * and 17) repeat all but the queue style, for its copied rows.
  */
 export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   autoplay: { music: true, spoken: true },
   queueStyle: 'youtube',
   firstRunDone: false,
+  showEveryonesLibrary: false,
 };
 
 /** A change to some autoplay switches: only those named change. */
@@ -54,6 +58,7 @@ export const SettingsBody = z
     autoplay: AutoplaySwitchesChange.optional(),
     queueStyle: QueueStyle.optional(),
     firstRunDone: z.boolean().optional(),
+    showEveryonesLibrary: z.boolean().optional(),
   })
   .strict()
   .openapi('SettingsBody');

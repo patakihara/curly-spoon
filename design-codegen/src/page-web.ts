@@ -9,7 +9,9 @@
  * `usePlaying()` in a page, the `playing` the shell hands each layout's parts, the mini-player
  * drawn only once something is loaded. A `<Play>` plays through `usePlay()`, and a `<Query />` is
  * the search draft's `useQuery()` (`web/src/query`); a `<Choose ref>` hands a menu's chosen verb to
- * `useChoose()` (`web/src/choose`), the page's own verbs, which give none while nothing acts; a back layer or subheader holding one, or an
+ * `useChoose()` (`web/src/choose`), the page's own verbs, which give none while nothing acts; an
+ * `<Act ref verb>` hands a request's verb to `useAct()` (`web/src/act`) the same way, and a
+ * `<Toggle setting>` a switch's change to `useToggle()` (`web/src/toggle`); a back layer or subheader holding one, or an
  * `<Open>` and so the router's `useNavigate()`, is drawn as a component of its own, since the
  * shell calls the frame's parts outside any page.
  */
@@ -106,6 +108,18 @@ const playsBound = (node: PageTree) =>
 /** Whether an element hands a menu's choice on, a `<Choose>` in one of its handler props. */
 const chooses = (node: PageTree) =>
   node.kind === 'element' && Object.values(node.props).some((v) => v.kind === 'choose');
+
+/** Whether an element does a request's verb, an `<Act>` in one of its handler props. */
+const acts = (node: PageTree) =>
+  node.kind === 'element' && Object.values(node.props).some((v) => v.kind === 'act');
+
+/** Whether an element sets a setting, a `<Toggle>` in one of its handler props. */
+const toggles = (node: PageTree) =>
+  node.kind === 'element' && Object.values(node.props).some((v) => v.kind === 'toggle');
+
+/** Whether an element asks again for what failed to load, a `<Retry />` in a handler prop. */
+const retries = (node: PageTree) =>
+  node.kind === 'element' && Object.values(node.props).some((v) => v.kind === 'retry');
 
 /** Whether an element holds the search query, a `<Query />` in one of its handler props. */
 const queries = (node: PageTree) =>
@@ -249,6 +263,22 @@ function propLines(
     if (ref === undefined) throw new Error(`${owner}.${name}: Choose needs ref={…}`);
     return [`${name}={choose(${pathCode(ref)})}`];
   }
+  // A request's verb goes to the verbs the page is given, none while nothing acts on the request.
+  if (value.kind === 'act') {
+    const ref = value.params['ref'];
+    if (ref === undefined) throw new Error(`${owner}.${name}: Act needs ref={…}`);
+    const verb =
+      typeof value.verb === 'string'
+        ? `'${value.verb}'`
+        : `${pathCode(value.verb.path)} as RequestVerb`;
+    const candidate = value.params['candidate'];
+    const also = candidate === undefined ? '' : `, ${pathCode(candidate)}`;
+    return [`${name}={act(${pathCode(ref)}, ${verb}${also})}`];
+  }
+  // Asking again goes to what the page is given, none while nothing failed.
+  if (value.kind === 'retry') return [`${name}={retry}`];
+  // A switch's change goes to the toggles the page is given, none while nothing sets the setting.
+  if (value.kind === 'toggle') return [`${name}={toggle('${value.setting}')}`];
   // No request endpoint exists yet. A handler doing nothing would draw a dead control as
   // enabled, so the prop is left out and Sonora draws the control disabled.
   if (value.kind === 'request') return [];
@@ -512,6 +542,58 @@ function barred(
   });
 }
 
+/**
+ * What a node holds, as the code saying it holds something: a list while it has items, an
+ * `ExpanderRow` while it has the words naming what it folds, anything else made of these. Null for
+ * what is always there. `rows`, the expander rows it met, each with its code.
+ */
+function holds(node: PageTree, placeholder: unknown, rows: Map<PageTree, string>): string[] | null {
+  const all = (nodes: PageTree[]) => {
+    const each = nodes.map((n) => holds(n, placeholder, rows));
+    return nodes.length === 0 || each.includes(null) ? null : (each as string[][]).flat();
+  };
+  switch (node.kind) {
+    case 'each':
+      return [`${pathCode(node.of)}.length > 0`];
+    case 'fragment':
+      return all(node.children);
+    case 'element': {
+      if (node.component !== 'ExpanderRow') return all(node.children);
+      const label = node.props.label;
+      if (label?.kind !== 'binding' || typeof valueAt(placeholder, label.path) !== 'string') {
+        return null;
+      }
+      const code = `${pathCode(label.path)} !== ''`;
+      rows.set(node, code);
+      return [code];
+    }
+    default:
+      return null;
+  }
+}
+
+/**
+ * A titled section made only of lists and expander rows draws only while one of them holds
+ * something, so no title stands over nothing, beside whatever else already gates it. Its expander
+ * rows draw only with their words.
+ */
+function holding(root: PageTree, placeholder: unknown, gated: Map<PageTree, string>) {
+  some(root, (n) => {
+    if (n.kind !== 'element' || n.component !== 'Section' || n.props.title === undefined) {
+      return false;
+    }
+    const rows = new Map<PageTree, string>();
+    const held = n.children.map((child) => holds(child, placeholder, rows));
+    if (n.children.length === 0 || held.includes(null)) return false;
+    const conditions = (held as string[][]).flat();
+    const holdsAny = conditions.length === 1 ? conditions[0]! : `(${conditions.join(' || ')})`;
+    const named = gated.get(n);
+    gated.set(n, named === undefined ? holdsAny : `${named} && ${holdsAny}`);
+    for (const [row, code] of rows) gated.set(row, code);
+    return false;
+  });
+}
+
 export function generateWebPage(
   tree: PageTree,
   id: string,
@@ -597,6 +679,7 @@ export function generateWebPage(
       });
   resumes(root, components.wired);
   if (subheader !== undefined) barred(root, subheader, placeholder, components.gated);
+  holding(root, placeholder, components.gated);
   const body = render(root, '    ', components);
   const own = [root, back, subheader].filter((t): t is PageTree => t !== undefined);
   const inPage = (test: (node: PageTree) => boolean) => own.some((t) => some(t, test));
@@ -615,6 +698,25 @@ export function generateWebPage(
     }
   }
   const usesChoose = some(root, chooses);
+  for (const part of [back, subheader]) {
+    if (part !== undefined && some(part, acts)) {
+      throw new Error(`${id}: Act goes in the page's content, not its back layer or subheader`);
+    }
+  }
+  const usesAct = some(root, acts);
+  for (const part of [back, subheader]) {
+    if (part !== undefined && some(part, toggles)) {
+      throw new Error(`${id}: Toggle goes in the page's content, not its back layer or subheader`);
+    }
+  }
+  const usesToggle = some(root, toggles);
+  const usesRetry = some(root, retries);
+  const actsBound = some(
+    root,
+    (node) =>
+      node.kind === 'element' &&
+      Object.values(node.props).some((v) => v.kind === 'act' && typeof v.verb !== 'string'),
+  );
   const used = new Set<string>();
   for (const t of own) drawn(t, used);
   for (const [, parts] of chromes) {
@@ -688,6 +790,11 @@ export function generateWebPage(
         : [`import { ${fromPlayer.join(', ')} } from '../../player';`]),
     ...(usesQuery ? ["import { useQuery } from '../../query';"] : []),
     ...(usesChoose ? ["import { useChoose } from '../../choose';"] : []),
+    ...(usesAct
+      ? [`import { ${actsBound ? 'type RequestVerb, ' : ''}useAct } from '../../act';`]
+      : []),
+    ...(usesToggle ? ["import { useToggle } from '../../toggle';"] : []),
+    ...(usesRetry ? ["import { useRetry } from '../../retry';"] : []),
     `import { ${[...used].sort().join(', ')} } from '../ui/index.js';`,
     '',
     `const placeholder = ${JSON.stringify(placeholder, null, 2)};`,
@@ -755,6 +862,9 @@ export function generateWebPage(
     ...(usesPlay ? ['  const play = usePlay();'] : []),
     ...(some(root, queries) ? ['  const query = useQuery();'] : []),
     ...(usesChoose ? ['  const choose = useChoose();'] : []),
+    ...(usesAct ? ['  const act = useAct();'] : []),
+    ...(usesToggle ? ['  const toggle = useToggle();'] : []),
+    ...(usesRetry ? ['  const retry = useRetry();'] : []),
     ...(usesPlaying
       ? ['  const playing = usePlaying();', '  if (playing === null) return null;']
       : []),

@@ -600,6 +600,145 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 16,
+    name: 'requests',
+    up: (db) => {
+      db.exec(`
+        -- Requests (store/requests.ts): what is being got onto the household's servers, where
+        -- it stands, and what its medium's steps keep. The release, candidates and download
+        -- handle stay on the server; a client sees a candidate's id. step_key is the idempotency
+        -- key of a step under way; version counts saves, so a save after a wait can tell that
+        -- the row moved on.
+        CREATE TABLE requests (
+          id            TEXT PRIMARY KEY,
+          medium        TEXT NOT NULL CHECK (medium IN ('book', 'album', 'song', 'podcast')),
+          target        TEXT NOT NULL,
+          status        TEXT NOT NULL CHECK (status IN ('requested', 'searching', 'needsChoice',
+                          'queued', 'downloading', 'importing', 'inLibrary', 'failed')),
+          failed_step   TEXT CHECK (failed_step IN ('requested', 'searching', 'needsChoice',
+                          'queued', 'downloading', 'importing')),
+          reason        TEXT CHECK (reason IN ('noRelease', 'searchFailed', 'downloadFailed',
+                          'importFailed', 'notIndexed', 'cancelledUpstream')),
+          progress      REAL CHECK (progress BETWEEN 0 AND 1),
+          release       TEXT,
+          candidates    TEXT NOT NULL DEFAULT '[]',
+          handle        TEXT,
+          step_key      TEXT,
+          version       INTEGER NOT NULL DEFAULT 0,
+          result_source TEXT CHECK (result_source IN ('abs', 'jellyfin')),
+          result_id     TEXT,
+          created_at    INTEGER NOT NULL,
+          updated_at    INTEGER NOT NULL,
+          CHECK ((failed_step IS NOT NULL) = (status = 'failed')),
+          CHECK ((reason IS NOT NULL) = (status = 'failed')),
+          CHECK ((progress IS NOT NULL) = (status = 'downloading')),
+          CHECK ((result_source IS NULL) = (result_id IS NULL)),
+          CHECK (status <> 'inLibrary' OR result_id IS NOT NULL)
+        );
+        CREATE INDEX idx_requests_working ON requests(status)
+          WHERE status NOT IN ('inLibrary', 'failed');
+
+        -- Every catalogue id a live request holds, one row each: a second person's request
+        -- sharing any of them joins it. A request in the library lets go of its ids, which then
+        -- only find it there, as nothing joins what has arrived.
+        CREATE TABLE request_keys (
+          medium     TEXT NOT NULL,
+          key        TEXT NOT NULL,
+          request_id TEXT NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+          PRIMARY KEY (medium, key)
+        );
+        CREATE INDEX idx_request_keys_request ON request_keys(request_id);
+        CREATE TABLE arrived_keys (
+          medium     TEXT NOT NULL,
+          key        TEXT NOT NULL,
+          request_id TEXT NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+          PRIMARY KEY (medium, key, request_id)
+        );
+        CREATE INDEX idx_arrived_keys_request ON arrived_keys(request_id);
+        CREATE TRIGGER requests_in_library AFTER UPDATE OF status ON requests
+          WHEN NEW.status = 'inLibrary'
+          BEGIN
+            INSERT OR IGNORE INTO arrived_keys (medium, key, request_id)
+              SELECT medium, key, request_id FROM request_keys WHERE request_id = NEW.id;
+            DELETE FROM request_keys WHERE request_id = NEW.id;
+          END;
+
+        -- Everyone on a request: who made it and who joined it. A request nobody is on any
+        -- longer goes with its last person.
+        CREATE TABLE request_people (
+          request_id TEXT NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+          user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          joined_at  INTEGER NOT NULL,
+          PRIMARY KEY (request_id, user_id)
+        );
+        CREATE INDEX idx_request_people_user ON request_people(user_id);
+        CREATE TRIGGER request_people_last_left AFTER DELETE ON request_people
+          WHEN NOT EXISTS (SELECT 1 FROM request_people WHERE request_id = OLD.request_id)
+          BEGIN DELETE FROM requests WHERE id = OLD.request_id; END;
+      `);
+    },
+  },
+  {
+    id: 17,
+    name: 'library_claims',
+    up: (db) => {
+      db.exec(`
+        -- The record of who added what behind each person's own library (store/claims.ts). It
+        -- names an item, not a device or a request, so it outlives both.
+        CREATE TABLE library_claims (
+          user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          source     TEXT NOT NULL CHECK (source IN ('abs', 'jellyfin')),
+          item_id    TEXT NOT NULL,
+          reason     TEXT NOT NULL CHECK (reason IN ('requested', 'added', 'subscribed', 'played')),
+          created_at INTEGER NOT NULL,
+          PRIMARY KEY (user_id, source, item_id)
+        );
+
+        -- Whether a person's library shows everything the household has, not just their own.
+        ALTER TABLE user_settings
+          ADD COLUMN show_everyone INTEGER NOT NULL DEFAULT 0 CHECK (show_everyone IN (0, 1));
+      `);
+    },
+  },
+  {
+    id: 18,
+    name: 'held_progress',
+    up: (db) => {
+      db.exec(`
+        -- Where a person is on a household play, which no upstream account hears of
+        -- (store/heldProgress.ts). item_id is the book's or the episode's own id.
+        CREATE TABLE held_progress (
+          user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          source     TEXT NOT NULL CHECK (source IN ('abs', 'jellyfin')),
+          item_id    TEXT NOT NULL,
+          position   REAL NOT NULL CHECK (position >= 0),
+          duration   REAL NOT NULL CHECK (duration >= 0),
+          finished   INTEGER NOT NULL CHECK (finished IN (0, 1)),
+          updated_at INTEGER NOT NULL,
+          PRIMARY KEY (user_id, source, item_id)
+        );
+      `);
+    },
+  },
+  {
+    id: 19,
+    name: 'held_bookmarks',
+    up: (db) => {
+      db.exec(`
+        -- A person's bookmark on a book their own Audiobookshelf account does not reach, kept
+        -- here until it does (store/heldBookmarks.ts). time is seconds from the item's start.
+        CREATE TABLE held_bookmarks (
+          user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          item_id    TEXT NOT NULL,
+          time       REAL NOT NULL CHECK (time >= 0),
+          title      TEXT NOT NULL,
+          created_at INTEGER NOT NULL,
+          PRIMARY KEY (user_id, item_id, time)
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

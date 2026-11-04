@@ -1,7 +1,8 @@
 /**
  * Bookmarks: named places in an item, kept on the item's own server as the person. Only
  * Audiobookshelf keeps them, per library item, told apart by their time; Jellyfin keeps none, so
- * a Jellyfin ref is refused. A podcast episode's bookmark sits on its show, as ABS keeps it.
+ * a Jellyfin ref is refused. A podcast episode's bookmark sits on its show, as ABS keeps it. On a
+ * book the person's own account does not reach, Auralis keeps it until that account does.
  */
 import { MediaRef, MediaRefKey } from './play.js';
 import { z } from './zod.js';

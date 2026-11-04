@@ -14,6 +14,7 @@ import {
 import { type FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DIGEST_NEW_DAYS } from './lists/rules.js';
+import { addClaim } from './store/claims.js';
 import {
   at,
   book,
@@ -61,6 +62,7 @@ const server = async (options: Parameters<typeof listsServer>[1] = {}) => {
 describe('[M2.lists/b] The Digest: subscribed shows’ unplayed episodes of the last 14 days', () => {
   it('[M2.lists/b] holds every show’s new unplayed episodes oldest first, leaving out the finished one and older ones', async () => {
     const s = await server();
+    addClaim(db, s.users.kara!, { source: 'abs', id: shows[1]!.id }, 'subscribed', 0);
 
     const [digest, ...rest] = await s.lists();
     const opened = await s.detail(digest!.id);
@@ -150,6 +152,40 @@ describe('[M2.lists/b] The Digest: subscribed shows’ unplayed episodes of the 
     expect(turned.order).toBe('newest');
     expect(s.refs(turned.items)).toEqual([four, three, two]);
     expect(s.refs((await s.detail(digest.id)).items)).toEqual([four, three, two]);
+  });
+});
+
+describe('[M3.requests/c] The Digest follows the person’s own library', () => {
+  it('[M3.requests/c] covers only shows the person’s own library lists', async () => {
+    const s = await server();
+    const digest = await s.theDigest();
+    const covered = (await s.detail(digest.id)).shows.map((show) => show.ref.id);
+    const library = await s.call('GET', '/library/podcasts');
+    const mine = (library.body as { items: { ref: { id: string } }[] }).items.map((i) => i.ref.id);
+
+    expect(covered.filter((id) => !mine.includes(id))).toEqual([]);
+  });
+});
+
+describe('[M3.requests/d] lists past a person’s own reach, with Auralis’s own account set', () => {
+  it('[M3.requests/d] takes and shows an episode their own account does not reach', async () => {
+    const s = await server({ household: true });
+    const drive = await s.create({ kind: 'playlist', name: 'Drive' }, 'otto');
+
+    const added = await s.call('POST', `/lists/${drive.id}/items`, { ref: two }, 'otto');
+
+    expect(added.status).toBe(200);
+    expect(s.refs((await s.detail(drive.id, 'otto')).items)).toEqual([two]);
+  });
+
+  it('[M3.requests/d] covers in The Digest only the shows in their own library, whatever plays', async () => {
+    const s = await server({ household: true });
+    const digest = await s.theDigest('otto');
+    expect((await s.detail(digest.id, 'otto')).shows).toEqual([]);
+
+    addClaim(db, s.users.otto!, { source: 'abs', id: show1.id }, 'played', 0);
+
+    expect((await s.detail(digest.id, 'otto')).shows.map((x) => x.ref.id)).toEqual([show1.id]);
   });
 });
 

@@ -7,7 +7,7 @@ part: The product
 
 ### Your library
 
-- **Library pages stay pure.** External items appear only on Browse, in Search, and on artist or author pages.
+- **Library pages stay pure.** External items appear only on Browse, in Search, and on artist or author pages. Your requests sit among your items, greyed with their status.
 - **Artist and author pages** do what Spotify's do, plus an "In your library" carousel.
 - **Library:** a 3-across grid on phones, bigger on desktop, a grid/list toggle, and sort by title, artist or **Random** (tap again to reshuffle).
 - **In-library marking:** not-playable items are greyed out. Streamable ones stay normal, with a subtle marker. Where the marker goes is still open.
@@ -32,7 +32,7 @@ part: The product
 ### Shared files, personal view
 
 - **Files are stored once, for the whole household**, as today: one Music library in Jellyfin, one Books and one Podcasts library in Audiobookshelf.
-- **Auralis shows each person their own library**: what they added, requested, subscribed to or played, from M3.requests; things already on the server count as yours once played. Until then it lists everything your own accounts reach.
-- **Everyone else's things stay findable**: search covers the household, and those results play at once, not as requests.
+- **Auralis shows each person their own library**: what they added, requested, subscribed to or played; things already on the server count as yours once played.
+- **Everyone else's things stay findable**: search covers the household, and those results play at once through Auralis's own account, not as requests.
 - **"Show everyone's library" is a setting**, off by default, only in Settings, never a toggle on library screens.
 - The Audiobookshelf and Jellyfin apps are unchanged and still show everything.

@@ -10,21 +10,27 @@ const DEFAULT_WEB_DIST_DIR = fileURLToPath(new URL('../../web/dist', import.meta
 /** The longest interval a Node timer holds, in whole minutes; a longer one fires after 1 ms. */
 const LONGEST_TIMER_MINUTES = Math.floor((2 ** 31 - 1) / 60_000);
 
-/** A whole number of minutes, digits only; blank reads as 0, unset as `fallback`. */
-function minutes(fallback: number, limits: { min: number; max?: number }) {
+/** The longest interval a Node timer holds, in whole seconds. */
+const LONGEST_TIMER_SECONDS = Math.floor((2 ** 31 - 1) / 1_000);
+
+/** A whole number of a unit, digits only; blank reads as 0, unset as `fallback`. */
+function whole(unit: string, fallback: number, limits: { min: number; max?: number }) {
   const atLeast = z.number().int().min(limits.min);
   const number =
     limits.max === undefined
       ? atLeast
-      : atLeast.max(limits.max, `at most ${limits.max} minutes (Node's longest timer)`);
+      : atLeast.max(limits.max, `at most ${limits.max} ${unit} (Node's longest timer)`);
   return z
     .string()
     .trim()
-    .regex(/^\d*$/, 'a whole number of minutes, in digits')
+    .regex(/^\d*$/, `a whole number of ${unit}, in digits`)
     .transform((value) => (value === '' ? 0 : Number(value)))
     .pipe(number)
     .default(String(fallback));
 }
+
+const minutes = (fallback: number, limits: { min: number; max?: number }) =>
+  whole('minutes', fallback, limits);
 
 const envSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(8787),
@@ -82,6 +88,11 @@ const envSchema = z.object({
         .refine((value) => /^https?:$/.test(new URL(value).protocol), 'an http or https URL'),
     ])
     .default('https://lrclib.net'),
+  // The request job: how often it moves each request a step, how long an imported item may stay
+  // out of the index before its request fails, and how long any one upstream step may go unanswered.
+  REQUESTS_EVERY_SECONDS: whole('seconds', 30, { min: 1, max: LONGEST_TIMER_SECONDS }),
+  REQUEST_NOT_INDEXED_HOURS: whole('hours', 24, { min: 1 }),
+  REQUEST_STEP_TIMEOUT_SECONDS: whole('seconds', 120, { min: 1, max: LONGEST_TIMER_SECONDS }),
   // How long a transcode may go unasked-for before Auralis closes it upstream.
   PLAY_IDLE_MINUTES: minutes(10, { min: 1 }),
   // The key that encrypts each person's upstream tokens: base64 here, or a 0600 file.
@@ -110,6 +121,7 @@ export interface AppConfig {
   jellyfin: UpstreamConfig | null;
   index: IndexConfig;
   lyrics: LyricsConfig;
+  requests: RequestsConfig;
   /** Minutes a transcode may go unasked-for before it is closed upstream. */
   playIdleMinutes: number;
   secretKey: string | undefined;
@@ -136,6 +148,14 @@ export interface LyricsConfig {
   everyMinutes: number;
   /** Null when LRCLIB is switched off. */
   lrclibUrl: string | null;
+}
+
+export interface RequestsConfig {
+  everySeconds: number;
+  /** How long an imported item may stay out of the index before its request fails. */
+  notIndexedAfterHours: number;
+  /** How long any one call to a medium's steps may go unanswered before it counts as failed. */
+  stepTimeoutSeconds: number;
 }
 
 export interface UpstreamConfig {
@@ -204,6 +224,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     lyrics: {
       everyMinutes: parsed.LYRICS_EVERY_MINUTES,
       lrclibUrl: parsed.LRCLIB_URL === '' ? null : parsed.LRCLIB_URL,
+    },
+    requests: {
+      everySeconds: parsed.REQUESTS_EVERY_SECONDS,
+      notIndexedAfterHours: parsed.REQUEST_NOT_INDEXED_HOURS,
+      stepTimeoutSeconds: parsed.REQUEST_STEP_TIMEOUT_SECONDS,
     },
     playIdleMinutes: parsed.PLAY_IDLE_MINUTES,
     secretKey: parsed.SECRET_KEY,

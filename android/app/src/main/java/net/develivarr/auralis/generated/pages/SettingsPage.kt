@@ -2,6 +2,7 @@
 package net.develivarr.auralis.generated.pages
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import net.develivarr.auralis.generated.nav.PageActions
@@ -21,6 +22,8 @@ import net.develivarr.auralis.generated.ui.PageBodyWidth
 import net.develivarr.auralis.generated.ui.Platform
 import net.develivarr.auralis.generated.ui.SectionProps
 import net.develivarr.auralis.generated.ui.SettingRowProps
+import net.develivarr.auralis.generated.ui.StatusBannerProps
+import net.develivarr.auralis.generated.ui.StatusBannerTone
 import net.develivarr.auralis.generated.ui.Variant
 import net.develivarr.auralis.ui.sonora.BackLayer
 import net.develivarr.auralis.ui.sonora.BackdropShell
@@ -32,6 +35,7 @@ import net.develivarr.auralis.ui.sonora.MiniPlayer
 import net.develivarr.auralis.ui.sonora.PageBody
 import net.develivarr.auralis.ui.sonora.Section
 import net.develivarr.auralis.ui.sonora.SettingRow
+import net.develivarr.auralis.ui.sonora.StatusBanner
 
 /** Settings, as design/app/pages/settings.page.jsx draws it on the phone, with its placeholder data. */
 @Composable
@@ -98,6 +102,24 @@ fun SettingsPage(navController: NavController, actions: PageActions) {
                                 SectionProps(
                                     platform = Platform.MOBILE,
                                     children = {
+                                        StatusBanner(
+                                            StatusBannerProps(
+                                                tone = StatusBannerTone.ERROR,
+                                                icon = "error",
+                                                children = {
+                                                    BasicText(
+                                                        "That setting did not change. The switch shows what the server holds.",
+                                                    )
+                                                },
+                                            ),
+                                        )
+                                    },
+                                ),
+                            )
+                            Section(
+                                SectionProps(
+                                    platform = Platform.MOBILE,
+                                    children = {
                                         FieldRow(
                                             FieldRowProps(
                                                 label = "Server",
@@ -132,6 +154,14 @@ fun SettingsPage(navController: NavController, actions: PageActions) {
                                                             title = "Wi-Fi only",
                                                             sub = "Pause transfers on mobile data.",
                                                             checked = true,
+                                                            platform = Platform.MOBILE,
+                                                        ),
+                                                    )
+                                                    SettingRow(
+                                                        SettingRowProps(
+                                                            title = "Show everyone’s library",
+                                                            sub = "List what the whole household has, not only what you’ve played, added or requested.",
+                                                            checked = false,
                                                             platform = Platform.MOBILE,
                                                         ),
                                                     )

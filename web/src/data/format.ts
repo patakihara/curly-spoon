@@ -54,3 +54,17 @@ export function emptied<T>(value: T): T {
   if (value === null || typeof value !== 'object') return value;
   return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, emptied(v)])) as T;
 }
+
+const SIZE_UNITS = ['KB', 'MB', 'GB', 'TB'];
+
+/** A size in bytes: `412 MB`, `1.1 GB`. */
+export function bytes(size: number): string {
+  if (size < 1000) return `${size} B`;
+  let value = size / 1000;
+  let unit = 0;
+  while (value >= 1000 && unit < SIZE_UNITS.length - 1) {
+    value /= 1000;
+    unit++;
+  }
+  return `${value < 10 ? value.toFixed(1).replace(/\.0$/, '') : Math.round(value)} ${SIZE_UNITS[unit]}`;
+}

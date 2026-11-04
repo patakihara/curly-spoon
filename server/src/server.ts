@@ -1,14 +1,16 @@
 /**
  * The whole server from its configuration: the database, the sign-on, each upstream's
- * provisioner, the app, the library index job and the lyrics backfill, wired as they run. `main.ts` starts it with the network's `fetch`;
+ * provisioner, the app with its request job, the library index job and the lyrics backfill, wired as they run. `main.ts` starts it with the network's `fetch`;
  * anything else that runs the server (a harness on recordings) passes its own `fetch` here and
  * changes nothing else.
  */
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { FastifyInstance } from 'fastify';
+import { AbsClient } from './adapters/audiobookshelf/client.js';
 import { AbsProvisioner } from './adapters/audiobookshelf/provision.js';
 import type { FetchLike } from './adapters/http/fetch.js';
+import { JellyfinClient } from './adapters/jellyfin/client.js';
 import { JellyfinProvisioner } from './adapters/jellyfin/quickConnect.js';
 import { type BuildAppOptions, buildApp } from './app.js';
 import { OidcClient } from './auth/oidc.js';
@@ -17,6 +19,8 @@ import type { AppConfig } from './config.js';
 import { loadSecretKey } from './crypto/secretBox.js';
 import { startIndexJob } from './libraryIndex/start.js';
 import { lyricsService, startLyricsJob } from './lyrics/start.js';
+import { type MediumSteps, stepsRegistry } from './requests/steps.js';
+import type { Upstreams } from './upstream/links.js';
 import { readSecretFile } from './secretFile.js';
 import { openDatabase } from './store/connection.js';
 import { startSessionSweep } from './store/sessions.js';
@@ -31,9 +35,41 @@ export interface Server {
   close(): Promise<void>;
 }
 
+/**
+ * Auralis's own clients, which act where a person's own account does not reach: the listen-only
+ * Audiobookshelf key, and Jellyfin's API key.
+ */
+function householdClients(config: AppConfig, fetch: FetchLike): Upstreams {
+  const { abs, jellyfin, index } = config;
+  return {
+    abs:
+      abs === null || index.absKeyFile === null
+        ? null
+        : new AbsClient({
+            baseUrl: abs.url,
+            token: readSecretFile(index.absKeyFile, 'ABS_API_KEY'),
+            fetch,
+          }),
+    jellyfin:
+      jellyfin === null
+        ? null
+        : new JellyfinClient({
+            baseUrl: jellyfin.url,
+            token: readSecretFile(jellyfin.keyFile, 'JELLYFIN_API_KEY'),
+            fetch,
+            serverKey: true,
+          }),
+  };
+}
+
 export async function assembleServer(
   config: AppConfig,
-  deps: { fetch: FetchLike; logger?: BuildAppOptions['logger'] },
+  deps: {
+    fetch: FetchLike;
+    logger?: BuildAppOptions['logger'];
+    /** The steps of each medium that can be requested; `main.ts` gives none until each lands. */
+    steps?: readonly MediumSteps[];
+  },
 ): Promise<Server> {
   const { fetch } = deps;
   mkdirSync(config.dataDir, { recursive: true });
@@ -100,9 +136,17 @@ export async function assembleServer(
       config: { absUrl: config.abs?.url, jellyfinUrl: config.jellyfin?.url },
       fetch,
       linker,
+      household: householdClients(config, fetch),
     },
     playback: { idleMs: config.playIdleMinutes * 60_000 },
     lyrics,
+    // Each medium's item registers its steps here; until then nothing can be requested.
+    requests: {
+      steps: stepsRegistry(deps.steps ?? []),
+      everyMs: config.requests.everySeconds * 1_000,
+      notIndexedAfterMs: config.requests.notIndexedAfterHours * 3_600_000,
+      stepTimeoutMs: config.requests.stepTimeoutSeconds * 1_000,
+    },
     logger: deps.logger ?? true,
   });
 

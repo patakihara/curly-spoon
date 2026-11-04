@@ -6,7 +6,8 @@ import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from 
 import type { ShellNav } from '../../shell-nav';
 import type { Playing } from '../../player';
 import { useChoose } from '../../choose';
-import { AccountButton, BackLayer, BottomNav, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, PageBody, Section, SortFilterBar, ViewToggle } from '../ui/index.js';
+import { useRetry } from '../../retry';
+import { AccountButton, BackLayer, BottomNav, Button, EmptyState, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, PageBody, Section, SortFilterBar, ViewToggle } from '../ui/index.js';
 
 const placeholder = {
   "sections": [
@@ -38,42 +39,63 @@ const placeholder = {
       "ref": "deep-inertia-radio",
       "sub": "3 unplayed",
       "image": "/art/deep-inertia-radio.jpg",
-      "unplayed": true
+      "unplayed": true,
+      "status": null,
+      "tone": null
+    },
+    {
+      "title": "Tide Tables",
+      "ref": "tide-tables",
+      "sub": "Subscribing",
+      "image": "/art/deep-inertia-radio.jpg",
+      "unplayed": false,
+      "status": "Searching…",
+      "tone": "progress"
     },
     {
       "title": "Fleeting Verses",
       "ref": "fleeting-verses",
       "sub": "YouTube · 2 unplayed",
       "image": "/art/fleeting-verses.jpg",
-      "unplayed": true
+      "unplayed": true,
+      "status": null,
+      "tone": null
     },
     {
       "title": "Signal & Noise",
       "ref": "signal-noise",
       "sub": "All played",
       "image": "/art/signal-noise.jpg",
-      "unplayed": false
+      "unplayed": false,
+      "status": null,
+      "tone": null
     },
     {
       "title": "Sonic Tales",
       "ref": "sonic-tales",
       "sub": "1 unplayed",
       "image": "/art/sonic-tales.jpg",
-      "unplayed": true
+      "unplayed": true,
+      "status": null,
+      "tone": null
     },
     {
       "title": "Tears of Ice",
       "ref": "tears-of-ice",
       "sub": "All played",
       "image": "/art/tears-of-ice.jpg",
-      "unplayed": false
+      "unplayed": false,
+      "status": null,
+      "tone": null
     },
     {
       "title": "The Long Read",
       "ref": "the-long-read",
       "sub": "5 unplayed",
       "image": "/art/the-long-read.jpg",
-      "unplayed": true
+      "unplayed": true,
+      "status": null,
+      "tone": null
     }
   ],
   "lists": [
@@ -316,39 +338,74 @@ export default function Podcasts({ data = placeholder, state = 'full' }: Podcast
   const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   const choose = useChoose();
+  const retry = useRetry();
   return (
     <PageBody platform={platform}>
-      <Section platform={platform}>
-        <SortFilterBar
-          icon="swap_vert"
-          label={data.sort.value}
-          items={data.sort.options}
-          onSelect={choose(data.sort.ref)}
-          trailing={<ViewToggle value="grid" platform={platform} />}
-          platform={platform}
-        />
-      </Section>
-      {data.sections.includes('Shows') && (
-        <Section title="Shows" platform={platform}>
-          <LayoutGrid platform={platform}>
-            {data.library.map((show, i) => (
-              <Fragment key={i}>
-                <MediaCard width="100%" title={show.title} sub={show.sub} image={show.image} unplayed={show.unplayed} onClick={show.ref ? () => navigate(generatePath('/podcasts/:ref', { ref: show.ref })) : undefined} platform={platform} />
-              </Fragment>
-            ))}
-          </LayoutGrid>
-        </Section>
+      {state === 'empty' && (
+        <>
+          <EmptyState
+            icon="podcasts"
+            title="No podcasts yet"
+            body="Your library shows the shows you’ve played, subscribed to or requested. Search is where to find one."
+            action={
+              <Button variant="secondary" onClick={() => navigate('/search')} platform={platform}>
+                {"Go to Search"}
+              </Button>
+            }
+            platform={platform}
+          />
+        </>
       )}
-      {data.sections.includes('Lists') && (
-        <Section title="Lists" last={true} platform={platform}>
-          <LayoutGrid platform={platform}>
-            {data.lists.map((list, i) => (
-              <Fragment key={i}>
-                <MediaCard width="100%" title={list.title} sub={list.sub} covers={list.covers} onClick={list.ref ? () => navigate(generatePath('/lists/:ref', { ref: list.ref })) : undefined} platform={platform} />
-              </Fragment>
-            ))}
-          </LayoutGrid>
-        </Section>
+      {state === 'failed' && (
+        <>
+          <EmptyState
+            icon="cloud_off"
+            title="Podcasts did not load"
+            body="The server did not answer."
+            action={
+              <Button variant="secondary" onClick={retry} platform={platform}>
+                {"Try again"}
+              </Button>
+            }
+            platform={platform}
+          />
+        </>
+      )}
+      {state === 'full' && (
+        <>
+          <Section platform={platform}>
+            <SortFilterBar
+              icon="swap_vert"
+              label={data.sort.value}
+              items={data.sort.options}
+              onSelect={choose(data.sort.ref)}
+              trailing={<ViewToggle value="grid" platform={platform} />}
+              platform={platform}
+            />
+          </Section>
+          {data.sections.includes('Shows') && data.library.length > 0 && (
+            <Section title="Shows" platform={platform}>
+              <LayoutGrid platform={platform}>
+                {data.library.map((show, i) => (
+                  <Fragment key={i}>
+                    <MediaCard width="100%" title={show.title} sub={show.sub} image={show.image} unplayed={show.unplayed} status={show.status} tone={show.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={show.ref ? () => navigate(generatePath('/podcasts/:ref', { ref: show.ref })) : undefined} platform={platform} />
+                  </Fragment>
+                ))}
+              </LayoutGrid>
+            </Section>
+          )}
+          {data.sections.includes('Lists') && data.lists.length > 0 && (
+            <Section title="Lists" last={true} platform={platform}>
+              <LayoutGrid platform={platform}>
+                {data.lists.map((list, i) => (
+                  <Fragment key={i}>
+                    <MediaCard width="100%" title={list.title} sub={list.sub} covers={list.covers} onClick={list.ref ? () => navigate(generatePath('/lists/:ref', { ref: list.ref })) : undefined} platform={platform} />
+                  </Fragment>
+                ))}
+              </LayoutGrid>
+            </Section>
+          )}
+        </>
       )}
     </PageBody>
   );

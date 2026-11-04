@@ -25,7 +25,8 @@ export type SearchParent = z.infer<typeof SearchParent>;
  * One result: its kind and title, the people it is by (`creators`, each name as the upstream
  * gives it), its album or show, its art (its own, or its album's or show's; none for a person or
  * a series), its length in seconds, its year, when it was published (milliseconds since the
- * epoch), and where you stand with it.
+ * epoch), where you stand with it (`owned` means it plays), and whether it is in your own library:
+ * a track or an episode by its album or show, a person or a series by what of yours names them.
  */
 export const SearchResult = z
   .object({
@@ -39,6 +40,7 @@ export const SearchResult = z
     year: z.number().int().nullable(),
     publishedAt: z.number().int().nullable(),
     availability: Availability,
+    inYourLibrary: z.boolean(),
   })
   .openapi('SearchResult');
 export type SearchResult = z.infer<typeof SearchResult>;
@@ -68,13 +70,22 @@ const queryText = () =>
 
 /** A search's results, best first, for the query as it was searched. */
 export const SearchResults = z
-  .object({ query: z.string(), results: z.array(SearchResult) })
+  .object({
+    query: z.string(),
+    results: z.array(SearchResult),
+    /** Whether the person has any request, which Search offers whatever it shows. */
+    hasRequests: z.boolean(),
+  })
   .openapi('SearchResults');
 export type SearchResults = z.infer<typeof SearchResults>;
 
 /** Suggestions for what is typed so far, best first. */
 export const SuggestionList = z
-  .object({ suggestions: z.array(Suggestion) })
+  .object({
+    suggestions: z.array(Suggestion),
+    /** Whether the person has any request, which Search offers whatever it shows. */
+    hasRequests: z.boolean(),
+  })
   .openapi('SuggestionList');
 export type SuggestionList = z.infer<typeof SuggestionList>;
 

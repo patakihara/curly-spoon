@@ -25,6 +25,8 @@ import net.develivarr.auralis.generated.ui.ResultRowProps
 import net.develivarr.auralis.generated.ui.ResultRowTone
 import net.develivarr.auralis.generated.ui.SectionProps
 import net.develivarr.auralis.generated.ui.SizeSmMdLg
+import net.develivarr.auralis.generated.ui.StatusBannerProps
+import net.develivarr.auralis.generated.ui.StatusBannerTone
 import net.develivarr.auralis.generated.ui.Variant
 import net.develivarr.auralis.ui.sonora.BackLayer
 import net.develivarr.auralis.ui.sonora.BackdropShell
@@ -35,6 +37,7 @@ import net.develivarr.auralis.ui.sonora.MiniPlayer
 import net.develivarr.auralis.ui.sonora.PageBody
 import net.develivarr.auralis.ui.sonora.ResultRow
 import net.develivarr.auralis.ui.sonora.Section
+import net.develivarr.auralis.ui.sonora.StatusBanner
 
 /** Requests, as design/app/pages/requests.page.jsx draws it on the phone, with its placeholder data. */
 @Composable
@@ -99,6 +102,24 @@ fun RequestsPage(navController: NavController, actions: PageActions) {
                         children = {
                             Section(
                                 SectionProps(
+                                    platform = Platform.MOBILE,
+                                    children = {
+                                        StatusBanner(
+                                            StatusBannerProps(
+                                                tone = StatusBannerTone.ERROR,
+                                                icon = "error",
+                                                children = {
+                                                    BasicText(
+                                                        "That did not go through, so the request stays as it was. Try it again.",
+                                                    )
+                                                },
+                                            ),
+                                        )
+                                    },
+                                ),
+                            )
+                            Section(
+                                SectionProps(
                                     title = "In flight",
                                     platform = Platform.MOBILE,
                                     children = {
@@ -106,6 +127,7 @@ fun RequestsPage(navController: NavController, actions: PageActions) {
                                             ResultRowProps(
                                                 title = "Salt and Static",
                                                 meta = "Album · Soul Vertex · Prowlarr · 412 MB",
+                                                detail = "",
                                                 status = "Downloading · 38%",
                                                 tone = ResultRowTone.PROGRESS,
                                                 image = "/art/salt-and-static.jpg",
@@ -125,6 +147,7 @@ fun RequestsPage(navController: NavController, actions: PageActions) {
                                             ResultRowProps(
                                                 title = "The Ink Orchard",
                                                 meta = "Book · Linnea Frost · AudiobookBay · 286 MB",
+                                                detail = "",
                                                 status = "Downloading · 64%",
                                                 tone = ResultRowTone.PROGRESS,
                                                 image = "/art/the-ink-orchard.jpg",
@@ -144,6 +167,7 @@ fun RequestsPage(navController: NavController, actions: PageActions) {
                                             ResultRowProps(
                                                 title = "The Salt Cartographer",
                                                 meta = "Book · Rosa Elin · AudiobookBay · 612 MB",
+                                                detail = "",
                                                 status = "Downloading · 18%",
                                                 tone = ResultRowTone.PROGRESS,
                                                 image = "/art/the-salt-cartographer.jpg",
@@ -163,6 +187,7 @@ fun RequestsPage(navController: NavController, actions: PageActions) {
                                             ResultRowProps(
                                                 title = "Fragments of the Wind",
                                                 meta = "Album · Fleeting Verses · Prowlarr · 1.1 GB",
+                                                detail = "",
                                                 status = "Importing",
                                                 tone = ResultRowTone.PROGRESS,
                                                 image = "/art/fragments-of-the-wind.jpg",
@@ -182,6 +207,7 @@ fun RequestsPage(navController: NavController, actions: PageActions) {
                                             ResultRowProps(
                                                 title = "The Glass Archivist",
                                                 meta = "Book · Rosa Elin · Prowlarr, then AudiobookBay",
+                                                detail = "",
                                                 status = "Searching…",
                                                 tone = ResultRowTone.PROGRESS,
                                                 image = "/art/the-long-read.jpg",
@@ -201,6 +227,7 @@ fun RequestsPage(navController: NavController, actions: PageActions) {
                                             ResultRowProps(
                                                 title = "Between Two Worlds",
                                                 meta = "Book · Maya Lind · AudiobookBay · 298 MB",
+                                                detail = "The download failed",
                                                 status = "Failed",
                                                 tone = ResultRowTone.ERROR,
                                                 image = "/art/between-two-worlds.jpg",
@@ -209,8 +236,45 @@ fun RequestsPage(navController: NavController, actions: PageActions) {
                                                 trailing = {
                                                     IconButton(
                                                         IconButtonProps(
-                                                            icon = "refresh",
-                                                            label = "Retry",
+                                                            icon = "close",
+                                                            label = "Cancel",
+                                                        ),
+                                                    )
+                                                },
+                                            ),
+                                        )
+                                        ResultRow(
+                                            ResultRowProps(
+                                                title = "A Grain of Salt",
+                                                meta = "Book · Evelyn Harper · Prowlarr · 340 MB",
+                                                status = "Failed",
+                                                tone = ResultRowTone.ERROR,
+                                                image = "/art/shadows-and-sighs.jpg",
+                                                platform = Platform.MOBILE,
+                                                trailing = {
+                                                    IconButton(
+                                                        IconButtonProps(
+                                                            icon = "close",
+                                                            label = "Cancel",
+                                                        ),
+                                                    )
+                                                },
+                                            ),
+                                        )
+                                        ResultRow(
+                                            ResultRowProps(
+                                                title = "Pick another release",
+                                                detail = "The download failed; 2 other releases are left",
+                                                image = "/art/shadows-and-sighs.jpg",
+                                                platform = Platform.MOBILE,
+                                                divider = true,
+                                                trailing = {
+                                                    Button(
+                                                        ButtonProps(
+                                                            variant = ButtonVariant.SECONDARY,
+                                                            size = SizeSmMdLg.SM,
+                                                            platform = Platform.MOBILE,
+                                                            children = { BasicText("Pick another") },
                                                         ),
                                                     )
                                                 },
@@ -246,7 +310,7 @@ fun RequestsPage(navController: NavController, actions: PageActions) {
                                         ResultRow(
                                             ResultRowProps(
                                                 title = "Paper Lanterns (2021) [FLAC 24-96]",
-                                                meta = "FLAC · 12 of 12 tracks · 1.1 GB · 41 seeders",
+                                                detail = "FLAC · 12 of 12 tracks · 1.1 GB · 41 seeders",
                                                 image = "/art/paper-lanterns.jpg",
                                                 platform = Platform.MOBILE,
                                                 divider = true,
@@ -265,7 +329,7 @@ fun RequestsPage(navController: NavController, actions: PageActions) {
                                         ResultRow(
                                             ResultRowProps(
                                                 title = "Paper Lanterns (Deluxe) [FLAC]",
-                                                meta = "FLAC · 12 of 15 tracks · 486 MB · 18 seeders",
+                                                detail = "FLAC · 12 of 15 tracks · 486 MB · 18 seeders",
                                                 image = "/art/paper-lanterns.jpg",
                                                 platform = Platform.MOBILE,
                                                 divider = true,
@@ -284,7 +348,7 @@ fun RequestsPage(navController: NavController, actions: PageActions) {
                                         ResultRow(
                                             ResultRowProps(
                                                 title = "Paper Lanterns [MP3 320]",
-                                                meta = "MP3 320 · 12 of 12 tracks · 136 MB · 96 seeders",
+                                                detail = "MP3 320 · 12 of 12 tracks · 136 MB · 96 seeders",
                                                 image = "/art/paper-lanterns.jpg",
                                                 platform = Platform.MOBILE,
                                                 divider = true,

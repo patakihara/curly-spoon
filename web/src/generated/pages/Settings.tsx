@@ -4,9 +4,15 @@ import type { ComponentProps } from 'react';
 import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
 import type { ShellNav } from '../../shell-nav';
 import type { Playing } from '../../player';
-import { BackLayer, BottomNav, FieldRow, IconButton, LayoutGrid, MiniPlayer, NavRail, PageBody, Section, SettingRow } from '../ui/index.js';
+import { useToggle } from '../../toggle';
+import { BackLayer, BottomNav, FieldRow, IconButton, LayoutGrid, MiniPlayer, NavRail, PageBody, Section, SettingRow, StatusBanner } from '../ui/index.js';
 
 const placeholder = {
+  "errors": [
+    {
+      "message": "That setting did not change. The switch shows what the server holds."
+    }
+  ],
   "server": "https://media.example.org",
   "settings": [
     {
@@ -19,7 +25,12 @@ const placeholder = {
       "sub": "Pause transfers on mobile data.",
       "checked": true
     }
-  ]
+  ],
+  "everyone": {
+    "title": "Show everyone’s library",
+    "sub": "List what the whole household has, not only what you’ve played, added or requested.",
+    "checked": false
+  }
 };
 
 /** What the shell shows around the page: shell.json, and each layout’s destinations in its order. */
@@ -229,8 +240,18 @@ export interface SettingsProps {
 
 export default function Settings({ data = placeholder, state = 'full' }: SettingsProps) {
   const platform = PLATFORM[useLayout()];
+  const toggle = useToggle();
   return (
     <PageBody width="form" platform={platform}>
+      {data.errors.map((error, i) => (
+        <Fragment key={i}>
+          <Section platform={platform}>
+            <StatusBanner tone="error" icon="error">
+              {error.message}
+            </StatusBanner>
+          </Section>
+        </Fragment>
+      ))}
       <Section platform={platform}>
         <FieldRow label="Server" value={data.server} platform={platform} />
       </Section>
@@ -241,6 +262,7 @@ export default function Settings({ data = placeholder, state = 'full' }: Setting
               <SettingRow title={setting.title} sub={setting.sub} checked={setting.checked} platform={platform} />
             </Fragment>
           ))}
+          <SettingRow title={data.everyone.title} sub={data.everyone.sub} checked={data.everyone.checked} onChange={toggle('showEveryonesLibrary')} platform={platform} />
         </LayoutGrid>
       </Section>
     </PageBody>

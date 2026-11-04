@@ -3,7 +3,8 @@
  *
  * What you listened to is the union of two histories: your own spoken plays in Auralis on every
  * one of your devices (never music, and never a play made in a digest's queue), and the books and
- * episodes begun or finished on Audiobookshelf, so listening in its own app counts too. Progress
+ * episodes begun or finished on Audiobookshelf or held by Auralis for a household play, so listening
+ * in its own app counts too. Progress
  * on an episode is left out when the digest made it, not you: while the episode is the current or
  * a queued entry of the digest's queue one of your devices plays now (not one put aside), or when
  * its newest Auralis play was a digest's, no more than `DIGEST_SYNC_MS` before Audiobookshelf last

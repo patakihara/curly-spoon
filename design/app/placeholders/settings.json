@@ -1,4 +1,9 @@
 {
+  "errors": [
+    {
+      "message": "That setting did not change. The switch shows what the server holds."
+    }
+  ],
   "server": "https://media.example.org",
   "settings": [
     {
@@ -11,5 +16,10 @@
       "sub": "Pause transfers on mobile data.",
       "checked": true
     }
-  ]
+  ],
+  "everyone": {
+    "title": "Show everyone’s library",
+    "sub": "List what the whole household has, not only what you’ve played, added or requested.",
+    "checked": false
+  }
 }
