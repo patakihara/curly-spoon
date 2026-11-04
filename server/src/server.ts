@@ -1,6 +1,6 @@
 /**
  * The whole server from its configuration: the database, the sign-on, each upstream's
- * provisioner, the app, the library index job and the lyrics backfill, wired as they run. `main.ts` starts it with the network's `fetch`;
+ * provisioner, the app with its request job, the library index job and the lyrics backfill, wired as they run. `main.ts` starts it with the network's `fetch`;
  * anything else that runs the server (a harness on recordings) passes its own `fetch` here and
  * changes nothing else.
  */
@@ -17,6 +17,7 @@ import type { AppConfig } from './config.js';
 import { loadSecretKey } from './crypto/secretBox.js';
 import { startIndexJob } from './libraryIndex/start.js';
 import { lyricsService, startLyricsJob } from './lyrics/start.js';
+import { stepsRegistry } from './requests/steps.js';
 import { readSecretFile } from './secretFile.js';
 import { openDatabase } from './store/connection.js';
 import { startSessionSweep } from './store/sessions.js';
@@ -103,6 +104,12 @@ export async function assembleServer(
     },
     playback: { idleMs: config.playIdleMinutes * 60_000 },
     lyrics,
+    // Each medium's item registers its steps here; until then nothing can be requested.
+    requests: {
+      steps: stepsRegistry([]),
+      everyMs: config.requests.everySeconds * 1_000,
+      notIndexedAfterMs: config.requests.notIndexedAfterHours * 3_600_000,
+    },
     logger: deps.logger ?? true,
   });
 

@@ -9,6 +9,9 @@ import type { SignOn } from './auth/oidc.js';
 import { createProxyTrust, type ProxyTrust } from './auth/proxy.js';
 import type { CookieSecure } from './config.js';
 import { answerFailure, refuseConnection } from './failures.js';
+import { scheduleJob } from './jobs/schedule.js';
+import { advanceRequests } from './requests/job.js';
+import type { StepsRegistry } from './requests/steps.js';
 import { retiredWorkerRoute } from './retiredWorker.js';
 import { serve } from './route.js';
 import { adminRoutes } from './routes/admin.js';
@@ -53,6 +56,8 @@ export interface BuildAppOptions {
   upstreams?: UpstreamAccess | null;
   /** Tracks' lyrics, shared with the lyrics job; by default Jellyfin's alone, LRCLIB off. */
   lyrics?: Lyrics;
+  /** The advance job: each medium's steps, how often it runs, and how long the index may lag. */
+  requests?: { steps: StepsRegistry; everyMs: number; notIndexedAfterMs: number };
   /** How transcodes are held open and their segments waited for. */
   playback?: PlaybackOptions;
   random?: Random;
@@ -182,6 +187,21 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   lyricsRoutes(app, { db, upstreams, lyrics });
   searchRoutes(app, { db, now: options.now ?? Date.now });
   settingsRoutes(app, { db, sessions, now: options.now ?? Date.now });
+
+  if (options.requests !== undefined) {
+    const { steps, everyMs, notIndexedAfterMs } = options.requests;
+    const deps = { db, steps, notIndexedAfterMs, log: app.log, now: options.now ?? Date.now };
+    let turn = Promise.resolve();
+    const stop = scheduleJob(
+      { name: 'requests', everyMs, run: () => (turn = advanceRequests(deps)) },
+      app.log,
+    );
+    // A turn still going finishes before the server's store closes.
+    app.addHook('onClose', async () => {
+      stop();
+      await turn.catch(() => undefined);
+    });
+  }
 
   const distDir = options.webDistDir;
   if (distDir !== null && existsSync(distDir)) {
