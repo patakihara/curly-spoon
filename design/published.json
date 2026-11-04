@@ -40,10 +40,10 @@
       "scripts/plan/render.mjs",
       "scripts/plan/results.mjs"
     ],
-    "commit": "96ab110cc2b37f174189bcb84d4e244214517980",
-    "tree": "911f537dc40c4f578db6eeb15f8258c3d423900c",
-    "version": "1793755747-7518",
-    "publishedAt": "2026-11-04T01:29:11.799Z"
+    "commit": "55b590283a4b30015c0e180dfa3990fd077a017e",
+    "tree": "c8ff83f6868b88333c8f8600b299f2ef35a7aef5",
+    "version": "1793755864-9c19",
+    "publishedAt": "2026-11-04T01:31:09.943Z"
   },
   "sonora": {
     "url": "https://claude.ai/artifact/CUW4CN7KpxgvjeWnbhTQBB",
