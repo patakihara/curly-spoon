@@ -99,17 +99,17 @@ export function afterPicked(medium: RequestMedium): RouteStatus {
   return found;
 }
 
-/** Where a failed request goes on an event: its failed step, or another release's way in. */
+/** Where a failed request goes on an event: its failed step, or back to the choice of release. */
 function fromFailed(
   medium: RequestMedium,
   state: Extract<RequestState, { status: 'failed' }>,
   event: RequestEvent,
 ): RequestState | null {
   if (event.type === 'retry') return enter(state.failedStep);
-  if (event.type !== 'pickAnother' && event.type !== 'chose') return null;
+  if (event.type !== 'pickAnother') return null;
   const hasChoice = ROUTES[medium].includes('needsChoice');
   if (!hasChoice || !PICK_ANOTHER_AFTER.includes(state.failedStep)) return null;
-  return enter(event.type === 'pickAnother' ? 'needsChoice' : afterPicked(medium));
+  return enter('needsChoice');
 }
 
 /** Where a request goes on an event, or null when its medium's route does not allow the move. */

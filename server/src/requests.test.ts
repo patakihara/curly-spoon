@@ -204,7 +204,7 @@ describe('[M3.requests/a] one request per medium through every status its route 
       look();
       for (const one of requests) {
         if (reread(one).state.status === 'needsChoice') {
-          expect(await chooseRelease(job, one.id, 'b')).not.toBeNull();
+          expect(chooseRelease(job, one.id, 'b')).not.toBeNull();
           look();
         }
       }
@@ -250,7 +250,7 @@ describe('[M3.requests/a] one request per medium through every status its route 
     expect(reread(one).state.status).toBe('needsChoice');
     expect(steps.calls.search).toBe(1);
 
-    await chooseRelease(job, one.id, 'a');
+    chooseRelease(job, one.id, 'a');
     expect(reread(one)).toMatchObject({ state: { status: 'queued' }, release: candidates[0] });
     await advanceRequests(job);
     expect(reread(one)).toMatchObject({ state: { status: 'queued' }, handle: { release: 'a' } });
@@ -263,10 +263,10 @@ describe('[M3.requests/a] one request per medium through every status its route 
   it('[M3.requests/a] refuses a choice of a release nobody offered', async () => {
     const job = deps(standInSteps('album', scripts.album));
     const one = request('album');
-    expect(await chooseRelease(job, one.id, 'a')).toBeNull();
+    expect(chooseRelease(job, one.id, 'a')).toBeNull();
     await runUntil(job, one, 'needsChoice');
-    expect(await chooseRelease(job, one.id, 'nobody-offered-this')).toBeNull();
-    expect(await chooseRelease(job, 'no-such-request', 'a')).toBeNull();
+    expect(chooseRelease(job, one.id, 'nobody-offered-this')).toBeNull();
+    expect(chooseRelease(job, 'no-such-request', 'a')).toBeNull();
     expect(reread(one).state.status).toBe('needsChoice');
   });
 });
@@ -325,7 +325,7 @@ describe('[M3.requests/b] a failed step names its status and reason, and a retry
     const counted = steps.import.bind(steps);
     const job = deps({
       ...steps,
-      import: (one) => (refuse ? Promise.reject(new Error('refused')) : counted(one)),
+      import: (one, key) => (refuse ? Promise.reject(new Error('refused')) : counted(one, key)),
     });
     const one = request('podcast');
     await runUntil(job, one, 'failed');
@@ -505,8 +505,8 @@ describe('[M3.requests/b] picking another release after a failure', () => {
       handle: null,
       release: null,
     });
-    expect(await chooseRelease(job, one.id, 'one')).toBeNull();
-    expect(await chooseRelease(job, one.id, 'three')).toMatchObject({
+    expect(chooseRelease(job, one.id, 'one')).toBeNull();
+    expect(chooseRelease(job, one.id, 'three')).toMatchObject({
       state: { status: 'queued' },
       release: others[1],
     });
@@ -523,18 +523,21 @@ describe('[M3.requests/b] picking another release after a failure', () => {
     const job = deps(steps);
     const one = request('book');
     await runUntil(job, one, 'needsChoice');
-    await chooseRelease(job, one.id, 'two');
+    chooseRelease(job, one.id, 'two');
     await runUntil(job, one, 'failed');
     expect(await pickAnotherRelease(job, one.id)).toMatchObject({ candidates: [others[1]] });
   });
 
-  it('[M3.requests/b] takes another release straight from a failure, with one tap', async () => {
+  it('[M3.requests/b] goes from a failure to another release only through the choice', async () => {
     const steps = failingWith(others);
     const job = deps(steps);
     const one = request('book');
     await runUntil(job, one, 'failed');
-    expect(await chooseRelease(job, one.id, 'one')).toBeNull();
-    expect(await chooseRelease(job, one.id, 'two')).toMatchObject({
+    expect(chooseRelease(job, one.id, 'two')).toBeNull();
+    expect(reread(one).state.status).toBe('failed');
+
+    await pickAnotherRelease(job, one.id);
+    expect(chooseRelease(job, one.id, 'two')).toMatchObject({
       state: { status: 'queued' },
       release: others[0],
       candidates: others,
@@ -563,7 +566,7 @@ describe('[M3.requests/b] picking another release after a failure', () => {
     await runUntil(job, one, 'failed');
 
     expect(await pickAnotherRelease(job, one.id)).toBeNull();
-    expect(await chooseRelease(job, one.id, 'one')).toBeNull();
+    expect(chooseRelease(job, one.id, 'one')).toBeNull();
     expect(reread(one).state).toMatchObject({ status: 'failed', failedStep: 'queued' });
     expect(steps.cancelled).toEqual([]);
 
@@ -583,7 +586,7 @@ describe('[M3.requests/b] picking another release after a failure', () => {
     expect(await pickAnotherRelease(job, one.id)).toBeNull();
     await runUntil(job, one, 'failed');
     expect(await pickAnotherRelease(job, one.id)).toBeNull();
-    expect(await chooseRelease(job, one.id, 'two')).toBeNull();
+    expect(chooseRelease(job, one.id, 'two')).toBeNull();
     expect(await retryRequest(job, 'no-such-request')).toBeNull();
   });
 });
@@ -682,6 +685,92 @@ describe('the windows a crash, a cancel or a second tap can fall into', () => {
     expect(reread(one).handle).toEqual(started);
   });
 
+  it('saves the key before the step is called, and passes that same key to the step', async () => {
+    const steps = standInSteps('song');
+    const start = steps.download!.start;
+    const saved: (string | null)[] = [];
+    const passed: string[] = [];
+    const download = {
+      ...steps.download!,
+      start: (...args: Parameters<typeof start>) => {
+        saved.push(reread(one).stepKey);
+        passed.push(args[2]);
+        return start(...args);
+      },
+    };
+    const job = deps({ ...steps, download });
+    const one = request('song');
+    await runUntil(job, one, 'downloading');
+    await advanceRequests(job);
+    expect(saved).toEqual(passed);
+    expect(saved[0]).toEqual(expect.any(String));
+    expect(reread(one).stepKey).toBeNull();
+  });
+
+  it('asks again under the same key after a start that threw, as it may have got through', async () => {
+    const steps = standInSteps('song');
+    const start = steps.download!.start;
+    const keys: string[] = [];
+    const download = {
+      ...steps.download!,
+      start: (...args: Parameters<typeof start>) => {
+        keys.push(args[2]);
+        return keys.length === 1 ? Promise.reject(new Error('timed out')) : start(...args);
+      },
+    };
+    const job = deps({ ...steps, download });
+    const one = request('song');
+    await runUntil(job, one, 'failed');
+    await retryRequest(job, one.id);
+    await advanceRequests(job);
+    expect(keys[1]).toBe(keys[0]);
+    expect(reread(one).handle).not.toBeNull();
+  });
+
+  it('fails a queued request whose start throws with a download failure at queued', async () => {
+    const steps = standInSteps('album');
+    const download = {
+      ...steps.download!,
+      start: () => Promise.reject(new Error('the client is down')),
+    };
+    const one = request('album');
+    await runUntil(deps({ ...steps, download }), one, 'failed');
+    expect(reread(one).state).toEqual({
+      status: 'failed',
+      failedStep: 'queued',
+      reason: 'downloadFailed',
+    });
+  });
+
+  it('fails a downloading request whose poll throws with a download failure at downloading', async () => {
+    const steps = standInSteps('song');
+    const download = {
+      ...steps.download!,
+      poll: () => Promise.reject(new Error('the client is down')),
+    };
+    const one = request('song');
+    await runUntil(deps({ ...steps, download }), one, 'failed');
+    expect(reread(one).state).toEqual({
+      status: 'failed',
+      failedStep: 'downloading',
+      reason: 'downloadFailed',
+    });
+  });
+
+  it('records no failure on a request cancelled while its step was throwing', async () => {
+    const one = request('book');
+    const steps = {
+      ...standInSteps('book'),
+      search: () => {
+        deleteRequest(db, one.id);
+        return Promise.reject(new Error('down'));
+      },
+    };
+    saveRequest(db, one.id, { state: { status: 'searching' } }, clock);
+    await advanceRequests(deps(steps));
+    expect(getRequest(db, one.id)).toBeNull();
+  });
+
   it('lets a person ask for something whose live request cannot be read', () => {
     const one = request('book');
     db.prepare('UPDATE requests SET handle = ? WHERE id = ?').run('{', one.id);
@@ -707,6 +796,45 @@ describe('the advance job in the app', () => {
     clock += 1;
     await new Promise((resolve) => setTimeout(resolve, 30));
     expect(reread(one).updatedAt).toBe(stopped);
+  });
+
+  it('closes only once a running turn has finished', async () => {
+    const one = request('podcast');
+    let finish = () => undefined as void;
+    const held = new Promise<void>((resolve) => (finish = resolve));
+    const steps = standInSteps('podcast');
+    let searching = false;
+    const app = await buildApp({
+      webDistDir: null,
+      db,
+      requests: {
+        steps: stepsRegistry([
+          {
+            ...steps,
+            search: async (...args) => {
+              searching = true;
+              await held;
+              return steps.search(...args);
+            },
+          },
+        ]),
+        everyMs: 5,
+        notIndexedAfterMs: CAP,
+      },
+    });
+    saveRequest(db, one.id, { state: { status: 'searching' } }, clock);
+    await vi.waitFor(() => expect(searching).toBe(true));
+
+    let closed = false;
+    const closing = app.close().then(() => {
+      closed = true;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(closed).toBe(false);
+
+    finish();
+    await closing;
+    expect(reread(one).state.status).toBe('importing');
   });
 
   it('schedules no job when none is configured', async () => {

@@ -47,7 +47,9 @@ describe('the requests store', () => {
       release: null,
       candidates: [],
       handle: null,
+      stepKey: null,
       result: null,
+      version: 0,
       createdAt: 1_000,
       updatedAt: 1_000,
     });
@@ -89,8 +91,72 @@ describe('the requests store', () => {
       candidates,
       handle: { hash: 'abc' },
       result: { source: 'jellyfin', id: 'a'.repeat(32) },
+      version: 3,
       updatedAt: 4_000,
     });
+  });
+
+  it('saves nothing on a deleted row, and brings nothing back', () => {
+    const { request } = createRequest(db, ana, book, 1_000);
+    deleteRequest(db, request.id);
+    expect(saveRequest(db, request.id, { state: { status: 'searching' } }, 2_000)).toBe(false);
+    expect(getRequest(db, request.id)).toBeNull();
+  });
+
+  it('saves over a version it read, and refuses once the row has moved past it', () => {
+    const { request } = createRequest(db, ana, book, 1_000);
+    const searching = { state: { status: 'searching' } } as const;
+    expect(saveRequest(db, request.id, searching, 2_000, request.version)).toBe(true);
+    expect(
+      saveRequest(db, request.id, { state: { status: 'requested' } }, 3_000, request.version),
+    ).toBe(false);
+    expect(getRequest(db, request.id)).toMatchObject({
+      state: { status: 'searching' },
+      version: request.version + 1,
+      updatedAt: 2_000,
+    });
+  });
+
+  it('lets go of its catalogue ids when deleted, so asking again makes a new request', () => {
+    const { request } = createRequest(db, ana, book, 1_000);
+    deleteRequest(db, request.id);
+    const keys = db.prepare('SELECT COUNT(*) AS n FROM request_keys').get() as { n: number };
+    expect(keys.n).toBe(0);
+    const again = createRequest(db, ana, book, 2_000);
+    expect(again.joined).toBe(false);
+    expect(again.request.id).not.toBe(request.id);
+  });
+
+  it('replaces a live request that cannot be read: it is deleted and everyone on it moves over', () => {
+    const { request } = createRequest(db, ana, book, 1_000);
+    db.prepare('UPDATE requests SET handle = ? WHERE id = ?').run('{', request.id);
+    const logged: Record<string, unknown>[] = [];
+
+    const made = createRequest(db, ben, book, 2_000, { error: (details) => logged.push(details) });
+
+    expect(made.joined).toBe(false);
+    expect(made.request.id).not.toBe(request.id);
+    expect(db.prepare('SELECT id FROM requests').all()).toEqual([{ id: made.request.id }]);
+    expect(peopleOn(db, made.request.id).sort()).toEqual([ana, ben].sort());
+    expect(logged).toEqual([expect.objectContaining({ request: request.id })]);
+    expect(createRequest(db, ana, book, 3_000).request.id).toBe(made.request.id);
+  });
+
+  it('joins a readable live request over one that cannot be read, and clears that one out', () => {
+    const asin = createRequest(db, ana, book, 1_000).request;
+    const isbnOnly = { ...book, target: { ...book.target, ids: { isbn: '9780141439600' } } };
+    const isbn = createRequest(db, ben, isbnOnly, 2_000).request;
+    db.prepare('UPDATE requests SET handle = ? WHERE id = ?').run('{', asin.id);
+    const both = {
+      ...book,
+      target: { ...book.target, ids: { asin: book.target.ids.asin!, isbn: '9780141439600' } },
+    };
+
+    const made = createRequest(db, ben, both, 3_000);
+
+    expect(made).toMatchObject({ joined: true, request: { id: isbn.id } });
+    expect(getRequest(db, asin.id)).toBeNull();
+    expect(peopleOn(db, isbn.id).sort()).toEqual([ana, ben].sort());
   });
 
   it('joins a second person’s request for the same thing to the first, never a second download', () => {

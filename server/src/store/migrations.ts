@@ -607,7 +607,9 @@ export const migrations: readonly Migration[] = [
       db.exec(`
         -- Requests (store/requests.ts): what is being got onto the household's servers, where
         -- it stands, and what its medium's steps keep. The release, candidates and download
-        -- handle stay on the server; a client sees a candidate's id.
+        -- handle stay on the server; a client sees a candidate's id. step_key is the idempotency
+        -- key of a step under way; version counts saves, so a save after a wait can tell that
+        -- the row moved on.
         CREATE TABLE requests (
           id            TEXT PRIMARY KEY,
           medium        TEXT NOT NULL CHECK (medium IN ('book', 'album', 'song', 'podcast')),
@@ -622,6 +624,8 @@ export const migrations: readonly Migration[] = [
           release       TEXT,
           candidates    TEXT NOT NULL DEFAULT '[]',
           handle        TEXT,
+          step_key      TEXT,
+          version       INTEGER NOT NULL DEFAULT 0,
           result_source TEXT CHECK (result_source IN ('abs', 'jellyfin')),
           result_id     TEXT,
           created_at    INTEGER NOT NULL,
@@ -660,6 +664,28 @@ export const migrations: readonly Migration[] = [
         CREATE TRIGGER request_people_last_left AFTER DELETE ON request_people
           WHEN NOT EXISTS (SELECT 1 FROM request_people WHERE request_id = OLD.request_id)
           BEGIN DELETE FROM requests WHERE id = OLD.request_id; END;
+      `);
+    },
+  },
+  {
+    id: 17,
+    name: 'library_claims',
+    up: (db) => {
+      db.exec(`
+        -- The record of who added what behind each person's own library (store/claims.ts). It
+        -- names an item, not a device or a request, so it outlives both.
+        CREATE TABLE library_claims (
+          user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          source     TEXT NOT NULL CHECK (source IN ('abs', 'jellyfin')),
+          item_id    TEXT NOT NULL,
+          reason     TEXT NOT NULL CHECK (reason IN ('requested', 'added', 'subscribed', 'played')),
+          created_at INTEGER NOT NULL,
+          PRIMARY KEY (user_id, source, item_id)
+        );
+
+        -- Whether a person's library shows everything the household has, not just their own.
+        ALTER TABLE user_settings
+          ADD COLUMN show_everyone INTEGER NOT NULL DEFAULT 0 CHECK (show_everyone IN (0, 1));
       `);
     },
   },

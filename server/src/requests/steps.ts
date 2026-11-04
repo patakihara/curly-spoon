@@ -46,9 +46,12 @@ export type PollOutcome =
   | { kind: 'done' }
   | { kind: 'failed'; reason: RequestFailure };
 
-/** Starting, following and dropping a download, for a medium whose route downloads. */
+/**
+ * Starting, following and dropping a download, for a medium whose route downloads. `start` takes
+ * the idempotency key `MediumSteps` describes.
+ */
 export interface DownloadSteps {
-  start(request: StoredRequest, release: Release): Promise<DownloadHandle>;
+  start(request: StoredRequest, release: Release, key: string): Promise<DownloadHandle>;
   poll(handle: DownloadHandle): Promise<PollOutcome>;
   cancel(handle: DownloadHandle): Promise<void>;
 }
@@ -56,12 +59,18 @@ export interface DownloadSteps {
 /**
  * One medium's steps: search for its target, download a release if its route downloads, and
  * import it, naming the item the index will find once it is in.
+ *
+ * The job saves an idempotency key on the request before it calls `start` or `import`, and passes
+ * that key to the step. A crash can fall between the step and saving what it answered, so the same
+ * key can come again: each medium must treat a repeat of a key as the same call and answer the same
+ * result, doing nothing twice. Real mediums get this cheaply from what they already have, such as
+ * a torrent's info hash or a folder path.
  */
 export interface MediumSteps {
   readonly medium: RequestMedium;
   search(request: StoredRequest): Promise<SearchOutcome>;
   readonly download?: DownloadSteps;
-  import(request: StoredRequest): Promise<{ ref: MediaRef }>;
+  import(request: StoredRequest, key: string): Promise<{ ref: MediaRef }>;
 }
 
 /** The registered steps, by medium. */

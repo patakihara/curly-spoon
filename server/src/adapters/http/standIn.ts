@@ -1,7 +1,8 @@
 /**
  * Test support: stand-in steps for any medium, with no upstream. Each step answers from a script
  * the test gives and counts its calls, so a test can drive a request through its route and see
- * what each step was asked. Never registered outside tests.
+ * what each step was asked. It keeps the steps' contract: a repeat of a key answers the first
+ * call's result and counts as no new call. Never registered outside tests.
  */
 import type { MediaRef, RequestMedium } from '@auralis/schema';
 import { ROUTES } from '../../requests/machine.js';
@@ -42,6 +43,8 @@ export function standInSteps(medium: RequestMedium, script: StandInScript = {}):
   const polled: DownloadHandle[] = [];
   const cancelled: DownloadHandle[] = [];
   const polls = script.polls ?? [{ kind: 'done' }];
+  const imported = new Map<string, { ref: MediaRef }>();
+  const started = new Map<string, DownloadHandle>();
   const count = (step: string): number => {
     calls[step] = (calls[step] ?? 0) + 1;
     return calls[step];
@@ -57,18 +60,23 @@ export function standInSteps(medium: RequestMedium, script: StandInScript = {}):
         script.search ?? { kind: 'picked', release: standInRelease('one'), others: [] },
       );
     },
-    import: () => {
-      count('import');
-      return Promise.resolve({ ref: script.imports ?? { source: 'abs', id: 'stand-in' } });
+    import: (_request, key) => {
+      const named = imported.get(key) ?? {
+        ref: script.imports ?? { source: 'abs', id: 'stand-in' },
+      };
+      if (!imported.has(key)) count('import');
+      imported.set(key, named);
+      return Promise.resolve(named);
     },
   };
   if (!ROUTES[medium].includes('downloading')) return steps;
   return {
     ...steps,
     download: {
-      start: (_request, release) => {
-        count('start');
-        return Promise.resolve({ release: release.id, start: calls.start });
+      start: (_request, release, key) => {
+        const handle = started.get(key) ?? { release: release.id, start: count('start') };
+        started.set(key, handle);
+        return Promise.resolve(handle);
       },
       poll: (handle) => {
         polled.push(handle);

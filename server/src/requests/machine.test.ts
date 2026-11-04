@@ -142,7 +142,10 @@ describe('the request machine', () => {
   it('lets a person pick another release after a download fails, as the get diagram says', () => {
     for (const medium of ['book', 'album'] as const) {
       const failed = next(medium, downloading(0.7), { type: 'failed', reason: 'downloadFailed' })!;
-      expect(next(medium, failed, { type: 'chose' }), medium).toEqual(at('queued'));
+      expect(next(medium, failed, { type: 'chose' }), medium).toBeNull();
+      const choosing = next(medium, failed, { type: 'pickAnother' })!;
+      expect(choosing, medium).toEqual(at('needsChoice'));
+      expect(next(medium, choosing, { type: 'chose' }), medium).toEqual(at('queued'));
     }
   });
 
