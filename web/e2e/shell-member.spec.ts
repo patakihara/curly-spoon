@@ -77,6 +77,12 @@ function canvasSamples(): string[] {
   );
   // The Digest's name is the app's own, which every member's Podcasts page lists; not a sample.
   found.delete('The Digest');
+  // The one switch Settings serves keeps its own words, as a page does; not a sample.
+  const { everyone } = JSON.parse(readFileSync(`${appDir}placeholders/settings.json`, 'utf8')) as {
+    everyone: { title: string; sub: string };
+  };
+  found.delete(everyone.title);
+  found.delete(everyone.sub);
   return [...found];
 }
 
