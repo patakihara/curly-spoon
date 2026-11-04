@@ -26,6 +26,7 @@ import {
   type PlayableItem,
   playableItemSchema,
   playableQueryResultSchema,
+  playedTracksSchema,
   publicSystemInfoSchema,
   type UserItemData,
   userItemDataSchema,
@@ -169,6 +170,29 @@ export class JellyfinClient {
   async getUserViews(): Promise<BaseItemDto[]> {
     const query = { includeHidden: 'true' };
     return (await this.get('UserViews', baseItemQueryResultSchema, query)).Items;
+  }
+
+  /**
+   * One page of the tracks the token's own user has played, with each one's album, and how many
+   * there are in all: `GET /Items`, in name order so pages hold still.
+   */
+  async getPlayedTracks(page: {
+    limit: number;
+    startIndex: number;
+  }): Promise<{ tracks: { id: string; albumId: string | null }[]; total: number }> {
+    const answer = await this.get('Items', playedTracksSchema, {
+      Recursive: 'true',
+      IncludeItemTypes: 'Audio',
+      Filters: 'IsPlayed',
+      SortBy: 'SortName',
+      Fields: 'AlbumId',
+      StartIndex: String(page.startIndex),
+      Limit: String(page.limit),
+    });
+    return {
+      tracks: answer.Items.map(({ Id, AlbumId }) => ({ id: Id, albumId: AlbumId ?? null })),
+      total: answer.TotalRecordCount,
+    };
   }
 
   /** Every track of one album, in disc and track order. */

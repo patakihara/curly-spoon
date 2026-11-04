@@ -71,6 +71,20 @@ export const indexQueryResultSchema = z.object({
 export type IndexQueryResult = z.infer<typeof indexQueryResultSchema>;
 
 /**
+ * A page of the tracks a person has played: each track and its album. A track with no album has
+ * `AlbumId` null or left out.
+ */
+export const playedTracksSchema = z.object({
+  Items: z.array(
+    z.object({
+      Id: z.string(),
+      AlbumId: z.string().nullable().optional(),
+    }),
+  ),
+  TotalRecordCount: z.number().int().nonnegative(),
+});
+
+/**
  * A track or an album as playing reads it, from `GET /Items/{id}` or an album's `GET /Items`
  * with the person's own token, so Jellyfin answers only what they can see. `Container` is the
  * file's format (`flac`); Jellyfin may list several names for one format (`mov,mp4,m4a`).

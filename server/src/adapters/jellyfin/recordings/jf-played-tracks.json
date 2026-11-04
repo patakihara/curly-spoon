@@ -1,0 +1,104 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "jf-played-tracks",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "Fields": "AlbumId",
+      "Filters": "IsPlayed",
+      "IncludeItemTypes": "Audio",
+      "Limit": "3",
+      "Recursive": "true",
+      "SortBy": "SortName",
+      "StartIndex": "0"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis\", DeviceId=\"auralis-recorder\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [
+          {
+            "Name": "Femininomenon",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "7c8b8e35e6ec0f40736aadee1f8979bb",
+            "HasLyrics": true,
+            "Container": "flac",
+            "PremiereDate": "2023-09-21T21:00:00.0000000Z",
+            "ChannelId": null,
+            "RunTimeTicks": 2197107260,
+            "ProductionYear": 2023,
+            "IndexNumber": 1,
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropItemId": "87179c1db4d100f90591e4f9b0e341c8",
+            "ParentBackdropImageTags": [
+              "9855482c023325ef94625c10994d5dc5"
+            ],
+            "UserData": {
+              "PlaybackPositionTicks": 0,
+              "PlayCount": 1,
+              "IsFavorite": false,
+              "LastPlayedDate": "2026-11-04T00:59:13.6908521Z",
+              "Played": true,
+              "Key": "<token>",
+              "ItemId": "7c8b8e35e6ec0f40736aadee1f8979bb"
+            },
+            "Artists": [
+              "Chappell Roan"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "Album": "The Rise and Fall of a Midwest Princess",
+            "AlbumId": "65de8562c54b89ceef199f91bacd8709",
+            "AlbumPrimaryImageTag": "aff9ba9d3c57fbf1ac8074b7fc289d22",
+            "AlbumArtist": "Chappell Roan",
+            "AlbumArtists": [
+              {
+                "Name": "Chappell Roan",
+                "Id": "87179c1db4d100f90591e4f9b0e341c8"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "436a49810142c4f856b033bae929874a"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "69bd028c1dabe27e1b0beed0edaee618",
+            "ImageBlurHashes": {
+              "Primary": {
+                "436a49810142c4f856b033bae929874a": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV[",
+                "aff9ba9d3c57fbf1ac8074b7fc289d22": "eHIX87E39Z}=IVem=_?HEQRQOFIotRNJE1?uxuIV$%E2wIs.J.NyV["
+              },
+              "Logo": {
+                "69bd028c1dabe27e1b0beed0edaee618": "OE7dHyoea|a|R+s.bGs.j@azazj@oda|0jWCjajas.WCf7"
+              },
+              "Backdrop": {
+                "9855482c023325ef94625c10994d5dc5": "WKOLTF+^-U}[sB=x#:r?kVWBRjM{?H%19tNwIoM{~C%MNHxtt6V["
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -10
+          }
+        ],
+        "TotalRecordCount": 1,
+        "StartIndex": 0
+      }
+    }
+  }
+}
