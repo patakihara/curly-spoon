@@ -28,6 +28,7 @@ import { type PlaybackOptions, playRoutes, type UpstreamAccess } from './routes/
 import { Lyrics } from './lyrics/service.js';
 import { IndexLookup } from './queues/lookup.js';
 import { Sessions } from './queues/sessions.js';
+import { requestRoutes } from './routes/requests.js';
 import { searchRoutes } from './routes/search.js';
 import { sessionRoutes } from './routes/sessions.js';
 import { settingsRoutes } from './routes/settings.js';
@@ -56,7 +57,10 @@ export interface BuildAppOptions {
   upstreams?: UpstreamAccess | null;
   /** Tracks' lyrics, shared with the lyrics job; by default Jellyfin's alone, LRCLIB off. */
   lyrics?: Lyrics;
-  /** The advance job: each medium's steps, how often it runs, and how long the index may lag. */
+  /**
+   * The advance job: each medium's steps, how often it runs, and how long the index may lag.
+   * Without it, no medium can be requested.
+   */
   requests?: { steps: StepsRegistry; everyMs: number; notIndexedAfterMs: number };
   /** How transcodes are held open and their segments waited for. */
   playback?: PlaybackOptions;
@@ -187,6 +191,13 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   lyricsRoutes(app, { db, upstreams, lyrics });
   searchRoutes(app, { db, now: options.now ?? Date.now });
   settingsRoutes(app, { db, sessions, now: options.now ?? Date.now });
+
+  requestRoutes(app, {
+    db,
+    steps: options.requests?.steps ?? new Map(),
+    log: app.log,
+    now: options.now ?? Date.now,
+  });
 
   if (options.requests !== undefined) {
     const { steps, everyMs, notIndexedAfterMs } = options.requests;

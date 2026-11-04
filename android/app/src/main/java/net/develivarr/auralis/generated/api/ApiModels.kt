@@ -700,6 +700,63 @@ data class RenameDeviceBody(
 )
 
 @Serializable
+data class RequestCandidate(
+    val id: String,
+    val title: String,
+    val source: String,
+    val size: Long?,
+)
+
+@Serializable
+enum class RequestFailure {
+    @SerialName("noRelease")
+    NO_RELEASE,
+    @SerialName("searchFailed")
+    SEARCH_FAILED,
+    @SerialName("downloadFailed")
+    DOWNLOAD_FAILED,
+    @SerialName("importFailed")
+    IMPORT_FAILED,
+    @SerialName("notIndexed")
+    NOT_INDEXED,
+    @SerialName("cancelledUpstream")
+    CANCELLED_UPSTREAM,
+}
+
+@Serializable
+data class RequestIds(
+    val asin: String? = null,
+    val isbn: String? = null,
+    val mbid: String? = null,
+    val feedUrl: String? = null,
+    val youtubeMusicId: String? = null,
+)
+
+@Serializable
+data class RequestList(
+    val inFlight: List<RequestView>,
+    val needsChoice: List<RequestView>,
+)
+
+@Serializable
+enum class RequestMedium {
+    @SerialName("book")
+    BOOK,
+    @SerialName("album")
+    ALBUM,
+    @SerialName("song")
+    SONG,
+    @SerialName("podcast")
+    PODCAST,
+}
+
+@Serializable
+data class RequestRef(
+    val medium: RequestMedium,
+    val target: RequestTarget,
+)
+
+@Serializable
 enum class RequestStatus {
     @SerialName("requested")
     REQUESTED,
@@ -718,6 +775,41 @@ enum class RequestStatus {
     @SerialName("failed")
     FAILED,
 }
+
+@Serializable
+data class RequestTarget(
+    val title: String,
+    val creator: String?,
+    val ids: RequestIds,
+)
+
+@Serializable
+enum class RequestVerb {
+    @SerialName("retry")
+    RETRY,
+    @SerialName("cancel")
+    CANCEL,
+    @SerialName("choose")
+    CHOOSE,
+    @SerialName("pickAnother")
+    PICK_ANOTHER,
+}
+
+@Serializable
+data class RequestView(
+    val id: String,
+    val medium: RequestMedium,
+    val title: String,
+    val creator: String?,
+    val art: String?,
+    val source: String?,
+    val size: Long?,
+    val status: RequestStatus,
+    val progress: Double?,
+    val reason: RequestFailure?,
+    val verbs: List<RequestVerb>,
+    val candidates: List<RequestCandidate>,
+)
 
 @Serializable
 enum class Role {

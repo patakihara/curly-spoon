@@ -105,6 +105,12 @@ export {
   appToken,
   closePlay,
   createBookmark,
+  createRequest,
+  cancelRequest,
+  chooseRelease,
+  getRequest,
+  listRequests,
+  retryRequest,
   createList,
   deleteBookmark,
   deleteDevice,
@@ -148,13 +154,20 @@ export {
   type Route,
 } from './routes.js';
 export {
+  ChooseReleaseBody,
+  CreateRequestBody,
   REQUEST_ID_KEYS,
+  RequestCandidate,
   RequestFailure,
   RequestIds,
+  RequestList,
   RequestMedium,
+  RequestParams,
   RequestRef,
   RequestStatus,
   RequestTarget,
+  RequestVerb,
+  RequestView,
 } from './requests.js';
 export {
   QUERY_MAX,

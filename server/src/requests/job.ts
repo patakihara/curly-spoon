@@ -134,8 +134,8 @@ async function download(deps: RequestJobDeps, steps: DownloadSteps, request: Sto
   }
 }
 
-/** Who gets the item on a request's arrival, and why it counts as theirs. */
-const ARRIVAL_CLAIM: Record<RequestMedium, ClaimReason> = {
+/** Why an item counts as a person's own once their request for it arrives. */
+export const ARRIVAL_CLAIM: Record<RequestMedium, ClaimReason> = {
   book: 'requested',
   album: 'requested',
   song: 'added',

@@ -56,6 +56,13 @@ import {
   ProgressBody,
   ProgressReport,
 } from './play.js';
+import {
+  ChooseReleaseBody,
+  CreateRequestBody,
+  RequestList,
+  RequestParams,
+  RequestView,
+} from './requests.js';
 import { SearchQuery, SearchResults, SuggestionList, SuggestQuery } from './search.js';
 import { Settings, SettingsBody } from './settings.js';
 import {
@@ -329,6 +336,72 @@ export const deleteBookmark = {
   response: Ok,
   access: 'member',
   params: BookmarkParams,
+} as const satisfies Route;
+
+export const createRequest = {
+  method: 'POST',
+  path: '/api/requests',
+  operationId: 'createRequest',
+  summary: 'Request something for the household, or join the request already under way for it',
+  responseDescription: 'The request, made, joined, or already in the library.',
+  response: RequestView,
+  access: 'member',
+  body: CreateRequestBody,
+} as const satisfies Route;
+
+export const listRequests = {
+  method: 'GET',
+  path: '/api/requests',
+  operationId: 'listRequests',
+  summary: "The signed-in person's requests under way; podcasts never show, subscribing is instant",
+  responseDescription: 'Requests in flight, and those waiting for a choice of release.',
+  response: RequestList,
+  access: 'member',
+} as const satisfies Route;
+
+export const getRequest = {
+  method: 'GET',
+  path: '/api/requests/{id}',
+  operationId: 'getRequest',
+  summary: "One of the signed-in person's requests",
+  responseDescription: 'The request.',
+  response: RequestView,
+  access: 'member',
+  params: RequestParams,
+} as const satisfies Route;
+
+export const retryRequest = {
+  method: 'POST',
+  path: '/api/requests/{id}/retry',
+  operationId: 'retryRequest',
+  summary: 'Resume a failed request at the step it failed in',
+  responseDescription: 'The request, moved back to that step.',
+  response: RequestView,
+  access: 'member',
+  params: RequestParams,
+} as const satisfies Route;
+
+export const cancelRequest = {
+  method: 'POST',
+  path: '/api/requests/{id}/cancel',
+  operationId: 'cancelRequest',
+  summary: 'Leave a request; the last person to leave ends it and drops its download',
+  responseDescription: 'The signed-in person is no longer on the request.',
+  response: Ok,
+  access: 'member',
+  params: RequestParams,
+} as const satisfies Route;
+
+export const chooseRelease = {
+  method: 'POST',
+  path: '/api/requests/{id}/choose',
+  operationId: 'chooseRelease',
+  summary: 'Take one of the candidates a request offers, one tap even from a failure',
+  responseDescription: 'The request, queued with that release.',
+  response: RequestView,
+  access: 'member',
+  params: RequestParams,
+  body: ChooseReleaseBody,
 } as const satisfies Route;
 
 export const listSessions = {
@@ -627,6 +700,12 @@ export const routes: readonly Route[] = [
   listBookmarks,
   createBookmark,
   deleteBookmark,
+  createRequest,
+  listRequests,
+  getRequest,
+  retryRequest,
+  cancelRequest,
+  chooseRelease,
   listSessions,
   getQueue,
   putQueue,

@@ -25,6 +25,17 @@
         "description": "The mime type of a transcode's one track: an HLS playlist.",
         "const": "application/vnd.apple.mpegurl"
       },
+      "RequestFailure": {
+        "type": "string",
+        "enum": [
+          "noRelease",
+          "searchFailed",
+          "downloadFailed",
+          "importFailed",
+          "notIndexed",
+          "cancelledUpstream"
+        ]
+      },
       "QueueType": {
         "type": "string",
         "enum": [
@@ -822,6 +833,240 @@
           "title"
         ]
       },
+      "RequestMedium": {
+        "type": "string",
+        "enum": [
+          "book",
+          "album",
+          "song",
+          "podcast"
+        ]
+      },
+      "RequestStatus": {
+        "type": "string",
+        "enum": [
+          "requested",
+          "searching",
+          "needsChoice",
+          "queued",
+          "downloading",
+          "importing",
+          "inLibrary",
+          "failed"
+        ]
+      },
+      "RequestVerb": {
+        "type": "string",
+        "enum": [
+          "retry",
+          "cancel",
+          "choose",
+          "pickAnother"
+        ]
+      },
+      "RequestCandidate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "size": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "source",
+          "size"
+        ]
+      },
+      "RequestView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "medium": {
+            "$ref": "#/components/schemas/RequestMedium"
+          },
+          "title": {
+            "type": "string"
+          },
+          "creator": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "art": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "size": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "status": {
+            "$ref": "#/components/schemas/RequestStatus"
+          },
+          "progress": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RequestFailure"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "verbs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestVerb"
+            }
+          },
+          "candidates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestCandidate"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "medium",
+          "title",
+          "creator",
+          "art",
+          "source",
+          "size",
+          "status",
+          "progress",
+          "reason",
+          "verbs",
+          "candidates"
+        ]
+      },
+      "RequestIds": {
+        "type": "object",
+        "properties": {
+          "asin": {
+            "type": "string",
+            "pattern": "^[A-Z0-9]{10}$"
+          },
+          "isbn": {
+            "type": "string",
+            "pattern": "^(?:\\d{9}[\\dX]|\\d{13})$"
+          },
+          "mbid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "feedUrl": {
+            "type": "string",
+            "maxLength": 2048,
+            "format": "uri",
+            "pattern": "^https?:\\/\\/"
+          },
+          "youtubeMusicId": {
+            "type": "string",
+            "pattern": "^[\\w-]{1,64}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RequestTarget": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "creator": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "ids": {
+            "$ref": "#/components/schemas/RequestIds"
+          }
+        },
+        "required": [
+          "title",
+          "creator",
+          "ids"
+        ],
+        "additionalProperties": false
+      },
+      "RequestRef": {
+        "type": "object",
+        "properties": {
+          "medium": {
+            "$ref": "#/components/schemas/RequestMedium"
+          },
+          "target": {
+            "$ref": "#/components/schemas/RequestTarget"
+          }
+        },
+        "required": [
+          "medium",
+          "target"
+        ],
+        "additionalProperties": false
+      },
+      "RequestList": {
+        "type": "object",
+        "properties": {
+          "inFlight": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestView"
+            }
+          },
+          "needsChoice": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestView"
+            }
+          }
+        },
+        "required": [
+          "inFlight",
+          "needsChoice"
+        ]
+      },
       "QueueCurrents": {
         "type": "object",
         "properties": {
@@ -1295,19 +1540,6 @@
           "streamable",
           "requested",
           "external"
-        ]
-      },
-      "RequestStatus": {
-        "type": "string",
-        "enum": [
-          "requested",
-          "searching",
-          "needsChoice",
-          "queued",
-          "downloading",
-          "importing",
-          "inLibrary",
-          "failed"
         ]
       },
       "Availability": {
@@ -3571,6 +3803,411 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/requests": {
+      "post": {
+        "summary": "Request something for the household, or join the request already under way for it",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "createRequest",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ref": {
+                    "$ref": "#/components/schemas/RequestRef"
+                  }
+                },
+                "required": [
+                  "ref"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The request, made, joined, or already in the library.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "The signed-in person's requests under way; podcasts never show, subscribing is instant",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "listRequests",
+        "responses": {
+          "200": {
+            "description": "Requests in flight, and those waiting for a choice of release.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/requests/{id}": {
+      "get": {
+        "summary": "One of the signed-in person's requests",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getRequest",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/requests/{id}/retry": {
+      "post": {
+        "summary": "Resume a failed request at the step it failed in",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "retryRequest",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request, moved back to that step.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/requests/{id}/cancel": {
+      "post": {
+        "summary": "Leave a request; the last person to leave ends it and drops its download",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "cancelRequest",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The signed-in person is no longer on the request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/requests/{id}/choose": {
+      "post": {
+        "summary": "Take one of the candidates a request offers, one tap even from a failure",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "chooseRelease",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "candidate": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "candidate"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The request, queued with that release.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestView"
                 }
               }
             }
