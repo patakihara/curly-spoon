@@ -2,6 +2,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CommitId } from '@auralis/schema';
 import { z } from 'zod';
+import { AUDIBLE_URL } from './adapters/audible/client.js';
+import { AUDNEXUS_URL } from './adapters/audnexus/client.js';
 import { isProxyEntry } from './auth/proxy.js';
 
 /** web's build sits next to server/ in both the repo and the image. */
@@ -31,6 +33,18 @@ function whole(unit: string, fallback: number, limits: { min: number; max?: numb
 
 const minutes = (fallback: number, limits: { min: number; max?: number }) =>
   whole('minutes', fallback, limits);
+
+/** A public service's address, with its own by default; empty turns it off. */
+const serviceUrl = (fallback: string) =>
+  z
+    .union([
+      z.literal(''),
+      z
+        .string()
+        .url()
+        .refine((value) => /^https?:$/.test(new URL(value).protocol), 'an http or https URL'),
+    ])
+    .default(fallback);
 
 const envSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(8787),
@@ -79,15 +93,7 @@ const envSchema = z.object({
   // The lyrics backfill: how often it runs (0 turns it off), and LRCLIB, the public lyrics
   // service it and the lyrics route ask, keyless; empty turns LRCLIB off.
   LYRICS_EVERY_MINUTES: minutes(60, { min: 0, max: LONGEST_TIMER_MINUTES }),
-  LRCLIB_URL: z
-    .union([
-      z.literal(''),
-      z
-        .string()
-        .url()
-        .refine((value) => /^https?:$/.test(new URL(value).protocol), 'an http or https URL'),
-    ])
-    .default('https://lrclib.net'),
+  LRCLIB_URL: serviceUrl('https://lrclib.net'),
   // The request job: how often it moves each request a step, how long an imported item may stay
   // out of the index before its request fails, how long any one upstream step may go unanswered,
   // how long a download may stand still, and how long an unreachable upstream may hold a request.
@@ -96,6 +102,18 @@ const envSchema = z.object({
   REQUEST_STEP_TIMEOUT_SECONDS: whole('seconds', 120, { min: 1, max: LONGEST_TIMER_SECONDS }),
   REQUEST_STALL_MINUTES: minutes(15, { min: 1 }),
   REQUEST_HOLD_MINUTES: minutes(60, { min: 1 }),
+  // Book requests, each optional: without them books cannot be requested and all else runs. The
+  // indexers and the torrent client with their keys' files; the folder holding Books and Downloads,
+  // on one mount so a link holds; where qBittorrent itself sees Downloads; and the two public
+  // catalogues, keyless, where empty names books by their request or leaves them without a photo.
+  PROWLARR_URL: z.string().url().optional(),
+  PROWLARR_API_KEY_FILE: z.string().min(1).optional(),
+  QBITTORRENT_URL: z.string().url().optional(),
+  QBITTORRENT_API_KEY_FILE: z.string().min(1).optional(),
+  QBITTORRENT_DOWNLOADS_PATH: z.string().min(1).optional(),
+  MEDIA_DIR: z.string().min(1).optional(),
+  AUDIBLE_URL: serviceUrl(AUDIBLE_URL),
+  AUDNEXUS_URL: serviceUrl(AUDNEXUS_URL),
   // How long a transcode may go unasked-for before Auralis closes it upstream.
   PLAY_IDLE_MINUTES: minutes(10, { min: 1 }),
   // The key that encrypts each person's upstream tokens: base64 here, or a 0600 file.
@@ -125,6 +143,7 @@ export interface AppConfig {
   index: IndexConfig;
   lyrics: LyricsConfig;
   requests: RequestsConfig;
+  books: BooksConfig;
   /** Minutes a transcode may go unasked-for before it is closed upstream. */
   playIdleMinutes: number;
   secretKey: string | undefined;
@@ -169,6 +188,23 @@ export interface UpstreamConfig {
   url: string;
   keyFile: string;
 }
+
+/** What book requests need. Unlike an upstream's, a part missing here is no reason not to start. */
+export interface BooksConfig {
+  prowlarr: UpstreamConfig | null;
+  qbittorrent: UpstreamConfig | null;
+  /** Where qBittorrent itself sees Downloads. */
+  downloadsPath: string | null;
+  /** The folder holding Books and Downloads. */
+  mediaDir: string | null;
+  /** Null when Audible is switched off. */
+  audibleUrl: string | null;
+  /** Null when Audnexus is switched off. */
+  audnexusUrl: string | null;
+}
+
+const bothOrNull = (url: string | undefined, keyFile: string | undefined) =>
+  url === undefined || keyFile === undefined ? null : { url, keyFile };
 
 function required<T>(value: T | undefined, name: string, because: string): T {
   if (value === undefined) throw new Error(`${name} is required ${because}`);
@@ -238,6 +274,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       stepTimeoutSeconds: parsed.REQUEST_STEP_TIMEOUT_SECONDS,
       stallAfterMinutes: parsed.REQUEST_STALL_MINUTES,
       holdAfterMinutes: parsed.REQUEST_HOLD_MINUTES,
+    },
+    books: {
+      prowlarr: bothOrNull(parsed.PROWLARR_URL, parsed.PROWLARR_API_KEY_FILE),
+      qbittorrent: bothOrNull(parsed.QBITTORRENT_URL, parsed.QBITTORRENT_API_KEY_FILE),
+      downloadsPath: parsed.QBITTORRENT_DOWNLOADS_PATH ?? null,
+      mediaDir: parsed.MEDIA_DIR ?? null,
+      audibleUrl: parsed.AUDIBLE_URL === '' ? null : parsed.AUDIBLE_URL,
+      audnexusUrl: parsed.AUDNEXUS_URL === '' ? null : parsed.AUDNEXUS_URL,
     },
     playIdleMinutes: parsed.PLAY_IDLE_MINUTES,
     secretKey: parsed.SECRET_KEY,

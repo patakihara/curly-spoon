@@ -33,7 +33,11 @@ test('a test, a recording, the test key, the recorder and the harness are each t
   ]) {
     assert.equal(testOnly(file), true, file);
   }
-  for (const file of ['server/src/main.ts', 'server/src/adapters/http/fetch.ts']) {
+  for (const file of [
+    'server/src/main.ts',
+    'server/src/adapters/http/fetch.ts',
+    'server/src/adapters/http/unavailable.ts',
+  ]) {
     assert.equal(testOnly(file), false, file);
   }
 });

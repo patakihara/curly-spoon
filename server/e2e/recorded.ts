@@ -236,7 +236,8 @@ async function indexRecordedPages(
   try {
     for (const page of upstreams.abs.recordings) {
       const library = /^\/api\/libraries\/([^/]+)\/items$/.exec(page.request.path)?.[1];
-      if (library === undefined) continue;
+      // A read of the newest items, as a book's import makes, is no page of the library.
+      if (library === undefined || page.request.query['sort'] === 'addedAt') continue;
       passes.push({
         db,
         pageSize: queryNumber(page, 'limit'),

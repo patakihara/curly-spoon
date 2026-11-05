@@ -32,11 +32,4 @@ server/src/adapters/oidc
 server/src/adapters/record-*.ts
 server/src/adapters/http/*
 !server/src/adapters/http/fetch.ts
-# Not run until the book steps are registered; M3.books' registration takes these lines out.
-server/src/adapters/audible
-server/src/adapters/audiobookbay
-server/src/adapters/audnexus
-server/src/adapters/prowlarr
-server/src/adapters/qbittorrent
-server/src/requests/books
-server/src/requests/download
+!server/src/adapters/http/unavailable.ts

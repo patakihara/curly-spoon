@@ -19,6 +19,7 @@ import type { AppConfig } from './config.js';
 import { loadSecretKey } from './crypto/secretBox.js';
 import { startIndexJob } from './libraryIndex/start.js';
 import { lyricsService, startLyricsJob } from './lyrics/start.js';
+import { bookSteps } from './requests/books/index.js';
 import { type MediumSteps, stepsRegistry } from './requests/steps.js';
 import type { Upstreams } from './upstream/links.js';
 import { readSecretFile } from './secretFile.js';
@@ -67,7 +68,7 @@ export async function assembleServer(
   deps: {
     fetch: FetchLike;
     logger?: BuildAppOptions['logger'];
-    /** The steps of each medium that can be requested; `main.ts` gives none until each lands. */
+    /** Steps of other media to request, as a harness brings; books come from the configuration. */
     steps?: readonly MediumSteps[];
   },
 ): Promise<Server> {
@@ -120,6 +121,13 @@ export async function assembleServer(
     log: { warn: (details, message) => app.log.warn(details, message) },
   });
 
+  const books = bookSteps(config, {
+    db,
+    fetch,
+    log: { error: (details, message) => app.log.error(details, message) },
+    now: Date.now,
+  });
+
   const setupCodeFile = join(config.dataDir, 'setup-code');
   const app = await buildApp({
     webDistDir: config.webDistDir,
@@ -140,9 +148,9 @@ export async function assembleServer(
     },
     playback: { idleMs: config.playIdleMinutes * 60_000 },
     lyrics,
-    // Each medium's item registers its steps here; until then nothing can be requested.
+    // A medium with no steps here cannot be requested.
     requests: {
-      steps: stepsRegistry(deps.steps ?? []),
+      steps: stepsRegistry([...(deps.steps ?? []), ...('steps' in books ? [books.steps] : [])]),
       everyMs: config.requests.everySeconds * 1_000,
       notIndexedAfterMs: config.requests.notIndexedAfterHours * 3_600_000,
       stepTimeoutMs: config.requests.stepTimeoutSeconds * 1_000,
@@ -151,6 +159,8 @@ export async function assembleServer(
     },
     logger: deps.logger ?? true,
   });
+
+  if ('off' in books) app.log.info({ missing: books.off }, 'Books cannot be requested');
 
   if (!hasAdmin(db)) {
     issueSetupCode(db, setupCodeFile);
