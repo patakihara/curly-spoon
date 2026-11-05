@@ -35,6 +35,7 @@ export const RequestFailure = z
     'noRelease',
     'searchFailed',
     'downloadFailed',
+    'downloadStalled',
     'importFailed',
     'notIndexed',
     'cancelledUpstream',

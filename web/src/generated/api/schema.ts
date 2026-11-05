@@ -688,7 +688,7 @@ export interface components {
          */
         HlsMime: "application/vnd.apple.mpegurl";
         /** @enum {string} */
-        RequestFailure: "noRelease" | "searchFailed" | "downloadFailed" | "importFailed" | "notIndexed" | "cancelledUpstream";
+        RequestFailure: "noRelease" | "searchFailed" | "downloadFailed" | "downloadStalled" | "importFailed" | "notIndexed" | "cancelledUpstream";
         /** @enum {string} */
         QueueType: "music" | "spoken";
         /** @enum {string} */

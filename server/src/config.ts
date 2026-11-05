@@ -89,10 +89,13 @@ const envSchema = z.object({
     ])
     .default('https://lrclib.net'),
   // The request job: how often it moves each request a step, how long an imported item may stay
-  // out of the index before its request fails, and how long any one upstream step may go unanswered.
+  // out of the index before its request fails, how long any one upstream step may go unanswered,
+  // how long a download may stand still, and how long an unreachable upstream may hold a request.
   REQUESTS_EVERY_SECONDS: whole('seconds', 30, { min: 1, max: LONGEST_TIMER_SECONDS }),
   REQUEST_NOT_INDEXED_HOURS: whole('hours', 24, { min: 1 }),
   REQUEST_STEP_TIMEOUT_SECONDS: whole('seconds', 120, { min: 1, max: LONGEST_TIMER_SECONDS }),
+  REQUEST_STALL_MINUTES: minutes(15, { min: 1 }),
+  REQUEST_HOLD_MINUTES: minutes(60, { min: 1 }),
   // How long a transcode may go unasked-for before Auralis closes it upstream.
   PLAY_IDLE_MINUTES: minutes(10, { min: 1 }),
   // The key that encrypts each person's upstream tokens: base64 here, or a 0600 file.
@@ -156,6 +159,10 @@ export interface RequestsConfig {
   notIndexedAfterHours: number;
   /** How long any one call to a medium's steps may go unanswered before it counts as failed. */
   stepTimeoutSeconds: number;
+  /** How long a download's bytes may stand still before its request fails. */
+  stallAfterMinutes: number;
+  /** How long an upstream that cannot be reached may hold a request before it fails. */
+  holdAfterMinutes: number;
 }
 
 export interface UpstreamConfig {
@@ -229,6 +236,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       everySeconds: parsed.REQUESTS_EVERY_SECONDS,
       notIndexedAfterHours: parsed.REQUEST_NOT_INDEXED_HOURS,
       stepTimeoutSeconds: parsed.REQUEST_STEP_TIMEOUT_SECONDS,
+      stallAfterMinutes: parsed.REQUEST_STALL_MINUTES,
+      holdAfterMinutes: parsed.REQUEST_HOLD_MINUTES,
     },
     playIdleMinutes: parsed.PLAY_IDLE_MINUTES,
     secretKey: parsed.SECRET_KEY,

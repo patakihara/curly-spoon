@@ -35,12 +35,20 @@ import { indexedRow } from './libraryIndex/store.js';
 import {
   advanceRequests,
   chooseRelease,
+  otherReleases,
   pickAnotherRelease,
   retryRequest,
   type RequestJobDeps,
 } from './requests/job.js';
 import { ROUTES } from './requests/machine.js';
-import { type DownloadHandle, type MediumSteps, stepsRegistry } from './requests/steps.js';
+import {
+  type DownloadHandle,
+  type ImportOutcome,
+  type MediumSteps,
+  type PollOutcome,
+  StepUnavailable,
+  stepsRegistry,
+} from './requests/steps.js';
 import { claimsOf } from './store/claims.js';
 import { openDatabase, type Db } from './store/connection.js';
 import { createDevice } from './store/devices.js';
@@ -59,6 +67,9 @@ const ADAPTERS = fileURLToPath(new URL('./adapters/', import.meta.url));
 const HOUR = 3_600_000;
 const CAP = 24 * HOUR;
 const STEP_LIMIT = 60_000;
+const MINUTE = 60_000;
+const STALL = 15 * MINUTE;
+const HOLD = 60 * MINUTE;
 
 function recording(upstream: string, call: string): Recording {
   const file = join(ADAPTERS, upstream, 'recordings', `${call}.json`);
@@ -157,6 +168,8 @@ const deps = (...steps: MediumSteps[]): RequestJobDeps => ({
   now: () => clock,
   notIndexedAfterMs: CAP,
   stepTimeoutMs: STEP_LIMIT,
+  stallAfterMs: STALL,
+  holdAfterMs: HOLD,
 });
 
 const request = (medium: RequestMedium) => createRequest(db, ana, refs[medium], clock).request;
@@ -802,6 +815,411 @@ describe('the windows a crash, a cancel or a second tap can fall into', () => {
   });
 });
 
+describe('[M3.books] an import that has to wait for its folder to be seen', () => {
+  const keysOf = (steps: StandInSteps) => {
+    const keys: string[] = [];
+    const imports = steps.import;
+    return {
+      keys,
+      steps: {
+        ...steps,
+        import: (...args: Parameters<typeof imports>) => {
+          keys.push(args[1]);
+          return imports(...args);
+        },
+      },
+    };
+  };
+
+  it('[M3.books] calls again under the same key, saving nothing, and then arrives', async () => {
+    const { keys, steps } = keysOf(standInSteps('podcast', { importWaits: 2, imports: show }));
+    const job = deps(steps);
+    const one = request('podcast');
+    await runUntil(job, one, 'importing');
+
+    clock += 1_000;
+    await advanceRequests(job);
+    const waiting = reread(one);
+    expect(waiting.result).toBeNull();
+    clock += 1_000;
+    await advanceRequests(job);
+    expect(reread(one)).toEqual(waiting);
+
+    clock += 1_000;
+    await advanceRequests(job);
+    expect(reread(one).result).toEqual(show);
+    expect(reread(one).stepKey).toBeNull();
+    expect(keys).toHaveLength(3);
+    expect(new Set(keys).size).toBe(1);
+  });
+
+  it('[M3.books] fails notIndexed when the wait never ends, not before, and a retry asks under the same key', async () => {
+    const { keys, steps } = keysOf(
+      standInSteps('podcast', { importWaits: Infinity, imports: show }),
+    );
+    const job = deps(steps);
+    const one = request('podcast');
+    await runUntil(job, one, 'importing');
+    clock += 1_000;
+    await advanceRequests(job);
+
+    clock += CAP - 1_000;
+    await advanceRequests(job);
+    expect(reread(one).state).toEqual({ status: 'importing' });
+
+    clock += 1_000;
+    await advanceRequests(job);
+    expect(reread(one).state).toEqual({
+      status: 'failed',
+      failedStep: 'importing',
+      reason: 'notIndexed',
+    });
+
+    await retryRequest(job, one.id);
+    await advanceRequests(job);
+    expect(new Set(keys).size).toBe(1);
+  });
+});
+
+describe('[M3.books] an upstream that cannot be reached holds the request where it stands', () => {
+  type Step = 'search' | 'start' | 'poll' | 'import';
+  /** The steps, with one of them refusing as a dropped connection does while `down` is set. */
+  const refusing = (step: Step, steps: StandInSteps) => {
+    const line = { down: false, keys: [] as string[] };
+    const refused = () => Promise.reject(new StepUnavailable('connection refused'));
+    const { search, download } = steps;
+    const imports = steps.import;
+    const { start, poll } = download!;
+    return {
+      line,
+      steps: {
+        ...steps,
+        search: (...args: Parameters<typeof search>) =>
+          line.down && step === 'search' ? refused() : search(...args),
+        import: (...args: Parameters<typeof imports>) => {
+          if (step === 'import') line.keys.push(args[1]);
+          return line.down && step === 'import' ? refused() : imports(...args);
+        },
+        download: {
+          ...download!,
+          start: (...args: Parameters<typeof start>) => {
+            if (step === 'start') line.keys.push(args[2]);
+            return line.down && step === 'start' ? refused() : start(...args);
+          },
+          poll: (...args: Parameters<typeof poll>) =>
+            line.down && step === 'poll' ? refused() : poll(...args),
+        },
+      },
+    };
+  };
+  const cases = [
+    { step: 'search', status: 'searching', reason: 'searchFailed' },
+    { step: 'start', status: 'queued', reason: 'downloadFailed' },
+    { step: 'poll', status: 'downloading', reason: 'downloadFailed' },
+    { step: 'import', status: 'importing', reason: 'importFailed' },
+  ] as const;
+
+  it.each(cases)(
+    '[M3.books] holds at $step with nothing saved, then fails $reason past the hold',
+    async ({ step, status, reason }) => {
+      const stand = standInSteps('book', {
+        polls: [{ kind: 'downloading', progress: 0.5 }, { kind: 'done' }],
+      });
+      const { line, steps } = refusing(step, stand);
+      const job = deps(steps);
+      const one = request('book');
+      await runUntil(job, one, status);
+      line.down = true;
+
+      clock += 1_000;
+      await advanceRequests(job);
+      const held = reread(one);
+      expect(held.state.status).toBe(status);
+      expect(logged.at(-1)).toMatchObject({ request: one.id, step: status });
+
+      clock = held.updatedAt + HOLD - 1_000;
+      await advanceRequests(job);
+      expect(reread(one)).toEqual(held);
+
+      clock += 1_000;
+      await advanceRequests(job);
+      expect(reread(one).state).toEqual({ status: 'failed', failedStep: status, reason });
+    },
+  );
+
+  it.each(cases.filter(({ step }) => step === 'start' || step === 'import'))(
+    '[M3.books] goes on under the same key once $step answers again',
+    async ({ step, status }) => {
+      const { line, steps } = refusing(step, standInSteps('book'));
+      const job = deps(steps);
+      const one = request('book');
+      await runUntil(job, one, status);
+      line.down = true;
+      clock += MINUTE;
+      await advanceRequests(job);
+      clock += MINUTE;
+      await advanceRequests(job);
+      line.down = false;
+      clock += MINUTE;
+      await advanceRequests(job);
+      expect(line.keys).toHaveLength(3);
+      expect(new Set(line.keys).size).toBe(1);
+      expect(reread(one).stepKey).toBeNull();
+    },
+  );
+
+  it('[M3.books] still fails at once on any other throw', async () => {
+    const steps = standInSteps('podcast');
+    const job = deps({ ...steps, search: () => Promise.reject(new Error('a 401')) });
+    const one = request('podcast');
+    await runUntil(job, one, 'failed');
+    expect(reread(one).state).toMatchObject({ reason: 'searchFailed' });
+  });
+
+  const standing = (progress = 0.5) =>
+    standInSteps('book', { polls: [{ kind: 'downloading', progress }] });
+
+  it('[M3.books] leaves the stall clock unwritten while the poll cannot be answered', async () => {
+    const { line, steps } = refusing('poll', standing());
+    const job = deps(steps);
+    const one = request('book');
+    await runUntil(job, one, 'downloading');
+    const { progressAt } = reread(one);
+    line.down = true;
+    clock += 20 * MINUTE;
+    await advanceRequests(job);
+    expect(reread(one).progressAt).toBe(progressAt);
+  });
+
+  it.each([STALL - MINUTE, STALL, 30 * MINUTE])(
+    '[M3.books] never takes a moving download for a stalled one after %d ms of no answers',
+    async (flap) => {
+      const { line, steps } = refusing('poll', standing());
+      const job = deps(steps);
+      const one = request('book');
+      await runUntil(job, one, 'downloading');
+      line.down = true;
+      clock += flap;
+      await advanceRequests(job);
+      line.down = false;
+      clock += 1_000;
+      await advanceRequests(job);
+      expect(reread(one).state).toEqual({ status: 'downloading', progress: 0.5 });
+    },
+  );
+
+  it('[M3.books] counts the stall afresh after a long gap, and it still fires', async () => {
+    const { line, steps } = refusing('poll', standing());
+    const job = deps(steps);
+    const one = request('book');
+    await runUntil(job, one, 'downloading');
+    line.down = true;
+    clock += 30 * MINUTE;
+    await advanceRequests(job);
+    line.down = false;
+    await advanceRequests(job);
+    expect(reread(one).state.status).toBe('downloading');
+    for (let minute = 0; minute < 14; minute += 1) {
+      clock += MINUTE;
+      await advanceRequests(job);
+    }
+    expect(reread(one).state.status).toBe('downloading');
+    clock += MINUTE;
+    await advanceRequests(job);
+    expect(reread(one).state).toMatchObject({ reason: 'downloadStalled' });
+  });
+});
+
+describe('[M3.books] a download that stops moving', () => {
+  const others = [standInRelease('b'), standInRelease('c')];
+  const picked = { kind: 'picked', release: standInRelease('a'), others } as const;
+  const everyMinute = async (job: RequestJobDeps, minutes: number) => {
+    for (let minute = 0; minute < minutes; minute += 1) {
+      clock += MINUTE;
+      await advanceRequests(job);
+    }
+  };
+
+  it('[M3.books] fails downloadStalled at the limit and not a minute before', async () => {
+    const job = deps(standInSteps('book', { polls: [{ kind: 'downloading', progress: 0.94 }] }));
+    const one = request('book');
+    await runUntil(job, one, 'downloading');
+
+    await everyMinute(job, 14);
+    expect(reread(one).state).toEqual({ status: 'downloading', progress: 0.94 });
+    await everyMinute(job, 1);
+    expect(reread(one).state).toEqual({
+      status: 'failed',
+      failedStep: 'downloading',
+      reason: 'downloadStalled',
+    });
+  });
+
+  it('[M3.books] catches metadata that never comes, as progress that stays at nothing', async () => {
+    const job = deps(standInSteps('book', { polls: [{ kind: 'downloading', progress: 0 }] }));
+    const one = request('book');
+    await runUntil(job, one, 'downloading');
+    await everyMinute(job, 15);
+    expect(reread(one).state).toMatchObject({ status: 'failed', reason: 'downloadStalled' });
+  });
+
+  it('[M3.books] takes rising progress as life, however slow', async () => {
+    const polls = Array.from({ length: 40 }, (_, turn) => ({
+      kind: 'downloading' as const,
+      progress: (turn + 1) / 100,
+    }));
+    const job = deps(standInSteps('book', { polls }));
+    const one = request('book');
+    await runUntil(job, one, 'downloading');
+    for (let turn = 0; turn < 8; turn += 1) {
+      clock += 10 * MINUTE;
+      await advanceRequests(job);
+      expect(reread(one).state.status).toBe('downloading');
+      expect(reread(one).progressAt).toBe(clock);
+    }
+  });
+
+  it('[M3.books] does not count time spent in the client’s queue', async () => {
+    const polls = [
+      { kind: 'downloading', progress: 0.5 },
+      ...Array.from({ length: 6 }, () => ({ kind: 'queued' as const })),
+      { kind: 'downloading', progress: 0.5 },
+    ] satisfies PollOutcome[];
+    const job = deps(standInSteps('book', { polls }));
+    const one = request('book');
+    await runUntil(job, one, 'downloading');
+    for (let turn = 0; turn < 7; turn += 1) {
+      clock += 10 * MINUTE;
+      await advanceRequests(job);
+      expect(reread(one).state).toEqual({ status: 'downloading', progress: 0.5 });
+    }
+    expect(reread(one).progressAt).toBe(clock - 10 * MINUTE);
+  });
+
+  it('[M3.books] drops the dead one and starts the next release by itself, down to the last', async () => {
+    const steps = standInSteps('book', {
+      search: picked,
+      polls: [{ kind: 'downloading', progress: 0.5 }],
+    });
+    const job = deps(steps);
+    const one = request('book');
+    await runUntil(job, one, 'downloading');
+
+    await everyMinute(job, 15);
+    expect(reread(one)).toMatchObject({
+      state: { status: 'queued' },
+      release: { id: 'b' },
+      handle: null,
+    });
+    expect(steps.cancelled).toEqual([{ release: 'a', start: 1 }]);
+
+    await runUntil(job, one, 'downloading');
+    await everyMinute(job, 15);
+    expect(reread(one).release?.id).toBe('c');
+    expect(steps.cancelled).toEqual([
+      { release: 'a', start: 1 },
+      { release: 'b', start: 2 },
+    ]);
+
+    await runUntil(job, one, 'downloading');
+    await everyMinute(job, 15);
+    expect(reread(one).state).toEqual({
+      status: 'failed',
+      failedStep: 'downloading',
+      reason: 'downloadStalled',
+    });
+    expect(otherReleases(reread(one))).toEqual([]);
+    expect(steps.calls.start).toBe(3);
+    await everyMinute(job, 30);
+    expect(steps.calls.start).toBe(3);
+    expect(steps.calls.search).toBe(1);
+  });
+
+  it('[M3.books] gives an album the same rule, and a song, with no choice, stays failed', async () => {
+    const stood = { polls: [{ kind: 'downloading', progress: 0.5 } as const] };
+    const album = standInSteps('album', { ...stood, search: picked });
+    const song = standInSteps('song', stood);
+    const job = deps(album, song);
+    const [theAlbum, theSong] = [request('album'), request('song')];
+    await runUntil(job, theSong, 'downloading');
+    await everyMinute(job, 18);
+    expect(reread(theAlbum).release?.id).toBe('b');
+    expect(reread(theSong).state).toMatchObject({ status: 'failed', reason: 'downloadStalled' });
+    expect(song.calls.start).toBe(1);
+  });
+
+  it('[M3.books] drops the dead one before the next one starts', async () => {
+    const order: string[] = [];
+    const steps = standInSteps('book', {
+      search: picked,
+      polls: [{ kind: 'downloading', progress: 0.5 }],
+    });
+    const { start, cancel } = steps.download!;
+    const job = deps({
+      ...steps,
+      download: {
+        ...steps.download!,
+        start: (one, release, key) => {
+          order.push(`start ${release.id}`);
+          return start(one, release, key);
+        },
+        cancel: async (target) => {
+          await new Promise((resolve) => setTimeout(resolve, 5));
+          order.push('cancel');
+          return cancel(target);
+        },
+      },
+    });
+    const one = request('book');
+    await runUntil(job, one, 'downloading');
+    await everyMinute(job, 16);
+    expect(order).toEqual(['start a', 'cancel', 'start b']);
+  });
+
+  it('[M3.books] a next release started for a request cancelled meanwhile still drops itself', async () => {
+    const steps = standInSteps('book', {
+      search: picked,
+      polls: [{ kind: 'downloading', progress: 0.5 }],
+    });
+    const { start } = steps.download!;
+    const one = request('book');
+    const job = deps({
+      ...steps,
+      download: {
+        ...steps.download!,
+        start: (...args) => {
+          if (args[1].id === 'b') deleteRequest(db, one.id);
+          return start(...args);
+        },
+      },
+    });
+    await runUntil(job, one, 'downloading');
+    await everyMinute(job, 16);
+    expect(getRequest(db, one.id)).toBeNull();
+    expect(steps.cancelled).toEqual([
+      { release: 'a', start: 1 },
+      { release: 'b', start: 2 },
+    ]);
+  });
+
+  it('[M3.books] a retry of a stalled download gets a full limit again', async () => {
+    const steps = standInSteps('book', { polls: [{ kind: 'downloading', progress: 0.5 }] });
+    const job = deps(steps);
+    const one = request('book');
+    await runUntil(job, one, 'downloading');
+    await everyMinute(job, 15);
+    expect(reread(one).state).toMatchObject({ reason: 'downloadStalled' });
+
+    await retryRequest(job, one.id);
+    await everyMinute(job, 2);
+    expect(reread(one).state).toEqual({ status: 'downloading', progress: 0.5 });
+    await everyMinute(job, 14);
+    expect(reread(one).state.status).toBe('downloading');
+    await everyMinute(job, 1);
+    expect(reread(one).state).toMatchObject({ reason: 'downloadStalled' });
+  });
+});
+
 describe('a step that never answers', () => {
   const hung = <T>(): Promise<T> => new Promise<T>(() => undefined);
   /** The job with a limit short enough to wait out. */
@@ -888,7 +1306,7 @@ describe('a step that never answers', () => {
       ...steps,
       import: (...args: Parameters<typeof imports>) => {
         keys.push(args[1]);
-        return hangs ? hung<{ ref: MediaRef }>() : imports(...args);
+        return hangs ? hung<ImportOutcome>() : imports(...args);
       },
     });
     const one = request('podcast');
@@ -967,6 +1385,8 @@ describe('a step that never answers', () => {
         everyMs: 5,
         notIndexedAfterMs: CAP,
         stepTimeoutMs: 5,
+        stallAfterMs: STALL,
+        holdAfterMs: HOLD,
       },
     });
     await vi.waitFor(() => expect(reread(stuck).state.status).toBe('failed'));
@@ -987,6 +1407,8 @@ describe('the advance job in the app', () => {
         everyMs: 5,
         notIndexedAfterMs: CAP,
         stepTimeoutMs: STEP_LIMIT,
+        stallAfterMs: STALL,
+        holdAfterMs: HOLD,
       },
     });
     await vi.waitFor(() => expect(reread(one).result).toEqual(show));
@@ -1020,6 +1442,8 @@ describe('the advance job in the app', () => {
         everyMs: 5,
         notIndexedAfterMs: CAP,
         stepTimeoutMs: STEP_LIMIT,
+        stallAfterMs: STALL,
+        holdAfterMs: HOLD,
       },
     });
     saveRequest(db, one.id, { state: { status: 'searching' } }, clock);
@@ -1076,6 +1500,8 @@ describe('the requests routes', () => {
               everyMs: 3_600_000,
               notIndexedAfterMs: CAP,
               stepTimeoutMs: STEP_LIMIT,
+              stallAfterMs: STALL,
+              holdAfterMs: HOLD,
             },
           }),
     });
@@ -1589,7 +2015,7 @@ describe('the requests routes', () => {
         medium: 'song',
         search: () =>
           Promise.resolve({ kind: 'picked', release: standInRelease('one'), others: [] }),
-        import: () => Promise.resolve({ ref: songsAlbum }),
+        import: () => Promise.resolve({ kind: 'arrived', ref: songsAlbum }),
         download: {
           start: () => {
             live.add('same-info-hash');
@@ -1649,7 +2075,7 @@ describe('the requests routes', () => {
         medium: 'song',
         search: () =>
           Promise.resolve({ kind: 'picked', release: standInRelease('one'), others: [] }),
-        import: () => Promise.resolve({ ref: songsAlbum }),
+        import: () => Promise.resolve({ kind: 'arrived', ref: songsAlbum }),
         download: {
           start: () => {
             live.add(hash.hash);

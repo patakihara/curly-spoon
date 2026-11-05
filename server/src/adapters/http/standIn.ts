@@ -8,17 +8,22 @@ import type { MediaRef, RequestMedium } from '@auralis/schema';
 import { ROUTES } from '../../requests/machine.js';
 import type {
   DownloadHandle,
+  ImportOutcome,
   MediumSteps,
   PollOutcome,
   Release,
   SearchOutcome,
 } from '../../requests/steps.js';
 
-/** What the stand-in answers: its search, its polls in turn (the last repeats), its import. */
+/**
+ * What the stand-in answers: its search, its polls in turn (the last repeats), its import, and how
+ * many times the import answers that it is still waiting first.
+ */
 export interface StandInScript {
   search?: SearchOutcome;
   polls?: PollOutcome[];
   imports?: MediaRef;
+  importWaits?: number;
 }
 
 /** A stand-in release, by id. */
@@ -43,7 +48,8 @@ export function standInSteps(medium: RequestMedium, script: StandInScript = {}):
   const polled: DownloadHandle[] = [];
   const cancelled: DownloadHandle[] = [];
   const polls = script.polls ?? [{ kind: 'done' }];
-  const imported = new Map<string, { ref: MediaRef }>();
+  const imported = new Map<string, ImportOutcome>();
+  let waits = script.importWaits ?? 0;
   const started = new Map<string, DownloadHandle>();
   const count = (step: string): number => {
     calls[step] = (calls[step] ?? 0) + 1;
@@ -61,7 +67,12 @@ export function standInSteps(medium: RequestMedium, script: StandInScript = {}):
       );
     },
     import: (_request, key) => {
+      if (waits > 0) {
+        waits -= 1;
+        return Promise.resolve({ kind: 'waiting' });
+      }
       const named = imported.get(key) ?? {
+        kind: 'arrived' as const,
         ref: script.imports ?? { source: 'abs', id: 'stand-in' },
       };
       if (!imported.has(key)) count('import');

@@ -59,6 +59,11 @@ describe('[M3.requests] the Requests page from GET /api/requests', () => {
     expect(row).toMatchObject({ meta: 'Book', status: 'Searching…' });
   });
 
+  it('says a download that stopped moving stalled, not that it failed', () => {
+    const data = requestsData(list([failed({ reason: 'downloadStalled' })]), frame.placeholder);
+    expect(data.failed[0]?.detail).toBe('The download stalled');
+  });
+
   it('offers a failed row a retry and a cancel, and says why it failed', () => {
     const data = requestsData(list([failed()]), frame.placeholder);
     expect(data.inFlight).toEqual([]);

@@ -739,6 +739,80 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 20,
+    name: 'request_stall',
+    up: (db) => {
+      // A CHECK cannot be altered, so the table is built again. Dropping it empties what refers to
+      // it (foreign keys stay on in a migration's transaction), so those rows are carried across,
+      // and the trigger naming it comes off until it is back.
+      db.exec(`
+        CREATE TEMP TABLE keep_request_keys AS SELECT * FROM request_keys;
+        CREATE TEMP TABLE keep_arrived_keys AS SELECT * FROM arrived_keys;
+        CREATE TEMP TABLE keep_request_people AS SELECT * FROM request_people;
+        DROP TRIGGER request_people_last_left;
+
+        -- progress_at is when a download's bytes were last seen to move, which times a stall.
+        CREATE TABLE requests_rebuilt (
+          id            TEXT PRIMARY KEY,
+          medium        TEXT NOT NULL CHECK (medium IN ('book', 'album', 'song', 'podcast')),
+          target        TEXT NOT NULL,
+          status        TEXT NOT NULL CHECK (status IN ('requested', 'searching', 'needsChoice',
+                          'queued', 'downloading', 'importing', 'inLibrary', 'failed')),
+          failed_step   TEXT CHECK (failed_step IN ('requested', 'searching', 'needsChoice',
+                          'queued', 'downloading', 'importing')),
+          reason        TEXT CHECK (reason IN ('noRelease', 'searchFailed', 'downloadFailed',
+                          'downloadStalled', 'importFailed', 'notIndexed', 'cancelledUpstream')),
+          progress      REAL CHECK (progress BETWEEN 0 AND 1),
+          release       TEXT,
+          candidates    TEXT NOT NULL DEFAULT '[]',
+          handle        TEXT,
+          step_key      TEXT,
+          version       INTEGER NOT NULL DEFAULT 0,
+          result_source TEXT CHECK (result_source IN ('abs', 'jellyfin')),
+          result_id     TEXT,
+          progress_at   INTEGER,
+          created_at    INTEGER NOT NULL,
+          updated_at    INTEGER NOT NULL,
+          CHECK ((failed_step IS NOT NULL) = (status = 'failed')),
+          CHECK ((reason IS NOT NULL) = (status = 'failed')),
+          CHECK ((progress IS NOT NULL) = (status = 'downloading')),
+          CHECK ((result_source IS NULL) = (result_id IS NULL)),
+          CHECK (status <> 'inLibrary' OR result_id IS NOT NULL)
+        );
+        INSERT INTO requests_rebuilt (id, medium, target, status, failed_step, reason, progress,
+            release, candidates, handle, step_key, version, result_source, result_id, created_at,
+            updated_at)
+          SELECT id, medium, target, status, failed_step, reason, progress, release, candidates,
+            handle, step_key, version, result_source, result_id, created_at, updated_at
+          FROM requests;
+        DROP TABLE requests;
+        ALTER TABLE requests_rebuilt RENAME TO requests;
+        CREATE INDEX idx_requests_working ON requests(status)
+          WHERE status NOT IN ('inLibrary', 'failed');
+        CREATE TRIGGER requests_in_library AFTER UPDATE OF status ON requests
+          WHEN NEW.status = 'inLibrary'
+          BEGIN
+            INSERT OR IGNORE INTO arrived_keys (medium, key, request_id)
+              SELECT medium, key, request_id FROM request_keys WHERE request_id = NEW.id;
+            DELETE FROM request_keys WHERE request_id = NEW.id;
+          END;
+
+        DELETE FROM request_keys;
+        DELETE FROM arrived_keys;
+        DELETE FROM request_people;
+        INSERT INTO request_keys SELECT * FROM keep_request_keys;
+        INSERT INTO arrived_keys SELECT * FROM keep_arrived_keys;
+        INSERT INTO request_people SELECT * FROM keep_request_people;
+        DROP TABLE keep_request_keys;
+        DROP TABLE keep_arrived_keys;
+        DROP TABLE keep_request_people;
+        CREATE TRIGGER request_people_last_left AFTER DELETE ON request_people
+          WHEN NOT EXISTS (SELECT 1 FROM request_people WHERE request_id = OLD.request_id)
+          BEGIN DELETE FROM requests WHERE id = OLD.request_id; END;
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

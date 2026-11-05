@@ -42,6 +42,85 @@ describe('runMigrations', () => {
   });
 });
 
+describe('the migration that lets a request fail stalled', () => {
+  const at = 1_000;
+  function withOneOfEach() {
+    const db = new Database(':memory:');
+    db.pragma('foreign_keys = ON');
+    runMigrations(
+      db,
+      migrations.filter((m) => m.id <= 19),
+    );
+    db.prepare(
+      `INSERT INTO users (id, username, role, created_at, updated_at)
+       VALUES ('ana', 'ana', 'member', ?, ?)`,
+    ).run(at, at);
+    const add = db.prepare(
+      `INSERT INTO requests (id, medium, target, status, created_at, updated_at)
+       VALUES (?, 'book', '{}', 'requested', ?, ?)`,
+    );
+    const person = db.prepare(
+      'INSERT INTO request_people (request_id, user_id, joined_at) VALUES (?, ?, ?)',
+    );
+    const key = db.prepare('INSERT INTO request_keys (medium, key, request_id) VALUES (?, ?, ?)');
+    for (const id of ['r1', 'r2']) {
+      add.run(id, at, at);
+      person.run(id, 'ana', at);
+      key.run('book', `asin:${id}`, id);
+    }
+    db.prepare(
+      `UPDATE requests SET status = 'inLibrary', result_source = 'abs', result_id = 'i' WHERE id = 'r2'`,
+    ).run();
+    runMigrations(db);
+    return db;
+  }
+
+  it('keeps every request, who is on it, and its keys', () => {
+    const db = withOneOfEach();
+    const rows = (sql: string) => db.prepare(sql).all();
+    expect(rows('SELECT id, status, progress_at FROM requests ORDER BY id')).toEqual([
+      { id: 'r1', status: 'requested', progress_at: null },
+      { id: 'r2', status: 'inLibrary', progress_at: null },
+    ]);
+    expect(rows('SELECT request_id, user_id FROM request_people ORDER BY request_id')).toEqual([
+      { request_id: 'r1', user_id: 'ana' },
+      { request_id: 'r2', user_id: 'ana' },
+    ]);
+    expect(rows('SELECT request_id, key FROM request_keys')).toEqual([
+      { request_id: 'r1', key: 'asin:r1' },
+    ]);
+    expect(rows('SELECT request_id, key FROM arrived_keys')).toEqual([
+      { request_id: 'r2', key: 'asin:r2' },
+    ]);
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.close();
+  });
+
+  it('takes the new reason, and still refuses one nobody knows', () => {
+    const db = withOneOfEach();
+    const fail = db.prepare(
+      `UPDATE requests SET status = 'failed', failed_step = 'downloading', reason = ? WHERE id = 'r1'`,
+    );
+    expect(fail.run('downloadStalled').changes).toBe(1);
+    expect(() => fail.run('tracker down')).toThrow();
+    db.close();
+  });
+
+  it('keeps what the table’s triggers and references do', () => {
+    const db = withOneOfEach();
+    db.prepare(
+      `UPDATE requests SET status = 'inLibrary', result_source = 'abs', result_id = 'j' WHERE id = 'r1'`,
+    ).run();
+    expect(db.prepare(`SELECT key FROM arrived_keys WHERE request_id = 'r1'`).all()).toEqual([
+      { key: 'asin:r1' },
+    ]);
+    db.prepare(`DELETE FROM request_people WHERE request_id = 'r2'`).run();
+    expect(db.prepare(`SELECT id FROM requests WHERE id = 'r2'`).get()).toBeUndefined();
+    expect(db.prepare(`SELECT 1 FROM arrived_keys WHERE request_id = 'r2'`).get()).toBeUndefined();
+    db.close();
+  });
+});
+
 describe('the episode order migration', () => {
   it('has every indexed show read again on the next run, and nothing else', () => {
     const db = new Database(':memory:');

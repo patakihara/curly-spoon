@@ -146,6 +146,8 @@ export async function assembleServer(
       everyMs: config.requests.everySeconds * 1_000,
       notIndexedAfterMs: config.requests.notIndexedAfterHours * 3_600_000,
       stepTimeoutMs: config.requests.stepTimeoutSeconds * 1_000,
+      stallAfterMs: config.requests.stallAfterMinutes * 60_000,
+      holdAfterMs: config.requests.holdAfterMinutes * 60_000,
     },
     logger: deps.logger ?? true,
   });

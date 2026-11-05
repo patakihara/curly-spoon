@@ -69,6 +69,8 @@ export interface BuildAppOptions {
     everyMs: number;
     notIndexedAfterMs: number;
     stepTimeoutMs: number;
+    stallAfterMs: number;
+    holdAfterMs: number;
   };
   /** How transcodes are held open and their segments waited for. */
   playback?: PlaybackOptions;

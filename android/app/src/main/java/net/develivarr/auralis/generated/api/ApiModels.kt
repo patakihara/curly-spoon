@@ -716,6 +716,8 @@ enum class RequestFailure {
     SEARCH_FAILED,
     @SerialName("downloadFailed")
     DOWNLOAD_FAILED,
+    @SerialName("downloadStalled")
+    DOWNLOAD_STALLED,
     @SerialName("importFailed")
     IMPORT_FAILED,
     @SerialName("notIndexed")

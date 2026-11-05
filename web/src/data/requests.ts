@@ -31,6 +31,7 @@ const FAILURES: Record<RequestFailure, string> = {
   noRelease: 'No release was found',
   searchFailed: 'The search failed',
   downloadFailed: 'The download failed',
+  downloadStalled: 'The download stalled',
   importFailed: 'The import failed',
   notIndexed: 'It never reached the library',
   cancelledUpstream: 'The download was cancelled',

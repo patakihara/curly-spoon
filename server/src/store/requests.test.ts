@@ -36,6 +36,15 @@ beforeEach(() => {
 });
 
 describe('the requests store', () => {
+  it('[M3.books] keeps when a download last moved until a change says otherwise', () => {
+    const { request } = createRequest(db, ana, book, 1);
+    const queued = { state: { status: 'queued' as const } };
+    saveRequest(db, request.id, { ...queued, progressAt: 5 }, 2);
+    expect(getRequest(db, request.id)?.progressAt).toBe(5);
+    saveRequest(db, request.id, queued, 3);
+    expect(getRequest(db, request.id)?.progressAt).toBe(5);
+  });
+
   it('keeps a new request as requested, with its target, and the person who made it', () => {
     const { request, joined } = createRequest(db, ana, book, 1_000);
     expect(joined).toBe(false);
@@ -49,6 +58,7 @@ describe('the requests store', () => {
       handle: null,
       stepKey: null,
       result: null,
+      progressAt: null,
       version: 0,
       createdAt: 1_000,
       updatedAt: 1_000,

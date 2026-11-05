@@ -33,6 +33,8 @@ export interface StoredRequest {
   /** The idempotency key of the step under way, saved before the step is called. */
   stepKey: string | null;
   result: MediaRef | null;
+  /** When a download's bytes were last seen to move, which times a stall. */
+  progressAt: number | null;
   /** Counts saves: a save after a wait names the version it read, and loses to a newer one. */
   version: number;
   createdAt: number;
@@ -76,6 +78,7 @@ const RequestRow = z
     version: z.number().int(),
     result_source: MediaRef.shape.source.nullable(),
     result_id: z.string().nullable(),
+    progress_at: z.number().int().nullable(),
     created_at: z.number().int(),
     updated_at: z.number().int(),
   })
@@ -94,6 +97,7 @@ const RequestRow = z
       row.result_source === null || row.result_id === null
         ? null
         : MediaRef.parse({ source: row.result_source, id: row.result_id }),
+    progressAt: row.progress_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }));
@@ -131,7 +135,8 @@ function catalogueKeys(ref: RequestRef): string[] {
 }
 
 const COLUMNS = `r.id, r.medium, r.target, r.status, r.failed_step, r.reason, r.progress, r.release,
-  r.candidates, r.handle, r.step_key, r.version, r.result_source, r.result_id, r.created_at, r.updated_at`;
+  r.candidates, r.handle, r.step_key, r.version, r.result_source, r.result_id, r.progress_at,
+  r.created_at, r.updated_at`;
 
 /**
  * The rows that can be read. One that cannot is left out and logged, so it never hides the others;
@@ -322,6 +327,7 @@ export interface RequestChange {
   handle?: DownloadHandle | null;
   stepKey?: string | null;
   result?: MediaRef | null;
+  progressAt?: number | null;
 }
 
 /**
@@ -350,6 +356,7 @@ export function saveRequest(
   if (change.candidates !== undefined) set.candidates = JSON.stringify(change.candidates);
   if (change.handle !== undefined) set.handle = change.handle && JSON.stringify(change.handle);
   if (change.stepKey !== undefined) set.step_key = change.stepKey;
+  if (change.progressAt !== undefined) set.progress_at = change.progressAt;
   if (change.result !== undefined) {
     set.result_source = change.result?.source ?? null;
     set.result_id = change.result?.id ?? null;
