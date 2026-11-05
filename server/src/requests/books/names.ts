@@ -28,6 +28,8 @@ export type RefusalReason =
   | 'notComplete'
   /** A book whose author nothing names. */
   | 'noAuthor'
+  /** No Audiobookshelf library holds a `Books` folder. */
+  | 'noBooksLibrary'
   /** The library has no watcher, so nothing would ever pick up the folder. */
   | 'watcherOff';
 

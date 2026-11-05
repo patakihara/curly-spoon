@@ -70,12 +70,17 @@ export async function authorPhoto(
   try {
     const url = (await audnexus.author(asin))?.imageUrl ?? null;
     if (url === null) return null;
-    const response = await fetch(url, { signal: AbortSignal.timeout(PHOTO_LIMIT_MS) });
-    const bytes = new Uint8Array(await response.arrayBuffer());
-    if (!response.ok || bytes.length > MAX_PHOTO_BYTES || !isSquareJpeg(bytes)) {
-      log?.error({ status: response.status, bytes: bytes.length }, 'the author photo was skipped');
+    const skipped = (why: string) => {
+      log?.error({ why }, 'the author photo was skipped');
       return null;
-    }
+    };
+    if (new URL(url).protocol !== 'https:') return skipped('not https');
+    const response = await fetch(url, { signal: AbortSignal.timeout(PHOTO_LIMIT_MS) });
+    if (!response.ok) return skipped(`answered ${response.status}`);
+    if (Number(response.headers.get('content-length')) > MAX_PHOTO_BYTES) return skipped('too big');
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (bytes.length > MAX_PHOTO_BYTES) return skipped('too big');
+    if (!isSquareJpeg(bytes)) return skipped('not a square JPEG');
     const path = join(authorDir, PHOTO_FILE);
     if (!(await exists(path))) await writeNew(path, bytes);
     return url;
