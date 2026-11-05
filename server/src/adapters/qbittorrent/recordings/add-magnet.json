@@ -1,0 +1,34 @@
+{
+  "upstream": "qbittorrent",
+  "upstreamVersion": "v5.3.0",
+  "call": "add-magnet",
+  "request": {
+    "method": "POST",
+    "path": "/api/v2/torrents/add",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>",
+      "content-type": "application/x-www-form-urlencoded"
+    },
+    "body": {
+      "text": "urls=magnet%3A%3Fxt%3Durn%3Abtih%3Ae0ed7aa2fcf3e4b4147a088ee7480e746bed8289&category=auralis-books&tags=auralis-record"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "added_torrent_ids": [
+          "e0ed7aa2fcf3e4b4147a088ee7480e746bed8289"
+        ],
+        "failure_count": 0,
+        "pending_count": 0,
+        "success_count": 1
+      }
+    }
+  }
+}

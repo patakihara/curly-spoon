@@ -1,0 +1,43 @@
+{
+  "upstream": "qbittorrent",
+  "upstreamVersion": "v5.3.0",
+  "call": "debian-queued",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/torrents/info",
+    "query": {
+      "hashes": "7acf8fb590b2060dd9c3146ef770169d593433b0"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": [
+        {
+          "added_on": 1793845982,
+          "amount_left": 0,
+          "category": "auralis-books",
+          "completed": 0,
+          "dlspeed": 0,
+          "downloaded": 0,
+          "hash": "7acf8fb590b2060dd9c3146ef770169d593433b0",
+          "last_activity": 1793845982,
+          "num_seeds": 0,
+          "progress": 0,
+          "save_path": "/data/Downloads",
+          "size": 0,
+          "state": "queuedDL",
+          "tags": "auralis-record"
+        }
+      ]
+    }
+  }
+}

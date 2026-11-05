@@ -64,6 +64,10 @@
  * trackers and indexers kept out, and the book's reads of the keyless Audible and Audnexus
  * (record-books.ts). It adds no download and needs only PROWLARR_API_KEY, from Prowlarr's own config.
  *
+ * `--only qbit --qbittorrent <url> --torrent <magnet>` records M3.books' qBittorrent calls on a
+ * made-up hash and the public torrent named (record-qbit.ts), both removed with their files
+ * afterwards. No read lists a household torrent. It needs only QBITTORRENT_API_KEY.
+ *
  * `--dry-run` makes the same calls but writes into a fresh temporary folder instead of the
  * committed recordings, and says where.
  */
@@ -87,6 +91,7 @@ import { UNDO_UNCONFIRMED } from './record-finished.js';
 import { recordLists } from './record-lists.js';
 import { recordLyrics } from './record-lyrics.js';
 import { recordBooks } from './record-books.js';
+import { recordQbit } from './record-qbit.js';
 import { recordHousehold } from './record-household.js';
 import { recordPlayed } from './record-played.js';
 import { recordProgress } from './record-progress.js';
@@ -114,10 +119,12 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
                      --only sessions, the track Instant Mix is asked for; for --only played,
                      the track to mark if the test user has played nothing
   --only <name>      record only abs, jellyfin, index, play, episode, jfplay, progress,
-                     sessions, shell, lyrics, lists, played or books; or
+                     sessions, shell, lyrics, lists, played, books or qbit; or
                      oidc, a sign-in and its links
   --lrclib <url>     LRCLIB's base URL, for --only lyrics
   --prowlarr <url>   Prowlarr's base URL, for --only books
+  --qbittorrent <url> qBittorrent's base URL, for --only qbit
+  --torrent <magnet> a public torrent with a healthy swarm, for --only qbit
   --albums <a,b,..>  for --only lyrics, the albums holding the three LRCLIB tracks
   --jellyfin-synced <id>, --jellyfin-plain <id>
                      for --only lyrics, a track with a synced and one with a plain lyrics file
@@ -644,6 +651,8 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'index-page': { type: 'string' },
       lrclib: { type: 'string' },
       prowlarr: { type: 'string' },
+      qbittorrent: { type: 'string' },
+      torrent: { type: 'string' },
       albums: { type: 'string' },
       'jellyfin-synced': { type: 'string' },
       'jellyfin-plain': { type: 'string' },
@@ -679,11 +688,12 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'played',
       'household',
       'books',
+      'qbit',
       'oidc',
     ].includes(only)
   ) {
     io.err(
-      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books or oidc, not ${only}`,
+      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, qbit or oidc, not ${only}`,
     );
     return 2;
   }
@@ -705,6 +715,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
   if (only === 'played') return runPlayed(io, values, parseKeys(io.stdin), root);
   if (only === 'household') return runHousehold(io, values, parseKeys(io.stdin), root);
   if (only === 'books') return runBooks(io, values, parseKeys(io.stdin), root);
+  if (only === 'qbit') return runQbit(io, values, parseKeys(io.stdin), root);
   const wantIndex = only === undefined || only === 'index';
   const wantAbs = only !== 'jellyfin';
   const wantJellyfin = only !== 'abs';
@@ -1175,6 +1186,36 @@ async function runBooks(
     root,
     prowlarrUrl: values.prowlarr as string,
     prowlarrKey: keys.PROWLARR_API_KEY as string,
+  });
+  return scanWritten(io, written, []);
+}
+
+async function runQbit(
+  io: RecordIo,
+  values: Record<string, string | boolean | undefined>,
+  keys: Record<string, string>,
+  root: string,
+): Promise<number> {
+  const need = {
+    '--qbittorrent': values.qbittorrent,
+    '--torrent': values.torrent,
+    'QBITTORRENT_API_KEY on stdin': keys.QBITTORRENT_API_KEY,
+  };
+  const missing = Object.entries(need)
+    .filter(([, v]) => typeof v !== 'string' || v === '')
+    .map(([k]) => k);
+  if (missing.length > 0) {
+    io.err(`missing ${missing.join(', ')}\n\n${USAGE}`);
+    return 2;
+  }
+  const { written } = await recordQbit({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    url: values.qbittorrent as string,
+    key: keys.QBITTORRENT_API_KEY as string,
+    magnet: values.torrent as string,
+    sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   });
   return scanWritten(io, written, []);
 }

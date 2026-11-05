@@ -31,6 +31,8 @@ export interface RequestInitJson {
   json?: unknown;
   /** Serialized as `application/x-www-form-urlencoded`, as OAuth token endpoints take it. */
   form?: Record<string, string>;
+  /** Sent as `multipart/form-data`, as a file upload takes it. */
+  formData?: FormData;
   timeoutMs?: number;
   /** Reads at most this many bytes of the body, cancelling the rest; a longer body fails. */
   maxBytes?: number;
@@ -87,13 +89,15 @@ export async function requestJson<T>(
   const method = init.method ?? 'GET';
   const call = `${method} ${new URL(url).pathname}`;
   const headers: Record<string, string> = { accept: 'application/json', ...init.headers };
-  let body: string | undefined;
+  let body: string | FormData | undefined;
   if (init.json !== undefined) {
     headers['content-type'] = 'application/json';
     body = JSON.stringify(init.json);
   } else if (init.form !== undefined) {
     headers['content-type'] = 'application/x-www-form-urlencoded';
     body = new URLSearchParams(init.form).toString();
+  } else if (init.formData !== undefined) {
+    body = init.formData;
   }
 
   // One limit covers the whole call, the body included: a feed that sends its headers and then

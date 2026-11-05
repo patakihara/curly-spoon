@@ -1,0 +1,60 @@
+{
+  "upstream": "qbittorrent",
+  "upstreamVersion": "v5.3.0",
+  "call": "info-by-tag",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/torrents/info",
+    "query": {
+      "category": "auralis-books",
+      "tag": "auralis-record"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": [
+        {
+          "added_on": 1793845949,
+          "amount_left": 0,
+          "category": "auralis-books",
+          "completed": 0,
+          "dlspeed": 0,
+          "downloaded": 0,
+          "hash": "e0ed7aa2fcf3e4b4147a088ee7480e746bed8289",
+          "last_activity": 1793845949,
+          "num_seeds": 0,
+          "progress": 0,
+          "save_path": "/data/Downloads",
+          "size": 0,
+          "state": "metaDL",
+          "tags": "auralis-record"
+        },
+        {
+          "added_on": 1793845982,
+          "amount_left": 0,
+          "category": "auralis-books",
+          "completed": 792723456,
+          "dlspeed": 11656504,
+          "downloaded": 801389596,
+          "hash": "7acf8fb590b2060dd9c3146ef770169d593433b0",
+          "last_activity": 1793846031,
+          "num_seeds": 0,
+          "progress": 1,
+          "save_path": "/data/Downloads",
+          "size": 792723456,
+          "state": "stalledUP",
+          "tags": "auralis-record"
+        }
+      ]
+    }
+  }
+}
