@@ -55,7 +55,9 @@ const timingSchema = z.object({
 });
 
 const here = dirname(fileURLToPath(import.meta.url));
-const raw: unknown = JSON.parse(readFileSync(join(here, 'timing', 'real-request.json'), 'utf8'));
+const raw: unknown = JSON.parse(
+  readFileSync(join(here, '..', '..', '..', 'e2e', 'real-request-timing.json'), 'utf8'),
+);
 const timing = timingSchema.parse(raw);
 
 const ms = (at: string) => Date.parse(at);
