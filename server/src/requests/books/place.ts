@@ -1,13 +1,15 @@
 /**
  * Puts a finished torrent's book in Books, as `audiobook-import` and its hand fixes did. Each kept
  * file is hard linked into a staging folder beside the download, `metadata.json` joins them, and one
- * `rename` puts the folder in place: Audiobookshelf's watcher never sees half a book, a failure
+ * `rename` is the only commit: Audiobookshelf's watcher never sees half a book, a failure or an abort
  * leaves nothing in Books, and the torrent goes on seeding the same bytes. No file is ever copied or
- * moved: a link that fails fails the import.
+ * moved: a link that fails fails the import. Each attempt has its own staging folder under the key,
+ * so what a crash left is cleared and an attempt still running is not touched.
  *
  * A book already there is left untouched and the request answers it: Bookshelf grabs editions on its
  * own. A shape that is not plainly one book fails by name, never guessing what belongs together.
  */
+import { randomBytes } from 'node:crypto';
 import {
   link as linkFile,
   lstat,
@@ -22,7 +24,7 @@ import { dirname, extname, join, sep } from 'node:path';
 import type { QbitFile } from '../../adapters/qbittorrent/schemas.js';
 import type { JobLog } from '../../jobs/schedule.js';
 import { type BookMetadata, writeMetadata } from './metadata.js';
-import { BookRefused, lastNameOf, safeFileName, safeName } from './names.js';
+import { BookRefused, lastNameOf, safeFileName, safeName, sameName } from './names.js';
 import { type Copy, markCopies, otherCopies, seriesFor, UNKNOWN_NARRATOR } from './narrators.js';
 
 const AUDIO = new Set([
@@ -43,6 +45,8 @@ const KEPT_EXTRAS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.cue']);
 const DISC = /(?:^|[\s._-])(?:disc|disk|cd|part|pt|volume|vol|tape)[\s._-]*\d+$|^\d+$/i;
 const STAGING = '.auralis-import';
 const MAX_NAME_BYTES = 120;
+/** The staging folders of the attempts running now; any other under a key was left by a crash. */
+const liveStaging = new Set<string>();
 
 export interface BookToPlace {
   title: string;
@@ -67,6 +71,8 @@ export interface PlaceBookInput {
   book: BookToPlace;
   log?: JobLog;
   link?: (from: string, to: string) => Promise<void>;
+  /** Aborted when the step's time limit passes; honoured up to the rename, and never after it. */
+  signal?: AbortSignal;
 }
 
 /** Where the book is, and whether this import put it there (or an earlier call of the same key). */
@@ -80,6 +86,8 @@ export interface PlacedBook {
 interface PlannedLink {
   source: string;
   target: string[];
+  /** The bytes qBittorrent lists for audio, which must be there; null for any other file. */
+  audioSize: number | null;
 }
 
 /** A torrent's own path split in parts, refusing any that could lead out of where it is put. */
@@ -139,8 +147,8 @@ function checkOneBook(audio: readonly string[][]): void {
 }
 
 /** What links where: audio, and the covers and cue sheets beside it. Everything else stays behind. */
-function planLinks(files: readonly Pick<QbitFile, 'name'>[]): PlannedLink[] {
-  const parsed = files.map(({ name }) => ({ name, parts: pathParts(name) }));
+function planLinks(files: readonly QbitFile[]): PlannedLink[] {
+  const parsed = files.map(({ name, size }) => ({ name, size, parts: pathParts(name) }));
   const visible = parsed.filter(({ parts }) => !parts.some((part) => part.startsWith('.')));
   const audio = visible.filter(({ name }) => AUDIO.has(extensionOf(name)));
   if (audio.length === 0) throw new BookRefused('noAudio');
@@ -155,8 +163,9 @@ function planLinks(files: readonly Pick<QbitFile, 'name'>[]): PlannedLink[] {
     const folder = folderOf(parts.slice(root));
     return folder === '' || audioFolders.has(folder);
   });
-  const planned = [...audio, ...extras].map(({ name, parts }) => ({
+  const planned = [...audio, ...extras].map(({ name, size, parts }) => ({
     source: name,
+    audioSize: AUDIO.has(extensionOf(name)) ? size : null,
     target: parts
       .slice(root)
       .map((part, at, all) => (at === all.length - 1 ? safeFileName(part) : safeName(part))),
@@ -169,18 +178,21 @@ function planLinks(files: readonly Pick<QbitFile, 'name'>[]): PlannedLink[] {
 /** Each file a plain file inside the save path, or the import stops before it makes anything. */
 async function checkSources(savePath: string, plan: readonly PlannedLink[]): Promise<void> {
   const inside = await realpath(savePath);
-  for (const { source } of plan) {
+  for (const { source, audioSize } of plan) {
     const path = join(savePath, source);
     const stat = await lstat(path).catch(() => null);
     if (stat === null || !stat.isFile()) throw new BookRefused('notARegularFile');
     if (!(await realpath(path)).startsWith(`${inside}${sep}`)) throw new BookRefused('unsafePath');
+    if (audioSize !== null && (stat.size === 0 || stat.size < audioSize)) {
+      throw new BookRefused('noAudioBytes');
+    }
   }
 }
 
 /** The author's folder: one there under any case, else a new name. A link is refused. */
 export async function authorFolder(booksDir: string, author: string): Promise<string> {
   const name = safeName(author);
-  const there = (await readdir(booksDir)).find((one) => one.toLowerCase() === name.toLowerCase());
+  const there = (await readdir(booksDir)).find((one) => sameName(one, name));
   if (there === undefined) return name;
   const stat = await lstat(join(booksDir, there));
   if (!stat.isDirectory()) throw new BookRefused('unsafePath');
@@ -206,6 +218,10 @@ const isSameFile = async (a: string, b: string) => {
   return other !== null && one.ino === other.ino && one.dev === other.dev;
 };
 
+const honourAbort = (signal: AbortSignal | undefined) => {
+  if (signal?.aborted) throw new BookRefused('timedOut');
+};
+
 async function stagedFolder(
   input: PlaceBookInput,
   plan: readonly PlannedLink[],
@@ -213,11 +229,11 @@ async function stagedFolder(
   staging: string,
   authorDir: string,
 ): Promise<void> {
-  const { book, savePath } = input;
+  const { book, savePath, signal } = input;
   const link = input.link ?? linkFile;
-  await rm(staging, { recursive: true, force: true });
   await mkdir(staging, { recursive: true });
   for (const { source, target } of plan) {
+    honourAbort(signal);
     const to = join(staging, ...target);
     await mkdir(dirname(to), { recursive: true });
     await link(join(savePath, source), to);
@@ -240,6 +256,28 @@ async function stagedFolder(
   await writeMetadata(staging, metadata);
 }
 
+/** What a crash left under this key. An attempt running now keeps its own folder. */
+async function clearLeftovers(keyDir: string): Promise<void> {
+  const entries = await readdir(keyDir).catch(() => []);
+  for (const entry of entries) {
+    const path = join(keyDir, entry);
+    if (!liveStaging.has(path)) await rm(path, { recursive: true, force: true });
+  }
+}
+
+/** The one commit. A folder that appeared meanwhile is someone else's: it stays and this fails. */
+async function commit(staging: string, target: string, signal?: AbortSignal): Promise<void> {
+  const there = await lstat(target).catch(() => null);
+  if (there !== null) throw new BookRefused('folderAppeared');
+  honourAbort(signal);
+  await rename(staging, target).catch((error: NodeJS.ErrnoException) => {
+    if (error.code === 'ENOTEMPTY' || error.code === 'EEXIST') {
+      throw new BookRefused('folderAppeared');
+    }
+    throw error;
+  });
+}
+
 /** Staging, on Books' own filesystem, and then one rename. Anything that fails leaves nothing. */
 async function putInPlace(
   input: PlaceBookInput,
@@ -249,21 +287,27 @@ async function putInPlace(
   target: string,
 ): Promise<void> {
   const stagingRoot = join(input.mediaDir, 'Downloads', STAGING);
-  const staging = join(stagingRoot, safeName(input.key));
+  const keyDir = join(stagingRoot, safeName(input.key));
+  const staging = join(keyDir, randomBytes(6).toString('hex'));
+  liveStaging.add(staging);
   const madeAuthor = await lstat(authorDir).then(
     () => false,
     () => true,
   );
   try {
+    await clearLeftovers(keyDir);
     await stagedFolder(input, plan, copies, staging, authorDir);
     await mkdir(authorDir, { recursive: true });
-    await rename(staging, target);
+    await commit(staging, target, input.signal);
   } catch (error) {
-    input.log?.error({ code: (error as NodeJS.ErrnoException).code }, 'a book could not be linked');
     if (madeAuthor) await rmdir(authorDir).catch(() => undefined);
+    if (error instanceof BookRefused) throw error;
+    input.log?.error({ code: (error as NodeJS.ErrnoException).code }, 'a book could not be linked');
     throw new BookRefused('linkFailed');
   } finally {
+    liveStaging.delete(staging);
     await rm(staging, { recursive: true, force: true });
+    await rmdir(keyDir).catch(() => undefined);
     await rmdir(stagingRoot).catch(() => undefined);
   }
 }
@@ -297,13 +341,10 @@ export async function placeBook(input: PlaceBookInput): Promise<PlacedBook> {
     const ours = await isSameFile(join(savePath, first.source), join(target, ...first.target));
     if (!ours) return { outcome: 'existing', relPath, authorDir };
   } else {
-    const mark = narratorMark(book.narrators).toLowerCase();
+    const mark = narratorMark(book.narrators);
     const same = copies.find(({ narrator }) => {
-      return (
-        narrator !== null &&
-        mark !== UNKNOWN_NARRATOR.toLowerCase() &&
-        lastNameOf(narrator)?.toLowerCase() === mark
-      );
+      const held = narrator === null ? null : lastNameOf(narrator);
+      return held !== null && mark !== UNKNOWN_NARRATOR && sameName(held, mark);
     });
     if (same !== undefined) {
       return { outcome: 'existing', relPath: `${authorName}/${same.folder}`, authorDir };

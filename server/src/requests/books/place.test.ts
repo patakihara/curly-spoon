@@ -605,6 +605,129 @@ describe('a book placed in Books', () => {
       }
     });
 
+    it('every link goes to staging beside the download, never under Books, where the watcher would see it', async () => {
+      const files = download('Book/01.mp3', 'Book/02.mp3');
+      const { link: realLink } = await import('node:fs/promises');
+      const targets: string[] = [];
+      await place({
+        files,
+        link: async (from, to) => {
+          targets.push(to);
+          await realLink(from, to);
+        },
+      });
+      expect(targets).toHaveLength(2);
+      for (const target of targets) {
+        expect(target.startsWith(join(save, '.auralis-import', 'key-1'))).toBe(true);
+        expect(target.startsWith(`${books}/`)).toBe(false);
+      }
+    });
+
+    it('what a crash left under the key is cleared', async () => {
+      const files = download('Book/01.mp3');
+      mkdirSync(join(save, '.auralis-import', 'key-1', 'half'), { recursive: true });
+      writeFileSync(join(save, '.auralis-import', 'key-1', 'half', 'left.mp3'), 'x');
+      await place({ files });
+      expect(existsSync(join(save, '.auralis-import'))).toBe(false);
+    });
+
+    it('an abort before the rename leaves nothing in Books and nothing in staging, and a repeat places it whole', async () => {
+      const files = download('Book/01.mp3', 'Book/02.mp3');
+      const { link: realLink } = await import('node:fs/promises');
+      const limit = new AbortController();
+      const link = async (from: string, to: string) => {
+        await realLink(from, to);
+        limit.abort();
+      };
+      expect(await refusal(place({ files, link, signal: limit.signal }))).toBe('timedOut');
+      expect(tree()).toEqual([]);
+      expect(existsSync(join(save, '.auralis-import'))).toBe(false);
+      const placed = await place({ files });
+      expect(tree(join(books, placed.relPath))).toEqual(['01.mp3', '02.mp3', 'metadata.json']);
+    });
+
+    it('an abort after the last link still stops the rename', async () => {
+      const files = download('Book/01.mp3');
+      const { link: realLink } = await import('node:fs/promises');
+      const limit = new AbortController();
+      const link = async (from: string, to: string) => {
+        await realLink(from, to);
+        limit.abort();
+      };
+      expect(await refusal(place({ files, link, signal: limit.signal }))).toBe('timedOut');
+      expect(tree()).toEqual([]);
+    });
+
+    it.each([
+      ['with a file in it', true],
+      ['empty', false],
+    ])(
+      'a folder appearing mid-import, %s, fails by name and stays untouched',
+      async (_how, full) => {
+        const files = download('Book/01.mp3');
+        const { link: realLink } = await import('node:fs/promises');
+        const folder = join(books, 'Ann Author', '2001 - A Quiet Book (Reader) 64k');
+        const link = async (from: string, to: string) => {
+          await realLink(from, to);
+          mkdirSync(folder, { recursive: true });
+          if (full) writeFileSync(join(folder, 'theirs.mp3'), 'theirs');
+        };
+        expect(await refusal(place({ files, link }))).toBe('folderAppeared');
+        expect(tree(folder)).toEqual(full ? ['theirs.mp3'] : []);
+        expect(existsSync(join(save, '.auralis-import'))).toBe(false);
+      },
+    );
+
+    it('a title with the same words in another case or order is the same book', async () => {
+      const files = download('Book/01.mp3');
+      shelved('2001 - Quiet Book, The (Reader) 64k', { title: 'x', narrators: ['Rob Reader'] });
+      const placed = await place({ files, book: plainBook({ title: 'THE QUIET BOOK' }) });
+      expect(placed.outcome).toBe('existing');
+      expect(placed.relPath).toBe('Ann Author/2001 - Quiet Book, The (Reader) 64k');
+    });
+
+    it.each([
+      [
+        'a mark an earlier import added is not added twice',
+        'A Quiet Book [Older]',
+        'A Quiet Book [Older]',
+      ],
+      [
+        'any other bracket on a copy stays, with the mark beside it',
+        'A Quiet Book [Dramatized Adaptation]',
+        'A Quiet Book [Dramatized Adaptation] [Older]',
+      ],
+    ])('%s', async (_how, title, after) => {
+      const marked = shelved('2001 - A Quiet Book (Older) 64k', {
+        title,
+        narrators: ['Ola Older'],
+      });
+      await place({ files: download('Book/01.mp3') });
+      const read = JSON.parse(readFileSync(join(marked, 'metadata.json'), 'utf8')) as {
+        title: string;
+      };
+      expect(read.title).toBe(after);
+    });
+
+    it('a folder whose own name carries its narrator mark is still a copy of the title', async () => {
+      const marked = shelved('2001 - A Quiet Book [Older] (Older) 64k', {
+        title: 'A Quiet Book',
+        narrators: ['Ola Older'],
+      });
+      await place({ files: download('Book/01.mp3') });
+      const read = JSON.parse(readFileSync(join(marked, 'metadata.json'), 'utf8')) as {
+        title: string;
+      };
+      expect(read.title).toBe('A Quiet Book [Older]');
+    });
+
+    it('one audio file with no bytes among whole ones keeps the whole book out', async () => {
+      const files = download('Book/01.mp3', 'Book/02.mp3');
+      writeFileSync(join(save, 'Book/02.mp3'), '');
+      expect(await refusal(place({ files }))).toBe('noAudioBytes');
+      expect(tree()).toEqual([]);
+    });
+
     it.each([
       ['qBittorrent lists it empty', 0],
       ['qBittorrent lists bytes it does not hold', 1000],
@@ -718,6 +841,90 @@ describe('a book placed in Books', () => {
         expect(reached).toEqual(['https://images.invalid/a.jpg']);
         expect(url).toBeNull();
         expect(existsSync(join(authorDir, 'author.jpg'))).toBe(false);
+      });
+
+      it('a length over the cap is refused with nothing read', async () => {
+        const authorDir = shelfDir();
+        const url = await authorPhoto(
+          {
+            audnexus: naming('https://images.invalid/a.jpg'),
+            fetch: async () =>
+              new Response(image, { headers: { 'content-length': String(9 * 1024 * 1024) } }),
+            log,
+          },
+          { authorDir, asin },
+        );
+        expect(url).toBeNull();
+        expect(existsSync(join(authorDir, 'author.jpg'))).toBe(false);
+        expect(errors).toContain('the author photo was skipped');
+      });
+
+      it.each([
+        ['plain http', 'http://images.invalid/a.jpg'],
+        ['loopback', 'https://127.0.0.1/a.jpg'],
+        ['loopback spelled as a number', 'https://2130706433/a.jpg'],
+        ['a home network', 'https://192.168.1.5/a.jpg'],
+        ['the tailnet range', 'https://100.86.1.1/a.jpg'],
+        ['IPv6 loopback', 'https://[::1]/a.jpg'],
+        ['a private address mapped to IPv6', 'https://[::ffff:10.0.0.1]/a.jpg'],
+        ['IPv6 unique local', 'https://[fd00::1]/a.jpg'],
+        ['localhost', 'https://localhost/a.jpg'],
+        ['a container by its name', 'https://gluetun:8080/a.jpg'],
+      ])('%s is never fetched', async (_how, imageUrl) => {
+        const authorDir = shelfDir();
+        let fetches = 0;
+        const url = await authorPhoto(
+          {
+            audnexus: naming(imageUrl),
+            fetch: async () => {
+              fetches += 1;
+              return new Response(image);
+            },
+            log,
+          },
+          { authorDir, asin },
+        );
+        expect(fetches).toBe(0);
+        expect(url).toBeNull();
+      });
+
+      it('a public name that resolves to a private address is never fetched', async () => {
+        const authorDir = shelfDir();
+        let fetches = 0;
+        const url = await authorPhoto(
+          {
+            audnexus: naming('https://images.invalid/a.jpg'),
+            fetch: async () => {
+              fetches += 1;
+              return new Response(image);
+            },
+            lookup: async () => ['93.184.216.34', '10.0.0.8'],
+            log,
+          },
+          { authorDir, asin },
+        );
+        expect(fetches).toBe(0);
+        expect(url).toBeNull();
+      });
+
+      it('a public name at a public address is fetched, and takes no redirect', async () => {
+        const authorDir = shelfDir();
+        const asked: unknown[] = [];
+        const url = await authorPhoto(
+          {
+            audnexus: naming('https://images.invalid/a.jpg'),
+            fetch: async (_input, init) => {
+              asked.push(init?.redirect);
+              return new Response(image);
+            },
+            lookup: async () => ['93.184.216.34'],
+            log,
+          },
+          { authorDir, asin },
+        );
+        expect(asked).toEqual(['manual']);
+        expect(url).toBe('https://images.invalid/a.jpg');
+        expect(existsSync(join(authorDir, 'author.jpg'))).toBe(true);
       });
 
       it('an address on a private network is never fetched, nor handed to Audiobookshelf', async () => {

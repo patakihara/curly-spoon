@@ -123,9 +123,10 @@ export class AbsClient {
   }
 
   /** The latest items added to a library, newest first, with the folder each sits in. */
-  async newestItems(libraryId: string, limit: number) {
+  async newestItems(libraryId: string, limit: number, page = 0) {
     const path = `api/libraries/${encodeURIComponent(libraryId)}/items`;
-    const query = { limit: String(limit), sort: 'addedAt', desc: '1', minified: '1' };
+    const first = { limit: String(limit), sort: 'addedAt', desc: '1', minified: '1' };
+    const query = page === 0 ? first : { ...first, page: String(page) };
     return (await this.call(path, newestItemsSchema, {}, query)).results;
   }
 

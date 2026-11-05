@@ -11,6 +11,7 @@ import {
   readdirSync,
   rmSync,
   statSync,
+  utimesSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -302,6 +303,159 @@ describe('the import step', () => {
     expect(answer.kind).toBe('arrived');
     expect(readdirSync(join(media, 'Books', FOLDER))).toEqual(['other.mp3']);
     expect(statSync(join(media, 'Downloads/Jekyll/01.mp3')).nlink).toBe(1);
+  });
+
+  describe('the row that names the folder', () => {
+    const listing = (rows: { id: string; relPath: string }[]) => {
+      const base = shelf();
+      const queries: URLSearchParams[] = [];
+      const fetch: FetchLike = async (input, init) => {
+        const url = new URL(input);
+        if (!url.pathname.endsWith('/items')) return base.fetch(input, init);
+        queries.push(url.searchParams);
+        const limit = Number(url.searchParams.get('limit'));
+        const page = Number(url.searchParams.get('page') ?? 0);
+        const results = rows
+          .slice(page * limit, (page + 1) * limit)
+          .map((one, at) => ({ ...one, addedAt: at }));
+        return new Response(JSON.stringify({ results, total: rows.length, limit, page }), {
+          headers: { 'content-type': 'application/json' },
+        });
+      };
+      return { fetch, queries };
+    };
+
+    it('a newest row for another folder is not this book, and it waits', async () => {
+      const { fetch, queries } = listing([{ id: 'not-it', relPath: 'Someone/Another Book' }]);
+      expect(await bookImport(deps(fetch))(importing(), 'k')).toEqual({ kind: 'waiting' });
+      expect(queries[0]?.get('sort')).toBe('addedAt');
+      expect(queries[0]?.get('desc')).toBe('1');
+    });
+
+    it('the row answered is the one naming the folder, wherever it sits among the newest', async () => {
+      const itemId = (jsonBody(absCall('index-book-new')) as { id: string }).id;
+      const { fetch } = listing([
+        { id: 'not-it', relPath: 'Someone/Another Book' },
+        { id: itemId, relPath: FOLDER },
+      ]);
+      expect(await bookImport(deps(fetch))(importing(), 'k')).toEqual({
+        kind: 'arrived',
+        ref: { source: 'abs', id: itemId },
+      });
+    });
+
+    const alreadyThere = (ageMs: number) => {
+      const folder = join(media, 'Books', FOLDER);
+      mkdirSync(folder, { recursive: true });
+      writeFileSync(join(folder, 'other.mp3'), 'another edition');
+      const when = new Date(clock - ageMs);
+      utimesSync(folder, when, when);
+    };
+
+    it('a folder already there that the library has not listed an hour on ends with that reason', async () => {
+      alreadyThere(61 * MINUTE);
+      const { fetch } = listing([{ id: 'not-it', relPath: 'Someone/Another Book' }]);
+      expect(await refusal(bookImport(deps(fetch))(importing(), 'k'))).toBe('notInLibrary');
+    });
+
+    it('a folder already there and only just made is given time', async () => {
+      alreadyThere(MINUTE);
+      const { fetch } = listing([{ id: 'not-it', relPath: 'Someone/Another Book' }]);
+      expect(await bookImport(deps(fetch))(importing(), 'k')).toEqual({ kind: 'waiting' });
+    });
+  });
+
+  describe('an import past its time limit', () => {
+    const gate = () => {
+      let open: () => void = () => undefined;
+      const opened = new Promise<void>((resolve) => {
+        open = resolve;
+      });
+      return { open, opened };
+    };
+    const held = async () => {
+      const { link: realLink } = await import('node:fs/promises');
+      const started = gate();
+      const mayGoOn = gate();
+      const links: string[] = [];
+      const link = async (from: string, to: string) => {
+        links.push(to);
+        started.open();
+        await mayGoOn.opened;
+        await realLink(from, to);
+      };
+      return { started, mayGoOn, links, link };
+    };
+
+    it('a repeat under the key waits for the running one, and links nothing of its own', async () => {
+      const { started, mayGoOn, links, link } = await held();
+      const step = bookImport(deps(shelf().fetch, { link }));
+      const first = step(importing(), 'k');
+      await started.opened;
+      const before = links.length;
+      const repeat = step(importing(), 'k');
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      expect(links).toHaveLength(before);
+      mayGoOn.open();
+      expect((await first).kind).toBe('arrived');
+      expect((await repeat).kind).toBe('arrived');
+      expect(links).toHaveLength(3);
+      expect(readdirSync(join(media, 'Books', FOLDER)).sort()).toEqual([
+        '01.mp3',
+        '02.mp3',
+        'cover.jpg',
+        'metadata.json',
+      ]);
+    });
+
+    it('a repeat waiting past its own limit gives up by name, and the running one is not disturbed', async () => {
+      const { started, mayGoOn, link } = await held();
+      const step = bookImport(deps(shelf().fetch, { link }));
+      const first = step(importing(), 'k');
+      await started.opened;
+      const limit = new AbortController();
+      const repeat = step(importing(), 'k', limit.signal);
+      limit.abort();
+      expect(await refusal(repeat)).toBe('timedOut');
+      mayGoOn.open();
+      expect((await first).kind).toBe('arrived');
+    });
+
+    it('the job aborts it at the limit: the request fails and nothing lands in Books afterwards', async () => {
+      const { started, mayGoOn, link } = await held();
+      const steps: MediumSteps = {
+        medium: 'book',
+        search: async () => ({ kind: 'picked', release, others: [] }),
+        download: {
+          start: async (_request, _release, key) => ({ hash: HASH, key, addedAt: clock }),
+          poll: async () => ({ kind: 'done' }),
+          cancel: async () => undefined,
+        },
+        import: bookImport(deps(shelf().fetch, { link })),
+      };
+      const job: RequestJobDeps = {
+        db,
+        steps: stepsRegistry([steps]),
+        log,
+        now: () => clock,
+        notIndexedAfterMs: 60 * MINUTE,
+        stepTimeoutMs: 20,
+        stallAfterMs: 15 * MINUTE,
+        holdAfterMs: 60 * MINUTE,
+      };
+      const one = createRequest(db, person, refOf, clock).request;
+      const reread = () => getRequest(db, one.id) as StoredRequest;
+      for (let at = 0; at < 6 && reread().state.status !== 'failed'; at += 1) {
+        clock += MINUTE;
+        await advanceRequests(job);
+      }
+      await started.opened;
+      expect(reread().state).toMatchObject({ status: 'failed', reason: 'importFailed' });
+      mayGoOn.open();
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      expect(readdirSync(join(media, 'Books'))).toEqual([]);
+      expect(existsSync(join(media, 'Downloads/.auralis-import'))).toBe(false);
+    });
   });
 
   it('a book placed long ago, past the newest rows, still answers its item rather than waiting until it fails', async () => {

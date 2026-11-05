@@ -6,9 +6,13 @@
  *
  * The name on the shelf comes from Audible's product by ASIN, and only falls to the request's target,
  * a client's text, when there is none. Who reads the book comes from the release first, as that is
- * the audio held. A repeat of a key finds its folder by the first file's inode, and links nothing.
+ * the audio held. A repeat of a key finds its folder by the first file's inode, and links nothing;
+ * one that comes while an import past its time limit is still running waits for it to end.
+ *
+ * A book that was already there can be anywhere in the library, so it is looked for in all of it. If
+ * Audiobookshelf has still not listed that folder an hour on it will not, and the request says so.
  */
-import { lstat } from 'node:fs/promises';
+import { lstat, stat } from 'node:fs/promises';
 import { join, posix } from 'node:path';
 import { z } from 'zod';
 import type { AudibleClient, AudibleProduct } from '../../adapters/audible/client.js';
@@ -23,12 +27,25 @@ import { indexOneAbsItem } from '../../libraryIndex/job.js';
 import type { Db } from '../../store/connection.js';
 import type { StoredRequest } from '../../store/requests.js';
 import type { ImportOutcome, MediumSteps } from '../steps.js';
-import { authorPhoto } from './authorPhoto.js';
+import { authorPhoto, type AuthorPhotoDeps } from './authorPhoto.js';
 import { BookRefused } from './names.js';
-import { type BookToPlace, bookDestination, type PlacedBook, placeBook } from './place.js';
+import {
+  type BookToPlace,
+  bookDestination,
+  type PlaceBookInput,
+  type PlacedBook,
+  placeBook,
+} from './place.js';
 
 /** How many of a library's newest items are read for the folder. */
 const NEWEST = 25;
+/** The page size and the most pages read when a folder is not among the newest. */
+const PAGE = 100;
+const MAX_PAGES = 200;
+/** How long Audiobookshelf's watcher is given before a new folder is looked for further back. */
+const WATCHER_SEES_MS = 5 * 60_000;
+/** How long a folder already there may have no item before the request ends with that reason. */
+const NEVER_SEEN_MS = 60 * 60_000;
 const PHOTO_FILE = 'author.jpg';
 
 export interface BookImportDeps {
@@ -44,6 +61,10 @@ export interface BookImportDeps {
   downloadsPath: string;
   /** Fetches the author's photo. */
   fetch: FetchLike;
+  /** What a photo's host resolves to. */
+  lookup?: AuthorPhotoDeps['lookup'];
+  /** Links a file into staging; only a test replaces it. */
+  link?: PlaceBookInput['link'];
   now: () => number;
   log?: JobLog;
 }
@@ -112,6 +133,7 @@ async function placed(
   request: StoredRequest,
   book: BookToPlace,
   key: string,
+  signal: AbortSignal | undefined,
 ): Promise<PlacedBook> {
   const handle = handleSchema.safeParse(request.handle);
   const [row] = handle.success ? await deps.qbittorrent.withHashes([handle.data.hash]) : [];
@@ -133,7 +155,40 @@ async function placed(
     key,
     book,
     ...(deps.log === undefined ? {} : { log: deps.log }),
+    ...(deps.link === undefined ? {} : { link: deps.link }),
+    ...(signal === undefined ? {} : { signal }),
   });
+}
+
+/** Rejects once the signal aborts; otherwise never settles. */
+const aborted = (signal: AbortSignal | undefined) =>
+  new Promise<never>((_resolve, reject) => {
+    const stop = () => reject(new BookRefused('timedOut'));
+    if (signal?.aborted) stop();
+    else signal?.addEventListener('abort', stop, { once: true });
+  });
+
+/** The library's row for this folder: among the newest, or further back when that is where it is. */
+async function rowOf(
+  deps: BookImportDeps,
+  libraryId: string,
+  place: PlacedBook,
+  folderAgeMs: number,
+) {
+  const wanted = place.relPath.normalize('NFC');
+  const isWanted = ({ relPath }: { relPath: string }) => relPath.normalize('NFC') === wanted;
+  const newest = await deps.abs.newestItems(libraryId, NEWEST);
+  const found = newest.find(isWanted);
+  if (found !== undefined || (place.outcome === 'placed' && folderAgeMs < WATCHER_SEES_MS)) {
+    return found;
+  }
+  for (let page = 0; page < MAX_PAGES; page += 1) {
+    const rows = await deps.abs.newestItems(libraryId, PAGE, page);
+    const row = rows.find(isWanted);
+    if (row !== undefined) return row;
+    if (rows.length < PAGE) break;
+  }
+  return undefined;
 }
 
 /**
@@ -162,6 +217,7 @@ async function photoOf(
       {
         audnexus: deps.audnexus,
         fetch: deps.fetch,
+        ...(deps.lookup === undefined ? {} : { lookup: deps.lookup }),
         ...(deps.log === undefined ? {} : { log: deps.log }),
       },
       { authorDir, asin },
@@ -181,7 +237,21 @@ export function bookImport(deps: BookImportDeps): MediumSteps['import'] {
       throw stepFailure('audiobookshelf', error);
     }
   };
-  return async (request, key): Promise<ImportOutcome> => {
+  const running = new Map<string, Promise<PlacedBook>>();
+  const placedOnce = async (
+    request: StoredRequest,
+    book: BookToPlace,
+    key: string,
+    signal: AbortSignal | undefined,
+  ): Promise<PlacedBook> => {
+    for (let earlier = running.get(key); earlier; earlier = running.get(key)) {
+      await Promise.race([earlier.catch(() => undefined), aborted(signal)]);
+    }
+    const work = placed(deps, request, book, key, signal).finally(() => running.delete(key));
+    running.set(key, work);
+    return work;
+  };
+  return async (request, key, signal): Promise<ImportOutcome> => {
     const libraries = await reading(() => deps.abs.getLibraries());
     const library = libraries.find(({ mediaType, folders }) => {
       return (
@@ -198,12 +268,17 @@ export function bookImport(deps: BookImportDeps): MediumSteps['import'] {
     const { asin } = request.target.ids;
     const product = asin === undefined ? null : await deps.audible.product(asin);
     const book = bookToPlace(request, product);
-    const place = await placed(deps, request, book, key);
+    const place = await placedOnce(request, book, key, signal);
 
-    const rows = await reading(() => deps.abs.newestItems(library.id, NEWEST));
-    const wanted = place.relPath.normalize('NFC');
-    const row = rows.find(({ relPath }) => relPath.normalize('NFC') === wanted);
-    if (row === undefined) return { kind: 'waiting' };
+    const folder = await stat(join(deps.mediaDir, 'Books', place.relPath));
+    const folderAgeMs = deps.now() - folder.mtimeMs;
+    const row = await reading(() => rowOf(deps, library.id, place, folderAgeMs));
+    if (row === undefined) {
+      if (place.outcome === 'existing' && folderAgeMs >= NEVER_SEEN_MS) {
+        throw new BookRefused('notInLibrary');
+      }
+      return { kind: 'waiting' };
+    }
 
     const item = await reading(() => indexOneAbsItem(deps.db, deps.abs, row.id, deps.now()));
     if (place.outcome === 'placed' && item.mediaType === 'book') {

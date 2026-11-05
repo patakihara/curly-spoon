@@ -93,17 +93,22 @@ const THROWN: Record<WorkingStatus, RequestFailure> = {
   importing: 'importFailed',
 };
 
-/** A step's answer, or a failure once the limit has passed with none. */
-async function limited<T>(deps: RequestActDeps, name: string, call: () => Promise<T>): Promise<T> {
+/** A step's answer, or a failure once the limit has passed with none, which aborts the step. */
+async function limited<T>(
+  deps: RequestActDeps,
+  name: string,
+  call: (signal: AbortSignal) => Promise<T>,
+): Promise<T> {
   let timer: NodeJS.Timeout | undefined;
+  const controller = new AbortController();
   const limit = new Promise<never>((_resolve, reject) => {
-    timer = setTimeout(
-      () => reject(new Error(`no answer to ${name} in ${deps.stepTimeoutMs} ms`)),
-      deps.stepTimeoutMs,
-    );
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new Error(`no answer to ${name} in ${deps.stepTimeoutMs} ms`));
+    }, deps.stepTimeoutMs);
   });
   try {
-    return await Promise.race([call(), limit]);
+    return await Promise.race([call(controller.signal), limit]);
   } finally {
     clearTimeout(timer);
   }
@@ -284,7 +289,9 @@ async function importing(deps: RequestJobDeps, steps: MediumSteps, request: Stor
     const ready = keyed(deps, request);
     if (ready?.stepKey == null) return;
     const { stepKey } = ready;
-    const imported = await limited(deps, 'import', () => steps.import(ready, stepKey));
+    const imported = await limited(deps, 'import', (signal) =>
+      steps.import(ready, stepKey, signal),
+    );
     if (imported.kind === 'arrived') {
       const change = { state: ready.state, result: imported.ref, stepKey: null };
       saveRequest(deps.db, ready.id, change, deps.now(), ready.version);

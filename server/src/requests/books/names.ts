@@ -18,6 +18,14 @@ export type RefusalReason =
   | 'severalFormats'
   /** Folders in a shape that is neither one book nor one book's discs. */
   | 'unexpectedLayout'
+  /** Audio with no bytes, or fewer than qBittorrent lists: it is not a whole book. */
+  | 'noAudioBytes'
+  /** The book's folder appeared while the import was linking; whatever made it keeps it. */
+  | 'folderAppeared'
+  /** The step's time limit passed before the rename, so nothing reached Books. */
+  | 'timedOut'
+  /** A folder that has sat in Books for long enough, with no item in the library. */
+  | 'notInLibrary'
   /** A hard link that failed. It is never replaced by a copy. */
   | 'linkFailed'
   /** The torrent saved somewhere other than Downloads. */
@@ -112,13 +120,32 @@ export function parseFolder(folder: string): { title: string; narrator: string |
     : { title: withoutYear, narrator: null };
 }
 
-/** A title to compare with, without case, marks, punctuation or a narrator's bracket. */
-export function normalTitle(title: string): string {
-  return title
-    .replace(/\s*\[[^\]]*\]\s*$/, '')
-    .normalize('NFKD')
-    .replace(/\p{M}/gu, '')
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, ' ')
-    .trim();
+/** Words too small to tell two titles apart, for the pick and the shelf alike. */
+export const SMALL_WORDS = new Set(['a', 'an', 'and', 'of', 'the', 'in', 'on', 'to', 'for']);
+
+/** Whether two names are one name, however their unicode is composed or their letters cased. */
+export function sameName(one: string, other: string): boolean {
+  return one.normalize('NFKC').toLowerCase() === other.normalize('NFKC').toLowerCase();
+}
+
+/** A title's words on normalised unicode, without its small words. Accents and numbers count. */
+const titleWords = (title: string) =>
+  new Set(
+    title
+      .normalize('NFKC')
+      .replace(/&/g, ' and ')
+      .replace(/['’]/g, '')
+      .toLowerCase()
+      .split(/[^\p{L}\p{M}\p{N}]+/u)
+      .filter((word) => word !== '' && !SMALL_WORDS.has(word)),
+  );
+
+/**
+ * Whether two titles are one book, by the word sets the pick compares: a volume, a part, an edition
+ * or an accent makes another book. A title with no words at all is compared as it stands.
+ */
+export function sameTitle(one: string, other: string): boolean {
+  const [these, those] = [titleWords(one), titleWords(other)];
+  if (these.size === 0 && those.size === 0) return sameName(one.trim(), other.trim());
+  return these.size === those.size && [...these].every((word) => those.has(word));
 }

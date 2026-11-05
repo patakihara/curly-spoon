@@ -8,6 +8,7 @@
 import type { DetailExtras } from '../../adapters/audiobookbay/parse.js';
 import type { ProwlarrRelease } from '../../adapters/prowlarr/client.js';
 import { infoHashFromMagnet } from '../download/torrentId.js';
+import { SMALL_WORDS } from './names.js';
 
 /** What the catalogue says of the book. Without a product, only the request's title and author. */
 export interface BookFacts {
@@ -34,7 +35,6 @@ const MIN_KBPS = 8;
 const MAX_KBPS = 5 * 128;
 const BEST_KBPS = { low: 64, high: 128 };
 
-const SMALL_WORDS = new Set(['a', 'an', 'and', 'of', 'the', 'in', 'on', 'to', 'for']);
 const NOTE_WORDS = new Set(['audiobook', 'audio', 'book', 'by', 'unabridged', 'read']);
 const EBOOK = /\b(?:epub|mobi|azw3?|pdf|ebook)\b/i;
 /** More or less than the one book, as a title or its notes say. */

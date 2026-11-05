@@ -99,12 +99,15 @@ export interface DownloadSteps {
  * key can come again: each medium must treat a repeat of a key as the same call and answer the same
  * result, doing nothing twice; an import may answer `waiting` until it can answer the rest. Real mediums get this cheaply from what they already have, such as
  * a torrent's info hash or a folder path.
+ *
+ * The job aborts `signal` when `import` passes its time limit. The request fails then, and the step
+ * must not make its change after that: what it has not committed stays uncommitted.
  */
 export interface MediumSteps {
   readonly medium: RequestMedium;
   search(request: StoredRequest): Promise<SearchOutcome>;
   readonly download?: DownloadSteps;
-  import(request: StoredRequest, key: string): Promise<ImportOutcome>;
+  import(request: StoredRequest, key: string, signal?: AbortSignal): Promise<ImportOutcome>;
 }
 
 /** The registered steps, by medium. */
