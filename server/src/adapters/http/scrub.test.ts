@@ -262,7 +262,7 @@ describe('[M0.record/c] scrubbing a recording', () => {
     });
   });
 
-  it("[M0.record/c] only accept, content-type, authorization, user-agent and a range's headers are kept", () => {
+  it("[M0.record/c] only accept, content-type, authorization, user-agent, location and a range's headers are kept", () => {
     const r = scrub(
       exchange({
         request: {
@@ -305,6 +305,41 @@ describe('[M0.record/c] scrubbing a recording', () => {
       'accept-ranges': 'bytes',
       'content-range': 'bytes 0-1/158919642',
       'content-type': 'audio/mp4',
+    });
+  });
+
+  it("[M3.books] a redirect's location is kept, with its secret query values scrubbed", () => {
+    const out = scrub(
+      exchange({
+        response: {
+          status: 301,
+          headers: {
+            location: `http://localhost:9696/a?apikey=${KEY}&file=b&x=1`,
+            server: 'kept-out',
+          },
+          body: null,
+        },
+      }),
+      { secrets: [], baseUrl },
+    );
+    expect(out.response.headers).toEqual({
+      location: 'http://localhost:9696/a?apikey=<token>&file=b&x=1',
+    });
+  });
+
+  it('[M3.books] a whole URL under a field ending in url keeps its path, losing only its key', () => {
+    const out = scrub(
+      exchange({
+        response: {
+          status: 200,
+          headers: {},
+          body: { json: { downloadUrl: `http://localhost:9696/2/download?apikey=${KEY}&file=b` } },
+        },
+      }),
+      { secrets: [KEY], baseUrl },
+    );
+    expect(out.response.body).toEqual({
+      json: { downloadUrl: 'http://localhost:9696/2/download?apikey=<token>&file=b' },
     });
   });
 

@@ -896,3 +896,34 @@ describe("LRCLIB's answers, recorded for M2.lrclib", () => {
     }
   });
 });
+
+describe("[M3.books] Prowlarr's and AudiobookBay's calls, as recorded", () => {
+  const calls = [
+    ['prowlarr', 'search-jekyll', 200],
+    ['prowlarr', 'search-jekyll-others', 200],
+    ['prowlarr', 'search-jekyll-spanish', 200],
+    ['prowlarr', 'download-redirect', 301],
+    ['prowlarr', 'unauthorized', 401],
+    ['audiobookbay', 'detail', 200],
+  ] as const;
+
+  it.each(calls)('[M3.books] %s %s answered %i', (upstream, call, status) => {
+    expect(recording(upstream, call).response.status).toBe(status);
+  });
+
+  it('[M3.books] the only indexer named is the one the plan names', () => {
+    for (const call of ['search-jekyll', 'search-jekyll-others', 'search-jekyll-spanish']) {
+      const { body } = recording('prowlarr', call).response;
+      if (body === null || !('json' in body)) throw new Error('expected rows');
+      for (const row of body.json as { indexer: string }[]) {
+        expect(row.indexer).toMatch(/^(?:AudioBook Bay|indexer-[a-z])$/);
+      }
+    }
+  });
+
+  it('[M3.books] a link asked keeps no key, and answers a magnet holding only its hash', () => {
+    const asked = recording('prowlarr', 'download-redirect');
+    expect(asked.request.query.apikey).toBe('<token>');
+    expect(asked.response.headers.location).toMatch(/^magnet:\?xt=urn:btih:[0-9A-Fa-f]{40}$/);
+  });
+});

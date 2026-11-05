@@ -1,0 +1,23 @@
+{
+  "upstream": "prowlarr",
+  "upstreamVersion": "10.0.0.22097",
+  "call": "unauthorized",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/search",
+    "query": {
+      "categories": "3030",
+      "query": "El extraño caso del Dr. Jekyll y Mr. Hyde",
+      "type": "search"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 401,
+    "headers": {},
+    "body": null
+  }
+}

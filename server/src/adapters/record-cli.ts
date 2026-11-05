@@ -59,6 +59,11 @@
  * reads an album and its first track by id, for M3.requests' household plays (record-household.ts).
  * It needs only JELLYFIN_API_KEY.
  *
+ * `--only books --prowlarr <url>` records M3.books' reads of Prowlarr and AudiobookBay's site: three
+ * searches, a link asked with no redirect followed, a wrong key's answer and one detail page, with
+ * trackers and indexers kept out (record-books.ts). It adds no download and needs only
+ * PROWLARR_API_KEY, from Prowlarr's own config.
+ *
  * `--dry-run` makes the same calls but writes into a fresh temporary folder instead of the
  * committed recordings, and says where.
  */
@@ -81,6 +86,7 @@ import { RECORD_USER_ID, recordOidc, TEST_IDENTITY } from './record-oidc.js';
 import { UNDO_UNCONFIRMED } from './record-finished.js';
 import { recordLists } from './record-lists.js';
 import { recordLyrics } from './record-lyrics.js';
+import { recordBooks } from './record-books.js';
 import { recordHousehold } from './record-household.js';
 import { recordPlayed } from './record-played.js';
 import { recordProgress } from './record-progress.js';
@@ -108,9 +114,10 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
                      --only sessions, the track Instant Mix is asked for; for --only played,
                      the track to mark if the test user has played nothing
   --only <name>      record only abs, jellyfin, index, play, episode, jfplay, progress,
-                     sessions, shell, lyrics, lists or played; or
+                     sessions, shell, lyrics, lists, played or books; or
                      oidc, a sign-in and its links
   --lrclib <url>     LRCLIB's base URL, for --only lyrics
+  --prowlarr <url>   Prowlarr's base URL, for --only books
   --albums <a,b,..>  for --only lyrics, the albums holding the three LRCLIB tracks
   --jellyfin-synced <id>, --jellyfin-plain <id>
                      for --only lyrics, a track with a synced and one with a plain lyrics file
@@ -636,6 +643,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
       shows: { type: 'string' },
       'index-page': { type: 'string' },
       lrclib: { type: 'string' },
+      prowlarr: { type: 'string' },
       albums: { type: 'string' },
       'jellyfin-synced': { type: 'string' },
       'jellyfin-plain': { type: 'string' },
@@ -670,11 +678,12 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'lists',
       'played',
       'household',
+      'books',
       'oidc',
     ].includes(only)
   ) {
     io.err(
-      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household or oidc, not ${only}`,
+      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books or oidc, not ${only}`,
     );
     return 2;
   }
@@ -695,6 +704,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
   if (only === 'lists') return runLists(io, values, parseKeys(io.stdin), root);
   if (only === 'played') return runPlayed(io, values, parseKeys(io.stdin), root);
   if (only === 'household') return runHousehold(io, values, parseKeys(io.stdin), root);
+  if (only === 'books') return runBooks(io, values, parseKeys(io.stdin), root);
   const wantIndex = only === undefined || only === 'index';
   const wantAbs = only !== 'jellyfin';
   const wantJellyfin = only !== 'abs';
@@ -1138,6 +1148,33 @@ async function runHousehold(
     jellyfinUrl: values.jellyfin as string,
     jellyfinKey: keys.JELLYFIN_API_KEY as string,
     albumId: values['jellyfin-item'] as string,
+  });
+  return scanWritten(io, written, []);
+}
+
+async function runBooks(
+  io: RecordIo,
+  values: Record<string, string | boolean | undefined>,
+  keys: Record<string, string>,
+  root: string,
+): Promise<number> {
+  const need = {
+    '--prowlarr': values.prowlarr,
+    'PROWLARR_API_KEY on stdin': keys.PROWLARR_API_KEY,
+  };
+  const missing = Object.entries(need)
+    .filter(([, v]) => typeof v !== 'string' || v === '')
+    .map(([k]) => k);
+  if (missing.length > 0) {
+    io.err(`missing ${missing.join(', ')}\n\n${USAGE}`);
+    return 2;
+  }
+  const { written } = await recordBooks({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    prowlarrUrl: values.prowlarr as string,
+    prowlarrKey: keys.PROWLARR_API_KEY as string,
   });
   return scanWritten(io, written, []);
 }

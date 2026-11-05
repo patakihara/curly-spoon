@@ -1,0 +1,21 @@
+{
+  "upstream": "audiobookbay",
+  "upstreamVersion": "AudiobookBay site, unversioned",
+  "call": "detail",
+  "request": {
+    "method": "GET",
+    "path": "/abss/the-sitrange-case-of-dr-jekyll-and-mr-hyde-robert-louis-stevenson-4/",
+    "query": {},
+    "headers": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "text/html; charset=UTF-8"
+    },
+    "body": {
+      "text": "<div class=\"post\">\n<div class=\"postTitle\"><h1 itemprop=\"name\">The Strange Case of Dr Jekyll and Mr Hyde - Robert Louis Stevenson</h1></div>\n<div class=\"postContent\"><div class=\"desc\">\n<p style=\"left;\">Written by <a><span class=\"author\" itemprop=\"author\">Robert Louis Stevenson</span></a> <br />Read by <a><span class=\"narrator\" itemprop=\"author\">Paapa Essiedu</span></a> <br />Format: <span class=\"format\" itemprop=\"encodingFormat\">M4B</span> <br />Bitrate: <span class=\"bitrate\" itemprop=\"bitrate\">128 Kbps</span> <br /><span class=\"is_abridged\">Unabridged</span> </p>\n</div>\n<table border='1'>\n<tr>\n<td>Piece Size:</td>\n<td><span style='color:#a00;'>128</span> KBs</td>\n</tr>\n<tr>\n<td>Info Hash:</td>\n<td>e49a3646bcc9dfa002114fe2d458834761f40d72</td>\n</tr>\n</table>\n</div></div>"
+    }
+  }
+}
