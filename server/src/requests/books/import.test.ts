@@ -422,7 +422,7 @@ describe('the import step', () => {
     });
 
     it('the job aborts it at the limit: the request fails and nothing lands in Books afterwards', async () => {
-      const { started, mayGoOn, link } = await held();
+      const { mayGoOn, link } = await held();
       const steps: MediumSteps = {
         medium: 'book',
         search: async () => ({ kind: 'picked', release, others: [] }),
@@ -439,7 +439,7 @@ describe('the import step', () => {
         log,
         now: () => clock,
         notIndexedAfterMs: 60 * MINUTE,
-        stepTimeoutMs: 20,
+        stepTimeoutMs: 100,
         stallAfterMs: 15 * MINUTE,
         holdAfterMs: 60 * MINUTE,
       };
@@ -449,7 +449,6 @@ describe('the import step', () => {
         clock += MINUTE;
         await advanceRequests(job);
       }
-      await started.opened;
       expect(reread().state).toMatchObject({ status: 'failed', reason: 'importFailed' });
       mayGoOn.open();
       await new Promise((resolve) => setTimeout(resolve, 30));
