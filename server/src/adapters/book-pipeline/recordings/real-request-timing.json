@@ -1,0 +1,109 @@
+{
+  "measuredOn": "a real request on the household server",
+  "book": {
+    "title": "The Strange Case of Dr. Jekyll and Mr. Hyde",
+    "author": "Robert Louis Stevenson",
+    "publicDomain": true,
+    "audioBytes": 92145570,
+    "durationSeconds": 11517.5
+  },
+  "search": {
+    "start": "2026-11-05T00:51:19.837Z",
+    "end": "2026-11-05T00:51:21.709Z",
+    "query": "Jekyll and Hyde audiobook",
+    "results": 1,
+    "perIndexer": [
+      {
+        "indexer": "indexer-a",
+        "elapsedMs": 1738,
+        "results": 1
+      },
+      {
+        "indexer": "indexer-b",
+        "elapsedMs": 904,
+        "results": 0
+      },
+      {
+        "indexer": "indexer-c",
+        "elapsedMs": 551,
+        "results": 0
+      },
+      {
+        "indexer": "indexer-d",
+        "elapsedMs": 455,
+        "results": 0
+      },
+      {
+        "indexer": "indexer-e",
+        "elapsedMs": 83,
+        "results": 1
+      },
+      {
+        "indexer": "indexer-f",
+        "elapsedMs": 51,
+        "results": 0
+      }
+    ]
+  },
+  "download": {
+    "start": "2026-11-05T00:51:21.715Z",
+    "end": "2026-11-05T01:03:21.569Z",
+    "added": {
+      "start": "2026-11-05T00:51:21.715Z",
+      "end": "2026-11-05T00:51:25.832Z"
+    },
+    "firstByte": "2026-11-05T00:51:39.360Z",
+    "lastProgress": "2026-11-05T00:52:55.094Z",
+    "clientCompleted": false,
+    "handFix": {
+      "start": "2026-11-05T01:02:55.909Z",
+      "end": "2026-11-05T01:03:21.569Z",
+      "bytes": 3016610,
+      "what": "qBittorrent stopped at 94.44% of the selected MP3s. The missing bytes were fetched from the Internet Archive by HTTP range, and all five files then matched the Archive's published SHA-1."
+    }
+  },
+  "import": {
+    "hardlink": {
+      "start": "2026-11-05T01:03:21.569Z",
+      "end": "2026-11-05T01:03:21.573Z",
+      "what": "Made the author and book folders by hand and hardlinked five MP3s. No ownership fix was needed."
+    },
+    "narratorTag": {
+      "start": "2026-11-05T01:03:21.573Z",
+      "end": "2026-11-05T01:03:21.573Z",
+      "what": "One narration owned, so no rename. A new folder has no metadata.json, so one was written with the plain title."
+    },
+    "seriesTag": {
+      "start": "2026-11-05T01:03:21.573Z",
+      "end": "2026-11-05T01:03:22.904Z",
+      "what": "One bibliography lookup. The book has no series, so nothing was written."
+    },
+    "authorImage": {
+      "start": "2026-11-05T01:03:22.904Z",
+      "end": "2026-11-05T01:03:24.708Z",
+      "what": "Fetched an encyclopedia portrait, cropped it square and saved it."
+    }
+  },
+  "scan": {
+    "start": "2026-11-05T01:03:21.569Z",
+    "end": "2026-11-05T01:03:39.726Z",
+    "how": "folder watcher",
+    "scanRequested": false,
+    "addedAtPerAudiobookshelf": "2026-11-05T01:03:38.627Z",
+    "tracksListed": 5
+  },
+  "notes": [
+    "All times are one server clock, read by a script polling every 1 to 2 seconds. Import times are the commands' work done by script; today's hand runs also spend a person's and a Claude session's time, which this does not measure.",
+    "The download came from the Internet Archive's own torrent for the book's LibriVox item, because the indexers' swarms were dead. The search's one result was a different, 605 MB edition from another indexer, so the search was timed but did not supply the download.",
+    "The Archive's torrent cannot finish on its web seeds. All 10 missing pieces were the first and last pieces of the five MP3s, each shared with a neighbouring file. An earlier Archive torrent stopped the same way at 99.8%. The cause inside qBittorrent was not established.",
+    "The gap between the last progress and the hand fix is the wait and the diagnosis, not transfer. Transfer itself reached 94.44% within 35 seconds of the add.",
+    "The torrent was deleted once the book was imported, because it could never complete. The book's files now have one link each and nothing seeds them.",
+    "Prowlarr's magnetUrl points at its own localhost and carries its API key, so qBittorrent, in the VPN's network, cannot fetch it and the add fails. Never log that link.",
+    "The guid link works when the guid is itself a magnet or a torrent file. When the guid is a web page, asking magnetUrl from the server's own host without following the redirect gives the magnet.",
+    "Listed seeder counts are unreliable: books listed with 14, 13 and 7 seeders never delivered metadata, and one listed with 12 stopped at 1.75% with no seeds left.",
+    "Five swarm attempts failed before this run, each given 5 to 9 minutes: no metadata from three, a stop at 1.75% on one, and a stop at 99.8% on one Archive torrent even after a recheck and a reannounce.",
+    "The network is not the fault. A control download of Debian's netinst torrent, 793 MB, finished in 69 seconds, peaking at 21.7 MB/s with up to 138 seeds, and was then deleted.",
+    "qBittorrent's API needs no password from inside its own container. From the server's host it answers 403.",
+    "The folder watcher picked up the new book alone, 18 seconds after the folder appeared, and Audiobookshelf lists it with its five tracks only in the expanded item. No scan was requested. Swap stayed flat throughout."
+  ]
+}
