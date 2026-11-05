@@ -32,4 +32,5 @@ server/src/adapters/oidc
 server/src/adapters/record-*.ts
 server/src/adapters/http/*
 !server/src/adapters/http/fetch.ts
+!server/src/adapters/http/publicFetch.ts
 !server/src/adapters/http/unavailable.ts

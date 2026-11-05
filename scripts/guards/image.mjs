@@ -88,6 +88,7 @@ export function imageFiles(root) {
 
 const HTTP_AT_RUNTIME = new Set([
   'server/src/adapters/http/fetch.ts',
+  'server/src/adapters/http/publicFetch.ts',
   'server/src/adapters/http/unavailable.ts',
 ]);
 
