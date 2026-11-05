@@ -937,7 +937,7 @@ describe('[M3.books] an upstream that cannot be reached holds the request where 
       expect(held.state.status).toBe(status);
       expect(logged.at(-1)).toMatchObject({ request: one.id, step: status });
 
-      clock = held.updatedAt + HOLD - 1_000;
+      clock = held.heldSince! + HOLD - 1_000;
       await advanceRequests(job);
       expect(reread(one)).toEqual(held);
 
@@ -967,6 +967,96 @@ describe('[M3.books] an upstream that cannot be reached holds the request where 
       expect(reread(one).stepKey).toBeNull();
     },
   );
+
+  describe('[M3.books] the hold is timed from when the service went away', () => {
+    /** An import still waiting for the service to see its folder, its last save long ago. */
+    const longWaiting = async () => {
+      const { line, steps } = refusing(
+        'import',
+        standInSteps('book', { importWaits: Infinity, imports: { source: 'abs', id: 'b' } }),
+      );
+      const job = deps(steps);
+      const one = request('book');
+      await runUntil(job, one, 'importing');
+      clock += 1_000;
+      await advanceRequests(job);
+      clock += 2 * HOLD;
+      await advanceRequests(job);
+      return { line, job, one };
+    };
+
+    it('[M3.books] holds an import that has waited over an hour on its first refusal', async () => {
+      const { line, job, one } = await longWaiting();
+      line.down = true;
+      const wentAway = clock + MINUTE;
+      clock = wentAway;
+      await advanceRequests(job);
+      expect(reread(one).state).toEqual({ status: 'importing' });
+      expect(reread(one).heldSince).toBe(wentAway);
+
+      clock = wentAway + HOLD - 1_000;
+      await advanceRequests(job);
+      expect(reread(one).state).toEqual({ status: 'importing' });
+
+      clock = wentAway + HOLD;
+      await advanceRequests(job);
+      expect(reread(one).state).toEqual({
+        status: 'failed',
+        failedStep: 'importing',
+        reason: 'importFailed',
+      });
+    });
+
+    it('[M3.books] starts the hold again once the service has answered in between', async () => {
+      const { line, job, one } = await longWaiting();
+      line.down = true;
+      clock += MINUTE;
+      await advanceRequests(job);
+      clock += HOLD - MINUTE;
+      line.down = false;
+      await advanceRequests(job);
+      expect(reread(one).heldSince).toBeNull();
+
+      line.down = true;
+      clock += MINUTE;
+      const again = clock;
+      await advanceRequests(job);
+      expect(reread(one).heldSince).toBe(again);
+      clock = again + HOLD - 1_000;
+      await advanceRequests(job);
+      expect(reread(one).state).toEqual({ status: 'importing' });
+    });
+
+    it('[M3.books] writes the hold without touching the version or the last save', async () => {
+      const { line, job, one } = await longWaiting();
+      const before = reread(one);
+      line.down = true;
+      clock += MINUTE;
+      await advanceRequests(job);
+      const held = reread(one);
+      expect(held.version).toBe(before.version);
+      expect(held.updatedAt).toBe(before.updatedAt);
+    });
+
+    it('[M3.books] ends the hold with any save, so a retry gets a whole hold of its own', async () => {
+      const { line, steps } = refusing('search', standInSteps('book'));
+      const job = deps(steps);
+      const one = request('book');
+      await runUntil(job, one, 'searching');
+      line.down = true;
+      clock += MINUTE;
+      await advanceRequests(job);
+      clock += HOLD;
+      await advanceRequests(job);
+      expect(reread(one).state).toMatchObject({ status: 'failed', reason: 'searchFailed' });
+      expect(reread(one).heldSince).toBeNull();
+
+      await retryRequest(job, one.id);
+      clock += MINUTE;
+      await advanceRequests(job);
+      expect(reread(one).state.status).not.toBe('failed');
+    });
+  });
 
   it('[M3.books] still fails at once on any other throw', async () => {
     const steps = standInSteps('podcast');

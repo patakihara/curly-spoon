@@ -813,6 +813,14 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 21,
+    name: 'request_held_since',
+    up: (db) => {
+      // held_since is when an upstream a request's step needs stopped answering, which times a hold.
+      db.exec('ALTER TABLE requests ADD COLUMN held_since INTEGER;');
+    },
+  },
 ];
 
 export function runMigrations(

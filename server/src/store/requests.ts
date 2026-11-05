@@ -35,6 +35,8 @@ export interface StoredRequest {
   result: MediaRef | null;
   /** When a download's bytes were last seen to move, which times a stall. */
   progressAt: number | null;
+  /** When the upstream its step needs stopped answering, which times a hold; null while it answers. */
+  heldSince: number | null;
   /** Counts saves: a save after a wait names the version it read, and loses to a newer one. */
   version: number;
   createdAt: number;
@@ -79,6 +81,7 @@ const RequestRow = z
     result_source: MediaRef.shape.source.nullable(),
     result_id: z.string().nullable(),
     progress_at: z.number().int().nullable(),
+    held_since: z.number().int().nullable(),
     created_at: z.number().int(),
     updated_at: z.number().int(),
   })
@@ -98,6 +101,7 @@ const RequestRow = z
         ? null
         : MediaRef.parse({ source: row.result_source, id: row.result_id }),
     progressAt: row.progress_at,
+    heldSince: row.held_since,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }));
@@ -136,6 +140,7 @@ function catalogueKeys(ref: RequestRef): string[] {
 
 const COLUMNS = `r.id, r.medium, r.target, r.status, r.failed_step, r.reason, r.progress, r.release,
   r.candidates, r.handle, r.step_key, r.version, r.result_source, r.result_id, r.progress_at,
+  r.held_since,
   r.created_at, r.updated_at`;
 
 /**
@@ -334,7 +339,7 @@ export interface RequestChange {
  * Saves a change to a request; what the change leaves out stays as it was. Answers whether it saved:
  * not when the row is gone, nor when `ifVersion` names a version the row has moved past, so a save
  * after a wait never overwrites newer state. Refuses, before writing, a change the row could not
- * then be read back from, such as a status off its medium's route.
+ * then be read back from, such as a status off its medium's route. Any save ends a hold.
  */
 export function saveRequest(
   db: Db,
@@ -351,6 +356,7 @@ export function saveRequest(
     reason: failed?.reason ?? null,
     progress: state.status === 'downloading' ? state.progress : null,
     updated_at: now,
+    held_since: null,
   };
   if (change.release !== undefined) set.release = change.release && JSON.stringify(change.release);
   if (change.candidates !== undefined) set.candidates = JSON.stringify(change.candidates);
@@ -377,4 +383,19 @@ export function saveRequest(
 /** Deletes a request, as a cancel does, and everyone's place on it. */
 export function deleteRequest(db: Db, id: string): void {
   db.prepare('DELETE FROM requests WHERE id = ?').run(id);
+}
+
+/**
+ * Notes that the upstream a request's step needs has stopped answering, unless that is already
+ * noted. It is no save: nothing about the request changed, so no later save loses to it.
+ */
+export function markHeld(db: Db, id: string, now: number): void {
+  db.prepare('UPDATE requests SET held_since = ? WHERE id = ? AND held_since IS NULL').run(now, id);
+}
+
+/** Notes that the upstream answered again. No save either, for the same reason. */
+export function clearHeld(db: Db, id: string): void {
+  db.prepare('UPDATE requests SET held_since = NULL WHERE id = ? AND held_since IS NOT NULL').run(
+    id,
+  );
 }

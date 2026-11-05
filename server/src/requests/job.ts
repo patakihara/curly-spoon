@@ -16,8 +16,9 @@
  * land upstream, and a retry under that key cannot double it.
  *
  * A step that answers `StepUnavailable` is different: the upstream could not be reached, which says
- * nothing about the request. It stays where it stands with nothing saved, and fails with the step's
- * usual reason only once it has gone that long since its last save.
+ * nothing about the request. It stays where it stands, and fails with the step's usual reason only
+ * once the upstream has been away that long. The hold is timed from the first refusal rather than
+ * the last save, as a step that waits (an import) saves nothing for hours while all is well.
  *
  * A download whose bytes stand still for the stall limit fails `downloadStalled`, and goes on by
  * itself to the next release the search found, while any are left. Listed seeders can be false, so
@@ -35,9 +36,11 @@ import { indexedRow } from '../libraryIndex/store.js';
 import { addClaim, type ClaimReason } from '../store/claims.js';
 import type { Db } from '../store/connection.js';
 import {
+  clearHeld,
   deleteRequest,
   getRequest,
   leaveRequest,
+  markHeld,
   peopleOn,
   saveRequest,
   type RequestChange,
@@ -319,14 +322,14 @@ function recordThrown(deps: RequestJobDeps, id: string, step: WorkingStatus): vo
 }
 
 /**
- * Leaves a request an unreachable upstream holds where it stands, saving nothing, until it has gone
- * the hold limit since its last save; then it fails as a step that throws does.
+ * Leaves a request an unreachable upstream holds where it stands, noting when the upstream went
+ * away, until it has been away the hold limit; then it fails as a step that throws does.
  */
 function recordHeld(deps: RequestJobDeps, id: string, step: WorkingStatus): void {
   const current = getRequest(deps.db, id);
-  if (current !== null && deps.now() - current.updatedAt >= deps.holdAfterMs) {
-    recordThrown(deps, id, step);
-  }
+  if (current?.state.status !== step) return;
+  if (current.heldSince === null) markHeld(deps.db, id, deps.now());
+  else if (deps.now() - current.heldSince >= deps.holdAfterMs) recordThrown(deps, id, step);
 }
 
 /**
@@ -343,6 +346,7 @@ export async function advanceRequests(deps: RequestJobDeps): Promise<void> {
       if (request === null) continue;
       step = request.state.status;
       await advance(deps, steps, request);
+      clearHeld(deps.db, id);
     } catch (err) {
       deps.log.error({ request: id, step, err }, 'request step failed');
       try {

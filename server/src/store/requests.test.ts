@@ -59,6 +59,7 @@ describe('the requests store', () => {
       stepKey: null,
       result: null,
       progressAt: null,
+      heldSince: null,
       version: 0,
       createdAt: 1_000,
       updatedAt: 1_000,
