@@ -888,26 +888,23 @@ describe('a book placed in Books', () => {
         expect(url).toBeNull();
       });
 
-      it('a public name that resolves to a private address is never fetched', async () => {
+      it('a name its fetch refuses as private is no photo, and nothing is written', async () => {
         const authorDir = shelfDir();
-        let fetches = 0;
         const url = await authorPhoto(
           {
             audnexus: naming('https://images.invalid/a.jpg'),
             fetch: async () => {
-              fetches += 1;
-              return new Response(image);
+              throw new Error('a private address');
             },
-            lookup: async () => ['93.184.216.34', '10.0.0.8'],
             log,
           },
           { authorDir, asin },
         );
-        expect(fetches).toBe(0);
         expect(url).toBeNull();
+        expect(existsSync(join(authorDir, 'author.jpg'))).toBe(false);
       });
 
-      it('a public name at a public address is fetched, and takes no redirect', async () => {
+      it('a public name is fetched, and takes no redirect', async () => {
         const authorDir = shelfDir();
         const asked: unknown[] = [];
         const url = await authorPhoto(
@@ -917,7 +914,6 @@ describe('a book placed in Books', () => {
               asked.push(init?.redirect);
               return new Response(image);
             },
-            lookup: async () => ['93.184.216.34'],
             log,
           },
           { authorDir, asin },

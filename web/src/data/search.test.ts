@@ -95,7 +95,7 @@ describe('search results as rows', () => {
 
 describe('[M3.requests] the way to Requests from Search', () => {
   const answered = (hasRequests: boolean) =>
-    SearchResults.parse({ query: 'zz', results: [], hasRequests });
+    SearchResults.parse({ query: 'zz', results: [], books: [], hasRequests });
   const said = (hasRequests: boolean) => SuggestionList.parse({ suggestions: [], hasRequests });
 
   it('is offered while the person has a request, with results or suggestions, and not otherwise', () => {
@@ -121,6 +121,7 @@ describe('search’s data', () => {
   it('puts the best result on top and the rest in your library, with nothing outside it', () => {
     const answer = SearchResults.parse({
       query: 'ri',
+      books: [],
       hasRequests: false,
       results: [
         result({ title: 'First' }),
@@ -138,6 +139,7 @@ describe('search’s data', () => {
   it('[M3.requests/d] sorts results in or out of your library as the server says, each one playing', () => {
     const answer = SearchResults.parse({
       query: 'o',
+      books: [],
       hasRequests: false,
       results: [
         result({ title: 'Best', inYourLibrary: false, ref: { source: 'abs', id: 'b1' } }),
@@ -156,7 +158,7 @@ describe('search’s data', () => {
 
   it('keeps the page’s own words and nothing of the canvas’s samples while nothing is found', () => {
     const data = searchData(
-      SearchResults.parse({ query: 'zz', results: [], hasRequests: false }),
+      SearchResults.parse({ query: 'zz', results: [], books: [], hasRequests: false }),
       empty,
     );
     expect(data.top.title).toBe('');
@@ -256,7 +258,7 @@ describe('what search asks of the server', () => {
         asked.push(`${url.pathname}?${url.searchParams}`);
         const body = url.pathname.endsWith('/suggest')
           ? { suggestions: [{ kind: 'recent', text: 'rise', ref: null }], hasRequests: false }
-          : { query: url.searchParams.get('q'), results, hasRequests: false };
+          : { query: url.searchParams.get('q'), results, books: [], hasRequests: false };
         return new Response(JSON.stringify(body), {
           headers: { 'content-type': 'application/json' },
         });

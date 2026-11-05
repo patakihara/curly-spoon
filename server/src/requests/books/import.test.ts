@@ -148,7 +148,7 @@ function deps(fetch: FetchLike, more: Partial<BookImportDeps> = {}): BookImportD
     db,
     mediaDir: media,
     downloadsPath: DOWNLOADS,
-    fetch: photoFetch,
+    photoFetch,
     now: () => clock,
     log,
     ...more,

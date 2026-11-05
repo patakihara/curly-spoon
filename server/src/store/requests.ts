@@ -298,6 +298,21 @@ export function arrivedRequests(db: Db, ref: RequestRef, log?: JobLog): StoredRe
   );
 }
 
+/** The live request for the same thing, the oldest if two share an id; failed ones are live too. */
+export function liveRequest(db: Db, ref: RequestRef, log?: JobLog): StoredRequest | undefined {
+  const keys = catalogueKeys(ref);
+  return readableRows(
+    db
+      .prepare(
+        `SELECT DISTINCT ${COLUMNS} FROM request_keys k JOIN requests r ON r.id = k.request_id
+         WHERE k.medium = ? AND k.key IN (${keys.map(() => '?').join(', ')})
+         ORDER BY r.created_at, r.id`,
+      )
+      .all(ref.medium, ...keys) as unknown[],
+    log,
+  )[0];
+}
+
 /** Puts a person on what has arrived; any catalogue id they brought finds it from now on. */
 export function joinArrivedRequest(
   db: Db,

@@ -27,7 +27,7 @@ import { indexOneAbsItem } from '../../libraryIndex/job.js';
 import type { Db } from '../../store/connection.js';
 import type { StoredRequest } from '../../store/requests.js';
 import type { ImportOutcome, MediumSteps } from '../steps.js';
-import { authorPhoto, type AuthorPhotoDeps } from './authorPhoto.js';
+import { authorPhoto } from './authorPhoto.js';
 import { BookRefused } from './names.js';
 import {
   type BookToPlace,
@@ -60,9 +60,9 @@ export interface BookImportDeps {
   /** Where qBittorrent itself sees `Downloads`. */
   downloadsPath: string;
   /** Fetches the author's photo. */
-  fetch: FetchLike;
+  /** Asks an address another service wrote: `publicFetch` where it runs. */
+  photoFetch: FetchLike;
   /** What a photo's host resolves to. */
-  lookup?: AuthorPhotoDeps['lookup'];
   /** Links a file into staging; only a test replaces it. */
   link?: PlaceBookInput['link'];
   now: () => number;
@@ -216,8 +216,7 @@ async function photoOf(
     const url = await authorPhoto(
       {
         audnexus: deps.audnexus,
-        fetch: deps.fetch,
-        ...(deps.lookup === undefined ? {} : { lookup: deps.lookup }),
+        fetch: deps.photoFetch,
         ...(deps.log === undefined ? {} : { log: deps.log }),
       },
       { authorDir, asin },

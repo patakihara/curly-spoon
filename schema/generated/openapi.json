@@ -251,6 +251,19 @@
           "title"
         ]
       },
+      "RequestStatus": {
+        "type": "string",
+        "enum": [
+          "requested",
+          "searching",
+          "needsChoice",
+          "queued",
+          "downloading",
+          "importing",
+          "inLibrary",
+          "failed"
+        ]
+      },
       "LyricsSource": {
         "type": "string",
         "enum": [
@@ -841,19 +854,6 @@
           "album",
           "song",
           "podcast"
-        ]
-      },
-      "RequestStatus": {
-        "type": "string",
-        "enum": [
-          "requested",
-          "searching",
-          "needsChoice",
-          "queued",
-          "downloading",
-          "importing",
-          "inLibrary",
-          "failed"
         ]
       },
       "RequestVerb": {
@@ -2159,6 +2159,67 @@
           "inYourLibrary"
         ]
       },
+      "SearchBook": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/RequestRef"
+          },
+          "title": {
+            "type": "string"
+          },
+          "author": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "narrator": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "year": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "art": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RequestStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "progress": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "ref",
+          "title",
+          "author",
+          "narrator",
+          "year",
+          "art",
+          "status",
+          "progress"
+        ]
+      },
       "SearchResults": {
         "type": "object",
         "properties": {
@@ -2171,6 +2232,12 @@
               "$ref": "#/components/schemas/SearchResult"
             }
           },
+          "books": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchBook"
+            }
+          },
           "hasRequests": {
             "type": "boolean"
           }
@@ -2178,6 +2245,7 @@
         "required": [
           "query",
           "results",
+          "books",
           "hasRequests"
         ]
       },
@@ -5246,7 +5314,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The best results first, of the kinds asked for, or of every kind.",
+            "description": "The best results first, of the kinds asked for, or of every kind, and the books the library lacks.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5284,6 +5352,127 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/search/books/{asin}/art": {
+      "get": {
+        "summary": "The cover of a book a search found, one the library lacks, from the catalogue's address",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getSearchBookArt",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{10}$"
+            },
+            "required": true,
+            "name": "asin",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "$ref": "#/components/schemas/ArtSize"
+            },
+            "required": false,
+            "name": "size",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image, as the catalogue holds it.",
+            "content": {
+              "image/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "summary": "The cover of a book a search found, one the library lacks, from the catalogue's address",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "getSearchBookArtHead",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{10}$"
+            },
+            "required": true,
+            "name": "asin",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "$ref": "#/components/schemas/ArtSize"
+            },
+            "required": false,
+            "name": "size",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image, as the catalogue holds it."
+          },
+          "400": {
+            "description": "The request does not parse, or was refused."
+          },
+          "401": {
+            "description": "No session."
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site."
           }
         }
       }

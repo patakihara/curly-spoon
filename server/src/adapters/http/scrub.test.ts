@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type RawExchange, scrub } from './scrub.js';
+import { type RawExchange, SECRET_QUERY_KEY, scrub } from './scrub.js';
 
 const KEY = 'sk-9f8e7d6c5b4a/+=';
 const baseUrl = 'http://100.64.12.34:13378';
@@ -27,6 +27,12 @@ function exchange(overrides: Partial<RawExchange> = {}): RawExchange {
 const opts = { secrets: [KEY], baseUrl };
 
 describe('[M0.record/c] scrubbing a recording', () => {
+  it("[M3.books] keeps a search's keywords, which only look like a key", () => {
+    expect(SECRET_QUERY_KEY.test('keywords')).toBe(false);
+    expect(SECRET_QUERY_KEY.test('apikey')).toBe(true);
+    expect(SECRET_QUERY_KEY.test('key')).toBe(true);
+  });
+
   it('[M0.record/c] secrets are replaced wherever they appear, raw or URL-encoded', () => {
     const r = scrub(
       exchange({

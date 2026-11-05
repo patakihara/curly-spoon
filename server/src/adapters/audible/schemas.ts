@@ -17,7 +17,10 @@ export const audibleProductSchema = z.object({
   language: z.string().nullish(),
   merchandising_summary: z.string().nullish(),
   product_images: z.record(z.string(), z.string()).nullish(),
+  content_delivery_type: z.string().nullish(),
 });
 export type AudibleProductRow = z.infer<typeof audibleProductSchema>;
 
 export const audibleAnswerSchema = z.object({ product: audibleProductSchema });
+
+export const audibleSearchSchema = z.object({ products: z.array(audibleProductSchema) });

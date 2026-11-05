@@ -5,6 +5,7 @@
  */
 import { Availability } from './library.js';
 import { ArtUrl, MediaRef } from './play.js';
+import { Asin, RequestRef, RequestStatus } from './requests.js';
 import { z } from './zod.js';
 
 /** What a result is: a song, an album, an artist, a book, an author, a series, a show, an episode. */
@@ -68,11 +69,39 @@ const queryText = () =>
     .refine((q) => [...q].length <= QUERY_MAX)
     .openapi({ maxLength: QUERY_MAX });
 
-/** A search's results, best first, for the query as it was searched. */
+/**
+ * A book the library lacks, as raw values the apps word themselves: `ref` is what a request for it
+ * takes, and `status` where a request for it stands, null while there is none. `progress` runs from
+ * 0 to 1 while downloading. A book the household holds is not listed, unless the person's own request
+ * brought it, which then says `inLibrary`.
+ */
+export const SearchBook = z
+  .object({
+    ref: RequestRef,
+    title: z.string(),
+    author: z.string().nullable(),
+    narrator: z.string().nullable(),
+    year: z.number().int().nullable(),
+    art: ArtUrl.nullable(),
+    status: RequestStatus.nullable(),
+    progress: z.number().nullable(),
+  })
+  .openapi('SearchBook');
+export type SearchBook = z.infer<typeof SearchBook>;
+
+/** A book row's cover, by its catalogue id. */
+export const SearchBookParams = z.object({ asin: Asin });
+export type SearchBookParams = z.infer<typeof SearchBookParams>;
+
+/**
+ * A search's results, best first, for the query as it was searched, and the books the library lacks
+ * that the catalogue finds for it.
+ */
 export const SearchResults = z
   .object({
     query: z.string(),
     results: z.array(SearchResult),
+    books: z.array(SearchBook),
     /** Whether the person has any request, which Search offers whatever it shows. */
     hasRequests: z.boolean(),
   })

@@ -63,7 +63,13 @@ import {
   RequestParams,
   RequestView,
 } from './requests.js';
-import { SearchQuery, SearchResults, SuggestionList, SuggestQuery } from './search.js';
+import {
+  SearchBookParams,
+  SearchQuery,
+  SearchResults,
+  SuggestionList,
+  SuggestQuery,
+} from './search.js';
 import { Settings, SettingsBody } from './settings.js';
 import {
   ActiveQueueBody,
@@ -562,10 +568,25 @@ export const getSearch = {
   path: '/api/search',
   operationId: 'getSearch',
   summary: "A search of the household's library, kept among the signed-in person's recent searches",
-  responseDescription: 'The best results first, of the kinds asked for, or of every kind.',
+  responseDescription:
+    'The best results first, of the kinds asked for, or of every kind, and the books the library lacks.',
   response: SearchResults,
   access: 'member',
   query: SearchQuery,
+} as const satisfies Route;
+
+export const searchBookArt = {
+  method: 'GET',
+  path: '/api/search/books/{asin}/art',
+  operationId: 'getSearchBookArt',
+  summary:
+    "The cover of a book a search found, one the library lacks, from the catalogue's address",
+  responseDescription: 'The image, as the catalogue holds it.',
+  response: ImageBytes,
+  access: 'member',
+  params: SearchBookParams,
+  query: ArtQuery,
+  stream: 'image',
 } as const satisfies Route;
 
 export const getLyrics = {
@@ -720,6 +741,7 @@ export const routes: readonly Route[] = [
   mediaArt,
   getSearchSuggest,
   getSearch,
+  searchBookArt,
   getLyrics,
   listLists,
   createList,

@@ -10,6 +10,7 @@ import { createProxyTrust, type ProxyTrust } from './auth/proxy.js';
 import type { CookieSecure } from './config.js';
 import { answerFailure, refuseConnection } from './failures.js';
 import { scheduleJob } from './jobs/schedule.js';
+import type { BookCatalogue } from './requests/books/catalogue.js';
 import { advanceRequests } from './requests/job.js';
 import type { StepsRegistry } from './requests/steps.js';
 import { retiredWorkerRoute } from './retiredWorker.js';
@@ -72,6 +73,8 @@ export interface BuildAppOptions {
     stallAfterMs: number;
     holdAfterMs: number;
   };
+  /** What Search lists of the books the library lacks, while books can be requested. */
+  bookCatalogue?: BookCatalogue;
   /** How transcodes are held open and their segments waited for. */
   playback?: PlaybackOptions;
   random?: Random;
@@ -212,7 +215,14 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       now: options.now ?? Date.now,
     });
   lyricsRoutes(app, { db, upstreams, lyrics });
-  searchRoutes(app, { db, now: options.now ?? Date.now });
+  searchRoutes(app, {
+    db,
+    now: options.now ?? Date.now,
+    // A row nothing could take the tap of is not listed.
+    ...(options.bookCatalogue !== undefined && options.requests?.steps.has('book') === true
+      ? { catalogue: options.bookCatalogue }
+      : {}),
+  });
   settingsRoutes(app, { db, sessions, now: options.now ?? Date.now });
 
   requestRoutes(app, {

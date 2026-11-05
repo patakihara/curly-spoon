@@ -2,17 +2,24 @@
  * Whether books can be requested on this server, as `main.ts` assembles it: only with everything
  * they need, and never at the cost of the rest. No upstream is reached here but to refuse.
  */
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { setTimeout as pause } from 'node:timers/promises';
+import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { FetchLike } from '../../adapters/http/fetch.js';
+import { recordingSchema } from '../../adapters/http/recording.js';
+import { replayFetch, standInsBeside } from '../../adapters/http/replay.js';
+import { PLACEHOLDER_ORIGIN } from '../../adapters/http/scrub.js';
+import { standInRelease } from '../../adapters/http/standIn.js';
 import { loadConfig } from '../../config.js';
 import { assembleServer, type Server } from '../../server.js';
 import { openDatabase } from '../../store/connection.js';
 import { createDevice } from '../../store/devices.js';
-import { getRequest } from '../../store/requests.js';
+import { createRequest, getRequest, saveRequest } from '../../store/requests.js';
 import { createSession } from '../../store/sessions.js';
+import { saveLink } from '../../store/upstreamLinks.js';
 import { upsertUser } from '../../store/users.js';
 import { bookSteps } from './index.js';
 
@@ -189,5 +196,97 @@ describe('the server with book steps', () => {
     expect(answer.json<{ error: string }>().error).toBe('medium_unavailable');
     const health = await server.app.inject({ method: 'GET', url: '/api/health' });
     expect(health.statusCode).toBe(200);
+  });
+
+  it('plays a book, track and all, while a download’s qBittorrent refuses and its request waits', async () => {
+    const adapters = fileURLToPath(new URL('../../adapters/', import.meta.url));
+    const recorded = (call: string) =>
+      recordingSchema.parse(
+        JSON.parse(
+          readFileSync(join(adapters, 'audiobookshelf', 'recordings', `${call}.json`), 'utf8'),
+        ),
+      );
+    const itemPlay = recorded('item-play');
+    const replay = replayFetch([itemPlay, recorded('item-detail'), recorded('item-file')], {
+      readBytes: standInsBeside(adapters),
+    });
+
+    const vars: Record<string, string> = {
+      ...env,
+      ABS_URL: PLACEHOLDER_ORIGIN,
+      REQUESTS_EVERY_SECONDS: '1',
+    };
+    const dataDir = vars['DATA_DIR'] as string;
+    const bearer = signedIn(dataDir);
+    const store = openDatabase(join(dataDir, 'auralis.sqlite'));
+    const kara = upsertUser(store, { username: 'kara', role: 'member' });
+    saveLink(store, Buffer.from(KEY, 'base64'), {
+      userId: kara.id,
+      service: 'abs',
+      upstreamUserId: 'abs-kara',
+      token: 'abs-token-kara',
+      state: 'linked',
+    });
+    const { request } = createRequest(
+      store,
+      kara.id,
+      {
+        medium: 'book',
+        target: { title: 'A Quiet Book', creator: 'Ann Author', ids: { asin: ASIN } },
+      },
+      Date.now(),
+    );
+    saveRequest(
+      store,
+      request.id,
+      {
+        state: { status: 'downloading', progress: 0.5 },
+        release: standInRelease('one'),
+        handle: { hash: 'a'.repeat(40), key: 'k', addedAt: Date.now() },
+        progressAt: Date.now(),
+      },
+      Date.now(),
+    );
+    store.close();
+
+    let refusals = 0;
+    const server = await assembleServer(loadConfig(vars), {
+      fetch: async (url, init) => {
+        if (new URL(url).hostname === 'qbittorrent.invalid') {
+          refusals += 1;
+          throw new TypeError('connection refused');
+        }
+        return replay(url, init);
+      },
+      logger: false,
+    });
+    servers.push(server);
+    for (let waited = 0; refusals === 0 && waited < 50; waited += 1) await pause(100);
+    expect(refusals).toBeGreaterThan(0);
+
+    const headers = { authorization: `Bearer ${bearer}` };
+    const planned = await server.app.inject({
+      method: 'POST',
+      url: '/api/play',
+      headers,
+      payload: { ref: { source: 'abs', id: itemPlay.request.path.split('/')[3] } },
+    });
+    expect(planned.statusCode, planned.body).toBe(200);
+    const [track] = planned.json<{ tracks: { url: string }[] }>().tracks;
+    const bytes = await server.app.inject({
+      method: 'GET',
+      url: track!.url,
+      headers: { ...headers, range: 'bytes=0-99' },
+    });
+    expect(bytes.statusCode).toBe(206);
+
+    const health = await server.app.inject({ method: 'GET', url: '/api/health' });
+    expect(health.statusCode).toBe(200);
+    const waiting = await server.app.inject({
+      method: 'GET',
+      url: `/api/requests/${request.id}`,
+      headers,
+    });
+    expect(waiting.json()).toMatchObject({ status: 'downloading', reason: null });
   });
 });

@@ -65,3 +65,38 @@ describe('[M3.books] the Audible catalogue', () => {
     await expect(broken.product('B09J9BJ8DF')).rejects.toBeInstanceOf(StepUnavailable);
   });
 });
+
+describe("[M3.books] Audible's keyword search", () => {
+  const found = client(
+    replayFetch(['search-jekyll', 'search-podcasts', 'search-nothing'].map(recorded)),
+  );
+
+  it('[M3.books] lists the books a search finds, in the catalogue’s order', async () => {
+    const products = await found.search('jekyll stevenson');
+    expect(products).toHaveLength(10);
+    expect(products[3]).toMatchObject({
+      asin: 'B09J9BJ8DF',
+      title: 'The Strange Case of Dr Jekyll and Mr Hyde',
+      authors: [{ name: 'Robert Louis Stevenson' }],
+    });
+    expect(products[3]?.imageUrl).toMatch(/^https:\/\//);
+  });
+
+  it('[M3.books] leaves out a podcast, which a book request could never get', async () => {
+    const products = await found.search('stuff you should know');
+    expect(products.map(({ asin }) => asin)).toContain('1250771498');
+    expect(products.map(({ asin }) => asin)).not.toContain('B08JJMNHTS');
+    expect(products).toHaveLength(9);
+  });
+
+  it('[M3.books] finds nothing as an empty list', async () => {
+    expect(await found.search('zzqqxxnomatchzz')).toEqual([]);
+  });
+
+  it('[M3.books] a refused connection throws StepUnavailable', async () => {
+    const refused = client(async () => {
+      throw new TypeError('connection refused');
+    });
+    await expect(refused.search('jekyll')).rejects.toBeInstanceOf(StepUnavailable);
+  });
+});

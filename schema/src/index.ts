@@ -137,6 +137,7 @@ export {
   loginCallback,
   logout,
   mediaArt,
+  searchBookArt,
   mediaHls,
   mediaTrack,
   play,
@@ -172,6 +173,8 @@ export {
 } from './requests.js';
 export {
   QUERY_MAX,
+  SearchBook,
+  SearchBookParams,
   SearchKind,
   SearchParent,
   SearchQuery,

@@ -9,7 +9,8 @@
  * - AudiobookBay's own site: that release's detail page, cut to the post (`detail`).
  * - Audible, keyless: the same book (`product-jekyll`), a book in two series (`product-dune`), one
  *   with no place in its series (`product-no-sequence`), an ASIN it does not know
- *   (`product-missing`), each cut to the fields the client reads.
+ *   (`product-missing`), each cut to the fields the client reads; and Search's keyword searches,
+ *   books (`search-jekyll`), podcasts among the rows (`search-podcasts`), nothing (`search-nothing`).
  * - Audnexus, keyless: a search by name (`author-search`), authors with a photo and without
  *   (`author-doyle`, `author-stevenson`), and an ASIN it refuses (`author-missing`).
  *
@@ -172,6 +173,7 @@ function scanned(recording: Recording) {
 }
 
 const AUDIBLE_FIELDS = [
+  'content_delivery_type',
   'asin',
   'title',
   'authors',
@@ -188,11 +190,7 @@ function only(value: Record<string, unknown>, fields: string[]): Record<string, 
   return Object.fromEntries(Object.entries(value).filter(([field]) => fields.includes(field)));
 }
 
-/** The hook for Audible's recorder: a product cut to what the client reads. */
-export function cutProduct(raw: RawExchange): RawExchange {
-  const { body } = raw.response;
-  if (body === null || !('json' in body)) throw new Error('that product came with no JSON');
-  const { product } = body.json as { product: Record<string, unknown> };
+function cutOneProduct(product: Record<string, unknown>): Record<string, unknown> {
   const kept = only(product, AUDIBLE_FIELDS);
   if (Array.isArray(product.series)) {
     kept.series = (product.series as Record<string, unknown>[]).map((one) =>
@@ -201,7 +199,22 @@ export function cutProduct(raw: RawExchange): RawExchange {
   }
   const images = product.product_images as Record<string, unknown> | undefined;
   if (images?.['500'] !== undefined) kept.product_images = { 500: images['500'] };
-  return { ...raw, response: { ...raw.response, body: { json: { product: kept } } } };
+  return kept;
+}
+
+/** The hook for Audible's recorder: a product, or a search's, cut to what the client reads. */
+export function cutProduct(raw: RawExchange): RawExchange {
+  const { body } = raw.response;
+  if (body === null || !('json' in body)) throw new Error('that product came with no JSON');
+  const { product, products } = body.json as {
+    product?: Record<string, unknown>;
+    products?: Record<string, unknown>[];
+  };
+  const json =
+    products === undefined
+      ? { product: cutOneProduct(product ?? {}) }
+      : { products: products.map(cutOneProduct) };
+  return { ...raw, response: { ...raw.response, body: { json } } };
 }
 
 /** The hook for Audnexus's recorder: an author without their blurb and neighbours. */
@@ -212,8 +225,38 @@ export function cutAuthor(raw: RawExchange): RawExchange {
   return { ...raw, response: { ...raw.response, body: { json } } };
 }
 
+/** Search's keyword searches of Audible: read only, keyless. */
+export async function recordAudibleSearches(
+  input: Pick<BooksRecordInput, 'fetch' | 'out' | 'root'>,
+  written: string[],
+): Promise<void> {
+  const dir = join(input.root, 'audible', 'recordings');
+  const audible = createRecorder({
+    fetch: input.fetch,
+    dir,
+    upstream: 'audible',
+    upstreamVersion: 'Audible catalogue API 1.0',
+    secrets: [],
+    baseUrl: AUDIBLE_URL,
+    prepare: cutProduct,
+  });
+  const catalogue = new AudibleClient({ baseUrl: AUDIBLE_URL, fetch: audible.fetch });
+  for (const [call, keywords] of [
+    ['search-jekyll', 'jekyll stevenson'],
+    ['search-podcasts', 'stuff you should know'],
+    ['search-nothing', 'zzqqxxnomatchzz'],
+  ] as const) {
+    await audible.capture(call, () => catalogue.search(keywords), {
+      verify: (_, recording) => scanned(recording),
+    });
+    written.push(join(dir, `${call}.json`));
+    input.out(`${call}: read`);
+  }
+}
+
 async function recordCatalogues(input: BooksRecordInput, written: string[]): Promise<void> {
   const { fetch, out } = input;
+  await recordAudibleSearches(input, written);
   const audibleDir = join(input.root, 'audible', 'recordings');
   const audible = createRecorder({
     fetch,

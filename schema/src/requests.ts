@@ -43,13 +43,16 @@ export const RequestFailure = z
   .openapi('RequestFailure');
 export type RequestFailure = z.infer<typeof RequestFailure>;
 
+/** An Audible catalogue id. */
+export const Asin = z.string().regex(/^[A-Z0-9]{10}$/);
+
 /**
  * The catalogue ids a request names its target by: an Audible ASIN, an ISBN-10 or ISBN-13, a
  * MusicBrainz release id, a podcast's feed address, a YouTube Music video id.
  */
 export const RequestIds = z
   .object({
-    asin: z.string().regex(/^[A-Z0-9]{10}$/),
+    asin: Asin,
     isbn: z.string().regex(/^(?:\d{9}[\dX]|\d{13})$/),
     mbid: z.string().uuid(),
     feedUrl: z

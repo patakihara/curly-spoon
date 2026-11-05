@@ -35,7 +35,7 @@ export const KEPT_HEADERS = [
   'location',
 ] as const;
 /** A query parameter or header name that carries a credential. `auth` spares `author`. */
-export const SECRET_QUERY_KEY = /token|key|secret|pass|pash|auth(?!or)|cookie|signature/i;
+export const SECRET_QUERY_KEY = /token|key(?!words)|secret|pass|pash|auth(?!or)|cookie|signature/i;
 /** A JSON field that carries a credential, by substring or by exact name. A field that only
  * describes one, such as a sign-on's `token_endpoint`, `token_type` or
  * `token_endpoint_auth_methods_supported`, is not. */

@@ -12,6 +12,7 @@ import { AbsClient } from '../../adapters/audiobookshelf/client.js';
 import { AbsProvisioner } from '../../adapters/audiobookshelf/provision.js';
 import { AudnexusClient } from '../../adapters/audnexus/client.js';
 import type { FetchLike } from '../../adapters/http/fetch.js';
+import { publicFetch } from '../../adapters/http/publicFetch.js';
 import { ProwlarrClient } from '../../adapters/prowlarr/client.js';
 import { QbittorrentClient } from '../../adapters/qbittorrent/client.js';
 import type { AppConfig } from '../../config.js';
@@ -19,6 +20,7 @@ import type { JobLog } from '../../jobs/schedule.js';
 import { readSecretFile } from '../../secretFile.js';
 import type { Db } from '../../store/connection.js';
 import type { MediumSteps } from '../steps.js';
+import { bookCatalogue, type BookCatalogue } from './catalogue.js';
 import { bookDownload } from './download.js';
 import { bookImport } from './import.js';
 import { bookSearch } from './search.js';
@@ -31,7 +33,7 @@ export interface BookStepsDeps {
 }
 
 /** The steps, or which setting keeps books from being requested. */
-export type BookSteps = { steps: MediumSteps } | { off: string };
+export type BookSteps = { steps: MediumSteps; catalogue: BookCatalogue } | { off: string };
 
 const addressesOf = async (host: string) =>
   (await lookup(host, { all: true })).map(({ address }) => address);
@@ -79,14 +81,17 @@ export function bookSteps(config: AppConfig, deps: BookStepsDeps): BookSteps {
   // Without Audible a book is named by its request; without Audnexus it only lacks a photo.
   const audible =
     books.audibleUrl === null
-      ? { product: async () => null }
+      ? { product: async () => null, search: async () => [] }
       : new AudibleClient({ baseUrl: books.audibleUrl, fetch });
   const audnexus =
     books.audnexusUrl === null
       ? { author: async () => null, authorsNamed: async () => [] }
       : new AudnexusClient({ baseUrl: books.audnexusUrl, fetch });
 
+  const photoFetch = publicFetch({ lookup: addressesOf });
+
   return {
+    catalogue: bookCatalogue({ audible, fetchArt: photoFetch, now, log }),
     steps: {
       medium: 'book',
       search: bookSearch({ audible, prowlarr, fetch, log }),
@@ -100,8 +105,7 @@ export function bookSteps(config: AppConfig, deps: BookStepsDeps): BookSteps {
         db,
         mediaDir,
         downloadsPath,
-        fetch,
-        lookup: addressesOf,
+        photoFetch,
         now,
         log,
       }),

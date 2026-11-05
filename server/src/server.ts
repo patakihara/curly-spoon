@@ -157,6 +157,7 @@ export async function assembleServer(
       stallAfterMs: config.requests.stallAfterMinutes * 60_000,
       holdAfterMs: config.requests.holdAfterMinutes * 60_000,
     },
+    ...('steps' in books ? { bookCatalogue: books.catalogue } : {}),
     logger: deps.logger ?? true,
   });
 
