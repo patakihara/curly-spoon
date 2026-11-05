@@ -2,8 +2,11 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { MemoryRouter } from 'react-router';
+import { describe, expect, it, vi } from 'vitest';
+import * as Author from './generated/pages/Author';
 import { MediaCard } from './generated/ui/index.js';
+import { type Request, RequestContext } from './request';
 
 const card = (props: Partial<Parameters<typeof MediaCard>[0]>) =>
   renderToString(
@@ -39,5 +42,39 @@ describe("Sonora's MediaCard for an item you don't own", () => {
     expect(
       card({ absent: true, status: 'Requested', onRequest: noop, onClick: noop }),
     ).not.toContain('More options');
+  });
+});
+
+describe('[M3.books] a card’s Request on a generated page', () => {
+  const drawn = (ref: string, absent: boolean, request: Request | null) => {
+    const row = { ...Author.frame.placeholder.books[0]!, ref, absent };
+    const data = { ...Author.frame.placeholder, books: [row] };
+    return renderToString(
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(
+          RequestContext.Provider,
+          { value: request },
+          createElement(Author.default, { data }),
+        ),
+      ),
+    );
+  };
+  const asked = vi.fn();
+  const handing: Request = (ref) => (ref === 'wanted' ? () => asked(ref) : undefined);
+
+  // A card its Request binds keeps its page behind "More options", and taps to ask.
+  it('binds an absent card to the request its ref names, once a page hands down its requests', () => {
+    expect(drawn('wanted', true, handing)).toContain('More options');
+  });
+
+  it('draws an absent card with no Request when nothing takes it, as a ref that is no request', () => {
+    expect(drawn('abs:item', true, handing)).not.toContain('More options');
+    expect(drawn('wanted', true, null)).not.toContain('More options');
+  });
+
+  it('asks for nothing on a card you have', () => {
+    expect(drawn('wanted', false, handing)).not.toContain('More options');
   });
 });

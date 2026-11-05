@@ -79,9 +79,10 @@ on, and its menu draws disabled too.
 
 `onRequest={<Request ref={book.ref} />}`, or `onClick` on a `Button`, asks for an item the library
 lacks: a card's Request, or Search's outside book row. Books are registered behind the endpoint,
-and every other medium still answers 409 until its item registers its steps. A book's Request lands
-on the web with M3.books; until it does, and on Android until M5, the prop is left out and the control
-draws disabled. The same request made twice joins the first.
+and every other medium still answers 409 until its item registers its steps. On the web its ref is a
+string carrying the request (`web/src/request.ts`), and one that carries none asks for nothing. Where
+nothing can take it, and on Android until M5, the control draws disabled. The same request made twice
+joins the first.
 
 `onClick={<Act ref={request.id} verb={request.verb} />}` does a request's verb to the request its
 ref binds: `retry`, `cancel`, `choose` or `pickAnother`, written or bound from the data, which the

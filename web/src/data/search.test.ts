@@ -1,4 +1,4 @@
-import { type SearchResult, SearchResults, SuggestionList } from '@auralis/schema';
+import { type SearchBook, type SearchResult, SearchResults, SuggestionList } from '@auralis/schema';
 import { describe, expect, it } from 'vitest';
 import { createApiClient } from '../api/client';
 import { frame as search } from '../generated/pages/Search';
@@ -8,6 +8,7 @@ import {
   metaOf,
   rowOf,
   searchData,
+  searchRequestFailed,
   type SearchDrawn,
   searchLive,
   type SearchLoaded,
@@ -15,6 +16,7 @@ import {
   suggestData,
 } from './search';
 import { answerFrom, createPageStore, pageKey } from './store';
+import { requestOf } from '../request';
 
 const result = (over: Partial<SearchResult>): SearchResult => ({
   ref: { source: 'jellyfin', id: 'a1' },
@@ -108,7 +110,7 @@ describe('[M3.requests] the way to Requests from Search', () => {
   it('stays as it was over a search that failed', () => {
     const live = searchLive('zz', null, empty);
     const before = live.draw(
-      { data: { data: searchData(answered(true), empty), found: false } },
+      { data: { data: searchData(answered(true), empty), found: false, moving: false } },
       null,
     );
     const failed = live.draw('failed', before);
@@ -130,7 +132,7 @@ describe('search’s data', () => {
       ],
     });
     const data = searchData(answer, empty);
-    expect(data.top.title).toBe('First');
+    expect(data.top.map((r) => r.title)).toEqual(['First']);
     expect(data.library.map((r) => r.title)).toEqual(['Second', 'Third']);
     expect(data.outside.books).toEqual([]);
     expect(data.suggestions).toEqual([]);
@@ -148,12 +150,12 @@ describe('search’s data', () => {
       ],
     });
     const data = searchData(answer, empty);
-    expect(data.top.title).toBe('Best');
+    expect(data.top.map((r) => r.title)).toEqual(['Best']);
     expect(data.library.map((r) => r.title)).toEqual(['Mine']);
     expect(data.outside.household).toEqual([
       expect.objectContaining({ title: 'Theirs', playRef: 'abs:b3', ref: 'abs:b3' }),
     ]);
-    expect(data.top.playRef).toBe('abs:b1');
+    expect(data.top[0]?.playRef).toBe('abs:b1');
   });
 
   it('keeps the page’s own words and nothing of the canvas’s samples while nothing is found', () => {
@@ -161,7 +163,7 @@ describe('search’s data', () => {
       SearchResults.parse({ query: 'zz', results: [], books: [], hasRequests: false }),
       empty,
     );
-    expect(data.top.title).toBe('');
+    expect(data.top).toEqual([]);
     expect(data.library).toEqual([]);
     expect(data.placeholder).toBe(search.placeholder.placeholder);
     expect(data.kinds).toEqual(search.placeholder.kinds);
@@ -291,10 +293,12 @@ describe('what search draws as its answers come', () => {
       suggestions: titles.map((title) => ({ title, meta: 'Album', query: title, icon: 'search' })),
     },
     found: true,
+    moving: false,
   });
   const found = (title: string): SearchLoaded => ({
-    data: { ...empty, top: { ...empty.top, title } },
+    data: { ...empty, top: [{ ...search.placeholder.top[0]!, title }] },
     found: true,
+    moving: false,
   });
   const titles = (drawn: SearchDrawn) => drawn.data.suggestions.map((s) => s.title);
 
@@ -317,16 +321,19 @@ describe('what search draws as its answers come', () => {
   it('draws the results of a search that found something', () => {
     const drawn = searchLive('ri', null, empty).draw({ data: found('Rise') }, null);
     expect(drawn.state).toBe('full');
-    expect(drawn.data.top.title).toBe('Rise');
+    expect(drawn.data.top[0]?.title).toBe('Rise');
     expect(drawn.data.query).toBe('ri');
   });
 
   it('draws the page’s empty state when a search finds nothing, and its failed state when it fails', () => {
-    const none = searchLive('zz', null, empty).draw({ data: { data: empty, found: false } }, null);
+    const none = searchLive('zz', null, empty).draw(
+      { data: { data: empty, found: false, moving: false } },
+      null,
+    );
     expect(none.state).toBe('empty');
     const failed = searchLive('zz', null, empty).draw('failed', null);
     expect(failed.state).toBe('failed');
-    expect(failed.data.top.title).toBe('');
+    expect(failed.data.top).toEqual([]);
   });
 
   it('keeps what it drew while a search loads, the earlier results or the suggestions, never empty rows', () => {
@@ -334,7 +341,7 @@ describe('what search draws as its answers come', () => {
     const earlier = searchLive('ri', null, empty).draw({ data: found('Rise') }, null);
     const kept = live.draw(undefined, earlier);
     expect(kept.state).toBe('full');
-    expect(kept.data.top.title).toBe('Rise');
+    expect(kept.data.top[0]?.title).toBe('Rise');
     expect(kept.data.query).toBe('po');
     const suggested = searchLive('', typed('po'), empty).draw({ data: suggesting('Poems') }, null);
     expect(live.draw(undefined, suggested).state).toBe('suggest');
@@ -376,5 +383,101 @@ describe('what search draws as its answers come', () => {
     held.get('ri')!(suggesting('Rise'));
     await Promise.resolve();
     expect(drawRis()).toEqual(['Rise and Shine']);
+  });
+});
+
+describe('[M3.books] a book the library lacks, in Search', () => {
+  const book = (over: Partial<SearchBook> = {}): SearchBook => ({
+    ref: {
+      medium: 'book',
+      target: { title: 'Kidnapped', creator: 'R. L. Stevenson', ids: { asin: 'B000000001' } },
+    },
+    title: 'Kidnapped',
+    author: 'R. L. Stevenson',
+    narrator: 'A Reader',
+    year: 1999,
+    art: '/api/search/books/B000000001/art',
+    status: null,
+    progress: null,
+    ...over,
+  });
+  const answered = (...books: SearchBook[]) =>
+    SearchResults.parse({ query: 'k', results: [], books, hasRequests: false });
+  const rows = (...books: SearchBook[]) => searchData(answered(...books), empty).outside.books;
+
+  it('offers a book nobody has asked for, with the request its string ref stands for', () => {
+    const [row] = rows(book());
+    expect(row).toMatchObject({
+      title: 'Kidnapped',
+      meta: 'Book · R. L. Stevenson · A Reader · 1999',
+      status: null,
+      tone: null,
+      requested: false,
+      action: 'Request',
+    });
+    expect(row?.image).toContain('/api/search/books/B000000001/art');
+    expect(requestOf(row?.ref ?? '')).toEqual(book().ref);
+  });
+
+  it('presses a requested book, and says where its request stands', () => {
+    const say = (over: Partial<SearchBook>) => {
+      const [row] = rows(book(over));
+      return [row?.status, row?.tone, row?.requested, row?.action];
+    };
+    expect(say({ status: 'requested' })).toEqual(['Requested', 'request', true, 'Requested']);
+    expect(say({ status: 'downloading', progress: 0.42 })).toEqual([
+      'Downloading · 42%',
+      'progress',
+      true,
+      'Requested',
+    ]);
+    expect(say({ status: 'inLibrary' })).toEqual(['In library', 'library', true, 'Requested']);
+    expect(say({ status: 'failed' })).toEqual(['Failed', 'error', true, 'Requested']);
+  });
+
+  it('leaves out what it does not know of a book', () => {
+    const [row] = rows(book({ author: null, narrator: null, year: null, art: null }));
+    expect(row?.meta).toBe('Book');
+    expect(row?.image).toBe('');
+  });
+
+  it('draws results for books alone, with no top result, and looks again only while one moves', async () => {
+    const loaded = (...books: SearchBook[]) =>
+      loadSearchPage(
+        createApiClient({
+          baseUrl: 'http://auralis.test',
+          fetch: async () => Response.json(answered(...books)),
+        }),
+        { q: 'k' },
+        empty,
+      );
+    const only = await loaded(book());
+    expect(only.found).toBe(true);
+    expect(only.data.top).toEqual([]);
+    expect(only.moving).toBe(false);
+    expect((await loaded(book({ status: 'queued' }))).moving).toBe(true);
+    expect((await loaded(book({ status: 'inLibrary' }))).moving).toBe(false);
+    expect((await loaded(book({ status: 'failed' }))).moving).toBe(false);
+    expect((await loaded()).found).toBe(false);
+  });
+
+  it('says on its row that a tap did not go through, and leaves the others alone', () => {
+    const other = book({
+      title: 'Treasure Island',
+      ref: {
+        medium: 'book',
+        target: { title: 'Treasure Island', creator: null, ids: { asin: 'B000000002' } },
+      },
+    });
+    const data = searchData(answered(book(), other), empty);
+    const failedRef = data.outside.books[0]!.ref;
+    const said = searchRequestFailed(data, failedRef);
+    expect(said.outside.books[0]).toMatchObject({
+      status: 'Request failed',
+      tone: 'error',
+      requested: false,
+      action: 'Request',
+    });
+    expect(said.outside.books[1]).toEqual(data.outside.books[1]);
   });
 });

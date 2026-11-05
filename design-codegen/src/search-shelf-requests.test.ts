@@ -89,7 +89,7 @@ describe('Search', () => {
   });
 
   it('[M0.canvas] matches songs on their lyrics too, a song found by a line showing that line in its row', () => {
-    const results = [data.top, ...(data.library as Row[])] as { meta: string }[];
+    const results = [...(data.top as Row[]), ...(data.library as Row[])] as { meta: string }[];
     const byLine = results.filter((r) => /“[^”]+”/.test(r.meta));
     expect(byLine.length).toBeGreaterThan(0);
     for (const { meta } of byLine) expect(meta).toMatch(/^Song · /);
@@ -112,7 +112,7 @@ describe('Search', () => {
     const results = found.filter(
       (r) => r.of !== 'data.suggestions' && r.of !== 'data.yourRequests',
     );
-    const top = results.filter(({ row }) => JSON.stringify(row.props.title).includes('"top"'));
+    const top = results.filter((r) => r.of === 'data.top');
     expect(top).toHaveLength(1);
     expect(results[0]).toBe(top[0]);
   });
@@ -192,9 +192,7 @@ describe('Search', () => {
   );
 
   it('opens each result in your library on a tap, a song its album, and plays it from its art on its own queue', () => {
-    const owned = found.filter(
-      ({ of, row }) => of === 'data.library' || JSON.stringify(row.props.title).includes('"top"'),
-    );
+    const owned = found.filter(({ of }) => of === 'data.library' || of === 'data.top');
     expect(owned).toHaveLength(2);
     for (const { row } of owned) {
       const item = (row.props.title as { path: string[] }).path.slice(0, -1);
@@ -220,7 +218,7 @@ describe('Search', () => {
       Book: ['book', 'spoken'],
       Episode: ['episode', 'spoken'],
     };
-    for (const item of [data.top as Row, ...(data.library as Row[])]) {
+    for (const item of [...(data.top as Row[]), ...(data.library as Row[])]) {
       const kind = String(item.meta).split(' · ')[0]!;
       expect(KIND[kind], kind).toBeDefined();
       expect([item.page, item.queue], String(item.title)).toEqual(KIND[kind]);
@@ -253,19 +251,25 @@ describe('Search', () => {
   });
 
   it('[M0.canvas] gives no owned result a request action, a status or a tone', () => {
-    const owned = found.filter(
-      ({ of, row }) => of === 'data.library' || JSON.stringify(row.props.title).includes('"top"'),
-    );
+    const owned = found.filter(({ of }) => of === 'data.library' || of === 'data.top');
     // The top result's row, and the one row drawn for each library result.
     expect(owned).toHaveLength(2);
     for (const { row } of owned) {
       for (const prop of ['trailing', 'status', 'tone'])
         expect(Object.keys(row.props)).not.toContain(prop);
     }
-    for (const item of [data.top as Row, ...(data.library as Row[])]) {
+    for (const item of [...(data.top as Row[]), ...(data.library as Row[])]) {
       for (const key of ['action', 'requested', 'status', 'tone'])
         expect(Object.keys(item)).not.toContain(key);
     }
+  });
+
+  it('[M3.books] asks for an outside book through the row’s button, by its ref', () => {
+    const { row } = found.find((r) => r.of === 'data.outside.books')!;
+    expect(slotted(row, 'trailing')?.props.onClick).toEqual({
+      kind: 'request',
+      params: { ref: ['book', 'ref'] },
+    });
   });
 
   it('[M0.canvas] plays outside music straight away, and gives outside books Request and podcasts Subscribe', () => {

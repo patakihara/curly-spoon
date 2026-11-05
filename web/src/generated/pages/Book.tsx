@@ -6,6 +6,7 @@ import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from 
 import type { ShellNav } from '../../shell-nav';
 import { usePlay, type Playing } from '../../player';
 import { useChoose } from '../../choose';
+import { useRequest } from '../../request';
 import { BackLayer, BottomNav, ExpandableText, IconButton, MediaCard, MediaHeader, MiniPlayer, NavRail, OverflowMenu, PageBody, Rating, ResultRow, Section, Shelf } from '../ui/index.js';
 
 const placeholder = {
@@ -439,6 +440,7 @@ export default function Book({ data = placeholder, state = 'full' }: BookProps) 
   const navigate = useNavigate();
   const play = usePlay();
   const choose = useChoose();
+  const askFor = useRequest();
   return (
     <PageBody width="list" platform={platform}>
       <Section platform={platform}>
@@ -478,7 +480,7 @@ export default function Book({ data = placeholder, state = 'full' }: BookProps) 
           <Shelf platform={platform}>
             {data.narrations.map((narration, i) => (
               <Fragment key={i}>
-                <MediaCard eyebrow="Read by" title={narration.narrator} sub={narration.sub} image={narration.image} absent={narration.absent} status={narration.status} tone={narration.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={narration.ref ? () => navigate(generatePath('/books/:ref', { ref: narration.ref })) : undefined} platform={platform} />
+                <MediaCard eyebrow="Read by" title={narration.narrator} sub={narration.sub} image={narration.image} absent={narration.absent} status={narration.status} tone={narration.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={narration.ref ? () => navigate(generatePath('/books/:ref', { ref: narration.ref })) : undefined} onRequest={askFor(narration.ref)} platform={platform} />
               </Fragment>
             ))}
           </Shelf>
@@ -489,7 +491,7 @@ export default function Book({ data = placeholder, state = 'full' }: BookProps) 
           <Shelf platform={platform}>
             {data.more.series.items.map((book, i) => (
               <Fragment key={i}>
-                <MediaCard title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={book.ref ? () => navigate(generatePath('/books/:ref', { ref: book.ref })) : undefined} platform={platform} />
+                <MediaCard title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={book.ref ? () => navigate(generatePath('/books/:ref', { ref: book.ref })) : undefined} onRequest={askFor(book.ref)} platform={platform} />
               </Fragment>
             ))}
           </Shelf>
@@ -500,7 +502,7 @@ export default function Book({ data = placeholder, state = 'full' }: BookProps) 
           <Shelf platform={platform}>
             {data.more.author.items.map((other, i) => (
               <Fragment key={i}>
-                <MediaCard title={other.title} sub={other.sub} image={other.image} progress={other.progress} absent={other.absent} status={other.status} tone={other.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={other.ref ? () => navigate(generatePath('/books/:ref', { ref: other.ref })) : undefined} platform={platform} />
+                <MediaCard title={other.title} sub={other.sub} image={other.image} progress={other.progress} absent={other.absent} status={other.status} tone={other.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={other.ref ? () => navigate(generatePath('/books/:ref', { ref: other.ref })) : undefined} onRequest={askFor(other.ref)} platform={platform} />
               </Fragment>
             ))}
           </Shelf>

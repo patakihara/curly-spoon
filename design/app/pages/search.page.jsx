@@ -58,13 +58,15 @@ export default function Search({ data }) {
         </When>
         <When state="full">
           <Section title="Top result">
-            <ResultRow
-              title={data.top.title}
-              meta={data.top.meta}
-              image={data.top.image}
-              onClick={<Open page={data.top.page} ref={data.top.ref} />}
-              onAction={<Play ref={data.top.playRef} queue={data.top.queue} />}
-            />
+            <Each of={data.top} as="best">
+              <ResultRow
+                title={best.title}
+                meta={best.meta}
+                image={best.image}
+                onClick={<Open page={best.page} ref={best.ref} />}
+                onAction={<Play ref={best.playRef} queue={best.queue} />}
+              />
+            </Each>
           </Section>
           <Section title="In your library">
             <Each of={data.library} as="item">

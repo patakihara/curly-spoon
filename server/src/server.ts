@@ -20,6 +20,7 @@ import { loadSecretKey } from './crypto/secretBox.js';
 import { startIndexJob } from './libraryIndex/start.js';
 import { lyricsService, startLyricsJob } from './lyrics/start.js';
 import { bookSteps } from './requests/books/index.js';
+import type { BookCatalogue } from './requests/books/catalogue.js';
 import { type MediumSteps, stepsRegistry } from './requests/steps.js';
 import type { Upstreams } from './upstream/links.js';
 import { readSecretFile } from './secretFile.js';
@@ -70,6 +71,8 @@ export async function assembleServer(
     logger?: BuildAppOptions['logger'];
     /** Steps of other media to request, as a harness brings; books come from the configuration. */
     steps?: readonly MediumSteps[];
+    /** What Search lists of the books the library lacks, in place of the configured one. */
+    bookCatalogue?: BookCatalogue;
   },
 ): Promise<Server> {
   const { fetch } = deps;
@@ -157,7 +160,11 @@ export async function assembleServer(
       stallAfterMs: config.requests.stallAfterMinutes * 60_000,
       holdAfterMs: config.requests.holdAfterMinutes * 60_000,
     },
-    ...('steps' in books ? { bookCatalogue: books.catalogue } : {}),
+    ...(deps.bookCatalogue !== undefined
+      ? { bookCatalogue: deps.bookCatalogue }
+      : 'steps' in books
+        ? { bookCatalogue: books.catalogue }
+        : {}),
     logger: deps.logger ?? true,
   });
 

@@ -16,7 +16,8 @@
  * the exchange. Every other claim is the recording's, so the identity is the recorded one.
  *
  * Requests run on stand-in mediums (`standInMedia.ts`), since a real medium's download is never
- * recorded, and the job turns every second so a test sees them move.
+ * recorded, and the job turns every second so a test sees them move. Search lists books from a
+ * stand-in catalogue (`standInBooks.ts`) over the recorded Audible search.
  *
  * Nothing here ships: the image copies `server/src` without its tests and recordings, and never
  * this folder (`scripts/guards/image.test.mjs`).
@@ -51,6 +52,7 @@ import { runIndex } from '../src/libraryIndex/job.js';
 import { assembleServer } from '../src/server.js';
 import { openDatabase } from '../src/store/connection.js';
 import { s256 } from '../src/store/signIn.js';
+import { type BookSource, standInBooks } from './standInBooks.js';
 import { standInMedia } from './standInMedia.js';
 
 const ADAPTERS = fileURLToPath(new URL('../src/adapters/', import.meta.url));
@@ -70,6 +72,8 @@ export interface RecordedServerOptions {
   logger?: BuildAppOptions['logger'];
   /** The recorded person, as if they had begun nothing on Audiobookshelf or Jellyfin. */
   nothingPlayed?: boolean;
+  /** How Search's source of books the library lacks behaves. Default: it answers. */
+  bookSource?: BookSource;
 }
 
 export interface RecordedServer {
@@ -452,6 +456,7 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     abs: { recordings: abs, fetch: absFetch },
     jellyfin: { recordings: jellyfin, fetch: jellyfinFetch },
   });
+  const multiFileId = call(abs, 'multi-play').request.path.split('/')[3] ?? '';
   const server = await assembleServer(config, {
     fetch: byOrigin({
       [SIGN_ON_ISSUER]: signOn.fetch,
@@ -459,14 +464,14 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
       [JELLYFIN_ORIGIN]: jellyfinFetch,
     }),
     logger: options.logger,
-    steps: standInMedia(),
+    steps: standInMedia({ source: 'abs', id: multiFileId }),
+    bookCatalogue: standInBooks(options.bookSource ?? 'answers', recordingsOf('audible'), ADAPTERS),
   });
 
   const userinfo = jsonOf<{ preferred_username: string; groups: string[] }>(
     call(recordingsOf('oidc'), 'userinfo'),
   );
   const itemId = call(abs, 'item-play').request.path.split('/')[3] ?? '';
-  const multiId = call(abs, 'multi-play').request.path.split('/')[3] ?? '';
   const trackId = call(jellyfin, 'jf-track').request.path.split('/')[2] ?? '';
   const [showId = '', episodeId = ''] = call(abs, 'episode-play')
     .request.path.split('/')
@@ -480,7 +485,7 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     signOn: { origin: signOnOrigin, authorize: signOn.authorize },
     user: { username: userinfo.preferred_username, groups: userinfo.groups },
     playable: { source: 'abs', id: itemId },
-    multiFile: { source: 'abs', id: multiId },
+    multiFile: { source: 'abs', id: multiFileId },
     music: { source: 'jellyfin', id: trackId },
     show: { source: 'abs', id: showId },
     episode: { source: 'abs', id: episodeId },

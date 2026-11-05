@@ -32,7 +32,9 @@ async function freePort(): Promise<number> {
 }
 
 /** Starts the recorded-upstreams server and reads where it is and what it plays from its banner. */
-export async function serveRecorded(options: { nothingPlayed?: boolean } = {}): Promise<Recorded> {
+export async function serveRecorded(
+  options: { nothingPlayed?: boolean; bookSource?: 'answers' | 'slow' | 'failing' } = {},
+): Promise<Recorded> {
   const child = spawn('node_modules/.bin/tsx', ['e2e/serve.ts'], {
     cwd: fileURLToPath(new URL('../../server/', import.meta.url)),
     env: {
@@ -40,6 +42,7 @@ export async function serveRecorded(options: { nothingPlayed?: boolean } = {}): 
       AURALIS_E2E_PORT: String(await freePort()),
       AURALIS_E2E_SIGN_ON_PORT: String(await freePort()),
       ...(options.nothingPlayed ? { AURALIS_E2E_NOTHING_PLAYED: '1' } : {}),
+      ...(options.bookSource ? { AURALIS_E2E_BOOK_SOURCE: options.bookSource } : {}),
     },
     stdio: ['ignore', 'pipe', 'inherit'],
   });

@@ -1,5 +1,6 @@
 import {
   mediaRefKey,
+  type SearchBook,
   type SearchKind,
   type SearchResult,
   type SearchResults,
@@ -10,7 +11,9 @@ import { type ApiClient } from '../api/client';
 import { type SearchData } from '../generated/pages/Search';
 import { type PlayQueue } from '../player';
 import { type Draft, searchText } from '../query';
+import { requestKey } from '../request';
 import { artAt, emptied } from './format';
+import { statusOf } from './library';
 import { loadSearch, loadSuggest } from './loads';
 import { type Answer } from './store';
 
@@ -19,15 +22,18 @@ import { type Answer } from './store';
  * that runs its search, and each result as a row that opens its page (a song its album) and whose
  * art plays it. The best result of all is the top one, the rest go in or out of your library as
  * the server says, and every one of them plays: what the household has that you have not played
- * or asked for is outside your library, and plays through Auralis's own account. The page's own
+ * or asked for is outside your library, and plays through Auralis's own account. A book the library
+ * lacks is a row of its own there, asked for with a tap, its string ref carrying its request. Its
+ * button stays pressed once anyone has asked, and pressing it again joins. The page's own
  * words (its placeholder, its kinds) stay as given; what it says when a search finds nothing or
  * fails is written in the page, which this only chooses the state of.
  * The kinds' names and the meta lines are written here, as the library homes write theirs, until
  * M5.strings and M5.formats.
  */
 
-type Row = SearchData['top'];
+type Row = SearchData['top'][number];
 type SuggestionRow = SearchData['suggestions'][number];
+type BookRow = SearchData['outside']['books'][number];
 
 /** What each kind of result or suggestion is called. */
 const KIND_LABELS: Record<SuggestionKind, string> = {
@@ -82,6 +88,48 @@ export function rowOf(result: SearchResult): Row {
   };
 }
 
+/**
+ * One book the library lacks as its row. Who reads it and when tells one edition from another, as
+ * the catalogue lists several of a title.
+ */
+export function bookRowOf(book: SearchBook): BookRow {
+  const standing =
+    book.status === null
+      ? null
+      : statusOf({
+          kind: 'requested',
+          status: book.status,
+          ...(book.status === 'downloading' ? { progress: book.progress ?? 0 } : {}),
+        });
+  return {
+    title: book.title,
+    ref: requestKey(book.ref),
+    meta: ['Book', book.author, book.narrator, book.year === null ? null : String(book.year)]
+      .filter((part) => part !== null)
+      .join(' · '),
+    image: artAt(book.art, 'small'),
+    status: standing?.status ?? null,
+    tone: standing?.tone ?? null,
+    requested: standing !== null,
+    action: standing !== null ? 'Requested' : 'Request',
+  } as BookRow;
+}
+
+/** Search's data saying, on the row `ref` names, that a tap asking for it did not go through. */
+export function searchRequestFailed(data: SearchData, ref: string): SearchData {
+  const said = (row: BookRow) =>
+    row.ref === ref
+      ? ({
+          ...row,
+          status: 'Request failed',
+          tone: 'error',
+          requested: false,
+          action: 'Request',
+        } as BookRow)
+      : row;
+  return { ...data, outside: { ...data.outside, books: data.outside.books.map(said) } };
+}
+
 /** The way to Requests, drawn while the person has any request, whatever the search shows. */
 const yourRequests = (has: boolean): SearchData['yourRequests'] =>
   has ? [{ title: 'Your requests' }] : [];
@@ -108,9 +156,9 @@ export function searchData(answer: SearchResults, page: SearchData): SearchData 
   return {
     ...page,
     yourRequests: yourRequests(answer.hasRequests),
-    ...(best === undefined ? {} : { top: rowOf(best) }),
+    top: best === undefined ? [] : [rowOf(best)],
     library: rows(true),
-    outside: { ...page.outside, household: rows(false) },
+    outside: { ...page.outside, household: rows(false), books: answer.books.map(bookRowOf) },
   };
 }
 
@@ -147,11 +195,18 @@ export function searchView(q: string, draft: Draft | null): SearchView {
   };
 }
 
-/** What Search loaded: the page's data, and whether a search found anything. */
+/**
+ * What Search loaded: the page's data, whether a search found anything, and whether a book it lists
+ * is on its way, so the page should look again.
+ */
 export interface SearchLoaded {
   data: SearchData;
   found: boolean;
+  moving: boolean;
 }
+
+const movingBook = ({ status }: SearchBook) =>
+  status !== null && status !== 'failed' && status !== 'inLibrary';
 
 /** Loads what Search asks for, over `page`: suggestions alone, or a search's results. */
 export async function loadSearchPage(
@@ -160,10 +215,15 @@ export async function loadSearchPage(
   page: SearchData,
 ): Promise<SearchLoaded> {
   if (asks.suggest !== undefined) {
-    return { data: suggestData(await loadSuggest(api, asks.suggest), page), found: true };
+    const list = await loadSuggest(api, asks.suggest);
+    return { data: suggestData(list, page), found: true, moving: false };
   }
   const answer = await loadSearch(api, asks.q ?? '');
-  return { data: searchData(answer, page), found: answer.results.length > 0 };
+  return {
+    data: searchData(answer, page),
+    found: answer.results.length + answer.books.length > 0,
+    moving: answer.books.some(movingBook),
+  };
 }
 
 /** What Search draws: its state, and its data with the field's text. */

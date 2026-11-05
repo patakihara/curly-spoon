@@ -131,7 +131,8 @@ const TAKEN = new Set([
   ...['frame', 'routes', 'generatePath', 'navigate', 'query', 'play', 'playing', 'go', 'inPanel'],
   ...['context', 'leading', 'key', 'tab', 'window', 'undefined'],
   ...['useContext', 'useLayout', 'useNavigate', 'usePlay', 'usePlaying', 'useQuery', 'useShellNav'],
-  ...['useChoose', 'act', 'useAct', 'toggle', 'useToggle', 'retry', 'useRetry'],
+  ...['useChoose', 'act', 'useAct', 'askFor', 'useRequest'],
+  ...['toggle', 'useToggle', 'retry', 'useRetry'],
 ]);
 
 /** `value`, if it is a plain lower-case name a page may give an Each item or a When state. */

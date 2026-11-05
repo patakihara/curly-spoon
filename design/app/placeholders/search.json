@@ -71,15 +71,17 @@
       "icon": "history"
     }
   ],
-  "top": {
-    "title": "Salt and Static",
-    "meta": "Album · Soul Vertex · 11 tracks",
-    "image": "/art/salt-and-static.jpg",
-    "page": "album",
-    "ref": "salt-and-static",
-    "playRef": "salt-and-static",
-    "queue": "music"
-  },
+  "top": [
+    {
+      "title": "Salt and Static",
+      "meta": "Album · Soul Vertex · 11 tracks",
+      "image": "/art/salt-and-static.jpg",
+      "page": "album",
+      "ref": "salt-and-static",
+      "playRef": "salt-and-static",
+      "queue": "music"
+    }
+  ],
   "library": [
     {
       "title": "Salt Water",

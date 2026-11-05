@@ -6,6 +6,7 @@ import { PLATFORM, useLayout, type Chrome, type FrameContext, type LayoutId, typ
 import type { ShellNav } from '../../shell-nav';
 import { usePlay, type PlayQueue, type Playing } from '../../player';
 import { useQuery } from '../../query';
+import { useRequest } from '../../request';
 import { AccountButton, BackLayer, BottomNav, Button, ButtonGroup, EmptyState, ExpanderRow, FrontLayerHeader, LayoutGrid, MiniPlayer, NavRail, PageBody, ResultRow, SearchField, Section, SortFilterBar } from '../ui/index.js';
 
 const placeholder = {
@@ -81,15 +82,17 @@ const placeholder = {
       "icon": "history"
     }
   ],
-  "top": {
-    "title": "Salt and Static",
-    "meta": "Album · Soul Vertex · 11 tracks",
-    "image": "/art/salt-and-static.jpg",
-    "page": "album",
-    "ref": "salt-and-static",
-    "playRef": "salt-and-static",
-    "queue": "music"
-  },
+  "top": [
+    {
+      "title": "Salt and Static",
+      "meta": "Album · Soul Vertex · 11 tracks",
+      "image": "/art/salt-and-static.jpg",
+      "page": "album",
+      "ref": "salt-and-static",
+      "playRef": "salt-and-static",
+      "queue": "music"
+    }
+  ],
   "library": [
     {
       "title": "Salt Water",
@@ -418,6 +421,7 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
   const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   const play = usePlay();
+  const askFor = useRequest();
   return (
     <PageBody width="list" platform={platform}>
       {data.yourRequests.map((entry, i) => (
@@ -450,9 +454,15 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
       )}
       {state === 'full' && (
         <>
-          <Section title="Top result" platform={platform}>
-            <ResultRow title={data.top.title} meta={data.top.meta} image={data.top.image} onClick={data.top.ref ? () => navigate(generatePath(routes[data.top.page]!, { ref: data.top.ref })) : undefined} onAction={play(data.top.playRef, data.top.queue as PlayQueue, 'now')} platform={platform} />
-          </Section>
+          {data.top.length > 0 && (
+            <Section title="Top result" platform={platform}>
+              {data.top.map((best, i) => (
+                <Fragment key={i}>
+                  <ResultRow title={best.title} meta={best.meta} image={best.image} onClick={best.ref ? () => navigate(generatePath(routes[best.page]!, { ref: best.ref })) : undefined} onAction={play(best.playRef, best.queue as PlayQueue, 'now')} platform={platform} />
+                </Fragment>
+              ))}
+            </Section>
+          )}
           {data.library.length > 0 && (
             <Section title="In your library" platform={platform}>
               {data.library.map((item, i) => (
@@ -487,7 +497,7 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
                     tone={book.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
                     divider={true}
                     trailing={
-                      <Button variant="secondary" size="sm" pressed={book.requested} platform={platform}>
+                      <Button variant="secondary" size="sm" pressed={book.requested} onClick={askFor(book.ref)} platform={platform}>
                         {book.action}
                       </Button>
                     }

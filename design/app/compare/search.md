@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: 69b5ac7a27b103b049214936d3eb750d123ba4f4d47566bc9b83b81901bf2a20
+pageHash: 768281d5316f5187cd2e606043b9821ebd0c503372b1665ed2bf67fce06c3ac3
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---
@@ -45,7 +45,7 @@ conceals the back layer. Then, in `PageBody` at the list width:
   action. One song, Tears of Ice, was found by a remembered line of its lyrics, and its row shows
   that line: "Song · Deep Inertia · “salt on my tongue, ice in my hands”".
 
-The top result and each row in your library open their item on a tap, a song its album, and play
+The top result, drawn only when the library matched, and each row in your library open their item on a tap, a song its album, and play
 it from the art's action on the item's own queue, spoken or music. On the canvas the art shows
 that action, always on the phone and on hover on desktop. These renders come from the web app on a
 server nobody can sign in to, where the placeholder refs name no playable item, so the rows draw

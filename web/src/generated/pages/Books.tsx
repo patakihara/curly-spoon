@@ -6,6 +6,7 @@ import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from 
 import type { ShellNav } from '../../shell-nav';
 import type { Playing } from '../../player';
 import { useChoose } from '../../choose';
+import { useRequest } from '../../request';
 import { useRetry } from '../../retry';
 import { AccountButton, BackLayer, BottomNav, Button, EmptyState, FrontLayerHeader, LayoutGrid, MediaCard, MiniPlayer, NavRail, PageBody, Section, SortFilterBar, TabBar, ViewToggle } from '../ui/index.js';
 
@@ -322,6 +323,7 @@ export default function Books({ data = placeholder, state = 'full' }: BooksProps
   const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   const choose = useChoose();
+  const askFor = useRequest();
   const retry = useRetry();
   return (
     <PageBody platform={platform}>
@@ -371,7 +373,7 @@ export default function Books({ data = placeholder, state = 'full' }: BooksProps
             <LayoutGrid platform={platform}>
               {data.library.map((book, i) => (
                 <Fragment key={i}>
-                  <MediaCard width="100%" title={book.title} sub={book.sub} image={book.image} progress={book.progress} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={book.ref ? () => navigate(generatePath('/books/:ref', { ref: book.ref })) : undefined} platform={platform} />
+                  <MediaCard width="100%" title={book.title} sub={book.sub} image={book.image} progress={book.progress} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={book.ref ? () => navigate(generatePath('/books/:ref', { ref: book.ref })) : undefined} onRequest={askFor(book.ref)} platform={platform} />
                 </Fragment>
               ))}
             </LayoutGrid>

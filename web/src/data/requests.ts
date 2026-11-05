@@ -3,6 +3,7 @@ import {
   type RequestFailure,
   type RequestList,
   type RequestMedium,
+  type RequestRef,
   type RequestVerb,
   type RequestView,
 } from '@auralis/schema';
@@ -133,6 +134,13 @@ export const requestsState = (list: RequestList): 'empty' | 'full' =>
 /** Whether anything is moving by itself, so the page should look again: not a failed one. */
 export const requestsMoving = (list: RequestList): boolean =>
   list.inFlight.some((request) => request.status !== 'failed');
+
+/** Asks for something the library lacks, or joins the request for it already under way. */
+export async function makeRequest(api: ApiClient, ref: RequestRef): Promise<void> {
+  const { response } = await api.POST('/api/requests', { body: { ref } });
+  if (response.status === 401) throw new SignedOut();
+  if (!response.ok) throw new Error(`a request answered ${response.status}`);
+}
 
 /**
  * Does a verb to a request. A choice takes its candidate, and picking another is the same route,
