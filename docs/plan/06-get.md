@@ -34,7 +34,7 @@ One pipeline and status vocabulary for all three media, so every request renders
   - `audiobook-import`: hardlink the download into `/data/media/Books/<Author>/<Book>`, wrapping loose audio files in their own book folder, without copying data, so seeding continues;
   - `audiobook-narrator-tag`: write a clean title to `metadata.json`, and add the narrator's name only when you own the same book in more than one narration;
   - `audiobook-series-tag`: set the series and its number from Audible and Audnexus, one narration per series so the series view has no duplicates or gaps;
-  - `audiobook-author-image`: add an author photo when the folder has none (Audnexus has author images, so no web scraping).
+  - `audiobook-author-image`: add an author photo when the folder has none and give it to Audiobookshelf (Audnexus has author images, so no web scraping).
 
   Audiobookshelf then picks up **only the new folder** through its folder watcher (on for Books), never a full scan.
 
