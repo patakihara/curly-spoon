@@ -45,4 +45,10 @@ describe("[M3.books] AudiobookBay's detail page", () => {
     expect(parseDetail(bad).infoHash).toBeUndefined();
     expect(parseDetail(bad).bitrateKbps).toBeUndefined();
   });
+
+  it('[M3.books] reads a hostile page without holding up the server', () => {
+    const started = performance.now();
+    expect(parseDetail('<span '.repeat(32_000))).toEqual({});
+    expect(performance.now() - started).toBeLessThan(500);
+  });
 });

@@ -1118,6 +1118,24 @@ describe('[M3.books] an upstream that cannot be reached holds the request where 
     await advanceRequests(job);
     expect(reread(one).state).toMatchObject({ reason: 'downloadStalled' });
   });
+
+  it('[M3.books] does not count a short outage towards the stall', async () => {
+    const { line, steps } = refusing('poll', standing());
+    const job = deps(steps);
+    const one = request('book');
+    await runUntil(job, one, 'downloading');
+    for (let minute = 0; minute < 10; minute += 1) {
+      clock += MINUTE;
+      await advanceRequests(job);
+    }
+    line.down = true;
+    clock += 6 * MINUTE;
+    await advanceRequests(job);
+    line.down = false;
+    clock += 1_000;
+    await advanceRequests(job);
+    expect(reread(one).state).toEqual({ status: 'downloading', progress: 0.5 });
+  });
 });
 
 describe('[M3.books] a download that stops moving', () => {
@@ -1223,6 +1241,20 @@ describe('[M3.books] a download that stops moving', () => {
     await everyMinute(job, 30);
     expect(steps.calls.start).toBe(3);
     expect(steps.calls.search).toBe(1);
+  });
+
+  it('[M3.books] starts at most 3 more releases by itself, however many a person was offered', async () => {
+    const offered = ['a', 'b', 'c', 'd', 'e', 'f'].map(standInRelease);
+    const steps = standInSteps('book', {
+      search: { kind: 'choose', candidates: offered },
+      polls: [{ kind: 'downloading', progress: 0.5 }],
+    });
+    const job = deps(steps);
+    const one = request('book');
+    await runUntil(job, one, 'needsChoice');
+    chooseRelease(job, one.id, 'a');
+    await everyMinute(job, 120);
+    expect(steps.calls.start).toBe(4);
   });
 
   it('[M3.books] gives an album the same rule, and a song, with no choice, stays failed', async () => {
