@@ -49,6 +49,7 @@ import { JellyfinClient } from '../src/adapters/jellyfin/client.js';
 import { type BuildAppOptions } from '../src/app.js';
 import { loadConfig } from '../src/config.js';
 import { runIndex } from '../src/libraryIndex/job.js';
+import { topLevelOfKind } from '../src/libraryIndex/store.js';
 import { assembleServer } from '../src/server.js';
 import { openDatabase } from '../src/store/connection.js';
 import { s256 } from '../src/store/signIn.js';
@@ -286,6 +287,16 @@ async function indexRecordedPages(
   }
 }
 
+/** The titles of the books the index holds. */
+function heldTitles(file: string): string[] {
+  const db = openDatabase(file);
+  try {
+    return topLevelOfKind(db, 'book').map(({ title }) => title);
+  } finally {
+    db.close();
+  }
+}
+
 /** Sends each request to the replay for its upstream's origin. */
 function byOrigin(upstreams: Record<string, FetchLike>): FetchLike {
   return (url, init) => {
@@ -465,7 +476,12 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
     }),
     logger: options.logger,
     steps: standInMedia({ source: 'abs', id: multiFileId }),
-    bookCatalogue: standInBooks(options.bookSource ?? 'answers', recordingsOf('audible'), ADAPTERS),
+    bookCatalogue: standInBooks(
+      options.bookSource ?? 'answers',
+      recordingsOf('audible'),
+      ADAPTERS,
+      heldTitles(database),
+    ),
   });
 
   const userinfo = jsonOf<{ preferred_username: string; groups: string[] }>(
