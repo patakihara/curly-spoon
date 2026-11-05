@@ -305,7 +305,7 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                         ResultRow(
                                             ResultRowProps(
                                                 title = "Salt and Stone",
-                                                meta = "Book · Maya Lind · AudiobookBay",
+                                                meta = "Book · Maya Lind · Audible",
                                                 status = "Downloading · 42%",
                                                 tone = ResultRowTone.PROGRESS,
                                                 image = "/art/between-two-worlds.jpg",
@@ -326,8 +326,30 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                         )
                                         ResultRow(
                                             ResultRowProps(
+                                                title = "Salt of the Earth",
+                                                meta = "Book · Adam Rivers · Audible",
+                                                status = "In library",
+                                                tone = ResultRowTone.LIBRARY,
+                                                image = "/art/foggy-trails.jpg",
+                                                platform = Platform.MOBILE,
+                                                divider = true,
+                                                trailing = {
+                                                    Button(
+                                                        ButtonProps(
+                                                            variant = ButtonVariant.SECONDARY,
+                                                            size = SizeSmMdLg.SM,
+                                                            platform = Platform.MOBILE,
+                                                            pressed = true,
+                                                            children = { BasicText("Requested") },
+                                                        ),
+                                                    )
+                                                },
+                                            ),
+                                        )
+                                        ResultRow(
+                                            ResultRowProps(
                                                 title = "A Grain of Salt",
-                                                meta = "Book · Evelyn Harper · Prowlarr",
+                                                meta = "Book · Evelyn Harper · Audible",
                                                 status = null,
                                                 tone = null,
                                                 image = "/art/shadows-and-sighs.jpg",

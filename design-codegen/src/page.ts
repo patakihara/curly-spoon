@@ -397,7 +397,7 @@ function element(node: t.JSXElement): PageTree {
   if (!/^[A-Z]/.test(name.name)) return fail(node, `<${name.name}> is not a Sonora component`);
   if (name.name === 'Open') return fail(node, 'Open goes in a handler prop, onClick={<Open … />}');
   if (name.name === 'Request') {
-    return fail(node, 'Request goes in a handler prop, onRequest={<Request … />}');
+    return fail(node, 'Request goes in a handler prop, onRequest or onClick={<Request … />}');
   }
   if (name.name === 'Play') return fail(node, 'Play goes in a handler prop, onPlay={<Play … />}');
   if (name.name === 'SignIn')

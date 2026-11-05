@@ -142,7 +142,8 @@ const placeholder = {
     "books": [
       {
         "title": "Salt and Stone",
-        "meta": "Book · Maya Lind · AudiobookBay",
+        "ref": "salt-and-stone",
+        "meta": "Book · Maya Lind · Audible",
         "image": "/art/between-two-worlds.jpg",
         "status": "Downloading · 42%",
         "tone": "progress",
@@ -150,8 +151,19 @@ const placeholder = {
         "action": "Requested"
       },
       {
+        "title": "Salt of the Earth",
+        "ref": "salt-of-the-earth",
+        "meta": "Book · Adam Rivers · Audible",
+        "image": "/art/foggy-trails.jpg",
+        "status": "In library",
+        "tone": "library",
+        "requested": true,
+        "action": "Requested"
+      },
+      {
         "title": "A Grain of Salt",
-        "meta": "Book · Evelyn Harper · Prowlarr",
+        "ref": "a-grain-of-salt",
+        "meta": "Book · Evelyn Harper · Audible",
         "image": "/art/shadows-and-sighs.jpg",
         "status": null,
         "tone": null,

@@ -102,7 +102,12 @@ export default function Search({ data }) {
                 tone={book.tone}
                 divider
                 trailing={
-                  <Button variant="secondary" size="sm" pressed={book.requested}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    pressed={book.requested}
+                    onClick={<Request ref={book.ref} />}
+                  >
                     {book.action}
                   </Button>
                 }

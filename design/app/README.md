@@ -77,9 +77,11 @@ handed, `useChoose()` in `web/src/choose`, which give none on the canvas or whil
 no item, so the menu's button draws disabled; Android leaves it unbound until it has lists to act
 on, and its menu draws disabled too.
 
-`onRequest={<Request ref={book.ref} />}` asks for an item the library lacks. The endpoint exists,
-but no medium is registered behind it yet, so both apps leave it unbound and the card draws its
-Request disabled, until each medium's item binds it as it registers its steps.
+`onRequest={<Request ref={book.ref} />}`, or `onClick` on a `Button`, asks for an item the library
+lacks: a card's Request, or Search's outside book row. Books are registered behind the endpoint,
+and every other medium still answers 409 until its item registers its steps. A book's Request lands
+on the web with M3.books; until it does, and on Android until M5, the prop is left out and the control
+draws disabled. The same request made twice joins the first.
 
 `onClick={<Act ref={request.id} verb={request.verb} />}` does a request's verb to the request its
 ref binds: `retry`, `cancel`, `choose` or `pickAnother`, written or bound from the data, which the

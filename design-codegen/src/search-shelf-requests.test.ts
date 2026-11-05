@@ -44,6 +44,7 @@ const STATUS: [RegExp, string][] = [
   [/^Importing$/, 'progress'],
   [/^Needs choice$/, 'request'],
   [/^Failed$/, 'error'],
+  [/^In library$/, 'library'],
 ];
 const toneOf = (status: string) => STATUS.find(([word]) => word.test(status))?.[1];
 
@@ -281,6 +282,30 @@ describe('Search', () => {
       else expect([book.status, book.tone]).toEqual([null, null]);
     }
     for (const show of outside.podcasts) expect(show.action).toBe('Subscribe');
+  });
+
+  it('[M3.books] requests an outside book from its row’s button, by its own ref', () => {
+    const { row } = found.find((r) => r.of === 'data.outside.books')!;
+    expect(slotted(row, 'trailing')?.props.onClick).toEqual({
+      kind: 'request',
+      params: { ref: ['book', 'ref'] },
+    });
+    for (const book of (data.outside as { books: Row[] }).books) {
+      expect(typeof book.ref).toBe('string');
+      expect(book.ref).not.toBe('');
+    }
+  });
+
+  it('[M3.books] draws a request that reached the library as In library, not as a request to make', () => {
+    const { books } = data.outside as { books: Row[] };
+    const there = books.filter((book) => book.status === 'In library');
+    expect(there).toHaveLength(1);
+    expect(there[0]).toMatchObject({ tone: 'library', requested: true });
+  });
+
+  it('[M3.books] leaves a podcast’s Subscribe unbound: only books can be requested from here', () => {
+    const { row } = found.find((r) => r.of === 'data.outside.podcasts')!;
+    expect(slotted(row, 'trailing')?.props.onClick).toBeUndefined();
   });
 
   it('[M3.requests] opens Requests from "Your requests", outside every one of its states', () => {

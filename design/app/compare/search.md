@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: 991ede0e9c9b6f548fa401bf2b7d84e4a8cdf56cc9bf7a56afc9fa162ba91e0f
+pageHash: 69b5ac7a27b103b049214936d3eb750d123ba4f4d47566bc9b83b81901bf2a20
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---
@@ -55,7 +55,8 @@ search; here it draws disabled, as the web serves no search draft yet.
 - **Not in your library**: a song that
   plays from YouTube Music, an `ExpanderRow` "More releases of Salt", a book already requested
   (ring on the art, "Downloading · 42%" in the progress tone, a pressed "Requested" button; on the
-  phone the pill keeps "42%"), a book with "Request", and a podcast with "Subscribe".
+  phone the pill keeps "42%"), a book a request brought, "In library" in the library tone, a book with
+  "Request", and a podcast with "Subscribe".
 
 **Suggestions** are the page's `suggest` state, while typing before results come in, drawn under
 `<When state="suggest">`; the results above are its `full` state. The canvas draws them on their
@@ -124,3 +125,10 @@ chooses the state. The canvas draws each on its own phone artboard, `search.phon
 - Changed on purpose: "Not in your library" opens with what the household has that you have not played, each row opening its page and playing from its art as a library row does: "Salt Roads". The catalogue's rows follow, unbound as before.
 - Changed on purpose: a section with nothing in it draws no title, and an expander row with no words is not drawn.
 - Changed on purpose: "Your requests" is a row of its own at the head of the page, leading to Requests, drawn while the person has any request, whatever the search shows: results, nothing found, a failed search, or no query yet. The server's answer says whether they have any.
+
+## M3.books
+
+- Changed on purpose: an outside book's button requests that book, `onClick={<Request ref={book.ref} />}`, the first `Request` that is not on a card's `onRequest`. These renders come from the web app, which leaves it unbound until its verbs land, so the button draws disabled as before.
+- Changed on purpose: a book your own request brought says "In library" on its row, in the library tone. The kits' pill says the same.
+- Changed on purpose: an outside book's meta names Audible, where its rows come from, in place of AudiobookBay and Prowlarr: which indexer holds a release is not known until the request searches.
+- Open: a requested row keeps a pressed "Requested" button beside its status, where it could draw the status alone. The page has no way to draw a row's trailing control only for some rows, and pressing it joins the same request, so it starts nothing.
