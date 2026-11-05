@@ -513,6 +513,110 @@ describe('a book placed in Books', () => {
     },
   );
 
+  describe('what the import must not do to a shelf already there', () => {
+    const decomposed = (name: string) => name.normalize('NFD');
+
+    it('an author folder there in decomposed unicode is the one used, not a second one beside it', async () => {
+      const files = download('Book/01.mp3');
+      const name = 'Åsa Äkta';
+      mkdirSync(join(books, decomposed(name)));
+      const placed = await place({ files, book: plainBook({ authors: [name] }) });
+      expect(readdirSync(books)).toEqual([decomposed(name)]);
+      expect(placed.relPath.startsWith(`${decomposed(name)}/`)).toBe(true);
+    });
+
+    it('the same narrator in a folder named in decomposed unicode counts as already there', async () => {
+      const files = download('Book/01.mp3');
+      const folder = decomposed('2001 - A Quiet Book (Åberg) 64k');
+      shelved(folder, { title: 'A Quiet Book', narrators: ['Bo Åberg'] });
+      const placed = await place({ files, book: plainBook({ narrators: ['Bo Åberg'] }) });
+      expect(placed.outcome).toBe('existing');
+      expect(readdirSync(join(books, 'Ann Author'))).toEqual([folder]);
+      expect(metadataAt(`Ann Author/${folder}`).title).toBe('A Quiet Book');
+    });
+
+    it.each([
+      ['a bracket', 'Foo [Vol 1]', 'Foo [Vol 2]'],
+      ['its accents', 'Tama', 'Tämä'],
+      ['symbols alone', '★★', '♥♥'],
+    ])(
+      'a book differing from one on the shelf only by %s is a different book, not "already there"',
+      async (_how, there, wanted) => {
+        const files = download('Book/01.mp3');
+        shelved(`2001 - ${there} (Reader) 64k`, { title: there, narrators: ['Rob Reader'] });
+        const placed = await place({ files, book: plainBook({ title: wanted }) });
+        expect(placed.relPath).toBe(`Ann Author/2001 - ${wanted} (Reader) 64k`);
+        expect(metadataAt(`Ann Author/2001 - ${there} (Reader) 64k`).title).toBe(there);
+      },
+    );
+
+    it('a title that ends in its own bracket keeps it when a second narration arrives', async () => {
+      const files = download('Book/01.mp3');
+      const there = 'Foo [Dramatized Adaptation]';
+      const folder = `2001 - ${there} (Old) 64k`;
+      shelved(folder, { title: there, narrators: ['Al Old'] });
+      await place({ files, book: plainBook({ title: 'Foo' }) });
+      expect(metadataAt(`Ann Author/${folder}`).title).toContain('Dramatized Adaptation');
+    });
+
+    it('an import past its time limit and its repeat under the key never leave half a book in Books', async () => {
+      const files = download('Book/01.mp3', 'Book/02.mp3', 'Book/03.mp3');
+      const { link: realLink } = await import('node:fs/promises');
+      const signal = () => {
+        let open: () => void = () => undefined;
+        const opened = new Promise<void>((resolve) => {
+          open = resolve;
+        });
+        return { open, opened };
+      };
+      const firstLinked = signal();
+      const firstMayGoOn = signal();
+      const repeatStarted = signal();
+      const repeatMayGoOn = signal();
+      let links = 0;
+      const first = place({
+        files,
+        link: async (from, to) => {
+          await realLink(from, to);
+          links += 1;
+          if (links === 1) {
+            firstLinked.open();
+            await firstMayGoOn.opened;
+          }
+        },
+      }).catch(() => null);
+      await firstLinked.opened;
+      const repeat = place({
+        files,
+        link: async (from, to) => {
+          repeatStarted.open();
+          await repeatMayGoOn.opened;
+          await realLink(from, to);
+        },
+      }).catch(() => null);
+      await repeatStarted.opened;
+      firstMayGoOn.open();
+      await first;
+      repeatMayGoOn.open();
+      await repeat;
+      const folder = join(books, 'Ann Author', '2001 - A Quiet Book (Reader) 64k');
+      if (existsSync(folder)) {
+        expect(tree(folder)).toEqual(['01.mp3', '02.mp3', '03.mp3', 'metadata.json']);
+      }
+    });
+
+    it.each([
+      ['qBittorrent lists it empty', 0],
+      ['qBittorrent lists bytes it does not hold', 1000],
+    ])('audio with no bytes never reaches Books: %s', async (_how, size) => {
+      mkdirSync(join(save, 'Book'));
+      writeFileSync(join(save, 'Book/01.mp3'), '');
+      const outcome = await place({ files: [{ name: 'Book/01.mp3', size }] }).catch(() => null);
+      expect(outcome).toBeNull();
+      expect(tree()).toEqual([]);
+    });
+  });
+
   describe('the author photo', () => {
     const image = readFileSync(join(adapters, 'audnexus/recordings/author-doyle-image.jpg'));
     const replayedPhoto = () =>
@@ -561,6 +665,78 @@ describe('a book placed in Books', () => {
       expect(url).toBeNull();
       expect(existsSync(join(authorDir, 'author.jpg'))).toBe(false);
       expect(errors).toContain('the author photo was skipped');
+    });
+
+    describe('a photo from where it should not come', () => {
+      const naming = (imageUrl: string) => ({
+        author: async (asin: string) => ({ asin, name: 'an author', imageUrl }),
+      });
+      const shelfDir = () => {
+        const authorDir = join(books, 'An Author');
+        mkdirSync(authorDir);
+        return authorDir;
+      };
+
+      it('a body with no length is read no further than the cap', async () => {
+        const authorDir = shelfDir();
+        const MEBIBYTE = 1024 * 1024;
+        let sent = 0;
+        const body = new ReadableStream<Uint8Array>({
+          pull(controller) {
+            sent += MEBIBYTE;
+            if (sent > 64 * MEBIBYTE) controller.close();
+            else controller.enqueue(new Uint8Array(MEBIBYTE));
+          },
+        });
+        const url = await authorPhoto(
+          {
+            audnexus: naming('https://images.invalid/a.jpg'),
+            fetch: async () => new Response(body),
+            log,
+          },
+          { authorDir, asin },
+        );
+        expect(url).toBeNull();
+        expect(sent).toBeLessThanOrEqual(10 * MEBIBYTE);
+      });
+
+      it('a redirect is not followed, as it could lead anywhere over plain http', async () => {
+        const authorDir = shelfDir();
+        const reached: string[] = [];
+        const fetch = async (input: string, init?: RequestInit) => {
+          reached.push(input);
+          if (init?.redirect === 'error' || init?.redirect === 'manual') {
+            return new Response(null, { status: 302, headers: { location: 'http://10.0.0.1/' } });
+          }
+          reached.push('http://10.0.0.1/');
+          return new Response(image);
+        };
+        const url = await authorPhoto(
+          { audnexus: naming('https://images.invalid/a.jpg'), fetch, log },
+          { authorDir, asin },
+        );
+        expect(reached).toEqual(['https://images.invalid/a.jpg']);
+        expect(url).toBeNull();
+        expect(existsSync(join(authorDir, 'author.jpg'))).toBe(false);
+      });
+
+      it('an address on a private network is never fetched, nor handed to Audiobookshelf', async () => {
+        const authorDir = shelfDir();
+        let fetches = 0;
+        const url = await authorPhoto(
+          {
+            audnexus: naming('https://10.0.0.1/a.jpg'),
+            fetch: async () => {
+              fetches += 1;
+              return new Response(image);
+            },
+            log,
+          },
+          { authorDir, asin },
+        );
+        expect(fetches).toBe(0);
+        expect(url).toBeNull();
+      });
     });
 
     it('an author with no photo, or an Audnexus that is away, is no failure', async () => {

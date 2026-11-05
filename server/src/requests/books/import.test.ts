@@ -304,6 +304,30 @@ describe('the import step', () => {
     expect(statSync(join(media, 'Downloads/Jekyll/01.mp3')).nlink).toBe(1);
   });
 
+  it('a book placed long ago, past the newest rows, still answers its item rather than waiting until it fails', async () => {
+    mkdirSync(join(media, 'Books', FOLDER), { recursive: true });
+    writeFileSync(join(media, 'Books', FOLDER, 'other.mp3'), 'another edition');
+    const itemId = (jsonBody(absCall('index-book-new')) as { id: string }).id;
+    const newestFirst = Array.from({ length: 200 }, (_, at) => ({
+      id: at === 199 ? itemId : `newer-${at}`,
+      relPath: at === 199 ? FOLDER : `Someone/Book ${at}`,
+      addedAt: 1_000 - at,
+    }));
+    const base = shelf();
+    const fetch: FetchLike = async (input, init) => {
+      const url = new URL(input);
+      if (!url.pathname.endsWith('/items')) return base.fetch(input, init);
+      const limit = Number(url.searchParams.get('limit') ?? newestFirst.length);
+      const page = Number(url.searchParams.get('page') ?? 0);
+      const results = newestFirst.slice(page * limit, (page + 1) * limit);
+      return new Response(JSON.stringify({ results, total: newestFirst.length, limit, page }), {
+        headers: { 'content-type': 'application/json' },
+      });
+    };
+    const answer = await bookImport(deps(fetch))(importing(), 'k');
+    expect(answer).toEqual({ kind: 'arrived', ref: { source: 'abs', id: itemId } });
+  });
+
   it('the author photo goes to Audiobookshelf only when it holds none', async () => {
     const posted: string[] = [];
     const base = shelf();
