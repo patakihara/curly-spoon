@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { RequestRef } from '@auralis/schema';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FetchLike } from '../../adapters/http/fetch.js';
 import { type Recording, recordingSchema } from '../../adapters/http/recording.js';
 import { replayFetch } from '../../adapters/http/replay.js';
@@ -160,12 +160,13 @@ describe('[M3.books/b] a book through the job, on qBittorrent recordings', () =>
     expect(reread(one).state.status).toBe('queued');
 
     await turn(deps);
-    expect(reread(one).handle).toEqual({ hash: DEBIAN, owned: true, addedAt: clock });
     const adding = asked.find((call) => call.path === 'torrents/add');
     const sent = new URLSearchParams(adding?.body);
     expect(sent.get('urls')).toContain(DEBIAN);
     expect(sent.get('category')).toBe(BOOKS_CATEGORY);
     expect(sent.get('tags')).toMatch(/^auralis-[\w-]+$/);
+    expect(`auralis-${(reread(one).handle as { key: string }).key}`).toBe(sent.get('tags'));
+    expect(reread(one).handle).toMatchObject({ hash: DEBIAN, addedAt: clock });
 
     await turn(deps);
     expect(reread(one).state.status).toBe('queued');
@@ -180,6 +181,20 @@ describe('[M3.books/b] a book through the job, on qBittorrent recordings', () =>
 
     await turn(deps);
     expect(reread(one).state.status).toBe('importing');
+  });
+
+  it('[M3.books/b] a torrent in qBittorrent’s queue waits as long as it takes, shows Queued, and is no stall', async () => {
+    const { qbittorrent } = upstream(
+      [recorded('create-category'), recorded('add-magnet')],
+      [recorded('info-absent'), recorded('debian-queued')],
+    );
+    const deps = job(steps(qbittorrent, DEBIAN));
+    const one = createRequest(db, person, ref, clock).request;
+    for (let at = 0; at < 3; at += 1) await turn(deps);
+    for (let at = 0; at < 8; at += 1) {
+      await turn(deps, STALL);
+      expect(reread(one).state.status).toBe('queued');
+    }
   });
 
   it('[M3.books/b] a torrent no swarm answers for fails with its reason at the stall limit', async () => {
@@ -203,8 +218,8 @@ describe('[M3.books/b] a book through the job, on qBittorrent recordings', () =>
 describe('[M3.books] starting a book', () => {
   it('[M3.books] a repeat of a key finds what the first made and adds nothing', async () => {
     const { asked, qbittorrent } = upstream([recorded('debian-queued')]);
-    const handle = await download(qbittorrent).start(request, release(DEBIAN), 'a-key');
-    expect(handle).toMatchObject({ hash: DEBIAN, owned: true });
+    const handle = await download(qbittorrent).start(request, release(DEBIAN), 'record');
+    expect(handle).toMatchObject({ hash: DEBIAN, key: 'record' });
     expect(asked.map((call) => call.path)).toEqual(['torrents/info']);
   });
 
@@ -212,9 +227,9 @@ describe('[M3.books] starting a book', () => {
     const { asked, qbittorrent } = upstream([underAnotherCategory('debian-queued')]);
     const steps = download(qbittorrent);
     const handle = await steps.start(request, release(DEBIAN), 'a-key');
-    expect(handle).toMatchObject({ hash: DEBIAN, owned: false });
+    expect(handle).toMatchObject({ hash: DEBIAN });
     await steps.cancel({ handle });
-    expect(asked.map((call) => call.path)).toEqual(['torrents/info']);
+    expect(asked.map((call) => call.path)).toEqual(['torrents/info', 'torrents/info']);
   });
 
   it('[M3.books] adding chooses no files', async () => {
@@ -239,14 +254,14 @@ describe('[M3.books] starting a book', () => {
       recorded('add-existing'),
     ]);
     const handle = await download(qbittorrent).start(request, release(DEBIAN), 'a-key');
-    expect(handle).toMatchObject({ hash: DEBIAN, owned: true });
+    expect(handle).toMatchObject({ hash: DEBIAN, key: 'a-key' });
   });
 });
 
 describe('[M3.books] following a book', () => {
   it('[M3.books] a torrent gone just after its add is waited for, and past two minutes is failed', async () => {
     const { qbittorrent } = upstream([recorded('info-absent')]);
-    const handle = { hash: DEBIAN, owned: true, addedAt: clock };
+    const handle = { hash: DEBIAN, key: 'a-key', addedAt: clock };
     const steps = download(qbittorrent);
     clock += 2 * MINUTE - 1;
     expect(await steps.poll(handle)).toEqual({ kind: 'queued' });
@@ -271,7 +286,10 @@ describe('[M3.books] following a book', () => {
     ['stoppedUP', 1, { kind: 'done' }],
     ['queuedUP', 1, { kind: 'done' }],
     ['forcedUP', 1, { kind: 'done' }],
-    ['checkingUP', 1, { kind: 'done' }],
+    ['checkingUP', 1, { kind: 'queued' }],
+    ['checkingUP', 0.3, { kind: 'queued' }],
+    ['stalledUP', 0.99, { kind: 'failed', reason: 'downloadFailed' }],
+    ['uploading', 0.5, { kind: 'failed', reason: 'downloadFailed' }],
     ['error', 0.5, { kind: 'failed', reason: 'downloadFailed' }],
     ['missingFiles', 1, { kind: 'failed', reason: 'downloadFailed' }],
     ['a state nobody knows', 1, { kind: 'failed', reason: 'downloadFailed' }],
@@ -285,7 +303,7 @@ describe('[M3.books] following a book', () => {
       apiKey: '<token>',
       fetch: () => Promise.reject(new Error('refused')),
     });
-    const handle = { hash: DEBIAN, owned: true, addedAt: clock };
+    const handle = { hash: DEBIAN, key: 'a-key', addedAt: clock };
     await expect(download(away).poll(handle)).rejects.toBeInstanceOf(StepUnavailable);
     const broken = new QbittorrentClient({
       baseUrl: 'http://upstream.invalid',
@@ -308,13 +326,20 @@ describe('[M3.books] following a book', () => {
 
 describe('[M3.books] cancelling a book', () => {
   it('[M3.books] by handle deletes our torrent with its files, and again does no harm', async () => {
-    const { asked, qbittorrent } = upstream([recorded('delete'), recorded('delete-missing')]);
+    const { asked, qbittorrent } = upstream(
+      [recorded('delete')],
+      [recorded('debian-queued'), recorded('info-absent')],
+    );
     const steps = download(qbittorrent);
-    const handle = { hash: DEBIAN, owned: true, addedAt: clock };
+    const handle = { hash: DEBIAN, key: 'record', addedAt: clock };
     await steps.cancel({ handle });
     await steps.cancel({ handle });
-    expect(asked).toHaveLength(2);
-    const sent = new URLSearchParams(asked[0]?.body);
+    expect(asked.map((call) => call.path)).toEqual([
+      'torrents/info',
+      'torrents/delete',
+      'torrents/info',
+    ]);
+    const sent = new URLSearchParams(asked[1]?.body);
     expect(sent.get('hashes')).toBe(DEBIAN);
     expect(sent.get('deleteFiles')).toBe('true');
   });
@@ -367,6 +392,103 @@ describe('[M3.books] what Auralis did not start stays untouched', () => {
     const handle = await steps.start(request, release(DEBIAN), 'another-request');
     await steps.cancel({ handle });
     noDelete(asked);
+  });
+
+  describe('the one rule for a delete, with this request’s own key in hand', () => {
+    /** The recorded row, changed as `change` says. */
+    const looksLike = (change: Record<string, unknown>): Recording => {
+      const one = recorded('debian-queued');
+      const rows = (one.response.body as { json: Record<string, unknown>[] }).json;
+      const json = rows.map((row) => ({ ...row, ...change }));
+      return { ...one, response: { ...one.response, body: { json } } };
+    };
+    const handle = { hash: DEBIAN, key: 'record', addedAt: 0 };
+    const cancelled = async (look: Recording) => {
+      const { asked, qbittorrent } = upstream([recorded('delete')], [look]);
+      const error = vi.fn();
+      const steps = bookDownload({
+        qbittorrent,
+        prowlarr: noProwlarr,
+        now: () => clock,
+        log: { error },
+      });
+      await steps.cancel({ handle });
+      return { asked, error };
+    };
+
+    it('[M3.books] deletes in our category with exactly our tag, among others', async () => {
+      const { asked, error } = await cancelled(looksLike({ tags: 'a-tag, auralis-record' }));
+      expect(asked.map((call) => call.path)).toEqual(['torrents/info', 'torrents/delete']);
+      expect(error).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['in another category, with our tag', { category: 'a-household-category' }],
+      ['in no category, with our tag', { category: '' }],
+      ['without a tag', { tags: '' }],
+      ['with another key’s tag', { tags: 'auralis-another-key' }],
+      ['with a tag that holds the key and more', { tags: 'auralis-record-2' }],
+      ['with a tag that is held in the key', { tags: 'auralis-rec' }],
+    ])('[M3.books] sends no delete for a torrent %s, and logs why', async (_name, change) => {
+      const { asked, error } = await cancelled(looksLike(change));
+      expect(asked.map((call) => call.path)).toEqual(['torrents/info']);
+      expect(error).toHaveBeenCalledOnce();
+      expect(JSON.stringify(error.mock.calls)).not.toContain('household');
+    });
+
+    it('[M3.books] a stored owned flag buys no delete', async () => {
+      const { asked, qbittorrent } = upstream([recorded('delete')], [looksLike({ tags: '' })]);
+      await download(qbittorrent).cancel({ handle: { ...handle, owned: true } });
+      expect(asked.map((call) => call.path)).toEqual(['torrents/info']);
+    });
+
+    it.each([
+      ['by handle', { handle }],
+      ['by key', { key: 'record', release: release(DEBIAN) }],
+    ])(
+      '[M3.books] a read that fails %s sends no delete, logs why and moves on',
+      async (_n, target) => {
+        const paths: string[] = [];
+        const error = vi.fn();
+        const steps = bookDownload({
+          qbittorrent: new QbittorrentClient({
+            baseUrl: 'http://upstream.invalid',
+            apiKey: '<token>',
+            fetch: (url) => {
+              paths.push(new URL(url).pathname);
+              return Promise.resolve(new Response('', { status: 502 }));
+            },
+          }),
+          prowlarr: noProwlarr,
+          now: () => clock,
+          log: { error },
+        });
+        await steps.cancel(target);
+        expect(paths).toEqual(['/api/v2/torrents/info']);
+        expect(error).toHaveBeenCalledOnce();
+      },
+    );
+
+    it('[M3.books] by key sends no delete for a row whose tag merely holds the key', async () => {
+      const one = recorded('info-by-tag');
+      const rows = (one.response.body as { json: Record<string, unknown>[] }).json;
+      const json = rows.map((row) => ({ ...row, tags: 'auralis-record-2' }));
+      const { asked, qbittorrent } = upstream([
+        { ...one, response: { ...one.response, body: { json } } },
+      ]);
+      await download(qbittorrent).cancel({ key: 'record', release: release(DEBIAN) });
+      expect(asked.map((call) => call.path)).toEqual(['torrents/info']);
+    });
+
+    it('[M3.books] a hash there at the start, or a 409 at its add, is given no tag', async () => {
+      const { asked, qbittorrent } = upstream([
+        recorded('info-absent'),
+        recorded('create-category-again'),
+        recorded('add-existing'),
+      ]);
+      await download(qbittorrent).start(request, release(DEBIAN), 'a-key');
+      expect(asked.map((call) => call.path)).not.toContain('torrents/addTags');
+    });
   });
 
   it('[M3.books] a finished torrent being checked again waits, and does not fail', () => {

@@ -1,7 +1,10 @@
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { scanRecording } from './http/scan.js';
 import { type RawExchange, scrub } from './http/scrub.js';
-import { cutQbit, recordQbit } from './record-qbit.js';
+import { cutQbit, MADE_UP_HASH, recordQbit } from './record-qbit.js';
 import type { FetchLike } from './http/fetch.js';
 
 const KEY = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
@@ -60,7 +63,7 @@ describe('[M3.books] what a qBittorrent recording keeps', () => {
 });
 
 describe('[M3.books] a recording run', () => {
-  it('[M3.books] takes its torrents, category and tag away when a step fails, and never lists all torrents', async () => {
+  it('[M3.books] a step that fails before its add takes its tag away, touches nothing else, and never lists all torrents', async () => {
     const asked: string[] = [];
     const fetch: FetchLike = async (url) => {
       const { pathname, search } = new URL(url);
@@ -81,8 +84,8 @@ describe('[M3.books] a recording run', () => {
         sleep: () => Promise.resolve(),
       }),
     ).rejects.toThrow();
-    expect(asked).toContainEqual('torrents/delete');
-    expect(asked).toContainEqual('torrents/removeCategories');
+    expect(asked).not.toContainEqual('torrents/delete');
+    expect(asked).not.toContainEqual('torrents/removeCategories');
     expect(asked).toContainEqual('torrents/deleteTags');
     for (const call of asked.filter((one) => one.startsWith('torrents/info'))) {
       expect(call).toMatch(/hashes=|tag=/);
@@ -117,6 +120,62 @@ describe('[M3.books] a recording run', () => {
   it('[M3.books] a run that fails before its add does not delete that hash, which may be the household’s', async () => {
     const deleted = (await failedRun()).filter((one) => one.path.endsWith('torrents/delete'));
     for (const one of deleted) expect(one.body).not.toContain(hash);
+  });
+
+  /** A run against an upstream that adds and then never shows a torrent, so a look fails it. */
+  const runUntilLookFails = async (answers: { category: number; add: number }) => {
+    const root = mkdtempSync(join(tmpdir(), 'record-qbit-'));
+    const sent: { path: string; body: string }[] = [];
+    const fetch: FetchLike = async (url, init) => {
+      const path = new URL(url).pathname.replace('/api/v2/', '');
+      const body = typeof init?.body === 'string' ? init.body : '';
+      sent.push({ path, body });
+      const bearer = new Headers(init?.headers).get('authorization');
+      if (bearer !== `Bearer ${KEY}`) return new Response('Forbidden', { status: 403 });
+      if (path === 'app/version') return new Response('v5.3.0');
+      if (path === 'torrents/createCategory') return new Response('', { status: answers.category });
+      if (path === 'torrents/add') {
+        return answers.add === 200
+          ? Response.json({ failure_count: 0, pending_count: 0, success_count: 1 })
+          : new Response('Conflict', { status: answers.add });
+      }
+      if (path === 'torrents/info') return Response.json([]);
+      return new Response('');
+    };
+    await recordQbit({
+      fetch,
+      out: () => undefined,
+      root,
+      url: BASE,
+      key: KEY,
+      magnet: `magnet:?xt=urn:btih:${hash}`,
+      sleep: () => Promise.resolve(),
+      looks: 1,
+    }).catch(() => undefined);
+    rmSync(root, { recursive: true });
+    return {
+      deleted: sent
+        .filter((one) => one.path === 'torrents/delete')
+        .map((one) => new URLSearchParams(one.body).get('hashes')),
+      categoriesRemoved: sent.filter((one) => one.path === 'torrents/removeCategories').length,
+    };
+  };
+
+  it('[M3.books] a run deletes what it added, and removes the category it made', async () => {
+    const { deleted, categoriesRemoved } = await runUntilLookFails({ category: 200, add: 200 });
+    expect(deleted).toEqual([MADE_UP_HASH]);
+    expect(categoriesRemoved).toBe(1);
+  });
+
+  it('[M3.books] a run leaves a category that was already there', async () => {
+    const { deleted, categoriesRemoved } = await runUntilLookFails({ category: 409, add: 200 });
+    expect(deleted).toEqual([MADE_UP_HASH]);
+    expect(categoriesRemoved).toBe(0);
+  });
+
+  it('[M3.books] a run stops at a torrent already there, and deletes nothing', async () => {
+    const { deleted } = await runUntilLookFails({ category: 200, add: 409 });
+    expect(deleted).toEqual([]);
   });
 
   it('[M3.books] a run does not remove the category Auralis’s real downloads sit in', async () => {

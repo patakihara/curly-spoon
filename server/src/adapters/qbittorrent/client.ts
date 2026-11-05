@@ -33,6 +33,10 @@ export interface AddTorrent {
   tag: string;
 }
 
+/** Whether a torrent's row carries exactly this tag; a tag that merely holds it is another tag. */
+export const carriesTag = (row: Pick<QbitTorrent, 'tags'>, tag: string): boolean =>
+  row.tags.split(/,\s*/).includes(tag);
+
 export class QbittorrentClient {
   constructor(private readonly opts: QbittorrentClientOptions) {}
 
@@ -57,24 +61,30 @@ export class QbittorrentClient {
     return this.ask('app/version', {}, z.string());
   }
 
-  /** Makes a category, which saves where every download saves. One that exists is no failure. */
-  async createCategory(category: string): Promise<void> {
+  /**
+   * Makes a category, which saves where every download saves. One that exists is no failure.
+   * Answers whether this call made it.
+   */
+  async createCategory(category: string): Promise<boolean> {
     try {
       await this.ask(
         'torrents/createCategory',
         { method: 'POST', form: { category, savePath: '' } },
         ignored,
       );
+      return true;
     } catch (error) {
       if (!(error instanceof AdapterError) || error.status !== CONFLICT) throw error;
+      return false;
     }
   }
 
   /**
    * Adds a torrent whole, with no choice of its files: a piece can span a neighbouring file. One it
-   * already has answers 409 and stays as it was, which is no failure.
+   * already has answers 409 and stays as it was, which is no failure. Answers whether this call
+   * added it.
    */
-  async add({ torrent, category, tag }: AddTorrent): Promise<void> {
+  async add({ torrent, category, tag }: AddTorrent): Promise<boolean> {
     const fields = { category, tags: tag };
     const init: RequestInitJson =
       torrent.kind === 'magnet'
@@ -83,8 +93,10 @@ export class QbittorrentClient {
     try {
       const { failure_count: failed } = await this.ask('torrents/add', init, qbitAddSchema);
       if (failed > 0) throw new AdapterError('parse', 'POST /api/v2/torrents/add', 'not added');
+      return true;
     } catch (error) {
       if (!(error instanceof AdapterError) || error.status !== CONFLICT) throw error;
+      return false;
     }
   }
 
@@ -96,7 +108,7 @@ export class QbittorrentClient {
   /** The torrents of a category carrying a tag, as a torrent's own row says. */
   async withTag(tag: string, category: string): Promise<QbitTorrent[]> {
     const rows = await this.ask('torrents/info', {}, qbitTorrentsSchema, { tag, category });
-    return rows.filter((row) => row.category === category && row.tags.split(/,\s*/).includes(tag));
+    return rows.filter((row) => row.category === category && carriesTag(row, tag));
   }
 
   async files(hash: string): Promise<QbitFile[]> {

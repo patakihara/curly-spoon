@@ -306,6 +306,175 @@ describe('[M3.books/a] the pick starts only what is plainly this book', () => {
   );
 });
 
+describe('[M3.books/a] what the pick weighs', () => {
+  const base: ProwlarrRelease = {
+    title: 'Dune - Frank Herbert',
+    source: 'an indexer',
+    size: null,
+    seeders: 1,
+    infoUrl: null,
+    details: {},
+  };
+  const dune: BookFacts = {
+    title: 'Dune',
+    authors: ['Frank Herbert'],
+    narrators: [],
+    runtimeMinutes: 60,
+    language: 'english',
+  };
+  /** The size of a sixty-minute book at this bitrate. */
+  const sizeAt = (kbps: number) => (kbps * 1000 * 3600) / 8;
+  const sized = (kbps: number): PickRow => ({
+    release: { ...base, size: sizeAt(kbps) },
+    extras: {},
+  });
+  const atPage = (kbps: number, title = base.title): PickRow => ({
+    release: { ...base, title },
+    extras: { bitrateKbps: kbps },
+  });
+  const kindOf = (rows: PickRow[], asked = dune) => pickRelease(rows, asked).kind;
+
+  it('[M3.books/a] a size above the bitrate any book has is rejected, and at that bitrate it is not', () => {
+    expect(kindOf([sized(640)])).toBe('picked');
+    expect(kindOf([sized(641)])).toBe('none');
+  });
+
+  it('[M3.books/a] a row with no size or no runtime skips the size check', () => {
+    expect(kindOf([{ release: { ...base, size: null }, extras: {} }])).toBe('picked');
+    const noLength = { ...dune, runtimeMinutes: null };
+    expect(kindOf([sized(100_000)], noLength)).toBe('picked');
+  });
+
+  it('[M3.books/a] a row must name an author by surname', () => {
+    const row = (title: string) => titled(title, base);
+    expect(kindOf([row('Dune - Frank Someone')])).toBe('none');
+    expect(kindOf([row('Dune')])).toBe('none');
+    const two = { ...dune, authors: ['Frank Herbert', 'Brian Anderson'] };
+    expect(kindOf([row('Dune - Brian Anderson')], two)).toBe('picked');
+  });
+
+  it('[M3.books/a] a bitrate in the wanted range beats one above or below it', () => {
+    const [low, wanted, high] = [atPage(32), atPage(64), atPage(320)];
+    expect(pickRelease([low, high, wanted], dune)).toMatchObject({ best: wanted });
+    expect(pickRelease([atPage(320), atPage(128)], dune)).toMatchObject({
+      best: { extras: { bitrateKbps: 128 } },
+    });
+    expect(pickRelease([atPage(32), atPage(48)], dune)).toMatchObject({
+      best: { extras: { bitrateKbps: 48 } },
+    });
+  });
+
+  it('[M3.books/a] any bitrate in range ranks the same, and the order given decides', () => {
+    expect(pickRelease([atPage(96), atPage(128)], dune)).toMatchObject({
+      best: { extras: { bitrateKbps: 96 } },
+    });
+    expect(pickRelease([atPage(128), atPage(64)], dune)).toMatchObject({
+      best: { extras: { bitrateKbps: 128 } },
+    });
+  });
+
+  it('[M3.books/a] an unknown bitrate ranks a little off: behind a wanted one, ahead of a far one', () => {
+    const unknown: PickRow = { release: base, extras: {} };
+    expect(pickRelease([unknown, atPage(128)], dune)).toMatchObject({
+      best: { extras: { bitrateKbps: 128 } },
+    });
+    expect(pickRelease([atPage(320), unknown], dune)).toMatchObject({ best: unknown });
+  });
+
+  it('[M3.books/a] the page’s bitrate beats the title’s, and the title’s beats the size’s', () => {
+    const pageIsRight = atPage(128, `${base.title} [320 Kbps]`);
+    const pageIsFar = atPage(320, `${base.title} [128 Kbps]`);
+    expect(pickRelease([pageIsFar, pageIsRight], dune)).toMatchObject({ best: pageIsRight });
+
+    const saysRight: PickRow = {
+      release: { ...base, title: `${base.title} [128 Kbps]`, size: sizeAt(400) },
+      extras: {},
+    };
+    const sizeOnly: PickRow = { release: { ...base, size: sizeAt(200) }, extras: {} };
+    expect(pickRelease([sizeOnly, saysRight], dune)).toMatchObject({ best: saysRight });
+    const saysFar: PickRow = {
+      release: { ...base, title: `${base.title} [400 Kbps]`, size: sizeAt(128) },
+      extras: {},
+    };
+    expect(pickRelease([saysFar, sized(200)], dune)).toMatchObject({
+      best: { release: { size: sizeAt(200) } },
+    });
+  });
+
+  it('[M3.books/a] a language is the same whatever it is written in, and one match among many is enough', () => {
+    const row = (mark: string) => titled(`${base.title} [${mark}]`, base);
+    expect(kindOf([row('Deutsch')], { ...dune, language: 'German' })).toBe('picked');
+    expect(kindOf([row('Deutsch')])).toBe('none');
+    expect(kindOf([row('English, Spanish')])).toBe('picked');
+    expect(kindOf([row('Danish')], { ...dune, language: null })).toBe('picked');
+  });
+
+  it('[M3.books/a] an unabridged edition is the one book, and a word of the book’s own title is no mark', () => {
+    expect(kindOf([titled(`${base.title} [Unabridged]`, base)])).toBe('picked');
+    const asked = { ...dune, title: 'The Dune Collection' };
+    expect(kindOf([titled('The Dune Collection - Frank Herbert', base)], asked)).toBe('picked');
+  });
+
+  it('[M3.books/a] the same torrent counts once however its hash is named, and keeps its best row', () => {
+    const hash = 'a'.repeat(40);
+    const named: PickRow = { release: { ...base, details: { infoHash: hash } }, extras: {} };
+    const magnet: PickRow = {
+      release: { ...base, details: { magnet: `magnet:?xt=urn:btih:${hash}` } },
+      extras: {},
+    };
+    const page: PickRow = {
+      release: { ...base, details: { link: '/c' } },
+      extras: { infoHash: hash, bitrateKbps: 128 },
+    };
+    expect(pickRelease([named, magnet, page], dune)).toMatchObject({ best: page, others: [] });
+  });
+});
+
+describe('[M3.books/a] how far the search goes', () => {
+  const row = (at: number, source: string): ProwlarrRelease => ({
+    title: 'The Strange Case of Dr Jekyll and Mr Hyde - Robert Louis Stevenson',
+    source,
+    size: null,
+    seeders: 1,
+    infoUrl: `http://upstream.invalid/${at}`,
+    details: { link: `/${at}` },
+  });
+  const listing = (rows: ProwlarrRelease[]) => ({ search: () => Promise.resolve(rows) });
+
+  it('[M3.books/a] reads three detail pages at most, all from the indexer that has them', async () => {
+    const pages: string[] = [];
+    const rows = [
+      row(0, 'another indexer'),
+      ...Array.from({ length: 5 }, (_, at) => row(at + 1, 'AudioBook Bay')),
+    ];
+    await bookSearch({
+      audible: audibleWith(replayFetch([product])),
+      prowlarr: listing(rows),
+      fetch: (url) => {
+        pages.push(url);
+        return Promise.reject(new Error('refused'));
+      },
+    })(asked(ASIN));
+    expect(pages.map((url) => new URL(url).pathname).sort()).toEqual(['/1', '/2', '/3']);
+  });
+
+  it('[M3.books/a] offers a person ten releases at most', async () => {
+    const found = await bookSearch({
+      audible: audibleWith(replayFetch([missing])),
+      prowlarr: listing(Array.from({ length: 12 }, (_, at) => row(at, 'an indexer'))),
+      fetch: () => Promise.reject(new Error('refused')),
+    })({
+      target: {
+        title: 'The Strange Case of Dr Jekyll and Mr Hyde',
+        creator: 'Robert Louis Stevenson',
+        ids: { asin: 'B000000000' },
+      },
+    } as unknown as StoredRequest);
+    expect(found).toMatchObject({ kind: 'choose' });
+    expect(found.kind === 'choose' && found.candidates).toHaveLength(10);
+  });
+});
+
 describe('[M3.books] a rate limit says nothing about the request', () => {
   const limited: FetchLike = () => Promise.resolve(new Response('', { status: 429 }));
 

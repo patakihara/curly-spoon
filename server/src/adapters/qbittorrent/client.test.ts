@@ -47,6 +47,39 @@ describe('[M3.books] the qBittorrent client', () => {
     expect(await client(fetch).withTag('auralis-record', 'auralis-books')).toEqual([]);
   });
 
+  it('[M3.books] a tag counts only exactly, wherever it sits among a row’s tags', async () => {
+    const one = recorded('info-by-tag');
+    const rows = (one.response.body as { json: Record<string, unknown>[] }).json;
+    const withTags = (tags: string) => {
+      const json = rows.slice(0, 1).map((row) => ({ ...row, tags }));
+      return client(replayFetch([{ ...one, response: { ...one.response, body: { json } } }]));
+    };
+    const asked = ['auralis-record', 'auralis-books'] as const;
+    expect(await withTags('auralis-record-2').withTag(...asked)).toEqual([]);
+    expect(await withTags('my-auralis-record').withTag(...asked)).toEqual([]);
+    expect(await withTags('a-tag, auralis-record').withTag(...asked)).toHaveLength(1);
+    expect(await withTags('auralis-record,a-tag').withTag(...asked)).toHaveLength(1);
+  });
+
+  it('[M3.books] says whether a call made the category and added the torrent', async () => {
+    const torrent = { kind: 'magnet', magnet: 'magnet:?', hash: 'a' } as const;
+    const fields = { torrent, category: 'a-category', tag: 'a-tag' };
+    const only = (call: string) => client(replayFetch([recorded(call)]));
+    expect(await only('create-category').createCategory('auralis-books')).toBe(true);
+    expect(await only('create-category-again').createCategory('auralis-books')).toBe(false);
+    expect(await only('add-magnet').add(fields)).toBe(true);
+    expect(await only('add-existing').add(fields)).toBe(false);
+  });
+
+  it('[M3.books] deleting a hash it does not have is no failure', async () => {
+    const hashes = new URLSearchParams(
+      (recorded('delete-missing').request.body as { text: string }).text,
+    ).get('hashes') as string;
+    await expect(
+      client(replayFetch([recorded('delete-missing')])).deleteWithFiles([hashes]),
+    ).resolves.toBeUndefined();
+  });
+
   it('[M3.books] an add that reports a failure throws', async () => {
     const one = recorded('add-magnet');
     const body = { json: { failure_count: 1, pending_count: 0, success_count: 0 } };

@@ -5,8 +5,10 @@
  * info hash no swarm has (`add-magnet`, `info-queued`, `info-metadata`, `info-stalled`), and the
  * public torrent the command line names, Debian's installer (`info-absent`, `debian-queued`,
  * `info-downloading`, `info-done`, `files`, `add-existing`, `delete`, `delete-missing`). Every read names a hash or that tag, so the run never lists a household
- * torrent. Whatever fails, both go with their files, the category and tag go too, and the last step
- * fails unless the hashes and the tag list nothing.
+ * torrent. Whatever fails, what this run added goes with its files and its tag goes too, and the
+ * last step fails unless those hashes and the tag list nothing. A hash the run did not add is never
+ * deleted, as it may be the household's, and a category the run did not create is never removed, as
+ * Auralis's real downloads sit in it.
  */
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
@@ -16,6 +18,7 @@ import { createRecorder, withCleanup } from './http/record.js';
 import { type Recording } from './http/recording.js';
 import { scanRecording } from './http/scan.js';
 import type { RawExchange } from './http/scrub.js';
+import type { ResolvedRelease } from './prowlarr/client.js';
 import { QbittorrentClient } from './qbittorrent/client.js';
 import type { QbitTorrent } from './qbittorrent/schemas.js';
 
@@ -139,6 +142,14 @@ export async function recordQbit(input: QbitRecordInput): Promise<{ written: str
     }
     throw new Error(`${one === hash ? 'the public torrent' : 'the made-up one'} did not get there`);
   };
+  const added = new Set<string>();
+  let categoryMade = false;
+  /** Adds a torrent this run then answers for. One already there is not its own: the run stops. */
+  const addOwn = async (client: QbittorrentClient, torrent: ResolvedRelease) => {
+    const isNew = await client.add({ torrent, category: RECORD_CATEGORY, tag: RECORD_TAG });
+    if (!isNew) throw new Error('a torrent to record was already there');
+    added.add(torrent.hash);
+  };
   const sameAs = (one: string) => (answer: QbitTorrent[]) => answer[0]?.hash === one;
 
   const work = async () => {
@@ -154,13 +165,13 @@ export async function recordQbit(input: QbitRecordInput): Promise<{ written: str
       ),
     );
     await capture('version', () => qbit.version());
-    await capture('create-category', () => qbit.createCategory(RECORD_CATEGORY));
+    categoryMade = await capture('create-category', () => qbit.createCategory(RECORD_CATEGORY));
     await capture('create-category-again', () => qbit.createCategory(RECORD_CATEGORY));
 
     const fields = { category: RECORD_CATEGORY, tag: RECORD_TAG };
     const madeUp = `magnet:?xt=urn:btih:${MADE_UP_HASH}`;
     await capture('add-magnet', () =>
-      qbit.add({ torrent: { kind: 'magnet', magnet: madeUp, hash: MADE_UP_HASH }, ...fields }),
+      addOwn(qbit, { kind: 'magnet', magnet: madeUp, hash: MADE_UP_HASH }),
     );
     await capture('info-queued', () => qbit.withHashes([MADE_UP_HASH]));
     await until(MADE_UP_HASH, (found) => found.state === 'metaDL');
@@ -174,7 +185,7 @@ export async function recordQbit(input: QbitRecordInput): Promise<{ written: str
       (answer) => answer.length === 0,
     );
     const torrent = { kind: 'magnet', magnet, hash } as const;
-    await plain.add({ torrent, ...fields });
+    await addOwn(plain, torrent);
     await until(hash, () => true);
     await capture('debian-queued', () => qbit.withHashes([hash]), sameAs(hash));
     await until(hash, (found) => found.progress > 0 && found.progress < 1);
@@ -214,17 +225,18 @@ export async function recordQbit(input: QbitRecordInput): Promise<{ written: str
     body: new URLSearchParams(fields).toString(),
   });
   const cleanup = async () => {
-    await plain.deleteWithFiles([hash, MADE_UP_HASH]);
+    const own = [...added];
+    const stillThere = async () => (own.length === 0 ? [] : plain.withHashes(own));
+    if (own.length > 0) await plain.deleteWithFiles(own);
     for (let look = 0; look < 10; look += 1) {
-      if ((await plain.withHashes([hash, MADE_UP_HASH])).length === 0) break;
+      if ((await stillThere()).length === 0) break;
       await sleep(LOOK_MS);
     }
-    const left = [
-      ...(await plain.withHashes([hash, MADE_UP_HASH])),
-      ...(await plain.withTag(RECORD_TAG, RECORD_CATEGORY)),
-    ];
+    const left = [...(await stillThere()), ...(await plain.withTag(RECORD_TAG, RECORD_CATEGORY))];
     const base = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-    await fetch(`${base}api/v2/torrents/removeCategories`, form({ categories: RECORD_CATEGORY }));
+    if (categoryMade) {
+      await fetch(`${base}api/v2/torrents/removeCategories`, form({ categories: RECORD_CATEGORY }));
+    }
     await fetch(`${base}api/v2/torrents/deleteTags`, form({ tags: RECORD_TAG }));
     if (left.length > 0) throw new Error(`${left.length} recorded torrents were left behind`);
     out('cleaned up: no recorded torrent is left');
