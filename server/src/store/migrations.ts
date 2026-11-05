@@ -821,6 +821,14 @@ export const migrations: readonly Migration[] = [
       db.exec('ALTER TABLE requests ADD COLUMN held_since INTEGER;');
     },
   },
+  {
+    id: 22,
+    name: 'request_auto_starts',
+    up: (db) => {
+      // auto_starts counts the releases the job started by itself after a stall, which it caps.
+      db.exec('ALTER TABLE requests ADD COLUMN auto_starts INTEGER NOT NULL DEFAULT 0;');
+    },
+  },
 ];
 
 export function runMigrations(

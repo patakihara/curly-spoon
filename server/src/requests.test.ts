@@ -1257,6 +1257,28 @@ describe('[M3.books] a download that stops moving', () => {
     expect(steps.calls.start).toBe(4);
   });
 
+  it('[M3.books] past the three, fails and offers what is left, and a person may still choose it', async () => {
+    const offered = ['a', 'b', 'c', 'd', 'e', 'f'].map(standInRelease);
+    const steps = standInSteps('book', {
+      search: { kind: 'choose', candidates: offered },
+      polls: [{ kind: 'downloading', progress: 0.5 }],
+    });
+    const job = deps(steps);
+    const one = request('book');
+    await runUntil(job, one, 'needsChoice');
+    chooseRelease(job, one.id, 'a');
+    await everyMinute(job, 120);
+    expect(reread(one).state).toMatchObject({ status: 'failed', reason: 'downloadStalled' });
+    expect(reread(one).autoStarts).toBe(3);
+    expect(otherReleases(reread(one)).map((release) => release.id)).toEqual(['e', 'f']);
+
+    await pickAnotherRelease(job, one.id);
+    chooseRelease(job, one.id, 'e');
+    await everyMinute(job, 60);
+    expect(steps.calls.start).toBe(5);
+    expect(reread(one).state.status).toBe('failed');
+  });
+
   it('[M3.books] gives an album the same rule, and a song, with no choice, stays failed', async () => {
     const stood = { polls: [{ kind: 'downloading', progress: 0.5 } as const] };
     const album = standInSteps('album', { ...stood, search: picked });

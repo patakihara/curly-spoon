@@ -60,6 +60,7 @@ describe('the requests store', () => {
       result: null,
       progressAt: null,
       heldSince: null,
+      autoStarts: 0,
       version: 0,
       createdAt: 1_000,
       updatedAt: 1_000,

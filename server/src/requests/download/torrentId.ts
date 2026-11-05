@@ -41,6 +41,7 @@ function decodeBase32(input: string): Uint8Array | null {
  * Pulls the info hash out of a magnet URI's `xt=urn:btih:<hash>` parameter. `urn:btmh:`
  * (BitTorrent v2, a different hash scheme entirely) and anything malformed degrade to
  * `null` rather than throwing — a rejected magnet is data the caller reports, not a crash.
+ * Magnets are matched in any case: `MAGNET:`, `XT=` and `urn:BTIH` all occur.
  */
 export function infoHashFromMagnet(magnetUri: string): string | null {
   let params: URLSearchParams;
@@ -52,8 +53,9 @@ export function infoHashFromMagnet(magnetUri: string): string | null {
     return null;
   }
 
-  for (const xt of params.getAll('xt')) {
-    const match = /^urn:btih:([A-Za-z0-9]+)$/u.exec(xt.trim());
+  for (const [name, xt] of params) {
+    if (name.toLowerCase() !== 'xt') continue;
+    const match = /^urn:btih:([A-Za-z0-9]+)$/iu.exec(xt.trim());
     if (!match) continue;
     // The capture group is non-optional in the pattern above, so a successful match always
     // has it.

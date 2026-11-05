@@ -37,6 +37,8 @@ export interface StoredRequest {
   progressAt: number | null;
   /** When the upstream its step needs stopped answering, which times a hold; null while it answers. */
   heldSince: number | null;
+  /** How many releases the job has started by itself after a stall; a person's choices don't count. */
+  autoStarts: number;
   /** Counts saves: a save after a wait names the version it read, and loses to a newer one. */
   version: number;
   createdAt: number;
@@ -82,6 +84,7 @@ const RequestRow = z
     result_id: z.string().nullable(),
     progress_at: z.number().int().nullable(),
     held_since: z.number().int().nullable(),
+    auto_starts: z.number().int(),
     created_at: z.number().int(),
     updated_at: z.number().int(),
   })
@@ -102,6 +105,7 @@ const RequestRow = z
         : MediaRef.parse({ source: row.result_source, id: row.result_id }),
     progressAt: row.progress_at,
     heldSince: row.held_since,
+    autoStarts: row.auto_starts,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }));
@@ -140,7 +144,7 @@ function catalogueKeys(ref: RequestRef): string[] {
 
 const COLUMNS = `r.id, r.medium, r.target, r.status, r.failed_step, r.reason, r.progress, r.release,
   r.candidates, r.handle, r.step_key, r.version, r.result_source, r.result_id, r.progress_at,
-  r.held_since,
+  r.held_since, r.auto_starts,
   r.created_at, r.updated_at`;
 
 /**
@@ -333,6 +337,7 @@ export interface RequestChange {
   stepKey?: string | null;
   result?: MediaRef | null;
   progressAt?: number | null;
+  autoStarts?: number;
 }
 
 /**
@@ -363,6 +368,7 @@ export function saveRequest(
   if (change.handle !== undefined) set.handle = change.handle && JSON.stringify(change.handle);
   if (change.stepKey !== undefined) set.step_key = change.stepKey;
   if (change.progressAt !== undefined) set.progress_at = change.progressAt;
+  if (change.autoStarts !== undefined) set.auto_starts = change.autoStarts;
   if (change.result !== undefined) {
     set.result_source = change.result?.source ?? null;
     set.result_id = change.result?.id ?? null;

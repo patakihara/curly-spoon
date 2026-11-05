@@ -21,9 +21,11 @@
  * the last save, as a step that waits (an import) saves nothing for hours while all is well.
  *
  * A download whose bytes stand still for the stall limit fails `downloadStalled`, and goes on by
- * itself to the next release the search found, while any are left. Listed seeders can be false, so
- * only bytes count. A look that comes a full limit after the last one has seen nothing stand still,
- * so it restarts the clock: an outage can never pass for a stall.
+ * itself to the next release the search found, up to `MAX_AUTO_STARTS`; a person's own choices don't
+ * count. Past that, or with none left, the request stays failed and offers what remains. Listed
+ * seeders can be false, so only bytes count. A look after an outage of any length, or a full limit
+ * after the last one, has seen nothing stand still, so it restarts the clock: an outage can never
+ * pass for a stall.
  *
  * What a person does to a request (retry, choose, pick another, cancel) lives here too, as dropping
  * a failed download takes the same steps. Each move is saved first, naming the version it read, so of
@@ -77,6 +79,9 @@ export type RequestActDeps = Omit<
   RequestJobDeps,
   'notIndexedAfterMs' | 'stallAfterMs' | 'holdAfterMs'
 >;
+
+/** How many releases a request starts by itself after stalls. */
+const MAX_AUTO_STARTS = 3;
 
 /** The reason a step that throws fails with. */
 const THROWN: Record<WorkingStatus, RequestFailure> = {
@@ -180,23 +185,25 @@ function inTurn<T>(
 
 /**
  * When the bytes last moved, as of a poll that found them at this progress: now if they have risen,
- * or if the last look was a full limit ago, as nothing has been seen to stand still since then.
+ * if the poll before this one went unanswered, or if the last look was a full limit ago, as nothing
+ * has been seen to stand still since then.
  */
 function stallClock(deps: RequestJobDeps, request: StoredRequest, progress: number): number {
   const before = request.state.status === 'downloading' ? request.state.progress : 0;
-  const unseen = deps.now() - request.updatedAt >= deps.stallAfterMs;
+  const unseen = request.heldSince !== null || deps.now() - request.updatedAt >= deps.stallAfterMs;
   if (progress > before || unseen || request.progressAt === null) return deps.now();
   return request.progressAt;
 }
 
-/** Fails a download that stopped moving, then drops it and starts the next release, if any. */
+/** Fails a download that stopped moving, then drops it and starts the next release, if it may. */
 async function stalled(deps: RequestJobDeps, request: StoredRequest) {
   if (!apply(deps, request, { type: 'failed', reason: 'downloadStalled' })) return;
   const failed = getRequest(deps.db, request.id);
-  const following = failed && otherReleases(failed)[0];
-  if (!following) return;
+  if (failed === null || failed.autoStarts >= MAX_AUTO_STARTS) return;
+  const following = otherReleases(failed)[0];
+  if (following === undefined) return;
   if ((await pickAnotherRelease(deps, request.id)) !== null) {
-    chooseRelease(deps, request.id, following.id);
+    chooseRelease(deps, request.id, following.id, { autoStarts: failed.autoStarts + 1 });
   }
 }
 
@@ -441,20 +448,22 @@ export async function pickAnotherRelease(
 }
 
 /**
- * A person's choice of a candidate while one is waited for. Null when refused: the request takes
- * no choice now, or nobody offered that candidate.
+ * A choice of a candidate while one is waited for: a person's, or the job's after a stall, which
+ * passes on its count. Null when refused: the request takes no choice now, or nobody offered that
+ * candidate.
  */
 export function chooseRelease(
   deps: RequestActDeps,
   id: string,
   candidateId: string,
+  change: Pick<RequestChange, 'autoStarts'> = {},
 ): StoredRequest | null {
   const request = getRequest(deps.db, id);
   const state = request && next(request.medium, request.state, { type: 'chose' });
   if (!request || !state) return null;
   const release = request.candidates.find((candidate) => candidate.id === candidateId);
   if (release === undefined) return null;
-  saveRequest(deps.db, id, { state, release }, deps.now(), request.version);
+  saveRequest(deps.db, id, { ...change, state, release }, deps.now(), request.version);
   return getRequest(deps.db, id);
 }
 

@@ -18,10 +18,15 @@ const MAX_CHARS = 1024 * 1024;
 /** What a page writes where it does not know who reads the book. */
 const NO_NARRATOR = /^(?:unknown|n\/?a|none|various|-+)$/i;
 
-const NARRATOR = /<span[^>]*\bclass="narrator"[^>]*>([^<]*)<\/span>/gi;
-const FORMAT = /<span[^>]*\bclass="format"[^>]*>\s*([a-z0-9]+)\s*<\/span>/i;
-const BITRATE = /<span[^>]*\bclass="bitrate"[^>]*>\s*(\d{1,4})\s*kbps\s*<\/span>/i;
-const INFO_HASH = /Info Hash:\s*<\/td>\s*<td[^>]*>\s*([0-9a-f]{40})\s*</i;
+/**
+ * A span with only text in it, and the one row that holds the hash. No part of either can run past
+ * the next `<`, so each try ends there and a page takes time in line with its length.
+ */
+const SPAN = /<span\b([^<>]*)>([^<]*)<\/span>/gi;
+const CLASS = /\bclass="([^"]*)"/i;
+const INFO_HASH = /Info Hash:\s*<\/td>\s*<td[^<>]*>\s*([0-9a-f]{40})\s*</i;
+const FORMAT = /^[a-z0-9]+$/i;
+const BITRATE = /^(\d{1,4})\s*kbps$/i;
 
 function decodeEntities(text: string): string {
   return text
@@ -35,11 +40,18 @@ function decodeEntities(text: string): string {
 
 export function parseDetail(page: string): DetailExtras {
   const html = page.slice(0, MAX_CHARS);
-  const narrators = [...html.matchAll(NARRATOR)]
-    .map((match) => decodeEntities(match[1] ?? ''))
+  const spans = [...html.matchAll(SPAN)].map((match) => ({
+    name: CLASS.exec(match[1] ?? '')?.[1],
+    text: (match[2] ?? '').trim(),
+  }));
+  const texts = (name: string) => spans.filter((span) => span.name === name).map((s) => s.text);
+  const narrators = texts('narrator')
+    .map(decodeEntities)
     .filter((name) => name.length > 0 && !NO_NARRATOR.test(name));
-  const format = FORMAT.exec(html)?.[1];
-  const bitrate = BITRATE.exec(html)?.[1];
+  const format = texts('format').find((text) => FORMAT.test(text));
+  const bitrate = texts('bitrate')
+    .map((text) => BITRATE.exec(text)?.[1])
+    .find((digits) => digits !== undefined);
   const infoHash = INFO_HASH.exec(html)?.[1];
   return {
     ...(narrators.length > 0 ? { narrators: [...new Set(narrators)] } : {}),

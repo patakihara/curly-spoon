@@ -6,12 +6,18 @@
  * keeps only their path and query, without the key. `resolve` puts both back from this client's own
  * settings. Asked with no redirect followed, a link answers 301 with a `magnet:` location, or 200
  * with a torrent's bytes (recorded: every row today gives a magnet). Details hold a download's
- * address: never log them.
+ * address: never log them. A malformed row is skipped and logged by its place and fields alone.
  */
+import type { JobLog } from '../../jobs/schedule.js';
 import { infoHashFromMagnet, infoHashFromTorrentFile } from '../../requests/download/torrentId.js';
 import { AdapterError, type FetchLike, requestJson } from '../http/fetch.js';
 import { stepFailure } from '../http/unavailable.js';
-import { type ProwlarrRow, prowlarrSearchSchema, prowlarrStatusSchema } from './schemas.js';
+import {
+  type ProwlarrRow,
+  prowlarrRowSchema,
+  prowlarrSearchSchema,
+  prowlarrStatusSchema,
+} from './schemas.js';
 
 /** Newznab's audiobook category. */
 const AUDIOBOOKS = '3030';
@@ -52,10 +58,12 @@ export interface ProwlarrClientOptions {
   fetch: FetchLike;
   /** Each call's limit; its own default when not given. */
   timeoutMs?: number;
+  /** Told of a row skipped as malformed. */
+  log?: JobLog;
 }
 
 const isMagnet = (value: string | null | undefined): value is string =>
-  value?.startsWith('magnet:') === true;
+  value?.toLowerCase().startsWith('magnet:') === true;
 
 /** A link's path and query, with its key gone in whatever case it was written; null if no URL. */
 function linkOf(value: string | null | undefined): string | null {
@@ -146,7 +154,13 @@ export class ProwlarrClient {
         { headers: this.keyHeader, timeoutMs: this.opts.timeoutMs ?? PROWLARR_SEARCH_LIMIT_MS },
         prowlarrSearchSchema,
       );
-      return rows.map(toRelease).filter((row) => row !== null);
+      return rows.flatMap((row, index) => {
+        const parsed = prowlarrRowSchema.safeParse(row);
+        if (parsed.success) return toRelease(parsed.data) ?? [];
+        const fields = parsed.error.issues.map((issue) => issue.path.join('.'));
+        this.opts.log?.error({ row: index, fields }, 'prowlarr row skipped');
+        return [];
+      });
     } catch (error) {
       throw stepFailure('prowlarr', error);
     }

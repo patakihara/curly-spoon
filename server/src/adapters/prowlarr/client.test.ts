@@ -25,6 +25,29 @@ const client = (fetch: FetchLike, apiKey = KEY) =>
 const replayed = (...recordings: Recording[]) => client(replayFetch(recordings));
 
 describe('[M3.books] searching Prowlarr', () => {
+  it('[M3.books] skips a malformed row and logs it, never its contents, and keeps the rest', async () => {
+    const good = {
+      title: 'A Book',
+      protocol: 'torrent',
+      guid: 'MAGNET:?XT=urn:BTIH:' + 'a'.repeat(40),
+    };
+    const bad = { title: 7, protocol: 'torrent', downloadUrl: 'http://x.invalid/?apikey=sekrit' };
+    const logged: unknown[] = [];
+    const rows = await new ProwlarrClient({
+      baseUrl: 'http://upstream.invalid',
+      apiKey: KEY,
+      fetch: () => Promise.resolve(Response.json([bad, good, 'not a row'])),
+      log: { error: (details) => logged.push(details) },
+    }).search('a book');
+    expect(rows.map((row) => row.title)).toEqual(['A Book']);
+    expect(rows[0]?.details.magnet).toBe(good.guid);
+    expect(logged).toEqual([
+      { row: 0, fields: ['title'] },
+      { row: 2, fields: [''] },
+    ]);
+    expect(JSON.stringify(logged)).not.toContain('sekrit');
+  });
+
   it('[M3.books] reads a row that has no info hash and no magnet, by its link alone', async () => {
     const rows = await replayed(search).search(queryOf(search));
     expect(rows.length).toBeGreaterThan(1);

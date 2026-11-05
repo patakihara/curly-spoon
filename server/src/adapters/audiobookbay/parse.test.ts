@@ -51,4 +51,26 @@ describe("[M3.books] AudiobookBay's detail page", () => {
     expect(parseDetail('<span '.repeat(32_000))).toEqual({});
     expect(performance.now() - started).toBeLessThan(500);
   });
+
+  it.each([
+    ['unclosed tags', '<span '],
+    ['unclosed classes', '<span class="narrator" '],
+    ['a class with no end', '<span class="'],
+    ['tags with no text after', '<span class="format">'],
+    ['hash labels with no hash', 'Info Hash:</td><td '],
+    ['space after a label', 'Info Hash:     '],
+  ])('[M3.books] takes linear time over a capped page of %s', (_name, piece) => {
+    const page = piece.repeat(Math.ceil((2 * 1024 * 1024) / piece.length));
+    const started = performance.now();
+    parseDetail(page);
+    expect(performance.now() - started).toBeLessThan(500);
+  });
+
+  it('[M3.books] reads the first usable format and bitrate, spaced or not', () => {
+    const page =
+      '<span class="format"> not one </span><span class="format">\n M4B </span>' +
+      '<span class="x" class="bitrate"> 64 kbps </span>';
+    expect(parseDetail(page)).toEqual({ format: 'm4b' });
+    expect(parseDetail('<span class="bitrate"> 64 kbps </span>')).toEqual({ bitrateKbps: 64 });
+  });
 });

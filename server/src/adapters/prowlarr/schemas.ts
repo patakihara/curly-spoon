@@ -18,6 +18,7 @@ export const prowlarrRowSchema = z.object({
 });
 export type ProwlarrRow = z.infer<typeof prowlarrRowSchema>;
 
-export const prowlarrSearchSchema = z.array(prowlarrRowSchema);
+/** The rows are parsed one by one, so that a malformed one costs only itself. */
+export const prowlarrSearchSchema = z.array(z.unknown());
 
 export const prowlarrStatusSchema = z.object({ version: z.string() });

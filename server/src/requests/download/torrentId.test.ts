@@ -172,6 +172,16 @@ describe('infoHashFromMagnet', () => {
     expect(infoHashFromMagnet(magnet)).toBe(hash);
   });
 
+  it.each([
+    'MAGNET:?xt=urn:btih:HASH',
+    'magnet:?xt=urn:BTIH:HASH',
+    'magnet:?XT=urn:btih:HASH',
+    'Magnet:?Xt=URN:BtIh:HASH',
+  ])('reads the hash from %s, whatever the case', (written) => {
+    const hash = 'c12fe1c06bba254a9dc9f519b335aa7c1367a88a';
+    expect(infoHashFromMagnet(written.replace('HASH', hash))).toBe(hash);
+  });
+
   it('returns null for a v2-only urn:btmh magnet', () => {
     const magnet =
       'magnet:?xt=urn:btmh:1220caf1e1c30e81cb361b9ee167c4aa64228a7fa4fa9f6105232b28ad099f3a302e&dn=Book';
