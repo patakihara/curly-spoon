@@ -1,0 +1,49 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.2",
+  "call": "newest-items",
+  "request": {
+    "method": "GET",
+    "path": "/api/libraries/e8aa253f-82d0-44ff-b87a-74671278ce9d/items",
+    "query": {
+      "desc": "1",
+      "limit": "25",
+      "minified": "1",
+      "sort": "addedAt"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "results": [
+          {
+            "id": "79762bb3-e6fb-47a7-b6b3-90b001e8f258",
+            "relPath": "Robert Louis Stevenson/1886 - The Strange Case of Dr. Jekyll and Mr. Hyde (Bob Neufeld) 64k",
+            "addedAt": 1793840618627,
+            "updatedAt": 1793840631111,
+            "mediaType": "book"
+          }
+        ],
+        "total": 1,
+        "limit": 25,
+        "page": 0,
+        "sortBy": "addedAt",
+        "sortDesc": true,
+        "mediaType": "book",
+        "minified": true,
+        "collapseseries": false,
+        "include": "",
+        "offset": 0
+      }
+    }
+  }
+}

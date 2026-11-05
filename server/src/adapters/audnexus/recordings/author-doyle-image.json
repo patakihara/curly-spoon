@@ -1,0 +1,23 @@
+{
+  "upstream": "audnexus",
+  "upstreamVersion": "Audnexus API, unversioned",
+  "call": "author-doyle-image",
+  "request": {
+    "method": "GET",
+    "path": "/images/S/amzn-author-media-prod/rldi51cf3nr99abtt922mgh6hi.jpg",
+    "query": {},
+    "headers": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "accept-ranges": "bytes",
+      "content-type": "image/jpeg"
+    },
+    "body": {
+      "bytes": "author-doyle-image.jpg",
+      "synthesized": "the photo's first 4096 bytes, which hold its header"
+    }
+  }
+}

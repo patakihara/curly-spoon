@@ -129,6 +129,20 @@ export class AbsProvisioner {
     return { token: apiKey.apiKey, keyId: apiKey.id };
   }
 
+  /**
+   * Gives an author a photo: Audiobookshelf fetches `url` itself and stores it under its own
+   * metadata, as `author.jpg` in a Books folder never reaches it. It needs the provisioning key,
+   * as a listening key may not update.
+   */
+  async setAuthorImage(authorId: string, url: string): Promise<void> {
+    await requestJson(
+      this.opts.fetch,
+      this.url(`api/authors/${encodeURIComponent(authorId)}/image`),
+      { method: 'POST', headers: this.headers, json: { url } },
+      z.unknown(),
+    );
+  }
+
   /** Deletes a key, as the provisioning key; one that is already gone is fine. */
   async revoke(keyId: string): Promise<void> {
     const call = 'DELETE api/api-keys';

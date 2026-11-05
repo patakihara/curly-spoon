@@ -64,6 +64,12 @@
  * trackers and indexers kept out, and the book's reads of the keyless Audible and Audnexus
  * (record-books.ts). It adds no download and needs only PROWLARR_API_KEY, from Prowlarr's own config.
  *
+ * `--only shelf --abs <url> --book-folder <relPath>` records how Audiobookshelf is asked about a
+ * folder a request placed, on that one book and its author: the newest items cut to that book, the
+ * book, the author, and a photo update sent with no address, which it refuses before it changes
+ * anything, and Audnexus's photo's first bytes (record-shelf.ts). It needs ABS_API_KEY and
+ * ABS_PROVISION_KEY.
+ *
  * `--only qbit --qbittorrent <url> --torrent <magnet>` records M3.books' qBittorrent calls on a
  * made-up hash and the public torrent named (record-qbit.ts), both removed with their files
  * afterwards. No read lists a household torrent. It needs only QBITTORRENT_API_KEY.
@@ -94,6 +100,7 @@ import { recordBooks } from './record-books.js';
 import { recordQbit } from './record-qbit.js';
 import { recordHousehold } from './record-household.js';
 import { recordPlayed } from './record-played.js';
+import { recordShelf } from './record-shelf.js';
 import { recordProgress } from './record-progress.js';
 import { recordSessions } from './record-sessions.js';
 import { recordShell } from './record-shell.js';
@@ -119,10 +126,11 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
                      --only sessions, the track Instant Mix is asked for; for --only played,
                      the track to mark if the test user has played nothing
   --only <name>      record only abs, jellyfin, index, play, episode, jfplay, progress,
-                     sessions, shell, lyrics, lists, played, books or qbit; or
+                     sessions, shell, lyrics, lists, played, books, shelf or qbit; or
                      oidc, a sign-in and its links
   --lrclib <url>     LRCLIB's base URL, for --only lyrics
   --prowlarr <url>   Prowlarr's base URL, for --only books
+  --book-folder <p>  for --only shelf, the book's folder under its library
   --qbittorrent <url> qBittorrent's base URL, for --only qbit
   --torrent <magnet> a public torrent with a healthy swarm, for --only qbit
   --albums <a,b,..>  for --only lyrics, the albums holding the three LRCLIB tracks
@@ -651,6 +659,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'index-page': { type: 'string' },
       lrclib: { type: 'string' },
       prowlarr: { type: 'string' },
+      'book-folder': { type: 'string' },
       qbittorrent: { type: 'string' },
       torrent: { type: 'string' },
       albums: { type: 'string' },
@@ -688,12 +697,13 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'played',
       'household',
       'books',
+      'shelf',
       'qbit',
       'oidc',
     ].includes(only)
   ) {
     io.err(
-      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, qbit or oidc, not ${only}`,
+      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, shelf, qbit or oidc, not ${only}`,
     );
     return 2;
   }
@@ -715,6 +725,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
   if (only === 'played') return runPlayed(io, values, parseKeys(io.stdin), root);
   if (only === 'household') return runHousehold(io, values, parseKeys(io.stdin), root);
   if (only === 'books') return runBooks(io, values, parseKeys(io.stdin), root);
+  if (only === 'shelf') return runShelf(io, values, parseKeys(io.stdin), root);
   if (only === 'qbit') return runQbit(io, values, parseKeys(io.stdin), root);
   const wantIndex = only === undefined || only === 'index';
   const wantAbs = only !== 'jellyfin';
@@ -1161,6 +1172,38 @@ async function runHousehold(
     albumId: values['jellyfin-item'] as string,
   });
   return scanWritten(io, written, []);
+}
+
+async function runShelf(
+  io: RecordIo,
+  values: Record<string, string | boolean | undefined>,
+  keys: Record<string, string>,
+  root: string,
+): Promise<number> {
+  const need = {
+    '--abs': values.abs,
+    '--book-folder': values['book-folder'],
+    'ABS_API_KEY on stdin': keys.ABS_API_KEY,
+    'ABS_PROVISION_KEY on stdin': keys.ABS_PROVISION_KEY,
+  };
+  const missing = Object.entries(need)
+    .filter(([, v]) => typeof v !== 'string' || v === '')
+    .map(([k]) => k);
+  if (missing.length > 0) {
+    io.err(`missing ${missing.join(', ')}\n\n${USAGE}`);
+    return 2;
+  }
+  const { written } = await recordShelf({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    absUrl: values.abs as string,
+    absKey: keys.ABS_API_KEY as string,
+    provisionKey: keys.ABS_PROVISION_KEY as string,
+    bookFolder: values['book-folder'] as string,
+  });
+  io.out(`wrote ${written.join(', ')}`);
+  return 0;
 }
 
 async function runBooks(

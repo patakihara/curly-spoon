@@ -14,7 +14,13 @@ export const statusSchema = z.object({ serverVersion: z.string() }).passthrough(
 export const mediaTypeSchema = z.enum(['book', 'podcast']);
 
 export const librarySchema = z
-  .object({ id: z.string(), name: z.string(), mediaType: mediaTypeSchema })
+  .object({
+    id: z.string(),
+    name: z.string(),
+    mediaType: mediaTypeSchema,
+    folders: z.array(z.object({ fullPath: z.string() }).passthrough()).optional(),
+    settings: z.object({ disableWatcher: z.boolean() }).passthrough().optional(),
+  })
   .passthrough();
 
 /** `GET /api/libraries`. */
@@ -32,6 +38,21 @@ export const libraryItemsSchema = z
       z.object({ id: z.string(), mediaType: mediaTypeSchema, updatedAt: z.number() }).passthrough(),
     ),
   })
+  .passthrough();
+
+/**
+ * `GET /api/libraries/:id/items?sort=addedAt&desc=1`, as read for a folder a request has just placed:
+ * `relPath` is the folder under the library's own, so the item can be told by where it is.
+ */
+export const newestItemsSchema = z.object({
+  results: z.array(
+    z.object({ id: z.string(), relPath: z.string(), addedAt: z.number() }).passthrough(),
+  ),
+});
+
+/** `GET /api/authors/:id`: an author with no photo of Audiobookshelf's own has a null `imagePath`. */
+export const authorSchema = z
+  .object({ id: z.string(), name: z.string(), imagePath: z.string().nullable() })
   .passthrough();
 
 /**

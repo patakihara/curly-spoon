@@ -1,0 +1,33 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.2",
+  "call": "author-new",
+  "request": {
+    "method": "GET",
+    "path": "/api/authors/9156bff8-444c-42ff-bbc8-c57a95f248f2",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "id": "9156bff8-444c-42ff-bbc8-c57a95f248f2",
+        "asin": null,
+        "name": "Robert Louis Stevenson",
+        "description": null,
+        "imagePath": null,
+        "libraryId": "e8aa253f-82d0-44ff-b87a-74671278ce9d",
+        "addedAt": 1793840618663,
+        "updatedAt": 1793840618663
+      }
+    }
+  }
+}
