@@ -335,3 +335,41 @@ describe('[M3.books] cancelling a book', () => {
     expect(asked.map((call) => call.path)).toEqual(['torrents/info']);
   });
 });
+
+describe('[M3.books] what Auralis did not start stays untouched', () => {
+  const noDelete = (asked: Asked[]) =>
+    expect(asked.map((call) => call.path)).not.toContain('torrents/delete');
+
+  it('[M3.books] a cancel by handle sends no delete once that hash is in another category', async () => {
+    const { asked, qbittorrent } = upstream(
+      [recorded('delete')],
+      [underAnotherCategory('debian-queued')],
+    );
+    const handle = { hash: DEBIAN, owned: true, addedAt: clock };
+    await download(qbittorrent).cancel({ handle });
+    noDelete(asked);
+  });
+
+  it('[M3.books] a torrent that answers 409 at its add is not ours, and its cancel sends no delete', async () => {
+    const { asked, qbittorrent } = upstream(
+      [recorded('create-category-again'), recorded('add-existing'), recorded('delete')],
+      [recorded('info-absent'), underAnotherCategory('debian-queued')],
+    );
+    const steps = download(qbittorrent);
+    const handle = await steps.start(request, release(DEBIAN), 'a-key');
+    await steps.cancel({ handle });
+    noDelete(asked);
+  });
+
+  it('[M3.books] a second request on a hash another key tagged cannot delete it', async () => {
+    const { asked, qbittorrent } = upstream([recorded('delete')], [recorded('debian-queued')]);
+    const steps = download(qbittorrent);
+    const handle = await steps.start(request, release(DEBIAN), 'another-request');
+    await steps.cancel({ handle });
+    noDelete(asked);
+  });
+
+  it('[M3.books] a finished torrent being checked again waits, and does not fail', () => {
+    expect(pollOutcome({ state: 'checkingUP', progress: 0.3 })).toEqual({ kind: 'queued' });
+  });
+});

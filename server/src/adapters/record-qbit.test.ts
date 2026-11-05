@@ -88,4 +88,41 @@ describe('[M3.books] a recording run', () => {
       expect(call).toMatch(/hashes=|tag=/);
     }
   });
+
+  const hash = 'a'.repeat(40);
+  const failedRun = async () => {
+    const sent: { path: string; body: string }[] = [];
+    let versions = 0;
+    const fetch: FetchLike = async (url, init) => {
+      const { pathname } = new URL(url);
+      sent.push({ path: pathname, body: typeof init?.body === 'string' ? init.body : '' });
+      if (pathname.endsWith('app/version')) {
+        versions += 1;
+        return versions === 1 ? new Response('v5.3.0') : new Response('', { status: 500 });
+      }
+      return new Response('[]', { headers: { 'content-type': 'application/json' } });
+    };
+    await recordQbit({
+      fetch,
+      out: () => undefined,
+      root: '/nonexistent',
+      url: BASE,
+      key: KEY,
+      magnet: `magnet:?xt=urn:btih:${hash}`,
+      sleep: () => Promise.resolve(),
+    }).catch(() => undefined);
+    return sent;
+  };
+
+  it('[M3.books] a run that fails before its add does not delete that hash, which may be the household’s', async () => {
+    const deleted = (await failedRun()).filter((one) => one.path.endsWith('torrents/delete'));
+    for (const one of deleted) expect(one.body).not.toContain(hash);
+  });
+
+  it('[M3.books] a run does not remove the category Auralis’s real downloads sit in', async () => {
+    const removed = (await failedRun()).filter((one) =>
+      one.path.endsWith('torrents/removeCategories'),
+    );
+    for (const one of removed) expect(one.body).not.toContain('auralis-books');
+  });
 });

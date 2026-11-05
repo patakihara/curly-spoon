@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AudibleClient } from '../../adapters/audible/client.js';
+import { AudnexusClient } from '../../adapters/audnexus/client.js';
 import { type FetchLike } from '../../adapters/http/fetch.js';
 import { type Recording, recordingSchema } from '../../adapters/http/recording.js';
 import { replayFetch } from '../../adapters/http/replay.js';
@@ -236,5 +237,83 @@ describe('[M3.books/a] the pick', () => {
     const picked = pickRelease(many, facts);
     expect(picked).toMatchObject({ kind: 'picked' });
     expect(picked.kind === 'picked' && picked.others).toHaveLength(3);
+  });
+});
+
+describe('[M3.books/a] the pick starts only what is plainly this book', () => {
+  const base: ProwlarrRelease = {
+    title: '',
+    source: 'an indexer',
+    size: null,
+    seeders: 1,
+    infoUrl: null,
+    details: {},
+  };
+  const dune: BookFacts = {
+    title: 'Dune',
+    authors: ['Frank Herbert'],
+    narrators: [],
+    runtimeMinutes: null,
+    language: 'english',
+  };
+  const plainDune = 'Dune - Frank Herbert';
+
+  it('[M3.books/a] a row only a person may choose never becomes an other, which a stall starts by itself', () => {
+    const picked = pickRelease(
+      [titled(plainDune, base), titled('Dune Messiah - Frank Herbert', base)],
+      dune,
+    );
+    expect(picked).toMatchObject({ kind: 'picked', others: [] });
+  });
+
+  it('[M3.books/a] the same torrent from a second indexer is not another release to go on to', () => {
+    const one = { ...base, title: plainDune, details: { link: '/a', infoHash: 'a'.repeat(40) } };
+    const two = { ...base, title: plainDune, details: { link: '/b', infoHash: 'a'.repeat(40) } };
+    const picked = pickRelease(
+      [
+        { release: one, extras: {} },
+        { release: two, extras: {} },
+      ],
+      dune,
+    );
+    expect(picked).toMatchObject({ kind: 'picked', others: [] });
+  });
+
+  it.each([
+    'Dune 2 - Frank Herbert',
+    'Dune Book 1-3 - Frank Herbert',
+    'Dune - Frank Herbert [Abridged]',
+    'Dune (Abridged) - Frank Herbert',
+    'Dune - Frank Herbert (Box Set)',
+    'Dune - Frank Herbert [Books 1-6]',
+  ])('[M3.books/a] %s is not picked for the one book', (title) => {
+    expect(pickRelease([titled(title, base)], dune).kind).not.toBe('picked');
+  });
+
+  it('[M3.books/a] a title holding the words in another order is not picked', () => {
+    const asked = { ...dune, title: 'Words of Radiance', authors: ['Brandon Sanderson'] };
+    const row = titled('Radiance of Words - Brandon Sanderson', base);
+    expect(pickRelease([row], asked).kind).not.toBe('picked');
+  });
+
+  it.each(['Danish', 'Hungarian', 'Korean'])(
+    '[M3.books/a] a row marked %s is another language than the product’s',
+    (language) => {
+      expect(pickRelease([titled(`${plainDune} [${language}]`, base)], dune)).toEqual({
+        kind: 'none',
+      });
+    },
+  );
+});
+
+describe('[M3.books] a rate limit says nothing about the request', () => {
+  const limited: FetchLike = () => Promise.resolve(new Response('', { status: 429 }));
+
+  it('[M3.books] a 429 from Audible, Prowlarr or Audnexus holds the request', async () => {
+    await expect(audibleWith(limited).product(ASIN)).rejects.toBeInstanceOf(StepUnavailable);
+    await expect(prowlarrWith(limited).search(QUERY)).rejects.toBeInstanceOf(StepUnavailable);
+    const audnexus = new AudnexusClient({ baseUrl: BASE, fetch: limited });
+    await expect(audnexus.author('an-asin')).rejects.toBeInstanceOf(StepUnavailable);
+    await expect(audnexus.authorsNamed('a name')).rejects.toBeInstanceOf(StepUnavailable);
   });
 });
