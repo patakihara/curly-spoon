@@ -23,8 +23,10 @@ import { type Answer } from './store';
  * art plays it. The best result of all is the top one, the rest go in or out of your library as
  * the server says, and every one of them plays: what the household has that you have not played
  * or asked for is outside your library, and plays through Auralis's own account. A book the library
- * lacks is a row of its own there, asked for with a tap, its string ref carrying its request. Its
- * button stays pressed once anyone has asked, and pressing it again joins. The page's own
+ * lacks is a row of its own there, asked for with a tap, its string ref carrying its request. Once
+ * anyone has asked, its row draws only where that request stands and leads to Requests; once the
+ * request brought it, its row opens and plays the item it became. A tap that did not go through
+ * leaves its button, as no request stands yet. The page's own
  * words (its placeholder, its kinds) stay as given; what it says when a search finds nothing or
  * fails is written in the page, which this only chooses the state of.
  * The kinds' names and the meta lines are written here, as the library homes write theirs, until
@@ -89,44 +91,50 @@ export function rowOf(result: SearchResult): Row {
 }
 
 /**
- * One book the library lacks as its row. Who reads it and when tells one edition from another, as
+ * One book the library lacks as its row, in the list of the three that says what the row does. Who reads it and when tells one edition from another, as
  * the catalogue lists several of a title.
  */
 export function bookRowOf(book: SearchBook): BookRow {
-  const standing =
-    book.status === null
-      ? null
-      : statusOf({
-          kind: 'requested',
-          status: book.status,
-          ...(book.status === 'downloading' ? { progress: book.progress ?? 0 } : {}),
-        });
-  return {
+  const row = {
     title: book.title,
-    ref: requestKey(book.ref),
     meta: ['Book', book.author, book.narrator, book.year === null ? null : String(book.year)]
       .filter((part) => part !== null)
       .join(' · '),
     image: artAt(book.art, 'small'),
-    status: standing?.status ?? null,
-    tone: standing?.tone ?? null,
-    requested: standing !== null,
-    action: standing !== null ? 'Requested' : 'Request',
-  } as BookRow;
+  };
+  const none = { asking: [], standing: [], arrived: [] };
+  if (book.status === null) {
+    const asking = {
+      ...row,
+      ref: requestKey(book.ref),
+      status: null,
+      tone: null,
+      action: 'Request',
+    };
+    return { ...none, asking: [asking] } as BookRow;
+  }
+  const { status, tone } = statusOf({
+    kind: 'requested',
+    status: book.status,
+    ...(book.status === 'downloading' ? { progress: book.progress ?? 0 } : {}),
+  });
+  const stands = { ...row, status, tone };
+  return (
+    book.status === 'inLibrary' && book.item !== null
+      ? { ...none, arrived: [{ ...stands, ref: mediaRefKey(book.item) }] }
+      : { ...none, standing: [stands] }
+  ) as BookRow;
 }
 
 /** Search's data saying, on the row `ref` names, that a tap asking for it did not go through. */
 export function searchRequestFailed(data: SearchData, ref: string): SearchData {
-  const said = (row: BookRow) =>
-    row.ref === ref
-      ? ({
-          ...row,
-          status: 'Request failed',
-          tone: 'error',
-          requested: false,
-          action: 'Request',
-        } as BookRow)
-      : row;
+  const said = (book: BookRow) =>
+    ({
+      ...book,
+      asking: book.asking.map((row) =>
+        row.ref === ref ? { ...row, status: 'Request failed', tone: 'error' } : row,
+      ),
+    }) as BookRow;
   return { ...data, outside: { ...data.outside, books: data.outside.books.map(said) } };
 }
 

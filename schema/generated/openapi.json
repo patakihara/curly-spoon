@@ -2207,6 +2207,16 @@
               "number",
               "null"
             ]
+          },
+          "item": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MediaRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -2217,7 +2227,8 @@
           "year",
           "art",
           "status",
-          "progress"
+          "progress",
+          "item"
         ]
       },
       "SearchResults": {

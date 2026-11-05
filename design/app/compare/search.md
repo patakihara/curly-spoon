@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: 768281d5316f5187cd2e606043b9821ebd0c503372b1665ed2bf67fce06c3ac3
+pageHash: b6bc7c0da0fbc1c3ff55811ce043d4fa9225ef8e9fe4dccbc795c72ce5b9b828
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---
@@ -54,8 +54,8 @@ search; here it draws disabled, as the web serves no search draft yet.
 
 - **Not in your library**: a song that
   plays from YouTube Music, an `ExpanderRow` "More releases of Salt", a book already requested
-  (ring on the art, "Downloading · 42%" in the progress tone, a pressed "Requested" button; on the
-  phone the pill keeps "42%"), a book a request brought, "In library" in the library tone, a book with
+  (ring on the art, "Downloading · 42%" in the progress tone and nothing else at its end; on the
+  phone the pill keeps "42%"), a book a request brought, "In library" in the library tone, its art playing it, a book with
   "Request", and a podcast with "Subscribe".
 
 **Suggestions** are the page's `suggest` state, while typing before results come in, drawn under
@@ -130,5 +130,5 @@ chooses the state. The canvas draws each on its own phone artboard, `search.phon
 
 - Changed on purpose: an outside book's button requests that book, `onClick={<Request ref={book.ref} />}`, the first `Request` that is not on a card's `onRequest`. These renders come from the web app, which leaves it unbound until its verbs land, so the button draws disabled as before.
 - Changed on purpose: a book your own request brought says "In library" on its row, in the library tone. The kits' pill says the same.
-- Changed on purpose: an outside book's meta names Audible, where its rows come from, in place of AudiobookBay and Prowlarr: which indexer holds a release is not known until the request searches.
-- Open: a requested row keeps a pressed "Requested" button beside its status, where it could draw the status alone. The page has no way to draw a row's trailing control only for some rows, and pressing it joins the same request, so it starts nothing.
+- Changed on purpose: an outside book's meta names who wrote it and its year, and who reads it where known, so one edition tells from another. It names no indexer: which one holds a release is not known until the request searches.
+- Changed on purpose: a book's row draws its status or its button, never both, so a title keeps its line on the phone. Each book names its row by three lists (`book.asking`, `book.standing`, `book.arrived`), one of them holding it, so it keeps its place in the list as its request moves. A row on its way or failed taps through to Requests, which says why. One that arrived opens its book and plays it from its art, as a library row does. A tap that did not reach the server keeps its Request button beside "Request failed": no request stands, so the button is the way to try again.

@@ -842,6 +842,7 @@ data class SearchBook(
     val art: String?,
     val status: RequestStatus?,
     val progress: Double?,
+    val item: MediaRef?,
 )
 
 @Serializable

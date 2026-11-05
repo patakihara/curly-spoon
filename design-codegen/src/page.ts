@@ -703,7 +703,8 @@ export function checkPage(
       case 'each': {
         const lists = check(node.line, node.of);
         if (lists.length === 0) return;
-        if (!lists.every((l) => Array.isArray(l) && l.length > 0)) {
+        // A list inside an item may be empty for some items: it says which row an item draws.
+        if (!lists.every(Array.isArray) || !lists.some((l) => (l as Json[]).length > 0)) {
           errors.push(`line ${node.line}: ${node.of.join('.')} is not a non-empty list`);
           return;
         }

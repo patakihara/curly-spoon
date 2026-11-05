@@ -31,15 +31,11 @@ const search = async (page: Page, q: string) => {
   await fontsLoaded(page);
 };
 
-/** The book's row in Search: the nearest box holding its title and a button. */
+/** The book's row in Search: ResultRow's root, around its title's line and its text column. */
 const bookRow = (page: Page, title: string) =>
-  page
-    .getByText(title, { exact: true })
-    .first()
-    .locator('xpath=ancestor::*[.//button[contains(., "Request")]][1]');
+  page.getByText(title, { exact: true }).first().locator('xpath=ancestor::div[3]');
 
-const button = (row: Locator, name: 'Request' | 'Requested') =>
-  row.getByRole('button', { name, exact: true });
+const request = (row: Locator) => row.getByRole('button', { name: 'Request', exact: true });
 
 /** The titles the person's own books list holds. */
 async function ownBooks(page: Page) {
@@ -64,15 +60,16 @@ for (const { name, viewport } of SIZES) {
         page.screenshot({ path: info.outputPath(`${name}-${step}.png`), fullPage: true });
 
       const row = bookRow(page, JEKYLL);
-      await expect(button(row, 'Request')).toBeVisible();
+      await expect(request(row)).toBeVisible();
+      await expect(row.getByText('In library')).toHaveCount(0);
       await expect(page.getByRole('button', { name: 'Your requests', exact: true })).toHaveCount(0);
       await expect(page.getByText('Top result', { exact: true })).toHaveCount(0);
       await shot('offered');
       const before = await ownBooks(page);
 
-      await button(row, 'Request').click();
-      await expect(button(row, 'Requested')).toHaveAttribute('aria-pressed', 'true');
+      await request(row).click();
       await expect(row).toContainText('38%', LOOKING_AGAIN);
+      await expect(row.getByRole('button', { name: /^Request/ })).toHaveCount(0);
       await shot('requested');
 
       await page.getByRole('button', { name: 'Your requests', exact: true }).click();
@@ -83,6 +80,7 @@ for (const { name, viewport } of SIZES) {
 
       await page.goto(`${recorded.origin}/search?q=jekyll+stevenson`);
       await expect(bookRow(page, JEKYLL)).toContainText('In library', { timeout: 40_000 });
+      await expect(bookRow(page, JEKYLL).getByRole('button', { name: /^Request/ })).toHaveCount(0);
       await shot('in-library');
 
       const after = await ownBooks(page);
@@ -94,10 +92,12 @@ for (const { name, viewport } of SIZES) {
       await expect(page.getByText(arrived!.title, { exact: true }).first()).toBeVisible();
       await shot('your-library');
 
-      await page.goto(`${recorded.origin}/search?q=${encodeURIComponent(arrived!.title)}`);
+      // The row that says In library plays the book its request brought.
+      await page.goto(`${recorded.origin}/search?q=jekyll+stevenson`);
       await fontsLoaded(page);
-      await page.getByRole('button', { name: arrived!.title, exact: true }).first().hover();
-      await page.getByRole('button', { name: 'Play', exact: true }).first().click();
+      const there = bookRow(page, JEKYLL);
+      await there.hover();
+      await there.getByRole('button', { name: 'Play', exact: true }).click();
       await expect.poll(() => titlePlaying(page), LOOKING_AGAIN).toBe(arrived!.title);
     });
 
@@ -105,8 +105,9 @@ for (const { name, viewport } of SIZES) {
       await serve();
       await search(page, 'alone in the stacks');
       const row = bookRow(page, ALONE);
-      await button(row, 'Request').click();
+      await request(row).click();
       await expect(row).toContainText('Failed', LOOKING_AGAIN);
+      await expect(request(row)).toHaveCount(0);
       await page.screenshot({ path: info.outputPath(`${name}-failed.png`), fullPage: true });
 
       await page.getByRole('button', { name: 'Your requests', exact: true }).click();
@@ -131,8 +132,8 @@ test.describe('[M3.books] tapping Request', () => {
       }
     });
     const row = bookRow(page, JEKYLL);
-    await button(row, 'Request').dblclick();
-    await expect(button(row, 'Requested')).toBeVisible();
+    await request(row).dblclick();
+    await expect(request(row)).toHaveCount(0);
     expect(posts).toHaveLength(1);
     const { inFlight } = (await (
       await page.request.get(`${recorded.origin}/api/requests`)
@@ -150,13 +151,13 @@ test.describe('[M3.books] tapping Request', () => {
     const refuse = (route: { abort(): Promise<void> }) => route.abort();
     await page.route('**/api/requests', refuse);
     const row = bookRow(page, JEKYLL);
-    await button(row, 'Request').click();
+    await request(row).click();
     await expect(row).toContainText('Request failed');
     await page.screenshot({ path: info.outputPath('phone-tap-failed.png'), fullPage: true });
 
     await page.unroute('**/api/requests', refuse);
-    await button(row, 'Request').click();
-    await expect(button(row, 'Requested')).toBeVisible();
+    await request(row).click();
+    await expect(request(row)).toHaveCount(0);
     await expect(row).not.toContainText('Request failed');
   });
 });
@@ -180,7 +181,7 @@ test.describe('[M3.books] Search and the source of books', () => {
     await fontsLoaded(page);
     await expect(page.getByText('Top result', { exact: true })).toBeVisible();
     // The source named it too, and a book you lack beside it, so the rows did draw.
-    await expect(button(bookRow(page, ALONE), 'Request')).toBeVisible();
+    await expect(request(bookRow(page, ALONE))).toBeVisible();
     await expect(page.getByRole('button', { name: 'Request', exact: true })).toHaveCount(1);
   });
 

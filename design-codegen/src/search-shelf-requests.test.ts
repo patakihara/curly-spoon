@@ -264,47 +264,64 @@ describe('Search', () => {
     }
   });
 
-  it('[M3.books] asks for an outside book through the row’s button, by its ref', () => {
-    const { row } = found.find((r) => r.of === 'data.outside.books')!;
-    expect(slotted(row, 'trailing')?.props.onClick).toEqual({
-      kind: 'request',
-      params: { ref: ['book', 'ref'] },
-    });
-  });
-
   it('[M0.canvas] plays outside music straight away, and gives outside books Request and podcasts Subscribe', () => {
-    const outside = data.outside as { music: Row[]; books: Row[]; podcasts: Row[] };
+    const outside = data.outside as { music: Row[]; podcasts: Row[] };
     const action = (of: string) =>
       found.filter((r) => r.of === of).map(({ row }) => slotted(row, 'trailing')?.component);
     // One row is drawn for each list, whatever its length.
     expect(action('data.outside.music')).toEqual([undefined]);
-    expect(action('data.outside.books')).toEqual(['Button']);
+    expect(action('book.asking')).toEqual(['Button']);
     expect(action('data.outside.podcasts')).toEqual(['Button']);
-    for (const book of outside.books) {
-      expect(book.action).toBe(book.requested ? 'Requested' : 'Request');
-      if (book.requested) expect(toneOf(book.status as string)).toBe(book.tone);
-      else expect([book.status, book.tone]).toEqual([null, null]);
-    }
     for (const show of outside.podcasts) expect(show.action).toBe('Subscribe');
   });
 
-  it('[M3.books] requests an outside book from its row’s button, by its own ref', () => {
-    const { row } = found.find((r) => r.of === 'data.outside.books')!;
-    expect(slotted(row, 'trailing')?.props.onClick).toEqual({
-      kind: 'request',
-      params: { ref: ['book', 'ref'] },
-    });
-    for (const book of (data.outside as { books: Row[] }).books) {
-      expect(typeof book.ref).toBe('string');
-      expect(book.ref).not.toBe('');
-    }
-  });
+  describe('[M3.books] an outside book’s row', () => {
+    const books = (data.outside as { books: Record<'asking' | 'standing' | 'arrived', Row[]>[] })
+      .books;
+    const rowOf = (of: string) => found.find((r) => r.of === of)!.row;
+    const shown = (list: 'asking' | 'standing' | 'arrived') => books.flatMap((book) => book[list]);
 
-  it('[M3.books] draws a request that reached the library as In library, not as a request to make', () => {
-    const { books } = data.outside as { books: Row[] };
-    const there = books.filter((book) => book.status === 'In library');
-    expect(there).toHaveLength(1);
-    expect(there[0]).toMatchObject({ tone: 'library', requested: true });
+    it('with no status draws its Request button, which asks by its own ref', () => {
+      const button = slotted(rowOf('book.asking'), 'trailing');
+      expect(button?.props.onClick).toEqual({
+        kind: 'request',
+        params: { ref: ['asking', 'ref'] },
+      });
+      expect(Object.keys(button?.props ?? {})).not.toContain('pressed');
+      for (const row of shown('asking')) {
+        expect(row).toMatchObject({ status: null, tone: null, action: 'Request' });
+        expect(row.ref).not.toBe('');
+      }
+    });
+
+    it('with a request on its way or failed draws only its status, and leads to Requests', () => {
+      const row = rowOf('book.standing');
+      expect(row.props.trailing).toBeUndefined();
+      expect(row.props.status).toEqual({ kind: 'binding', path: ['standing', 'status'] });
+      expect(row.props.onClick).toEqual({ kind: 'open', page: 'requests', params: {} });
+      expect(shown('standing').length).toBeGreaterThan(0);
+      for (const { status, tone } of shown('standing')) {
+        expect(toneOf(status as string)).toBe(tone);
+        expect(status).not.toBe('In library');
+      }
+    });
+
+    it('In library draws only its status, opens the book and plays it from its art', () => {
+      const row = rowOf('book.arrived');
+      expect(row.props.trailing).toBeUndefined();
+      expect(row.props.onAction).toMatchObject({
+        kind: 'play',
+        params: { ref: ['arrived', 'ref'] },
+        queue: 'spoken',
+      });
+      expect(row.props.onClick).toMatchObject({
+        kind: 'open',
+        page: 'book',
+        params: { ref: ['arrived', 'ref'] },
+      });
+      expect(shown('arrived')).toHaveLength(1);
+      expect(shown('arrived')[0]).toMatchObject({ status: 'In library', tone: 'library' });
+    });
   });
 
   it('[M3.books] leaves a podcast’s Subscribe unbound: only books can be requested from here', () => {

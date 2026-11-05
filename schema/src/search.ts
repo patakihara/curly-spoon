@@ -85,6 +85,8 @@ export const SearchBook = z
     art: ArtUrl.nullable(),
     status: RequestStatus.nullable(),
     progress: z.number().nullable(),
+    /** The library item the person's request became, once it is `inLibrary`. */
+    item: MediaRef.nullable(),
   })
   .openapi('SearchBook');
 export type SearchBook = z.infer<typeof SearchBook>;

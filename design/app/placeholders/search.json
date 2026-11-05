@@ -133,34 +133,46 @@
     "moreReleases": "More releases of Salt",
     "books": [
       {
-        "title": "Salt and Stone",
-        "ref": "salt-and-stone",
-        "meta": "Book · Maya Lind · Audible",
-        "image": "/art/between-two-worlds.jpg",
-        "status": "Downloading · 42%",
-        "tone": "progress",
-        "requested": true,
-        "action": "Requested"
+        "asking": [],
+        "standing": [
+          {
+            "title": "Salt and Stone",
+            "meta": "Book · Maya Lind · 2021",
+            "image": "/art/between-two-worlds.jpg",
+            "status": "Downloading · 42%",
+            "tone": "progress"
+          }
+        ],
+        "arrived": []
       },
       {
-        "title": "Salt of the Earth",
-        "ref": "salt-of-the-earth",
-        "meta": "Book · Adam Rivers · Audible",
-        "image": "/art/foggy-trails.jpg",
-        "status": "In library",
-        "tone": "library",
-        "requested": true,
-        "action": "Requested"
+        "asking": [],
+        "standing": [],
+        "arrived": [
+          {
+            "title": "Salt of the Earth",
+            "ref": "salt-of-the-earth",
+            "meta": "Book · Adam Rivers · 2019",
+            "image": "/art/foggy-trails.jpg",
+            "status": "In library",
+            "tone": "library"
+          }
+        ]
       },
       {
-        "title": "A Grain of Salt",
-        "ref": "a-grain-of-salt",
-        "meta": "Book · Evelyn Harper · Audible",
-        "image": "/art/shadows-and-sighs.jpg",
-        "status": null,
-        "tone": null,
-        "requested": false,
-        "action": "Request"
+        "asking": [
+          {
+            "title": "A Grain of Salt",
+            "ref": "a-grain-of-salt",
+            "meta": "Book · Evelyn Harper · 2020",
+            "image": "/art/shadows-and-sighs.jpg",
+            "status": null,
+            "tone": null,
+            "action": "Request"
+          }
+        ],
+        "standing": [],
+        "arrived": []
       }
     ],
     "podcasts": [

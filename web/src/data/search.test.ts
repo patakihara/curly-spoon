@@ -399,6 +399,7 @@ describe('[M3.books] a book the library lacks, in Search', () => {
     art: '/api/search/books/B000000001/art',
     status: null,
     progress: null,
+    item: null,
     ...over,
   });
   const answered = (...books: SearchBook[]) =>
@@ -407,38 +408,51 @@ describe('[M3.books] a book the library lacks, in Search', () => {
 
   it('offers a book nobody has asked for, with the request its string ref stands for', () => {
     const [row] = rows(book());
-    expect(row).toMatchObject({
+    expect(row?.standing).toEqual([]);
+    expect(row?.arrived).toEqual([]);
+    expect(row?.asking[0]).toMatchObject({
       title: 'Kidnapped',
       meta: 'Book · R. L. Stevenson · A Reader · 1999',
       status: null,
       tone: null,
-      requested: false,
       action: 'Request',
     });
-    expect(row?.image).toContain('/api/search/books/B000000001/art');
-    expect(requestOf(row?.ref ?? '')).toEqual(book().ref);
+    expect(row?.asking[0]?.image).toContain('/api/search/books/B000000001/art');
+    expect(requestOf(row?.asking[0]?.ref ?? '')).toEqual(book().ref);
   });
 
-  it('presses a requested book, and says where its request stands', () => {
+  it('draws a request on its way or failed as its status alone, with nothing to press', () => {
     const say = (over: Partial<SearchBook>) => {
       const [row] = rows(book(over));
-      return [row?.status, row?.tone, row?.requested, row?.action];
+      expect(row?.asking).toEqual([]);
+      expect(row?.arrived).toEqual([]);
+      expect(Object.keys(row?.standing[0] ?? {})).not.toContain('action');
+      return [row?.standing[0]?.status, row?.standing[0]?.tone];
     };
-    expect(say({ status: 'requested' })).toEqual(['Requested', 'request', true, 'Requested']);
+    expect(say({ status: 'requested' })).toEqual(['Requested', 'request']);
     expect(say({ status: 'downloading', progress: 0.42 })).toEqual([
       'Downloading · 42%',
       'progress',
-      true,
-      'Requested',
     ]);
-    expect(say({ status: 'inLibrary' })).toEqual(['In library', 'library', true, 'Requested']);
-    expect(say({ status: 'failed' })).toEqual(['Failed', 'error', true, 'Requested']);
+    expect(say({ status: 'failed' })).toEqual(['Failed', 'error']);
+  });
+
+  it('draws a book its request brought as In library, opening and playing the item it became', () => {
+    const [row] = rows(book({ status: 'inLibrary', item: { source: 'abs', id: 'b9' } }));
+    expect(row?.asking).toEqual([]);
+    expect(row?.standing).toEqual([]);
+    expect(row?.arrived[0]).toMatchObject({
+      status: 'In library',
+      tone: 'library',
+      ref: 'abs:b9',
+    });
+    expect(Object.keys(row?.arrived[0] ?? {})).not.toContain('action');
   });
 
   it('leaves out what it does not know of a book', () => {
     const [row] = rows(book({ author: null, narrator: null, year: null, art: null }));
-    expect(row?.meta).toBe('Book');
-    expect(row?.image).toBe('');
+    expect(row?.asking[0]?.meta).toBe('Book');
+    expect(row?.asking[0]?.image).toBe('');
   });
 
   it('draws results for books alone, with no top result, and looks again only while one moves', async () => {
@@ -470,12 +484,11 @@ describe('[M3.books] a book the library lacks, in Search', () => {
       },
     });
     const data = searchData(answered(book(), other), empty);
-    const failedRef = data.outside.books[0]!.ref;
+    const failedRef = data.outside.books[0]!.asking[0]!.ref;
     const said = searchRequestFailed(data, failedRef);
-    expect(said.outside.books[0]).toMatchObject({
+    expect(said.outside.books[0]!.asking[0]).toMatchObject({
       status: 'Request failed',
       tone: 'error',
-      requested: false,
       action: 'Request',
     });
     expect(said.outside.books[1]).toEqual(data.outside.books[1]);

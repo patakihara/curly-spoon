@@ -8,7 +8,7 @@
  * sure" as owned (the plan's Discovery page): the same title with no author named on one side counts,
  * as it would be worse to offer what you have than to miss another edition.
  */
-import type { RequestRef, RequestStatus, SearchBook } from '@auralis/schema';
+import type { MediaRef, RequestRef, RequestStatus, SearchBook } from '@auralis/schema';
 import { RequestRef as RequestRefSchema } from '@auralis/schema';
 import {
   type AudibleClient,
@@ -177,20 +177,22 @@ function requestStanding(
   userId: string,
   ref: RequestRef,
   owned: boolean,
-): { status: RequestStatus; progress: number | null } | null | 'owned' {
+): { status: RequestStatus; progress: number | null; item: MediaRef | null } | null | 'owned' {
   const live = liveRequest(db, ref);
   const isMine = (id: string) => peopleOn(db, id).includes(userId);
   if (live !== undefined && live.state.status !== 'failed') {
     const progress = live.state.status === 'downloading' ? live.state.progress : null;
-    return { status: live.state.status, progress };
+    return { status: live.state.status, progress, item: null };
   }
-  const arrived = arrivedRequests(db, ref).some(
+  const arrived = arrivedRequests(db, ref).find(
     ({ id, result }) =>
       result !== null && isMine(id) && indexedRow(db, result.source, result.id) !== undefined,
   );
-  if (arrived) return { status: 'inLibrary', progress: null };
+  if (arrived?.result) return { status: 'inLibrary', progress: null, item: arrived.result };
   if (owned) return 'owned';
-  return live !== undefined && isMine(live.id) ? { status: 'failed', progress: null } : null;
+  return live !== undefined && isMine(live.id)
+    ? { status: 'failed', progress: null, item: null }
+    : null;
 }
 
 /** The rows these found books make for this person, in the order they were found. */
@@ -220,6 +222,7 @@ export function bookRows(
         art: product.imageUrl === null ? null : `/api/search/books/${product.asin}/art`,
         status: standing?.status ?? null,
         progress: standing?.progress ?? null,
+        item: standing?.item ?? null,
       },
     ];
   });

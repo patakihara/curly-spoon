@@ -138,6 +138,7 @@ describe('[M3.books] book rows in Search', () => {
       narrator: 'Paapa Essiedu',
       status: null,
       progress: null,
+      item: null,
     });
     expect(row.art).toBe(`/api/search/books/${JEKYLL}/art`);
     const made = await app.inject({
@@ -246,7 +247,10 @@ describe('[M3.books] book rows in Search', () => {
       T0,
     );
     const mine = (await search()).books.find((book) => book.ref.target.ids.asin === JEKYLL);
-    expect(mine?.status).toBe('inLibrary');
+    expect(mine).toMatchObject({
+      status: 'inLibrary',
+      item: { source: 'abs', id: 'arrived' },
+    });
     const others = await search('jekyll stevenson', '', person('otto'));
     expect(others.books.map((book) => book.ref.target.ids.asin)).not.toContain(JEKYLL);
   });

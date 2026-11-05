@@ -144,34 +144,46 @@ const placeholder = {
     "moreReleases": "More releases of Salt",
     "books": [
       {
-        "title": "Salt and Stone",
-        "ref": "salt-and-stone",
-        "meta": "Book · Maya Lind · Audible",
-        "image": "/art/between-two-worlds.jpg",
-        "status": "Downloading · 42%",
-        "tone": "progress",
-        "requested": true,
-        "action": "Requested"
+        "asking": [],
+        "standing": [
+          {
+            "title": "Salt and Stone",
+            "meta": "Book · Maya Lind · 2021",
+            "image": "/art/between-two-worlds.jpg",
+            "status": "Downloading · 42%",
+            "tone": "progress"
+          }
+        ],
+        "arrived": []
       },
       {
-        "title": "Salt of the Earth",
-        "ref": "salt-of-the-earth",
-        "meta": "Book · Adam Rivers · Audible",
-        "image": "/art/foggy-trails.jpg",
-        "status": "In library",
-        "tone": "library",
-        "requested": true,
-        "action": "Requested"
+        "asking": [],
+        "standing": [],
+        "arrived": [
+          {
+            "title": "Salt of the Earth",
+            "ref": "salt-of-the-earth",
+            "meta": "Book · Adam Rivers · 2019",
+            "image": "/art/foggy-trails.jpg",
+            "status": "In library",
+            "tone": "library"
+          }
+        ]
       },
       {
-        "title": "A Grain of Salt",
-        "ref": "a-grain-of-salt",
-        "meta": "Book · Evelyn Harper · Audible",
-        "image": "/art/shadows-and-sighs.jpg",
-        "status": null,
-        "tone": null,
-        "requested": false,
-        "action": "Request"
+        "asking": [
+          {
+            "title": "A Grain of Salt",
+            "ref": "a-grain-of-salt",
+            "meta": "Book · Evelyn Harper · 2020",
+            "image": "/art/shadows-and-sighs.jpg",
+            "status": null,
+            "tone": null,
+            "action": "Request"
+          }
+        ],
+        "standing": [],
+        "arrived": []
       }
     ],
     "podcasts": [
@@ -489,20 +501,34 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
               )}
               {data.outside.books.map((book, i) => (
                 <Fragment key={i}>
-                  <ResultRow
-                    title={book.title}
-                    meta={book.meta}
-                    image={book.image}
-                    status={book.status}
-                    tone={book.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
-                    divider={true}
-                    trailing={
-                      <Button variant="secondary" size="sm" pressed={book.requested} onClick={askFor(book.ref)} platform={platform}>
-                        {book.action}
-                      </Button>
-                    }
-                    platform={platform}
-                  />
+                  {book.asking.map((asking, i) => (
+                    <Fragment key={i}>
+                      <ResultRow
+                        title={asking.title}
+                        meta={asking.meta}
+                        image={asking.image}
+                        status={asking.status}
+                        tone={asking.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
+                        divider={true}
+                        trailing={
+                          <Button variant="secondary" size="sm" onClick={askFor(asking.ref)} platform={platform}>
+                            {asking.action}
+                          </Button>
+                        }
+                        platform={platform}
+                      />
+                    </Fragment>
+                  ))}
+                  {book.standing.map((standing, i) => (
+                    <Fragment key={i}>
+                      <ResultRow title={standing.title} meta={standing.meta} image={standing.image} status={standing.status} tone={standing.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>} onClick={() => navigate('/requests')} divider={true} platform={platform} />
+                    </Fragment>
+                  ))}
+                  {book.arrived.map((arrived, i) => (
+                    <Fragment key={i}>
+                      <ResultRow title={arrived.title} meta={arrived.meta} image={arrived.image} status={arrived.status} tone={arrived.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>} onClick={arrived.ref ? () => navigate(generatePath('/books/:ref', { ref: arrived.ref })) : undefined} onAction={play(arrived.ref, 'spoken', 'now')} divider={true} platform={platform} />
+                    </Fragment>
+                  ))}
                 </Fragment>
               ))}
               {data.outside.podcasts.map((show, i) => (

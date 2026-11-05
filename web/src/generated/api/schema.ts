@@ -1178,6 +1178,7 @@ export interface components {
             art: string | null;
             status: components["schemas"]["RequestStatus"] | null;
             progress: number | null;
+            item: components["schemas"]["MediaRef"] | null;
         };
         SearchResults: {
             query: string;

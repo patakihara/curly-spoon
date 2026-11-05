@@ -305,51 +305,36 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                         ResultRow(
                                             ResultRowProps(
                                                 title = "Salt and Stone",
-                                                meta = "Book · Maya Lind · Audible",
+                                                meta = "Book · Maya Lind · 2021",
                                                 status = "Downloading · 42%",
                                                 tone = ResultRowTone.PROGRESS,
                                                 image = "/art/between-two-worlds.jpg",
                                                 platform = Platform.MOBILE,
+                                                onClick = { navController.navigate(Route.Requests) },
                                                 divider = true,
-                                                trailing = {
-                                                    Button(
-                                                        ButtonProps(
-                                                            variant = ButtonVariant.SECONDARY,
-                                                            size = SizeSmMdLg.SM,
-                                                            platform = Platform.MOBILE,
-                                                            pressed = true,
-                                                            children = { BasicText("Requested") },
-                                                        ),
-                                                    )
-                                                },
                                             ),
                                         )
                                         ResultRow(
                                             ResultRowProps(
                                                 title = "Salt of the Earth",
-                                                meta = "Book · Adam Rivers · Audible",
+                                                meta = "Book · Adam Rivers · 2019",
                                                 status = "In library",
                                                 tone = ResultRowTone.LIBRARY,
                                                 image = "/art/foggy-trails.jpg",
                                                 platform = Platform.MOBILE,
-                                                divider = true,
-                                                trailing = {
-                                                    Button(
-                                                        ButtonProps(
-                                                            variant = ButtonVariant.SECONDARY,
-                                                            size = SizeSmMdLg.SM,
-                                                            platform = Platform.MOBILE,
-                                                            pressed = true,
-                                                            children = { BasicText("Requested") },
-                                                        ),
-                                                    )
+                                                onClick = {
+                                                    navController.navigate(Route.Book(ref = "salt-of-the-earth"))
                                                 },
+                                                onAction = {
+                                                    actions.onPlay("salt-of-the-earth", PlayQueue.SPOKEN, PlayMode.NOW)
+                                                },
+                                                divider = true,
                                             ),
                                         )
                                         ResultRow(
                                             ResultRowProps(
                                                 title = "A Grain of Salt",
-                                                meta = "Book · Evelyn Harper · Audible",
+                                                meta = "Book · Evelyn Harper · 2020",
                                                 status = null,
                                                 tone = null,
                                                 image = "/art/shadows-and-sighs.jpg",
@@ -361,7 +346,6 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                                             variant = ButtonVariant.SECONDARY,
                                                             size = SizeSmMdLg.SM,
                                                             platform = Platform.MOBILE,
-                                                            pressed = false,
                                                             children = { BasicText("Request") },
                                                         ),
                                                     )
