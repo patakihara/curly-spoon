@@ -25,8 +25,8 @@
         {
           "guid": "http://upstream.invalid/abss/el-extrano-caso-del-dr-jekyll-y-mr-hyde-robert-louis-stevenson/",
           "age": 233,
-          "ageHours": 5593.781738109445,
-          "ageMinutes": 335626.90428657335,
+          "ageHours": 5594.295035847389,
+          "ageMinutes": 335657.70215085335,
           "size": 51107594,
           "indexerId": 11,
           "indexer": "AudioBook Bay",
@@ -37,7 +37,7 @@
           "tvdbId": 0,
           "tvMazeId": 0,
           "publishDate": "2026-03-17T00:00:00Z",
-          "downloadUrl": "http://upstream.invalid/11/download?apikey=<token>&link=link-434da995bd84",
+          "downloadUrl": "http://upstream.invalid/11/download?apikey=<token>&link=link-933c9311e517",
           "infoUrl": "http://upstream.invalid/abss/el-extrano-caso-del-dr-jekyll-y-mr-hyde-robert-louis-stevenson/",
           "posterUrl": "http://upstream.invalid/images/I/41zCB5cla5L._SL300_.jpg",
           "indexerFlags": [

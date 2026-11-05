@@ -34,6 +34,9 @@ server/src/adapters/http/*
 !server/src/adapters/http/fetch.ts
 server/src/adapters/book-pipeline
 # Not run until the book steps are registered; M3.books' registration takes these lines out.
+server/src/adapters/audible
 server/src/adapters/audiobookbay
+server/src/adapters/audnexus
 server/src/adapters/prowlarr
+server/src/requests/books
 server/src/requests/download

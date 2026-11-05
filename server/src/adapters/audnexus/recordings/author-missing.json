@@ -1,0 +1,23 @@
+{
+  "upstream": "audnexus",
+  "upstreamVersion": "Audnexus API, unversioned",
+  "call": "author-missing",
+  "request": {
+    "method": "GET",
+    "path": "/authors/B0B8V3KRKX123",
+    "query": {},
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {}
+    }
+  }
+}

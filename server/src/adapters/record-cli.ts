@@ -61,8 +61,8 @@
  *
  * `--only books --prowlarr <url>` records M3.books' reads of Prowlarr and AudiobookBay's site: three
  * searches, a link asked with no redirect followed, a wrong key's answer and one detail page, with
- * trackers and indexers kept out (record-books.ts). It adds no download and needs only
- * PROWLARR_API_KEY, from Prowlarr's own config.
+ * trackers and indexers kept out, and the book's reads of the keyless Audible and Audnexus
+ * (record-books.ts). It adds no download and needs only PROWLARR_API_KEY, from Prowlarr's own config.
  *
  * `--dry-run` makes the same calls but writes into a fresh temporary folder instead of the
  * committed recordings, and says where.

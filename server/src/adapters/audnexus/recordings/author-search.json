@@ -1,0 +1,126 @@
+{
+  "upstream": "audnexus",
+  "upstreamVersion": "Audnexus API, unversioned",
+  "call": "author-search",
+  "request": {
+    "method": "GET",
+    "path": "/authors",
+    "query": {
+      "name": "Robert Louis Stevenson"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": [
+        {
+          "asin": "B0D6C556NN",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B00JVVRCRS",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0B8V3KRKX",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B000AQ0JI2",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0B8V3KRKX",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0B8V3KRKX",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0B8V3KRKX",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B00X6D6BOC",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0CMWVYS8Z",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0B8V3KRKX",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0D6C556NN",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0CMWVYS8Z",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0CMWVYS8Z",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0D6C556NN",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0CMWVYS8Z",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0D6C556NN",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0D6C556NN",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0D6C556NN",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0B8V3KRKX",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0CMWVYS8Z",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0B8V3KRKX",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0B8V3KRKX",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0B8V3KRKX",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0CMWVYS8Z",
+          "name": "Robert Louis Stevenson"
+        },
+        {
+          "asin": "B0CMWVYS8Z",
+          "name": "Robert Louis Stevenson"
+        }
+      ]
+    }
+  }
+}

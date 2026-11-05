@@ -7,6 +7,11 @@
  *   Spanish edition (`search-jekyll-spanish`), one of AudiobookBay's links asked with no redirect
  *   followed (`download-redirect`), and a wrong key's answer (`unauthorized`).
  * - AudiobookBay's own site: that release's detail page, cut to the post (`detail`).
+ * - Audible, keyless: the same book (`product-jekyll`), a book in two series (`product-dune`), one
+ *   with no place in its series (`product-no-sequence`), an ASIN it does not know
+ *   (`product-missing`), each cut to the fields the client reads.
+ * - Audnexus, keyless: a search by name (`author-search`), authors with a photo and without
+ *   (`author-doyle`, `author-stevenson`), and an ASIN it refuses (`author-missing`).
  *
  * The repo is public and these answers name more than a household's address, so before the scrubber
  * runs: indexers other than AudiobookBay become `indexer-a`, `indexer-b`; a magnet keeps only its
@@ -16,6 +21,8 @@
  */
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
+import { AudibleClient, AUDIBLE_URL } from './audible/client.js';
+import { AudnexusClient, AUDNEXUS_URL } from './audnexus/client.js';
 import { AdapterError, type FetchLike } from './http/fetch.js';
 import { createRecorder } from './http/record.js';
 import { type Recording } from './http/recording.js';
@@ -24,7 +31,7 @@ import { PLACEHOLDER_ORIGIN, type RawExchange } from './http/scrub.js';
 import { ProwlarrClient, type ProwlarrRelease } from './prowlarr/client.js';
 
 /** The query the search step sends for this book: its title and author, as Audible names them. */
-export const JEKYLL_QUERY = 'The Strange Case of Dr. Jekyll and Mr. Hyde Robert Louis Stevenson';
+export const JEKYLL_QUERY = 'The Strange Case of Dr Jekyll and Mr Hyde Robert Louis Stevenson';
 const OTHERS_QUERY = 'Jekyll and Hyde Stevenson';
 const SPANISH_QUERY = 'El extraño caso del Dr. Jekyll y Mr. Hyde';
 
@@ -164,6 +171,97 @@ function scanned(recording: Recording) {
   }
 }
 
+const AUDIBLE_FIELDS = [
+  'asin',
+  'title',
+  'authors',
+  'narrators',
+  'series',
+  'runtime_length_min',
+  'release_date',
+  'language',
+  'merchandising_summary',
+];
+
+/** Keeps of a value only the named fields it has. */
+function only(value: Record<string, unknown>, fields: string[]): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(value).filter(([field]) => fields.includes(field)));
+}
+
+/** The hook for Audible's recorder: a product cut to what the client reads. */
+export function cutProduct(raw: RawExchange): RawExchange {
+  const { body } = raw.response;
+  if (body === null || !('json' in body)) throw new Error('that product came with no JSON');
+  const { product } = body.json as { product: Record<string, unknown> };
+  const kept = only(product, AUDIBLE_FIELDS);
+  if (Array.isArray(product.series)) {
+    kept.series = (product.series as Record<string, unknown>[]).map((one) =>
+      only(one, ['title', 'sequence']),
+    );
+  }
+  const images = product.product_images as Record<string, unknown> | undefined;
+  if (images?.['500'] !== undefined) kept.product_images = { 500: images['500'] };
+  return { ...raw, response: { ...raw.response, body: { json: { product: kept } } } };
+}
+
+/** The hook for Audnexus's recorder: an author without their blurb and neighbours. */
+export function cutAuthor(raw: RawExchange): RawExchange {
+  const { body } = raw.response;
+  if (body === null || !('json' in body) || Array.isArray(body.json)) return raw;
+  const json = only(body.json as Record<string, unknown>, ['asin', 'name', 'image']);
+  return { ...raw, response: { ...raw.response, body: { json } } };
+}
+
+async function recordCatalogues(input: BooksRecordInput, written: string[]): Promise<void> {
+  const { fetch, out } = input;
+  const audibleDir = join(input.root, 'audible', 'recordings');
+  const audible = createRecorder({
+    fetch,
+    dir: audibleDir,
+    upstream: 'audible',
+    upstreamVersion: 'Audible catalogue API 1.0',
+    secrets: [],
+    baseUrl: AUDIBLE_URL,
+    prepare: cutProduct,
+  });
+  const products = new AudibleClient({ baseUrl: AUDIBLE_URL, fetch: audible.fetch });
+  for (const [call, asin] of [
+    ['product-jekyll', 'B09J9BJ8DF'],
+    ['product-dune', 'B002V1OF70'],
+    ['product-no-sequence', 'B002VA8K2M'],
+    ['product-missing', 'B000000000'],
+  ] as const) {
+    await audible.capture(call, () => products.product(asin), {
+      verify: (_, recording) => scanned(recording),
+    });
+    written.push(join(audibleDir, `${call}.json`));
+    out(`${call}: read`);
+  }
+
+  const audnexusDir = join(input.root, 'audnexus', 'recordings');
+  const audnexus = createRecorder({
+    fetch,
+    dir: audnexusDir,
+    upstream: 'audnexus',
+    upstreamVersion: 'Audnexus API, unversioned',
+    secrets: [],
+    baseUrl: AUDNEXUS_URL,
+    prepare: cutAuthor,
+  });
+  const authors = new AudnexusClient({ baseUrl: AUDNEXUS_URL, fetch: audnexus.fetch });
+  const steps: [string, () => Promise<unknown>][] = [
+    ['author-search', () => authors.authorsNamed('Robert Louis Stevenson')],
+    ['author-stevenson', () => authors.author('B0B8V3KRKX')],
+    ['author-doyle', () => authors.author('B000AQ43GQ')],
+    ['author-missing', () => authors.author('B0B8V3KRKX123')],
+  ];
+  for (const [call, step] of steps) {
+    await audnexus.capture(call, step, { verify: (_, recording) => scanned(recording) });
+    written.push(join(audnexusDir, `${call}.json`));
+    out(`${call}: read`);
+  }
+}
+
 export interface BooksRecordInput {
   fetch: FetchLike;
   out: (line: string) => void;
@@ -255,5 +353,6 @@ export async function recordBooks(input: BooksRecordInput): Promise<{ written: s
   });
   written.push(join(siteDir, 'detail.json'));
   out('detail: the post');
+  await recordCatalogues(input, written);
   return { written };
 }

@@ -1,0 +1,29 @@
+{
+  "upstream": "audible",
+  "upstreamVersion": "Audible catalogue API 1.0",
+  "call": "product-missing",
+  "request": {
+    "method": "GET",
+    "path": "/1.0/catalog/products/B000000000",
+    "query": {
+      "response_groups": "contributors,series,product_attrs,product_desc,media"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "product": {
+          "asin": "B000000000"
+        }
+      }
+    }
+  }
+}

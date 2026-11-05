@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { scanRecording } from './http/scan.js';
 import { type RawExchange, scrub } from './http/scrub.js';
-import { anonymiseProwlarr, trimDetail } from './record-books.js';
+import { anonymiseProwlarr, cutAuthor, cutProduct, trimDetail } from './record-books.js';
 
 const KEY = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
 const BASE = 'http://192.168.100.34:9696';
@@ -131,5 +131,44 @@ describe('[M3.books] what a detail page recording keeps', () => {
 
   it('[M3.books] fails on a page it does not recognise, rather than keep all of it', () => {
     expect(() => trimDetail('<html>a challenge page</html>')).toThrow(/no post/);
+  });
+});
+
+describe("[M3.books] what the catalogues' recordings keep", () => {
+  const answering = (json: unknown) =>
+    exchange({ response: { status: 200, headers: {}, body: { json } } });
+
+  it('[M3.books] a product keeps what the client reads, and no other image', () => {
+    const cut = cutProduct(
+      answering({
+        product: {
+          asin: 'B000000001',
+          title: 'A Book',
+          sku: 'dropped',
+          series: [{ title: 'A Series', sequence: '2', asin: 'dropped', url: '/dropped' }],
+          product_images: { 500: 'https://m.media-amazon.com/a.jpg', 1024: 'dropped' },
+          social_media_images: { facebook: 'dropped' },
+        },
+      }),
+    );
+    expect(cut.response.body).toEqual({
+      json: {
+        product: {
+          asin: 'B000000001',
+          title: 'A Book',
+          series: [{ title: 'A Series', sequence: '2' }],
+          product_images: { 500: 'https://m.media-amazon.com/a.jpg' },
+        },
+      },
+    });
+  });
+
+  it('[M3.books] an author keeps its name and photo, and a search stays as it is', () => {
+    const author = { asin: 'B000000002', name: 'A Writer', image: '', similar: [], genres: [] };
+    expect(cutAuthor(answering(author)).response.body).toEqual({
+      json: { asin: 'B000000002', name: 'A Writer', image: '' },
+    });
+    const rows = [{ asin: 'B000000002', name: 'A Writer' }];
+    expect(cutAuthor(answering(rows)).response.body).toEqual({ json: rows });
   });
 });
