@@ -1,0 +1,63 @@
+{
+  "upstream": "audible",
+  "upstreamVersion": "Audible catalogue API 1.0",
+  "call": "product-role-credits",
+  "request": {
+    "method": "GET",
+    "path": "/1.0/catalog/products/B0DBRJK13Y",
+    "query": {
+      "response_groups": "contributors,series,product_attrs,product_desc,media"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "product": {
+          "asin": "B0DBRJK13Y",
+          "authors": [
+            {
+              "asin": "B000AQ40D2",
+              "name": "H.P. Lovecraft"
+            },
+            {
+              "asin": "B002LABYP2",
+              "name": "Leslie S. Klinger - editor"
+            }
+          ],
+          "language": "english",
+          "merchandising_summary": "<p>Lovecraft’s most famous story of an investigation into worldwide terror—be careful what knowledge you seek!</p>",
+          "narrators": [
+            {
+              "name": "Matt Godfrey"
+            },
+            {
+              "name": "Leslie S. Klinger - introduction"
+            }
+          ],
+          "product_images": {
+            "500": "https://m.media-amazon.com/images/I/51Wkrb-nL9L._SL500_.jpg"
+          },
+          "release_date": "2024-09-26",
+          "runtime_length_min": 88,
+          "series": [
+            {
+              "asin": "B0DBX4BJJD",
+              "sequence": "",
+              "title": "The Essential Lovecraft Stories",
+              "url": "/pd/The-Essential-Lovecraft-Stories-Audiobook/B0DBX4BJJD"
+            }
+          ],
+          "title": "The Call of Cthulhu"
+        }
+      }
+    }
+  }
+}

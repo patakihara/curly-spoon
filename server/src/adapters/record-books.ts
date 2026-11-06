@@ -8,7 +8,7 @@
  *   followed (`download-redirect`), and a wrong key's answer (`unauthorized`).
  * - AudiobookBay's own site: that release's detail page, cut to the post (`detail`).
  * - Audible, keyless: the same book (`product-jekyll`), a book in two series (`product-dune`), one
- *   with no place in its series (`product-no-sequence`), an ASIN it does not know
+ *   with no place in its series (`product-no-sequence`), one crediting an editor (`product-role-credits`), an ASIN it does not know
  *   (`product-missing`), each cut to the fields the client reads; and Search's keyword searches,
  *   books (`search-jekyll`), podcasts among the rows (`search-podcasts`), nothing (`search-nothing`).
  * - Audnexus, keyless: a search by name (`author-search`), authors with a photo and without
@@ -272,6 +272,7 @@ async function recordCatalogues(input: BooksRecordInput, written: string[]): Pro
     ['product-jekyll', 'B09J9BJ8DF'],
     ['product-dune', 'B002V1OF70'],
     ['product-no-sequence', 'B002VA8K2M'],
+    ['product-role-credits', 'B0DBRJK13Y'],
     ['product-missing', 'B000000000'],
   ] as const) {
     await audible.capture(call, () => products.product(asin), {
