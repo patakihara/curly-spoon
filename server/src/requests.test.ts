@@ -1346,6 +1346,25 @@ describe('[M3.books] a download that stops moving', () => {
     ]);
   });
 
+  it('[M3.books] a retry of a stalled download keeps what it has and follows it, starting nothing', async () => {
+    const steps = standInSteps('book', { polls: [{ kind: 'downloading', progress: 0.5 }] });
+    const start = vi.fn(steps.download!.start);
+    const cancel = vi.fn(steps.download!.cancel);
+    const job = deps({ ...steps, download: { ...steps.download!, start, cancel } });
+    const one = request('book');
+    await runUntil(job, one, 'downloading');
+    const handle = reread(one).handle;
+    await everyMinute(job, 15);
+    expect(reread(one).state).toMatchObject({ reason: 'downloadStalled' });
+
+    await retryRequest(job, one.id);
+    await everyMinute(job, 1);
+    expect(cancel).not.toHaveBeenCalled();
+    expect(start).toHaveBeenCalledTimes(1);
+    expect(reread(one).handle).toEqual(handle);
+    expect(reread(one).state.status).toBe('downloading');
+  });
+
   it('[M3.books] a retry of a stalled download gets a full limit again', async () => {
     const steps = standInSteps('book', { polls: [{ kind: 'downloading', progress: 0.5 }] });
     const job = deps(steps);
@@ -1357,7 +1376,7 @@ describe('[M3.books] a download that stops moving', () => {
     await retryRequest(job, one.id);
     await everyMinute(job, 2);
     expect(reread(one).state).toEqual({ status: 'downloading', progress: 0.5 });
-    await everyMinute(job, 14);
+    await everyMinute(job, 13);
     expect(reread(one).state.status).toBe('downloading');
     await everyMinute(job, 1);
     expect(reread(one).state).toMatchObject({ reason: 'downloadStalled' });
