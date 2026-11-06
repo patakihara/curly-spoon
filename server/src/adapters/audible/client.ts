@@ -47,6 +47,11 @@ export function cleanTitle(title: string): string {
   return title.replace(/\s*[([]\s*unabridged\s*[)\]]\s*$/i, '').trim();
 }
 
+/** Audible credits others on the book by their job: "Leslie S. Klinger - editor". */
+const NAMED_BY_JOB = /\s-\s\p{Ll}[\p{L} ]*$/u;
+const creators = <T extends { name: string }>(rows: T[] | null | undefined): T[] =>
+  (rows ?? []).filter(({ name }) => !NAMED_BY_JOB.test(name));
+
 const plainText = (html: string) =>
   html
     .replace(/<[^<>]*>/g, ' ')
@@ -59,8 +64,8 @@ function toProduct(row: AudibleProductRow): AudibleProduct | null {
   return {
     asin: row.asin,
     title: cleanTitle(row.title),
-    authors: (row.authors ?? []).map(({ name, asin }) => ({ name, asin: asin ?? null })),
-    narrators: (row.narrators ?? []).map(({ name }) => name),
+    authors: creators(row.authors).map(({ name, asin }) => ({ name, asin: asin ?? null })),
+    narrators: creators(row.narrators).map(({ name }) => name),
     series: (row.series ?? []).map(({ title, sequence }) =>
       sequence ? `${title} #${sequence}` : title,
     ),

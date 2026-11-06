@@ -15,7 +15,13 @@ const client = (fetch: FetchLike) =>
   new AudibleClient({ baseUrl: 'http://upstream.invalid', fetch });
 const replayed = client(
   replayFetch(
-    ['product-jekyll', 'product-dune', 'product-no-sequence', 'product-missing'].map(recorded),
+    [
+      'product-jekyll',
+      'product-dune',
+      'product-no-sequence',
+      'product-role-credits',
+      'product-missing',
+    ].map(recorded),
   ),
 );
 const asinOf = (call: string) => recorded(call).request.path.split('/').pop() as string;
@@ -35,6 +41,12 @@ describe('[M3.books] the Audible catalogue', () => {
     });
     expect(product?.description).not.toContain('<');
     expect(product?.imageUrl).toMatch(/^https:\/\/.*\.jpg$/);
+  });
+
+  it('[M3.books] names those who wrote and read the book, not an editor or an introduction', async () => {
+    const product = await replayed.product(asinOf('product-role-credits'));
+    expect(product?.authors.map((author) => author.name)).toEqual(['H.P. Lovecraft']);
+    expect(product?.narrators).toEqual(['Matt Godfrey']);
   });
 
   it('[M3.books] gives every series a book is in, with its place', async () => {
