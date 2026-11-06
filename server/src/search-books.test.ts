@@ -201,6 +201,47 @@ describe('[M3.books] book rows in Search', () => {
     expect(titles).toContain('Dr. Jekyll and Mr. Hyde');
   });
 
+  it('[M3.books] keeps a sequel that only shares its series name before the colon with a book you own', async () => {
+    const product = (asin: string, title: string) => ({
+      asin,
+      title,
+      authors: [{ name: 'Brandon Sanderson', asin: null }],
+      narrators: [],
+      series: [],
+      runtimeMinutes: null,
+      year: null,
+      language: null,
+      description: null,
+      imageUrl: null,
+    });
+    const { db, search } = await server({
+      catalogue: {
+        search: async () => [product('B000000011', 'Mistborn: The Well of Ascension')],
+        art: async () => null,
+      },
+    });
+    indexedBook(db, 'a', 'Mistborn: The Final Empire', ['Brandon Sanderson']);
+    const titles = (await search('mistborn')).books.map(({ title }) => title);
+    expect(titles).toContain('Mistborn: The Well of Ascension');
+  });
+
+  it('[M3.books] whoever sees someone else’s request on a row has a way in: a Request to join it, or the request in their own list', async () => {
+    const { app, db, kara, person, search } = await server();
+    const { books } = await search();
+    const ref = books.find((book) => book.ref.target.ids.asin === JEKYLL)!.ref;
+    const { request } = createRequest(db, kara.user.id, ref, T0);
+    saveRequest(db, request.id, { state: { status: 'downloading', progress: 0.42 } }, T0);
+    const otto = person('otto');
+    const row = (await search('jekyll stevenson', '', otto)).books.find(
+      (book) => book.ref.target.ids.asin === JEKYLL,
+    )!;
+    const list = await app.inject({ method: 'GET', url: '/api/requests', headers: otto.headers });
+    const canAsk = row.status === null;
+    const listed = (list.json() as { inFlight: unknown[] }).inFlight.length > 0;
+    // The web draws a row with a status with no button, and it opens Requests.
+    expect(canAsk || listed).toBe(true);
+  });
+
   it('[M3.books] shows a live request’s status, for whoever searches, and a download’s progress', async () => {
     const { db, kara, person, search } = await server();
     const { books } = await search();
@@ -409,6 +450,17 @@ describe('[M3.books] book rows in Search', () => {
     it('[M3.books] answers 404 for what is not an image, or a source that fails', async () => {
       const { app, kara, search } = await server({
         artFetch: async () => new Response('<html>', { headers: { 'content-type': 'text/html' } }),
+      });
+      await search();
+      expect((await art(app, kara.headers, JEKYLL)).statusCode).toBe(404);
+    });
+
+    it('[M3.books] answers 404 for an image that can carry script, as it would run on the app’s own address', async () => {
+      const { app, kara, search } = await server({
+        artFetch: async () =>
+          new Response('<svg xmlns="http://www.w3.org/2000/svg"><script>0</script></svg>', {
+            headers: { 'content-type': 'image/svg+xml' },
+          }),
       });
       await search();
       expect((await art(app, kara.headers, JEKYLL)).statusCode).toBe(404);

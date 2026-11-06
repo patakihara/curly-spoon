@@ -2,7 +2,7 @@
  * Whether books can be requested on this server, as `main.ts` assembles it: only with everything
  * they need, and never at the cost of the rest. No upstream is reached here but to refuse.
  */
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as pause } from 'node:timers/promises';
@@ -121,6 +121,18 @@ describe('book steps from the configuration', () => {
     const made = stepsWith({ ...env, PROWLARR_API_KEY_FILE: keys });
     expect(made).toEqual({ off: 'a key their files should hold' });
     expect(JSON.stringify(made)).not.toContain('value-kept-out-of-sight');
+  });
+
+  it('a media folder it may not look inside keeps books off and does not throw', () => {
+    const shut = join(dir, 'shut');
+    mkdirSync(join(shut, 'Books'), { recursive: true });
+    chmodSync(shut, 0o000);
+    try {
+      const made = stepsWith({ ...env, MEDIA_DIR: shut });
+      expect('off' in made).toBe(true);
+    } finally {
+      chmodSync(shut, 0o700);
+    }
   });
 
   it('a missing key file keeps books off and does not throw', () => {
