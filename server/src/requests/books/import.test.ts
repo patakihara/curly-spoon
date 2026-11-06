@@ -598,7 +598,7 @@ describe('the import step', () => {
     expect(await refusal(bookImport(deps(fetch, { audible }))(request, 'k'))).toBe('noAuthor');
   });
 
-  it('the narrator and bitrate come from the release, then Audible', async () => {
+  it('the narrator and bitrate come from the release alone', async () => {
     const { fetch } = shelf();
     const titled = {
       ...importing(),
@@ -612,7 +612,43 @@ describe('the import step', () => {
     const bare = { ...importing(), release: null } as StoredRequest;
     await bookImport(deps(fetch))(bare, 'k');
     expect(readdirSync(join(media, 'Books/Robert Louis Stevenson'))).toContain(
-      '2021 - The Strange Case of Dr Jekyll and Mr Hyde (Essiedu)',
+      '2021 - The Strange Case of Dr Jekyll and Mr Hyde (V)',
     );
+  });
+
+  const narratorsWritten = async (title: string, details: Record<string, unknown> = {}) => {
+    const { fetch } = shelf();
+    const asked = { ...importing(), release: { ...release, title, details } } as StoredRequest;
+    await bookImport(deps(fetch))(asked, 'k');
+    const [folder] = readdirSync(join(media, 'Books/Robert Louis Stevenson')).filter((name) =>
+      name.startsWith('2021 - '),
+    );
+    const written = JSON.parse(
+      readFileSync(join(media, 'Books/Robert Louis Stevenson', folder!, 'metadata.json'), 'utf8'),
+    ) as { narrators: string[] };
+    return { folder, narrators: written.narrators };
+  };
+
+  it('[M3.books] a release that does not say who reads it takes no narrator from Audible', async () => {
+    expect(await narratorsWritten('Dr Jekyll and Mr Hyde - Stevenson [MP3] [64 Kbps]')).toEqual({
+      folder: expect.stringContaining('(V)'),
+      narrators: [],
+    });
+  });
+
+  it("[M3.books] a release naming Audible's narrator in its title confirms that narrator", async () => {
+    expect((await narratorsWritten('Jekyll and Hyde - Paapa Essiedu [M4B]')).narrators).toEqual([
+      'Paapa Essiedu',
+    ]);
+  });
+
+  it("[M3.books] a release's detail page says who reads it, whatever Audible says", async () => {
+    const said = await narratorsWritten('Jekyll', { narrators: ['Bob Neufeld'] });
+    expect(said.narrators).toEqual(['Bob Neufeld']);
+  });
+
+  it("[M3.books] a LibriVox release never takes Audible's narrator, even with that name in it", async () => {
+    const librivox = await narratorsWritten('Jekyll - Paapa Essiedu [Librivox]');
+    expect(librivox.narrators).toEqual([]);
   });
 });

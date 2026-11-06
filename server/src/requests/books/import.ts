@@ -88,11 +88,36 @@ function heardIn(release: StoredRequest['release']) {
   };
 }
 
+const spoken = (text: string) =>
+  ` ${text
+    .normalize('NFKD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .join(' ')} `;
+
+/**
+ * Who reads the book: only what the release itself says. Audible names who reads its own edition,
+ * which a torrent need not be, so its narrator counts only where the release's title names them, and
+ * never for LibriVox, whose readers are its own. A book nothing confirms has no narrator.
+ */
+function narratorsOf(
+  release: StoredRequest['release'],
+  said: string[],
+  product: AudibleProduct | null,
+): string[] {
+  if (said.length > 0) return said;
+  if (release === null || product === null) return [];
+  const title = spoken(release.title);
+  if (title.includes(' librivox ')) return [];
+  return product.narrators.filter((name) => title.includes(spoken(name)));
+}
+
 function bookToPlace(request: StoredRequest, product: AudibleProduct | null): BookToPlace {
   const heard = heardIn(request.release);
   const { title, creator, ids } = request.target;
   const asBook = {
-    narrators: heard.narrators.length > 0 ? heard.narrators : (product?.narrators ?? []),
+    narrators: narratorsOf(request.release, heard.narrators, product),
     bitrateKbps: heard.bitrateKbps,
   };
   if (product === null) {
