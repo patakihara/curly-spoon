@@ -414,8 +414,10 @@ export function otherReleases(request: StoredRequest): Release[] {
 }
 
 /**
- * A retry: back to the step it failed in. A download starts afresh on the same release; an import
- * that was found wanting by the index keeps what it named and waits again. Null when refused, as a
+ * A retry: back to the step it failed in. A download starts afresh on the same release, except one
+ * that only stalled, which is still in the client and may have come alive since: it keeps its bytes
+ * and gets a full limit again. An import that was found wanting by the index keeps what it named and
+ * waits again. Null when refused, as a
  * second tap is. A step that failed before saving its answer keeps its key, as it may have got
  * through upstream: the start under that key answers the same, so there is nothing to drop.
  */
@@ -427,6 +429,13 @@ export async function retryRequest(
   const state = request && next(request.medium, request.state, { type: 'retry' });
   if (!request || !state) return null;
   const restarts = state.status === 'queued' || state.status === 'downloading';
+  const stalled = request.state.status === 'failed' && request.state.reason === 'downloadStalled';
+  if (restarts && stalled && request.handle !== null) {
+    const followed = { state, progressAt: deps.now() };
+    return saveRequest(deps.db, id, followed, deps.now(), request.version)
+      ? getRequest(deps.db, id)
+      : null;
+  }
   const change = { state, ...(restarts ? { handle: null } : {}) };
   if (!saveRequest(deps.db, id, change, deps.now(), request.version)) return null;
   if (restarts && request.handle !== null) {
