@@ -1,0 +1,68 @@
+{
+  "upstream": "prowlarr",
+  "upstreamVersion": "10.0.0.22097",
+  "call": "search-jekyll-spanish",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/search",
+    "query": {
+      "categories": "3030",
+      "query": "El extraño caso del Dr. Jekyll y Mr. Hyde",
+      "type": "search"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": [
+        {
+          "guid": "http://upstream.invalid/abss/el-extrano-caso-del-dr-jekyll-y-mr-hyde-robert-louis-stevenson/",
+          "age": 233,
+          "ageHours": 5594.295035847389,
+          "ageMinutes": 335657.70215085335,
+          "size": 51107594,
+          "indexerId": 11,
+          "indexer": "AudioBook Bay",
+          "title": "El extraño caso del Dr. Jekyll y Mr. Hyde - Robert Louis Stevenson [M4B] [128 Kbps]",
+          "sortTitle": "el extraño caso del dr jekyll y mr hyde robert louis stevenson m4b 128 kbps",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2026-03-17T00:00:00Z",
+          "downloadUrl": "http://upstream.invalid/11/download?apikey=<token>&link=link-933c9311e517",
+          "infoUrl": "http://upstream.invalid/abss/el-extrano-caso-del-dr-jekyll-y-mr-hyde-robert-louis-stevenson/",
+          "posterUrl": "http://upstream.invalid/images/I/41zCB5cla5L._SL300_.jpg",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3030,
+              "name": "Audio/Audiobook",
+              "subCategories": []
+            },
+            {
+              "id": 158895,
+              "subCategories": []
+            },
+            {
+              "id": 141199,
+              "subCategories": []
+            }
+          ],
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        }
+      ]
+    }
+  }
+}

@@ -44,6 +44,7 @@ const STATUS: [RegExp, string][] = [
   [/^Importing$/, 'progress'],
   [/^Needs choice$/, 'request'],
   [/^Failed$/, 'error'],
+  [/^In library$/, 'library'],
 ];
 const toneOf = (status: string) => STATUS.find(([word]) => word.test(status))?.[1];
 
@@ -55,6 +56,7 @@ describe('Search', () => {
   it('[M0.canvas] binds only its own query, filters, suggestions and results', () => {
     expect(dataRoots(tree)).toEqual([
       'activeFilters',
+      'errors',
       'kinds',
       'library',
       'outside',
@@ -88,7 +90,7 @@ describe('Search', () => {
   });
 
   it('[M0.canvas] matches songs on their lyrics too, a song found by a line showing that line in its row', () => {
-    const results = [data.top, ...(data.library as Row[])] as { meta: string }[];
+    const results = [...(data.top as Row[]), ...(data.library as Row[])] as { meta: string }[];
     const byLine = results.filter((r) => /“[^”]+”/.test(r.meta));
     expect(byLine.length).toBeGreaterThan(0);
     for (const { meta } of byLine) expect(meta).toMatch(/^Song · /);
@@ -104,6 +106,7 @@ describe('Search', () => {
     expect(sections(tree)).toEqual([
       undefined,
       undefined,
+      undefined,
       'Top result',
       'In your library',
       'Not in your library',
@@ -111,7 +114,7 @@ describe('Search', () => {
     const results = found.filter(
       (r) => r.of !== 'data.suggestions' && r.of !== 'data.yourRequests',
     );
-    const top = results.filter(({ row }) => JSON.stringify(row.props.title).includes('"top"'));
+    const top = results.filter((r) => r.of === 'data.top');
     expect(top).toHaveLength(1);
     expect(results[0]).toBe(top[0]);
   });
@@ -133,7 +136,7 @@ describe('Search', () => {
   });
 
   it('lists suggestions first while typing, each choice running the search with its text', () => {
-    expect(body()[1]).toMatchObject({ kind: 'when', state: 'suggest' });
+    expect(body()[2]).toMatchObject({ kind: 'when', state: 'suggest' });
     const [suggest] = when('suggest');
     const held = elements(suggest);
     expect(held.map((e) => e.component)).toEqual(['Section', 'ResultRow']);
@@ -158,6 +161,7 @@ describe('Search', () => {
 
   it('draws the results, all three sections of them, only once the search has run', () => {
     expect(body().map((c) => (c.kind === 'when' ? c.state : c.kind))).toEqual([
+      'each',
       'each',
       'suggest',
       'empty',
@@ -191,9 +195,7 @@ describe('Search', () => {
   );
 
   it('opens each result in your library on a tap, a song its album, and plays it from its art on its own queue', () => {
-    const owned = found.filter(
-      ({ of, row }) => of === 'data.library' || JSON.stringify(row.props.title).includes('"top"'),
-    );
+    const owned = found.filter(({ of }) => of === 'data.library' || of === 'data.top');
     expect(owned).toHaveLength(2);
     for (const { row } of owned) {
       const item = (row.props.title as { path: string[] }).path.slice(0, -1);
@@ -219,7 +221,7 @@ describe('Search', () => {
       Book: ['book', 'spoken'],
       Episode: ['episode', 'spoken'],
     };
-    for (const item of [data.top as Row, ...(data.library as Row[])]) {
+    for (const item of [...(data.top as Row[]), ...(data.library as Row[])]) {
       const kind = String(item.meta).split(' · ')[0]!;
       expect(KIND[kind], kind).toBeDefined();
       expect([item.page, item.queue], String(item.title)).toEqual(KIND[kind]);
@@ -252,42 +254,96 @@ describe('Search', () => {
   });
 
   it('[M0.canvas] gives no owned result a request action, a status or a tone', () => {
-    const owned = found.filter(
-      ({ of, row }) => of === 'data.library' || JSON.stringify(row.props.title).includes('"top"'),
-    );
+    const owned = found.filter(({ of }) => of === 'data.library' || of === 'data.top');
     // The top result's row, and the one row drawn for each library result.
     expect(owned).toHaveLength(2);
     for (const { row } of owned) {
       for (const prop of ['trailing', 'status', 'tone'])
         expect(Object.keys(row.props)).not.toContain(prop);
     }
-    for (const item of [data.top as Row, ...(data.library as Row[])]) {
+    for (const item of [...(data.top as Row[]), ...(data.library as Row[])]) {
       for (const key of ['action', 'requested', 'status', 'tone'])
         expect(Object.keys(item)).not.toContain(key);
     }
   });
 
   it('[M0.canvas] plays outside music straight away, and gives outside books Request and podcasts Subscribe', () => {
-    const outside = data.outside as { music: Row[]; books: Row[]; podcasts: Row[] };
+    const outside = data.outside as { music: Row[]; podcasts: Row[] };
     const action = (of: string) =>
       found.filter((r) => r.of === of).map(({ row }) => slotted(row, 'trailing')?.component);
     // One row is drawn for each list, whatever its length.
     expect(action('data.outside.music')).toEqual([undefined]);
-    expect(action('data.outside.books')).toEqual(['Button']);
+    expect(action('book.asking')).toEqual(['Button']);
     expect(action('data.outside.podcasts')).toEqual(['Button']);
-    for (const book of outside.books) {
-      expect(book.action).toBe(book.requested ? 'Requested' : 'Request');
-      if (book.requested) expect(toneOf(book.status as string)).toBe(book.tone);
-      else expect([book.status, book.tone]).toEqual([null, null]);
-    }
     for (const show of outside.podcasts) expect(show.action).toBe('Subscribe');
   });
 
+  describe('[M3.books] an outside book’s row', () => {
+    const books = (data.outside as { books: Record<'asking' | 'standing' | 'arrived', Row[]>[] })
+      .books;
+    const rowOf = (of: string) => found.find((r) => r.of === of)!.row;
+    const shown = (list: 'asking' | 'standing' | 'arrived') => books.flatMap((book) => book[list]);
+
+    it('with no status draws its Request button, which asks by its own ref', () => {
+      const button = slotted(rowOf('book.asking'), 'trailing');
+      expect(button?.props.onClick).toEqual({
+        kind: 'request',
+        params: { ref: ['asking', 'ref'] },
+      });
+      expect(Object.keys(button?.props ?? {})).not.toContain('pressed');
+      for (const row of shown('asking')) {
+        expect(row).toMatchObject({ status: null, tone: null, action: 'Request' });
+        expect(row.ref).not.toBe('');
+      }
+    });
+
+    it('with a request on its way or failed draws only its status, and leads to Requests', () => {
+      const row = rowOf('book.standing');
+      expect(row.props.trailing).toBeUndefined();
+      expect(row.props.status).toEqual({ kind: 'binding', path: ['standing', 'status'] });
+      expect(row.props.onClick).toEqual({ kind: 'open', page: 'requests', params: {} });
+      expect(shown('standing').length).toBeGreaterThan(0);
+      for (const { status, tone } of shown('standing')) {
+        expect(toneOf(status as string)).toBe(tone);
+        expect(status).not.toBe('In library');
+      }
+    });
+
+    it('In library draws only its status, opens the book and plays it from its art', () => {
+      const row = rowOf('book.arrived');
+      expect(row.props.trailing).toBeUndefined();
+      expect(row.props.onAction).toMatchObject({
+        kind: 'play',
+        params: { ref: ['arrived', 'ref'] },
+        queue: 'spoken',
+      });
+      expect(row.props.onClick).toMatchObject({
+        kind: 'open',
+        page: 'book',
+        params: { ref: ['arrived', 'ref'] },
+      });
+      expect(shown('arrived')).toHaveLength(1);
+      expect(shown('arrived')[0]).toMatchObject({ status: 'In library', tone: 'library' });
+    });
+  });
+
+  it('[M3.books] leaves a podcast’s Subscribe unbound: only books can be requested from here', () => {
+    const { row } = found.find((r) => r.of === 'data.outside.podcasts')!;
+    expect(slotted(row, 'trailing')?.props.onClick).toBeUndefined();
+  });
+
   it('[M3.requests] opens Requests from "Your requests", outside every one of its states', () => {
-    const [entry] = body();
+    const entry = body()[1];
     expect(entry).toMatchObject({ kind: 'each', of: ['data', 'yourRequests'] });
     const row = elements(entry!).find((e) => e.component === 'ResultRow');
     expect(row?.props.onClick).toEqual({ kind: 'open', page: 'requests', params: {} });
+  });
+
+  it('[M3.books] says a failure no row can in one StatusBanner, over every one of its states', () => {
+    const [errors] = body();
+    expect(errors).toMatchObject({ kind: 'each', of: ['data', 'errors'] });
+    expect(elements(tree).filter((e) => e.component === 'StatusBanner')).toHaveLength(1);
+    expect(elements(errors!).some((e) => e.component === 'StatusBanner')).toBe(true);
   });
 });
 

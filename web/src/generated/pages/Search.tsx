@@ -6,9 +6,15 @@ import { PLATFORM, useLayout, type Chrome, type FrameContext, type LayoutId, typ
 import type { ShellNav } from '../../shell-nav';
 import { usePlay, type PlayQueue, type Playing } from '../../player';
 import { useQuery } from '../../query';
-import { AccountButton, BackLayer, BottomNav, Button, ButtonGroup, EmptyState, ExpanderRow, FrontLayerHeader, LayoutGrid, MiniPlayer, NavRail, PageBody, ResultRow, SearchField, Section, SortFilterBar } from '../ui/index.js';
+import { useRequest } from '../../request';
+import { AccountButton, BackLayer, BottomNav, Button, ButtonGroup, EmptyState, ExpanderRow, FrontLayerHeader, LayoutGrid, MiniPlayer, NavRail, PageBody, ResultRow, SearchField, Section, SortFilterBar, StatusBanner } from '../ui/index.js';
 
 const placeholder = {
+  "errors": [
+    {
+      "message": "You have too many requests under way. Cancel one, or wait for one to finish, and ask again."
+    }
+  ],
   "query": "salt",
   "placeholder": "What do you want to listen to?",
   "kinds": [
@@ -81,15 +87,17 @@ const placeholder = {
       "icon": "history"
     }
   ],
-  "top": {
-    "title": "Salt and Static",
-    "meta": "Album · Soul Vertex · 11 tracks",
-    "image": "/art/salt-and-static.jpg",
-    "page": "album",
-    "ref": "salt-and-static",
-    "playRef": "salt-and-static",
-    "queue": "music"
-  },
+  "top": [
+    {
+      "title": "Salt and Static",
+      "meta": "Album · Soul Vertex · 11 tracks",
+      "image": "/art/salt-and-static.jpg",
+      "page": "album",
+      "ref": "salt-and-static",
+      "playRef": "salt-and-static",
+      "queue": "music"
+    }
+  ],
   "library": [
     {
       "title": "Salt Water",
@@ -141,22 +149,46 @@ const placeholder = {
     "moreReleases": "More releases of Salt",
     "books": [
       {
-        "title": "Salt and Stone",
-        "meta": "Book · Maya Lind · AudiobookBay",
-        "image": "/art/between-two-worlds.jpg",
-        "status": "Downloading · 42%",
-        "tone": "progress",
-        "requested": true,
-        "action": "Requested"
+        "asking": [],
+        "standing": [
+          {
+            "title": "Salt and Stone",
+            "meta": "Book · Maya Lind · 2021",
+            "image": "/art/between-two-worlds.jpg",
+            "status": "Downloading · 42%",
+            "tone": "progress"
+          }
+        ],
+        "arrived": []
       },
       {
-        "title": "A Grain of Salt",
-        "meta": "Book · Evelyn Harper · Prowlarr",
-        "image": "/art/shadows-and-sighs.jpg",
-        "status": null,
-        "tone": null,
-        "requested": false,
-        "action": "Request"
+        "asking": [],
+        "standing": [],
+        "arrived": [
+          {
+            "title": "Salt of the Earth",
+            "ref": "salt-of-the-earth",
+            "meta": "Book · Adam Rivers · 2019",
+            "image": "/art/foggy-trails.jpg",
+            "status": "In library",
+            "tone": "library"
+          }
+        ]
+      },
+      {
+        "asking": [
+          {
+            "title": "A Grain of Salt",
+            "ref": "a-grain-of-salt",
+            "meta": "Book · Evelyn Harper · 2020",
+            "image": "/art/shadows-and-sighs.jpg",
+            "status": null,
+            "tone": null,
+            "action": "Request"
+          }
+        ],
+        "standing": [],
+        "arrived": []
       }
     ],
     "podcasts": [
@@ -406,8 +438,18 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
   const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
   const play = usePlay();
+  const askFor = useRequest();
   return (
     <PageBody width="list" platform={platform}>
+      {data.errors.map((error, i) => (
+        <Fragment key={i}>
+          <Section platform={platform}>
+            <StatusBanner tone="error" icon="error">
+              {error.message}
+            </StatusBanner>
+          </Section>
+        </Fragment>
+      ))}
       {data.yourRequests.map((entry, i) => (
         <Fragment key={i}>
           <Section platform={platform}>
@@ -438,9 +480,15 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
       )}
       {state === 'full' && (
         <>
-          <Section title="Top result" platform={platform}>
-            <ResultRow title={data.top.title} meta={data.top.meta} image={data.top.image} onClick={data.top.ref ? () => navigate(generatePath(routes[data.top.page]!, { ref: data.top.ref })) : undefined} onAction={play(data.top.playRef, data.top.queue as PlayQueue, 'now')} platform={platform} />
-          </Section>
+          {data.top.length > 0 && (
+            <Section title="Top result" platform={platform}>
+              {data.top.map((best, i) => (
+                <Fragment key={i}>
+                  <ResultRow title={best.title} meta={best.meta} image={best.image} onClick={best.ref ? () => navigate(generatePath(routes[best.page]!, { ref: best.ref })) : undefined} onAction={play(best.playRef, best.queue as PlayQueue, 'now')} platform={platform} />
+                </Fragment>
+              ))}
+            </Section>
+          )}
           {data.library.length > 0 && (
             <Section title="In your library" platform={platform}>
               {data.library.map((item, i) => (
@@ -467,20 +515,34 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
               )}
               {data.outside.books.map((book, i) => (
                 <Fragment key={i}>
-                  <ResultRow
-                    title={book.title}
-                    meta={book.meta}
-                    image={book.image}
-                    status={book.status}
-                    tone={book.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
-                    divider={true}
-                    trailing={
-                      <Button variant="secondary" size="sm" pressed={book.requested} platform={platform}>
-                        {book.action}
-                      </Button>
-                    }
-                    platform={platform}
-                  />
+                  {book.asking.map((asking, i) => (
+                    <Fragment key={i}>
+                      <ResultRow
+                        title={asking.title}
+                        meta={asking.meta}
+                        image={asking.image}
+                        status={asking.status}
+                        tone={asking.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>}
+                        divider={true}
+                        trailing={
+                          <Button variant="secondary" size="sm" onClick={askFor(asking.ref)} platform={platform}>
+                            {asking.action}
+                          </Button>
+                        }
+                        platform={platform}
+                      />
+                    </Fragment>
+                  ))}
+                  {book.standing.map((standing, i) => (
+                    <Fragment key={i}>
+                      <ResultRow title={standing.title} meta={standing.meta} image={standing.image} status={standing.status} tone={standing.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>} onClick={() => navigate('/requests')} divider={true} platform={platform} />
+                    </Fragment>
+                  ))}
+                  {book.arrived.map((arrived, i) => (
+                    <Fragment key={i}>
+                      <ResultRow title={arrived.title} meta={arrived.meta} image={arrived.image} status={arrived.status} tone={arrived.tone as Exclude<ComponentProps<typeof ResultRow>['tone'], undefined>} onClick={arrived.ref ? () => navigate(generatePath('/books/:ref', { ref: arrived.ref })) : undefined} onAction={play(arrived.ref, 'spoken', 'now')} divider={true} platform={platform} />
+                    </Fragment>
+                  ))}
                 </Fragment>
               ))}
               {data.outside.podcasts.map((show, i) => (

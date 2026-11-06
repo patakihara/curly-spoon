@@ -131,7 +131,8 @@ const TAKEN = new Set([
   ...['frame', 'routes', 'generatePath', 'navigate', 'query', 'play', 'playing', 'go', 'inPanel'],
   ...['context', 'leading', 'key', 'tab', 'window', 'undefined'],
   ...['useContext', 'useLayout', 'useNavigate', 'usePlay', 'usePlaying', 'useQuery', 'useShellNav'],
-  ...['useChoose', 'act', 'useAct', 'toggle', 'useToggle', 'retry', 'useRetry'],
+  ...['useChoose', 'act', 'useAct', 'askFor', 'useRequest'],
+  ...['toggle', 'useToggle', 'retry', 'useRetry'],
 ]);
 
 /** `value`, if it is a plain lower-case name a page may give an Each item or a When state. */
@@ -397,7 +398,7 @@ function element(node: t.JSXElement): PageTree {
   if (!/^[A-Z]/.test(name.name)) return fail(node, `<${name.name}> is not a Sonora component`);
   if (name.name === 'Open') return fail(node, 'Open goes in a handler prop, onClick={<Open … />}');
   if (name.name === 'Request') {
-    return fail(node, 'Request goes in a handler prop, onRequest={<Request … />}');
+    return fail(node, 'Request goes in a handler prop, onRequest or onClick={<Request … />}');
   }
   if (name.name === 'Play') return fail(node, 'Play goes in a handler prop, onPlay={<Play … />}');
   if (name.name === 'SignIn')
@@ -702,7 +703,8 @@ export function checkPage(
       case 'each': {
         const lists = check(node.line, node.of);
         if (lists.length === 0) return;
-        if (!lists.every((l) => Array.isArray(l) && l.length > 0)) {
+        // A list inside an item may be empty for some items: it says which row an item draws.
+        if (!lists.every(Array.isArray) || !lists.some((l) => (l as Json[]).length > 0)) {
           errors.push(`line ${node.line}: ${node.of.join('.')} is not a non-empty list`);
           return;
         }

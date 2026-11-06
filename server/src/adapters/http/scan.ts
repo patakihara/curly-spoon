@@ -52,7 +52,7 @@ export interface Finding {
 /**
  * Public hosts that published metadata carries: an album's `ExternalUrls` on Jellyfin, a
  * podcast's feed, episode enclosures and directory page on Audiobookshelf, and the iTunes
- * namespace a feed declares.
+ * namespace a feed declares; the covers and author photos Audible and Audnexus name.
  */
 export const PUBLIC_HOSTS: readonly string[] = [
   'musicbrainz.org',
@@ -61,6 +61,8 @@ export const PUBLIC_HOSTS: readonly string[] = [
   'www.omnycontent.com',
   'podtrac.com',
   'podcasts.apple.com',
+  'm.media-amazon.com',
+  'images-na.ssl-images-amazon.com',
 ];
 /**
  * Whole public addresses allowed where their host is not: Auralis's public homepage, which its

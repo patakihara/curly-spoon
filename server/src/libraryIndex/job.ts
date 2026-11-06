@@ -137,6 +137,22 @@ async function showOrdering(pass: Pass, item: ItemSummary): Promise<ShowOrdering
   }
 }
 
+/**
+ * One Audiobookshelf item into the index now, as a pass would, so a request that placed it turns
+ * `inLibrary` on its next turn and not the next run. The answer is what the request names.
+ */
+export async function indexOneAbsItem(
+  db: Db,
+  abs: Pick<AbsClient, 'getItemSummary'>,
+  itemId: string,
+  now: number,
+): Promise<ItemSummary> {
+  const summary = await abs.getItemSummary(itemId);
+  applyTree(db, absTree(summary), now, emptyCounts());
+  writeSync(db, 'abs', itemId, String(summary.updatedAt), now);
+  return summary;
+}
+
 async function indexAbs(pass: Pass, abs: NonNullable<IndexJobOptions['abs']>): Promise<boolean> {
   let complete = true;
   for (const library of await abs.getLibraries()) {

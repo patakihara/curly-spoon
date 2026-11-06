@@ -141,10 +141,16 @@ describe('what search reads from the API', () => {
   });
 
   it('asks for the results of a search, every kind of them, parsed', async () => {
-    const { client, asked } = answering({ query: 'rise and', results: [], hasRequests: false });
+    const { client, asked } = answering({
+      query: 'rise and',
+      results: [],
+      books: [],
+      hasRequests: false,
+    });
     expect(await loadSearch(client, 'rise and')).toEqual({
       query: 'rise and',
       results: [],
+      books: [],
       hasRequests: false,
     });
     expect(asked).toEqual(['/api/search [["q","rise and"]]']);

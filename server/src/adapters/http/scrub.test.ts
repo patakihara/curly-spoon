@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type RawExchange, scrub } from './scrub.js';
+import { type RawExchange, SECRET_QUERY_KEY, scrub } from './scrub.js';
 
 const KEY = 'sk-9f8e7d6c5b4a/+=';
 const baseUrl = 'http://100.64.12.34:13378';
@@ -27,6 +27,12 @@ function exchange(overrides: Partial<RawExchange> = {}): RawExchange {
 const opts = { secrets: [KEY], baseUrl };
 
 describe('[M0.record/c] scrubbing a recording', () => {
+  it("[M3.books] keeps a search's keywords, which only look like a key", () => {
+    expect(SECRET_QUERY_KEY.test('keywords')).toBe(false);
+    expect(SECRET_QUERY_KEY.test('apikey')).toBe(true);
+    expect(SECRET_QUERY_KEY.test('key')).toBe(true);
+  });
+
   it('[M0.record/c] secrets are replaced wherever they appear, raw or URL-encoded', () => {
     const r = scrub(
       exchange({
@@ -262,7 +268,7 @@ describe('[M0.record/c] scrubbing a recording', () => {
     });
   });
 
-  it("[M0.record/c] only accept, content-type, authorization, user-agent and a range's headers are kept", () => {
+  it("[M0.record/c] only accept, content-type, authorization, user-agent, location and a range's headers are kept", () => {
     const r = scrub(
       exchange({
         request: {
@@ -305,6 +311,41 @@ describe('[M0.record/c] scrubbing a recording', () => {
       'accept-ranges': 'bytes',
       'content-range': 'bytes 0-1/158919642',
       'content-type': 'audio/mp4',
+    });
+  });
+
+  it("[M3.books] a redirect's location is kept, with its secret query values scrubbed", () => {
+    const out = scrub(
+      exchange({
+        response: {
+          status: 301,
+          headers: {
+            location: `http://localhost:9696/a?apikey=${KEY}&file=b&x=1`,
+            server: 'kept-out',
+          },
+          body: null,
+        },
+      }),
+      { secrets: [], baseUrl },
+    );
+    expect(out.response.headers).toEqual({
+      location: 'http://localhost:9696/a?apikey=<token>&file=b&x=1',
+    });
+  });
+
+  it('[M3.books] a whole URL under a field ending in url keeps its path, losing only its key', () => {
+    const out = scrub(
+      exchange({
+        response: {
+          status: 200,
+          headers: {},
+          body: { json: { downloadUrl: `http://localhost:9696/2/download?apikey=${KEY}&file=b` } },
+        },
+      }),
+      { secrets: [KEY], baseUrl },
+    );
+    expect(out.response.body).toEqual({
+      json: { downloadUrl: 'http://localhost:9696/2/download?apikey=<token>&file=b' },
     });
   });
 

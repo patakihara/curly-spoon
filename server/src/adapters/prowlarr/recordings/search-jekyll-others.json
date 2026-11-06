@@ -1,0 +1,626 @@
+{
+  "upstream": "prowlarr",
+  "upstreamVersion": "10.0.0.22097",
+  "call": "search-jekyll-others",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/search",
+    "query": {
+      "categories": "3030",
+      "query": "Jekyll and Hyde Stevenson",
+      "type": "search"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": [
+        {
+          "guid": "magnet:?xt=urn:btih:13E44B57A50830C7028DCC15FE4463FB41114EF4",
+          "age": 5281,
+          "ageHours": 126756.64169328059,
+          "ageMinutes": 7605398.501596845,
+          "size": 53305351,
+          "files": 2,
+          "indexerId": 5,
+          "indexer": "indexer-a",
+          "title": "R.L. Stevenson - The Strange Case of Dr Jekyll and Mr Hyde (BBC)",
+          "sortTitle": "r l stevenson strange case dr jekyll mr hyde bbc",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2012-05-20T13:39:09Z",
+          "infoUrl": "http://upstream.invalid/page-4fd50b0a497d",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3030,
+              "name": "Audio/Audiobook",
+              "subCategories": []
+            },
+            {
+              "id": 100102,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-8bb5bf0525d0",
+          "infoHash": "13E44B57A50830C7028DCC15FE4463FB41114EF4",
+          "seeders": 4,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "magnet:?xt=urn:btih:0DC666EB082BD5EC1A828B6AA25862B6A7E7B2F0",
+          "age": 5702,
+          "ageHours": 136863.84863779944,
+          "ageMinutes": 8211830.918267974,
+          "size": 34315457,
+          "files": 7,
+          "indexerId": 5,
+          "indexer": "indexer-a",
+          "title": "R.L. Stevenson - The Strange Case of Dr Jekyll and Mr Hyde",
+          "sortTitle": "r l stevenson strange case dr jekyll mr hyde",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2011-03-26T10:26:44Z",
+          "infoUrl": "http://upstream.invalid/page-378e39a5a47c",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3030,
+              "name": "Audio/Audiobook",
+              "subCategories": []
+            },
+            {
+              "id": 100102,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/5/download?apikey=<token>&link=link-3f535434a72e",
+          "infoHash": "0DC666EB082BD5EC1A828B6AA25862B6A7E7B2F0",
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-2887d18eb8ba",
+          "age": 5282,
+          "ageHours": 126771.29419339486,
+          "ageMinutes": 7606277.651603703,
+          "size": 53309603,
+          "indexerId": 8,
+          "indexer": "indexer-b",
+          "title": "R.L. Stevenson - The Strange Case of Dr Jekyll and Mr Hyde (BBC) ...",
+          "sortTitle": "r l stevenson strange case dr jekyll mr hyde bbc",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2012-05-19T23:00:00Z",
+          "infoUrl": "http://upstream.invalid/page-2887d18eb8ba",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 1100000,
+              "subCategories": []
+            },
+            {
+              "id": 3030,
+              "name": "Audio/Audiobook",
+              "subCategories": []
+            },
+            {
+              "id": 1103000,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/8/download?apikey=<token>&link=link-ef2941e2388f",
+          "infoHash": "13E44B57A50830C7028DCC15FE4463FB41114EF4",
+          "seeders": 4,
+          "leechers": 1,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/page-86ef0c2f8fd0",
+          "age": 5703,
+          "ageHours": 136875.2941934333,
+          "ageMinutes": 8212517.651606005,
+          "size": 34319892,
+          "indexerId": 8,
+          "indexer": "indexer-b",
+          "title": "R.L. Stevenson - The Strange Case of Dr Jekyll and Mr Hyde",
+          "sortTitle": "r l stevenson strange case dr jekyll mr hyde",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2011-03-25T23:00:00Z",
+          "infoUrl": "http://upstream.invalid/page-86ef0c2f8fd0",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3000,
+              "name": "Audio",
+              "subCategories": [
+                {
+                  "id": 3010,
+                  "name": "Audio/MP3",
+                  "subCategories": []
+                },
+                {
+                  "id": 3020,
+                  "name": "Audio/Video",
+                  "subCategories": []
+                },
+                {
+                  "id": 3030,
+                  "name": "Audio/Audiobook",
+                  "subCategories": []
+                },
+                {
+                  "id": 3040,
+                  "name": "Audio/Lossless",
+                  "subCategories": []
+                },
+                {
+                  "id": 3050,
+                  "name": "Audio/Other",
+                  "subCategories": []
+                },
+                {
+                  "id": 3060,
+                  "name": "Audio/Foreign",
+                  "subCategories": []
+                }
+              ]
+            },
+            {
+              "id": 1100000,
+              "subCategories": []
+            },
+            {
+              "id": 3030,
+              "name": "Audio/Audiobook",
+              "subCategories": []
+            },
+            {
+              "id": 1103000,
+              "subCategories": []
+            }
+          ],
+          "magnetUrl": "http://upstream.invalid/8/download?apikey=<token>&link=link-671ef3957c88",
+          "infoHash": "0DC666EB082BD5EC1A828B6AA25862B6A7E7B2F0",
+          "seeders": 2,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/abss/the-sitrange-case-of-dr-jekyll-and-mr-hyde-robert-louis-stevenson-4/",
+          "age": 1829,
+          "ageHours": 43898.29419347116,
+          "ageMinutes": 2633897.6516082785,
+          "size": 173612728,
+          "indexerId": 11,
+          "indexer": "AudioBook Bay",
+          "title": "The Strange Case of Dr Jekyll and Mr Hyde - Robert Louis Stevenson [M4B] [128 Kbps]",
+          "sortTitle": "strange case dr jekyll mr hyde robert louis stevenson m4b 128 kbps",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2021-11-02T00:00:00Z",
+          "downloadUrl": "http://upstream.invalid/11/download?apikey=<token>&link=link-d55114a675d0",
+          "infoUrl": "http://upstream.invalid/abss/the-sitrange-case-of-dr-jekyll-and-mr-hyde-robert-louis-stevenson-4/",
+          "posterUrl": "http://upstream.invalid/BAlEvEI.jpg",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3030,
+              "name": "Audio/Audiobook",
+              "subCategories": []
+            },
+            {
+              "id": 102857,
+              "subCategories": []
+            },
+            {
+              "id": 147705,
+              "subCategories": []
+            },
+            {
+              "id": 131679,
+              "subCategories": []
+            }
+          ],
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/abss/the-hofrror-collection-dracula-frankenstein-the-call-of-cthulhu-the-strange-case-of-dr-jekyll-and-mr-hyde-at-the-mountains-of-madness-the-raven-the-horror-at-red-hook-and-more-bram-stoker-h/",
+          "age": 2257,
+          "ageHours": 54170.29419349272,
+          "ageMinutes": 3250217.65160957,
+          "size": 1288490188,
+          "indexerId": 11,
+          "indexer": "AudioBook Bay",
+          "title": "The Horror Collection: Dracula, Frankenstein, The Call of Cthulhu, The Strange Case of Dr. Jekyll and Mr. Hyde, At the Mountains of Madness, The Raven, The Horror at Red Hook and More - Bram Stoker, H. P. Lovecraft, Edgar Allan Poe, Mary Shelley, Robert Louis Stevenson [MP3] [64 Kbps]",
+          "sortTitle": "horror collection dracula frankenstein call cthulhu strange case dr jekyll mr hyde at mountains madness raven horror at red hook more bram stoker h p lovecraft edgar allan poe mary shelley robert louis stevenson mp3 64 kbps",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2020-08-31T00:00:00Z",
+          "downloadUrl": "http://upstream.invalid/11/download?apikey=<token>&link=link-7c3fb09893cd",
+          "infoUrl": "http://upstream.invalid/abss/the-hofrror-collection-dracula-frankenstein-the-call-of-cthulhu-the-strange-case-of-dr-jekyll-and-mr-hyde-at-the-mountains-of-madness-the-raven-the-horror-at-red-hook-and-more-bram-stoker-h/",
+          "posterUrl": "http://upstream.invalid/images/I/61wYSRZd07L._SL500_.jpg",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3030,
+              "name": "Audio/Audiobook",
+              "subCategories": []
+            },
+            {
+              "id": 122830,
+              "subCategories": []
+            },
+            {
+              "id": 131679,
+              "subCategories": []
+            },
+            {
+              "id": 141199,
+              "subCategories": []
+            }
+          ],
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/abss/bthe-strange-case-of-dr-jekyll-and-mr-hyde-plus-markheim-robert-louis-stevenson/",
+          "age": 2843,
+          "ageHours": 68234.29419352028,
+          "ageMinutes": 4094057.6516112266,
+          "size": 47720693,
+          "indexerId": 11,
+          "indexer": "AudioBook Bay",
+          "title": "The Strange Case of Dr. Jekyll and Mr. Hyde - plus Markheim - Robert Louis Stevenson [M4B]",
+          "sortTitle": "strange case dr jekyll mr hyde plus markheim robert louis stevenson m4b",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2019-01-23T00:00:00Z",
+          "downloadUrl": "http://upstream.invalid/11/download?apikey=<token>&link=link-0485cd45c0ab",
+          "infoUrl": "http://upstream.invalid/abss/bthe-strange-case-of-dr-jekyll-and-mr-hyde-plus-markheim-robert-louis-stevenson/",
+          "posterUrl": "http://upstream.invalid/images/I/51FcUgsYRFL._SL500_.jpg",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3030,
+              "name": "Audio/Audiobook",
+              "subCategories": []
+            },
+            {
+              "id": 101983,
+              "subCategories": []
+            },
+            {
+              "id": 102857,
+              "subCategories": []
+            },
+            {
+              "id": 141199,
+              "subCategories": []
+            },
+            {
+              "id": 153698,
+              "subCategories": []
+            }
+          ],
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/abss/the-strqange-case-of-dr-jekyll-mr-hyde-and-other-tales-of-terror-2008-bbc-audiobooks-ltd-uk-robert-louis-stevenson/",
+          "age": 3354,
+          "ageHours": 80498.29419353936,
+          "ageMinutes": 4829897.651612367,
+          "size": 605353410,
+          "indexerId": 11,
+          "indexer": "AudioBook Bay",
+          "title": "The Strange Case of Dr Jekyll & Mr Hyde and Other Tales of Terror (2008 BBC Audiobooks Ltd UK) - Robert Louis Stevenson [MP3] [256 Kbps]",
+          "sortTitle": "strange case dr jekyll mr hyde other tales terror 2008 bbc audiobooks ltd uk robert louis stevenson mp3 256 kbps",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2017-08-30T00:00:00Z",
+          "downloadUrl": "http://upstream.invalid/11/download?apikey=<token>&link=link-dc152c170bd3",
+          "infoUrl": "http://upstream.invalid/abss/the-strqange-case-of-dr-jekyll-mr-hyde-and-other-tales-of-terror-2008-bbc-audiobooks-ltd-uk-robert-louis-stevenson/",
+          "posterUrl": "http://upstream.invalid/4x9s4Yo.jpg",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3030,
+              "name": "Audio/Audiobook",
+              "subCategories": []
+            },
+            {
+              "id": 101983,
+              "subCategories": []
+            },
+            {
+              "id": 102857,
+              "subCategories": []
+            },
+            {
+              "id": 158895,
+              "subCategories": []
+            },
+            {
+              "id": 131679,
+              "subCategories": []
+            }
+          ],
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/abss/theb-strange-case-of-dr-jekyll-and-mr-hyde-robert-louis-stevenson-3/",
+          "age": 3672,
+          "ageHours": 88130.29419356042,
+          "ageMinutes": 5287817.651613631,
+          "size": 84850769,
+          "indexerId": 11,
+          "indexer": "AudioBook Bay",
+          "title": "The Strange Case of Dr. Jekyll and Mr. Hyde - Robert Louis Stevenson [MP3]",
+          "sortTitle": "strange case dr jekyll mr hyde robert louis stevenson mp3",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2016-10-16T00:00:00Z",
+          "downloadUrl": "http://upstream.invalid/11/download?apikey=<token>&link=link-4e900ccb8513",
+          "infoUrl": "http://upstream.invalid/abss/theb-strange-case-of-dr-jekyll-and-mr-hyde-robert-louis-stevenson-3/",
+          "posterUrl": "http://upstream.invalid/books/1318116526l/51496.jpg",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3030,
+              "name": "Audio/Audiobook",
+              "subCategories": []
+            },
+            {
+              "id": 102857,
+              "subCategories": []
+            },
+            {
+              "id": 131679,
+              "subCategories": []
+            }
+          ],
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/abss/the-sqtrange-case-of-dr-jekyll-and-mr-hyde-robert-louis-stevenson-2/",
+          "age": 4243,
+          "ageHours": 101834.29419363156,
+          "ageMinutes": 6110057.651617899,
+          "size": 73872179,
+          "indexerId": 11,
+          "indexer": "AudioBook Bay",
+          "title": "The Strange Case of Dr. Jekyll and Mr. Hyde - Robert Louis Stevenson [MP3] [64 Kbps]",
+          "sortTitle": "strange case dr jekyll mr hyde robert louis stevenson mp3 64 kbps",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2015-03-25T00:00:00Z",
+          "downloadUrl": "http://upstream.invalid/11/download?apikey=<token>&link=link-7264b6f88909",
+          "infoUrl": "http://upstream.invalid/abss/the-sqtrange-case-of-dr-jekyll-and-mr-hyde-robert-louis-stevenson-2/",
+          "posterUrl": "http://upstream.invalid/images/I/51DCeOpotPL._SL500_AA300_PIaudible,BottomRight,13,73_AA300_.jpg",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3030,
+              "name": "Audio/Audiobook",
+              "subCategories": []
+            },
+            {
+              "id": 102857,
+              "subCategories": []
+            },
+            {
+              "id": 141199,
+              "subCategories": []
+            }
+          ],
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/abss/stprange-case-of-dr-jekyll-and-mr-hyde-robert-louis-stevenson/",
+          "age": 5280,
+          "ageHours": 126722.29419365089,
+          "ageMinutes": 7603337.651619062,
+          "size": 71082967,
+          "indexerId": 11,
+          "indexer": "AudioBook Bay",
+          "title": "Strange Case Of Dr Jekyll And Mr. Hyde - Robert Louis Stevenson [MP3] [128 Kbps]",
+          "sortTitle": "strange case dr jekyll mr hyde robert louis stevenson mp3 128 kbps",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2012-05-22T00:00:00Z",
+          "downloadUrl": "http://upstream.invalid/11/download?apikey=<token>&link=link-a3cf8fee1b70",
+          "infoUrl": "http://upstream.invalid/abss/stprange-case-of-dr-jekyll-and-mr-hyde-robert-louis-stevenson/",
+          "posterUrl": "http://upstream.invalid/images/I/41SZ7P1VWBL._SL500_AA300_.jpg",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3030,
+              "name": "Audio/Audiobook",
+              "subCategories": []
+            },
+            {
+              "id": 149741,
+              "subCategories": []
+            }
+          ],
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/abss/ther-strange-case-of-dr-jekyll-and-mr-hyde-rl-stevenson/",
+          "age": 5282,
+          "ageHours": 126770.29419366953,
+          "ageMinutes": 7606217.65162018,
+          "size": 53309603,
+          "indexerId": 11,
+          "indexer": "AudioBook Bay",
+          "title": "The Strange Case of Dr Jekyll and Mr Hyde - R.L. Stevenson [MP3] [128 Kbps]",
+          "sortTitle": "strange case dr jekyll mr hyde r l stevenson mp3 128 kbps",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2012-05-20T00:00:00Z",
+          "downloadUrl": "http://upstream.invalid/11/download?apikey=<token>&link=link-9f93b2e670bb",
+          "infoUrl": "http://upstream.invalid/abss/ther-strange-case-of-dr-jekyll-and-mr-hyde-rl-stevenson/",
+          "posterUrl": "http://upstream.invalid/images/I/41SZ7P1VWBL._SL500_AA300_.jpg",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3030,
+              "name": "Audio/Audiobook",
+              "subCategories": []
+            },
+            {
+              "id": 110901,
+              "subCategories": []
+            }
+          ],
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        },
+        {
+          "guid": "http://upstream.invalid/abss/they-strange-case-of-dr-jekyll-and-mr-hyde-robert-louis-stevenson/",
+          "age": 5625,
+          "ageHours": 135002.29419368977,
+          "ageMinutes": 8100137.651621397,
+          "size": 123690024,
+          "indexerId": 11,
+          "indexer": "AudioBook Bay",
+          "title": "The Strange Case of Dr. Jekyll and Mr. Hyde - Robert Louis Stevenson [MP3]",
+          "sortTitle": "strange case dr jekyll mr hyde robert louis stevenson mp3",
+          "imdbId": 0,
+          "tmdbId": 0,
+          "tvdbId": 0,
+          "tvMazeId": 0,
+          "publishDate": "2011-06-12T00:00:00Z",
+          "downloadUrl": "http://upstream.invalid/11/download?apikey=<token>&link=link-fe0992240023",
+          "infoUrl": "http://upstream.invalid/abss/they-strange-case-of-dr-jekyll-and-mr-hyde-robert-louis-stevenson/",
+          "posterUrl": "http://upstream.invalid/images/I/41SZ7P1VWBL._BO2,204,203,200_PIsitb-sticker-arrow-click,TopRight,35,-76_AA300_SH20_OU01_.jpg",
+          "indexerFlags": [
+            "freeleech"
+          ],
+          "categories": [
+            {
+              "id": 3030,
+              "name": "Audio/Audiobook",
+              "subCategories": []
+            },
+            {
+              "id": 110901,
+              "subCategories": []
+            }
+          ],
+          "seeders": 1,
+          "leechers": 0,
+          "protocol": "torrent"
+        }
+      ]
+    }
+  }
+}

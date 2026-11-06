@@ -1,4 +1,9 @@
 {
+  "errors": [
+    {
+      "message": "You have too many requests under way. Cancel one, or wait for one to finish, and ask again."
+    }
+  ],
   "query": "salt",
   "placeholder": "What do you want to listen to?",
   "kinds": [
@@ -71,15 +76,17 @@
       "icon": "history"
     }
   ],
-  "top": {
-    "title": "Salt and Static",
-    "meta": "Album · Soul Vertex · 11 tracks",
-    "image": "/art/salt-and-static.jpg",
-    "page": "album",
-    "ref": "salt-and-static",
-    "playRef": "salt-and-static",
-    "queue": "music"
-  },
+  "top": [
+    {
+      "title": "Salt and Static",
+      "meta": "Album · Soul Vertex · 11 tracks",
+      "image": "/art/salt-and-static.jpg",
+      "page": "album",
+      "ref": "salt-and-static",
+      "playRef": "salt-and-static",
+      "queue": "music"
+    }
+  ],
   "library": [
     {
       "title": "Salt Water",
@@ -131,22 +138,46 @@
     "moreReleases": "More releases of Salt",
     "books": [
       {
-        "title": "Salt and Stone",
-        "meta": "Book · Maya Lind · AudiobookBay",
-        "image": "/art/between-two-worlds.jpg",
-        "status": "Downloading · 42%",
-        "tone": "progress",
-        "requested": true,
-        "action": "Requested"
+        "asking": [],
+        "standing": [
+          {
+            "title": "Salt and Stone",
+            "meta": "Book · Maya Lind · 2021",
+            "image": "/art/between-two-worlds.jpg",
+            "status": "Downloading · 42%",
+            "tone": "progress"
+          }
+        ],
+        "arrived": []
       },
       {
-        "title": "A Grain of Salt",
-        "meta": "Book · Evelyn Harper · Prowlarr",
-        "image": "/art/shadows-and-sighs.jpg",
-        "status": null,
-        "tone": null,
-        "requested": false,
-        "action": "Request"
+        "asking": [],
+        "standing": [],
+        "arrived": [
+          {
+            "title": "Salt of the Earth",
+            "ref": "salt-of-the-earth",
+            "meta": "Book · Adam Rivers · 2019",
+            "image": "/art/foggy-trails.jpg",
+            "status": "In library",
+            "tone": "library"
+          }
+        ]
+      },
+      {
+        "asking": [
+          {
+            "title": "A Grain of Salt",
+            "ref": "a-grain-of-salt",
+            "meta": "Book · Evelyn Harper · 2020",
+            "image": "/art/shadows-and-sighs.jpg",
+            "status": null,
+            "tone": null,
+            "action": "Request"
+          }
+        ],
+        "standing": [],
+        "arrived": []
       }
     ],
     "podcasts": [

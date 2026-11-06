@@ -6,6 +6,9 @@
  * Asking for what is already being got joins that request. If it had failed, joining retries it,
  * as someone has just asked for it, and everyone on it sees it move. What has already reached the
  * library holds no live key, so asking for it finds it there and the person gets their claim.
+ *
+ * A person may be on only so many live requests. Joining counts, as it can make the job do more; asking
+ * again for one they are already on does not, and neither does what has reached the library.
  */
 import {
   cancelRequest as cancelRequestRoute,
@@ -36,6 +39,9 @@ import {
   arrivedRequests,
   createRequest,
   joinArrivedRequest,
+  liveRequest,
+  liveRequestCount,
+  peopleOn,
   requestOf,
   requestsListed,
   type StoredRequest,
@@ -66,8 +72,11 @@ function actions(request: StoredRequest): {
   }
 }
 
-export function requestRoutes(app: FastifyInstance, deps: RequestActDeps): void {
-  const { db, log, now, steps } = deps;
+export function requestRoutes(
+  app: FastifyInstance,
+  deps: RequestActDeps & { maxLive: number },
+): void {
+  const { db, log, now, steps, maxLive } = deps;
 
   /** The request a path names, if the signed-in person is on it. */
   const own = (request: FastifyRequest, id: string) => {
@@ -122,6 +131,11 @@ export function requestRoutes(app: FastifyInstance, deps: RequestActDeps): void 
       joinArrivedRequest(db, there.id, user.id, ref, now());
       addClaim(db, user.id, there.result, ARRIVAL_CLAIM[there.medium], now());
       return viewOf(there);
+    }
+    const live = liveRequest(db, ref, log);
+    const holdsIt = live !== undefined && peopleOn(db, live.id).includes(user.id);
+    if (!holdsIt && liveRequestCount(db, user.id, log) >= maxLive) {
+      throw new Refusal(429, 'too_many_requests');
     }
     const made = createRequest(db, user.id, ref, now(), log);
     const retried =

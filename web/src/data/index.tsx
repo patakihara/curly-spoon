@@ -45,6 +45,7 @@ import ShelfReview, { frame as shelfReviewFrame } from '../generated/pages/Shelf
 import Show, { frame as showFrame } from '../generated/pages/Show';
 import SignIn from '../generated/pages/SignIn';
 import { type Act, ActContext } from '../act';
+import { type Request, RequestContext, requestOf } from '../request';
 import { type Choose, ChooseContext } from '../choose';
 import { PlayContext, useListPlay, usePlayId } from '../player';
 import { type Draft, useTabDraft } from '../query';
@@ -64,8 +65,23 @@ import {
   podcastsData,
 } from './library';
 import { emptyQueue, queueData } from './queue';
-import { requestsData, requestsMoving, requestsState, requestVerb, verbFailure } from './requests';
-import { emptySearch, loadSearchPage, searchLive, type SearchLoaded } from './search';
+import {
+  makeRequest,
+  TOO_MANY_REQUESTS,
+  TooManyRequests,
+  requestsData,
+  requestsMoving,
+  requestsState,
+  requestVerb,
+  verbFailure,
+} from './requests';
+import {
+  emptySearch,
+  loadSearchPage,
+  searchLive,
+  type SearchLoaded,
+  searchRequestFailed,
+} from './search';
 import { setSetting, settingFailure, settingsData, settingsAwaited } from './settings';
 import { SignInScreen } from './sign-in';
 import { listCards, listData } from './lists';
@@ -99,7 +115,8 @@ import { answerFrom, type Answer, pageKey, SignedOut } from './store';
  * `GET /api/lists/{id}`, whose Play plays it through its own route (`listPlayOf`) and whose menu
  * renames, turns round or deletes it, a book's, show's or episode's menu adding it to your lists
  * (`./menus`), the queue from `GET /api/queues/{active}`, Search from what is typed into it
- * (`../query`) and `GET /api/search/suggest` or `GET /api/search`, sign in from the address,
+ * (`../query`) and `GET /api/search/suggest` or `GET /api/search`, whose book rows ask through
+ * `POST /api/requests` and look again while one moves, sign in from the address,
  * Requests from `GET /api/requests`, looking again after each verb and while anything moves, and
  * Settings' switch for everyone's library from `GET /api/settings`, setting it through
  * `PUT /api/settings`. A library home with nothing of yours draws its empty state, and it or
@@ -160,6 +177,8 @@ interface Screen<T, L = T> {
   acts?(api: ApiClient, ref: string, verb: RequestVerb, candidate?: string): Promise<void>;
   /** What the page says when a request's verb fails. */
   actFailure?(verb: RequestVerb): string;
+  /** What the page draws when a tap on the ref `failed` did not make its request. */
+  requestFailed?(data: T, failed: string): T;
   /** For a page of switches, a setting set to what its switch says: the page loads again after. */
   toggles?(api: ApiClient, setting: ToggleSetting, next: boolean): Promise<void>;
   /** What the page says when a switch could not be set. */
@@ -389,6 +408,8 @@ const screens: Screen<never>[] = [
       return searchLive(q, draft?.over === q ? draft : null, searchEmpty);
     },
     load: (api, asks) => loadSearchPage(api, asks, searchEmpty),
+    polls: ({ moving }) => moving,
+    requestFailed: searchRequestFailed,
   } satisfies Screen<SearchData, SearchLoaded>,
   {
     name: 'settings',
@@ -578,6 +599,7 @@ function useChanges<T, L>(screen: Screen<T, L>) {
   const [failure, setFailure] = useState<string | null>(null);
   const [working, setWorking] = useState<ReadonlySet<string>>(new Set());
   const going = useRef(new Set<string>());
+  const asks = asksAt(screen, params);
   const make = (what: string, failing: string, change: () => Promise<void>) => {
     if (going.current.has(what)) return;
     going.current.add(what);
@@ -589,13 +611,13 @@ function useChanges<T, L>(screen: Screen<T, L>) {
         if (error instanceof SignedOut) access.refused();
         else {
           console.warn('the change failed', what, error);
-          setFailure(failing);
+          setFailure(error instanceof TooManyRequests ? TOO_MANY_REQUESTS : failing);
         }
       })
       .then(() =>
         load === undefined
           ? undefined
-          : pages.reload(pageKey(screen.name, params), () => load(api, params)),
+          : pages.reload(pageKey(screen.name, asks), () => load(api, asks)),
       )
       .finally(() => {
         going.current.delete(what);
@@ -620,6 +642,24 @@ function actsOf<T, L>(
     working.has(ref)
       ? undefined
       : () => make(ref, screen.actFailure?.(verb) ?? '', () => acts(api, ref, verb, candidate));
+}
+
+/**
+ * A page's requests for it to hand down: none on the canvas. A ref that stands for no request asks
+ * for nothing, and the failure a tap leaves names the ref tapped, for the page to say on its row.
+ */
+function requestsOf<T>(
+  drawn: Drawn<T> | undefined,
+  api: ApiClient,
+  { make, working }: Changes,
+): Request | null {
+  if (drawn === undefined) return null;
+  return (key) => {
+    const ref = requestOf(key);
+    return ref === null || working.has(key)
+      ? undefined
+      : () => make(key, key, () => makeRequest(api, ref));
+  };
 }
 
 /**
@@ -654,13 +694,18 @@ function sayingFailure<T>(drawn: Drawn<T> | undefined, failure: string | null): 
   return { ...drawn.data, errors: failure === null ? [] : [{ message: failure }] };
 }
 
+/** What `screen` loads at this address when nothing is typed over it. */
+const asksAt = <T, L>(screen: Screen<T, L>, params: Params): Params =>
+  screen.live?.(params, null).asks ?? params;
+
 /** Looks at `screen` again every so often while it is open and what it holds moves by itself. */
 function usePolling<T, L>(screen: Screen<T, L>): void {
   const { api, access, pages } = useDeps();
   const who = useAccessOf(access);
   const params = useParams();
   const open = useMatches().at(-1)?.id === screen.name;
-  const key = pageKey(screen.name, params);
+  const asks = asksAt(screen, params);
+  const key = pageKey(screen.name, asks);
   const kept = useSyncExternalStore(
     pages.subscribe,
     () => pages.peek(key),
@@ -671,9 +716,9 @@ function usePolling<T, L>(screen: Screen<T, L>): void {
   useEffect(() => {
     const load = screen.load;
     if (!moving || load === undefined) return;
-    const timer = setInterval(() => void pages.load(key, () => load(api, params)), POLL_MS);
+    const timer = setInterval(() => void pages.load(key, () => load(api, asks)), POLL_MS);
     return () => clearInterval(timer);
-    // `params` is in `key`.
+    // `asks` is in `key`.
   }, [moving, key, screen, api, pages]);
 }
 
@@ -694,20 +739,25 @@ function pageOf<T>(screen: Screen<T>): ComponentType {
             const { api } = useDeps();
             const changes = useChanges(screen);
             const act = actsOf(screen, shown, api, changes);
+            const request = requestsOf(shown, api, changes);
             const toggle = togglesOf(screen, shown, api, changes);
             const retry = useRetries(screen, shown);
             usePolling(screen);
             const data =
-              screen.acts === undefined && screen.toggles === undefined
-                ? shown?.data
-                : sayingFailure(shown, changes.failure);
+              screen.requestFailed !== undefined && shown !== undefined && changes.failure !== null
+                ? screen.requestFailed(shown.data, changes.failure)
+                : screen.acts === undefined && screen.toggles === undefined
+                  ? shown?.data
+                  : sayingFailure(shown, changes.failure);
             const page = <Page data={data} state={shown?.state} />;
             return (
               <ChooseContext.Provider value={choose}>
                 <ActContext.Provider value={act}>
-                  <ToggleContext.Provider value={toggle}>
-                    <RetryContext.Provider value={retry}>{page}</RetryContext.Provider>
-                  </ToggleContext.Provider>
+                  <RequestContext.Provider value={request}>
+                    <ToggleContext.Provider value={toggle}>
+                      <RetryContext.Provider value={retry}>{page}</RetryContext.Provider>
+                    </ToggleContext.Provider>
+                  </RequestContext.Provider>
                 </ActContext.Provider>
               </ChooseContext.Provider>
             );

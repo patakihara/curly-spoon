@@ -573,6 +573,8 @@ describe('[M3.requests/c] a person’s own library', () => {
     now: () => 1,
     notIndexedAfterMs: 1_000,
     stepTimeoutMs: 1_000,
+    stallAfterMs: 1_000,
+    holdAfterMs: 1_000,
   });
 
   it('[M3.requests/c] shows empty lists to a person with no claims and no progress, linked or not', async () => {

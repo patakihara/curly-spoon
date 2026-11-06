@@ -46,6 +46,7 @@ describe('a search', () => {
     const results = {
       query: 'rumours',
       hasRequests: false,
+      books: [],
       results: [
         {
           ref: album,

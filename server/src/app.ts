@@ -10,6 +10,7 @@ import { createProxyTrust, type ProxyTrust } from './auth/proxy.js';
 import type { CookieSecure } from './config.js';
 import { answerFailure, refuseConnection } from './failures.js';
 import { scheduleJob } from './jobs/schedule.js';
+import type { BookCatalogue } from './requests/books/catalogue.js';
 import { advanceRequests } from './requests/job.js';
 import type { StepsRegistry } from './requests/steps.js';
 import { retiredWorkerRoute } from './retiredWorker.js';
@@ -29,6 +30,7 @@ import { Lyrics } from './lyrics/service.js';
 import { IndexLookup } from './queues/lookup.js';
 import { Sessions } from './queues/sessions.js';
 import { requestRoutes } from './routes/requests.js';
+import { MOST_LIVE_REQUESTS } from './store/requests.js';
 import { searchRoutes } from './routes/search.js';
 import { sessionRoutes } from './routes/sessions.js';
 import { settingsRoutes } from './routes/settings.js';
@@ -69,7 +71,13 @@ export interface BuildAppOptions {
     everyMs: number;
     notIndexedAfterMs: number;
     stepTimeoutMs: number;
+    stallAfterMs: number;
+    holdAfterMs: number;
+    /** How many live requests one person may be on; `MOST_LIVE_REQUESTS` otherwise. */
+    maxLive?: number;
   };
+  /** What Search lists of the books the library lacks, while books can be requested. */
+  bookCatalogue?: BookCatalogue;
   /** How transcodes are held open and their segments waited for. */
   playback?: PlaybackOptions;
   random?: Random;
@@ -210,7 +218,14 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       now: options.now ?? Date.now,
     });
   lyricsRoutes(app, { db, upstreams, lyrics });
-  searchRoutes(app, { db, now: options.now ?? Date.now });
+  searchRoutes(app, {
+    db,
+    now: options.now ?? Date.now,
+    // A row nothing could take the tap of is not listed.
+    ...(options.bookCatalogue !== undefined && options.requests?.steps.has('book') === true
+      ? { catalogue: options.bookCatalogue }
+      : {}),
+  });
   settingsRoutes(app, { db, sessions, now: options.now ?? Date.now });
 
   requestRoutes(app, {
@@ -220,10 +235,11 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     now: options.now ?? Date.now,
     // With no steps registered, no step ever runs against this.
     stepTimeoutMs: options.requests?.stepTimeoutMs ?? 0,
+    maxLive: options.requests?.maxLive ?? MOST_LIVE_REQUESTS,
   });
 
   if (options.requests !== undefined) {
-    const { everyMs, ...requests } = options.requests;
+    const { everyMs, maxLive: _maxLive, ...requests } = options.requests;
     const deps = { db, ...requests, log: app.log, now: options.now ?? Date.now };
     let turn = Promise.resolve();
     const stop = scheduleJob(

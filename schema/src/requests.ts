@@ -35,6 +35,7 @@ export const RequestFailure = z
     'noRelease',
     'searchFailed',
     'downloadFailed',
+    'downloadStalled',
     'importFailed',
     'notIndexed',
     'cancelledUpstream',
@@ -42,13 +43,16 @@ export const RequestFailure = z
   .openapi('RequestFailure');
 export type RequestFailure = z.infer<typeof RequestFailure>;
 
+/** An Audible catalogue id. */
+export const Asin = z.string().regex(/^[A-Z0-9]{10}$/);
+
 /**
  * The catalogue ids a request names its target by: an Audible ASIN, an ISBN-10 or ISBN-13, a
  * MusicBrainz release id, a podcast's feed address, a YouTube Music video id.
  */
 export const RequestIds = z
   .object({
-    asin: z.string().regex(/^[A-Z0-9]{10}$/),
+    asin: Asin,
     isbn: z.string().regex(/^(?:\d{9}[\dX]|\d{13})$/),
     mbid: z.string().uuid(),
     feedUrl: z
@@ -70,8 +74,8 @@ export type RequestIds = z.infer<typeof RequestIds>;
 /** What is requested: its title, its author, artist or host, and its catalogue ids. */
 export const RequestTarget = z
   .object({
-    title: z.string().trim().min(1).max(500),
-    creator: z.string().trim().min(1).max(500).nullable(),
+    title: z.string().trim().min(1).max(300),
+    creator: z.string().trim().min(1).max(300).nullable(),
     ids: RequestIds,
   })
   .strict()

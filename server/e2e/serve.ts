@@ -6,7 +6,8 @@
  *
  * AURALIS_E2E_ADDRESS is the host clients put in URLs (the emulator's `10.0.2.2` in CI);
  * AURALIS_E2E_PORT and AURALIS_E2E_SIGN_ON_PORT are the app's and the sign-on's ports;
- * AURALIS_E2E_NOTHING_PLAYED=1 has the recorded person begin with nothing played.
+ * AURALIS_E2E_NOTHING_PLAYED=1 has the recorded person begin with nothing played;
+ * AURALIS_E2E_BOOK_SOURCE is how Search's source of books the library lacks behaves.
  */
 import { mediaRefKey } from '@auralis/schema';
 import { z } from 'zod';
@@ -18,6 +19,7 @@ const env = z
     AURALIS_E2E_PORT: z.coerce.number().int().min(1).max(65535).default(8787),
     AURALIS_E2E_SIGN_ON_PORT: z.coerce.number().int().min(1).max(65535).default(8788),
     AURALIS_E2E_NOTHING_PLAYED: z.literal('1').optional(),
+    AURALIS_E2E_BOOK_SOURCE: z.enum(['answers', 'slow', 'failing']).default('answers'),
   })
   .parse(process.env);
 
@@ -27,6 +29,7 @@ const server = await recordedServer({
   signOnPort: env.AURALIS_E2E_SIGN_ON_PORT,
   logger: { stream: process.stderr },
   nothingPlayed: env.AURALIS_E2E_NOTHING_PLAYED === '1',
+  bookSource: env.AURALIS_E2E_BOOK_SOURCE,
 });
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {

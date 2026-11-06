@@ -588,6 +588,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/search/books/{asin}/art": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The cover of a book a search found, one the library lacks, from the catalogue's address */
+        get: operations["getSearchBookArt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /** The cover of a book a search found, one the library lacks, from the catalogue's address */
+        head: operations["getSearchBookArtHead"];
+        patch?: never;
+        trace?: never;
+    };
     "/api/lyrics/{ref}": {
         parameters: {
             query?: never;
@@ -688,7 +706,7 @@ export interface components {
          */
         HlsMime: "application/vnd.apple.mpegurl";
         /** @enum {string} */
-        RequestFailure: "noRelease" | "searchFailed" | "downloadFailed" | "importFailed" | "notIndexed" | "cancelledUpstream";
+        RequestFailure: "noRelease" | "searchFailed" | "downloadFailed" | "downloadStalled" | "importFailed" | "notIndexed" | "cancelledUpstream";
         /** @enum {string} */
         QueueType: "music" | "spoken";
         /** @enum {string} */
@@ -741,6 +759,8 @@ export interface components {
             ref: components["schemas"]["MediaRef"];
             title: string;
         };
+        /** @enum {string} */
+        RequestStatus: "requested" | "searching" | "needsChoice" | "queued" | "downloading" | "importing" | "inLibrary" | "failed";
         /** @enum {string} */
         LyricsSource: "jellyfin" | "lrclib";
         /** @enum {string} */
@@ -885,8 +905,6 @@ export interface components {
         };
         /** @enum {string} */
         RequestMedium: "book" | "album" | "song" | "podcast";
-        /** @enum {string} */
-        RequestStatus: "requested" | "searching" | "needsChoice" | "queued" | "downloading" | "importing" | "inLibrary" | "failed";
         /** @enum {string} */
         RequestVerb: "retry" | "cancel" | "choose" | "pickAnother";
         RequestCandidate: {
@@ -1151,9 +1169,21 @@ export interface components {
             availability: components["schemas"]["Availability"];
             inYourLibrary: boolean;
         };
+        SearchBook: {
+            ref: components["schemas"]["RequestRef"];
+            title: string;
+            author: string | null;
+            narrator: string | null;
+            year: number | null;
+            art: string | null;
+            status: components["schemas"]["RequestStatus"] | null;
+            progress: number | null;
+            item: components["schemas"]["MediaRef"] | null;
+        };
         SearchResults: {
             query: string;
             results: components["schemas"]["SearchResult"][];
+            books: components["schemas"]["SearchBook"][];
             hasRequests: boolean;
         };
         /** @enum {string} */
@@ -3238,7 +3268,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The best results first, of the kinds asked for, or of every kind. */
+            /** @description The best results first, of the kinds asked for, or of every kind, and the books the library lacks. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3273,6 +3303,100 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
+            };
+        };
+    };
+    getSearchBookArt: {
+        parameters: {
+            query?: {
+                size?: components["schemas"]["ArtSize"];
+            };
+            header?: never;
+            path: {
+                asin: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The image, as the catalogue holds it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/*": string;
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getSearchBookArtHead: {
+        parameters: {
+            query?: {
+                size?: components["schemas"]["ArtSize"];
+            };
+            header?: never;
+            path: {
+                asin: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The image, as the catalogue holds it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

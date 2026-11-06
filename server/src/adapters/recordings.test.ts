@@ -896,3 +896,89 @@ describe("LRCLIB's answers, recorded for M2.lrclib", () => {
     }
   });
 });
+
+describe("[M3.books] Prowlarr's and AudiobookBay's calls, as recorded", () => {
+  const calls = [
+    ['prowlarr', 'search-jekyll', 200],
+    ['prowlarr', 'search-jekyll-others', 200],
+    ['prowlarr', 'search-jekyll-spanish', 200],
+    ['prowlarr', 'download-redirect', 301],
+    ['prowlarr', 'unauthorized', 401],
+    ['audiobookbay', 'detail', 200],
+  ] as const;
+
+  it.each(calls)('[M3.books] %s %s answered %i', (upstream, call, status) => {
+    expect(recording(upstream, call).response.status).toBe(status);
+  });
+
+  it('[M3.books] the only indexer named is the one the plan names', () => {
+    for (const call of ['search-jekyll', 'search-jekyll-others', 'search-jekyll-spanish']) {
+      const { body } = recording('prowlarr', call).response;
+      if (body === null || !('json' in body)) throw new Error('expected rows');
+      for (const row of body.json as { indexer: string }[]) {
+        expect(row.indexer).toMatch(/^(?:AudioBook Bay|indexer-[a-z])$/);
+      }
+    }
+  });
+
+  it('[M3.books] a link asked keeps no key, and answers a magnet holding only its hash', () => {
+    const asked = recording('prowlarr', 'download-redirect');
+    expect(asked.request.query.apikey).toBe('<token>');
+    expect(asked.response.headers.location).toMatch(/^magnet:\?xt=urn:btih:[0-9A-Fa-f]{40}$/);
+  });
+});
+
+describe("[M3.books] qBittorrent's calls, as recorded on controlled torrents", () => {
+  const calls = [
+    ['unauthorized', 403],
+    ['version', 200],
+    ['create-category', 200],
+    ['create-category-again', 409],
+    ['add-magnet', 200],
+    ['add-existing', 409],
+    ['info-absent', 200],
+    ['info-queued', 200],
+    ['info-metadata', 200],
+    ['info-stalled', 200],
+    ['debian-queued', 200],
+    ['info-downloading', 200],
+    ['info-done', 200],
+    ['info-by-tag', 200],
+    ['info-by-unused-tag', 200],
+    ['files', 200],
+    ['delete', 200],
+    ['delete-missing', 200],
+    ['after-delete', 200],
+  ] as const;
+
+  it.each(calls)('[M3.books] %s answered %i', (call, status) => {
+    expect(recording('qbittorrent', call).response.status).toBe(status);
+  });
+
+  it('[M3.books] every call names a hash or the recording tag, or lists no torrents at all', () => {
+    for (const [call] of calls) {
+      const { path, query } = recording('qbittorrent', call).request;
+      if (path.endsWith('torrents/info')) {
+        expect(query.hashes ?? query.tag, call).toBeDefined();
+      }
+    }
+  });
+
+  it('[M3.books] every row recorded is one of the two controlled torrents', () => {
+    for (const [call] of calls) {
+      const { body } = recording('qbittorrent', call).response;
+      if (body === null || !('json' in body) || !Array.isArray(body.json)) continue;
+      for (const row of body.json as { tags?: string; category?: string }[]) {
+        if (row.tags === undefined) continue;
+        expect(row.tags, call).toBe('auralis-record');
+        expect(row.category, call).toBe('auralis-books');
+      }
+    }
+  });
+
+  it('[M3.books] the state of a torrent with no peers stays metaDL with no bytes', () => {
+    const { body } = recording('qbittorrent', 'info-stalled').response;
+    const [row] = (body as { json: { state: string; progress: number }[] }).json;
+    expect(row).toMatchObject({ state: 'metaDL', progress: 0 });
+  });
+});

@@ -1,0 +1,26 @@
+{
+  "upstream": "qbittorrent",
+  "upstreamVersion": "v5.3.0",
+  "call": "info-absent",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/torrents/info",
+    "query": {
+      "hashes": "7acf8fb590b2060dd9c3146ef770169d593433b0"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": []
+    }
+  }
+}

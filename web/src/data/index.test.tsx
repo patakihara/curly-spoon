@@ -371,8 +371,9 @@ describe('search given its data', () => {
   });
   const empty = emptySearch(searchFrame.placeholder);
   const results = {
-    data: { ...empty, top: row('The Rise and Fall'), library: [row('Rumours')] },
+    data: { ...empty, top: [row('The Rise and Fall')], library: [row('Rumours')] },
     found: true,
+    moving: false,
   };
   const suggesting = (...titles: string[]) => ({
     data: {
@@ -380,6 +381,7 @@ describe('search given its data', () => {
       suggestions: titles.map((title) => ({ title, meta: 'Album', query: title, icon: 'search' })),
     },
     found: true,
+    moving: false,
   });
 
   /** A member's pages, Search's answers kept by what was asked for. */

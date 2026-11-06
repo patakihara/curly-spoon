@@ -1,0 +1,91 @@
+{
+  "upstream": "audible",
+  "upstreamVersion": "Audible catalogue API 1.0",
+  "call": "product-dune",
+  "request": {
+    "method": "GET",
+    "path": "/1.0/catalog/products/B002V1OF70",
+    "query": {
+      "response_groups": "contributors,series,product_attrs,product_desc,media"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "product": {
+          "asin": "B002V1OF70",
+          "authors": [
+            {
+              "asin": "B000APO5OM",
+              "name": "Frank Herbert"
+            }
+          ],
+          "language": "english",
+          "merchandising_summary": "NOW A MAJOR MOTION PICTURE directed by Denis Villeneuve, starring Timothée Chalamet, Zendaya, Rebecca Ferguson, Javier Bardem, Josh Brolin, Austin Butler, Florence Pugh, Dave Bautista, Christopher Walken, Léa Seydoux, Stellan Skarsgård, and Charlotte Rampling Set on the desert planet Arrakis...",
+          "narrators": [
+            {
+              "name": "Scott Brick"
+            },
+            {
+              "name": "Orlagh Cassidy"
+            },
+            {
+              "name": "Euan Morton"
+            },
+            {
+              "name": "Simon Vance"
+            },
+            {
+              "name": "Ilyana Kadushin"
+            },
+            {
+              "name": "Byron Jennings"
+            },
+            {
+              "name": "David R. Gordon"
+            },
+            {
+              "name": "Jason Culp"
+            },
+            {
+              "name": "Kent Broadhurst"
+            },
+            {
+              "name": "Oliver Wyman"
+            },
+            {
+              "name": "Patricia Kilgarriff"
+            },
+            {
+              "name": "Scott Sowers"
+            }
+          ],
+          "release_date": "2007-05-29",
+          "runtime_length_min": 1262,
+          "series": [
+            {
+              "sequence": "12",
+              "title": "The Dune Sequence"
+            },
+            {
+              "sequence": "1",
+              "title": "Dune"
+            }
+          ],
+          "title": "Dune",
+          "product_images": {
+            "500": "https://m.media-amazon.com/images/I/41rrXYM-wHL._SL500_.jpg"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "upstream": "audible",
+  "upstreamVersion": "Audible catalogue API 1.0",
+  "call": "product-no-sequence",
+  "request": {
+    "method": "GET",
+    "path": "/1.0/catalog/products/B002VA8K2M",
+    "query": {
+      "response_groups": "contributors,series,product_attrs,product_desc,media"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "product": {
+          "asin": "B002VA8K2M",
+          "authors": [
+            {
+              "asin": "B000APO5OM",
+              "name": "Frank Herbert"
+            }
+          ],
+          "language": "english",
+          "merchandising_summary": "Read by the author, this compilation of key excerpts from the brilliant Dune trilogy is melded with connective text written by Frank Herbert specifically for these recordings. It includes selections from Dune: The Banquet Scene, Sandworms of Dune, The Battles of Dune, and The Truths of Dune...",
+          "narrators": [
+            {
+              "name": "Frank Herbert"
+            }
+          ],
+          "release_date": "2007-04-24",
+          "runtime_length_min": 203,
+          "series": [
+            {
+              "sequence": "",
+              "title": "Dune"
+            },
+            {
+              "sequence": "",
+              "title": "The Dune Sequence"
+            }
+          ],
+          "title": "The Dune Audio Collection",
+          "product_images": {
+            "500": "https://m.media-amazon.com/images/I/51MdISkVxGL._SL500_.jpg"
+          }
+        }
+      }
+    }
+  }
+}

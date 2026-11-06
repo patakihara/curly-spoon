@@ -86,6 +86,12 @@ export function imageFiles(root) {
   return [...new Set(listFiles(root, sources))].filter((f) => !ignored(f)).sort();
 }
 
+const HTTP_AT_RUNTIME = new Set([
+  'server/src/adapters/http/fetch.ts',
+  'server/src/adapters/http/publicFetch.ts',
+  'server/src/adapters/http/unavailable.ts',
+]);
+
 /** True for a file only tests use: a test, a recording, the test key, the recorder or the harness. */
 export function testOnly(file) {
   return (
@@ -93,7 +99,7 @@ export function testOnly(file) {
     file.includes('/recordings/') ||
     file.startsWith('server/e2e/') ||
     /^server\/src\/adapters\/record-[^/]+$/.test(file) ||
-    (file.startsWith('server/src/adapters/http/') && file !== 'server/src/adapters/http/fetch.ts')
+    (file.startsWith('server/src/adapters/http/') && !HTTP_AT_RUNTIME.has(file))
   );
 }
 

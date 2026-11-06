@@ -14,6 +14,7 @@ import {
 } from '../stream.js';
 import { type ZodType, type z } from 'zod';
 import {
+  authorSchema,
   type AbsBookmark,
   type AbsMe,
   bookDetailSchema,
@@ -33,6 +34,7 @@ import {
   type MediaProgress,
   mediaProgressSchema,
   meSchema,
+  newestItemsSchema,
   libraryItemsSchema,
   markFinishedSchema,
   type PlayRequest,
@@ -118,6 +120,19 @@ export class AbsClient {
     };
     if (page.sort !== undefined) query.sort = page.sort;
     return this.call(path, libraryItemsSchema, {}, query);
+  }
+
+  /** The latest items added to a library, newest first, with the folder each sits in. */
+  async newestItems(libraryId: string, limit: number, page = 0) {
+    const path = `api/libraries/${encodeURIComponent(libraryId)}/items`;
+    const first = { limit: String(limit), sort: 'addedAt', desc: '1', minified: '1' };
+    const query = page === 0 ? first : { ...first, page: String(page) };
+    return (await this.call(path, newestItemsSchema, {}, query)).results;
+  }
+
+  /** An author, for whether Audiobookshelf holds a photo of them. */
+  getAuthor(authorId: string): Promise<z.infer<typeof authorSchema>> {
+    return this.call(`api/authors/${encodeURIComponent(authorId)}`, authorSchema);
   }
 
   /** A book or a show as the index reads it: `GET /api/items/:id`, not expanded. */

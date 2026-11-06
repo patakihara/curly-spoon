@@ -5,6 +5,7 @@ import { generatePath, useNavigate } from 'react-router';
 import { PLATFORM, useLayout, type Chrome, type LayoutId, type PageFrame } from '../nav/platform';
 import type { ShellNav } from '../../shell-nav';
 import type { Playing } from '../../player';
+import { useRequest } from '../../request';
 import { BackLayer, BottomNav, IconButton, LayoutGrid, MediaCard, MediaHeader, MiniPlayer, NavRail, PageBody, Section } from '../ui/index.js';
 
 const placeholder = {
@@ -274,6 +275,7 @@ export interface SeriesProps {
 export default function Series({ data = placeholder, state = 'full' }: SeriesProps) {
   const platform = PLATFORM[useLayout()];
   const navigate = useNavigate();
+  const askFor = useRequest();
   return (
     <PageBody platform={platform}>
       <Section platform={platform}>
@@ -283,7 +285,7 @@ export default function Series({ data = placeholder, state = 'full' }: SeriesPro
         <LayoutGrid platform={platform}>
           {data.books.map((book, i) => (
             <Fragment key={i}>
-              <MediaCard width="100%" eyebrow={book.eyebrow} title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={book.ref ? () => navigate(generatePath('/books/:ref', { ref: book.ref })) : undefined} platform={platform} />
+              <MediaCard width="100%" eyebrow={book.eyebrow} title={book.title} sub={book.sub} image={book.image} progress={book.progress} absent={book.absent} status={book.status} tone={book.tone as Exclude<ComponentProps<typeof MediaCard>['tone'], undefined>} onClick={book.ref ? () => navigate(generatePath('/books/:ref', { ref: book.ref })) : undefined} onRequest={askFor(book.ref)} platform={platform} />
             </Fragment>
           ))}
         </LayoutGrid>

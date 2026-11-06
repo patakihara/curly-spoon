@@ -3,6 +3,7 @@ import {
   type RequestFailure,
   type RequestList,
   type RequestMedium,
+  type RequestRef,
   type RequestVerb,
   type RequestView,
 } from '@auralis/schema';
@@ -31,6 +32,7 @@ const FAILURES: Record<RequestFailure, string> = {
   noRelease: 'No release was found',
   searchFailed: 'The search failed',
   downloadFailed: 'The download failed',
+  downloadStalled: 'The download stalled',
   importFailed: 'The import failed',
   notIndexed: 'It never reached the library',
   cancelledUpstream: 'The download was cancelled',
@@ -132,6 +134,23 @@ export const requestsState = (list: RequestList): 'empty' | 'full' =>
 /** Whether anything is moving by itself, so the page should look again: not a failed one. */
 export const requestsMoving = (list: RequestList): boolean =>
   list.inFlight.some((request) => request.status !== 'failed');
+
+/** The server's refusal of one live request too many, which no row can put right. */
+export class TooManyRequests extends Error {}
+
+/** What the page's banner says of it. */
+export const TOO_MANY_REQUESTS =
+  'You have too many requests under way. Cancel one, or wait for one to finish, and ask again.';
+
+/** Asks for something the library lacks, or joins the request for it already under way. */
+export async function makeRequest(api: ApiClient, ref: RequestRef): Promise<void> {
+  const { response, error } = await api.POST('/api/requests', { body: { ref } });
+  if (response.status === 401) throw new SignedOut();
+  if (response.status === 429 && (error as { error?: string })?.error === 'too_many_requests') {
+    throw new TooManyRequests();
+  }
+  if (!response.ok) throw new Error(`a request answered ${response.status}`);
+}
 
 /**
  * Does a verb to a request. A choice takes its candidate, and picking another is the same route,

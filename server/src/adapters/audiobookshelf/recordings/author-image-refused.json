@@ -1,0 +1,26 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.2",
+  "call": "author-image-refused",
+  "request": {
+    "method": "POST",
+    "path": "/api/authors/9156bff8-444c-42ff-bbc8-c57a95f248f2/image",
+    "query": {},
+    "headers": {
+      "authorization": "Bearer <token>",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {}
+    }
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "content-type": "text/plain; charset=utf-8"
+    },
+    "body": {
+      "text": "Not Found"
+    }
+  }
+}

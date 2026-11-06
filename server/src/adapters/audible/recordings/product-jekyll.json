@@ -1,0 +1,48 @@
+{
+  "upstream": "audible",
+  "upstreamVersion": "Audible catalogue API 1.0",
+  "call": "product-jekyll",
+  "request": {
+    "method": "GET",
+    "path": "/1.0/catalog/products/B09J9BJ8DF",
+    "query": {
+      "response_groups": "contributors,series,product_attrs,product_desc,media"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "product": {
+          "asin": "B09J9BJ8DF",
+          "authors": [
+            {
+              "asin": "B0B8V3KRKX",
+              "name": "Robert Louis Stevenson"
+            }
+          ],
+          "language": "english",
+          "merchandising_summary": "<p>Robert Louis Stevenson's dark psychological fantasy follows a respectable London lawyer as he investigates the strange relationship between his old friend Dr Henry Jekyll and the evil Edward Hyde....</p>",
+          "narrators": [
+            {
+              "name": "Paapa Essiedu"
+            }
+          ],
+          "release_date": "2021-10-21",
+          "runtime_length_min": 182,
+          "title": "The Strange Case of Dr Jekyll and Mr Hyde",
+          "product_images": {
+            "500": "https://m.media-amazon.com/images/I/51lhbwbqi0L._SL500_.jpg"
+          }
+        }
+      }
+    }
+  }
+}

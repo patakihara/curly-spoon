@@ -47,6 +47,23 @@ export type PollOutcome =
   | { kind: 'failed'; reason: RequestFailure };
 
 /**
+ * An import's answer: the item the index will find once it is in, or that it is not ready to name
+ * one yet, as when a server only assigns an id once it has seen the folder. A waiting import saves
+ * nothing, and is called again next turn under the same key.
+ */
+export type ImportOutcome = { kind: 'arrived'; ref: MediaRef } | { kind: 'waiting' };
+
+/**
+ * Thrown by a step for an upstream it could not reach: a refused connection, a time limit of its
+ * own, a 5xx. It says nothing about the request, so the job holds it where it stands and asks again
+ * next turn, failing it only once it has been held too long. A step's own limit must be below the
+ * job's, which fails the request as any other throw does.
+ */
+export class StepUnavailable extends Error {
+  override readonly name = 'StepUnavailable';
+}
+
+/**
  * The download a cancel drops: the one a handle names, or, when the answer of a `start` was lost so
  * no handle was saved, whatever that start made, by its key and the release it was given.
  */
@@ -80,14 +97,17 @@ export interface DownloadSteps {
  * The job saves an idempotency key on the request before it calls `start` or `import`, and passes
  * that key to the step. A crash can fall between the step and saving what it answered, so the same
  * key can come again: each medium must treat a repeat of a key as the same call and answer the same
- * result, doing nothing twice. Real mediums get this cheaply from what they already have, such as
+ * result, doing nothing twice; an import may answer `waiting` until it can answer the rest. Real mediums get this cheaply from what they already have, such as
  * a torrent's info hash or a folder path.
+ *
+ * The job aborts `signal` when `import` passes its time limit. The request fails then, and the step
+ * must not make its change after that: what it has not committed stays uncommitted.
  */
 export interface MediumSteps {
   readonly medium: RequestMedium;
   search(request: StoredRequest): Promise<SearchOutcome>;
   readonly download?: DownloadSteps;
-  import(request: StoredRequest, key: string): Promise<{ ref: MediaRef }>;
+  import(request: StoredRequest, key: string, signal?: AbortSignal): Promise<ImportOutcome>;
 }
 
 /** The registered steps, by medium. */

@@ -395,9 +395,10 @@ describe('a page requesting an item, on the web', () => {
     shellOf('book'),
   );
 
-  it('[M0.states/c] binds no request, since no request endpoint exists: the card draws its Request disabled', () => {
-    expect(requesting).toContain('<MediaCard title={b.title} />');
-    expect(requesting).not.toMatch(/<MediaCard[^>]*onRequest/);
+  it('[M3.books] binds a request to what the page is given, which gives none while nothing can take it', () => {
+    expect(requesting).toContain('<MediaCard title={b.title} onRequest={askFor(b.ref)} />');
+    expect(requesting).toContain("import { useRequest } from '../../request';");
+    expect(requesting).toContain('const askFor = useRequest();');
     expect(requesting).not.toContain('ignore');
     expect(requesting).not.toContain('useNavigate');
   });

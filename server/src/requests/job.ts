@@ -15,6 +15,18 @@
  * its limit fails as a step that throws does, so a `start` or `import` keeps its key: it may yet
  * land upstream, and a retry under that key cannot double it.
  *
+ * A step that answers `StepUnavailable` is different: the upstream could not be reached, which says
+ * nothing about the request. It stays where it stands, and fails with the step's usual reason only
+ * once the upstream has been away that long. The hold is timed from the first refusal rather than
+ * the last save, as a step that waits (an import) saves nothing for hours while all is well.
+ *
+ * A download whose bytes stand still for the stall limit fails `downloadStalled`, and goes on by
+ * itself to the next release the search found, up to `MAX_AUTO_STARTS`; a person's own choices don't
+ * count. Past that, or with none left, the request stays failed and offers what remains. Listed
+ * seeders can be false, so only bytes count. A look after an outage of any length, or a full limit
+ * after the last one, has seen nothing stand still, so it restarts the clock: an outage can never
+ * pass for a stall.
+ *
  * What a person does to a request (retry, choose, pick another, cancel) lives here too, as dropping
  * a failed download takes the same steps. Each move is saved first, naming the version it read, so of
  * two taps only one goes on to drop a download.
@@ -26,9 +38,11 @@ import { indexedRow } from '../libraryIndex/store.js';
 import { addClaim, type ClaimReason } from '../store/claims.js';
 import type { Db } from '../store/connection.js';
 import {
+  clearHeld,
   deleteRequest,
   getRequest,
   leaveRequest,
+  markHeld,
   peopleOn,
   saveRequest,
   type RequestChange,
@@ -36,12 +50,13 @@ import {
   workingRequests,
 } from '../store/requests.js';
 import { afterPicked, next, type RequestEvent, type WorkingStatus } from './machine.js';
-import type {
-  DownloadSteps,
-  DownloadTarget,
-  MediumSteps,
-  Release,
-  StepsRegistry,
+import {
+  type DownloadSteps,
+  type DownloadTarget,
+  type MediumSteps,
+  type Release,
+  StepUnavailable,
+  type StepsRegistry,
 } from './steps.js';
 
 export interface RequestJobDeps {
@@ -53,10 +68,20 @@ export interface RequestJobDeps {
   notIndexedAfterMs: number;
   /** How long any one call to a medium's steps may go unanswered before it counts as failed. */
   stepTimeoutMs: number;
+  /** How long a download's bytes may stand still before its request fails. */
+  stallAfterMs: number;
+  /** How long an upstream that cannot be reached may hold a request before it fails. */
+  holdAfterMs: number;
 }
 
 /** What acting on a request for a person takes. */
-export type RequestActDeps = Omit<RequestJobDeps, 'notIndexedAfterMs'>;
+export type RequestActDeps = Omit<
+  RequestJobDeps,
+  'notIndexedAfterMs' | 'stallAfterMs' | 'holdAfterMs'
+>;
+
+/** How many releases a request starts by itself after stalls. */
+const MAX_AUTO_STARTS = 3;
 
 /** The reason a step that throws fails with. */
 const THROWN: Record<WorkingStatus, RequestFailure> = {
@@ -68,17 +93,22 @@ const THROWN: Record<WorkingStatus, RequestFailure> = {
   importing: 'importFailed',
 };
 
-/** A step's answer, or a failure once the limit has passed with none. */
-async function limited<T>(deps: RequestActDeps, name: string, call: () => Promise<T>): Promise<T> {
+/** A step's answer, or a failure once the limit has passed with none, which aborts the step. */
+async function limited<T>(
+  deps: RequestActDeps,
+  name: string,
+  call: (signal: AbortSignal) => Promise<T>,
+): Promise<T> {
   let timer: NodeJS.Timeout | undefined;
+  const controller = new AbortController();
   const limit = new Promise<never>((_resolve, reject) => {
-    timer = setTimeout(
-      () => reject(new Error(`no answer to ${name} in ${deps.stepTimeoutMs} ms`)),
-      deps.stepTimeoutMs,
-    );
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new Error(`no answer to ${name} in ${deps.stepTimeoutMs} ms`));
+    }, deps.stepTimeoutMs);
   });
   try {
-    return await Promise.race([call(), limit]);
+    return await Promise.race([call(controller.signal), limit]);
   } finally {
     clearTimeout(timer);
   }
@@ -158,6 +188,30 @@ function inTurn<T>(
   return answer;
 }
 
+/**
+ * When the bytes last moved, as of a poll that found them at this progress: now if they have risen,
+ * if the poll before this one went unanswered, or if the last look was a full limit ago, as nothing
+ * has been seen to stand still since then.
+ */
+function stallClock(deps: RequestJobDeps, request: StoredRequest, progress: number): number {
+  const before = request.state.status === 'downloading' ? request.state.progress : 0;
+  const unseen = request.heldSince !== null || deps.now() - request.updatedAt >= deps.stallAfterMs;
+  if (progress > before || unseen || request.progressAt === null) return deps.now();
+  return request.progressAt;
+}
+
+/** Fails a download that stopped moving, then drops it and starts the next release, if it may. */
+async function stalled(deps: RequestJobDeps, request: StoredRequest) {
+  if (!apply(deps, request, { type: 'failed', reason: 'downloadStalled' })) return;
+  const failed = getRequest(deps.db, request.id);
+  if (failed === null || failed.autoStarts >= MAX_AUTO_STARTS) return;
+  const following = otherReleases(failed)[0];
+  if (following === undefined) return;
+  if ((await pickAnotherRelease(deps, request.id)) !== null) {
+    chooseRelease(deps, request.id, following.id, { autoStarts: failed.autoStarts + 1 });
+  }
+}
+
 /** Starts the release's download, or follows the one the store holds a handle to. */
 async function download(deps: RequestJobDeps, steps: DownloadSteps, request: StoredRequest) {
   const { db, now } = deps;
@@ -168,7 +222,7 @@ async function download(deps: RequestJobDeps, steps: DownloadSteps, request: Sto
     const { release } = request;
     const { stepKey } = ready;
     const handle = await inTurn(deps, steps, 'start', () => steps.start(ready, release, stepKey));
-    const change = { state: ready.state, handle, stepKey: null };
+    const change = { state: ready.state, handle, stepKey: null, progressAt: now() };
     if (!saveRequest(db, ready.id, change, now(), ready.version)) {
       await inTurn(deps, steps, 'cancel', () => steps.cancel({ handle }));
     }
@@ -179,10 +233,24 @@ async function download(deps: RequestJobDeps, steps: DownloadSteps, request: Sto
   const waiting = request.state.status === 'queued';
   switch (polled.kind) {
     case 'queued':
+      saveRequest(
+        db,
+        request.id,
+        { state: request.state, progressAt: now() },
+        now(),
+        request.version,
+      );
       return;
-    case 'downloading':
-      apply(deps, request, { type: 'moved', to: 'downloading', progress: polled.progress });
+    case 'downloading': {
+      const progressAt = stallClock(deps, request, polled.progress);
+      if (!waiting && now() - progressAt >= deps.stallAfterMs) {
+        await stalled(deps, request);
+        return;
+      }
+      const moved = { type: 'moved', to: 'downloading', progress: polled.progress } as const;
+      apply(deps, request, moved, { progressAt });
       return;
+    }
     case 'done':
       apply(
         deps,
@@ -221,9 +289,15 @@ async function importing(deps: RequestJobDeps, steps: MediumSteps, request: Stor
     const ready = keyed(deps, request);
     if (ready?.stepKey == null) return;
     const { stepKey } = ready;
-    const { ref } = await limited(deps, 'import', () => steps.import(ready, stepKey));
-    const change = { state: ready.state, result: ref, stepKey: null };
-    saveRequest(deps.db, ready.id, change, deps.now(), ready.version);
+    const imported = await limited(deps, 'import', (signal) =>
+      steps.import(ready, stepKey, signal),
+    );
+    if (imported.kind === 'arrived') {
+      const change = { state: ready.state, result: imported.ref, stepKey: null };
+      saveRequest(deps.db, ready.id, change, deps.now(), ready.version);
+    } else if (deps.now() - ready.updatedAt >= deps.notIndexedAfterMs) {
+      apply(deps, ready, { type: 'failed', reason: 'notIndexed' });
+    }
   } else if (indexedRow(deps.db, request.result.source, request.result.id) !== undefined) {
     arrive(deps, request, request.result);
   } else if (deps.now() - request.updatedAt >= deps.notIndexedAfterMs) {
@@ -262,6 +336,17 @@ function recordThrown(deps: RequestJobDeps, id: string, step: WorkingStatus): vo
 }
 
 /**
+ * Leaves a request an unreachable upstream holds where it stands, noting when the upstream went
+ * away, until it has been away the hold limit; then it fails as a step that throws does.
+ */
+function recordHeld(deps: RequestJobDeps, id: string, step: WorkingStatus): void {
+  const current = getRequest(deps.db, id);
+  if (current?.state.status !== step) return;
+  if (current.heldSince === null) markHeld(deps.db, id, deps.now());
+  else if (deps.now() - current.heldSince >= deps.holdAfterMs) recordThrown(deps, id, step);
+}
+
+/**
  * One run: every working request whose medium has steps moves one step. Each is read again just
  * before its step, as the steps before it wait, and in that wait it may have been cancelled.
  */
@@ -275,10 +360,13 @@ export async function advanceRequests(deps: RequestJobDeps): Promise<void> {
       if (request === null) continue;
       step = request.state.status;
       await advance(deps, steps, request);
+      clearHeld(deps.db, id);
     } catch (err) {
       deps.log.error({ request: id, step, err }, 'request step failed');
       try {
-        if (step !== 'inLibrary' && step !== 'failed') recordThrown(deps, id, step);
+        if (step === 'inLibrary' || step === 'failed') continue;
+        if (err instanceof StepUnavailable) recordHeld(deps, id, step);
+        else recordThrown(deps, id, step);
       } catch (saveErr) {
         deps.log.error({ request: id, step, err: saveErr }, 'request failure not saved');
       }
@@ -367,20 +455,22 @@ export async function pickAnotherRelease(
 }
 
 /**
- * A person's choice of a candidate while one is waited for. Null when refused: the request takes
- * no choice now, or nobody offered that candidate.
+ * A choice of a candidate while one is waited for: a person's, or the job's after a stall, which
+ * passes on its count. Null when refused: the request takes no choice now, or nobody offered that
+ * candidate.
  */
 export function chooseRelease(
   deps: RequestActDeps,
   id: string,
   candidateId: string,
+  change: Pick<RequestChange, 'autoStarts'> = {},
 ): StoredRequest | null {
   const request = getRequest(deps.db, id);
   const state = request && next(request.medium, request.state, { type: 'chose' });
   if (!request || !state) return null;
   const release = request.candidates.find((candidate) => candidate.id === candidateId);
   if (release === undefined) return null;
-  saveRequest(deps.db, id, { state, release }, deps.now(), request.version);
+  saveRequest(deps.db, id, { ...change, state, release }, deps.now(), request.version);
   return getRequest(deps.db, id);
 }
 

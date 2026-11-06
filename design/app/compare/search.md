@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: 991ede0e9c9b6f548fa401bf2b7d84e4a8cdf56cc9bf7a56afc9fa162ba91e0f
+pageHash: 41aef426f1c71ce7d775cd6cdec71030a373b2d541568e45b527f023bb18ceda
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---
@@ -45,7 +45,7 @@ conceals the back layer. Then, in `PageBody` at the list width:
   action. One song, Tears of Ice, was found by a remembered line of its lyrics, and its row shows
   that line: "Song · Deep Inertia · “salt on my tongue, ice in my hands”".
 
-The top result and each row in your library open their item on a tap, a song its album, and play
+The top result, drawn only when the library matched, and each row in your library open their item on a tap, a song its album, and play
 it from the art's action on the item's own queue, spoken or music. On the canvas the art shows
 that action, always on the phone and on hover on desktop. These renders come from the web app on a
 server nobody can sign in to, where the placeholder refs name no playable item, so the rows draw
@@ -54,8 +54,9 @@ search; here it draws disabled, as the web serves no search draft yet.
 
 - **Not in your library**: a song that
   plays from YouTube Music, an `ExpanderRow` "More releases of Salt", a book already requested
-  (ring on the art, "Downloading · 42%" in the progress tone, a pressed "Requested" button; on the
-  phone the pill keeps "42%"), a book with "Request", and a podcast with "Subscribe".
+  (ring on the art, "Downloading · 42%" in the progress tone and nothing else at its end; on the
+  phone the pill keeps "42%"), a book a request brought, "In library" in the library tone, its art playing it, a book with
+  "Request", and a podcast with "Subscribe".
 
 **Suggestions** are the page's `suggest` state, while typing before results come in, drawn under
 `<When state="suggest">`; the results above are its `full` state. The canvas draws them on their
@@ -124,3 +125,12 @@ chooses the state. The canvas draws each on its own phone artboard, `search.phon
 - Changed on purpose: "Not in your library" opens with what the household has that you have not played, each row opening its page and playing from its art as a library row does: "Salt Roads". The catalogue's rows follow, unbound as before.
 - Changed on purpose: a section with nothing in it draws no title, and an expander row with no words is not drawn.
 - Changed on purpose: "Your requests" is a row of its own at the head of the page, leading to Requests, drawn while the person has any request, whatever the search shows: results, nothing found, a failed search, or no query yet. The server's answer says whether they have any.
+
+## M3.books
+
+- Changed on purpose: an outside book's button requests that book, `onClick={<Request ref={book.ref} />}`, the first `Request` that is not on a card's `onRequest`. These renders come from the web app, which leaves it unbound until its verbs land, so the button draws disabled as before.
+- Changed on purpose: a book your own request brought says "In library" on its row, in the library tone. The kits' pill says the same.
+- Changed on purpose: an outside book's meta names who wrote it and its year, and who reads it where known, so one edition tells from another. It names no indexer: which one holds a release is not known until the request searches.
+- Changed on purpose: a book's row draws its status or its button, never both, so a title keeps its line on the phone. Each book names its row by three lists (`book.asking`, `book.standing`, `book.arrived`), one of them holding it, so it keeps its place in the list as its request moves. A row on its way or failed taps through to Requests, which says why. One that arrived opens its book and plays it from its art, as a library row does. A tap that did not reach the server keeps its Request button beside "Request failed": no request stands, so the button is the way to try again.
+- Changed on purpose: one live request too many says so in a `StatusBanner` over the rows, as Requests says a verb that failed, and the row keeps its Request button, as nothing about that book went wrong. Drawn on this canvas page with its words, as on Requests.
+- Changed on purpose: a book someone else has asked for draws as any book you lack, with its Request button, so nothing of another person's request shows. Tapping it joins, and the row then shows its status and it is in your Requests.

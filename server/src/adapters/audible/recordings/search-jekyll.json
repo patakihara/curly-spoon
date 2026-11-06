@@ -1,0 +1,257 @@
+{
+  "upstream": "audible",
+  "upstreamVersion": "Audible catalogue API 1.0",
+  "call": "search-jekyll",
+  "request": {
+    "method": "GET",
+    "path": "/1.0/catalog/products",
+    "query": {
+      "keywords": "jekyll stevenson",
+      "num_results": "10",
+      "products_sort_by": "Relevance",
+      "response_groups": "contributors,series,product_attrs,product_desc,media"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "products": [
+          {
+            "asin": "B003Y8GW9I",
+            "authors": [
+              {
+                "asin": "B0B8V3KRKX",
+                "name": "Robert Louis Stevenson"
+              }
+            ],
+            "content_delivery_type": "SinglePartBook",
+            "language": "english",
+            "merchandising_summary": "This dark psychological fantasy is more than a moral tale....",
+            "narrators": [
+              {
+                "name": "Michael Kitchen"
+              }
+            ],
+            "release_date": "2010-08-04",
+            "runtime_length_min": 314,
+            "title": "The Strange Case of Dr Jekyll and Mr Hyde and Other Tales of Terror",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/511Sm2pu4iL._SL500_.jpg"
+            }
+          },
+          {
+            "asin": "B002UZMR68",
+            "authors": [
+              {
+                "asin": "B0B8V3KRKX",
+                "name": "Robert Louis Stevenson"
+              }
+            ],
+            "content_delivery_type": "SinglePartBook",
+            "language": "english",
+            "merchandising_summary": "A dangerous man roams the dark, glistening streets of Victorian England. An unrepentant killer, a madman with a tormented soul, returns to the laboratory where it all began...",
+            "narrators": [
+              {
+                "name": "full cast"
+              }
+            ],
+            "release_date": "2000-05-03",
+            "runtime_length_min": 93,
+            "title": "The Strange Case of Dr. Jekyll and Mr. Hyde (Dramatized)",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/519H7OZsOaL._SL500_.jpg"
+            }
+          },
+          {
+            "asin": "B0HLPQTS53",
+            "authors": [
+              {
+                "name": "R.L. Stevenson"
+              }
+            ],
+            "content_delivery_type": "SinglePartBook",
+            "language": "english",
+            "merchandising_summary": "This audiobook is narrated by an AI Voice. Robert Louis Stevenson's timeless masterpiece of duality, *The Strange Case of Dr. Jekyll and Mr. Hyde* is the definitive Gothic tale of good and evil within the human soul. When the respected Dr. Jekyll begins experimenting with a mysterious potion, he...",
+            "narrators": [
+              {
+                "name": "AI Voice Orpheus"
+              }
+            ],
+            "release_date": "2026-10-01",
+            "runtime_length_min": 207,
+            "title": "Dr. Jekyll and Mr. Hyde",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/41eaOgoDDYL._SL500_.jpg"
+            }
+          },
+          {
+            "asin": "B09J9BJ8DF",
+            "authors": [
+              {
+                "asin": "B0B8V3KRKX",
+                "name": "Robert Louis Stevenson"
+              }
+            ],
+            "content_delivery_type": "SinglePartBook",
+            "language": "english",
+            "merchandising_summary": "<p>Robert Louis Stevenson's dark psychological fantasy follows a respectable London lawyer as he investigates the strange relationship between his old friend Dr Henry Jekyll and the evil Edward Hyde....</p>",
+            "narrators": [
+              {
+                "name": "Paapa Essiedu"
+              }
+            ],
+            "release_date": "2021-10-21",
+            "runtime_length_min": 182,
+            "title": "The Strange Case of Dr Jekyll and Mr Hyde",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/51lhbwbqi0L._SL500_.jpg"
+            }
+          },
+          {
+            "asin": "B002V01CCM",
+            "authors": [
+              {
+                "name": "Robert Louis Stevenson"
+              }
+            ],
+            "content_delivery_type": "SinglePartBook",
+            "language": "english",
+            "merchandising_summary": "Saintly Dr. Henry Jekyll is the epitome of dedication, while the frightening Mr. Edward Hyde commits murder. What strange secret binds these two men in the fog of London?...",
+            "narrators": [
+              {
+                "name": "Alexander Spencer"
+              }
+            ],
+            "release_date": "2008-09-12",
+            "runtime_length_min": 185,
+            "title": "Dr. Jekyll and Mr. Hyde",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/51gBzOhP2ZL._SL500_.jpg"
+            }
+          },
+          {
+            "asin": "B0HCM4HR81",
+            "authors": [
+              {
+                "name": "Robert Louis Stevenson"
+              }
+            ],
+            "content_delivery_type": "SinglePartBook",
+            "language": "spanish",
+            "merchandising_summary": "Una edición pensada para disfrutar plenamente del clásico Español actual, fluido y natural, cuidadosamente trabajado para ofrecer una ...",
+            "narrators": [
+              {
+                "name": "Virtual Voice"
+              }
+            ],
+            "release_date": "2026-08-03",
+            "runtime_length_min": 162,
+            "title": "El Extraño caso del Dr. Jekyll y Mr. Hyde (Traducido)",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/41vXEPyQU+L._SL500_.jpg"
+            }
+          },
+          {
+            "asin": "B0HNN629YD",
+            "authors": [
+              {
+                "name": "Robert Louis Stevenson"
+              }
+            ],
+            "content_delivery_type": "SinglePartBook",
+            "language": "english",
+            "merchandising_summary": "This audiobook is narrated by an AI Voice. A respectable Victorian lawyer, Gabriel John Utterson, is drawn into a chilling mystery when his old friend Dr. Henry Jekyll names a violent, deformed man named Edward Hyde as his sole heir. As Hyde’s crimes mount and Jekyll withdraws behind locked...",
+            "narrators": [
+              {
+                "name": "AI Voice Alex Mercer"
+              }
+            ],
+            "release_date": "2026-10-20",
+            "runtime_length_min": 137,
+            "title": "The Strange Case of Dr. Jekyll and Mr. Hyde",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/418TR5Of0+L._SL500_.jpg"
+            }
+          },
+          {
+            "asin": "B00400A998",
+            "authors": [
+              {
+                "asin": "B0B8V3KRKX",
+                "name": "Robert Louis Stevenson"
+              }
+            ],
+            "content_delivery_type": "MultiPartBook",
+            "language": "english",
+            "merchandising_summary": "<i>The Strange Case of Dr Jekyll and Mr Hyde</i>, a story about a London lawyer named Gabriel John Utterson who investigates strange occurrences between his old friends....",
+            "narrators": [
+              {
+                "name": "Charles Minx"
+              }
+            ],
+            "release_date": "2010-08-19",
+            "runtime_length_min": 161,
+            "title": "Dr Jekyll & Mr Hyde",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/51tm3kTbq8L._SL500_.jpg"
+            }
+          },
+          {
+            "asin": "B08T9XSRLM",
+            "authors": [
+              {
+                "asin": "B0B8V3KRKX",
+                "name": "Robert Louis Stevenson"
+              }
+            ],
+            "content_delivery_type": "SinglePartBook",
+            "language": "spanish",
+            "merchandising_summary": "<p>Esta es sin duda una de las obras más conocidas de Stevenson, junto con \"La isla del tesoro\". Es un texto característico de la época...</p>",
+            "narrators": [
+              {
+                "name": "Imanol Arias"
+              }
+            ],
+            "release_date": "2021-01-21",
+            "runtime_length_min": 170,
+            "title": "El extraño caso de Doctor Jekyll y Mr. Hyde",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/51ye5eD7TSL._SL500_.jpg"
+            }
+          },
+          {
+            "asin": "0241423554",
+            "authors": [
+              {
+                "asin": "B0D6C556NN",
+                "name": "Robert Louis Stevenson"
+              }
+            ],
+            "content_delivery_type": "SinglePartBook",
+            "language": "english",
+            "merchandising_summary": "Brought to you by Penguin. This Penguin Classic is performed by Olivier Award winner Rory Kinnear, star of Penny Dreadful. Kinnear is also known for his portrayal of Bill Tanner in Spectre and for his role in The Imitation Game. This definitive recording includes an Introduction by Robert...",
+            "narrators": [
+              {
+                "name": "Rory Kinnear"
+              }
+            ],
+            "release_date": "2019-09-26",
+            "runtime_length_min": 453,
+            "title": "The Strange Case of Dr Jekyll and Mr Hyde and Other Tales of Terror",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/51cxk8+YH-L._SL500_.jpg"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

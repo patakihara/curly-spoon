@@ -2,7 +2,15 @@ import { RequestList, type RequestView } from '@auralis/schema';
 import { describe, expect, it, vi } from 'vitest';
 import { createApiClient } from '../api/client';
 import { frame } from '../generated/pages/Requests';
-import { formatOf, requestsData, requestsMoving, requestsState, requestVerb } from './requests';
+import {
+  formatOf,
+  makeRequest,
+  requestsData,
+  requestsMoving,
+  requestsState,
+  requestVerb,
+  TooManyRequests,
+} from './requests';
 import { SignedOut } from './store';
 
 const request = (over: Partial<RequestView> = {}): RequestView => ({
@@ -57,6 +65,11 @@ describe('[M3.requests] the Requests page from GET /api/requests', () => {
     });
     const [row] = requestsData(list([searching]), frame.placeholder).inFlight;
     expect(row).toMatchObject({ meta: 'Book', status: 'Searching…' });
+  });
+
+  it('says a download that stopped moving stalled, not that it failed', () => {
+    const data = requestsData(list([failed({ reason: 'downloadStalled' })]), frame.placeholder);
+    expect(data.failed[0]?.detail).toBe('The download stalled');
   });
 
   it('offers a failed row a retry and a cancel, and says why it failed', () => {
@@ -169,5 +182,29 @@ describe('[M3.requests] a request’s verbs', () => {
   it('says when signed out, and when refused', async () => {
     await expect(requestVerb(answering(401).api, 'r1', 'retry')).rejects.toBeInstanceOf(SignedOut);
     await expect(requestVerb(answering(409).api, 'r1', 'retry')).rejects.toThrow('409');
+  });
+});
+
+describe('[M3.books] asking for something', () => {
+  const answering = (status: number, body: object) =>
+    createApiClient({
+      baseUrl: 'http://a.test',
+      fetch: async () => Response.json(body, { status }),
+    });
+  const ref = {
+    medium: 'book' as const,
+    target: { title: 'A Book', creator: null, ids: { asin: 'B000000001' } },
+  };
+
+  it('[M3.books] tells too many live requests from any other refusal', async () => {
+    await expect(
+      makeRequest(answering(429, { error: 'too_many_requests' }), ref),
+    ).rejects.toBeInstanceOf(TooManyRequests);
+    await expect(makeRequest(answering(500, { error: 'x' }), ref)).rejects.not.toBeInstanceOf(
+      TooManyRequests,
+    );
+    await expect(makeRequest(answering(429, { error: 'x' }), ref)).rejects.not.toBeInstanceOf(
+      TooManyRequests,
+    );
   });
 });

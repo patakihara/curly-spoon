@@ -223,6 +223,18 @@ describe('checking a page', () => {
     ).toEqual(['line 3: data.title is not a non-empty list']);
   });
 
+  it('lets a list inside an item be empty for some items, so long as some item draws it', () => {
+    const page = tree(`<Each of={data.books} as="book">
+  <Each of={book.asking} as="row"><EpisodeRow title={row.title} /></Each>
+</Each>`);
+    expect(
+      checkPage(page, { books: [{ asking: [{ title: 'A' }] }, { asking: [] }] }, props),
+    ).toEqual([]);
+    expect(checkPage(page, { books: [{ asking: [] }, { asking: [] }] }, props)).toEqual([
+      'line 4: book.asking is not a non-empty list',
+    ]);
+  });
+
   it('names a component Sonora lacks and a prop the component does not declare', () => {
     expect(checkPage(tree('<DetailPage colour="red"><Frob /></DetailPage>'), data, props)).toEqual([
       'line 3: DetailPage has no prop colour',

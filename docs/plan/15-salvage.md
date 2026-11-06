@@ -13,7 +13,7 @@ Each carried-over part is taken from the tag `legacy` when its plan item starts.
 
 - Session and crypto: `db/crypto.ts`, `sessionsRepo`, `auth/*` (fix the cookie flags)
 - `packages/jellyfin-client`, the most complete module; re-record its fixtures
-- Request building blocks: `requestStatus`, `torrentId`, `prowlarr`, `qbittorrent`/`transmission` (check the cookie name live)
+- Request building blocks: `requestStatus`, `torrentId`, `prowlarr`, `qbittorrent`
 - Recommendation core: `profile`, `score`, `shelves`, `ownership` (pure functions), `listenbrainz.ts`
 - Self-hosted Inter, Archivo and Sonora's icon font; the legacy icons and Roboto Flex stay behind
 - Android: `ApiClient` cookie jar, DownloadManager wiring, Auto `BrowseTree`, the service skeleton
@@ -29,7 +29,7 @@ Each carried-over part is taken from the tag `legacy` when its plan item starts.
 - The three hand-copied contracts → generated
 - `abs-client` schemas (re-derived from recordings; request body; token type)
 - Setup and the authorisation model
-- AudiobookBay scraper; the duplicated book and music request services. The slskd single-file flow is dropped in favour of YouTube Music.
+- AudiobookBay's detail-page parser; the duplicated book and music request services. The slskd single-file flow is dropped in favour of YouTube Music.
 - Live fan-out in recommendations → index plus candidate pool
 - Fake-upstream routing that ships in the image
 :::

@@ -1,0 +1,27 @@
+{
+  "upstream": "audnexus",
+  "upstreamVersion": "Audnexus API, unversioned",
+  "call": "author-stevenson",
+  "request": {
+    "method": "GET",
+    "path": "/authors/B0B8V3KRKX",
+    "query": {},
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "asin": "B0B8V3KRKX",
+        "image": "",
+        "name": "Robert Louis Stevenson"
+      }
+    }
+  }
+}

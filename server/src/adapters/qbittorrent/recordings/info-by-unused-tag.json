@@ -1,0 +1,27 @@
+{
+  "upstream": "qbittorrent",
+  "upstreamVersion": "v5.3.0",
+  "call": "info-by-unused-tag",
+  "request": {
+    "method": "GET",
+    "path": "/api/v2/torrents/info",
+    "query": {
+      "category": "auralis-books",
+      "tag": "auralis-no-such-key"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": []
+    }
+  }
+}

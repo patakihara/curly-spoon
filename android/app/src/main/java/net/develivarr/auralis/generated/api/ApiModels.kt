@@ -716,6 +716,8 @@ enum class RequestFailure {
     SEARCH_FAILED,
     @SerialName("downloadFailed")
     DOWNLOAD_FAILED,
+    @SerialName("downloadStalled")
+    DOWNLOAD_STALLED,
     @SerialName("importFailed")
     IMPORT_FAILED,
     @SerialName("notIndexed")
@@ -831,6 +833,19 @@ enum class Role {
 }
 
 @Serializable
+data class SearchBook(
+    val ref: RequestRef,
+    val title: String,
+    val author: String?,
+    val narrator: String?,
+    val year: Long?,
+    val art: String?,
+    val status: RequestStatus?,
+    val progress: Double?,
+    val item: MediaRef?,
+)
+
+@Serializable
 enum class SearchKind {
     @SerialName("track")
     TRACK,
@@ -875,6 +890,7 @@ data class SearchResult(
 data class SearchResults(
     val query: String,
     val results: List<SearchResult>,
+    val books: List<SearchBook>,
     val hasRequests: Boolean,
 )
 

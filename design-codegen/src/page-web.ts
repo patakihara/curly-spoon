@@ -11,6 +11,7 @@
  * the search draft's `useQuery()` (`web/src/query`); a `<Choose ref>` hands a menu's chosen verb to
  * `useChoose()` (`web/src/choose`), the page's own verbs, which give none while nothing acts; an
  * `<Act ref verb>` hands a request's verb to `useAct()` (`web/src/act`) the same way, and a
+ * `<Request ref>` a control's tap to `useRequest()` (`web/src/request`), and a
  * `<Toggle setting>` a switch's change to `useToggle()` (`web/src/toggle`); a back layer or subheader holding one, or an
  * `<Open>` and so the router's `useNavigate()`, is drawn as a component of its own, since the
  * shell calls the frame's parts outside any page.
@@ -112,6 +113,10 @@ const chooses = (node: PageTree) =>
 /** Whether an element does a request's verb, an `<Act>` in one of its handler props. */
 const acts = (node: PageTree) =>
   node.kind === 'element' && Object.values(node.props).some((v) => v.kind === 'act');
+
+/** Whether an element asks for what the library lacks, a `<Request>` in one of its handler props. */
+const requests = (node: PageTree) =>
+  node.kind === 'element' && Object.values(node.props).some((v) => v.kind === 'request');
 
 /** Whether an element sets a setting, a `<Toggle>` in one of its handler props. */
 const toggles = (node: PageTree) =>
@@ -279,9 +284,12 @@ function propLines(
   if (value.kind === 'retry') return [`${name}={retry}`];
   // A switch's change goes to the toggles the page is given, none while nothing sets the setting.
   if (value.kind === 'toggle') return [`${name}={toggle('${value.setting}')}`];
-  // No request endpoint exists yet. A handler doing nothing would draw a dead control as
-  // enabled, so the prop is left out and Sonora draws the control disabled.
-  if (value.kind === 'request') return [];
+  // A request goes to what the page is given, none while nothing can take this one.
+  if (value.kind === 'request') {
+    const ref = value.params['ref'];
+    if (ref === undefined) throw new Error(`${owner}.${name}: Request needs ref={…}`);
+    return [`${name}={askFor(${pathCode(ref)})}`];
+  }
   // Sign-in leaves the app for the server's route, which sends the browser on to the sign-on.
   if (value.kind === 'signIn') return [`${name}={${signInHandler()}}`];
   if (value.kind === 'binding' && choice) {
@@ -705,6 +713,12 @@ export function generateWebPage(
   }
   const usesAct = some(root, acts);
   for (const part of [back, subheader]) {
+    if (part !== undefined && some(part, requests)) {
+      throw new Error(`${id}: Request goes in the page's content, not its back layer or subheader`);
+    }
+  }
+  const usesRequest = some(root, requests);
+  for (const part of [back, subheader]) {
     if (part !== undefined && some(part, toggles)) {
       throw new Error(`${id}: Toggle goes in the page's content, not its back layer or subheader`);
     }
@@ -793,6 +807,7 @@ export function generateWebPage(
     ...(usesAct
       ? [`import { ${actsBound ? 'type RequestVerb, ' : ''}useAct } from '../../act';`]
       : []),
+    ...(usesRequest ? ["import { useRequest } from '../../request';"] : []),
     ...(usesToggle ? ["import { useToggle } from '../../toggle';"] : []),
     ...(usesRetry ? ["import { useRetry } from '../../retry';"] : []),
     `import { ${[...used].sort().join(', ')} } from '../ui/index.js';`,
@@ -863,6 +878,7 @@ export function generateWebPage(
     ...(some(root, queries) ? ['  const query = useQuery();'] : []),
     ...(usesChoose ? ['  const choose = useChoose();'] : []),
     ...(usesAct ? ['  const act = useAct();'] : []),
+    ...(usesRequest ? ['  const askFor = useRequest();'] : []),
     ...(usesToggle ? ['  const toggle = useToggle();'] : []),
     ...(usesRetry ? ['  const retry = useRetry();'] : []),
     ...(usesPlaying

@@ -1,0 +1,28 @@
+{
+  "upstream": "audnexus",
+  "upstreamVersion": "Audnexus API, unversioned",
+  "call": "author-doyle",
+  "request": {
+    "method": "GET",
+    "path": "/authors/B000AQ43GQ",
+    "query": {},
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "accept-ranges": "bytes",
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "asin": "B000AQ43GQ",
+        "image": "https://images-na.ssl-images-amazon.com/images/S/amzn-author-media-prod/rldi51cf3nr99abtt922mgh6hi.jpg",
+        "name": "Arthur Conan Doyle"
+      }
+    }
+  }
+}

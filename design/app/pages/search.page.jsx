@@ -24,6 +24,13 @@ export default function Search({ data }) {
       }
     >
       <PageBody width="list">
+        <Each of={data.errors} as="error">
+          <Section>
+            <StatusBanner tone="error" icon="error">
+              {error.message}
+            </StatusBanner>
+          </Section>
+        </Each>
         <Each of={data.yourRequests} as="entry">
           <Section>
             <ResultRow title={entry.title} icon="downloading" onClick={<Open page="requests" />} />
@@ -58,13 +65,15 @@ export default function Search({ data }) {
         </When>
         <When state="full">
           <Section title="Top result">
-            <ResultRow
-              title={data.top.title}
-              meta={data.top.meta}
-              image={data.top.image}
-              onClick={<Open page={data.top.page} ref={data.top.ref} />}
-              onAction={<Play ref={data.top.playRef} queue={data.top.queue} />}
-            />
+            <Each of={data.top} as="best">
+              <ResultRow
+                title={best.title}
+                meta={best.meta}
+                image={best.image}
+                onClick={<Open page={best.page} ref={best.ref} />}
+                onAction={<Play ref={best.playRef} queue={best.queue} />}
+              />
+            </Each>
           </Section>
           <Section title="In your library">
             <Each of={data.library} as="item">
@@ -94,19 +103,44 @@ export default function Search({ data }) {
             </Each>
             <ExpanderRow label={data.outside.moreReleases} />
             <Each of={data.outside.books} as="book">
-              <ResultRow
-                title={book.title}
-                meta={book.meta}
-                image={book.image}
-                status={book.status}
-                tone={book.tone}
-                divider
-                trailing={
-                  <Button variant="secondary" size="sm" pressed={book.requested}>
-                    {book.action}
-                  </Button>
-                }
-              />
+              <Each of={book.asking} as="asking">
+                <ResultRow
+                  title={asking.title}
+                  meta={asking.meta}
+                  image={asking.image}
+                  status={asking.status}
+                  tone={asking.tone}
+                  divider
+                  trailing={
+                    <Button variant="secondary" size="sm" onClick={<Request ref={asking.ref} />}>
+                      {asking.action}
+                    </Button>
+                  }
+                />
+              </Each>
+              <Each of={book.standing} as="standing">
+                <ResultRow
+                  title={standing.title}
+                  meta={standing.meta}
+                  image={standing.image}
+                  status={standing.status}
+                  tone={standing.tone}
+                  onClick={<Open page="requests" />}
+                  divider
+                />
+              </Each>
+              <Each of={book.arrived} as="arrived">
+                <ResultRow
+                  title={arrived.title}
+                  meta={arrived.meta}
+                  image={arrived.image}
+                  status={arrived.status}
+                  tone={arrived.tone}
+                  onClick={<Open page="book" ref={arrived.ref} />}
+                  onAction={<Play ref={arrived.ref} queue="spoken" />}
+                  divider
+                />
+              </Each>
             </Each>
             <Each of={data.outside.podcasts} as="show">
               <ResultRow

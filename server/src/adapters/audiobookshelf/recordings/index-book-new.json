@@ -1,0 +1,254 @@
+{
+  "upstream": "audiobookshelf",
+  "upstreamVersion": "2.37.2",
+  "call": "index-book-new",
+  "request": {
+    "method": "GET",
+    "path": "/api/items/79762bb3-e6fb-47a7-b6b3-90b001e8f258",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "Bearer <token>"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "id": "79762bb3-e6fb-47a7-b6b3-90b001e8f258",
+        "ino": "115100",
+        "oldLibraryItemId": null,
+        "libraryId": "e8aa253f-82d0-44ff-b87a-74671278ce9d",
+        "folderId": "46f3a6da-763c-4197-b197-d7519c832355",
+        "path": "/data/Books/Robert Louis Stevenson/1886 - The Strange Case of Dr. Jekyll and Mr. Hyde (Bob Neufeld) 64k",
+        "relPath": "Robert Louis Stevenson/1886 - The Strange Case of Dr. Jekyll and Mr. Hyde (Bob Neufeld) 64k",
+        "isFile": false,
+        "mtimeMs": 1793840618611,
+        "ctimeMs": 1793840618611,
+        "birthtimeMs": 1793840601563,
+        "addedAt": 1793840618627,
+        "updatedAt": 1793840631111,
+        "lastScan": 1793840631111,
+        "scanVersion": "2.37.2",
+        "isMissing": false,
+        "isInvalid": false,
+        "mediaType": "book",
+        "media": {
+          "id": "745175e7-37ab-44b9-904b-cf84ecf19f75",
+          "libraryItemId": "79762bb3-e6fb-47a7-b6b3-90b001e8f258",
+          "metadata": {
+            "title": "The Strange Case of Dr. Jekyll and Mr. Hyde",
+            "subtitle": null,
+            "authors": [
+              {
+                "id": "9156bff8-444c-42ff-bbc8-c57a95f248f2",
+                "name": "Robert Louis Stevenson"
+              }
+            ],
+            "narrators": [
+              "Bob Neufeld"
+            ],
+            "series": [],
+            "genres": [],
+            "publishedYear": "1886",
+            "publishedDate": null,
+            "publisher": null,
+            "description": null,
+            "isbn": null,
+            "asin": null,
+            "language": null,
+            "explicit": false,
+            "abridged": false
+          },
+          "coverPath": "/data/Books/Robert Louis Stevenson/1886 - The Strange Case of Dr. Jekyll and Mr. Hyde (Bob Neufeld) 64k/cover.jpg",
+          "tags": [],
+          "audioFiles": [
+            {
+              "ino": "115094",
+              "duration": 2677.707755,
+              "exclude": false
+            },
+            {
+              "ino": "115095",
+              "duration": 2373.668571,
+              "exclude": false
+            },
+            {
+              "ino": "115097",
+              "duration": 1943.849796,
+              "exclude": false
+            },
+            {
+              "ino": "115098",
+              "duration": 1302.93551,
+              "exclude": false
+            },
+            {
+              "ino": "115096",
+              "duration": 3219.356735,
+              "exclude": false
+            }
+          ],
+          "chapters": [
+            {
+              "id": 0,
+              "start": 0,
+              "end": 2677.707755,
+              "title": "01 - Part 1"
+            },
+            {
+              "id": 1,
+              "start": 2677.707755,
+              "end": 5051.376326,
+              "title": "02 - Part 2"
+            },
+            {
+              "id": 2,
+              "start": 5051.376326,
+              "end": 6995.226122,
+              "title": "03 - Part 3"
+            },
+            {
+              "id": 3,
+              "start": 6995.226122,
+              "end": 8298.161632,
+              "title": "04 - Part 4"
+            },
+            {
+              "id": 4,
+              "start": 8298.161632,
+              "end": 11517.518366999999,
+              "title": "05 - Part 5"
+            }
+          ],
+          "ebookFile": null
+        },
+        "libraryFiles": [
+          {
+            "ino": "115101",
+            "metadata": {
+              "filename": "metadata.json",
+              "ext": ".json",
+              "path": "/data/Books/Robert Louis Stevenson/1886 - The Strange Case of Dr. Jekyll and Mr. Hyde (Bob Neufeld) 64k/metadata.json",
+              "relPath": "metadata.json",
+              "size": 1031,
+              "mtimeMs": 1793840618775,
+              "ctimeMs": 1793840618775,
+              "birthtimeMs": 1793840601567
+            },
+            "isSupplementary": null,
+            "addedAt": 1793840617131,
+            "updatedAt": 1793840617131,
+            "fileType": "metadata"
+          },
+          {
+            "ino": "115094",
+            "metadata": {
+              "filename": "thestrangecaseofdrjekyllandmrhyde_01_stevenson_64kb.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Robert Louis Stevenson/1886 - The Strange Case of Dr. Jekyll and Mr. Hyde (Bob Neufeld) 64k/thestrangecaseofdrjekyllandmrhyde_01_stevenson_64kb.mp3",
+              "relPath": "thestrangecaseofdrjekyllandmrhyde_01_stevenson_64kb.mp3",
+              "size": 21422747,
+              "mtimeMs": 1793840583903,
+              "ctimeMs": 1793840604799,
+              "birthtimeMs": 1793839898091
+            },
+            "isSupplementary": null,
+            "addedAt": 1793840617131,
+            "updatedAt": 1793840617131,
+            "fileType": "audio"
+          },
+          {
+            "ino": "115095",
+            "metadata": {
+              "filename": "thestrangecaseofdrjekyllandmrhyde_02_stevenson_64kb.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Robert Louis Stevenson/1886 - The Strange Case of Dr. Jekyll and Mr. Hyde (Bob Neufeld) 64k/thestrangecaseofdrjekyllandmrhyde_02_stevenson_64kb.mp3",
+              "relPath": "thestrangecaseofdrjekyllandmrhyde_02_stevenson_64kb.mp3",
+              "size": 18990433,
+              "mtimeMs": 1793840588239,
+              "ctimeMs": 1793840604799,
+              "birthtimeMs": 1793839898951
+            },
+            "isSupplementary": null,
+            "addedAt": 1793840617131,
+            "updatedAt": 1793840617131,
+            "fileType": "audio"
+          },
+          {
+            "ino": "115097",
+            "metadata": {
+              "filename": "thestrangecaseofdrjekyllandmrhyde_03_stevenson_64kb.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Robert Louis Stevenson/1886 - The Strange Case of Dr. Jekyll and Mr. Hyde (Bob Neufeld) 64k/thestrangecaseofdrjekyllandmrhyde_03_stevenson_64kb.mp3",
+              "relPath": "thestrangecaseofdrjekyllandmrhyde_03_stevenson_64kb.mp3",
+              "size": 15551883,
+              "mtimeMs": 1793840592947,
+              "ctimeMs": 1793840604799,
+              "birthtimeMs": 1793839901651
+            },
+            "isSupplementary": null,
+            "addedAt": 1793840617132,
+            "updatedAt": 1793840617132,
+            "fileType": "audio"
+          },
+          {
+            "ino": "115098",
+            "metadata": {
+              "filename": "thestrangecaseofdrjekyllandmrhyde_04_stevenson_64kb.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Robert Louis Stevenson/1886 - The Strange Case of Dr. Jekyll and Mr. Hyde (Bob Neufeld) 64k/thestrangecaseofdrjekyllandmrhyde_04_stevenson_64kb.mp3",
+              "relPath": "thestrangecaseofdrjekyllandmrhyde_04_stevenson_64kb.mp3",
+              "size": 10424569,
+              "mtimeMs": 1793840597311,
+              "ctimeMs": 1793840604799,
+              "birthtimeMs": 1793839902855
+            },
+            "isSupplementary": null,
+            "addedAt": 1793840617132,
+            "updatedAt": 1793840617132,
+            "fileType": "audio"
+          },
+          {
+            "ino": "115096",
+            "metadata": {
+              "filename": "thestrangecaseofdrjekyllandmrhyde_05_stevenson_64kb.mp3",
+              "ext": ".mp3",
+              "path": "/data/Books/Robert Louis Stevenson/1886 - The Strange Case of Dr. Jekyll and Mr. Hyde (Bob Neufeld) 64k/thestrangecaseofdrjekyllandmrhyde_05_stevenson_64kb.mp3",
+              "relPath": "thestrangecaseofdrjekyllandmrhyde_05_stevenson_64kb.mp3",
+              "size": 25755938,
+              "mtimeMs": 1793840601343,
+              "ctimeMs": 1793840604799,
+              "birthtimeMs": 1793839900387
+            },
+            "isSupplementary": null,
+            "addedAt": 1793840617132,
+            "updatedAt": 1793840617132,
+            "fileType": "audio"
+          },
+          {
+            "ino": "115103",
+            "metadata": {
+              "filename": "cover.jpg",
+              "ext": ".jpg",
+              "path": "/data/Books/Robert Louis Stevenson/1886 - The Strange Case of Dr. Jekyll and Mr. Hyde (Bob Neufeld) 64k/cover.jpg",
+              "relPath": "cover.jpg",
+              "size": 106224,
+              "mtimeMs": 1793840618595,
+              "ctimeMs": 1793840618611,
+              "birthtimeMs": 1793840618523
+            },
+            "isSupplementary": null,
+            "addedAt": 1793840631110,
+            "updatedAt": 1793840631110,
+            "fileType": "image"
+          }
+        ]
+      }
+    }
+  }
+}

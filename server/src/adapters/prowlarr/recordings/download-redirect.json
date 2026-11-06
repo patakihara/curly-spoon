@@ -1,0 +1,22 @@
+{
+  "upstream": "prowlarr",
+  "upstreamVersion": "10.0.0.22097",
+  "call": "download-redirect",
+  "request": {
+    "method": "GET",
+    "path": "/11/download",
+    "query": {
+      "apikey": "<token>",
+      "link": "link-cbbdc3c05c9b"
+    },
+    "headers": {},
+    "body": null
+  },
+  "response": {
+    "status": 301,
+    "headers": {
+      "location": "magnet:?xt=urn:btih:E49A3646BCC9DFA002114FE2D458834761F40D72"
+    },
+    "body": null
+  }
+}

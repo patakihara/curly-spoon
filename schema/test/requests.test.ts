@@ -32,6 +32,7 @@ describe('the request vocabulary', () => {
       'noRelease',
       'searchFailed',
       'downloadFailed',
+      'downloadStalled',
       'importFailed',
       'notIndexed',
       'cancelledUpstream',

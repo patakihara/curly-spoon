@@ -1,0 +1,323 @@
+{
+  "upstream": "audible",
+  "upstreamVersion": "Audible catalogue API 1.0",
+  "call": "search-podcasts",
+  "request": {
+    "method": "GET",
+    "path": "/1.0/catalog/products",
+    "query": {
+      "keywords": "stuff you should know",
+      "num_results": "10",
+      "products_sort_by": "Relevance",
+      "response_groups": "contributors,series,product_attrs,product_desc,media"
+    },
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "products": [
+          {
+            "asin": "1250771498",
+            "authors": [
+              {
+                "asin": "B01B6Z1SXU",
+                "name": "Josh Clark"
+              },
+              {
+                "asin": "B08JD7QDJ6",
+                "name": "Chuck Bryant"
+              }
+            ],
+            "content_delivery_type": "SinglePartBook",
+            "language": "english",
+            "merchandising_summary": "This program is read by the authors and includes an audio exclusive bonus conversation. From the duo behind the massively successful and award-winning podcast Stuff You Should Know comes an unexpected look at things you thought you knew. Josh Clark and Chuck Bryant started the podcast Stuff You...",
+            "narrators": [
+              {
+                "name": "Chuck Bryant"
+              },
+              {
+                "name": "Josh Clark"
+              }
+            ],
+            "release_date": "2020-11-24",
+            "runtime_length_min": 540,
+            "title": "Stuff You Should Know",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/51l2-iICKmL._SL500_.jpg"
+            }
+          },
+          {
+            "asin": "B08JJMNHTS",
+            "authors": [
+              {
+                "name": "iHeartPodcasts"
+              }
+            ],
+            "content_delivery_type": "PodcastParent",
+            "language": "english",
+            "merchandising_summary": "If you've ever wanted to know about champagne, satanism, the Stonewall Uprising, chaos theory, LSD, El Nino, true crime and Rosa Parks, then look no ...",
+            "release_date": "2026-06-03",
+            "title": "Stuff You Should Know",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/41ozoMPUfUL._SL500_.jpg"
+            }
+          },
+          {
+            "asin": "B0HPXZVSRQ",
+            "authors": [
+              {
+                "name": "M.J. Stone"
+              }
+            ],
+            "content_delivery_type": "SinglePartBook",
+            "language": "english",
+            "merchandising_summary": "Your First Money Pit- Stuff You Should Know, But Probably Don't. A field manual for first-time buyers, renovators, and anyone about to sign ...",
+            "narrators": [
+              {
+                "name": "Virtual Voice"
+              }
+            ],
+            "release_date": "2026-10-31",
+            "runtime_length_min": 54,
+            "title": "YOUR FIRST MONEY PIT- Stuff You Should Know, But Probably Don’t",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/41wv03xc37L._SL500_.jpg"
+            }
+          },
+          {
+            "asin": "B002V5J18O",
+            "authors": [
+              {
+                "asin": "B000AQ4ORY",
+                "name": "E. B. White"
+              }
+            ],
+            "content_delivery_type": "SinglePartBook",
+            "language": "english",
+            "merchandising_summary": "Stuart Little is a shy, philosophical mouse witha big heart and a taste for adventure. He also happens to be the second son born to the Littles, a human family living in New York City. In spite of his dimunuitive statue-barely two inches tall--Stuart enjoys life in the big city. He rides a Fifth...",
+            "narrators": [
+              {
+                "name": "Julie Harris"
+              }
+            ],
+            "release_date": "1999-12-15",
+            "runtime_length_min": 114,
+            "title": "Stuart Little",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/51xWkUWG1YL._SL500_.jpg"
+            }
+          },
+          {
+            "asin": "B0HQ4TSFG5",
+            "authors": [
+              {
+                "name": "M.J. Stone"
+              }
+            ],
+            "content_delivery_type": "SinglePartBook",
+            "language": "english",
+            "merchandising_summary": "Your First Dog: Stuff You Should Know, But Probably Don't The Love, the Cost, and the 3 AM Emergency Vet. A straight-talking guide for people about...",
+            "narrators": [
+              {
+                "name": "Virtual Voice"
+              }
+            ],
+            "release_date": "2026-11-02",
+            "runtime_length_min": 71,
+            "title": "Your First Dog- Stuff You Should Know, But Probably Don't",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/41hn3Vyk3KL._SL500_.jpg"
+            }
+          },
+          {
+            "asin": "B0GS3LHKQ5",
+            "authors": [
+              {
+                "asin": "B0DRZ2CVQZ",
+                "name": "Reck Well"
+              }
+            ],
+            "content_delivery_type": "MultiPartBook",
+            "language": "english",
+            "merchandising_summary": "<p>Meet Richard: ‘[Immortal]’ banana slug, emotional terrorist, dungeon life coach…Then there’s Cole. He just wants to survive. Richard has goals. Neither of them is optimistic.</p>",
+            "narrators": [
+              {
+                "name": "Jeremy Frazier"
+              },
+              {
+                "name": "Jessica Threet"
+              }
+            ],
+            "release_date": "2026-03-13",
+            "runtime_length_min": 897,
+            "series": [
+              {
+                "sequence": "1",
+                "title": "Stumbling Up"
+              }
+            ],
+            "title": "Stumbling Up",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/51e+x6p3pCL._SL500_.jpg"
+            }
+          },
+          {
+            "asin": "B0F9M48DBC",
+            "authors": [
+              {
+                "asin": "B0GR7VHTYW",
+                "name": "Andy Stumpf"
+              }
+            ],
+            "content_delivery_type": "SinglePartBook",
+            "language": "english",
+            "merchandising_summary": "Featuring a foreword written and read by Jocko Willink! A motivational guide to success and leadership based on the author's experience as a Navy SEAL. Drawing from his extensive military career, renowned Navy SEAL Andy Stumpf shares his hard-earned wisdom by reflecting on his own journey and...",
+            "narrators": [
+              {
+                "name": "Andy Stumpf"
+              },
+              {
+                "name": "Jocko Willink"
+              }
+            ],
+            "release_date": "2026-04-14",
+            "runtime_length_min": 389,
+            "title": "Drownproof",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/51Kc2bFuJPL._SL500_.jpg"
+            }
+          },
+          {
+            "asin": "B085F3F6CX",
+            "authors": [
+              {
+                "asin": "B001IR3JB6",
+                "name": "Chris Grabenstein"
+              }
+            ],
+            "content_delivery_type": "SinglePartBook",
+            "language": "english",
+            "merchandising_summary": "<p>On his 11th birthday, Jackson is nervous middle school where he knows he'll be bullied by older kids, so he makes his wish, \"I don't want to grow up!\" When his 12th birthday rolls around, he discovers his wish came true: he's still 11, and he’s starting fifth grade (again). </p>",
+            "narrators": [
+              {
+                "name": "Mark Sanderlin"
+              },
+              {
+                "name": "Elizabeth Hess"
+              },
+              {
+                "name": "Oliver Wyman"
+              },
+              {
+                "asin": "B0C9M7ST71",
+                "name": "Farah Bala"
+              },
+              {
+                "asin": "B0C9M93HDV",
+                "name": "Rita Wolf"
+              },
+              {
+                "name": "Caroline Grogan"
+              },
+              {
+                "name": "Cynthia Darlow"
+              },
+              {
+                "asin": "B0C9M8TB28",
+                "name": "Mateo D'Amato"
+              },
+              {
+                "name": "J.J. Myers"
+              },
+              {
+                "asin": "B0C9M9GX7R",
+                "name": "Neil Hellegers"
+              },
+              {
+                "name": "Genesis Oliver"
+              },
+              {
+                "name": "Chris Grabenstein"
+              }
+            ],
+            "release_date": "2020-05-14",
+            "runtime_length_min": 192,
+            "title": "Stuck",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/51GKoszPFmL._SL500_.jpg"
+            }
+          },
+          {
+            "asin": "B01GGKQVFU",
+            "authors": [
+              {
+                "asin": "B006SKAK42",
+                "name": "Colleen Hoover"
+              }
+            ],
+            "content_delivery_type": "SinglePartBook",
+            "language": "english",
+            "merchandising_summary": "From the #1 New York Times bestselling author of Reminders of Him and It Starts with Us, a “brave and heartbreaking novel that digs its claws into you and doesn’t let go, long after you’ve finished it” (Anna Todd, New York Times bestselling author) about a young woman in a new...",
+            "narrators": [
+              {
+                "name": "Olivia Song"
+              }
+            ],
+            "release_date": "2016-08-02",
+            "runtime_length_min": 678,
+            "series": [
+              {
+                "sequence": "1",
+                "title": "It Ends with Us"
+              }
+            ],
+            "title": "It Ends with Us",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/514AlIuBkKL._SL500_.jpg"
+            }
+          },
+          {
+            "asin": "B0GCPLBLLX",
+            "authors": [
+              {
+                "asin": "B0CH4HSV2J",
+                "name": "Stacy Williams"
+              }
+            ],
+            "content_delivery_type": "MultiPartBook",
+            "language": "english",
+            "merchandising_summary": "What if you've been through hell? How difficult can it be to start over? Sarah Atwater is seeking a fresh start. When an opportunity arises that she can't refuse, the single mom is ready to leave her painful past behind—and perhaps her old self along with it. But sometimes, new beginnings are...",
+            "narrators": [
+              {
+                "name": "Alex Kydd"
+              },
+              {
+                "name": "Madeleine Dauer"
+              }
+            ],
+            "release_date": "2026-07-07",
+            "runtime_length_min": 914,
+            "series": [
+              {
+                "sequence": "",
+                "title": "Cal's Garage"
+              }
+            ],
+            "title": "Stuck With You",
+            "product_images": {
+              "500": "https://m.media-amazon.com/images/I/51PRxwPpvzL._SL500_.jpg"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
