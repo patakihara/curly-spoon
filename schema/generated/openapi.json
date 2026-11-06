@@ -1010,7 +1010,7 @@
           "title": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 500
+            "maxLength": 300
           },
           "creator": {
             "type": [
@@ -1018,7 +1018,7 @@
               "null"
             ],
             "minLength": 1,
-            "maxLength": 500
+            "maxLength": 300
           },
           "ids": {
             "$ref": "#/components/schemas/RequestIds"

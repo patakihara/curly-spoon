@@ -101,7 +101,7 @@ async function server(
       : {
           requests: {
             steps: stepsRegistry([standInSteps('book')]),
-            everyMs: 0,
+            everyMs: 3_600_000,
             notIndexedAfterMs: 60_000,
             stepTimeoutMs: 0,
             stallAfterMs: 60_000,
@@ -225,6 +225,34 @@ describe('[M3.books] book rows in Search', () => {
     expect(titles).toContain('Mistborn: The Well of Ascension');
   });
 
+  it('[M3.books] takes the words of a whole title in any order as the same book, and a subtitle only one side has as another', async () => {
+    const product = (asin: string, title: string) => ({
+      asin,
+      title,
+      authors: [{ name: 'Brandon Sanderson', asin: null }],
+      narrators: [],
+      series: [],
+      runtimeMinutes: null,
+      year: null,
+      language: null,
+      description: null,
+      imageUrl: null,
+    });
+    const { db, search } = await server({
+      catalogue: {
+        search: async () => [
+          product('B000000011', 'The Final Empire: Mistborn'),
+          product('B000000012', 'Mistborn'),
+          product('B000000013', 'Mistborn: The Well of Ascension'),
+        ],
+        art: async () => null,
+      },
+    });
+    indexedBook(db, 'a', 'Mistborn: The Final Empire', []);
+    const titles = (await search('mistborn')).books.map(({ title }) => title);
+    expect(titles).toEqual(['Mistborn', 'Mistborn: The Well of Ascension']);
+  });
+
   it('[M3.books] whoever sees someone else’s request on a row has a way in: a Request to join it, or the request in their own list', async () => {
     const { app, db, kara, person, search } = await server();
     const { books } = await search();
@@ -242,18 +270,45 @@ describe('[M3.books] book rows in Search', () => {
     expect(canAsk || listed).toBe(true);
   });
 
-  it('[M3.books] shows a live request’s status, for whoever searches, and a download’s progress', async () => {
-    const { db, kara, person, search } = await server();
+  it('[M3.books] shows a live request’s status and a download’s progress to those on it, and nothing of it to anyone else until they join', async () => {
+    const { app, db, kara, person, search } = await server();
     const { books } = await search();
     const ref = books.find((book) => book.ref.target.ids.asin === JEKYLL)!.ref;
     const { request } = createRequest(db, kara.user.id, ref, T0);
     saveRequest(db, request.id, { state: { status: 'downloading', progress: 0.42 } }, T0);
-    for (const who of [kara, person('otto')]) {
-      const row = (await search('jekyll stevenson', '', who)).books.find(
+    const rowFor = async (who: typeof kara) =>
+      (await search('jekyll stevenson', '', who)).books.find(
         (book) => book.ref.target.ids.asin === JEKYLL,
       )!;
-      expect(row).toMatchObject({ status: 'downloading', progress: 0.42 });
-    }
+    expect(await rowFor(kara)).toMatchObject({ status: 'downloading', progress: 0.42 });
+
+    const otto = person('otto');
+    expect(await rowFor(otto)).toMatchObject({ status: null, progress: null, item: null });
+    const listed = async () =>
+      (await app.inject({ method: 'GET', url: '/api/requests', headers: otto.headers })).json<{
+        inFlight: { id: string }[];
+      }>().inFlight;
+    expect(await listed()).toEqual([]);
+
+    const joined = await app.inject({
+      method: 'POST',
+      url: '/api/requests',
+      headers: otto.headers,
+      payload: { ref },
+    });
+    expect(joined.json()).toMatchObject({ id: request.id, status: 'downloading' });
+    expect(await rowFor(otto)).toMatchObject({ status: 'downloading' });
+    expect((await listed()).map(({ id }) => id)).toEqual([request.id]);
+  });
+
+  it('[M3.books] a book someone else is getting that the library holds stays out, as any owned book does', async () => {
+    const { db, kara, person, search } = await server();
+    const { books } = await search();
+    const ref = books.find((book) => book.ref.target.ids.asin === JEKYLL)!.ref;
+    createRequest(db, kara.user.id, ref, T0);
+    indexedBook(db, 'a', 'A Different Title Altogether', ['Someone Else'], { asin: JEKYLL });
+    const others = await search('jekyll stevenson', '', person('otto'));
+    expect(others.books.map((book) => book.ref.target.ids.asin)).not.toContain(JEKYLL);
   });
 
   it('[M3.books] a failed request shows only to those on it; anyone else may still ask', async () => {
@@ -464,6 +519,33 @@ describe('[M3.books] book rows in Search', () => {
       });
       await search();
       expect((await art(app, kara.headers, JEKYLL)).statusCode).toBe(404);
+    });
+
+    it.each(['image/gif', 'image/avif', 'image/svg+xml;charset=utf-8', 'IMAGE/SVG+XML'])(
+      '[M3.books] answers 404 for %s, serving only jpeg, png and webp',
+      async (type) => {
+        const { app, kara, search } = await server({
+          artFetch: async () =>
+            new Response(new Uint8Array([1]), { headers: { 'content-type': type } }),
+        });
+        await search();
+        expect((await art(app, kara.headers, JEKYLL)).statusCode).toBe(404);
+      },
+    );
+
+    it.each([
+      ['image/jpeg', 'image/jpeg'],
+      ['IMAGE/PNG', 'image/png'],
+      ['image/webp; charset=binary', 'image/webp'],
+    ])('[M3.books] serves %s as %s', async (given, served) => {
+      const { app, kara, search } = await server({
+        artFetch: async () =>
+          new Response(new Uint8Array([1]), { headers: { 'content-type': given } }),
+      });
+      await search();
+      const answer = await art(app, kara.headers, JEKYLL);
+      expect(answer.statusCode).toBe(200);
+      expect(answer.headers['content-type']).toBe(served);
     });
 
     it('[M3.books] refuses what is not an ASIN, and anyone not signed in', async () => {

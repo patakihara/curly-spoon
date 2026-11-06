@@ -56,6 +56,7 @@ describe('Search', () => {
   it('[M0.canvas] binds only its own query, filters, suggestions and results', () => {
     expect(dataRoots(tree)).toEqual([
       'activeFilters',
+      'errors',
       'kinds',
       'library',
       'outside',
@@ -105,6 +106,7 @@ describe('Search', () => {
     expect(sections(tree)).toEqual([
       undefined,
       undefined,
+      undefined,
       'Top result',
       'In your library',
       'Not in your library',
@@ -134,7 +136,7 @@ describe('Search', () => {
   });
 
   it('lists suggestions first while typing, each choice running the search with its text', () => {
-    expect(body()[1]).toMatchObject({ kind: 'when', state: 'suggest' });
+    expect(body()[2]).toMatchObject({ kind: 'when', state: 'suggest' });
     const [suggest] = when('suggest');
     const held = elements(suggest);
     expect(held.map((e) => e.component)).toEqual(['Section', 'ResultRow']);
@@ -159,6 +161,7 @@ describe('Search', () => {
 
   it('draws the results, all three sections of them, only once the search has run', () => {
     expect(body().map((c) => (c.kind === 'when' ? c.state : c.kind))).toEqual([
+      'each',
       'each',
       'suggest',
       'empty',
@@ -330,10 +333,17 @@ describe('Search', () => {
   });
 
   it('[M3.requests] opens Requests from "Your requests", outside every one of its states', () => {
-    const [entry] = body();
+    const entry = body()[1];
     expect(entry).toMatchObject({ kind: 'each', of: ['data', 'yourRequests'] });
     const row = elements(entry!).find((e) => e.component === 'ResultRow');
     expect(row?.props.onClick).toEqual({ kind: 'open', page: 'requests', params: {} });
+  });
+
+  it('[M3.books] says a failure no row can in one StatusBanner, over every one of its states', () => {
+    const [errors] = body();
+    expect(errors).toMatchObject({ kind: 'each', of: ['data', 'errors'] });
+    expect(elements(tree).filter((e) => e.component === 'StatusBanner')).toHaveLength(1);
+    expect(elements(errors!).some((e) => e.component === 'StatusBanner')).toBe(true);
   });
 });
 

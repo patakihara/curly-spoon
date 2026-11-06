@@ -32,6 +32,8 @@ import net.develivarr.auralis.generated.ui.SearchFieldProps
 import net.develivarr.auralis.generated.ui.SectionProps
 import net.develivarr.auralis.generated.ui.SizeSmMdLg
 import net.develivarr.auralis.generated.ui.SortFilterBarProps
+import net.develivarr.auralis.generated.ui.StatusBannerProps
+import net.develivarr.auralis.generated.ui.StatusBannerTone
 import net.develivarr.auralis.generated.ui.Variant
 import net.develivarr.auralis.ui.sonora.AccountButton
 import net.develivarr.auralis.ui.sonora.BackLayer
@@ -48,6 +50,7 @@ import net.develivarr.auralis.ui.sonora.ResultRow
 import net.develivarr.auralis.ui.sonora.SearchField
 import net.develivarr.auralis.ui.sonora.Section
 import net.develivarr.auralis.ui.sonora.SortFilterBar
+import net.develivarr.auralis.ui.sonora.StatusBanner
 
 /** Search, as design/app/pages/search.page.jsx draws it on the phone, with its placeholder data. */
 @Composable
@@ -179,6 +182,24 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                         platform = Platform.MOBILE,
                         width = PageBodyWidth.LIST,
                         children = {
+                            Section(
+                                SectionProps(
+                                    platform = Platform.MOBILE,
+                                    children = {
+                                        StatusBanner(
+                                            StatusBannerProps(
+                                                tone = StatusBannerTone.ERROR,
+                                                icon = "error",
+                                                children = {
+                                                    BasicText(
+                                                        "You have too many requests under way. Cancel one, or wait for one to finish, and ask again.",
+                                                    )
+                                                },
+                                            ),
+                                        )
+                                    },
+                                ),
+                            )
                             Section(
                                 SectionProps(
                                     platform = Platform.MOBILE,

@@ -7,9 +7,14 @@ import type { ShellNav } from '../../shell-nav';
 import { usePlay, type PlayQueue, type Playing } from '../../player';
 import { useQuery } from '../../query';
 import { useRequest } from '../../request';
-import { AccountButton, BackLayer, BottomNav, Button, ButtonGroup, EmptyState, ExpanderRow, FrontLayerHeader, LayoutGrid, MiniPlayer, NavRail, PageBody, ResultRow, SearchField, Section, SortFilterBar } from '../ui/index.js';
+import { AccountButton, BackLayer, BottomNav, Button, ButtonGroup, EmptyState, ExpanderRow, FrontLayerHeader, LayoutGrid, MiniPlayer, NavRail, PageBody, ResultRow, SearchField, Section, SortFilterBar, StatusBanner } from '../ui/index.js';
 
 const placeholder = {
+  "errors": [
+    {
+      "message": "You have too many requests under way. Cancel one, or wait for one to finish, and ask again."
+    }
+  ],
   "query": "salt",
   "placeholder": "What do you want to listen to?",
   "kinds": [
@@ -436,6 +441,15 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
   const askFor = useRequest();
   return (
     <PageBody width="list" platform={platform}>
+      {data.errors.map((error, i) => (
+        <Fragment key={i}>
+          <Section platform={platform}>
+            <StatusBanner tone="error" icon="error">
+              {error.message}
+            </StatusBanner>
+          </Section>
+        </Fragment>
+      ))}
       {data.yourRequests.map((entry, i) => (
         <Fragment key={i}>
           <Section platform={platform}>

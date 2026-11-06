@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
 import { type Recorded, serveRecorded } from './recorded';
 import { fontsLoaded, signIn, titlePlaying } from './shell-steps';
 
@@ -159,6 +159,28 @@ test.describe('[M3.books] tapping Request', () => {
     await request(row).click();
     await expect(request(row)).toHaveCount(0);
     await expect(row).not.toContainText('Request failed');
+  });
+});
+
+test.describe('[M3.books] too many requests', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('says so in the banner, and the row keeps its Request', async ({ page }, info) => {
+    await serve();
+    await search(page, 'jekyll stevenson');
+    const refuse = (route: Route) =>
+      route.fulfill({ status: 429, json: { error: 'too_many_requests' } });
+    await page.route('**/api/requests', refuse);
+    const row = bookRow(page, JEKYLL);
+    await request(row).click();
+    await expect(page.getByText('You have too many requests under way.')).toBeVisible();
+    await expect(row).not.toContainText('Request failed');
+    await expect(request(row)).toBeVisible();
+    await page.screenshot({ path: info.outputPath('phone-too-many.png'), fullPage: true });
+
+    await page.unroute('**/api/requests', refuse);
+    await request(row).click();
+    await expect(page.getByText('You have too many requests under way.')).toHaveCount(0);
   });
 });
 

@@ -30,6 +30,7 @@ import { Lyrics } from './lyrics/service.js';
 import { IndexLookup } from './queues/lookup.js';
 import { Sessions } from './queues/sessions.js';
 import { requestRoutes } from './routes/requests.js';
+import { MOST_LIVE_REQUESTS } from './store/requests.js';
 import { searchRoutes } from './routes/search.js';
 import { sessionRoutes } from './routes/sessions.js';
 import { settingsRoutes } from './routes/settings.js';
@@ -72,6 +73,8 @@ export interface BuildAppOptions {
     stepTimeoutMs: number;
     stallAfterMs: number;
     holdAfterMs: number;
+    /** How many live requests one person may be on; `MOST_LIVE_REQUESTS` otherwise. */
+    maxLive?: number;
   };
   /** What Search lists of the books the library lacks, while books can be requested. */
   bookCatalogue?: BookCatalogue;
@@ -232,10 +235,11 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     now: options.now ?? Date.now,
     // With no steps registered, no step ever runs against this.
     stepTimeoutMs: options.requests?.stepTimeoutMs ?? 0,
+    maxLive: options.requests?.maxLive ?? MOST_LIVE_REQUESTS,
   });
 
   if (options.requests !== undefined) {
-    const { everyMs, ...requests } = options.requests;
+    const { everyMs, maxLive: _maxLive, ...requests } = options.requests;
     const deps = { db, ...requests, log: app.log, now: options.now ?? Date.now };
     let turn = Promise.resolve();
     const stop = scheduleJob(

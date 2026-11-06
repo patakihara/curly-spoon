@@ -1,8 +1,8 @@
 /**
- * A book request's search step. Audible names the book by its ASIN, as a request's title and author
- * are a client's text; Prowlarr lists releases; AudiobookBay's detail pages say who reads the likeliest
- * few and how. With no product there is no truth to pick by, so a person chooses. An upstream that
- * cannot be reached throws `StepUnavailable` and holds the request; only the pages are optional.
+ * A book request's search step. Audible names the book by its ASIN, and a request's title and author,
+ * a client's text, are never sent on; Prowlarr lists releases; AudiobookBay's detail pages say who reads
+ * the likeliest few and how. A book Audible does not know has no release, and Prowlarr is not asked. An
+ * upstream that cannot be reached throws `StepUnavailable` and holds the request; only the pages are optional.
  */
 import { createHash } from 'node:crypto';
 import type { AudibleClient, AudibleProduct } from '../../adapters/audible/client.js';
@@ -10,7 +10,6 @@ import { readDetail } from '../../adapters/audiobookbay/client.js';
 import type { FetchLike } from '../../adapters/http/fetch.js';
 import type { ProwlarrClient, ProwlarrRelease } from '../../adapters/prowlarr/client.js';
 import type { JobLog } from '../../jobs/schedule.js';
-import type { StoredRequest } from '../../store/requests.js';
 import type { MediumSteps, Release, SearchOutcome } from '../steps.js';
 import { type BookFacts, pickRelease, type PickRow, rankRows } from './pick.js';
 
@@ -28,25 +27,13 @@ export interface BookSearchDeps {
   log?: JobLog;
 }
 
-function factsOf(request: StoredRequest, product: AudibleProduct | null): BookFacts {
-  if (product !== null) {
-    return {
-      title: product.title,
-      authors: product.authors.map((author) => author.name),
-      narrators: product.narrators,
-      runtimeMinutes: product.runtimeMinutes,
-      language: product.language,
-    };
-  }
-  const { title, creator } = request.target;
-  return {
-    title,
-    authors: creator === null ? [] : [creator],
-    narrators: [],
-    runtimeMinutes: null,
-    language: null,
-  };
-}
+const factsOf = (product: AudibleProduct): BookFacts => ({
+  title: product.title,
+  authors: product.authors.map((author) => author.name),
+  narrators: product.narrators,
+  runtimeMinutes: product.runtimeMinutes,
+  language: product.language,
+});
 
 function sizeOf(release: ProwlarrRelease): number | null {
   const { size } = release;
@@ -83,12 +70,13 @@ export function bookSearch(deps: BookSearchDeps): MediumSteps['search'] {
   return async (request): Promise<SearchOutcome> => {
     const { asin } = request.target.ids;
     const product = asin === undefined ? null : await deps.audible.product(asin);
-    const facts = factsOf(request, product);
+    if (product === null) return { kind: 'none', reason: 'noRelease' };
+    const facts = factsOf(product);
     const query = [facts.title, facts.authors[0]].filter(Boolean).join(' ');
     const rows = await withExtras(deps, await deps.prowlarr.search(query), facts);
     const picked = pickRelease(rows, facts);
     if (picked.kind === 'none') return { kind: 'none', reason: 'noRelease' };
-    if (picked.kind === 'choose' || product === null) {
+    if (picked.kind === 'choose') {
       const offered = rankRows(rows, facts).slice(0, MAX_CANDIDATES);
       return { kind: 'choose', candidates: offered.map(toRelease) };
     }

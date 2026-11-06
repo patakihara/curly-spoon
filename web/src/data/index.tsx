@@ -67,6 +67,8 @@ import {
 import { emptyQueue, queueData } from './queue';
 import {
   makeRequest,
+  TOO_MANY_REQUESTS,
+  TooManyRequests,
   requestsData,
   requestsMoving,
   requestsState,
@@ -609,7 +611,7 @@ function useChanges<T, L>(screen: Screen<T, L>) {
         if (error instanceof SignedOut) access.refused();
         else {
           console.warn('the change failed', what, error);
-          setFailure(failing);
+          setFailure(error instanceof TooManyRequests ? TOO_MANY_REQUESTS : failing);
         }
       })
       .then(() =>

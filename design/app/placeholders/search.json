@@ -1,4 +1,9 @@
 {
+  "errors": [
+    {
+      "message": "You have too many requests under way. Cancel one, or wait for one to finish, and ask again."
+    }
+  ],
   "query": "salt",
   "placeholder": "What do you want to listen to?",
   "kinds": [

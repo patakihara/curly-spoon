@@ -1619,6 +1619,7 @@ describe('the requests routes', () => {
   const others = [standInRelease('two'), standInRelease('three')];
   let app: FastifyInstance | null = null;
   let ben: string;
+  let mostLive: number | undefined;
   const cookies: Record<string, string> = {};
 
   const signIn = (userId: string, name: string) => {
@@ -1646,6 +1647,7 @@ describe('the requests routes', () => {
               stepTimeoutMs: STEP_LIMIT,
               stallAfterMs: STALL,
               holdAfterMs: HOLD,
+              ...(mostLive === undefined ? {} : { maxLive: mostLive }),
             },
           }),
     });
@@ -1655,6 +1657,7 @@ describe('the requests routes', () => {
   afterEach(async () => {
     await app?.close();
     app = null;
+    mostLive = undefined;
   });
 
   const call = (method: 'GET' | 'POST', url: string, who: string | null, payload?: object) =>
@@ -1687,6 +1690,100 @@ describe('the requests routes', () => {
   /** Runs the job until a request reaches a status, or fails the test. */
   const until = async (job: RequestJobDeps, id: string, status: RequestStatus) =>
     runUntil(job, stored(id), status);
+
+  describe('[M3.books] how many live requests a person may hold', () => {
+    const bookNo = (n: number): RequestRef => ({
+      medium: 'book',
+      target: {
+        title: `Book ${n}`,
+        creator: null,
+        ids: { asin: `B${String(n).padStart(9, '0')}` },
+      },
+    });
+    const filled = (count: number) =>
+      [...Array(count).keys()].map((n) => createRequest(db, ana, bookNo(n), clock).request);
+
+    it('answers 429 too_many_requests past the limit, and makes nothing', async () => {
+      await serving(standInSteps('book'));
+      filled(20);
+      const res = await call('POST', '', 'ana', { ref: bookNo(20) });
+      expect(res.statusCode).toBe(429);
+      expect(res.json()).toEqual({ error: 'too_many_requests' });
+      expect(db.prepare('SELECT id FROM requests').all()).toHaveLength(20);
+    });
+
+    it('takes the twentieth', async () => {
+      await serving(standInSteps('book'));
+      filled(19);
+      expect((await call('POST', '', 'ana', { ref: bookNo(19) })).statusCode).toBe(200);
+    });
+
+    it('counts joining: a person at the limit joins nobody else’s, and stays off it', async () => {
+      await serving(standInSteps('book'));
+      filled(20);
+      const { request } = createRequest(db, ben, bookNo(20), clock);
+      const res = await call('POST', '', 'ana', { ref: bookNo(20) });
+      expect(res.statusCode).toBe(429);
+      expect(peopleOn(db, request.id)).toEqual([ben]);
+    });
+
+    it('counts a join toward the limit', async () => {
+      await serving(standInSteps('book'));
+      filled(19);
+      createRequest(db, ben, bookNo(19), clock);
+      expect((await call('POST', '', 'ana', { ref: bookNo(19) })).statusCode).toBe(200);
+      expect((await call('POST', '', 'ana', { ref: bookNo(20) })).statusCode).toBe(429);
+    });
+
+    it('still answers a person at the limit asking again for what they hold', async () => {
+      await serving(standInSteps('book'));
+      const [first] = filled(20);
+      const res = await call('POST', '', 'ana', { ref: bookNo(0) });
+      expect(res.statusCode).toBe(200);
+      expect(res.json()).toMatchObject({ id: first!.id });
+    });
+
+    it('counts every medium and every failed request, but not one that reached the library', async () => {
+      await serving(standInSteps('book'), standInSteps('podcast'));
+      const held = filled(20);
+      const feed = refs.podcast;
+      expect((await call('POST', '', 'ana', { ref: feed })).statusCode).toBe(429);
+      saveRequest(
+        db,
+        held[0]!.id,
+        { state: { status: 'failed', failedStep: 'searching', reason: 'noRelease' } },
+        clock,
+      );
+      expect((await call('POST', '', 'ana', { ref: feed })).statusCode).toBe(429);
+      saveRequest(
+        db,
+        held[1]!.id,
+        { state: { status: 'inLibrary' }, result: { source: 'abs', id: 'landed' } },
+        clock,
+      );
+      expect((await call('POST', '', 'ana', { ref: feed })).statusCode).toBe(200);
+    });
+
+    it('takes its limit from the configuration', async () => {
+      mostLive = 2;
+      await serving(standInSteps('book'));
+      filled(2);
+      expect((await call('POST', '', 'ana', { ref: bookNo(2) })).statusCode).toBe(429);
+    });
+
+    it('refuses a title or a creator over 300 characters, and takes one of 300', async () => {
+      await serving(standInSteps('book'));
+      const named = (title: string, creator: string): RequestRef => ({
+        medium: 'book',
+        target: { title, creator, ids: { asin: 'B000000099' } },
+      });
+      const long = 'x'.repeat(301);
+      const most = 'x'.repeat(300);
+      expect((await call('POST', '', 'ana', { ref: named(long, 'a') })).statusCode).toBe(400);
+      expect((await call('POST', '', 'ana', { ref: named('a', long) })).statusCode).toBe(400);
+      expect((await call('POST', '', 'ana', { ref: named(most, most) })).statusCode).toBe(200);
+    });
+  });
 
   it('answers 409 medium_unavailable when no medium has steps, and makes nothing', async () => {
     await serving();

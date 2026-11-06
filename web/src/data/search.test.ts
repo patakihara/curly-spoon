@@ -17,6 +17,7 @@ import {
 } from './search';
 import { answerFrom, createPageStore, pageKey } from './store';
 import { requestOf } from '../request';
+import { TOO_MANY_REQUESTS } from './requests';
 
 const result = (over: Partial<SearchResult>): SearchResult => ({
   ref: { source: 'jellyfin', id: 'a1' },
@@ -492,5 +493,18 @@ describe('[M3.books] a book the library lacks, in Search', () => {
       action: 'Request',
     });
     expect(said.outside.books[1]).toEqual(data.outside.books[1]);
+    expect(said.errors).toEqual([]);
+  });
+
+  it('[M3.books] says a failure naming no row in the page’s banner, leaving every row as it was', () => {
+    const data = searchData(answered(book()), empty);
+    const said = searchRequestFailed(data, TOO_MANY_REQUESTS);
+    expect(said.errors).toEqual([{ message: TOO_MANY_REQUESTS }]);
+    expect(said.outside).toEqual(data.outside);
+  });
+
+  it('[M3.books] draws no banner until something has failed', () => {
+    expect(empty.errors).toEqual([]);
+    expect(searchData(answered(book()), empty).errors).toEqual([]);
   });
 });

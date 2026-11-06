@@ -159,6 +159,7 @@ export async function assembleServer(
       stepTimeoutMs: config.requests.stepTimeoutSeconds * 1_000,
       stallAfterMs: config.requests.stallAfterMinutes * 60_000,
       holdAfterMs: config.requests.holdAfterMinutes * 60_000,
+      maxLive: config.requests.maxLive,
     },
     ...(deps.bookCatalogue !== undefined
       ? { bookCatalogue: deps.bookCatalogue }

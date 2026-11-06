@@ -11,7 +11,7 @@ import { type ApiClient } from '../api/client';
 import { type SearchData } from '../generated/pages/Search';
 import { type PlayQueue } from '../player';
 import { type Draft, searchText } from '../query';
-import { requestKey } from '../request';
+import { requestKey, requestOf } from '../request';
 import { artAt, emptied } from './format';
 import { statusOf } from './library';
 import { loadSearch, loadSuggest } from './loads';
@@ -126,13 +126,17 @@ export function bookRowOf(book: SearchBook): BookRow {
   ) as BookRow;
 }
 
-/** Search's data saying, on the row `ref` names, that a tap asking for it did not go through. */
-export function searchRequestFailed(data: SearchData, ref: string): SearchData {
+/**
+ * Search's data saying what a tap asking for a book left: on the row `failure` names, that it did
+ * not go through; a failure naming no row, in the page's banner.
+ */
+export function searchRequestFailed(data: SearchData, failure: string): SearchData {
+  if (requestOf(failure) === null) return { ...data, errors: [{ message: failure }] };
   const said = (book: BookRow) =>
     ({
       ...book,
       asking: book.asking.map((row) =>
-        row.ref === ref ? { ...row, status: 'Request failed', tone: 'error' } : row,
+        row.ref === failure ? { ...row, status: 'Request failed', tone: 'error' } : row,
       ),
     }) as BookRow;
   return { ...data, outside: { ...data.outside, books: data.outside.books.map(said) } };

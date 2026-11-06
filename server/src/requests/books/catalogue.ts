@@ -4,9 +4,10 @@
  * do not. A search waits for it only up to the limit, and anything going wrong is no rows, never a
  * failed search. A row's cover comes from the address in the parsed product, never from a client.
  *
- * A book the household holds is left out, by its ASIN and then by its title and author, treating "not
- * sure" as owned (the plan's Discovery page): the same title with no author named on one side counts,
- * as it would be worse to offer what you have than to miss another edition.
+ * A book the household holds is left out, by its ASIN and then by the words of its whole title and its
+ * author, treating "not sure" as owned (the plan's Discovery page): the same words with no author named
+ * on one side count. Words after a colon are the title too, as a series name before one is shared by
+ * every sequel.
  */
 import type { MediaRef, RequestRef, RequestStatus, SearchBook } from '@auralis/schema';
 import { RequestRef as RequestRefSchema } from '@auralis/schema';
@@ -28,6 +29,8 @@ const KEPT_MS = 5 * 60_000;
 const MOST_KEPT = 200;
 const ART_LIMIT_MS = 5_000;
 const MAX_ART_BYTES = 2 * 1024 * 1024;
+/** What a cover may be: anything else could carry script, which would run on the app's own address. */
+const ART_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 export interface BookArt {
   type: string;
@@ -109,8 +112,11 @@ export function bookCatalogue(deps: BookCatalogueDeps): BookCatalogue {
           redirect: 'manual',
           signal: AbortSignal.any([gone, AbortSignal.timeout(ART_LIMIT_MS)]),
         });
-        const type = response.headers.get('content-type') ?? '';
-        if (!response.ok || !type.startsWith('image/')) {
+        const type = (response.headers.get('content-type') ?? '')
+          .split(';')[0]!
+          .trim()
+          .toLowerCase();
+        if (!response.ok || !ART_TYPES.has(type)) {
           await response.body?.cancel();
           return null;
         }
@@ -126,51 +132,50 @@ export function bookCatalogue(deps: BookCatalogueDeps): BookCatalogue {
 
 const ARTICLES = new Set(['the', 'a', 'an']);
 
-/** A title's words, without its article, its edition note, a narrator's tag, or "and" for "&". */
+/**
+ * The set of a whole title's words, in one order: without an article, its edition note, a narrator's
+ * tag, or "and" for "&". An article goes wherever it stands, as a part after a colon may lead with one.
+ */
 const titleKey = (title: string) => {
   const words = searchTokens(
     cleanTitle(title)
       .replace(/\s*\[[^\]]*\]\s*$/, '')
       .replace(/\s*\([^)]*\)\s*$/, ''),
-  ).filter((word) => word !== 'and');
-  return (ARTICLES.has(words[0] ?? '') ? words.slice(1) : words).join(' ');
+  ).filter((word) => word !== 'and' && !ARTICLES.has(word));
+  return [...new Set(words)].sort().join(' ');
 };
-
-/** The title as given and without its subtitle, either of which may name the same book. */
-const titleKeys = (title: string) =>
-  [titleKey(title), titleKey(title.split(/:|\s[-–—]\s/)[0] ?? '')].filter((key) => key !== '');
 
 const surname = (name: string) => searchTokens(name).at(-1) ?? '';
 
 interface OwnedBook {
   asin: string | undefined;
-  titles: string[];
+  title: string;
   surnames: string[];
 }
 
 function ownedBooks(db: Db): OwnedBook[] {
   return topLevelOfKind(db, 'book').map((row) => ({
     asin: row.ids['asin'],
-    titles: titleKeys(row.title),
+    title: titleKey(row.title),
     surnames: row.creators.filter(({ role }) => role === 'author').map(({ name }) => surname(name)),
   }));
 }
 
 function isOwned(product: AudibleProduct, owned: readonly OwnedBook[]): boolean {
-  const titles = titleKeys(product.title);
+  const title = titleKey(product.title);
   const surnames = product.authors.map(({ name }) => surname(name));
   return owned.some((book) => {
     if (book.asin === product.asin) return true;
-    if (!book.titles.some((title) => titles.includes(title))) return false;
+    if (title === '' || book.title !== title) return false;
     if (book.surnames.length === 0 || surnames.length === 0) return true;
     return book.surnames.some((name) => surnames.includes(name));
   });
 }
 
 /**
- * Where this person should see a request for this book stand, or null. Anyone's request under way
- * shows, as tapping joins it; a failed one only to those on it, as anyone else may ask again; and one
- * that reached the library only to those on it, while the index still holds it.
+ * Where this person should see a request for this book stand, or null. A request shows only to those
+ * on it, and one that reached the library only while the index still holds it. Anyone else sees a row
+ * to ask from, and nothing of the request: asking joins it, and it shows from then on.
  */
 function requestStanding(
   db: Db,
@@ -180,9 +185,10 @@ function requestStanding(
 ): { status: RequestStatus; progress: number | null; item: MediaRef | null } | null | 'owned' {
   const live = liveRequest(db, ref);
   const isMine = (id: string) => peopleOn(db, id).includes(userId);
-  if (live !== undefined && live.state.status !== 'failed') {
-    const progress = live.state.status === 'downloading' ? live.state.progress : null;
-    return { status: live.state.status, progress, item: null };
+  const mine = live !== undefined && isMine(live.id) ? live : undefined;
+  if (mine !== undefined && mine.state.status !== 'failed') {
+    const progress = mine.state.status === 'downloading' ? mine.state.progress : null;
+    return { status: mine.state.status, progress, item: null };
   }
   const arrived = arrivedRequests(db, ref).find(
     ({ id, result }) =>
@@ -190,9 +196,7 @@ function requestStanding(
   );
   if (arrived?.result) return { status: 'inLibrary', progress: null, item: arrived.result };
   if (owned) return 'owned';
-  return live !== undefined && isMine(live.id)
-    ? { status: 'failed', progress: null, item: null }
-    : null;
+  return mine === undefined ? null : { status: 'failed', progress: null, item: null };
 }
 
 /** The rows these found books make for this person, in the order they were found. */

@@ -38,8 +38,16 @@ export type BookSteps = { steps: MediumSteps; catalogue: BookCatalogue } | { off
 const addressesOf = async (host: string) =>
   (await lookup(host, { all: true })).map(({ address }) => address);
 
-const isFolder = (path: string) =>
-  statSync(path, { throwIfNoEntry: false })?.isDirectory() === true;
+/** What keeps the Books folder from being used, or null; one it may not look into starts nothing. */
+function booksFolderLacking(path: string): string | null {
+  try {
+    return statSync(path, { throwIfNoEntry: false })?.isDirectory() === true
+      ? null
+      : 'a Books folder in MEDIA_DIR';
+  } catch {
+    return 'a Books folder in MEDIA_DIR it may look inside';
+  }
+}
 
 export function bookSteps(config: AppConfig, deps: BookStepsDeps): BookSteps {
   const { abs, index, books } = config;
@@ -51,7 +59,8 @@ export function bookSteps(config: AppConfig, deps: BookStepsDeps): BookSteps {
   if (books.downloadsPath === null) return { off: 'QBITTORRENT_DOWNLOADS_PATH' };
   if (books.mediaDir === null) return { off: 'MEDIA_DIR' };
   const { mediaDir, downloadsPath } = books;
-  if (!isFolder(join(mediaDir, 'Books'))) return { off: 'a Books folder in MEDIA_DIR' };
+  const lacking = booksFolderLacking(join(mediaDir, 'Books'));
+  if (lacking !== null) return { off: lacking };
 
   const secrets = [
     [books.prowlarr.keyFile, 'PROWLARR_API_KEY'],
@@ -78,7 +87,7 @@ export function bookSteps(config: AppConfig, deps: BookStepsDeps): BookSteps {
     apiKey: qbittorrentKey,
     fetch,
   });
-  // Without Audible a book is named by its request; without Audnexus it only lacks a photo.
+  // Without Audible no book is found or searched for; without Audnexus it only lacks a photo.
   const audible =
     books.audibleUrl === null
       ? { product: async () => null, search: async () => [] }

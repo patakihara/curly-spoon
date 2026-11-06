@@ -24,6 +24,13 @@ export default function Search({ data }) {
       }
     >
       <PageBody width="list">
+        <Each of={data.errors} as="error">
+          <Section>
+            <StatusBanner tone="error" icon="error">
+              {error.message}
+            </StatusBanner>
+          </Section>
+        </Each>
         <Each of={data.yourRequests} as="entry">
           <Section>
             <ResultRow title={entry.title} icon="downloading" onClick={<Open page="requests" />} />

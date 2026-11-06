@@ -361,6 +361,7 @@ describe('loadConfig', () => {
       stepTimeoutSeconds: 120,
       stallAfterMinutes: 15,
       holdAfterMinutes: 60,
+      maxLive: 20,
     });
     expect(
       loadConfig({
@@ -369,6 +370,7 @@ describe('loadConfig', () => {
         REQUEST_STEP_TIMEOUT_SECONDS: '9',
         REQUEST_STALL_MINUTES: '7',
         REQUEST_HOLD_MINUTES: '8',
+        REQUESTS_MAX_LIVE: '3',
       }).requests,
     ).toEqual({
       everySeconds: 5,
@@ -376,12 +378,28 @@ describe('loadConfig', () => {
       stepTimeoutSeconds: 9,
       stallAfterMinutes: 7,
       holdAfterMinutes: 8,
+      maxLive: 3,
     });
     expect(() => loadConfig({ REQUEST_STALL_MINUTES: '0' })).toThrow();
     expect(() => loadConfig({ REQUEST_HOLD_MINUTES: '0' })).toThrow();
     expect(() => loadConfig({ REQUEST_STEP_TIMEOUT_SECONDS: '0' })).toThrow();
     expect(() => loadConfig({ REQUESTS_EVERY_SECONDS: '0' })).toThrow();
     expect(() => loadConfig({ REQUEST_NOT_INDEXED_HOURS: '0' })).toThrow();
+    expect(() => loadConfig({ REQUESTS_MAX_LIVE: '0' })).toThrow();
+    expect(() => loadConfig({ REQUESTS_MAX_LIVE: 'many' })).toThrow();
+  });
+
+  it('[M3.books] stops the start on a malformed PROWLARR_URL or QBITTORRENT_URL, as other bad config does', () => {
+    for (const name of ['PROWLARR_URL', 'QBITTORRENT_URL']) {
+      for (const bad of ['not a url', 'prowlarr:9696', 'ftp://prowlarr.invalid', '']) {
+        expect(() => loadConfig({ [name]: bad }), `${name}=${bad}`).toThrow();
+      }
+    }
+    const fine = loadConfig({
+      PROWLARR_URL: 'http://prowlarr.invalid:9696',
+      PROWLARR_API_KEY_FILE: '/run/key',
+    });
+    expect(fine.books.prowlarr?.url).toBe('http://prowlarr.invalid:9696');
   });
 
   it('runs the library index hourly by default, not at all at 0, and reads ABS with its own key', () => {

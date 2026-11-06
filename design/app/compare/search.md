@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: b6bc7c0da0fbc1c3ff55811ce043d4fa9225ef8e9fe4dccbc795c72ce5b9b828
+pageHash: 41aef426f1c71ce7d775cd6cdec71030a373b2d541568e45b527f023bb18ceda
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---
@@ -132,3 +132,5 @@ chooses the state. The canvas draws each on its own phone artboard, `search.phon
 - Changed on purpose: a book your own request brought says "In library" on its row, in the library tone. The kits' pill says the same.
 - Changed on purpose: an outside book's meta names who wrote it and its year, and who reads it where known, so one edition tells from another. It names no indexer: which one holds a release is not known until the request searches.
 - Changed on purpose: a book's row draws its status or its button, never both, so a title keeps its line on the phone. Each book names its row by three lists (`book.asking`, `book.standing`, `book.arrived`), one of them holding it, so it keeps its place in the list as its request moves. A row on its way or failed taps through to Requests, which says why. One that arrived opens its book and plays it from its art, as a library row does. A tap that did not reach the server keeps its Request button beside "Request failed": no request stands, so the button is the way to try again.
+- Changed on purpose: one live request too many says so in a `StatusBanner` over the rows, as Requests says a verb that failed, and the row keeps its Request button, as nothing about that book went wrong. Drawn on this canvas page with its words, as on Requests.
+- Changed on purpose: a book someone else has asked for draws as any book you lack, with its Request button, so nothing of another person's request shows. Tapping it joins, and the row then shows its status and it is in your Requests.

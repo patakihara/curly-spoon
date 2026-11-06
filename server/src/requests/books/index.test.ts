@@ -129,7 +129,7 @@ describe('book steps from the configuration', () => {
     chmodSync(shut, 0o000);
     try {
       const made = stepsWith({ ...env, MEDIA_DIR: shut });
-      expect('off' in made).toBe(true);
+      expect(made).toEqual({ off: 'a Books folder in MEDIA_DIR it may look inside' });
     } finally {
       chmodSync(shut, 0o700);
     }

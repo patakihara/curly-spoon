@@ -142,23 +142,39 @@ describe('[M3.books/a] the search step, on Prowlarr and AudiobookBay recordings'
     });
   });
 
-  it('[M3.books/a] lets a person choose when the catalogue does not know the ASIN', async () => {
-    const byClient: Recording = {
-      ...search,
-      request: {
-        ...search.request,
-        query: { ...search.request.query, query: QUERY },
-      },
+  it('[M3.books/a] answers noRelease when the catalogue does not know the ASIN, asking Prowlarr nothing', async () => {
+    const asks: string[] = [];
+    const replay = replayFetch([missing]);
+    const fetch: FetchLike = (url, init) => {
+      asks.push(url);
+      return replay(url, init);
     };
-    const request = {
+    const prowlarr = { search: vi.fn(async () => []) };
+    const found = await bookSearch({ audible: audibleWith(fetch), prowlarr, fetch })({
       target: {
         title: 'The Strange Case of Dr Jekyll and Mr Hyde',
         creator: 'Robert Louis Stevenson',
         ids: { asin: 'B000000000' },
       },
-    } as unknown as StoredRequest;
-    const found = await steps(missing, byClient, detail)(request);
-    expect(found.kind).toBe('choose');
+    } as unknown as StoredRequest);
+    expect(found).toEqual({ kind: 'none', reason: 'noRelease' });
+    expect(prowlarr.search).not.toHaveBeenCalled();
+    expect(asks).toHaveLength(1);
+  });
+
+  it('[M3.books/a] answers noRelease for a book with no ASIN, as nothing says what it is', async () => {
+    const prowlarr = { search: vi.fn(async () => []) };
+    const product = vi.fn(async () => null);
+    const found = await bookSearch({
+      audible: { product },
+      prowlarr,
+      fetch: replayFetch([]),
+    })({
+      target: { title: 'Anything', creator: null, ids: { isbn: '9780000000000' } },
+    } as unknown as StoredRequest);
+    expect(found).toEqual({ kind: 'none', reason: 'noRelease' });
+    expect(product).not.toHaveBeenCalled();
+    expect(prowlarr.search).not.toHaveBeenCalled();
   });
 
   it('[M3.books/a] holds the request while Prowlarr or Audible is away', async () => {
@@ -459,17 +475,15 @@ describe('[M3.books/a] how far the search goes', () => {
   });
 
   it('[M3.books/a] offers a person ten releases at most', async () => {
+    const notPlainly = (at: number) => ({
+      ...row(at, 'an indexer'),
+      title: 'The Strange Case of Dr Jekyll and Mr Hyde plus Markheim - Robert Louis Stevenson',
+    });
     const found = await bookSearch({
-      audible: audibleWith(replayFetch([missing])),
-      prowlarr: listing(Array.from({ length: 12 }, (_, at) => row(at, 'an indexer'))),
+      audible: audibleWith(replayFetch([product])),
+      prowlarr: listing(Array.from({ length: 12 }, (_, at) => notPlainly(at))),
       fetch: () => Promise.reject(new Error('refused')),
-    })({
-      target: {
-        title: 'The Strange Case of Dr Jekyll and Mr Hyde',
-        creator: 'Robert Louis Stevenson',
-        ids: { asin: 'B000000000' },
-      },
-    } as unknown as StoredRequest);
+    })(asked(ASIN));
     expect(found).toMatchObject({ kind: 'choose' });
     expect(found.kind === 'choose' && found.candidates).toHaveLength(10);
   });
