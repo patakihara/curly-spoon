@@ -126,7 +126,11 @@ beforeEach(() => {
 describe('[M3.ytmusic/a] the plan has the stream go through publicFetch', () => {
   it("[M3.ytmusic/a] publicFetch passes the stream's Range on, so a chunk is asked as a closed range", async () => {
     const heard: (string | undefined)[] = [];
-    const request = ((_url: URL, options: { headers?: Record<string, string> }, answer) => {
+    const request = ((
+      _url: URL,
+      options: { headers?: Record<string, string> },
+      answer: (body: unknown) => void,
+    ) => {
       const range = options.headers?.range ?? options.headers?.Range;
       heard.push(range);
       const [first = 0, last = SIZE - 1] = (range ?? 'bytes=0-')
