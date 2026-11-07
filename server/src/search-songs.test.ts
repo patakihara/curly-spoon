@@ -19,13 +19,13 @@ import { type YtSong, YtMusicClient } from './adapters/ytmusic/client.js';
 import { buildApp } from './app.js';
 import { type IndexRow } from './libraryIndex/rows.js';
 import { applyRow, emptyCounts } from './libraryIndex/store.js';
-import { SongCatalogue, type SongSource } from './music/catalogue.js';
+import { SongCatalogue, songRows, type SongSource } from './music/catalogue.js';
 import { type SpawnLike } from './music/extractor.js';
 import { Music } from './music/index.js';
 import { openDatabase, type Db } from './store/connection.js';
 import { createDevice } from './store/devices.js';
 import { createSession } from './store/sessions.js';
-import { streamedTrack } from './store/streamedTracks.js';
+import { rememberTracks, streamedTrack } from './store/streamedTracks.js';
 import { upsertUser } from './store/users.js';
 
 const ADAPTERS = fileURLToPath(new URL('./adapters/', import.meta.url));
@@ -321,5 +321,52 @@ describe('[M3.ytmusic/e] the song a Jellyfin track is', () => {
     const songs = catalogue(db, { search: (q) => recorded().search(q), radio: async () => [] });
     expect(await songs.seedFor('owned-1')).toBeNull();
     expect(await songs.seedFor('not-indexed')).toBeNull();
+  });
+});
+
+describe('[M3.ytmusic] one song under other names', () => {
+  const song = (id: string, title: string, artists: string[]): YtSong => ({
+    id,
+    title,
+    artists,
+    album: null,
+    duration: 200,
+    artUrl: null,
+    type: 'ATV',
+  });
+  const catalogue = (db: Db, radio: YtSong[]) =>
+    new SongCatalogue({
+      client: { search: async () => [], radio: async () => radio },
+      db,
+      now: () => T0,
+      log,
+    });
+
+  it('[M3.ytmusic] a radio holding one song under two videos plays it once', async () => {
+    const db = openDatabase(':memory:');
+    const picks = await catalogue(db, [
+      song('aaaaaaaaaaa', 'Take on Me', ['a-ha']),
+      song('bbbbbbbbbbb', 'Take on Me', ['a-ha']),
+      song('ccccccccccc', 'Forever Young', ['Alphaville']),
+    ]).radio('zzzzzzzzzzz');
+    expect(picks.map(({ id }) => id)).toEqual(['aaaaaaaaaaa', 'ccccccccccc']);
+  });
+
+  it('[M3.ytmusic] a radio does not follow a song with its other video', async () => {
+    const db = openDatabase(':memory:');
+    const seed = song('zzzzzzzzzzz', 'Take on Me', ['a-ha']);
+    rememberTracks(db, [seed], T0);
+    const picks = await catalogue(db, [
+      song('aaaaaaaaaaa', 'Take on Me', ['a-ha']),
+      song('ccccccccccc', 'Forever Young', ['Alphaville']),
+    ]).radio(seed.id);
+    expect(picks.map(({ id }) => id)).toEqual(['ccccccccccc']);
+  });
+
+  it('[M3.ytmusic] an artist whose name only holds the letters of an owned artist is another song', () => {
+    const db = openDatabase(':memory:');
+    ownedTrack(db, 'owned-1', 'Run', ['Air']);
+    const rows = songRows(db, [song('aaaaaaaaaaa', 'Run', ['Fair to Midland'])]);
+    expect(rows.map(({ ref }) => ref.id)).toEqual(['aaaaaaaaaaa']);
   });
 });

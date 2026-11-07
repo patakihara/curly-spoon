@@ -170,3 +170,81 @@ for (const { name, viewport } of SIZES) {
     });
   });
 }
+
+test.describe('when a streamed song cannot play', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  const toTheEnd = (page: Page) =>
+    page.evaluate(() => {
+      const audio = [...document.querySelectorAll('audio')].find((a) => !a.paused);
+      if (audio !== undefined) audio.currentTime = audio.duration - 0.3;
+    });
+
+  test('[M3.ytmusic] a song put next that cannot play is stepped over, and the music goes on', async ({
+    page,
+  }) => {
+    recorded = await serveRecorded({ nothingPlayed: true, music: 'answers' });
+    await search(page, 'never');
+    const songs = await songsOf(page, 'never');
+    await artPlay(page, songs[0]!.title);
+    await expect.poll(() => titlePlaying(page)).toBe(songs[0]!.title);
+    await advances(page);
+    await songRow(page, songs.at(-1)!.title).getByRole('button', { name: 'Play next' }).click();
+    await expect
+      .poll(async () => {
+        const answer = await page.request.get(`${recorded.origin}/api/queues/music`);
+        return JSON.stringify(await answer.json());
+      })
+      .toContain(songs.at(-1)!.ref.id);
+    await toTheEnd(page);
+    await expect.poll(() => titlePlaying(page), { timeout: 15_000 }).not.toBe(songs[0]!.title);
+    await advances(page);
+  });
+
+  test('[M3.ytmusic] a radio pick the server refuses is stepped over, and autoplay goes on', async ({
+    page,
+  }) => {
+    recorded = await serveRecorded({ nothingPlayed: true, music: 'answers' });
+    await search(page, 'never');
+    const [first] = await songsOf(page, 'never');
+    await artPlay(page, first!.title);
+    await expect.poll(() => titlePlaying(page)).toBe(first!.title);
+    await advances(page);
+    const queue = await page.request.get(`${recorded.origin}/api/queues/music`);
+    const { autoplay } = (await queue.json()) as { autoplay: { ref: { id: string } } };
+    // The server's own answer for a song barred where it plays, on the song radio picked.
+    await page.route('**/api/play', async (route) => {
+      const asked = route.request().postDataJSON() as { ref: { id: string } };
+      if (asked.ref.id !== autoplay.ref.id) return route.continue();
+      return route.fulfill({
+        status: 422,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'song_region_blocked' }),
+      });
+    });
+    await toTheEnd(page);
+    await expect.poll(() => titlePlaying(page), { timeout: 15_000 }).not.toBe(first!.title);
+    await advances(page);
+  });
+
+  test('[M3.ytmusic] while music plays, a song the household holds offers Play next as a streamed one does', async ({
+    page,
+  }) => {
+    recorded = await serveRecorded({ nothingPlayed: true, music: 'answers' });
+    await search(page, 'never');
+    const answer = await page.request.get(`${recorded.origin}/api/search?q=never`);
+    const { results, songs } = (await answer.json()) as {
+      results: { title: string; kind: string }[];
+      songs: Song[];
+    };
+    const held = results.find((result) => result.kind === 'track')!;
+    await artPlay(page, songs[0]!.title);
+    await expect.poll(() => titlePlaying(page)).toBe(songs[0]!.title);
+    await expect(
+      songRow(page, songs[1]!.title).getByRole('button', { name: 'Play next' }),
+    ).toBeVisible();
+    await expect(songRow(page, held.title).getByRole('button', { name: 'Play next' })).toBeVisible({
+      timeout: 3_000,
+    });
+  });
+});
