@@ -349,6 +349,9 @@ describe('loadConfig', () => {
   });
 
   it('closes an unasked-for transcode after 10 minutes by default, or the minutes set', () => {
+    expect(loadConfig({}).streamCacheMib).toBe(2048);
+    expect(loadConfig({ STREAM_CACHE_MIB: '64' }).streamCacheMib).toBe(64);
+    expect(() => loadConfig({ STREAM_CACHE_MIB: '0' })).toThrow();
     expect(loadConfig({}).playIdleMinutes).toBe(10);
     expect(loadConfig({ PLAY_IDLE_MINUTES: '3' }).playIdleMinutes).toBe(3);
     expect(() => loadConfig({ PLAY_IDLE_MINUTES: '0' })).toThrow();

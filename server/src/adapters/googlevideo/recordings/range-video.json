@@ -1,0 +1,35 @@
+{
+  "upstream": "googlevideo",
+  "upstreamVersion": "yt-dlp 2026.10.26",
+  "call": "range-video",
+  "request": {
+    "method": "GET",
+    "path": "/videoplayback",
+    "query": {
+      "clen": "226434",
+      "dur": "213.560",
+      "ei": "<token>",
+      "expire": "1794034318",
+      "ip": "<token>",
+      "itag": "160",
+      "lsig": "<token>",
+      "mime": "video/mp4",
+      "n": "<token>",
+      "sig": "<token>",
+      "source": "youtube"
+    },
+    "headers": {
+      "range": "bytes=0-1"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 206,
+    "headers": {
+      "accept-ranges": "bytes",
+      "content-range": "bytes 0-1/226434",
+      "content-type": "video/mp4"
+    },
+    "body": null
+  }
+}

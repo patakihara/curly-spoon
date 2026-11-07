@@ -138,6 +138,7 @@ describe('the recording run', () => {
       duration: 214,
       formats: [
         { format_id: '251', url: STREAM, filesize: 3445462, vcodec: 'none', protocol: 'https' },
+        { format_id: '160', url: STREAM.replace('audio%2Fwebm', 'video%2Fmp4'), filesize: 1 },
       ],
     };
     const ok = (stdout: string): ExecResult => ({ rc: 0, stdout, stderr: '' });
@@ -159,7 +160,8 @@ describe('the recording run', () => {
         const range = stdin.trim().split('\n')[1]!;
         const away = line.includes('container:gluetun');
         const status = away ? 403 : range.endsWith('-') ? 416 : 206;
-        const head = { 'content-type': 'audio/webm', 'content-range': `bytes 0-1/3445462` };
+        const type = stdin.includes('video%2Fmp4') ? 'video/mp4' : 'audio/webm';
+        const head = { 'content-type': type, 'content-range': `bytes 0-1/3445462` };
         return Promise.resolve(ok(JSON.stringify({ status, headers: head })));
       }
       return Promise.resolve(ok(''));
@@ -189,7 +191,9 @@ describe('the recording run', () => {
       ),
     );
     expect(readdirSync(join(dir, 'googlevideo', 'recordings')).sort()).toEqual(
-      ['range-403', 'range-416', 'range-chunk', 'range-head'].map((call) => `${call}.json`),
+      ['range-403', 'range-416', 'range-chunk', 'range-head', 'range-video'].map(
+        (call) => `${call}.json`,
+      ),
     );
     for (const sub of ['ytdlp', 'googlevideo']) {
       for (const file of readdirSync(join(dir, sub, 'recordings'))) {

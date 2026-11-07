@@ -7,6 +7,7 @@
  * - `ytdlp/error-unavailable`, `error-botwall`: an id that does not exist, and the one request
  *   known to meet the bot wall.
  * - `googlevideo/range-head`, `range-chunk`, `range-416`: status and headers, from that container.
+ * - `googlevideo/range-video`: a video-only format's header, which the proxy must refuse.
  * - `googlevideo/range-403`: the same URL, asked from another address (the VPN's). One call.
  *
  * A stream's bytes are never read: the body is cancelled at the headers, and a recording names a
@@ -139,6 +140,7 @@ export function headRecording(
   answer: HeadAnswer,
   secrets: string[],
 ): Recording {
+  const isAudio = answer.status === 206 && /^audio\//.test(answer.headers['content-type'] ?? '');
   const raw: RawExchange = {
     upstream: 'googlevideo',
     upstreamVersion: version,
@@ -147,7 +149,7 @@ export function headRecording(
     response: {
       status: answer.status,
       headers: answer.headers,
-      body: answer.status === 206 ? { bytes: CLIP_FILE, synthesized: CLIP_SYNTHESIZED } : null,
+      body: isAudio ? { bytes: CLIP_FILE, synthesized: CLIP_SYNTHESIZED } : null,
     },
   };
   return scrub(raw, { secrets, baseUrl: BASE_URL });
@@ -261,14 +263,16 @@ export async function recordExtractor(input: ExtractorRecordInput): Promise<{ wr
     await failure('error-unavailable', NO_SUCH_TRACK, []);
     await failure('error-botwall', KNOWN_TRACK, BOT_WALL_ARGS);
 
-    const opus = (plain.formats as { format_id: string; url: string; filesize: number }[]).find(
-      (format) => format.format_id === '251',
-    );
-    if (opus === undefined) throw new Error('the known track has no format 251');
-    const head = async (call: string, range: string) => {
-      const answer = await must(inBox('node', '-e', HEAD_SCRIPT), `${opus.url}\n${range}\n`);
+    const formats = plain.formats as { format_id: string; url: string; filesize: number }[];
+    const opus = formats.find((format) => format.format_id === '251');
+    const video = formats.find((format) => format.format_id === '160');
+    if (opus === undefined || video === undefined) {
+      throw new Error('the known track lacks format 251 or 160');
+    }
+    const head = async (call: string, range: string, url = opus.url) => {
+      const answer = await must(inBox('node', '-e', HEAD_SCRIPT), `${url}\n${range}\n`);
       const parsed = JSON.parse(answer.stdout) as HeadAnswer;
-      await write(headRecording(call, version, opus.url, range, parsed, secrets));
+      await write(headRecording(call, version, url, range, parsed, secrets));
       return parsed;
     };
     const first = await head('range-head', 'bytes=0-1');
@@ -277,6 +281,10 @@ export async function recordExtractor(input: ExtractorRecordInput): Promise<{ wr
     }
     await head('range-chunk', 'bytes=0-1048575');
     await head('range-416', `bytes=${opus.filesize + 10}-`);
+    const shown = await head('range-video', 'bytes=0-1', video.url);
+    if (!/^video\//.test(shown.headers['content-type'] ?? '')) {
+      throw new Error('a video-only format did not answer with a video type');
+    }
 
     const away = await must(
       onServer(
