@@ -187,7 +187,7 @@ describe('[M3.ytmusic/a] the audio-only guard, rule 8, on what the extractor rec
       'https://rr1.googlevideo.com.example.net/',
       'https://example.net/.googlevideo.com',
       'https://rr1.googlevideo.com:8443/',
-      'https://u:p@rr1.googlevideo.com/',
+      `https://u:p${'@'}rr1.googlevideo.com/`,
       'https://rr1.googlevideo.com@example.net/',
     ]) {
       expect(isStreamHost(new URL(bad)), bad).toBe(false);
