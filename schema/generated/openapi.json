@@ -48,7 +48,8 @@
         "type": "string",
         "enum": [
           "abs",
-          "jellyfin"
+          "jellyfin",
+          "ytmusic"
         ]
       },
       "MediaRef": {
@@ -2231,6 +2232,58 @@
           "item"
         ]
       },
+      "SearchSong": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "title": {
+            "type": "string"
+          },
+          "artists": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "album": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "duration": {
+            "type": "number",
+            "minimum": 0
+          },
+          "art": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "availability": {
+            "$ref": "#/components/schemas/Availability"
+          }
+        },
+        "required": [
+          "ref",
+          "title",
+          "artists",
+          "album",
+          "duration",
+          "art",
+          "availability"
+        ]
+      },
+      "StreamingState": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "unavailable"
+        ]
+      },
       "SearchResults": {
         "type": "object",
         "properties": {
@@ -2249,6 +2302,15 @@
               "$ref": "#/components/schemas/SearchBook"
             }
           },
+          "songs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchSong"
+            }
+          },
+          "streaming": {
+            "$ref": "#/components/schemas/StreamingState"
+          },
           "hasRequests": {
             "type": "boolean"
           }
@@ -2257,6 +2319,8 @@
           "query",
           "results",
           "books",
+          "songs",
+          "streaming",
           "hasRequests"
         ]
       },
@@ -3489,7 +3553,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",
@@ -3578,7 +3642,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",
@@ -3632,7 +3696,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",
@@ -3730,7 +3794,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",
@@ -3793,7 +3857,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",
@@ -3923,7 +3987,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",
@@ -5040,7 +5104,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",
@@ -5115,7 +5179,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",
@@ -5189,7 +5253,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",
@@ -5504,7 +5568,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",

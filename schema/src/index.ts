@@ -175,6 +175,8 @@ export {
   QUERY_MAX,
   SearchBook,
   SearchBookParams,
+  SearchSong,
+  StreamingState,
   SearchKind,
   SearchParent,
   SearchQuery,

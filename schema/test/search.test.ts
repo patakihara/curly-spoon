@@ -8,6 +8,7 @@ import {
   routes,
   SearchQuery,
   SearchResults,
+  SearchSong,
   SuggestionList,
   SuggestQuery,
 } from '../src/index.js';
@@ -47,6 +48,8 @@ describe('a search', () => {
       query: 'rumours',
       hasRequests: false,
       books: [],
+      songs: [],
+      streaming: 'ok',
       results: [
         {
           ref: album,
@@ -170,5 +173,31 @@ describe('the search routes', () => {
     expect(kotlin).toContain('enum class SuggestionKind');
     expect(kotlin).toContain('    val parent: SearchParent?,');
     expect(kotlin).toContain('    val ref: MediaRef?,');
+  });
+});
+
+describe('a song outside the library', () => {
+  const song = {
+    ref: { source: 'ytmusic', id: 'lYBUbBu4W08' },
+    title: 'A song',
+    artists: ['An artist', 'Another'],
+    album: null,
+    duration: 214,
+    art: null,
+    availability: { kind: 'streamable' },
+  } as const;
+
+  it('names its artists, its album if it has one, its length, and that it plays straight away', () => {
+    expect(SearchSong.parse(song)).toEqual(song);
+    expect(SearchSong.parse({ ...song, album: 'An album' }).album).toBe('An album');
+  });
+
+  it('comes with whether streaming is up, in every answer', () => {
+    const answer = { query: 'a', results: [], books: [], songs: [song], hasRequests: false };
+    expect(SearchResults.parse({ ...answer, streaming: 'unavailable' }).streaming).toBe(
+      'unavailable',
+    );
+    expect(SearchResults.safeParse(answer).success).toBe(false);
+    expect(SearchResults.safeParse({ ...answer, streaming: 'maybe' }).success).toBe(false);
   });
 });

@@ -325,6 +325,45 @@ describe('playing a Jellyfin track', () => {
   });
 });
 
+describe('a YouTube Music ref, with no streaming wired', () => {
+  const ref = { source: 'ytmusic', id: 'lYBUbBu4W08' } as const;
+
+  it('answers 409 to a play and asks no upstream, Audiobookshelf least of all', async () => {
+    const { app, as, sent } = await server();
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/play',
+      headers: as('kara'),
+      payload: { ref },
+    });
+    expect(res.statusCode).toBe(409);
+    expect(res.json()).toEqual({ error: 'not_linked' });
+    expect(sent).toEqual([]);
+  });
+
+  it('answers 404 to its track and asks no upstream', async () => {
+    const { app, as, sent } = await server();
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/media/ytmusic:lYBUbBu4W08/tracks/0',
+      headers: as('kara'),
+    });
+    expect(res.statusCode).toBe(404);
+    expect(sent).toEqual([]);
+  });
+
+  it('refuses an id of any other length before anything is asked', async () => {
+    const { app, as, sent } = await server();
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/media/ytmusic:short/tracks/0',
+      headers: as('kara'),
+    });
+    expect(res.statusCode).toBe(400);
+    expect(sent).toEqual([]);
+  });
+});
+
 describe('[M1.music/b] playing a Jellyfin album', () => {
   it('[M1.music/b] plans the album as one plan, its tracks in order, back to back', async () => {
     const { plan } = await server();

@@ -3,6 +3,9 @@ import { generateKotlin } from '../codegen/kotlin.js';
 import { buildOpenApiDocument } from '../codegen/openapi.js';
 import {
   ErrorResponse,
+  MediaRefKey,
+  mediaRefKey,
+  parseMediaRefKey,
   PlaybackMeta,
   PlaybackPlan,
   ProgressAnswer,
@@ -101,5 +104,37 @@ describe('a progress answer', () => {
 
   it('refuses a stop before the start of the item', () => {
     expect(ProgressAnswer.safeParse({ taken: true, lastSeq: 3, endAt: -1 }).success).toBe(false);
+  });
+});
+
+describe('a streamed song as a ref', () => {
+  it('reads and writes YouTube Music ids of exactly 11 characters', () => {
+    expect(parseMediaRefKey('ytmusic:lYBUbBu4W08')).toEqual({
+      source: 'ytmusic',
+      id: 'lYBUbBu4W08',
+    });
+    expect(mediaRefKey({ source: 'ytmusic', id: 'a_b-c_d-e_f' })).toBe('ytmusic:a_b-c_d-e_f');
+    expect(MediaRefKey.safeParse('ytmusic:a_b-c_d-e_f').success).toBe(true);
+  });
+
+  it('refuses any other length, and a character that could change a path', () => {
+    for (const key of [
+      'ytmusic:',
+      'ytmusic:lYBUbBu4W0',
+      'ytmusic:lYBUbBu4W080',
+      'ytmusic:lYBUbBu4W/8',
+      'ytmusic:lYBUbBu4W.8',
+    ]) {
+      expect(parseMediaRefKey(key), key).toBeNull();
+    }
+  });
+
+  it('leaves the two owned sources reading as they did', () => {
+    expect(parseMediaRefKey('abs:7b3fa64c')).toEqual({ source: 'abs', id: '7b3fa64c' });
+    expect(parseMediaRefKey(`jellyfin:${'a'.repeat(32)}`)).toEqual({
+      source: 'jellyfin',
+      id: 'a'.repeat(32),
+    });
+    expect(parseMediaRefKey('jellyfin:lYBUbBu4W08')).toBeNull();
   });
 });

@@ -98,7 +98,14 @@ describe('search results as rows', () => {
 
 describe('[M3.requests] the way to Requests from Search', () => {
   const answered = (hasRequests: boolean) =>
-    SearchResults.parse({ query: 'zz', results: [], books: [], hasRequests });
+    SearchResults.parse({
+      query: 'zz',
+      results: [],
+      books: [],
+      songs: [],
+      streaming: 'ok',
+      hasRequests,
+    });
   const said = (hasRequests: boolean) => SuggestionList.parse({ suggestions: [], hasRequests });
 
   it('is offered while the person has a request, with results or suggestions, and not otherwise', () => {
@@ -125,6 +132,8 @@ describe('search’s data', () => {
     const answer = SearchResults.parse({
       query: 'ri',
       books: [],
+      songs: [],
+      streaming: 'ok',
       hasRequests: false,
       results: [
         result({ title: 'First' }),
@@ -143,6 +152,8 @@ describe('search’s data', () => {
     const answer = SearchResults.parse({
       query: 'o',
       books: [],
+      songs: [],
+      streaming: 'ok',
       hasRequests: false,
       results: [
         result({ title: 'Best', inYourLibrary: false, ref: { source: 'abs', id: 'b1' } }),
@@ -161,7 +172,14 @@ describe('search’s data', () => {
 
   it('keeps the page’s own words and nothing of the canvas’s samples while nothing is found', () => {
     const data = searchData(
-      SearchResults.parse({ query: 'zz', results: [], books: [], hasRequests: false }),
+      SearchResults.parse({
+        query: 'zz',
+        results: [],
+        books: [],
+        songs: [],
+        streaming: 'ok',
+        hasRequests: false,
+      }),
       empty,
     );
     expect(data.top).toEqual([]);
@@ -261,7 +279,14 @@ describe('what search asks of the server', () => {
         asked.push(`${url.pathname}?${url.searchParams}`);
         const body = url.pathname.endsWith('/suggest')
           ? { suggestions: [{ kind: 'recent', text: 'rise', ref: null }], hasRequests: false }
-          : { query: url.searchParams.get('q'), results, books: [], hasRequests: false };
+          : {
+              query: url.searchParams.get('q'),
+              results,
+              books: [],
+              songs: [],
+              streaming: 'ok',
+              hasRequests: false,
+            };
         return new Response(JSON.stringify(body), {
           headers: { 'content-type': 'application/json' },
         });
@@ -404,7 +429,14 @@ describe('[M3.books] a book the library lacks, in Search', () => {
     ...over,
   });
   const answered = (...books: SearchBook[]) =>
-    SearchResults.parse({ query: 'k', results: [], books, hasRequests: false });
+    SearchResults.parse({
+      query: 'k',
+      results: [],
+      books,
+      songs: [],
+      streaming: 'ok',
+      hasRequests: false,
+    });
   const rows = (...books: SearchBook[]) => searchData(answered(...books), empty).outside.books;
 
   it('offers a book nobody has asked for, with the request its string ref stands for', () => {

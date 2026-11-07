@@ -449,6 +449,7 @@ export function playRoutes(
     const ref = mediaRefKey(body.ref);
     const caller = signedIn(request);
     const heldBefore = open.heldBy({ userId: caller.id, deviceId: caller.deviceId });
+    if (body.ref.source === 'ytmusic') throw new Refusal(409, 'not_linked');
     if (body.ref.source === 'jellyfin') {
       if (parseMediaRefKey(ref) === null) throw new Refusal(400, 'bad_request');
       const { client, household, userId, deviceId } = await personFor(
@@ -577,6 +578,7 @@ export function playRoutes(
   serveStream(app, mediaTrack, async (request, { params, range }) => {
     const ref = parseMediaRefKey(params.ref);
     if (ref === null) throw new Refusal(400, 'bad_request');
+    if (ref.source === 'ytmusic') throw new Refusal(404, 'not_found');
     if (ref.source === 'jellyfin') {
       // A Jellyfin track is its own ref's only track. Jellyfin streams to anyone with the id, so
       // the person's own lookup decides whether they may have it.

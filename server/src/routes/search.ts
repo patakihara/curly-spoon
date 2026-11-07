@@ -93,6 +93,8 @@ export function searchRoutes(
       query: query.q,
       hasRequests: requestsListed(db, user.id).length > 0,
       books: found,
+      songs: [],
+      streaming: 'ok' as const,
       results: results.map((result) => {
         const top = result.parent?.ref ?? result.ref;
         const inYourLibrary =

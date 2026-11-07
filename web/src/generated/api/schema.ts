@@ -710,7 +710,7 @@ export interface components {
         /** @enum {string} */
         QueueType: "music" | "spoken";
         /** @enum {string} */
-        MediaSource: "abs" | "jellyfin";
+        MediaSource: "abs" | "jellyfin" | "ytmusic";
         MediaRef: {
             source: components["schemas"]["MediaSource"];
             id: string;
@@ -1180,10 +1180,23 @@ export interface components {
             progress: number | null;
             item: components["schemas"]["MediaRef"] | null;
         };
+        SearchSong: {
+            ref: components["schemas"]["MediaRef"];
+            title: string;
+            artists: string[];
+            album: string | null;
+            duration: number;
+            art: string | null;
+            availability: components["schemas"]["Availability"];
+        };
+        /** @enum {string} */
+        StreamingState: "ok" | "unavailable";
         SearchResults: {
             query: string;
             results: components["schemas"]["SearchResult"][];
             books: components["schemas"]["SearchBook"][];
+            songs: components["schemas"]["SearchSong"][];
+            streaming: components["schemas"]["StreamingState"];
             hasRequests: boolean;
         };
         /** @enum {string} */

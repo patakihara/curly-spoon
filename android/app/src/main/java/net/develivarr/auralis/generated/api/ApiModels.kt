@@ -461,6 +461,8 @@ enum class MediaSource {
     ABS,
     @SerialName("jellyfin")
     JELLYFIN,
+    @SerialName("ytmusic")
+    YTMUSIC,
 }
 
 @Serializable
@@ -891,7 +893,20 @@ data class SearchResults(
     val query: String,
     val results: List<SearchResult>,
     val books: List<SearchBook>,
+    val songs: List<SearchSong>,
+    val streaming: StreamingState,
     val hasRequests: Boolean,
+)
+
+@Serializable
+data class SearchSong(
+    val ref: MediaRef,
+    val title: String,
+    val artists: List<String>,
+    val album: String?,
+    val duration: Double,
+    val art: String?,
+    val availability: Availability,
 )
 
 @Serializable
@@ -943,6 +958,14 @@ enum class StepDirection {
     NEXT,
     @SerialName("back")
     BACK,
+}
+
+@Serializable
+enum class StreamingState {
+    @SerialName("ok")
+    OK,
+    @SerialName("unavailable")
+    UNAVAILABLE,
 }
 
 @Serializable
