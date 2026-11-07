@@ -1,0 +1,38 @@
+name: Server live
+
+# Takes a real run of scripts/mediaserver/canary.live.test.mjs to the plan. That test runs from the
+# laptop, on this server, in its running container: GitHub's runners cannot reach the server, and a
+# stream asked from a runner's address says nothing of this server's. Dispatched by hand on main with
+# the JUnit that run wrote, base64; canary-results.mjs lets through that test's result alone, and
+# scripts/plan/results.mjs reads the artifact as it reads any other run on main.
+on:
+  workflow_dispatch:
+    inputs:
+      junit:
+        description: Base64 of the JUnit file canary.live.test.mjs wrote
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  record:
+    name: Record the live canary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - env:
+          JUNIT: ${{ inputs.junit }}
+        run: node scripts/mediaserver/canary-results.mjs reports/junit/server-live.xml
+      - run: node scripts/plan/collect-results.mjs --workflow server-live --job record --out reports/plan-results.json reports/junit/server-live.xml
+      - uses: actions/upload-artifact@v4
+        with:
+          {
+            name: plan-results-server-live,
+            path: reports/plan-results.json,
+            if-no-files-found: error,
+          }

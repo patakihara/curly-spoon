@@ -9,7 +9,14 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type FetchLike } from '../adapters/http/fetch.js';
 import { recordingSchema } from '../adapters/http/recording.js';
-import { type Canary, canaryBytes, canaryOf, type CanaryResult, webmAudioCodec } from './canary.js';
+import {
+  type Canary,
+  canaryBytes,
+  canaryOf,
+  type CanaryResult,
+  webmAudioCodec,
+  webmAudioSeconds,
+} from './canary.js';
 import type { SpawnLike } from './extractor.js';
 
 const adapters = join(dirname(fileURLToPath(import.meta.url)), '..', 'adapters');
@@ -162,6 +169,15 @@ describe('[M3.ytmusic/d] the canary', () => {
     expect(failure(await canary({ fetch })('p'))).toBe('streamRefused');
   });
 
+  it('[M3.ytmusic/d] a stream that ends with under ten seconds of audio is streamRefused', async () => {
+    const fetch: FetchLike = async () =>
+      new Response(clip.subarray(0, 4096), {
+        status: 206,
+        headers: { 'content-type': 'audio/webm', 'content-range': 'bytes 0-4095/121328' },
+      });
+    expect(failure(await canary({ fetch })('p'))).toBe('streamRefused');
+  });
+
   it('[M3.ytmusic/d] asks about twenty seconds of a file, within limits', () => {
     expect(canaryBytes(3_445_462, 214)).toBe(Math.ceil((3_445_462 / 214) * 20));
     expect(canaryBytes(1000, 214)).toBe(1000);
@@ -199,6 +215,17 @@ describe("[M3.ytmusic/d] reading a WebM's tracks", () => {
 
   it('[M3.ytmusic/d] a second track, the muxed case, is refused', () => {
     expect(webmAudioCodec(file(track(2, 'A_OPUS'), track(1, 'V_VP9')))).toBeNull();
+  });
+
+  it('[M3.ytmusic/d] the synthesized clip holds its twenty seconds of Opus packets', () => {
+    expect(webmAudioSeconds(clip)).toBeCloseTo(20, 0);
+  });
+
+  it('[M3.ytmusic/d] half the clip holds about half its seconds, and a head none', () => {
+    expect(webmAudioSeconds(clip.subarray(0, clip.length >> 1))).toBeGreaterThan(8);
+    expect(webmAudioSeconds(clip.subarray(0, clip.length >> 1))).toBeLessThan(12);
+    expect(webmAudioSeconds(clip.subarray(0, 64))).toBe(0);
+    expect(webmAudioSeconds(Buffer.alloc(4096, 0x41))).toBe(0);
   });
 
   it('[M3.ytmusic/d] anything else is refused', () => {

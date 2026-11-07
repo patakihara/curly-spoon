@@ -230,8 +230,8 @@ export class Sessions {
       closePlay?: (caller: Caller, ref: MediaRef, before: number) => Promise<void>;
       /** YouTube Music's radio, when the server has it. */
       ytmusic?: AutoplayRadio;
-      /** This device's queues just changed; never fails. */
-      onChange?: (caller: Caller) => void;
+      /** This device's queues just changed, and this is what a Next would play now; never fails. */
+      onChange?: (caller: Caller, next: MediaRef | undefined) => void;
     },
   ) {}
 
@@ -305,7 +305,7 @@ export class Sessions {
     // A Back, a Next, a Play now or the switch moves the controls off the play's entry: the play
     // is no longer current, and its late reports change nothing.
     if (controlled(saved) !== controlled(s)) this.plays.delete(this.device(caller));
-    this.options.onChange?.(caller);
+    this.options.onChange?.(caller, currentOf(step(valueOf(saved), 'next', this.deps))?.ref);
     this.refreshAutoplay(caller);
     return saved;
   }

@@ -135,7 +135,7 @@ export function fixtureRepo() {
  * `artifacts` (run id → the plan-results.json objects that run uploaded). `failGh` makes every
  * gh call throw, as when gh is missing or offline.
  */
-export function fakeExec({ runs = [], artifacts = {}, failGh = false } = {}) {
+export function fakeExec({ runs = [], manualRuns = runs, artifacts = {}, failGh = false } = {}) {
   const calls = [];
   const exec = (cmd, args, opts = {}) => {
     calls.push([cmd, ...args]);
@@ -143,7 +143,9 @@ export function fakeExec({ runs = [], artifacts = {}, failGh = false } = {}) {
       return execFileSync(cmd, args, { encoding: 'utf8', env: GIT_ENV, ...opts, stdio: 'pipe' });
     }
     if (failGh) throw new Error('gh: could not reach api.github.com');
-    if (args[0] === 'run' && args[1] === 'list') return JSON.stringify(runs);
+    if (args[0] === 'run' && args[1] === 'list') {
+      return JSON.stringify(args.includes('--workflow') ? manualRuns : runs);
+    }
     if (args[0] === 'run' && args[1] === 'download') {
       const id = args[2];
       const dir = args[args.indexOf('--dir') + 1];
