@@ -829,6 +829,124 @@ export const migrations: readonly Migration[] = [
       db.exec('ALTER TABLE requests ADD COLUMN auto_starts INTEGER NOT NULL DEFAULT 0;');
     },
   },
+  {
+    id: 23,
+    name: 'stream_cache',
+    up: (db) => {
+      // A streamed track's held bytes, in fixed chunks of one sparse file. A chunk's bit is set only
+      // once all of it is on disk. bytes counts the set chunks. pinned is kept out of eviction.
+      db.exec(`
+        CREATE TABLE stream_cache (
+          id        TEXT PRIMARY KEY,
+          itag      INTEGER NOT NULL,
+          size      INTEGER NOT NULL CHECK (size > 0),
+          mime      TEXT NOT NULL CHECK (mime LIKE 'audio/%'),
+          duration  REAL NOT NULL,
+          chunks    BLOB NOT NULL,
+          bytes     INTEGER NOT NULL DEFAULT 0,
+          last_used INTEGER NOT NULL,
+          pinned    INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE INDEX stream_cache_last_used ON stream_cache (last_used);
+      `);
+    },
+  },
+  {
+    id: 24,
+    name: 'queues_take_a_streamed_song',
+    up: (db) => {
+      // A streamed song sits in a queue, its history and autoplay like any other, so these tables'
+      // checks learn its source. SQLite changes a check only by rebuilding the table. A migration
+      // runs in a transaction, where foreign keys cannot be turned off, and dropping
+      // listening_sessions cascades into whatever still points at it, so each table is rebuilt
+      // beside the old one, every child (saved_queues too, whose check needs no change) is dropped
+      // first, and listening_sessions last, by when no row points at it.
+      const children = [
+        'queue_items',
+        'playing_from',
+        'play_history',
+        'autoplay_picks',
+        'radio_tracks',
+        'saved_queues',
+      ];
+      const tables = ['listening_sessions', ...children];
+      const definition = db.prepare<[string, string], { sql: string }>(
+        'SELECT sql FROM sqlite_master WHERE type = ? AND name = ?',
+      );
+      const indexes = db
+        .prepare<[], { sql: string }>(
+          `SELECT sql FROM sqlite_master
+           WHERE type = 'index' AND sql IS NOT NULL
+             AND tbl_name IN (${tables.map((t) => `'${t}'`).join(', ')})`,
+        )
+        .all();
+      for (const table of tables) {
+        const { sql } = definition.get('table', table)!;
+        db.exec(
+          sql
+            .replace(`CREATE TABLE ${table} `, `CREATE TABLE ${table}_new `)
+            .replaceAll('REFERENCES listening_sessions(', 'REFERENCES listening_sessions_new(')
+            .replaceAll("IN ('abs', 'jellyfin')", "IN ('abs', 'jellyfin', 'ytmusic')"),
+        );
+        db.exec(`INSERT INTO ${table}_new SELECT * FROM ${table}`);
+      }
+      for (const table of [...children, 'listening_sessions']) db.exec(`DROP TABLE ${table}`);
+      for (const table of tables) db.exec(`ALTER TABLE ${table}_new RENAME TO ${table}`);
+      for (const index of indexes) db.exec(index.sql);
+    },
+  },
+  {
+    id: 25,
+    name: 'extractor_versions',
+    up: (db) => {
+      // What the extractor's daily canary said of each version. One is promoted (in use), the last
+      // passing one before it kept, and one that failed stays named with its reason. The image's own
+      // version has its row once a canary has run on it.
+      db.exec(`
+        CREATE TABLE extractor_versions (
+          version     TEXT PRIMARY KEY,
+          source      TEXT NOT NULL CHECK (source IN ('image', 'release', 'nightly')),
+          state       TEXT NOT NULL CHECK (state IN ('promoted', 'kept', 'failed')),
+          promoted_at INTEGER,
+          canary_at   INTEGER,
+          canary_ms   INTEGER,
+          tier        TEXT CHECK (tier IN ('plain', 'node')),
+          reason      TEXT
+        );
+      `);
+    },
+  },
+  {
+    id: 26,
+    name: 'streamed_tracks',
+    up: (db) => {
+      // The songs search and radio have named: the only ones a client may play. artists is JSON.
+      db.exec(`
+        CREATE TABLE streamed_tracks (
+          id       TEXT PRIMARY KEY,
+          title    TEXT NOT NULL,
+          artists  TEXT NOT NULL,
+          album    TEXT,
+          duration REAL NOT NULL,
+          art_url  TEXT,
+          seen_at  INTEGER NOT NULL
+        );
+      `);
+    },
+  },
+  {
+    id: 27,
+    name: 'streamed_seeds',
+    up: (db) => {
+      // Which song on YouTube Music a Jellyfin track is: where a radio that joins Instant Mix starts.
+      db.exec(`
+        CREATE TABLE streamed_seeds (
+          jellyfin_id TEXT PRIMARY KEY,
+          id          TEXT NOT NULL
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

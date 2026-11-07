@@ -1,0 +1,1212 @@
+{
+  "upstream": "ytmusic",
+  "upstreamVersion": "InnerTube WEB_REMIX, unversioned",
+  "call": "search-songs",
+  "request": {
+    "method": "POST",
+    "path": "/youtubei/v1/search",
+    "query": {
+      "prettyPrint": "false"
+    },
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "context": {
+          "client": {
+            "clientName": "WEB_REMIX",
+            "clientVersion": "1.20261107.01.00",
+            "hl": "en",
+            "gl": "FI"
+          }
+        },
+        "query": "Never Gonna Give You Up Rick Astley",
+        "params": "EgWKAQIIAWoKEAkQBRAKEAMQBA=="
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "body": {
+      "json": {
+        "contents": {
+          "tabbedSearchResultsRenderer": {
+            "tabs": [
+              {
+                "tabRenderer": {
+                  "title": "YT Music",
+                  "selected": true,
+                  "content": {
+                    "sectionListRenderer": {
+                      "contents": [
+                        {},
+                        {
+                          "musicShelfRenderer": {
+                            "title": {
+                              "runs": [
+                                {
+                                  "text": "Songs"
+                                }
+                              ]
+                            },
+                            "contents": [
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/eC9DfRcYSk4FE-fvDCJSu_4xsKdVMKxwmFTYFZwP8OqB7R4TKxAjKoR-Kp1lXeRi2WddPFYulSte4eW-=w60-h60-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/eC9DfRcYSk4FE-fvDCJSu_4xsKdVMKxwmFTYFZwP8OqB7R4TKxAjKoR-Kp1lXeRi2WddPFYulSte4eW-=w120-h120-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Never Gonna Give You Up",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "lYBUbBu4W08",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Rick Astley",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UCwZEU0wAwIyZb4x5G_KJp2w",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Whenever You Need Somebody",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_dcYZhAh5urI",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "3:34"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "Rick Astley • Whenever You Need Somebody • 3 minutes, 34 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "2B plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "2 billion plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "lYBUbBu4W08"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/_uMmjd35dKSmPC2YsdUPgq1DHBM8_fIaK2VQlT2t6hO76dULNn7To4X2Mr6lurXG0SClysnQPl5dnME9=w60-h60-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/_uMmjd35dKSmPC2YsdUPgq1DHBM8_fIaK2VQlT2t6hO76dULNn7To4X2Mr6lurXG0SClysnQPl5dnME9=w120-h120-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "I'm Never Gonna Give You Up",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "0Om-vyXny3Y",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Frank Stallone",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UCVgZX_7OqcAKvxOG75wB9hw",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " & "
+                                            },
+                                            {
+                                              "text": "Cynthia Rhodes",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UC3P1gHTcHd-9dRRTZgQhMdA",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Staying Alive (Original Motion Picture Soundtrack)",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_vo3gSsl5j9I",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "3:31"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "Frank Stallone & Cynthia Rhodes • Staying Alive (Original Motion Picture Soundtrack) • 3 minutes, 31 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "2.5M plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "2.5 million plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "0Om-vyXny3Y"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/igDUvs0dufzKRn0pxT32xX-wP6adbAolLzYQlN7GL_A1nVPEr1VrF3EyndyYLVHCgbWPJXschiyIaTAx=w60-h60-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/igDUvs0dufzKRn0pxT32xX-wP6adbAolLzYQlN7GL_A1nVPEr1VrF3EyndyYLVHCgbWPJXschiyIaTAx=w120-h120-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Not Gonna Give It Up (2002 Remaster)",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "NOgFvBZgogg",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Peter Tosh",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UCFLzDxCkznTBfJkRBgJ_hwA",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Mama Africa",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_F6eRHMtDlJp",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "5:48"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "Peter Tosh • Mama Africa • 5 minutes, 48 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "2.2M plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "2.2 million plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "NOgFvBZgogg"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/W3QYju3gwz-laWklZgS9G-Urbgj27uSOP9Daz9Ld30rZBN4r0i1e74Q0CCnsEmr9HDdINQDGYX_mUPnw=w60-h60-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/W3QYju3gwz-laWklZgS9G-Urbgj27uSOP9Daz9Ld30rZBN4r0i1e74Q0CCnsEmr9HDdINQDGYX_mUPnw=w120-h120-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Never Give You Up",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "DPpWrwz3Iao",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Jerry Butler",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UCAbK3ceQj-rsfPv7qvYCpqg",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "The Very Best Of Jerry Butler",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_Um0rFSEiBXr",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "2:56"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "Jerry Butler • The Very Best Of Jerry Butler • 2 minutes, 56 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "9.6M plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "9.6 million plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "DPpWrwz3Iao"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/MWLQzu82f2wtTlvOw3LWbwU1ve7tPx1LsWenj8UmfUy-bMhBOLz4HL37z0aIdz11q5D6psVDapYykws=w60-h60-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/MWLQzu82f2wtTlvOw3LWbwU1ve7tPx1LsWenj8UmfUy-bMhBOLz4HL37z0aIdz11q5D6psVDapYykws=w120-h120-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Never Gonna Give You Up (Rick Astley)",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "4ywFyK8cCg4",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Stegosaurus Rex",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UCqvY_uIEMtIvF2qLOupYGYg",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "The Dino Soars",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_tMhvbjTTEz5",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "4:28"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "Stegosaurus Rex • The Dino Soars • 4 minutes, 28 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "24K plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "24 thousand plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "4ywFyK8cCg4"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/7hAxBy2heuAxHggUnmNA5F24b61_qaK_CVWMbhmSRC17oRsWYVg1ccYvltmn3PuGLBSHuY-oUbV2bw0nOA=w60-h60-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/7hAxBy2heuAxHggUnmNA5F24b61_qaK_CVWMbhmSRC17oRsWYVg1ccYvltmn3PuGLBSHuY-oUbV2bw0nOA=w120-h120-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Never Gonna Give You Up",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "4AU-NV7s6sg",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Rick Roll",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UCT49JNYJjiqhdY8K2VS58Vw",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "80's Hits - Totally Bitchin' Album of the 1980s",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_XJDhtmTzINA",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "3:37"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "Rick Roll • 80's Hits - Totally Bitchin' Album of the 1980s • 3 minutes, 37 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "45K plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "45 thousand plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "4AU-NV7s6sg"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/4FS5992ARiI40XJhH3F4-ximRbQ87gQEuZWvoaJdkjubCdaehwz0Zhg_Wh8_d83092wvyQqPho_A25qX-w=w60-h60-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/4FS5992ARiI40XJhH3F4-ximRbQ87gQEuZWvoaJdkjubCdaehwz0Zhg_Wh8_d83092wvyQqPho_A25qX-w=w120-h120-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Hold Me in Your Arms",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "a4DkPD97AB4",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Rick Astley",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UCwZEU0wAwIyZb4x5G_KJp2w",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Hold Me in Your Arms",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_UJVkovhBHqE",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "4:34"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "Rick Astley • Hold Me in Your Arms • 4 minutes, 34 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "25M plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "25 million plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "a4DkPD97AB4"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/P20o2wVojRKPCXbCAOIRRNeAD4T1G43REHPQ0XxZrXa2pEPESODBhg9VBnZowwtYC_CV-aLsTcoUqfOT=w60-h60-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/P20o2wVojRKPCXbCAOIRRNeAD4T1G43REHPQ0XxZrXa2pEPESODBhg9VBnZowwtYC_CV-aLsTcoUqfOT=w120-h120-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Never Gonna Give A Fuck (Parody)",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "TeoXlGh22B8",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "RaunchyRemix",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UCo-_gsPnQfUbAn4yCjgtqog",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Never Gonna Give A Fuck (Parody)",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_LbnSpqFalXp",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "3:29"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "RaunchyRemix • Never Gonna Give A Fuck (Parody) • 3 minutes, 29 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "22K plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "22 thousand plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "TeoXlGh22B8"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              }
+                            ],
+                            "shelfDivider": {
+                              "musicShelfDividerRenderer": {
+                                "hidden": true
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "header": {
+                        "chipCloudRenderer": {
+                          "chips": [
+                            {
+                              "chipCloudChipRenderer": {
+                                "style": {
+                                  "styleType": "STYLE_SECONDARY"
+                                },
+                                "navigationEndpoint": {
+                                  "searchEndpoint": {
+                                    "query": "Never Gonna Give You Up Rick Astley"
+                                  }
+                                },
+                                "icon": {
+                                  "iconType": "CLOSE"
+                                },
+                                "accessibilityData": {
+                                  "accessibilityData": {
+                                    "label": "Clear filters"
+                                  }
+                                },
+                                "isSelected": false,
+                                "uniqueId": "Clear filters"
+                              }
+                            },
+                            {
+                              "chipCloudChipRenderer": {
+                                "style": {
+                                  "styleType": "STYLE_DEFAULT"
+                                },
+                                "text": {
+                                  "runs": [
+                                    {
+                                      "text": "Albums"
+                                    }
+                                  ]
+                                },
+                                "navigationEndpoint": {
+                                  "searchEndpoint": {
+                                    "query": "Never Gonna Give You Up Rick Astley",
+                                    "params": "EgWKAQIYAWoKEAkQBRAKEAMQBA%3D%3D"
+                                  }
+                                },
+                                "accessibilityData": {
+                                  "accessibilityData": {
+                                    "label": "Show album results"
+                                  }
+                                },
+                                "isSelected": false,
+                                "uniqueId": "Albums"
+                              }
+                            },
+                            {
+                              "chipCloudChipRenderer": {
+                                "style": {
+                                  "styleType": "STYLE_DEFAULT"
+                                },
+                                "text": {
+                                  "runs": [
+                                    {
+                                      "text": "Artists"
+                                    }
+                                  ]
+                                },
+                                "navigationEndpoint": {
+                                  "searchEndpoint": {
+                                    "query": "Never Gonna Give You Up Rick Astley",
+                                    "params": "EgWKAQIgAWoKEAkQBRAKEAMQBA%3D%3D"
+                                  }
+                                },
+                                "accessibilityData": {
+                                  "accessibilityData": {
+                                    "label": "Show artist results"
+                                  }
+                                },
+                                "isSelected": false,
+                                "uniqueId": "Artists"
+                              }
+                            },
+                            {
+                              "chipCloudChipRenderer": {
+                                "style": {
+                                  "styleType": "STYLE_DEFAULT"
+                                },
+                                "text": {
+                                  "runs": [
+                                    {
+                                      "text": "Community playlists"
+                                    }
+                                  ]
+                                },
+                                "navigationEndpoint": {
+                                  "searchEndpoint": {
+                                    "query": "Never Gonna Give You Up Rick Astley",
+                                    "params": "EgeKAQQoAEABagoQCRAFEAoQAxAE"
+                                  }
+                                },
+                                "accessibilityData": {
+                                  "accessibilityData": {
+                                    "label": "Show community playlist results"
+                                  }
+                                },
+                                "isSelected": false,
+                                "uniqueId": "Community playlists"
+                              }
+                            },
+                            {
+                              "chipCloudChipRenderer": {
+                                "style": {
+                                  "styleType": "STYLE_PRIMARY"
+                                },
+                                "text": {
+                                  "runs": [
+                                    {
+                                      "text": "Songs"
+                                    }
+                                  ]
+                                },
+                                "navigationEndpoint": {
+                                  "searchEndpoint": {
+                                    "query": "Never Gonna Give You Up Rick Astley",
+                                    "params": "EgWKAQIIAWoKEAkQBRAKEAMQBA%3D%3D"
+                                  }
+                                },
+                                "accessibilityData": {
+                                  "accessibilityData": {
+                                    "label": "Show song results selected"
+                                  }
+                                },
+                                "isSelected": true,
+                                "uniqueId": "Songs"
+                              }
+                            },
+                            {
+                              "chipCloudChipRenderer": {
+                                "style": {
+                                  "styleType": "STYLE_DEFAULT"
+                                },
+                                "text": {
+                                  "runs": [
+                                    {
+                                      "text": "Videos"
+                                    }
+                                  ]
+                                },
+                                "navigationEndpoint": {
+                                  "searchEndpoint": {
+                                    "query": "Never Gonna Give You Up Rick Astley",
+                                    "params": "EgWKAQIQAWoKEAkQBRAKEAMQBA%3D%3D"
+                                  }
+                                },
+                                "accessibilityData": {
+                                  "accessibilityData": {
+                                    "label": "Show video results"
+                                  }
+                                },
+                                "isSelected": false,
+                                "uniqueId": "Videos"
+                              }
+                            }
+                          ],
+                          "collapsedRowCount": 1,
+                          "horizontalScrollable": true
+                        }
+                      }
+                    }
+                  },
+                  "tabIdentifier": "music_search_catalog"
+                }
+              }
+            ]
+          }
+        },
+        "trimmed": "Trimmed by the recorder: rows cut to the first few, and everything Auralis never reads taken out (tracking values, menus, continuations, the session context)."
+      }
+    }
+  }
+}

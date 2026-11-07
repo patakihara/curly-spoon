@@ -95,7 +95,8 @@ const placeholder = {
       "page": "album",
       "ref": "salt-and-static",
       "playRef": "salt-and-static",
-      "queue": "music"
+      "queue": "music",
+      "next": ""
     }
   ],
   "library": [
@@ -106,7 +107,8 @@ const placeholder = {
       "page": "album",
       "ref": "heartbeats-in-silence",
       "playRef": "salt-water",
-      "queue": "music"
+      "queue": "music",
+      "next": "Play next"
     },
     {
       "title": "The Saltwater Diaries",
@@ -115,7 +117,8 @@ const placeholder = {
       "page": "book",
       "ref": "the-saltwater-diaries",
       "playRef": "the-saltwater-diaries",
-      "queue": "spoken"
+      "queue": "spoken",
+      "next": ""
     },
     {
       "title": "Tears of Ice",
@@ -124,7 +127,8 @@ const placeholder = {
       "page": "album",
       "ref": "tears-of-ice",
       "playRef": "tears-of-ice-song",
-      "queue": "music"
+      "queue": "music",
+      "next": ""
     }
   ],
   "outside": {
@@ -136,14 +140,32 @@ const placeholder = {
         "page": "book",
         "ref": "salt-roads",
         "playRef": "salt-roads",
-        "queue": "spoken"
+        "queue": "spoken",
+        "next": ""
       }
     ],
     "music": [
       {
-        "title": "Salt",
-        "meta": "Song · Fleeting Verses · YouTube Music",
-        "image": "/art/fragments-of-the-wind.jpg"
+        "plays": [
+          {
+            "title": "Salt",
+            "meta": "Song · Streams · Fleeting Verses",
+            "image": "/art/fragments-of-the-wind.jpg",
+            "playRef": "salt"
+          }
+        ],
+        "follows": []
+      },
+      {
+        "plays": [],
+        "follows": [
+          {
+            "title": "Salted",
+            "meta": "Song · Streams · Deep Inertia",
+            "image": "/art/tears-of-ice.jpg",
+            "playRef": "salted"
+          }
+        ]
       }
     ],
     "moreReleases": "More releases of Salt",
@@ -484,7 +506,7 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
             <Section title="Top result" platform={platform}>
               {data.top.map((best, i) => (
                 <Fragment key={i}>
-                  <ResultRow title={best.title} meta={best.meta} image={best.image} onClick={best.ref ? () => navigate(generatePath(routes[best.page]!, { ref: best.ref })) : undefined} onAction={play(best.playRef, best.queue as PlayQueue, 'now')} platform={platform} />
+                  <ResultRow title={best.title} meta={best.meta} image={best.image} onClick={best.ref ? () => navigate(generatePath(routes[best.page]!, { ref: best.ref })) : undefined} onAction={play(best.playRef, best.queue as PlayQueue, 'now')} nextLabel={best.next} onNext={play(best.playRef, best.queue as PlayQueue, 'next')} platform={platform} />
                 </Fragment>
               ))}
             </Section>
@@ -493,7 +515,7 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
             <Section title="In your library" platform={platform}>
               {data.library.map((item, i) => (
                 <Fragment key={i}>
-                  <ResultRow title={item.title} meta={item.meta} image={item.image} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} onAction={play(item.playRef, item.queue as PlayQueue, 'now')} divider={true} platform={platform} />
+                  <ResultRow title={item.title} meta={item.meta} image={item.image} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} onAction={play(item.playRef, item.queue as PlayQueue, 'now')} nextLabel={item.next} onNext={play(item.playRef, item.queue as PlayQueue, 'next')} divider={true} platform={platform} />
                 </Fragment>
               ))}
             </Section>
@@ -502,12 +524,33 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
             <Section title="Not in your library" last={true} platform={platform}>
               {data.outside.household.map((item, i) => (
                 <Fragment key={i}>
-                  <ResultRow title={item.title} meta={item.meta} image={item.image} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} onAction={play(item.playRef, item.queue as PlayQueue, 'now')} divider={true} platform={platform} />
+                  <ResultRow title={item.title} meta={item.meta} image={item.image} onClick={item.ref ? () => navigate(generatePath(routes[item.page]!, { ref: item.ref })) : undefined} onAction={play(item.playRef, item.queue as PlayQueue, 'now')} nextLabel={item.next} onNext={play(item.playRef, item.queue as PlayQueue, 'next')} divider={true} platform={platform} />
                 </Fragment>
               ))}
               {data.outside.music.map((song, i) => (
                 <Fragment key={i}>
-                  <ResultRow title={song.title} meta={song.meta} image={song.image} divider={true} platform={platform} />
+                  {song.plays.map((plays, i) => (
+                    <Fragment key={i}>
+                      <ResultRow title={plays.title} meta={plays.meta} image={plays.image} onAction={play(plays.playRef, 'music', 'now')} divider={true} platform={platform} />
+                    </Fragment>
+                  ))}
+                  {song.follows.map((follows, i) => (
+                    <Fragment key={i}>
+                      <ResultRow
+                        title={follows.title}
+                        meta={follows.meta}
+                        image={follows.image}
+                        onAction={play(follows.playRef, 'music', 'now')}
+                        divider={true}
+                        trailing={
+                          <Button variant="secondary" size="sm" onClick={play(follows.playRef, 'music', 'next')} platform={platform}>
+                            {"Play next"}
+                          </Button>
+                        }
+                        platform={platform}
+                      />
+                    </Fragment>
+                  ))}
                 </Fragment>
               ))}
               {data.outside.moreReleases !== '' && (

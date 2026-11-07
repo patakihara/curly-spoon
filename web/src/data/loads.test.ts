@@ -145,12 +145,16 @@ describe('what search reads from the API', () => {
       query: 'rise and',
       results: [],
       books: [],
+      songs: [],
+      streaming: 'ok',
       hasRequests: false,
     });
     expect(await loadSearch(client, 'rise and')).toEqual({
       query: 'rise and',
       results: [],
       books: [],
+      songs: [],
+      streaming: 'ok',
       hasRequests: false,
     });
     expect(asked).toEqual(['/api/search [["q","rise and"]]']);

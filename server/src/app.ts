@@ -25,6 +25,7 @@ import { libraryRoutes } from './routes/library.js';
 import { listRoutes } from './routes/lists.js';
 import { lyricsRoutes } from './routes/lyrics.js';
 import { OpenPlays } from './routes/openPlays.js';
+import type { Music } from './music/index.js';
 import { type PlaybackOptions, playRoutes, type UpstreamAccess } from './routes/play.js';
 import { Lyrics } from './lyrics/service.js';
 import { IndexLookup } from './queues/lookup.js';
@@ -80,6 +81,8 @@ export interface BuildAppOptions {
   bookCatalogue?: BookCatalogue;
   /** How transcodes are held open and their segments waited for. */
   playback?: PlaybackOptions;
+  /** Songs from outside the library. Null or absent, a streamed ref is not linked. */
+  music?: Music | null;
   random?: Random;
   now?: () => number;
   /** The commit the image was built from, reported by the health check; none by default. */
@@ -161,7 +164,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   });
   authRoutes(app, { db, cookieSecure });
   deviceRoutes(app, { db, cookieSecure });
-  adminRoutes(app, { db });
+  adminRoutes(app, { db, music: options.music ?? null });
   const upstreams = options.upstreams ?? null;
   const plays = new OpenPlays({ now: options.now ?? Date.now });
   const markReach = new Reach(db, upstreams);
@@ -179,6 +182,16 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     // Decision (M2.lists): an episode marked played has its play session closed first, so the
     // session's last sync never lands after the mark and undoes it.
     closePlay: (caller, ref, before) => plays.closeHeld(caller.id, mediaRefKey(ref), before),
+    onChange: (caller) => options.music?.cancelPreload(caller.deviceId),
+    ...(options.music
+      ? {
+          ytmusic: {
+            available: () => options.music!.radio.available(),
+            radio: (id: string) => options.music!.radio.radio(id),
+            seedFor: (id: string) => options.music!.radio.seedFor(id),
+          },
+        }
+      : {}),
     ...(options.playback?.autoplayWaitMs === undefined
       ? {}
       : { autoplayWaitMs: options.playback.autoplayWaitMs }),
@@ -191,6 +204,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     upstreams,
     sessions,
     open: plays,
+    music: options.music ?? null,
     ...(options.playback ? { playback: options.playback } : {}),
     ...(options.now ? { now: options.now } : {}),
   });
@@ -206,7 +220,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     now: options.now ?? Date.now,
     ...(options.playedPageSize === undefined ? {} : { playedPageSize: options.playedPageSize }),
   });
-  itemRoutes(app, { db, upstreams });
+  itemRoutes(app, { db, upstreams, music: options.music ?? null });
   listRoutes(app, { db, upstreams, sessions, now: options.now ?? Date.now });
   feedRoutes(app, { db, upstreams, now: options.now ?? Date.now });
   const lyrics =
@@ -221,6 +235,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   searchRoutes(app, {
     db,
     now: options.now ?? Date.now,
+    music: options.music ?? null,
     // A row nothing could take the tap of is not listed.
     ...(options.bookCatalogue !== undefined && options.requests?.steps.has('book') === true
       ? { catalogue: options.bookCatalogue }

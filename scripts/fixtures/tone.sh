@@ -4,7 +4,7 @@
 # music and are never committed. Bitexact and no metadata keep ffmpeg's name and version out; MPEG-TS names its
 # service instead of taking ffmpeg's default. The MP3 frames still carry LAME's encoder tag.
 #
-#   scripts/fixtures/tone.sh <out.m4a|out.mp3|out.mp2t|out.flac>
+#   scripts/fixtures/tone.sh <out.m4a|out.mp3|out.mp2t|out.flac|out.webm>
 #
 # - .m4a: the single-file book's file call. 20 s at 440 Hz, AAC mono 22.05 kHz in MP4, with
 #   faststart so a player can start from the first range.
@@ -13,9 +13,10 @@
 #   an MP3 book into its HLS segments. Not .ts, which TypeScript would take for a source file.
 # - .flac: Jellyfin's static stream of a FLAC track. 5 s at 220 Hz, FLAC mono 44.1 kHz. Its vendor
 #   string says ffmpeg, with no version.
+# - .webm: a YouTube Music stream's chunks. 20 s at 440 Hz, Opus mono 48 kHz in WebM.
 set -euo pipefail
 
-out="${1:?usage: tone.sh <out.m4a|out.mp3|out.mp2t|out.flac>}"
+out="${1:?usage: tone.sh <out.m4a|out.mp3|out.mp2t|out.flac|out.webm>}"
 common=(-map_metadata -1 -fflags +bitexact -flags:a +bitexact)
 case "$out" in
   *.m4a)
@@ -41,6 +42,11 @@ case "$out" in
     ffmpeg -hide_banner -loglevel error -y \
       -f lavfi -i 'sine=frequency=220:sample_rate=44100:duration=5' \
       -ac 1 -c:a flac "${common[@]}" -f flac "$out"
+    ;;
+  *.webm)
+    ffmpeg -hide_banner -loglevel error -y \
+      -f lavfi -i 'sine=frequency=440:sample_rate=48000:duration=20' \
+      -ac 1 -c:a libopus -b:a 32k "${common[@]}" -f webm "$out"
     ;;
   *)
     echo "tone.sh: no stand-in for $out" >&2

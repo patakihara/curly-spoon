@@ -48,7 +48,8 @@
         "type": "string",
         "enum": [
           "abs",
-          "jellyfin"
+          "jellyfin",
+          "ytmusic"
         ]
       },
       "MediaRef": {
@@ -559,6 +560,120 @@
         },
         "required": [
           "users"
+        ]
+      },
+      "JobName": {
+        "type": "string",
+        "enum": [
+          "extractor"
+        ]
+      },
+      "JobVersion": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "image",
+              "release",
+              "nightly"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "promoted",
+              "kept",
+              "failed"
+            ]
+          },
+          "canaryAt": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "canaryMs": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "tier": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "version",
+          "source",
+          "state",
+          "canaryAt",
+          "canaryMs",
+          "tier",
+          "reason"
+        ]
+      },
+      "Job": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "$ref": "#/components/schemas/JobName"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable"
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "current": {
+            "type": "string"
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobVersion"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "state",
+          "reason",
+          "current",
+          "versions"
+        ]
+      },
+      "JobList": {
+        "type": "object",
+        "properties": {
+          "jobs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Job"
+            }
+          }
+        },
+        "required": [
+          "jobs"
         ]
       },
       "PlaybackVariant": {
@@ -2231,6 +2346,58 @@
           "item"
         ]
       },
+      "SearchSong": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/MediaRef"
+          },
+          "title": {
+            "type": "string"
+          },
+          "artists": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "album": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "duration": {
+            "type": "number",
+            "minimum": 0
+          },
+          "art": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "availability": {
+            "$ref": "#/components/schemas/Availability"
+          }
+        },
+        "required": [
+          "ref",
+          "title",
+          "artists",
+          "album",
+          "duration",
+          "art",
+          "availability"
+        ]
+      },
+      "StreamingState": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "unavailable"
+        ]
+      },
       "SearchResults": {
         "type": "object",
         "properties": {
@@ -2249,6 +2416,15 @@
               "$ref": "#/components/schemas/SearchBook"
             }
           },
+          "songs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchSong"
+            }
+          },
+          "streaming": {
+            "$ref": "#/components/schemas/StreamingState"
+          },
           "hasRequests": {
             "type": "boolean"
           }
@@ -2257,6 +2433,8 @@
           "query",
           "results",
           "books",
+          "songs",
+          "streaming",
           "hasRequests"
         ]
       },
@@ -3267,6 +3445,118 @@
         }
       }
     },
+    "/api/admin/jobs": {
+      "get": {
+        "summary": "The extractor job: what is in use, and what its canary last said",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "listJobs",
+        "responses": {
+          "200": {
+            "description": "Each job, with its state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/jobs/{name}/run": {
+      "post": {
+        "summary": "Run a job now, in the background",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "runJob",
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/components/schemas/JobName"
+            },
+            "required": true,
+            "name": "name",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The run has started, or one already going carries on.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/play": {
       "post": {
         "summary": "Plan how to play an item, as the signed-in person",
@@ -3489,7 +3779,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",
@@ -3578,7 +3868,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",
@@ -3632,7 +3922,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",
@@ -3730,7 +4020,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",
@@ -3793,7 +4083,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",
@@ -3923,7 +4213,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",
@@ -5040,7 +5330,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",
@@ -5115,7 +5405,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",
@@ -5189,7 +5479,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",
@@ -5504,7 +5794,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32})$"
+              "pattern": "^(?:abs:[\\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\\w-]{11})$"
             },
             "required": true,
             "name": "ref",

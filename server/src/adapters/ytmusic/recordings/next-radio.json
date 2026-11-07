@@ -1,0 +1,2105 @@
+{
+  "upstream": "ytmusic",
+  "upstreamVersion": "InnerTube WEB_REMIX, unversioned",
+  "call": "next-radio",
+  "request": {
+    "method": "POST",
+    "path": "/youtubei/v1/next",
+    "query": {
+      "prettyPrint": "false"
+    },
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "context": {
+          "client": {
+            "clientName": "WEB_REMIX",
+            "clientVersion": "1.20261107.01.00",
+            "hl": "en",
+            "gl": "FI"
+          }
+        },
+        "videoId": "lYBUbBu4W08",
+        "playlistId": "RDAMVMlYBUbBu4W08",
+        "isAudioOnly": true
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "body": {
+      "json": {
+        "contents": {
+          "singleColumnMusicWatchNextResultsRenderer": {
+            "tabbedRenderer": {
+              "watchNextTabbedResultsRenderer": {
+                "tabs": [
+                  {
+                    "tabRenderer": {
+                      "title": "Up next",
+                      "content": {
+                        "musicQueueRenderer": {
+                          "content": {
+                            "playlistPanelRenderer": {
+                              "contents": [
+                                {
+                                  "playlistPanelVideoRenderer": {
+                                    "title": {
+                                      "runs": [
+                                        {
+                                          "text": "Never Gonna Give You Up"
+                                        }
+                                      ]
+                                    },
+                                    "longBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Rick Astley",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "UCwZEU0wAwIyZb4x5G_KJp2w",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "Whenever You Need Somebody",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "MPREb_dcYZhAh5urI",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "1987"
+                                        }
+                                      ]
+                                    },
+                                    "thumbnail": {
+                                      "thumbnails": [
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/eC9DfRcYSk4FE-fvDCJSu_4xsKdVMKxwmFTYFZwP8OqB7R4TKxAjKoR-Kp1lXeRi2WddPFYulSte4eW-=w60-h60-l90-rj",
+                                          "width": 60,
+                                          "height": 60
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/eC9DfRcYSk4FE-fvDCJSu_4xsKdVMKxwmFTYFZwP8OqB7R4TKxAjKoR-Kp1lXeRi2WddPFYulSte4eW-=w120-h120-l90-rj",
+                                          "width": 120,
+                                          "height": 120
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/eC9DfRcYSk4FE-fvDCJSu_4xsKdVMKxwmFTYFZwP8OqB7R4TKxAjKoR-Kp1lXeRi2WddPFYulSte4eW-=w180-h180-l90-rj",
+                                          "width": 180,
+                                          "height": 180
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/eC9DfRcYSk4FE-fvDCJSu_4xsKdVMKxwmFTYFZwP8OqB7R4TKxAjKoR-Kp1lXeRi2WddPFYulSte4eW-=w226-h226-l90-rj",
+                                          "width": 226,
+                                          "height": 226
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/eC9DfRcYSk4FE-fvDCJSu_4xsKdVMKxwmFTYFZwP8OqB7R4TKxAjKoR-Kp1lXeRi2WddPFYulSte4eW-=w302-h302-l90-rj",
+                                          "width": 302,
+                                          "height": 302
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/eC9DfRcYSk4FE-fvDCJSu_4xsKdVMKxwmFTYFZwP8OqB7R4TKxAjKoR-Kp1lXeRi2WddPFYulSte4eW-=w544-h544-l90-rj",
+                                          "width": 544,
+                                          "height": 544
+                                        }
+                                      ]
+                                    },
+                                    "lengthText": {
+                                      "runs": [
+                                        {
+                                          "text": "3:34"
+                                        }
+                                      ],
+                                      "accessibility": {
+                                        "accessibilityData": {
+                                          "label": "3 minutes, 34 seconds"
+                                        }
+                                      }
+                                    },
+                                    "selected": true,
+                                    "navigationEndpoint": {
+                                      "watchEndpoint": {
+                                        "videoId": "lYBUbBu4W08",
+                                        "playlistId": "RDAMVMlYBUbBu4W08",
+                                        "index": 0,
+                                        "params": "OAHyAQIIAQ%3D%3D",
+                                        "playerParams": "8AUBygYQNTZCNDRGNkQxMDU1N0NDNrAIAg%3D%3D",
+                                        "playlistSetVideoId": "56B44F6D10557CC6",
+                                        "watchEndpointMusicSupportedConfigs": {
+                                          "watchEndpointMusicConfig": {
+                                            "hasPersistentPlaylistPanel": true,
+                                            "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "videoId": "lYBUbBu4W08",
+                                    "shortBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Rick Astley"
+                                        }
+                                      ]
+                                    },
+                                    "playlistSetVideoId": "56B44F6D10557CC6",
+                                    "canReorder": true
+                                  }
+                                },
+                                {
+                                  "playlistPanelVideoRenderer": {
+                                    "title": {
+                                      "runs": [
+                                        {
+                                          "text": "Whenever You Need Somebody"
+                                        }
+                                      ]
+                                    },
+                                    "longBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Rick Astley",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "UCwZEU0wAwIyZb4x5G_KJp2w",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "Whenever You Need Somebody",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "MPREb_dcYZhAh5urI",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "1987"
+                                        }
+                                      ]
+                                    },
+                                    "thumbnail": {
+                                      "thumbnails": [
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/eC9DfRcYSk4FE-fvDCJSu_4xsKdVMKxwmFTYFZwP8OqB7R4TKxAjKoR-Kp1lXeRi2WddPFYulSte4eW-=w60-h60-l90-rj",
+                                          "width": 60,
+                                          "height": 60
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/eC9DfRcYSk4FE-fvDCJSu_4xsKdVMKxwmFTYFZwP8OqB7R4TKxAjKoR-Kp1lXeRi2WddPFYulSte4eW-=w120-h120-l90-rj",
+                                          "width": 120,
+                                          "height": 120
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/eC9DfRcYSk4FE-fvDCJSu_4xsKdVMKxwmFTYFZwP8OqB7R4TKxAjKoR-Kp1lXeRi2WddPFYulSte4eW-=w180-h180-l90-rj",
+                                          "width": 180,
+                                          "height": 180
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/eC9DfRcYSk4FE-fvDCJSu_4xsKdVMKxwmFTYFZwP8OqB7R4TKxAjKoR-Kp1lXeRi2WddPFYulSte4eW-=w226-h226-l90-rj",
+                                          "width": 226,
+                                          "height": 226
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/eC9DfRcYSk4FE-fvDCJSu_4xsKdVMKxwmFTYFZwP8OqB7R4TKxAjKoR-Kp1lXeRi2WddPFYulSte4eW-=w302-h302-l90-rj",
+                                          "width": 302,
+                                          "height": 302
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/eC9DfRcYSk4FE-fvDCJSu_4xsKdVMKxwmFTYFZwP8OqB7R4TKxAjKoR-Kp1lXeRi2WddPFYulSte4eW-=w544-h544-l90-rj",
+                                          "width": 544,
+                                          "height": 544
+                                        }
+                                      ]
+                                    },
+                                    "lengthText": {
+                                      "runs": [
+                                        {
+                                          "text": "3:54"
+                                        }
+                                      ],
+                                      "accessibility": {
+                                        "accessibilityData": {
+                                          "label": "3 minutes, 54 seconds"
+                                        }
+                                      }
+                                    },
+                                    "selected": false,
+                                    "navigationEndpoint": {
+                                      "watchEndpoint": {
+                                        "videoId": "raBobo3GZYA",
+                                        "playlistId": "RDAMVMlYBUbBu4W08",
+                                        "index": 1,
+                                        "params": "OAHyAQIIAQ%3D%3D",
+                                        "playerParams": "8AUBygYQMjg5RjRBNDZERjBBMzBEMrAIAg%3D%3D",
+                                        "playlistSetVideoId": "289F4A46DF0A30D2",
+                                        "watchEndpointMusicSupportedConfigs": {
+                                          "watchEndpointMusicConfig": {
+                                            "hasPersistentPlaylistPanel": true,
+                                            "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "videoId": "raBobo3GZYA",
+                                    "shortBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Rick Astley"
+                                        }
+                                      ]
+                                    },
+                                    "playlistSetVideoId": "289F4A46DF0A30D2",
+                                    "canReorder": true
+                                  }
+                                },
+                                {
+                                  "playlistPanelVideoRenderer": {
+                                    "title": {
+                                      "runs": [
+                                        {
+                                          "text": "Cheri Cheri Lady"
+                                        }
+                                      ]
+                                    },
+                                    "longBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Modern Talking",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "UCoQve3vhvnrr_n8GboFptdQ",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "Let's Talk About Love",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "MPREb_MMuoJCoztFX",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "1985"
+                                        }
+                                      ]
+                                    },
+                                    "thumbnail": {
+                                      "thumbnails": [
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/31gQwmEGi5mGGnQf7jRHHl_mqQZPv1ZzlXigLwAWrPJmPIGHvIgXP8Ihh59aXLR7ycOqgf6Kj2XTtz-BnQ=w60-h60-s-l90-rj",
+                                          "width": 60,
+                                          "height": 60
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/31gQwmEGi5mGGnQf7jRHHl_mqQZPv1ZzlXigLwAWrPJmPIGHvIgXP8Ihh59aXLR7ycOqgf6Kj2XTtz-BnQ=w120-h120-s-l90-rj",
+                                          "width": 120,
+                                          "height": 120
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/31gQwmEGi5mGGnQf7jRHHl_mqQZPv1ZzlXigLwAWrPJmPIGHvIgXP8Ihh59aXLR7ycOqgf6Kj2XTtz-BnQ=w180-h180-s-l90-rj",
+                                          "width": 180,
+                                          "height": 180
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/31gQwmEGi5mGGnQf7jRHHl_mqQZPv1ZzlXigLwAWrPJmPIGHvIgXP8Ihh59aXLR7ycOqgf6Kj2XTtz-BnQ=w226-h226-s-l90-rj",
+                                          "width": 226,
+                                          "height": 226
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/31gQwmEGi5mGGnQf7jRHHl_mqQZPv1ZzlXigLwAWrPJmPIGHvIgXP8Ihh59aXLR7ycOqgf6Kj2XTtz-BnQ=w302-h302-s-l90-rj",
+                                          "width": 302,
+                                          "height": 302
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/31gQwmEGi5mGGnQf7jRHHl_mqQZPv1ZzlXigLwAWrPJmPIGHvIgXP8Ihh59aXLR7ycOqgf6Kj2XTtz-BnQ=w544-h544-s-l90-rj",
+                                          "width": 544,
+                                          "height": 544
+                                        }
+                                      ]
+                                    },
+                                    "lengthText": {
+                                      "runs": [
+                                        {
+                                          "text": "3:47"
+                                        }
+                                      ],
+                                      "accessibility": {
+                                        "accessibilityData": {
+                                          "label": "3 minutes, 47 seconds"
+                                        }
+                                      }
+                                    },
+                                    "selected": false,
+                                    "navigationEndpoint": {
+                                      "watchEndpoint": {
+                                        "videoId": "c1ZCYY-4lAM",
+                                        "playlistId": "RDAMVMlYBUbBu4W08",
+                                        "index": 2,
+                                        "params": "OAHyAQIIAQ%3D%3D",
+                                        "playerParams": "8AUBygYQMDE3MjA4RkFBODUyMzNGOdIHCQlOARCCnT_ysLAIAg%3D%3D",
+                                        "playlistSetVideoId": "017208FAA85233F9",
+                                        "watchEndpointMusicSupportedConfigs": {
+                                          "watchEndpointMusicConfig": {
+                                            "hasPersistentPlaylistPanel": true,
+                                            "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "videoId": "c1ZCYY-4lAM",
+                                    "shortBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Modern Talking"
+                                        }
+                                      ]
+                                    },
+                                    "playlistSetVideoId": "017208FAA85233F9",
+                                    "canReorder": true
+                                  }
+                                },
+                                {
+                                  "playlistPanelVideoRenderer": {
+                                    "title": {
+                                      "runs": [
+                                        {
+                                          "text": "Take on Me"
+                                        }
+                                      ]
+                                    },
+                                    "longBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "a-ha",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "UCx00XxqRCfPS6zaTzRm3H2A",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "Hunting High and Low",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "MPREb_5xYAryDnQqC",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "1985"
+                                        }
+                                      ]
+                                    },
+                                    "thumbnail": {
+                                      "thumbnails": [
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/8YZqnYRc52GUz0iyQTRZvzh8RSbCNTTC0NSrpRlKf8UfSyu87K7ziegM8aFfAyMgUXBisxT_weHb4pFE=w60-h60-l90-rj",
+                                          "width": 60,
+                                          "height": 60
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/8YZqnYRc52GUz0iyQTRZvzh8RSbCNTTC0NSrpRlKf8UfSyu87K7ziegM8aFfAyMgUXBisxT_weHb4pFE=w120-h120-l90-rj",
+                                          "width": 120,
+                                          "height": 120
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/8YZqnYRc52GUz0iyQTRZvzh8RSbCNTTC0NSrpRlKf8UfSyu87K7ziegM8aFfAyMgUXBisxT_weHb4pFE=w180-h180-l90-rj",
+                                          "width": 180,
+                                          "height": 180
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/8YZqnYRc52GUz0iyQTRZvzh8RSbCNTTC0NSrpRlKf8UfSyu87K7ziegM8aFfAyMgUXBisxT_weHb4pFE=w226-h226-l90-rj",
+                                          "width": 226,
+                                          "height": 226
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/8YZqnYRc52GUz0iyQTRZvzh8RSbCNTTC0NSrpRlKf8UfSyu87K7ziegM8aFfAyMgUXBisxT_weHb4pFE=w302-h302-l90-rj",
+                                          "width": 302,
+                                          "height": 302
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/8YZqnYRc52GUz0iyQTRZvzh8RSbCNTTC0NSrpRlKf8UfSyu87K7ziegM8aFfAyMgUXBisxT_weHb4pFE=w544-h544-l90-rj",
+                                          "width": 544,
+                                          "height": 544
+                                        }
+                                      ]
+                                    },
+                                    "lengthText": {
+                                      "runs": [
+                                        {
+                                          "text": "3:46"
+                                        }
+                                      ],
+                                      "accessibility": {
+                                        "accessibilityData": {
+                                          "label": "3 minutes, 46 seconds"
+                                        }
+                                      }
+                                    },
+                                    "selected": false,
+                                    "navigationEndpoint": {
+                                      "watchEndpoint": {
+                                        "videoId": "HzdD8kbDzZA",
+                                        "playlistId": "RDAMVMlYBUbBu4W08",
+                                        "index": 3,
+                                        "params": "OAHyAQIIAQ%3D%3D",
+                                        "playerParams": "8AUBygYQNTIxNTJCNDk0NkMyRjczRrAIAg%3D%3D",
+                                        "playlistSetVideoId": "52152B4946C2F73F",
+                                        "watchEndpointMusicSupportedConfigs": {
+                                          "watchEndpointMusicConfig": {
+                                            "hasPersistentPlaylistPanel": true,
+                                            "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "videoId": "HzdD8kbDzZA",
+                                    "shortBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "a-ha"
+                                        }
+                                      ]
+                                    },
+                                    "playlistSetVideoId": "52152B4946C2F73F",
+                                    "canReorder": true
+                                  }
+                                },
+                                {
+                                  "playlistPanelVideoRenderer": {
+                                    "title": {
+                                      "runs": [
+                                        {
+                                          "text": "Stayin' Alive"
+                                        }
+                                      ]
+                                    },
+                                    "longBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Bee Gees",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "UC4GVf3NpBzQiuNVf5EYsI5A",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "Staying Alive (Original Motion Picture Soundtrack)",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "MPREb_vo3gSsl5j9I",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "1977"
+                                        }
+                                      ]
+                                    },
+                                    "thumbnail": {
+                                      "thumbnails": [
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/_uMmjd35dKSmPC2YsdUPgq1DHBM8_fIaK2VQlT2t6hO76dULNn7To4X2Mr6lurXG0SClysnQPl5dnME9=w60-h60-l90-rj",
+                                          "width": 60,
+                                          "height": 60
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/_uMmjd35dKSmPC2YsdUPgq1DHBM8_fIaK2VQlT2t6hO76dULNn7To4X2Mr6lurXG0SClysnQPl5dnME9=w120-h120-l90-rj",
+                                          "width": 120,
+                                          "height": 120
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/_uMmjd35dKSmPC2YsdUPgq1DHBM8_fIaK2VQlT2t6hO76dULNn7To4X2Mr6lurXG0SClysnQPl5dnME9=w180-h180-l90-rj",
+                                          "width": 180,
+                                          "height": 180
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/_uMmjd35dKSmPC2YsdUPgq1DHBM8_fIaK2VQlT2t6hO76dULNn7To4X2Mr6lurXG0SClysnQPl5dnME9=w226-h226-l90-rj",
+                                          "width": 226,
+                                          "height": 226
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/_uMmjd35dKSmPC2YsdUPgq1DHBM8_fIaK2VQlT2t6hO76dULNn7To4X2Mr6lurXG0SClysnQPl5dnME9=w302-h302-l90-rj",
+                                          "width": 302,
+                                          "height": 302
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/_uMmjd35dKSmPC2YsdUPgq1DHBM8_fIaK2VQlT2t6hO76dULNn7To4X2Mr6lurXG0SClysnQPl5dnME9=w544-h544-l90-rj",
+                                          "width": 544,
+                                          "height": 544
+                                        }
+                                      ]
+                                    },
+                                    "lengthText": {
+                                      "runs": [
+                                        {
+                                          "text": "1:33"
+                                        }
+                                      ],
+                                      "accessibility": {
+                                        "accessibilityData": {
+                                          "label": "1 minute, 33 seconds"
+                                        }
+                                      }
+                                    },
+                                    "selected": false,
+                                    "navigationEndpoint": {
+                                      "watchEndpoint": {
+                                        "videoId": "aZ5fQyiZgns",
+                                        "playlistId": "RDAMVMlYBUbBu4W08",
+                                        "index": 4,
+                                        "params": "OAHyAQIIAQ%3D%3D",
+                                        "playerParams": "8AUBygYQMDkwNzk2QTc1RDE1MzkzMrAIAg%3D%3D",
+                                        "playlistSetVideoId": "090796A75D153932",
+                                        "watchEndpointMusicSupportedConfigs": {
+                                          "watchEndpointMusicConfig": {
+                                            "hasPersistentPlaylistPanel": true,
+                                            "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "videoId": "aZ5fQyiZgns",
+                                    "shortBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Bee Gees"
+                                        }
+                                      ]
+                                    },
+                                    "playlistSetVideoId": "090796A75D153932",
+                                    "canReorder": true
+                                  }
+                                },
+                                {
+                                  "playlistPanelVideoRenderer": {
+                                    "title": {
+                                      "runs": [
+                                        {
+                                          "text": "Forever Young"
+                                        }
+                                      ]
+                                    },
+                                    "longBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Alphaville",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "UC-GWJZkyivsS-0yMjKMH0AA",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "Forever Young (Super Deluxe Edition; 2019 Remaster)",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "MPREb_FELTdQwna3o",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "1984"
+                                        }
+                                      ]
+                                    },
+                                    "thumbnail": {
+                                      "thumbnails": [
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/HEzEItN1YX2pm4ubdKidbyuH_dZVovn7Go-MtSvN8-3_lHc59QBTaELNJjDjY-c2fEvrU4048ZI_loqu=w60-h60-s-l90-rj",
+                                          "width": 60,
+                                          "height": 60
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/HEzEItN1YX2pm4ubdKidbyuH_dZVovn7Go-MtSvN8-3_lHc59QBTaELNJjDjY-c2fEvrU4048ZI_loqu=w120-h120-s-l90-rj",
+                                          "width": 120,
+                                          "height": 120
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/HEzEItN1YX2pm4ubdKidbyuH_dZVovn7Go-MtSvN8-3_lHc59QBTaELNJjDjY-c2fEvrU4048ZI_loqu=w180-h180-s-l90-rj",
+                                          "width": 180,
+                                          "height": 180
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/HEzEItN1YX2pm4ubdKidbyuH_dZVovn7Go-MtSvN8-3_lHc59QBTaELNJjDjY-c2fEvrU4048ZI_loqu=w226-h226-s-l90-rj",
+                                          "width": 226,
+                                          "height": 226
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/HEzEItN1YX2pm4ubdKidbyuH_dZVovn7Go-MtSvN8-3_lHc59QBTaELNJjDjY-c2fEvrU4048ZI_loqu=w302-h302-s-l90-rj",
+                                          "width": 302,
+                                          "height": 302
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/HEzEItN1YX2pm4ubdKidbyuH_dZVovn7Go-MtSvN8-3_lHc59QBTaELNJjDjY-c2fEvrU4048ZI_loqu=w544-h544-s-l90-rj",
+                                          "width": 544,
+                                          "height": 544
+                                        }
+                                      ]
+                                    },
+                                    "lengthText": {
+                                      "runs": [
+                                        {
+                                          "text": "3:46"
+                                        }
+                                      ],
+                                      "accessibility": {
+                                        "accessibilityData": {
+                                          "label": "3 minutes, 46 seconds"
+                                        }
+                                      }
+                                    },
+                                    "selected": false,
+                                    "navigationEndpoint": {
+                                      "watchEndpoint": {
+                                        "videoId": "9OUurVdRGsc",
+                                        "playlistId": "RDAMVMlYBUbBu4W08",
+                                        "index": 5,
+                                        "params": "OAHyAQIIAQ%3D%3D",
+                                        "playerParams": "8AUBygYQMTJFRkIzQjFDNTdERTRFMbAIAg%3D%3D",
+                                        "playlistSetVideoId": "12EFB3B1C57DE4E1",
+                                        "watchEndpointMusicSupportedConfigs": {
+                                          "watchEndpointMusicConfig": {
+                                            "hasPersistentPlaylistPanel": true,
+                                            "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "videoId": "9OUurVdRGsc",
+                                    "shortBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Alphaville"
+                                        }
+                                      ]
+                                    },
+                                    "playlistSetVideoId": "12EFB3B1C57DE4E1",
+                                    "canReorder": true
+                                  }
+                                },
+                                {
+                                  "playlistPanelVideoRenderer": {
+                                    "title": {
+                                      "runs": [
+                                        {
+                                          "text": "Radio Ga Ga"
+                                        }
+                                      ]
+                                    },
+                                    "longBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Queen",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "UCEPMVbUzImPl4p8k4LkGevA",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "The Works",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "MPREb_gJnhf9DLh8Q",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "1984"
+                                        }
+                                      ]
+                                    },
+                                    "thumbnail": {
+                                      "thumbnails": [
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/mxUt_QbHxgW4xwdxjgH-YyHfe5UGXumjC7IOMekozxXVurs25YBmbks0-7DFqU9SdKBTdx1BnvDyq8tk=w60-h60-l90-rj",
+                                          "width": 60,
+                                          "height": 60
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/mxUt_QbHxgW4xwdxjgH-YyHfe5UGXumjC7IOMekozxXVurs25YBmbks0-7DFqU9SdKBTdx1BnvDyq8tk=w120-h120-l90-rj",
+                                          "width": 120,
+                                          "height": 120
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/mxUt_QbHxgW4xwdxjgH-YyHfe5UGXumjC7IOMekozxXVurs25YBmbks0-7DFqU9SdKBTdx1BnvDyq8tk=w180-h180-l90-rj",
+                                          "width": 180,
+                                          "height": 180
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/mxUt_QbHxgW4xwdxjgH-YyHfe5UGXumjC7IOMekozxXVurs25YBmbks0-7DFqU9SdKBTdx1BnvDyq8tk=w226-h226-l90-rj",
+                                          "width": 226,
+                                          "height": 226
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/mxUt_QbHxgW4xwdxjgH-YyHfe5UGXumjC7IOMekozxXVurs25YBmbks0-7DFqU9SdKBTdx1BnvDyq8tk=w302-h302-l90-rj",
+                                          "width": 302,
+                                          "height": 302
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/mxUt_QbHxgW4xwdxjgH-YyHfe5UGXumjC7IOMekozxXVurs25YBmbks0-7DFqU9SdKBTdx1BnvDyq8tk=w544-h544-l90-rj",
+                                          "width": 544,
+                                          "height": 544
+                                        }
+                                      ]
+                                    },
+                                    "lengthText": {
+                                      "runs": [
+                                        {
+                                          "text": "5:49"
+                                        }
+                                      ],
+                                      "accessibility": {
+                                        "accessibilityData": {
+                                          "label": "5 minutes, 49 seconds"
+                                        }
+                                      }
+                                    },
+                                    "selected": false,
+                                    "navigationEndpoint": {
+                                      "watchEndpoint": {
+                                        "videoId": "g9L-hOwKcHQ",
+                                        "playlistId": "RDAMVMlYBUbBu4W08",
+                                        "index": 6,
+                                        "params": "OAHyAQIIAQ%3D%3D",
+                                        "playerParams": "8AUBygYQNTMyQkIwQjQyMkZCQzdFQ9IHCQlOARCCnT_ysLAIAg%3D%3D",
+                                        "playlistSetVideoId": "532BB0B422FBC7EC",
+                                        "watchEndpointMusicSupportedConfigs": {
+                                          "watchEndpointMusicConfig": {
+                                            "hasPersistentPlaylistPanel": true,
+                                            "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "videoId": "g9L-hOwKcHQ",
+                                    "shortBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Queen"
+                                        }
+                                      ]
+                                    },
+                                    "playlistSetVideoId": "532BB0B422FBC7EC",
+                                    "canReorder": true
+                                  }
+                                },
+                                {
+                                  "playlistPanelVideoRenderer": {
+                                    "title": {
+                                      "runs": [
+                                        {
+                                          "text": "Everybody Wants To Rule The World"
+                                        }
+                                      ]
+                                    },
+                                    "longBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Tears For Fears",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "UCcozhiTOkGB1HCOgdBlEFPA",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "Songs From The Big Chair (Super Deluxe)",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "MPREb_LPH5eNlvHWD",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "1985"
+                                        }
+                                      ]
+                                    },
+                                    "thumbnail": {
+                                      "thumbnails": [
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/_cIihjoSNsgJRwFfxAvEbkDTYn08-N5z4FYhhC1EkypKbdeGqK9P4s0re4ppApskUQZzvD33_jOneFQ=w60-h60-l90-rj",
+                                          "width": 60,
+                                          "height": 60
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/_cIihjoSNsgJRwFfxAvEbkDTYn08-N5z4FYhhC1EkypKbdeGqK9P4s0re4ppApskUQZzvD33_jOneFQ=w120-h120-l90-rj",
+                                          "width": 120,
+                                          "height": 120
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/_cIihjoSNsgJRwFfxAvEbkDTYn08-N5z4FYhhC1EkypKbdeGqK9P4s0re4ppApskUQZzvD33_jOneFQ=w180-h180-l90-rj",
+                                          "width": 180,
+                                          "height": 180
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/_cIihjoSNsgJRwFfxAvEbkDTYn08-N5z4FYhhC1EkypKbdeGqK9P4s0re4ppApskUQZzvD33_jOneFQ=w226-h226-l90-rj",
+                                          "width": 226,
+                                          "height": 226
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/_cIihjoSNsgJRwFfxAvEbkDTYn08-N5z4FYhhC1EkypKbdeGqK9P4s0re4ppApskUQZzvD33_jOneFQ=w302-h302-l90-rj",
+                                          "width": 302,
+                                          "height": 302
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/_cIihjoSNsgJRwFfxAvEbkDTYn08-N5z4FYhhC1EkypKbdeGqK9P4s0re4ppApskUQZzvD33_jOneFQ=w544-h544-l90-rj",
+                                          "width": 544,
+                                          "height": 544
+                                        }
+                                      ]
+                                    },
+                                    "lengthText": {
+                                      "runs": [
+                                        {
+                                          "text": "4:12"
+                                        }
+                                      ],
+                                      "accessibility": {
+                                        "accessibilityData": {
+                                          "label": "4 minutes, 12 seconds"
+                                        }
+                                      }
+                                    },
+                                    "selected": false,
+                                    "navigationEndpoint": {
+                                      "watchEndpoint": {
+                                        "videoId": "Y1-Qymcppps",
+                                        "playlistId": "RDAMVMlYBUbBu4W08",
+                                        "index": 7,
+                                        "params": "OAHyAQIIAQ%3D%3D",
+                                        "playerParams": "8AUBygYQQ0FDREQ0NjZCM0VEMTU2NbAIAg%3D%3D",
+                                        "playlistSetVideoId": "CACDD466B3ED1565",
+                                        "watchEndpointMusicSupportedConfigs": {
+                                          "watchEndpointMusicConfig": {
+                                            "hasPersistentPlaylistPanel": true,
+                                            "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "videoId": "Y1-Qymcppps",
+                                    "shortBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Tears For Fears"
+                                        }
+                                      ]
+                                    },
+                                    "playlistSetVideoId": "CACDD466B3ED1565",
+                                    "canReorder": true
+                                  }
+                                },
+                                {
+                                  "playlistPanelVideoRenderer": {
+                                    "title": {
+                                      "runs": [
+                                        {
+                                          "text": "What Is Love (7\" Mix)"
+                                        }
+                                      ]
+                                    },
+                                    "longBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Haddaway",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "UCfS_1LLbHxkCHWVL8u2mXlg",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "The Album",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "MPREb_EloIRHbWKNa",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "1993"
+                                        }
+                                      ]
+                                    },
+                                    "thumbnail": {
+                                      "thumbnails": [
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/Lz646ZvyuKh68QemdEz1-ZQFDe1DbGg3qeOLjQkPJjfWu9mikzqaA2M_CTYZFsQO8iVTBLzgiliDu7P2=w60-h60-l90-rj",
+                                          "width": 60,
+                                          "height": 60
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/Lz646ZvyuKh68QemdEz1-ZQFDe1DbGg3qeOLjQkPJjfWu9mikzqaA2M_CTYZFsQO8iVTBLzgiliDu7P2=w120-h120-l90-rj",
+                                          "width": 120,
+                                          "height": 120
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/Lz646ZvyuKh68QemdEz1-ZQFDe1DbGg3qeOLjQkPJjfWu9mikzqaA2M_CTYZFsQO8iVTBLzgiliDu7P2=w180-h180-l90-rj",
+                                          "width": 180,
+                                          "height": 180
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/Lz646ZvyuKh68QemdEz1-ZQFDe1DbGg3qeOLjQkPJjfWu9mikzqaA2M_CTYZFsQO8iVTBLzgiliDu7P2=w226-h226-l90-rj",
+                                          "width": 226,
+                                          "height": 226
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/Lz646ZvyuKh68QemdEz1-ZQFDe1DbGg3qeOLjQkPJjfWu9mikzqaA2M_CTYZFsQO8iVTBLzgiliDu7P2=w302-h302-l90-rj",
+                                          "width": 302,
+                                          "height": 302
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/Lz646ZvyuKh68QemdEz1-ZQFDe1DbGg3qeOLjQkPJjfWu9mikzqaA2M_CTYZFsQO8iVTBLzgiliDu7P2=w544-h544-l90-rj",
+                                          "width": 544,
+                                          "height": 544
+                                        }
+                                      ]
+                                    },
+                                    "lengthText": {
+                                      "runs": [
+                                        {
+                                          "text": "4:31"
+                                        }
+                                      ],
+                                      "accessibility": {
+                                        "accessibilityData": {
+                                          "label": "4 minutes, 31 seconds"
+                                        }
+                                      }
+                                    },
+                                    "selected": false,
+                                    "navigationEndpoint": {
+                                      "watchEndpoint": {
+                                        "videoId": "dEOmR6b0IqM",
+                                        "playlistId": "RDAMVMlYBUbBu4W08",
+                                        "index": 8,
+                                        "params": "OAHyAQIIAQ%3D%3D",
+                                        "playerParams": "8AUBygYQOTQ5NURGRDc4RDM1OTA0M7AIAg%3D%3D",
+                                        "playlistSetVideoId": "9495DFD78D359043",
+                                        "watchEndpointMusicSupportedConfigs": {
+                                          "watchEndpointMusicConfig": {
+                                            "hasPersistentPlaylistPanel": true,
+                                            "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "videoId": "dEOmR6b0IqM",
+                                    "shortBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Haddaway"
+                                        }
+                                      ]
+                                    },
+                                    "playlistSetVideoId": "9495DFD78D359043",
+                                    "canReorder": true
+                                  }
+                                },
+                                {
+                                  "playlistPanelVideoRenderer": {
+                                    "title": {
+                                      "runs": [
+                                        {
+                                          "text": "Self Control (Edit)"
+                                        }
+                                      ]
+                                    },
+                                    "longBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Laura Branigan",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "UChUr6-Fbc5f5FH9f0YNWLfQ",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "Self Control (Expanded)",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "MPREb_wfcNxI0ofQt",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "2020"
+                                        }
+                                      ]
+                                    },
+                                    "thumbnail": {
+                                      "thumbnails": [
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/SwnEX-AKmPzhcUCtF_4kGynpSMpILLeRrDKamNUCwa0AtZxlbUSZdgzOSkMXJikWBvcc-cR5hFHTbIDu=w60-h60-l90-rj",
+                                          "width": 60,
+                                          "height": 60
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/SwnEX-AKmPzhcUCtF_4kGynpSMpILLeRrDKamNUCwa0AtZxlbUSZdgzOSkMXJikWBvcc-cR5hFHTbIDu=w120-h120-l90-rj",
+                                          "width": 120,
+                                          "height": 120
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/SwnEX-AKmPzhcUCtF_4kGynpSMpILLeRrDKamNUCwa0AtZxlbUSZdgzOSkMXJikWBvcc-cR5hFHTbIDu=w180-h180-l90-rj",
+                                          "width": 180,
+                                          "height": 180
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/SwnEX-AKmPzhcUCtF_4kGynpSMpILLeRrDKamNUCwa0AtZxlbUSZdgzOSkMXJikWBvcc-cR5hFHTbIDu=w226-h226-l90-rj",
+                                          "width": 226,
+                                          "height": 226
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/SwnEX-AKmPzhcUCtF_4kGynpSMpILLeRrDKamNUCwa0AtZxlbUSZdgzOSkMXJikWBvcc-cR5hFHTbIDu=w302-h302-l90-rj",
+                                          "width": 302,
+                                          "height": 302
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/SwnEX-AKmPzhcUCtF_4kGynpSMpILLeRrDKamNUCwa0AtZxlbUSZdgzOSkMXJikWBvcc-cR5hFHTbIDu=w544-h544-l90-rj",
+                                          "width": 544,
+                                          "height": 544
+                                        }
+                                      ]
+                                    },
+                                    "lengthText": {
+                                      "runs": [
+                                        {
+                                          "text": "3:58"
+                                        }
+                                      ],
+                                      "accessibility": {
+                                        "accessibilityData": {
+                                          "label": "3 minutes, 58 seconds"
+                                        }
+                                      }
+                                    },
+                                    "selected": false,
+                                    "navigationEndpoint": {
+                                      "watchEndpoint": {
+                                        "videoId": "f8Uwtm30uhc",
+                                        "playlistId": "RDAMVMlYBUbBu4W08",
+                                        "index": 9,
+                                        "params": "OAHyAQIIAQ%3D%3D",
+                                        "playerParams": "8AUBygYQRjYzQ0Q0RDA0MTk4QjA0NtIHCQlOARCCnT_ysLAIAg%3D%3D",
+                                        "playlistSetVideoId": "F63CD4D04198B046",
+                                        "watchEndpointMusicSupportedConfigs": {
+                                          "watchEndpointMusicConfig": {
+                                            "hasPersistentPlaylistPanel": true,
+                                            "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "videoId": "f8Uwtm30uhc",
+                                    "shortBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Laura Branigan"
+                                        }
+                                      ]
+                                    },
+                                    "playlistSetVideoId": "F63CD4D04198B046",
+                                    "canReorder": true
+                                  }
+                                },
+                                {
+                                  "playlistPanelVideoRenderer": {
+                                    "title": {
+                                      "runs": [
+                                        {
+                                          "text": "It's My Life"
+                                        }
+                                      ]
+                                    },
+                                    "longBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Dr. Alban",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "UCGOvL1_e4eMWHBkbP6pbIAg",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "One Love",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "MPREb_l8ghLZT4qhQ",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "1992"
+                                        }
+                                      ]
+                                    },
+                                    "thumbnail": {
+                                      "thumbnails": [
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/4fvOyxb5iDqp91Ztmo6uIuzc-aym1m1XfkPkZTcE2p3unsZNDvYHYYc7jqoLnEy_9BHAbWijGEB2YEs=w60-h60-l90-rj",
+                                          "width": 60,
+                                          "height": 60
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/4fvOyxb5iDqp91Ztmo6uIuzc-aym1m1XfkPkZTcE2p3unsZNDvYHYYc7jqoLnEy_9BHAbWijGEB2YEs=w120-h120-l90-rj",
+                                          "width": 120,
+                                          "height": 120
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/4fvOyxb5iDqp91Ztmo6uIuzc-aym1m1XfkPkZTcE2p3unsZNDvYHYYc7jqoLnEy_9BHAbWijGEB2YEs=w180-h180-l90-rj",
+                                          "width": 180,
+                                          "height": 180
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/4fvOyxb5iDqp91Ztmo6uIuzc-aym1m1XfkPkZTcE2p3unsZNDvYHYYc7jqoLnEy_9BHAbWijGEB2YEs=w226-h226-l90-rj",
+                                          "width": 226,
+                                          "height": 226
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/4fvOyxb5iDqp91Ztmo6uIuzc-aym1m1XfkPkZTcE2p3unsZNDvYHYYc7jqoLnEy_9BHAbWijGEB2YEs=w302-h302-l90-rj",
+                                          "width": 302,
+                                          "height": 302
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/4fvOyxb5iDqp91Ztmo6uIuzc-aym1m1XfkPkZTcE2p3unsZNDvYHYYc7jqoLnEy_9BHAbWijGEB2YEs=w544-h544-l90-rj",
+                                          "width": 544,
+                                          "height": 544
+                                        }
+                                      ]
+                                    },
+                                    "lengthText": {
+                                      "runs": [
+                                        {
+                                          "text": "4:00"
+                                        }
+                                      ],
+                                      "accessibility": {
+                                        "accessibilityData": {
+                                          "label": "4 minutes"
+                                        }
+                                      }
+                                    },
+                                    "selected": false,
+                                    "navigationEndpoint": {
+                                      "watchEndpoint": {
+                                        "videoId": "Q266UWljhlc",
+                                        "playlistId": "RDAMVMlYBUbBu4W08",
+                                        "index": 10,
+                                        "params": "OAHyAQIIAQ%3D%3D",
+                                        "playerParams": "8AUBygYQNDc2QjBEQzI1RDdERUU4QbAIAg%3D%3D",
+                                        "playlistSetVideoId": "476B0DC25D7DEE8A",
+                                        "watchEndpointMusicSupportedConfigs": {
+                                          "watchEndpointMusicConfig": {
+                                            "hasPersistentPlaylistPanel": true,
+                                            "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "videoId": "Q266UWljhlc",
+                                    "shortBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Dr. Alban"
+                                        }
+                                      ]
+                                    },
+                                    "playlistSetVideoId": "476B0DC25D7DEE8A",
+                                    "canReorder": true
+                                  }
+                                },
+                                {
+                                  "playlistPanelVideoRenderer": {
+                                    "title": {
+                                      "runs": [
+                                        {
+                                          "text": "Danger Zone (From \"Top Gun\" Original Soundtrack)"
+                                        }
+                                      ]
+                                    },
+                                    "longBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Kenny Loggins",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "UCF-DjS6Y9CKZThQf01SYe7w",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "TOP GUN/SOUNDTRACK",
+                                          "navigationEndpoint": {
+                                            "browseEndpoint": {
+                                              "browseId": "MPREb_HAA0in8CPLq",
+                                              "browseEndpointContextSupportedConfigs": {
+                                                "browseEndpointContextMusicConfig": {
+                                                  "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "text": " • "
+                                        },
+                                        {
+                                          "text": "1986"
+                                        }
+                                      ]
+                                    },
+                                    "thumbnail": {
+                                      "thumbnails": [
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/ma7NNwzNMhR9Z69iI53CLLujrqxOK7Ha1qcsRM41GIwNMojTtLYSlBDhNpQABs8vNDaoYXKBRassktecxw=w60-h60-l90-rj",
+                                          "width": 60,
+                                          "height": 60
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/ma7NNwzNMhR9Z69iI53CLLujrqxOK7Ha1qcsRM41GIwNMojTtLYSlBDhNpQABs8vNDaoYXKBRassktecxw=w120-h120-l90-rj",
+                                          "width": 120,
+                                          "height": 120
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/ma7NNwzNMhR9Z69iI53CLLujrqxOK7Ha1qcsRM41GIwNMojTtLYSlBDhNpQABs8vNDaoYXKBRassktecxw=w180-h180-l90-rj",
+                                          "width": 180,
+                                          "height": 180
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/ma7NNwzNMhR9Z69iI53CLLujrqxOK7Ha1qcsRM41GIwNMojTtLYSlBDhNpQABs8vNDaoYXKBRassktecxw=w226-h226-l90-rj",
+                                          "width": 226,
+                                          "height": 226
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/ma7NNwzNMhR9Z69iI53CLLujrqxOK7Ha1qcsRM41GIwNMojTtLYSlBDhNpQABs8vNDaoYXKBRassktecxw=w302-h302-l90-rj",
+                                          "width": 302,
+                                          "height": 302
+                                        },
+                                        {
+                                          "url": "https://yt3.googleusercontent.com/ma7NNwzNMhR9Z69iI53CLLujrqxOK7Ha1qcsRM41GIwNMojTtLYSlBDhNpQABs8vNDaoYXKBRassktecxw=w544-h544-l90-rj",
+                                          "width": 544,
+                                          "height": 544
+                                        }
+                                      ]
+                                    },
+                                    "lengthText": {
+                                      "runs": [
+                                        {
+                                          "text": "3:32"
+                                        }
+                                      ],
+                                      "accessibility": {
+                                        "accessibilityData": {
+                                          "label": "3 minutes, 32 seconds"
+                                        }
+                                      }
+                                    },
+                                    "selected": false,
+                                    "navigationEndpoint": {
+                                      "watchEndpoint": {
+                                        "videoId": "7PWsIld-QoU",
+                                        "playlistId": "RDAMVMlYBUbBu4W08",
+                                        "index": 11,
+                                        "params": "OAHyAQIIAQ%3D%3D",
+                                        "playerParams": "8AUBygYQRDBBMEVGOTNEQ0U1NzQyQrAIAg%3D%3D",
+                                        "playlistSetVideoId": "D0A0EF93DCE5742B",
+                                        "watchEndpointMusicSupportedConfigs": {
+                                          "watchEndpointMusicConfig": {
+                                            "hasPersistentPlaylistPanel": true,
+                                            "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "videoId": "7PWsIld-QoU",
+                                    "shortBylineText": {
+                                      "runs": [
+                                        {
+                                          "text": "Kenny Loggins"
+                                        }
+                                      ]
+                                    },
+                                    "playlistSetVideoId": "D0A0EF93DCE5742B",
+                                    "canReorder": true
+                                  }
+                                }
+                              ],
+                              "playlistId": "RDAMVMlYBUbBu4W08",
+                              "isInfinite": true,
+                              "numItemsToShow": 25
+                            }
+                          },
+                          "hack": true,
+                          "musicQueueConfig": {},
+                          "header": {
+                            "musicQueueHeaderRenderer": {
+                              "title": {
+                                "runs": [
+                                  {
+                                    "text": "Playing from"
+                                  }
+                                ]
+                              },
+                              "subtitle": {
+                                "runs": [
+                                  {
+                                    "text": "Never Gonna Give You Up Mix"
+                                  }
+                                ]
+                              },
+                              "buttons": [
+                                {
+                                  "chipCloudChipRenderer": {
+                                    "style": {
+                                      "styleType": "STYLE_TRANSPARENT"
+                                    },
+                                    "text": {
+                                      "runs": [
+                                        {
+                                          "text": "Save"
+                                        }
+                                      ]
+                                    },
+                                    "navigationEndpoint": {
+                                      "modalEndpoint": {
+                                        "modal": {
+                                          "modalWithTitleAndButtonRenderer": {
+                                            "title": {
+                                              "runs": [
+                                                {
+                                                  "text": "Save this for later"
+                                                }
+                                              ]
+                                            },
+                                            "content": {
+                                              "runs": [
+                                                {
+                                                  "text": "Make playlists and share them after signing in"
+                                                }
+                                              ]
+                                            },
+                                            "button": {
+                                              "buttonRenderer": {
+                                                "style": "STYLE_BLUE_TEXT",
+                                                "isDisabled": false,
+                                                "text": {
+                                                  "runs": [
+                                                    {
+                                                      "text": "Sign in"
+                                                    }
+                                                  ]
+                                                },
+                                                "navigationEndpoint": {
+                                                  "signInEndpoint": {
+                                                    "hack": true
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "saveQueueToPlaylistCommand": {}
+                                    },
+                                    "icon": {
+                                      "iconType": "ADD_TO_PLAYLIST"
+                                    },
+                                    "accessibilityData": {
+                                      "accessibilityData": {
+                                        "label": "Save"
+                                      }
+                                    },
+                                    "isSelected": false,
+                                    "uniqueId": "Save"
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "subHeaderChipCloud": {
+                            "chipCloudRenderer": {
+                              "chips": [
+                                {
+                                  "chipCloudChipRenderer": {
+                                    "text": {
+                                      "runs": [
+                                        {
+                                          "text": "All"
+                                        }
+                                      ]
+                                    },
+                                    "navigationEndpoint": {
+                                      "queueUpdateCommand": {
+                                        "queueUpdateSection": "QUEUE_UPDATE_SECTION_QUEUE",
+                                        "fetchContentsCommand": {
+                                          "watchEndpoint": {
+                                            "playlistId": "RDAMVMlYBUbBu4W08",
+                                            "params": "ggUMRWdBWUFRJTNEJTNE"
+                                          }
+                                        },
+                                        "dedupeAgainstLocalQueue": true,
+                                        "syncMode": "QUEUE_UPDATE_SYNC_MODE_DEDUPE_AGAINST_LOCAL"
+                                      }
+                                    },
+                                    "accessibilityData": {
+                                      "accessibilityData": {
+                                        "label": "All"
+                                      }
+                                    },
+                                    "isSelected": true,
+                                    "uniqueId": "All"
+                                  }
+                                },
+                                {
+                                  "chipCloudChipRenderer": {
+                                    "text": {
+                                      "runs": [
+                                        {
+                                          "text": "Popular"
+                                        }
+                                      ]
+                                    },
+                                    "navigationEndpoint": {
+                                      "queueUpdateCommand": {
+                                        "queueUpdateSection": "QUEUE_UPDATE_SECTION_QUEUE",
+                                        "fetchContentsCommand": {
+                                          "watchEndpoint": {
+                                            "playlistId": "RDATpYvlYBUbBu4W08",
+                                            "params": "ggU4Q2hKU1JFRlVjRmwyYkZsQ1ZXSkNkVFJYTURnWUN5SU5DZ2RRYjNCMWJHRnlHZ0psYmclM0QlM0Q%3D"
+                                          }
+                                        },
+                                        "dedupeAgainstLocalQueue": true,
+                                        "syncMode": "QUEUE_UPDATE_SYNC_MODE_DEDUPE_AGAINST_LOCAL"
+                                      }
+                                    },
+                                    "accessibilityData": {
+                                      "accessibilityData": {
+                                        "label": "Popular"
+                                      }
+                                    },
+                                    "isSelected": false,
+                                    "uniqueId": "Popular"
+                                  }
+                                },
+                                {
+                                  "chipCloudChipRenderer": {
+                                    "text": {
+                                      "runs": [
+                                        {
+                                          "text": "Discover"
+                                        }
+                                      ]
+                                    },
+                                    "navigationEndpoint": {
+                                      "queueUpdateCommand": {
+                                        "queueUpdateSection": "QUEUE_UPDATE_SECTION_QUEUE",
+                                        "fetchContentsCommand": {
+                                          "watchEndpoint": {
+                                            "playlistId": "RDATiXvlYBUbBu4W08",
+                                            "params": "ggU2Q2hKU1JFRlVhVmgyYkZsQ1ZXSkNkVFJYTURnWUN5SU9DZ2hFYVhOamIzWmxjaG9DWlc0JTNE"
+                                          }
+                                        },
+                                        "dedupeAgainstLocalQueue": true,
+                                        "syncMode": "QUEUE_UPDATE_SYNC_MODE_DEDUPE_AGAINST_LOCAL"
+                                      }
+                                    },
+                                    "accessibilityData": {
+                                      "accessibilityData": {
+                                        "label": "Discover"
+                                      }
+                                    },
+                                    "isSelected": false,
+                                    "uniqueId": "Discover"
+                                  }
+                                },
+                                {
+                                  "chipCloudChipRenderer": {
+                                    "text": {
+                                      "runs": [
+                                        {
+                                          "text": "Deep cuts"
+                                        }
+                                      ]
+                                    },
+                                    "navigationEndpoint": {
+                                      "queueUpdateCommand": {
+                                        "queueUpdateSection": "QUEUE_UPDATE_SECTION_QUEUE",
+                                        "fetchContentsCommand": {
+                                          "watchEndpoint": {
+                                            "playlistId": "RDATpXvlYBUbBu4W08",
+                                            "params": "ggU0Q2hKU1JFRlVjRmgyYkZsQ1ZXSkNkVFJYTURnWUN5SVBDZ2xFWldWd0lHTjFkSE1hQW1WdQ%3D%3D",
+                                            "playerParams": "0gcJCW0At9Zurpe2"
+                                          }
+                                        },
+                                        "dedupeAgainstLocalQueue": true,
+                                        "syncMode": "QUEUE_UPDATE_SYNC_MODE_DEDUPE_AGAINST_LOCAL"
+                                      }
+                                    },
+                                    "accessibilityData": {
+                                      "accessibilityData": {
+                                        "label": "Deep cuts"
+                                      }
+                                    },
+                                    "isSelected": false,
+                                    "uniqueId": "Deep cuts"
+                                  }
+                                },
+                                {
+                                  "chipCloudChipRenderer": {
+                                    "text": {
+                                      "runs": [
+                                        {
+                                          "text": "Party"
+                                        }
+                                      ]
+                                    },
+                                    "navigationEndpoint": {
+                                      "queueUpdateCommand": {
+                                        "queueUpdateSection": "QUEUE_UPDATE_SECTION_QUEUE",
+                                        "fetchContentsCommand": {
+                                          "watchEndpoint": {
+                                            "playlistId": "RDATmevlYBUbBu4W08",
+                                            "params": "ggUyQ2hKU1JFRlViV1YyYkZsQ1ZXSkNkVFJYTURnWUN5SUxDZ1ZRWVhKMGVSb0NaVzQlM0Q%3D"
+                                          }
+                                        },
+                                        "dedupeAgainstLocalQueue": true,
+                                        "syncMode": "QUEUE_UPDATE_SYNC_MODE_DEDUPE_AGAINST_LOCAL"
+                                      }
+                                    },
+                                    "accessibilityData": {
+                                      "accessibilityData": {
+                                        "label": "Party"
+                                      }
+                                    },
+                                    "isSelected": false,
+                                    "uniqueId": "Party"
+                                  }
+                                },
+                                {
+                                  "chipCloudChipRenderer": {
+                                    "text": {
+                                      "runs": [
+                                        {
+                                          "text": "Pop"
+                                        }
+                                      ]
+                                    },
+                                    "navigationEndpoint": {
+                                      "queueUpdateCommand": {
+                                        "queueUpdateSection": "QUEUE_UPDATE_SECTION_QUEUE",
+                                        "fetchContentsCommand": {
+                                          "watchEndpoint": {
+                                            "playlistId": "RDATg9XvlYBUbBu4W08",
+                                            "params": "ggU0Q2hOU1JFRlVaemxZZG14WlFsVmlRblUwVnpBNEdBc2lDUW9EVUc5d0dnSmxiZyUzRCUzRA%3D%3D"
+                                          }
+                                        },
+                                        "dedupeAgainstLocalQueue": true,
+                                        "syncMode": "QUEUE_UPDATE_SYNC_MODE_DEDUPE_AGAINST_LOCAL"
+                                      }
+                                    },
+                                    "accessibilityData": {
+                                      "accessibilityData": {
+                                        "label": "Pop"
+                                      }
+                                    },
+                                    "isSelected": false,
+                                    "uniqueId": "Pop"
+                                  }
+                                },
+                                {
+                                  "chipCloudChipRenderer": {
+                                    "text": {
+                                      "runs": [
+                                        {
+                                          "text": "R&B"
+                                        }
+                                      ]
+                                    },
+                                    "navigationEndpoint": {
+                                      "queueUpdateCommand": {
+                                        "queueUpdateSection": "QUEUE_UPDATE_SECTION_QUEUE",
+                                        "fetchContentsCommand": {
+                                          "watchEndpoint": {
+                                            "playlistId": "RDATgBXvlYBUbBu4W08",
+                                            "params": "ggU0Q2hOU1JFRlVaMEpZZG14WlFsVmlRblUwVnpBNEdBc2lDUW9EVWlaQ0dnSmxiZyUzRCUzRA%3D%3D"
+                                          }
+                                        },
+                                        "dedupeAgainstLocalQueue": true,
+                                        "syncMode": "QUEUE_UPDATE_SYNC_MODE_DEDUPE_AGAINST_LOCAL"
+                                      }
+                                    },
+                                    "accessibilityData": {
+                                      "accessibilityData": {
+                                        "label": "R&B"
+                                      }
+                                    },
+                                    "isSelected": false,
+                                    "uniqueId": "R&B"
+                                  }
+                                },
+                                {
+                                  "chipCloudChipRenderer": {
+                                    "text": {
+                                      "runs": [
+                                        {
+                                          "text": "Rock"
+                                        }
+                                      ]
+                                    },
+                                    "navigationEndpoint": {
+                                      "queueUpdateCommand": {
+                                        "queueUpdateSection": "QUEUE_UPDATE_SECTION_QUEUE",
+                                        "fetchContentsCommand": {
+                                          "watchEndpoint": {
+                                            "playlistId": "RDATgFXvlYBUbBu4W08",
+                                            "params": "ggUyQ2hOU1JFRlVaMFpZZG14WlFsVmlRblUwVnpBNEdBc2lDZ29FVW05amF4b0NaVzQlM0Q%3D"
+                                          }
+                                        },
+                                        "dedupeAgainstLocalQueue": true,
+                                        "syncMode": "QUEUE_UPDATE_SYNC_MODE_DEDUPE_AGAINST_LOCAL"
+                                      }
+                                    },
+                                    "accessibilityData": {
+                                      "accessibilityData": {
+                                        "label": "Rock"
+                                      }
+                                    },
+                                    "isSelected": false,
+                                    "uniqueId": "Rock"
+                                  }
+                                },
+                                {
+                                  "chipCloudChipRenderer": {
+                                    "text": {
+                                      "runs": [
+                                        {
+                                          "text": "Pop rock"
+                                        }
+                                      ]
+                                    },
+                                    "navigationEndpoint": {
+                                      "queueUpdateCommand": {
+                                        "queueUpdateSection": "QUEUE_UPDATE_SECTION_QUEUE",
+                                        "fetchContentsCommand": {
+                                          "watchEndpoint": {
+                                            "playlistId": "RDATG05bt6jEvlYBUbBu4W08",
+                                            "params": "ggU-Q2hoU1JFRlVSekExWW5RMmFrVjJiRmxDVldKQ2RUUlhNRGdZQ3lJT0NnaFFiM0FnY205amF4b0NaVzQlM0Q%3D"
+                                          }
+                                        },
+                                        "dedupeAgainstLocalQueue": true,
+                                        "syncMode": "QUEUE_UPDATE_SYNC_MODE_DEDUPE_AGAINST_LOCAL"
+                                      }
+                                    },
+                                    "accessibilityData": {
+                                      "accessibilityData": {
+                                        "label": "Pop rock"
+                                      }
+                                    },
+                                    "isSelected": false,
+                                    "uniqueId": "Pop rock"
+                                  }
+                                },
+                                {
+                                  "chipCloudChipRenderer": {
+                                    "text": {
+                                      "runs": [
+                                        {
+                                          "text": "Twee pop"
+                                        }
+                                      ]
+                                    },
+                                    "navigationEndpoint": {
+                                      "queueUpdateCommand": {
+                                        "queueUpdateSection": "QUEUE_UPDATE_SECTION_QUEUE",
+                                        "fetchContentsCommand": {
+                                          "watchEndpoint": {
+                                            "playlistId": "RDATG1214mddwEvlYBUbBu4W08",
+                                            "params": "ggVEQ2hwU1JFRlVSekV5TVRSdFpHUjNSWFpzV1VKVllrSjFORmN3T0JnTElnNEtDRlIzWldVZ2NHOXdHZ0psYmclM0QlM0Q%3D"
+                                          }
+                                        },
+                                        "dedupeAgainstLocalQueue": true,
+                                        "syncMode": "QUEUE_UPDATE_SYNC_MODE_DEDUPE_AGAINST_LOCAL"
+                                      }
+                                    },
+                                    "accessibilityData": {
+                                      "accessibilityData": {
+                                        "label": "Twee pop"
+                                      }
+                                    },
+                                    "isSelected": false,
+                                    "uniqueId": "Twee pop"
+                                  }
+                                },
+                                {
+                                  "chipCloudChipRenderer": {
+                                    "text": {
+                                      "runs": [
+                                        {
+                                          "text": "Adult contemporary music"
+                                        }
+                                      ]
+                                    },
+                                    "navigationEndpoint": {
+                                      "queueUpdateCommand": {
+                                        "queueUpdateSection": "QUEUE_UPDATE_SECTION_QUEUE",
+                                        "fetchContentsCommand": {
+                                          "watchEndpoint": {
+                                            "playlistId": "RDATG02vjzrEvlYBUbBu4W08",
+                                            "params": "ggVQQ2hoU1JFRlVSekF5ZG1wNmNrVjJiRmxDVldKQ2RUUlhNRGdZQ3lJZUNoaEJaSFZzZENCamIyNTBaVzF3YjNKaGNua2diWFZ6YVdNYUFtVnU%3D"
+                                          }
+                                        },
+                                        "dedupeAgainstLocalQueue": true,
+                                        "syncMode": "QUEUE_UPDATE_SYNC_MODE_DEDUPE_AGAINST_LOCAL"
+                                      }
+                                    },
+                                    "accessibilityData": {
+                                      "accessibilityData": {
+                                        "label": "Adult contemporary music"
+                                      }
+                                    },
+                                    "isSelected": false,
+                                    "uniqueId": "Adult contemporary music"
+                                  }
+                                },
+                                {
+                                  "chipCloudChipRenderer": {
+                                    "text": {
+                                      "runs": [
+                                        {
+                                          "text": "Modern soul"
+                                        }
+                                      ]
+                                    },
+                                    "navigationEndpoint": {
+                                      "queueUpdateCommand": {
+                                        "queueUpdateSection": "QUEUE_UPDATE_SECTION_QUEUE",
+                                        "fetchContentsCommand": {
+                                          "watchEndpoint": {
+                                            "playlistId": "RDATG0bh7fsEvlYBUbBu4W08",
+                                            "params": "ggVCQ2hoU1JFRlVSekJpYURkbWMwVjJiRmxDVldKQ2RUUlhNRGdZQ3lJUkNndE5iMlJsY200Z2MyOTFiQm9DWlc0JTNE"
+                                          }
+                                        },
+                                        "dedupeAgainstLocalQueue": true,
+                                        "syncMode": "QUEUE_UPDATE_SYNC_MODE_DEDUPE_AGAINST_LOCAL"
+                                      }
+                                    },
+                                    "accessibilityData": {
+                                      "accessibilityData": {
+                                        "label": "Modern soul"
+                                      }
+                                    },
+                                    "isSelected": false,
+                                    "uniqueId": "Modern soul"
+                                  }
+                                },
+                                {
+                                  "chipCloudChipRenderer": {
+                                    "text": {
+                                      "runs": [
+                                        {
+                                          "text": "Adult Pop"
+                                        }
+                                      ]
+                                    },
+                                    "navigationEndpoint": {
+                                      "queueUpdateCommand": {
+                                        "queueUpdateSection": "QUEUE_UPDATE_SECTION_QUEUE",
+                                        "fetchContentsCommand": {
+                                          "watchEndpoint": {
+                                            "playlistId": "RDATG11bydln0qkEvlYBUbBu4W08",
+                                            "params": "ggVIQ2h4U1JFRlVSekV4WW5sa2JHNHdjV3RGZG14WlFsVmlRblUwVnpBNEdBc2lEd29KUVdSMWJIUWdVRzl3R2dKbGJnJTNEJTNE",
+                                            "playerParams": "0gcJCW0At9Zurpe2"
+                                          }
+                                        },
+                                        "dedupeAgainstLocalQueue": true,
+                                        "syncMode": "QUEUE_UPDATE_SYNC_MODE_DEDUPE_AGAINST_LOCAL"
+                                      }
+                                    },
+                                    "accessibilityData": {
+                                      "accessibilityData": {
+                                        "label": "Adult Pop"
+                                      }
+                                    },
+                                    "isSelected": false,
+                                    "uniqueId": "Adult Pop"
+                                  }
+                                }
+                              ],
+                              "selectionBehavior": "CHIP_CLOUD_SELECTION_BEHAVIOR_SINGLE_SELECT_ALWAYS_SELECTED"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "tabRenderer": {
+                      "endpoint": {
+                        "browseEndpoint": {
+                          "browseId": "MPLYt_dcYZhAh5urI-1",
+                          "browseEndpointContextSupportedConfigs": {
+                            "browseEndpointContextMusicConfig": {
+                              "pageType": "MUSIC_PAGE_TYPE_TRACK_LYRICS"
+                            }
+                          }
+                        }
+                      },
+                      "title": "Lyrics"
+                    }
+                  },
+                  {
+                    "tabRenderer": {
+                      "title": "Comments",
+                      "content": {
+                        "sectionListRenderer": {
+                          "targetId": "lYBUbBu4W08"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "tabRenderer": {
+                      "endpoint": {
+                        "browseEndpoint": {
+                          "browseId": "MPTRt_dcYZhAh5urI-1",
+                          "browseEndpointContextSupportedConfigs": {
+                            "browseEndpointContextMusicConfig": {
+                              "pageType": "MUSIC_PAGE_TYPE_TRACK_RELATED"
+                            }
+                          }
+                        }
+                      },
+                      "title": "Related"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "frameworkUpdates": {
+          "entityBatchUpdate": {
+            "mutations": [
+              {
+                "entityKey": "EgtsWUJVYkJ1NFcwOCA-KAE%3D",
+                "type": "ENTITY_MUTATION_TYPE_REPLACE",
+                "payload": {
+                  "likeStatusEntity": {
+                    "key": "<token>",
+                    "likeStatus": "INDIFFERENT"
+                  }
+                }
+              }
+            ],
+            "timestamp": {
+              "seconds": "1794011438",
+              "nanos": 258868207
+            }
+          }
+        },
+        "trimmed": "Trimmed by the recorder: rows cut to the first few, and everything Auralis never reads taken out (tracking values, menus, continuations, the session context)."
+      }
+    }
+  }
+}

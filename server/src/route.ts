@@ -10,7 +10,7 @@ import { type z } from 'zod';
  */
 export class Refusal extends Error {
   constructor(
-    readonly status: 400 | 401 | 403 | 404 | 409 | 416 | 422 | 429 | 502,
+    readonly status: 400 | 401 | 403 | 404 | 409 | 416 | 422 | 429 | 502 | 503,
     readonly error: string,
     readonly headers: Record<string, string> = {},
   ) {

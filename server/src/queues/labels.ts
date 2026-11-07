@@ -5,7 +5,8 @@
  * its upstream as the person, each once: a Jellyfin track (Instant Mix can name one) from
  * Jellyfin; an Audiobookshelf episode from its show, found through the person's own progress on
  * it (`GET /api/me`); any other Audiobookshelf id as a book, from its expanded answer. A read that
- * fails is logged and leaves the entry unlabelled.
+ * fails is logged and leaves the entry unlabelled. A streamed song is read from its own table, with
+ * no upstream call.
  */
 import type { MediaRef } from '@auralis/schema';
 import type { ItemSummary } from '../adapters/audiobookshelf/schemas.js';
@@ -13,6 +14,7 @@ import type { Creator } from '../libraryIndex/rows.js';
 import { indexedRow, type StoredRow } from '../libraryIndex/store.js';
 import type { Db } from '../store/connection.js';
 import type { QueueEntry } from '../store/listening.js';
+import { streamedTrack } from '../store/streamedTracks.js';
 import type { BookChapter, IndexLookup } from './lookup.js';
 
 export interface EntryLabel {
@@ -139,6 +141,7 @@ export async function labelled(
   const { db, lookup, jellyfin, abs, log } = deps;
   const unindexed = new Map<string, MediaRef>();
   for (const { ref } of entries) {
+    if (ref.source === 'ytmusic') continue;
     if (indexedRow(db, ref.source, ref.id) === undefined) unindexed.set(key(ref), ref);
   }
   let progress: Promise<Map<string, string>> | undefined;
@@ -169,6 +172,11 @@ export async function labelled(
     }),
   );
   return (entry) => {
+    if (entry.ref.source === 'ytmusic') {
+      const song = streamedTrack(db, entry.ref.id);
+      if (song === undefined) return UNLABELLED;
+      return { title: song.title, sub: song.artists.join(', '), duration: song.duration };
+    }
     const row = indexedRow(db, entry.ref.source, entry.ref.id);
     if (row !== undefined) return fromIndex(db, lookup, row, entry);
     return read.get(key(entry.ref))?.(entry) ?? UNLABELLED;

@@ -27,6 +27,13 @@ data class ResultRowProps(
     val tone: ResultRowTone? = null,
     /** Glyph for the art overlay action; "downloading" renders a pause control. */
     val actionGlyph: String? = null,
+    /**
+     * What the row's second action says, such as "Play next"; empty or omitted, it draws none, so a
+     * row can offer it only some of the time. Drawn where `trailing` goes; ignored beside `trailing`.
+     */
+    val nextLabel: String? = null,
+    /** Runs when the second action is pressed. */
+    val onNext: (() -> Unit)? = null,
     /** Cover art URL. Falls back to the generated gradient when omitted. */
     val image: String? = null,
     /**

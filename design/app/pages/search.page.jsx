@@ -72,6 +72,8 @@ export default function Search({ data }) {
                 image={best.image}
                 onClick={<Open page={best.page} ref={best.ref} />}
                 onAction={<Play ref={best.playRef} queue={best.queue} />}
+                nextLabel={best.next}
+                onNext={<Play ref={best.playRef} queue={best.queue} next />}
               />
             </Each>
           </Section>
@@ -83,6 +85,8 @@ export default function Search({ data }) {
                 image={item.image}
                 onClick={<Open page={item.page} ref={item.ref} />}
                 onAction={<Play ref={item.playRef} queue={item.queue} />}
+                nextLabel={item.next}
+                onNext={<Play ref={item.playRef} queue={item.queue} next />}
                 divider
               />
             </Each>
@@ -95,11 +99,39 @@ export default function Search({ data }) {
                 image={item.image}
                 onClick={<Open page={item.page} ref={item.ref} />}
                 onAction={<Play ref={item.playRef} queue={item.queue} />}
+                nextLabel={item.next}
+                onNext={<Play ref={item.playRef} queue={item.queue} next />}
                 divider
               />
             </Each>
             <Each of={data.outside.music} as="song">
-              <ResultRow title={song.title} meta={song.meta} image={song.image} divider />
+              <Each of={song.plays} as="plays">
+                <ResultRow
+                  title={plays.title}
+                  meta={plays.meta}
+                  image={plays.image}
+                  onAction={<Play ref={plays.playRef} queue="music" />}
+                  divider
+                />
+              </Each>
+              <Each of={song.follows} as="follows">
+                <ResultRow
+                  title={follows.title}
+                  meta={follows.meta}
+                  image={follows.image}
+                  onAction={<Play ref={follows.playRef} queue="music" />}
+                  divider
+                  trailing={
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={<Play ref={follows.playRef} queue="music" next />}
+                    >
+                      Play next
+                    </Button>
+                  }
+                />
+              </Each>
             </Each>
             <ExpanderRow label={data.outside.moreReleases} />
             <Each of={data.outside.books} as="book">

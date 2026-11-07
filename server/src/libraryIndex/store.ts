@@ -3,7 +3,7 @@
  * `updated_at` say which rows a run really touched.
  */
 import { createHash } from 'node:crypto';
-import type { EpisodeOrder } from '@auralis/schema';
+import type { EpisodeOrder, MediaSource } from '@auralis/schema';
 import { searchText, writeSearchItem } from '../search/items.js';
 import type { Db } from '../store/connection.js';
 import { statement } from '../store/statements.js';
@@ -381,7 +381,7 @@ function ids(db: Db, rows: RawRow[]): StoredRow[] {
 }
 
 /** One indexed row by its source and upstream id, or undefined when the index does not hold it. */
-export function indexedRow(db: Db, source: IndexSource, id: string): StoredRow | undefined {
+export function indexedRow(db: Db, source: MediaSource, id: string): StoredRow | undefined {
   const raw = db
     .prepare('SELECT * FROM index_items WHERE source = ? AND upstream_id = ?')
     .all(source, id) as RawRow[];

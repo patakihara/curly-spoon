@@ -12,6 +12,7 @@ import { LYRICS_KEPT_LINES, LYRICS_TRIMMED } from './record-lyrics.js';
 import { albumRow, trackRows } from '../libraryIndex/rows.js';
 import { lyricsQuery } from '../lyrics/query.js';
 import { ART_WIDTH } from '../routes/items.js';
+import { RADIO_KEPT_ROWS, YTMUSIC_TRIMMED } from './record-ytmusic.js';
 import { PLAYED_PAGE } from './record-played.js';
 import { ABS_PROGRESS_CALLS, JELLYFIN_PROGRESS_CALLS, TEST_BOOKMARK } from './record-progress.js';
 
@@ -980,5 +981,122 @@ describe("[M3.books] qBittorrent's calls, as recorded on controlled torrents", (
     const { body } = recording('qbittorrent', 'info-stalled').response;
     const [row] = (body as { json: { state: string; progress: number }[] }).json;
     expect(row).toMatchObject({ state: 'metaDL', progress: 0 });
+  });
+});
+
+describe("[M3.ytmusic/a] YouTube Music's InnerTube calls, as recorded", () => {
+  const calls = [
+    ['search-songs', '/youtubei/v1/search', 200],
+    ['search-songs-several', '/youtubei/v1/search', 200],
+    ['search-bad-version', '/youtubei/v1/search', 404],
+    ['next-radio', '/youtubei/v1/next', 200],
+  ] as const;
+
+  it.each(calls)('[M3.ytmusic/a] %s asked %s and answered %i', (call, path, status) => {
+    const r = recording('ytmusic', call);
+    expect(r.upstream).toBe('ytmusic');
+    expect(r.request).toMatchObject({ method: 'POST', path });
+    expect(r.response.status).toBe(status);
+  });
+
+  it('[M3.ytmusic/a] each asked with no key, cookie or account, and keeps no session value', () => {
+    for (const [call] of calls) {
+      const r = recording('ytmusic', call);
+      expect(Object.keys(r.request.query), call).toEqual(['prettyPrint']);
+      expect(Object.keys(r.request.headers).sort(), call).toEqual(['accept', 'content-type']);
+      const client = (json(r.request.body).context as { client: Record<string, string> }).client;
+      expect(Object.keys(client).sort(), call).toEqual(['clientName', 'clientVersion', 'gl', 'hl']);
+      const answer = JSON.stringify(r.response.body);
+      for (const gone of ['visitorData', 'trackingParams', 'responseContext', '"continuations"']) {
+        expect(answer, `${call} ${gone}`).not.toContain(gone);
+      }
+    }
+  });
+
+  it("[M3.ytmusic/a] says it was trimmed, to the recorder's row limits", () => {
+    expect(json(recording('ytmusic', 'search-songs').response.body).trimmed).toBe(YTMUSIC_TRIMMED);
+    expect(JSON.stringify(recording('ytmusic', 'search-songs').response.body)).toContain(
+      'musicShelfRenderer',
+    );
+    expect(
+      JSON.stringify(recording('ytmusic', 'next-radio').response.body).match(
+        /playlistPanelVideoRenderer/g,
+      )?.length,
+    ).toBeLessThanOrEqual(RADIO_KEPT_ROWS);
+  });
+});
+
+describe("[M3.ytmusic/a] the extractor's runs and the stream host's answers, as recorded", () => {
+  it('[M3.ytmusic/a] each run names the command and its exit code, with no account or cookie', () => {
+    const calls = [
+      ['info-plain', 0],
+      ['info-node', 0],
+      ['info-long', 0],
+      ['error-unavailable', 1],
+      ['error-botwall', 1],
+    ] as const;
+    for (const [call, rc] of calls) {
+      const r = recording('ytdlp', call);
+      expect(r.request.method, call).toBe('EXEC');
+      expect(r.response.status, call).toBe(rc);
+      const argv = (json(r.request.body) as { argv: string[] }).argv;
+      expect(argv.join(' '), call).not.toMatch(/cookies|username|password/);
+    }
+  });
+
+  it('[M3.ytmusic/a] the long track is long, and its size is in its formats', () => {
+    const { stdout } = json(recording('ytdlp', 'info-long').response.body) as {
+      stdout: { duration: number; formats: { format_id: string; filesize: number }[] };
+    };
+    expect(stdout.duration).toBeGreaterThan(3000);
+    expect(stdout.formats.find((f) => f.format_id === '251')?.filesize).toBeGreaterThan(30_000_000);
+  });
+
+  it('[M3.ytmusic/a] no recorded format URL keeps an address, a signature or a cache node', () => {
+    for (const call of ['info-plain', 'info-node', 'info-long']) {
+      const text = JSON.stringify(recording('ytdlp', call));
+      expect(text.match(/[?&](?:ip|sig|lsig|n|ei)=(?!<token>)/g), call).toBeNull();
+      expect(
+        text
+          .match(/https:\/\/[^/]*googlevideo\.com/g)
+          ?.every((host) => host.endsWith('//rr0---sn-recorded.googlevideo.com')),
+        call,
+      ).toBe(true);
+      for (const gone of ['sparams', 'lsparams', 'mvi=', 'mm=', 'mh=', 'bui=', 'spc=']) {
+        expect(text, `${call} ${gone}`).not.toContain(gone);
+      }
+    }
+  });
+
+  const hosted = [
+    ['range-head', 206, 'bytes=0-1'],
+    ['range-chunk', 206, 'bytes=0-1048575'],
+    ['range-403', 403, 'bytes=0-1'],
+  ] as const;
+
+  it.each(hosted)('[M3.ytmusic/a] %s answered %i to %s', (call, status, range) => {
+    const r = recording('googlevideo', call);
+    expect(r.request.path).toBe('/videoplayback');
+    expect(r.request.headers.range).toBe(range);
+    expect(r.response.status).toBe(status);
+    for (const name of ['ip', 'sig', 'lsig', 'n', 'ei']) {
+      expect(r.request.query[name], `${call} ${name}`).toBe('<token>');
+    }
+  });
+
+  it("[M3.ytmusic/a] a range's body is a synthesized clip, never the stream's bytes", () => {
+    for (const call of ['range-head', 'range-chunk']) {
+      const { body, headers } = recording('googlevideo', call).response;
+      expect(body).toMatchObject({ bytes: 'opus-clip.webm', synthesized: expect.any(String) });
+      expect(headers['content-type']).toBe('audio/webm');
+      expect(headers['accept-ranges']).toBe('bytes');
+    }
+    expect(recording('googlevideo', 'range-403').response.body).toBeNull();
+  });
+
+  it('[M3.ytmusic/a] a range past the end answers 416 and names the size', () => {
+    const { status, headers } = recording('googlevideo', 'range-416').response;
+    expect(status).toBe(416);
+    expect(headers['content-range']).toMatch(/^bytes \*\/\d+$/);
   });
 });

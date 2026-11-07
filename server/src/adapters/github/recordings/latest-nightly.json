@@ -1,0 +1,44 @@
+{
+  "upstream": "github",
+  "upstreamVersion": "REST 2022-11-28",
+  "call": "latest-nightly",
+  "request": {
+    "method": "GET",
+    "path": "/repos/yt-dlp/yt-dlp-nightly-builds/releases/latest",
+    "query": {},
+    "headers": {
+      "accept": "application/vnd.github+json",
+      "user-agent": "auralis-recorder"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "accept-ranges": "bytes",
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "tag_name": "2026.11.04.232659",
+        "assets": [
+          {
+            "name": "SHA2-256SUMS",
+            "browser_download_url": "http://upstream.invalid/yt-dlp/yt-dlp-nightly-builds/releases/download/2026.11.04.232659/SHA2-256SUMS",
+            "size": 1505
+          },
+          {
+            "name": "yt-dlp_musllinux.zip",
+            "browser_download_url": "http://upstream.invalid/yt-dlp/yt-dlp-nightly-builds/releases/download/2026.11.04.232659/yt-dlp_musllinux.zip",
+            "size": 41380199
+          },
+          {
+            "name": "yt-dlp_musllinux_aarch64.zip",
+            "browser_download_url": "http://upstream.invalid/yt-dlp/yt-dlp-nightly-builds/releases/download/2026.11.04.232659/yt-dlp_musllinux_aarch64.zip",
+            "size": 40641580
+          }
+        ]
+      }
+    }
+  }
+}

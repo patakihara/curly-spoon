@@ -116,6 +116,16 @@ const envSchema = z.object({
   AUDNEXUS_URL: serviceUrl(AUDNEXUS_URL),
   // How long a transcode may go unasked-for before Auralis closes it upstream.
   PLAY_IDLE_MINUTES: minutes(10, { min: 1 }),
+  // The most a streamed song's held bytes may take on disk, about 500 songs by default.
+  STREAM_CACHE_MIB: whole('MiB', 2048, { min: 1 }),
+  // The extractor the image brings, under a folder named for its version; unset, nothing streams.
+  // The song its daily canary checks, and the search that should find it.
+  EXTRACTOR_PATH: z.string().min(1).optional(),
+  YTMUSIC_CANARY_ID: z
+    .string()
+    .regex(/^[\w-]{11}$/)
+    .default('lYBUbBu4W08'),
+  YTMUSIC_CANARY_QUERY: z.string().min(1).default('Never Gonna Give You Up Rick Astley'),
   // The key that encrypts each person's upstream tokens: base64 here, or a 0600 file.
   SECRET_KEY: z.string().min(1).optional(),
   SECRET_KEY_FILE: z.string().min(1).optional(),
@@ -146,6 +156,10 @@ export interface AppConfig {
   books: BooksConfig;
   /** Minutes a transcode may go unasked-for before it is closed upstream. */
   playIdleMinutes: number;
+  /** The extractor the image brings, and the song its canary checks. */
+  ytmusic: { extractorPath: string | null; canaryId: string; canaryQuery: string };
+  /** MiB the capped disk cache of streamed songs may hold. */
+  streamCacheMib: number;
   secretKey: string | undefined;
   secretKeyFile: string;
   commit: string | null;
@@ -287,6 +301,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       audnexusUrl: parsed.AUDNEXUS_URL === '' ? null : parsed.AUDNEXUS_URL,
     },
     playIdleMinutes: parsed.PLAY_IDLE_MINUTES,
+    streamCacheMib: parsed.STREAM_CACHE_MIB,
+    ytmusic: {
+      extractorPath: parsed.EXTRACTOR_PATH ?? null,
+      canaryId: parsed.YTMUSIC_CANARY_ID,
+      canaryQuery: parsed.YTMUSIC_CANARY_QUERY,
+    },
     secretKey: parsed.SECRET_KEY,
     secretKeyFile: parsed.SECRET_KEY_FILE ?? join(parsed.DATA_DIR, 'secret.key'),
     commit: parsed.AURALIS_COMMIT ?? null,

@@ -1,0 +1,25 @@
+{
+  "upstream": "github",
+  "upstreamVersion": "REST 2022-11-28",
+  "call": "sums",
+  "request": {
+    "method": "GET",
+    "path": "/yt-dlp/yt-dlp/releases/download/2026.10.26/SHA2-256SUMS",
+    "query": {},
+    "headers": {
+      "accept": "application/vnd.github+json",
+      "user-agent": "auralis-recorder"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "accept-ranges": "bytes",
+      "content-type": "application/octet-stream"
+    },
+    "body": {
+      "text": "c3a67f7c14d4cbf876e7801039237fc16b929a629c72f9c785ec3fdc8aa40748  yt-dlp_musllinux.zip\n1648beeb7b0c78b471654262697066c016783d33813659367a5c274828ba3240  yt-dlp_musllinux_aarch64.zip\n"
+    }
+  }
+}

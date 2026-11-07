@@ -1,0 +1,1203 @@
+{
+  "upstream": "ytmusic",
+  "upstreamVersion": "InnerTube WEB_REMIX, unversioned",
+  "call": "search-songs-several",
+  "request": {
+    "method": "POST",
+    "path": "/youtubei/v1/search",
+    "query": {
+      "prettyPrint": "false"
+    },
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "context": {
+          "client": {
+            "clientName": "WEB_REMIX",
+            "clientVersion": "1.20261107.01.00",
+            "hl": "en",
+            "gl": "FI"
+          }
+        },
+        "query": "Dame Tu Cosita El Chombo",
+        "params": "EgWKAQIIAWoKEAkQBRAKEAMQBA=="
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "body": {
+      "json": {
+        "contents": {
+          "tabbedSearchResultsRenderer": {
+            "tabs": [
+              {
+                "tabRenderer": {
+                  "title": "YT Music",
+                  "selected": true,
+                  "content": {
+                    "sectionListRenderer": {
+                      "contents": [
+                        {},
+                        {
+                          "musicShelfRenderer": {
+                            "title": {
+                              "runs": [
+                                {
+                                  "text": "Songs"
+                                }
+                              ]
+                            },
+                            "contents": [
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/e39fMPo94eJlOGL9yNMn25xItESk6eiyNEmgo7yA4p2INQL19_xHLA9Z9kyEgpKXE2ILcU92zN65KrD66A=w60-h60-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/e39fMPo94eJlOGL9yNMn25xItESk6eiyNEmgo7yA4p2INQL19_xHLA9Z9kyEgpKXE2ILcU92zN65KrD66A=w120-h120-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Dame Tu Cosita (feat. Cutty Ranks)",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "I_7Xul0VD74",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "El Chombo",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UCvlDEVR4EEBd3wt30HbamRQ",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Dame Tu Cosita",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_4lTy9810uoq",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "2:32"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "El Chombo • Dame Tu Cosita • 2 minutes, 32 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "6B plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "6 billion plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "I_7Xul0VD74"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/XwG7SMw4Duvf3f12ONE5mLBzMFjqHBAG_BWslzhw6CD_zOwAqtWoc-MEncdIv5DbaY9qhPiKBvHz_Qs=w60-h60-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/XwG7SMw4Duvf3f12ONE5mLBzMFjqHBAG_BWslzhw6CD_zOwAqtWoc-MEncdIv5DbaY9qhPiKBvHz_Qs=w120-h120-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Dame Tu Cosita",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "DfOwVeNthZQ",
+                                                  "playerParams": "0gcJCTUC0OBS9m0t",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Boricua Boys",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UC7AziFAHQhkJzDckw2eYzMA",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Latin Top Hits 2018 Vol. 1",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_HFgmNlrb2Nm",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "2:27"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "Boricua Boys • Latin Top Hits 2018 Vol. 1 • 2 minutes, 27 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "882K plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "882 thousand plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "DfOwVeNthZQ"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/t4F0BHoypjVVyzy4SmkdZKudNuHzEbLd1dkjW1POEb_2T4JLzqbr0tW-36lk7KdDjRqtzAVF1On8W-Y=w60-h60-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/t4F0BHoypjVVyzy4SmkdZKudNuHzEbLd1dkjW1POEb_2T4JLzqbr0tW-36lk7KdDjRqtzAVF1On8W-Y=w120-h120-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "TU COSITA",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "BtSB48QLzgc",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "El Señorón de la Cumbia Juan Ortega y su Grupo",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UCmvhKSSLQxVo45aCibTD38w",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "TU COSITA",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_gtfMeZ7A7EJ",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "2:31"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "El Señorón de la Cumbia Juan Ortega y su Grupo • TU COSITA • 2 minutes, 31 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "132K plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "132 thousand plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "BtSB48QLzgc"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/STX2ZcDIu4pX86IRE8rm6BTJk5fIo4G3Wc7yzrODOsmQ2UU0uxjR5l53MYABkdaXRsOrA6c0Jlk_Ofc=w60-h60-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/STX2ZcDIu4pX86IRE8rm6BTJk5fIo4G3Wc7yzrODOsmQ2UU0uxjR5l53MYABkdaXRsOrA6c0Jlk_Ofc=w120-h120-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Montagem Miau",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "9OL9LX0pr0o",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Lenar",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UC4TtNU8uJHcOkyjySZScX6w",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Montagem Miau",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_E59lq1ajHzk",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "1:13"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "Lenar • Montagem Miau • 1 minute, 13 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "37M plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "37 million plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "9OL9LX0pr0o"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/uV3OOZgeymcqmPFEasp324JNyQJK4Zr1xLprWuPP-TXXCtSChMyRMzpMdf1Aiqp2rG_SvfhUjIhuXCW0AA=w60-h60-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/uV3OOZgeymcqmPFEasp324JNyQJK4Zr1xLprWuPP-TXXCtSChMyRMzpMdf1Aiqp2rG_SvfhUjIhuXCW0AA=w120-h120-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Dame Tu Cosita (Explicit Remix)",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "FKqlb15symM",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Tony Feel",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UCeE8SkGyCtShedGQjCFzmRQ",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " & "
+                                            },
+                                            {
+                                              "text": "Candy Black",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UC7q4v2I865U64FIMPGT9VBQ",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Dame Tu Cosita (Explicit Remix)",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_zxsq4YgX7fj",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "2:20"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "Tony Feel & Candy Black • Dame Tu Cosita (Explicit Remix) • 2 minutes, 20 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "3.5K plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "3.5 thousand plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "FKqlb15symM"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/Am4iWmeLseAt0BWF24c1rUbEHvvT2toVsrXKY98qITE_dOOHfiv8FusaBVMcGXkDcBInQ9kH5G_L2TA=w60-h60-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/Am4iWmeLseAt0BWF24c1rUbEHvvT2toVsrXKY98qITE_dOOHfiv8FusaBVMcGXkDcBInQ9kH5G_L2TA=w120-h120-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Dame Tu Cosita",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "VGWBeYqh7kE",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Tony Moro"
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Verano 2018 (Los Nuevos Éxitos)",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_KhfJzVdAssR",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "2:29"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "Tony Moro • Verano 2018 (Los Nuevos Éxitos) • 2 minutes, 29 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "12K plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "12 thousand plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "VGWBeYqh7kE"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/xtrpjimWSOiA6zwgz97jebLrArdrwg4GoL1ey0D844vxSuvzYrCuG-nyCSuOUKElPgDo0hR3vB2SBEo=w60-h60-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/xtrpjimWSOiA6zwgz97jebLrArdrwg4GoL1ey0D844vxSuvzYrCuG-nyCSuOUKElPgDo0hR3vB2SBEo=w120-h120-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Dame Tu Cosita, Pt. 2",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "nx7UFyPgFd8",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Jonathan Beats",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UCv3i5kZJVG9rr5T8lhHBP9Q",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Dame Tu Cosita",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_norYJu6qDLw",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "0:53"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "Jonathan Beats • Dame Tu Cosita • 53 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "3.4K plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "3.4 thousand plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "nx7UFyPgFd8"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/Vx1WLxFF6euBHWXYjSJhTI3w4WzzUYxd9EvHf4oBHBDvOeatlDr6j-vo6UsvLC0PXskOzexyDt-QiPs1=w60-h60-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/Vx1WLxFF6euBHWXYjSJhTI3w4WzzUYxd9EvHf4oBHBDvOeatlDr6j-vo6UsvLC0PXskOzexyDt-QiPs1=w120-h120-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Dame tu cosita",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "XJsPGJpdBPE",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "El Consul",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UC0bUwv8gJjfcUxznfpfEqWA",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Arrebátate",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_nLAr1SUXSDs",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "3:43"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "El Consul • Arrebátate • 3 minutes, 43 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "540 plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "540 plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "XJsPGJpdBPE"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              }
+                            ],
+                            "shelfDivider": {
+                              "musicShelfDividerRenderer": {
+                                "hidden": true
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "header": {
+                        "chipCloudRenderer": {
+                          "chips": [
+                            {
+                              "chipCloudChipRenderer": {
+                                "style": {
+                                  "styleType": "STYLE_SECONDARY"
+                                },
+                                "navigationEndpoint": {
+                                  "searchEndpoint": {
+                                    "query": "Dame Tu Cosita El Chombo"
+                                  }
+                                },
+                                "icon": {
+                                  "iconType": "CLOSE"
+                                },
+                                "accessibilityData": {
+                                  "accessibilityData": {
+                                    "label": "Clear filters"
+                                  }
+                                },
+                                "isSelected": false,
+                                "uniqueId": "Clear filters"
+                              }
+                            },
+                            {
+                              "chipCloudChipRenderer": {
+                                "style": {
+                                  "styleType": "STYLE_DEFAULT"
+                                },
+                                "text": {
+                                  "runs": [
+                                    {
+                                      "text": "Albums"
+                                    }
+                                  ]
+                                },
+                                "navigationEndpoint": {
+                                  "searchEndpoint": {
+                                    "query": "Dame Tu Cosita El Chombo",
+                                    "params": "EgWKAQIYAWoKEAkQBRAKEAMQBA%3D%3D"
+                                  }
+                                },
+                                "accessibilityData": {
+                                  "accessibilityData": {
+                                    "label": "Show album results"
+                                  }
+                                },
+                                "isSelected": false,
+                                "uniqueId": "Albums"
+                              }
+                            },
+                            {
+                              "chipCloudChipRenderer": {
+                                "style": {
+                                  "styleType": "STYLE_DEFAULT"
+                                },
+                                "text": {
+                                  "runs": [
+                                    {
+                                      "text": "Artists"
+                                    }
+                                  ]
+                                },
+                                "navigationEndpoint": {
+                                  "searchEndpoint": {
+                                    "query": "Dame Tu Cosita El Chombo",
+                                    "params": "EgWKAQIgAWoKEAkQBRAKEAMQBA%3D%3D"
+                                  }
+                                },
+                                "accessibilityData": {
+                                  "accessibilityData": {
+                                    "label": "Show artist results"
+                                  }
+                                },
+                                "isSelected": false,
+                                "uniqueId": "Artists"
+                              }
+                            },
+                            {
+                              "chipCloudChipRenderer": {
+                                "style": {
+                                  "styleType": "STYLE_DEFAULT"
+                                },
+                                "text": {
+                                  "runs": [
+                                    {
+                                      "text": "Community playlists"
+                                    }
+                                  ]
+                                },
+                                "navigationEndpoint": {
+                                  "searchEndpoint": {
+                                    "query": "Dame Tu Cosita El Chombo",
+                                    "params": "EgeKAQQoAEABagoQCRAFEAoQAxAE"
+                                  }
+                                },
+                                "accessibilityData": {
+                                  "accessibilityData": {
+                                    "label": "Show community playlist results"
+                                  }
+                                },
+                                "isSelected": false,
+                                "uniqueId": "Community playlists"
+                              }
+                            },
+                            {
+                              "chipCloudChipRenderer": {
+                                "style": {
+                                  "styleType": "STYLE_PRIMARY"
+                                },
+                                "text": {
+                                  "runs": [
+                                    {
+                                      "text": "Songs"
+                                    }
+                                  ]
+                                },
+                                "navigationEndpoint": {
+                                  "searchEndpoint": {
+                                    "query": "Dame Tu Cosita El Chombo",
+                                    "params": "EgWKAQIIAWoKEAkQBRAKEAMQBA%3D%3D"
+                                  }
+                                },
+                                "accessibilityData": {
+                                  "accessibilityData": {
+                                    "label": "Show song results selected"
+                                  }
+                                },
+                                "isSelected": true,
+                                "uniqueId": "Songs"
+                              }
+                            },
+                            {
+                              "chipCloudChipRenderer": {
+                                "style": {
+                                  "styleType": "STYLE_DEFAULT"
+                                },
+                                "text": {
+                                  "runs": [
+                                    {
+                                      "text": "Videos"
+                                    }
+                                  ]
+                                },
+                                "navigationEndpoint": {
+                                  "searchEndpoint": {
+                                    "query": "Dame Tu Cosita El Chombo",
+                                    "params": "EgWKAQIQAWoKEAkQBRAKEAMQBA%3D%3D"
+                                  }
+                                },
+                                "accessibilityData": {
+                                  "accessibilityData": {
+                                    "label": "Show video results"
+                                  }
+                                },
+                                "isSelected": false,
+                                "uniqueId": "Videos"
+                              }
+                            }
+                          ],
+                          "collapsedRowCount": 1,
+                          "horizontalScrollable": true
+                        }
+                      }
+                    }
+                  },
+                  "tabIdentifier": "music_search_catalog"
+                }
+              }
+            ]
+          }
+        },
+        "trimmed": "Trimmed by the recorder: rows cut to the first few, and everything Auralis never reads taken out (tracking values, menus, continuations, the session context)."
+      }
+    }
+  }
+}

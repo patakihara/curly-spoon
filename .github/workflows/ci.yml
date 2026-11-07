@@ -140,6 +140,19 @@ jobs:
           node scripts/guards/image.mjs > "$RUNNER_TEMP/expected-files"
           diff "$RUNNER_TEMP/expected-files" "$RUNNER_TEMP/image-files"
           docker run --rm --entrypoint sh auralis:ci -c '! test -e /app/server/e2e'
+      # The extractor the image brings runs as the image's user, with no network and no home of its
+      # own, and the server starts with no network at all: nothing at start calls an upstream.
+      - name: The image's extractor runs, and the image starts, with no network
+        run: |
+          docker run --rm --network none --entrypoint sh auralis:ci -c '"$EXTRACTOR_PATH" --version'
+          docker run -d --network none --name auralis-offline auralis:ci
+          for _ in $(seq 1 30); do
+            status="$(docker inspect -f '{{.State.Health.Status}}' auralis-offline)"
+            [ "$status" = healthy ] && break
+            sleep 2
+          done
+          docker rm -f auralis-offline
+          [ "$status" = healthy ]
       - name: Boot and wait for the HEALTHCHECK
         run: |
           docker run -d --name auralis-ci -p 8787:8787 auralis:ci

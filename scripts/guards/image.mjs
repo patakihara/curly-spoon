@@ -86,6 +86,32 @@ export function imageFiles(root) {
   return [...new Set(listFiles(root, sources))].filter((f) => !ignored(f)).sort();
 }
 
+/**
+ * Where a stage uses a global ARG, one declared before the first FROM, without naming it again:
+ * only FROM lines see those, and anywhere else the variable expands empty. As `stage: NAME`.
+ */
+export function undeclaredGlobalArgs(dockerfile) {
+  const lines = dockerfile.split(/\r?\n/).filter((line) => !line.startsWith('#'));
+  const firstFrom = lines.findIndex((line) => /^FROM\s/i.test(line));
+  const argName = (line) => /^ARG\s+(\w+)/i.exec(line)?.[1];
+  const globals = new Set(lines.slice(0, firstFrom).map(argName));
+  const found = [];
+  let stage = '';
+  let declared = new Set();
+  for (const line of lines.slice(firstFrom)) {
+    if (/^FROM\s/i.test(line)) {
+      stage = /\sAS\s+(\S+)/i.exec(line)?.[1] ?? line;
+      declared = new Set();
+    } else if (argName(line)) declared.add(argName(line));
+    else {
+      for (const [, name] of line.matchAll(/\$\{?(\w+)/g)) {
+        if (globals.has(name) && !declared.has(name)) found.push(`${stage}: ${name}`);
+      }
+    }
+  }
+  return found;
+}
+
 const HTTP_AT_RUNTIME = new Set([
   'server/src/adapters/http/fetch.ts',
   'server/src/adapters/http/publicFetch.ts',

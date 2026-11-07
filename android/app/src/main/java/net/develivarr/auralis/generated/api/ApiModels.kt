@@ -254,6 +254,65 @@ data class ItemTrack(
 )
 
 @Serializable
+data class Job(
+    val name: JobName,
+    val state: JobState,
+    val reason: String?,
+    val current: String,
+    val versions: List<JobVersion>,
+)
+
+@Serializable
+enum class JobState {
+    @SerialName("ok")
+    OK,
+    @SerialName("unavailable")
+    UNAVAILABLE,
+}
+
+@Serializable
+data class JobList(
+    val jobs: List<Job>,
+)
+
+@Serializable
+enum class JobName {
+    @SerialName("extractor")
+    EXTRACTOR,
+}
+
+@Serializable
+data class JobVersion(
+    val version: String,
+    val source: JobVersionSource,
+    val state: JobVersionState,
+    val canaryAt: Double?,
+    val canaryMs: Double?,
+    val tier: String?,
+    val reason: String?,
+)
+
+@Serializable
+enum class JobVersionSource {
+    @SerialName("image")
+    IMAGE,
+    @SerialName("release")
+    RELEASE,
+    @SerialName("nightly")
+    NIGHTLY,
+}
+
+@Serializable
+enum class JobVersionState {
+    @SerialName("promoted")
+    PROMOTED,
+    @SerialName("kept")
+    KEPT,
+    @SerialName("failed")
+    FAILED,
+}
+
+@Serializable
 data class LibraryEntry(
     val ref: MediaRef,
     val kind: LibraryEntryKind,
@@ -461,6 +520,8 @@ enum class MediaSource {
     ABS,
     @SerialName("jellyfin")
     JELLYFIN,
+    @SerialName("ytmusic")
+    YTMUSIC,
 }
 
 @Serializable
@@ -891,7 +952,20 @@ data class SearchResults(
     val query: String,
     val results: List<SearchResult>,
     val books: List<SearchBook>,
+    val songs: List<SearchSong>,
+    val streaming: StreamingState,
     val hasRequests: Boolean,
+)
+
+@Serializable
+data class SearchSong(
+    val ref: MediaRef,
+    val title: String,
+    val artists: List<String>,
+    val album: String?,
+    val duration: Double,
+    val art: String?,
+    val availability: Availability,
 )
 
 @Serializable
@@ -943,6 +1017,14 @@ enum class StepDirection {
     NEXT,
     @SerialName("back")
     BACK,
+}
+
+@Serializable
+enum class StreamingState {
+    @SerialName("ok")
+    OK,
+    @SerialName("unavailable")
+    UNAVAILABLE,
 }
 
 @Serializable

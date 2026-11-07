@@ -91,19 +91,42 @@ export const SearchBook = z
   .openapi('SearchBook');
 export type SearchBook = z.infer<typeof SearchBook>;
 
+/**
+ * A song outside the library that plays straight away: its title, its artists, each name as the
+ * upstream gives it, its album where it has one, its length in seconds, and its art.
+ */
+export const SearchSong = z
+  .object({
+    ref: MediaRef,
+    title: z.string(),
+    artists: z.array(z.string()),
+    album: z.string().nullable(),
+    duration: z.number().nonnegative(),
+    art: ArtUrl.nullable(),
+    availability: Availability,
+  })
+  .openapi('SearchSong');
+export type SearchSong = z.infer<typeof SearchSong>;
+
+/** Whether songs from outside the library can play right now. */
+export const StreamingState = z.enum(['ok', 'unavailable']).openapi('StreamingState');
+export type StreamingState = z.infer<typeof StreamingState>;
+
 /** A book row's cover, by its catalogue id. */
 export const SearchBookParams = z.object({ asin: Asin });
 export type SearchBookParams = z.infer<typeof SearchBookParams>;
 
 /**
- * A search's results, best first, for the query as it was searched, and the books the library lacks
- * that the catalogue finds for it.
+ * A search's results, best first, for the query as it was searched, the books the library lacks
+ * that the catalogue finds for it, the songs that play straight away, and whether they can now.
  */
 export const SearchResults = z
   .object({
     query: z.string(),
     results: z.array(SearchResult),
     books: z.array(SearchBook),
+    songs: z.array(SearchSong),
+    streaming: StreamingState,
     /** Whether the person has any request, which Search offers whatever it shows. */
     hasRequests: z.boolean(),
   })

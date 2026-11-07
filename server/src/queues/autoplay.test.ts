@@ -12,13 +12,17 @@ import { type Recording, recordingSchema } from '../adapters/http/recording.js';
 import { replayFetch } from '../adapters/http/replay.js';
 import { JellyfinClient } from '../adapters/jellyfin/client.js';
 import { indexQueryResultSchema } from '../adapters/jellyfin/schemas.js';
+import { YtMusicClient } from '../adapters/ytmusic/client.js';
 import { absTree, albumRow, orderingFromFeed, trackRows } from '../libraryIndex/rows.js';
 import { applyTree, emptyCounts, episodesInOrder } from '../libraryIndex/store.js';
+import { SongCatalogue } from '../music/catalogue.js';
 import { openDatabase, type Db } from '../store/connection.js';
 import type { QueueEntry, SessionPlay, SessionValue } from '../store/listening.js';
+import { streamedTrack } from '../store/streamedTracks.js';
 import {
   AUTOPLAY_STALE_MS,
   type AutoplayDeps,
+  type AutoplayRadio,
   autoplayStale,
   isOwnPlay,
   ownPlays,
@@ -585,5 +589,184 @@ describe('[M2.sorting] a play of your own', () => {
     const own: SessionPlay = { seq: 0, queue: 'spoken', ref: abs('episode'), playedAt: 1 };
     expect(isOwnPlay(own)).toBe(true);
     expect(isOwnPlay({ ...own, list: 'digest' })).toBe(false);
+  });
+});
+
+describe('[M3.ytmusic/e] radio from YouTube Music joins autoplay after the album', () => {
+  const fromAlbum = { from: { kind: 'album' as const, ref: albumRef }, items: [] };
+  const SEED = 'seedseedsee';
+  const log = { warn: () => undefined };
+
+  /** The radio as recorded, through the catalogue that remembers each row and owns what it should. */
+  function youTubeMusic(
+    over: { available?: boolean; seed?: string | null; answers?: Recording[] } = {},
+  ) {
+    const client = new YtMusicClient({
+      baseUrl: 'http://upstream.invalid',
+      fetch: replayFetch(over.answers ?? [recording('ytmusic', 'next-radio')]),
+      now: () => NOW,
+    });
+    const catalogue = new SongCatalogue({ client, db, now: () => NOW, log });
+    const radio = vi.fn((id: string) => catalogue.radio(id));
+    const seedFor = vi.fn(async () => (over.seed === undefined ? SEED : over.seed));
+    const ytmusic: AutoplayRadio = {
+      available: () => over.available ?? true,
+      radio,
+      seedFor,
+    };
+    return { ytmusic, radio, seedFor, client };
+  }
+
+  const withRadio = (ytmusic: AutoplayRadio) => {
+    const made = resolver();
+    return { ...made, deps: { ...made.deps, ytmusic } };
+  };
+
+  const recordedRadio = async () =>
+    new YtMusicClient({
+      baseUrl: 'http://upstream.invalid',
+      fetch: replayFetch([recording('ytmusic', 'next-radio')]),
+      now: () => NOW,
+    }).radio('none');
+
+  const refsOf = (ids: string[]) => ids.map((id): MediaRef => ({ source: 'ytmusic', id }));
+
+  it('[M3.ytmusic/e] the rest of the album still comes first, with nothing asked', async () => {
+    const { ytmusic, seedFor } = youTubeMusic();
+    const s = await prepareAutoplay(
+      playing('music', { ref: tracks[11]! }, [], fromAlbum),
+      withRadio(ytmusic).deps,
+    );
+    expect(pick(s, 'music')).toEqual({ ref: tracks[12] });
+    expect(seedFor).not.toHaveBeenCalled();
+  });
+
+  it('[M3.ytmusic/e] after the album, Instant Mix and the radio take turns, owned first', async () => {
+    const last = tracks.at(-1)!;
+    const { ytmusic } = youTubeMusic();
+    const s = await prepareAutoplay(
+      playing('music', { ref: last }, [], fromAlbum),
+      withRadio(ytmusic).deps,
+    );
+    const songs = (await recordedRadio()).map(({ id }) => id);
+    expect(songs.length).toBeGreaterThan(1);
+    const run = s.radio!.tracks;
+    expect(s.radio!.seed).toEqual(last);
+    expect(run.slice(0, 4)).toEqual([
+      mix[0],
+      ...refsOf(songs.slice(0, 1)),
+      mix[1],
+      ...refsOf(songs.slice(1, 2)),
+    ]);
+    // Nothing follows itself: the mix opens with the last track, so the pick is the radio's first.
+    expect(pick(s, 'music')).toEqual({ ref: { source: 'ytmusic', id: songs[0] } });
+  });
+
+  it('[M3.ytmusic/e] each radio song can play, as its row was remembered', async () => {
+    const { ytmusic } = youTubeMusic();
+    await prepareAutoplay(
+      playing('music', { ref: tracks.at(-1)! }, [], fromAlbum),
+      withRadio(ytmusic).deps,
+    );
+    const [first] = await recordedRadio();
+    expect(streamedTrack(db, first!.id)).toMatchObject({ title: first!.title });
+  });
+
+  it('[M3.ytmusic/e] the seed itself is never a pick', async () => {
+    const songs = await recordedRadio();
+    const { ytmusic } = youTubeMusic();
+    const refs = await ytmusic.radio(SEED);
+    expect(refs).not.toContainEqual({ source: 'ytmusic', id: SEED });
+    expect(refs.length).toBeGreaterThanOrEqual(songs.length - 1);
+  });
+
+  it('[M3.ytmusic/e] a radio track the index holds plays as Jellyfin', async () => {
+    const [first] = await recordedRadio();
+    const counts = emptyCounts();
+    const row = trackRows(album.Id, musicLibrary, albumTracks)[0]!;
+    applyTree(
+      db,
+      {
+        top: albumRow(album, musicLibrary),
+        children: [
+          {
+            ...row,
+            title: first!.title,
+            creators: first!.artists.map((name) => ({ name, role: 'artist' as const })),
+          },
+        ],
+      },
+      2,
+      counts,
+    );
+    const { ytmusic } = youTubeMusic();
+    const refs = await ytmusic.radio('none');
+    expect(refs[0]).toEqual({ source: 'jellyfin', id: row.id });
+  });
+
+  it('[M3.ytmusic/e] after a song from YouTube Music, its radio alone, with no seed search', async () => {
+    const { ytmusic, seedFor } = youTubeMusic();
+    const made = withRadio(ytmusic);
+    const song: MediaRef = { source: 'ytmusic', id: SEED };
+    const s = await prepareAutoplay(playing('music', { ref: song }), made.deps);
+    const [first] = await recordedRadio();
+    expect(pick(s, 'music')).toEqual({ ref: { source: 'ytmusic', id: first!.id } });
+    expect(seedFor).not.toHaveBeenCalled();
+    expect(made.calls).toEqual([]);
+  });
+
+  it('[M3.ytmusic/e] a Jellyfin track with no match on YouTube Music uses the mix alone', async () => {
+    const { ytmusic, radio } = youTubeMusic({ seed: null });
+    const s = await prepareAutoplay(
+      playing('music', { ref: tracks.at(-1)! }, [], fromAlbum),
+      withRadio(ytmusic).deps,
+    );
+    expect(s.radio!.tracks).toEqual(mix);
+    expect(radio).not.toHaveBeenCalled();
+  });
+
+  it('[M3.ytmusic/e] the radio failing is logged and leaves the mix', async () => {
+    const { ytmusic } = youTubeMusic({ answers: [] });
+    const made = withRadio(ytmusic);
+    const s = await prepareAutoplay(
+      playing('music', { ref: tracks.at(-1)! }, [], fromAlbum),
+      made.deps,
+    );
+    expect(s.radio!.tracks).toEqual(mix);
+    expect(made.warnings).toContain('radio from YouTube Music failed');
+  });
+
+  it('[M3.ytmusic/e] the mix failing leaves the radio', async () => {
+    const { ytmusic } = youTubeMusic();
+    const made = resolver([ME], async () => new Response(null, { status: 500 }));
+    const s = await prepareAutoplay(playing('music', { ref: tracks.at(-1)! }, [], fromAlbum), {
+      ...made.deps,
+      ytmusic,
+    });
+    const [first] = await recordedRadio();
+    expect(pick(s, 'music')).toEqual({ ref: { source: 'ytmusic', id: first!.id } });
+  });
+
+  it('[M3.ytmusic/e] while streaming is unavailable, no pick is a streamed song', async () => {
+    const { ytmusic, seedFor, radio } = youTubeMusic({ available: false });
+    const last = tracks.at(-1)!;
+    const fresh = await prepareAutoplay(
+      playing('music', { ref: last }, [], fromAlbum),
+      withRadio(ytmusic).deps,
+    );
+    expect(fresh.radio!.tracks).toEqual(mix);
+    expect(seedFor).not.toHaveBeenCalled();
+    expect(radio).not.toHaveBeenCalled();
+
+    const kept = playing('music', { ref: mix[2]! });
+    kept.radio = {
+      seed: last,
+      tracks: [mix[2]!, { source: 'ytmusic', id: 'aaaaaaaaaaa' }, mix[3]!],
+    };
+    const again = await prepareAutoplay(kept, withRadio(ytmusic).deps);
+    expect(pick(again, 'music')).toEqual({ ref: mix[3] });
+
+    const onSong = playing('music', { ref: { source: 'ytmusic', id: SEED } });
+    expect(pick(await prepareAutoplay(onSong, withRadio(ytmusic).deps), 'music')).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: 41aef426f1c71ce7d775cd6cdec71030a373b2d541568e45b527f023bb18ceda
+pageHash: a84eae1d9fd6f089fc6f66572d52a22022b266e64ca6fb2b20482f5907f8bd28
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---
@@ -12,6 +12,10 @@ in the app shell. Sonora UI kit renders, the design this page is compared agains
 `sonora/kit-desktop-search.png` and `sonora/kit-mobile-search.png`. Also looked at: the page
 scrolled to its end on both widths, the Result Rows card, M2's backdrop page
 (m2.material.io/components/backdrop, read with Playwright), and Spotify's S03, S04 and S32.
+
+While music plays, a song the household holds shows Play next at the row's end, as a streamed song
+does: `ResultRow`'s `nextLabel` and `onNext`, drawn only while it has a label (Salt Water on the
+canvas); other pages' rows give no label, so they draw as before.
 
 ## What the Sonora UI kit renders show
 
@@ -52,8 +56,8 @@ server nobody can sign in to, where the placeholder refs name no playable item, 
 enabled and their art without the action. The field types the search and submitting it runs the
 search; here it draws disabled, as the web serves no search draft yet.
 
-- **Not in your library**: a song that
-  plays from YouTube Music, an `ExpanderRow` "More releases of Salt", a book already requested
+- **Not in your library**: songs that
+  play from YouTube Music, an `ExpanderRow` "More releases of Salt", a book already requested
   (ring on the art, "Downloading · 42%" in the progress tone and nothing else at its end; on the
   phone the pill keeps "42%"), a book a request brought, "In library" in the library tone, its art playing it, a book with
   "Request", and a podcast with "Subscribe".
@@ -134,3 +138,9 @@ chooses the state. The canvas draws each on its own phone artboard, `search.phon
 - Changed on purpose: a book's row draws its status or its button, never both, so a title keeps its line on the phone. Each book names its row by three lists (`book.asking`, `book.standing`, `book.arrived`), one of them holding it, so it keeps its place in the list as its request moves. A row on its way or failed taps through to Requests, which says why. One that arrived opens its book and plays it from its art, as a library row does. A tap that did not reach the server keeps its Request button beside "Request failed": no request stands, so the button is the way to try again.
 - Changed on purpose: one live request too many says so in a `StatusBanner` over the rows, as Requests says a verb that failed, and the row keeps its Request button, as nothing about that book went wrong. Drawn on this canvas page with its words, as on Requests.
 - Changed on purpose: a book someone else has asked for draws as any book you lack, with its Request button, so nothing of another person's request shows. Tapping it joins, and the row then shows its status and it is in your Requests.
+
+## M3.ytmusic
+
+- Changed on purpose: a song from YouTube Music plays from its art, as a library row does, and names no page to open: it belongs to no album here. Its meta line says "Streams" straight after "Song", the subtle mark the plan asks for, where a phone's cut line keeps it.
+- Changed on purpose: while music plays a song's own button is "Play next", the plan's default action, at the row's end (ResultRow `trailing`); its art still says Play and plays it now. Each song names its row by two lists (`song.plays`, `song.follows`), one of them holding it, as a book's three do, so the row keeps its place. The canvas draws one of each.
+- Changed on purpose: "Streaming unavailable", and a song that cannot play saying why, take the page's one `StatusBanner`, over the rows, as too many requests does. The banner's words are the data's; the canvas draws it with too many requests.

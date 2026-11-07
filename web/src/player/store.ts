@@ -15,9 +15,12 @@
  * named by the playing track's own title, and its place is within that track. Putting an item next
  * first says where it is, so the server cuts the play after the part playing, not one it left. An
  * item that cannot be planned leaves the player on what it had, or idle; the shell binds no status
- * to show it, so it is logged.
+ * to show it, so it is logged. A step that lands on a song that cannot be planned steps over it and
+ * says which, and so does a streamed song whose audio fails for good once planned; `MOST_SKIPPED` of
+ * either in a row stop the player and say that. A song heard ends the run.
  */
 import {
+  ErrorResponse,
   ListeningSession,
   ListeningSessionList,
   type MediaRef,
@@ -25,6 +28,7 @@ import {
   ProgressAnswer,
   Queue,
   type QueueType,
+  QueueView,
 } from '@auralis/schema';
 import { type ApiClient, createApiClient } from '../api/client';
 import { createPlayer, type Player, type PlayerOptions, type ProgressReport } from '../playback';
@@ -40,6 +44,9 @@ export const SLEEP_STEPS = ['off', 15, 30, 45, 60, 'chapter'] as const;
 export const REPORT_EVERY_MS = 10_000;
 
 const MINUTE_MS = 60_000;
+
+/** How many songs in a row may be stepped over before the player stops and says so. */
+export const MOST_SKIPPED = 5;
 
 /** How near a stop counts as at it: the engine moves back onto a stop, so this is only rounding. */
 const AT_STOP_S = 0.01;
@@ -96,6 +103,19 @@ export interface PlayerState {
    * only mean not yet.
    */
   restored: boolean;
+  /** The streamed song last refused a plan, and the server's word for why, until the next change. */
+  refused: Refused | null;
+}
+
+/**
+ * A song the server would not plan; no word when no answer came. One met in a queue was stepped
+ * over: `skipped` says so, and `stoppedAfter` that so many in a row stopped the player.
+ */
+export interface Refused {
+  ref: MediaRef;
+  error: string | null;
+  skipped?: { title: string | null };
+  stoppedAfter?: number;
 }
 
 export interface PlayerStore {
@@ -125,6 +145,8 @@ export interface PlayerStore {
   step(direction: 'next' | 'back'): Promise<void>;
   cycleSpeed(): void;
   cycleSleep(): void;
+  /** No page now says why a song was refused. */
+  forgetRefused(): void;
 }
 
 type Sleep = { kind: 'off' } | { kind: 'timer'; endsAt: number } | { kind: 'chapter'; at: number };
@@ -209,6 +231,10 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
   let named: number | null | undefined;
   let restoring: Promise<void> | null = null;
   let restored = false;
+  let refused: Refused | null = null;
+  /** The songs stepped over in a row, and the way the run goes, until a song is heard. */
+  let steppedOver = 0;
+  let heading: 'next' | 'back' = 'next';
 
   const listeners = new Set<() => void>();
   const sleepLabel = () =>
@@ -226,6 +252,7 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     speed,
     sleep: sleepLabel(),
     restored,
+    refused,
   });
   let state = snapshot();
   const emit = () => {
@@ -403,7 +430,13 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     await last.destroy(final).catch(logClose);
   };
 
+  const endRun = () => {
+    steppedOver = 0;
+    heading = 'next';
+  };
+
   const unload = () => {
+    endRun();
     ref = null;
     plan = null;
     position = 0;
@@ -434,7 +467,14 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
       return true;
     }
     const parsed = PlaybackPlan.safeParse(answered?.data);
-    if (!parsed.success) return false;
+    if (!parsed.success) {
+      if (to.source === 'ytmusic') {
+        const said = ErrorResponse.safeParse(answered?.error);
+        refused = { ref: to, error: said.success ? said.data.error : null };
+        emit();
+      }
+      return false;
+    }
     ref = to;
     plan = parsed.data;
     position = plan.startAt;
@@ -459,6 +499,15 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
       onStop: () => {
         const stopped = mine;
         void run(() => stoppedAt(stopped));
+      },
+      onPlaying: () => {
+        if (ours()) endRun();
+      },
+      onFailed: () => {
+        const failed = mine;
+        // Decision (M3.ytmusic): only a streamed song is stepped over when its audio fails. An
+        // item the household holds stays where it is, as it did.
+        if (to.source === 'ytmusic') void run(() => audioFailed(failed));
       },
     });
     engine = mine;
@@ -489,24 +538,72 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     if (endAt !== null && at >= endAt - AT_STOP_S) await advance('next');
   };
 
-  /** Steps the session and plays what it plays now, playing on if it played. */
-  const advance = async (direction: 'next' | 'back') => {
+  /** What the session's music queue calls its current item, when it says. */
+  const currentTitle = async () => {
+    const answered = await api
+      .GET('/api/queues/{type}', { params: { path: { type: 'music' } } })
+      .catch(() => null);
+    const view = QueueView.safeParse(answered?.data);
+    return view.success ? (view.data.current?.title ?? null) : null;
+  };
+
+  /** Says `song` was stepped over, with so many in a row, and whether that many stop the player. */
+  const stepOver = async (song: MediaRef, error: string | null) => {
+    steppedOver += 1;
+    const stops = steppedOver >= MOST_SKIPPED;
+    refused = {
+      ref: song,
+      error,
+      skipped: { title: await currentTitle() },
+      ...(stops ? { stoppedAfter: steppedOver } : {}),
+    };
+    return stops;
+  };
+
+  /**
+   * Closes what plays, steps the session the way the run goes, and plays what it plays now, playing
+   * on if it played. A song that cannot be planned is stepped over the same way, until
+   * `MOST_SKIPPED` in a row stop it; a book or an episode that cannot leaves nothing loaded.
+   */
+  const walkOn = async () => {
     const playOn = playing;
     await closeCurrent();
-    const answered = await api
-      .POST('/api/sessions/this/step', { body: { direction } })
-      .catch(() => null);
-    if (answered?.response.status === 401) {
-      await signOut();
-      return;
+    for (;;) {
+      const answered = await api
+        .POST('/api/sessions/this/step', { body: { direction: heading } })
+        .catch(() => null);
+      if (answered?.response.status === 401) {
+        await signOut();
+        return;
+      }
+      const session = ListeningSession.safeParse(answered?.data);
+      const now = session.success ? session.data.currents[session.data.active] : null;
+      if (now === null) break;
+      if (await start(now.ref, playOn)) return;
+      if (session.data?.active !== 'music') break;
+      const said = store.getState().refused;
+      if (await stepOver(now.ref, said?.ref === now.ref ? said.error : null)) break;
     }
-    const session = ListeningSession.safeParse(answered?.data);
-    const now = session.success ? session.data.currents[session.data.active] : null;
-    if (now === null) {
+    unload();
+  };
+
+  /** A step of its own, begun by an end or by a person: a new run of songs stepped over. */
+  const advance = async (direction: 'next' | 'back') => {
+    refused = null;
+    endRun();
+    heading = direction;
+    await walkOn();
+  };
+
+  /** The audio of the streamed song `failed` plays failed for good: it is stepped over. */
+  const audioFailed = async (failed: Player | null) => {
+    if (failed === null || engine !== failed || ref === null) return;
+    if (await stepOver(ref, null)) {
+      await closeCurrent();
       unload();
       return;
     }
-    await load(now.ref, playOn);
+    await walkOn();
   };
 
   /** The server no longer holds `playId`: plan the same item again, from where it says. */
@@ -541,6 +638,8 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     pick: () => Promise<{ to: MediaRef | null; moved: boolean } | 'signedOut'>,
     failed: MediaRef | string,
   ): Promise<void> => {
+    refused = null;
+    endRun();
     const was = ref;
     const playOn = playing;
     await closeCurrent();
@@ -601,6 +700,11 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
       return () => listeners.delete(listener);
     },
     getState: () => state,
+    forgetRefused: () => {
+      if (refused === null) return;
+      refused = null;
+      emit();
+    },
     play: (to) => run(() => playInstead(async () => ({ to, moved: false }), to)),
     playList: (id, from) => run(() => playInstead(() => listCurrent(id, from), id)),
     restore: () =>
@@ -614,6 +718,7 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
       })),
     queueNext: (to, queue) =>
       run(async () => {
+        refused = null;
         if (plan === null) {
           await load(to, true);
           return;

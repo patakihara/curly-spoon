@@ -36,6 +36,18 @@ export const KEPT_HEADERS = [
 ] as const;
 /** A query parameter or header name that carries a credential. `auth` spares `author`. */
 export const SECRET_QUERY_KEY = /token|key(?!words)|secret|pass|pash|auth(?!or)|cookie|signature/i;
+/** The host YouTube streams from, whatever its cache node. Its name is the household's ISP's. */
+export const STREAM_HOST = /^(?:[\w-]+\.)*googlevideo\.com$/i;
+/** What a stream's URL replaces every such host with. */
+export const RECORDED_STREAM_HOST = 'rr0---sn-recorded.googlevideo.com';
+/**
+ * A stream URL's parameters that name the address it was issued to (`ip`), the cache nodes near it
+ * (`mn`, `initcwndbps`), or sign it (`sig`, `lsig`, `n`, `ei`, `pot`). No name says secret.
+ */
+export const STREAM_SECRET_PARAM = /^(?:ip|mn|sig|lsig|n|ei|pot|initcwndbps)$/;
+/** A cache node's own name, which turns up beyond the host; only the recorded one is allowed. */
+export const STREAM_NODE = /(?<![\w-])sn-(?!recorded(?![\w-]))[a-z0-9-]{6,}/gi;
+const STREAM_URL = /https?:\/\/(?:[\w-]+\.)*googlevideo\.com(?:[/?](?:<token>|[^\s"'<>])*)?/gi;
 /** A JSON field that carries a credential, by substring or by exact name. A field that only
  * describes one, such as a sign-on's `token_endpoint`, `token_type` or
  * `token_endpoint_auth_methods_supported`, is not. */
@@ -218,12 +230,22 @@ export function isUsersRoute(route: boolean, offset: number, s1: string, dir: st
   return route && offset === 0 && s1 === '/' && dir === 'Users';
 }
 
+/** A stream URL with its host the recorded one and its address and signatures gone. */
+function scrubStreamUrl(url: string): string {
+  return url
+    .replace(/^(https?:\/\/)[^/?]+/i, `$1${RECORDED_STREAM_HOST}`)
+    .replace(QUERY_PARAM, (all, sep: string, name: string) =>
+      STREAM_SECRET_PARAM.test(name) ? `${sep}${name}=${PLACEHOLDER}` : all,
+    );
+}
+
 /**
- * Scrubs one string wherever it sits: query secrets, hosts, addresses, emails, home folders.
+ * Scrubs one string wherever it sits: stream URLs, query secrets, hosts, addresses, emails, home folders.
  * `route` marks a request path, whose leading `/Users/...` is Jellyfin's API, not a folder.
  */
 export function scrubString(value: string, route = false): string {
   return value
+    .replace(STREAM_URL, scrubStreamUrl)
     .replace(QUERY_PARAM, (all, sep: string, name: string) =>
       SECRET_QUERY_KEY.test(name) ? `${sep}${name}=${PLACEHOLDER}` : all,
     )
@@ -287,7 +309,11 @@ function scrubBody(body: RecordedBody): RecordedBody {
 export function scrub(raw: RawExchange, options: ScrubOptions): Recording {
   const url = new URL(raw.request.url);
   const query: Record<string, string> = {};
-  for (const [k, v] of url.searchParams) query[k] = SECRET_QUERY_KEY.test(k) ? PLACEHOLDER : v;
+  const stream = STREAM_HOST.test(url.hostname);
+  for (const [k, v] of url.searchParams) {
+    const secret = SECRET_QUERY_KEY.test(k) || (stream && STREAM_SECRET_PARAM.test(k));
+    query[k] = secret ? PLACEHOLDER : v;
+  }
 
   const shaped: Recording = {
     upstream: raw.upstream,

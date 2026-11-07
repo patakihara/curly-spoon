@@ -24,6 +24,7 @@ function fakeStore(state: PlayerState) {
     step: async (d) => void calls.push(`step ${d}`),
     cycleSpeed: () => void calls.push('speed'),
     cycleSleep: () => void calls.push('sleep'),
+    forgetRefused: () => void calls.push('forget'),
   };
   return { store, calls };
 }
@@ -45,6 +46,7 @@ const loaded = (variant: 'spoken' | 'music', art: string | null = null): PlayerS
   speed: 1.5,
   sleep: '15 min',
   restored: true,
+  refused: null,
 });
 
 const IDLE: PlayerState = {
@@ -56,6 +58,7 @@ const IDLE: PlayerState = {
   speed: 1,
   sleep: 'Off',
   restored: true,
+  refused: null,
 };
 
 const handlers = (p: object) =>

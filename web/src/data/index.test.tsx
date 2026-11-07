@@ -368,6 +368,7 @@ describe('search given its data', () => {
     ref: 'jellyfin:a1',
     playRef: 'jellyfin:a1',
     queue: 'music',
+    next: '',
   });
   const empty = emptySearch(searchFrame.placeholder);
   const results = {

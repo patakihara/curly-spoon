@@ -268,14 +268,50 @@ describe('Search', () => {
   });
 
   it('[M0.canvas] plays outside music straight away, and gives outside books Request and podcasts Subscribe', () => {
-    const outside = data.outside as { music: Row[]; podcasts: Row[] };
+    const outside = data.outside as { podcasts: Row[] };
     const action = (of: string) =>
       found.filter((r) => r.of === of).map(({ row }) => slotted(row, 'trailing')?.component);
     // One row is drawn for each list, whatever its length.
-    expect(action('data.outside.music')).toEqual([undefined]);
+    expect(action('song.plays')).toEqual([undefined]);
+    expect(action('song.follows')).toEqual(['Button']);
     expect(action('book.asking')).toEqual(['Button']);
     expect(action('data.outside.podcasts')).toEqual(['Button']);
     for (const show of outside.podcasts) expect(show.action).toBe('Subscribe');
+  });
+
+  describe('[M3.ytmusic] a song from outside the library', () => {
+    const rowOf = (of: string) => found.find((r) => r.of === of)!.row;
+    const songs = (data.outside as { music: Record<'plays' | 'follows', Row[]>[] }).music;
+
+    it('plays from its art on the music queue, and opens nothing', () => {
+      for (const [of, as] of [
+        ['song.plays', 'plays'],
+        ['song.follows', 'follows'],
+      ] as const) {
+        expect(rowOf(of).props.onAction).toMatchObject({
+          kind: 'play',
+          queue: 'music',
+          params: { ref: [as, 'playRef'] },
+        });
+        expect(rowOf(of).props.onClick).toBeUndefined();
+      }
+    });
+
+    it('while music plays, its own button puts it next and says so', () => {
+      const button = slotted(rowOf('song.follows'), 'trailing');
+      expect(button?.props.onClick).toMatchObject({
+        kind: 'play',
+        queue: 'music',
+        next: true,
+        params: { ref: ['follows', 'playRef'] },
+      });
+    });
+
+    it('is marked as streaming on the canvas, in either list', () => {
+      for (const row of songs.flatMap((song) => [...song.plays, ...song.follows])) {
+        expect(row.meta).toMatch(/^Song · Streams · /);
+      }
+    });
   });
 
   describe('[M3.books] an outside book’s row', () => {

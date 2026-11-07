@@ -472,3 +472,91 @@ describe('the settings migration', () => {
     db.close();
   });
 });
+
+describe('[M3.ytmusic/e] the migration that lets a streamed song sit in a queue', () => {
+  const TABLES = [
+    'listening_sessions',
+    'queue_items',
+    'playing_from',
+    'play_history',
+    'autoplay_picks',
+    'radio_tracks',
+  ];
+  const STREAM_MIGRATION = 24;
+
+  function withOneOfEach() {
+    const db = new Database(':memory:');
+    db.pragma('foreign_keys = ON');
+    runMigrations(
+      db,
+      migrations.filter((m) => m.id < STREAM_MIGRATION),
+    );
+    db.exec(`
+      INSERT INTO users (id, username, role, created_at, updated_at)
+        VALUES ('ana', 'ana', 'member', 1, 1);
+      INSERT INTO devices (id, user_id, kind, name, created_at, last_seen_at)
+        VALUES ('d', 'ana', 'web', 'd', 1, 1);
+      INSERT INTO listening_sessions
+        (device_id, user_id, active, rev, updated_at, radio_seed_source, radio_seed_id)
+        VALUES ('d', 'ana', 'music', 3, 1, 'jellyfin', 'seed');
+      INSERT INTO queue_items (device_id, queue, segment, ord, item_id, source, upstream_id)
+        VALUES ('d', 'music', 'current', 0, 'i', 'jellyfin', 'a');
+      INSERT INTO playing_from (device_id, queue, kind, source, upstream_id)
+        VALUES ('d', 'music', 'album', 'jellyfin', 'a');
+      INSERT INTO play_history (device_id, seq, queue, source, upstream_id, played_at)
+        VALUES ('d', 1, 'music', 'jellyfin', 'a', 1);
+      INSERT INTO autoplay_picks (device_id, queue, after_source, after_upstream_id)
+        VALUES ('d', 'music', 'jellyfin', 'a');
+      INSERT INTO radio_tracks (device_id, ord, source, upstream_id)
+        VALUES ('d', 0, 'jellyfin', 'a');
+      INSERT INTO saved_queues (device_id, owner, queue, saved_at) VALUES ('d', '', '{}', 1);
+    `);
+    runMigrations(db);
+    return db;
+  }
+  const count = (db: Database.Database, table: string) =>
+    (db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n;
+
+  it.each(TABLES)('[M3.ytmusic/e] %s takes a ytmusic ref', (table) => {
+    const db = withOneOfEach();
+    const { sql } = db
+      .prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?")
+      .get(table) as { sql: string };
+    expect(sql).not.toMatch(/IN \('abs', 'jellyfin'\)/);
+    db.close();
+  });
+
+  it('[M3.ytmusic/e] a streamed song is written to each of them, and something else still is not', () => {
+    const db = withOneOfEach();
+    const song = (source: string) =>
+      db
+        .prepare(
+          `INSERT INTO queue_items (device_id, queue, segment, ord, item_id, source, upstream_id)
+           VALUES ('d', 'music', 'user', ?, ?, ?, 'lYBUbBu4W08')`,
+        )
+        .run(Math.floor(Math.random() * 1e6), source + Math.random(), source);
+    expect(() => song('ytmusic')).not.toThrow();
+    expect(() => song('spotify')).toThrow(/CHECK/);
+    db.exec(`
+      UPDATE listening_sessions SET radio_seed_source = 'ytmusic';
+      UPDATE playing_from SET source = 'ytmusic';
+      UPDATE play_history SET source = 'ytmusic';
+      UPDATE autoplay_picks SET after_source = 'ytmusic', source = 'ytmusic', upstream_id = 'x';
+      UPDATE radio_tracks SET source = 'ytmusic';
+    `);
+    db.close();
+  });
+
+  it('[M3.ytmusic/e] every row survives it, and a device going still takes them all', () => {
+    const db = withOneOfEach();
+    for (const table of [...TABLES, 'saved_queues']) expect(count(db, table)).toBe(1);
+    const indexes = db
+      .prepare("SELECT name FROM sqlite_master WHERE name = 'idx_listening_sessions_user_id'")
+      .all();
+    expect(indexes).toHaveLength(1);
+    expect(db.pragma('foreign_key_check')).toEqual([]);
+    db.prepare("DELETE FROM devices WHERE id = 'd'").run();
+    for (const table of [...TABLES, 'saved_queues']) expect(count(db, table)).toBe(0);
+    db.close();
+  });
+});

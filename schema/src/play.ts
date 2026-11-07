@@ -8,7 +8,7 @@
 import { z } from './zod.js';
 
 /** Where an item lives upstream. */
-export const MediaSource = z.enum(['abs', 'jellyfin']).openapi('MediaSource');
+export const MediaSource = z.enum(['abs', 'jellyfin', 'ytmusic']).openapi('MediaSource');
 export type MediaSource = z.infer<typeof MediaSource>;
 
 /** An upstream id as it sits in a path: nothing that could change the path it is put in. */
@@ -22,11 +22,13 @@ export const PlayBody = z.object({ ref: MediaRef }).openapi('PlayBody');
 export type PlayBody = z.infer<typeof PlayBody>;
 
 /**
- * A ref as it sits in a path, `<source>:<id>`: `abs:6d9c…`, or `jellyfin:` and Jellyfin's 32 hex
- * digits. The server maps it back to the upstream item; nothing a client puts here reaches an
- * upstream path unchecked.
+ * A ref as it sits in a path, `<source>:<id>`: `abs:6d9c…`, `jellyfin:` and Jellyfin's 32 hex
+ * digits, or `ytmusic:` and YouTube's 11 characters. The server maps it back to the upstream item;
+ * nothing a client puts here reaches an upstream path unchecked.
  */
-export const MediaRefKey = z.string().regex(/^(?:abs:[\w-]{1,64}|jellyfin:[0-9a-f]{32})$/);
+export const MediaRefKey = z
+  .string()
+  .regex(/^(?:abs:[\w-]{1,64}|jellyfin:[0-9a-f]{32}|ytmusic:[\w-]{11})$/);
 export type MediaRefKey = z.infer<typeof MediaRefKey>;
 
 export function mediaRefKey(ref: MediaRef): MediaRefKey {

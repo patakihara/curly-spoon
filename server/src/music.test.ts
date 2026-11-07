@@ -15,6 +15,7 @@ import { type Recording, recordingSchema } from './adapters/http/recording.js';
 import { replayFetch, standInsBeside } from './adapters/http/replay.js';
 import { PLACEHOLDER_ORIGIN } from './adapters/http/scrub.js';
 import { buildApp } from './app.js';
+import type { Music } from './music/index.js';
 import { openDatabase } from './store/connection.js';
 import { createDevice } from './store/devices.js';
 import { createSession } from './store/sessions.js';
@@ -89,6 +90,7 @@ async function server(
     recordings?: Recording[];
     reports?: Recording[];
     slow?: boolean;
+    music?: Music;
   } = {},
 ) {
   const db = openDatabase(':memory:');
@@ -137,6 +139,7 @@ async function server(
     webDistDir: null,
     db,
     upstreams: { key: KEY, config: { absUrl: undefined, jellyfinUrl: PLACEHOLDER_ORIGIN }, fetch },
+    ...(options.music === undefined ? {} : { music: options.music }),
   });
   apps.push(app);
   const as = (name: string) => ({ authorization: `Bearer ${bearer[name] ?? ''}` });
@@ -321,6 +324,75 @@ describe('playing a Jellyfin track', () => {
     const res = await play(trackId, 'otto');
     expect(res.statusCode).toBe(409);
     expect(res.json()).toEqual({ error: 'not_linked' });
+    expect(sent).toEqual([]);
+  });
+});
+
+describe('[M3.ytmusic/a] owned music with streaming broken', () => {
+  it('[M3.ytmusic/a] a Jellyfin album plans and streams without asking anything of the music side', async () => {
+    const untouchable = new Proxy({} as Music, {
+      get: (_target, name) => {
+        throw new Error(`a Jellyfin play asked the music side for ${String(name)}`);
+      },
+    });
+    const { plan } = await server({ music: untouchable });
+    const { tracks } = await plan(albumId);
+    expect(tracks.length).toBeGreaterThan(0);
+  });
+
+  it('[M3.ytmusic/a] a linked Jellyfin track plays its bytes whatever the music side does', async () => {
+    const untouchable = new Proxy({} as Music, {
+      get: (_target, name) => {
+        throw new Error(`a Jellyfin play asked the music side for ${String(name)}`);
+      },
+    });
+    const { app, as, plan } = await server({ music: untouchable });
+    const { tracks } = await plan(trackId);
+    const res = await app.inject({
+      method: 'GET',
+      url: tracks[0]!.url,
+      headers: { ...as('kara'), range: 'bytes=0-99' },
+    });
+    expect(res.statusCode).toBe(206);
+    expect(res.rawPayload).toEqual(flacTone.subarray(0, 100));
+  });
+});
+
+describe('a YouTube Music ref, with no streaming wired', () => {
+  const ref = { source: 'ytmusic', id: 'lYBUbBu4W08' } as const;
+
+  it('answers 409 to a play and asks no upstream, Audiobookshelf least of all', async () => {
+    const { app, as, sent } = await server();
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/play',
+      headers: as('kara'),
+      payload: { ref },
+    });
+    expect(res.statusCode).toBe(409);
+    expect(res.json()).toEqual({ error: 'not_linked' });
+    expect(sent).toEqual([]);
+  });
+
+  it('answers 404 to its track and asks no upstream', async () => {
+    const { app, as, sent } = await server();
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/media/ytmusic:lYBUbBu4W08/tracks/0',
+      headers: as('kara'),
+    });
+    expect(res.statusCode).toBe(404);
+    expect(sent).toEqual([]);
+  });
+
+  it('refuses an id of any other length before anything is asked', async () => {
+    const { app, as, sent } = await server();
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/media/ytmusic:short/tracks/0',
+      headers: as('kara'),
+    });
+    expect(res.statusCode).toBe(400);
     expect(sent).toEqual([]);
   });
 });

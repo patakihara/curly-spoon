@@ -84,7 +84,8 @@
       "page": "album",
       "ref": "salt-and-static",
       "playRef": "salt-and-static",
-      "queue": "music"
+      "queue": "music",
+      "next": ""
     }
   ],
   "library": [
@@ -95,7 +96,8 @@
       "page": "album",
       "ref": "heartbeats-in-silence",
       "playRef": "salt-water",
-      "queue": "music"
+      "queue": "music",
+      "next": "Play next"
     },
     {
       "title": "The Saltwater Diaries",
@@ -104,7 +106,8 @@
       "page": "book",
       "ref": "the-saltwater-diaries",
       "playRef": "the-saltwater-diaries",
-      "queue": "spoken"
+      "queue": "spoken",
+      "next": ""
     },
     {
       "title": "Tears of Ice",
@@ -113,7 +116,8 @@
       "page": "album",
       "ref": "tears-of-ice",
       "playRef": "tears-of-ice-song",
-      "queue": "music"
+      "queue": "music",
+      "next": ""
     }
   ],
   "outside": {
@@ -125,14 +129,32 @@
         "page": "book",
         "ref": "salt-roads",
         "playRef": "salt-roads",
-        "queue": "spoken"
+        "queue": "spoken",
+        "next": ""
       }
     ],
     "music": [
       {
-        "title": "Salt",
-        "meta": "Song · Fleeting Verses · YouTube Music",
-        "image": "/art/fragments-of-the-wind.jpg"
+        "plays": [
+          {
+            "title": "Salt",
+            "meta": "Song · Streams · Fleeting Verses",
+            "image": "/art/fragments-of-the-wind.jpg",
+            "playRef": "salt"
+          }
+        ],
+        "follows": []
+      },
+      {
+        "plays": [],
+        "follows": [
+          {
+            "title": "Salted",
+            "meta": "Song · Streams · Deep Inertia",
+            "image": "/art/tears-of-ice.jpg",
+            "playRef": "salted"
+          }
+        ]
       }
     ],
     "moreReleases": "More releases of Salt",

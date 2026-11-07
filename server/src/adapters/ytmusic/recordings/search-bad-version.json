@@ -1,0 +1,53 @@
+{
+  "upstream": "ytmusic",
+  "upstreamVersion": "InnerTube WEB_REMIX, unversioned",
+  "call": "search-bad-version",
+  "request": {
+    "method": "POST",
+    "path": "/youtubei/v1/search",
+    "query": {
+      "prettyPrint": "false"
+    },
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "context": {
+          "client": {
+            "clientName": "WEB_REMIX",
+            "clientVersion": "0.0.0",
+            "hl": "en",
+            "gl": "FI"
+          }
+        },
+        "query": "Never Gonna Give You Up Rick Astley",
+        "params": "EgWKAQIIAWoKEAkQBRAKEAMQBA=="
+      }
+    }
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "body": {
+      "json": {
+        "error": {
+          "code": 404,
+          "message": "Requested entity was not found.",
+          "errors": [
+            {
+              "message": "Requested entity was not found.",
+              "domain": "upstream.invalid",
+              "reason": "notFound"
+            }
+          ],
+          "status": "NOT_FOUND"
+        },
+        "trimmed": "Trimmed by the recorder: rows cut to the first few, and everything Auralis never reads taken out (tracking values, menus, continuations, the session context)."
+      }
+    }
+  }
+}

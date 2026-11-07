@@ -55,7 +55,7 @@ Setup claims the admin role once, with a one-time code the server writes to its 
 ::: card
 #### 7 · The extractor lives in the server
 
-The server runs `yt-dlp` in the one container, for both clients. It should **point and forward, not burden the server**: no transcoding, bytes passed straight through, a small capped cache only for streamed tracks (the next one preloaded, a recent one replayed, a song being kept) and cut channel episodes. Audiobooks always come from Audiobookshelf. A daily job promotes a new extractor only once a canary search-and-resolve passes, else keeps the last that passed; failures show on the admin jobs page. Android may later add NewPipeExtractor as an offline fallback.
+The server runs `yt-dlp` in the one container. It should **point and forward**: no transcoding, bytes passed straight through, a small capped cache only for streamed tracks (the next one preloaded, a recent one replayed, a song being kept) and cut channel episodes. Audiobooks always come from Audiobookshelf. A daily job promotes a new extractor only once a canary search-and-resolve passes, else keeps the last that passed; failures show on the admin jobs page. Android may later add NewPipeExtractor as an offline fallback.
 :::
 
 ::: card

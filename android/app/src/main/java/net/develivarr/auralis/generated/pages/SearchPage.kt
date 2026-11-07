@@ -224,6 +224,10 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                             ResultRowProps(
                                                 title = "Salt and Static",
                                                 meta = "Album · Soul Vertex · 11 tracks",
+                                                nextLabel = "",
+                                                onNext = {
+                                                    actions.onPlay("salt-and-static", PlayQueue.MUSIC, PlayMode.NEXT)
+                                                },
                                                 image = "/art/salt-and-static.jpg",
                                                 platform = Platform.MOBILE,
                                                 onClick = {
@@ -246,6 +250,10 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                             ResultRowProps(
                                                 title = "Salt Water",
                                                 meta = "Song · Deep Inertia · Heartbeats in Silence",
+                                                nextLabel = "Play next",
+                                                onNext = {
+                                                    actions.onPlay("salt-water", PlayQueue.MUSIC, PlayMode.NEXT)
+                                                },
                                                 image = "/art/deep-inertia.jpg",
                                                 platform = Platform.MOBILE,
                                                 onClick = {
@@ -261,6 +269,10 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                             ResultRowProps(
                                                 title = "The Saltwater Diaries",
                                                 meta = "Book · Adam Rivers · 8 h 20 m",
+                                                nextLabel = "",
+                                                onNext = {
+                                                    actions.onPlay("the-saltwater-diaries", PlayQueue.SPOKEN, PlayMode.NEXT)
+                                                },
                                                 image = "/art/foggy-trails.jpg",
                                                 platform = Platform.MOBILE,
                                                 onClick = {
@@ -276,6 +288,10 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                             ResultRowProps(
                                                 title = "Tears of Ice",
                                                 meta = "Song · Deep Inertia · “salt on my tongue, ice in my hands”",
+                                                nextLabel = "",
+                                                onNext = {
+                                                    actions.onPlay("tears-of-ice-song", PlayQueue.MUSIC, PlayMode.NEXT)
+                                                },
                                                 image = "/art/tears-of-ice.jpg",
                                                 platform = Platform.MOBILE,
                                                 onClick = {
@@ -300,6 +316,10 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                             ResultRowProps(
                                                 title = "Salt Roads",
                                                 meta = "Book · Maya Lind",
+                                                nextLabel = "",
+                                                onNext = {
+                                                    actions.onPlay("salt-roads", PlayQueue.SPOKEN, PlayMode.NEXT)
+                                                },
                                                 image = "/art/between-two-worlds.jpg",
                                                 platform = Platform.MOBILE,
                                                 onClick = {
@@ -314,10 +334,38 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                         ResultRow(
                                             ResultRowProps(
                                                 title = "Salt",
-                                                meta = "Song · Fleeting Verses · YouTube Music",
+                                                meta = "Song · Streams · Fleeting Verses",
                                                 image = "/art/fragments-of-the-wind.jpg",
                                                 platform = Platform.MOBILE,
+                                                onAction = {
+                                                    actions.onPlay("salt", PlayQueue.MUSIC, PlayMode.NOW)
+                                                },
                                                 divider = true,
+                                            ),
+                                        )
+                                        ResultRow(
+                                            ResultRowProps(
+                                                title = "Salted",
+                                                meta = "Song · Streams · Deep Inertia",
+                                                image = "/art/tears-of-ice.jpg",
+                                                platform = Platform.MOBILE,
+                                                onAction = {
+                                                    actions.onPlay("salted", PlayQueue.MUSIC, PlayMode.NOW)
+                                                },
+                                                divider = true,
+                                                trailing = {
+                                                    Button(
+                                                        ButtonProps(
+                                                            variant = ButtonVariant.SECONDARY,
+                                                            size = SizeSmMdLg.SM,
+                                                            platform = Platform.MOBILE,
+                                                            onClick = {
+                                                                actions.onPlay("salted", PlayQueue.MUSIC, PlayMode.NEXT)
+                                                            },
+                                                            children = { BasicText("Play next") },
+                                                        ),
+                                                    )
+                                                },
                                             ),
                                         )
                                         ExpanderRow(

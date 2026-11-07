@@ -3,7 +3,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApiClient } from '../api/client';
 import { type Player, type PlayerOptions, type ProgressReport } from '../playback';
 import { type MediaControls } from './media-session';
-import { type Clock, createPlayerStore, SLEEP_STEPS, SPEED_STEPS } from './store';
+import {
+  type Clock,
+  createPlayerStore,
+  MOST_SKIPPED,
+  type PlayerStore,
+  SLEEP_STEPS,
+  SPEED_STEPS,
+} from './store';
 
 /** A clock the test moves by hand: its time and the timers due by it. */
 class FakeClock implements Clock {
@@ -99,6 +106,14 @@ class FakeEngine implements Player {
     this.position = position;
     this.options.onPosition?.(position);
   }
+  /** Its audio fails for good, as the element's `error` event says. */
+  fail() {
+    this.options.onFailed?.();
+  }
+  /** Its audio begins to be heard, as the element's `playing` event says. */
+  heard() {
+    this.options.onPlaying?.();
+  }
 }
 
 const meta = (variant: 'spoken' | 'music' = 'spoken') => ({
@@ -160,6 +175,10 @@ function rig(
     refuses?: string[];
     /** Items the server cannot plan, by id: their plan fails upstream. */
     unplannable?: string[];
+    /** Items the server refuses to plan, by id, with what it says. */
+    refusesPlan?: Record<string, string>;
+    /** The songs a music queue's Next lands on, one per step, then nothing; each with its title. */
+    walk?: { ref: MediaRef; title: string }[];
   } = {},
 ) {
   const sent: Sent[] = [];
@@ -176,6 +195,7 @@ function rig(
   /** What the session plays after a step, by direction. */
   const after: Record<'next' | 'back', MediaRef | null> = { next: episode, back: book };
   const startAts: number[] = [];
+  let walked: { ref: MediaRef; title: string } | null = null;
   /** What a list's play makes current, and the lists with nothing left to play. */
   const lists: { current: MediaRef; refuses: string[] } = { current: episode, refuses: [] };
   const controls: string[] = [];
@@ -219,12 +239,50 @@ function rig(
         if (options.unplannable?.includes(ref.id)) {
           return Response.json({ error: 'upstream_failed' }, { status: 502 });
         }
+        const refusal = options.refusesPlan?.[ref.id];
+        if (refusal !== undefined) {
+          const status = refusal === 'streaming_unavailable' ? 503 : 422;
+          return Response.json({ error: refusal }, { status });
+        }
         return Response.json(planOf(ref, `play-${plays++}`, startAts.shift() ?? 0));
       }
       if (path === '/api/progress') {
         const answer = options.answers?.(body!) ?? { taken: true, lastSeq: body!.seq as number };
         if (answer === 404) return Response.json({ error: 'not_found' }, { status: 404 });
         return Response.json(answer);
+      }
+      if (path === '/api/queues/music' && walked !== null) {
+        return Response.json({
+          type: 'music',
+          current: {
+            itemId: crypto.randomUUID(),
+            ref: walked.ref,
+            title: walked.title,
+            sub: null,
+            duration: null,
+          },
+          position: null,
+          user: [],
+          context: null,
+          digest: null,
+          rev: 1,
+          autoplay: null,
+          played: [],
+        });
+      }
+      if (path === '/api/sessions/this/step' && options.walk !== undefined) {
+        walked = options.walk.shift() ?? null;
+        const current = walked === null ? null : { itemId: crypto.randomUUID(), ref: walked.ref };
+        return Response.json({
+          deviceId: 'd',
+          deviceName: 'This browser',
+          thisDevice: true,
+          active: 'music',
+          switchAfterCurrent: null,
+          currents: { music: current, spoken: null },
+          rev: 1,
+          updatedAt: 0,
+        });
       }
       if (path === '/api/sessions/this/step') {
         const ref = after[body!.direction as 'next' | 'back'];
@@ -670,6 +728,291 @@ describe('[M1.shell] the web player store', () => {
     const { store } = rig({ unplannable: [episode.id] });
     await store.play(episode);
     expect(store.getState()).toMatchObject({ ref: null, plan: null, playing: false });
+  });
+
+  it('[M3.ytmusic] says why a streamed song was refused, and plays nothing', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const streamed: MediaRef = { source: 'ytmusic', id: 'aaaaaaaaaaa' };
+    const { store } = rig({ refusesPlan: { [streamed.id]: 'song_region_blocked' } });
+    await store.play(streamed);
+    expect(store.getState()).toMatchObject({
+      ref: null,
+      playing: false,
+      refused: { ref: streamed, error: 'song_region_blocked' },
+    });
+  });
+
+  it('[M3.ytmusic] keeps what plays when a streamed song is refused, and a later play forgets it', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const streamed: MediaRef = { source: 'ytmusic', id: 'aaaaaaaaaaa' };
+    const { store } = rig({ refusesPlan: { [streamed.id]: 'song_live' } });
+    await store.play(book);
+    await store.play(streamed);
+    expect(store.getState()).toMatchObject({ ref: book, refused: { error: 'song_live' } });
+    await store.play(book);
+    expect(store.getState().refused).toBeNull();
+  });
+
+  describe('[M3.ytmusic] a song met in a queue that cannot play', () => {
+    const song = (n: number) => ({
+      ref: { source: 'ytmusic', id: `song${n}song${n}` } as MediaRef,
+      title: `Song ${n}`,
+    });
+    const stepsSent = (sent: { path: string }[]) =>
+      sent.filter(({ path }) => path === '/api/sessions/this/step').length;
+
+    it.each([
+      ['refused', 'song_region_blocked'],
+      ['met with 503 from streaming', 'streaming_unavailable'],
+    ])('[M3.ytmusic] is stepped over when %s, and says which', async (_how, error) => {
+      vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const [blocked, plays] = [song(1), song(2)];
+      const { store, sent } = rig({
+        refusesPlan: { [blocked.ref.id]: error },
+        walk: [blocked, plays],
+      });
+      await store.play(book);
+      await store.step('next');
+      expect(store.getState()).toMatchObject({
+        ref: plays.ref,
+        playing: true,
+        refused: { ref: blocked.ref, error, skipped: { title: 'Song 1' } },
+      });
+      expect(store.getState().refused?.stoppedAfter).toBeUndefined();
+      expect(stepsSent(sent)).toBe(2);
+    });
+
+    it('[M3.ytmusic] goes on past a song the household holds that cannot be planned', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const held = { ref: { source: 'jellyfin', id: 'held' } as MediaRef, title: 'Held' };
+      const { store } = rig({ unplannable: ['held'], walk: [held, song(2)] });
+      await store.play(book);
+      await store.step('next');
+      expect(store.getState()).toMatchObject({
+        ref: song(2).ref,
+        refused: { ref: held.ref, error: null, skipped: { title: 'Held' } },
+      });
+    });
+
+    it('[M3.ytmusic] a run of them stops the player and says so, however many more wait', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const songs = Array.from({ length: MOST_SKIPPED * 3 }, (_, n) => song(n));
+      const { store, sent } = rig({
+        refusesPlan: Object.fromEntries(songs.map(({ ref }) => [ref.id, 'song_live'])),
+        walk: songs,
+      });
+      await store.play(book);
+      await store.step('next');
+      expect(stepsSent(sent)).toBe(MOST_SKIPPED);
+      expect(store.getState()).toMatchObject({
+        ref: null,
+        plan: null,
+        playing: false,
+        refused: { stoppedAfter: MOST_SKIPPED },
+      });
+    });
+
+    it('[M3.ytmusic] the end of the queue after one leaves nothing loaded, still saying which', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const { store } = rig({ refusesPlan: { [song(1).ref.id]: 'song_live' }, walk: [song(1)] });
+      await store.play(book);
+      await store.step('next');
+      expect(store.getState()).toMatchObject({
+        plan: null,
+        refused: { skipped: { title: 'Song 1' } },
+      });
+    });
+  });
+
+  describe('[M3.ytmusic] a streamed song planned whose audio then fails', () => {
+    const streamed = (n: number) => ({
+      ref: { source: 'ytmusic', id: `song${n}song${n}` } as MediaRef,
+      title: `Song ${n}`,
+    });
+    const stepsSent = (sent: Sent[]) =>
+      sent.filter(({ path }) => path === '/api/sessions/this/step');
+    /** Fails what plays `times` times, each answered before the next. */
+    const failInTurn = async (engine: () => FakeEngine, times: number) => {
+      for (let n = 0; n < times; n += 1) {
+        engine().fail();
+        await settle();
+      }
+    };
+
+    it('[M3.ytmusic] is stepped over, says which, and the music goes on', async () => {
+      const { store, sent, engine, engines } = rig({ walk: [streamed(1), streamed(2)] });
+      await store.play(book);
+      await store.step('next');
+      const failed = engine();
+      failed.fail();
+      await settle();
+      expect(store.getState()).toMatchObject({
+        ref: streamed(2).ref,
+        playing: true,
+        refused: { ref: streamed(1).ref, error: null, skipped: { title: 'Song 1' } },
+      });
+      expect(store.getState().refused?.stoppedAfter).toBeUndefined();
+      expect(stepsSent(sent)).toHaveLength(2);
+      expect(engine()).not.toBe(failed);
+      expect(engines.at(-1)!.paused).toBe(false);
+      expect(failed.closedWith).toBeDefined();
+    });
+
+    it('[M3.ytmusic] five in a row stop the player and say so, however many more wait', async () => {
+      const songs = Array.from({ length: MOST_SKIPPED * 3 }, (_, n) => streamed(n));
+      const { store, sent, engine } = rig({ walk: songs });
+      await store.play(book);
+      await store.step('next');
+      const before = stepsSent(sent).length;
+      await failInTurn(engine, MOST_SKIPPED);
+      expect(stepsSent(sent).length - before).toBe(MOST_SKIPPED - 1);
+      expect(store.getState()).toMatchObject({
+        ref: null,
+        plan: null,
+        playing: false,
+        refused: { stoppedAfter: MOST_SKIPPED },
+      });
+    });
+
+    it('[M3.ytmusic] counts in one run with songs that cannot be planned', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const songs = Array.from({ length: MOST_SKIPPED * 3 }, (_, n) => streamed(n));
+      const { store, sent, engine } = rig({
+        // Of the songs after the first, three in a row refuse a plan.
+        refusesPlan: Object.fromEntries(songs.slice(2, 5).map(({ ref }) => [ref.id, 'song_live'])),
+        walk: songs,
+      });
+      await store.play(book);
+      await store.step('next');
+      await failInTurn(engine, 2);
+      expect(store.getState()).toMatchObject({
+        plan: null,
+        refused: { stoppedAfter: MOST_SKIPPED },
+      });
+      expect(stepsSent(sent)).toHaveLength(MOST_SKIPPED);
+    });
+
+    it('[M3.ytmusic] a song that plays ends the run', async () => {
+      const songs = Array.from({ length: MOST_SKIPPED * 3 }, (_, n) => streamed(n));
+      const { store, engine } = rig({ walk: songs });
+      await store.play(book);
+      await store.step('next');
+      await failInTurn(engine, MOST_SKIPPED - 1);
+      engine().heard();
+      await failInTurn(engine, MOST_SKIPPED - 1);
+      expect(store.getState().plan).not.toBeNull();
+      expect(store.getState().refused?.stoppedAfter).toBeUndefined();
+    });
+
+    it.each([
+      ['Next', (store: PlayerStore) => store.step('next')],
+      ['a new play', (store: PlayerStore) => store.play(streamed(90).ref)],
+    ])('[M3.ytmusic] %s begins a new run', async (_how, act) => {
+      const songs = Array.from({ length: MOST_SKIPPED * 3 }, (_, n) => streamed(n));
+      const { store, engine } = rig({ walk: songs });
+      await store.play(book);
+      await store.step('next');
+      await failInTurn(engine, MOST_SKIPPED - 1);
+      await act(store);
+      await failInTurn(engine, MOST_SKIPPED - 1);
+      expect(store.getState().plan).not.toBeNull();
+      expect(store.getState().refused?.stoppedAfter).toBeUndefined();
+    });
+
+    it('[M3.ytmusic] after a run stopped the player, the next play counts from the start', async () => {
+      const songs = Array.from({ length: MOST_SKIPPED * 3 }, (_, n) => streamed(n));
+      const { store, engine } = rig({ walk: songs });
+      await store.play(book);
+      await store.step('next');
+      await failInTurn(engine, MOST_SKIPPED);
+      await store.play(streamed(90).ref);
+      await failInTurn(engine, 1);
+      expect(store.getState().plan).not.toBeNull();
+      expect(store.getState().refused).toMatchObject({ skipped: {} });
+      expect(store.getState().refused?.stoppedAfter).toBeUndefined();
+    });
+
+    it('[M3.ytmusic] goes on the way the step that met it went', async () => {
+      const { store, sent, engine } = rig({ walk: [streamed(1), streamed(2)] });
+      await store.play(book);
+      await store.step('back');
+      engine().fail();
+      await settle();
+      expect(stepsSent(sent).map(({ body }) => body!.direction)).toEqual(['back', 'back']);
+    });
+
+    it('[M3.ytmusic] goes on forward once a song stepped back to has played', async () => {
+      const { store, sent, engine } = rig({ walk: [streamed(1), streamed(2)] });
+      await store.play(book);
+      await store.step('back');
+      engine().heard();
+      engine().fail();
+      await settle();
+      expect(stepsSent(sent).map(({ body }) => body!.direction)).toEqual(['back', 'next']);
+    });
+
+    it('[M3.ytmusic] stays paused when it fails while paused', async () => {
+      const { store, engine } = rig({ walk: [streamed(1), streamed(2)] });
+      await store.play(book);
+      await store.step('next');
+      await store.pause();
+      engine().fail();
+      await settle();
+      expect(store.getState()).toMatchObject({ ref: streamed(2).ref, playing: false });
+    });
+
+    it('[M3.ytmusic] a failure heard after the song was left steps nothing', async () => {
+      const { store, sent, engine } = rig({ walk: [streamed(1), streamed(2), streamed(3)] });
+      await store.play(book);
+      await store.step('next');
+      const left = engine();
+      const asked = store.step('next');
+      left.fail();
+      await asked;
+      await settle();
+      expect(store.getState()).toMatchObject({ ref: streamed(2).ref, refused: null });
+      expect(stepsSent(sent)).toHaveLength(2);
+    });
+
+    it.each([
+      ['a book', book],
+      ['a song the household holds', song],
+      ['an episode', episode],
+    ])('[M3.ytmusic] %s whose audio fails stays as it was', async (_what, item) => {
+      const { store, sent, engine } = rig({ walk: [streamed(1)] });
+      await store.play(item);
+      const failed = engine();
+      const before = sent.length;
+      failed.fail();
+      await settle();
+      expect(sent).toHaveLength(before);
+      expect(engine()).toBe(failed);
+      expect(store.getState()).toMatchObject({ ref: item, playing: true, refused: null });
+    });
+  });
+
+  it('[M3.ytmusic] forgets a refusal when asked, as a page leaving it does', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const streamed: MediaRef = { source: 'ytmusic', id: 'aaaaaaaaaaa' };
+    const { store } = rig({ refusesPlan: { [streamed.id]: 'song_live' } });
+    await store.play(streamed);
+    store.forgetRefused();
+    expect(store.getState().refused).toBeNull();
+  });
+
+  it("[M3.ytmusic] passes on the word of a refusal that is not the song's own", async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const streamed: MediaRef = { source: 'ytmusic', id: 'aaaaaaaaaaa' };
+    const { store } = rig({ unplannable: [streamed.id] });
+    await store.play(streamed);
+    expect(store.getState().refused).toEqual({ ref: streamed, error: 'upstream_failed' });
+  });
+
+  it('[M3.ytmusic] says nothing of an item of the library that cannot be planned', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { store } = rig({ unplannable: [episode.id] });
+    await store.play(episode);
+    expect(store.getState().refused).toBeNull();
   });
 
   it('[M1.shell] says once it has looked for what a reload left, found or not', async () => {
