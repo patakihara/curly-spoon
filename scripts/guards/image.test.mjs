@@ -9,7 +9,13 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { REPO_ROOT } from '../plan/testing.mjs';
-import { dockerignore, imageFiles, runtimeFiles, testOnly } from './image.mjs';
+import {
+  dockerignore,
+  imageFiles,
+  runtimeFiles,
+  testOnly,
+  undeclaredGlobalArgs,
+} from './image.mjs';
 
 test('the image copies exactly the files server/src/main.ts runs, and their package manifests', () => {
   assert.deepEqual(imageFiles(REPO_ROOT), runtimeFiles(REPO_ROOT));
@@ -24,6 +30,32 @@ test("the extractor stands outside /app, each platform's archive pinned by its c
   );
   assert.match(dockerfile, /^COPY --from=extractor \/opt\/yt-dlp \/opt\/yt-dlp$/m);
   assert.match(dockerfile, /^ENV EXTRACTOR_PATH=\/opt\/yt-dlp\//m);
+});
+
+test('a stage that uses a global ARG names it again first, or it expands empty', () => {
+  const dockerfile = readFileSync(join(REPO_ROOT, 'Dockerfile'), 'utf8');
+  assert.deepEqual(undeclaredGlobalArgs(dockerfile), []);
+});
+
+test('a global ARG counts as undeclared only in a stage that uses it before naming it', () => {
+  const dockerfile = [
+    'ARG IMAGE=alpine',
+    'ARG VERSION=1',
+    '# a comment naming ${VERSION}',
+    'FROM ${IMAGE} AS forgets',
+    'RUN echo ${VERSION} $VERSION $OTHER',
+    'FROM ${IMAGE} AS names',
+    'ARG VERSION',
+    'RUN echo ${VERSION}',
+    'FROM ${IMAGE} AS late',
+    'RUN echo ${VERSION}',
+    'ARG VERSION',
+  ].join('\n');
+  assert.deepEqual(undeclaredGlobalArgs(dockerfile), [
+    'forgets: VERSION',
+    'forgets: VERSION',
+    'late: VERSION',
+  ]);
 });
 
 test('the image holds no test, recording, test key, recorder or recorded-upstreams harness', () => {

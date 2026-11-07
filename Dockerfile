@@ -26,12 +26,15 @@ RUN --mount=type=cache,id=auralis-pnpm-store,target=/root/.local/share/pnpm/stor
     pnpm install --frozen-lockfile --prod --filter "@auralis/server..."
 
 # yt-dlp's one-folder form: no Python to carry, and 0.7 s to start where the one-file form unpacks on
-# every call. Each platform's archive is pinned by its published SHA-256.
+# every call. Each platform's archive is pinned by its published SHA-256. Only FROM lines see a global
+# ARG: each stage that uses one names it again (scripts/guards/image.test.mjs).
 FROM node:${NODE_VERSION} AS extractor-amd64
+ARG YTDLP_VERSION
 ADD --checksum=sha256:c3a67f7c14d4cbf876e7801039237fc16b929a629c72f9c785ec3fdc8aa40748 \
     https://github.com/yt-dlp/yt-dlp/releases/download/${YTDLP_VERSION}/yt-dlp_musllinux.zip /tmp/yt-dlp.zip
 
 FROM node:${NODE_VERSION} AS extractor-arm64
+ARG YTDLP_VERSION
 ADD --checksum=sha256:1648beeb7b0c78b471654262697066c016783d33813659367a5c274828ba3240 \
     https://github.com/yt-dlp/yt-dlp/releases/download/${YTDLP_VERSION}/yt-dlp_musllinux_aarch64.zip /tmp/yt-dlp.zip
 
