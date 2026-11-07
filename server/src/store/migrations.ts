@@ -916,6 +916,24 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 26,
+    name: 'streamed_tracks',
+    up: (db) => {
+      // The songs search and radio have named: the only ones a client may play. artists is JSON.
+      db.exec(`
+        CREATE TABLE streamed_tracks (
+          id       TEXT PRIMARY KEY,
+          title    TEXT NOT NULL,
+          artists  TEXT NOT NULL,
+          album    TEXT,
+          duration REAL NOT NULL,
+          art_url  TEXT,
+          seen_at  INTEGER NOT NULL
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

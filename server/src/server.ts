@@ -1,6 +1,6 @@
 /**
  * The whole server from its configuration: the database, the sign-on, each upstream's
- * provisioner, the app with its request job, the library index job and the lyrics backfill, wired as they run. `main.ts` starts it with the network's `fetch`;
+ * provisioner, the app with its request job, the library index job, the lyrics backfill and the extractor's update, wired as they run. `main.ts` starts it with the network's `fetch`;
  * anything else that runs the server (a harness on recordings) passes its own `fetch` here and
  * changes nothing else.
  */
@@ -19,6 +19,7 @@ import type { AppConfig } from './config.js';
 import { loadSecretKey } from './crypto/secretBox.js';
 import { startIndexJob } from './libraryIndex/start.js';
 import { lyricsService, startLyricsJob } from './lyrics/start.js';
+import { ytMusic } from './music/index.js';
 import { bookSteps } from './requests/books/index.js';
 import type { BookCatalogue } from './requests/books/catalogue.js';
 import { type MediumSteps, stepsRegistry } from './requests/steps.js';
@@ -131,6 +132,17 @@ export async function assembleServer(
     now: Date.now,
   });
 
+  // Makes no upstream call at start, so a server with no network still starts.
+  const streamed = ytMusic(config, {
+    db,
+    fetch,
+    log: {
+      warn: (details, message) => app.log.warn(details, message),
+      error: (details, message) => app.log.error(details, message),
+    },
+    now: Date.now,
+  });
+
   const setupCodeFile = join(config.dataDir, 'setup-code');
   const app = await buildApp({
     webDistDir: config.webDistDir,
@@ -150,6 +162,7 @@ export async function assembleServer(
       household: householdClients(config, fetch),
     },
     playback: { idleMs: config.playIdleMinutes * 60_000 },
+    music: streamed?.music ?? null,
     lyrics,
     // A medium with no steps here cannot be requested.
     requests: {
@@ -186,6 +199,7 @@ export async function assembleServer(
       stopSessionSweep();
       stopIndexJob();
       stopLyricsJob();
+      streamed?.stop();
       db.close();
       app.log.info('Database closed');
     },

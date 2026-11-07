@@ -41,6 +41,7 @@ import { type AbsAccess, Reach, withHeld } from '../upstream/reach.js';
 import { PAGE_KINDS } from './art.js';
 import { signedIn } from './auth.js';
 import { entry } from './library.js';
+import { type Music, TrackRefused } from '../music/index.js';
 import { refusalFor, type UpstreamAccess } from './play.js';
 
 /** Pixel widths the art route asks the upstream for, by size. */
@@ -110,6 +111,12 @@ function tracks(db: Db, album: StoredRow): ItemTrack[] {
 }
 
 /** The headers art is passed on with: the image's own, and this server's caching. */
+/** A song's art cannot be served: it has none, or its host would not answer. */
+function artRefusal(error: unknown): never {
+  if (error instanceof TrackRefused) throw new Refusal(404, 'not_found');
+  return refusalFor(error);
+}
+
 function artAnswer(opened: UpstreamFile<ImageHeaders>): StreamAnswer {
   const { 'content-type': type, 'content-length': length, etag } = opened.headers;
   const lastModified = opened.headers['last-modified'];
@@ -128,7 +135,7 @@ function artAnswer(opened: UpstreamFile<ImageHeaders>): StreamAnswer {
 
 export function itemRoutes(
   app: FastifyInstance,
-  options: { db: Db; upstreams: UpstreamAccess | null },
+  options: { db: Db; upstreams: UpstreamAccess | null; music?: Music | null },
 ): void {
   const { db, upstreams } = options;
   const reach = new Reach(db, upstreams);
@@ -221,6 +228,11 @@ export function itemRoutes(
   });
 
   serveStream(app, mediaArt, async (request, { params, query }) => {
+    if (params.ref.startsWith('ytmusic:')) {
+      const id = params.ref.slice('ytmusic:'.length);
+      if (!options.music) throw new Refusal(404, 'not_found');
+      return artAnswer(await options.music.openArt(id).catch(artRefusal));
+    }
     const item = await openable(request, params.ref, true);
     const width = query.size === undefined ? undefined : ART_WIDTH[query.size];
     const opened =

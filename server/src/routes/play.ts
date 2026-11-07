@@ -26,7 +26,9 @@
  * does not reach goes through Auralis's own account instead (`upstream/reach.ts`): a household
  * play. It reports to no upstream. An Audiobookshelf one keeps its position in `held_progress`,
  * where its next plan starts; a Jellyfin one, like any music, keeps none. Only the playlist is read whole, parsed,
- * and passed on with bare segment names that resolve under the same route.
+ * and passed on with bare segment names that resolve under the same route. A streamed song needs
+ * no upstream account: it plays for anyone signed in, only if search or radio has named it, reports
+ * nowhere, claims nothing, and every byte comes through `music/`'s cache.
  */
 import { randomUUID } from 'node:crypto';
 import {
@@ -76,6 +78,14 @@ import {
   planRun,
 } from './jellyfinPlay.js';
 import { type OpenPlays, type UpstreamReport } from './openPlays.js';
+import {
+  MOST_SONG_SECONDS,
+  type Music,
+  StreamingUnavailable,
+  TrackRefused,
+} from '../music/index.js';
+import { RangeRefused } from '../music/streamCache.js';
+import { streamedTrack } from '../store/streamedTracks.js';
 import { type z } from 'zod';
 
 /** What the server needs to act upstream as a person: their tokens' key and the upstreams. */
@@ -249,6 +259,18 @@ export function refusalFor(error: unknown): never {
   throw error;
 }
 
+/** Why a streamed song cannot play, as this server's answer. */
+export function songRefusal(error: unknown): never {
+  if (error instanceof StreamingUnavailable) throw new Refusal(503, 'streaming_unavailable');
+  if (error instanceof TrackRefused) throw new Refusal(404, 'not_found');
+  if (error instanceof RangeRefused) {
+    const headers: Record<string, string> =
+      error.size === undefined ? {} : { 'content-range': `bytes */${error.size}` };
+    throw new Refusal(416, 'range_not_satisfiable', headers);
+  }
+  throw error;
+}
+
 export function playRoutes(
   app: FastifyInstance,
   options: {
@@ -259,10 +281,13 @@ export function playRoutes(
     /** The playback sessions held open, shared with the listening sessions that close them. */
     open: OpenPlays;
     playback?: PlaybackOptions;
+    /** Songs from outside the library. Null or absent, a streamed ref is not linked. */
+    music?: Music | null;
     now?: () => number;
   },
 ): void {
   const { db, upstreams, sessions } = options;
+  const music = options.music ?? null;
   const segmentWait = options.playback?.segmentWait ?? DEFAULT_SEGMENT_WAIT;
   const transcodeIdleMs = options.playback?.idleMs ?? DEFAULT_IDLE_MS;
   const directIdleMs = options.playback?.directIdleMs ?? DEFAULT_DIRECT_IDLE_MS;
@@ -369,6 +394,7 @@ export function playRoutes(
       );
       const last = plan.tracks[plan.tracks.length - 1]!;
       const length = last.offset + last.duration;
+      if (next?.source === 'ytmusic') music?.preload(caller.deviceId, next.id);
       return {
         ...plan,
         ...(position === null ? {} : { startAt: Math.min(position.ms / 1000, length) }),
@@ -445,11 +471,57 @@ export function playRoutes(
     addClaim(db, userId, held, 'played', (options.now ?? Date.now)());
   };
 
+  /** A streamed song's plan, from its own row and how its file is typed. */
+  const playSong = async (
+    songs: Music,
+    caller: Caller,
+    ref: MediaRef,
+    heldBefore: string | null,
+  ): Promise<PlaybackPlan> => {
+    const song = streamedTrack(db, ref.id);
+    if (song === undefined) throw new Refusal(404, 'not_found');
+    if (song.duration > MOST_SONG_SECONDS) throw new Refusal(422, 'unsupported_format');
+    const { mime } = await songs.plan(ref.id).catch(songRefusal);
+    const key = mediaRefKey(ref);
+    const playId = randomUUID().replace(/-/g, '');
+    const entries: PlanEntry[] = [{ entry: { ref }, start: 0 }];
+    const owner = { userId: caller.id, deviceId: caller.deviceId };
+    await open.planOn(owner, async () => {
+      await open.closeDevice(owner.userId, owner.deviceId);
+      await open.open({
+        playId,
+        ...owner,
+        ref: key,
+        entries,
+        duration: song.duration,
+        idleMs: directIdleMs,
+        report: async () => undefined,
+        close: async () => undefined,
+      });
+    });
+    const plan: PlaybackPlan = {
+      meta: {
+        title: song.title,
+        sub: song.artists.join(', '),
+        art: artOf(db, ref),
+        variant: 'music',
+      },
+      tracks: [{ url: `/api/media/${key}/tracks/0`, mime, duration: song.duration, offset: 0 }],
+      chapters: [],
+      startAt: 0,
+      progressTarget: { playId },
+    };
+    return inSession(caller, plan, ref, heldBefore, entries);
+  };
+
   serve(app, play, async (request, _reply, body) => {
     const ref = mediaRefKey(body.ref);
     const caller = signedIn(request);
     const heldBefore = open.heldBy({ userId: caller.id, deviceId: caller.deviceId });
-    if (body.ref.source === 'ytmusic') throw new Refusal(409, 'not_linked');
+    if (body.ref.source === 'ytmusic') {
+      if (music === null) throw new Refusal(409, 'not_linked');
+      return playSong(music, caller, body.ref, heldBefore);
+    }
     if (body.ref.source === 'jellyfin') {
       if (parseMediaRefKey(ref) === null) throw new Refusal(400, 'bad_request');
       const { client, household, userId, deviceId } = await personFor(
@@ -575,10 +647,15 @@ export function playRoutes(
     return { ok: true };
   });
 
-  serveStream(app, mediaTrack, async (request, { params, range }) => {
+  serveStream(app, mediaTrack, async (request, { params, range, signal }) => {
     const ref = parseMediaRefKey(params.ref);
     if (ref === null) throw new Refusal(400, 'bad_request');
-    if (ref.source === 'ytmusic') throw new Refusal(404, 'not_found');
+    if (ref.source === 'ytmusic') {
+      if (params.n !== '0' || music === null || streamedTrack(db, ref.id) === undefined) {
+        throw new Refusal(404, 'not_found');
+      }
+      return music.open(ref.id, range, signal).catch(songRefusal);
+    }
     if (ref.source === 'jellyfin') {
       // A Jellyfin track is its own ref's only track. Jellyfin streams to anyone with the id, so
       // the person's own lookup decides whether they may have it.

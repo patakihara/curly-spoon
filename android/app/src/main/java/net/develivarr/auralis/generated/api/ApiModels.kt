@@ -254,6 +254,65 @@ data class ItemTrack(
 )
 
 @Serializable
+data class Job(
+    val name: JobName,
+    val state: JobState,
+    val reason: String?,
+    val current: String,
+    val versions: List<JobVersion>,
+)
+
+@Serializable
+enum class JobState {
+    @SerialName("ok")
+    OK,
+    @SerialName("unavailable")
+    UNAVAILABLE,
+}
+
+@Serializable
+data class JobList(
+    val jobs: List<Job>,
+)
+
+@Serializable
+enum class JobName {
+    @SerialName("extractor")
+    EXTRACTOR,
+}
+
+@Serializable
+data class JobVersion(
+    val version: String,
+    val source: JobVersionSource,
+    val state: JobVersionState,
+    val canaryAt: Double?,
+    val canaryMs: Double?,
+    val tier: String?,
+    val reason: String?,
+)
+
+@Serializable
+enum class JobVersionSource {
+    @SerialName("image")
+    IMAGE,
+    @SerialName("release")
+    RELEASE,
+    @SerialName("nightly")
+    NIGHTLY,
+}
+
+@Serializable
+enum class JobVersionState {
+    @SerialName("promoted")
+    PROMOTED,
+    @SerialName("kept")
+    KEPT,
+    @SerialName("failed")
+    FAILED,
+}
+
+@Serializable
 data class LibraryEntry(
     val ref: MediaRef,
     val kind: LibraryEntryKind,

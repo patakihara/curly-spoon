@@ -562,6 +562,120 @@
           "users"
         ]
       },
+      "JobName": {
+        "type": "string",
+        "enum": [
+          "extractor"
+        ]
+      },
+      "JobVersion": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "image",
+              "release",
+              "nightly"
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "promoted",
+              "kept",
+              "failed"
+            ]
+          },
+          "canaryAt": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "canaryMs": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "tier": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "version",
+          "source",
+          "state",
+          "canaryAt",
+          "canaryMs",
+          "tier",
+          "reason"
+        ]
+      },
+      "Job": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "$ref": "#/components/schemas/JobName"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable"
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "current": {
+            "type": "string"
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobVersion"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "state",
+          "reason",
+          "current",
+          "versions"
+        ]
+      },
+      "JobList": {
+        "type": "object",
+        "properties": {
+          "jobs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Job"
+            }
+          }
+        },
+        "required": [
+          "jobs"
+        ]
+      },
       "PlaybackVariant": {
         "type": "string",
         "enum": [
@@ -3304,6 +3418,118 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/jobs": {
+      "get": {
+        "summary": "The extractor job: what is in use, and what its canary last said",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "listJobs",
+        "responses": {
+          "200": {
+            "description": "Each job, with its state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Without the role this route needs, or sent from another site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/jobs/{name}/run": {
+      "post": {
+        "summary": "Run a job now, in the background",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "operationId": "runJob",
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/components/schemas/JobName"
+            },
+            "required": true,
+            "name": "name",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The run has started, or one already going carries on.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request does not parse, or was refused.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }

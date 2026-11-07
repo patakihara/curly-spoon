@@ -23,6 +23,7 @@ import {
   CreateBookmarkBody,
 } from './bookmarks.js';
 import { Feed } from './feed.js';
+import { JobList, JobParams } from './jobs.js';
 import { HealthResponse } from './health.js';
 import {
   AddListItemBody,
@@ -250,6 +251,27 @@ export const listUsers = {
   responseDescription: 'Every user.',
   response: UserList,
   access: 'admin',
+} as const satisfies Route;
+
+export const listJobs = {
+  method: 'GET',
+  path: '/api/admin/jobs',
+  operationId: 'listJobs',
+  summary: 'The extractor job: what is in use, and what its canary last said',
+  responseDescription: 'Each job, with its state.',
+  response: JobList,
+  access: 'admin',
+} as const satisfies Route;
+
+export const runJob = {
+  method: 'POST',
+  path: '/api/admin/jobs/{name}/run',
+  operationId: 'runJob',
+  summary: 'Run a job now, in the background',
+  responseDescription: 'The run has started, or one already going carries on.',
+  response: Ok,
+  access: 'admin',
+  params: JobParams,
 } as const satisfies Route;
 
 export const play = {
@@ -713,6 +735,8 @@ export const routes: readonly Route[] = [
   renameDevice,
   deleteDevice,
   listUsers,
+  listJobs,
+  runJob,
   play,
   reportProgress,
   closePlay,

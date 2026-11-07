@@ -4,12 +4,14 @@
  * chapters, an episode or a song as itself. The index keeps no chapters, so a book's chapters are
  * read from Audiobookshelf as the person, ahead of the engine's synchronous lookup, and kept until
  * the index sees the book change; the queue page labels a book's entries with them. A Jellyfin item the index does not hold plays as a
- * lone song: Instant Mix can name tracks the index has not reached yet.
+ * lone song: Instant Mix can name tracks the index has not reached yet. A streamed song plays as a
+ * lone song too, when search or radio has named it.
  */
 import type { MediaRef, QueueType } from '@auralis/schema';
 import { albumTracks, booksInSeries, indexedRow, type StoredRow } from '../libraryIndex/store.js';
 import type { Db } from '../store/connection.js';
 import type { QueueEntry, SessionValue } from '../store/listening.js';
+import { streamedTrack } from '../store/streamedTracks.js';
 import { ownPlays } from './autoplay.js';
 import type { Expansion } from './engine.js';
 
@@ -59,6 +61,10 @@ export class IndexLookup {
 
   /** The engine's lookup: what `ref` enters a queue as, or null for an item it cannot queue. */
   expand = (ref: MediaRef): Expansion | null => {
+    if (ref.source === 'ytmusic') {
+      if (streamedTrack(this.db, ref.id) === undefined) return null;
+      return { kind: 'track', entries: [{ ref }], from: null };
+    }
     const row = indexedRow(this.db, ref.source, ref.id);
     if (row === undefined) {
       return ref.source === 'jellyfin' ? { kind: 'track', entries: [{ ref }], from: null } : null;
@@ -117,6 +123,8 @@ export class IndexLookup {
    */
   endOf(entry: QueueEntry): number | null {
     if (entry.chapter !== undefined) return this.chapters(entry.ref)?.[entry.chapter]?.end ?? null;
+    if (entry.ref.source === 'ytmusic')
+      return streamedTrack(this.db, entry.ref.id)?.duration ?? null;
     return indexedRow(this.db, entry.ref.source, entry.ref.id)?.duration ?? null;
   }
 

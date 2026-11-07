@@ -1,3 +1,4 @@
+export { Job, JobList, JobName, JobParams, JobVersion } from './jobs.js';
 export {
   Account,
   AppToken,
@@ -132,7 +133,9 @@ export {
   listLibrary,
   listLists,
   listSessions,
+  listJobs,
   listUsers,
+  runJob,
   login,
   loginCallback,
   logout,

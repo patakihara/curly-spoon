@@ -15,6 +15,7 @@ import { type Recording, recordingSchema } from './adapters/http/recording.js';
 import { replayFetch, standInsBeside } from './adapters/http/replay.js';
 import { PLACEHOLDER_ORIGIN } from './adapters/http/scrub.js';
 import { buildApp } from './app.js';
+import type { Music } from './music/index.js';
 import { openDatabase } from './store/connection.js';
 import { createDevice } from './store/devices.js';
 import { createSession } from './store/sessions.js';
@@ -89,6 +90,7 @@ async function server(
     recordings?: Recording[];
     reports?: Recording[];
     slow?: boolean;
+    music?: Music;
   } = {},
 ) {
   const db = openDatabase(':memory:');
@@ -137,6 +139,7 @@ async function server(
     webDistDir: null,
     db,
     upstreams: { key: KEY, config: { absUrl: undefined, jellyfinUrl: PLACEHOLDER_ORIGIN }, fetch },
+    ...(options.music === undefined ? {} : { music: options.music }),
   });
   apps.push(app);
   const as = (name: string) => ({ authorization: `Bearer ${bearer[name] ?? ''}` });
@@ -322,6 +325,19 @@ describe('playing a Jellyfin track', () => {
     expect(res.statusCode).toBe(409);
     expect(res.json()).toEqual({ error: 'not_linked' });
     expect(sent).toEqual([]);
+  });
+});
+
+describe('[M3.ytmusic/a] owned music with streaming broken', () => {
+  it('[M3.ytmusic/a] a Jellyfin album plans and streams without asking anything of the music side', async () => {
+    const untouchable = new Proxy({} as Music, {
+      get: (_target, name) => {
+        throw new Error(`a Jellyfin play asked the music side for ${String(name)}`);
+      },
+    });
+    const { plan } = await server({ music: untouchable });
+    const { tracks } = await plan(albumId);
+    expect(tracks.length).toBeGreaterThan(0);
   });
 });
 

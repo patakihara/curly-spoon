@@ -173,6 +173,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The extractor job: what is in use, and what its canary last said */
+        get: operations["listJobs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/jobs/{name}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run a job now, in the background */
+        post: operations["runJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/play": {
         parameters: {
             query?: never;
@@ -835,6 +869,30 @@ export interface components {
         };
         UserList: {
             users: components["schemas"]["Me"][];
+        };
+        /** @enum {string} */
+        JobName: "extractor";
+        JobVersion: {
+            version: string;
+            /** @enum {string} */
+            source: "image" | "release" | "nightly";
+            /** @enum {string} */
+            state: "promoted" | "kept" | "failed";
+            canaryAt: number | null;
+            canaryMs: number | null;
+            tier: string | null;
+            reason: string | null;
+        };
+        Job: {
+            name: components["schemas"]["JobName"];
+            /** @enum {string} */
+            state: "ok" | "unavailable";
+            reason: string | null;
+            current: string;
+            versions: components["schemas"]["JobVersion"][];
+        };
+        JobList: {
+            jobs: components["schemas"]["Job"][];
         };
         /** @enum {string} */
         PlaybackVariant: "music" | "spoken";
@@ -1735,6 +1793,93 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserList"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listJobs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Each job, with its state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobList"];
+                };
+            };
+            /** @description No session. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Without the role this route needs, or sent from another site. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    runJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: components["schemas"]["JobName"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The run has started, or one already going carries on. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ok"];
+                };
+            };
+            /** @description The request does not parse, or was refused. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description No session. */
