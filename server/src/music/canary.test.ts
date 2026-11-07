@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { PassThrough } from 'node:stream';
 import { fileURLToPath } from 'node:url';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type FetchLike } from '../adapters/http/fetch.js';
 import { recordingSchema } from '../adapters/http/recording.js';
 import { type Canary, canaryBytes, canaryOf, type CanaryResult, webmAudioCodec } from './canary.js';
@@ -204,5 +204,40 @@ describe("[M3.ytmusic/d] reading a WebM's tracks", () => {
   it('[M3.ytmusic/d] anything else is refused', () => {
     expect(webmAudioCodec(Buffer.from('<html>'))).toBeNull();
     expect(webmAudioCodec(Buffer.alloc(0))).toBeNull();
+  });
+});
+
+afterEach(() => vi.useRealTimers());
+
+describe('[M3.ytmusic/d] a stream that stalls', () => {
+  it('a stream whose bytes stop coming ends within its minute, as no result', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const hung: FetchLike = async () =>
+      new Response(new ReadableStream({ start: () => undefined }), {
+        status: 206,
+        headers: { 'content-type': 'audio/webm', 'content-range': 'bytes 0-9/10' },
+      });
+    let result: CanaryResult | undefined;
+    void canary({ fetch: hung })(`${home}/yt-dlp`).then((r) => (result = r));
+    await vi.waitFor(() => new Promise<void>((go) => setImmediate(go)));
+    await new Promise<void>((go) => setImmediate(go));
+    await vi.advanceTimersByTimeAsync(61_000);
+    await new Promise<void>((go) => setImmediate(go));
+    expect(result).toMatchObject({ passed: false, reason: 'unavailable' });
+  });
+
+  it('a stream host that never answers is no result: the network says nothing of the binary', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const silent: FetchLike = (_url, init) =>
+      new Promise((_done, failed) => {
+        init?.signal?.addEventListener('abort', () => failed(new Error('aborted')));
+      });
+    let result: CanaryResult | undefined;
+    void canary({ fetch: silent })(`${home}/yt-dlp`).then((r) => (result = r));
+    await new Promise<void>((go) => setImmediate(go));
+    await new Promise<void>((go) => setImmediate(go));
+    await vi.advanceTimersByTimeAsync(16_000);
+    await vi.waitFor(() => expect(result).toBeDefined(), { interval: 1 }).catch(() => undefined);
+    expect(result).toMatchObject({ passed: false, reason: 'unavailable' });
   });
 });

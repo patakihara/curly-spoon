@@ -17,7 +17,7 @@ import { type FetchLike } from './adapters/http/fetch.js';
 import { recordingSchema } from './adapters/http/recording.js';
 import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
-import { type Canary } from './music/canary.js';
+import { type Canary, type CanaryResult } from './music/canary.js';
 import { type SpawnLike } from './music/extractor.js';
 import { Music, type MusicDeps } from './music/index.js';
 import { assembleServer } from './server.js';
@@ -256,7 +256,7 @@ describe("[M3.ytmusic/a] a song's plan", () => {
     const { play } = await server({
       say: (id) => ({ rc: 0, stdout: { ...answerFor(id), duration: 3 * 3600 + 1 } }),
     });
-    expect((await play()).statusCode).toBe(404);
+    expect((await play()).statusCode).toBe(422);
   });
 
   it('[M3.ytmusic/a] claims nothing: a song is not a library item', async () => {
@@ -409,6 +409,51 @@ describe('[M3.ytmusic/a] a song in a queue', () => {
   });
 });
 
+describe('[M3.ytmusic/a] a preload the queue moved past', () => {
+  const add = (app: FastifyInstance, kara: object, id: string) =>
+    app.inject({
+      method: 'POST',
+      url: '/api/queues/music/items',
+      headers: kara as Record<string, string>,
+      payload: { ref: { source: 'ytmusic', id }, how: 'next' },
+    });
+
+  it('[M3.ytmusic/a] stops its upstream read when the queue changes, with nothing logged', async () => {
+    const aborted = vi.fn();
+    let asked = 0;
+    const hanging = streamHost();
+    const host = {
+      ...hanging,
+      fetch: ((url, init) => {
+        if (!init?.signal) return hanging.fetch(url, init);
+        const signal = init.signal;
+        asked += 1;
+        return new Promise<Response>((_answer, refuse) => {
+          signal.addEventListener('abort', () => {
+            aborted();
+            refuse(new Error('aborted'));
+          });
+        });
+      }) as FetchLike,
+    };
+    const { app, kara, play, music, warned } = await server({
+      host,
+      tracks: [song(ID), song(OTHER), song(THIRD)],
+    });
+    // The played song's own row needs no bytes for its plan, so the only read is the preload's.
+    await play();
+    await add(app, kara, OTHER);
+    const plan = (await play()).json<PlaybackPlan>();
+    expect(plan.next).toEqual({ source: 'ytmusic', id: OTHER });
+    await vi.waitFor(() => expect(asked).toBeGreaterThan(0));
+    expect((await add(app, kara, THIRD)).statusCode).toBeLessThan(300);
+    await vi.waitFor(() => expect(aborted).toHaveBeenCalled());
+    await new Promise((settled) => setTimeout(settled, 20));
+    expect(warned).not.toContain('a song could not be preloaded');
+    expect(music).not.toBeNull();
+  });
+});
+
 describe('[M3.ytmusic/a] streaming unavailable', () => {
   const clockAt = (start: number) => {
     const at = { now: start };
@@ -450,10 +495,10 @@ describe('[M3.ytmusic/a] streaming unavailable', () => {
 
   it('[M3.ytmusic/a] a success clears it', async () => {
     const { music } = await server();
-    music!.state.playFailed('blocked');
-    music!.state.playFailed('blocked');
+    music!.state.playFailed('blocked', 'x');
+    music!.state.playFailed('blocked', 'x');
     music!.state.succeeded();
-    music!.state.playFailed('blocked');
+    music!.state.playFailed('blocked', 'x');
     expect(music!.state.available).toBe(true);
   });
 
@@ -561,5 +606,134 @@ describe('[M3.ytmusic/a] the server as it starts', () => {
     const res = await server.app.inject({ method: 'GET', url: '/api/health' });
     expect(res.statusCode).toBe(200);
     await server.close();
+  });
+});
+
+describe("[M3.ytmusic/a] a track's own failure says nothing of streaming", () => {
+  const noDuration = (id: string) => {
+    const { duration: _duration, ...rest } = answerFor(id);
+    return rest;
+  };
+
+  it.each([
+    [
+      'a live stream, which has no duration',
+      (id: string) => ({ ...noDuration(id), is_live: true }),
+    ],
+    ['a duration of 0', (id: string) => ({ ...answerFor(id), duration: 0 })],
+  ])('%s refuses that song, and three of them leave streaming up', async (_name, answer) => {
+    const { play, music } = await server({ say: (id) => ({ rc: 0, stdout: answer(id) }) });
+    for (const id of [ID, OTHER, THIRD]) expect((await play(id)).statusCode).toBe(404);
+    expect(music!.state.available).toBe(true);
+  });
+
+  it('a live stream is named as one to its client', async () => {
+    const { play } = await server({
+      say: (id) => ({ rc: 0, stdout: { ...answerFor(id), is_live: true } }),
+    });
+    expect((await play()).json()).toEqual({ error: 'song_live' });
+  });
+
+  it.each([
+    ['The uploader has not made this video available in your country', 'song_region_blocked'],
+    ['Join this channel to get access to members-only content', 'song_members_only'],
+    ['Premieres in 3 hours', 'song_premiere'],
+  ])('%s is told as %s', async (text, error) => {
+    const { play } = await server({ say: failing(`ERROR: [youtube] x: ${text}`) });
+    expect((await play()).json()).toEqual({ error });
+  });
+
+  it('the same track failing three times says nothing of streaming; three tracks do', async () => {
+    const { play, music } = await server({ say: failing('ERROR: something new') });
+    for (let i = 0; i < 3; i += 1) expect((await play(ID)).statusCode).toBe(503);
+    expect(music!.state.available).toBe(true);
+    await play(OTHER);
+    expect(music!.state.available).toBe(true);
+    await play(THIRD);
+    expect(music!.state.available).toBe(false);
+  });
+
+  it('a live stream that names a duration is refused too', async () => {
+    const { play } = await server({
+      say: (id) => ({ rc: 0, stdout: { ...answerFor(id), is_live: true } }),
+    });
+    expect((await play()).statusCode).toBe(404);
+  });
+
+  // yt-dlp's wording, from memory of its source: none of these is recorded, and each is one track's.
+  it.each([
+    'ERROR: [youtube] x: The uploader has not made this video available in your country',
+    'ERROR: [youtube] x: Join this channel to get access to members-only content like this video',
+    'ERROR: [youtube] x: This live event will begin in 3 hours.',
+    'ERROR: [youtube] x: Premieres in 3 hours',
+    'ERROR: [youtube] x: This video is only available to Music Premium members',
+  ])('%s refuses that song, and three of them leave streaming up', async (stderr) => {
+    const { play, music } = await server({ say: failing(stderr) });
+    for (const id of [ID, OTHER, THIRD]) expect((await play(id)).statusCode).toBe(404);
+    expect(music!.state.available).toBe(true);
+  });
+});
+
+describe('[M3.ytmusic/a] over three hours or live, the track route refuses as the plan does', () => {
+  it('a row over three hours is not streamed by asking for its track directly', async () => {
+    const { track, host, child } = await server({
+      tracks: [song(ID, { duration: 3 * 3600 + 1 })],
+    });
+    expect((await track()).statusCode).toBeGreaterThanOrEqual(400);
+    expect(host.asked).toEqual([]);
+    expect(child.runs).not.toHaveBeenCalled();
+  });
+
+  it('nor is one the extractor names as over three hours', async () => {
+    const { track, host } = await server({
+      say: (id) => ({ rc: 0, stdout: { ...answerFor(id), duration: 5 * 3600 } }),
+    });
+    expect((await track()).statusCode).toBeGreaterThanOrEqual(400);
+    expect(host.asked).toEqual([]);
+  });
+});
+
+describe('[M3.ytmusic/a] guards no other test reaches', () => {
+  it('a track asked for while streaming is unavailable answers 503 and runs nothing', async () => {
+    const { track, music, child, host } = await server();
+    music!.state.canaryFailed('blocked');
+    expect((await track()).statusCode).toBe(503);
+    expect(child.runs).not.toHaveBeenCalled();
+    expect(host.asked).toEqual([]);
+  });
+
+  it('the jobs list is for admin alone', async () => {
+    const { app, kara, ada } = await server();
+    const url = '/api/admin/jobs';
+    expect((await app.inject({ method: 'GET', url })).statusCode).toBe(401);
+    expect((await app.inject({ method: 'GET', url, headers: kara })).statusCode).toBe(403);
+    expect((await app.inject({ method: 'GET', url, headers: ada })).statusCode).toBe(200);
+  });
+
+  it("a song's art with no music configured answers 404", async () => {
+    const { app, kara } = await server({ music: false });
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/media/ytmusic:${ID}/art`,
+      headers: kara,
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('two runs asked at once share one canary', async () => {
+    let finish: (result: CanaryResult) => void = () => undefined;
+    const canary = vi.fn<Canary>(
+      () =>
+        new Promise<CanaryResult>((done) => {
+          finish = done;
+        }),
+    );
+    const { music } = await server({ canary });
+    const first = music!.runNow();
+    const second = music!.runNow();
+    expect(canary).toHaveBeenCalledTimes(1);
+    finish({ passed: false, reason: 'unavailable', ms: 1 });
+    expect(await first).toBe('unavailable');
+    expect(await second).toBe('unavailable');
   });
 });

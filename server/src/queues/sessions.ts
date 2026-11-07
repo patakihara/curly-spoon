@@ -227,6 +227,8 @@ export class Sessions {
        * that was opened no later than `before`; never fails.
        */
       closePlay?: (caller: Caller, ref: MediaRef, before: number) => Promise<void>;
+      /** This device's queues just changed; never fails. */
+      onChange?: (caller: Caller) => void;
     },
   ) {}
 
@@ -300,6 +302,7 @@ export class Sessions {
     // A Back, a Next, a Play now or the switch moves the controls off the play's entry: the play
     // is no longer current, and its late reports change nothing.
     if (controlled(saved) !== controlled(s)) this.plays.delete(this.device(caller));
+    this.options.onChange?.(caller);
     this.refreshAutoplay(caller);
     return saved;
   }

@@ -40,6 +40,7 @@ export interface CanaryOptions {
 }
 
 /** Twenty seconds' bytes at the rate of a file of this size and length, within reason. */
+const CANARY_MS = 60_000;
 const FEWEST_BYTES = 64 * 1024;
 const MOST_BYTES = 4 * 1024 * 1024;
 
@@ -115,6 +116,29 @@ export function webmAudioCodec(bytes: Uint8Array): string | null {
 const isMp4 = (bytes: Uint8Array) =>
   Buffer.from(bytes.subarray(4, 8)).toString('latin1') === 'ftyp';
 
+/** A body's bytes, or null when they are not all here in `ms`. Reading stops either way. */
+async function readWithin(body: ReadableStream<Uint8Array>, ms: number): Promise<Buffer | null> {
+  const reader = body.getReader();
+  const parts: Uint8Array[] = [];
+  let timer: NodeJS.Timeout | undefined;
+  const late = new Promise<'late'>((go) => {
+    timer = setTimeout(() => go('late'), ms);
+  });
+  try {
+    for (;;) {
+      const read = await Promise.race([reader.read(), late]);
+      if (read === 'late') {
+        void reader.cancel().catch(() => undefined);
+        return null;
+      }
+      if (read.done) return Buffer.concat(parts);
+      parts.push(read.value);
+    }
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export function canaryOf(options: CanaryOptions): Canary {
   const { now } = options;
   return async (path) => {
@@ -156,9 +180,12 @@ export function canaryOf(options: CanaryOptions): Canary {
         `bytes=0-${wanted - 1}`,
         fileHeadersSchema,
       );
-      bytes = Buffer.from(await new Response(file.body).arrayBuffer());
+      const read = await readWithin(file.body, Math.max(CANARY_MS - (now() - started), 1000));
+      if (read === null) return failed('unavailable');
+      bytes = read;
     } catch (error) {
-      const network = !(error instanceof AdapterError) || error.kind === 'network';
+      const network =
+        !(error instanceof AdapterError) || error.kind === 'network' || error.kind === 'timeout';
       return failed(network ? 'unavailable' : 'streamRefused');
     }
     const codec = audio.mime === 'audio/mp4' && isMp4(bytes) ? 'mp4' : webmAudioCodec(bytes);

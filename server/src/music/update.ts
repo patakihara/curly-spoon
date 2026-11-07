@@ -6,18 +6,20 @@
  * before anything of it runs, is capped, unpacks and answers `--version` under the same limits as any
  * child, and only a canary pass puts it in use. A failing one is deleted and the last passing version
  * stays. When the version in use fails and there is no new release, nightly is tried: fixes reach it
- * first. A network failure, or a bot wall on a candidate, says nothing of the binary and changes
+ * first. When nothing newer passes either, the last version on disk that passes goes back in use. A
+ * network failure, a full disk, or a bot wall on a candidate, says nothing of the binary and changes
  * nothing; a bot wall on the version in use stops the run, since no update can help.
  */
 import { createHash } from 'node:crypto';
-import { createWriteStream, mkdirSync, renameSync, rmSync } from 'node:fs';
+import { createWriteStream, mkdirSync, readdirSync, renameSync, rmSync } from 'node:fs';
 import { chmod, rename } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+import { pipeline } from 'node:stream/promises';
 import { type Release, releaseSchema, sumOf } from '../adapters/github/schemas.js';
 import { type FetchLike } from '../adapters/http/fetch.js';
 import { readCapped } from '../adapters/http/publicFetch.js';
 import type { Canary, CanaryResult } from './canary.js';
-import { runChild, type SpawnLike } from './extractor.js';
+import { type RunResult, runChild, type SpawnLike } from './extractor.js';
 import { BINARY, type ExtractorVersions, type VersionSource } from './versions.js';
 
 export const UPDATE_EVERY_MS = 60 * 60_000;
@@ -31,6 +33,7 @@ const ASKED_MS = 120_000;
 const USER_AGENT = 'auralis-extractor-update';
 const CHILD_PATH = '/usr/local/bin:/usr/bin:/bin';
 const SUMS = 'SHA2-256SUMS';
+const NO_ROOM = /no space left|disk full|quota exceeded/i;
 
 const STABLE = 'https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest';
 const NIGHTLY = 'https://api.github.com/repos/yt-dlp/yt-dlp-nightly-builds/releases/latest';
@@ -105,19 +108,36 @@ export class ExtractorUpdate {
     if (!result.passed)
       log.warn({ reason: result.reason }, 'the extractor in use failed its canary');
     if (!result.passed && result.reason === 'blocked') return 'blocked';
+    let outcome: UpdateOutcome;
     try {
-      const outcome = await this.tryRelease(STABLE, 'release', result.passed);
+      outcome = await this.tryRelease(STABLE, 'release', result.passed);
       if (result.passed || outcome === 'promoted') return outcome;
       const nightly = await this.tryRelease(NIGHTLY, 'nightly', false);
-      return nightly === 'noCandidate' ? outcome : nightly;
+      if (nightly !== 'noCandidate') outcome = nightly;
+      if (outcome === 'promoted') return outcome;
     } catch (error) {
-      if (!(error instanceof NoResult)) throw error;
+      if (!(error instanceof NoResult) && !isSystemError(error)) throw error;
       log.warn(
-        { reason: error.message },
+        { reason: error instanceof NoResult ? error.message : 'a file could not be written' },
         'the extractor update could not finish, so nothing moved',
       );
-      return 'unavailable';
+      outcome = 'unavailable';
+      if (result.passed) return outcome;
     }
+    return (await this.fallBack()) ? 'promoted' : outcome;
+  }
+
+  /** The version in use failed and nothing newer passed: the last one on disk that passes returns. */
+  private async fallBack(): Promise<boolean> {
+    const { versions, canary, now, log } = this.opts;
+    for (const row of versions.fallbacks()) {
+      const result = await canary(versions.pathOf(row));
+      if (!result.passed) continue;
+      versions.fallBack(row, result, now());
+      log.warn({ version: row.version }, 'the last passing extractor is in use again');
+      return true;
+    }
+    return false;
   }
 
   private async tryRelease(
@@ -197,7 +217,7 @@ export class ExtractorUpdate {
     try {
       const got = await this.download(archive.browser_download_url, zip);
       if (got !== sum) throw new BadDownload('the checksum does not match');
-      await this.child('unzip', ['-q', zip, '-d', into], into);
+      await this.unzip(zip, into);
     } finally {
       rmSync(zip, { force: true });
     }
@@ -214,18 +234,30 @@ export class ExtractorUpdate {
     }
   }
 
+  /** Unpacks a verified archive, and makes sure all of it stayed a plain file in `into`. */
+  private async unzip(zip: string, into: string): Promise<void> {
+    const result = await this.runIn('unzip', ['-q', zip, '-d', into], into);
+    if (NO_ROOM.test(result.stderr)) throw new NoResult('the disk is full');
+    if (result.killed || result.rc !== 0) throw new BadDownload('the archive would not unpack');
+    if (holdsOtherThanFiles(into)) throw new BadDownload('the archive holds a link');
+  }
+
   private async child(file: string, args: string[], cwd: string): Promise<string> {
+    const result = await this.runIn(file, args, cwd);
+    if (result.killed || result.rc !== 0) throw new BadDownload(`${BINARY} would not run`);
+    return result.stdout;
+  }
+
+  private runIn(file: string, args: string[], cwd: string): Promise<RunResult> {
     const { spawn, kill, timeoutMs, home } = this.opts;
     mkdirSync(home, { recursive: true });
-    const result = await runChild(file, args, {
+    return runChild(file, args, {
       env: { HOME: home, PATH: CHILD_PATH },
       cwd,
       ...(spawn === undefined ? {} : { spawn }),
       ...(kill === undefined ? {} : { kill }),
       ...(timeoutMs === undefined ? {} : { timeoutMs }),
     });
-    if (result.killed || result.rc !== 0) throw new BadDownload(`${BINARY} would not run`);
-    return result.stdout;
   }
 
   /** A GET, following a redirect only to GitHub's own download hosts. */
@@ -273,33 +305,42 @@ export class ExtractorUpdate {
     const answer = await this.ask(url, {});
     if (answer.body === null) throw new BadDownload('the archive came empty');
     const hash = createHash('sha256');
-    const out = createWriteStream(path, { mode: 0o600 });
-    const closed = new Promise<void>((done, failed) => {
-      out.once('close', done);
-      out.once('error', failed);
-    });
     const reader = answer.body.getReader();
-    let total = 0;
-    try {
-      for (;;) {
-        const { done, value } = await reader.read().catch(() => {
-          throw new NoResult('the download stopped');
-        });
-        if (done) break;
-        total += value.byteLength;
-        if (total > MOST_ARCHIVE_BYTES) {
-          await reader.cancel();
-          throw new BadDownload('the archive is too large');
+    const chunks = async function* () {
+      let total = 0;
+      try {
+        for (;;) {
+          const { done, value } = await reader.read().catch(() => {
+            throw new NoResult('the download stopped');
+          });
+          if (done) return;
+          total += value.byteLength;
+          if (total > MOST_ARCHIVE_BYTES) throw new BadDownload('the archive is too large');
+          hash.update(value);
+          yield value;
         }
-        hash.update(value);
-        if (!out.write(value)) await new Promise<void>((go) => out.once('drain', () => go()));
+      } finally {
+        await reader.cancel().catch(() => undefined);
       }
-    } finally {
-      out.end();
-      await closed;
+    };
+    try {
+      await pipeline(chunks, createWriteStream(path, { mode: 0o600 }));
+    } catch (error) {
+      if (error instanceof NoResult || error instanceof BadDownload) throw error;
+      throw new NoResult('the archive could not be written');
     }
     return hash.digest('hex');
   }
+}
+
+/** A failure of the machine, such as a full disk: `ENOSPC` and its kin carry a code. */
+const isSystemError = (error: unknown) => error instanceof Error && 'code' in error;
+
+/** Whether anything under `dir` is a link or a device, which a release's archive never holds. */
+function holdsOtherThanFiles(dir: string): boolean {
+  return readdirSync(dir, { withFileTypes: true, recursive: true }).some(
+    (entry) => !entry.isFile() && !entry.isDirectory(),
+  );
 }
 
 function safeJson(text: string): unknown {

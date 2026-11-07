@@ -22,6 +22,7 @@ import type { Db } from '../store/connection.js';
 import { streamedTrack } from '../store/streamedTracks.js';
 import { type Canary, canaryOf, type CanaryResult } from './canary.js';
 import { Extractor, ExtractorFailure, type SpawnLike } from './extractor.js';
+import type { StreamUrl } from './schemas.js';
 import { StreamingState } from './state.js';
 import {
   CHUNK_BYTES,
@@ -38,8 +39,16 @@ export const MOST_SONG_SECONDS = 3 * 60 * 60;
 
 const PRELOADED_CHUNKS = 2;
 
-/** This track cannot play, and that says nothing of streaming. */
-export class TrackRefused extends Error {}
+/** This track cannot play, and that says nothing of streaming. `error` is what a client is told. */
+export class TrackRefused extends Error {
+  constructor(
+    readonly error = 'not_found',
+    readonly status: 404 | 422 = 404,
+  ) {
+    super(error);
+    this.name = 'TrackRefused';
+  }
+}
 
 /** No song from outside the library can play now, held ones aside. */
 export class StreamingUnavailable extends Error {}
@@ -65,7 +74,16 @@ export interface MusicDeps {
 }
 
 /** A reason that belongs to one track, or to the client, and says nothing of streaming. */
-const NOT_STREAMING = new Set(['gone', 'badId', 'changed']);
+const TRACK_ERRORS = new Map<string, string>([
+  ['gone', 'not_found'],
+  ['badId', 'not_found'],
+  ['changed', 'not_found'],
+  ['live', 'song_live'],
+  ['premiere', 'song_premiere'],
+  ['noLength', 'song_no_length'],
+  ['regionBlocked', 'song_region_blocked'],
+  ['membersOnly', 'song_members_only'],
+]);
 
 export class Music {
   readonly state: StreamingState;
@@ -73,9 +91,18 @@ export class Music {
   private readonly extractor: Extractor;
   private readonly versions: ExtractorVersions;
   private readonly update: ExtractorUpdate;
-  private readonly preloading = new Set<string>();
+  private readonly preloading = new Map<string, { id: string; stop: AbortController }>();
   private readonly chunkBytes: number;
   private running: Promise<UpdateOutcome> | null = null;
+
+  /** The extractor, for a song: one it names as too long is refused before a byte is asked. */
+  private readonly songs = {
+    resolve: async (id: string, options?: { replacing?: StreamUrl }) => {
+      const audio = await this.extractor.resolve(id, options);
+      if (audio.duration > MOST_SONG_SECONDS) throw new TrackRefused('unsupported_format', 422);
+      return audio;
+    },
+  };
 
   constructor(private readonly deps: MusicDeps) {
     const { db, now, dataDir, imagePath, streamFetch, spawn, log } = deps;
@@ -99,7 +126,7 @@ export class Music {
       db,
       capBytes: deps.capBytes,
       fetch: streamFetch,
-      resolver: this.extractor,
+      resolver: this.songs,
       now,
       chunkBytes: this.chunkBytes,
       onLog: (what) => log.warn({}, what),
@@ -129,11 +156,10 @@ export class Music {
     if (whole !== null) return { mime: whole.mime };
     if (!this.state.available) throw new StreamingUnavailable();
     try {
-      const { mime, duration } = await this.extractor.resolve(id);
-      if (duration > MOST_SONG_SECONDS) throw new TrackRefused();
+      const { mime } = await this.songs.resolve(id);
       return { mime };
     } catch (error) {
-      throw this.refusalOf(error);
+      throw this.refusalOf(error, id);
     }
   }
 
@@ -147,29 +173,41 @@ export class Music {
       return answer;
     } catch (error) {
       if (error instanceof RangeRefused) throw error;
-      throw this.refusalOf(error);
+      throw this.refusalOf(error, id);
     }
   }
 
   /**
-   * Fetches a track's first chunks ahead of its play, at most one per device. The next play's first
-   * ask then finds them held. A failure is only logged.
+   * Fetches a track's first chunks ahead of its play, at most one per device: a newer pick takes the
+   * place of the one running. The next play's first ask then finds them held. A failure is only
+   * logged.
    */
   preload(deviceId: string, id: string): void {
-    if (this.preloading.has(deviceId) || !this.state.available) return;
+    const running = this.preloading.get(deviceId);
+    if (running?.id === id || !this.state.available) return;
     if (streamedTrack(this.deps.db, id) === undefined) return;
-    this.preloading.add(deviceId);
-    const stop = new AbortController();
+    running?.stop.abort();
+    const mine = { id, stop: new AbortController() };
+    this.preloading.set(deviceId, mine);
     void this.cache
-      .open(id, `bytes=0-${PRELOADED_CHUNKS * this.chunkBytes - 1}`, stop.signal)
+      .open(id, `bytes=0-${PRELOADED_CHUNKS * this.chunkBytes - 1}`, mine.stop.signal)
       .then(async ({ body }) => {
         for await (const chunk of body) void chunk;
       })
       .catch((error: unknown) => {
+        if (mine.stop.signal.aborted) return;
         const reason = error instanceof Error ? error.name : 'unknown';
         this.deps.log.warn({ reason }, 'a song could not be preloaded');
       })
-      .finally(() => this.preloading.delete(deviceId));
+      .finally(() => {
+        if (this.preloading.get(deviceId) === mine) this.preloading.delete(deviceId);
+      });
+  }
+
+  /** This device's queue changed, so what it was preloading may never play. */
+  cancelPreload(deviceId: string): void {
+    this.preloading.get(deviceId)?.stop.abort();
+    this.preloading.delete(deviceId);
   }
 
   /** A song's art, from the address its row holds, through the public-only fetch. */
@@ -223,11 +261,12 @@ export class Music {
   }
 
   /** Counts a failure toward the state, and says how the route should answer it. */
-  private refusalOf(error: unknown): Error {
+  private refusalOf(error: unknown, id: string): Error {
     if (error instanceof TrackRefused) return error;
     if (error instanceof ExtractorFailure || error instanceof StreamFailure) {
-      if (NOT_STREAMING.has(error.reason)) return new TrackRefused();
-      this.state.playFailed(error.reason);
+      const own = TRACK_ERRORS.get(error.reason);
+      if (own !== undefined) return new TrackRefused(own);
+      this.state.playFailed(error.reason, id);
       return new StreamingUnavailable();
     }
     return error instanceof Error ? error : new StreamingUnavailable();

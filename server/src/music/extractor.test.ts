@@ -322,6 +322,13 @@ describe('[M3.ytmusic/a] the two tiers', () => {
     expect(classifyFailure(missing.stderr)).toBe('gone');
     expect(classifyFailure(`WARNING: Sign in to confirm\n${missing.stderr}`)).toBe('gone');
     expect(classifyFailure('ERROR: Requested format is not available')).toBe('noAudio');
+    // yt-dlp's wording, from memory of its source: the site answered, so the network is not at
+    // fault, and calling it so would mean the job never looks for the update that fixes it.
+    expect(
+      classifyFailure(
+        'ERROR: [youtube] x: Unable to download API page: HTTP Error 400: Bad Request',
+      ),
+    ).toBe('extractorError');
     expect(classifyFailure('ERROR: Unable to download API page: timed out')).toBe('unavailable');
     expect(classifyFailure('ERROR: something new')).toBe('extractorError');
   });

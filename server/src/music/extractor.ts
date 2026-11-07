@@ -21,8 +21,18 @@ import {
 export type ExtractorReason =
   /** The site asks for a sign-in. No update can help. */
   | 'blocked'
-  /** This track is gone, private or barred here. Says nothing of the extractor's health. */
+  /** This track is gone, or private. Says nothing of the extractor's health. */
   | 'gone'
+  /** This track is live now, and a live stream never plays. */
+  | 'live'
+  /** This track is not out yet. */
+  | 'premiere'
+  /** This track names no length, which a song always has. */
+  | 'noLength'
+  /** This track is barred in this country. */
+  | 'regionBlocked'
+  /** This track needs a membership or a subscription, and no account is used. */
+  | 'membersOnly'
   /** It answered, with no audio-only format. */
   | 'noAudio'
   /** The network failed, so nothing is known. */
@@ -72,6 +82,12 @@ const BOT_WALL = /sign in to confirm|not a bot/i;
 const GONE =
   /video (?:is )?unavailable|private video|not available|has been removed|account .*terminated|your age/i;
 const NO_FORMAT = /requested format is not available|no video formats found/i;
+const REGION =
+  /not made this video available in your country|not available in your (?:country|location)/i;
+const MEMBERS = /members-only|join this channel|only available to (?:[\w ]+ )?(?:members|premium)/i;
+const PREMIERE = /live event will begin|premieres in/i;
+/** The site answered, whatever it said, so the network is not at fault. */
+const HTTP_ANSWER = /HTTP Error \d{3}/i;
 const NETWORK =
   /timed out|connection (?:reset|refused|aborted)|network is unreachable|name resolution|name or service|getaddrinfo|unable to download/i;
 
@@ -83,7 +99,11 @@ export function classifyFailure(stderr: string): ExtractorReason {
     .join('\n');
   if (BOT_WALL.test(errors) && !/your age/i.test(errors)) return 'blocked';
   if (NO_FORMAT.test(errors)) return 'noAudio';
+  if (REGION.test(errors)) return 'regionBlocked';
+  if (MEMBERS.test(errors)) return 'membersOnly';
+  if (PREMIERE.test(errors)) return 'premiere';
   if (GONE.test(errors)) return 'gone';
+  if (HTTP_ANSWER.test(errors)) return 'extractorError';
   if (NETWORK.test(errors)) return 'unavailable';
   return 'extractorError';
 }

@@ -339,6 +339,23 @@ describe('[M3.ytmusic/a] owned music with streaming broken', () => {
     const { tracks } = await plan(albumId);
     expect(tracks.length).toBeGreaterThan(0);
   });
+
+  it('[M3.ytmusic/a] a linked Jellyfin track plays its bytes, the music side never asked', async () => {
+    const untouchable = new Proxy({} as Music, {
+      get: (_target, name) => {
+        throw new Error(`a Jellyfin play asked the music side for ${String(name)}`);
+      },
+    });
+    const { app, as, plan } = await server({ music: untouchable });
+    const { tracks } = await plan(trackId);
+    const res = await app.inject({
+      method: 'GET',
+      url: tracks[0]!.url,
+      headers: { ...as('kara'), range: 'bytes=0-99' },
+    });
+    expect(res.statusCode).toBe(206);
+    expect(res.rawPayload).toEqual(flacTone.subarray(0, 100));
+  });
 });
 
 describe('a YouTube Music ref, with no streaming wired', () => {

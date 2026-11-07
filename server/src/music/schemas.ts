@@ -110,7 +110,9 @@ export const audioFormatSchema = z
 
 const infoSchema = z.object({
   id: z.string().regex(YT_ID),
-  duration: z.number().positive(),
+  duration: z.number().nullish(),
+  is_live: z.boolean().nullish(),
+  live_status: z.string().nullish(),
   formats: z.array(z.unknown()),
 });
 
@@ -122,8 +124,13 @@ export interface AudioInfo {
   formats: AudioFormat[];
 }
 
-/** An answer that is not understood, or that holds no audio-only format. */
-export type InfoFailure = 'noAudio' | 'extractorError';
+/**
+ * An answer that is not understood or holds no audio-only format, or a track that is no song: live,
+ * not out yet, or of no length.
+ */
+export type InfoFailure = 'noAudio' | 'extractorError' | 'live' | 'premiere' | 'noLength';
+
+const LIVE_STATES = new Set(['is_live', 'post_live']);
 
 export class InfoRefused extends Error {
   constructor(readonly reason: InfoFailure) {
@@ -136,12 +143,18 @@ export class InfoRefused extends Error {
 export function parseInfo(raw: unknown): AudioInfo {
   const info = infoSchema.safeParse(raw);
   if (!info.success) throw new InfoRefused('extractorError');
+  const { duration, is_live: isLive, live_status: liveStatus } = info.data;
+  if (isLive === true || LIVE_STATES.has(liveStatus ?? '')) throw new InfoRefused('live');
+  if (liveStatus === 'is_upcoming') throw new InfoRefused('premiere');
+  if (duration === undefined || duration === null || duration <= 0) {
+    throw new InfoRefused('noLength');
+  }
   const formats = info.data.formats.flatMap((row) => {
     const format = audioFormatSchema.safeParse(row);
     return format.success ? [format.data] : [];
   });
   if (formats.length === 0) throw new InfoRefused('noAudio');
-  return { id: info.data.id, duration: info.data.duration, formats };
+  return { id: info.data.id, duration, formats };
 }
 
 /** Opus at its best first, then the AAC every player reads. */

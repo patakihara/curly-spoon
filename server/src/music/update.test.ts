@@ -2,14 +2,24 @@
  * The extractor's daily update, on GitHub's recorded release answers, with a fake clock, a stand-in
  * archive and a child that only says what a test tells it. Nothing here runs a real extractor.
  */
-import { type ChildProcess } from 'node:child_process';
+import { type ChildProcess, spawn as nodeSpawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { EventEmitter } from 'node:events';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { PassThrough } from 'node:stream';
 import { fileURLToPath } from 'node:url';
+import { crc32 } from 'node:zlib';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type FetchLike } from '../adapters/http/fetch.js';
 import { recordingSchema } from '../adapters/http/recording.js';
@@ -152,6 +162,9 @@ function setUp(
 }
 
 const stateOf = (versions: ExtractorVersions, version: string) => versions.row(version)?.state;
+
+const within = <T>(work: Promise<T>, ms = 3000): Promise<T | 'hung'> =>
+  Promise.race([work, new Promise<'hung'>((go) => setTimeout(() => go('hung'), ms))]);
 
 describe('[M3.ytmusic/d] when the update runs', () => {
   it('[M3.ytmusic/d] the first tick after a start makes no upstream call', async () => {
@@ -501,3 +514,207 @@ describe('[M3.ytmusic/d] the archive for this machine', () => {
     expect(archiveFor('riscv64')).toBeNull();
   });
 });
+
+describe('[M3.ytmusic/d] a full disk', () => {
+  it('filling while the archive downloads ends the run with nothing moved, and fails no version', async () => {
+    const { versions, update } = setUp({ net: github({ archive: Buffer.alloc(1024 * 1024, 1) }) });
+    versions.prepare();
+    mkdirSync(join(dir, '.incoming'), { recursive: true });
+    // The kernel's own always-full file, so the write is a real ENOSPC.
+    symlinkSync('/dev/full', join(dir, '.incoming', `${STABLE.tag_name}.zip`));
+    const outcome = await within(update.run());
+    expect(outcome).toBe('unavailable');
+    expect(stateOf(versions, STABLE.tag_name)).toBeUndefined();
+    expect(versions.now().version).toBe(IMAGE_VERSION);
+  });
+
+  it('filling while it unpacks does not fail the release for good', async () => {
+    const spawn: SpawnLike = (file, _args, options) => {
+      const child = new EventEmitter() as ChildProcess & EventEmitter;
+      const stdout = new PassThrough();
+      const stderr = new PassThrough();
+      Object.assign(child, { stdout, stderr, pid: 4242 });
+      setImmediate(() => {
+        stderr.write('unzip: write error: No space left on device\n');
+        stdout.end();
+        stderr.end();
+        child.emit('close', file === 'unzip' ? 1 : 0);
+      });
+      void options;
+      return child;
+    };
+    const { versions, update } = setUp({ kids: { spawn, ran: [] } });
+    const outcome = await update.run();
+    expect(outcome).toBe('unavailable');
+    expect(stateOf(versions, STABLE.tag_name)).toBeUndefined();
+  });
+});
+
+describe('[M3.ytmusic/d] the last passing version', () => {
+  it('is what plays again when a newer image fails its canary and nothing newer passes', async () => {
+    // A release brought a newer image; the version the update promoted still passes, on disk.
+    const held = '2025.12.01';
+    db.prepare(
+      `INSERT INTO extractor_versions (version, source, state, promoted_at, canary_at, canary_ms, tier)
+       VALUES (?, 'release', 'promoted', ?, ?, 100, 'plain')`,
+    ).run(held, clock, clock);
+    mkdirSync(folderOf(held), { recursive: true });
+    writeFileSync(join(folderOf(held), 'yt-dlp'), 'stand-in');
+    const { versions, update } = setUp({
+      net: github({
+        stable: { ...STABLE, tag_name: IMAGE_VERSION },
+        nightly: { ...NIGHTLY, tag_name: IMAGE_VERSION },
+      }),
+      canary: (path) => (path.startsWith(dir) ? PASS : FAIL),
+    });
+    expect(versions.now().version).toBe(IMAGE_VERSION);
+    await update.run();
+    expect(versions.now().version).toBe(held);
+  });
+
+  it('anything older goes when a release is promoted over a newer image', async () => {
+    const held = '2025.12.01';
+    db.prepare(
+      `INSERT INTO extractor_versions (version, source, state, promoted_at, canary_at, canary_ms, tier)
+       VALUES (?, 'release', 'promoted', ?, ?, 100, 'plain')`,
+    ).run(held, clock, clock);
+    mkdirSync(folderOf(held), { recursive: true });
+    writeFileSync(join(folderOf(held), 'yt-dlp'), 'stand-in');
+    const { versions, update } = setUp();
+    expect(versions.now().version).toBe(IMAGE_VERSION);
+    expect(await update.run()).toBe('promoted');
+    expect(stateOf(versions, IMAGE_VERSION)).toBe('kept');
+    expect(existsSync(folderOf(held))).toBe(false);
+    expect(versions.row(held)).toBeUndefined();
+  });
+});
+
+describe("[M3.ytmusic/d] the checksum file's lines", () => {
+  const trueSum = createHash('sha256').update(ARCHIVE).digest('hex');
+
+  it("another file's line holding the true sum does not pass the archive", async () => {
+    const kids = children();
+    const sums = `${trueSum}  yt-dlp_linux.zip\n${'0'.repeat(64)}  yt-dlp_musllinux.zip\n`;
+    const { versions, update } = setUp({ net: github({ sums }), kids });
+    expect(await update.run()).toBe('failed');
+    expect(kids.ran.filter((run) => run.file === 'unzip')).toEqual([]);
+    expect(stateOf(versions, STABLE.tag_name)).toBe('failed');
+  });
+
+  it("another file's line coming first does not fail the archive", async () => {
+    const sums = `${'0'.repeat(64)}  yt-dlp_linux.zip\n${trueSum}  yt-dlp_musllinux.zip\n`;
+    const { update } = setUp({ net: github({ sums }) });
+    expect(await update.run()).toBe('promoted');
+  });
+});
+
+/** A real zip: each entry stored whole, with the Unix mode its central record names. */
+function zipOf(entries: { name: string; data: string; mode: number }[]): Buffer {
+  const locals: Buffer[] = [];
+  const centrals: Buffer[] = [];
+  let at = 0;
+  for (const { name, data, mode } of entries) {
+    const bytes = Buffer.from(data);
+    const file = Buffer.from(name);
+    const crc = crc32(bytes);
+    const local = Buffer.alloc(30);
+    local.writeUInt32LE(0x04034b50, 0);
+    local.writeUInt16LE(20, 4);
+    local.writeUInt32LE(crc, 14);
+    local.writeUInt32LE(bytes.length, 18);
+    local.writeUInt32LE(bytes.length, 22);
+    local.writeUInt16LE(file.length, 26);
+    const central = Buffer.alloc(46);
+    central.writeUInt32LE(0x02014b50, 0);
+    central.writeUInt16LE((3 << 8) | 20, 4);
+    central.writeUInt16LE(20, 6);
+    central.writeUInt32LE(crc, 16);
+    central.writeUInt32LE(bytes.length, 20);
+    central.writeUInt32LE(bytes.length, 24);
+    central.writeUInt16LE(file.length, 28);
+    central.writeUInt32LE(mode * 0x10000, 38);
+    central.writeUInt32LE(at, 42);
+    locals.push(local, file, bytes);
+    centrals.push(central, file);
+    at += local.length + file.length + bytes.length;
+  }
+  const directory = Buffer.concat(centrals);
+  const end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0);
+  end.writeUInt16LE(entries.length, 8);
+  end.writeUInt16LE(entries.length, 10);
+  end.writeUInt32LE(directory.length, 12);
+  end.writeUInt32LE(at, 16);
+  return Buffer.concat([...locals, directory, end]);
+}
+
+// The image's unzip is BusyBox's; a machine with neither it nor another has nothing to prove here.
+const hasCommand = (file: string, args: string[]) => spawnSync(file, args).error === undefined;
+const unzips = [
+  ...(hasCommand('busybox', ['unzip', '--help']) ? (['busybox'] as const) : []),
+  ...(hasCommand('unzip', ['-v']) ? (['unzip'] as const) : []),
+];
+
+describe.skipIf(unzips.length === 0).each(unzips)(
+  '[M3.ytmusic/d] a real archive, by %s',
+  (tool) => {
+    /** The update running real children, with BusyBox standing in for the `unzip` it names. */
+    const realChildren: SpawnLike = (file, args, options) =>
+      file === 'unzip' && tool === 'busybox'
+        ? nodeSpawn('busybox', ['unzip', ...args], options)
+        : nodeSpawn(file, args, options);
+
+    const binary = (version: string, mode: number) => ({
+      name: 'yt-dlp_musllinux',
+      data: `#!/bin/sh\necho ${version}\n`,
+      mode,
+    });
+
+    const updateWith = (archive: Buffer) => {
+      const { versions, update: _update, canary } = setUp({ net: github({ archive }) });
+      const update = new ExtractorUpdate({
+        versions,
+        fetch: github({ archive }).fetch,
+        canary,
+        now: () => clock,
+        home: join(dir, 'home'),
+        arch: 'x64',
+        spawn: realChildren,
+        log: { warn: (_details, message) => warnings.push(message) },
+      });
+      return { versions, update };
+    };
+
+    it('a binary the archive does not mark executable still runs and is promoted', async () => {
+      const { versions, update } = updateWith(zipOf([binary(STABLE.tag_name, 0o100644)]));
+      expect(await update.run()).toBe('promoted');
+      expect(statSync(versions.path()).mode & 0o111).toBe(0o111);
+    });
+
+    it('an entry naming a path out of its folder lands inside it or nowhere', async () => {
+      const { versions, update } = updateWith(
+        zipOf([
+          binary(STABLE.tag_name, 0o100755),
+          { name: '../../escaped', data: 'out', mode: 0o100644 },
+        ]),
+      );
+      await update.run();
+      expect(existsSync(join(dir, 'escaped'))).toBe(false);
+      expect(existsSync(join(dir, '.incoming', 'escaped'))).toBe(false);
+      expect(versions.row(STABLE.tag_name)).toBeDefined();
+    });
+
+    it('an archive holding a symlink is refused, and nothing of it stays', async () => {
+      const { versions, update } = updateWith(
+        zipOf([
+          binary(STABLE.tag_name, 0o100755),
+          { name: 'link', data: '/etc/passwd', mode: 0o120777 },
+        ]),
+      );
+      expect(await update.run()).toBe('failed');
+      expect(stateOf(versions, STABLE.tag_name)).toBe('failed');
+      expect(existsSync(folderOf(STABLE.tag_name))).toBe(false);
+      expect(versions.now().version).toBe(IMAGE_VERSION);
+    });
+  },
+);

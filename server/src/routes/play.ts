@@ -262,7 +262,7 @@ export function refusalFor(error: unknown): never {
 /** Why a streamed song cannot play, as this server's answer. */
 export function songRefusal(error: unknown): never {
   if (error instanceof StreamingUnavailable) throw new Refusal(503, 'streaming_unavailable');
-  if (error instanceof TrackRefused) throw new Refusal(404, 'not_found');
+  if (error instanceof TrackRefused) throw new Refusal(error.status, error.error);
   if (error instanceof RangeRefused) {
     const headers: Record<string, string> =
       error.size === undefined ? {} : { 'content-range': `bytes */${error.size}` };
@@ -651,9 +651,11 @@ export function playRoutes(
     const ref = parseMediaRefKey(params.ref);
     if (ref === null) throw new Refusal(400, 'bad_request');
     if (ref.source === 'ytmusic') {
-      if (params.n !== '0' || music === null || streamedTrack(db, ref.id) === undefined) {
+      const song = streamedTrack(db, ref.id);
+      if (params.n !== '0' || music === null || song === undefined) {
         throw new Refusal(404, 'not_found');
       }
+      if (song.duration > MOST_SONG_SECONDS) throw new Refusal(422, 'unsupported_format');
       return music.open(ref.id, range, signal).catch(songRefusal);
     }
     if (ref.source === 'jellyfin') {

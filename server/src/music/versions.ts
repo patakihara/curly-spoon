@@ -109,12 +109,14 @@ export class ExtractorVersions {
     const before = this.current;
     db.transaction(() => {
       const older = db
-        .prepare("SELECT version, source FROM extractor_versions WHERE state = 'kept'")
+        .prepare("SELECT version, source FROM extractor_versions WHERE state <> 'failed'")
         .all() as Pick<VersionRow, 'version' | 'source'>[];
       for (const row of older) {
+        if (row.version === before.version) continue;
         db.prepare('DELETE FROM extractor_versions WHERE version = ?').run(row.version);
-        if (row.source !== 'image')
+        if (row.source !== 'image') {
           rmSync(this.folder(row.version), { recursive: true, force: true });
+        }
       }
       db.prepare(
         `INSERT INTO extractor_versions (version, source, state, promoted_at)
@@ -124,6 +126,49 @@ export class ExtractorVersions {
       this.write(version, source, 'promoted', result, at, at);
     })();
     this.current = { version, source, path: join(this.folder(version), BINARY) };
+  }
+
+  /** What else on disk last passed, best first: the versions to fall back on. */
+  fallbacks(): VersionRow[] {
+    const rank = (row: VersionRow) => (row.state === 'promoted' ? 0 : 1);
+    return this.rows()
+      .filter((row) => row.state !== 'failed' && row.version !== this.current.version)
+      .filter((row) => this.onDisk(row))
+      .sort((a, b) => rank(a) - rank(b));
+  }
+
+  /**
+   * The version in use failed its canary and `row` passed: `row` is in use from now. The failed one
+   * is marked so, and its folder goes, so a start cannot pick it again.
+   */
+  fallBack(row: VersionRow, result: CanaryResult, at: number): void {
+    const before = this.current;
+    this.opts.db
+      .prepare("UPDATE extractor_versions SET state = 'failed' WHERE version = ?")
+      .run(before.version);
+    if (before.source !== 'image') {
+      rmSync(this.folder(before.version), { recursive: true, force: true });
+    }
+    this.write(row.version, row.source, 'promoted', result, at, at);
+    this.current = this.currentOf(row);
+  }
+
+  pathOf(row: Pick<VersionRow, 'version' | 'source'>): string {
+    return this.currentOf(row).path;
+  }
+
+  private onDisk(row: VersionRow): boolean {
+    return row.source === 'image'
+      ? row.version === this.opts.imageVersion
+      : existsSync(join(this.folder(row.version), BINARY));
+  }
+
+  private currentOf(row: Pick<VersionRow, 'version' | 'source'>): CurrentExtractor {
+    return {
+      version: row.version,
+      source: row.source,
+      path: row.source === 'image' ? this.opts.imagePath : join(this.folder(row.version), BINARY),
+    };
   }
 
   private write(
@@ -166,21 +211,12 @@ export class ExtractorVersions {
       path: imagePath,
       source: 'image',
     };
-    const onDisk = (row: VersionRow) =>
-      row.source === 'image'
-        ? row.version === imageVersion
-        : existsSync(join(this.folder(row.version), BINARY));
-    const rows = this.rows().filter(onDisk);
+    const rows = this.rows().filter((row) => this.onDisk(row));
     const best =
       rows.find((row) => row.state === 'promoted') ?? rows.find((r) => r.state === 'kept');
     if (best === undefined) return image;
     const imageFailed = this.row(imageVersion)?.state === 'failed';
     if (imageVersion > best.version && !imageFailed) return image;
-    if (best.source === 'image') return image;
-    return {
-      version: best.version,
-      source: best.source,
-      path: join(this.folder(best.version), BINARY),
-    };
+    return this.currentOf(best);
   }
 }
