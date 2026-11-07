@@ -70,6 +70,9 @@
  * anything, and Audnexus's photo's first bytes (record-shelf.ts). It needs ABS_API_KEY and
  * ABS_PROVISION_KEY.
  *
+ * `--only ytmusic` records M3.ytmusic's InnerTube reads, with no key at all, after checking this
+ * machine leaves by the server's own public address (record-ytmusic.ts). Nothing goes on stdin.
+ *
  * `--only qbit --qbittorrent <url> --torrent <magnet>` records M3.books' qBittorrent calls on a
  * made-up hash and the public torrent named (record-qbit.ts), both removed with their files
  * afterwards. No read lists a household torrent. It needs only QBITTORRENT_API_KEY.
@@ -81,7 +84,8 @@ import { mkdtempSync, readFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseArgs } from 'node:util';
+import { execFile } from 'node:child_process';
+import { parseArgs, promisify } from 'node:util';
 import { AbsClient, contentUrlParts, hlsSessionOf } from './audiobookshelf/client.js';
 import { AdapterError, type FetchLike } from './http/fetch.js';
 import { createRecorder } from './http/record.js';
@@ -98,6 +102,8 @@ import { recordLists } from './record-lists.js';
 import { recordLyrics } from './record-lyrics.js';
 import { recordBooks } from './record-books.js';
 import { recordQbit } from './record-qbit.js';
+import { recordYtMusic, SERVER_ECHO_ARGV } from './record-ytmusic.js';
+import { YTMUSIC_URL } from './ytmusic/client.js';
 import { recordHousehold } from './record-household.js';
 import { recordPlayed } from './record-played.js';
 import { recordShelf } from './record-shelf.js';
@@ -126,7 +132,7 @@ Records Audiobookshelf's and Jellyfin's calls into server/src/adapters/*/recordi
                      --only sessions, the track Instant Mix is asked for; for --only played,
                      the track to mark if the test user has played nothing
   --only <name>      record only abs, jellyfin, index, play, episode, jfplay, progress,
-                     sessions, shell, lyrics, lists, played, books, shelf or qbit; or
+                     sessions, shell, lyrics, lists, played, books, shelf, qbit or ytmusic; or
                      oidc, a sign-in and its links
   --lrclib <url>     LRCLIB's base URL, for --only lyrics
   --prowlarr <url>   Prowlarr's base URL, for --only books
@@ -206,6 +212,8 @@ export interface RecordIo {
   sleep?: (ms: number) => Promise<void>;
   /** People's names from the local, uncommitted names file: the scan fails on any of them. */
   names?: readonly string[];
+  /** For --only ytmusic: the address echo as the server reads it; over ssh when not given. */
+  serverEcho?: () => Promise<string>;
 }
 
 /** The `id` of a play answer, from its raw text, whether or not the rest of it parses. */
@@ -699,11 +707,12 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'books',
       'shelf',
       'qbit',
+      'ytmusic',
       'oidc',
     ].includes(only)
   ) {
     io.err(
-      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, shelf, qbit or oidc, not ${only}`,
+      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, shelf, qbit, ytmusic or oidc, not ${only}`,
     );
     return 2;
   }
@@ -727,6 +736,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
   if (only === 'books') return runBooks(io, values, parseKeys(io.stdin), root);
   if (only === 'shelf') return runShelf(io, values, parseKeys(io.stdin), root);
   if (only === 'qbit') return runQbit(io, values, parseKeys(io.stdin), root);
+  if (only === 'ytmusic') return runYtMusic(io, root);
   const wantIndex = only === undefined || only === 'index';
   const wantAbs = only !== 'jellyfin';
   const wantJellyfin = only !== 'abs';
@@ -1229,6 +1239,23 @@ async function runBooks(
     root,
     prowlarrUrl: values.prowlarr as string,
     prowlarrKey: keys.PROWLARR_API_KEY as string,
+  });
+  return scanWritten(io, written, []);
+}
+
+async function runYtMusic(io: RecordIo, root: string): Promise<number> {
+  const { written } = await recordYtMusic({
+    fetch: io.fetch,
+    out: io.out,
+    root,
+    baseUrl: YTMUSIC_URL,
+    now: io.now ?? Date.now,
+    serverEcho:
+      io.serverEcho ??
+      (async () => {
+        const [file, ...args] = SERVER_ECHO_ARGV as [string, ...string[]];
+        return (await promisify(execFile)(file, args, { timeout: 120_000 })).stdout;
+      }),
   });
   return scanWritten(io, written, []);
 }

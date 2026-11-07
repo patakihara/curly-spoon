@@ -30,6 +30,7 @@ server/src/**/*.test.ts
 server/src/adapters/*/recordings
 server/src/adapters/oidc
 server/src/adapters/record-*.ts
+server/src/adapters/ytmusic
 server/src/adapters/http/*
 !server/src/adapters/http/fetch.ts
 !server/src/adapters/http/publicFetch.ts

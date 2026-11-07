@@ -22,8 +22,11 @@ import {
   PLACEHOLDER_EMAIL,
   PLACEHOLDER_HOME_USER,
   QUERY_PARAM,
+  RECORDED_STREAM_HOST,
   SECRET_BODY_KEY,
   SECRET_QUERY_KEY,
+  STREAM_NODE,
+  STREAM_SECRET_PARAM,
 } from './scrub.js';
 import { isTestSignedJwt, jwtClaims } from './testSigningKey.js';
 
@@ -52,7 +55,8 @@ export interface Finding {
 /**
  * Public hosts that published metadata carries: an album's `ExternalUrls` on Jellyfin, a
  * podcast's feed, episode enclosures and directory page on Audiobookshelf, and the iTunes
- * namespace a feed declares; the covers and author photos Audible and Audnexus name.
+ * namespace a feed declares; the covers and author photos Audible and Audnexus name; YouTube Music's
+ * art, and the one stream host a scrubbed recording can name.
  */
 export const PUBLIC_HOSTS: readonly string[] = [
   'musicbrainz.org',
@@ -63,6 +67,9 @@ export const PUBLIC_HOSTS: readonly string[] = [
   'podcasts.apple.com',
   'm.media-amazon.com',
   'images-na.ssl-images-amazon.com',
+  'yt3.googleusercontent.com',
+  'lh3.googleusercontent.com',
+  RECORDED_STREAM_HOST,
 ];
 /**
  * Whole public addresses allowed where their host is not: Auralis's public homepage, which its
@@ -169,8 +176,11 @@ function scanString(
     (m) => !isUsersRoute(route, m.index, m[1] ?? '', m[2] ?? ''),
   );
   if (homes.some((m) => m[4] !== PLACEHOLDER_HOME_USER)) add('home-path');
+  if (value.search(STREAM_NODE) >= 0) add('host');
+  const stream = value.includes(RECORDED_STREAM_HOST);
   for (const [, , name = '', v = ''] of value.matchAll(QUERY_PARAM)) {
-    if ((SECRET_QUERY_KEY.test(name) && v !== '' && v !== PLACEHOLDER) || isOpaque(v)) {
+    const secret = SECRET_QUERY_KEY.test(name) || (stream && STREAM_SECRET_PARAM.test(name));
+    if ((secret && v !== '' && v !== PLACEHOLDER) || isOpaque(v)) {
       add('query-secret');
     }
   }

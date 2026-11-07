@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { type RawExchange, SECRET_QUERY_KEY, scrub } from './scrub.js';
+import { scanRecording } from './scan.js';
+import { type RawExchange, SECRET_QUERY_KEY, scrub, scrubString } from './scrub.js';
 
 const KEY = 'sk-9f8e7d6c5b4a/+=';
 const baseUrl = 'http://100.64.12.34:13378';
@@ -411,5 +412,102 @@ describe('[M0.record/c] scrubbing a recording', () => {
       opts,
     );
     expect(again).toEqual(once);
+  });
+});
+
+describe("[M3.ytmusic] scrubbing a stream URL, which holds the household's address", () => {
+  const ADDRESS = '85.76.1.2';
+  const STREAM = `https://rr3---sn-5hne6n7s.googlevideo.com/videoplayback?expire=1&ei=abc&ip=${ADDRESS}&id=o-A&itag=251&mn=sn-5hne6n7s,sn-oxu8pnpvo-ovce&initcwndbps=8000&n=xyz&sig=AOq0&lsig=ALc&pot=Mn&sparams=expire,ip`;
+  const YTDLP = (url: string) =>
+    exchange({
+      response: { status: 200, headers: {}, body: { json: { formats: [{ url, itag: 251 }] } } },
+    });
+  const scrubbedUrl = (recording: ReturnType<typeof scrub>) =>
+    (recording.response.body as { json: { formats: { url: string }[] } }).json.formats[0]!.url;
+
+  it('[M3.ytmusic] takes the address, the signatures and the cache nodes out, and keeps the rest', () => {
+    const url = scrubbedUrl(scrub(YTDLP(STREAM), opts));
+    expect(url).not.toContain(ADDRESS);
+    const query = new URL(url).searchParams;
+    for (const name of ['ip', 'ei', 'mn', 'n', 'sig', 'lsig', 'pot', 'initcwndbps']) {
+      expect(query.get(name), name).toBe('<token>');
+    }
+    expect(query.get('itag')).toBe('251');
+    expect(query.get('expire')).toBe('1');
+    expect(query.get('sparams')).toBe('expire,ip');
+  });
+
+  it("[M3.ytmusic] rewrites the host, which names the ISP's cache node", () => {
+    const url = scrubbedUrl(scrub(YTDLP(STREAM), opts));
+    expect(new URL(url).hostname).toBe('rr0---sn-recorded.googlevideo.com');
+    expect(url).not.toContain('5hne6n7s');
+  });
+
+  it('[M3.ytmusic] does the same for a stream URL asked directly', () => {
+    const r = scrub(
+      exchange({
+        request: { method: 'GET', url: STREAM, headers: {}, body: null },
+      }),
+      { secrets: [], baseUrl: 'https://rr3---sn-5hne6n7s.googlevideo.com' },
+    );
+    expect(r.request.query.ip).toBe('<token>');
+    expect(r.request.query.sig).toBe('<token>');
+    expect(r.request.query.itag).toBe('251');
+  });
+
+  it('[M3.ytmusic] is idempotent, and what it leaves passes the scan', () => {
+    const once = scrub(YTDLP(STREAM), opts);
+    const twice = scrubString(scrubbedUrl(once));
+    expect(twice).toBe(scrubbedUrl(once));
+    expect(scanRecording(once)).toEqual([]);
+  });
+
+  it('[M3.ytmusic] leaves an `n` or an `ip` outside a stream URL alone: only there are they secret', () => {
+    expect(scrubString('http://upstream.invalid/page?n=5&ip=no')).toBe(
+      'http://upstream.invalid/page?n=5&ip=no',
+    );
+  });
+
+  it('[M3.ytmusic] the address the recorder was given goes wherever it appears', () => {
+    const r = scrub(
+      exchange({
+        response: {
+          status: 200,
+          headers: {},
+          body: {
+            json: { seenFrom: `from ${Buffer.from(ADDRESS).toString('base64')} or ${ADDRESS}` },
+          },
+        },
+      }),
+      { secrets: [ADDRESS], baseUrl },
+    );
+    const text = JSON.stringify(r);
+    expect(text).not.toContain(ADDRESS);
+    expect(text).not.toContain(Buffer.from(ADDRESS).toString('base64'));
+  });
+
+  describe('the scan, as the backstop', () => {
+    const clean = () => scrub(YTDLP(STREAM), opts);
+    const plant = (url: string) => {
+      const r = clean();
+      (r.response.body as { json: { formats: { url: string }[] } }).json.formats[0]!.url = url;
+      return r;
+    };
+
+    it('[M3.ytmusic] fails on the planted address', () => {
+      const r = plant(scrubbedUrl(clean()).replace('ip=<token>', `ip=${ADDRESS}`));
+      expect(scanRecording(r).map((f) => f.kind)).toContain('ip');
+    });
+
+    it('[M3.ytmusic] fails on a signature left in a stream URL', () => {
+      const r = plant(scrubbedUrl(clean()).replace('sig=<token>', 'sig=AOq0'));
+      expect(scanRecording(r).map((f) => f.kind)).toContain('query-secret');
+    });
+
+    it("[M3.ytmusic] fails on a real cache node's host, and on its name alone", () => {
+      expect(scanRecording(plant(STREAM)).map((f) => f.kind)).toContain('host');
+      const named = plant('sn-5hne6n7s');
+      expect(scanRecording(named).map((f) => f.kind)).toContain('host');
+    });
   });
 });

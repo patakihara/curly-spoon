@@ -12,6 +12,7 @@ import { LYRICS_KEPT_LINES, LYRICS_TRIMMED } from './record-lyrics.js';
 import { albumRow, trackRows } from '../libraryIndex/rows.js';
 import { lyricsQuery } from '../lyrics/query.js';
 import { ART_WIDTH } from '../routes/items.js';
+import { RADIO_KEPT_ROWS, YTMUSIC_TRIMMED } from './record-ytmusic.js';
 import { PLAYED_PAGE } from './record-played.js';
 import { ABS_PROGRESS_CALLS, JELLYFIN_PROGRESS_CALLS, TEST_BOOKMARK } from './record-progress.js';
 
@@ -980,5 +981,47 @@ describe("[M3.books] qBittorrent's calls, as recorded on controlled torrents", (
     const { body } = recording('qbittorrent', 'info-stalled').response;
     const [row] = (body as { json: { state: string; progress: number }[] }).json;
     expect(row).toMatchObject({ state: 'metaDL', progress: 0 });
+  });
+});
+
+describe("[M3.ytmusic/a] YouTube Music's InnerTube calls, as recorded", () => {
+  const calls = [
+    ['search-songs', '/youtubei/v1/search', 200],
+    ['search-songs-several', '/youtubei/v1/search', 200],
+    ['search-bad-version', '/youtubei/v1/search', 404],
+    ['next-radio', '/youtubei/v1/next', 200],
+  ] as const;
+
+  it.each(calls)('[M3.ytmusic/a] %s asked %s and answered %i', (call, path, status) => {
+    const r = recording('ytmusic', call);
+    expect(r.upstream).toBe('ytmusic');
+    expect(r.request).toMatchObject({ method: 'POST', path });
+    expect(r.response.status).toBe(status);
+  });
+
+  it('[M3.ytmusic/a] each asked with no key, cookie or account, and keeps no session value', () => {
+    for (const [call] of calls) {
+      const r = recording('ytmusic', call);
+      expect(Object.keys(r.request.query), call).toEqual(['prettyPrint']);
+      expect(Object.keys(r.request.headers).sort(), call).toEqual(['accept', 'content-type']);
+      const client = (json(r.request.body).context as { client: Record<string, string> }).client;
+      expect(Object.keys(client).sort(), call).toEqual(['clientName', 'clientVersion', 'gl', 'hl']);
+      const answer = JSON.stringify(r.response.body);
+      for (const gone of ['visitorData', 'trackingParams', 'responseContext', '"continuations"']) {
+        expect(answer, `${call} ${gone}`).not.toContain(gone);
+      }
+    }
+  });
+
+  it("[M3.ytmusic/a] says it was trimmed, to the recorder's row limits", () => {
+    expect(json(recording('ytmusic', 'search-songs').response.body).trimmed).toBe(YTMUSIC_TRIMMED);
+    expect(JSON.stringify(recording('ytmusic', 'search-songs').response.body)).toContain(
+      'musicShelfRenderer',
+    );
+    expect(
+      JSON.stringify(recording('ytmusic', 'next-radio').response.body).match(
+        /playlistPanelVideoRenderer/g,
+      )?.length,
+    ).toBeLessThanOrEqual(RADIO_KEPT_ROWS);
   });
 });
