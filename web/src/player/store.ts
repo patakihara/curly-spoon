@@ -16,7 +16,8 @@
  * first says where it is, so the server cuts the play after the part playing, not one it left. An
  * item that cannot be planned leaves the player on what it had, or idle; the shell binds no status
  * to show it, so it is logged. A step that lands on a song that cannot be planned steps over it and
- * says which, and `MOST_SKIPPED` of them in a row stop the player and say that.
+ * says which, and so does a streamed song whose audio fails for good once planned; `MOST_SKIPPED` of
+ * either in a row stop the player and say that. A song heard ends the run.
  */
 import {
   ErrorResponse,
@@ -44,7 +45,7 @@ export const REPORT_EVERY_MS = 10_000;
 
 const MINUTE_MS = 60_000;
 
-/** How many songs in a row one step may step over before the player stops and says so. */
+/** How many songs in a row may be stepped over before the player stops and says so. */
 export const MOST_SKIPPED = 5;
 
 /** How near a stop counts as at it: the engine moves back onto a stop, so this is only rounding. */
@@ -231,6 +232,9 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
   let restoring: Promise<void> | null = null;
   let restored = false;
   let refused: Refused | null = null;
+  /** The songs stepped over in a row, and the way the run goes, until a song is heard. */
+  let steppedOver = 0;
+  let heading: 'next' | 'back' = 'next';
 
   const listeners = new Set<() => void>();
   const sleepLabel = () =>
@@ -426,7 +430,13 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     await last.destroy(final).catch(logClose);
   };
 
+  const endRun = () => {
+    steppedOver = 0;
+    heading = 'next';
+  };
+
   const unload = () => {
+    endRun();
     ref = null;
     plan = null;
     position = 0;
@@ -490,6 +500,15 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
         const stopped = mine;
         void run(() => stoppedAt(stopped));
       },
+      onPlaying: () => {
+        if (ours()) endRun();
+      },
+      onFailed: () => {
+        const failed = mine;
+        // Decision (M3.ytmusic): only a streamed song is stepped over when its audio fails. An
+        // item the household holds stays where it is, as it did.
+        if (to.source === 'ytmusic') void run(() => audioFailed(failed));
+      },
     });
     engine = mine;
     mine.setRate(rate());
@@ -528,18 +547,30 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     return view.success ? (view.data.current?.title ?? null) : null;
   };
 
+  /** Says `song` was stepped over, with so many in a row, and whether that many stop the player. */
+  const stepOver = async (song: MediaRef, error: string | null) => {
+    steppedOver += 1;
+    const stops = steppedOver >= MOST_SKIPPED;
+    refused = {
+      ref: song,
+      error,
+      skipped: { title: await currentTitle() },
+      ...(stops ? { stoppedAfter: steppedOver } : {}),
+    };
+    return stops;
+  };
+
   /**
-   * Steps the session and plays what it plays now, playing on if it played. A song that cannot be
-   * planned is stepped over the same way, up to `MOST_SKIPPED` in a row; a book or an episode that
-   * cannot leaves nothing loaded.
+   * Closes what plays, steps the session the way the run goes, and plays what it plays now, playing
+   * on if it played. A song that cannot be planned is stepped over the same way, until
+   * `MOST_SKIPPED` in a row stop it; a book or an episode that cannot leaves nothing loaded.
    */
-  const advance = async (direction: 'next' | 'back') => {
-    refused = null;
+  const walkOn = async () => {
     const playOn = playing;
     await closeCurrent();
-    for (let met = 1; met <= MOST_SKIPPED; met += 1) {
+    for (;;) {
       const answered = await api
-        .POST('/api/sessions/this/step', { body: { direction } })
+        .POST('/api/sessions/this/step', { body: { direction: heading } })
         .catch(() => null);
       if (answered?.response.status === 401) {
         await signOut();
@@ -551,14 +582,28 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
       if (await start(now.ref, playOn)) return;
       if (session.data?.active !== 'music') break;
       const said = store.getState().refused;
-      refused = {
-        ref: now.ref,
-        error: said?.ref === now.ref ? said.error : null,
-        skipped: { title: await currentTitle() },
-        ...(met === MOST_SKIPPED ? { stoppedAfter: met } : {}),
-      };
+      if (await stepOver(now.ref, said?.ref === now.ref ? said.error : null)) break;
     }
     unload();
+  };
+
+  /** A step of its own, begun by an end or by a person: a new run of songs stepped over. */
+  const advance = async (direction: 'next' | 'back') => {
+    refused = null;
+    endRun();
+    heading = direction;
+    await walkOn();
+  };
+
+  /** The audio of the streamed song `failed` plays failed for good: it is stepped over. */
+  const audioFailed = async (failed: Player | null) => {
+    if (failed === null || engine !== failed || ref === null) return;
+    if (await stepOver(ref, null)) {
+      await closeCurrent();
+      unload();
+      return;
+    }
+    await walkOn();
   };
 
   /** The server no longer holds `playId`: plan the same item again, from where it says. */
@@ -594,6 +639,7 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     failed: MediaRef | string,
   ): Promise<void> => {
     refused = null;
+    endRun();
     const was = ref;
     const playOn = playing;
     await closeCurrent();

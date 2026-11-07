@@ -87,6 +87,8 @@ function rig(plan: PlaybackPlan, options: { native?: string; hlsArrives?: Promis
   const bodies: unknown[] = [];
   let ended = 0;
   let stops = 0;
+  let failures = 0;
+  let playings = 0;
   const player = createPlayer(plan, {
     api: createApiClient({
       baseUrl: 'http://auralis.test',
@@ -124,6 +126,8 @@ function rig(plan: PlaybackPlan, options: { native?: string; hlsArrives?: Promis
     onPosition: (position) => positions.push(position),
     onEnded: () => ended++,
     onStop: () => stops++,
+    onFailed: () => failures++,
+    onPlaying: () => playings++,
   });
   const playing = () => audios.find((a) => !a.paused);
   return {
@@ -136,6 +140,8 @@ function rig(plan: PlaybackPlan, options: { native?: string; hlsArrives?: Promis
     playing,
     ended: () => ended,
     stops: () => stops,
+    failures: () => failures,
+    playings: () => playings,
   };
 }
 
@@ -458,6 +464,55 @@ describe('the web player', () => {
     await player.destroy();
     await player.seek(100);
     expect(audios.every((a) => a.paused && a.src === '')).toBe(true);
+  });
+
+  describe('[M3.ytmusic] when a file fails', () => {
+    it('[M3.ytmusic] says so when the file playing fails for good', async () => {
+      const { player, playing, failures } = rig(book);
+      await player.play();
+      playing()!.fire('error');
+      expect(failures()).toBe(1);
+    });
+
+    it.each(['stalled', 'waiting', 'seeking', 'suspend', 'abort', 'emptied'])(
+      '[M3.ytmusic] leaves a %s to the browser, which recovers from it itself',
+      async (event) => {
+        const { player, playing, failures } = rig(book);
+        await player.play();
+        playing()!.fire(event);
+        expect(failures()).toBe(0);
+      },
+    );
+
+    it('[M3.ytmusic] plays on when only the file preloaded next fails', async () => {
+      const { player, audios, playing, failures } = rig(book);
+      await player.play();
+      const current = playing()!;
+      current.loaded(21);
+      current.at(11);
+      audios.find((a) => a !== current)!.fire('error');
+      expect(failures()).toBe(0);
+      expect(playing()).toBe(current);
+    });
+
+    it('[M3.ytmusic] hears nothing of an element once it is closed', async () => {
+      const { player, audios, failures } = rig(book);
+      await player.play();
+      await player.destroy();
+      audios.forEach((audio) => audio.fire('error'));
+      expect(failures()).toBe(0);
+    });
+
+    it('[M3.ytmusic] says the file playing began to play, never the one preloaded next', async () => {
+      const { player, audios, playing, playings } = rig(book);
+      await player.play();
+      expect(playings()).toBe(1);
+      const current = playing()!;
+      current.loaded(21);
+      current.at(11);
+      audios.find((a) => a !== current)!.fire('playing');
+      expect(playings()).toBe(1);
+    });
   });
 
   describe('its own audio elements', () => {

@@ -6,7 +6,9 @@
  * its planned end), so chapters and progress work across files. A transcode's one HLS track plays
  * through hls.js, loaded only then, or through the browser's own HLS where it has one. It plays at
  * the rate it is given, its pitch kept, and stops where it is told to, never starting a file past
- * that point. The plan's playback session is closed when the player is.
+ * that point. It says when the file playing begins to be heard, and when that file fails for good:
+ * the element's `error` event, so a stall the browser recovers from says nothing, and nor does the
+ * file preloaded next. The plan's playback session is closed when the player is.
  */
 import { type ApiClient, createApiClient } from './api/client';
 import { type components } from './generated/api/schema';
@@ -66,6 +68,10 @@ export interface PlayerOptions {
   onEnded?: () => void;
   /** It paused at the stop `stopAt` set, or was asked to play at or past it. */
   onStop?: () => void;
+  /** The file playing begins to be heard, each time it does. */
+  onPlaying?: () => void;
+  /** The file playing failed for good. */
+  onFailed?: () => void;
 }
 
 export interface Player {
@@ -212,6 +218,12 @@ export function createPlayer(plan: PlaybackPlan, options: PlayerOptions = {}): P
       slot.audio.addEventListener(type, listener);
       unlisten.push(() => slot.audio.removeEventListener(type, listener));
     };
+    on('playing', () => {
+      if (mine()) options.onPlaying?.();
+    });
+    on('error', () => {
+      if (mine()) options.onFailed?.();
+    });
     on('timeupdate', () => {
       if (!mine()) return;
       if (atCut() && !slot.audio.paused) halt();

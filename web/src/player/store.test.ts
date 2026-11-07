@@ -3,7 +3,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApiClient } from '../api/client';
 import { type Player, type PlayerOptions, type ProgressReport } from '../playback';
 import { type MediaControls } from './media-session';
-import { type Clock, createPlayerStore, MOST_SKIPPED, SLEEP_STEPS, SPEED_STEPS } from './store';
+import {
+  type Clock,
+  createPlayerStore,
+  MOST_SKIPPED,
+  type PlayerStore,
+  SLEEP_STEPS,
+  SPEED_STEPS,
+} from './store';
 
 /** A clock the test moves by hand: its time and the timers due by it. */
 class FakeClock implements Clock {
@@ -98,6 +105,14 @@ class FakeEngine implements Player {
   at(position: number) {
     this.position = position;
     this.options.onPosition?.(position);
+  }
+  /** Its audio fails for good, as the element's `error` event says. */
+  fail() {
+    this.options.onFailed?.();
+  }
+  /** Its audio begins to be heard, as the element's `playing` event says. */
+  heard() {
+    this.options.onPlaying?.();
   }
 }
 
@@ -806,6 +821,173 @@ describe('[M1.shell] the web player store', () => {
         plan: null,
         refused: { skipped: { title: 'Song 1' } },
       });
+    });
+  });
+
+  describe('[M3.ytmusic] a streamed song planned whose audio then fails', () => {
+    const streamed = (n: number) => ({
+      ref: { source: 'ytmusic', id: `song${n}song${n}` } as MediaRef,
+      title: `Song ${n}`,
+    });
+    const stepsSent = (sent: Sent[]) =>
+      sent.filter(({ path }) => path === '/api/sessions/this/step');
+    /** Fails what plays `times` times, each answered before the next. */
+    const failInTurn = async (engine: () => FakeEngine, times: number) => {
+      for (let n = 0; n < times; n += 1) {
+        engine().fail();
+        await settle();
+      }
+    };
+
+    it('[M3.ytmusic] is stepped over, says which, and the music goes on', async () => {
+      const { store, sent, engine, engines } = rig({ walk: [streamed(1), streamed(2)] });
+      await store.play(book);
+      await store.step('next');
+      const failed = engine();
+      failed.fail();
+      await settle();
+      expect(store.getState()).toMatchObject({
+        ref: streamed(2).ref,
+        playing: true,
+        refused: { ref: streamed(1).ref, error: null, skipped: { title: 'Song 1' } },
+      });
+      expect(store.getState().refused?.stoppedAfter).toBeUndefined();
+      expect(stepsSent(sent)).toHaveLength(2);
+      expect(engine()).not.toBe(failed);
+      expect(engines.at(-1)!.paused).toBe(false);
+      expect(failed.closedWith).toBeDefined();
+    });
+
+    it('[M3.ytmusic] five in a row stop the player and say so, however many more wait', async () => {
+      const songs = Array.from({ length: MOST_SKIPPED * 3 }, (_, n) => streamed(n));
+      const { store, sent, engine } = rig({ walk: songs });
+      await store.play(book);
+      await store.step('next');
+      const before = stepsSent(sent).length;
+      await failInTurn(engine, MOST_SKIPPED);
+      expect(stepsSent(sent).length - before).toBe(MOST_SKIPPED - 1);
+      expect(store.getState()).toMatchObject({
+        ref: null,
+        plan: null,
+        playing: false,
+        refused: { stoppedAfter: MOST_SKIPPED },
+      });
+    });
+
+    it('[M3.ytmusic] counts in one run with songs that cannot be planned', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const songs = Array.from({ length: MOST_SKIPPED * 3 }, (_, n) => streamed(n));
+      const { store, sent, engine } = rig({
+        // Of the songs after the first, three in a row refuse a plan.
+        refusesPlan: Object.fromEntries(songs.slice(2, 5).map(({ ref }) => [ref.id, 'song_live'])),
+        walk: songs,
+      });
+      await store.play(book);
+      await store.step('next');
+      await failInTurn(engine, 2);
+      expect(store.getState()).toMatchObject({
+        plan: null,
+        refused: { stoppedAfter: MOST_SKIPPED },
+      });
+      expect(stepsSent(sent)).toHaveLength(MOST_SKIPPED);
+    });
+
+    it('[M3.ytmusic] a song that plays ends the run', async () => {
+      const songs = Array.from({ length: MOST_SKIPPED * 3 }, (_, n) => streamed(n));
+      const { store, engine } = rig({ walk: songs });
+      await store.play(book);
+      await store.step('next');
+      await failInTurn(engine, MOST_SKIPPED - 1);
+      engine().heard();
+      await failInTurn(engine, MOST_SKIPPED - 1);
+      expect(store.getState().plan).not.toBeNull();
+      expect(store.getState().refused?.stoppedAfter).toBeUndefined();
+    });
+
+    it.each([
+      ['Next', (store: PlayerStore) => store.step('next')],
+      ['a new play', (store: PlayerStore) => store.play(streamed(90).ref)],
+    ])('[M3.ytmusic] %s begins a new run', async (_how, act) => {
+      const songs = Array.from({ length: MOST_SKIPPED * 3 }, (_, n) => streamed(n));
+      const { store, engine } = rig({ walk: songs });
+      await store.play(book);
+      await store.step('next');
+      await failInTurn(engine, MOST_SKIPPED - 1);
+      await act(store);
+      await failInTurn(engine, MOST_SKIPPED - 1);
+      expect(store.getState().plan).not.toBeNull();
+      expect(store.getState().refused?.stoppedAfter).toBeUndefined();
+    });
+
+    it('[M3.ytmusic] after a run stopped the player, the next play counts from the start', async () => {
+      const songs = Array.from({ length: MOST_SKIPPED * 3 }, (_, n) => streamed(n));
+      const { store, engine } = rig({ walk: songs });
+      await store.play(book);
+      await store.step('next');
+      await failInTurn(engine, MOST_SKIPPED);
+      await store.play(streamed(90).ref);
+      await failInTurn(engine, 1);
+      expect(store.getState().plan).not.toBeNull();
+      expect(store.getState().refused).toMatchObject({ skipped: {} });
+      expect(store.getState().refused?.stoppedAfter).toBeUndefined();
+    });
+
+    it('[M3.ytmusic] goes on the way the step that met it went', async () => {
+      const { store, sent, engine } = rig({ walk: [streamed(1), streamed(2)] });
+      await store.play(book);
+      await store.step('back');
+      engine().fail();
+      await settle();
+      expect(stepsSent(sent).map(({ body }) => body!.direction)).toEqual(['back', 'back']);
+    });
+
+    it('[M3.ytmusic] goes on forward once a song stepped back to has played', async () => {
+      const { store, sent, engine } = rig({ walk: [streamed(1), streamed(2)] });
+      await store.play(book);
+      await store.step('back');
+      engine().heard();
+      engine().fail();
+      await settle();
+      expect(stepsSent(sent).map(({ body }) => body!.direction)).toEqual(['back', 'next']);
+    });
+
+    it('[M3.ytmusic] stays paused when it fails while paused', async () => {
+      const { store, engine } = rig({ walk: [streamed(1), streamed(2)] });
+      await store.play(book);
+      await store.step('next');
+      await store.pause();
+      engine().fail();
+      await settle();
+      expect(store.getState()).toMatchObject({ ref: streamed(2).ref, playing: false });
+    });
+
+    it('[M3.ytmusic] a failure heard after the song was left steps nothing', async () => {
+      const { store, sent, engine } = rig({ walk: [streamed(1), streamed(2), streamed(3)] });
+      await store.play(book);
+      await store.step('next');
+      const left = engine();
+      const asked = store.step('next');
+      left.fail();
+      await asked;
+      await settle();
+      expect(store.getState()).toMatchObject({ ref: streamed(2).ref, refused: null });
+      expect(stepsSent(sent)).toHaveLength(2);
+    });
+
+    it.each([
+      ['a book', book],
+      ['a song the household holds', song],
+      ['an episode', episode],
+    ])('[M3.ytmusic] %s whose audio fails stays as it was', async (_what, item) => {
+      const { store, sent, engine } = rig({ walk: [streamed(1)] });
+      await store.play(item);
+      const failed = engine();
+      const before = sent.length;
+      failed.fail();
+      await settle();
+      expect(sent).toHaveLength(before);
+      expect(engine()).toBe(failed);
+      expect(store.getState()).toMatchObject({ ref: item, playing: true, refused: null });
     });
   });
 

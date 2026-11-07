@@ -227,6 +227,53 @@ test.describe('when a streamed song cannot play', () => {
     await advances(page);
   });
 
+  /** The server answers an error for the audio of the streamed songs `fails` picks. */
+  const audioFails = (page: Page, fails: (id: string) => boolean) =>
+    page.route(/\/api\/media\/ytmusic(?::|%3A)[^/]+\/tracks\/0$/, (route) => {
+      const id = /ytmusic(?::|%3A)([^/]+)\/tracks/.exec(route.request().url())![1]!;
+      return fails(id) ? route.fulfill({ status: 502 }) : route.continue();
+    });
+
+  test('[M3.ytmusic] a song planned whose audio then fails is stepped over and named, and the music goes on', async ({
+    page,
+  }) => {
+    recorded = await serveRecorded({ nothingPlayed: true, music: 'answers' });
+    await search(page, 'never');
+    const [first, second] = await songsOf(page, 'never');
+    await artPlay(page, first!.title);
+    await expect.poll(() => titlePlaying(page)).toBe(first!.title);
+    await advances(page);
+    await audioFails(page, (id) => id === second!.ref.id);
+    await songRow(page, second!.title).getByRole('button', { name: 'Play next' }).click();
+    await expect
+      .poll(async () => {
+        const answer = await page.request.get(`${recorded.origin}/api/queues/music`);
+        return JSON.stringify(await answer.json());
+      })
+      .toContain(second!.ref.id);
+    await toTheEnd(page);
+    await expect(
+      page.getByText(`Skipped “${second!.title}”. This song could not play.`),
+    ).toBeVisible({ timeout: 15_000 });
+    await expect.poll(() => titlePlaying(page), { timeout: 15_000 }).not.toBe(second!.title);
+    await advances(page);
+  });
+
+  test('[M3.ytmusic] five songs in a row whose audio fails stop the player, and it says so', async ({
+    page,
+  }) => {
+    recorded = await serveRecorded({ nothingPlayed: true, music: 'answers' });
+    await search(page, 'never');
+    const [first] = await songsOf(page, 'never');
+    await audioFails(page, () => true);
+    await artPlay(page, first!.title);
+    await expect(page.getByText('Stopped: 5 songs in a row could not play.')).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect.poll(() => titlePlaying(page)).toBeNull();
+    expect(await page.locator('audio').count()).toBe(0);
+  });
+
   test('[M3.ytmusic] while music plays, a song the household holds offers Play next as a streamed one does', async ({
     page,
   }) => {
