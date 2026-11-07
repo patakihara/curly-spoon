@@ -67,8 +67,9 @@ export interface AudioFormat {
 }
 
 /**
- * Rule 8, on the extractor's own words: no video codec, an audio codec, a plain file over https, an
- * audio type, YouTube's stream host. Failing rows say nothing of the URL they held.
+ * Rule 8, on the extractor's own words and the URL's: no video codec, an audio codec, a plain file
+ * over https, an audio type, YouTube's stream host, a file rather than a manifest, and the URL asking
+ * for the format its row names. Failing rows say nothing of the URL they held.
  */
 export const audioFormatSchema = z
   .object({
@@ -84,7 +85,14 @@ export const audioFormatSchema = z
     const url = URL.canParse(row.url) ? new URL(row.url) : null;
     const mime = url?.searchParams.get('mime') ?? '';
     const expire = Number(url?.searchParams.get('expire') ?? '');
-    if (url === null || !isStreamHost(url) || !/^audio\/[\w.+-]+$/.test(mime) || !(expire > 0)) {
+    if (
+      url === null ||
+      !isStreamHost(url) ||
+      url.pathname !== '/videoplayback' ||
+      url.searchParams.get('itag') !== row.format_id ||
+      !/^audio\/[\w.+-]+$/.test(mime) ||
+      !(expire > 0)
+    ) {
       ctx.addIssue({ code: 'custom', message: 'not an audio stream on the stream host' });
       return z.NEVER;
     }

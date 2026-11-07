@@ -851,6 +851,50 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 24,
+    name: 'queues_take_a_streamed_song',
+    up: (db) => {
+      // A streamed song sits in a queue, its history and autoplay like any other, so these tables'
+      // checks learn its source. SQLite changes a check only by rebuilding the table. A migration
+      // runs in a transaction, where foreign keys cannot be turned off, and dropping
+      // listening_sessions cascades into whatever still points at it, so each table is rebuilt
+      // beside the old one, every child (saved_queues too, whose check needs no change) is dropped
+      // first, and listening_sessions last, by when no row points at it.
+      const children = [
+        'queue_items',
+        'playing_from',
+        'play_history',
+        'autoplay_picks',
+        'radio_tracks',
+        'saved_queues',
+      ];
+      const tables = ['listening_sessions', ...children];
+      const definition = db.prepare<[string, string], { sql: string }>(
+        'SELECT sql FROM sqlite_master WHERE type = ? AND name = ?',
+      );
+      const indexes = db
+        .prepare<[], { sql: string }>(
+          `SELECT sql FROM sqlite_master
+           WHERE type = 'index' AND sql IS NOT NULL
+             AND tbl_name IN (${tables.map((t) => `'${t}'`).join(', ')})`,
+        )
+        .all();
+      for (const table of tables) {
+        const { sql } = definition.get('table', table)!;
+        db.exec(
+          sql
+            .replace(`CREATE TABLE ${table} `, `CREATE TABLE ${table}_new `)
+            .replaceAll('REFERENCES listening_sessions(', 'REFERENCES listening_sessions_new(')
+            .replaceAll("IN ('abs', 'jellyfin')", "IN ('abs', 'jellyfin', 'ytmusic')"),
+        );
+        db.exec(`INSERT INTO ${table}_new SELECT * FROM ${table}`);
+      }
+      for (const table of [...children, 'listening_sessions']) db.exec(`DROP TABLE ${table}`);
+      for (const table of tables) db.exec(`ALTER TABLE ${table}_new RENAME TO ${table}`);
+      for (const index of indexes) db.exec(index.sql);
+    },
+  },
 ];
 
 export function runMigrations(

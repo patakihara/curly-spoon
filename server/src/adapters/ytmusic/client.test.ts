@@ -240,3 +240,45 @@ describe('[M3.ytmusic/a] the radio YouTube Music makes from a song, on recording
     expect(bad).toHaveLength(1);
   });
 });
+
+describe('[M3.ytmusic/a] what InnerTube renames is told of', () => {
+  /* eslint-disable @typescript-eslint/no-explicit-any -- each test reaches one field of a recording */
+  const sections = (json: any): any[] =>
+    json.contents.tabbedSearchResultsRenderer.tabs[0].tabRenderer.content.sectionListRenderer
+      .contents;
+
+  it('[M3.ytmusic/a] an artist whose name begins with & keeps it', async () => {
+    const renamed = edited(searchSongs, (json) => {
+      bylineOf(shelfRows(json)[0]).runs[0].text = '&TEAM';
+    });
+    const [first] = await client([renamed]).search('q');
+    expect(first?.artists).toEqual(['&TEAM']);
+  });
+
+  it('[M3.ytmusic/a] a shelf renamed upstream is told of, not taken for a search that found nothing', async () => {
+    const bad: string[] = [];
+    const renamed = edited(searchSongs, (json) => {
+      for (const section of sections(json)) {
+        if (section.musicShelfRenderer === undefined) continue;
+        section.musicShelfRendererV2 = section.musicShelfRenderer;
+        delete section.musicShelfRenderer;
+      }
+    });
+    expect(await client([renamed], (what) => bad.push(what)).search('q')).toEqual([]);
+    expect(bad.length).toBeGreaterThan(0);
+  });
+
+  it('[M3.ytmusic/a] a radio panel renamed upstream is told of, not taken for no radio', async () => {
+    const bad: string[] = [];
+    const renamed = edited(nextRadio, (json: any) => {
+      const tab =
+        json.contents.singleColumnMusicWatchNextResultsRenderer.tabbedRenderer
+          .watchNextTabbedResultsRenderer.tabs[0].tabRenderer;
+      tab.content.musicQueueRendererV2 = tab.content.musicQueueRenderer;
+      delete tab.content.musicQueueRenderer;
+    });
+    expect(await client([renamed], (what) => bad.push(what)).radio(SEED)).toEqual([]);
+    expect(bad.length).toBeGreaterThan(0);
+  });
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+});

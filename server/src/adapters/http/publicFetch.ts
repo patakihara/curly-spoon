@@ -79,6 +79,7 @@ export function pinnedGet(
       {
         method: 'GET',
         lookup: pinnedLookup(addresses),
+        headers: Object.fromEntries(new Headers(init?.headers).entries()),
         ...(init?.signal ? { signal: init.signal } : {}),
       },
       (answer) => {

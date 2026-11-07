@@ -14,9 +14,10 @@ import {
   Extractor,
   ExtractorFailure,
   extractorArgs,
+  runChild,
   type SpawnLike,
 } from './extractor.js';
-import { InfoRefused, isStreamHost, parseInfo, pickFormat } from './schemas.js';
+import { audioFormatSchema, InfoRefused, isStreamHost, parseInfo, pickFormat } from './schemas.js';
 
 const adapters = join(dirname(fileURLToPath(import.meta.url)), '..', 'adapters');
 
@@ -94,6 +95,38 @@ describe('[M3.ytmusic/a] the audio-only guard, rule 8, on what the extractor rec
     expect(info.formats.map((format) => format.itag)).toEqual([139, 249, 250, 140, 251]);
     expect(info.id).toBe(KNOWN);
     expect(formatsOf(plain).map((row) => row.format_id)).toContain('160');
+  });
+
+  describe('a row that contradicts itself', () => {
+    const URL_251 =
+      'https://rr1.googlevideo.com/videoplayback?itag=251&mime=audio/webm&expire=4000000000';
+    const row = (url: string, vcodec = 'none') => ({
+      format_id: '251',
+      vcodec,
+      acodec: 'opus',
+      protocol: 'https',
+      url,
+    });
+
+    it('[M3.ytmusic/a] the row itself is good, so each refusal below is its one change', () => {
+      expect(audioFormatSchema.safeParse(row(URL_251)).success).toBe(true);
+    });
+
+    it('[M3.ytmusic/a] a manifest on the stream host is refused, whatever its row says', () => {
+      const manifest =
+        'https://manifest.googlevideo.com/api/manifest/hls_playlist/file/index.m3u8?itag=251&mime=audio/webm&expire=4000000000';
+      expect(audioFormatSchema.safeParse(row(manifest)).success).toBe(false);
+    });
+
+    it('[M3.ytmusic/a] a row naming 251 whose URL asks for the muxed 18 is refused', () => {
+      expect(audioFormatSchema.safeParse(row(URL_251.replace('itag=251', 'itag=18'))).success).toBe(
+        false,
+      );
+    });
+
+    it('[M3.ytmusic/a] a row naming a video codec is refused, though its URL says audio', () => {
+      expect(audioFormatSchema.safeParse(row(URL_251, 'vp9')).success).toBe(false);
+    });
   });
 
   it('[M3.ytmusic/a] refuses the recorded muxed format, 18, and every video-only one', () => {
@@ -387,6 +420,26 @@ describe("[M3.ytmusic/a] a URL's life in memory", () => {
 });
 
 describe('[M3.ytmusic/a] the child itself, a real process', () => {
+  it('[M3.ytmusic/a] a child answering past the output cap is killed, and what it said past the cap is not kept', async () => {
+    const child = new EventEmitter() as ChildProcess & EventEmitter;
+    const stdout = new PassThrough();
+    const stderr = new PassThrough();
+    Object.assign(child, { stdout, stderr, pid: 4242 });
+    const kill = vi.fn(() => child.emit('close', null));
+    const running = runChild('extractor', [], {
+      spawn: () => child,
+      kill,
+      env: {},
+      cwd: '/',
+      maxOutputBytes: 10,
+    });
+    stdout.write('12345678');
+    stdout.write('too much');
+    const result = await running;
+    expect(kill).toHaveBeenCalledWith(4242);
+    expect(result).toMatchObject({ killed: true, stdout: '12345678' });
+  });
+
   const script = (dir: string, body: string) => {
     const file = join(dir, 'fake-extractor');
     writeFileSync(file, `#!/bin/sh\n${body}\n`);

@@ -13,11 +13,16 @@
  * the least recently used tracks that are neither pinned nor being played, and with no room the
  * chunk is served without being kept, as it is when the disk is full.
  */
-import { mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { constants, open as openFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { AdapterError, type FetchLike } from '../adapters/http/fetch.js';
-import { fileHeadersSchema, openStream, RangeNotSatisfiable } from '../adapters/stream.js';
+import {
+  type FileHeaders,
+  fileHeadersSchema,
+  openStream,
+  RangeNotSatisfiable,
+} from '../adapters/stream.js';
 import type { Db } from '../store/connection.js';
 import { isStreamHost, type StreamUrl, YT_ID } from './schemas.js';
 
@@ -137,7 +142,8 @@ const withBit = (bits: Buffer, n: number, on: boolean) => {
 async function writeAndSync(path: string, chunk: Uint8Array, offset: number): Promise<void> {
   const file = await openFile(path, constants.O_WRONLY | constants.O_CREAT, 0o600);
   try {
-    await file.write(chunk, 0, chunk.byteLength, offset);
+    const { bytesWritten } = await file.write(chunk, 0, chunk.byteLength, offset);
+    if (bytesWritten !== chunk.byteLength) throw new Error('a short write');
     await file.datasync();
   } finally {
     await file.close();
@@ -151,6 +157,8 @@ export class StreamCache {
   private readonly changed = new Set<string>();
   /** Bytes between room being made for them and their bit being set. */
   private writing = 0;
+  /** How many times each track's file has gone, so a write begun before cannot count after. */
+  private readonly forgotten = new Map<string, number>();
 
   constructor(private readonly opts: StreamCacheOptions) {
     this.chunkBytes = opts.chunkBytes ?? CHUNK_BYTES;
@@ -203,7 +211,7 @@ export class StreamCache {
     let row: Row;
     let pending: Buffer | null;
     try {
-      row = await this.rowFor(id);
+      row = await untilGone(this.rowFor(id), client.signal);
       [pos, last] = spanOf(range, row.size);
       this.opts.db
         .prepare('UPDATE stream_cache SET last_used = ? WHERE id = ?')
@@ -268,6 +276,7 @@ export class StreamCache {
     for (let n = 0; n < count; n += 1) {
       if (!hasBit(row.chunks, n)) return null;
     }
+    if (!this.fileHolds(row)) return null;
     return { path: this.path(row), mime: row.mime, size: row.size };
   }
 
@@ -277,6 +286,15 @@ export class StreamCache {
       .prepare('SELECT COALESCE(SUM(bytes), 0) AS total FROM stream_cache')
       .get() as { total: number };
     return total;
+  }
+
+  /** The file on disk reaches the track's last byte. */
+  private fileHolds(row: Row): boolean {
+    try {
+      return statSync(this.path(row)).size >= row.size;
+    } catch {
+      return false;
+    }
   }
 
   private path(row: Pick<Row, 'id' | 'itag'>): string {
@@ -306,6 +324,7 @@ export class StreamCache {
   }
 
   private forget(id: string, itag: number): void {
+    this.forgotten.set(id, (this.forgotten.get(id) ?? 0) + 1);
     this.opts.db.prepare('DELETE FROM stream_cache WHERE id = ?').run(id);
     rmSync(this.path({ id, itag }), { force: true });
   }
@@ -336,9 +355,14 @@ export class StreamCache {
 
   /** A format that names no size: the answer to its first two bytes does. */
   private async sizeOf(source: StreamSource): Promise<number> {
-    const stop = new AbortController();
-    const { total } = await this.ask(source.url, 0, 1, stop.signal);
-    return total;
+    const stop = new AbortController().signal;
+    try {
+      return (await this.ask(source.url, 0, 1, stop)).total;
+    } catch (error) {
+      if (!(error instanceof StreamFailure) || error.reason !== 'refused') throw error;
+      const again = await this.opts.resolver.resolve(source.id, { replacing: source.url });
+      return (await this.ask(again.url, 0, 1, stop)).total;
+    }
   }
 
   /** One chunk's bytes: from disk when held, else from the one fetch everyone waiting shares. */
@@ -447,6 +471,7 @@ export class StreamCache {
         await this.keep(row, n, bytes);
         return bytes;
       } catch (error) {
+        if (error instanceof StreamFailure && error.reason === 'changed') this.changed.add(id);
         if (retried || !(error instanceof StreamFailure) || error.reason !== 'refused') throw error;
         source = await this.opts.resolver.resolve(id, { replacing: source.url });
       }
@@ -465,7 +490,7 @@ export class StreamCache {
       AbortSignal.timeout(this.opts.chunkTimeoutMs ?? CHUNK_TIMEOUT_MS),
     ]);
     const expected = last - first + 1;
-    let file: Awaited<ReturnType<typeof openStream>>;
+    let file: Awaited<ReturnType<typeof openStream<FileHeaders>>>;
     try {
       file = await openStream(
         this.onStreamHostsOnly(limit),
@@ -540,6 +565,7 @@ export class StreamCache {
       return;
     }
     this.writing += bytes.byteLength;
+    const generation = this.forgotten.get(row.id) ?? 0;
     try {
       await (this.opts.writeChunk ?? writeAndSync)(
         this.path(row),
@@ -547,7 +573,10 @@ export class StreamCache {
         this.spanOfChunk(row.size, n).start,
       );
       const now = this.row(row.id);
-      if (now !== undefined && !hasBit(now.chunks, n)) {
+      if ((this.forgotten.get(row.id) ?? 0) !== generation) {
+        // The track was evicted meanwhile. Its bit stays unset, whatever row has come since.
+        if (now?.itag !== row.itag) rmSync(this.path(row), { force: true });
+      } else if (now !== undefined && !hasBit(now.chunks, n)) {
         this.opts.db
           .prepare(
             'UPDATE stream_cache SET chunks = ?, bytes = bytes + ?, last_used = ? WHERE id = ?',
@@ -579,6 +608,16 @@ export class StreamCache {
     }
     return false;
   }
+}
+
+/** The work's answer, or `gone` as soon as the client leaves; the work itself carries on. */
+function untilGone<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const leave = () => reject(new StreamFailure('gone'));
+    if (signal.aborted) leave();
+    else signal.addEventListener('abort', leave, { once: true });
+    work.then(resolve, reject).finally(() => signal.removeEventListener('abort', leave));
+  });
 }
 
 /** The first and last byte a checked range asks of a file of `size`, or a refusal naming the size. */

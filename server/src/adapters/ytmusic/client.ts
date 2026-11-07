@@ -84,10 +84,15 @@ const pageType = (run: Run) =>
   run.navigationEndpoint?.browseEndpoint?.browseEndpointContextSupportedConfigs
     .browseEndpointContextMusicConfig.pageType;
 
-/** A byline's first part: each run a name, with the `, ` and ` & ` between them taken off. */
+/**
+ * A byline's first part: each run a name, with the `, ` and ` & ` between them taken off. An `&`
+ * touching a word belongs to the name, as in `&TEAM`.
+ */
 function artistsOf(first: Run[]): string[] {
   return first
-    .map((run) => run.text.replace(/^(?:\s*[,&]\s*)+|(?:\s*[,&]\s*)+$/g, ''))
+    .map((run) => run.text.trim())
+    .map((text) => (text === '&' ? '' : text))
+    .map((text) => text.replace(/^(?:[,\s]|&\s)+|(?:[,\s]|\s&)+$/g, ''))
     .filter((name) => name !== '');
 }
 
@@ -118,9 +123,13 @@ export class YtMusicClient {
   async search(query: string): Promise<YtSong[]> {
     const answer = await this.ask('search', { query, params: SONGS_FILTER }, searchAnswerSchema);
     if (answer === null) return [];
-    const rows = answer.contents.tabbedSearchResultsRenderer.tabs
-      .flatMap((tab) => tab.tabRenderer.content.sectionListRenderer.contents)
-      .flatMap((section) => section.musicShelfRenderer?.contents ?? []);
+    const sections = answer.contents.tabbedSearchResultsRenderer.tabs.flatMap(
+      (tab) => tab.tabRenderer.content.sectionListRenderer.contents,
+    );
+    if (sections.length > 0 && sections.every((s) => s.musicShelfRenderer === undefined)) {
+      this.opts.onBad?.('search: sections came with no shelf of songs');
+    }
+    const rows = sections.flatMap((section) => section.musicShelfRenderer?.contents ?? []);
     return this.official(rows, (row) => this.searchRow(row));
   }
 
@@ -132,11 +141,12 @@ export class YtMusicClient {
       radioAnswerSchema,
     );
     if (answer === null) return [];
-    const rows =
+    const panels =
       answer.contents.singleColumnMusicWatchNextResultsRenderer.tabbedRenderer.watchNextTabbedResultsRenderer.tabs.flatMap(
-        (tab) =>
-          tab.tabRenderer.content?.musicQueueRenderer?.content.playlistPanelRenderer.contents ?? [],
+        (tab) => tab.tabRenderer.content?.musicQueueRenderer ?? [],
       );
+    if (panels.length === 0) this.opts.onBad?.('next: no tab held the radio panel');
+    const rows = panels.flatMap((panel) => panel.content.playlistPanelRenderer.contents);
     return this.official(rows, (row) => this.radioRow(row)).filter((song) => song.id !== id);
   }
 
