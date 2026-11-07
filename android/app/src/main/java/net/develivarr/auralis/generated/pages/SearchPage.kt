@@ -314,10 +314,38 @@ fun SearchPage(navController: NavController, actions: PageActions) {
                                         ResultRow(
                                             ResultRowProps(
                                                 title = "Salt",
-                                                meta = "Song · Fleeting Verses · YouTube Music",
+                                                meta = "Song · Streams · Fleeting Verses",
                                                 image = "/art/fragments-of-the-wind.jpg",
                                                 platform = Platform.MOBILE,
+                                                onAction = {
+                                                    actions.onPlay("salt", PlayQueue.MUSIC, PlayMode.NOW)
+                                                },
                                                 divider = true,
+                                            ),
+                                        )
+                                        ResultRow(
+                                            ResultRowProps(
+                                                title = "Salted",
+                                                meta = "Song · Streams · Deep Inertia",
+                                                image = "/art/tears-of-ice.jpg",
+                                                platform = Platform.MOBILE,
+                                                onAction = {
+                                                    actions.onPlay("salted", PlayQueue.MUSIC, PlayMode.NOW)
+                                                },
+                                                divider = true,
+                                                trailing = {
+                                                    Button(
+                                                        ButtonProps(
+                                                            variant = ButtonVariant.SECONDARY,
+                                                            size = SizeSmMdLg.SM,
+                                                            platform = Platform.MOBILE,
+                                                            onClick = {
+                                                                actions.onPlay("salted", PlayQueue.MUSIC, PlayMode.NEXT)
+                                                            },
+                                                            children = { BasicText("Play next") },
+                                                        ),
+                                                    )
+                                                },
                                             ),
                                         )
                                         ExpanderRow(

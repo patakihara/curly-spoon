@@ -1,4 +1,10 @@
-import { type SearchBook, type SearchResult, SearchResults, SuggestionList } from '@auralis/schema';
+import {
+  type SearchBook,
+  type SearchResult,
+  SearchResults,
+  type SearchSong,
+  SuggestionList,
+} from '@auralis/schema';
 import { describe, expect, it } from 'vitest';
 import { createApiClient } from '../api/client';
 import { frame as search } from '../generated/pages/Search';
@@ -8,7 +14,9 @@ import {
   metaOf,
   rowOf,
   searchData,
+  searchHeard,
   searchRequestFailed,
+  songRowOf,
   type SearchDrawn,
   searchLive,
   type SearchLoaded,
@@ -538,5 +546,104 @@ describe('[M3.books] a book the library lacks, in Search', () => {
   it('[M3.books] draws no banner until something has failed', () => {
     expect(empty.errors).toEqual([]);
     expect(searchData(answered(book()), empty).errors).toEqual([]);
+  });
+});
+
+describe('[M3.ytmusic] songs from outside the library', () => {
+  const ref = { source: 'ytmusic', id: 'lYBUbBu4W08' } as const;
+  const song: SearchSong = {
+    ref,
+    title: 'Never Gonna',
+    artists: ['An Artist', 'Another'],
+    album: 'An Album',
+    duration: 214,
+    art: '/api/media/ytmusic:lYBUbBu4W08/art',
+    availability: { kind: 'streamable' },
+  };
+  const answer = (over: Partial<SearchResults> = {}): SearchResults => ({
+    query: 'never',
+    results: [],
+    books: [],
+    songs: [song],
+    streaming: 'ok',
+    hasRequests: false,
+    ...over,
+  });
+  const nothing = { music: false, refused: null };
+
+  it('draws a song as a row that plays, marked as streaming, its art through the server', () => {
+    expect(songRowOf(song)).toEqual({
+      plays: [
+        {
+          title: 'Never Gonna',
+          meta: 'Song · Streams · An Artist, Another · An Album',
+          image: '/api/media/ytmusic:lYBUbBu4W08/art?size=small',
+          playRef: 'ytmusic:lYBUbBu4W08',
+        },
+      ],
+      follows: [],
+    });
+  });
+
+  it('leaves out an album a song has none of, and draws a song with no art', () => {
+    const [row] = songRowOf({ ...song, album: null, art: null }).plays;
+    expect(row?.meta).toBe('Song · Streams · An Artist, Another');
+    expect(row?.image).toBe('');
+  });
+
+  it('lists the songs outside your library, and says nothing while streaming works', () => {
+    const data = searchData(answer(), empty);
+    expect(data.outside.music).toEqual([songRowOf(song)]);
+    expect(data.errors).toEqual([]);
+  });
+
+  it('counts a search that found only songs as found', async () => {
+    const client = createApiClient({
+      baseUrl: 'http://auralis.test',
+      fetch: async () =>
+        new Response(JSON.stringify(answer()), {
+          headers: { 'content-type': 'application/json' },
+        }),
+    });
+    expect((await loadSearchPage(client, { q: 'never' }, empty)).found).toBe(true);
+  });
+
+  it('says streaming is unavailable in the banner, with the library rows still drawn', () => {
+    const data = searchData(
+      answer({ songs: [], streaming: 'unavailable', results: [result({}), result({})] }),
+      empty,
+    );
+    expect(data.errors).toEqual([
+      { message: 'Streaming unavailable. Your own music still plays.' },
+    ]);
+    expect(data.top).toHaveLength(1);
+    expect(data.library).toHaveLength(1);
+  });
+
+  it('names Play next on a song while music plays, and Play otherwise, in the same place', () => {
+    const data = searchData(answer(), empty);
+    expect(searchHeard(data, nothing).outside.music).toEqual([songRowOf(song)]);
+    const [row] = songRowOf(song).plays;
+    expect(searchHeard(data, { music: true, refused: null }).outside.music).toEqual([
+      { plays: [], follows: [row] },
+    ]);
+  });
+
+  it.each([
+    ['song_live', 'This song is a live stream, so it can’t play here.'],
+    ['song_premiere', 'This song hasn’t premiered yet.'],
+    ['song_no_length', 'This song has no set length, so it can’t play here.'],
+    ['song_region_blocked', 'This song isn’t available in this country.'],
+    ['song_members_only', 'This song is only for a channel’s members.'],
+    ['not_found', 'This song is no longer on YouTube Music.'],
+    ['unsupported_format', 'This song is too long to play here.'],
+    ['streaming_unavailable', 'Streaming unavailable. Your own music still plays.'],
+    ['upstream_failed', 'This song could not play.'],
+    [null, 'This song could not play.'],
+  ])('says in the one banner why a song was refused: %s', (error, message) => {
+    const data = searchData(answer({ streaming: 'unavailable' }), empty);
+    expect(searchHeard(data, { music: false, refused: { ref, error } }).errors).toEqual([
+      { message },
+    ]);
   });
 });

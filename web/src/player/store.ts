@@ -18,6 +18,7 @@
  * to show it, so it is logged.
  */
 import {
+  ErrorResponse,
   ListeningSession,
   ListeningSessionList,
   type MediaRef,
@@ -96,6 +97,14 @@ export interface PlayerState {
    * only mean not yet.
    */
   restored: boolean;
+  /** The streamed song last refused a plan, and the server's word for why, until the next change. */
+  refused: Refused | null;
+}
+
+/** A streamed song the server would not plan; no word when no answer came. */
+export interface Refused {
+  ref: MediaRef;
+  error: string | null;
 }
 
 export interface PlayerStore {
@@ -125,6 +134,8 @@ export interface PlayerStore {
   step(direction: 'next' | 'back'): Promise<void>;
   cycleSpeed(): void;
   cycleSleep(): void;
+  /** No page now says why a song was refused. */
+  forgetRefused(): void;
 }
 
 type Sleep = { kind: 'off' } | { kind: 'timer'; endsAt: number } | { kind: 'chapter'; at: number };
@@ -209,6 +220,7 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
   let named: number | null | undefined;
   let restoring: Promise<void> | null = null;
   let restored = false;
+  let refused: Refused | null = null;
 
   const listeners = new Set<() => void>();
   const sleepLabel = () =>
@@ -226,6 +238,7 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     speed,
     sleep: sleepLabel(),
     restored,
+    refused,
   });
   let state = snapshot();
   const emit = () => {
@@ -434,7 +447,13 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
       return true;
     }
     const parsed = PlaybackPlan.safeParse(answered?.data);
-    if (!parsed.success) return false;
+    if (!parsed.success) {
+      if (to.source === 'ytmusic') {
+        const said = ErrorResponse.safeParse(answered?.error);
+        refused = { ref: to, error: said.success ? said.data.error : null };
+      }
+      return false;
+    }
     ref = to;
     plan = parsed.data;
     position = plan.startAt;
@@ -491,6 +510,7 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
 
   /** Steps the session and plays what it plays now, playing on if it played. */
   const advance = async (direction: 'next' | 'back') => {
+    refused = null;
     const playOn = playing;
     await closeCurrent();
     const answered = await api
@@ -541,6 +561,7 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     pick: () => Promise<{ to: MediaRef | null; moved: boolean } | 'signedOut'>,
     failed: MediaRef | string,
   ): Promise<void> => {
+    refused = null;
     const was = ref;
     const playOn = playing;
     await closeCurrent();
@@ -601,6 +622,11 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
       return () => listeners.delete(listener);
     },
     getState: () => state,
+    forgetRefused: () => {
+      if (refused === null) return;
+      refused = null;
+      emit();
+    },
     play: (to) => run(() => playInstead(async () => ({ to, moved: false }), to)),
     playList: (id, from) => run(() => playInstead(() => listCurrent(id, from), id)),
     restore: () =>
@@ -614,6 +640,7 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
       })),
     queueNext: (to, queue) =>
       run(async () => {
+        refused = null;
         if (plan === null) {
           await load(to, true);
           return;

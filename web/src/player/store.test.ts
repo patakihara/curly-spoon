@@ -160,6 +160,8 @@ function rig(
     refuses?: string[];
     /** Items the server cannot plan, by id: their plan fails upstream. */
     unplannable?: string[];
+    /** Items the server refuses to plan, by id, with what it says. */
+    refusesPlan?: Record<string, string>;
   } = {},
 ) {
   const sent: Sent[] = [];
@@ -219,6 +221,8 @@ function rig(
         if (options.unplannable?.includes(ref.id)) {
           return Response.json({ error: 'upstream_failed' }, { status: 502 });
         }
+        const refusal = options.refusesPlan?.[ref.id];
+        if (refusal !== undefined) return Response.json({ error: refusal }, { status: 404 });
         return Response.json(planOf(ref, `play-${plays++}`, startAts.shift() ?? 0));
       }
       if (path === '/api/progress') {
@@ -670,6 +674,53 @@ describe('[M1.shell] the web player store', () => {
     const { store } = rig({ unplannable: [episode.id] });
     await store.play(episode);
     expect(store.getState()).toMatchObject({ ref: null, plan: null, playing: false });
+  });
+
+  it('[M3.ytmusic] says why a streamed song was refused, and plays nothing', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const streamed: MediaRef = { source: 'ytmusic', id: 'aaaaaaaaaaa' };
+    const { store } = rig({ refusesPlan: { [streamed.id]: 'song_region_blocked' } });
+    await store.play(streamed);
+    expect(store.getState()).toMatchObject({
+      ref: null,
+      playing: false,
+      refused: { ref: streamed, error: 'song_region_blocked' },
+    });
+  });
+
+  it('[M3.ytmusic] keeps what plays when a streamed song is refused, and a later play forgets it', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const streamed: MediaRef = { source: 'ytmusic', id: 'aaaaaaaaaaa' };
+    const { store } = rig({ refusesPlan: { [streamed.id]: 'song_live' } });
+    await store.play(book);
+    await store.play(streamed);
+    expect(store.getState()).toMatchObject({ ref: book, refused: { error: 'song_live' } });
+    await store.play(book);
+    expect(store.getState().refused).toBeNull();
+  });
+
+  it('[M3.ytmusic] forgets a refusal when asked, as a page leaving it does', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const streamed: MediaRef = { source: 'ytmusic', id: 'aaaaaaaaaaa' };
+    const { store } = rig({ refusesPlan: { [streamed.id]: 'song_live' } });
+    await store.play(streamed);
+    store.forgetRefused();
+    expect(store.getState().refused).toBeNull();
+  });
+
+  it("[M3.ytmusic] passes on the word of a refusal that is not the song's own", async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const streamed: MediaRef = { source: 'ytmusic', id: 'aaaaaaaaaaa' };
+    const { store } = rig({ unplannable: [streamed.id] });
+    await store.play(streamed);
+    expect(store.getState().refused).toEqual({ ref: streamed, error: 'upstream_failed' });
+  });
+
+  it('[M3.ytmusic] says nothing of an item of the library that cannot be planned', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { store } = rig({ unplannable: [episode.id] });
+    await store.play(episode);
+    expect(store.getState().refused).toBeNull();
   });
 
   it('[M1.shell] says once it has looked for what a reload left, found or not', async () => {

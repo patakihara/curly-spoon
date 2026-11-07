@@ -4,12 +4,13 @@ import {
   type SearchKind,
   type SearchResult,
   type SearchResults,
+  type SearchSong,
   type SuggestionKind,
   type SuggestionList,
 } from '@auralis/schema';
 import { type ApiClient } from '../api/client';
 import { type SearchData } from '../generated/pages/Search';
-import { type PlayQueue } from '../player';
+import { type PlayerHeard, type PlayQueue } from '../player';
 import { type Draft, searchText } from '../query';
 import { requestKey, requestOf } from '../request';
 import { artAt, emptied } from './format';
@@ -26,7 +27,9 @@ import { type Answer } from './store';
  * lacks is a row of its own there, asked for with a tap, its string ref carrying its request. Once
  * anyone has asked, its row draws only where that request stands and leads to Requests; once the
  * request brought it, its row opens and plays the item it became. A tap that did not go through
- * leaves its button, as no request stands yet. The page's own
+ * leaves its button, as no request stands yet. A song from YouTube Music plays from its art and
+ * opens nothing; while music plays its own button puts it next, and why it would not play takes the
+ * page's one banner, as does streaming being unavailable. The page's own
  * words (its placeholder, its kinds) stay as given; what it says when a search finds nothing or
  * fails is written in the page, which this only chooses the state of.
  * The kinds' names and the meta lines are written here, as the library homes write theirs, until
@@ -36,6 +39,7 @@ import { type Answer } from './store';
 type Row = SearchData['top'][number];
 type SuggestionRow = SearchData['suggestions'][number];
 type BookRow = SearchData['outside']['books'][number];
+type SongRow = SearchData['outside']['music'][number];
 
 /** What each kind of result or suggestion is called. */
 const KIND_LABELS: Record<SuggestionKind, string> = {
@@ -142,6 +146,56 @@ export function searchRequestFailed(data: SearchData, failure: string): SearchDa
   return { ...data, outside: { ...data.outside, books: data.outside.books.map(said) } };
 }
 
+/** What Search says while no song from outside the library can play. */
+const STREAMING_UNAVAILABLE = 'Streaming unavailable. Your own music still plays.';
+
+/** Why a streamed song did not play, by the server's word; any other: that it did not. */
+const REFUSED: Record<string, string> = {
+  song_live: 'This song is a live stream, so it can’t play here.',
+  song_premiere: 'This song hasn’t premiered yet.',
+  song_no_length: 'This song has no set length, so it can’t play here.',
+  song_region_blocked: 'This song isn’t available in this country.',
+  song_members_only: 'This song is only for a channel’s members.',
+  not_found: 'This song is no longer on YouTube Music.',
+  unsupported_format: 'This song is too long to play here.',
+  streaming_unavailable: STREAMING_UNAVAILABLE,
+};
+const COULD_NOT_PLAY = 'This song could not play.';
+
+/** One song from YouTube Music as its row, in the list of the two that says what its button does. */
+export function songRowOf(song: SearchSong): SongRow {
+  const row = {
+    title: song.title,
+    meta: ['Song', 'Streams', song.artists.join(', '), song.album]
+      .filter((part) => part !== null && part !== '')
+      .join(' · '),
+    image: artAt(song.art, 'small'),
+    playRef: mediaRefKey(song.ref),
+  };
+  return { plays: [row], follows: [] } as SongRow;
+}
+
+/**
+ * Search's data as the player has it: while music is loaded a song's button says Play next, and a
+ * song the server refused says why in the banner, in place of anything it said.
+ */
+export function searchHeard(data: SearchData, heard: PlayerHeard): SearchData {
+  const said = (song: SongRow) =>
+    ({
+      plays: heard.music ? [] : [...song.plays, ...song.follows],
+      follows: heard.music ? [...song.plays, ...song.follows] : [],
+    }) as SongRow;
+  const { refused } = heard;
+  return {
+    ...data,
+    outside: { ...data.outside, music: data.outside.music.map(said) },
+    errors:
+      refused === null
+        ? data.errors
+        : [{ message: REFUSED[refused.error ?? ''] ?? COULD_NOT_PLAY }],
+  };
+}
+
 /** The way to Requests, drawn while the person has any request, whatever the search shows. */
 const yourRequests = (has: boolean): SearchData['yourRequests'] =>
   has ? [{ title: 'Your requests' }] : [];
@@ -170,7 +224,13 @@ export function searchData(answer: SearchResults, page: SearchData): SearchData 
     yourRequests: yourRequests(answer.hasRequests),
     top: best === undefined ? [] : [rowOf(best)],
     library: rows(true),
-    outside: { ...page.outside, household: rows(false), books: answer.books.map(bookRowOf) },
+    outside: {
+      ...page.outside,
+      household: rows(false),
+      books: answer.books.map(bookRowOf),
+      music: answer.songs.map(songRowOf),
+    },
+    errors: answer.streaming === 'unavailable' ? [{ message: STREAMING_UNAVAILABLE }] : [],
   };
 }
 
@@ -233,7 +293,7 @@ export async function loadSearchPage(
   const answer = await loadSearch(api, asks.q ?? '');
   return {
     data: searchData(answer, page),
-    found: answer.results.length + answer.books.length > 0,
+    found: answer.results.length + answer.books.length + answer.songs.length > 0,
     moving: answer.books.some(movingBook),
   };
 }

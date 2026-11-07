@@ -55,6 +55,7 @@ import { openDatabase } from '../src/store/connection.js';
 import { s256 } from '../src/store/signIn.js';
 import { type BookSource, standInBooks } from './standInBooks.js';
 import { standInMedia } from './standInMedia.js';
+import { type MusicSource, standInMusic } from './standInMusic.js';
 
 const ADAPTERS = fileURLToPath(new URL('../src/adapters/', import.meta.url));
 
@@ -75,6 +76,8 @@ export interface RecordedServerOptions {
   nothingPlayed?: boolean;
   /** How Search's source of books the library lacks behaves. Default: it answers. */
   bookSource?: BookSource;
+  /** How YouTube Music behaves. Default: there is none, as with no extractor named. */
+  music?: MusicSource;
 }
 
 export interface RecordedServer {
@@ -482,6 +485,15 @@ export async function recordedServer(options: RecordedServerOptions = {}): Promi
       ADAPTERS,
       heldTitles(database),
     ),
+    ...(options.music === undefined
+      ? {}
+      : {
+          music: standInMusic(options.music, {
+            adapters: ADAPTERS,
+            art: fileURLToPath(new URL('../../web/public/art/deep-inertia.jpg', import.meta.url)),
+            dataDir: config.dataDir,
+          }),
+        }),
   });
 
   const userinfo = jsonOf<{ preferred_username: string; groups: string[] }>(

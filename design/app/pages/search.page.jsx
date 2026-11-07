@@ -99,7 +99,33 @@ export default function Search({ data }) {
               />
             </Each>
             <Each of={data.outside.music} as="song">
-              <ResultRow title={song.title} meta={song.meta} image={song.image} divider />
+              <Each of={song.plays} as="plays">
+                <ResultRow
+                  title={plays.title}
+                  meta={plays.meta}
+                  image={plays.image}
+                  onAction={<Play ref={plays.playRef} queue="music" />}
+                  divider
+                />
+              </Each>
+              <Each of={song.follows} as="follows">
+                <ResultRow
+                  title={follows.title}
+                  meta={follows.meta}
+                  image={follows.image}
+                  onAction={<Play ref={follows.playRef} queue="music" />}
+                  divider
+                  trailing={
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={<Play ref={follows.playRef} queue="music" next />}
+                    >
+                      Play next
+                    </Button>
+                  }
+                />
+              </Each>
             </Each>
             <ExpanderRow label={data.outside.moreReleases} />
             <Each of={data.outside.books} as="book">

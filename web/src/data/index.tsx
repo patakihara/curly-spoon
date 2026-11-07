@@ -47,7 +47,14 @@ import SignIn from '../generated/pages/SignIn';
 import { type Act, ActContext } from '../act';
 import { type Request, RequestContext, requestOf } from '../request';
 import { type Choose, ChooseContext } from '../choose';
-import { PlayContext, useListPlay, usePlayId } from '../player';
+import {
+  PlayContext,
+  type PlayerHeard,
+  playerStore,
+  useListPlay,
+  usePlayerHeard,
+  usePlayId,
+} from '../player';
 import { type Draft, useTabDraft } from '../query';
 import { RetryContext } from '../retry';
 import { type RequestList, type RequestVerb } from '@auralis/schema';
@@ -80,6 +87,7 @@ import {
   loadSearchPage,
   searchLive,
   type SearchLoaded,
+  searchHeard,
   searchRequestFailed,
 } from './search';
 import { setSetting, settingFailure, settingsData, settingsAwaited } from './settings';
@@ -177,6 +185,8 @@ interface Screen<T, L = T> {
   acts?(api: ApiClient, ref: string, verb: RequestVerb, candidate?: string): Promise<void>;
   /** What the page says when a request's verb fails. */
   actFailure?(verb: RequestVerb): string;
+  /** What the page draws by what the player says. */
+  heard?(data: T, heard: PlayerHeard): T;
   /** What the page draws when a tap on the ref `failed` did not make its request. */
   requestFailed?(data: T, failed: string): T;
   /** For a page of switches, a setting set to what its switch says: the page loads again after. */
@@ -410,6 +420,7 @@ const screens: Screen<never>[] = [
     load: (api, asks) => loadSearchPage(api, asks, searchEmpty),
     polls: ({ moving }) => moving,
     requestFailed: searchRequestFailed,
+    heard: searchHeard,
   } satisfies Screen<SearchData, SearchLoaded>,
   {
     name: 'settings',
@@ -722,6 +733,24 @@ function usePolling<T, L>(screen: Screen<T, L>): void {
   }, [moving, key, screen, api, pages]);
 }
 
+/** What the player says for `screen`; why a song was refused stays only while its search does. */
+function useHeard<T, L>(screen: Screen<T, L>): PlayerHeard {
+  const heard = usePlayerHeard();
+  const key = pageKey(screen.name, useParams());
+  const hears = screen.heard !== undefined;
+  useEffect(() => {
+    if (hears) return () => playerStore().forgetRefused();
+  }, [hears, key]);
+  // The song tapped may be far down the page, and the banner that says why is at its head.
+  const { refused } = heard;
+  useEffect(() => {
+    if (hears && refused !== null) {
+      document.querySelector('[role="status"]')?.scrollIntoView({ block: 'center' });
+    }
+  }, [hears, refused]);
+  return heard;
+}
+
 const made = new Map<Screen<never>, ComponentType>();
 
 /** The page `screen` draws, given its data. */
@@ -743,12 +772,14 @@ function pageOf<T>(screen: Screen<T>): ComponentType {
             const toggle = togglesOf(screen, shown, api, changes);
             const retry = useRetries(screen, shown);
             usePolling(screen);
-            const data =
+            const heard = useHeard(screen);
+            const said =
               screen.requestFailed !== undefined && shown !== undefined && changes.failure !== null
                 ? screen.requestFailed(shown.data, changes.failure)
                 : screen.acts === undefined && screen.toggles === undefined
                   ? shown?.data
                   : sayingFailure(shown, changes.failure);
+            const data = said === undefined ? said : (screen.heard?.(said, heard) ?? said);
             const page = <Page data={data} state={shown?.state} />;
             return (
               <ChooseContext.Provider value={choose}>

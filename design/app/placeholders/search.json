@@ -130,9 +130,26 @@
     ],
     "music": [
       {
-        "title": "Salt",
-        "meta": "Song · Fleeting Verses · YouTube Music",
-        "image": "/art/fragments-of-the-wind.jpg"
+        "plays": [
+          {
+            "title": "Salt",
+            "meta": "Song · Streams · Fleeting Verses",
+            "image": "/art/fragments-of-the-wind.jpg",
+            "playRef": "salt"
+          }
+        ],
+        "follows": []
+      },
+      {
+        "plays": [],
+        "follows": [
+          {
+            "title": "Salted",
+            "meta": "Song · Streams · Deep Inertia",
+            "image": "/art/tears-of-ice.jpg",
+            "playRef": "salted"
+          }
+        ]
       }
     ],
     "moreReleases": "More releases of Salt",

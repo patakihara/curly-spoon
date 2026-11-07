@@ -4,7 +4,13 @@ import { useDeps } from '../data/deps';
 import { useAccessOf } from '../data/access';
 import { placeholder, type Loaded } from '../generated/nav/playing';
 import { SKIP_SECONDS } from './media-session';
-import { createPlayerStore, heardAt, type PlayerState, type PlayerStore } from './store';
+import {
+  createPlayerStore,
+  heardAt,
+  type PlayerState,
+  type PlayerStore,
+  type Refused,
+} from './store';
 
 /**
  * The web's player, as the generated pages and shell bind it: `usePlaying()` is what is loaded,
@@ -194,6 +200,25 @@ const playIdOf = () => playerStore().getState().plan?.progressTarget.playId ?? '
 /** The id of the play loaded, '' while none is: it changes with each item played. */
 export function usePlayId(): string {
   return useSyncExternalStore(playerStore().subscribe, playIdOf, playIdOf);
+}
+
+/** What a page drawing songs must know of the player. */
+export interface PlayerHeard {
+  /** Whether music is what is loaded, so a song's button puts it next. */
+  music: boolean;
+  /** The streamed song last refused, and why. */
+  refused: Refused | null;
+}
+
+const musicLoaded = () => playerStore().getState().plan?.meta.variant === 'music';
+const refusedOf = () => playerStore().getState().refused;
+
+/** What the player says that a page draws by. */
+export function usePlayerHeard(): PlayerHeard {
+  const { subscribe } = playerStore();
+  const music = useSyncExternalStore(subscribe, musicLoaded, () => false);
+  const refused = useSyncExternalStore(subscribe, refusedOf, () => null);
+  return useMemo(() => ({ music, refused }), [music, refused]);
 }
 
 /** The player's Play, or the one the page drawing it hands down. */

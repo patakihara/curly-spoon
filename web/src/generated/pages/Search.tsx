@@ -141,9 +141,26 @@ const placeholder = {
     ],
     "music": [
       {
-        "title": "Salt",
-        "meta": "Song · Fleeting Verses · YouTube Music",
-        "image": "/art/fragments-of-the-wind.jpg"
+        "plays": [
+          {
+            "title": "Salt",
+            "meta": "Song · Streams · Fleeting Verses",
+            "image": "/art/fragments-of-the-wind.jpg",
+            "playRef": "salt"
+          }
+        ],
+        "follows": []
+      },
+      {
+        "plays": [],
+        "follows": [
+          {
+            "title": "Salted",
+            "meta": "Song · Streams · Deep Inertia",
+            "image": "/art/tears-of-ice.jpg",
+            "playRef": "salted"
+          }
+        ]
       }
     ],
     "moreReleases": "More releases of Salt",
@@ -507,7 +524,28 @@ export default function Search({ data = placeholder, state = 'full' }: SearchPro
               ))}
               {data.outside.music.map((song, i) => (
                 <Fragment key={i}>
-                  <ResultRow title={song.title} meta={song.meta} image={song.image} divider={true} platform={platform} />
+                  {song.plays.map((plays, i) => (
+                    <Fragment key={i}>
+                      <ResultRow title={plays.title} meta={plays.meta} image={plays.image} onAction={play(plays.playRef, 'music', 'now')} divider={true} platform={platform} />
+                    </Fragment>
+                  ))}
+                  {song.follows.map((follows, i) => (
+                    <Fragment key={i}>
+                      <ResultRow
+                        title={follows.title}
+                        meta={follows.meta}
+                        image={follows.image}
+                        onAction={play(follows.playRef, 'music', 'now')}
+                        divider={true}
+                        trailing={
+                          <Button variant="secondary" size="sm" onClick={play(follows.playRef, 'music', 'next')} platform={platform}>
+                            {"Play next"}
+                          </Button>
+                        }
+                        platform={platform}
+                      />
+                    </Fragment>
+                  ))}
                 </Fragment>
               ))}
               {data.outside.moreReleases !== '' && (
