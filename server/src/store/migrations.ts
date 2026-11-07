@@ -934,6 +934,19 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 27,
+    name: 'streamed_seeds',
+    up: (db) => {
+      // Which song on YouTube Music a Jellyfin track is: where a radio that joins Instant Mix starts.
+      db.exec(`
+        CREATE TABLE streamed_seeds (
+          jellyfin_id TEXT PRIMARY KEY,
+          id          TEXT NOT NULL
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

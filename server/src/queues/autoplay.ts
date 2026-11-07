@@ -18,7 +18,9 @@
  * Music: the rest of the album the queue plays from, by disc and position, then radio from music
  * you own: Jellyfin's Instant Mix for the last track, read as the user, skipping tracks that have
  * played. The run is kept and played on until every track of it has played, then asked for again
- * for the track that played last.
+ * for the track that played last. Where YouTube Music can play, its radio for that track joins the
+ * mix, the two taking turns, owned first; after a song from YouTube Music, its radio alone. Its radio
+ * failing leaves the mix, and while streaming is unavailable no pick is a streamed song.
  *
  * An upstream that fails or times out leaves the queue with no pick for this step, logged; the
  * next pass asks again.
@@ -47,6 +49,17 @@ export interface AutoplayDeps {
   jellyfin: { getInstantMix(itemId: string, limit: number): Promise<IndexItem[]> };
   log: { warn(detail: object, message: string): void };
   now(): number;
+  /** YouTube Music's radio, when the server has it. */
+  ytmusic?: AutoplayRadio;
+}
+
+export interface AutoplayRadio {
+  /** Whether a streamed song can play now. */
+  available(): boolean;
+  /** The radio after a song, the song itself left out; one the household holds as Jellyfin's. */
+  radio(id: string): Promise<MediaRef[]>;
+  /** The song that is this Jellyfin track, when YouTube Music has it. */
+  seedFor(jellyfinId: string): Promise<string | null>;
 }
 
 /** How old the last autoplay run may get before a progress report runs it again. */
@@ -252,14 +265,57 @@ async function musicPick(
     if (rest !== null) return rest;
   }
   const played = new Set([key(after.ref), ...s.history.map((h) => key(h.ref))]);
-  const left = onRadio ? run.tracks.find((t) => !played.has(key(t))) : undefined;
+  const streaming = deps.ytmusic?.available() === true;
+  const playable = (t: MediaRef) => t.source !== 'ytmusic' || streaming;
+  const left = onRadio ? run.tracks.find((t) => !played.has(key(t)) && playable(t)) : undefined;
   if (left !== undefined) return { ref: left };
-  if (after.ref.source !== 'jellyfin') return null;
-
-  const mix = await deps.jellyfin.getInstantMix(after.ref.id, INSTANT_MIX_LIMIT);
-  const tracks = mix.map((t): MediaRef => ({ source: 'jellyfin', id: t.Id }));
+  let tracks: MediaRef[];
+  if (after.ref.source === 'ytmusic') {
+    if (!streaming) return null;
+    tracks = await deps.ytmusic!.radio(after.ref.id);
+  } else if (after.ref.source === 'jellyfin') {
+    tracks = await joinedRadio(after.ref.id, streaming, deps);
+  } else {
+    return null;
+  }
   const next = tracks.find((t) => !played.has(key(t)));
-  // A run with nothing left to play is not kept, so the next pass asks Instant Mix again.
+  // A run with nothing left to play is not kept, so the next pass asks again.
   s.radio = next === undefined ? null : { seed: after.ref, tracks };
   return next === undefined ? null : { ref: next };
+}
+
+/** Instant Mix and YouTube Music's radio for a Jellyfin track, taking turns, owned first and each once. */
+async function joinedRadio(
+  id: string,
+  streaming: boolean,
+  deps: AutoplayDeps,
+): Promise<MediaRef[]> {
+  const [mix, radio] = await Promise.allSettled([
+    deps.jellyfin.getInstantMix(id, INSTANT_MIX_LIMIT),
+    streaming ? radioFor(id, deps.ytmusic!) : Promise.resolve([]),
+  ]);
+  if (radio.status === 'rejected') {
+    deps.log.warn({ err: radio.reason as unknown }, 'radio from YouTube Music failed');
+  }
+  const streamed = radio.status === 'fulfilled' ? radio.value : [];
+  if (mix.status === 'rejected' && streamed.length === 0) throw mix.reason;
+  const owned =
+    mix.status === 'fulfilled'
+      ? mix.value.map((t): MediaRef => ({ source: 'jellyfin', id: t.Id }))
+      : [];
+  const seen = new Set<string>();
+  const joined: MediaRef[] = [];
+  for (let at = 0; at < Math.max(owned.length, streamed.length); at += 1) {
+    for (const ref of [owned[at], streamed[at]]) {
+      if (ref === undefined || seen.has(key(ref))) continue;
+      seen.add(key(ref));
+      joined.push(ref);
+    }
+  }
+  return joined;
+}
+
+async function radioFor(id: string, ytmusic: AutoplayRadio): Promise<MediaRef[]> {
+  const seed = await ytmusic.seedFor(id);
+  return seed === null ? [] : ytmusic.radio(seed);
 }

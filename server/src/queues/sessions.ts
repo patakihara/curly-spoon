@@ -71,6 +71,7 @@ import {
 import type { User } from '../store/users.js';
 import type { Upstreams } from '../upstream/links.js';
 import {
+  type AutoplayRadio,
   autoplayKept,
   autoplayStale,
   pendingAutoplay,
@@ -227,6 +228,8 @@ export class Sessions {
        * that was opened no later than `before`; never fails.
        */
       closePlay?: (caller: Caller, ref: MediaRef, before: number) => Promise<void>;
+      /** YouTube Music's radio, when the server has it. */
+      ytmusic?: AutoplayRadio;
       /** This device's queues just changed; never fails. */
       onChange?: (caller: Caller) => void;
     },
@@ -1019,6 +1022,7 @@ export class Sessions {
         jellyfin: clients.jellyfin ?? { getInstantMix: unlinked('Jellyfin') },
         log,
         now: this.options.now,
+        ...(this.options.ytmusic === undefined ? {} : { ytmusic: this.options.ytmusic }),
       });
       // A session that moved on meanwhile is read again and its picks worked out once more.
       if (saveAutoplay(db, caller.id, caller.deviceId, s.rev, done)) return;

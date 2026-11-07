@@ -340,7 +340,7 @@ describe('[M3.ytmusic/a] owned music with streaming broken', () => {
     expect(tracks.length).toBeGreaterThan(0);
   });
 
-  it('[M3.ytmusic/a] a linked Jellyfin track plays its bytes, the music side never asked', async () => {
+  it('[M3.ytmusic/a] a linked Jellyfin track plays its bytes whatever the music side does', async () => {
     const untouchable = new Proxy({} as Music, {
       get: (_target, name) => {
         throw new Error(`a Jellyfin play asked the music side for ${String(name)}`);

@@ -183,6 +183,15 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     // session's last sync never lands after the mark and undoes it.
     closePlay: (caller, ref, before) => plays.closeHeld(caller.id, mediaRefKey(ref), before),
     onChange: (caller) => options.music?.cancelPreload(caller.deviceId),
+    ...(options.music
+      ? {
+          ytmusic: {
+            available: () => options.music!.radio.available(),
+            radio: (id: string) => options.music!.radio.radio(id),
+            seedFor: (id: string) => options.music!.radio.seedFor(id),
+          },
+        }
+      : {}),
     ...(options.playback?.autoplayWaitMs === undefined
       ? {}
       : { autoplayWaitMs: options.playback.autoplayWaitMs }),
@@ -226,6 +235,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   searchRoutes(app, {
     db,
     now: options.now ?? Date.now,
+    music: options.music ?? null,
     // A row nothing could take the tap of is not listed.
     ...(options.bookCatalogue !== undefined && options.requests?.steps.has('book') === true
       ? { catalogue: options.bookCatalogue }

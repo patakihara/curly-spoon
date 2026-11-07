@@ -6,6 +6,7 @@
  * stream's URL: every byte comes through the cache.
  */
 import { lookup } from 'node:dns/promises';
+import type { MediaRef } from '@auralis/schema';
 import { basename, dirname, join } from 'node:path';
 import type { FetchLike } from '../adapters/http/fetch.js';
 import { publicFetch } from '../adapters/http/publicFetch.js';
@@ -15,12 +16,13 @@ import {
   openStream,
   type UpstreamFile,
 } from '../adapters/stream.js';
-import { YtMusicClient, YTMUSIC_URL } from '../adapters/ytmusic/client.js';
+import { type YtSong, YtMusicClient, YTMUSIC_URL } from '../adapters/ytmusic/client.js';
 import type { AppConfig } from '../config.js';
 import { type JobLog, scheduleJob } from '../jobs/schedule.js';
 import type { Db } from '../store/connection.js';
 import { streamedTrack } from '../store/streamedTracks.js';
 import { type Canary, canaryOf, type CanaryResult } from './canary.js';
+import { MOST_SONG_SECONDS, SongCatalogue, type SongSource } from './catalogue.js';
 import { Extractor, ExtractorFailure, type SpawnLike } from './extractor.js';
 import type { StreamUrl } from './schemas.js';
 import { StreamingState } from './state.js';
@@ -34,10 +36,11 @@ import {
 import { ExtractorUpdate, UPDATE_EVERY_MS, type UpdateOutcome } from './update.js';
 import { ExtractorVersions, type VersionRow } from './versions.js';
 
-/** The longest song that plays; anything longer is not a song, nor is a live stream. */
-export const MOST_SONG_SECONDS = 3 * 60 * 60;
+export { MOST_SONG_SECONDS };
 
 const PRELOADED_CHUNKS = 2;
+const RESOLVED_AHEAD_MS = 5 * 60_000;
+const MOST_RESOLVED_AHEAD = 200;
 
 /** This track cannot play, and that says nothing of streaming. `error` is what a client is told. */
 export class TrackRefused extends Error {
@@ -71,6 +74,10 @@ export interface MusicDeps {
   spawn?: SpawnLike;
   chunkBytes?: number;
   arch?: string;
+  /** YouTube Music itself, for search and radio; with none, neither names a song. */
+  client?: SongSource;
+  /** How long a search waits for it. */
+  searchLimitMs?: number;
 }
 
 /** A reason that belongs to one track, or to the client, and says nothing of streaming. */
@@ -94,6 +101,9 @@ export class Music {
   private readonly preloading = new Map<string, { id: string; stop: AbortController }>();
   private readonly chunkBytes: number;
   private running: Promise<UpdateOutcome> | null = null;
+  private readonly catalogue: SongCatalogue | null;
+  /** The songs resolved ahead of a tap, and when. */
+  private readonly ahead = new Map<string, number>();
 
   /** The extractor, for a song: one it names as too long is refused before a byte is asked. */
   private readonly songs = {
@@ -131,6 +141,16 @@ export class Music {
       chunkBytes: this.chunkBytes,
       onLog: (what) => log.warn({}, what),
     });
+    this.catalogue =
+      deps.client === undefined
+        ? null
+        : new SongCatalogue({
+            client: deps.client,
+            db,
+            now,
+            log,
+            ...(deps.searchLimitMs === undefined ? {} : { limitMs: deps.searchLimitMs }),
+          });
     this.update = new ExtractorUpdate({
       versions: this.versions,
       fetch: streamFetch,
@@ -216,6 +236,36 @@ export class Music {
     if (url === null) throw new TrackRefused();
     return openStream(this.deps.streamFetch, url, {}, undefined, imageHeadersSchema);
   }
+
+  /** The songs a search finds. While streaming is unavailable none is listed, and nothing is asked. */
+  async searchSongs(q: string, gone: AbortSignal): Promise<YtSong[]> {
+    if (this.catalogue === null || !this.state.available) return [];
+    return this.catalogue.search(q, gone);
+  }
+
+  /**
+   * Resolves a song before its tap, once in the time a search is kept: one process, for the row
+   * likeliest to be tapped. A failure is only logged, and says nothing of streaming.
+   */
+  resolveAhead(id: string): void {
+    const now = this.deps.now();
+    const last = this.ahead.get(id);
+    if (!this.state.available || (last !== undefined && now - last < RESOLVED_AHEAD_MS)) return;
+    if (this.ahead.size >= MOST_RESOLVED_AHEAD) this.ahead.clear();
+    this.ahead.set(id, now);
+    this.extractor.resolve(id).catch((error: unknown) => {
+      const reason = error instanceof Error ? error.name : 'unknown';
+      this.deps.log.warn({ reason }, 'a song could not be resolved ahead');
+    });
+  }
+
+  /** What autoplay asks of YouTube Music; never throws for streaming being down. */
+  readonly radio = {
+    available: (): boolean => this.catalogue !== null && this.state.available,
+    radio: (id: string): Promise<MediaRef[]> => this.catalogue?.radio(id) ?? Promise.resolve([]),
+    seedFor: (jellyfinId: string): Promise<string | null> =>
+      this.catalogue?.seedFor(jellyfinId) ?? Promise.resolve(null),
+  };
 
   /** What a job tick does. While streaming is unavailable each one checks again, due or not. */
   tick(): Promise<UpdateOutcome> {
@@ -306,6 +356,7 @@ export function ytMusic(
     capBytes: config.streamCacheMib * 1024 * 1024,
     imagePath: extractorPath,
     streamFetch,
+    client,
     canary: canaryOf({
       search: (query) => client.search(query),
       fetch: streamFetch,

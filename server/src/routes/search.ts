@@ -10,18 +10,23 @@
  *
  * A search, never a suggestion, also lists the books the library lacks, from the catalogue, while
  * books can be requested. It waits for that source only up to the catalogue's limit, and whatever goes
- * wrong there the library's results still answer.
+ * wrong there the library's results still answer. It lists the songs the library lacks the same way,
+ * from YouTube Music, each playing straight away; while streaming is unavailable it lists none and
+ * says so, and asks nothing. The top song is resolved ahead of its tap.
  */
 import {
   getSearch,
   getSearchSuggest,
   mediaRefKey,
   searchBookArt,
+  type SearchSong,
   type SearchBook,
   type SearchKind,
 } from '@auralis/schema';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { personalView } from '../library/personal.js';
+import { songRows } from '../music/catalogue.js';
+import type { Music } from '../music/index.js';
 import { bookRows, type BookCatalogue } from '../requests/books/catalogue.js';
 import { clientGone, Refusal, serve, serveStream } from '../route.js';
 import { librarySource } from '../search/library.js';
@@ -40,9 +45,10 @@ const ART_CACHE = 'private, max-age=86400';
 
 export function searchRoutes(
   app: FastifyInstance,
-  options: { db: Db; now: () => number; catalogue?: BookCatalogue },
+  options: { db: Db; now: () => number; catalogue?: BookCatalogue; music?: Music | null },
 ): void {
   const { db, now, catalogue } = options;
+  const music = options.music ?? null;
   const sources: readonly SearchSource[] = [librarySource(db)];
 
   /** The rows for this search; none for a search of other kinds, or when anything goes wrong. */
@@ -62,6 +68,24 @@ export function searchRoutes(
     }
   };
 
+  /** The rows for this search; none for a search of other kinds, or when anything goes wrong. */
+  const songs = async (
+    request: FastifyRequest,
+    q: string,
+    kinds: readonly SearchKind[] | undefined,
+    gone: AbortSignal,
+  ): Promise<SearchSong[]> => {
+    if (music === null || (kinds !== undefined && !kinds.includes('track'))) return [];
+    try {
+      const rows = songRows(db, await music.searchSongs(q, gone));
+      if (rows[0] !== undefined) music.resolveAhead(rows[0].ref.id);
+      return rows;
+    } catch (err) {
+      request.log.warn({ err }, 'no song rows');
+      return [];
+    }
+  };
+
   serve(app, getSearchSuggest, (request, _reply, _body, { query }) => {
     const user = signedIn(request);
     return {
@@ -74,9 +98,10 @@ export function searchRoutes(
     const user = signedIn(request);
     const gone = clientGone(reply);
     const asked = query.kinds === undefined ? { q: query.q } : { q: query.q, kinds: query.kinds };
-    const [lists, found] = await Promise.all([
+    const [lists, found, streamed] = await Promise.all([
       Promise.all(sources.map((source) => source.search(asked, gone))),
       books(request, query.q, query.kinds, user.id, gone),
+      songs(request, query.q, query.kinds, gone),
     ]);
     // A recent search is a convenience: failing to keep one never costs the results.
     if (request.method === 'GET') {
@@ -93,8 +118,9 @@ export function searchRoutes(
       query: query.q,
       hasRequests: requestsListed(db, user.id).length > 0,
       books: found,
-      songs: [],
-      streaming: 'ok' as const,
+      songs: streamed,
+      streaming:
+        music === null || music.state.available ? ('ok' as const) : ('unavailable' as const),
       results: results.map((result) => {
         const top = result.parent?.ref ?? result.ref;
         const inYourLibrary =
