@@ -15,7 +15,7 @@ if (typeof document !== 'undefined' && !document.getElementById('sonora-resultro
 const acts=(node)=>{if(Array.isArray(node))return node.some(acts);const p=node&&node.props;if(!p||p.disabled)return false;return Object.keys(p).some(k=>/^on[A-Z]/.test(k)&&typeof p[k]==='function')||acts(p.children);};
 
 /** One row of a track / search / request list. Replaces the old TrackRow. */
-export function ResultRow({ title, meta, detail, status, progress = null, tone = 'library', actionGlyph, image, icon, platform = 'desktop', onClick, onAction, divider = false, trailing, number = null }) {
+export function ResultRow({ title, meta, detail, status, progress = null, tone = 'library', actionGlyph, image, icon, platform = 'desktop', onClick, onAction, divider = false, trailing: given, nextLabel, onNext, number = null }) {
   const mobile = platform === 'mobile';
   const fg = 'var(--surface-fg)', muted = 'var(--surface-fg-muted)';
   const pctMatch = /(\d+)\s*%/.exec(status || '');
@@ -25,7 +25,9 @@ export function ResultRow({ title, meta, detail, status, progress = null, tone =
   const queued = pct === null && st.indexOf('queued') > -1;
   const spinning = pct === null && st.indexOf('searching') > -1;
   const failed = pct === null && (st.indexOf('failed') > -1 || st.indexOf('error') > -1);
-  const { Badge, CoverArt, ProgressRing, StateLayer } = NS();
+  const { Badge, Button, CoverArt, ProgressRing, StateLayer } = NS();
+  // What the row may do next, drawn as its trailing control only while it has a label.
+  const trailing = given ?? (nextLabel && Button ? <Button variant="secondary" size="sm" platform={platform} onClick={onNext}>{nextLabel}</Button> : undefined);
   const off = !onClick;
   // The art's action is the row's own, given apart: opening the row never wears a Play label.
   const act = onAction;

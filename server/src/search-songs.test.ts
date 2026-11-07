@@ -370,3 +370,36 @@ describe('[M3.ytmusic] one song under other names', () => {
     expect(rows.map(({ ref }) => ref.id)).toEqual(['aaaaaaaaaaa']);
   });
 });
+
+describe('[M3.ytmusic] which song a Jellyfin track is', () => {
+  it('[M3.ytmusic] stays remembered for the newest tracks only, the oldest pruned', async () => {
+    const db = openDatabase(':memory:');
+    const search = vi.fn(async (q: string): Promise<YtSong[]> => {
+      const title = q.split(' ')[0]!;
+      return [
+        {
+          id: `${title}-video`,
+          title,
+          artists: ['An Artist'],
+          album: null,
+          duration: 200,
+          artUrl: null,
+          type: 'ATV',
+        },
+      ];
+    });
+    const songs = new SongCatalogue({
+      client: { search, radio: async () => [] },
+      db,
+      now: () => T0,
+      log,
+      mostSeeds: 2,
+    });
+    for (const n of ['One', 'Two', 'Three']) {
+      ownedTrack(db, `owned-${n}`, n, ['An Artist']);
+      await songs.seedFor(`owned-${n}`);
+    }
+    const held = db.prepare('SELECT jellyfin_id FROM streamed_seeds ORDER BY rowid').all();
+    expect(held).toEqual([{ jellyfin_id: 'owned-Two' }, { jellyfin_id: 'owned-Three' }]);
+  });
+});

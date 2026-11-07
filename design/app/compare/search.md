@@ -1,6 +1,6 @@
 ---
 page: search
-pageHash: 5a8483e3784e2b698076974f568da376205d86aae6690229e1d5c50bfdec3700
+pageHash: a84eae1d9fd6f089fc6f66572d52a22022b266e64ca6fb2b20482f5907f8bd28
 sonora: [kit:desktop/search, kit:mobile/search]
 spotify: [S03, S04, S32]
 ---
@@ -12,6 +12,10 @@ in the app shell. Sonora UI kit renders, the design this page is compared agains
 `sonora/kit-desktop-search.png` and `sonora/kit-mobile-search.png`. Also looked at: the page
 scrolled to its end on both widths, the Result Rows card, M2's backdrop page
 (m2.material.io/components/backdrop, read with Playwright), and Spotify's S03, S04 and S32.
+
+While music plays, a song the household holds shows Play next at the row's end, as a streamed song
+does: `ResultRow`'s `nextLabel` and `onNext`, drawn only while it has a label (Salt Water on the
+canvas); other pages' rows give no label, so they draw as before.
 
 ## What the Sonora UI kit renders show
 

@@ -15,7 +15,8 @@
  * named by the playing track's own title, and its place is within that track. Putting an item next
  * first says where it is, so the server cuts the play after the part playing, not one it left. An
  * item that cannot be planned leaves the player on what it had, or idle; the shell binds no status
- * to show it, so it is logged.
+ * to show it, so it is logged. A step that lands on a song that cannot be planned steps over it and
+ * says which, and `MOST_SKIPPED` of them in a row stop the player and say that.
  */
 import {
   ErrorResponse,
@@ -26,6 +27,7 @@ import {
   ProgressAnswer,
   Queue,
   type QueueType,
+  QueueView,
 } from '@auralis/schema';
 import { type ApiClient, createApiClient } from '../api/client';
 import { createPlayer, type Player, type PlayerOptions, type ProgressReport } from '../playback';
@@ -41,6 +43,9 @@ export const SLEEP_STEPS = ['off', 15, 30, 45, 60, 'chapter'] as const;
 export const REPORT_EVERY_MS = 10_000;
 
 const MINUTE_MS = 60_000;
+
+/** How many songs in a row one step may step over before the player stops and says so. */
+export const MOST_SKIPPED = 5;
 
 /** How near a stop counts as at it: the engine moves back onto a stop, so this is only rounding. */
 const AT_STOP_S = 0.01;
@@ -101,10 +106,15 @@ export interface PlayerState {
   refused: Refused | null;
 }
 
-/** A streamed song the server would not plan; no word when no answer came. */
+/**
+ * A song the server would not plan; no word when no answer came. One met in a queue was stepped
+ * over: `skipped` says so, and `stoppedAfter` that so many in a row stopped the player.
+ */
 export interface Refused {
   ref: MediaRef;
   error: string | null;
+  skipped?: { title: string | null };
+  stoppedAfter?: number;
 }
 
 export interface PlayerStore {
@@ -451,6 +461,7 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
       if (to.source === 'ytmusic') {
         const said = ErrorResponse.safeParse(answered?.error);
         refused = { ref: to, error: said.success ? said.data.error : null };
+        emit();
       }
       return false;
     }
@@ -508,25 +519,46 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
     if (endAt !== null && at >= endAt - AT_STOP_S) await advance('next');
   };
 
-  /** Steps the session and plays what it plays now, playing on if it played. */
+  /** What the session's music queue calls its current item, when it says. */
+  const currentTitle = async () => {
+    const answered = await api
+      .GET('/api/queues/{type}', { params: { path: { type: 'music' } } })
+      .catch(() => null);
+    const view = QueueView.safeParse(answered?.data);
+    return view.success ? (view.data.current?.title ?? null) : null;
+  };
+
+  /**
+   * Steps the session and plays what it plays now, playing on if it played. A song that cannot be
+   * planned is stepped over the same way, up to `MOST_SKIPPED` in a row; a book or an episode that
+   * cannot leaves nothing loaded.
+   */
   const advance = async (direction: 'next' | 'back') => {
     refused = null;
     const playOn = playing;
     await closeCurrent();
-    const answered = await api
-      .POST('/api/sessions/this/step', { body: { direction } })
-      .catch(() => null);
-    if (answered?.response.status === 401) {
-      await signOut();
-      return;
+    for (let met = 1; met <= MOST_SKIPPED; met += 1) {
+      const answered = await api
+        .POST('/api/sessions/this/step', { body: { direction } })
+        .catch(() => null);
+      if (answered?.response.status === 401) {
+        await signOut();
+        return;
+      }
+      const session = ListeningSession.safeParse(answered?.data);
+      const now = session.success ? session.data.currents[session.data.active] : null;
+      if (now === null) break;
+      if (await start(now.ref, playOn)) return;
+      if (session.data?.active !== 'music') break;
+      const said = store.getState().refused;
+      refused = {
+        ref: now.ref,
+        error: said?.ref === now.ref ? said.error : null,
+        skipped: { title: await currentTitle() },
+        ...(met === MOST_SKIPPED ? { stoppedAfter: met } : {}),
+      };
     }
-    const session = ListeningSession.safeParse(answered?.data);
-    const now = session.success ? session.data.currents[session.data.active] : null;
-    if (now === null) {
-      unload();
-      return;
-    }
-    await load(now.ref, playOn);
+    unload();
   };
 
   /** The server no longer holds `playId`: plan the same item again, from where it says. */

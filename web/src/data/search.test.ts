@@ -59,6 +59,7 @@ describe('search results as rows', () => {
       page: 'album',
       ref: 'jellyfin:a1',
       playRef: 'jellyfin:t1',
+      next: '',
       queue: 'music',
     });
   });
@@ -626,6 +627,49 @@ describe('[M3.ytmusic] songs from outside the library', () => {
     const [row] = songRowOf(song).plays;
     expect(searchHeard(data, { music: true, refused: null }).outside.music).toEqual([
       { plays: [], follows: [row] },
+    ]);
+  });
+
+  it('[M3.ytmusic] offers Play next on a song the household holds while music plays, never on an album', () => {
+    const track = result({
+      kind: 'track',
+      ref: { source: 'jellyfin', id: 't1' },
+      parent: { ref: { source: 'jellyfin', id: 'an-album' }, title: 'An album' },
+    });
+    const anAlbum = result({ kind: 'album' });
+    const data = {
+      ...empty,
+      top: [rowOf(track)],
+      library: [rowOf(track), rowOf(anAlbum)],
+      outside: { ...empty.outside, household: [rowOf(track)] },
+    };
+    const heard = searchHeard(data, { music: true, refused: null });
+    expect(heard.top[0]!.next).toBe('Play next');
+    expect(heard.library.map(({ next }) => next)).toEqual(['Play next', '']);
+    expect(heard.outside.household[0]!.next).toBe('Play next');
+    const quiet = searchHeard(data, nothing);
+    expect(quiet.library.map(({ next }) => next)).toEqual(['', '']);
+  });
+
+  it('[M3.ytmusic] says in the one banner which song a queue stepped over, and why', () => {
+    const data = searchData(answer(), empty);
+    const met = (title: string | null) =>
+      searchHeard(data, {
+        music: true,
+        refused: { ref, error: 'song_live', skipped: { title } },
+      }).errors;
+    expect(met('Take on Me')).toEqual([
+      { message: 'Skipped “Take on Me”. This song is a live stream, so it can’t play here.' },
+    ]);
+    expect(met(null)).toEqual([
+      { message: 'Skipped a song. This song is a live stream, so it can’t play here.' },
+    ]);
+  });
+
+  it('[M3.ytmusic] says in the one banner that a run of songs stopped the player', () => {
+    const refused = { ref, error: null, skipped: { title: 'A' }, stoppedAfter: 5 };
+    expect(searchHeard(searchData(answer(), empty), { music: false, refused }).errors).toEqual([
+      { message: 'Stopped: 5 songs in a row could not play.' },
     ]);
   });
 

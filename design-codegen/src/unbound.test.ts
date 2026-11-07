@@ -91,6 +91,7 @@ const DRAWN_WHEN: Readonly<Record<string, (props: Props) => boolean>> = {
   'MediaHeader.onAdd': (props) => has(props, 'addLabel'),
   'MediaHeader.onDownload': (props) => has(props, 'download'),
   'ResultRow.onAction': () => false,
+  'ResultRow.onNext': (props) => has(props, 'nextLabel'),
   'FeatureCard.onSave': () => false,
   'FeatureCard.onPlay': () => false,
   'FeatureCard.onMore': () => false,

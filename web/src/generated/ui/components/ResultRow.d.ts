@@ -25,6 +25,13 @@ export interface ResultRowProps {
   tone?: 'library' | 'request' | 'progress' | 'error' | null;
   /** Glyph for the art overlay action; "downloading" renders a pause control. */
   actionGlyph?: string;
+  /**
+   * What the row's second action says, such as "Play next"; empty or omitted, it draws none, so a
+   * row can offer it only some of the time. Drawn where `trailing` goes; ignored beside `trailing`.
+   */
+  nextLabel?: string;
+  /** Runs when the second action is pressed. */
+  onNext?: () => void;
   /** Cover art URL. Falls back to the generated gradient when omitted. */
   image?: string;
   /**

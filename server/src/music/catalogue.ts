@@ -4,14 +4,16 @@
  * rows, never a failed search. Every song named is remembered, which is what lets it play; one that
  * is no song (too long, or of no length) is not named at all. A song the household owns is told by
  * the words of its title and its artists: on Search it is left out, and on a radio it plays from
- * Jellyfin, so one song is never listed twice. Words in brackets, and a dash's edition, do not count.
+ * Jellyfin, so one song is never listed twice, and a radio holds a song once and never follows it with
+ * its other video. Words in brackets, and a dash's edition, do not count; an artist counts by whole
+ * words. Which song a Jellyfin track is stays remembered for its newest `MOST_SEEDS` tracks.
  */
 import type { MediaRef, SearchSong } from '@auralis/schema';
 import type { YtSong } from '../adapters/ytmusic/client.js';
 import { indexedRow } from '../libraryIndex/store.js';
 import { artOf } from '../routes/art.js';
 import type { Db } from '../store/connection.js';
-import { rememberTracks } from '../store/streamedTracks.js';
+import { rememberTracks, streamedTrack } from '../store/streamedTracks.js';
 import { searchFold } from '../text/fold.js';
 
 const SEARCH_LIMIT_MS = 3_000;
@@ -19,6 +21,8 @@ const KEPT_MS = 5 * 60_000;
 const MOST_KEPT = 200;
 /** The longest song that plays; anything longer is not a song. */
 export const MOST_SONG_SECONDS = 3 * 60 * 60;
+/** How many Jellyfin tracks' songs are remembered; asking YouTube Music again finds a forgotten one. */
+export const MOST_SEEDS = 5_000;
 
 const EDITION = /\s+-\s+.*(?:remaster|version|edit|mono|stereo|mix|live).*$/;
 
@@ -52,26 +56,42 @@ export function ownedTracks(db: Db): OwnedTracks {
   return owned;
 }
 
-/** Whether any name on one side is, or holds, a name on the other. No names on a side is not sure. */
+/** A name's words, each between spaces, so that a name holds another only by whole words. */
+const wordsOf = (name: string) => ` ${name.replace(/[^\p{L}\p{N}]+/gu, ' ').trim()} `;
+
+/** Whether any name on one side is, or holds the words of, a name on the other. No names on a side is not sure. */
 function sameArtists(ours: readonly string[], theirs: readonly string[]): boolean {
   if (ours.length === 0 || theirs.length === 0) return true;
-  return ours.some((a) => theirs.some((b) => a === b || a.includes(b) || b.includes(a)));
+  const words = (names: readonly string[]) => names.map(wordsOf).filter((name) => name !== '  ');
+  return words(ours).some((a) => words(theirs).some((b) => a.includes(b) || b.includes(a)));
 }
 
+type Named = Pick<YtSong, 'title' | 'artists'>;
+
+/** Whether two rows are one song, whatever video each is. */
+const sameSong = (a: Named, b: Named) =>
+  titleKey(a.title) === titleKey(b.title) &&
+  sameArtists(a.artists.map(searchFold), b.artists.map(searchFold));
+
 /** The Jellyfin track that is this song, when the household holds one. */
-export function ownedTrack(owned: OwnedTracks, song: Pick<YtSong, 'title' | 'artists'>) {
+export function ownedTrack(owned: OwnedTracks, song: Named) {
   const names = song.artists.map(searchFold);
   return owned.get(titleKey(song.title))?.find((t) => sameArtists(t.artists, names))?.id ?? null;
+}
+
+/** The songs, each once, under the first video that names it. */
+function eachOnce<T extends Named>(songs: readonly T[]): T[] {
+  return songs.reduce<T[]>(
+    (kept, song) => (kept.some((other) => sameSong(other, song)) ? kept : [...kept, song]),
+    [],
+  );
 }
 
 /** Search's rows: the songs the household does not hold, each once. */
 export function songRows(db: Db, songs: readonly YtSong[]): SearchSong[] {
   const owned = ownedTracks(db);
-  const seen = new Set<string>();
-  return songs.flatMap((song): SearchSong[] => {
-    const once = `${titleKey(song.title)}\n${song.artists.map(searchFold).join()}`;
-    if (seen.has(once) || ownedTrack(owned, song) !== null) return [];
-    seen.add(once);
+  return eachOnce(songs).flatMap((song): SearchSong[] => {
+    if (ownedTrack(owned, song) !== null) return [];
     const ref: MediaRef = { source: 'ytmusic', id: song.id };
     return [
       {
@@ -98,6 +118,8 @@ export interface SongCatalogueDeps {
   now: () => number;
   log: { warn: (details: Record<string, unknown>, message: string) => void };
   limitMs?: number;
+  /** How many Jellyfin tracks' songs are remembered; `MOST_SEEDS` by default. */
+  mostSeeds?: number;
 }
 
 const playable = (song: YtSong) => song.duration > 0 && song.duration <= MOST_SONG_SECONDS;
@@ -157,9 +179,15 @@ export class SongCatalogue {
     return ask;
   }
 
-  /** The radio after a song, each remembered, and a song the household holds as its Jellyfin track. */
+  /**
+   * The radio after a song, each once and never the song again, each remembered, and a song the
+   * household holds as its Jellyfin track.
+   */
   async radio(id: string): Promise<MediaRef[]> {
-    const found = (await this.deps.client.radio(id)).filter(playable);
+    const seed = streamedTrack(this.deps.db, id);
+    const found = eachOnce((await this.deps.client.radio(id)).filter(playable)).filter(
+      (song) => seed === undefined || !sameSong(seed, song),
+    );
     rememberTracks(this.deps.db, found, this.deps.now());
     const owned = ownedTracks(this.deps.db);
     return found.map((song): MediaRef => {
@@ -179,18 +207,19 @@ export class SongCatalogue {
     if (held !== undefined) return held.id;
     const row = indexedRow(db, 'jellyfin', jellyfinId);
     if (row === undefined) return null;
-    const artists = row.creators.map(({ name }) => searchFold(name));
+    const artists = row.creators.map(({ name }) => name);
     const songs = await this.search(`${row.title} ${row.creators[0]?.name ?? ''}`.trim());
-    const seed = songs.find(
-      (song) =>
-        titleKey(song.title) === titleKey(row.title) &&
-        sameArtists(artists, song.artists.map(searchFold)),
-    );
+    const seed = songs.find((song) => sameSong({ title: row.title, artists }, song));
     if (seed === undefined) return null;
     db.prepare('INSERT OR REPLACE INTO streamed_seeds (jellyfin_id, id) VALUES (?, ?)').run(
       jellyfinId,
       seed.id,
     );
+    // A rowid only grows, so the lowest are the oldest written.
+    db.prepare(
+      `DELETE FROM streamed_seeds WHERE rowid NOT IN
+         (SELECT rowid FROM streamed_seeds ORDER BY rowid DESC LIMIT ?)`,
+    ).run(this.deps.mostSeeds ?? MOST_SEEDS);
     return seed.id;
   }
 }

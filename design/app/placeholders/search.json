@@ -84,7 +84,8 @@
       "page": "album",
       "ref": "salt-and-static",
       "playRef": "salt-and-static",
-      "queue": "music"
+      "queue": "music",
+      "next": ""
     }
   ],
   "library": [
@@ -95,7 +96,8 @@
       "page": "album",
       "ref": "heartbeats-in-silence",
       "playRef": "salt-water",
-      "queue": "music"
+      "queue": "music",
+      "next": "Play next"
     },
     {
       "title": "The Saltwater Diaries",
@@ -104,7 +106,8 @@
       "page": "book",
       "ref": "the-saltwater-diaries",
       "playRef": "the-saltwater-diaries",
-      "queue": "spoken"
+      "queue": "spoken",
+      "next": ""
     },
     {
       "title": "Tears of Ice",
@@ -113,7 +116,8 @@
       "page": "album",
       "ref": "tears-of-ice",
       "playRef": "tears-of-ice-song",
-      "queue": "music"
+      "queue": "music",
+      "next": ""
     }
   ],
   "outside": {
@@ -125,7 +129,8 @@
         "page": "book",
         "ref": "salt-roads",
         "playRef": "salt-roads",
-        "queue": "spoken"
+        "queue": "spoken",
+        "next": ""
       }
     ],
     "music": [

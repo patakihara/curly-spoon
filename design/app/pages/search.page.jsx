@@ -72,6 +72,8 @@ export default function Search({ data }) {
                 image={best.image}
                 onClick={<Open page={best.page} ref={best.ref} />}
                 onAction={<Play ref={best.playRef} queue={best.queue} />}
+                nextLabel={best.next}
+                onNext={<Play ref={best.playRef} queue={best.queue} next />}
               />
             </Each>
           </Section>
@@ -83,6 +85,8 @@ export default function Search({ data }) {
                 image={item.image}
                 onClick={<Open page={item.page} ref={item.ref} />}
                 onAction={<Play ref={item.playRef} queue={item.queue} />}
+                nextLabel={item.next}
+                onNext={<Play ref={item.playRef} queue={item.queue} next />}
                 divider
               />
             </Each>
@@ -95,6 +99,8 @@ export default function Search({ data }) {
                 image={item.image}
                 onClick={<Open page={item.page} ref={item.ref} />}
                 onAction={<Play ref={item.playRef} queue={item.queue} />}
+                nextLabel={item.next}
+                onNext={<Play ref={item.playRef} queue={item.queue} next />}
                 divider
               />
             </Each>

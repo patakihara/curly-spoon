@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApiClient } from '../api/client';
 import { type Player, type PlayerOptions, type ProgressReport } from '../playback';
 import { type MediaControls } from './media-session';
-import { type Clock, createPlayerStore, SLEEP_STEPS, SPEED_STEPS } from './store';
+import { type Clock, createPlayerStore, MOST_SKIPPED, SLEEP_STEPS, SPEED_STEPS } from './store';
 
 /** A clock the test moves by hand: its time and the timers due by it. */
 class FakeClock implements Clock {
@@ -162,6 +162,8 @@ function rig(
     unplannable?: string[];
     /** Items the server refuses to plan, by id, with what it says. */
     refusesPlan?: Record<string, string>;
+    /** The songs a music queue's Next lands on, one per step, then nothing; each with its title. */
+    walk?: { ref: MediaRef; title: string }[];
   } = {},
 ) {
   const sent: Sent[] = [];
@@ -178,6 +180,7 @@ function rig(
   /** What the session plays after a step, by direction. */
   const after: Record<'next' | 'back', MediaRef | null> = { next: episode, back: book };
   const startAts: number[] = [];
+  let walked: { ref: MediaRef; title: string } | null = null;
   /** What a list's play makes current, and the lists with nothing left to play. */
   const lists: { current: MediaRef; refuses: string[] } = { current: episode, refuses: [] };
   const controls: string[] = [];
@@ -222,13 +225,49 @@ function rig(
           return Response.json({ error: 'upstream_failed' }, { status: 502 });
         }
         const refusal = options.refusesPlan?.[ref.id];
-        if (refusal !== undefined) return Response.json({ error: refusal }, { status: 404 });
+        if (refusal !== undefined) {
+          const status = refusal === 'streaming_unavailable' ? 503 : 422;
+          return Response.json({ error: refusal }, { status });
+        }
         return Response.json(planOf(ref, `play-${plays++}`, startAts.shift() ?? 0));
       }
       if (path === '/api/progress') {
         const answer = options.answers?.(body!) ?? { taken: true, lastSeq: body!.seq as number };
         if (answer === 404) return Response.json({ error: 'not_found' }, { status: 404 });
         return Response.json(answer);
+      }
+      if (path === '/api/queues/music' && walked !== null) {
+        return Response.json({
+          type: 'music',
+          current: {
+            itemId: crypto.randomUUID(),
+            ref: walked.ref,
+            title: walked.title,
+            sub: null,
+            duration: null,
+          },
+          position: null,
+          user: [],
+          context: null,
+          digest: null,
+          rev: 1,
+          autoplay: null,
+          played: [],
+        });
+      }
+      if (path === '/api/sessions/this/step' && options.walk !== undefined) {
+        walked = options.walk.shift() ?? null;
+        const current = walked === null ? null : { itemId: crypto.randomUUID(), ref: walked.ref };
+        return Response.json({
+          deviceId: 'd',
+          deviceName: 'This browser',
+          thisDevice: true,
+          active: 'music',
+          switchAfterCurrent: null,
+          currents: { music: current, spoken: null },
+          rev: 1,
+          updatedAt: 0,
+        });
       }
       if (path === '/api/sessions/this/step') {
         const ref = after[body!.direction as 'next' | 'back'];
@@ -697,6 +736,77 @@ describe('[M1.shell] the web player store', () => {
     expect(store.getState()).toMatchObject({ ref: book, refused: { error: 'song_live' } });
     await store.play(book);
     expect(store.getState().refused).toBeNull();
+  });
+
+  describe('[M3.ytmusic] a song met in a queue that cannot play', () => {
+    const song = (n: number) => ({
+      ref: { source: 'ytmusic', id: `song${n}song${n}` } as MediaRef,
+      title: `Song ${n}`,
+    });
+    const stepsSent = (sent: { path: string }[]) =>
+      sent.filter(({ path }) => path === '/api/sessions/this/step').length;
+
+    it.each([
+      ['refused', 'song_region_blocked'],
+      ['met with 503 from streaming', 'streaming_unavailable'],
+    ])('[M3.ytmusic] is stepped over when %s, and says which', async (_how, error) => {
+      vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const [blocked, plays] = [song(1), song(2)];
+      const { store, sent } = rig({
+        refusesPlan: { [blocked.ref.id]: error },
+        walk: [blocked, plays],
+      });
+      await store.play(book);
+      await store.step('next');
+      expect(store.getState()).toMatchObject({
+        ref: plays.ref,
+        playing: true,
+        refused: { ref: blocked.ref, error, skipped: { title: 'Song 1' } },
+      });
+      expect(store.getState().refused?.stoppedAfter).toBeUndefined();
+      expect(stepsSent(sent)).toBe(2);
+    });
+
+    it('[M3.ytmusic] goes on past a song the household holds that cannot be planned', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const held = { ref: { source: 'jellyfin', id: 'held' } as MediaRef, title: 'Held' };
+      const { store } = rig({ unplannable: ['held'], walk: [held, song(2)] });
+      await store.play(book);
+      await store.step('next');
+      expect(store.getState()).toMatchObject({
+        ref: song(2).ref,
+        refused: { ref: held.ref, error: null, skipped: { title: 'Held' } },
+      });
+    });
+
+    it('[M3.ytmusic] a run of them stops the player and says so, however many more wait', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const songs = Array.from({ length: MOST_SKIPPED * 3 }, (_, n) => song(n));
+      const { store, sent } = rig({
+        refusesPlan: Object.fromEntries(songs.map(({ ref }) => [ref.id, 'song_live'])),
+        walk: songs,
+      });
+      await store.play(book);
+      await store.step('next');
+      expect(stepsSent(sent)).toBe(MOST_SKIPPED);
+      expect(store.getState()).toMatchObject({
+        ref: null,
+        plan: null,
+        playing: false,
+        refused: { stoppedAfter: MOST_SKIPPED },
+      });
+    });
+
+    it('[M3.ytmusic] the end of the queue after one leaves nothing loaded, still saying which', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const { store } = rig({ refusesPlan: { [song(1).ref.id]: 'song_live' }, walk: [song(1)] });
+      await store.play(book);
+      await store.step('next');
+      expect(store.getState()).toMatchObject({
+        plan: null,
+        refused: { skipped: { title: 'Song 1' } },
+      });
+    });
   });
 
   it('[M3.ytmusic] forgets a refusal when asked, as a page leaving it does', async () => {

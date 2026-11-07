@@ -741,10 +741,11 @@ function useHeard<T, L>(screen: Screen<T, L>): PlayerHeard {
   useEffect(() => {
     if (hears) return () => playerStore().forgetRefused();
   }, [hears, key]);
-  // The song tapped may be far down the page, and the banner that says why is at its head.
+  // The song tapped may be far down the page, and the banner that says why is at its head. One the
+  // queue stepped over was no tap, so the page stays where it is read.
   const { refused } = heard;
   useEffect(() => {
-    if (hears && refused !== null) {
+    if (hears && refused !== null && refused.skipped === undefined) {
       document.querySelector('[role="status"]')?.scrollIntoView({ block: 'center' });
     }
   }, [hears, refused]);

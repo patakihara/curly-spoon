@@ -11,6 +11,7 @@ import {
 import { type ApiClient } from '../api/client';
 import { type SearchData } from '../generated/pages/Search';
 import { type PlayerHeard, type PlayQueue } from '../player';
+import { type Refused } from '../player/store';
 import { type Draft, searchText } from '../query';
 import { requestKey, requestOf } from '../request';
 import { artAt, emptied } from './format';
@@ -28,8 +29,9 @@ import { type Answer } from './store';
  * anyone has asked, its row draws only where that request stands and leads to Requests; once the
  * request brought it, its row opens and plays the item it became. A tap that did not go through
  * leaves its button, as no request stands yet. A song from YouTube Music plays from its art and
- * opens nothing; while music plays its own button puts it next, and why it would not play takes the
- * page's one banner, as does streaming being unavailable. The page's own
+ * opens nothing; while music plays its own button puts it next, as a song of the household's does,
+ * and why it would not play, or was stepped over, takes the page's one banner, as does streaming
+ * being unavailable. The page's own
  * words (its placeholder, its kinds) stay as given; what it says when a search finds nothing or
  * fails is written in the page, which this only chooses the state of.
  * The kinds' names and the meta lines are written here, as the library homes write theirs, until
@@ -91,6 +93,7 @@ export function rowOf(result: SearchResult): Row {
     ref: kind.opens && opened !== undefined ? mediaRefKey(opened) : '',
     playRef: kind.plays ? mediaRefKey(result.ref) : '',
     queue: kind.queue,
+    next: '',
   };
 }
 
@@ -162,6 +165,16 @@ const REFUSED: Record<string, string> = {
 };
 const COULD_NOT_PLAY = 'This song could not play.';
 
+/** What the one banner says of a refusal: why, and for one met in a queue, that the music went on. */
+function refusedMessage({ error, skipped, stoppedAfter }: Refused): string {
+  if (stoppedAfter !== undefined) {
+    return `Stopped: ${stoppedAfter} songs in a row could not play.`;
+  }
+  const why = REFUSED[error ?? ''] ?? COULD_NOT_PLAY;
+  if (skipped === undefined) return why;
+  return `${skipped.title === null ? 'Skipped a song' : `Skipped “${skipped.title}”`}. ${why}`;
+}
+
 /** One song from YouTube Music as its row, in the list of the two that says what its button does. */
 export function songRowOf(song: SearchSong): SongRow {
   const row = {
@@ -175,9 +188,13 @@ export function songRowOf(song: SearchSong): SongRow {
   return { plays: [row], follows: [] } as SongRow;
 }
 
+/** Whether a row of the household's is one song: it opens its album, and plays itself. */
+const isSong = ({ page, ref, playRef }: Row) => page === 'album' && ref !== playRef;
+
 /**
- * Search's data as the player has it: while music is loaded a song's button says Play next, and a
- * song the server refused says why in the banner, in place of anything it said.
+ * Search's data as the player has it: while music is loaded a song's button says Play next, the
+ * household's own songs and the streamed alike, and a song the server refused, or the player
+ * stepped over, says why in the banner, in place of anything it said.
  */
 export function searchHeard(data: SearchData, heard: PlayerHeard): SearchData {
   const said = (song: SongRow) =>
@@ -185,14 +202,18 @@ export function searchHeard(data: SearchData, heard: PlayerHeard): SearchData {
       plays: heard.music ? [] : [...song.plays, ...song.follows],
       follows: heard.music ? [...song.plays, ...song.follows] : [],
     }) as SongRow;
+  const held = (row: Row): Row => ({ ...row, next: heard.music && isSong(row) ? 'Play next' : '' });
   const { refused } = heard;
   return {
     ...data,
-    outside: { ...data.outside, music: data.outside.music.map(said) },
-    errors:
-      refused === null
-        ? data.errors
-        : [{ message: REFUSED[refused.error ?? ''] ?? COULD_NOT_PLAY }],
+    top: data.top.map(held),
+    library: data.library.map(held),
+    outside: {
+      ...data.outside,
+      household: data.outside.household.map(held),
+      music: data.outside.music.map(said),
+    },
+    errors: refused === null ? data.errors : [{ message: refusedMessage(refused) }],
   };
 }
 

@@ -10,11 +10,17 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { PassThrough } from 'node:stream';
 import { fileURLToPath } from 'node:url';
-import { type PlaybackPlan, type Queue } from '@auralis/schema';
+import {
+  type ListeningSession,
+  type PlaybackPlan,
+  type Queue,
+  type QueueView,
+} from '@auralis/schema';
 import { type FastifyInstance } from 'fastify';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type FetchLike } from './adapters/http/fetch.js';
 import { recordingSchema } from './adapters/http/recording.js';
+import { type YtSong } from './adapters/ytmusic/client.js';
 import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
 import { type Canary, type CanaryResult } from './music/canary.js';
@@ -131,6 +137,7 @@ async function server(
     music?: false;
     tracks?: StreamedTrack[];
     now?: () => number;
+    radio?: (id: string) => Promise<YtSong[]>;
   } = {},
 ) {
   const db: Db = openDatabase(':memory:');
@@ -153,6 +160,9 @@ async function server(
     spawn: child.spawn,
     chunkBytes: CHUNK,
     arch: 'x64',
+    ...(options.radio === undefined
+      ? {}
+      : { client: { search: async () => [], radio: options.radio } }),
   };
   const music = options.music === false ? null : new Music(deps);
   music?.prepare();
@@ -735,5 +745,47 @@ describe('[M3.ytmusic/a] guards no other test reaches', () => {
     finish({ passed: false, reason: 'unavailable', ms: 1 });
     expect(await first).toBe('unavailable');
     expect(await second).toBe('unavailable');
+  });
+});
+
+describe('[M3.ytmusic/e] radio belongs to the person listening', () => {
+  const radioRow = (id: string) => ({ ...song(id), type: 'ATV' as const });
+  const PICK = 'ccccccccccc';
+  const LATER = 'ddddddddddd';
+  const pickOf = async (app: FastifyInstance, who: object) => {
+    const view = await app.inject({
+      method: 'GET',
+      url: '/api/queues/music',
+      headers: who as Record<string, string>,
+    });
+    return view.json<QueueView>().autoplay?.ref.id;
+  };
+  const playAs = (app: FastifyInstance, who: object) =>
+    app.inject({
+      method: 'POST',
+      url: '/api/play',
+      headers: who as Record<string, string>,
+      payload: { ref: { source: 'ytmusic', id: ID } },
+    });
+
+  it("[M3.ytmusic/e] one person's next song is not played away from another's radio", async () => {
+    const { app, kara, ada } = await server({
+      radio: async () => [radioRow(PICK), radioRow(LATER)],
+    });
+    expect((await playAs(app, kara)).statusCode).toBe(200);
+    expect((await playAs(app, ada)).statusCode).toBe(200);
+    await vi.waitFor(async () => expect(await pickOf(app, kara)).toBe(PICK));
+    await vi.waitFor(async () => expect(await pickOf(app, ada)).toBe(PICK));
+
+    const stepped = await app.inject({
+      method: 'POST',
+      url: '/api/sessions/this/step',
+      headers: kara,
+      payload: { direction: 'next' },
+    });
+    expect(stepped.statusCode).toBe(200);
+    expect(stepped.json<ListeningSession>().currents.music?.ref.id).toBe(PICK);
+    await vi.waitFor(async () => expect(await pickOf(app, kara)).toBe(LATER));
+    expect(await pickOf(app, ada)).toBe(PICK);
   });
 });
