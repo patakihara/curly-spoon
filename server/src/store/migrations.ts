@@ -895,6 +895,27 @@ export const migrations: readonly Migration[] = [
       for (const index of indexes) db.exec(index.sql);
     },
   },
+  {
+    id: 25,
+    name: 'extractor_versions',
+    up: (db) => {
+      // What the extractor's daily canary said of each version. One is promoted (in use), the last
+      // passing one before it kept, and one that failed stays named with its reason. The image's own
+      // version has its row once a canary has run on it.
+      db.exec(`
+        CREATE TABLE extractor_versions (
+          version     TEXT PRIMARY KEY,
+          source      TEXT NOT NULL CHECK (source IN ('image', 'release', 'nightly')),
+          state       TEXT NOT NULL CHECK (state IN ('promoted', 'kept', 'failed')),
+          promoted_at INTEGER,
+          canary_at   INTEGER,
+          canary_ms   INTEGER,
+          tier        TEXT CHECK (tier IN ('plain', 'node')),
+          reason      TEXT
+        );
+      `);
+    },
+  },
 ];
 
 export function runMigrations(

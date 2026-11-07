@@ -84,6 +84,7 @@
  * `--dry-run` makes the same calls but writes into a fresh temporary folder instead of the
  * committed recordings, and says where.
  */
+import { recordGithub } from './record-github.js';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -715,11 +716,12 @@ export async function runRecord(io: RecordIo): Promise<number> {
       'qbit',
       'ytmusic',
       'extractor',
+      'github',
       'oidc',
     ].includes(only)
   ) {
     io.err(
-      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, shelf, qbit, ytmusic, extractor or oidc, not ${only}`,
+      `--only is abs, jellyfin, index, play, episode, jfplay, progress, sessions, shell, lyrics, lists, played, household, books, shelf, qbit, ytmusic, extractor, github or oidc, not ${only}`,
     );
     return 2;
   }
@@ -745,6 +747,7 @@ export async function runRecord(io: RecordIo): Promise<number> {
   if (only === 'qbit') return runQbit(io, values, parseKeys(io.stdin), root);
   if (only === 'ytmusic') return runYtMusic(io, root);
   if (only === 'extractor') return runExtractor(io, values, root);
+  if (only === 'github') return runGithub(io, root);
   const wantIndex = only === undefined || only === 'index';
   const wantAbs = only !== 'jellyfin';
   const wantJellyfin = only !== 'abs';
@@ -1248,6 +1251,11 @@ async function runBooks(
     prowlarrUrl: values.prowlarr as string,
     prowlarrKey: keys.PROWLARR_API_KEY as string,
   });
+  return scanWritten(io, written, []);
+}
+
+async function runGithub(io: RecordIo, root: string): Promise<number> {
+  const { written } = await recordGithub({ fetch: io.fetch, out: io.out, root });
   return scanWritten(io, written, []);
 }
 

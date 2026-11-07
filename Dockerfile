@@ -1,5 +1,9 @@
 # One container, one port: the server serves the API and web's built assets on the same origin.
 ARG NODE_VERSION=22-alpine
+# The extractor the image brings, and the platform it is built for, which BuildKit sets. The daily
+# update keeps anything newer in the data folder (server/src/music/update.ts).
+ARG YTDLP_VERSION=2026.10.26
+ARG TARGETARCH
 
 FROM node:${NODE_VERSION} AS base
 RUN corepack enable
@@ -21,6 +25,21 @@ COPY . .
 RUN --mount=type=cache,id=auralis-pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --prod --filter "@auralis/server..."
 
+# yt-dlp's one-folder form: no Python to carry, and 0.7 s to start where the one-file form unpacks on
+# every call. Each platform's archive is pinned by its published SHA-256.
+FROM node:${NODE_VERSION} AS extractor-amd64
+ADD --checksum=sha256:c3a67f7c14d4cbf876e7801039237fc16b929a629c72f9c785ec3fdc8aa40748 \
+    https://github.com/yt-dlp/yt-dlp/releases/download/${YTDLP_VERSION}/yt-dlp_musllinux.zip /tmp/yt-dlp.zip
+
+FROM node:${NODE_VERSION} AS extractor-arm64
+ADD --checksum=sha256:1648beeb7b0c78b471654262697066c016783d33813659367a5c274828ba3240 \
+    https://github.com/yt-dlp/yt-dlp/releases/download/${YTDLP_VERSION}/yt-dlp_musllinux_aarch64.zip /tmp/yt-dlp.zip
+
+FROM extractor-${TARGETARCH} AS extractor
+ARG YTDLP_VERSION
+RUN mkdir -p /opt/yt-dlp/${YTDLP_VERSION} && cd /opt/yt-dlp/${YTDLP_VERSION} \
+    && unzip -q /tmp/yt-dlp.zip && mv yt-dlp_musllinux* yt-dlp && chmod -R a+rX . && chmod 755 yt-dlp
+
 FROM node:${NODE_VERSION} AS final
 RUN addgroup -S auralis && adduser -S auralis -G auralis
 WORKDIR /app
@@ -35,6 +54,10 @@ COPY --chown=auralis:auralis server/package.json ./server/package.json
 # recordings and the recorder (scripts/guards/image.test.mjs).
 COPY --chown=auralis:auralis server/src ./server/src
 COPY --from=build --chown=auralis:auralis /app/web/dist ./web/dist
+# Outside /app, owned by root: it only ever runs, and writes nowhere but its home in the data folder.
+COPY --from=extractor /opt/yt-dlp /opt/yt-dlp
+ARG YTDLP_VERSION
+ENV EXTRACTOR_PATH=/opt/yt-dlp/${YTDLP_VERSION}/yt-dlp
 
 # The commit this image is built from, which /api/health reports. Declared here, last, so a new
 # commit rebuilds only the layers below it. CI, Publish and Release pass it.

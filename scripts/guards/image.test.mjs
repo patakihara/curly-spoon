@@ -15,6 +15,17 @@ test('the image copies exactly the files server/src/main.ts runs, and their pack
   assert.deepEqual(imageFiles(REPO_ROOT), runtimeFiles(REPO_ROOT));
 });
 
+test("the extractor stands outside /app, each platform's archive pinned by its checksum", () => {
+  const dockerfile = readFileSync(join(REPO_ROOT, 'Dockerfile'), 'utf8');
+  const pinned = [...dockerfile.matchAll(/ADD --checksum=sha256:[0-9a-f]{64} \\\n\s+(\S+)/g)];
+  assert.deepEqual(
+    pinned.map((match) => match[1].split('/').at(-1)),
+    ['yt-dlp_musllinux.zip', 'yt-dlp_musllinux_aarch64.zip'],
+  );
+  assert.match(dockerfile, /^COPY --from=extractor \/opt\/yt-dlp \/opt\/yt-dlp$/m);
+  assert.match(dockerfile, /^ENV EXTRACTOR_PATH=\/opt\/yt-dlp\//m);
+});
+
 test('the image holds no test, recording, test key, recorder or recorded-upstreams harness', () => {
   assert.deepEqual(imageFiles(REPO_ROOT).filter(testOnly), []);
 });
