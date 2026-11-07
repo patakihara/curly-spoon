@@ -1,0 +1,38 @@
+{
+  "upstream": "googlevideo",
+  "upstreamVersion": "yt-dlp 2026.10.26",
+  "call": "range-chunk",
+  "request": {
+    "method": "GET",
+    "path": "/videoplayback",
+    "query": {
+      "clen": "3445462",
+      "dur": "213.581",
+      "ei": "<token>",
+      "expire": "1794034003",
+      "ip": "<token>",
+      "itag": "251",
+      "lsig": "<token>",
+      "mime": "audio/webm",
+      "n": "<token>",
+      "sig": "<token>",
+      "source": "youtube"
+    },
+    "headers": {
+      "range": "bytes=0-1048575"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 206,
+    "headers": {
+      "accept-ranges": "bytes",
+      "content-range": "bytes 0-1048575/3445462",
+      "content-type": "audio/webm"
+    },
+    "body": {
+      "bytes": "opus-clip.webm",
+      "synthesized": "A 20 s sine tone in Opus and WebM, from scripts/fixtures/tone.sh, in place of the real audio."
+    }
+  }
+}

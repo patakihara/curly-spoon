@@ -829,6 +829,28 @@ export const migrations: readonly Migration[] = [
       db.exec('ALTER TABLE requests ADD COLUMN auto_starts INTEGER NOT NULL DEFAULT 0;');
     },
   },
+  {
+    id: 23,
+    name: 'stream_cache',
+    up: (db) => {
+      // A streamed track's held bytes, in fixed chunks of one sparse file. A chunk's bit is set only
+      // once all of it is on disk. bytes counts the set chunks. pinned is kept out of eviction.
+      db.exec(`
+        CREATE TABLE stream_cache (
+          id        TEXT PRIMARY KEY,
+          itag      INTEGER NOT NULL,
+          size      INTEGER NOT NULL CHECK (size > 0),
+          mime      TEXT NOT NULL CHECK (mime LIKE 'audio/%'),
+          duration  REAL NOT NULL,
+          chunks    BLOB NOT NULL,
+          bytes     INTEGER NOT NULL DEFAULT 0,
+          last_used INTEGER NOT NULL,
+          pinned    INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE INDEX stream_cache_last_used ON stream_cache (last_used);
+      `);
+    },
+  },
 ];
 
 export function runMigrations(
