@@ -1,9 +1,11 @@
 /**
  * A streamed song's bytes, proxied through a capped disk cache. Whatever a client's range, the
  * upstream is only ever asked closed ranges of one aligned chunk, because an open-ended range is
- * paced to about twice the audio's rate (checked live). Each chunk is held in full before it counts:
- * its bit is set once all its bytes are on disk, so a crash or a short answer costs only that chunk.
- * A track fully held needs no resolve and no fetch, and plays with streaming down.
+ * paced to about twice the audio's rate (checked live). A chunk's bytes go on to every client
+ * reading it as they arrive, while the whole chunk is gathered for the disk. It counts only once
+ * held in full: its bit is set once all its bytes are on disk, so a crash, a short answer or every
+ * client leaving costs only that chunk. A track fully held needs no resolve and no fetch, and plays
+ * with streaming down.
  *
  * Only stream hosts are asked, and a redirect is followed only to another. An answer that is not
  * audio is refused. A refused URL is resolved once more and tried again, so one that expires
@@ -124,10 +126,33 @@ interface Row {
   pinned: number;
 }
 
+/**
+ * One chunk's upstream read, shared by every client reading the chunk. `bytes[0, got)` never
+ * change once there; `received` is set when all `length` are, and `kept` once the chunk's keeping
+ * is over. Its last byte is held back until then, so a client that has a whole chunk finds it held.
+ */
 interface Flight {
-  done: Promise<Buffer>;
+  bytes: Buffer;
+  length: number;
+  got: number;
+  received: boolean;
+  kept: boolean;
+  failure: Error | null;
+  /** Readers waiting for more bytes, or for the failure. */
+  wakers: Set<() => void>;
+  /** Settles once the upstream answer's headers are checked: the chunk can start. */
+  started: Promise<void>;
   stop: AbortController;
   waiters: number;
+}
+
+/** A chunk as one reader has it: held on disk, or a share of its upstream read. */
+interface ChunkReader {
+  length: number;
+  /** The chunk's bytes from `from` on that are here, waiting for at least one. */
+  read(from: number): Promise<Buffer>;
+  /** This reader is done with the chunk; the last to leave an unfinished read stops it. */
+  release(): void;
 }
 
 const hasBit = (bits: Buffer, n: number) => ((bits[n >> 3] ?? 0) & (1 << (n & 7))) !== 0;
@@ -184,8 +209,10 @@ export class StreamCache {
   }
 
   /**
-   * A client's range of a track. Waits for the range's first chunk, so a track that cannot start is
-   * thrown here and never a broken answer; after that a failure errors the body.
+   * A client's range of a track. Waits for the range's first chunk to start, its upstream answer's
+   * headers checked (or the chunk read from disk), so a track that cannot start is thrown here and
+   * never a broken answer. After that a failure errors the body: a stall, a short answer or a
+   * network error partway through any chunk, the first one too.
    */
   async open(id: string, range: string | undefined, signal?: AbortSignal): Promise<StreamAnswer> {
     if (!YT_ID.test(id)) throw new StreamFailure('badId');
@@ -209,14 +236,14 @@ export class StreamCache {
     let pos: number;
     let last: number;
     let row: Row;
-    let pending: Buffer | null;
+    let current: ChunkReader | null;
     try {
       row = await untilGone(this.rowFor(id), client.signal);
       [pos, last] = spanOf(range, row.size);
       this.opts.db
         .prepare('UPDATE stream_cache SET last_used = ? WHERE id = ?')
         .run(this.opts.now(), id);
-      pending = await this.chunk(id, Math.floor(pos / this.chunkBytes), client.signal);
+      current = await this.chunk(id, Math.floor(pos / this.chunkBytes), client.signal);
     } catch (error) {
       finish();
       throw error;
@@ -229,22 +256,34 @@ export class StreamCache {
           try {
             if (client.signal.aborted) throw new StreamFailure('gone');
             const n = Math.floor(pos / this.chunkBytes);
-            const chunk = pending ?? (await this.chunk(id, n, client.signal));
-            pending = null;
             const base = n * this.chunkBytes;
-            const end = Math.min(chunk.byteLength, last + 1 - base);
-            controller.enqueue(chunk.subarray(pos - base, end));
+            current ??= await this.chunk(id, n, client.signal);
+            const here = await current.read(pos - base);
+            const end = Math.min(pos - base + here.byteLength, last + 1 - base);
+            controller.enqueue(here.subarray(0, end - (pos - base)));
             pos = base + end;
+            if (end >= current.length) {
+              current.release();
+              current = null;
+            }
             if (pos > last) {
+              current?.release();
+              current = null;
               finish();
               controller.close();
             }
           } catch (error) {
+            current?.release();
+            current = null;
             finish();
             controller.error(error);
           }
         },
-        cancel: leave,
+        cancel: () => {
+          current?.release();
+          current = null;
+          leave();
+        },
       },
       { highWaterMark: 0 },
     );
@@ -356,68 +395,144 @@ export class StreamCache {
   /** A format that names no size: the answer to its first two bytes does. */
   private async sizeOf(source: StreamSource): Promise<number> {
     const stop = new AbortController().signal;
+    const totalOf = async (url: StreamUrl) => {
+      const { body, total } = await this.ask(url, 0, 1, stop);
+      await body(() => undefined);
+      return total;
+    };
     try {
-      return (await this.ask(source.url, 0, 1, stop)).total;
+      return await totalOf(source.url);
     } catch (error) {
       if (!(error instanceof StreamFailure) || error.reason !== 'refused') throw error;
       const again = await this.opts.resolver.resolve(source.id, { replacing: source.url });
-      return (await this.ask(again.url, 0, 1, stop)).total;
+      return totalOf(again.url);
     }
   }
 
-  /** One chunk's bytes: from disk when held, else from the one fetch everyone waiting shares. */
-  private async chunk(id: string, n: number, signal: AbortSignal): Promise<Buffer> {
+  /**
+   * One chunk, ready to read: from disk when held, else a share of the one fetch everyone reading
+   * it shares, once its answer has started.
+   */
+  private async chunk(id: string, n: number, signal: AbortSignal): Promise<ChunkReader> {
     const row = this.row(id);
     if (row === undefined) throw new StreamFailure('changed');
     if (hasBit(row.chunks, n)) {
       const held = await this.readHeld(row, n);
-      if (held !== null) return held;
+      if (held !== null) {
+        return {
+          length: held.byteLength,
+          read: (from) => Promise.resolve(held.subarray(from)),
+          release: () => undefined,
+        };
+      }
     }
-    return this.join(id, n, signal);
+    return this.join(id, n, row, signal);
   }
 
-  /** Joins this chunk's fetch. When the last one waiting leaves, the fetch stops. */
-  private join(id: string, n: number, signal: AbortSignal): Promise<Buffer> {
-    if (signal.aborted) return Promise.reject(new StreamFailure('gone'));
+  /**
+   * Joins this chunk's fetch, starting it when none runs. When the last reader leaves before all
+   * its bytes are here, the fetch stops and nothing is kept.
+   */
+  private async join(id: string, n: number, row: Row, signal: AbortSignal): Promise<ChunkReader> {
+    if (signal.aborted) throw new StreamFailure('gone');
     const key = `${id}:${n}`;
-    let flight = this.flights.get(key);
-    if (flight === undefined) {
-      const stop = new AbortController();
-      const started: Flight = {
-        stop,
-        waiters: 0,
-        done: this.fetchChunk(id, n, stop.signal).finally(() => {
-          if (this.flights.get(key) === started) this.flights.delete(key);
-        }),
-      };
-      flight = started;
-      this.flights.set(key, started);
+    const flight = this.flights.get(key) ?? this.fly(key, id, n, row);
+    flight.waiters += 1;
+    let released = false;
+    const release = () => {
+      if (released) return;
+      released = true;
+      signal.removeEventListener('abort', leave);
+      flight.waiters -= 1;
+      if (flight.waiters === 0 && !flight.received) {
+        if (this.flights.get(key) === flight) this.flights.delete(key);
+        flight.stop.abort();
+      }
+    };
+    const leave = () => {
+      release();
+      for (const wake of flight.wakers) wake();
+    };
+    signal.addEventListener('abort', leave, { once: true });
+    const shown = () => (flight.kept ? flight.got : Math.min(flight.got, flight.length - 1));
+    const read = (from: number) =>
+      new Promise<Buffer>((resolve, reject) => {
+        const check = () => {
+          if (signal.aborted) reject(new StreamFailure('gone'));
+          else if (shown() > from) resolve(flight.bytes.subarray(from, shown()));
+          else if (flight.failure !== null) reject(flight.failure);
+          else return;
+          flight.wakers.delete(check);
+        };
+        flight.wakers.add(check);
+        check();
+      });
+    try {
+      await untilGone(flight.started, signal);
+    } catch (error) {
+      release();
+      throw error;
     }
-    const shared = flight;
-    shared.waiters += 1;
-    return new Promise((resolve, reject) => {
-      const leave = () => {
-        shared.waiters -= 1;
-        if (shared.waiters === 0) {
-          if (this.flights.get(key) === shared) this.flights.delete(key);
-          shared.stop.abort();
-        }
-        reject(new StreamFailure('gone'));
-      };
-      signal.addEventListener('abort', leave, { once: true });
-      shared.done.then(
-        (chunk) => {
-          signal.removeEventListener('abort', leave);
-          shared.waiters -= 1;
-          resolve(chunk);
-        },
-        (error: unknown) => {
-          signal.removeEventListener('abort', leave);
-          shared.waiters -= 1;
-          reject(error instanceof Error ? error : new StreamFailure('unavailable'));
-        },
-      );
+    return { length: flight.length, read, release };
+  }
+
+  /** Starts a chunk's fetch: its bytes gathered as they come, then kept once all are here. */
+  private fly(key: string, id: string, n: number, row: Row): Flight {
+    const { length } = this.spanOfChunk(row.size, n);
+    const stop = new AbortController();
+    let opened!: (body: (onPart: (part: Uint8Array) => void) => Promise<void>) => void;
+    let refused!: (error: Error) => void;
+    const flight: Flight = {
+      bytes: Buffer.alloc(length),
+      length,
+      got: 0,
+      received: false,
+      kept: false,
+      failure: null,
+      wakers: new Set(),
+      started: new Promise((resolve, reject) => {
+        opened = (body) => {
+          resolve();
+          void pump(body);
+        };
+        refused = reject;
+      }),
+      stop,
+      waiters: 0,
+    };
+    flight.started.catch(() => undefined);
+    const wake = () => {
+      for (const check of [...flight.wakers]) check();
+    };
+    const fail = (error: unknown) => {
+      flight.failure = error instanceof Error ? error : new StreamFailure('unavailable');
+      if (this.flights.get(key) === flight) this.flights.delete(key);
+      wake();
+    };
+    const pump = async (body: (onPart: (part: Uint8Array) => void) => Promise<void>) => {
+      try {
+        await body((part) => {
+          flight.bytes.set(part, flight.got);
+          flight.got += part.byteLength;
+          wake();
+        });
+        flight.received = true;
+        await this.keep(row, n, flight.bytes);
+        flight.kept = true;
+      } catch (error) {
+        fail(error);
+        return;
+      } finally {
+        wake();
+      }
+      if (this.flights.get(key) === flight) this.flights.delete(key);
+    };
+    this.flights.set(key, flight);
+    this.openChunk(id, n, row, stop.signal).then(opened, (error: unknown) => {
+      fail(error);
+      refused(flight.failure!);
     });
+    return flight;
   }
 
   /** Reads a held chunk. One that comes up short is not held after all, and null says so. */
@@ -450,9 +565,16 @@ export class StreamCache {
     return { start, length: Math.min(this.chunkBytes, size - start) };
   }
 
-  private async fetchChunk(id: string, n: number, stop: AbortSignal): Promise<Buffer> {
-    const row = this.row(id);
-    if (row === undefined) throw new StreamFailure('changed');
+  /**
+   * A chunk's upstream answer, its headers checked: what reads its body. A refused URL is resolved
+   * once more and asked again; a failure once the body has begun is the body's own.
+   */
+  private async openChunk(
+    id: string,
+    n: number,
+    row: Row,
+    stop: AbortSignal,
+  ): Promise<(onPart: (part: Uint8Array) => void) => Promise<void>> {
     const { start, length } = this.spanOfChunk(row.size, n);
     const last = start + length - 1;
     let source = await this.opts.resolver.resolve(id);
@@ -463,13 +585,13 @@ export class StreamCache {
         throw new StreamFailure('changed');
       }
       try {
-        const { bytes, total } = await this.ask(source.url, start, last, stop);
+        const { body, total } = await this.ask(source.url, start, last, stop);
         if (total !== row.size) {
+          await body(() => undefined).catch(() => undefined);
           this.changed.add(id);
           throw new StreamFailure('changed');
         }
-        await this.keep(row, n, bytes);
-        return bytes;
+        return body;
       } catch (error) {
         if (error instanceof StreamFailure && error.reason === 'changed') this.changed.add(id);
         if (retried || !(error instanceof StreamFailure) || error.reason !== 'refused') throw error;
@@ -478,13 +600,19 @@ export class StreamCache {
     }
   }
 
-  /** A closed range of the stream, all of it or a failure, within the chunk's time limit. */
+  /**
+   * A closed range of the stream, its answer's headers checked, and what reads its body: each part
+   * to `onPart` as it comes, then all of it or a failure, within the chunk's time limit.
+   */
   private async ask(
     url: StreamUrl,
     first: number,
     last: number,
     stop: AbortSignal,
-  ): Promise<{ bytes: Buffer; total: number }> {
+  ): Promise<{
+    body: (onPart: (part: Uint8Array) => void) => Promise<void>;
+    total: number;
+  }> {
     const limit = AbortSignal.any([
       stop,
       AbortSignal.timeout(this.opts.chunkTimeoutMs ?? CHUNK_TIMEOUT_MS),
@@ -516,28 +644,29 @@ export class StreamCache {
     const reader = file.body.getReader();
     const cancel = () => void reader.cancel().catch(() => undefined);
     limit.addEventListener('abort', cancel, { once: true });
-    try {
-      const parts: Uint8Array[] = [];
-      let got = 0;
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (limit.aborted) throw new StreamFailure(stop.aborted ? 'gone' : 'unavailable');
-        if (done) break;
-        got += value.byteLength;
-        if (got > expected) {
-          cancel();
-          throw new StreamFailure('badAnswer');
+    const body = async (onPart: (part: Uint8Array) => void) => {
+      try {
+        let got = 0;
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (limit.aborted) throw new StreamFailure(stop.aborted ? 'gone' : 'unavailable');
+          if (done) break;
+          got += value.byteLength;
+          if (got > expected) {
+            cancel();
+            throw new StreamFailure('badAnswer');
+          }
+          onPart(value);
         }
-        parts.push(value);
+        if (got !== expected) throw new StreamFailure('badAnswer');
+      } catch (error) {
+        if (error instanceof StreamFailure) throw error;
+        throw new StreamFailure(stop.aborted ? 'gone' : 'unavailable');
+      } finally {
+        limit.removeEventListener('abort', cancel);
       }
-      if (got !== expected) throw new StreamFailure('badAnswer');
-      return { bytes: Buffer.concat(parts, got), total: Number(range[3]) };
-    } catch (error) {
-      if (error instanceof StreamFailure) throw error;
-      throw new StreamFailure(stop.aborted ? 'gone' : 'unavailable');
-    } finally {
-      limit.removeEventListener('abort', cancel);
-    }
+    };
+    return { body, total: Number(range[3]) };
   }
 
   /** The fetch every ask goes through: a stream host, and a redirect only to another. */

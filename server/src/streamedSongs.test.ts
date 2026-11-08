@@ -310,6 +310,42 @@ describe("[M3.ytmusic/a] a song's track", () => {
     expect(host.asked.every((range) => /^bytes=\d+-\d+$/.test(range))).toBe(true);
   });
 
+  it('[M3.ytmusic] an upstream failing partway through the first chunk cuts the answer short, keeps nothing, and plays on', async () => {
+    const real = streamHost();
+    let breakNext = true;
+    const host = {
+      ...real,
+      fetch: (async (url, init) => {
+        const whole = await real.fetch(url, init);
+        if (!breakNext || url.includes('art.')) return whole;
+        breakNext = false;
+        const bytes = new Uint8Array(await whole.arrayBuffer());
+        const broken = new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(bytes.slice(0, 100));
+            setTimeout(() => controller.error(new Error('reset')), 50);
+          },
+        });
+        return new Response(broken, { status: whole.status, headers: whole.headers });
+      }) as FetchLike,
+    };
+    const logged: string[] = [];
+    const { app, kara, track, music } = await server({ host, logged });
+    const address = await app.listen({ port: 0, host: '127.0.0.1' });
+    const cut = await fetch(`${address}/api/media/ytmusic:${ID}/tracks/0`, {
+      headers: { ...kara, range: 'bytes=0-' },
+    });
+    // Its headers and first bytes went out, so the connection is cut short, never padded.
+    expect(cut.status).toBe(206);
+    await expect(cut.arrayBuffer()).rejects.toThrow();
+    const again = await track(ID, 'bytes=0-');
+    expect(again.statusCode).toBe(206);
+    expect(again.rawPayload.equals(clip)).toBe(true);
+    expect(music!.state.available).toBe(true);
+    const lines = logged.map((l) => JSON.parse(l) as Record<string, unknown>);
+    expect(lines.some((l) => typeof l.firstByteMs === 'number')).toBe(true);
+  });
+
   it('[M3.ytmusic/a] only track 0 exists', async () => {
     const { app, kara } = await server();
     const res = await app.inject({

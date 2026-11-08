@@ -272,6 +272,30 @@ export function songRefusal(error: unknown): never {
   throw error;
 }
 
+/** `body` as it is, telling `first` when its first bytes are read. */
+function onFirstBytes(
+  body: ReadableStream<Uint8Array>,
+  first: () => void,
+): ReadableStream<Uint8Array> {
+  const reader = body.getReader();
+  let told = false;
+  return new ReadableStream<Uint8Array>(
+    {
+      pull: async (controller) => {
+        const { done, value } = await reader.read();
+        if (done) return controller.close();
+        if (!told) {
+          told = true;
+          first();
+        }
+        controller.enqueue(value);
+      },
+      cancel: (reason) => reader.cancel(reason),
+    },
+    { highWaterMark: 0 },
+  );
+}
+
 export function playRoutes(
   app: FastifyInstance,
   options: {
@@ -672,7 +696,17 @@ export function playRoutes(
         throw new Refusal(404, 'not_found');
       }
       if (song.duration > MOST_SONG_SECONDS) throw new Refusal(422, 'unsupported_format');
-      return music.open(ref.id, range, signal).catch(songRefusal);
+      const started = performance.now();
+      const answer = await music.open(ref.id, range, signal).catch(songRefusal);
+      return {
+        ...answer,
+        body: onFirstBytes(answer.body, () =>
+          app.log.info(
+            { firstByteMs: Math.round(performance.now() - started) },
+            'a song’s first bytes went out',
+          ),
+        ),
+      };
     }
     if (ref.source === 'jellyfin') {
       // A Jellyfin track is its own ref's only track. Jellyfin streams to anyone with the id, so
