@@ -25,7 +25,7 @@ import { type PlayerAnswer, playerAnswerSchema } from './adapters/ytmusic/schema
 import { type DirectResolve } from './music/direct.js';
 import { type SpawnLike } from './music/extractor.js';
 import { MOST_AHEAD_PER_MINUTE, Music } from './music/index.js';
-import { parsePlayer, PlayerRefused } from './music/schemas.js';
+import { parsePlayer, PlayerRefused, StreamUrl } from './music/schemas.js';
 import { openDatabase, type Db } from './store/connection.js';
 import { createDevice } from './store/devices.js';
 import { createSession } from './store/sessions.js';
@@ -137,6 +137,7 @@ async function server(
     now?: () => number;
     direct?: DirectResolve;
     streamFetch?: FetchLike;
+    warmHost?: (url: StreamUrl) => void;
   } = {},
 ) {
   const db = openDatabase(':memory:');
@@ -173,6 +174,7 @@ async function server(
           streamFetch: options.streamFetch ?? (() => Promise.reject(new Error('no stream host'))),
           chunkBytes: CHUNK,
           ...(options.direct === undefined ? {} : { direct: options.direct }),
+          ...(options.warmHost === undefined ? {} : { warmHost: options.warmHost }),
           canary: async () => ({ passed: false, reason: 'unavailable', ms: 1 }),
           spawn,
           client: { search, radio: (id) => client.radio(id) },
@@ -410,6 +412,51 @@ describe('[M3.ytmusic/a] song rows in Search', () => {
     expect(asked).toHaveBeenCalledTimes(2);
     expect(host.asked).toHaveLength(1);
     expect(runs).not.toHaveBeenCalled();
+  });
+
+  it('[M3.ytmusic] each row resolved ahead has its stream host looked up as it resolves', async () => {
+    const recorded = directPlayer().direct;
+    // Each song served from a host of its own, named after it.
+    const direct: DirectResolve = async (id) => {
+      const info = await recorded(id);
+      const own = (url: StreamUrl) => new StreamUrl(url.reveal().replace('://', `://${id}.`));
+      return { ...info, formats: info.formats.map((row) => ({ ...row, url: own(row.url) })) };
+    };
+    const warmed = new Set<string>();
+    const { ask } = await server({
+      direct,
+      warmHost: (url) => warmed.add(new URL(url.reveal()).hostname.split('.')[0]!),
+    });
+    const { songs } = await ask();
+    await vi.waitFor(() => expect(warmed.size).toBe(2));
+    const ids = [songs[0]!.ref.id, songs[1]!.ref.id].map((id) => id.toLowerCase());
+    expect([...warmed].sort()).toEqual(ids.sort());
+  });
+
+  it('[M3.ytmusic] a tapped song has its stream host looked up as soon as it resolves, before its first fetch', async () => {
+    const { direct } = directPlayer();
+    const host = streamHost();
+    const order: string[] = [];
+    const { app, ask, headers } = await server({
+      direct,
+      streamFetch: (url, init) => {
+        order.push('fetch');
+        return host.fetch(url, init);
+      },
+      warmHost: () => order.push('warm'),
+    });
+    const { songs } = await ask();
+    await new Promise((settled) => setTimeout(settled, 20));
+    order.length = 0;
+    const ref = songs[3]!.ref;
+    const played = await app.inject({
+      method: 'POST',
+      url: '/api/play',
+      headers,
+      payload: { ref },
+    });
+    expect(played.statusCode, played.body).toBe(200);
+    expect(order).toEqual(['warm']);
   });
 
   it('[M3.ytmusic] a URL refused to the chunk fetched ahead is resolved again through the direct call, never a process', async () => {
