@@ -34,8 +34,10 @@ export const KEPT_HEADERS = [
   'user-agent',
   'location',
 ] as const;
-/** A query parameter or header name that carries a credential. `auth` spares `author`. */
-export const SECRET_QUERY_KEY = /token|key(?!words)|secret|pass|pash|auth(?!or)|cookie|signature/i;
+/** A query parameter or header name that carries a credential. `auth` spares `author`. A visitor
+ * id (`X-Goog-Visitor-Id`) is one. */
+export const SECRET_QUERY_KEY =
+  /token|key(?!words)|secret|pass|pash|auth(?!or)|cookie|signature|visitor/i;
 /** The host YouTube streams from, whatever its cache node. Its name is the household's ISP's. */
 export const STREAM_HOST = /^(?:[\w-]+\.)*googlevideo\.com$/i;
 /** What a stream's URL replaces every such host with. */
@@ -48,11 +50,11 @@ export const STREAM_SECRET_PARAM = /^(?:ip|mn|sig|lsig|n|ei|pot|initcwndbps)$/;
 /** A cache node's own name, which turns up beyond the host; only the recorded one is allowed. */
 export const STREAM_NODE = /(?<![\w-])sn-(?!recorded(?![\w-]))[a-z0-9-]{6,}/gi;
 const STREAM_URL = /https?:\/\/(?:[\w-]+\.)*googlevideo\.com(?:[/?](?:<token>|[^\s"'<>])*)?/gi;
-/** A JSON field that carries a credential, by substring or by exact name. A field that only
- * describes one, such as a sign-on's `token_endpoint`, `token_type` or
- * `token_endpoint_auth_methods_supported`, is not. */
+/** A JSON field that carries a credential, by substring or by exact name, InnerTube's visitor id
+ * (`visitorData`) among them. A field that only describes one, such as a sign-on's
+ * `token_endpoint`, `token_type` or `token_endpoint_auth_methods_supported`, is not. */
 export const SECRET_BODY_KEY =
-  /^(?!.*(?:_endpoint|_type|_supported)$)(?:.*(?:token|api_?key|password|passwd|pash|secret|cookie|authorization)|key$|pass$)/i;
+  /^(?!.*(?:_endpoint|_type|_supported)$)(?:.*(?:token|api_?key|password|passwd|pash|secret|cookie|authorization|visitor)|key$|pass$)/i;
 /** A JSON field whose value is a host or an address. An endpoint's own name, not a field that
  * only mentions one (`token_endpoint_auth_methods_supported`). */
 export const HOST_FIELD = /host|address|^addr$|servername|domain|origin|endpoint$|url$/i;

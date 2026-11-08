@@ -739,6 +739,11 @@ export interface components {
          * @enum {string}
          */
         HlsMime: "application/vnd.apple.mpegurl";
+        JobDirect: {
+            passed: boolean;
+            reason: string | null;
+            at: number;
+        };
         /** @enum {string} */
         RequestFailure: "noRelease" | "searchFailed" | "downloadFailed" | "downloadStalled" | "importFailed" | "notIndexed" | "cancelledUpstream";
         /** @enum {string} */
@@ -890,6 +895,7 @@ export interface components {
             reason: string | null;
             current: string;
             versions: components["schemas"]["JobVersion"][];
+            direct: components["schemas"]["JobDirect"] | null;
         };
         JobList: {
             jobs: components["schemas"]["Job"][];

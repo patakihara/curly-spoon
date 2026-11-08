@@ -7,12 +7,17 @@
  * user's upload. A bad row is dropped alone, a bad whole answer is no rows, and each is told to
  * `onBad`. A refusal or a network failure is thrown, as every adapter's is.
  *
- * `new YtMusicClient({ baseUrl, fetch, now, timeoutMs?, onBad? })`.
+ * Every answer may carry a visitor id (`responseContext.visitorData`), which YouTube's player asks
+ * for before it names a stream: the client keeps the newest in a `Visitor`, in memory only.
+ *
+ * `new YtMusicClient({ baseUrl, fetch, now, timeoutMs?, onBad?, visitor? })`.
  */
+import { inspect } from 'node:util';
 import { AdapterError, type FetchLike, requestJson } from '../http/fetch.js';
 import {
   radioAnswerSchema,
   radioRowSchema,
+  type ResponseContext,
   type Run,
   searchAnswerSchema,
   searchRowSchema,
@@ -47,6 +52,44 @@ export interface YtSong {
   type: OfficialType;
 }
 
+/** A visitor id's form: base64 and its URL escapes, so it can only ever be one header's value. */
+const VISITOR_ID = /^[\w%=-]{8,256}$/;
+
+/**
+ * The newest visitor id an InnerTube answer named. It never reaches a log, a file or a client: it
+ * prints as a placeholder, and is read only by asking for it by name.
+ */
+export class Visitor {
+  #id: string | null = null;
+
+  /** The id held, or null. For the one header that carries it. */
+  get(): string | null {
+    return this.#id;
+  }
+
+  /** Keeps an answer's id, the newest winning; anything not shaped like one is ignored. */
+  keep(id: string | undefined): void {
+    if (id !== undefined && VISITOR_ID.test(id)) this.#id = id;
+  }
+
+  /** The id held was refused: the next ask gets a fresh one. */
+  drop(): void {
+    this.#id = null;
+  }
+
+  toString(): string {
+    return '<visitor>';
+  }
+
+  toJSON(): string {
+    return '<visitor>';
+  }
+
+  [inspect.custom](): string {
+    return '<visitor>';
+  }
+}
+
 export interface YtMusicClientOptions {
   baseUrl: string;
   fetch: FetchLike;
@@ -56,6 +99,8 @@ export interface YtMusicClientOptions {
   timeoutMs?: number;
   /** Told of each row dropped as malformed, and of an answer not understood at all. */
   onBad?: (what: string) => void;
+  /** Where each answer's visitor id is kept. */
+  visitor?: Visitor;
 }
 
 /** `1.<today>.01.00`, the web player's own form. A year-old date also answers (checked live). */
@@ -150,7 +195,7 @@ export class YtMusicClient {
     return this.official(rows, (row) => this.radioRow(row)).filter((song) => song.id !== id);
   }
 
-  private async ask<T>(
+  private async ask<T extends { responseContext?: ResponseContext }>(
     endpoint: string,
     body: Record<string, unknown>,
     schema: Parameters<typeof requestJson<T>>[3],
@@ -167,7 +212,7 @@ export class YtMusicClient {
       },
     };
     try {
-      return await requestJson(
+      const answer = await requestJson(
         fetch,
         url.toString(),
         {
@@ -178,6 +223,8 @@ export class YtMusicClient {
         },
         schema,
       );
+      this.opts.visitor?.keep(answer.responseContext?.visitorData);
+      return answer;
     } catch (error) {
       if (error instanceof AdapterError && error.kind === 'parse') {
         this.opts.onBad?.(`${endpoint}: the answer is not understood`);

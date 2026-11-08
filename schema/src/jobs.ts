@@ -1,7 +1,7 @@
 /**
  * What admin sees of the server's background jobs. Today that is the extractor's: its state, the
- * version in use, and what its canary last said of each version. A reason is one word, never the
- * extractor's own output.
+ * version in use, what its canary last said of each version, and of the direct resolve (YouTube's
+ * player, asked ahead of the extractor). A reason is one word, never the extractor's own output.
  */
 import { z } from './zod.js';
 
@@ -20,6 +20,12 @@ export type JobVersion = z.infer<typeof JobVersion>;
 
 export const JobName = z.enum(['extractor']).openapi('JobName');
 
+/** The canary's last word on the direct resolve; null before its first run. */
+export const JobDirect = z
+  .object({ passed: z.boolean(), reason: z.string().nullable(), at: z.number() })
+  .openapi('JobDirect');
+export type JobDirect = z.infer<typeof JobDirect>;
+
 export const Job = z
   .object({
     name: JobName,
@@ -27,6 +33,7 @@ export const Job = z
     reason: z.string().nullable(),
     current: z.string(),
     versions: z.array(JobVersion),
+    direct: JobDirect.nullable(),
   })
   .openapi('Job');
 export type Job = z.infer<typeof Job>;

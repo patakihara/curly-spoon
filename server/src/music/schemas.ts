@@ -1,12 +1,13 @@
 /**
- * What the extractor (yt-dlp) answers, cut to audio alone. `AudioFormat` has no field for video, so
- * nothing downstream of `parseInfo` can carry a video stream: a format with one is dropped here, and
- * an answer with no audio-only format throws. A stream's URL is held in a `StreamUrl`, which prints
+ * What the extractor (yt-dlp) and YouTube's player answer, cut to audio alone. `AudioFormat` has no
+ * field for video, so nothing downstream of `parseInfo` or `parsePlayer` can carry a video stream: a
+ * format with one is dropped here, and an answer with no audio-only format throws. A stream's URL is held in a `StreamUrl`, which prints
  * as a placeholder wherever it is logged, serialized or given to a client by mistake: it names the
  * household's address and is good for six hours.
  */
 import { inspect } from 'node:util';
 import { z } from 'zod';
+import type { PlayerAnswer } from '../adapters/ytmusic/schemas.js';
 
 /** A YouTube video id, and all a client may name to the extractor. */
 export const YT_ID = /^[\w-]{11}$/;
@@ -155,6 +156,90 @@ export function parseInfo(raw: unknown): AudioInfo {
   });
   if (formats.length === 0) throw new InfoRefused('noAudio');
   return { id: info.data.id, duration, formats };
+}
+
+/** `audio/webm; codecs="opus"`: the type, and its one codec. */
+const PLAYER_MIME = /^(audio\/[\w.+-]+);\s*codecs="(opus|mp4a\.[\w.]+)"$/;
+
+/**
+ * Rule 8 on a player's format row: an audio type with one audio codec, no width, height, frame rate
+ * or quality label, a plain URL (a `signatureCipher` row has none, and is dropped), on the stream
+ * host, a file rather than a manifest, asking for the format and type its row names. `expiresAt`
+ * comes from the URL's `expire`, else from the answer's `expiresInSeconds`.
+ */
+export const playerFormatSchema = (expiresAt: number | null) =>
+  z
+    .object({
+      itag: z.number().int().positive(),
+      url: z.string(),
+      mimeType: z.string().regex(PLAYER_MIME),
+      width: z.undefined(),
+      height: z.undefined(),
+      fps: z.undefined(),
+      qualityLabel: z.undefined(),
+      averageBitrate: z.number().positive().optional(),
+      bitrate: z.number().positive().optional(),
+      contentLength: z.string().regex(/^\d+$/).optional(),
+    })
+    .transform((row, ctx): AudioFormat => {
+      const [, type = '', codec = ''] = PLAYER_MIME.exec(row.mimeType) ?? [];
+      const url = URL.canParse(row.url) ? new URL(row.url) : null;
+      const expire = Number(url?.searchParams.get('expire') ?? '') * 1000;
+      const until = expire > 0 ? expire : expiresAt;
+      if (
+        url === null ||
+        !isStreamHost(url) ||
+        url.pathname !== '/videoplayback' ||
+        url.searchParams.get('itag') !== String(row.itag) ||
+        (url.searchParams.get('mime') ?? type) !== type ||
+        until === null
+      ) {
+        ctx.addIssue({ code: 'custom', message: 'not an audio stream on the stream host' });
+        return z.NEVER;
+      }
+      const rate = row.averageBitrate ?? row.bitrate;
+      return {
+        itag: row.itag,
+        url: new StreamUrl(row.url),
+        mime: type,
+        codec,
+        abr: rate === undefined ? null : rate / 1000,
+        size: row.contentLength === undefined ? null : Number(row.contentLength),
+        expiresAt: until,
+      };
+    });
+
+/** The player said no: `blocked` for its bot wall, `notPlayable` for any other status. */
+export class PlayerRefused extends Error {
+  constructor(readonly reason: 'blocked' | 'notPlayable' | 'otherTrack') {
+    super(`the player's answer: ${reason}`);
+    this.name = 'PlayerRefused';
+  }
+}
+
+/**
+ * The audio-only formats of a player's answer for `id`, at `now`. Throws `PlayerRefused` for a
+ * refusal or another track's answer, and `InfoRefused` as `parseInfo` does, never naming a URL.
+ */
+export function parsePlayer(answer: PlayerAnswer, id: string, now: number): AudioInfo {
+  const { status } = answer.playabilityStatus;
+  if (status === 'LOGIN_REQUIRED') throw new PlayerRefused('blocked');
+  if (status !== 'OK') throw new PlayerRefused('notPlayable');
+  const details = answer.videoDetails;
+  if (details?.videoId !== id) throw new PlayerRefused('otherTrack');
+  if (details.isLive === true) throw new InfoRefused('live');
+  const duration = Number(details.lengthSeconds ?? '');
+  if (!(duration > 0)) throw new InfoRefused('noLength');
+  const streaming = answer.streamingData;
+  const seconds = Number(streaming?.expiresInSeconds ?? '');
+  const schema = playerFormatSchema(seconds > 0 ? now + seconds * 1000 : null);
+  const rows = [...(streaming?.formats ?? []), ...(streaming?.adaptiveFormats ?? [])];
+  const formats = rows.flatMap((row) => {
+    const format = schema.safeParse(row);
+    return format.success ? [format.data] : [];
+  });
+  if (formats.length === 0) throw new InfoRefused('noAudio');
+  return { id, duration, formats };
 }
 
 /** Opus at its best first, then the AAC every player reads. */

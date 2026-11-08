@@ -1,5 +1,7 @@
 /**
- * Runs the extractor (yt-dlp), a process per call, to turn a video id into an audio-only stream. No
+ * Turns a video id into an audio-only stream. When given one, the direct resolve answers first
+ * (YouTube's player API, one HTTP call, about 0.1 s, checked live) within three seconds; anything it
+ * cannot answer, a live track aside, goes to the extractor (yt-dlp), a process per call. No
  * client's text reaches its command line but an id that passed `YT_ID`, and that after `--`. Each
  * child gets a clean environment, no config, no cache and a time limit, and a kill takes its children
  * with it. Tried twice, in order: the default clients with no JS runtime (2 s, 56 MiB, checked
@@ -9,8 +11,10 @@
  */
 import { type ChildProcess, spawn as nodeSpawn, type SpawnOptions } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
+import type { DirectResolve } from './direct.js';
 import {
   type AudioFormat,
+  type AudioInfo,
   InfoRefused,
   parseInfo,
   pickFormat,
@@ -49,7 +53,14 @@ export class ExtractorFailure extends Error {
   }
 }
 
+/** The extractor's two ways of running. */
 export type Tier = 'plain' | 'node';
+
+/** What answered a resolve: the direct call, or one of the extractor's tiers. */
+export type ResolvedTier = 'direct' | Tier;
+
+/** The direct resolve's whole limit, the visitor id's search included. */
+export const DIRECT_LIMIT_MS = 3_000;
 
 /** Asks for a format with no video, so the extractor itself cannot pick a muxed one. */
 export const AUDIO_SELECTOR = 'bestaudio[vcodec=none]';
@@ -229,7 +240,7 @@ export interface ResolvedAudio {
   /** Seconds. */
   duration: number;
   expiresAt: number;
-  tier: Tier;
+  tier: ResolvedTier;
 }
 
 export interface ResolveOptions {
@@ -246,6 +257,20 @@ export interface ExtractorOptions {
   spawn?: SpawnLike;
   kill?: (pid: number) => void;
   timeoutMs?: number;
+  /** Tried first, when given. */
+  direct?: DirectResolve;
+  /** Told why the direct resolve did not answer: an error's name, never its text. */
+  onDirectFailed?: (reason: string) => void;
+}
+
+/** Rejects once `ms` pass; the work itself is left to end on its own, its result unread. */
+function within<T>(work: Promise<T>, ms: number): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  const late = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('late')), ms);
+  });
+  work.catch(() => undefined);
+  return Promise.race([work, late]).finally(() => clearTimeout(timer));
 }
 
 export class Extractor {
@@ -273,6 +298,11 @@ export class Extractor {
   }
 
   private async extract(id: string): Promise<ResolvedAudio> {
+    const direct = await this.direct(id);
+    if (direct !== null) {
+      this.hold(direct);
+      return direct;
+    }
     let audio: ResolvedAudio;
     try {
       audio = await this.plain.run(() => this.attempt(id, 'plain'));
@@ -282,6 +312,21 @@ export class Extractor {
     }
     this.hold(audio);
     return audio;
+  }
+
+  /** The direct resolve's answer, or null for the extractor to answer instead. A live track throws. */
+  private async direct(id: string): Promise<ResolvedAudio | null> {
+    const { direct, onDirectFailed } = this.opts;
+    if (direct === undefined) return null;
+    try {
+      return audioFromInfo(id, await within(direct(id), DIRECT_LIMIT_MS), 'direct');
+    } catch (error) {
+      if (error instanceof InfoRefused && error.reason === 'live')
+        throw new ExtractorFailure('live');
+      const late = error instanceof Error && error.message === 'late';
+      onDirectFailed?.(late ? 'timeout' : error instanceof Error ? error.name : 'unknown');
+      return null;
+    }
   }
 
   private async attempt(id: string, tier: Tier): Promise<ResolvedAudio> {
@@ -323,17 +368,20 @@ function audioOf(id: string, stdout: string, tier: Tier): ResolvedAudio {
   } catch {
     throw new ExtractorFailure('extractorError');
   }
-  let picked: AudioFormat | undefined;
-  let duration: number;
+  let info: AudioInfo;
   try {
-    const info = parseInfo(raw);
-    if (info.id !== id) throw new ExtractorFailure('extractorError');
-    picked = pickFormat(info.formats);
-    duration = info.duration;
+    info = parseInfo(raw);
   } catch (error) {
     if (error instanceof InfoRefused) throw new ExtractorFailure(error.reason);
     throw error;
   }
+  return audioFromInfo(id, info, tier);
+}
+
+/** The format a play uses, of an answer for `id`. Rule 8 has already held: every format is audio. */
+function audioFromInfo(id: string, info: AudioInfo, tier: ResolvedTier): ResolvedAudio {
+  if (info.id !== id) throw new ExtractorFailure('extractorError');
+  const picked: AudioFormat | undefined = pickFormat(info.formats);
   if (picked === undefined) throw new ExtractorFailure('noAudio');
   return {
     id,
@@ -341,7 +389,7 @@ function audioOf(id: string, stdout: string, tier: Tier): ResolvedAudio {
     itag: picked.itag,
     mime: picked.mime,
     size: picked.size,
-    duration,
+    duration: info.duration,
     expiresAt: picked.expiresAt,
     tier,
   };

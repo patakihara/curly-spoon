@@ -32,13 +32,53 @@ describe("the recorder's trim of an InnerTube answer", () => {
   const trimmed = (json: unknown) =>
     (trimYtMusicExchange(raw(json)).response.body as { json: Record<string, unknown> }).json;
 
-  it('takes out tracking, session and menu values at any depth, and says so', () => {
+  it('takes out tracking, session and menu values at any depth, the visitor id aside, and says so', () => {
     const out = trimmed({
-      responseContext: { visitorData: 'v' },
+      responseContext: { visitorData: 'v', serviceTrackingParams: [] },
       trackingParams: 't',
       contents: { deep: [{ clickTrackingParams: 'c', menu: {}, keep: 1 }] },
     });
-    expect(out).toEqual({ contents: { deep: [{ keep: 1 }] }, trimmed: YTMUSIC_TRIMMED });
+    expect(out).toEqual({
+      responseContext: { visitorData: 'v' },
+      contents: { deep: [{ keep: 1 }] },
+      trimmed: YTMUSIC_TRIMMED,
+    });
+  });
+
+  it("cuts a player's answer to its status, track and format rows, each URL rebuilt", () => {
+    const out = trimmed({
+      playabilityStatus: { status: 'OK', playableInEmbed: true },
+      videoDetails: { videoId: 'lYBUbBu4W08', lengthSeconds: '214', author: 'a', thumbnail: {} },
+      streamingData: {
+        expiresInSeconds: '21540',
+        serverAbrStreamingUrl: 'https://rr1---sn-abcdefgh.googlevideo.com/x',
+        adaptiveFormats: [
+          {
+            itag: 251,
+            mimeType: 'audio/webm; codecs="opus"',
+            loudnessDb: 1,
+            url: 'https://rr1---sn-abcdefgh.googlevideo.com/videoplayback?expire=1&itag=251&ip=85.76.1.2&bui=AbCdEf123456789xyz',
+          },
+        ],
+      },
+      playerConfig: {},
+      storyboards: {},
+    });
+    expect(out).toEqual({
+      playabilityStatus: { status: 'OK' },
+      videoDetails: { videoId: 'lYBUbBu4W08', lengthSeconds: '214' },
+      streamingData: {
+        expiresInSeconds: '21540',
+        adaptiveFormats: [
+          {
+            itag: 251,
+            mimeType: 'audio/webm; codecs="opus"',
+            url: 'https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1&itag=251&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>',
+          },
+        ],
+      },
+      trimmed: YTMUSIC_TRIMMED,
+    });
   });
 
   it('keeps the first rows of a shelf', () => {

@@ -46,7 +46,7 @@
           ],
           "status": "NOT_FOUND"
         },
-        "trimmed": "Trimmed by the recorder: rows cut to the first few, and everything Auralis never reads taken out (tracking values, menus, continuations, the session context)."
+        "trimmed": "Trimmed by the recorder: rows cut to the first few, and everything Auralis never reads taken out (tracking values, menus, continuations, the session context but its visitor id)."
       }
     }
   }

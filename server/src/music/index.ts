@@ -16,14 +16,16 @@ import {
   openStream,
   type UpstreamFile,
 } from '../adapters/stream.js';
-import { type YtSong, YtMusicClient, YTMUSIC_URL } from '../adapters/ytmusic/client.js';
+import { Visitor, type YtSong, YtMusicClient, YTMUSIC_URL } from '../adapters/ytmusic/client.js';
+import { PLAYER_URL, YtPlayer } from '../adapters/ytmusic/player.js';
 import type { AppConfig } from '../config.js';
 import { type JobLog, scheduleJob } from '../jobs/schedule.js';
 import type { Db } from '../store/connection.js';
 import { streamedTrack } from '../store/streamedTracks.js';
 import { type Canary, canaryOf, type CanaryResult } from './canary.js';
 import { MOST_SONG_SECONDS, SongCatalogue, type SongSource } from './catalogue.js';
-import { Extractor, ExtractorFailure, type SpawnLike } from './extractor.js';
+import { type DirectResolve, directResolver } from './direct.js';
+import { DIRECT_LIMIT_MS, Extractor, ExtractorFailure, type SpawnLike } from './extractor.js';
 import type { StreamUrl } from './schemas.js';
 import { StreamingState } from './state.js';
 import {
@@ -78,6 +80,15 @@ export interface MusicDeps {
   client?: SongSource;
   /** How long a search waits for it. */
   searchLimitMs?: number;
+  /** YouTube's player, asked ahead of the extractor. */
+  direct?: DirectResolve;
+}
+
+/** What the canary last said of the direct resolve, for admin. */
+export interface DirectState {
+  passed: boolean;
+  reason: string | null;
+  at: number;
 }
 
 /** A reason that belongs to one track, or to the client, and says nothing of streaming. */
@@ -104,6 +115,7 @@ export class Music {
   private readonly catalogue: SongCatalogue | null;
   /** The songs resolved ahead of a tap, and when. */
   private readonly ahead = new Map<string, number>();
+  private directState: DirectState | null = null;
 
   /** The extractor, for a song: one it names as too long is refused before a byte is asked. */
   private readonly songs = {
@@ -130,6 +142,9 @@ export class Music {
       home,
       now,
       ...(spawn === undefined ? {} : { spawn }),
+      ...(deps.direct === undefined ? {} : { direct: deps.direct }),
+      onDirectFailed: (reason) =>
+        log.warn({ reason }, 'the direct resolve did not answer, so the extractor does'),
     });
     this.cache = new StreamCache({
       dir: join(dataDir, 'cache', 'streams'),
@@ -283,12 +298,14 @@ export class Music {
     reason: string | null;
     current: string;
     versions: VersionRow[];
+    direct: DirectState | null;
   } {
     return {
       state: this.state.available ? 'ok' : 'unavailable',
       reason: this.state.reason,
       current: this.versions.now().version,
       versions: this.versions.rows(),
+      direct: this.directState,
     };
   }
 
@@ -304,9 +321,20 @@ export class Music {
     return this.running;
   }
 
-  /** The canary's word on the version in use. No result, a lost network, moves nothing. */
+  /**
+   * The canary's word on the version in use, and on the direct resolve. Either passing means songs
+   * play. No result, a lost network, moves nothing.
+   */
   private heard(result: CanaryResult): void {
-    if (result.passed) this.state.succeeded();
+    const { direct } = result;
+    if (direct !== undefined) {
+      this.directState = {
+        passed: direct.passed,
+        reason: direct.passed ? null : direct.reason,
+        at: this.deps.now(),
+      };
+    }
+    if (result.passed || direct?.passed === true) this.state.succeeded();
     else if (result.reason !== 'unavailable') this.state.canaryFailed(result.reason);
   }
 
@@ -342,11 +370,25 @@ export function ytMusic(
   if (extractorPath === null) return null;
   const { db, fetch, log, now } = deps;
   const streamFetch = publicFetch({ lookup: addressesOf });
+  const visitor = new Visitor();
   const client = new YtMusicClient({
     baseUrl: YTMUSIC_URL,
     fetch,
     now,
     onBad: (what) => log.warn({}, what),
+    visitor,
+  });
+  const player = new YtPlayer({ baseUrl: PLAYER_URL, fetch, timeoutMs: DIRECT_LIMIT_MS });
+  const direct = directResolver({
+    player: (id, visitorId) => player.player(id, visitorId),
+    visitor,
+    // The song's own search: its title and first artist, as its row was listed.
+    findVisitor: async (id) => {
+      const song = streamedTrack(db, id);
+      const query = song === undefined ? id : `${song.title} ${song.artists[0] ?? ''}`.trim();
+      await client.search(query);
+    },
+    now,
   });
   const music = new Music({
     db,
@@ -357,6 +399,7 @@ export function ytMusic(
     imagePath: extractorPath,
     streamFetch,
     client,
+    direct,
     canary: canaryOf({
       search: (query) => client.search(query),
       fetch: streamFetch,
@@ -364,6 +407,7 @@ export function ytMusic(
       now,
       id: canaryId,
       query: canaryQuery,
+      direct,
     }),
   });
   music.prepare();

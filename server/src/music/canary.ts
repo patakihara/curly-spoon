@@ -4,11 +4,15 @@
  * twenty seconds' bytes, and reads their container: exactly one track, audio, Opus, with at least ten
  * seconds of it in whole packets. An MP4 answer passes on its file type alone, having no such walk.
  * Reasons stay apart, because only some say an update could help; `unavailable` means the network
- * failed, and so is no result at all.
+ * failed, and so is no result at all. Given the direct resolve, it checks that too, the same way and
+ * apart, as `direct`: the extractor's result alone decides a version, and `direct` says whether the
+ * one HTTP call still answers plays ahead of it.
  */
 import { AdapterError, type FetchLike } from '../adapters/http/fetch.js';
 import { fileHeadersSchema, openStream, type FileHeaders } from '../adapters/stream.js';
+import type { DirectResolve } from './direct.js';
 import { Extractor, ExtractorFailure, type SpawnLike, type Tier } from './extractor.js';
+import { InfoRefused, pickFormat, PlayerRefused, type StreamUrl } from './schemas.js';
 
 export type CanaryReason =
   /** A bot wall. No update can help. */
@@ -22,9 +26,18 @@ export type CanaryReason =
   /** The network failed. No result. */
   | 'unavailable';
 
-export type CanaryResult =
-  | { passed: true; tier: Tier; ms: number; bytes: number; codec: string }
+/** What one way of resolving gave: bytes of one audio track, or why not. */
+export type CanaryCheck =
+  | { passed: true; ms: number; bytes: number; codec: string }
   | { passed: false; reason: CanaryReason; ms: number };
+
+export type CanaryResult = (
+  | { passed: true; tier: Tier; ms: number; bytes: number; codec: string }
+  | { passed: false; reason: CanaryReason; ms: number }
+) & {
+  /** The direct resolve's own result, when it was asked. */
+  direct?: CanaryCheck;
+};
 
 export type Canary = (path: string) => Promise<CanaryResult>;
 
@@ -38,6 +51,8 @@ export interface CanaryOptions {
   spawn?: SpawnLike;
   kill?: (pid: number) => void;
   timeoutMs?: number;
+  /** YouTube's player, checked apart from the extractor. */
+  direct?: DirectResolve;
 }
 
 /** Twenty seconds' bytes at the rate of a file of this size and length, within reason. */
@@ -181,8 +196,77 @@ async function readWithin(body: ReadableStream<Uint8Array>, ms: number): Promise
   }
 }
 
+interface Resolved {
+  url: StreamUrl;
+  mime: string;
+  size: number | null;
+  duration: number;
+}
+
+/** A closed range of `audio`, read within `ms`: one audio track's bytes, or why not. */
+async function played(
+  fetch: FetchLike,
+  audio: Resolved,
+  ms: number,
+): Promise<{ bytes: number; codec: string } | CanaryReason> {
+  const wanted = canaryBytes(audio.size, audio.duration);
+  let bytes: Buffer;
+  try {
+    const file = await openStream<FileHeaders>(
+      fetch,
+      audio.url.reveal(),
+      {},
+      `bytes=0-${wanted - 1}`,
+      fileHeadersSchema,
+    );
+    const read = await readWithin(file.body, Math.max(ms, 1000));
+    if (read === null) return 'unavailable';
+    bytes = read;
+  } catch (error) {
+    const network =
+      !(error instanceof AdapterError) || error.kind === 'network' || error.kind === 'timeout';
+    return network ? 'unavailable' : 'streamRefused';
+  }
+  const codec = audio.mime === 'audio/mp4' && isMp4(bytes) ? 'mp4' : webmAudioCodec(bytes);
+  if (codec === null) return 'streamRefused';
+  if (codec !== 'mp4' && webmAudioSeconds(bytes) < LEAST_SECONDS) return 'streamRefused';
+  return { bytes: bytes.byteLength, codec };
+}
+
+/** Why the direct resolve did not answer, in the canary's words. */
+function directReason(error: unknown): CanaryReason {
+  if (error instanceof PlayerRefused && error.reason === 'blocked') return 'blocked';
+  if (error instanceof InfoRefused && error.reason === 'noAudio') return 'noAudio';
+  if (error instanceof AdapterError && (error.kind === 'network' || error.kind === 'timeout')) {
+    return 'unavailable';
+  }
+  return 'extractorError';
+}
+
 export function canaryOf(options: CanaryOptions): Canary {
   const { now } = options;
+
+  const direct = async (resolve: DirectResolve): Promise<CanaryCheck> => {
+    const started = now();
+    const failed = (reason: CanaryReason): CanaryCheck => ({
+      passed: false,
+      reason,
+      ms: now() - started,
+    });
+    let audio: Resolved;
+    try {
+      const info = await resolve(options.id);
+      const picked = pickFormat(info.formats);
+      if (picked === undefined) return failed('noAudio');
+      audio = { ...picked, duration: info.duration };
+    } catch (error) {
+      return failed(directReason(error));
+    }
+    const read = await played(options.fetch, audio, CANARY_MS - (now() - started));
+    if (typeof read === 'string') return failed(read);
+    return { passed: true, ms: now() - started, ...read };
+  };
+
   return async (path) => {
     const started = now();
     const failed = (reason: CanaryReason): CanaryResult => ({
@@ -196,6 +280,19 @@ export function canaryOf(options: CanaryOptions): Canary {
     } catch {
       return failed('unavailable');
     }
+    const result = await extracted(path, started);
+    if (options.direct === undefined) return result;
+    return { ...result, direct: await direct(options.direct) };
+  };
+
+  /** The extractor's own result, its time counted from `started`. */
+  async function extracted(path: string, started: number): Promise<CanaryResult> {
+    const failed = (reason: CanaryReason): CanaryResult => ({
+      passed: false,
+      reason,
+      ms: now() - started,
+    });
+    // Built with no direct resolve, so only the extractor's own tiers answer it.
     const extractor = new Extractor({
       path: () => path,
       home: options.home,
@@ -212,33 +309,8 @@ export function canaryOf(options: CanaryOptions): Canary {
       if (error.reason === 'blocked' || error.reason === 'noAudio') return failed(error.reason);
       return failed(error.reason === 'unavailable' ? 'unavailable' : 'extractorError');
     }
-    const wanted = canaryBytes(audio.size, audio.duration);
-    let bytes: Buffer;
-    try {
-      const file = await openStream<FileHeaders>(
-        options.fetch,
-        audio.url.reveal(),
-        {},
-        `bytes=0-${wanted - 1}`,
-        fileHeadersSchema,
-      );
-      const read = await readWithin(file.body, Math.max(CANARY_MS - (now() - started), 1000));
-      if (read === null) return failed('unavailable');
-      bytes = read;
-    } catch (error) {
-      const network =
-        !(error instanceof AdapterError) || error.kind === 'network' || error.kind === 'timeout';
-      return failed(network ? 'unavailable' : 'streamRefused');
-    }
-    const codec = audio.mime === 'audio/mp4' && isMp4(bytes) ? 'mp4' : webmAudioCodec(bytes);
-    if (codec === null) return failed('streamRefused');
-    if (codec !== 'mp4' && webmAudioSeconds(bytes) < LEAST_SECONDS) return failed('streamRefused');
-    return {
-      passed: true,
-      tier: audio.tier,
-      ms: now() - started,
-      bytes: bytes.byteLength,
-      codec,
-    };
-  };
+    const read = await played(options.fetch, audio, CANARY_MS - (now() - started));
+    if (typeof read === 'string') return failed(read);
+    return { passed: true, tier: audio.tier as Tier, ms: now() - started, ...read };
+  }
 }

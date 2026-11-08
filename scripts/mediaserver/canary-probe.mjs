@@ -1,8 +1,9 @@
 /**
  * The live canary test's probe: a script sent over stdin to `node` in a running container, so the
  * image needs nothing added. It runs the image's own canary as the daily job does, with the
- * container's own configuration, keeping the bytes the canary read. It prints one line of JSON:
- * never a stream's URL.
+ * container's own configuration, keeping the bytes the canary read, and checks the direct resolve
+ * (YouTube's player) apart, as the server does. It prints one line of JSON: never a stream's URL or
+ * a visitor id. Which answered is in it: `tier` for the extractor, `direct` for the player.
  *
  * How long those bytes play is counted here rather than taken from their number: only whole Opus
  * packets count, by what each packet's first byte says it holds (RFC 6716, 3.1).
@@ -84,8 +85,10 @@ import { lookup } from 'node:dns/promises';
 import { basename, dirname } from 'node:path';
 import { loadConfig } from 'file:///app/server/src/config.ts';
 import { publicFetch } from 'file:///app/server/src/adapters/http/publicFetch.ts';
-import { YtMusicClient, YTMUSIC_URL } from 'file:///app/server/src/adapters/ytmusic/client.ts';
+import { Visitor, YtMusicClient, YTMUSIC_URL } from 'file:///app/server/src/adapters/ytmusic/client.ts';
+import { PLAYER_URL, YtPlayer } from 'file:///app/server/src/adapters/ytmusic/player.ts';
 import { canaryOf } from 'file:///app/server/src/music/canary.ts';
+import { directResolver } from 'file:///app/server/src/music/direct.ts';
 
 const opusSeconds = ${opusSeconds.toString()};
 
@@ -99,18 +102,40 @@ const reached = publicFetch({
 let resolveMs = 0;
 let asked = null;
 let kept = null;
+let keeping = true;
+const visitor = new Visitor();
+const client = new YtMusicClient({
+  baseUrl: YTMUSIC_URL,
+  fetch: (url, init) => globalThis.fetch(url, init),
+  now,
+  onBad: () => undefined,
+  visitor,
+});
+const player = new YtPlayer({ baseUrl: PLAYER_URL, fetch: (url, init) => globalThis.fetch(url, init) });
+let directResolveMs = null;
+const direct = directResolver({
+  player: (id, visitorId) => player.player(id, visitorId),
+  visitor,
+  findVisitor: async () => void (await client.search(canaryQuery)),
+  now,
+});
 const canary = canaryOf({
-  search: (query) =>
-    new YtMusicClient({
-      baseUrl: YTMUSIC_URL,
-      fetch: (url, init) => globalThis.fetch(url, init),
-      now,
-      onBad: () => undefined,
-    }).search(query),
+  search: (query) => client.search(query),
+  direct: async (id) => {
+    keeping = false;
+    const started = now();
+    try {
+      return await direct(id);
+    } finally {
+      directResolveMs = now() - started;
+    }
+  },
   fetch: async (url, init) => {
     const answer = await reached(url, init);
-    asked = new Headers(init?.headers).get('range');
-    kept = answer.clone().arrayBuffer();
+    if (keeping) {
+      asked = new Headers(init?.headers).get('range');
+      kept = answer.clone().arrayBuffer();
+    }
     return answer;
   },
   spawn: (file, args, options) => {
@@ -145,6 +170,12 @@ console.log(
     audioSeconds: opusSeconds(read),
     passed: result.passed,
     ...(result.passed ? {} : { reason: result.reason }),
+    direct: result.direct === undefined ? null : {
+      passed: result.direct.passed,
+      resolveMs: directResolveMs,
+      ms: result.direct.ms,
+      ...(result.direct.passed ? { codec: result.direct.codec } : { reason: result.direct.reason }),
+    },
   }),
 );
 process.exit(0);
