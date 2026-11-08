@@ -71,6 +71,7 @@ import {
 import type { User } from '../store/users.js';
 import type { Upstreams } from '../upstream/links.js';
 import {
+  type AutoplayDeps,
   type AutoplayRadio,
   autoplayKept,
   autoplayStale,
@@ -217,6 +218,8 @@ export class Sessions {
       clients: (user: Caller) => Upstreams;
       /** Auralis's own Audiobookshelf client, which reads chapters for a household play. */
       householdAbs?: AbsClient | null;
+      /** Auralis's own Jellyfin client, which answers Instant Mix for someone with no account. */
+      householdJellyfin?: AutoplayDeps['jellyfin'] | null;
       /** Whether the person's own account reaches an indexed row, now; a failed check throws. */
       ownReaches?: (user: Caller, row: StoredRow) => Promise<boolean>;
       now: () => number;
@@ -1019,7 +1022,8 @@ export class Sessions {
         db,
         expand: (ref) => lookup.expand(ref),
         abs: clients.abs ?? { getMe: unlinked('Audiobookshelf') },
-        jellyfin: clients.jellyfin ?? { getInstantMix: unlinked('Jellyfin') },
+        jellyfin: clients.jellyfin ??
+          this.options.householdJellyfin ?? { getInstantMix: unlinked('Jellyfin') },
         log,
         now: this.options.now,
         ...(this.options.ytmusic === undefined ? {} : { ytmusic: this.options.ytmusic }),

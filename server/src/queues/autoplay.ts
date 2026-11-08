@@ -16,11 +16,13 @@
  * read as the user.
  *
  * Music: the rest of the album the queue plays from, by disc and position, then radio from music
- * you own: Jellyfin's Instant Mix for the last track, read as the user, skipping tracks that have
+ * you own: Jellyfin's Instant Mix for the last track, read as the user, or through Auralis's own
+ * Jellyfin key for someone with no Jellyfin account, as a household play is; skipping tracks that have
  * played. The run is kept and played on until every track of it has played, then asked for again
  * for the track that played last. Where YouTube Music can play, its radio for that track joins the
- * mix, the two taking turns, owned first; after a song from YouTube Music, its radio alone. Its radio
- * failing leaves the mix, and while streaming is unavailable no pick is a streamed song.
+ * mix, the two taking turns, owned first; after a song from YouTube Music, its radio alone. Either
+ * failing is logged and leaves the other, and while streaming is unavailable no pick is a streamed
+ * song.
  *
  * An upstream that fails or times out leaves the queue with no pick for this step, logged; the
  * next pass asks again.
@@ -45,7 +47,7 @@ export interface AutoplayDeps {
   expand(ref: MediaRef): Expansion | null;
   /** Audiobookshelf as the user, for what they have finished. */
   abs: { getMe(): Promise<AbsMe> };
-  /** Jellyfin as the user, for Instant Mix from their library. */
+  /** Jellyfin as the user, or Auralis's own for someone with no account, for Instant Mix. */
   jellyfin: { getInstantMix(itemId: string, limit: number): Promise<IndexItem[]> };
   log: { warn(detail: object, message: string): void };
   now(): number;
@@ -298,7 +300,10 @@ async function joinedRadio(
     deps.log.warn({ err: radio.reason as unknown }, 'radio from YouTube Music failed');
   }
   const streamed = radio.status === 'fulfilled' ? radio.value : [];
-  if (mix.status === 'rejected' && streamed.length === 0) throw mix.reason;
+  if (mix.status === 'rejected') {
+    if (streamed.length === 0) throw mix.reason;
+    deps.log.warn({ err: mix.reason as unknown }, 'Instant Mix failed');
+  }
   const owned =
     mix.status === 'fulfilled'
       ? mix.value.map((t): MediaRef => ({ source: 'jellyfin', id: t.Id }))

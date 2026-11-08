@@ -638,6 +638,26 @@ describe("Jellyfin's played tracks, recorded for M3.requests", () => {
   });
 });
 
+describe("[M3.ytmusic] Jellyfin's Instant Mix as Auralis's own API key reads it", () => {
+  const mix = recording('jellyfin', 'jf-household-instant-mix');
+
+  it("[M3.ytmusic] is asked by the server, with no user, for the recorded album's last track", async () => {
+    const last = (json(sessions.album.response.body) as { Items: { Id: string }[] }).Items.at(-1);
+    expect(mix.request.path).toBe(`/Items/${last?.Id ?? ''}/InstantMix`);
+    expect(mix.request.headers.authorization).toContain('DeviceId="auralis-server"');
+    expect(mix.request.query).not.toHaveProperty('userId');
+    const jf = new JellyfinClient({
+      baseUrl: 'http://upstream.invalid',
+      token: '<token>',
+      fetch: replayFetch([mix]),
+      serverKey: true,
+    });
+    const tracks = await jf.getInstantMix(last?.Id ?? '', 20);
+    expect(tracks.length).toBe(20);
+    expect(tracks.every((t) => t.Type === 'Audio' && Boolean(t.AlbumId))).toBe(true);
+  });
+});
+
 describe("Audiobookshelf's and Jellyfin's answers, recorded for M1.shell", () => {
   const abs = () =>
     new AbsClient({

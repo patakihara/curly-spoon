@@ -56,8 +56,8 @@
  * undone once the page is recorded (record-played.ts). It needs only JELLYFIN_API_KEY.
  *
  * `--only household --jellyfin-item <album>` records how the Jellyfin API key, with no user behind it,
- * reads an album and its first track by id, for M3.requests' household plays (record-household.ts).
- * It needs only JELLYFIN_API_KEY.
+ * reads an album and its first track by id, for M3.requests' household plays, and Instant Mix for the
+ * album's last track, for autoplay's radio on one (record-household.ts). It needs only JELLYFIN_API_KEY.
  *
  * `--only books --prowlarr <url>` records M3.books' reads of Prowlarr and AudiobookBay's site: three
  * searches, a link asked with no redirect followed, a wrong key's answer and one detail page, with

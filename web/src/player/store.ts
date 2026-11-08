@@ -17,7 +17,8 @@
  * item that cannot be planned leaves the player on what it had, or idle; the shell binds no status
  * to show it, so it is logged. A step that lands on a song that cannot be planned steps over it and
  * says which, and so does a streamed song whose audio fails for good once planned; `MOST_SKIPPED` of
- * either in a row stop the player and say that. A song heard ends the run.
+ * either in a row stop the player and say that. A song heard ends the run. A music queue that
+ * runs out with nothing for autoplay stops the player and says that too.
  */
 import {
   ErrorResponse,
@@ -109,13 +110,16 @@ export interface PlayerState {
 
 /**
  * A song the server would not plan; no word when no answer came. One met in a queue was stepped
- * over: `skipped` says so, and `stoppedAfter` that so many in a row stopped the player.
+ * over: `skipped` says so, and `stoppedAfter` that so many in a row stopped the player. `ranOut`
+ * says the music queue ran out after this song with nothing for autoplay to play, so the music
+ * stopped.
  */
 export interface Refused {
   ref: MediaRef;
   error: string | null;
   skipped?: { title: string | null };
   stoppedAfter?: number;
+  ranOut?: true;
 }
 
 export interface PlayerStore {
@@ -567,6 +571,7 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
    */
   const walkOn = async () => {
     const playOn = playing;
+    const left = ref;
     await closeCurrent();
     for (;;) {
       const answered = await api
@@ -578,7 +583,14 @@ export function createPlayerStore(options: PlayerStoreOptions = {}): PlayerStore
       }
       const session = ListeningSession.safeParse(answered?.data);
       const now = session.success ? session.data.currents[session.data.active] : null;
-      if (now === null) break;
+      if (now === null) {
+        // The music queue ran out and autoplay had nothing: say so, unless a skip already says why.
+        const ranOut = session.success && session.data.active === 'music' && heading === 'next';
+        if (ranOut && refused === null && left !== null && left.source !== 'abs') {
+          refused = { ref: left, error: null, ranOut: true };
+        }
+        break;
+      }
       if (await start(now.ref, playOn)) return;
       if (session.data?.active !== 'music') break;
       const said = store.getState().refused;

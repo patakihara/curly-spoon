@@ -736,7 +736,7 @@ describe('[M3.ytmusic/e] radio from YouTube Music joins autoplay after the album
     expect(made.warnings).toContain('radio from YouTube Music failed');
   });
 
-  it('[M3.ytmusic/e] the mix failing leaves the radio', async () => {
+  it('[M3.ytmusic/e] the mix failing is logged and leaves the radio', async () => {
     const { ytmusic } = youTubeMusic();
     const made = resolver([ME], async () => new Response(null, { status: 500 }));
     const s = await prepareAutoplay(playing('music', { ref: tracks.at(-1)! }, [], fromAlbum), {
@@ -745,6 +745,7 @@ describe('[M3.ytmusic/e] radio from YouTube Music joins autoplay after the album
     });
     const [first] = await recordedRadio();
     expect(pick(s, 'music')).toEqual({ ref: { source: 'ytmusic', id: first!.id } });
+    expect(made.warnings).toContain('Instant Mix failed');
   });
 
   it('[M3.ytmusic/e] while streaming is unavailable, no pick is a streamed song', async () => {
