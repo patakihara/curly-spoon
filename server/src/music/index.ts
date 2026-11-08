@@ -25,7 +25,13 @@ import { streamedTrack } from '../store/streamedTracks.js';
 import { type Canary, canaryOf, type CanaryResult } from './canary.js';
 import { MOST_SONG_SECONDS, SongCatalogue, type SongSource } from './catalogue.js';
 import { type DirectResolve, directResolver } from './direct.js';
-import { DIRECT_LIMIT_MS, Extractor, ExtractorFailure, type SpawnLike } from './extractor.js';
+import {
+  DIRECT_LIMIT_MS,
+  Extractor,
+  ExtractorFailure,
+  type ResolvedTier,
+  type SpawnLike,
+} from './extractor.js';
 import type { StreamUrl } from './schemas.js';
 import { StreamingState } from './state.js';
 import {
@@ -185,14 +191,17 @@ export class Music {
     this.cache.prepare();
   }
 
-  /** What a plan needs: how the file is typed. A track held whole needs nothing upstream. */
-  async plan(id: string): Promise<{ mime: string }> {
+  /**
+   * What a plan needs: how the file is typed, and what answered (`cache` for a track held whole,
+   * which needs nothing upstream).
+   */
+  async plan(id: string): Promise<{ mime: string; tier: ResolvedTier | 'cache' }> {
     const whole = this.cache.whole(id);
-    if (whole !== null) return { mime: whole.mime };
+    if (whole !== null) return { mime: whole.mime, tier: 'cache' };
     if (!this.state.available) throw new StreamingUnavailable();
     try {
-      const { mime } = await this.songs.resolve(id);
-      return { mime };
+      const { mime, tier } = await this.songs.resolve(id);
+      return { mime, tier };
     } catch (error) {
       throw this.refusalOf(error, id);
     }
