@@ -105,6 +105,12 @@ export interface DownloadSteps {
  */
 export interface MediumSteps {
   readonly medium: RequestMedium;
+  /**
+   * Moves on as soon as a step lets it, not at the job's next turn: a request whose status a turn
+   * moved, or that `Wake` names, gets one more turn at once. A medium that waits on a slow upstream
+   * anyway (a torrent) leaves this off and keeps the job's turns.
+   */
+  readonly prompt?: boolean;
   search(request: StoredRequest): Promise<SearchOutcome>;
   readonly download?: DownloadSteps;
   import(request: StoredRequest, key: string, signal?: AbortSignal): Promise<ImportOutcome>;

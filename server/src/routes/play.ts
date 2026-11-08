@@ -60,7 +60,7 @@ import {
 import { AdapterError, type FetchLike } from '../adapters/http/fetch.js';
 import type { JellyfinClient } from '../adapters/jellyfin/client.js';
 import { RangeNotSatisfiable, type UpstreamFile } from '../adapters/stream.js';
-import { indexedRow } from '../libraryIndex/store.js';
+import { indexedRow, topLevelOf } from '../libraryIndex/store.js';
 import type { Caller, HeldPlan, PlanEntry, Sessions } from '../queues/sessions.js';
 import { Refusal, serve, serveStream, type StreamAnswer } from '../route.js';
 import { addClaim } from '../store/claims.js';
@@ -497,9 +497,7 @@ export function playRoutes(
 
   /** Playing a thing makes it the person's own: a track's album, an episode's show, or itself. */
   const claimPlayed = (ref: MediaRef, userId: string) => {
-    const parent = indexedRow(db, ref.source, ref.id)?.parentId ?? null;
-    const held = parent === null ? ref : { source: ref.source, id: parent };
-    addClaim(db, userId, held, 'played', (options.now ?? Date.now)());
+    addClaim(db, userId, topLevelOf(db, ref), 'played', (options.now ?? Date.now)());
   };
 
   /**

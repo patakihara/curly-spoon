@@ -350,6 +350,32 @@ export function workingRequests(db: Db, log?: JobLog): StoredRequest[] {
   );
 }
 
+/** Every live request of one medium: not yet in the library, failed ones too, oldest first. */
+export function liveRequestsOf(db: Db, medium: RequestMedium, log?: JobLog): StoredRequest[] {
+  return readableRows(
+    db
+      .prepare(
+        `SELECT ${COLUMNS} FROM requests r WHERE r.medium = ? AND r.status != 'inLibrary'
+         ORDER BY r.created_at, r.id`,
+      )
+      .all(medium) as unknown[],
+    log,
+  );
+}
+
+/** The releases a medium's requests have gone with, live or landed, oldest first. */
+export function releasesOf(db: Db, medium: RequestMedium, log?: JobLog): Release[] {
+  return readableRows(
+    db
+      .prepare(
+        `SELECT ${COLUMNS} FROM requests r WHERE r.medium = ? AND r.release IS NOT NULL
+         ORDER BY r.created_at, r.id`,
+      )
+      .all(medium) as unknown[],
+    log,
+  ).flatMap(({ release }) => (release === null ? [] : [release]));
+}
+
 /** A change to a request: where it now stands, and any of what its steps keep. */
 export interface RequestChange {
   state: RequestState;

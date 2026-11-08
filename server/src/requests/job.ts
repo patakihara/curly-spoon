@@ -34,7 +34,7 @@
 import { randomUUID } from 'node:crypto';
 import type { MediaRef, RequestFailure, RequestMedium } from '@auralis/schema';
 import type { JobLog } from '../jobs/schedule.js';
-import { indexedRow } from '../libraryIndex/store.js';
+import { indexedRow, topLevelOf } from '../libraryIndex/store.js';
 import { addClaim, type ClaimReason } from '../store/claims.js';
 import type { Db } from '../store/connection.js';
 import {
@@ -273,12 +273,16 @@ export const ARRIVAL_CLAIM: Record<RequestMedium, ClaimReason> = {
   podcast: 'subscribed',
 };
 
-/** Moves a request into the library and claims the item for everyone on it, together. */
+/**
+ * Moves a request into the library and claims the item for everyone on it, together. What is
+ * claimed is the top-level item, as a play claims it: a kept song's album, which the library lists.
+ */
 function arrive(deps: RequestJobDeps, request: StoredRequest, ref: MediaRef): void {
   deps.db.transaction(() => {
     if (!apply(deps, request, { type: 'moved', to: 'inLibrary' })) return;
+    const held = topLevelOf(deps.db, ref);
     for (const person of peopleOn(deps.db, request.id)) {
-      addClaim(deps.db, person, ref, ARRIVAL_CLAIM[request.medium], deps.now());
+      addClaim(deps.db, person, held, ARRIVAL_CLAIM[request.medium], deps.now());
     }
   })();
 }
@@ -347,13 +351,31 @@ function recordHeld(deps: RequestJobDeps, id: string, step: WorkingStatus): void
 }
 
 /**
- * One run: every working request whose medium has steps moves one step. Each is read again just
- * before its step, as the steps before it wait, and in that wait it may have been cancelled.
+ * Whether a step moved a request on: to another status, or with a download started or an import
+ * named. A poll that only counts bytes did not, so a download under way never spins the job.
  */
-export async function advanceRequests(deps: RequestJobDeps): Promise<void> {
+function movedOn(before: StoredRequest, after: StoredRequest | null): boolean {
+  if (after === null) return false;
+  return (
+    after.state.status !== before.state.status ||
+    (before.handle === null && after.handle !== null) ||
+    (before.result === null && after.result !== null)
+  );
+}
+
+/**
+ * One run: every working request whose medium has steps moves one step, or with `only`, those of
+ * the media it names. Each is read again just before its step, as the steps before it wait, and in
+ * that wait it may have been cancelled. Answers the media whose requests a step moved on.
+ */
+export async function advanceRequests(
+  deps: RequestJobDeps,
+  only?: (medium: RequestMedium) => boolean,
+): Promise<Set<RequestMedium>> {
+  const moved = new Set<RequestMedium>();
   for (const { id, medium, state } of workingRequests(deps.db, deps.log)) {
     const steps = deps.steps.get(medium);
-    if (steps === undefined) continue;
+    if (steps === undefined || only?.(medium) === false) continue;
     let step = state.status;
     try {
       const request = getRequest(deps.db, id);
@@ -361,6 +383,7 @@ export async function advanceRequests(deps: RequestJobDeps): Promise<void> {
       step = request.state.status;
       await advance(deps, steps, request);
       clearHeld(deps.db, id);
+      if (movedOn(request, getRequest(deps.db, id))) moved.add(medium);
     } catch (err) {
       deps.log.error({ request: id, step, err }, 'request step failed');
       try {
@@ -371,6 +394,77 @@ export async function advanceRequests(deps: RequestJobDeps): Promise<void> {
         deps.log.error({ request: id, step, err: saveErr }, 'request failure not saved');
       }
     }
+  }
+  return moved;
+}
+
+/**
+ * Asks for a turn of the prompt media before the job that runs it exists: the steps and routes are
+ * built first, and the job attaches itself once it is. Before that, and after the job stops, a wake
+ * does nothing; the job's own turns come anyway.
+ */
+export class Wake {
+  private run: (() => void) | null = null;
+
+  attach(run: (() => void) | null): void {
+    this.run = run;
+  }
+
+  now(): void {
+    this.run?.();
+  }
+}
+
+/**
+ * The job's turns, one at a time. The interval's turn moves every medium, and is skipped while a
+ * turn runs. A wake asks for one more turn of the prompt media after the running one, or at once
+ * if none runs; wakes while one is waiting add nothing, so two turns never run at once and a burst
+ * of wakes makes one turn. A turn that moved a prompt medium's request wakes again by itself, so
+ * such a request walks its route in one go, each step as soon as the one before is saved.
+ */
+export class RequestTurns {
+  private running: Promise<void> | null = null;
+  private again = false;
+  private stopped = false;
+  private readonly prompt: (medium: RequestMedium) => boolean;
+
+  constructor(private readonly deps: RequestJobDeps) {
+    this.prompt = (medium) => deps.steps.get(medium)?.prompt === true;
+  }
+
+  /** The interval's turn, or the one running. */
+  tick(): Promise<void> {
+    return this.running ?? this.start();
+  }
+
+  wake(): void {
+    if (this.stopped) return;
+    if (this.running === null) void this.start(this.prompt);
+    else this.again = true;
+  }
+
+  /** No more wakes; settles once the turn running, and any it asked for, is over. */
+  async stop(): Promise<void> {
+    this.stopped = true;
+    this.again = false;
+    await this.running;
+  }
+
+  private start(only?: (medium: RequestMedium) => boolean): Promise<void> {
+    const turn = advanceRequests(this.deps, only)
+      .then((moved) => {
+        if ([...moved].some(this.prompt)) this.again = true;
+      })
+      .catch((err: unknown) => this.deps.log.error({ job: 'requests', err }, 'job failed'))
+      .finally(() => {
+        this.running = null;
+        if (this.again && !this.stopped) {
+          this.again = false;
+          void this.start(this.prompt);
+        }
+      });
+    this.running = turn;
+    return turn;
   }
 }
 

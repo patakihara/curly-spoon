@@ -3,7 +3,7 @@
  * vocabulary covers every medium, so a library card and a Requests row say the same thing. Each
  * medium passes only the statuses its route has (the server's request machine holds the routes).
  */
-import { ArtUrl } from './play.js';
+import { ArtUrl, MediaRef } from './play.js';
 import { z } from './zod.js';
 
 /** What can be requested: a book, an album, a song kept from YouTube Music, or a podcast. */
@@ -110,6 +110,13 @@ export type RequestRef = z.infer<typeof RequestRef>;
 /** The body of a new request. */
 export const CreateRequestBody = z.object({ ref: RequestRef }).strict();
 export type CreateRequestBody = z.infer<typeof CreateRequestBody>;
+
+/**
+ * A song to keep, by the ref search or radio named it by: the server builds its target from what it
+ * already knows of that song, so a client can keep nothing else.
+ */
+export const KeepBody = z.object({ ref: MediaRef }).strict();
+export type KeepBody = z.infer<typeof KeepBody>;
 
 /** One request by its id in the path. */
 export const RequestParams = z.object({ id: z.string().min(1) });
