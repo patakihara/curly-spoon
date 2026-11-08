@@ -11,8 +11,9 @@
  *   Various Artists; `recording-search-stallone` finds the song by title, artist and length, and
  *   `release-staying-alive` is the earliest "Staying Alive" release it is on.
  * - `recording-search-none`: a title nothing has.
- * - `search-503`: the Mama Africa release search answered 503, its status and headers only. It is asked just after twenty
- *   unrecorded copies of itself at once, past MusicBrainz's limit, and again until it is busy.
+ * - `search-503`: the Mama Africa release search answered 503, its status and headers only. It is
+ *   asked a few more times at the client's own pace, never in a burst: MusicBrainz is a free
+ *   service. A run that meets no 503 keeps the committed file and says so.
  * - The Cover Art Archive's front cover of the Mama Africa release: `front-307` to archive.org,
  *   `front-302` to one of its nodes, and `front-200`, whose body is a stand-in. A node's name
  *   varies, so each recording names one recorded node instead.
@@ -98,12 +99,8 @@ export const COVER_STAND_IN = {
     'Status and headers are the real answer; the body is not.',
 } as const;
 
-/**
- * How many times the busy answer is tried for, and how many unrecorded calls go at once before the
- * recorded one. Eight at once all answered 200; of twenty, five answered 503 (checked live, 8 Nov).
- */
+/** How many times the busy answer is asked for, each 1.1 s after the call before. */
 export const BUSY_TRIES = 3;
-export const BUSY_BURST = 20;
 /** How many times a call answered busy is captured, and the wait before each try again. */
 export const RECORD_TRIES = 6;
 export const BUSY_WAIT_MS = 10_000;
@@ -247,7 +244,7 @@ export async function recordMusicBrainz(
     (found) => check(found.count === 0, 'none: the nonsense title was found'),
   );
 
-  // The busy answer: the same release search, asked just after a burst of itself.
+  // The busy answer: the same release search, asked again at the client's pace until one is busy.
   const url = new URL('ws/2/release', `${input.musicBrainzUrl.replace(/\/$/, '')}/`);
   url.searchParams.set('query', releaseQuery(mamaAfrica.release));
   url.searchParams.set('limit', String(MUSICBRAINZ_SEARCH_LIMIT));
@@ -262,21 +259,15 @@ export async function recordMusicBrainz(
     baseUrl: input.musicBrainzUrl,
     prepare: statusAndHeaders,
   });
-  let busy = false;
-  for (let tries = 1; tries <= BUSY_TRIES && !busy; tries += 1) {
+  for (let tries = 1; tries <= BUSY_TRIES; tries += 1) {
+    await clock.sleep(MUSICBRAINZ_GAP_MS);
     try {
       await busyRec.capture(
         'search-503',
         async () => {
-          const burst = await Promise.allSettled(
-            Array.from({ length: BUSY_BURST }, () => input.fetch(url.toString(), init)),
-          );
-          for (const sent of burst) {
-            if (sent.status === 'fulfilled') await sent.value.body?.cancel();
-          }
-          const mine = await busyRec.fetch(url.toString(), init);
-          await mine.body?.cancel();
-          return mine.status;
+          const answer = await busyRec.fetch(url.toString(), init);
+          await answer.body?.cancel();
+          return answer.status;
         },
         {
           verify: (status, recording) => {
@@ -285,14 +276,13 @@ export async function recordMusicBrainz(
           },
         },
       );
-      busy = true;
+      written.push(join(dir, 'search-503.json'));
+      return { written };
     } catch (error) {
       out(`search-503: try ${tries}: ${error instanceof Error ? error.message : String(error)}`);
-      await clock.sleep(MUSICBRAINZ_GAP_MS);
     }
   }
-  if (!busy) throw new Error(`search-503: MusicBrainz was never busy in ${BUSY_TRIES} tries`);
-  written.push(join(dir, 'search-503.json'));
+  out(`search-503: MusicBrainz was never busy in ${BUSY_TRIES} tries; the committed file is kept`);
   return { written };
 }
 

@@ -14,7 +14,7 @@ import { indexedRow } from '../libraryIndex/store.js';
 import { artOf } from '../routes/art.js';
 import type { Db } from '../store/connection.js';
 import { rememberTracks, streamedTrack } from '../store/streamedTracks.js';
-import { searchFold } from '../text/fold.js';
+import { searchFold, titleKey } from '../text/fold.js';
 
 const SEARCH_LIMIT_MS = 3_000;
 const KEPT_MS = 5 * 60_000;
@@ -23,14 +23,6 @@ const MOST_KEPT = 200;
 export const MOST_SONG_SECONDS = 3 * 60 * 60;
 /** How many Jellyfin tracks' songs are remembered; asking YouTube Music again finds a forgotten one. */
 export const MOST_SEEDS = 5_000;
-
-const EDITION = /\s+-\s+.*(?:remaster|version|edit|mono|stereo|mix|live).*$/;
-
-const titleKey = (title: string) =>
-  searchFold(title)
-    .replace(/\s*[([{][^)\]}]*[)\]}]/g, '')
-    .replace(EDITION, '')
-    .trim();
 
 interface OwnedTrack {
   id: string;

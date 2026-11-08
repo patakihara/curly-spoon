@@ -20,6 +20,24 @@ export function searchFold(text: string): string {
   return foldName(text.replace(APOSTROPHES, '')).replace(/ß/g, 'ss').replace(/\s+/g, ' ').trim();
 }
 
+/** Words in brackets: "(2002 Remaster)", "[Live]", "{feat. …}". */
+const BRACKETED = /\s*[([{][^)\]}]*[)\]}]/g;
+/** A dash's edition: "Song - 2002 Remaster", "Song - Radio Edit". */
+const EDITION = /\s+-\s+.*(?:remaster|version|edit|mono|stereo|mix|live).*$/i;
+
+/**
+ * A song's title as written, its brackets and its dash's edition dropped, case and apostrophes
+ * kept: what is sent to a catalogue that matches words only as spelled, such as MusicBrainz.
+ */
+export function plainTitle(title: string): string {
+  return title.replace(BRACKETED, '').replace(EDITION, '').replace(/\s+/g, ' ').trim();
+}
+
+/** A song's title for comparing: folded for search, its brackets and its dash's edition dropped. */
+export function titleKey(title: string): string {
+  return searchFold(title).replace(BRACKETED, '').replace(EDITION, '').trim();
+}
+
 /**
  * Letters, numbers and private-use characters make words; everything else separates them. Search
  * rows hold these words space-joined, so the full-text index's unicode61 tokenizer sees nothing
