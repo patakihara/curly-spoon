@@ -408,6 +408,15 @@ describe('[M3.ytmusic/a] a song in a queue', () => {
     expect(host.asked).toHaveLength(2);
   });
 
+  it('[M3.ytmusic/a] a song put next while another plays has its first chunks fetched ahead at once', async () => {
+    const { app, kara, play, host, child } = await server();
+    await play();
+    await add(app, kara, OTHER);
+    await vi.waitFor(() => expect(child.runs).toHaveBeenCalledWith(OTHER));
+    await vi.waitFor(() => expect(host.asked).toHaveLength(2));
+    expect(host.asked).toEqual([`bytes=0-${CHUNK - 1}`, `bytes=${CHUNK}-${2 * CHUNK - 1}`]);
+  });
+
   it('[M3.ytmusic/a] a preload failing is only logged', async () => {
     const { app, kara, play, warned } = await server({
       say: (id) => (id === OTHER ? { rc: 1, stderr: goneTrack } : { rc: 0, stdout: answerFor(id) }),

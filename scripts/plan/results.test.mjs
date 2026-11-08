@@ -263,17 +263,18 @@ test('loadResults unions the tests, and for the same test name the newer run win
   }
 });
 
+const run = (databaseId, headSha, workflowName, createdAt) => ({
+  databaseId,
+  headSha,
+  workflowName,
+  status: 'completed',
+  conclusion: 'success',
+  createdAt,
+});
+
 test('loadResults reads the Live workflow newest run alongside CI', () => {
   const repo = fixtureRepo();
   const { second, third } = repo.commits;
-  const run = (databaseId, headSha, workflowName, createdAt) => ({
-    databaseId,
-    headSha,
-    workflowName,
-    status: 'completed',
-    conclusion: 'failure',
-    createdAt,
-  });
   const runs = [
     run(21, third, 'CI', '2026-01-03T00:00:00Z'),
     run(22, second, 'Live', '2026-01-02T00:00:00Z'),
@@ -414,6 +415,50 @@ test('the Live workflow runs every six hours and by hand, never on push, so a fa
   assert.doesNotMatch(on, /^\s+push:/m);
   assert.match(on, /^\s+schedule:\n\s+- cron: '\d+ \*\/6 \* \* \*'/m);
   assert.match(on, /^\s+workflow_dispatch:/m);
+});
+
+test('a live canary result sent by hand counts, however many runs came after it', () => {
+  const repo = fixtureRepo();
+  const head = repo.commits.third;
+  const test = t('M3.ytmusic', 'b', 'passed');
+  const exec = fakeExec({
+    runs: [run(31, head, 'CI', '2026-01-05T00:00:00Z')],
+    manualRuns: [run(30, head, 'Server live', '2026-01-01T00:00:00Z')],
+    artifacts: { 30: [result(head, [test])], 31: [result(head, [])] },
+  });
+  try {
+    const { sources, tests } = loadResults({ root: repo.root, mode: 'ci', exec });
+    assert.deepEqual(sources.map((s) => s.workflow).sort(), ['CI', 'Server live']);
+    assert.deepEqual(
+      tests.map((x) => [x.item, x.criterion, x.status]),
+      [['M3.ytmusic', 'b', 'passed']],
+    );
+    const list = exec.calls.find((c) => c.includes('--workflow'));
+    assert.equal(list[list.indexOf('--workflow') + 1], 'server-live.yml');
+    assert.equal(list[list.indexOf('--branch') + 1], 'main');
+  } finally {
+    removeTree(repo.root);
+  }
+});
+
+test('with no such workflow yet, the other runs still count', () => {
+  const repo = fixtureRepo();
+  const head = repo.commits.third;
+  const inner = fakeExec({
+    runs: [run(31, head, 'CI', '2026-01-05T00:00:00Z')],
+    artifacts: { 31: [result(head, [t('M0.aa', 'a', 'passed')])] },
+  });
+  const exec = (cmd, args, opts) => {
+    if (args.includes('--workflow')) throw new Error('could not find any workflows');
+    return inner(cmd, args, opts);
+  };
+  try {
+    const { error, tests } = loadResults({ root: repo.root, mode: 'ci', exec });
+    assert.equal(error, null);
+    assert.equal(tests.length, 1);
+  } finally {
+    removeTree(repo.root);
+  }
 });
 
 test('loadResults reads runs on main of every event, so a scheduled Live run counts', () => {

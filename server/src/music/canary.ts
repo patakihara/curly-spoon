@@ -1,9 +1,10 @@
 /**
  * The canary: whether an extractor binary still gets a known track, as a real play would. It finds
  * the track by search, resolves it through both tiers with that binary, asks a closed range of about
- * twenty seconds' bytes, and reads their container: exactly one track, audio, Opus. An MP4 answer
- * passes on its file type alone, having no such walk. Reasons stay apart, because only some say an
- * update could help; `unavailable` means the network failed, and so is no result at all.
+ * twenty seconds' bytes, and reads their container: exactly one track, audio, Opus, with at least ten
+ * seconds of it in whole packets. An MP4 answer passes on its file type alone, having no such walk.
+ * Reasons stay apart, because only some say an update could help; `unavailable` means the network
+ * failed, and so is no result at all.
  */
 import { AdapterError, type FetchLike } from '../adapters/http/fetch.js';
 import { fileHeadersSchema, openStream, type FileHeaders } from '../adapters/stream.js';
@@ -57,6 +58,12 @@ const TRACK_ENTRY = 0xae;
 const TRACK_TYPE = 0x83;
 const CODEC_ID = 0x86;
 const AUDIO_TRACK = 2;
+const CLUSTER = 0x1f43b675;
+const SIMPLE_BLOCK = 0xa3;
+const BLOCK_GROUP = 0xa0;
+const BLOCK = 0xa1;
+/** What a passing canary must have read, of the twenty seconds it asks. */
+const LEAST_SECONDS = 10;
 
 interface Element {
   id: number;
@@ -111,6 +118,41 @@ export function webmAudioCodec(bytes: Uint8Array): string | null {
   const name = Buffer.from(bytes.subarray(codec.start, codec.end)).toString('latin1');
   return name === 'A_OPUS' ? name : null;
 }
+
+/** One frame's length by an Opus packet's configuration, in tenths of a millisecond (RFC 6716, 3.1). */
+const opusFrameTenths = (config: number) => {
+  if (config < 12) return [100, 200, 400, 600][config % 4] ?? 0;
+  if (config < 16) return [100, 200][config % 2] ?? 0;
+  return [25, 50, 100, 200][config % 4] ?? 0;
+};
+
+/** How long a block's one Opus packet plays, in tenths of a millisecond. A laced block counts none. */
+function blockTenths(bytes: Uint8Array, block: Element): number {
+  const trackLength = Math.clz32(bytes[block.start] ?? 0) - 23;
+  const at = block.start + trackLength + 3;
+  if (trackLength < 1 || trackLength > 8 || at >= block.end) return 0;
+  if (((bytes[at - 1] ?? 0) >> 1) & 3) return 0;
+  const toc = bytes[at] ?? 0;
+  const code = toc & 3;
+  const frames = code === 0 ? 1 : code === 3 ? (bytes[at + 1] ?? 0) & 0x3f : 2;
+  return frames * opusFrameTenths(toc >> 3);
+}
+
+function tenthsIn(bytes: Uint8Array, from: number, to: number): number {
+  let tenths = 0;
+  for (const element of elements(bytes, from, to)) {
+    if (element.id === SIMPLE_BLOCK || element.id === BLOCK) {
+      tenths += blockTenths(bytes, element);
+    } else if (element.id === SEGMENT || element.id === CLUSTER || element.id === BLOCK_GROUP) {
+      tenths += tenthsIn(bytes, element.start, element.end);
+    }
+  }
+  return tenths;
+}
+
+/** How long the Opus packets in a WebM's bytes play, by what each one says it holds. */
+export const webmAudioSeconds = (bytes: Uint8Array): number =>
+  tenthsIn(bytes, 0, bytes.length) / 10_000;
 
 /** Whether an MP4 head says so: a file type box at the very start. */
 const isMp4 = (bytes: Uint8Array) =>
@@ -190,6 +232,7 @@ export function canaryOf(options: CanaryOptions): Canary {
     }
     const codec = audio.mime === 'audio/mp4' && isMp4(bytes) ? 'mp4' : webmAudioCodec(bytes);
     if (codec === null) return failed('streamRefused');
+    if (codec !== 'mp4' && webmAudioSeconds(bytes) < LEAST_SECONDS) return failed('streamRefused');
     return {
       passed: true,
       tier: audio.tier,

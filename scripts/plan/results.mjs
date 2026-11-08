@@ -74,6 +74,9 @@ export function parseJUnit(xml) {
   return cases;
 }
 
+const RUN_FIELDS = 'databaseId,headSha,workflowName,status,conclusion,createdAt';
+const MANUAL_WORKFLOW = 'server-live.yml';
+
 const JS_TAG = /\[(M[0-6]\.[a-z][a-z0-9]{1,15})\/([a-f])\]/;
 const JVM_TAG = /^(M[0-6])_([a-z][a-z0-9]{1,15})_([a-f])(?:_|\s|$)/;
 
@@ -134,27 +137,48 @@ function runResults(exec, root, runId, deadline) {
   return [...jsonFiles(dir)].flatMap((f) => JSON.parse(readFileSync(f, 'utf8')).tests ?? []);
 }
 
+/**
+ * A workflow run only by hand, whose one run soon falls out of main's newest hundred: asked for by
+ * name. With the workflow not there yet, or `gh` failing here, it is simply not among the results.
+ */
+function manualRuns(exec, root, deadline) {
+  try {
+    return JSON.parse(
+      exec(
+        'gh',
+        [
+          'run',
+          'list',
+          '--workflow',
+          MANUAL_WORKFLOW,
+          '--branch',
+          'main',
+          '--limit',
+          '1',
+          '--json',
+          RUN_FIELDS,
+        ],
+        ghOpts(root, deadline),
+      ),
+    );
+  } catch {
+    return [];
+  }
+}
+
 function ciResults(exec, root, deadline, budget) {
   let runs;
   try {
     const out = exec(
       'gh',
-      [
-        'run',
-        'list',
-        '--branch',
-        'main',
-        '--limit',
-        '100',
-        '--json',
-        'databaseId,headSha,workflowName,status,conclusion,createdAt',
-      ],
+      ['run', 'list', '--branch', 'main', '--limit', '100', '--json', RUN_FIELDS],
       ghOpts(root, deadline),
     );
     runs = JSON.parse(out);
   } catch (err) {
     return { runs: [], error: ghFailure('gh run list', err, budget) };
   }
+  runs.push(...manualRuns(exec, root, deadline));
   const newest = new Map();
   for (const run of runs) {
     if (run.status !== 'completed' || !isAncestor(exec, root, run.headSha)) continue;
