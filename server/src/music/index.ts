@@ -129,6 +129,8 @@ export class Music {
   private readonly ahead = new Map<string, number>();
   /** When each resolve ahead in the last minute was asked. */
   private aheadTimes: number[] = [];
+  /** The top playable row of each device's last search, whose first chunk alone is fetched ahead. */
+  private readonly aheadTop = new Map<string, string | null>();
   /** The first chunk each device's last search is fetching ahead. */
   private readonly aheadChunks = new Map<string, { id: string; stop: AbortController }>();
   /** Songs whose first chunk is fetched ahead, by how many such fetches, that no play has asked for. */
@@ -291,7 +293,8 @@ export class Music {
   /**
    * Readies a search's top song rows for their tap, without holding up its answer: the first
    * `ROWS_RESOLVED_AHEAD` resolved through the direct call alone, never a process, and the first
-   * row's first chunk fetched. A newer search's first row stops this device's last chunk fetch. Each
+   * row's first chunk fetched. A newer search's first row stops this device's last chunk fetch, and
+   * an older search's resolve ahead, answering late, fetches nothing. Each
    * song is asked once in the time a search is kept, at most `MOST_AHEAD_PER_MINUTE` in a minute, and
    * only one that plays: streamable, named, of a song's length. Nothing is asked while streaming is
    * unavailable, or with no direct call. A failure is only logged, and says nothing of streaming.
@@ -300,6 +303,7 @@ export class Music {
     const top = rows
       .slice(0, ROWS_RESOLVED_AHEAD)
       .map((row) => (this.plays(row) ? row.ref.id : null));
+    this.aheadTop.set(deviceId, top[0] ?? null);
     const chunk = this.aheadChunks.get(deviceId);
     if (chunk !== undefined && chunk.id !== top[0]) this.stopAheadChunk(deviceId);
     if (this.deps.direct === undefined || !this.state.available) return;
@@ -308,7 +312,7 @@ export class Music {
       this.extractor
         .resolveAhead(id)
         .then(() => {
-          if (n === 0) this.fetchAhead(deviceId, id);
+          if (n === 0 && this.aheadTop.get(deviceId) === id) this.fetchAhead(deviceId, id);
         })
         .catch((error: unknown) => {
           const reason = error instanceof Error ? error.name : 'unknown';
@@ -481,7 +485,6 @@ export function ytMusic(
       const query = song === undefined ? id : `${song.title} ${song.artists[0] ?? ''}`.trim();
       await client.search(query);
     },
-    now,
   });
   const music = new Music({
     db,

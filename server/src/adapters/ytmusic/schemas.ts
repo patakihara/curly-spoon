@@ -133,7 +133,6 @@ export const playerAnswerSchema = z.object({
     .optional(),
   streamingData: z
     .object({
-      expiresInSeconds: z.string().regex(/^\d+$/).optional(),
       formats: z.array(z.unknown()).optional(),
       adaptiveFormats: z.array(z.unknown()).optional(),
     })

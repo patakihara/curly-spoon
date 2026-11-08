@@ -61,7 +61,7 @@ function directPlayer(fails = false) {
         contentLength: String(SIZE),
       })),
     };
-    return parsePlayer(playerAnswerSchema.parse(raw), id, T0);
+    return parsePlayer(playerAnswerSchema.parse(raw), id);
   };
   return { direct, asked };
 }
@@ -471,6 +471,27 @@ describe('[M3.ytmusic/a] song rows in Search', () => {
     await ask('other');
     await vi.waitFor(() => expect(host.stopped).toHaveLength(1));
     await vi.waitFor(() => expect(host.asked).toHaveLength(2));
+  });
+
+  it("[M3.ytmusic] an older search's resolve ahead, slower than the newer one's, fetches nothing", async () => {
+    const [first, , third] = await songsOnRecord();
+    const client: SongSource = {
+      search: async (q) => (q === 'other' ? [third!] : [first!]),
+      radio: async () => [],
+    };
+    const player = directPlayer();
+    const direct: DirectResolve = async (id) => {
+      if (id === first!.id) await new Promise((settled) => setTimeout(settled, 60));
+      return player.direct(id);
+    };
+    const host = streamHost(true);
+    const { ask } = await server({ client, direct, streamFetch: host.fetch });
+    await ask('a song');
+    await ask('other');
+    await vi.waitFor(() => expect(player.asked).toHaveBeenCalledWith(first!.id));
+    await new Promise((settled) => setTimeout(settled, 40));
+    expect(host.asked).toHaveLength(1);
+    expect(host.stopped).toEqual([]);
   });
 
   it('[M3.ytmusic] searches never ask more than the minute’s share of resolves ahead', async () => {

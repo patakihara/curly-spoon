@@ -139,7 +139,6 @@ function cutPlayer(json: Record<string, unknown>): Record<string, unknown> {
       ? {}
       : {
           streamingData: {
-            ...pick(streaming, ['expiresInSeconds']),
             ...rows('formats'),
             ...rows('adaptiveFormats'),
           },

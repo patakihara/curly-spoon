@@ -27,7 +27,6 @@ export interface DirectOptions {
   visitor: Visitor;
   /** Asks YouTube Music something about `id` (its own search) that names a visitor id. */
   findVisitor: (id: string) => Promise<void>;
-  now: () => number;
 }
 
 export function directResolver(options: DirectOptions): DirectResolve {
@@ -43,11 +42,11 @@ export function directResolver(options: DirectOptions): DirectResolve {
   return async (id) => {
     const first = await options.player(id, await held(id));
     try {
-      return parsePlayer(first, id, options.now());
+      return parsePlayer(first, id);
     } catch (error) {
       if (!(error instanceof PlayerRefused) || error.reason !== 'blocked') throw error;
     }
     visitor.drop();
-    return parsePlayer(await options.player(id, await held(id)), id, options.now());
+    return parsePlayer(await options.player(id, await held(id)), id);
   };
 }

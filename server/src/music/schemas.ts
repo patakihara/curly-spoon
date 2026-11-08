@@ -67,6 +67,33 @@ export interface AudioFormat {
   expiresAt: number;
 }
 
+const NOT_AUDIO = 'not an audio stream on the stream host';
+
+/**
+ * Rule 8 on a stream URL, the same for yt-dlp's rows and the player's: on the stream host, a file
+ * rather than a manifest, asking for format `itag`, naming its own audio type and when it expires.
+ * Its type and expiry, or null for any other URL.
+ */
+function audioStream(
+  raw: string,
+  itag: string,
+): { url: URL; mime: string; expiresAt: number } | null {
+  const url = URL.canParse(raw) ? new URL(raw) : null;
+  const mime = url?.searchParams.get('mime') ?? '';
+  const expire = Number(url?.searchParams.get('expire') ?? '');
+  if (
+    url === null ||
+    !isStreamHost(url) ||
+    url.pathname !== '/videoplayback' ||
+    url.searchParams.get('itag') !== itag ||
+    !/^audio\/[\w.+-]+$/.test(mime) ||
+    !(expire > 0)
+  ) {
+    return null;
+  }
+  return { url, mime, expiresAt: expire * 1000 };
+}
+
 /**
  * Rule 8, on the extractor's own words and the URL's: no video codec, an audio codec, a plain file
  * over https, an audio type, YouTube's stream host, a file rather than a manifest, and the URL asking
@@ -83,29 +110,20 @@ export const audioFormatSchema = z
     filesize: z.number().int().positive().nullish(),
   })
   .transform((row, ctx): AudioFormat => {
-    const url = URL.canParse(row.url) ? new URL(row.url) : null;
-    const mime = url?.searchParams.get('mime') ?? '';
-    const expire = Number(url?.searchParams.get('expire') ?? '');
-    if (
-      url === null ||
-      !isStreamHost(url) ||
-      url.pathname !== '/videoplayback' ||
-      url.searchParams.get('itag') !== row.format_id ||
-      !/^audio\/[\w.+-]+$/.test(mime) ||
-      !(expire > 0)
-    ) {
-      ctx.addIssue({ code: 'custom', message: 'not an audio stream on the stream host' });
+    const stream = audioStream(row.url, row.format_id);
+    if (stream === null) {
+      ctx.addIssue({ code: 'custom', message: NOT_AUDIO });
       return z.NEVER;
     }
-    const clen = Number(url.searchParams.get('clen') ?? '');
+    const clen = Number(stream.url.searchParams.get('clen') ?? '');
     return {
       itag: Number(row.format_id),
       url: new StreamUrl(row.url),
-      mime,
+      mime: stream.mime,
       codec: row.acodec,
       abr: row.abr ?? null,
       size: row.filesize ?? (Number.isInteger(clen) && clen > 0 ? clen : null),
-      expiresAt: expire * 1000,
+      expiresAt: stream.expiresAt,
     };
   });
 
@@ -163,51 +181,40 @@ const PLAYER_MIME = /^(audio\/[\w.+-]+);\s*codecs="(opus|mp4a\.[\w.]+)"$/;
 
 /**
  * Rule 8 on a player's format row: an audio type with one audio codec, no width, height, frame rate
- * or quality label, a plain URL (a `signatureCipher` row has none, and is dropped), on the stream
- * host, a file rather than a manifest, asking for the format and type its row names. `expiresAt`
- * comes from the URL's `expire`, else from the answer's `expiresInSeconds`.
+ * or quality label, a plain URL (a `signatureCipher` row has none, and is dropped), and that URL
+ * passing the check yt-dlp's rows pass, its own audio type the one its row names.
  */
-export const playerFormatSchema = (expiresAt: number | null) =>
-  z
-    .object({
-      itag: z.number().int().positive(),
-      url: z.string(),
-      mimeType: z.string().regex(PLAYER_MIME),
-      width: z.undefined(),
-      height: z.undefined(),
-      fps: z.undefined(),
-      qualityLabel: z.undefined(),
-      averageBitrate: z.number().positive().optional(),
-      bitrate: z.number().positive().optional(),
-      contentLength: z.string().regex(/^\d+$/).optional(),
-    })
-    .transform((row, ctx): AudioFormat => {
-      const [, type = '', codec = ''] = PLAYER_MIME.exec(row.mimeType) ?? [];
-      const url = URL.canParse(row.url) ? new URL(row.url) : null;
-      const expire = Number(url?.searchParams.get('expire') ?? '') * 1000;
-      const until = expire > 0 ? expire : expiresAt;
-      if (
-        url === null ||
-        !isStreamHost(url) ||
-        url.pathname !== '/videoplayback' ||
-        url.searchParams.get('itag') !== String(row.itag) ||
-        (url.searchParams.get('mime') ?? type) !== type ||
-        until === null
-      ) {
-        ctx.addIssue({ code: 'custom', message: 'not an audio stream on the stream host' });
-        return z.NEVER;
-      }
-      const rate = row.averageBitrate ?? row.bitrate;
-      return {
-        itag: row.itag,
-        url: new StreamUrl(row.url),
-        mime: type,
-        codec,
-        abr: rate === undefined ? null : rate / 1000,
-        size: row.contentLength === undefined ? null : Number(row.contentLength),
-        expiresAt: until,
-      };
-    });
+export const playerFormatSchema = z
+  .object({
+    itag: z.number().int().positive(),
+    url: z.string(),
+    mimeType: z.string().regex(PLAYER_MIME),
+    width: z.undefined(),
+    height: z.undefined(),
+    fps: z.undefined(),
+    qualityLabel: z.undefined(),
+    averageBitrate: z.number().positive().optional(),
+    bitrate: z.number().positive().optional(),
+    contentLength: z.string().regex(/^\d+$/).optional(),
+  })
+  .transform((row, ctx): AudioFormat => {
+    const [, type = '', codec = ''] = PLAYER_MIME.exec(row.mimeType) ?? [];
+    const stream = audioStream(row.url, String(row.itag));
+    if (stream === null || stream.mime !== type) {
+      ctx.addIssue({ code: 'custom', message: NOT_AUDIO });
+      return z.NEVER;
+    }
+    const rate = row.averageBitrate ?? row.bitrate;
+    return {
+      itag: row.itag,
+      url: new StreamUrl(row.url),
+      mime: type,
+      codec,
+      abr: rate === undefined ? null : rate / 1000,
+      size: row.contentLength === undefined ? null : Number(row.contentLength),
+      expiresAt: stream.expiresAt,
+    };
+  });
 
 /** The player said no: `blocked` for its bot wall, `notPlayable` for any other status. */
 export class PlayerRefused extends Error {
@@ -218,10 +225,10 @@ export class PlayerRefused extends Error {
 }
 
 /**
- * The audio-only formats of a player's answer for `id`, at `now`. Throws `PlayerRefused` for a
+ * The audio-only formats of a player's answer for `id`. Throws `PlayerRefused` for a
  * refusal or another track's answer, and `InfoRefused` as `parseInfo` does, never naming a URL.
  */
-export function parsePlayer(answer: PlayerAnswer, id: string, now: number): AudioInfo {
+export function parsePlayer(answer: PlayerAnswer, id: string): AudioInfo {
   const { status } = answer.playabilityStatus;
   if (status === 'LOGIN_REQUIRED') throw new PlayerRefused('blocked');
   if (status !== 'OK') throw new PlayerRefused('notPlayable');
@@ -231,11 +238,9 @@ export function parsePlayer(answer: PlayerAnswer, id: string, now: number): Audi
   const duration = Number(details.lengthSeconds ?? '');
   if (!(duration > 0)) throw new InfoRefused('noLength');
   const streaming = answer.streamingData;
-  const seconds = Number(streaming?.expiresInSeconds ?? '');
-  const schema = playerFormatSchema(seconds > 0 ? now + seconds * 1000 : null);
   const rows = [...(streaming?.formats ?? []), ...(streaming?.adaptiveFormats ?? [])];
   const formats = rows.flatMap((row) => {
-    const format = schema.safeParse(row);
+    const format = playerFormatSchema.safeParse(row);
     return format.success ? [format.data] : [];
   });
   if (formats.length === 0) throw new InfoRefused('noAudio');

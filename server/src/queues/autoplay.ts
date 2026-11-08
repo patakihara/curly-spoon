@@ -286,6 +286,19 @@ async function musicPick(
   return next === undefined ? null : { ref: next };
 }
 
+/**
+ * Instant Mix through Auralis's own Jellyfin key, kept to the tracks the library index holds: only
+ * those play for someone with no Jellyfin account, as every household play does.
+ */
+export function indexedMix(jellyfin: AutoplayDeps['jellyfin'], db: Db): AutoplayDeps['jellyfin'] {
+  return {
+    getInstantMix: async (itemId, limit) =>
+      (await jellyfin.getInstantMix(itemId, limit)).filter(
+        (t) => indexedRow(db, 'jellyfin', t.Id) !== undefined,
+      ),
+  };
+}
+
 /** Instant Mix and YouTube Music's radio for a Jellyfin track, taking turns, owned first and each once. */
 async function joinedRadio(
   id: string,

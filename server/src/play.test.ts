@@ -1248,7 +1248,7 @@ describe('[M3.requests/d] a household play, for someone whose own accounts do no
 });
 
 describe('[M1.sessions/e] radio from music you own, for someone with no Jellyfin account', () => {
-  it('[M1.sessions/e] follows the album with Instant Mix read through Auralis’s own Jellyfin key', async () => {
+  it('[M1.sessions/e] follows the album with Instant Mix read through Auralis’s own Jellyfin key, kept to what the index holds', async () => {
     const s = await householdServer();
     const last = albumTrackIds.at(-1)!;
     const put = await s.app.inject({
@@ -1259,7 +1259,9 @@ describe('[M1.sessions/e] radio from music you own, for someone with no Jellyfin
     });
     expect(put.statusCode, put.body).toBe(200);
 
-    const picked = householdMix.find((id) => id !== last);
+    // The mix holds tracks the index does not; only one it holds plays for someone with no account.
+    const picked = householdMix.find((id) => id !== last && albumTrackIds.includes(id));
+    expect(householdMix.some((id) => !albumTrackIds.includes(id))).toBe(true);
     await vi.waitFor(async () => {
       const view = (await s.get('/api/queues/music')).json<{ autoplay: { ref: object } | null }>();
       expect(view.autoplay?.ref).toEqual({ source: 'jellyfin', id: picked });

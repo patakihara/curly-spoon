@@ -114,7 +114,6 @@ function resolving(answers: Record<string, Recording[]>, visitor = new Visitor()
       player: (id, v) => player.player(id, v),
       visitor,
       findVisitor: async () => void (await client.search('the song and its artist')),
-      now: () => NOW,
     }),
     onDirectFailed: (reason) => failed.push(reason),
   });
@@ -123,7 +122,7 @@ function resolving(answers: Record<string, Recording[]>, visitor = new Visitor()
 
 describe("[M3.ytmusic/a] the audio-only guard on the player's formats, on recordings", () => {
   it('[M3.ytmusic/a] the recorded answer gives exactly the five audio formats, and Opus 251 plays', () => {
-    const info = parsePlayer(answer(ok), ID, NOW);
+    const info = parsePlayer(answer(ok), ID);
     expect(info.formats.map((f) => f.itag).sort((a, b) => a - b)).toEqual([
       139, 140, 249, 250, 251,
     ]);
@@ -146,7 +145,7 @@ describe("[M3.ytmusic/a] the audio-only guard on the player's formats, on record
       { ...audio, height: 144 },
       ...raw.streamingData.adaptiveFormats,
     ];
-    const formats = parsePlayer(playerAnswerSchema.parse(raw), ID, NOW).formats;
+    const formats = parsePlayer(playerAnswerSchema.parse(raw), ID).formats;
     expect(formats).toHaveLength(5);
     expect(formats.every((f) => f.mime.startsWith('audio/'))).toBe(true);
     expect(JSON.stringify(formats)).not.toMatch(/video|cipher/i);
@@ -157,15 +156,15 @@ describe("[M3.ytmusic/a] the audio-only guard on the player's formats, on record
     raw.streamingData.adaptiveFormats = raw.streamingData.adaptiveFormats.map(
       (f: { url: string }) => ({ ...f, url: f.url.replace('itag=', 'itag=1') }),
     );
-    expect(() => parsePlayer(playerAnswerSchema.parse(raw), ID, NOW)).toThrow(InfoRefused);
+    expect(() => parsePlayer(playerAnswerSchema.parse(raw), ID)).toThrow(InfoRefused);
   });
 
   it("[M3.ytmusic/a] another track's answer, the bot wall and an unplayable id are refused", () => {
-    expect(() => parsePlayer(answer(ok), 'aaaaaaaaaaa', NOW)).toThrow(PlayerRefused);
-    expect(() => parsePlayer(answer(botwall), ID, NOW)).toThrow(
+    expect(() => parsePlayer(answer(ok), 'aaaaaaaaaaa')).toThrow(PlayerRefused);
+    expect(() => parsePlayer(answer(botwall), ID)).toThrow(
       expect.objectContaining({ reason: 'blocked' }),
     );
-    expect(() => parsePlayer(answer(unplayable), 'aaaaaaaaaaa', NOW)).toThrow(
+    expect(() => parsePlayer(answer(unplayable), 'aaaaaaaaaaa')).toThrow(
       expect.objectContaining({ reason: 'notPlayable' }),
     );
   });
@@ -174,18 +173,49 @@ describe("[M3.ytmusic/a] the audio-only guard on the player's formats, on record
     const raw = json(ok);
     raw.videoDetails.isLive = true;
     raw.videoDetails.isLiveContent = true;
-    expect(() => parsePlayer(playerAnswerSchema.parse(raw), ID, NOW)).toThrow(
+    expect(() => parsePlayer(playerAnswerSchema.parse(raw), ID)).toThrow(
       expect.objectContaining({ reason: 'live' }),
     );
   });
 
-  it('[M3.ytmusic/a] with no expire in a URL, the answer’s expiresInSeconds says when it ends', () => {
+  it('[M3.ytmusic/a] a row whose URL names no audio type or no expiry of its own is dropped, as from yt-dlp', () => {
+    const without = (key: string) => {
+      const raw = json(ok);
+      raw.streamingData.adaptiveFormats = raw.streamingData.adaptiveFormats.map(
+        (f: { url: string }) => {
+          const url = new URL(f.url);
+          url.searchParams.delete(key);
+          return { ...f, url: url.toString() };
+        },
+      );
+      return () => parsePlayer(playerAnswerSchema.parse(raw), ID);
+    };
+    expect(without('mime')).toThrow(InfoRefused);
+    expect(without('expire')).toThrow(InfoRefused);
+  });
+
+  it('[M3.ytmusic/a] a video row labelled as audio, its URL naming no type, never passes', () => {
+    const raw = json(ok);
+    const video = raw.streamingData.adaptiveFormats.find((f: { itag: number }) => f.itag === 137);
+    const url = new URL(video.url);
+    url.searchParams.delete('mime');
+    raw.streamingData.adaptiveFormats = [
+      { itag: 137, url: url.toString(), mimeType: 'audio/mp4; codecs="mp4a.40.2"' },
+      ...raw.streamingData.adaptiveFormats,
+    ];
+    const formats = parsePlayer(playerAnswerSchema.parse(raw), ID).formats;
+    expect(formats.map((f) => f.itag)).not.toContain(137);
+  });
+
+  it("[M3.ytmusic/a] a row whose URL's audio type is not its row's is dropped", () => {
     const raw = json(ok);
     raw.streamingData.adaptiveFormats = raw.streamingData.adaptiveFormats.map(
-      (f: { url: string }) => ({ ...f, url: f.url.replace(/expire=\d+&/, '') }),
+      (f: { url: string }) => ({
+        ...f,
+        url: f.url.replace(/mime=audio%2F\w+/, 'mime=audio%2Fogg'),
+      }),
     );
-    const picked = pickFormat(parsePlayer(playerAnswerSchema.parse(raw), ID, NOW).formats);
-    expect(picked?.expiresAt).toBe(NOW + 21_540_000);
+    expect(() => parsePlayer(playerAnswerSchema.parse(raw), ID)).toThrow(InfoRefused);
   });
 });
 
@@ -385,7 +415,7 @@ describe("[M3.ytmusic/d] the canary's direct result", () => {
   };
 
   it('[M3.ytmusic/d] names which passed: the extractor’s tier, and the direct call apart', async () => {
-    const result = await canary(async (id) => parsePlayer(answer(ok), id, NOW))('/opt/yt-dlp');
+    const result = await canary(async (id) => parsePlayer(answer(ok), id))('/opt/yt-dlp');
     expect(result).toMatchObject({
       passed: true,
       tier: 'plain',
@@ -394,7 +424,7 @@ describe("[M3.ytmusic/d] the canary's direct result", () => {
   });
 
   it('[M3.ytmusic/d] a bot wall on the direct call is its own blocked, and the extractor still decides', async () => {
-    const result = await canary(async (id) => parsePlayer(answer(botwall), id, NOW))('/opt/yt-dlp');
+    const result = await canary(async (id) => parsePlayer(answer(botwall), id))('/opt/yt-dlp');
     expect(result).toMatchObject({ passed: true, direct: { passed: false, reason: 'blocked' } });
   });
 

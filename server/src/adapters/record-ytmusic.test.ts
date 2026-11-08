@@ -68,7 +68,6 @@ describe("the recorder's trim of an InnerTube answer", () => {
       playabilityStatus: { status: 'OK' },
       videoDetails: { videoId: 'lYBUbBu4W08', lengthSeconds: '214' },
       streamingData: {
-        expiresInSeconds: '21540',
         adaptiveFormats: [
           {
             itag: 251,

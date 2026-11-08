@@ -75,6 +75,7 @@ import {
   type AutoplayRadio,
   autoplayKept,
   autoplayStale,
+  indexedMix,
   pendingAutoplay,
   prepareAutoplay,
   storedAutoplay,
@@ -1045,14 +1046,18 @@ export class Sessions {
       const s = this.open(caller);
       const clients = this.options.clients(caller);
       await lookup.load(lookup.autoplayBooks(s), this.chapterSource(caller));
+      const household = this.options.householdJellyfin ?? null;
       const unlinked = (service: string) => () =>
         Promise.reject(new Error(`no ${service} account is linked`));
       const done = await prepareAutoplay(valueOf(s), {
         db,
         expand: (ref) => lookup.expand(ref),
         abs: clients.abs ?? { getMe: unlinked('Audiobookshelf') },
-        jellyfin: clients.jellyfin ??
-          this.options.householdJellyfin ?? { getInstantMix: unlinked('Jellyfin') },
+        jellyfin:
+          clients.jellyfin ??
+          (household === null
+            ? { getInstantMix: unlinked('Jellyfin') }
+            : indexedMix(household, db)),
         log,
         now: this.options.now,
         ...(this.options.ytmusic === undefined ? {} : { ytmusic: this.options.ytmusic }),
