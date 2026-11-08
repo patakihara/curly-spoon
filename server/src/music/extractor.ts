@@ -2,13 +2,20 @@
  * Turns a video id into an audio-only stream. When given one, the direct resolve answers first
  * (YouTube's player API, one HTTP call, about 0.1 s, checked live) within three seconds; anything it
  * cannot answer, a live track aside, goes to the extractor (yt-dlp), a process per call. A resolve
- * ahead of a tap asks the direct call alone, never a process, and a tap joins it. No
- * client's text reaches its command line but an id that passed `YT_ID`, and that after `--`. Each
- * child gets a clean environment, no config, no cache and a time limit, and a kill takes its children
- * with it. Tried twice, in order: the default clients with no JS runtime (2 s, 56 MiB, checked
- * live), then node as the runtime (6 s, 260 MiB). At most two plain runs and one node run at once,
- * and one per id. A failure names a reason and nothing of the extractor's output, which can hold a
- * stream's URL. The URL itself stays in memory only, until ten minutes before it expires.
+ * ahead of a tap asks the direct call alone, never a process, and a tap joins it. No client's text
+ * reaches its command line but an id that passed `YT_ID`, and that after `--`. Each child gets a
+ * clean environment, no config but what it reads on stdin, no cache and a time limit, and a kill
+ * takes its children with it. Tried in order: the default clients with no JS runtime (2.3 s, 56 MiB,
+ * checked live), then node as the runtime (6 s, 260 MiB). While a visitor id is held, the first is
+ * trimmed: it skips the web page, the `next` call and the HLS manifest, and is handed the id instead
+ * (1.2 to 1.4 s on 4 tracks, checked live). Skipping the page met the bot wall only because the page
+ * was where the id came from: with no id, or a made-up one, the trimmed run meets it too (checked
+ * live), so a bot wall there runs the plain tier untrimmed once. The id goes on the child's stdin as
+ * its one config file, never on its command line or in its environment, which other processes can
+ * read; yt-dlp prints it nowhere unless asked to be verbose (checked live). At most two plain runs
+ * and one node run at once, and one per id. A failure names a reason and nothing of the extractor's
+ * output, which can hold a stream's URL. The URL itself stays in memory only, until ten minutes
+ * before it expires.
  */
 import { type ChildProcess, spawn as nodeSpawn, type SpawnOptions } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
@@ -66,8 +73,14 @@ export const DIRECT_LIMIT_MS = 3_000;
 /** Asks for a format with no video, so the extractor itself cannot pick a muxed one. */
 export const AUDIO_SELECTOR = 'bestaudio[vcodec=none]';
 
-/** The whole command line, for an id that has passed `YT_ID`. */
-export function extractorArgs(id: string, tier: Tier): string[] {
+/** A visitor id's form: base64 and its URL escapes, nothing a config line could read otherwise. */
+const VISITOR_ID = /^[\w%=-]{8,256}$/;
+
+/**
+ * The whole command line, for an id that has passed `YT_ID`. A trimmed plain run also reads its
+ * config from stdin, which `trimmedConfig` writes.
+ */
+export function extractorArgs(id: string, tier: Tier, trimmed = false): string[] {
   return [
     '--no-config',
     '--no-cache-dir',
@@ -76,9 +89,19 @@ export function extractorArgs(id: string, tier: Tier): string[] {
     '--format',
     AUDIO_SELECTOR,
     ...(tier === 'node' ? ['--js-runtimes', 'node'] : []),
+    ...(tier === 'plain' && trimmed ? ['--config-locations', '-'] : []),
     '--',
     id,
   ];
+}
+
+/**
+ * What a trimmed run reads on stdin: no web page, `next` call or HLS manifest, and the visitor id
+ * the page would have given. Null for anything not shaped like an id.
+ */
+export function trimmedConfig(visitor: string): string | null {
+  if (!VISITOR_ID.test(visitor)) return null;
+  return `--extractor-args "youtube:player_skip=webpage,configs,initial_data;visitor_data=${visitor};skip=hls"\n`;
 }
 
 const KILL_AFTER_MS = 30_000;
@@ -142,6 +165,8 @@ export interface RunOptions {
   cwd: string;
   timeoutMs?: number;
   maxOutputBytes?: number;
+  /** Written to the child's stdin, which is closed after; with none, stdin is not open at all. */
+  stdin?: string;
 }
 
 /** One run of a child, to its end or its kill. Never rejects: a child that cannot start has no rc. */
@@ -176,11 +201,16 @@ export function runChild(file: string, args: string[], options: RunOptions): Pro
         env,
         cwd,
         detached: true,
-        stdio: ['ignore', 'pipe', 'pipe'],
+        stdio: [options.stdin === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'],
       });
     } catch {
       finish(null);
       return;
+    }
+    if (options.stdin !== undefined) {
+      // A child that exits without reading closes the pipe; its exit says what happened.
+      child.stdin?.on('error', () => undefined);
+      child.stdin?.end(options.stdin);
     }
 
     const stop = () => {
@@ -262,6 +292,8 @@ export interface ExtractorOptions {
   direct?: DirectResolve;
   /** Told why the direct resolve did not answer: an error's name, never its text. */
   onDirectFailed?: (reason: string) => void;
+  /** The visitor id held now, which trims the plain run; null or none runs it untrimmed. */
+  visitor?: () => string | null;
 }
 
 /** Rejects once `ms` pass; the work itself is left to end on its own, its result unread. */
@@ -347,11 +379,11 @@ export class Extractor {
     return direct;
   }
 
-  /** The extractor's answer: the plain tier, then node. */
+  /** The extractor's answer: the plain tier, trimmed while a visitor id is held, then node. */
   private async extracted(id: string): Promise<ResolvedAudio> {
     let audio: ResolvedAudio;
     try {
-      audio = await this.plain.run(() => this.attempt(id, 'plain'));
+      audio = await this.plain.run(() => this.plainRun(id));
     } catch (error) {
       if (!(error instanceof ExtractorFailure)) throw error;
       audio = await this.node.run(() => this.attempt(id, 'node'));
@@ -375,16 +407,30 @@ export class Extractor {
     }
   }
 
-  private async attempt(id: string, tier: Tier): Promise<ResolvedAudio> {
+  /** The plain tier: trimmed with the visitor id held, and on a bot wall untrimmed, once. */
+  private async plainRun(id: string): Promise<ResolvedAudio> {
+    const visitor = this.opts.visitor?.() ?? null;
+    const config = visitor === null ? null : trimmedConfig(visitor);
+    if (config === null) return this.attempt(id, 'plain');
+    try {
+      return await this.attempt(id, 'plain', config);
+    } catch (error) {
+      if (!(error instanceof ExtractorFailure) || error.reason !== 'blocked') throw error;
+      return this.attempt(id, 'plain');
+    }
+  }
+
+  private async attempt(id: string, tier: Tier, config?: string): Promise<ResolvedAudio> {
     const { home } = this.opts;
     try {
       mkdirSync(home, { recursive: true });
     } catch {
       throw new ExtractorFailure('extractorError');
     }
-    const result = await runChild(this.opts.path(), extractorArgs(id, tier), {
+    const result = await runChild(this.opts.path(), extractorArgs(id, tier, config !== undefined), {
       env: { HOME: home, PATH: CHILD_PATH },
       cwd: home,
+      ...(config === undefined ? {} : { stdin: config }),
       ...(this.opts.spawn === undefined ? {} : { spawn: this.opts.spawn }),
       ...(this.opts.kill === undefined ? {} : { kill: this.opts.kill }),
       ...(this.opts.timeoutMs === undefined ? {} : { timeoutMs: this.opts.timeoutMs }),

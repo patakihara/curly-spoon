@@ -92,6 +92,8 @@ export interface MusicDeps {
   searchLimitMs?: number;
   /** YouTube's player, asked ahead of the extractor. */
   direct?: DirectResolve;
+  /** The visitor id YouTube Music's answers named last, which trims the extractor's plain run. */
+  visitor?: () => string | null;
 }
 
 /** What the canary last said of the direct resolve, for admin. */
@@ -164,6 +166,7 @@ export class Music {
       now,
       ...(spawn === undefined ? {} : { spawn }),
       ...(deps.direct === undefined ? {} : { direct: deps.direct }),
+      ...(deps.visitor === undefined ? {} : { visitor: deps.visitor }),
       onDirectFailed: (reason) =>
         log.warn({ reason }, 'the direct resolve did not answer, so the extractor does'),
     });
@@ -490,6 +493,7 @@ export function ytMusic(
     streamFetch,
     client,
     direct,
+    visitor: () => visitor.get(),
     canary: canaryOf({
       search: (query) => client.search(query),
       fetch: streamFetch,
