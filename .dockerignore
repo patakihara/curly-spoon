@@ -34,3 +34,5 @@ server/src/adapters/http/*
 !server/src/adapters/http/fetch.ts
 !server/src/adapters/http/publicFetch.ts
 !server/src/adapters/http/unavailable.ts
+# Not run until the song steps are registered; M3.keep's registration takes these lines out.
+server/src/music/opus
