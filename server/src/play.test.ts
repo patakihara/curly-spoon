@@ -839,6 +839,14 @@ Object.assign((householdPlay.response.body as { json: object }).json, { currentT
 const episodePlay = absRecording('episode-play');
 const episodeId = jsonOf<{ episodeId: string }>(episodePlay).episodeId;
 const showId = jsonOf<{ libraryItemId: string }>(episodePlay).libraryItemId;
+/** The tracks the recorded album holds, in order: Instant Mix was recorded for its last. */
+const albumTrackIds = jsonOf<{ Items: { Id: string }[] }>(
+  jfRecording('index-album-tracks-1'),
+).Items.map((t) => t.Id);
+/** Instant Mix for that last track, as Auralis's own API key read it. */
+const householdMix = jsonOf<{ Items: { Id: string }[] }>(
+  jfRecording('jf-household-instant-mix'),
+).Items.map((t) => t.Id);
 const householdTrack = jsonOf<{ Items: { Id: string; AlbumId: string; Name: string }[] }>(
   jfRecording('jf-household-track'),
 ).Items[0]!;
@@ -890,6 +898,7 @@ async function householdServer(options: { ownSessionIds?: boolean } = {}) {
       absRecording('index-show-1'),
       jfRecording('jf-household-track'),
       jfRecording('jf-household-album'),
+      jfRecording('jf-household-instant-mix'),
       jfRecording('jf-album-tracks'),
       jfRecording('jf-stream'),
     ],
@@ -1235,6 +1244,31 @@ describe('[M3.requests/d] a household play, for someone whose own accounts do no
 
     expect((await s.search('Three Poems'))[0]!.inYourLibrary).toBe(true);
     expect((await s.search(householdTrack.Name))[0]!.inYourLibrary).toBe(true);
+  });
+});
+
+describe('[M1.sessions/e] radio from music you own, for someone with no Jellyfin account', () => {
+  it('[M1.sessions/e] follows the album with Instant Mix read through Auralis’s own Jellyfin key, kept to what the index holds', async () => {
+    const s = await householdServer();
+    const last = albumTrackIds.at(-1)!;
+    const put = await s.app.inject({
+      method: 'POST',
+      url: '/api/queues/music/items',
+      headers: s.as('nora'),
+      payload: { ref: { source: 'jellyfin', id: last }, how: 'now' },
+    });
+    expect(put.statusCode, put.body).toBe(200);
+
+    // The mix holds tracks the index does not; only one it holds plays for someone with no account.
+    const picked = householdMix.find((id) => id !== last && albumTrackIds.includes(id));
+    expect(householdMix.some((id) => !albumTrackIds.includes(id))).toBe(true);
+    await vi.waitFor(async () => {
+      const view = (await s.get('/api/queues/music')).json<{ autoplay: { ref: object } | null }>();
+      expect(view.autoplay?.ref).toEqual({ source: 'jellyfin', id: picked });
+    });
+    const mix = s.sent.filter((c) => c.path.endsWith('/InstantMix'));
+    expect(mix.map((c) => c.path)).toEqual([`/Items/${last}/InstantMix`]);
+    expect(mix[0]!.authorization).toContain('Token="household"');
   });
 });
 

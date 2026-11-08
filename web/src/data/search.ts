@@ -165,8 +165,12 @@ const REFUSED: Record<string, string> = {
 };
 const COULD_NOT_PLAY = 'This song could not play.';
 
-/** What the one banner says of a refusal: why, and for one met in a queue, that the music went on. */
-function refusedMessage({ error, skipped, stoppedAfter }: Refused): string {
+/**
+ * What the one banner says of a refusal: why, and for one met in a queue, that the music went on;
+ * or that the music stopped, autoplay having nothing after the queue.
+ */
+function refusedMessage({ error, skipped, stoppedAfter, ranOut }: Refused): string {
+  if (ranOut === true) return 'Stopped: autoplay found nothing to play after this song.';
   if (stoppedAfter !== undefined) {
     return `Stopped: ${stoppedAfter} songs in a row could not play.`;
   }

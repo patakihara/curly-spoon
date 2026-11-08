@@ -5,7 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { AdapterError, type FetchLike } from '../http/fetch.js';
 import { type Recording, recordingSchema } from '../http/recording.js';
 import { replayFetch } from '../http/replay.js';
-import { clientVersion, SONGS_FILTER, YtMusicClient } from './client.js';
+import { inspect } from 'node:util';
+import { clientVersion, SONGS_FILTER, Visitor, YtMusicClient } from './client.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const recording = (call: string) =>
@@ -281,4 +282,47 @@ describe('[M3.ytmusic/a] what InnerTube renames is told of', () => {
     expect(bad.length).toBeGreaterThan(0);
   });
   /* eslint-enable @typescript-eslint/no-explicit-any */
+});
+
+describe("[M3.ytmusic/a] the visitor id YouTube Music's answers name", () => {
+  const named = (r: Recording, id: unknown) =>
+    edited(r, (json) => {
+      (json as Record<string, unknown>).responseContext = { visitorData: id };
+    });
+  const visiting = (recordings: Recording[], visitor: Visitor) =>
+    new YtMusicClient({
+      baseUrl: 'http://upstream.invalid',
+      fetch: replayFetch(recordings),
+      now: () => NOW,
+      visitor,
+    });
+
+  it('[M3.ytmusic/a] a search keeps the id it names, and a radio after it the newer one', async () => {
+    const visitor = new Visitor();
+    await visiting([named(searchSongs, 'CgtGaXJzdFZpc2l0b3I')], visitor).search('q');
+    expect(visitor.get()).toBe('CgtGaXJzdFZpc2l0b3I');
+    await visiting([named(nextRadio, 'CgtTZWNvbmQlM0QlM0Q')], visitor).radio(SEED);
+    expect(visitor.get()).toBe('CgtTZWNvbmQlM0QlM0Q');
+  });
+
+  it('[M3.ytmusic/a] an answer naming none, or something not shaped like one, leaves the id held', async () => {
+    const visitor = new Visitor();
+    visitor.keep('CgtGaXJzdFZpc2l0b3I');
+    await visiting([named(searchSongs, 'bad id\r\nX-Other: 1')], visitor).search('q');
+    const bare = edited(searchSongs, (json) => {
+      delete (json as Record<string, unknown>).responseContext;
+    });
+    await visiting([bare], visitor).search('q');
+    expect(visitor.get()).toBe('CgtGaXJzdFZpc2l0b3I');
+  });
+
+  it('[M3.ytmusic/a] the id never prints, and dropping it leaves none', () => {
+    const visitor = new Visitor();
+    visitor.keep('CgtGaXJzdFZpc2l0b3I');
+    expect(`${String(visitor)} ${JSON.stringify({ visitor })} ${inspect(visitor)}`).not.toContain(
+      'CgtGaXJz',
+    );
+    visitor.drop();
+    expect(visitor.get()).toBeNull();
+  });
 });

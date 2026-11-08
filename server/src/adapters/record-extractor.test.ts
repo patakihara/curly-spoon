@@ -15,6 +15,7 @@ import {
 } from './record-extractor.js';
 
 const ADDRESS = '85.76.1.2';
+const VISITOR = 'CgtWaXNpdG9yMTIzKKCB';
 const STREAM =
   `https://rr3---sn-abcdef12.googlevideo.com/videoplayback?expire=1794034003&ei=e1&ip=${ADDRESS}` +
   '&id=o-AbCdEf0123456789&itag=251&source=youtube&requiressl=yes&mh=xy&mm=31&mn=sn-abcdef12' +
@@ -148,6 +149,7 @@ describe('the recording run', () => {
       const special = overrides(line, stdin);
       if (special !== undefined) return Promise.resolve(special);
       if (line.includes("'--version'")) return Promise.resolve(ok('2026.10.26\n'));
+      if (line.includes('visitorData')) return Promise.resolve(ok(`${VISITOR}\n`));
       if (line.includes('cdn-cgi/trace')) return Promise.resolve(ok(`ip=${ADDRESS}\n`));
       if (line.includes("'--dump-json'")) {
         return Promise.resolve(
@@ -186,9 +188,14 @@ describe('the recording run', () => {
       longTrack: KNOWN_TRACK,
     });
     expect(readdirSync(join(dir, 'ytdlp', 'recordings')).sort()).toEqual(
-      ['error-botwall', 'error-unavailable', 'info-long', 'info-node', 'info-plain'].map(
-        (call) => `${call}.json`,
-      ),
+      [
+        'error-botwall',
+        'error-unavailable',
+        'info-long',
+        'info-node',
+        'info-plain',
+        'info-trimmed',
+      ].map((call) => `${call}.json`),
     );
     expect(readdirSync(join(dir, 'googlevideo', 'recordings')).sort()).toEqual(
       ['range-403', 'range-416', 'range-chunk', 'range-head', 'range-video'].map(
@@ -220,6 +227,26 @@ describe('the recording run', () => {
     const [ssh, host, line, ...rest] = onServer('sh', '-c', `cd /tmp && echo 'x' "$HOME"`);
     expect([ssh, host, rest]).toEqual(['ssh', 'mediaserver', []]);
     expect(line).toBe(`'sh' '-c' 'cd /tmp && echo '\\''x'\\'' "$HOME"'`);
+  });
+
+  it('[M3.ytmusic] records the trimmed run with the visitor id on its stdin alone, and in no recording', async () => {
+    const configs: string[] = [];
+    const { exec, lines } = server((line, stdin) => {
+      if (line.includes("'--config-locations'") && stdin !== undefined) configs.push(stdin);
+      return undefined;
+    });
+    const dir = root();
+    await recordExtractor({ exec, out: () => undefined, root: dir, longTrack: KNOWN_TRACK });
+    expect(configs).toHaveLength(1);
+    expect(configs[0]).toContain(`visitor_data=${VISITOR}`);
+    for (const line of lines) expect(line).not.toContain(VISITOR);
+    for (const sub of ['ytdlp', 'googlevideo']) {
+      for (const file of readdirSync(join(dir, sub, 'recordings'))) {
+        expect(readFileSync(join(dir, sub, 'recordings', file), 'utf8'), file).not.toContain(
+          VISITOR,
+        );
+      }
+    }
   });
 
   it('never sends a URL on a command line, where the server keeps it in its process list', async () => {

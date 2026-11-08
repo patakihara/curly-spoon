@@ -55,7 +55,7 @@ Anything you say about Auralis takes one fixed path, each step safe to interrupt
 
 1. **Filed.** One file per idea in `docs/inbox/`: your words verbatim, where it came from, and the date. The session replies `Noted: <title>` (in the thread, for a comment) and carries on. Filing never touches the plan or the work in progress, unless you say "do it now", answer one of its outbox items, or tell the session itself to stop or pause.
 2. **Sorted, at set moments:** each milestone demo, when you say "let's go through my ideas", or once about ten are waiting. The orchestrator hands each idea to a fresh subagent, which reads it and the whole plan and decides which it is:
-   - **new work**: a new plan item, with an id and a concrete "done when", in the milestone where it belongs (usually a later one; the milestone in progress only takes small fixes to what it builds, or anything you pulled in);
+   - **new work**: a new plan item, in the milestone where it belongs (usually a later one; the milestone in progress only takes small fixes to what it builds, or anything you pulled in);
    - **a change** to an existing item: that item is rewritten in place, including its "done when";
    - **a bug** in something done: a check that catches it is added to that item, which reopens it;
    - **already planned**: the existing sentence is sharpened if your words add something;

@@ -36,7 +36,7 @@ Fixed inputs, not re-opened.
 #### Library and getting things
 
 - Library pages show only what you own plus what you've requested.
-- **Each person sees their own library** (what they added, requested, subscribed to or played). Files stay shared; "show everyone's library" is a setting, off by default, and search always covers the household.
+- **Each person sees their own library**. Files stay shared; "show everyone's library" is a setting, off by default, and search always covers the household.
 - Artist and author pages show the whole catalogue, unowned titles greyed out and requestable, **on by default**, with a setting to turn it off.
 - Books come through Prowlarr first, with the AudiobookBay scraper as fallback, via qBittorrent or Transmission. Approval is automatic by default.
 - **Music follows AbleMusicPlayer's approach**: YouTube Music is the catalogue and the audio source, reached through a NewPipe-style extractor, with Spotify used only to import playlists.

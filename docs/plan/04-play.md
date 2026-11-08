@@ -41,7 +41,7 @@ The rule: **the server works out how to play something; the clients just play th
 
 | Queue runs out | What autoplay does |
 |---|---|
-| Music | The rest of the album, then similar music you own (Jellyfin's Instant Mix); from M3, YouTube Music's radio for the last track (not personalised) joins it. Then the recommendation algorithm under Discovery takes over. |
+| Music | The rest of the album, then similar music you own (Jellyfin's Instant Mix); from M3, YouTube Music's radio for the last track (not personalised) joins it. Then the recommendation algorithm under Discovery takes over. With no Jellyfin account, Instant Mix goes through Auralis's own. One source failing leaves the others; when none has anything, the music stops and says why. |
 | Spoken | The show's next unplayed episode, whatever its page's sort (oldest first for serial shows, newest first for episodic ones, from the feed's `itunes:type`), or the next chapter or book in the series. Later, the next entry of your listening list. |
 
 ### Lists that aren't queues

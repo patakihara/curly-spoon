@@ -666,6 +666,13 @@ describe('[M3.ytmusic] songs from outside the library', () => {
     ]);
   });
 
+  it('[M3.ytmusic] says in the one banner that the music stopped with nothing for autoplay', () => {
+    const refused = { ref, error: null, ranOut: true as const };
+    expect(searchHeard(searchData(answer(), empty), { music: false, refused }).errors).toEqual([
+      { message: 'Stopped: autoplay found nothing to play after this song.' },
+    ]);
+  });
+
   it('[M3.ytmusic] says in the one banner that a run of songs stopped the player', () => {
     const refused = { ref, error: null, skipped: { title: 'A' }, stoppedAfter: 5 };
     expect(searchHeard(searchData(answer(), empty), { music: false, refused }).errors).toEqual([

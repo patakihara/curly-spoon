@@ -17,7 +17,7 @@
         "context": {
           "client": {
             "clientName": "WEB_REMIX",
-            "clientVersion": "1.20261107.01.00",
+            "clientVersion": "1.20261108.01.00",
             "hl": "en",
             "gl": "FI"
           }
@@ -34,6 +34,9 @@
     },
     "body": {
       "json": {
+        "responseContext": {
+          "visitorData": "<token>"
+        },
         "contents": {
           "tabbedSearchResultsRenderer": {
             "tabs": [
@@ -206,6 +209,7 @@
                                               "navigationEndpoint": {
                                                 "watchEndpoint": {
                                                   "videoId": "0Om-vyXny3Y",
+                                                  "playerParams": "0gcJCTUC0OBS9m0t",
                                                   "watchEndpointMusicSupportedConfigs": {
                                                     "watchEndpointMusicConfig": {
                                                       "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
@@ -435,244 +439,6 @@
                                       "thumbnail": {
                                         "thumbnails": [
                                           {
-                                            "url": "https://yt3.googleusercontent.com/W3QYju3gwz-laWklZgS9G-Urbgj27uSOP9Daz9Ld30rZBN4r0i1e74Q0CCnsEmr9HDdINQDGYX_mUPnw=w60-h60-l90-rj",
-                                            "width": 60,
-                                            "height": 60
-                                          },
-                                          {
-                                            "url": "https://yt3.googleusercontent.com/W3QYju3gwz-laWklZgS9G-Urbgj27uSOP9Daz9Ld30rZBN4r0i1e74Q0CCnsEmr9HDdINQDGYX_mUPnw=w120-h120-l90-rj",
-                                            "width": 120,
-                                            "height": 120
-                                          }
-                                        ]
-                                      },
-                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
-                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
-                                    }
-                                  },
-                                  "flexColumns": [
-                                    {
-                                      "musicResponsiveListItemFlexColumnRenderer": {
-                                        "text": {
-                                          "runs": [
-                                            {
-                                              "text": "Never Give You Up",
-                                              "navigationEndpoint": {
-                                                "watchEndpoint": {
-                                                  "videoId": "DPpWrwz3Iao",
-                                                  "watchEndpointMusicSupportedConfigs": {
-                                                    "watchEndpointMusicConfig": {
-                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
-                                                    }
-                                                  }
-                                                }
-                                              }
-                                            }
-                                          ]
-                                        },
-                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
-                                      }
-                                    },
-                                    {
-                                      "musicResponsiveListItemFlexColumnRenderer": {
-                                        "text": {
-                                          "runs": [
-                                            {
-                                              "text": "Jerry Butler",
-                                              "navigationEndpoint": {
-                                                "browseEndpoint": {
-                                                  "browseId": "UCAbK3ceQj-rsfPv7qvYCpqg",
-                                                  "browseEndpointContextSupportedConfigs": {
-                                                    "browseEndpointContextMusicConfig": {
-                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
-                                                    }
-                                                  }
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "text": " • "
-                                            },
-                                            {
-                                              "text": "The Very Best Of Jerry Butler",
-                                              "navigationEndpoint": {
-                                                "browseEndpoint": {
-                                                  "browseId": "MPREb_Um0rFSEiBXr",
-                                                  "browseEndpointContextSupportedConfigs": {
-                                                    "browseEndpointContextMusicConfig": {
-                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
-                                                    }
-                                                  }
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "text": " • "
-                                            },
-                                            {
-                                              "text": "2:56"
-                                            }
-                                          ],
-                                          "accessibility": {
-                                            "accessibilityData": {
-                                              "label": "Jerry Butler • The Very Best Of Jerry Butler • 2 minutes, 56 seconds"
-                                            }
-                                          }
-                                        },
-                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
-                                      }
-                                    },
-                                    {
-                                      "musicResponsiveListItemFlexColumnRenderer": {
-                                        "text": {
-                                          "runs": [
-                                            {
-                                              "text": "9.6M plays"
-                                            }
-                                          ],
-                                          "accessibility": {
-                                            "accessibilityData": {
-                                              "label": "9.6 million plays"
-                                            }
-                                          }
-                                        },
-                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
-                                      }
-                                    }
-                                  ],
-                                  "playlistItemData": {
-                                    "videoId": "DPpWrwz3Iao"
-                                  },
-                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
-                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
-                                }
-                              },
-                              {
-                                "musicResponsiveListItemRenderer": {
-                                  "thumbnail": {
-                                    "musicThumbnailRenderer": {
-                                      "thumbnail": {
-                                        "thumbnails": [
-                                          {
-                                            "url": "https://yt3.googleusercontent.com/MWLQzu82f2wtTlvOw3LWbwU1ve7tPx1LsWenj8UmfUy-bMhBOLz4HL37z0aIdz11q5D6psVDapYykws=w60-h60-l90-rj",
-                                            "width": 60,
-                                            "height": 60
-                                          },
-                                          {
-                                            "url": "https://yt3.googleusercontent.com/MWLQzu82f2wtTlvOw3LWbwU1ve7tPx1LsWenj8UmfUy-bMhBOLz4HL37z0aIdz11q5D6psVDapYykws=w120-h120-l90-rj",
-                                            "width": 120,
-                                            "height": 120
-                                          }
-                                        ]
-                                      },
-                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
-                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
-                                    }
-                                  },
-                                  "flexColumns": [
-                                    {
-                                      "musicResponsiveListItemFlexColumnRenderer": {
-                                        "text": {
-                                          "runs": [
-                                            {
-                                              "text": "Never Gonna Give You Up (Rick Astley)",
-                                              "navigationEndpoint": {
-                                                "watchEndpoint": {
-                                                  "videoId": "4ywFyK8cCg4",
-                                                  "watchEndpointMusicSupportedConfigs": {
-                                                    "watchEndpointMusicConfig": {
-                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
-                                                    }
-                                                  }
-                                                }
-                                              }
-                                            }
-                                          ]
-                                        },
-                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
-                                      }
-                                    },
-                                    {
-                                      "musicResponsiveListItemFlexColumnRenderer": {
-                                        "text": {
-                                          "runs": [
-                                            {
-                                              "text": "Stegosaurus Rex",
-                                              "navigationEndpoint": {
-                                                "browseEndpoint": {
-                                                  "browseId": "UCqvY_uIEMtIvF2qLOupYGYg",
-                                                  "browseEndpointContextSupportedConfigs": {
-                                                    "browseEndpointContextMusicConfig": {
-                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
-                                                    }
-                                                  }
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "text": " • "
-                                            },
-                                            {
-                                              "text": "The Dino Soars",
-                                              "navigationEndpoint": {
-                                                "browseEndpoint": {
-                                                  "browseId": "MPREb_tMhvbjTTEz5",
-                                                  "browseEndpointContextSupportedConfigs": {
-                                                    "browseEndpointContextMusicConfig": {
-                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
-                                                    }
-                                                  }
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "text": " • "
-                                            },
-                                            {
-                                              "text": "4:28"
-                                            }
-                                          ],
-                                          "accessibility": {
-                                            "accessibilityData": {
-                                              "label": "Stegosaurus Rex • The Dino Soars • 4 minutes, 28 seconds"
-                                            }
-                                          }
-                                        },
-                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
-                                      }
-                                    },
-                                    {
-                                      "musicResponsiveListItemFlexColumnRenderer": {
-                                        "text": {
-                                          "runs": [
-                                            {
-                                              "text": "24K plays"
-                                            }
-                                          ],
-                                          "accessibility": {
-                                            "accessibilityData": {
-                                              "label": "24 thousand plays"
-                                            }
-                                          }
-                                        },
-                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
-                                      }
-                                    }
-                                  ],
-                                  "playlistItemData": {
-                                    "videoId": "4ywFyK8cCg4"
-                                  },
-                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
-                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
-                                }
-                              },
-                              {
-                                "musicResponsiveListItemRenderer": {
-                                  "thumbnail": {
-                                    "musicThumbnailRenderer": {
-                                      "thumbnail": {
-                                        "thumbnails": [
-                                          {
                                             "url": "https://yt3.googleusercontent.com/7hAxBy2heuAxHggUnmNA5F24b61_qaK_CVWMbhmSRC17oRsWYVg1ccYvltmn3PuGLBSHuY-oUbV2bw0nOA=w60-h60-l90-rj",
                                             "width": 60,
                                             "height": 60
@@ -765,12 +531,12 @@
                                         "text": {
                                           "runs": [
                                             {
-                                              "text": "45K plays"
+                                              "text": "863 plays"
                                             }
                                           ],
                                           "accessibility": {
                                             "accessibilityData": {
-                                              "label": "45 thousand plays"
+                                              "label": "863 plays"
                                             }
                                           }
                                         },
@@ -780,6 +546,141 @@
                                   ],
                                   "playlistItemData": {
                                     "videoId": "4AU-NV7s6sg"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/sOf0p1tBD1-nTJxltoRfKz0g1Wgxk43peLyvhBJBeIPbAjYwcU9zK3q77ndFq9KxY0z2YVKvqq_htbU=w60-h60-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/sOf0p1tBD1-nTJxltoRfKz0g1Wgxk43peLyvhBJBeIPbAjYwcU9zK3q77ndFq9KxY0z2YVKvqq_htbU=w120-h120-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "(When You Gonna) Give It Up to Me [Radio Version]",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "aUajNfZwkjY",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Sean Paul",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UCnCNNA05VZcH8wVJYtC-6ew",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " & "
+                                            },
+                                            {
+                                              "text": "Keyshia Cole",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UCyHB0BFvGwsLPBFXutnr7LQ",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "(When You Gonna) Give It Up to Me",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_r661h9JCWWC",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "4:04"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "Sean Paul & Keyshia Cole • (When You Gonna) Give It Up to Me • 4 minutes, 4 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "803M plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "803 million plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "aUajNfZwkjY"
                                   },
                                   "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
                                   "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
@@ -1003,12 +904,12 @@
                                         "text": {
                                           "runs": [
                                             {
-                                              "text": "22K plays"
+                                              "text": "23K plays"
                                             }
                                           ],
                                           "accessibility": {
                                             "accessibilityData": {
-                                              "label": "22 thousand plays"
+                                              "label": "23 thousand plays"
                                             }
                                           }
                                         },
@@ -1018,6 +919,125 @@
                                   ],
                                   "playlistItemData": {
                                     "videoId": "TeoXlGh22B8"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/BSfyHnz0Y52jc8ta0dY2s7NCB3MS0eX6_LaHZLlcI-YgwnvQgt3iPeTjaoYL3bWwmjFTq4LRj0YPtv0=w60-h60-s-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/BSfyHnz0Y52jc8ta0dY2s7NCB3MS0eX6_LaHZLlcI-YgwnvQgt3iPeTjaoYL3bWwmjFTq4LRj0YPtv0=w120-h120-s-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Never Give Up",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "LhpsXSIGnPk",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Yolanda Adams",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UCdzcv2b9_W98BTx5VChLhww",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Believe",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_IpYRTFBqtii",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "5:20"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "Yolanda Adams • Believe • 5 minutes, 20 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "32M plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "32 million plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "LhpsXSIGnPk"
                                   },
                                   "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
                                   "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
@@ -1205,7 +1225,7 @@
             ]
           }
         },
-        "trimmed": "Trimmed by the recorder: rows cut to the first few, and everything Auralis never reads taken out (tracking values, menus, continuations, the session context)."
+        "trimmed": "Trimmed by the recorder: rows cut to the first few, and everything Auralis never reads taken out (tracking values, menus, continuations, the session context but its visitor id)."
       }
     }
   }

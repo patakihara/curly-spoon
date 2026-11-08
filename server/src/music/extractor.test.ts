@@ -16,6 +16,7 @@ import {
   extractorArgs,
   runChild,
   type SpawnLike,
+  trimmedConfig,
 } from './extractor.js';
 import { audioFormatSchema, InfoRefused, isStreamHost, parseInfo, pickFormat } from './schemas.js';
 
@@ -43,18 +44,27 @@ type Answer = { rc: number; stdout?: unknown; stderr?: string } | 'hold';
 
 /** A spawn that answers from a script and says what it was asked. */
 function fakeSpawn(answer: (args: string[]) => Answer) {
-  const calls: { file: string; args: string[]; env: NodeJS.ProcessEnv }[] = [];
+  const calls: {
+    file: string;
+    args: string[];
+    env: NodeJS.ProcessEnv;
+    stdin: string | null;
+  }[] = [];
   const held: (() => void)[] = [];
   let live = 0;
   let most = 0;
   const spawn: SpawnLike = (file, args, options) => {
-    calls.push({ file, args, env: options.env ?? {} });
+    const call = { file, args, env: options.env ?? {}, stdin: null as string | null };
+    calls.push(call);
     live += 1;
     most = Math.max(most, live);
     const child = new EventEmitter() as ChildProcess & EventEmitter;
     const stdout = new PassThrough();
     const stderr = new PassThrough();
-    Object.assign(child, { stdout, stderr, pid: 4242 });
+    const stdinOpen = Array.isArray(options.stdio) && options.stdio[0] === 'pipe';
+    const stdin = stdinOpen ? new PassThrough() : null;
+    stdin?.on('data', (data: Buffer) => (call.stdin = (call.stdin ?? '') + data.toString()));
+    Object.assign(child, { stdout, stderr, stdin, pid: 4242 });
     const reply = (a: Exclude<Answer, 'hold'>) =>
       setImmediate(() => {
         if (a.stdout !== undefined) stdout.write(JSON.stringify(a.stdout));
@@ -83,8 +93,14 @@ afterEach(() => {
   for (const dir of homes.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
-function extractor(spawn: SpawnLike, now = () => NOW) {
-  return new Extractor({ path: () => '/opt/yt-dlp', home: home(), now, spawn });
+function extractor(spawn: SpawnLike, now = () => NOW, visitor?: () => string | null) {
+  return new Extractor({
+    path: () => '/opt/yt-dlp',
+    home: home(),
+    now,
+    spawn,
+    ...(visitor === undefined ? {} : { visitor }),
+  });
 }
 
 const tick = () => new Promise((go) => setImmediate(go));
@@ -253,15 +269,114 @@ describe('[M3.ytmusic/a] no client text reaches the command line as a flag', () 
     expect(args.indexOf('--')).toBe(args.length - 2);
   });
 
-  it('[M3.ytmusic/a] pins no client and skips no page, in either tier', () => {
+  it('[M3.ytmusic] pins no client, and skips pages only when trimmed, only in the plain tier', () => {
     for (const tier of ['plain', 'node'] as const) {
       const line = extractorArgs(KNOWN, tier).join(' ');
-      expect(line).not.toMatch(/player_client|player_skip|extractor-args/);
+      expect(line).not.toMatch(/player_client|player_skip|extractor-args|config-locations/);
       expect(line).toContain('--no-config');
       expect(line).toContain('--no-cache-dir');
     }
+    expect(extractorArgs(KNOWN, 'node', true).join(' ')).not.toContain('config-locations');
+    const trimmed = extractorArgs(KNOWN, 'plain', true);
+    expect(trimmed.slice(-4)).toEqual(['--config-locations', '-', '--', KNOWN]);
+    expect(trimmed.join(' ')).not.toMatch(/player_client|player_skip|visitor/);
     expect(extractorArgs(KNOWN, 'plain').join(' ')).not.toContain('--js-runtimes');
     expect(extractorArgs(KNOWN, 'node').join(' ')).toContain('--js-runtimes node');
+  });
+});
+
+describe('[M3.ytmusic] the plain tier trimmed with a visitor id', () => {
+  const VISITOR = 'CgtWaXNpdG9yMTIzKKCB';
+  const botWall = recorded('error-botwall');
+  const trimmed = recorded('info-trimmed');
+  const isTrimmed = (args: string[]) => args.includes('--config-locations');
+
+  it('[M3.ytmusic] the config it reads skips the page, its next call and the manifest, and passes the id', () => {
+    expect(trimmedConfig(VISITOR)).toBe(
+      `--extractor-args "youtube:player_skip=webpage,configs,initial_data;visitor_data=${VISITOR};skip=hls"\n`,
+    );
+    for (const bad of ['a"b c" --exec x', 'short', `${VISITOR}\n--exec`]) {
+      expect(trimmedConfig(bad)).toBeNull();
+    }
+  });
+
+  it('[M3.ytmusic] the recorded trimmed answer keeps its audio-only formats, and 251 plays', () => {
+    expect(trimmed.rc).toBe(0);
+    const { formats } = parseInfo(trimmed.stdout);
+    expect(formats.length).toBeGreaterThan(0);
+    expect(formats.every((format) => format.mime.startsWith('audio/'))).toBe(true);
+    expect(pickFormat(formats)?.itag).toBe(251);
+  });
+
+  it('[M3.ytmusic] with an id held, one trimmed run answers, the id on stdin alone', async () => {
+    const { spawn, calls } = fakeSpawn(() => ({ rc: 0, stdout: trimmed.stdout }));
+    const audio = await extractor(
+      spawn,
+      () => NOW,
+      () => VISITOR,
+    ).resolve(KNOWN);
+    expect(audio).toMatchObject({ tier: 'plain', itag: 251 });
+    expect(calls).toHaveLength(1);
+    expect(isTrimmed(calls[0]!.args)).toBe(true);
+    expect(calls[0]!.stdin).toBe(trimmedConfig(VISITOR));
+    expect(JSON.stringify(calls[0]!.args)).not.toContain(VISITOR);
+    expect(JSON.stringify(calls[0]!.env)).not.toContain(VISITOR);
+  });
+
+  it('[M3.ytmusic] with no id held, or none shaped like one, the run is untrimmed with no stdin', async () => {
+    for (const visitor of [() => null, () => 'not an id']) {
+      const { spawn, calls } = fakeSpawn(() => ({ rc: 0, stdout: plain.stdout }));
+      await extractor(spawn, () => NOW, visitor).resolve(KNOWN);
+      expect(calls).toHaveLength(1);
+      expect(isTrimmed(calls[0]!.args)).toBe(false);
+      expect(calls[0]!.stdin).toBeNull();
+    }
+  });
+
+  it('[M3.ytmusic] a bot wall on the trimmed run runs it untrimmed once, then node', async () => {
+    const { spawn, calls } = fakeSpawn(() => ({ rc: 1, stderr: botWall.stderr }));
+    const failed = await extractor(
+      spawn,
+      () => NOW,
+      () => VISITOR,
+    )
+      .resolve(KNOWN)
+      .catch((error: unknown) => error);
+    expect(failed).toMatchObject({ reason: 'blocked' });
+    expect(calls.map(({ args }) => [isTrimmed(args), args.includes('--js-runtimes')])).toEqual([
+      [true, false],
+      [false, false],
+      [false, true],
+    ]);
+    expect(inspect(failed, { depth: 5 })).not.toContain(VISITOR);
+  });
+
+  it('[M3.ytmusic] the untrimmed retry answers when it passes', async () => {
+    const { spawn, calls } = fakeSpawn((args) =>
+      isTrimmed(args) ? { rc: 1, stderr: botWall.stderr } : { rc: 0, stdout: plain.stdout },
+    );
+    const audio = await extractor(
+      spawn,
+      () => NOW,
+      () => VISITOR,
+    ).resolve(KNOWN);
+    expect(audio.tier).toBe('plain');
+    expect(calls).toHaveLength(2);
+  });
+
+  it('[M3.ytmusic] any other failure of the trimmed run goes to node, as the plain tier did', async () => {
+    const { spawn, calls } = fakeSpawn((args) =>
+      isTrimmed(args)
+        ? { rc: 1, stderr: 'ERROR: something else' }
+        : { rc: 0, stdout: withRuntime.stdout },
+    );
+    const audio = await extractor(
+      spawn,
+      () => NOW,
+      () => VISITOR,
+    ).resolve(KNOWN);
+    expect(audio.tier).toBe('node');
+    expect(calls).toHaveLength(2);
   });
 });
 
@@ -480,6 +595,36 @@ describe('[M3.ytmusic/a] the child itself, a real process', () => {
       .filter((name) => !['PWD', 'OLDPWD', 'SHLVL', '_'].includes(name!));
     expect(names.sort()).toEqual(['HOME', 'PATH']);
     expect(readFileSync(join(dir, 'cwd'), 'utf8').trim()).toBe(dir);
+  });
+
+  it('[M3.ytmusic] a trimmed run reads the visitor id on stdin; its command line and environment never hold it', async () => {
+    const visitor = 'CgtWaXNpdG9yMTIzKKCB';
+    const dir = home();
+    const path = script(
+      dir,
+      // Each tier's run appends: the trimmed one, then node's.
+      'cat >> "$HOME/stdin"; echo "$@" >> "$HOME/args"; env >> "$HOME/env"; cat /proc/$$/cmdline >> "$HOME/cmdline"; exit 1',
+    );
+    const e = new Extractor({
+      path: () => path,
+      home: dir,
+      now: () => NOW,
+      visitor: () => visitor,
+    });
+    await e.resolve(KNOWN).catch(() => undefined);
+    expect(readFileSync(join(dir, 'stdin'), 'utf8')).toBe(trimmedConfig(visitor));
+    for (const file of ['args', 'env', 'cmdline']) {
+      expect(readFileSync(join(dir, file), 'utf8'), file).not.toContain(visitor);
+    }
+  });
+
+  it('[M3.ytmusic] a child that exits without reading its stdin fails as itself, not the server', async () => {
+    const result = await runChild('/bin/sh', ['-c', 'exit 3'], {
+      env: { PATH: '/usr/bin:/bin' },
+      cwd: home(),
+      stdin: 'x'.repeat(4 * 1024 * 1024),
+    });
+    expect(result.rc).toBe(3);
   });
 
   it('[M3.ytmusic/a] is killed at its time limit, with the children it started', async () => {

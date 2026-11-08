@@ -6,6 +6,8 @@ import { AbsClient } from './audiobookshelf/client.js';
 import { AdapterError, type FetchLike } from './http/fetch.js';
 import { type Recording, recordingSchema } from './http/recording.js';
 import { replayFetch, standInsBeside } from './http/replay.js';
+import { scanRecording } from './http/scan.js';
+import { PLACEHOLDER } from './http/scrub.js';
 import { JellyfinClient, TICKS_PER_SECOND } from './jellyfin/client.js';
 import { LRCLIB_USER_AGENT, LrclibClient } from './lrclib/client.js';
 import { LYRICS_KEPT_LINES, LYRICS_TRIMMED } from './record-lyrics.js';
@@ -638,6 +640,26 @@ describe("Jellyfin's played tracks, recorded for M3.requests", () => {
   });
 });
 
+describe("[M3.ytmusic] Jellyfin's Instant Mix as Auralis's own API key reads it", () => {
+  const mix = recording('jellyfin', 'jf-household-instant-mix');
+
+  it("[M3.ytmusic] is asked by the server, with no user, for the recorded album's last track", async () => {
+    const last = (json(sessions.album.response.body) as { Items: { Id: string }[] }).Items.at(-1);
+    expect(mix.request.path).toBe(`/Items/${last?.Id ?? ''}/InstantMix`);
+    expect(mix.request.headers.authorization).toContain('DeviceId="auralis-server"');
+    expect(mix.request.query).not.toHaveProperty('userId');
+    const jf = new JellyfinClient({
+      baseUrl: 'http://upstream.invalid',
+      token: '<token>',
+      fetch: replayFetch([mix]),
+      serverKey: true,
+    });
+    const tracks = await jf.getInstantMix(last?.Id ?? '', 20);
+    expect(tracks.length).toBe(20);
+    expect(tracks.every((t) => t.Type === 'Audio' && Boolean(t.AlbumId))).toBe(true);
+  });
+});
+
 describe("Audiobookshelf's and Jellyfin's answers, recorded for M1.shell", () => {
   const abs = () =>
     new AbsClient({
@@ -1007,9 +1029,57 @@ describe("[M3.ytmusic/a] YouTube Music's InnerTube calls, as recorded", () => {
       const client = (json(r.request.body).context as { client: Record<string, string> }).client;
       expect(Object.keys(client).sort(), call).toEqual(['clientName', 'clientVersion', 'gl', 'hl']);
       const answer = JSON.stringify(r.response.body);
-      for (const gone of ['visitorData', 'trackingParams', 'responseContext', '"continuations"']) {
+      for (const gone of ['trackingParams', '"continuations"']) {
         expect(answer, `${call} ${gone}`).not.toContain(gone);
       }
+      expect(
+        answer.replaceAll('"responseContext":{"visitorData":"<token>"}', ''),
+        call,
+      ).not.toMatch(/responseContext|visitorData/);
+    }
+  });
+
+  it('[M3.ytmusic/a] a search and a radio each name a visitor id, kept only as the placeholder', () => {
+    for (const call of ['search-songs', 'next-radio']) {
+      expect(json(recording('ytmusic', call).response.body).responseContext, call).toEqual({
+        visitorData: PLACEHOLDER,
+      });
+    }
+  });
+
+  const players = [
+    ['player-visionos', 'OK'],
+    ['player-botwall', 'LOGIN_REQUIRED'],
+    ['player-unplayable', 'ERROR'],
+  ] as const;
+
+  it.each(players)(
+    "[M3.ytmusic/a] %s asked YouTube's player as VISIONOS, with no key or cookie, and answered %s",
+    (call, status) => {
+      const r = recording('ytmusic', call);
+      expect(r.request).toMatchObject({ method: 'POST', path: '/youtubei/v1/player' });
+      expect(Object.keys(r.request.query)).toEqual(['prettyPrint']);
+      expect(Object.keys(r.request.headers).sort()).toEqual([
+        'accept',
+        'content-type',
+        'user-agent',
+      ]);
+      const client = (json(r.request.body).context as { client: Record<string, string> }).client;
+      expect(client.clientName).toBe('VISIONOS');
+      const answer = json(r.response.body) as { playabilityStatus: { status: string } };
+      expect(answer.playabilityStatus.status).toBe(status);
+      expect(scanRecording(r)).toEqual([]);
+    },
+  );
+
+  it("[M3.ytmusic/a] the player's format URLs keep no address, signature or cache node", () => {
+    const answer = JSON.stringify(recording('ytmusic', 'player-visionos').response.body);
+    const urls = answer.match(/https:\/\/[^"]+/g) ?? [];
+    expect(urls.length).toBeGreaterThan(5);
+    for (const url of urls) {
+      expect(url).toMatch(/^https:\/\/rr0---sn-recorded\.googlevideo\.com\/videoplayback\?/);
+      expect(url).toContain('ip=<token>');
+      expect(url).not.toMatch(/bui=|spc=|[?&]id=|mn=/);
     }
   });
 

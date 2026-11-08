@@ -71,9 +71,11 @@ import {
 import type { User } from '../store/users.js';
 import type { Upstreams } from '../upstream/links.js';
 import {
+  type AutoplayDeps,
   type AutoplayRadio,
   autoplayKept,
   autoplayStale,
+  indexedMix,
   pendingAutoplay,
   prepareAutoplay,
   storedAutoplay,
@@ -217,6 +219,8 @@ export class Sessions {
       clients: (user: Caller) => Upstreams;
       /** Auralis's own Audiobookshelf client, which reads chapters for a household play. */
       householdAbs?: AbsClient | null;
+      /** Auralis's own Jellyfin client, which answers Instant Mix for someone with no account. */
+      householdJellyfin?: AutoplayDeps['jellyfin'] | null;
       /** Whether the person's own account reaches an indexed row, now; a failed check throws. */
       ownReaches?: (user: Caller, row: StoredRow) => Promise<boolean>;
       now: () => number;
@@ -447,6 +451,8 @@ export class Sessions {
    * position and the upstream's, when the session holds one. With nothing queued after the plan
    * and no autoplay pick kept for its end, it waits for the run this play starts, up to the wait;
    * past it, it answers nothing next and the run goes on (the client reads the pick on its Next).
+   * With `waitForAutoplay: false` it never waits: it answers nothing next, and `later` gives the
+   * pick once the run is over, or nothing when the device has played or stepped on meanwhile.
    * When `ref` is a saved spoken queue's current item, or what follows it once that finished, that
    * queue comes back instead, stepping on in the second case. `playId` becomes the device's
    * current play.
@@ -457,7 +463,12 @@ export class Sessions {
     ref: MediaRef,
     heldBefore: string | null,
     entries: readonly PlanEntry[],
-  ): Promise<{ next: MediaRef | undefined; position: QueuePosition | null }> {
+    options: { waitForAutoplay?: boolean } = {},
+  ): Promise<{
+    next: MediaRef | undefined;
+    position: QueuePosition | null;
+    later?: Promise<MediaRef | undefined>;
+  }> {
     const { lookup } = this.options;
     this.plays.set(this.device(caller), { playId, recorded: new Map() });
     await this.load(caller, [ref]);
@@ -490,11 +501,33 @@ export class Sessions {
     if (now === null || !covered.has(key(now.ref))) return { next: undefined, position: null };
 
     let after = this.nextAfter(valueOf(saved), covered);
-    if (after.waiting) {
+    let later: Promise<MediaRef | undefined> | undefined;
+    if (after.waiting && options.waitForAutoplay === false) {
+      later = running.then(() => this.pickAfter(caller, playId, covered));
+    } else if (after.waiting) {
       await this.within(running);
       after = this.nextAfter(valueOf(this.open(caller)), covered);
     }
-    return { next: after.next, position: await this.startIn(caller, saved, ref, entries) };
+    const position = await this.startIn(caller, saved, ref, entries);
+    return { next: after.next, position, ...(later === undefined ? {} : { later }) };
+  }
+
+  /**
+   * What plays after the covered refs, as the session now has it, while `playId` is still the
+   * device's play and its current entry is still one the play covers; otherwise nothing. A session
+   * that cannot be read says nothing (logged).
+   */
+  private pickAfter(caller: Caller, playId: string, covered: Set<string>): MediaRef | undefined {
+    try {
+      if (this.plays.get(this.device(caller))?.playId !== playId) return undefined;
+      const s = valueOf(this.open(caller));
+      const now = currentOf(s);
+      if (now === null || !covered.has(key(now.ref))) return undefined;
+      return this.nextAfter(s, covered).next;
+    } catch (err) {
+      this.options.log.warn({ err }, 'the listening session could not say what plays next');
+      return undefined;
+    }
   }
 
   /**
@@ -1013,13 +1046,18 @@ export class Sessions {
       const s = this.open(caller);
       const clients = this.options.clients(caller);
       await lookup.load(lookup.autoplayBooks(s), this.chapterSource(caller));
+      const household = this.options.householdJellyfin ?? null;
       const unlinked = (service: string) => () =>
         Promise.reject(new Error(`no ${service} account is linked`));
       const done = await prepareAutoplay(valueOf(s), {
         db,
         expand: (ref) => lookup.expand(ref),
         abs: clients.abs ?? { getMe: unlinked('Audiobookshelf') },
-        jellyfin: clients.jellyfin ?? { getInstantMix: unlinked('Jellyfin') },
+        jellyfin:
+          clients.jellyfin ??
+          (household === null
+            ? { getInstantMix: unlinked('Jellyfin') }
+            : indexedMix(household, db)),
         log,
         now: this.options.now,
         ...(this.options.ytmusic === undefined ? {} : { ytmusic: this.options.ytmusic }),

@@ -753,6 +753,19 @@ describe('[M1.shell] the web player store', () => {
     expect(store.getState().refused).toBeNull();
   });
 
+  it('[M3.ytmusic] says the music stopped when its queue runs out with nothing for autoplay', async () => {
+    const { store, engines } = rig({ walk: [] });
+    await store.play(song);
+    engines[0]!.options.onEnded?.();
+    await settle();
+    expect(store.getState()).toMatchObject({
+      ref: null,
+      plan: null,
+      playing: false,
+      refused: { ref: song, error: null, ranOut: true },
+    });
+  });
+
   describe('[M3.ytmusic] a song met in a queue that cannot play', () => {
     const song = (n: number) => ({
       ref: { source: 'ytmusic', id: `song${n}song${n}` } as MediaRef,

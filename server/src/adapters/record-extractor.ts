@@ -4,6 +4,8 @@
  * so it leaves by the server's own address; a URL it hands out is tied to that address.
  *
  * - `ytdlp/info-plain`, `info-node`, `info-long`: `-j`, in each tier, and on a long track.
+ * - `ytdlp/info-trimmed`: the plain tier trimmed as the server runs it with a visitor id held, the
+ *   id from a YouTube Music search in the same container, handed over on stdin.
  * - `ytdlp/error-unavailable`, `error-botwall`: an id that does not exist, and the one request
  *   known to meet the bot wall.
  * - `googlevideo/range-head`, `range-chunk`, `range-416`: status and headers, from that container.
@@ -18,7 +20,7 @@
 import { randomBytes } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { extractorArgs, type Tier } from '../music/extractor.js';
+import { extractorArgs, type Tier, trimmedConfig } from '../music/extractor.js';
 import { type Recording, serializeRecording } from './http/recording.js';
 import { scanRecording } from './http/scan.js';
 import {
@@ -30,6 +32,7 @@ import {
   scrub,
 } from './http/scrub.js';
 import { ADDRESS_ECHO_URL, echoedAddress } from './record-ytmusic.js';
+import { SONGS_FILTER, YTMUSIC_COUNTRY, YTMUSIC_URL } from './ytmusic/client.js';
 
 export const KNOWN_TRACK = 'lYBUbBu4W08';
 /** No video has this id: yt-dlp's own answer for one that does not exist. */
@@ -155,6 +158,16 @@ export function headRecording(
   return scrub(raw, { secrets, baseUrl: BASE_URL });
 }
 
+/** Asks YouTube Music for songs, as the server does, and prints the answer's visitor id alone. */
+const VISITOR_SCRIPT = `
+const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+const client = { clientName: 'WEB_REMIX', clientVersion: '1.' + date + '.01.00', hl: 'en', gl: '${YTMUSIC_COUNTRY}' };
+fetch('${YTMUSIC_URL}/youtubei/v1/search?prettyPrint=false', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ context: { client }, query: 'a song', params: '${SONGS_FILTER}' }),
+}).then(async (r) => console.log((await r.json()).responseContext?.visitorData ?? ''));`;
+
 /** Asks one range and prints its status and headers. The body is cancelled unread. */
 const HEAD_SCRIPT = `
 const [url, range] = require('fs').readFileSync(0, 'utf8').trim().split('\\n');
@@ -235,15 +248,15 @@ export async function recordExtractor(input: ExtractorRecordInput): Promise<{ wr
       out(`${recording.call}: ${recording.response.status}`);
     };
 
-    const run = async (id: string, tier: Tier, extra: string[] = []) => {
-      const args = extractorArgs(id, tier);
+    const run = async (id: string, tier: Tier, extra: string[] = [], config?: string) => {
+      const args = extractorArgs(id, tier, config !== undefined);
       const end = args.indexOf('--');
       const argv = [...args.slice(0, end), ...extra, ...args.slice(end)];
-      const result = await exec(inBox('env', 'HOME=/tmp', BINARY, ...argv));
+      const result = await exec(inBox('env', 'HOME=/tmp', BINARY, ...argv), config);
       return { argv: ['yt-dlp', ...argv], ...result };
     };
-    const info = async (call: string, id: string, tier: Tier) => {
-      const { argv, rc, stdout, stderr } = await run(id, tier);
+    const info = async (call: string, id: string, tier: Tier, config?: string) => {
+      const { argv, rc, stdout, stderr } = await run(id, tier, [], config);
       if (rc !== 0) throw new Error(`${call}: the extractor answered ${rc}`);
       const parsed = JSON.parse(stdout) as Record<string, unknown>;
       await write(
@@ -258,6 +271,11 @@ export async function recordExtractor(input: ExtractorRecordInput): Promise<{ wr
     };
 
     const plain = await info('info-plain', KNOWN_TRACK, 'plain');
+    const visitor = (await must(inBox('node', '-e', VISITOR_SCRIPT))).stdout.trim();
+    const config = trimmedConfig(visitor);
+    if (config === null) throw new Error('the search named no visitor id');
+    secrets.push(visitor);
+    await info('info-trimmed', KNOWN_TRACK, 'plain', config);
     await info('info-node', KNOWN_TRACK, 'node');
     await info('info-long', input.longTrack, 'plain');
     await failure('error-unavailable', NO_SUCH_TRACK, []);

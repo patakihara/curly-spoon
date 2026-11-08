@@ -260,6 +260,7 @@ data class Job(
     val reason: String?,
     val current: String,
     val versions: List<JobVersion>,
+    val direct: JobDirect?,
 )
 
 @Serializable
@@ -269,6 +270,13 @@ enum class JobState {
     @SerialName("unavailable")
     UNAVAILABLE,
 }
+
+@Serializable
+data class JobDirect(
+    val passed: Boolean,
+    val reason: String?,
+    val at: Double,
+)
 
 @Serializable
 data class JobList(

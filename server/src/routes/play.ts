@@ -28,7 +28,8 @@
  * where its next plan starts; a Jellyfin one, like any music, keeps none. Only the playlist is read whole, parsed,
  * and passed on with bare segment names that resolve under the same route. A streamed song needs
  * no upstream account: it plays for anyone signed in, only if search or radio has named it, reports
- * nowhere, claims nothing, and every byte comes through `music/`'s cache.
+ * nowhere, claims nothing, and every byte comes through `music/`'s cache. Its plan never waits for
+ * autoplay's pick, which no client reads: the server preloads the pick once it is worked out.
  */
 import { randomUUID } from 'node:crypto';
 import {
@@ -271,6 +272,30 @@ export function songRefusal(error: unknown): never {
   throw error;
 }
 
+/** `body` as it is, telling `first` when its first bytes are read. */
+function onFirstBytes(
+  body: ReadableStream<Uint8Array>,
+  first: () => void,
+): ReadableStream<Uint8Array> {
+  const reader = body.getReader();
+  let told = false;
+  return new ReadableStream<Uint8Array>(
+    {
+      pull: async (controller) => {
+        const { done, value } = await reader.read();
+        if (done) return controller.close();
+        if (!told) {
+          told = true;
+          first();
+        }
+        controller.enqueue(value);
+      },
+      cancel: (reason) => reader.cancel(reason),
+    },
+    { highWaterMark: 0 },
+  );
+}
+
 export function playRoutes(
   app: FastifyInstance,
   options: {
@@ -383,18 +408,24 @@ export function playRoutes(
     ref: MediaRef,
     heldBefore: string | null,
     entries: readonly PlanEntry[],
+    waitForAutoplay = true,
   ): Promise<PlaybackPlan> => {
+    const preload = (next: MediaRef | undefined) => {
+      if (next?.source === 'ytmusic') music?.preload(caller.deviceId, next.id);
+    };
     try {
-      const { next, position } = await sessions.played(
+      const { next, position, later } = await sessions.played(
         caller,
         plan.progressTarget.playId,
         ref,
         heldBefore,
         entries,
+        { waitForAutoplay },
       );
       const last = plan.tracks[plan.tracks.length - 1]!;
       const length = last.offset + last.duration;
-      if (next?.source === 'ytmusic') music?.preload(caller.deviceId, next.id);
+      preload(next);
+      void later?.then(preload);
       return {
         ...plan,
         ...(position === null ? {} : { startAt: Math.min(position.ms / 1000, length) }),
@@ -471,17 +502,23 @@ export function playRoutes(
     addClaim(db, userId, held, 'played', (options.now ?? Date.now)());
   };
 
-  /** A streamed song's plan, from its own row and how its file is typed. */
+  /**
+   * A streamed song's plan, from its own row and how its file is typed. It never waits for
+   * autoplay: what plays after it is preloaded once the run is over. How it resolved and how long
+   * it took is logged, without the song.
+   */
   const playSong = async (
     songs: Music,
     caller: Caller,
     ref: MediaRef,
     heldBefore: string | null,
   ): Promise<PlaybackPlan> => {
+    const started = performance.now();
     const song = streamedTrack(db, ref.id);
     if (song === undefined) throw new Refusal(404, 'not_found');
     if (song.duration > MOST_SONG_SECONDS) throw new Refusal(422, 'unsupported_format');
-    const { mime } = await songs.plan(ref.id).catch(songRefusal);
+    const { mime, tier } = await songs.plan(ref.id).catch(songRefusal);
+    const resolveMs = Math.round(performance.now() - started);
     const key = mediaRefKey(ref);
     const playId = randomUUID().replace(/-/g, '');
     const entries: PlanEntry[] = [{ entry: { ref }, start: 0 }];
@@ -511,7 +548,10 @@ export function playRoutes(
       startAt: 0,
       progressTarget: { playId },
     };
-    return inSession(caller, plan, ref, heldBefore, entries);
+    const planned = await inSession(caller, plan, ref, heldBefore, entries, false);
+    const totalMs = Math.round(performance.now() - started);
+    app.log.info({ tier, resolveMs, totalMs }, 'a song was planned');
+    return planned;
   };
 
   serve(app, play, async (request, _reply, body) => {
@@ -656,7 +696,17 @@ export function playRoutes(
         throw new Refusal(404, 'not_found');
       }
       if (song.duration > MOST_SONG_SECONDS) throw new Refusal(422, 'unsupported_format');
-      return music.open(ref.id, range, signal).catch(songRefusal);
+      const started = performance.now();
+      const answer = await music.open(ref.id, range, signal).catch(songRefusal);
+      return {
+        ...answer,
+        body: onFirstBytes(answer.body, () =>
+          app.log.info(
+            { firstByteMs: Math.round(performance.now() - started) },
+            'a song’s first bytes went out',
+          ),
+        ),
+      };
     }
     if (ref.source === 'jellyfin') {
       // A Jellyfin track is its own ref's only track. Jellyfin streams to anyone with the id, so

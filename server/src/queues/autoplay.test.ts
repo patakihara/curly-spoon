@@ -24,6 +24,7 @@ import {
   type AutoplayDeps,
   type AutoplayRadio,
   autoplayStale,
+  indexedMix,
   isOwnPlay,
   ownPlays,
   prepareAutoplay,
@@ -662,6 +663,30 @@ describe('[M3.ytmusic/e] radio from YouTube Music joins autoplay after the album
     expect(pick(s, 'music')).toEqual({ ref: { source: 'ytmusic', id: songs[0] } });
   });
 
+  it("[M3.ytmusic/e] through Auralis's own key, only mix tracks the index holds are picked; with none, the radio carries on", async () => {
+    const last = tracks.at(-1)!;
+    const indexed = new Set(tracks.map((t) => t.id));
+    const recorded = indexQueryResultSchema.parse(json(INSTANT_MIX)).Items;
+    const songs = (await recordedRadio()).map(({ id }) => id);
+    const run = async (items: typeof recorded) => {
+      const made = withRadio(youTubeMusic().ytmusic);
+      const household = { getInstantMix: async () => items };
+      return prepareAutoplay(playing('music', { ref: last }, [], fromAlbum), {
+        ...made.deps,
+        jellyfin: indexedMix(household, db),
+      });
+    };
+    const all = await run(recorded);
+    expect(recorded.some((t) => !indexed.has(t.Id))).toBe(true);
+    const owned = all.radio!.tracks.filter((t) => t.source === 'jellyfin');
+    expect(owned.length).toBeGreaterThan(0);
+    expect(owned.every((t) => indexed.has(t.id))).toBe(true);
+
+    const none = await run(recorded.filter((t) => !indexed.has(t.Id)));
+    expect(none.radio!.tracks).toEqual(refsOf(songs));
+    expect(pick(none, 'music')).toEqual({ ref: { source: 'ytmusic', id: songs[0] } });
+  });
+
   it('[M3.ytmusic/e] each radio song can play, as its row was remembered', async () => {
     const { ytmusic } = youTubeMusic();
     await prepareAutoplay(
@@ -736,7 +761,7 @@ describe('[M3.ytmusic/e] radio from YouTube Music joins autoplay after the album
     expect(made.warnings).toContain('radio from YouTube Music failed');
   });
 
-  it('[M3.ytmusic/e] the mix failing leaves the radio', async () => {
+  it('[M3.ytmusic/e] the mix failing is logged and leaves the radio', async () => {
     const { ytmusic } = youTubeMusic();
     const made = resolver([ME], async () => new Response(null, { status: 500 }));
     const s = await prepareAutoplay(playing('music', { ref: tracks.at(-1)! }, [], fromAlbum), {
@@ -745,6 +770,7 @@ describe('[M3.ytmusic/e] radio from YouTube Music joins autoplay after the album
     });
     const [first] = await recordedRadio();
     expect(pick(s, 'music')).toEqual({ ref: { source: 'ytmusic', id: first!.id } });
+    expect(made.warnings).toContain('Instant Mix failed');
   });
 
   it('[M3.ytmusic/e] while streaming is unavailable, no pick is a streamed song', async () => {

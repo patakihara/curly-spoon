@@ -17,7 +17,7 @@
         "context": {
           "client": {
             "clientName": "WEB_REMIX",
-            "clientVersion": "1.20261107.01.00",
+            "clientVersion": "1.20261108.01.00",
             "hl": "en",
             "gl": "FI"
           }
@@ -34,6 +34,9 @@
     },
     "body": {
       "json": {
+        "responseContext": {
+          "visitorData": "<token>"
+        },
         "contents": {
           "tabbedSearchResultsRenderer": {
             "tabs": [
@@ -206,7 +209,6 @@
                                               "navigationEndpoint": {
                                                 "watchEndpoint": {
                                                   "videoId": "DfOwVeNthZQ",
-                                                  "playerParams": "0gcJCTUC0OBS9m0t",
                                                   "watchEndpointMusicSupportedConfigs": {
                                                     "watchEndpointMusicConfig": {
                                                       "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
@@ -274,12 +276,12 @@
                                         "text": {
                                           "runs": [
                                             {
-                                              "text": "882K plays"
+                                              "text": "883K plays"
                                             }
                                           ],
                                           "accessibility": {
                                             "accessibilityData": {
-                                              "label": "882 thousand plays"
+                                              "label": "883 thousand plays"
                                             }
                                           }
                                         },
@@ -289,6 +291,125 @@
                                   ],
                                   "playlistItemData": {
                                     "videoId": "DfOwVeNthZQ"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/O1N7cQv-pEza-wwXC9yeFEadlNtW7yXjCCDIWudfk8H9VzCEabkdnJIvcAf3UiUdQPY7l4R6sa8OYGZFLQ=w60-h60-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/O1N7cQv-pEza-wwXC9yeFEadlNtW7yXjCCDIWudfk8H9VzCEabkdnJIvcAf3UiUdQPY7l4R6sa8OYGZFLQ=w120-h120-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Xripta Celestial (Dame Tu Cosita Funk) (feat. Yel0y)",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "_HZqSMI-F04",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "DJ VATOREXX",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UCeQ_J0VMEJgmGFDwXmmBNEQ",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Xripta Celestial (Dame Tu Cosita Funk)",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_guoG3zuZiF6",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "1:49"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "DJ VATOREXX • Xripta Celestial (Dame Tu Cosita Funk) • 1 minute, 49 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "9.6K plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "9.6 thousand plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "_HZqSMI-F04"
                                   },
                                   "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
                                   "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
@@ -393,12 +514,12 @@
                                         "text": {
                                           "runs": [
                                             {
-                                              "text": "132K plays"
+                                              "text": "133K plays"
                                             }
                                           ],
                                           "accessibility": {
                                             "accessibilityData": {
-                                              "label": "132 thousand plays"
+                                              "label": "133 thousand plays"
                                             }
                                           }
                                         },
@@ -420,12 +541,12 @@
                                       "thumbnail": {
                                         "thumbnails": [
                                           {
-                                            "url": "https://yt3.googleusercontent.com/STX2ZcDIu4pX86IRE8rm6BTJk5fIo4G3Wc7yzrODOsmQ2UU0uxjR5l53MYABkdaXRsOrA6c0Jlk_Ofc=w60-h60-l90-rj",
+                                            "url": "https://yt3.googleusercontent.com/cYFZYwW-mv53Y72NgwaEgSMScRteuBi3WGv3svWjY4bEBfpuLEewpmbBOv5HdnZG_n9tL9BooU-Y-Sw=w60-h60-l90-rj",
                                             "width": 60,
                                             "height": 60
                                           },
                                           {
-                                            "url": "https://yt3.googleusercontent.com/STX2ZcDIu4pX86IRE8rm6BTJk5fIo4G3Wc7yzrODOsmQ2UU0uxjR5l53MYABkdaXRsOrA6c0Jlk_Ofc=w120-h120-l90-rj",
+                                            "url": "https://yt3.googleusercontent.com/cYFZYwW-mv53Y72NgwaEgSMScRteuBi3WGv3svWjY4bEBfpuLEewpmbBOv5HdnZG_n9tL9BooU-Y-Sw=w120-h120-l90-rj",
                                             "width": 120,
                                             "height": 120
                                           }
@@ -441,10 +562,10 @@
                                         "text": {
                                           "runs": [
                                             {
-                                              "text": "Montagem Miau",
+                                              "text": "DAME.TU.COSITA",
                                               "navigationEndpoint": {
                                                 "watchEndpoint": {
-                                                  "videoId": "9OL9LX0pr0o",
+                                                  "videoId": "8JBsgk_cA3U",
                                                   "watchEndpointMusicSupportedConfigs": {
                                                     "watchEndpointMusicConfig": {
                                                       "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
@@ -463,26 +584,16 @@
                                         "text": {
                                           "runs": [
                                             {
-                                              "text": "Lenar",
-                                              "navigationEndpoint": {
-                                                "browseEndpoint": {
-                                                  "browseId": "UC4TtNU8uJHcOkyjySZScX6w",
-                                                  "browseEndpointContextSupportedConfigs": {
-                                                    "browseEndpointContextMusicConfig": {
-                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
-                                                    }
-                                                  }
-                                                }
-                                              }
+                                              "text": "117★FC"
                                             },
                                             {
                                               "text": " • "
                                             },
                                             {
-                                              "text": "Montagem Miau",
+                                              "text": "VARIETY 01　~1ˢᵗ 117★FC COMPILATION ALBUM~",
                                               "navigationEndpoint": {
                                                 "browseEndpoint": {
-                                                  "browseId": "MPREb_E59lq1ajHzk",
+                                                  "browseId": "MPREb_Y79xudlxJGE",
                                                   "browseEndpointContextSupportedConfigs": {
                                                     "browseEndpointContextMusicConfig": {
                                                       "pageType": "MUSIC_PAGE_TYPE_ALBUM"
@@ -495,12 +606,12 @@
                                               "text": " • "
                                             },
                                             {
-                                              "text": "1:13"
+                                              "text": "1:40"
                                             }
                                           ],
                                           "accessibility": {
                                             "accessibilityData": {
-                                              "label": "Lenar • Montagem Miau • 1 minute, 13 seconds"
+                                              "label": "117★FC • VARIETY 01　~1ˢᵗ 117★FC COMPILATION ALBUM~ • 1 minute, 40 seconds"
                                             }
                                           }
                                         },
@@ -512,12 +623,12 @@
                                         "text": {
                                           "runs": [
                                             {
-                                              "text": "37M plays"
+                                              "text": "355 plays"
                                             }
                                           ],
                                           "accessibility": {
                                             "accessibilityData": {
-                                              "label": "37 million plays"
+                                              "label": "355 plays"
                                             }
                                           }
                                         },
@@ -526,7 +637,164 @@
                                     }
                                   ],
                                   "playlistItemData": {
-                                    "videoId": "9OL9LX0pr0o"
+                                    "videoId": "8JBsgk_cA3U"
+                                  },
+                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "thumbnail": {
+                                    "musicThumbnailRenderer": {
+                                      "thumbnail": {
+                                        "thumbnails": [
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/O8n66ZK6OHgvARcSBCkfXcmzaImOjs3nnKdf_09IDxf7DSni2v_JFevwIoddYdTDRZ2iaRtTqpcwvOym=w60-h60-l90-rj",
+                                            "width": 60,
+                                            "height": 60
+                                          },
+                                          {
+                                            "url": "https://yt3.googleusercontent.com/O8n66ZK6OHgvARcSBCkfXcmzaImOjs3nnKdf_09IDxf7DSni2v_JFevwIoddYdTDRZ2iaRtTqpcwvOym=w120-h120-l90-rj",
+                                            "width": 120,
+                                            "height": 120
+                                          }
+                                        ]
+                                      },
+                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
+                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
+                                    }
+                                  },
+                                  "flexColumns": [
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Dame Tu Cosita",
+                                              "navigationEndpoint": {
+                                                "watchEndpoint": {
+                                                  "videoId": "5mFM1U02Bl4",
+                                                  "watchEndpointMusicSupportedConfigs": {
+                                                    "watchEndpointMusicConfig": {
+                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "Pitbull"
+                                            },
+                                            {
+                                              "text": ", "
+                                            },
+                                            {
+                                              "text": "El Chombo",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UCvlDEVR4EEBd3wt30HbamRQ",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": ", "
+                                            },
+                                            {
+                                              "text": "Karol G",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UC7n3gWRN0vQzgiOKc51aZ4w",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " & "
+                                            },
+                                            {
+                                              "text": "Dancing Green Alien",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "UCVLjC4AsQ-ud91cXA7-KhPg",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "Dame Tu Cosita",
+                                              "navigationEndpoint": {
+                                                "browseEndpoint": {
+                                                  "browseId": "MPREb_kHqf4fSCb9U",
+                                                  "browseEndpointContextSupportedConfigs": {
+                                                    "browseEndpointContextMusicConfig": {
+                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "text": " • "
+                                            },
+                                            {
+                                              "text": "2:59"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "Pitbull, El Chombo, Karol G & Dancing Green Alien • Dame Tu Cosita • 2 minutes, 59 seconds"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    },
+                                    {
+                                      "musicResponsiveListItemFlexColumnRenderer": {
+                                        "text": {
+                                          "runs": [
+                                            {
+                                              "text": "144M plays"
+                                            }
+                                          ],
+                                          "accessibility": {
+                                            "accessibilityData": {
+                                              "label": "144 million plays"
+                                            }
+                                          }
+                                        },
+                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+                                      }
+                                    }
+                                  ],
+                                  "playlistItemData": {
+                                    "videoId": "5mFM1U02Bl4"
                                   },
                                   "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
                                   "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
@@ -775,244 +1043,6 @@
                                   "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
                                   "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
                                 }
-                              },
-                              {
-                                "musicResponsiveListItemRenderer": {
-                                  "thumbnail": {
-                                    "musicThumbnailRenderer": {
-                                      "thumbnail": {
-                                        "thumbnails": [
-                                          {
-                                            "url": "https://yt3.googleusercontent.com/xtrpjimWSOiA6zwgz97jebLrArdrwg4GoL1ey0D844vxSuvzYrCuG-nyCSuOUKElPgDo0hR3vB2SBEo=w60-h60-l90-rj",
-                                            "width": 60,
-                                            "height": 60
-                                          },
-                                          {
-                                            "url": "https://yt3.googleusercontent.com/xtrpjimWSOiA6zwgz97jebLrArdrwg4GoL1ey0D844vxSuvzYrCuG-nyCSuOUKElPgDo0hR3vB2SBEo=w120-h120-l90-rj",
-                                            "width": 120,
-                                            "height": 120
-                                          }
-                                        ]
-                                      },
-                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
-                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
-                                    }
-                                  },
-                                  "flexColumns": [
-                                    {
-                                      "musicResponsiveListItemFlexColumnRenderer": {
-                                        "text": {
-                                          "runs": [
-                                            {
-                                              "text": "Dame Tu Cosita, Pt. 2",
-                                              "navigationEndpoint": {
-                                                "watchEndpoint": {
-                                                  "videoId": "nx7UFyPgFd8",
-                                                  "watchEndpointMusicSupportedConfigs": {
-                                                    "watchEndpointMusicConfig": {
-                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
-                                                    }
-                                                  }
-                                                }
-                                              }
-                                            }
-                                          ]
-                                        },
-                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
-                                      }
-                                    },
-                                    {
-                                      "musicResponsiveListItemFlexColumnRenderer": {
-                                        "text": {
-                                          "runs": [
-                                            {
-                                              "text": "Jonathan Beats",
-                                              "navigationEndpoint": {
-                                                "browseEndpoint": {
-                                                  "browseId": "UCv3i5kZJVG9rr5T8lhHBP9Q",
-                                                  "browseEndpointContextSupportedConfigs": {
-                                                    "browseEndpointContextMusicConfig": {
-                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
-                                                    }
-                                                  }
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "text": " • "
-                                            },
-                                            {
-                                              "text": "Dame Tu Cosita",
-                                              "navigationEndpoint": {
-                                                "browseEndpoint": {
-                                                  "browseId": "MPREb_norYJu6qDLw",
-                                                  "browseEndpointContextSupportedConfigs": {
-                                                    "browseEndpointContextMusicConfig": {
-                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
-                                                    }
-                                                  }
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "text": " • "
-                                            },
-                                            {
-                                              "text": "0:53"
-                                            }
-                                          ],
-                                          "accessibility": {
-                                            "accessibilityData": {
-                                              "label": "Jonathan Beats • Dame Tu Cosita • 53 seconds"
-                                            }
-                                          }
-                                        },
-                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
-                                      }
-                                    },
-                                    {
-                                      "musicResponsiveListItemFlexColumnRenderer": {
-                                        "text": {
-                                          "runs": [
-                                            {
-                                              "text": "3.4K plays"
-                                            }
-                                          ],
-                                          "accessibility": {
-                                            "accessibilityData": {
-                                              "label": "3.4 thousand plays"
-                                            }
-                                          }
-                                        },
-                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
-                                      }
-                                    }
-                                  ],
-                                  "playlistItemData": {
-                                    "videoId": "nx7UFyPgFd8"
-                                  },
-                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
-                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
-                                }
-                              },
-                              {
-                                "musicResponsiveListItemRenderer": {
-                                  "thumbnail": {
-                                    "musicThumbnailRenderer": {
-                                      "thumbnail": {
-                                        "thumbnails": [
-                                          {
-                                            "url": "https://yt3.googleusercontent.com/Vx1WLxFF6euBHWXYjSJhTI3w4WzzUYxd9EvHf4oBHBDvOeatlDr6j-vo6UsvLC0PXskOzexyDt-QiPs1=w60-h60-l90-rj",
-                                            "width": 60,
-                                            "height": 60
-                                          },
-                                          {
-                                            "url": "https://yt3.googleusercontent.com/Vx1WLxFF6euBHWXYjSJhTI3w4WzzUYxd9EvHf4oBHBDvOeatlDr6j-vo6UsvLC0PXskOzexyDt-QiPs1=w120-h120-l90-rj",
-                                            "width": 120,
-                                            "height": 120
-                                          }
-                                        ]
-                                      },
-                                      "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_UNSPECIFIED",
-                                      "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FIT"
-                                    }
-                                  },
-                                  "flexColumns": [
-                                    {
-                                      "musicResponsiveListItemFlexColumnRenderer": {
-                                        "text": {
-                                          "runs": [
-                                            {
-                                              "text": "Dame tu cosita",
-                                              "navigationEndpoint": {
-                                                "watchEndpoint": {
-                                                  "videoId": "XJsPGJpdBPE",
-                                                  "watchEndpointMusicSupportedConfigs": {
-                                                    "watchEndpointMusicConfig": {
-                                                      "musicVideoType": "MUSIC_VIDEO_TYPE_ATV"
-                                                    }
-                                                  }
-                                                }
-                                              }
-                                            }
-                                          ]
-                                        },
-                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
-                                      }
-                                    },
-                                    {
-                                      "musicResponsiveListItemFlexColumnRenderer": {
-                                        "text": {
-                                          "runs": [
-                                            {
-                                              "text": "El Consul",
-                                              "navigationEndpoint": {
-                                                "browseEndpoint": {
-                                                  "browseId": "UC0bUwv8gJjfcUxznfpfEqWA",
-                                                  "browseEndpointContextSupportedConfigs": {
-                                                    "browseEndpointContextMusicConfig": {
-                                                      "pageType": "MUSIC_PAGE_TYPE_ARTIST"
-                                                    }
-                                                  }
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "text": " • "
-                                            },
-                                            {
-                                              "text": "Arrebátate",
-                                              "navigationEndpoint": {
-                                                "browseEndpoint": {
-                                                  "browseId": "MPREb_nLAr1SUXSDs",
-                                                  "browseEndpointContextSupportedConfigs": {
-                                                    "browseEndpointContextMusicConfig": {
-                                                      "pageType": "MUSIC_PAGE_TYPE_ALBUM"
-                                                    }
-                                                  }
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "text": " • "
-                                            },
-                                            {
-                                              "text": "3:43"
-                                            }
-                                          ],
-                                          "accessibility": {
-                                            "accessibilityData": {
-                                              "label": "El Consul • Arrebátate • 3 minutes, 43 seconds"
-                                            }
-                                          }
-                                        },
-                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
-                                      }
-                                    },
-                                    {
-                                      "musicResponsiveListItemFlexColumnRenderer": {
-                                        "text": {
-                                          "runs": [
-                                            {
-                                              "text": "540 plays"
-                                            }
-                                          ],
-                                          "accessibility": {
-                                            "accessibilityData": {
-                                              "label": "540 plays"
-                                            }
-                                          }
-                                        },
-                                        "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
-                                      }
-                                    }
-                                  ],
-                                  "playlistItemData": {
-                                    "videoId": "XJsPGJpdBPE"
-                                  },
-                                  "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
-                                  "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_TALL"
-                                }
                               }
                             ],
                             "shelfDivider": {
@@ -1196,7 +1226,7 @@
             ]
           }
         },
-        "trimmed": "Trimmed by the recorder: rows cut to the first few, and everything Auralis never reads taken out (tracking values, menus, continuations, the session context)."
+        "trimmed": "Trimmed by the recorder: rows cut to the first few, and everything Auralis never reads taken out (tracking values, menus, continuations, the session context but its visitor id)."
       }
     }
   }

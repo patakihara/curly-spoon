@@ -42,7 +42,21 @@ function ex(o: Parts): RawExchange {
 const b64 = Buffer.from(OPAQUE).toString('base64');
 
 /** [name, raw call, what must not survive, how it ends: scrubbed or the scan's finding]. */
+const VISITOR = 'CgtGaXNpdG9yMTIzKKCB0p8GMgoKAkZJEgQaAgsg';
+
 const cases: [string, RawExchange, string[], 'scrubbed' | FindingKind][] = [
+  [
+    "an InnerTube answer's visitor id",
+    ex({ json: { responseContext: { visitorData: VISITOR } } }),
+    [VISITOR],
+    'scrubbed',
+  ],
+  [
+    'a visitor id sent as a header',
+    ex({ reqH: { 'X-Goog-Visitor-Id': VISITOR } }),
+    [VISITOR],
+    'scrubbed',
+  ],
   ['a bearer header', ex({ reqH: { Authorization: `Bearer ${SECRET}` } }), [SECRET], 'scrubbed'],
   [
     'a bearer token the recorder was not given',
@@ -254,5 +268,19 @@ describe('[M0.record/c] scrubbing keeps what the adapter tests need', () => {
       );
       expect(again).toEqual(once);
     }
+  });
+});
+
+describe('[M0.record/c] a visitor id the scrubber missed', () => {
+  it('[M0.record/c] the scan flags a planted visitor id in an answer', () => {
+    const recording = scrub(ex({ json: {} }), { secrets: [], baseUrl: BASE });
+    const planted = {
+      ...recording,
+      response: {
+        ...recording.response,
+        body: { json: { responseContext: { visitorData: VISITOR } } },
+      },
+    };
+    expect(scanRecording(planted).map((f) => f.kind)).toContain('secret-field');
   });
 });

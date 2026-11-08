@@ -216,7 +216,7 @@ describe('[M3.ytmusic/a] a stream the server proxies', () => {
     const host = streamHost();
     const answer = await cacheWith({ fetch: host.fetch }).open(ID, 'bytes=0-');
     const reader = answer.body.getReader();
-    await reader.read();
+    for (let got = 0; got < CHUNK;) got += (await reader.read()).value!.byteLength;
     await new Promise((go) => setTimeout(go, 10));
     expect(host.asks).toHaveLength(1);
     await reader.read();
@@ -390,9 +390,9 @@ describe('[M3.ytmusic/c] a partial chunk is never served as whole', () => {
     const host = streamHost();
     const fetch = vi.fn(shortBody(3));
     const cache = cacheWith({ fetch });
-    await expect(cache.open(ID, `bytes=0-${CHUNK - 1}`)).rejects.toMatchObject({
-      reason: 'badAnswer',
-    });
+    // The answer's headers were right, so the body has begun: it is the body that fails.
+    const answer = await cache.open(ID, `bytes=0-${CHUNK - 1}`);
+    await expect(bytesOf(answer)).rejects.toMatchObject({ reason: 'badAnswer' });
     expect(cache.heldBytes()).toBe(0);
     fetch.mockImplementation(host.fetch);
     const again = await cache.open(ID, `bytes=0-${CHUNK - 1}`);
@@ -412,9 +412,8 @@ describe('[M3.ytmusic/c] a partial chunk is never served as whole', () => {
       return new Response(broken, { status: whole.status, headers: whole.headers });
     });
     const cache = cacheWith({ fetch });
-    await expect(cache.open(ID, `bytes=0-${CHUNK - 1}`)).rejects.toMatchObject({
-      reason: 'unavailable',
-    });
+    const answer = await cache.open(ID, `bytes=0-${CHUNK - 1}`);
+    await expect(bytesOf(answer)).rejects.toMatchObject({ reason: 'unavailable' });
     expect(cache.heldBytes()).toBe(0);
   });
 
@@ -424,9 +423,10 @@ describe('[M3.ytmusic/c] a partial chunk is never served as whole', () => {
       const whole = await host.fetch(url, init);
       return new Response(new Uint8Array(CHUNK + 1), { status: 206, headers: whole.headers });
     };
-    await expect(cacheWith({ fetch }).open(ID, 'bytes=0-')).rejects.toMatchObject({
-      reason: 'badAnswer',
-    });
+    const cache = cacheWith({ fetch });
+    const answer = await cache.open(ID, 'bytes=0-');
+    await expect(bytesOf(answer)).rejects.toMatchObject({ reason: 'badAnswer' });
+    expect(cache.heldBytes()).toBe(0);
   });
 
   it('[M3.ytmusic/c] a 200 to a closed range, or another range, is refused', async () => {
@@ -651,10 +651,11 @@ describe('[M3.ytmusic/a] a client leaving', () => {
     const host = stalledHost();
     const cache = cacheWith({ fetch: host.fetch });
     const gone = new AbortController();
-    const opening = cache.open(ID, 'bytes=0-', gone.signal);
-    await vi.waitFor(() => expect(host.asks).toHaveLength(1));
+    const reader = (await cache.open(ID, 'bytes=0-', gone.signal)).body.getReader();
+    expect((await reader.read()).value).toHaveLength(4);
+    const next = reader.read().catch((error: unknown) => error);
     gone.abort();
-    await expect(opening).rejects.toMatchObject({ reason: 'gone' });
+    expect(await next).toMatchObject({ reason: 'gone' });
     await vi.waitFor(() => expect(host.cancelled()).toBe(1));
     expect(cache.heldBytes()).toBe(0);
   });
@@ -681,7 +682,8 @@ describe('[M3.ytmusic/a] a client leaving', () => {
     const gone = new AbortController();
     const answer = await cacheWith({ fetch }).open(ID, 'bytes=0-', gone.signal);
     const reader = answer.body.getReader();
-    await reader.read();
+    for (let got = 0; got < CHUNK;) got += (await reader.read()).value!.byteLength;
+    expect((await reader.read()).value).toHaveLength(4);
     const next = reader.read().catch((error: unknown) => error);
     await vi.waitFor(() => expect(stalled.asks).toHaveLength(1));
     gone.abort();
@@ -693,8 +695,8 @@ describe('[M3.ytmusic/a] a client leaving', () => {
     const host = stalledHost();
     const cache = cacheWith({ fetch: host.fetch, chunkTimeoutMs: 200 });
     const gone = new AbortController();
-    const leaving = cache.open(ID, 'bytes=0-', gone.signal);
-    const staying = cache.open(ID, 'bytes=0-').catch((error: unknown) => error);
+    const leaving = bytesOf(await cache.open(ID, 'bytes=0-', gone.signal));
+    const staying = bytesOf(await cache.open(ID, 'bytes=0-')).catch((error: unknown) => error);
     await vi.waitFor(() => expect(host.asks).toHaveLength(1));
     gone.abort();
     await expect(leaving).rejects.toMatchObject({ reason: 'gone' });
@@ -706,7 +708,8 @@ describe('[M3.ytmusic/a] a client leaving', () => {
   it('[M3.ytmusic/a] an answer that stalls is given up on at its time limit, not waited on for ever', async () => {
     const host = stalledHost();
     const cache = cacheWith({ fetch: host.fetch, chunkTimeoutMs: 30 });
-    await expect(cache.open(ID, 'bytes=0-')).rejects.toMatchObject({ reason: 'unavailable' });
+    const answer = await cache.open(ID, 'bytes=0-');
+    await expect(bytesOf(answer)).rejects.toMatchObject({ reason: 'unavailable' });
     expect(host.cancelled()).toBe(1);
   });
 
@@ -1117,5 +1120,182 @@ describe('[M3.ytmusic/a] a URL or a file that changed', () => {
       reason: 'changed',
     });
     expect(cache.heldBytes()).toBe(0);
+  });
+});
+
+describe('[M3.ytmusic] a chunk reaches the client as it arrives', () => {
+  /**
+   * The stream host as recorded, whose answer to each range gives its first `part` bytes at once
+   * and holds the rest until `release`, `cut` (the rest short by 3 bytes) or `fail`.
+   */
+  function heldHost(part: number) {
+    const real = streamHost();
+    const asks: string[] = [];
+    const cancelled = vi.fn();
+    const gates: { release: () => void; cut: () => void; fail: () => void }[] = [];
+    const fetch: FetchLike = async (url, init) => {
+      const whole = await real.fetch(url, init);
+      asks.push(new Headers(init?.headers).get('range') ?? '');
+      const bytes = new Uint8Array(await whole.arrayBuffer());
+      let controller!: ReadableStreamDefaultController<Uint8Array>;
+      const body = new ReadableStream<Uint8Array>({
+        start(c) {
+          controller = c;
+          c.enqueue(bytes.slice(0, part));
+        },
+        cancel: cancelled,
+      });
+      gates.push({
+        release: () => {
+          controller.enqueue(bytes.slice(part));
+          controller.close();
+        },
+        cut: () => {
+          controller.enqueue(bytes.slice(part, bytes.byteLength - 3));
+          controller.close();
+        },
+        fail: () => controller.error(new Error('reset')),
+      });
+      return new Response(body, { status: whole.status, headers: whole.headers });
+    };
+    return { fetch, asks, cancelled, gates };
+  }
+  const PART = 4096;
+  const firstChunk = `bytes=0-${CHUNK - 1}`;
+
+  it('[M3.ytmusic] the client has the first bytes before the chunk is complete', async () => {
+    const host = heldHost(PART);
+    const cache = cacheWith({ fetch: host.fetch });
+    const answer = await cache.open(ID, firstChunk);
+    const reader = answer.body.getReader();
+    const { value } = await reader.read();
+    expect(Buffer.from(value!).equals(clip.subarray(0, PART))).toBe(true);
+    expect(cache.heldBytes()).toBe(0);
+    host.gates[0]!.release();
+    await reader.cancel();
+  });
+
+  it('[M3.ytmusic] the bit is set only once the last byte is written and synced', async () => {
+    const host = heldHost(PART);
+    let synced = () => undefined as void;
+    const written = new Promise<void>((done) => (synced = done));
+    let writes = 0;
+    const cache = cacheWith({
+      fetch: host.fetch,
+      writeChunk: async (path, chunk, offset) => {
+        writes += 1;
+        await written;
+        const file = await openFile(path, 'a+');
+        await file.write(chunk, 0, chunk.byteLength, offset);
+        await file.close();
+      },
+    });
+    const reader = (await cache.open(ID, firstChunk)).body.getReader();
+    const got: Uint8Array[] = [(await reader.read()).value!];
+    await new Promise((go) => setTimeout(go, 10));
+    expect(writes).toBe(0);
+    host.gates[0]!.release();
+    got.push((await reader.read()).value!);
+    // All but the chunk's last byte is out before its write ends; the last waits for the keeping.
+    expect(Buffer.concat(got).equals(clip.subarray(0, CHUNK - 1))).toBe(true);
+    await vi.waitFor(() => expect(writes).toBe(1));
+    expect(cache.heldBytes()).toBe(0);
+    const last = reader.read();
+    await new Promise((go) => setTimeout(go, 10));
+    expect(cache.heldBytes()).toBe(0);
+    synced();
+    expect(Buffer.from((await last).value!).equals(clip.subarray(CHUNK - 1, CHUNK))).toBe(true);
+    expect(cache.heldBytes()).toBe(CHUNK);
+  });
+
+  it('[M3.ytmusic] a short answer mid-chunk errors the body, keeps no bit, and the next read fetches it', async () => {
+    const host = heldHost(PART);
+    const cache = cacheWith({ fetch: host.fetch });
+    const answer = await cache.open(ID, firstChunk);
+    const reading = bytesOf(answer);
+    host.gates[0]!.cut();
+    await expect(reading).rejects.toMatchObject({ reason: 'badAnswer' });
+    expect(cache.heldBytes()).toBe(0);
+    const again = bytesOf(await cache.open(ID, firstChunk));
+    host.gates[1]!.release();
+    expect((await again).equals(clip.subarray(0, CHUNK))).toBe(true);
+    expect(host.asks).toEqual([firstChunk, firstChunk]);
+  });
+
+  it('[M3.ytmusic] an upstream error mid-chunk errors the body and keeps nothing', async () => {
+    const host = heldHost(PART);
+    const cache = cacheWith({ fetch: host.fetch });
+    const reading = bytesOf(await cache.open(ID, firstChunk));
+    host.gates[0]!.fail();
+    await expect(reading).rejects.toMatchObject({ reason: 'unavailable' });
+    expect(cache.heldBytes()).toBe(0);
+    expect(readdirSync(dir).map((f) => statSync(join(dir, f)).size)).toEqual(
+      readdirSync(dir).map(() => 0),
+    );
+  });
+
+  it('[M3.ytmusic] two clients joining one read partway both get every byte from their own start', async () => {
+    const host = heldHost(PART);
+    const cache = cacheWith({ fetch: host.fetch });
+    const first = await cache.open(ID, firstChunk);
+    const reader = first.body.getReader();
+    const head = (await reader.read()).value!;
+    const fromStart = bytesOf(await cache.open(ID, firstChunk));
+    const midway = bytesOf(await cache.open(ID, `bytes=${PART + 100}-${CHUNK + 9}`));
+    host.gates[0]!.release();
+    const rest: Uint8Array[] = [head];
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      rest.push(value);
+    }
+    expect(Buffer.concat(rest).equals(clip.subarray(0, CHUNK))).toBe(true);
+    expect((await fromStart).equals(clip.subarray(0, CHUNK))).toBe(true);
+    // The next chunk's first part holds all it asks of it, so it leaves that read early.
+    expect((await midway).equals(clip.subarray(PART + 100, CHUNK + 10))).toBe(true);
+    expect(host.asks).toEqual([firstChunk, `bytes=${CHUNK}-${2 * CHUNK - 1}`]);
+    await vi.waitFor(() => expect(host.cancelled).toHaveBeenCalledOnce());
+  });
+
+  it('[M3.ytmusic] a range starting mid-chunk gets its bytes once they arrive', async () => {
+    const host = heldHost(PART);
+    const cache = cacheWith({ fetch: host.fetch });
+    const reading = bytesOf(await cache.open(ID, `bytes=${PART + 5}-${PART + 9}`));
+    await new Promise((go) => setTimeout(go, 10));
+    host.gates[0]!.release();
+    expect((await reading).equals(clip.subarray(PART + 5, PART + 10))).toBe(true);
+  });
+
+  it('[M3.ytmusic] a client leaving mid-chunk stops the read only when it was the last', async () => {
+    const host = heldHost(PART);
+    const cache = cacheWith({ fetch: host.fetch });
+    const goneFirst = new AbortController();
+    const goneSecond = new AbortController();
+    const one = await cache.open(ID, firstChunk, goneFirst.signal);
+    const two = await cache.open(ID, firstChunk, goneSecond.signal);
+    const readOne = bytesOf(one).catch((error: unknown) => error);
+    const readTwo = bytesOf(two).catch((error: unknown) => error);
+    goneFirst.abort();
+    expect(await readOne).toMatchObject({ reason: 'gone' });
+    await new Promise((go) => setTimeout(go, 10));
+    expect(host.cancelled).not.toHaveBeenCalled();
+    goneSecond.abort();
+    expect(await readTwo).toMatchObject({ reason: 'gone' });
+    await vi.waitFor(() => expect(host.cancelled).toHaveBeenCalledOnce());
+    expect(cache.heldBytes()).toBe(0);
+  });
+
+  it('[M3.ytmusic] a partial chunk a client left is never taken as whole by the next one', async () => {
+    const host = heldHost(PART);
+    const cache = cacheWith({ fetch: host.fetch });
+    const gone = new AbortController();
+    const left = bytesOf(await cache.open(ID, firstChunk, gone.signal)).catch((e: unknown) => e);
+    gone.abort();
+    await left;
+    const next = bytesOf(await cache.open(ID, firstChunk));
+    await vi.waitFor(() => expect(host.gates).toHaveLength(2));
+    host.gates[1]!.release();
+    expect((await next).equals(clip.subarray(0, CHUNK))).toBe(true);
+    expect(host.asks).toEqual([firstChunk, firstChunk]);
   });
 });

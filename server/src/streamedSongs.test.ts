@@ -138,6 +138,8 @@ async function server(
     tracks?: StreamedTrack[];
     now?: () => number;
     radio?: (id: string) => Promise<YtSong[]>;
+    autoplayWaitMs?: number;
+    logged?: string[];
   } = {},
 ) {
   const db: Db = openDatabase(':memory:');
@@ -192,7 +194,10 @@ async function server(
       fetch,
     },
     music,
-    playback: { autoplayWaitMs: 0 },
+    playback: { autoplayWaitMs: options.autoplayWaitMs ?? 0 },
+    ...(options.logged === undefined
+      ? {}
+      : { logger: { stream: { write: (line: string) => void options.logged!.push(line) } } }),
   });
   apps.push(app);
   const play = (id = ID) =>
@@ -303,6 +308,42 @@ describe("[M3.ytmusic/a] a song's track", () => {
     expect(res.headers['content-range']).toBe(`bytes 0-${SIZE - 1}/${SIZE}`);
     expect(res.rawPayload.equals(clip)).toBe(true);
     expect(host.asked.every((range) => /^bytes=\d+-\d+$/.test(range))).toBe(true);
+  });
+
+  it('[M3.ytmusic] an upstream failing partway through the first chunk cuts the answer short, keeps nothing, and plays on', async () => {
+    const real = streamHost();
+    let breakNext = true;
+    const host = {
+      ...real,
+      fetch: (async (url, init) => {
+        const whole = await real.fetch(url, init);
+        if (!breakNext || url.includes('art.')) return whole;
+        breakNext = false;
+        const bytes = new Uint8Array(await whole.arrayBuffer());
+        const broken = new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(bytes.slice(0, 100));
+            setTimeout(() => controller.error(new Error('reset')), 50);
+          },
+        });
+        return new Response(broken, { status: whole.status, headers: whole.headers });
+      }) as FetchLike,
+    };
+    const logged: string[] = [];
+    const { app, kara, track, music } = await server({ host, logged });
+    const address = await app.listen({ port: 0, host: '127.0.0.1' });
+    const cut = await fetch(`${address}/api/media/ytmusic:${ID}/tracks/0`, {
+      headers: { ...kara, range: 'bytes=0-' },
+    });
+    // Its headers and first bytes went out, so the connection is cut short, never padded.
+    expect(cut.status).toBe(206);
+    await expect(cut.arrayBuffer()).rejects.toThrow();
+    const again = await track(ID, 'bytes=0-');
+    expect(again.statusCode).toBe(206);
+    expect(again.rawPayload.equals(clip)).toBe(true);
+    expect(music!.state.available).toBe(true);
+    const lines = logged.map((l) => JSON.parse(l) as Record<string, unknown>);
+    expect(lines.some((l) => typeof l.firstByteMs === 'number')).toBe(true);
   });
 
   it('[M3.ytmusic/a] only track 0 exists', async () => {
@@ -470,6 +511,87 @@ describe('[M3.ytmusic/a] a preload the queue moved past', () => {
     await new Promise((settled) => setTimeout(settled, 20));
     expect(warned).not.toContain('a song could not be preloaded');
     expect(music).not.toBeNull();
+  });
+});
+
+describe('[M3.ytmusic] a song plays without waiting for autoplay', () => {
+  const radioRow = (id: string) => ({ ...song(id), type: 'ATV' as const });
+  const PICK = 'ccccccccccc';
+  const LATER = 'ddddddddddd';
+  /** Radio held until `release`, then answering each seed as `pickFor` says. */
+  const heldRadio = (pickFor: (seed: string) => string) => {
+    let release = () => undefined as void;
+    const open = new Promise<void>((done) => (release = done));
+    const radio = async (seed: string) => {
+      await open;
+      return [radioRow(pickFor(seed))];
+    };
+    return { radio, release: () => release() };
+  };
+
+  it('[M3.ytmusic] answers at once while autoplay is still being worked out, with no next', async () => {
+    const { play } = await server({
+      radio: () => new Promise<YtSong[]>(() => undefined),
+      autoplayWaitMs: 60_000,
+    });
+    const started = Date.now();
+    const res = await play();
+    expect(res.statusCode).toBe(200);
+    expect(res.json<PlaybackPlan>().next).toBeUndefined();
+    expect(Date.now() - started).toBeLessThan(5_000);
+  });
+
+  it("[M3.ytmusic] once autoplay is worked out, its pick's first chunks are fetched ahead, once", async () => {
+    const held = heldRadio(() => PICK);
+    const { play, child, host } = await server({ radio: held.radio, autoplayWaitMs: 60_000 });
+    expect((await play()).statusCode).toBe(200);
+    await new Promise((settled) => setTimeout(settled, 20));
+    expect(child.runs).not.toHaveBeenCalledWith(PICK);
+    held.release();
+    await vi.waitFor(() => expect(child.runs).toHaveBeenCalledWith(PICK));
+    await vi.waitFor(() => expect(host.asked).toHaveLength(2));
+    expect(host.asked).toEqual([`bytes=0-${CHUNK - 1}`, `bytes=${CHUNK}-${2 * CHUNK - 1}`]);
+    await new Promise((settled) => setTimeout(settled, 20));
+    expect(host.asked).toHaveLength(2);
+  });
+
+  it('[M3.ytmusic] a device that played something else meanwhile never has the old song’s pick fetched', async () => {
+    const held = heldRadio((seed) => (seed === ID ? PICK : LATER));
+    const { play, child } = await server({
+      radio: held.radio,
+      autoplayWaitMs: 60_000,
+      tracks: [song(ID), song(OTHER), song(THIRD), song(PICK), song(LATER)],
+    });
+    expect((await play(ID)).statusCode).toBe(200);
+    expect((await play(OTHER)).statusCode).toBe(200);
+    held.release();
+    await vi.waitFor(() => expect(child.runs).toHaveBeenCalledWith(LATER));
+    await new Promise((settled) => setTimeout(settled, 20));
+    expect(child.runs).not.toHaveBeenCalledWith(PICK);
+  });
+
+  it('[M3.ytmusic] a song whose resolve fails still answers 503 streaming_unavailable', async () => {
+    const { play } = await server({
+      say: failing(botWall),
+      radio: () => new Promise<YtSong[]>(() => undefined),
+      autoplayWaitMs: 60_000,
+    });
+    const res = await play();
+    expect(res.statusCode).toBe(503);
+    expect(res.json()).toEqual({ error: 'streaming_unavailable' });
+  });
+
+  it('[M3.ytmusic] logs how it resolved and how long it took, with no id', async () => {
+    const logged: string[] = [];
+    const { play } = await server({ logged });
+    expect((await play()).statusCode).toBe(200);
+    const line = logged
+      .map((l) => JSON.parse(l) as Record<string, unknown>)
+      .find((l) => 'tier' in l);
+    expect(line).toMatchObject({ tier: 'plain' });
+    expect(typeof line?.resolveMs).toBe('number');
+    expect(typeof line?.totalMs).toBe('number');
+    expect(logged.join('\n')).not.toContain(ID);
   });
 });
 

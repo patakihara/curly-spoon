@@ -20,8 +20,12 @@ import { buildApp } from './app.js';
 import { type IndexRow } from './libraryIndex/rows.js';
 import { applyRow, emptyCounts } from './libraryIndex/store.js';
 import { SongCatalogue, songRows, type SongSource } from './music/catalogue.js';
+import { type FetchLike } from './adapters/http/fetch.js';
+import { type PlayerAnswer, playerAnswerSchema } from './adapters/ytmusic/schemas.js';
+import { type DirectResolve } from './music/direct.js';
 import { type SpawnLike } from './music/extractor.js';
-import { Music } from './music/index.js';
+import { MOST_AHEAD_PER_MINUTE, Music } from './music/index.js';
+import { parsePlayer, PlayerRefused } from './music/schemas.js';
 import { openDatabase, type Db } from './store/connection.js';
 import { createDevice } from './store/devices.js';
 import { createSession } from './store/sessions.js';
@@ -35,6 +39,57 @@ const recording = (call: string): Recording =>
   );
 const T0 = Date.UTC(2026, 10, 7, 8);
 const log = { warn: () => undefined, error: () => undefined };
+const clip = readFileSync(join(ADAPTERS, 'googlevideo', 'recordings', 'opus-clip.webm'));
+const SIZE = clip.byteLength;
+const CHUNK = Math.ceil(SIZE / 8);
+const playerOk = recordingSchema.parse(
+  JSON.parse(readFileSync(join(ADAPTERS, 'ytmusic', 'recordings', 'player-visionos.json'), 'utf8')),
+);
+
+/** YouTube's player as recorded, answering for any id, its formats the clip's size; every ask counted. */
+function directPlayer(fails = false) {
+  const asked = vi.fn((id: string) => id);
+  const direct: DirectResolve = async (id) => {
+    asked(id);
+    if (fails) throw new PlayerRefused('notPlayable');
+    const raw = structuredClone((playerOk.response.body as { json: PlayerAnswer }).json);
+    raw.videoDetails = { ...raw.videoDetails, videoId: id };
+    raw.streamingData = {
+      ...raw.streamingData,
+      adaptiveFormats: (raw.streamingData?.adaptiveFormats ?? []).map((row) => ({
+        ...(row as object),
+        contentLength: String(SIZE),
+      })),
+    };
+    return parsePlayer(playerAnswerSchema.parse(raw), id);
+  };
+  return { direct, asked };
+}
+
+/** The stream host: closed ranges of the clip; `hold` leaves an answer waiting until it is stopped. */
+function streamHost(hold = false) {
+  const asked: string[] = [];
+  const stopped: string[] = [];
+  const fetch: FetchLike = async (_url, init) => {
+    const range = new Headers(init?.headers).get('range') ?? '';
+    asked.push(range);
+    if (hold) {
+      return new Promise((_, reject) =>
+        init?.signal?.addEventListener('abort', () => {
+          stopped.push(range);
+          reject(new Error('aborted'));
+        }),
+      );
+    }
+    const [first = 0, last = 0] = range.replace('bytes=', '').split('-').map(Number);
+    const end = Math.min(last, SIZE - 1);
+    return new Response(clip.subarray(first, end + 1), {
+      status: 206,
+      headers: { 'content-type': 'audio/webm', 'content-range': `bytes ${first}-${end}/${SIZE}` },
+    });
+  };
+  return { fetch, asked, stopped };
+}
 
 const recorded = (): YtMusicClient =>
   new YtMusicClient({
@@ -75,11 +130,20 @@ afterEach(async () => {
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
-async function server(options: { client?: SongSource; music?: false; now?: () => number } = {}) {
+async function server(
+  options: {
+    client?: SongSource;
+    music?: false;
+    now?: () => number;
+    direct?: DirectResolve;
+    streamFetch?: FetchLike;
+  } = {},
+) {
   const db = openDatabase(':memory:');
   const dataDir = mkdtempSync(join(tmpdir(), 'auralis-search-songs-'));
   dirs.push(dataDir);
   const runs = vi.fn();
+  const warned: string[] = [];
   const spawn: SpawnLike = (_file, args) => {
     runs(args.at(-1));
     const child = new EventEmitter() as ChildProcess & EventEmitter;
@@ -101,12 +165,14 @@ async function server(options: { client?: SongSource; music?: false; now?: () =>
       ? null
       : new Music({
           db,
-          log,
+          log: { warn: (_d, message) => warned.push(message), error: () => undefined },
           now: options.now ?? (() => T0),
           dataDir,
-          capBytes: 1024,
+          capBytes: options.streamFetch === undefined ? 1024 : SIZE * 10,
           imagePath: '/opt/yt-dlp/2026.10.26/yt-dlp',
-          streamFetch: () => Promise.reject(new Error('no stream host')),
+          streamFetch: options.streamFetch ?? (() => Promise.reject(new Error('no stream host'))),
+          chunkBytes: CHUNK,
+          ...(options.direct === undefined ? {} : { direct: options.direct }),
           canary: async () => ({ passed: false, reason: 'unavailable', ms: 1 }),
           spawn,
           client: { search, radio: (id) => client.radio(id) },
@@ -125,7 +191,7 @@ async function server(options: { client?: SongSource; music?: false; now?: () =>
     expect(answer.statusCode, answer.body).toBe(200);
     return SearchResults.parse(answer.json());
   };
-  return { app, db, music, headers, ask, search, runs };
+  return { app, db, music, headers, ask, search, runs, warned };
 }
 
 const songsOnRecord = () => recorded().search('a song');
@@ -266,26 +332,187 @@ describe('[M3.ytmusic/a] song rows in Search', () => {
     expect(back.songs.length).toBeGreaterThan(0);
   });
 
-  it('[M3.ytmusic/a] the top row alone is resolved ahead, once for a repeat search', async () => {
-    const { ask, runs, search } = await server();
+  it('[M3.ytmusic] the top two rows are resolved ahead through the direct call alone, once in five minutes', async () => {
+    const { direct, asked } = directPlayer();
+    const { ask, runs } = await server({ direct, streamFetch: streamHost().fetch });
     const { songs } = await ask();
-    await vi.waitFor(() => expect(runs).toHaveBeenCalled());
+    await vi.waitFor(() => expect(asked).toHaveBeenCalledTimes(2));
     await ask();
     await new Promise((settled) => setTimeout(settled, 20));
-    expect(search).toHaveBeenCalledTimes(1);
-    expect(new Set(runs.mock.calls.map(([id]) => id as string))).toEqual(
-      new Set([songs[0]!.ref.id]),
-    );
-    // Both tiers of one failing resolve, and no more for the repeat.
-    expect(runs).toHaveBeenCalledTimes(2);
+    expect(asked.mock.calls.map(([id]) => id)).toEqual([songs[0]!.ref.id, songs[1]!.ref.id]);
+    expect(runs).not.toHaveBeenCalled();
   });
 
-  it('[M3.ytmusic/a] the resolve ahead failing says nothing of streaming', async () => {
-    const { ask, music, runs } = await server();
+  it('[M3.ytmusic] the search answers without waiting on its resolve ahead', async () => {
+    const asked = vi.fn();
+    const { ask } = await server({
+      direct: (id) => {
+        asked(id);
+        return new Promise(() => undefined);
+      },
+    });
+    expect((await ask()).songs.length).toBeGreaterThan(1);
+    expect(asked).toHaveBeenCalledTimes(2);
+  });
+
+  it('[M3.ytmusic] a direct failure ahead spawns nothing, and says nothing of streaming', async () => {
+    const { direct, asked } = directPlayer(true);
+    const { ask, music, runs, warned } = await server({ direct });
     await ask();
-    await vi.waitFor(() => expect(runs).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(warned).toContain('a song could not be resolved ahead'));
     await new Promise((settled) => setTimeout(settled, 20));
+    expect(asked).toHaveBeenCalledTimes(2);
+    expect(runs).not.toHaveBeenCalled();
     expect(music!.state.available).toBe(true);
+  });
+
+  it('[M3.ytmusic] with no direct call, nothing is resolved ahead and nothing spawns', async () => {
+    const { ask, runs } = await server();
+    await ask();
+    await new Promise((settled) => setTimeout(settled, 20));
+    expect(runs).not.toHaveBeenCalled();
+  });
+
+  it('[M3.ytmusic] while streaming is unavailable nothing is resolved ahead', async () => {
+    const { direct, asked } = directPlayer();
+    const host = streamHost();
+    const { ask, music } = await server({ direct, streamFetch: host.fetch });
+    music!.state.canaryFailed('blocked');
+    await ask();
+    await new Promise((settled) => setTimeout(settled, 20));
+    expect(asked).not.toHaveBeenCalled();
+    expect(host.asked).toEqual([]);
+  });
+
+  it('[M3.ytmusic] the top row alone has its first chunk fetched, and a tap on it asks the player and the host nothing more', async () => {
+    const { direct, asked } = directPlayer();
+    const host = streamHost();
+    const { app, ask, headers, runs } = await server({ direct, streamFetch: host.fetch });
+    const { songs } = await ask();
+    await vi.waitFor(() => expect(host.asked).toEqual([`bytes=0-${CHUNK - 1}`]));
+    await new Promise((settled) => setTimeout(settled, 20));
+    expect(host.asked).toHaveLength(1);
+    const ref = songs[0]!.ref;
+    const played = await app.inject({
+      method: 'POST',
+      url: '/api/play',
+      headers,
+      payload: { ref },
+    });
+    expect(played.statusCode, played.body).toBe(200);
+    const track = await app.inject({
+      method: 'GET',
+      url: `/api/media/ytmusic:${ref.id}/tracks/0`,
+      headers: { ...headers, range: `bytes=0-${CHUNK - 1}` },
+    });
+    expect(track.statusCode).toBe(206);
+    expect(track.rawPayload.equals(clip.subarray(0, CHUNK))).toBe(true);
+    expect(asked).toHaveBeenCalledTimes(2);
+    expect(host.asked).toHaveLength(1);
+    expect(runs).not.toHaveBeenCalled();
+  });
+
+  it('[M3.ytmusic] a URL refused to the chunk fetched ahead is resolved again through the direct call, never a process', async () => {
+    const player = directPlayer();
+    const asked = vi.fn();
+    // The first two rows resolve; the re-resolve after the refusal fails, which yt-dlp would answer.
+    const direct: DirectResolve = (id) => {
+      asked(id);
+      return asked.mock.calls.length <= 2
+        ? player.direct(id)
+        : Promise.reject(new PlayerRefused('notPlayable'));
+    };
+    const streamFetch: FetchLike = async () => new Response('', { status: 403 });
+    const { ask, runs, warned } = await server({ direct, streamFetch });
+    const { songs } = await ask();
+    await vi.waitFor(() => expect(warned).toContain('a song could not be fetched ahead'));
+    await new Promise((settled) => setTimeout(settled, 20));
+    expect(asked.mock.calls.map(([id]) => id as string)).toEqual([
+      songs[0]!.ref.id,
+      songs[1]!.ref.id,
+      songs[0]!.ref.id,
+    ]);
+    expect(runs).not.toHaveBeenCalled();
+  });
+
+  it('[M3.ytmusic] a row that would not play is never resolved ahead', async () => {
+    const { direct, asked } = directPlayer();
+    const { ask, db, music } = await server({
+      direct,
+      client: { search: async () => [], radio: async () => [] },
+    });
+    await ask();
+    const [first] = await songsOnRecord();
+    const row = songRows(db, [first!])[0]!;
+    rememberTracks(db, [{ ...first!, id: 'ccccccccccc', duration: 3 * 3600 + 1 }], T0);
+    music!.resolveAhead('a-device', [
+      { ...row, availability: { kind: 'external', requestable: false } },
+      { ...row, ref: { source: 'ytmusic', id: 'zzzzzzzzzzz' } },
+    ]);
+    music!.resolveAhead('a-device', [{ ...row, ref: { source: 'ytmusic', id: 'ccccccccccc' } }]);
+    await new Promise((settled) => setTimeout(settled, 20));
+    expect(asked).not.toHaveBeenCalled();
+  });
+
+  it("[M3.ytmusic] a new search's top row stops the last one's chunk fetch", async () => {
+    const [first, second, third] = await songsOnRecord();
+    const client: SongSource = {
+      search: async (q) => (q === 'other' ? [third!, second!] : [first!, second!]),
+      radio: async () => [],
+    };
+    const host = streamHost(true);
+    const { ask } = await server({
+      client,
+      direct: directPlayer().direct,
+      streamFetch: host.fetch,
+    });
+    await ask('a song');
+    await vi.waitFor(() => expect(host.asked).toHaveLength(1));
+    await ask('other');
+    await vi.waitFor(() => expect(host.stopped).toHaveLength(1));
+    await vi.waitFor(() => expect(host.asked).toHaveLength(2));
+  });
+
+  it("[M3.ytmusic] an older search's resolve ahead, slower than the newer one's, fetches nothing", async () => {
+    const [first, , third] = await songsOnRecord();
+    const client: SongSource = {
+      search: async (q) => (q === 'other' ? [third!] : [first!]),
+      radio: async () => [],
+    };
+    const player = directPlayer();
+    const direct: DirectResolve = async (id) => {
+      if (id === first!.id) await new Promise((settled) => setTimeout(settled, 60));
+      return player.direct(id);
+    };
+    const host = streamHost(true);
+    const { ask } = await server({ client, direct, streamFetch: host.fetch });
+    await ask('a song');
+    await ask('other');
+    await vi.waitFor(() => expect(player.asked).toHaveBeenCalledWith(first!.id));
+    await new Promise((settled) => setTimeout(settled, 40));
+    expect(host.asked).toHaveLength(1);
+    expect(host.stopped).toEqual([]);
+  });
+
+  it('[M3.ytmusic] searches never ask more than the minute’s share of resolves ahead', async () => {
+    const songOf = (n: number): YtSong => ({
+      id: `song${String(n).padStart(7, '0')}`,
+      title: `Song ${n}`,
+      artists: [`Artist ${n}`],
+      album: null,
+      duration: 200,
+      artUrl: null,
+      type: 'ATV',
+    });
+    const client: SongSource = {
+      search: async (q) => [songOf(Number(q) * 2), songOf(Number(q) * 2 + 1)],
+      radio: async () => [],
+    };
+    const { direct, asked } = directPlayer();
+    const { ask } = await server({ client, direct, streamFetch: streamHost().fetch });
+    for (let n = 0; n < MOST_AHEAD_PER_MINUTE; n += 1) await ask(String(n));
+    await new Promise((settled) => setTimeout(settled, 20));
+    expect(asked).toHaveBeenCalledTimes(MOST_AHEAD_PER_MINUTE);
   });
 
   it('[M3.ytmusic/a] with no music configured, no rows and streaming ok', async () => {

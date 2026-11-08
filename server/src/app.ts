@@ -176,6 +176,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
         ? { abs: null, jellyfin: null }
         : upstreamFor({ db, ...upstreams }, caller),
     householdAbs: upstreams?.household?.abs ?? null,
+    householdJellyfin: upstreams?.household?.jellyfin ?? null,
     ownReaches: (caller, row) => markReach.reaches(caller, row, true),
     now: options.now ?? Date.now,
     log: app.log,

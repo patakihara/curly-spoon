@@ -1,0 +1,364 @@
+{
+  "upstream": "ytmusic",
+  "upstreamVersion": "InnerTube VISIONOS 1.02, as yt-dlp 2026.10.26 asks it",
+  "call": "player-visionos",
+  "request": {
+    "method": "POST",
+    "path": "/youtubei/v1/player",
+    "query": {
+      "prettyPrint": "false"
+    },
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json",
+      "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_7_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15"
+    },
+    "body": {
+      "json": {
+        "context": {
+          "client": {
+            "clientName": "VISIONOS",
+            "clientVersion": "1.02",
+            "deviceMake": "Apple",
+            "deviceModel": "RealityDevice17,1",
+            "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_7_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15",
+            "osName": "visionOS",
+            "osVersion": "26.5.23O471",
+            "hl": "en",
+            "timeZone": "UTC",
+            "utcOffsetMinutes": 0
+          }
+        },
+        "videoId": "lYBUbBu4W08",
+        "playbackContext": {
+          "contentPlaybackContext": {
+            "html5Preference": "HTML5_PREF_WANTS"
+          }
+        },
+        "contentCheckOk": true,
+        "racyCheckOk": true
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=UTF-8"
+    },
+    "body": {
+      "json": {
+        "responseContext": {
+          "visitorData": "<token>"
+        },
+        "playabilityStatus": {
+          "status": "OK"
+        },
+        "videoDetails": {
+          "videoId": "lYBUbBu4W08",
+          "lengthSeconds": "214",
+          "isLiveContent": false
+        },
+        "streamingData": {
+          "expiresInSeconds": "21540",
+          "adaptiveFormats": [
+            {
+              "itag": 137,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=137&mime=video%2Fmp4&clen=4157465&dur=213.560&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "video/mp4; codecs=\"avc1.640020\"",
+              "bitrate": 288800,
+              "averageBitrate": 155739,
+              "contentLength": "4157465",
+              "approxDurationMs": "213560",
+              "width": 1080,
+              "height": 1080,
+              "fps": 25,
+              "qualityLabel": "1080p"
+            },
+            {
+              "itag": 248,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=248&mime=video%2Fwebm&clen=6295225&dur=213.560&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "video/webm; codecs=\"vp9\"",
+              "bitrate": 456247,
+              "averageBitrate": 235820,
+              "contentLength": "6295225",
+              "approxDurationMs": "213560",
+              "width": 1080,
+              "height": 1080,
+              "fps": 25,
+              "qualityLabel": "1080p"
+            },
+            {
+              "itag": 399,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=399&mime=video%2Fmp4&clen=9472649&dur=213.560&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "video/mp4; codecs=\"av01.0.08M.08\"",
+              "bitrate": 678669,
+              "averageBitrate": 354847,
+              "contentLength": "9472649",
+              "approxDurationMs": "213560",
+              "width": 1080,
+              "height": 1080,
+              "fps": 25,
+              "qualityLabel": "1080p"
+            },
+            {
+              "itag": 136,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=136&mime=video%2Fmp4&clen=1163590&dur=213.560&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "video/mp4; codecs=\"avc1.4D401F\"",
+              "bitrate": 74885,
+              "averageBitrate": 43588,
+              "contentLength": "1163590",
+              "approxDurationMs": "213560",
+              "width": 720,
+              "height": 720,
+              "fps": 25,
+              "qualityLabel": "720p"
+            },
+            {
+              "itag": 247,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=247&mime=video%2Fwebm&clen=3936485&dur=213.560&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "video/webm; codecs=\"vp9\"",
+              "bitrate": 276858,
+              "averageBitrate": 147461,
+              "contentLength": "3936485",
+              "approxDurationMs": "213560",
+              "width": 720,
+              "height": 720,
+              "fps": 25,
+              "qualityLabel": "720p"
+            },
+            {
+              "itag": 398,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=398&mime=video%2Fmp4&clen=4492840&dur=213.560&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "video/mp4; codecs=\"av01.0.04M.08\"",
+              "bitrate": 318617,
+              "averageBitrate": 168302,
+              "contentLength": "4492840",
+              "approxDurationMs": "213560",
+              "width": 720,
+              "height": 720,
+              "fps": 25,
+              "qualityLabel": "720p"
+            },
+            {
+              "itag": 135,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=135&mime=video%2Fmp4&clen=777596&dur=213.560&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "video/mp4; codecs=\"avc1.4D401E\"",
+              "bitrate": 49085,
+              "averageBitrate": 29128,
+              "contentLength": "777596",
+              "approxDurationMs": "213560",
+              "width": 480,
+              "height": 480,
+              "fps": 25,
+              "qualityLabel": "480p"
+            },
+            {
+              "itag": 244,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=244&mime=video%2Fwebm&clen=2181563&dur=213.560&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "video/webm; codecs=\"vp9\"",
+              "bitrate": 152880,
+              "averageBitrate": 81721,
+              "contentLength": "2181563",
+              "approxDurationMs": "213560",
+              "width": 480,
+              "height": 480,
+              "fps": 25,
+              "qualityLabel": "480p"
+            },
+            {
+              "itag": 397,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=397&mime=video%2Fmp4&clen=2627862&dur=213.560&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "video/mp4; codecs=\"av01.0.01M.08\"",
+              "bitrate": 184312,
+              "averageBitrate": 98440,
+              "contentLength": "2627862",
+              "approxDurationMs": "213560",
+              "width": 480,
+              "height": 480,
+              "fps": 25,
+              "qualityLabel": "480p"
+            },
+            {
+              "itag": 134,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=134&mime=video%2Fmp4&clen=517804&dur=213.560&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "video/mp4; codecs=\"avc1.4D4015\"",
+              "bitrate": 30878,
+              "averageBitrate": 19397,
+              "contentLength": "517804",
+              "approxDurationMs": "213560",
+              "width": 360,
+              "height": 360,
+              "fps": 25,
+              "qualityLabel": "360p"
+            },
+            {
+              "itag": 243,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=243&mime=video%2Fwebm&clen=1523853&dur=213.560&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "video/webm; codecs=\"vp9\"",
+              "bitrate": 105595,
+              "averageBitrate": 57083,
+              "contentLength": "1523853",
+              "approxDurationMs": "213560",
+              "width": 360,
+              "height": 360,
+              "fps": 25,
+              "qualityLabel": "360p"
+            },
+            {
+              "itag": 396,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=396&mime=video%2Fmp4&clen=1429851&dur=213.560&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "video/mp4; codecs=\"av01.0.00M.08\"",
+              "bitrate": 98242,
+              "averageBitrate": 53562,
+              "contentLength": "1429851",
+              "approxDurationMs": "213560",
+              "width": 360,
+              "height": 360,
+              "fps": 25,
+              "qualityLabel": "360p"
+            },
+            {
+              "itag": 133,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=133&mime=video%2Fmp4&clen=332199&dur=213.560&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "video/mp4; codecs=\"avc1.4D400C\"",
+              "bitrate": 18328,
+              "averageBitrate": 12444,
+              "contentLength": "332199",
+              "approxDurationMs": "213560",
+              "width": 240,
+              "height": 240,
+              "fps": 25,
+              "qualityLabel": "240p"
+            },
+            {
+              "itag": 242,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=242&mime=video%2Fwebm&clen=678779&dur=213.560&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "video/webm; codecs=\"vp9\"",
+              "bitrate": 44952,
+              "averageBitrate": 25427,
+              "contentLength": "678779",
+              "approxDurationMs": "213560",
+              "width": 240,
+              "height": 240,
+              "fps": 25,
+              "qualityLabel": "240p"
+            },
+            {
+              "itag": 395,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=395&mime=video%2Fmp4&clen=778068&dur=213.560&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "video/mp4; codecs=\"av01.0.00M.08\"",
+              "bitrate": 51058,
+              "averageBitrate": 29146,
+              "contentLength": "778068",
+              "approxDurationMs": "213560",
+              "width": 240,
+              "height": 240,
+              "fps": 25,
+              "qualityLabel": "240p"
+            },
+            {
+              "itag": 160,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=160&mime=video%2Fmp4&clen=226434&dur=213.560&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "video/mp4; codecs=\"avc1.4D400B\"",
+              "bitrate": 11476,
+              "averageBitrate": 8482,
+              "contentLength": "226434",
+              "approxDurationMs": "213560",
+              "width": 144,
+              "height": 144,
+              "fps": 25,
+              "qualityLabel": "144p"
+            },
+            {
+              "itag": 278,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=278&mime=video%2Fwebm&clen=484497&dur=213.560&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "video/webm; codecs=\"vp9\"",
+              "bitrate": 26240,
+              "averageBitrate": 18149,
+              "contentLength": "484497",
+              "approxDurationMs": "213560",
+              "width": 144,
+              "height": 144,
+              "fps": 25,
+              "qualityLabel": "144p"
+            },
+            {
+              "itag": 394,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=394&mime=video%2Fmp4&clen=495565&dur=213.560&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "video/mp4; codecs=\"av01.0.00M.08\"",
+              "bitrate": 32417,
+              "averageBitrate": 18563,
+              "contentLength": "495565",
+              "approxDurationMs": "213560",
+              "width": 144,
+              "height": 144,
+              "fps": 25,
+              "qualityLabel": "144p"
+            },
+            {
+              "itag": 139,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=139&mime=audio%2Fmp4&clen=1304649&dur=213.573&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "audio/mp4; codecs=\"mp4a.40.5\"",
+              "bitrate": 50546,
+              "averageBitrate": 48869,
+              "contentLength": "1304649",
+              "approxDurationMs": "213573",
+              "audioQuality": "AUDIO_QUALITY_LOW",
+              "audioSampleRate": "22050",
+              "audioChannels": 2
+            },
+            {
+              "itag": 140,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=140&mime=audio%2Fmp4&clen=3459077&dur=213.573&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "audio/mp4; codecs=\"mp4a.40.2\"",
+              "bitrate": 131115,
+              "averageBitrate": 129569,
+              "contentLength": "3459077",
+              "approxDurationMs": "213573",
+              "audioQuality": "AUDIO_QUALITY_MEDIUM",
+              "audioSampleRate": "44100",
+              "audioChannels": 2
+            },
+            {
+              "itag": 249,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=249&mime=audio%2Fwebm&clen=1294342&dur=213.581&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "audio/webm; codecs=\"opus\"",
+              "bitrate": 51585,
+              "averageBitrate": 48481,
+              "contentLength": "1294342",
+              "approxDurationMs": "213581",
+              "audioQuality": "AUDIO_QUALITY_LOW",
+              "audioSampleRate": "48000",
+              "audioChannels": 2
+            },
+            {
+              "itag": 250,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=250&mime=audio%2Fwebm&clen=1717713&dur=213.581&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "audio/webm; codecs=\"opus\"",
+              "bitrate": 68132,
+              "averageBitrate": 64339,
+              "contentLength": "1717713",
+              "approxDurationMs": "213581",
+              "audioQuality": "AUDIO_QUALITY_LOW",
+              "audioSampleRate": "48000",
+              "audioChannels": 2
+            },
+            {
+              "itag": 251,
+              "url": "https://rr0---sn-recorded.googlevideo.com/videoplayback?expire=1794121615&itag=251&mime=audio%2Fwebm&clen=3445462&dur=213.581&source=youtube&ip=<token>&sig=<token>&lsig=<token>&n=<token>&ei=<token>",
+              "mimeType": "audio/webm; codecs=\"opus\"",
+              "bitrate": 135138,
+              "averageBitrate": 129055,
+              "contentLength": "3445462",
+              "approxDurationMs": "213581",
+              "audioQuality": "AUDIO_QUALITY_MEDIUM",
+              "audioSampleRate": "48000",
+              "audioChannels": 2
+            }
+          ]
+        },
+        "trimmed": "Trimmed by the recorder: rows cut to the first few, and everything Auralis never reads taken out (tracking values, menus, continuations, the session context but its visitor id)."
+      }
+    }
+  }
+}
