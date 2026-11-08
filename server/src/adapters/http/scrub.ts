@@ -40,6 +40,8 @@ export const SECRET_QUERY_KEY =
   /token|key(?!words)|secret|pass|pash|auth(?!or)|cookie|signature|visitor/i;
 /** The host YouTube streams from, whatever its cache node. Its name is the household's ISP's. */
 export const STREAM_HOST = /^(?:[\w-]+\.)*googlevideo\.com$/i;
+/** What a cover's redirect replaces each of the Internet Archive's nodes with, as it varies. */
+export const RECORDED_ARCHIVE_NODE = 'recorded-node.archive.org';
 /** What a stream's URL replaces every such host with. */
 export const RECORDED_STREAM_HOST = 'rr0---sn-recorded.googlevideo.com';
 /**

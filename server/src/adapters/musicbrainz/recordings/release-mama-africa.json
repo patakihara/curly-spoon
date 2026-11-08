@@ -1,0 +1,525 @@
+{
+  "upstream": "musicbrainz",
+  "upstreamVersion": "MusicBrainz web service 2",
+  "call": "release-mama-africa",
+  "request": {
+    "method": "GET",
+    "path": "/ws/2/release/a8cf67cb-78ef-4768-b0b1-cd24cf61da85",
+    "query": {
+      "fmt": "json",
+      "inc": "recordings+artist-credits+release-groups+media"
+    },
+    "headers": {
+      "accept": "application/json",
+      "user-agent": "Auralis/0.0.0 ( https://github.com/patakihara/curly-spoon )"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "quality": "normal",
+        "id": "a8cf67cb-78ef-4768-b0b1-cd24cf61da85",
+        "date": "1983",
+        "status": "Official",
+        "media": [
+          {
+            "format-id": "3e9080b0-5e6c-34ab-bd15-f526b6306a64",
+            "id": "cc9c33c5-4927-3681-83c2-0c7d6796a307",
+            "format": "12\" Vinyl",
+            "track-offset": 0,
+            "track-count": 9,
+            "position": 1,
+            "tracks": [
+              {
+                "id": "71473bdf-a3f1-474c-8f79-da0d6a57aa02",
+                "number": "A1",
+                "length": 476733,
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "artist": {
+                      "type": "Person",
+                      "sort-name": "Tosh, Peter",
+                      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                      "disambiguation": "",
+                      "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                      "country": "JM",
+                      "name": "Peter Tosh"
+                    },
+                    "name": "Peter Tosh"
+                  }
+                ],
+                "position": 1,
+                "title": "Mama Africa",
+                "recording": {
+                  "first-release-date": "1983",
+                  "id": "4fd282b5-9804-483d-a0d6-71387f2ebebf",
+                  "video": false,
+                  "artist-credit": [
+                    {
+                      "joinphrase": "",
+                      "name": "Peter Tosh",
+                      "artist": {
+                        "country": "JM",
+                        "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                        "name": "Peter Tosh",
+                        "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                        "disambiguation": "",
+                        "type": "Person",
+                        "sort-name": "Tosh, Peter"
+                      }
+                    }
+                  ],
+                  "title": "Mama Africa",
+                  "length": 476733,
+                  "disambiguation": ""
+                }
+              },
+              {
+                "length": 353466,
+                "id": "e8c9b769-fd55-46ef-a582-3767bac492bd",
+                "number": "A2",
+                "recording": {
+                  "title": "Glasshouse",
+                  "video": false,
+                  "artist-credit": [
+                    {
+                      "name": "Peter Tosh",
+                      "artist": {
+                        "country": "JM",
+                        "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                        "name": "Peter Tosh",
+                        "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                        "disambiguation": "",
+                        "type": "Person",
+                        "sort-name": "Tosh, Peter"
+                      },
+                      "joinphrase": ""
+                    }
+                  ],
+                  "disambiguation": "",
+                  "length": 353466,
+                  "first-release-date": "1983",
+                  "id": "907fc013-0f39-47f7-a72d-e7b61828324a"
+                },
+                "position": 2,
+                "title": "Glasshouse",
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "artist": {
+                      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                      "disambiguation": "",
+                      "country": "JM",
+                      "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                      "name": "Peter Tosh",
+                      "type": "Person",
+                      "sort-name": "Tosh, Peter"
+                    },
+                    "name": "Peter Tosh"
+                  }
+                ]
+              },
+              {
+                "length": 345800,
+                "id": "64e04edb-fe35-4647-93f2-27c86da0785a",
+                "number": "A3",
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "name": "Peter Tosh",
+                    "artist": {
+                      "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                      "country": "JM",
+                      "name": "Peter Tosh",
+                      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                      "disambiguation": "",
+                      "type": "Person",
+                      "sort-name": "Tosh, Peter"
+                    }
+                  }
+                ],
+                "recording": {
+                  "first-release-date": "1983",
+                  "id": "c42ad8d5-c568-49e2-b542-0f931418cb2e",
+                  "title": "Not Gonna Give It Up",
+                  "video": false,
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                        "disambiguation": "",
+                        "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                        "country": "JM",
+                        "name": "Peter Tosh",
+                        "type": "Person",
+                        "sort-name": "Tosh, Peter"
+                      },
+                      "name": "Peter Tosh",
+                      "joinphrase": ""
+                    }
+                  ],
+                  "disambiguation": "",
+                  "length": 345800
+                },
+                "title": "Not Gonna Give It Up",
+                "position": 3
+              },
+              {
+                "id": "7e857534-05b1-47f0-9763-f81e74b6b30b",
+                "number": "A4",
+                "length": 241333,
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "name": "Peter Tosh",
+                    "artist": {
+                      "disambiguation": "",
+                      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                      "name": "Peter Tosh",
+                      "country": "JM",
+                      "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                      "sort-name": "Tosh, Peter",
+                      "type": "Person"
+                    }
+                  }
+                ],
+                "position": 4,
+                "title": "Stop That Train",
+                "recording": {
+                  "disambiguation": "1983 re-recording",
+                  "length": 241333,
+                  "title": "Stop That Train",
+                  "artist-credit": [
+                    {
+                      "joinphrase": "",
+                      "name": "Peter Tosh",
+                      "artist": {
+                        "disambiguation": "",
+                        "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                        "name": "Peter Tosh",
+                        "country": "JM",
+                        "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                        "sort-name": "Tosh, Peter",
+                        "type": "Person"
+                      }
+                    }
+                  ],
+                  "video": false,
+                  "id": "8ad29a79-4fbe-464a-809d-b49df8fab607",
+                  "first-release-date": "1983"
+                }
+              },
+              {
+                "length": 243626,
+                "number": "B1",
+                "id": "1e5c2700-2583-4a45-9a35-84e29d5fa322",
+                "artist-credit": [
+                  {
+                    "artist": {
+                      "type": "Person",
+                      "sort-name": "Tosh, Peter",
+                      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                      "disambiguation": "",
+                      "country": "JM",
+                      "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                      "name": "Peter Tosh"
+                    },
+                    "name": "Peter Tosh",
+                    "joinphrase": ""
+                  }
+                ],
+                "recording": {
+                  "id": "d33e6fba-937c-48d0-84fe-7a374c4844ec",
+                  "first-release-date": "1983",
+                  "disambiguation": "",
+                  "length": 243400,
+                  "title": "Johnny B. Goode",
+                  "artist-credit": [
+                    {
+                      "joinphrase": "",
+                      "artist": {
+                        "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                        "disambiguation": "",
+                        "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                        "country": "JM",
+                        "name": "Peter Tosh",
+                        "type": "Person",
+                        "sort-name": "Tosh, Peter"
+                      },
+                      "name": "Peter Tosh"
+                    }
+                  ],
+                  "video": false
+                },
+                "position": 5,
+                "title": "Johnny B. Goode"
+              },
+              {
+                "length": 249800,
+                "id": "e26c2600-1df7-4d78-a916-0bade62ca1ee",
+                "number": "B2",
+                "recording": {
+                  "id": "e4109946-23d1-49ad-8b34-fa571c11fb3a",
+                  "first-release-date": "1983",
+                  "length": 249800,
+                  "disambiguation": "",
+                  "artist-credit": [
+                    {
+                      "joinphrase": "",
+                      "name": "Peter Tosh",
+                      "artist": {
+                        "name": "Peter Tosh",
+                        "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                        "country": "JM",
+                        "disambiguation": "",
+                        "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                        "sort-name": "Tosh, Peter",
+                        "type": "Person"
+                      }
+                    }
+                  ],
+                  "video": false,
+                  "title": "Where You Gonna Run"
+                },
+                "title": "Where You Gonna Run",
+                "position": 6,
+                "artist-credit": [
+                  {
+                    "name": "Peter Tosh",
+                    "artist": {
+                      "sort-name": "Tosh, Peter",
+                      "type": "Person",
+                      "disambiguation": "",
+                      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                      "name": "Peter Tosh",
+                      "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                      "country": "JM"
+                    },
+                    "joinphrase": ""
+                  }
+                ]
+              },
+              {
+                "number": "B3",
+                "id": "47929ccb-52b6-4040-82a3-46ae67e12459",
+                "length": 261040,
+                "position": 7,
+                "title": "Peace Treaty",
+                "recording": {
+                  "video": false,
+                  "artist-credit": [
+                    {
+                      "joinphrase": "",
+                      "artist": {
+                        "sort-name": "Tosh, Peter",
+                        "type": "Person",
+                        "name": "Peter Tosh",
+                        "country": "JM",
+                        "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                        "disambiguation": "",
+                        "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df"
+                      },
+                      "name": "Peter Tosh"
+                    }
+                  ],
+                  "title": "Peace Treaty",
+                  "length": 261040,
+                  "disambiguation": "",
+                  "first-release-date": "1983",
+                  "id": "83192956-dae9-4664-89d8-362d64493a57"
+                },
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "artist": {
+                      "type": "Person",
+                      "sort-name": "Tosh, Peter",
+                      "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                      "country": "JM",
+                      "name": "Peter Tosh",
+                      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                      "disambiguation": ""
+                    },
+                    "name": "Peter Tosh"
+                  }
+                ]
+              },
+              {
+                "id": "a6cc0ab3-ad11-4e22-8625-108e2a6a93b7",
+                "number": "B4",
+                "length": 209133,
+                "position": 8,
+                "title": "Feel No Way",
+                "recording": {
+                  "first-release-date": "1983",
+                  "id": "7a44ac59-e955-4761-b2bd-16413d865d65",
+                  "artist-credit": [
+                    {
+                      "name": "Peter Tosh",
+                      "artist": {
+                        "type": "Person",
+                        "sort-name": "Tosh, Peter",
+                        "country": "JM",
+                        "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                        "name": "Peter Tosh",
+                        "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                        "disambiguation": ""
+                      },
+                      "joinphrase": ""
+                    }
+                  ],
+                  "video": false,
+                  "title": "Feel No Way",
+                  "length": 209133,
+                  "disambiguation": ""
+                },
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "name": "Peter Tosh",
+                    "artist": {
+                      "disambiguation": "",
+                      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                      "name": "Peter Tosh",
+                      "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                      "country": "JM",
+                      "sort-name": "Tosh, Peter",
+                      "type": "Person"
+                    }
+                  }
+                ]
+              },
+              {
+                "title": "Maga Dog",
+                "position": 9,
+                "recording": {
+                  "title": "Maga Dog",
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                        "disambiguation": "",
+                        "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                        "country": "JM",
+                        "name": "Peter Tosh",
+                        "type": "Person",
+                        "sort-name": "Tosh, Peter"
+                      },
+                      "name": "Peter Tosh",
+                      "joinphrase": ""
+                    }
+                  ],
+                  "video": false,
+                  "disambiguation": "1983 re-recording",
+                  "length": 265067,
+                  "first-release-date": "1983",
+                  "id": "4d586c1d-a7e8-4512-8cce-774e15a4e7e3"
+                },
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "artist": {
+                      "sort-name": "Tosh, Peter",
+                      "type": "Person",
+                      "name": "Peter Tosh",
+                      "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                      "country": "JM",
+                      "disambiguation": "",
+                      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df"
+                    },
+                    "name": "Peter Tosh"
+                  }
+                ],
+                "id": "a3f178c6-6f2c-4bb6-9d8e-1552ea8082b8",
+                "number": "B5",
+                "length": 265067
+              }
+            ],
+            "title": ""
+          }
+        ],
+        "disambiguation": "",
+        "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+        "barcode": "077771709517",
+        "artist-credit": [
+          {
+            "name": "Peter Tosh",
+            "artist": {
+              "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+              "disambiguation": "",
+              "country": "JM",
+              "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+              "name": "Peter Tosh",
+              "type": "Person",
+              "sort-name": "Tosh, Peter"
+            },
+            "joinphrase": ""
+          }
+        ],
+        "asin": null,
+        "packaging-id": "f7101ce3-0384-39ce-9fde-fbbd0044d35f",
+        "cover-art-archive": {
+          "count": 1,
+          "back": false,
+          "front": true,
+          "darkened": false,
+          "artwork": true
+        },
+        "text-representation": {
+          "language": "eng",
+          "script": "Latn"
+        },
+        "release-group": {
+          "secondary-types": [],
+          "disambiguation": "",
+          "artist-credit": [
+            {
+              "joinphrase": "",
+              "artist": {
+                "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                "disambiguation": "",
+                "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                "country": "JM",
+                "name": "Peter Tosh",
+                "type": "Person",
+                "sort-name": "Tosh, Peter"
+              },
+              "name": "Peter Tosh"
+            }
+          ],
+          "secondary-type-ids": [],
+          "title": "Mama Africa",
+          "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+          "id": "f463bc86-e66e-36de-a576-657927392f22",
+          "primary-type": "Album",
+          "first-release-date": "1983"
+        },
+        "packaging": "Cardboard/Paper Sleeve",
+        "country": "US",
+        "release-events": [
+          {
+            "date": "1983",
+            "area": {
+              "type": null,
+              "sort-name": "United States",
+              "iso-3166-1-codes": [
+                "US"
+              ],
+              "type-id": null,
+              "disambiguation": "",
+              "id": "489ce91b-6658-3307-9877-795b68554c98",
+              "name": "United States"
+            }
+          }
+        ],
+        "title": "Mama Africa"
+      }
+    }
+  }
+}

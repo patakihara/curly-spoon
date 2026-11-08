@@ -1,0 +1,21 @@
+{
+  "upstream": "coverart",
+  "upstreamVersion": "Cover Art Archive API, unversioned",
+  "call": "front-302",
+  "request": {
+    "method": "GET",
+    "path": "/download/mbid-a8cf67cb-78ef-4768-b0b1-cd24cf61da85/mbid-a8cf67cb-78ef-4768-b0b1-cd24cf61da85-8480799354_thumb500.jpg",
+    "query": {},
+    "headers": {},
+    "body": null
+  },
+  "response": {
+    "status": 302,
+    "headers": {
+      "accept-ranges": "bytes",
+      "content-type": "image/jpeg",
+      "location": "https://recorded-node.archive.org/0/items/mbid-a8cf67cb-78ef-4768-b0b1-cd24cf61da85/mbid-a8cf67cb-78ef-4768-b0b1-cd24cf61da85-8480799354_thumb500.jpg"
+    },
+    "body": null
+  }
+}

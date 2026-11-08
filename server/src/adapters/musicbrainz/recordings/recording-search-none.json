@@ -1,0 +1,33 @@
+{
+  "upstream": "musicbrainz",
+  "upstreamVersion": "MusicBrainz web service 2",
+  "call": "recording-search-none",
+  "request": {
+    "method": "GET",
+    "path": "/ws/2/recording",
+    "query": {
+      "fmt": "json",
+      "limit": "25",
+      "query": "recording:\"Zqxv Plorb Wendigast\" AND artist:\"Nobody Atall\" AND dur:[176000 TO 184000]"
+    },
+    "headers": {
+      "accept": "application/json",
+      "user-agent": "Auralis/0.0.0 ( https://github.com/patakihara/curly-spoon )"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "created": "2026-11-08T05:23:38.837Z",
+        "count": 0,
+        "offset": 0,
+        "recordings": []
+      }
+    }
+  }
+}

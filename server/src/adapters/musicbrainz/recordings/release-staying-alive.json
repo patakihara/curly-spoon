@@ -1,0 +1,690 @@
+{
+  "upstream": "musicbrainz",
+  "upstreamVersion": "MusicBrainz web service 2",
+  "call": "release-staying-alive",
+  "request": {
+    "method": "GET",
+    "path": "/ws/2/release/ccff5ec4-efff-4aa7-a288-67a4bcfd1621",
+    "query": {
+      "fmt": "json",
+      "inc": "recordings+artist-credits+release-groups+media"
+    },
+    "headers": {
+      "accept": "application/json",
+      "user-agent": "Auralis/0.0.0 ( https://github.com/patakihara/curly-spoon )"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "artist-credit": [
+          {
+            "name": "Various Artists",
+            "joinphrase": "",
+            "artist": {
+              "name": "Various Artists",
+              "sort-name": "Various Artists",
+              "country": null,
+              "id": "89ad4ac3-39f7-470e-963a-56509c546377",
+              "disambiguation": "add compilations to this artist",
+              "type": "Other",
+              "type-id": "ac897045-5043-3294-969b-187360e45d86"
+            }
+          }
+        ],
+        "status": "Official",
+        "quality": "normal",
+        "text-representation": {
+          "script": "Latn",
+          "language": "eng"
+        },
+        "release-group": {
+          "first-release-date": "1983-06-03",
+          "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+          "artist-credit": [
+            {
+              "joinphrase": "",
+              "artist": {
+                "name": "Various Artists",
+                "sort-name": "Various Artists",
+                "type-id": "ac897045-5043-3294-969b-187360e45d86",
+                "id": "89ad4ac3-39f7-470e-963a-56509c546377",
+                "country": null,
+                "type": "Other",
+                "disambiguation": "add compilations to this artist"
+              },
+              "name": "Various Artists"
+            }
+          ],
+          "disambiguation": "",
+          "id": "c13fe4e1-f57c-394f-855e-445f690baa70",
+          "primary-type": "Album",
+          "title": "Staying Alive",
+          "secondary-type-ids": [
+            "22a628ad-c082-3c4f-b1b6-d41665107b88"
+          ],
+          "secondary-types": [
+            "Soundtrack"
+          ]
+        },
+        "barcode": "042281326929",
+        "media": [
+          {
+            "track-count": 12,
+            "format": "CD",
+            "tracks": [
+              {
+                "artist-credit": [
+                  {
+                    "name": "Bee Gees",
+                    "joinphrase": "",
+                    "artist": {
+                      "country": "GB",
+                      "id": "bf0f7e29-dfe1-416c-b5c6-f9ebc19ea810",
+                      "type": "Group",
+                      "disambiguation": "",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "sort-name": "Bee Gees",
+                      "name": "Bee Gees"
+                    }
+                  }
+                ],
+                "recording": {
+                  "artist-credit": [
+                    {
+                      "name": "Bee Gees",
+                      "joinphrase": "",
+                      "artist": {
+                        "sort-name": "Bee Gees",
+                        "name": "Bee Gees",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "disambiguation": "",
+                        "type": "Group",
+                        "id": "bf0f7e29-dfe1-416c-b5c6-f9ebc19ea810",
+                        "country": "GB"
+                      }
+                    }
+                  ],
+                  "first-release-date": "1983-06-03",
+                  "video": false,
+                  "length": 243000,
+                  "title": "The Woman in You",
+                  "id": "1a44aa3a-933a-4ab4-a70e-164082e55508",
+                  "disambiguation": ""
+                },
+                "number": "1",
+                "length": 243933,
+                "id": "704d5ec7-e1a4-4932-ab5d-b597a0186126",
+                "title": "The Woman in You",
+                "position": 1
+              },
+              {
+                "position": 2,
+                "title": "I Love You Too Much",
+                "id": "f93aaa2d-7f4f-43bf-aa34-9109a07c543e",
+                "length": 267640,
+                "recording": {
+                  "first-release-date": "1983-06-03",
+                  "artist-credit": [
+                    {
+                      "name": "Bee Gees",
+                      "joinphrase": "",
+                      "artist": {
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "country": "GB",
+                        "id": "bf0f7e29-dfe1-416c-b5c6-f9ebc19ea810",
+                        "type": "Group",
+                        "disambiguation": "",
+                        "name": "Bee Gees",
+                        "sort-name": "Bee Gees"
+                      }
+                    }
+                  ],
+                  "video": false,
+                  "length": 267626,
+                  "id": "c3c82fc6-e502-4937-821c-f5e101e3b34a",
+                  "title": "I Love You Too Much",
+                  "disambiguation": ""
+                },
+                "number": "2",
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "artist": {
+                      "country": "GB",
+                      "id": "bf0f7e29-dfe1-416c-b5c6-f9ebc19ea810",
+                      "disambiguation": "",
+                      "type": "Group",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "sort-name": "Bee Gees",
+                      "name": "Bee Gees"
+                    },
+                    "name": "Bee Gees"
+                  }
+                ]
+              },
+              {
+                "number": "3",
+                "recording": {
+                  "length": 283960,
+                  "video": false,
+                  "first-release-date": "1983-06-03",
+                  "artist-credit": [
+                    {
+                      "joinphrase": "",
+                      "artist": {
+                        "country": "GB",
+                        "id": "bf0f7e29-dfe1-416c-b5c6-f9ebc19ea810",
+                        "type": "Group",
+                        "disambiguation": "",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "name": "Bee Gees",
+                        "sort-name": "Bee Gees"
+                      },
+                      "name": "Bee Gees"
+                    }
+                  ],
+                  "disambiguation": "",
+                  "id": "a934a87b-c408-41d0-b292-b202074d2765",
+                  "title": "Breakout"
+                },
+                "artist-credit": [
+                  {
+                    "name": "Bee Gees",
+                    "joinphrase": "",
+                    "artist": {
+                      "id": "bf0f7e29-dfe1-416c-b5c6-f9ebc19ea810",
+                      "country": "GB",
+                      "disambiguation": "",
+                      "type": "Group",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "sort-name": "Bee Gees",
+                      "name": "Bee Gees"
+                    }
+                  }
+                ],
+                "position": 3,
+                "id": "c159f849-4d97-4c4c-bc30-990d3b29eeeb",
+                "title": "Breakout",
+                "length": 283960
+              },
+              {
+                "artist-credit": [
+                  {
+                    "name": "Bee Gees",
+                    "artist": {
+                      "sort-name": "Bee Gees",
+                      "name": "Bee Gees",
+                      "disambiguation": "",
+                      "type": "Group",
+                      "id": "bf0f7e29-dfe1-416c-b5c6-f9ebc19ea810",
+                      "country": "GB",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                    },
+                    "joinphrase": ""
+                  }
+                ],
+                "recording": {
+                  "first-release-date": "1983-06-03",
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "name": "Bee Gees",
+                        "sort-name": "Bee Gees",
+                        "id": "bf0f7e29-dfe1-416c-b5c6-f9ebc19ea810",
+                        "country": "GB",
+                        "disambiguation": "",
+                        "type": "Group",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                      },
+                      "joinphrase": "",
+                      "name": "Bee Gees"
+                    }
+                  ],
+                  "video": false,
+                  "length": 264160,
+                  "id": "7297c49f-3031-4733-b093-edd82f7be411",
+                  "title": "Someone Belonging to Someone",
+                  "disambiguation": ""
+                },
+                "number": "4",
+                "length": 265266,
+                "title": "Someone Belonging to Someone",
+                "id": "aba07c66-4d01-41e2-b2a4-5d2e9b76e246",
+                "position": 4
+              },
+              {
+                "length": 265306,
+                "position": 5,
+                "id": "3409f44e-ffef-470f-9eeb-ea42e4bd070b",
+                "title": "Life Goes On",
+                "recording": {
+                  "title": "Life Goes On",
+                  "id": "961ac61d-25be-4119-b968-56f3f67da9ca",
+                  "disambiguation": "",
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                        "country": "GB",
+                        "id": "bf0f7e29-dfe1-416c-b5c6-f9ebc19ea810",
+                        "type": "Group",
+                        "disambiguation": "",
+                        "sort-name": "Bee Gees",
+                        "name": "Bee Gees"
+                      },
+                      "joinphrase": "",
+                      "name": "Bee Gees"
+                    }
+                  ],
+                  "first-release-date": "1983-06-03",
+                  "length": 265293,
+                  "video": false
+                },
+                "number": "5",
+                "artist-credit": [
+                  {
+                    "joinphrase": "",
+                    "artist": {
+                      "name": "Bee Gees",
+                      "sort-name": "Bee Gees",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "type": "Group",
+                      "disambiguation": "",
+                      "id": "bf0f7e29-dfe1-416c-b5c6-f9ebc19ea810",
+                      "country": "GB"
+                    },
+                    "name": "Bee Gees"
+                  }
+                ]
+              },
+              {
+                "recording": {
+                  "disambiguation": "",
+                  "id": "8e13de06-8ada-4a68-91ad-171204ed59c2",
+                  "title": "Stayin’ Alive",
+                  "length": 92866,
+                  "video": false,
+                  "first-release-date": "1983-06-03",
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "sort-name": "Bee Gees",
+                        "name": "Bee Gees",
+                        "type": "Group",
+                        "disambiguation": "",
+                        "id": "bf0f7e29-dfe1-416c-b5c6-f9ebc19ea810",
+                        "country": "GB",
+                        "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b"
+                      },
+                      "joinphrase": "",
+                      "name": "Bee Gees"
+                    }
+                  ]
+                },
+                "number": "6",
+                "artist-credit": [
+                  {
+                    "name": "Bee Gees",
+                    "artist": {
+                      "country": "GB",
+                      "id": "bf0f7e29-dfe1-416c-b5c6-f9ebc19ea810",
+                      "disambiguation": "",
+                      "type": "Group",
+                      "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+                      "name": "Bee Gees",
+                      "sort-name": "Bee Gees"
+                    },
+                    "joinphrase": ""
+                  }
+                ],
+                "length": 92866,
+                "position": 6,
+                "title": "Stayin' Alive",
+                "id": "d76d92ef-da9b-4fa6-aa63-d35008d2e39b"
+              },
+              {
+                "length": 236133,
+                "position": 7,
+                "title": "Far From Over",
+                "id": "24eff04e-efcc-447c-ba49-c818013efcb1",
+                "recording": {
+                  "id": "6332471d-f156-4344-8e18-3c6314961d3a",
+                  "title": "Far From Over",
+                  "disambiguation": "",
+                  "first-release-date": "1983-06-03",
+                  "artist-credit": [
+                    {
+                      "name": "Frank Stallone",
+                      "joinphrase": "",
+                      "artist": {
+                        "sort-name": "Stallone, Frank",
+                        "name": "Frank Stallone",
+                        "type": "Person",
+                        "disambiguation": "",
+                        "id": "3c521c8f-0940-451c-85e3-f4310795dbcd",
+                        "country": "US",
+                        "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df"
+                      }
+                    }
+                  ],
+                  "length": 235360,
+                  "video": false
+                },
+                "number": "7",
+                "artist-credit": [
+                  {
+                    "name": "Frank Stallone",
+                    "artist": {
+                      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                      "id": "3c521c8f-0940-451c-85e3-f4310795dbcd",
+                      "country": "US",
+                      "type": "Person",
+                      "disambiguation": "",
+                      "name": "Frank Stallone",
+                      "sort-name": "Stallone, Frank"
+                    },
+                    "joinphrase": ""
+                  }
+                ]
+              },
+              {
+                "position": 8,
+                "title": "Look Out for Number One",
+                "id": "cb829752-e9b7-46f4-b3d4-49df82bf0ed1",
+                "length": 200533,
+                "recording": {
+                  "artist-credit": [
+                    {
+                      "name": "Tommy Faragher",
+                      "joinphrase": "",
+                      "artist": {
+                        "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                        "country": "US",
+                        "id": "133a6a93-835b-46c5-8974-3c69783cfad3",
+                        "disambiguation": "",
+                        "type": "Person",
+                        "name": "Tommy Faragher",
+                        "sort-name": "Faragher, Tommy"
+                      }
+                    }
+                  ],
+                  "first-release-date": "1983-06-03",
+                  "length": 199000,
+                  "video": false,
+                  "title": "Look Out for Number One",
+                  "id": "90058fc3-233a-42a3-9b3e-b3e8b5368240",
+                  "disambiguation": ""
+                },
+                "number": "8",
+                "artist-credit": [
+                  {
+                    "name": "Tommy Faragher",
+                    "artist": {
+                      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                      "disambiguation": "",
+                      "type": "Person",
+                      "country": "US",
+                      "id": "133a6a93-835b-46c5-8974-3c69783cfad3",
+                      "sort-name": "Faragher, Tommy",
+                      "name": "Tommy Faragher"
+                    },
+                    "joinphrase": ""
+                  }
+                ]
+              },
+              {
+                "artist-credit": [
+                  {
+                    "name": "Cynthia Rhodes",
+                    "artist": {
+                      "id": "eb240c6e-6e61-4446-b1a8-5d950a235793",
+                      "country": "US",
+                      "disambiguation": "",
+                      "type": "Person",
+                      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                      "name": "Cynthia Rhodes",
+                      "sort-name": "Rhodes, Cynthia"
+                    },
+                    "joinphrase": ""
+                  }
+                ],
+                "number": "9",
+                "recording": {
+                  "video": false,
+                  "length": 212226,
+                  "artist-credit": [
+                    {
+                      "name": "Cynthia Rhodes",
+                      "joinphrase": "",
+                      "artist": {
+                        "name": "Cynthia Rhodes",
+                        "sort-name": "Rhodes, Cynthia",
+                        "country": "US",
+                        "id": "eb240c6e-6e61-4446-b1a8-5d950a235793",
+                        "disambiguation": "",
+                        "type": "Person",
+                        "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df"
+                      }
+                    }
+                  ],
+                  "first-release-date": "1983-06-03",
+                  "disambiguation": "",
+                  "title": "Finding Out the Hard Way",
+                  "id": "a515a471-7689-4b4e-b9c2-8a5ce16a3c08"
+                },
+                "length": 212226,
+                "title": "Finding Out the Hard Way",
+                "id": "2320ebf2-ef9b-47f6-a7bf-79c0fec21b7c",
+                "position": 9
+              },
+              {
+                "title": "Moody Girl",
+                "id": "f578bfba-60f9-45e8-842f-816ee164d116",
+                "position": 10,
+                "length": 246506,
+                "artist-credit": [
+                  {
+                    "name": "Frank Stallone",
+                    "joinphrase": "",
+                    "artist": {
+                      "name": "Frank Stallone",
+                      "sort-name": "Stallone, Frank",
+                      "id": "3c521c8f-0940-451c-85e3-f4310795dbcd",
+                      "country": "US",
+                      "type": "Person",
+                      "disambiguation": "",
+                      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df"
+                    }
+                  }
+                ],
+                "number": "10",
+                "recording": {
+                  "video": false,
+                  "length": 246493,
+                  "first-release-date": "1983-06-03",
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "disambiguation": "",
+                        "type": "Person",
+                        "country": "US",
+                        "id": "3c521c8f-0940-451c-85e3-f4310795dbcd",
+                        "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                        "name": "Frank Stallone",
+                        "sort-name": "Stallone, Frank"
+                      },
+                      "joinphrase": "",
+                      "name": "Frank Stallone"
+                    }
+                  ],
+                  "disambiguation": "",
+                  "id": "c7dc123a-c0a2-4226-a31f-cbb2b1e15d3e",
+                  "title": "Moody Girl"
+                }
+              },
+              {
+                "artist-credit": [
+                  {
+                    "name": "Tommy Faragher",
+                    "artist": {
+                      "sort-name": "Faragher, Tommy",
+                      "name": "Tommy Faragher",
+                      "type": "Person",
+                      "disambiguation": "",
+                      "country": "US",
+                      "id": "133a6a93-835b-46c5-8974-3c69783cfad3",
+                      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df"
+                    },
+                    "joinphrase": ""
+                  }
+                ],
+                "recording": {
+                  "disambiguation": "",
+                  "title": "(We Dance) So Close to the Fire",
+                  "id": "bae7410a-2551-4dcf-8601-374163c56ddd",
+                  "video": false,
+                  "length": 223693,
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                        "type": "Person",
+                        "disambiguation": "",
+                        "country": "US",
+                        "id": "133a6a93-835b-46c5-8974-3c69783cfad3",
+                        "name": "Tommy Faragher",
+                        "sort-name": "Faragher, Tommy"
+                      },
+                      "joinphrase": "",
+                      "name": "Tommy Faragher"
+                    }
+                  ],
+                  "first-release-date": "1983-06-03"
+                },
+                "number": "11",
+                "id": "ba956405-5c2e-4f84-a521-5cfcd314762c",
+                "title": "(We Dance) So Close to the Fire",
+                "position": 11,
+                "length": 223693
+              },
+              {
+                "recording": {
+                  "length": 210066,
+                  "video": false,
+                  "artist-credit": [
+                    {
+                      "artist": {
+                        "sort-name": "Stallone, Frank",
+                        "name": "Frank Stallone",
+                        "type": "Person",
+                        "disambiguation": "",
+                        "id": "3c521c8f-0940-451c-85e3-f4310795dbcd",
+                        "country": "US",
+                        "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df"
+                      },
+                      "joinphrase": " & ",
+                      "name": "Frank Stallone"
+                    },
+                    {
+                      "joinphrase": "",
+                      "artist": {
+                        "country": "US",
+                        "id": "eb240c6e-6e61-4446-b1a8-5d950a235793",
+                        "type": "Person",
+                        "disambiguation": "",
+                        "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                        "sort-name": "Rhodes, Cynthia",
+                        "name": "Cynthia Rhodes"
+                      },
+                      "name": "Cynthia Rhodes"
+                    }
+                  ],
+                  "first-release-date": "1983-06-03",
+                  "disambiguation": "",
+                  "title": "I’m Never Gonna Give You Up",
+                  "id": "88eb888f-81c8-47b2-9177-76ef43951d17"
+                },
+                "number": "12",
+                "artist-credit": [
+                  {
+                    "name": "Frank Stallone",
+                    "joinphrase": " & ",
+                    "artist": {
+                      "id": "3c521c8f-0940-451c-85e3-f4310795dbcd",
+                      "country": "US",
+                      "disambiguation": "",
+                      "type": "Person",
+                      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                      "sort-name": "Stallone, Frank",
+                      "name": "Frank Stallone"
+                    }
+                  },
+                  {
+                    "joinphrase": "",
+                    "artist": {
+                      "disambiguation": "",
+                      "type": "Person",
+                      "country": "US",
+                      "id": "eb240c6e-6e61-4446-b1a8-5d950a235793",
+                      "type-id": "b6e035f4-3ce9-331c-97df-83397230b0df",
+                      "name": "Cynthia Rhodes",
+                      "sort-name": "Rhodes, Cynthia"
+                    },
+                    "name": "Cynthia Rhodes"
+                  }
+                ],
+                "position": 12,
+                "id": "2cc439b9-060c-46ae-bb95-7103944ba0bd",
+                "title": "I'm Never Gonna Give You Up",
+                "length": 210066
+              }
+            ],
+            "track-offset": 0,
+            "position": 1,
+            "id": "8e19d6e5-3a52-4919-a645-c0e36f8da034",
+            "title": "",
+            "format-id": "9712d52a-4509-3d4b-a1a2-67c88c643e31"
+          }
+        ],
+        "id": "ccff5ec4-efff-4aa7-a288-67a4bcfd1621",
+        "date": "1983",
+        "country": "XE",
+        "title": "Staying Alive",
+        "packaging-id": "ec27701a-4a22-37f4-bfac-6616e0f9750a",
+        "asin": null,
+        "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+        "release-events": [
+          {
+            "area": {
+              "iso-3166-1-codes": [
+                "XE"
+              ],
+              "name": "Europe",
+              "sort-name": "Europe",
+              "type": null,
+              "disambiguation": "",
+              "id": "89a675c2-3e37-3518-b83c-418bad59a85a",
+              "type-id": null
+            },
+            "date": "1983"
+          }
+        ],
+        "disambiguation": "red label CD",
+        "cover-art-archive": {
+          "darkened": false,
+          "back": true,
+          "front": true,
+          "count": 3,
+          "artwork": true
+        },
+        "packaging": "Jewel Case"
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "media-updated",
+  "request": {
+    "method": "POST",
+    "path": "/Library/Media/Updated",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\"",
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "Updates": [
+          {
+            "Path": "/data/media/Music/.auralis-keep/recording-probe.opus",
+            "UpdateType": "Created"
+          }
+        ]
+      }
+    }
+  },
+  "response": {
+    "status": 204,
+    "headers": {},
+    "body": null
+  }
+}

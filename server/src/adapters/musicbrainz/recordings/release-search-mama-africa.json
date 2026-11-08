@@ -1,0 +1,554 @@
+{
+  "upstream": "musicbrainz",
+  "upstreamVersion": "MusicBrainz web service 2",
+  "call": "release-search-mama-africa",
+  "request": {
+    "method": "GET",
+    "path": "/ws/2/release",
+    "query": {
+      "fmt": "json",
+      "limit": "25",
+      "query": "release:\"Mama Africa\" AND artist:\"Peter Tosh\""
+    },
+    "headers": {
+      "accept": "application/json",
+      "user-agent": "Auralis/0.0.0 ( https://github.com/patakihara/curly-spoon )"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "json": {
+        "created": "2026-11-08T05:23:20.306Z",
+        "count": 8,
+        "offset": 0,
+        "releases": [
+          {
+            "id": "9836687c-3d89-4139-8466-342a92186fe1",
+            "score": 100,
+            "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+            "artist-credit-id": "1c2fd001-877c-314a-8228-b4f89765da40",
+            "count": 1,
+            "title": "Mama Africa",
+            "status": "Official",
+            "text-representation": {
+              "language": "eng",
+              "script": "Latn"
+            },
+            "artist-credit": [
+              {
+                "name": "Peter Tosh",
+                "artist": {
+                  "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                  "name": "Peter Tosh",
+                  "sort-name": "Tosh, Peter"
+                }
+              }
+            ],
+            "release-group": {
+              "id": "f463bc86-e66e-36de-a576-657927392f22",
+              "type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+              "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+              "title": "Mama Africa",
+              "primary-type": "Album"
+            },
+            "date": "2002-07-30",
+            "country": "US",
+            "release-events": [
+              {
+                "date": "2002-07-30",
+                "area": {
+                  "id": "489ce91b-6658-3307-9877-795b68554c98",
+                  "name": "United States",
+                  "sort-name": "United States",
+                  "iso-3166-1-codes": [
+                    "US"
+                  ]
+                }
+              }
+            ],
+            "asin": "B00000DR9D",
+            "track-count": 9,
+            "media": [
+              {
+                "id": "d55455a9-415d-3516-a21b-b320efc70115",
+                "disc-count": 3,
+                "track-count": 9
+              }
+            ]
+          },
+          {
+            "id": "a8cf67cb-78ef-4768-b0b1-cd24cf61da85",
+            "score": 100,
+            "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+            "packaging-id": "f7101ce3-0384-39ce-9fde-fbbd0044d35f",
+            "artist-credit-id": "1c2fd001-877c-314a-8228-b4f89765da40",
+            "count": 1,
+            "title": "Mama Africa",
+            "status": "Official",
+            "packaging": "Cardboard/Paper Sleeve",
+            "text-representation": {
+              "language": "eng",
+              "script": "Latn"
+            },
+            "artist-credit": [
+              {
+                "name": "Peter Tosh",
+                "artist": {
+                  "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                  "name": "Peter Tosh",
+                  "sort-name": "Tosh, Peter"
+                }
+              }
+            ],
+            "release-group": {
+              "id": "f463bc86-e66e-36de-a576-657927392f22",
+              "type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+              "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+              "title": "Mama Africa",
+              "primary-type": "Album"
+            },
+            "date": "1983",
+            "country": "US",
+            "release-events": [
+              {
+                "date": "1983",
+                "area": {
+                  "id": "489ce91b-6658-3307-9877-795b68554c98",
+                  "name": "United States",
+                  "sort-name": "United States",
+                  "iso-3166-1-codes": [
+                    "US"
+                  ]
+                }
+              }
+            ],
+            "barcode": "077771709517",
+            "label-info": [
+              {
+                "catalog-number": "SO-17095",
+                "label": {
+                  "id": "4881ac0f-1a15-4dd9-8b64-1c39a68edd33",
+                  "name": "EMI America"
+                }
+              }
+            ],
+            "track-count": 9,
+            "media": [
+              {
+                "id": "cc9c33c5-4927-3681-83c2-0c7d6796a307",
+                "format": "12\" Vinyl",
+                "disc-count": 0,
+                "track-count": 9
+              }
+            ],
+            "tags": [
+              {
+                "count": 1,
+                "name": "reggae"
+              }
+            ]
+          },
+          {
+            "id": "49ab2645-26bd-33f6-94e3-80f04aebdf50",
+            "score": 100,
+            "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+            "artist-credit-id": "1c2fd001-877c-314a-8228-b4f89765da40",
+            "count": 1,
+            "title": "Mama Africa",
+            "status": "Official",
+            "text-representation": {
+              "language": "eng",
+              "script": "Latn"
+            },
+            "artist-credit": [
+              {
+                "name": "Peter Tosh",
+                "artist": {
+                  "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                  "name": "Peter Tosh",
+                  "sort-name": "Tosh, Peter"
+                }
+              }
+            ],
+            "release-group": {
+              "id": "f463bc86-e66e-36de-a576-657927392f22",
+              "type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+              "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+              "title": "Mama Africa",
+              "primary-type": "Album"
+            },
+            "date": "1983",
+            "country": "XE",
+            "release-events": [
+              {
+                "date": "1983",
+                "area": {
+                  "id": "89a675c2-3e37-3518-b83c-418bad59a85a",
+                  "name": "Europe",
+                  "sort-name": "Europe",
+                  "iso-3166-1-codes": [
+                    "XE"
+                  ]
+                }
+              }
+            ],
+            "asin": "B00000DR9D",
+            "label-info": [
+              {
+                "catalog-number": "264-07717",
+                "label": {
+                  "id": "c029628b-6633-439e-bcee-ed02e8a338f7",
+                  "name": "EMI"
+                }
+              }
+            ],
+            "track-count": 9,
+            "media": [
+              {
+                "id": "8e1bf1bb-7cd9-35a1-8fcf-e784c99091c6",
+                "format": "Cassette",
+                "disc-count": 0,
+                "track-count": 9
+              }
+            ]
+          },
+          {
+            "id": "53df4501-d0fd-3729-851d-e73d15223796",
+            "score": 100,
+            "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+            "artist-credit-id": "1c2fd001-877c-314a-8228-b4f89765da40",
+            "count": 1,
+            "title": "Mama Africa",
+            "status": "Official",
+            "text-representation": {
+              "language": "eng",
+              "script": "Latn"
+            },
+            "artist-credit": [
+              {
+                "name": "Peter Tosh",
+                "artist": {
+                  "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                  "name": "Peter Tosh",
+                  "sort-name": "Tosh, Peter"
+                }
+              }
+            ],
+            "release-group": {
+              "id": "f463bc86-e66e-36de-a576-657927392f22",
+              "type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+              "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+              "title": "Mama Africa",
+              "primary-type": "Album"
+            },
+            "date": "1983",
+            "country": "XE",
+            "release-events": [
+              {
+                "date": "1983",
+                "area": {
+                  "id": "89a675c2-3e37-3518-b83c-418bad59a85a",
+                  "name": "Europe",
+                  "sort-name": "Europe",
+                  "iso-3166-1-codes": [
+                    "XE"
+                  ]
+                }
+              }
+            ],
+            "asin": "B00000DR9D",
+            "label-info": [
+              {
+                "catalog-number": "064-07717",
+                "label": {
+                  "id": "c029628b-6633-439e-bcee-ed02e8a338f7",
+                  "name": "EMI"
+                }
+              }
+            ],
+            "track-count": 9,
+            "media": [
+              {
+                "id": "d24248b5-9ed6-33c4-ac3d-9bcf559277c1",
+                "format": "Vinyl",
+                "disc-count": 0,
+                "track-count": 9
+              }
+            ]
+          },
+          {
+            "id": "38d30631-9341-4e62-9d10-2cd372b3e0f4",
+            "score": 100,
+            "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+            "packaging-id": "f7101ce3-0384-39ce-9fde-fbbd0044d35f",
+            "artist-credit-id": "1c2fd001-877c-314a-8228-b4f89765da40",
+            "count": 1,
+            "title": "Mama Africa",
+            "status": "Official",
+            "packaging": "Cardboard/Paper Sleeve",
+            "text-representation": {
+              "language": "eng",
+              "script": "Latn"
+            },
+            "artist-credit": [
+              {
+                "name": "Peter Tosh",
+                "artist": {
+                  "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                  "name": "Peter Tosh",
+                  "sort-name": "Tosh, Peter"
+                }
+              }
+            ],
+            "release-group": {
+              "id": "f463bc86-e66e-36de-a576-657927392f22",
+              "type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+              "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+              "title": "Mama Africa",
+              "primary-type": "Album"
+            },
+            "date": "1983",
+            "country": "DE",
+            "release-events": [
+              {
+                "date": "1983",
+                "area": {
+                  "id": "85752fda-13c4-31a3-bee5-0e5cb1f51dad",
+                  "name": "Germany",
+                  "sort-name": "Germany",
+                  "iso-3166-1-codes": [
+                    "DE"
+                  ]
+                }
+              }
+            ],
+            "barcode": "077779167111",
+            "label-info": [
+              {
+                "catalog-number": "038-79 1671 1",
+                "label": {
+                  "id": "c029628b-6633-439e-bcee-ed02e8a338f7",
+                  "name": "EMI"
+                }
+              }
+            ],
+            "track-count": 9,
+            "media": [
+              {
+                "id": "4eee3160-50c9-3b73-bd52-e11aec2945ef",
+                "format": "12\" Vinyl",
+                "disc-count": 0,
+                "track-count": 9
+              }
+            ]
+          },
+          {
+            "id": "3f192b39-52b4-3887-81e2-f638f91d39bf",
+            "score": 100,
+            "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+            "packaging-id": "ec27701a-4a22-37f4-bfac-6616e0f9750a",
+            "artist-credit-id": "1c2fd001-877c-314a-8228-b4f89765da40",
+            "count": 1,
+            "title": "Mama Africa",
+            "status": "Official",
+            "packaging": "Jewel Case",
+            "text-representation": {
+              "language": "eng",
+              "script": "Latn"
+            },
+            "artist-credit": [
+              {
+                "name": "Peter Tosh",
+                "artist": {
+                  "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                  "name": "Peter Tosh",
+                  "sort-name": "Tosh, Peter"
+                }
+              }
+            ],
+            "release-group": {
+              "id": "f463bc86-e66e-36de-a576-657927392f22",
+              "type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+              "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+              "title": "Mama Africa",
+              "primary-type": "Album"
+            },
+            "date": "1983",
+            "country": "US",
+            "release-events": [
+              {
+                "date": "1983",
+                "area": {
+                  "id": "489ce91b-6658-3307-9877-795b68554c98",
+                  "name": "United States",
+                  "sort-name": "United States",
+                  "iso-3166-1-codes": [
+                    "US"
+                  ]
+                }
+              }
+            ],
+            "barcode": "077779167128",
+            "asin": "B00000DR9D",
+            "label-info": [
+              {
+                "catalog-number": "CDP 7 91671 2",
+                "label": {
+                  "id": "c029628b-6633-439e-bcee-ed02e8a338f7",
+                  "name": "EMI"
+                }
+              }
+            ],
+            "track-count": 9,
+            "media": [
+              {
+                "id": "b14eccd9-aa44-3695-af0d-ff25042b16e3",
+                "format": "CD",
+                "disc-count": 3,
+                "track-count": 9
+              }
+            ]
+          },
+          {
+            "id": "3bb1e7a8-c6bb-4aaa-aa1b-4575c222d813",
+            "score": 100,
+            "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+            "packaging-id": "ec27701a-4a22-37f4-bfac-6616e0f9750a",
+            "artist-credit-id": "1c2fd001-877c-314a-8228-b4f89765da40",
+            "count": 1,
+            "title": "Mama Africa",
+            "status": "Official",
+            "packaging": "Jewel Case",
+            "text-representation": {
+              "language": "eng",
+              "script": "Latn"
+            },
+            "artist-credit": [
+              {
+                "name": "Peter Tosh",
+                "artist": {
+                  "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                  "name": "Peter Tosh",
+                  "sort-name": "Tosh, Peter"
+                }
+              }
+            ],
+            "release-group": {
+              "id": "f463bc86-e66e-36de-a576-657927392f22",
+              "type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+              "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+              "title": "Mama Africa",
+              "primary-type": "Album"
+            },
+            "date": "1983",
+            "country": "DE",
+            "release-events": [
+              {
+                "date": "1983",
+                "area": {
+                  "id": "85752fda-13c4-31a3-bee5-0e5cb1f51dad",
+                  "name": "Germany",
+                  "sort-name": "Germany",
+                  "iso-3166-1-codes": [
+                    "DE"
+                  ]
+                }
+              }
+            ],
+            "barcode": "077779167128",
+            "label-info": [
+              {
+                "catalog-number": "CDP 538-7 916712",
+                "label": {
+                  "id": "c029628b-6633-439e-bcee-ed02e8a338f7",
+                  "name": "EMI"
+                }
+              }
+            ],
+            "track-count": 9,
+            "media": [
+              {
+                "id": "fd01b977-23a8-3e57-965a-57f26f3fa07f",
+                "format": "CD",
+                "disc-count": 1,
+                "track-count": 9
+              }
+            ]
+          },
+          {
+            "id": "8dc7f06c-bf41-4eba-a3e8-afde607e35c8",
+            "score": 100,
+            "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+            "packaging-id": "ec27701a-4a22-37f4-bfac-6616e0f9750a",
+            "artist-credit-id": "1c2fd001-877c-314a-8228-b4f89765da40",
+            "count": 1,
+            "title": "Mama Africa",
+            "status": "Official",
+            "disambiguation": "remastered",
+            "packaging": "Jewel Case",
+            "text-representation": {
+              "language": "eng",
+              "script": "Latn"
+            },
+            "artist-credit": [
+              {
+                "name": "Peter Tosh",
+                "artist": {
+                  "id": "7db6aae5-6644-4513-9bfc-ca2e79d4469c",
+                  "name": "Peter Tosh",
+                  "sort-name": "Tosh, Peter"
+                }
+              }
+            ],
+            "release-group": {
+              "id": "f463bc86-e66e-36de-a576-657927392f22",
+              "type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+              "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+              "title": "Mama Africa",
+              "primary-type": "Album"
+            },
+            "date": "2002",
+            "country": "GB",
+            "release-events": [
+              {
+                "date": "2002",
+                "area": {
+                  "id": "8a754a16-0027-3a29-b6d7-2b40ea0481ed",
+                  "name": "United Kingdom",
+                  "sort-name": "United Kingdom",
+                  "iso-3166-1-codes": [
+                    "GB"
+                  ]
+                }
+              }
+            ],
+            "barcode": "724353769826",
+            "label-info": [
+              {
+                "catalog-number": "7243 5 37698 2 6",
+                "label": {
+                  "id": "c029628b-6633-439e-bcee-ed02e8a338f7",
+                  "name": "EMI"
+                }
+              }
+            ],
+            "track-count": 12,
+            "media": [
+              {
+                "id": "9832915e-8607-3564-a67c-143cf4a38597",
+                "format": "CD",
+                "disc-count": 1,
+                "track-count": 12
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

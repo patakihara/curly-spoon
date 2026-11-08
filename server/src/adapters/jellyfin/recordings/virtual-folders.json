@@ -1,0 +1,172 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "virtual-folders",
+  "request": {
+    "method": "GET",
+    "path": "/Library/VirtualFolders",
+    "query": {},
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": [
+        {
+          "Name": "Music",
+          "Locations": [
+            "/data/media/Music"
+          ],
+          "CollectionType": "music",
+          "LibraryOptions": {
+            "Enabled": true,
+            "EnablePhotos": true,
+            "EnableRealtimeMonitor": true,
+            "EnableLUFSScan": true,
+            "EnableChapterImageExtraction": false,
+            "ExtractChapterImagesDuringLibraryScan": false,
+            "EnableTrickplayImageExtraction": false,
+            "ExtractTrickplayImagesDuringLibraryScan": false,
+            "PathInfos": [
+              {
+                "Path": "/data/media/Music"
+              }
+            ],
+            "SaveLocalMetadata": true,
+            "EnableInternetProviders": false,
+            "EnableAutomaticSeriesGrouping": false,
+            "EnableEmbeddedTitles": false,
+            "EnableEmbeddedExtrasTitles": false,
+            "EnableEmbeddedEpisodeInfos": false,
+            "AutomaticRefreshIntervalDays": 0,
+            "PreferredMetadataLanguage": "en",
+            "MetadataCountryCode": "FI",
+            "SeasonZeroDisplayName": "Specials",
+            "MetadataSavers": [
+              "Nfo"
+            ],
+            "DisabledLocalMetadataReaders": [],
+            "LocalMetadataReaderOrder": [
+              "Nfo"
+            ],
+            "DisabledSubtitleFetchers": [],
+            "SubtitleFetcherOrder": [],
+            "DisabledMediaSegmentProviders": [],
+            "MediaSegmentProviderOrder": [
+              "Chapter Segments Provider"
+            ],
+            "SkipSubtitlesIfEmbeddedSubtitlesPresent": false,
+            "SkipSubtitlesIfAudioTrackMatches": false,
+            "SubtitleDownloadLanguages": [],
+            "RequirePerfectSubtitleMatch": true,
+            "SaveSubtitlesWithMedia": true,
+            "SaveLyricsWithMedia": true,
+            "SaveTrickplayWithMedia": false,
+            "DisabledLyricFetchers": [],
+            "LyricFetcherOrder": [
+              "LrcLib Lyrics"
+            ],
+            "PreferNonstandardArtistsTag": false,
+            "UseCustomTagDelimiters": true,
+            "CustomTagDelimiters": [
+              "/",
+              "|",
+              ";",
+              "\\",
+              ","
+            ],
+            "DelimiterWhitelist": [],
+            "AutomaticallyAddToCollection": false,
+            "AllowEmbeddedSubtitles": "AllowAll",
+            "TypeOptions": [
+              {
+                "Type": "MusicArtist",
+                "MetadataFetchers": [
+                  "MusicBrainz",
+                  "Discogs",
+                  "TheAudioDB"
+                ],
+                "MetadataFetcherOrder": [
+                  "MusicBrainz",
+                  "Discogs",
+                  "TheAudioDB"
+                ],
+                "ImageFetchers": [
+                  "Fanart",
+                  "TheAudioDB"
+                ],
+                "ImageFetcherOrder": [
+                  "Fanart",
+                  "TheAudioDB"
+                ],
+                "ImageOptions": []
+              },
+              {
+                "Type": "MusicAlbum",
+                "MetadataFetchers": [
+                  "MusicBrainz",
+                  "Discogs",
+                  "TheAudioDB"
+                ],
+                "MetadataFetcherOrder": [
+                  "MusicBrainz",
+                  "Discogs",
+                  "TheAudioDB"
+                ],
+                "ImageFetchers": [
+                  "Cover Art Archive",
+                  "TheAudioDB",
+                  "Fanart"
+                ],
+                "ImageFetcherOrder": [
+                  "Cover Art Archive",
+                  "TheAudioDB",
+                  "Fanart"
+                ],
+                "ImageOptions": []
+              },
+              {
+                "Type": "Audio",
+                "MetadataFetchers": [],
+                "MetadataFetcherOrder": [],
+                "ImageFetchers": [
+                  "Image Extractor"
+                ],
+                "ImageFetcherOrder": [
+                  "Image Extractor"
+                ],
+                "ImageOptions": []
+              },
+              {
+                "Type": "MusicVideo",
+                "MetadataFetchers": [],
+                "MetadataFetcherOrder": [],
+                "ImageFetchers": [
+                  "Fanart",
+                  "Embedded Image Extractor",
+                  "Screen Grabber"
+                ],
+                "ImageFetcherOrder": [
+                  "Fanart",
+                  "Embedded Image Extractor",
+                  "Screen Grabber"
+                ],
+                "ImageOptions": []
+              }
+            ]
+          },
+          "ItemId": "7e64e319657a9516ec78490da03edccb",
+          "PrimaryImageItemId": "7e64e319657a9516ec78490da03edccb",
+          "RefreshStatus": "Idle"
+        }
+      ]
+    }
+  }
+}

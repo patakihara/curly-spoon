@@ -22,6 +22,7 @@ import {
   PLACEHOLDER_EMAIL,
   PLACEHOLDER_HOME_USER,
   QUERY_PARAM,
+  RECORDED_ARCHIVE_NODE,
   RECORDED_STREAM_HOST,
   SECRET_BODY_KEY,
   SECRET_QUERY_KEY,
@@ -56,7 +57,8 @@ export interface Finding {
  * Public hosts that published metadata carries: an album's `ExternalUrls` on Jellyfin, a
  * podcast's feed, episode enclosures and directory page on Audiobookshelf, and the iTunes
  * namespace a feed declares; the covers and author photos Audible and Audnexus name; YouTube Music's
- * art, and the one stream host a scrubbed recording can name.
+ * art, the one stream host a scrubbed recording can name, and the Internet Archive, which the Cover
+ * Art Archive redirects to, with the one node name a recording keeps.
  */
 export const PUBLIC_HOSTS: readonly string[] = [
   'musicbrainz.org',
@@ -70,6 +72,8 @@ export const PUBLIC_HOSTS: readonly string[] = [
   'yt3.googleusercontent.com',
   'lh3.googleusercontent.com',
   RECORDED_STREAM_HOST,
+  'archive.org',
+  RECORDED_ARCHIVE_NODE,
 ];
 /**
  * Whole public addresses allowed where their host is not: Auralis's public homepage, which its

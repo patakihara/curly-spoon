@@ -1,0 +1,338 @@
+{
+  "upstream": "jellyfin",
+  "upstreamVersion": "10.11.11",
+  "call": "items-newest-audio",
+  "request": {
+    "method": "GET",
+    "path": "/Items",
+    "query": {
+      "Fields": "Path,ProviderIds",
+      "IncludeItemTypes": "Audio",
+      "Limit": "25",
+      "ParentId": "7e64e319657a9516ec78490da03edccb",
+      "Recursive": "true",
+      "SortBy": "DateCreated",
+      "SortOrder": "Descending"
+    },
+    "headers": {
+      "accept": "application/json",
+      "authorization": "MediaBrowser Client=\"Auralis\", Device=\"Auralis server\", DeviceId=\"auralis-server\", Version=\"0.0.0\", Token=\"<token>\""
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json; charset=utf-8"
+    },
+    "body": {
+      "json": {
+        "Items": [
+          {
+            "Name": "Contact",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "938e5244cce65cdf77c31e56f3ad0ed1",
+            "HasLyrics": false,
+            "Container": "flac",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "Path": "/data/media/Music/Daft Punk/2013 - Random Access Memories/13 - Contact.flac",
+            "ChannelId": null,
+            "RunTimeTicks": 3815211790,
+            "ProductionYear": 2021,
+            "IndexNumber": 13,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "Artists": [
+              "Daft Punk"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "Album": "Random Access Memories",
+            "AlbumId": "8dcbf3aa770d450e1988ccf23dca8a9b",
+            "AlbumPrimaryImageTag": "048119a76c97892cfdb4ea64dc916e52",
+            "AlbumArtist": "Daft Punk",
+            "AlbumArtists": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "316cb52ac55788e6c2d60c4888a224f3"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "3eb714b69b6dd29a122a1c2e659d0325",
+            "ImageBlurHashes": {
+              "Primary": {
+                "316cb52ac55788e6c2d60c4888a224f3": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*",
+                "048119a76c97892cfdb4ea64dc916e52": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              },
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -8.7
+          },
+          {
+            "Name": "Doin' it Right",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "30ee41101064a23e57e3667ba6560429",
+            "HasLyrics": false,
+            "Container": "flac",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "Path": "/data/media/Music/Daft Punk/2013 - Random Access Memories/12 - Doin’ It Right.flac",
+            "ChannelId": null,
+            "RunTimeTicks": 2513171090,
+            "ProductionYear": 2021,
+            "IndexNumber": 12,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "Artists": [
+              "Daft Punk feat. Panda Bear"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Daft Punk feat. Panda Bear",
+                "Id": "69b6d0286bf2b823656e7bf80910f6bf"
+              }
+            ],
+            "Album": "Random Access Memories",
+            "AlbumId": "8dcbf3aa770d450e1988ccf23dca8a9b",
+            "AlbumPrimaryImageTag": "048119a76c97892cfdb4ea64dc916e52",
+            "AlbumArtist": "Daft Punk",
+            "AlbumArtists": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "fd28db21b8e7e5be4e42e86e2a346f34"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "3eb714b69b6dd29a122a1c2e659d0325",
+            "ImageBlurHashes": {
+              "Primary": {
+                "fd28db21b8e7e5be4e42e86e2a346f34": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*",
+                "048119a76c97892cfdb4ea64dc916e52": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              },
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -7.3
+          },
+          {
+            "Name": "Fragments of Time",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "a313245d53b693a93fe832104f9d76fc",
+            "HasLyrics": false,
+            "Container": "flac",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "Path": "/data/media/Music/Daft Punk/2013 - Random Access Memories/11 - Fragments of Time.flac",
+            "ChannelId": null,
+            "RunTimeTicks": 2797478910,
+            "ProductionYear": 2021,
+            "IndexNumber": 11,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "Artists": [
+              "Daft Punk feat. Todd Edwards"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Daft Punk feat. Todd Edwards",
+                "Id": "a0f1b34888c93ef81cd5e85aa16f7a6a"
+              }
+            ],
+            "Album": "Random Access Memories",
+            "AlbumId": "8dcbf3aa770d450e1988ccf23dca8a9b",
+            "AlbumPrimaryImageTag": "048119a76c97892cfdb4ea64dc916e52",
+            "AlbumArtist": "Daft Punk",
+            "AlbumArtists": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "65a7c942a89638f3fcf5c8ebaa95d39d"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "3eb714b69b6dd29a122a1c2e659d0325",
+            "ImageBlurHashes": {
+              "Primary": {
+                "65a7c942a89638f3fcf5c8ebaa95d39d": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*",
+                "048119a76c97892cfdb4ea64dc916e52": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              },
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -7.5
+          },
+          {
+            "Name": "Motherboard",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "d891eea01d53af8010f76bdb76732348",
+            "HasLyrics": false,
+            "Container": "flac",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "Path": "/data/media/Music/Daft Punk/2013 - Random Access Memories/10 - Motherboard.flac",
+            "ChannelId": null,
+            "RunTimeTicks": 3416945579,
+            "ProductionYear": 2021,
+            "IndexNumber": 10,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "Artists": [
+              "Daft Punk"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "Album": "Random Access Memories",
+            "AlbumId": "8dcbf3aa770d450e1988ccf23dca8a9b",
+            "AlbumPrimaryImageTag": "048119a76c97892cfdb4ea64dc916e52",
+            "AlbumArtist": "Daft Punk",
+            "AlbumArtists": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "8b6b26f12dff54612788b928a3d09fb0"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "3eb714b69b6dd29a122a1c2e659d0325",
+            "ImageBlurHashes": {
+              "Primary": {
+                "8b6b26f12dff54612788b928a3d09fb0": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*",
+                "048119a76c97892cfdb4ea64dc916e52": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              },
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -4.8
+          },
+          {
+            "Name": "Beyond",
+            "ServerId": "96bcbb8daf9c48859172e3625e4877dd",
+            "Id": "abfad6dd7501d23cdbbf9ecefbc0006f",
+            "HasLyrics": false,
+            "Container": "flac",
+            "PremiereDate": "2021-01-01T00:00:00.0000000Z",
+            "Path": "/data/media/Music/Daft Punk/2013 - Random Access Memories/09 - Beyond.flac",
+            "ChannelId": null,
+            "RunTimeTicks": 2902145580,
+            "ProductionYear": 2021,
+            "IndexNumber": 9,
+            "ProviderIds": {},
+            "IsFolder": false,
+            "Type": "Audio",
+            "ParentLogoItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropItemId": "9797844cbaa5d04632be1dbc456b01a5",
+            "ParentBackdropImageTags": [
+              "f97e8f5658a61378dc9c5b56713438f2"
+            ],
+            "Artists": [
+              "Daft Punk"
+            ],
+            "ArtistItems": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "Album": "Random Access Memories",
+            "AlbumId": "8dcbf3aa770d450e1988ccf23dca8a9b",
+            "AlbumPrimaryImageTag": "048119a76c97892cfdb4ea64dc916e52",
+            "AlbumArtist": "Daft Punk",
+            "AlbumArtists": [
+              {
+                "Name": "Daft Punk",
+                "Id": "9797844cbaa5d04632be1dbc456b01a5"
+              }
+            ],
+            "ImageTags": {
+              "Primary": "858439d3b592b1eab75d82bab704bd00"
+            },
+            "BackdropImageTags": [],
+            "ParentLogoImageTag": "3eb714b69b6dd29a122a1c2e659d0325",
+            "ImageBlurHashes": {
+              "Primary": {
+                "858439d3b592b1eab75d82bab704bd00": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*",
+                "048119a76c97892cfdb4ea64dc916e52": "eD9H2|x_00MaM|NLofxsR-NH9EV?tStT-:VrWBt8t8V@IUae-;kXD*"
+              },
+              "Logo": {
+                "3eb714b69b6dd29a122a1c2e659d0325": "OLI#x_xuayt7xu%MM{?b%Mt7IUayj[of~qt7ayM{ofof%M"
+              },
+              "Backdrop": {
+                "f97e8f5658a61378dc9c5b56713438f2": "W68g:MSz?s?b8|?I%$X9RlspR+o10hw}E3I:v~E2E9wMXSNZw^Iq"
+              }
+            },
+            "LocationType": "FileSystem",
+            "MediaType": "Audio",
+            "NormalizationGain": -6.5
+          }
+        ],
+        "TotalRecordCount": 561,
+        "StartIndex": 0,
+        "trimmed": "Trimmed by the recorder: only the first five tracks are kept, as the rest hold household names."
+      }
+    }
+  }
+}

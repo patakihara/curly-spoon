@@ -3,7 +3,7 @@
  * environment themselves: they take a `FetchLike`, so tests inject a fake, record mode injects
  * the recorder's wrapper, and replay injects `replayFetch`. Every answer is parsed with zod.
  */
-import { type ZodType } from 'zod';
+import { type ZodType, type ZodTypeDef } from 'zod';
 
 /** The subset of the `fetch` contract adapters depend on. */
 export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
@@ -84,7 +84,8 @@ export async function requestJson<T>(
   fetch: FetchLike,
   url: string,
   init: RequestInitJson,
-  schema: ZodType<T>,
+  /** Any schema whose output is `T`, a transforming one included. */
+  schema: ZodType<T, ZodTypeDef, unknown>,
 ): Promise<T> {
   const method = init.method ?? 'GET';
   const call = `${method} ${new URL(url).pathname}`;

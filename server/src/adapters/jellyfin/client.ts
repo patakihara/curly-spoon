@@ -22,6 +22,8 @@ import {
   indexQueryResultSchema,
   type JellyfinLyrics,
   jellyfinLyricsSchema,
+  type NewestAudio,
+  newestAudioSchema,
   noContentSchema,
   type PlayableItem,
   playableItemSchema,
@@ -31,7 +33,17 @@ import {
   type UserItemData,
   userItemDataSchema,
   userListSchema,
+  virtualFoldersSchema,
 } from './schemas.js';
+
+/** How many of the newest tracks `newestAudio` reads. */
+export const NEWEST_AUDIO_LIMIT = 25;
+
+/** The music library a song is kept in: its id, and the folders it reads on Jellyfin's host. */
+export interface MusicLibrary {
+  id: string;
+  locations: string[];
+}
 
 /** How many tracks autoplay's radio asks Instant Mix for, and the recording records. */
 export const INSTANT_MIX_LIMIT = 20;
@@ -221,6 +233,41 @@ export class JellyfinClient {
     const query = { Limit: String(limit), Fields: INDEX_FIELDS };
     const path = `Items/${encodeURIComponent(itemId)}/InstantMix`;
     return (await this.get(path, indexQueryResultSchema, query)).Items;
+  }
+
+  /**
+   * The one music library, from `GET /Library/VirtualFolders`; null when there is none or more
+   * than one, as a kept song would have no one place to go.
+   */
+  async musicLibrary(): Promise<MusicLibrary | null> {
+    const folders = await this.get('Library/VirtualFolders', virtualFoldersSchema);
+    const music = folders.filter((folder) => folder.CollectionType === 'music');
+    if (music.length !== 1) return null;
+    return { id: music[0]!.ItemId, locations: music[0]!.Locations };
+  }
+
+  /**
+   * Tells Jellyfin a file was made at `path`, as its host sees it: `POST /Library/Media/Updated`,
+   * the report a path's watcher makes. Jellyfin refreshes what holds that path after its monitor's
+   * delay, and never scans the whole library for it.
+   */
+  async reportCreated(path: string): Promise<void> {
+    const json = { Updates: [{ Path: path, UpdateType: 'Created' }] };
+    await this.post('Library/Media/Updated', json, noContentSchema);
+  }
+
+  /** The library's newest tracks, newest first, each with its file's path and its album. */
+  async newestAudio(libraryId: string): Promise<NewestAudio[]> {
+    const query = {
+      ParentId: libraryId,
+      Recursive: 'true',
+      IncludeItemTypes: 'Audio',
+      SortBy: 'DateCreated',
+      SortOrder: 'Descending',
+      Limit: String(NEWEST_AUDIO_LIMIT),
+      Fields: 'Path,ProviderIds',
+    };
+    return (await this.get('Items', newestAudioSchema, query)).Items;
   }
 
   /** The first administrator's id: `GET /Users`, which only an admin token may call. */
