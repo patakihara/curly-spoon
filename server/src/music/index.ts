@@ -5,7 +5,6 @@
  * image with no network starts, and owned music never touches any of it. No play ever carries a
  * stream's URL: every byte comes through the cache.
  */
-import { lookup } from 'node:dns/promises';
 import type { MediaRef, SearchSong } from '@auralis/schema';
 import { basename, dirname, join } from 'node:path';
 import type { FetchLike } from '../adapters/http/fetch.js';
@@ -33,6 +32,7 @@ import {
   type SpawnLike,
 } from './extractor.js';
 import type { StreamUrl } from './schemas.js';
+import { quickLookup, StreamHosts } from './streamHosts.js';
 import { StreamingState } from './state.js';
 import {
   CHUNK_BYTES,
@@ -94,6 +94,8 @@ export interface MusicDeps {
   direct?: DirectResolve;
   /** The visitor id YouTube Music's answers named last, which trims the extractor's plain run. */
   visitor?: () => string | null;
+  /** Looks up a stream's host as soon as its song resolves, ahead of the first fetch. */
+  warmHost?: (url: StreamUrl) => void;
 }
 
 /** What the canary last said of the direct resolve, for admin. */
@@ -147,6 +149,7 @@ export class Music {
         ? await this.extractor.resolveAhead(id, options)
         : await this.extractor.resolve(id, options);
       if (audio.duration > MOST_SONG_SECONDS) throw new TrackRefused('unsupported_format', 422);
+      this.deps.warmHost?.(audio.url);
       return audio;
     },
   };
@@ -311,7 +314,8 @@ export class Music {
       if (id === null || !this.mayAskAhead(id)) return;
       this.extractor
         .resolveAhead(id)
-        .then(() => {
+        .then(({ url }) => {
+          this.deps.warmHost?.(url);
           if (n === 0 && this.aheadTop.get(deviceId) === id) this.fetchAhead(deviceId, id);
         })
         .catch((error: unknown) => {
@@ -455,9 +459,6 @@ export interface MusicConfigDeps {
   now: () => number;
 }
 
-const addressesOf = async (host: string) =>
-  (await lookup(host, { all: true })).map(({ address }) => address);
-
 /** The music the configuration names, prepared, with its job; null with no extractor named. */
 export function ytMusic(
   config: AppConfig,
@@ -466,7 +467,8 @@ export function ytMusic(
   const { extractorPath, canaryId, canaryQuery } = config.ytmusic;
   if (extractorPath === null) return null;
   const { db, fetch, log, now } = deps;
-  const streamFetch = publicFetch({ lookup: addressesOf });
+  const hosts = new StreamHosts({ lookup: quickLookup(), now });
+  const streamFetch = publicFetch({ lookup: (host) => hosts.lookup(host) });
   const visitor = new Visitor();
   const client = new YtMusicClient({
     baseUrl: YTMUSIC_URL,
@@ -497,6 +499,7 @@ export function ytMusic(
     client,
     direct,
     visitor: () => visitor.get(),
+    warmHost: (url) => hosts.warm(url),
     canary: canaryOf({
       search: (query) => client.search(query),
       fetch: streamFetch,
