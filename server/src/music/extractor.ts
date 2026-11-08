@@ -1,7 +1,8 @@
 /**
  * Turns a video id into an audio-only stream. When given one, the direct resolve answers first
  * (YouTube's player API, one HTTP call, about 0.1 s, checked live) within three seconds; anything it
- * cannot answer, a live track aside, goes to the extractor (yt-dlp), a process per call. No
+ * cannot answer, a live track aside, goes to the extractor (yt-dlp), a process per call. A resolve
+ * ahead of a tap asks the direct call alone, never a process, and a tap joins it. No
  * client's text reaches its command line but an id that passed `YT_ID`, and that after `--`. Each
  * child gets a clean environment, no config, no cache and a time limit, and a kill takes its children
  * with it. Tried twice, in order: the default clients with no JS runtime (2 s, 56 MiB, checked
@@ -276,33 +277,78 @@ function within<T>(work: Promise<T>, ms: number): Promise<T> {
 export class Extractor {
   private readonly plain = new Gate(2);
   private readonly node = new Gate(1);
-  private readonly running = new Map<string, Promise<ResolvedAudio>>();
+  /** The resolve running for each id; `ahead` when it asks the direct call alone. */
+  private readonly running = new Map<string, { run: Promise<ResolvedAudio>; ahead: boolean }>();
   private readonly urls = new Map<string, ResolvedAudio>();
 
   constructor(private readonly opts: ExtractorOptions) {}
 
-  /** A stream for `id`: the one in hand while it holds, else a run shared by everyone asking. */
+  /**
+   * A stream for `id`: the one in hand while it holds, else a run shared by everyone asking. A run
+   * ahead of the tap that is going is joined; if it fails, the extractor answers, once.
+   */
   async resolve(id: string, options: ResolveOptions = {}): Promise<ResolvedAudio> {
+    const held = this.held(id, options);
+    if (held !== undefined) return held;
+    const running = this.running.get(id);
+    if (running !== undefined && !running.ahead) return running.run;
+    const run =
+      running === undefined
+        ? this.extract(id)
+        : running.run.catch((error: unknown) => {
+            if (error instanceof ExtractorFailure && error.reason === 'live') throw error;
+            return this.extracted(id);
+          });
+    return this.flight(id, run, false);
+  }
+
+  /**
+   * A stream for `id` from the direct call alone, before anyone taps it: never a process, so the
+   * extractor's gates stay for taps. A held URL or a running resolve answers instead; with no
+   * direct call, or when it cannot answer, this throws.
+   */
+  async resolveAhead(id: string, options: ResolveOptions = {}): Promise<ResolvedAudio> {
+    const held = this.held(id, options);
+    if (held !== undefined) return held;
+    const running = this.running.get(id);
+    if (running !== undefined) return running.run;
+    const run = this.direct(id).then((audio) => {
+      if (audio === null) throw new ExtractorFailure('extractorError');
+      this.hold(audio);
+      return audio;
+    });
+    return this.flight(id, run, true);
+  }
+
+  /** The URL in hand for `id`, while it holds and was not the one refused. */
+  private held(id: string, options: ResolveOptions): ResolvedAudio | undefined {
     if (!YT_ID.test(id)) throw new ExtractorFailure('badId');
     const held = this.urls.get(id);
-    if (held !== undefined) {
-      const fresh = this.opts.now() < held.expiresAt - URL_KEPT_UNTIL_BEFORE_EXPIRY_MS;
-      if (fresh && held.url !== options.replacing) return held;
-      this.urls.delete(id);
-    }
-    const running = this.running.get(id);
-    if (running !== undefined) return running;
-    const run = this.extract(id).finally(() => this.running.delete(id));
-    this.running.set(id, run);
-    return run;
+    if (held === undefined) return undefined;
+    const fresh = this.opts.now() < held.expiresAt - URL_KEPT_UNTIL_BEFORE_EXPIRY_MS;
+    if (fresh && held.url !== options.replacing) return held;
+    this.urls.delete(id);
+    return undefined;
+  }
+
+  private flight(id: string, work: Promise<ResolvedAudio>, ahead: boolean) {
+    const entry = { run: work, ahead };
+    entry.run = work.finally(() => {
+      if (this.running.get(id) === entry) this.running.delete(id);
+    });
+    this.running.set(id, entry);
+    return entry.run;
   }
 
   private async extract(id: string): Promise<ResolvedAudio> {
     const direct = await this.direct(id);
-    if (direct !== null) {
-      this.hold(direct);
-      return direct;
-    }
+    if (direct === null) return this.extracted(id);
+    this.hold(direct);
+    return direct;
+  }
+
+  /** The extractor's answer: the plain tier, then node. */
+  private async extracted(id: string): Promise<ResolvedAudio> {
     let audio: ResolvedAudio;
     try {
       audio = await this.plain.run(() => this.attempt(id, 'plain'));

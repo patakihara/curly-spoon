@@ -285,6 +285,75 @@ describe('[M3.ytmusic/a] the direct resolve ahead of yt-dlp, on recordings', () 
   }, 10_000);
 });
 
+describe('[M3.ytmusic] a resolve ahead of the tap: the direct call alone', () => {
+  const held = () => {
+    const visitor = new Visitor();
+    visitor.keep(VISITOR);
+    return visitor;
+  };
+
+  it('[M3.ytmusic] answers from one player call and spawns nothing; the tap after it asks nothing', async () => {
+    const run = resolving({ player: [ok] }, held());
+    expect((await run.extractor.resolveAhead(ID)).tier).toBe('direct');
+    expect((await run.extractor.resolve(ID)).tier).toBe('direct');
+    expect(run.asked).toHaveLength(1);
+    expect(run.spawned).toHaveLength(0);
+  });
+
+  it('[M3.ytmusic] a direct failure ahead throws, and nothing spawns', async () => {
+    const run = resolving({ player: [unplayable] }, held());
+    await expect(run.extractor.resolveAhead(ID)).rejects.toThrow();
+    expect(run.spawned).toHaveLength(0);
+  });
+
+  it('[M3.ytmusic] a tap during the resolve ahead shares its player call', async () => {
+    const run = resolving({ player: [ok] }, held());
+    const [ahead, tap] = await Promise.all([
+      run.extractor.resolveAhead(ID),
+      run.extractor.resolve(ID),
+    ]);
+    expect(tap).toBe(ahead);
+    expect(run.asked).toHaveLength(1);
+    expect(run.spawned).toHaveLength(0);
+  });
+
+  it('[M3.ytmusic] a tap during a resolve ahead that fails runs yt-dlp once, asking the player no more', async () => {
+    const run = resolving({ player: [unplayable] }, held());
+    const ahead = run.extractor.resolveAhead(ID);
+    const taps = Promise.all([run.extractor.resolve(ID), run.extractor.resolve(ID)]);
+    await expect(ahead).rejects.toThrow();
+    const [a, b] = await taps;
+    expect(a).toBe(b);
+    expect(a.tier).toBe('plain');
+    expect(run.asked).toHaveLength(1);
+    expect(run.spawned).toHaveLength(1);
+  });
+
+  it('[M3.ytmusic] a resolve ahead joins a running tap rather than asking again', async () => {
+    const run = resolving({ player: [ok] }, held());
+    const [tap, ahead] = await Promise.all([
+      run.extractor.resolve(ID),
+      run.extractor.resolveAhead(ID),
+    ]);
+    expect(ahead).toBe(tap);
+    expect(run.asked).toHaveLength(1);
+  });
+
+  it('[M3.ytmusic] with no direct call, a resolve ahead throws and spawns nothing', async () => {
+    const home = mkdtempSync(join(tmpdir(), 'auralis-direct-'));
+    homes.push(home);
+    const spy = spawnSpy();
+    const extractor = new Extractor({
+      path: () => '/opt/yt-dlp',
+      home,
+      now: () => NOW,
+      spawn: spy.spawn,
+    });
+    await expect(extractor.resolveAhead(ID)).rejects.toThrow();
+    expect(spy.calls).toHaveLength(0);
+  });
+});
+
 describe("[M3.ytmusic/d] the canary's direct result", () => {
   const stream: FetchLike = async (_url, init) => {
     const [first = 0, last = 0] = (new Headers(init?.headers).get('range') ?? '')

@@ -6,7 +6,7 @@
  * stream's URL: every byte comes through the cache.
  */
 import { lookup } from 'node:dns/promises';
-import type { MediaRef } from '@auralis/schema';
+import type { MediaRef, SearchSong } from '@auralis/schema';
 import { basename, dirname, join } from 'node:path';
 import type { FetchLike } from '../adapters/http/fetch.js';
 import { publicFetch } from '../adapters/http/publicFetch.js';
@@ -49,6 +49,10 @@ export { MOST_SONG_SECONDS };
 const PRELOADED_CHUNKS = 2;
 const RESOLVED_AHEAD_MS = 5 * 60_000;
 const MOST_RESOLVED_AHEAD = 200;
+/** How many of a search's song rows are resolved ahead of a tap; the first also has its first chunk fetched. */
+export const ROWS_RESOLVED_AHEAD = 2;
+/** At most this many resolves ahead in any minute, whatever is searched: ten searches' worth. */
+export const MOST_AHEAD_PER_MINUTE = 20;
 
 /** This track cannot play, and that says nothing of streaming. `error` is what a client is told. */
 export class TrackRefused extends Error {
@@ -121,12 +125,23 @@ export class Music {
   private readonly catalogue: SongCatalogue | null;
   /** The songs resolved ahead of a tap, and when. */
   private readonly ahead = new Map<string, number>();
+  /** When each resolve ahead in the last minute was asked. */
+  private aheadTimes: number[] = [];
+  /** The first chunk each device's last search is fetching ahead. */
+  private readonly aheadChunks = new Map<string, { id: string; stop: AbortController }>();
+  /** Songs whose first chunk is fetched ahead, by how many such fetches, that no play has asked for. */
+  private readonly aheadOnly = new Map<string, number>();
   private directState: DirectState | null = null;
 
-  /** The extractor, for a song: one it names as too long is refused before a byte is asked. */
+  /**
+   * The extractor, for a song: one it names as too long is refused before a byte is asked. A song
+   * only fetched ahead, which no play has asked for, is resolved through the direct call alone.
+   */
   private readonly songs = {
     resolve: async (id: string, options?: { replacing?: StreamUrl }) => {
-      const audio = await this.extractor.resolve(id, options);
+      const audio = this.aheadOnly.has(id)
+        ? await this.extractor.resolveAhead(id, options)
+        : await this.extractor.resolve(id, options);
       if (audio.duration > MOST_SONG_SECONDS) throw new TrackRefused('unsupported_format', 422);
       return audio;
     },
@@ -198,6 +213,7 @@ export class Music {
   async plan(id: string): Promise<{ mime: string; tier: ResolvedTier | 'cache' }> {
     const whole = this.cache.whole(id);
     if (whole !== null) return { mime: whole.mime, tier: 'cache' };
+    this.aheadOnly.delete(id);
     if (!this.state.available) throw new StreamingUnavailable();
     try {
       const { mime, tier } = await this.songs.resolve(id);
@@ -209,6 +225,7 @@ export class Music {
 
   /** A client's range of a track, every byte through the cache. */
   async open(id: string, range: string | undefined, signal: AbortSignal): Promise<StreamAnswer> {
+    this.aheadOnly.delete(id);
     const held = this.cache.whole(id) !== null;
     if (!held && !this.state.available) throw new StreamingUnavailable();
     try {
@@ -230,6 +247,7 @@ export class Music {
     const running = this.preloading.get(deviceId);
     if (running?.id === id || !this.state.available) return;
     if (streamedTrack(this.deps.db, id) === undefined) return;
+    this.aheadOnly.delete(id);
     running?.stop.abort();
     const mine = { id, stop: new AbortController() };
     this.preloading.set(deviceId, mine);
@@ -268,19 +286,82 @@ export class Music {
   }
 
   /**
-   * Resolves a song before its tap, once in the time a search is kept: one process, for the row
-   * likeliest to be tapped. A failure is only logged, and says nothing of streaming.
+   * Readies a search's top song rows for their tap, without holding up its answer: the first
+   * `ROWS_RESOLVED_AHEAD` resolved through the direct call alone, never a process, and the first
+   * row's first chunk fetched. A newer search's first row stops this device's last chunk fetch. Each
+   * song is asked once in the time a search is kept, at most `MOST_AHEAD_PER_MINUTE` in a minute, and
+   * only one that plays: streamable, named, of a song's length. Nothing is asked while streaming is
+   * unavailable, or with no direct call. A failure is only logged, and says nothing of streaming.
    */
-  resolveAhead(id: string): void {
+  resolveAhead(deviceId: string, rows: readonly SearchSong[]): void {
+    const top = rows
+      .slice(0, ROWS_RESOLVED_AHEAD)
+      .map((row) => (this.plays(row) ? row.ref.id : null));
+    const chunk = this.aheadChunks.get(deviceId);
+    if (chunk !== undefined && chunk.id !== top[0]) this.stopAheadChunk(deviceId);
+    if (this.deps.direct === undefined || !this.state.available) return;
+    top.forEach((id, n) => {
+      if (id === null || !this.mayAskAhead(id)) return;
+      this.extractor
+        .resolveAhead(id)
+        .then(() => {
+          if (n === 0) this.fetchAhead(deviceId, id);
+        })
+        .catch((error: unknown) => {
+          const reason = error instanceof Error ? error.name : 'unknown';
+          this.deps.log.warn({ reason }, 'a song could not be resolved ahead');
+        });
+    });
+  }
+
+  /** Whether a row is a song this server would play. */
+  private plays(row: SearchSong): boolean {
+    if (row.ref.source !== 'ytmusic' || row.availability.kind !== 'streamable') return false;
+    const song = streamedTrack(this.deps.db, row.ref.id);
+    return song !== undefined && song.duration <= MOST_SONG_SECONDS;
+  }
+
+  /** Counts a resolve ahead of `id`, unless it was asked lately or the minute's share is used. */
+  private mayAskAhead(id: string): boolean {
     const now = this.deps.now();
     const last = this.ahead.get(id);
-    if (!this.state.available || (last !== undefined && now - last < RESOLVED_AHEAD_MS)) return;
+    if (last !== undefined && now - last < RESOLVED_AHEAD_MS) return false;
+    this.aheadTimes = this.aheadTimes.filter((at) => now - at < 60_000);
+    if (this.aheadTimes.length >= MOST_AHEAD_PER_MINUTE) return false;
+    this.aheadTimes.push(now);
     if (this.ahead.size >= MOST_RESOLVED_AHEAD) this.ahead.clear();
     this.ahead.set(id, now);
-    this.extractor.resolve(id).catch((error: unknown) => {
-      const reason = error instanceof Error ? error.name : 'unknown';
-      this.deps.log.warn({ reason }, 'a song could not be resolved ahead');
-    });
+    return true;
+  }
+
+  /** A song's first chunk, into the cache under its cap, for this device's last search. */
+  private fetchAhead(deviceId: string, id: string): void {
+    if (!this.state.available || this.aheadChunks.get(deviceId)?.id === id) return;
+    this.stopAheadChunk(deviceId);
+    const mine = { id, stop: new AbortController() };
+    this.aheadChunks.set(deviceId, mine);
+    this.aheadOnly.set(id, (this.aheadOnly.get(id) ?? 0) + 1);
+    void this.cache
+      .open(id, `bytes=0-${this.chunkBytes - 1}`, mine.stop.signal)
+      .then(async ({ body }) => {
+        for await (const part of body) void part;
+      })
+      .catch((error: unknown) => {
+        if (mine.stop.signal.aborted) return;
+        const reason = error instanceof Error ? error.name : 'unknown';
+        this.deps.log.warn({ reason }, 'a song could not be fetched ahead');
+      })
+      .finally(() => {
+        if (this.aheadChunks.get(deviceId) === mine) this.aheadChunks.delete(deviceId);
+        const left = (this.aheadOnly.get(id) ?? 0) - 1;
+        if (left > 0) this.aheadOnly.set(id, left);
+        else this.aheadOnly.delete(id);
+      });
+  }
+
+  private stopAheadChunk(deviceId: string): void {
+    this.aheadChunks.get(deviceId)?.stop.abort();
+    this.aheadChunks.delete(deviceId);
   }
 
   /** What autoplay asks of YouTube Music; never throws for streaming being down. */

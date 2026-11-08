@@ -12,7 +12,8 @@
  * books can be requested. It waits for that source only up to the catalogue's limit, and whatever goes
  * wrong there the library's results still answer. It lists the songs the library lacks the same way,
  * from YouTube Music, each playing straight away; while streaming is unavailable it lists none and
- * says so, and asks nothing. The top song is resolved ahead of its tap.
+ * says so, and asks nothing. The top songs are readied ahead of their tap, after the answer's rows
+ * are known and without waiting on it.
  */
 import {
   getSearch,
@@ -73,12 +74,13 @@ export function searchRoutes(
     request: FastifyRequest,
     q: string,
     kinds: readonly SearchKind[] | undefined,
+    deviceId: string,
     gone: AbortSignal,
   ): Promise<SearchSong[]> => {
     if (music === null || (kinds !== undefined && !kinds.includes('track'))) return [];
     try {
       const rows = songRows(db, await music.searchSongs(q, gone));
-      if (rows[0] !== undefined) music.resolveAhead(rows[0].ref.id);
+      music.resolveAhead(deviceId, rows);
       return rows;
     } catch (err) {
       request.log.warn({ err }, 'no song rows');
@@ -101,7 +103,7 @@ export function searchRoutes(
     const [lists, found, streamed] = await Promise.all([
       Promise.all(sources.map((source) => source.search(asked, gone))),
       books(request, query.q, query.kinds, user.id, gone),
-      songs(request, query.q, query.kinds, gone),
+      songs(request, query.q, query.kinds, user.deviceId, gone),
     ]);
     // A recent search is a convenience: failing to keep one never costs the results.
     if (request.method === 'GET') {
