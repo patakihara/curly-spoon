@@ -1869,7 +1869,7 @@ describe('the requests routes', () => {
       expect(res.json()).toMatchObject({ id: first!.id });
     });
 
-    it('counts every medium and every failed request, but not one that reached the library', async () => {
+    it('counts every medium, but neither a failed request nor one that reached the library', async () => {
       await serving(standInSteps('book'), standInSteps('podcast'));
       const held = filled(20);
       const feed = refs.podcast;
@@ -1880,14 +1880,30 @@ describe('the requests routes', () => {
         { state: { status: 'failed', failedStep: 'searching', reason: 'noRelease' } },
         clock,
       );
-      expect((await call('POST', '', 'ana', { ref: feed })).statusCode).toBe(429);
+      expect((await call('POST', '', 'ana', { ref: feed })).statusCode).toBe(200);
       saveRequest(
         db,
         held[1]!.id,
         { state: { status: 'inLibrary' }, result: { source: 'abs', id: 'landed' } },
         clock,
       );
-      expect((await call('POST', '', 'ana', { ref: feed })).statusCode).toBe(200);
+      expect((await call('POST', '', 'ana', { ref: bookNo(30) })).statusCode).toBe(200);
+      expect((await call('POST', '', 'ana', { ref: bookNo(31) })).statusCode).toBe(429);
+    });
+
+    it('[M3.keep] lets a person at the limit retry a failed keep of theirs, which counts again once it moves', async () => {
+      await serving(standInSteps('book'), standInSteps('song'));
+      const keptBefore = await ask('song');
+      saveRequest(
+        db,
+        keptBefore.id,
+        { state: { status: 'failed', failedStep: 'downloading', reason: 'downloadFailed' } },
+        clock,
+      );
+      filled(20);
+      const again = await ask('song');
+      expect(again).toMatchObject({ id: keptBefore.id, status: 'downloading' });
+      expect((await call('POST', '', 'ana', { ref: bookNo(20) })).statusCode).toBe(429);
     });
 
     it('takes its limit from the configuration', async () => {
@@ -2174,6 +2190,63 @@ describe('the requests routes', () => {
       const again = await ask('song', 'ben');
       expect(again).toMatchObject({ id: first.id, status: 'inLibrary' });
       expect(claimsOf(db, ben)).toEqual([{ ref: songsAlbum, reason: 'added' }]);
+    });
+
+    it('[M3.keep] a song the household already owns, by its title and artist, answers from the library and runs no step', async () => {
+      const steps = standInSteps('song', { imports: songsTrack });
+      const searched = vi.spyOn(steps, 'search');
+      await serving(steps);
+      await indexRecordings(db, clock);
+      const owned = indexedRow(db, 'jellyfin', songsTrack.id)!;
+      rememberTracks(
+        db,
+        [
+          {
+            ...STREAMED_SONG,
+            id: 'ownedSong01',
+            title: `${owned.title} (2011 Remaster)`,
+            artists: owned.creators.map(({ name }) => name),
+          },
+        ],
+        clock,
+      );
+      const res = await keep({ source: 'ytmusic', id: 'ownedSong01' });
+      expect(res.statusCode).toBe(200);
+      const answered = RequestView.parse(res.json());
+      expect(answered.status).toBe('inLibrary');
+      expect(stored(answered.id).result).toEqual(songsTrack);
+      expect(claimsOf(db, ana)).toEqual([{ ref: songsAlbum, reason: 'added' }]);
+      expect(searched).not.toHaveBeenCalled();
+      expect((await list()).inFlight).toEqual([]);
+
+      const second = await keep({ source: 'ytmusic', id: 'ownedSong01' }, 'ben');
+      expect(RequestView.parse(second.json()).id).toBe(answered.id);
+      expect(claimsOf(db, ben)).toEqual([{ ref: songsAlbum, reason: 'added' }]);
+    });
+
+    it('[M3.keep] a failed keep is retried by keeping the song again', async () => {
+      await serving(standInSteps('song'));
+      const first = await ask('song');
+      saveRequest(
+        db,
+        first.id,
+        { state: { status: 'failed', failedStep: 'downloading', reason: 'downloadFailed' } },
+        clock,
+      );
+      expect(await ask('song')).toMatchObject({ id: first.id, status: 'downloading' });
+    });
+
+    it('[M3.keep] a keep being imported offers no cancel, and a cancel of it answers 409 past_cancel', async () => {
+      await serving(standInSteps('song'));
+      const { id } = await ask('song');
+      saveRequest(db, id, { state: { status: 'importing' } }, clock);
+      expect((await view(id)).verbs).toEqual([]);
+      const res = await call('POST', `/${id}/cancel`, 'ana');
+      expect(res.statusCode).toBe(409);
+      expect(res.json()).toEqual({ error: 'past_cancel' });
+      expect(stored(id).state.status).toBe('importing');
+      saveRequest(db, id, { state: { status: 'downloading', progress: 0.5 } }, clock);
+      expect((await view(id)).verbs).toEqual(['cancel']);
     });
 
     it('[M3.keep] a keep wakes the job: the song walks on with no turn of the job asked', async () => {

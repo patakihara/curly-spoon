@@ -34,7 +34,8 @@ import { type Answer, SignedOut } from './store';
  * and why it would not play, or was stepped over, takes the page's one banner, as does streaming
  * being unavailable. Its menu keeps it in the household's library (`POST /api/keep`) while it only
  * streams; once the person's keep of it is under way the menu is empty and its row says where the
- * keep stands, the page looking again until it is done. The page's own
+ * keep stands, the page looking again until it is done. A keep that failed moves no more, so the
+ * page stops looking, and its menu offers Add to library again, which retries it. The page's own
  * words (its placeholder, its kinds) stay as given; what it says when a search finds nothing or
  * fails is written in the page, which this only chooses the state of.
  * The kinds' names and the meta lines are written here, as the library homes write theirs, until
@@ -185,9 +186,17 @@ function refusedMessage({ error, skipped, stoppedAfter, ranOut }: Refused): stri
 /** A song's one verb: keeping it in the household's library. */
 const KEEP = { key: 'keep', label: 'Add to library', icon: 'library_add' };
 
+/** Whether this person's keep of a song failed. */
+const isFailedKeep = ({ availability }: SearchSong) =>
+  availability.kind === 'requested' && availability.status === 'failed';
+
+/** Whether a song's keep is under way: asked for, and neither failed nor done. */
+const keeping = (song: SearchSong) => song.availability.kind === 'requested' && !isFailedKeep(song);
+
 /**
  * One song from YouTube Music as its row, in the list of the two that says what its button does.
- * Only a song that just streams offers to be kept; one being kept says where that stands.
+ * A song that just streams, or whose keep failed, offers to be kept; one being kept says where that
+ * stands.
  */
 export function songRowOf(song: SearchSong): SongRow {
   const key = mediaRefKey(song.ref);
@@ -200,7 +209,7 @@ export function songRowOf(song: SearchSong): SongRow {
     ...statusOf(song.availability),
     playRef: key,
     ref: key,
-    menu: song.availability.kind === 'streamable' ? [KEEP] : [],
+    menu: song.availability.kind === 'streamable' || isFailedKeep(song) ? [KEEP] : [],
   };
   return { plays: [row], follows: [] } as SongRow;
 }
@@ -357,9 +366,7 @@ export async function loadSearchPage(
   return {
     data: searchData(answer, page),
     found: answer.results.length + answer.books.length + answer.songs.length > 0,
-    moving:
-      answer.books.some(movingBook) ||
-      answer.songs.some(({ availability }) => availability.kind === 'requested'),
+    moving: answer.books.some(movingBook) || answer.songs.some(keeping),
   };
 }
 

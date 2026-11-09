@@ -266,9 +266,14 @@ export function requestsOf(db: Db, userId: string, log?: JobLog): StoredRequest[
 /** How many live requests of all media one person may be on, unless the configuration says. */
 export const MOST_LIVE_REQUESTS = 20;
 
-/** How many live requests a person is on, made or joined; a failed one is live until cancelled. */
+/**
+ * How many requests still under way a person is on, made or joined, of every medium: neither failed
+ * nor in the library. A failed one stays theirs to retry or cancel, but uses up none of the limit.
+ */
 export const liveRequestCount = (db: Db, userId: string, log?: JobLog): number =>
-  requestsOf(db, userId, log).filter(({ state }) => state.status !== 'inLibrary').length;
+  requestsOf(db, userId, log).filter(
+    ({ state }) => state.status !== 'inLibrary' && state.status !== 'failed',
+  ).length;
 
 /** The requests a person's Requests page lists: not a podcast's, which is instant, nor one landed. */
 export const requestsListed = (db: Db, userId: string, log?: JobLog): StoredRequest[] =>

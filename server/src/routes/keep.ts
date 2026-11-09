@@ -2,11 +2,14 @@
  * Keeping a song from YouTube Music: `POST /keep {ref}`. A client names the song only by the ref
  * search or radio gave it; the target is built here from `streamed_tracks`, so nothing a client
  * says reaches a request but which of those songs it means. Any other ref answers 404, as one
- * never named does. The rest is a request like any other (joined, retried, or found in the
- * library), and the job is woken so the keep starts at once rather than at its next turn.
+ * never named does. A song the household already owns, by the words of its title and its artists
+ * as Search tells it, is answered from the library at once, its track claimed and nothing written
+ * to Music. The rest is a request like any other (joined, retried, or found in the library), and the
+ * job is woken so the keep starts at once rather than at its next turn.
  */
 import { keepSong, RequestRef } from '@auralis/schema';
 import type { FastifyInstance } from 'fastify';
+import { ownedTrack, ownedTracks } from '../music/catalogue.js';
 import type { Wake } from '../requests/job.js';
 import { Refusal, serve } from '../route.js';
 import type { StoredRequest } from '../store/requests.js';
@@ -34,7 +37,12 @@ export function songKeeper(
         ids: { youtubeMusicId },
       },
     });
-    const kept = await askFor(userId, asked);
+    const owned = ownedTrack(ownedTracks(deps.db), song);
+    const kept = await askFor(
+      userId,
+      asked,
+      owned === null ? null : { source: 'jellyfin', id: owned },
+    );
     deps.wake.now();
     return kept;
   };

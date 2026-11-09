@@ -745,6 +745,14 @@ describe('[M3.keep] keeping a song from YouTube Music', () => {
     );
   });
 
+  it('offers Add to library again on a song whose keep failed, and says it failed', () => {
+    const [row] = songRowOf(song({ kind: 'requested', status: 'failed' })).plays;
+    expect(row?.menu).toEqual([{ key: 'keep', label: 'Add to library', icon: 'library_add' }]);
+    expect(row?.tone).toBe('error');
+    const data = searchData(answer(song({ kind: 'requested', status: 'failed' })), empty);
+    expect(searchOffers(data, 'ytmusic:lYBUbBu4W08')).toBe(true);
+  });
+
   it('offers nothing for a song the household owns', () => {
     expect(songRowOf(song({ kind: 'owned' })).plays[0]?.menu).toEqual([]);
   });
@@ -781,6 +789,7 @@ describe('[M3.keep] keeping a song from YouTube Music', () => {
       );
     expect((await loaded(song({ kind: 'streamable' }))).moving).toBe(false);
     expect((await loaded(song({ kind: 'requested', status: 'requested' }))).moving).toBe(true);
+    expect((await loaded(song({ kind: 'requested', status: 'failed' }))).moving).toBe(false);
   });
 
   it('keeps the song by POST /api/keep with its ref, then has the page load again', async () => {
