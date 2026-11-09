@@ -1,7 +1,7 @@
 /**
  * A kept song's download: its whole stream, read through the stream cache into this server's
- * staging folder (`Music/.auralis-keep/<instance>/<id>.webm`, which Jellyfin ignores as a dot
- * folder). Chunks the cache holds come from its disk, so a song played through makes no upstream
+ * staging folder (`<MEDIA_DIR>/.auralis-keep/<instance>/<id>.webm`, beside Music, outside Jellyfin's
+ * library). Chunks the cache holds come from its disk, so a song played through makes no upstream
  * call; missing ones the cache fetches as it always does, in closed ranges. `start` opens the stream and answers the handle
  * `{id, size}` at once, the bytes following in the background; `poll` counts the staged bytes, and
  * is done once they are the stream's size. The read wakes the job when it ends, so the import does
@@ -37,7 +37,7 @@ export interface SongStream {
 
 export interface SongDownloadDeps {
   stream: SongStream;
-  /** The staging folder, inside the Music folder so a staged file links into place. */
+  /** The staging folder, on the Music folder's filesystem so a staged file links into place. */
   stagingDir: string;
   /** Asks the job for a turn: the read ended. */
   wake: () => void;

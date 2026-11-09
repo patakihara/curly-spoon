@@ -109,7 +109,7 @@ export const RECORD_TRIES = 6;
 export const BUSY_WAIT_MS = 10_000;
 
 /** Where the `media-updated` report points, under the music library: ignored and absent. */
-export const UNINDEXED_PROBE = '.auralis-keep/recording-probe.opus';
+export const UNINDEXED_PROBE = '.auralis-probe/recording-probe.opus';
 
 function scanned(recording: Recording) {
   const findings = scanRecording(recording);
