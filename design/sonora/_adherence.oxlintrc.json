@@ -405,8 +405,8 @@
         "message": "<QuickPick> platform must be one of 'desktop' | 'mobile'."
       },
       {
-        "selector": "JSXOpeningElement[name.name='ResultRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|meta|detail|status|progress|tone|actionGlyph|image|icon|platform|onClick|onAction|divider|number|trailing|key|ref|className|style|children)$/]",
-        "message": "<ResultRow> doesn't accept that prop. Declared props: title, meta, detail, status, progress, tone, actionGlyph, image, icon, platform, onClick, onAction, divider, number, trailing."
+        "selector": "JSXOpeningElement[name.name='ResultRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|meta|detail|status|progress|tone|actionGlyph|nextLabel|onNext|image|icon|platform|onClick|onAction|divider|number|trailing|menu|key|ref|className|style|children)$/]",
+        "message": "<ResultRow> doesn't accept that prop. Declared props: title, meta, detail, status, progress, tone, actionGlyph, nextLabel, onNext, image, icon, platform, onClick, onAction, divider, number, trailing, menu."
       },
       {
         "selector": "JSXOpeningElement[name.name='ResultRow'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:library|request|progress|error)$/]",

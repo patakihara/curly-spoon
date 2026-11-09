@@ -657,14 +657,17 @@ One row of a track, search-result or request list: art with a hover play/cancel 
 | `progress` | `number \| null` |  |
 | `tone` | `'library' \| 'request' \| 'progress' \| 'error' \| null` | Colour family for the pill and ring; null for a row with no status. |
 | `actionGlyph` | `string` | Glyph for the art overlay action; "downloading" renders a pause control. |
+| `nextLabel` | `string` |  What the row's second action says, such as "Play next"; empty or omitted, it draws none, so a row can offer it only some of the time. Drawn where `trailing` goes; ignored beside `trailing`.  |
+| `onNext` | `() => void` | Runs when the second action is pressed. |
 | `image` | `string` | Cover art URL. Falls back to the generated gradient when omitted. |
 | `icon` | `string` |  Material Symbols Rounded glyph name, leading the row in place of the art: a row with no cover of its own, such as a search suggestion ("search") or a recent search ("history"). With no art there is no art action. Ignored beside `number`.  |
 | `platform` | `'desktop' \| 'mobile'` |  |
-| `onClick` | `() => void` |  Without it the row is drawn disabled, unless its `onAction` or its `trailing` control has an action: then the row is no control, and only they act. A row holding another control (`onAction`, `trailing`) takes its tap on the title for the keyboard and a screen reader, so no control sits inside another; a pointer taps it anywhere.  |
+| `onClick` | `() => void` |  Without it the row is drawn disabled, unless its `onAction`, its `trailing` control or its `menu` has an action: then the row is no control, and only they act. A row holding another control (`onAction`, `trailing`, `menu`) takes its tap on the title for the keyboard and a screen reader, so no control sits inside another; a pointer taps it anywhere.  |
 | `onAction` | `() => void` |  The art's action: play, or cancel or retry a request, as the status says. Without it the art draws no action; the row's `onClick` never stands in for it. A failed row's retry is drawn at every width, in place of the error glyph.  |
 | `divider` | `boolean` | Hairline separator along the bottom, inset to the text column. Set on all but the last row of a list. |
 | `number` | `number \| null` | A track number, leading the row in place of the art: an album's tracks, which share one cover. Null or omitted for art. |
 | `trailing` | `ReactNode` | Rendered after the status pill, at the row's trailing edge — an overflow menu or an add control. |
+| `menu` | `ReactNode` |  Drawn last, after `trailing` or the second action: an `OverflowMenu` with the verbs that get no button, such as Add to library. A press on it never opens the row.  |
 
 ### SectionHeader
 

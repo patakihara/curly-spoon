@@ -357,6 +357,11 @@ Add `trailing?: ReactNode` — rendered after the status pill, at the row's trai
 overflow menu and an add control; `ResultRow` today offers exactly one action, on the artwork.
 When `trailing` is absent nothing changes.
 
+Add `menu?: ReactNode` — an `OverflowMenu`, drawn last, after `trailing` or the second action
+(`nextLabel`). **Affordance: verbs that get no button, beside one that does.** A song row with Play
+next has no room for a menu in `trailing`, and moving Play next into the menu would move a button.
+A press on the menu never opens the row. When `menu` is absent nothing changes.
+
 ---
 
 # Cards

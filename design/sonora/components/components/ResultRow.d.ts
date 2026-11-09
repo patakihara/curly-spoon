@@ -41,8 +41,8 @@ export interface ResultRowProps {
   icon?: string;
   platform?: 'desktop' | 'mobile';
   /**
-   * Without it the row is drawn disabled, unless its `onAction` or its `trailing` control has an
-   * action: then the row is no control, and only they act. A row holding another control (`onAction`, `trailing`) takes its tap
+   * Without it the row is drawn disabled, unless its `onAction`, its `trailing` control or its `menu` has an
+   * action: then the row is no control, and only they act. A row holding another control (`onAction`, `trailing`, `menu`) takes its tap
    * on the title for the keyboard and a screen reader, so no control sits inside another; a
    * pointer taps it anywhere.
    */
@@ -59,5 +59,10 @@ export interface ResultRowProps {
   number?: number | null;
   /** Rendered after the status pill, at the row's trailing edge — an overflow menu or an add control. */
   trailing?: ReactNode;
+  /**
+   * Drawn last, after `trailing` or the second action: an `OverflowMenu` with the verbs that get no
+   * button, such as Add to library. A press on it never opens the row.
+   */
+  menu?: ReactNode;
 }
 export declare function ResultRow(props: ResultRowProps): JSX.Element;

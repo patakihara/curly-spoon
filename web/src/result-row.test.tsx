@@ -244,4 +244,74 @@ describe("Sonora's ResultRow trailing control", () => {
       expect(opened, platform).toEqual([]);
     }
   });
+
+  it('[M3.keep] keeps a press on its menu from opening the row', () => {
+    for (const platform of ['desktop', 'mobile'] as const) {
+      const opened: string[] = [];
+      const menu = <button type="button">More</button>;
+      const tree = (ResultRow as unknown as (p: object) => unknown)({
+        title: 'Salt',
+        platform,
+        menu,
+        onClick: () => opened.push('row'),
+      });
+      expect(pathTo(tree, menu).length, platform).toBeGreaterThan(1);
+      click(tree, menu);
+      expect(opened, platform).toEqual([]);
+    }
+  });
+});
+
+describe("Sonora's ResultRow menu", () => {
+  const opens = () => undefined;
+  const chooses = () => undefined;
+  const menu = <IconButton icon="more_vert" label="More" onClick={chooses} />;
+  const labels = (html: string) =>
+    roles(html)
+      .filter((r) => r.role === 'button')
+      .map((b) => /aria-label="([^"]*)"/.exec(b.attrs)?.[1] ?? null);
+
+  it('[M3.keep] draws the menu last, after the Play next action, so neither button moves', () => {
+    for (const platform of ['desktop', 'mobile'] as const) {
+      const html = row({ platform, onClick: opens, nextLabel: 'Play next', onNext: opens, menu });
+      expect(html, platform).toContain('Play next');
+      expect(html.indexOf('aria-label="More"'), platform).toBeGreaterThan(
+        html.indexOf('Play next'),
+      );
+    }
+  });
+
+  it('[M3.keep] draws the menu last, after a trailing control', () => {
+    const trailing = <IconButton icon="close" label="Cancel" onClick={opens} />;
+    for (const platform of ['desktop', 'mobile'] as const) {
+      const html = row({ platform, onClick: opens, trailing, menu });
+      expect(
+        labels(html).filter((l) => l !== null),
+        platform,
+      ).toEqual(['Cancel', 'More']);
+    }
+  });
+
+  it('[M3.keep] draws nothing more without one', () => {
+    expect(labels(row({ onClick: opens, nextLabel: 'Play next', onNext: opens }))).not.toContain(
+      'More',
+    );
+  });
+
+  it('[M3.keep] is no control at all when only its menu acts: no row button, nothing disabled', () => {
+    for (const platform of ['desktop', 'mobile'] as const) {
+      const html = row({ platform, menu });
+      expect(labels(html), platform).toEqual(['More']);
+      expect(html, platform).not.toContain('aria-disabled');
+    }
+  });
+
+  it('[M3.keep] takes the row’s tap on its title when it opens and holds a menu, so no button sits inside another', () => {
+    for (const platform of ['desktop', 'mobile'] as const) {
+      const html = row({ platform, onClick: opens, menu });
+      for (const b of roles(html).filter((r) => r.role === 'button'))
+        expect(b.inside, `${platform} ${b.attrs}`).toEqual([]);
+      expect(labels(html), platform).toEqual([null, 'More']);
+    }
+  });
 });
