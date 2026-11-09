@@ -32,12 +32,15 @@ export type DownloadHandle = z.infer<typeof DownloadHandle>;
 
 /**
  * A search's answer: one release picked, with the others it passed over in case that one fails;
- * candidates for the person to choose from; or none.
+ * candidates for the person to choose from; none; or not yet, for a search that asks its upstream
+ * a little each turn, as an album's asks one query a turn to stay inside the step's limit. A waiting
+ * search saves nothing, and is called again next turn.
  */
 export type SearchOutcome =
   | { kind: 'picked'; release: Release; others: Release[] }
   | { kind: 'choose'; candidates: Release[] }
-  | { kind: 'none'; reason: RequestFailure };
+  | { kind: 'none'; reason: RequestFailure }
+  | { kind: 'waiting' };
 
 /** How a download stands: waiting in the client's queue, under way, finished, or failed. */
 export type PollOutcome =

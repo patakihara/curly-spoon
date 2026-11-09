@@ -793,6 +793,8 @@ enum class RequestFailure {
     NOT_INDEXED,
     @SerialName("cancelledUpstream")
     CANCELLED_UPSTREAM,
+    @SerialName("wrongRelease")
+    WRONG_RELEASE,
 }
 
 @Serializable

@@ -18,12 +18,15 @@ import type { AppConfig } from '../../config.js';
 import type { JobLog } from '../../jobs/schedule.js';
 import { readSecretFile } from '../../secretFile.js';
 import type { Db } from '../../store/connection.js';
+import { torrentDownload } from '../download/torrent.js';
 import { folderLacking } from '../folder.js';
 import type { MediumSteps } from '../steps.js';
 import { bookCatalogue, type BookCatalogue } from './catalogue.js';
-import { bookDownload } from './download.js';
 import { bookImport } from './import.js';
 import { bookSearch } from './search.js';
+
+/** Books' own qBittorrent category. */
+export const BOOKS_CATEGORY = 'auralis-books';
 
 export interface BookStepsDeps {
   db: Db;
@@ -93,7 +96,7 @@ export function bookSteps(config: AppConfig, deps: BookStepsDeps): BookSteps {
     steps: {
       medium: 'book',
       search: bookSearch({ audible, prowlarr, fetch, log }),
-      download: bookDownload({ qbittorrent, prowlarr, now, log }),
+      download: torrentDownload({ category: BOOKS_CATEGORY, qbittorrent, prowlarr, now, log }),
       import: bookImport({
         audible,
         audnexus,

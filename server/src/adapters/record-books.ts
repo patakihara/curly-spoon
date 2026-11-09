@@ -35,6 +35,8 @@ import { ProwlarrClient, type ProwlarrRelease } from './prowlarr/client.js';
 export const JEKYLL_QUERY = 'The Strange Case of Dr Jekyll and Mr Hyde Robert Louis Stevenson';
 const OTHERS_QUERY = 'Jekyll and Hyde Stevenson';
 const SPANISH_QUERY = 'El extraño caso del Dr. Jekyll y Mr. Hyde';
+/** Where a book is searched: Newznab's audiobook category. */
+const AUDIOBOOKS = { categories: [3030] };
 
 /** The one indexer the plan names. Every other stays out of the public repo. */
 const NAMED_INDEXER = 'AudioBook Bay';
@@ -337,7 +339,7 @@ export async function recordBooks(input: BooksRecordInput): Promise<{ written: s
   ] as const;
   const found = new Map<string, ProwlarrRelease[]>();
   for (const [call, query] of searches) {
-    const rows = await rec.capture(call, () => prowlarr.search(query), {
+    const rows = await rec.capture(call, () => prowlarr.search(query, AUDIOBOOKS), {
       verify: (answer, recording) => {
         if (answer.length === 0) throw new Error(`${call}: no rows`);
         scanned(recording);
@@ -368,7 +370,7 @@ export async function recordBooks(input: BooksRecordInput): Promise<{ written: s
   await rec.capture(
     'unauthorized',
     () =>
-      wrong.search(SPANISH_QUERY).then(
+      wrong.search(SPANISH_QUERY, AUDIOBOOKS).then(
         () => {
           throw new Error('a wrong key was let in');
         },

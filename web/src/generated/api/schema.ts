@@ -762,7 +762,7 @@ export interface components {
             at: number;
         };
         /** @enum {string} */
-        RequestFailure: "noRelease" | "searchFailed" | "downloadFailed" | "downloadStalled" | "importFailed" | "notIndexed" | "cancelledUpstream";
+        RequestFailure: "noRelease" | "searchFailed" | "downloadFailed" | "downloadStalled" | "importFailed" | "notIndexed" | "cancelledUpstream" | "wrongRelease";
         /** @enum {string} */
         QueueType: "music" | "spoken";
         /** @enum {string} */

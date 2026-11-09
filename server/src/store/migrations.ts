@@ -962,6 +962,50 @@ export const migrations: readonly Migration[] = [
       `);
     },
   },
+  {
+    id: 29,
+    name: 'request_wrong_release',
+    up: (db) => {
+      // A request may fail wrongRelease. A CHECK cannot be altered, so requests is built again from
+      // its own definition with the new reason, as request_stall did: dropping it empties what refers
+      // to it, so those rows are carried across, and the trigger naming it comes off until it is back.
+      const { sql } = db
+        .prepare<[], { sql: string }>(
+          "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'requests'",
+        )
+        .get()!;
+      const reasons = "'cancelledUpstream')";
+      if (sql.split(reasons).length !== 2)
+        throw new Error('requests: its reasons are not as known');
+      const rebuilt = sql
+        .replace(/^CREATE TABLE "?requests"?\s*\(/, 'CREATE TABLE requests_rebuilt (')
+        .replace(reasons, "'cancelledUpstream', 'wrongRelease')");
+      if (!rebuilt.startsWith('CREATE TABLE requests_rebuilt (')) {
+        throw new Error('requests: its definition is not as known');
+      }
+      const children = ['request_keys', 'arrived_keys', 'request_people'];
+      const attached = db
+        .prepare<[], { type: string; name: string; sql: string }>(
+          `SELECT type, name, sql FROM sqlite_master
+           WHERE type IN ('index', 'trigger') AND sql IS NOT NULL
+             AND (tbl_name = 'requests' OR name = 'request_people_last_left')`,
+        )
+        .all();
+      for (const child of children)
+        db.exec(`CREATE TEMP TABLE keep_${child} AS SELECT * FROM ${child}`);
+      db.exec('DROP TRIGGER request_people_last_left');
+      db.exec(rebuilt);
+      db.exec('INSERT INTO requests_rebuilt SELECT * FROM requests');
+      db.exec('DROP TABLE requests');
+      db.exec('ALTER TABLE requests_rebuilt RENAME TO requests');
+      for (const child of children) {
+        db.exec(`DELETE FROM ${child}`);
+        db.exec(`INSERT INTO ${child} SELECT * FROM keep_${child}`);
+        db.exec(`DROP TABLE keep_${child}`);
+      }
+      for (const one of attached) db.exec(one.sql);
+    },
+  },
 ];
 
 export function runMigrations(

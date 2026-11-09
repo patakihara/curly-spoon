@@ -56,7 +56,8 @@
           "downloadStalled",
           "importFailed",
           "notIndexed",
-          "cancelledUpstream"
+          "cancelledUpstream",
+          "wrongRelease"
         ]
       },
       "QueueType": {

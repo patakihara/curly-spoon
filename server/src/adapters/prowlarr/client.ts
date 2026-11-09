@@ -1,6 +1,7 @@
 /**
- * The Prowlarr client: one search over every indexer it has, and turning a release it found into a
- * magnet or a torrent's bytes (`new ProwlarrClient({ baseUrl, apiKey, fetch, timeoutMs? })`).
+ * The Prowlarr client: one search over its indexers, in the categories a medium asks for, and
+ * turning a release it found into a magnet or a torrent's bytes
+ * (`new ProwlarrClient({ baseUrl, apiKey, fetch, timeoutMs? })`).
  *
  * A row's links point at Prowlarr's own address as it saw it and hold its key, so a parsed release
  * keeps only their path and query, without the key. `resolve` puts both back from this client's own
@@ -19,8 +20,6 @@ import {
   prowlarrStatusSchema,
 } from './schemas.js';
 
-/** Newznab's audiobook category. */
-const AUDIOBOOKS = '3030';
 /** A search waits on every indexer; a step may take 120 s before the job fails its request. */
 export const PROWLARR_SEARCH_LIMIT_MS = 90_000;
 const LINK_LIMIT_MS = 30_000;
@@ -46,6 +45,12 @@ export interface ProwlarrRelease {
   /** The release's page on its indexer. */
   infoUrl: string | null;
   details: ProwlarrDetails;
+}
+
+/** Where a search looks: its categories, and the indexers it asks, every one when not given. */
+export interface ProwlarrSearchWithin {
+  categories: readonly number[];
+  indexerIds?: readonly number[];
 }
 
 export type ResolvedRelease =
@@ -141,11 +146,17 @@ export class ProwlarrClient {
     return version;
   }
 
-  /** Every torrent any indexer lists for `query` among audiobooks. */
-  async search(query: string): Promise<ProwlarrRelease[]> {
+  /**
+   * Every torrent the indexers list for `query` in the given Newznab categories (3030 audiobooks,
+   * 3000 audio), from every indexer, or only those `indexerIds` names.
+   */
+  async search(query: string, within: ProwlarrSearchWithin): Promise<ProwlarrRelease[]> {
     const url = this.url('api/v1/search');
     url.searchParams.set('query', query);
-    url.searchParams.set('categories', AUDIOBOOKS);
+    for (const category of within.categories) {
+      url.searchParams.append('categories', String(category));
+    }
+    for (const id of within.indexerIds ?? []) url.searchParams.append('indexerIds', String(id));
     url.searchParams.set('type', 'search');
     try {
       const rows = await requestJson(

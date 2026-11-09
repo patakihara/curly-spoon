@@ -1,6 +1,7 @@
 /**
- * A book's download through the real job, store and qBittorrent client, on recordings of controlled
- * torrents. Only `search` and `import` stand in, as those are other parts' steps.
+ * A torrent download, as books register it: through the real job, store and qBittorrent client, on
+ * recordings of controlled torrents. Only `search` and `import` stand in, as those are other parts'
+ * steps.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -17,7 +18,12 @@ import { createRequest, getRequest, type StoredRequest } from '../../store/reque
 import { upsertUser } from '../../store/users.js';
 import { advanceRequests, type RequestJobDeps } from '../job.js';
 import { type MediumSteps, type Release, StepUnavailable, stepsRegistry } from '../steps.js';
-import { BOOKS_CATEGORY, bookDownload, pollOutcome } from './download.js';
+import { BOOKS_CATEGORY } from '../books/index.js';
+import { pollOutcome, torrentDownload, type TorrentDownloadDeps } from './torrent.js';
+
+/** The download as books register it, in their own category. */
+const bookDownload = (deps: Omit<TorrentDownloadDeps, 'category'>) =>
+  torrentDownload({ category: BOOKS_CATEGORY, ...deps });
 
 const here = dirname(fileURLToPath(import.meta.url));
 const recorded = (call: string): Recording =>
@@ -489,6 +495,27 @@ describe('[M3.books] what Auralis did not start stays untouched', () => {
       await download(qbittorrent).start(request, release(DEBIAN), 'a-key');
       expect(asked.map((call) => call.path)).not.toContain('torrents/addTags');
     });
+  });
+
+  it('[M3.albums] a medium’s own category is where it adds, and the only one it deletes from', async () => {
+    const { asked, qbittorrent } = upstream(
+      [recorded('create-category'), recorded('add-magnet'), recorded('delete')],
+      [recorded('info-absent'), recorded('debian-queued')],
+    );
+    const music = torrentDownload({
+      category: 'auralis-music',
+      qbittorrent,
+      prowlarr: noProwlarr,
+      now: () => clock,
+    });
+    const handle = await music.start(request, release(DEBIAN), 'record');
+    const bodies = (path: string) =>
+      asked.filter((call) => call.path === path).map((call) => new URLSearchParams(call.body));
+    expect(bodies('torrents/createCategory')[0]?.get('category')).toBe('auralis-music');
+    expect(bodies('torrents/add')[0]?.get('category')).toBe('auralis-music');
+
+    await music.cancel({ handle });
+    expect(asked.map((call) => call.path)).not.toContain('torrents/delete');
   });
 
   it('[M3.books] a finished torrent being checked again waits, and does not fail', () => {

@@ -36,6 +36,7 @@ describe('the request vocabulary', () => {
       'importFailed',
       'notIndexed',
       'cancelledUpstream',
+      'wrongRelease',
     ]);
     expect(RequestFailure.safeParse('the tracker was down').success).toBe(false);
   });

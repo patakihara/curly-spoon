@@ -29,7 +29,7 @@ Each carried-over part is taken from the tag `legacy` when its plan item starts.
 - The three hand-copied contracts → generated
 - `abs-client` schemas (re-derived from recordings; request body; token type)
 - Setup and the authorisation model
-- AudiobookBay's detail-page parser; the duplicated book and music request services. The slskd single-file flow is dropped in favour of YouTube Music.
+- AudiobookBay's detail-page parser; the duplicated book and music request services.
 - Live fan-out in recommendations → index plus candidate pool
 - Fake-upstream routing that ships in the image
 :::

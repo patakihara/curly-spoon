@@ -36,6 +36,7 @@ const FAILURES: Record<RequestFailure, string> = {
   importFailed: 'The import failed',
   notIndexed: 'It never reached the library',
   cancelledUpstream: 'The download was cancelled',
+  wrongRelease: 'The download was not the right release',
 };
 
 const line = (...parts: (string | null)[]) =>
