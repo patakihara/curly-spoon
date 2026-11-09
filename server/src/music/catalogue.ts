@@ -6,11 +6,14 @@
  * the words of its title and its artists: on Search it is left out, and on a radio it plays from
  * Jellyfin, so one song is never listed twice, and a radio holds a song once and never follows it with
  * its other video. Words in brackets, and a dash's edition, do not count; an artist counts by whole
- * words. Which song a Jellyfin track is stays remembered for its newest `MOST_SEEDS` tracks.
+ * words. A song kept is owned exactly, as the track its keep named, before any of that. A song with
+ * a keep under way that the person is on is listed as requested, and still plays. Which song a
+ * Jellyfin track is stays remembered for its newest `MOST_SEEDS` tracks.
  */
 import type { MediaRef, SearchSong } from '@auralis/schema';
 import type { YtSong } from '../adapters/ytmusic/client.js';
 import { indexedRow } from '../libraryIndex/store.js';
+import { keptTrack, liveKeep } from '../requests/songs/kept.js';
 import { artOf } from '../routes/art.js';
 import type { Db } from '../store/connection.js';
 import { rememberTracks, streamedTrack } from '../store/streamedTracks.js';
@@ -79,11 +82,26 @@ function eachOnce<T extends Named>(songs: readonly T[]): T[] {
   );
 }
 
-/** Search's rows: the songs the household does not hold, each once. */
-export function songRows(db: Db, songs: readonly YtSong[]): SearchSong[] {
+/** The Jellyfin track that is this song: the one it was kept as, else one of the same name. */
+function heldAs(db: Db, owned: OwnedTracks, song: Pick<YtSong, 'id' | 'title' | 'artists'>) {
+  return keptTrack(db, song.id)?.id ?? ownedTrack(owned, song);
+}
+
+/** Where this person stands with a song the household does not hold. */
+function standing(db: Db, userId: string, id: string): SearchSong['availability'] {
+  const keep = liveKeep(db, userId, id);
+  if (keep === null) return { kind: 'streamable' };
+  const { state } = keep;
+  return state.status === 'downloading'
+    ? { kind: 'requested', status: state.status, progress: state.progress }
+    : { kind: 'requested', status: state.status };
+}
+
+/** Search's rows for this person: the songs the household does not hold, each once. */
+export function songRows(db: Db, userId: string, songs: readonly YtSong[]): SearchSong[] {
   const owned = ownedTracks(db);
   return eachOnce(songs).flatMap((song): SearchSong[] => {
-    if (ownedTrack(owned, song) !== null) return [];
+    if (heldAs(db, owned, song) !== null) return [];
     const ref: MediaRef = { source: 'ytmusic', id: song.id };
     return [
       {
@@ -93,7 +111,7 @@ export function songRows(db: Db, songs: readonly YtSong[]): SearchSong[] {
         album: song.album,
         duration: song.duration,
         art: artOf(db, ref),
-        availability: { kind: 'streamable' },
+        availability: standing(db, userId, song.id),
       },
     ];
   });
@@ -183,7 +201,7 @@ export class SongCatalogue {
     rememberTracks(this.deps.db, found, this.deps.now());
     const owned = ownedTracks(this.deps.db);
     return found.map((song): MediaRef => {
-      const track = ownedTrack(owned, song);
+      const track = heldAs(this.deps.db, owned, song);
       return track === null
         ? { source: 'ytmusic', id: song.id }
         : { source: 'jellyfin', id: track };
