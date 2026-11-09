@@ -134,6 +134,8 @@ const stubResolver = (answer: (id: string) => StreamSource = source) => {
 let dir: string;
 let db: Db;
 const now = vi.fn(() => NOW);
+/** Every cache a test made, so it ends only once their writes have. */
+let caches: StreamCache[] = [];
 
 beforeEach(() => {
   disk.shortWrites = false;
@@ -143,7 +145,9 @@ beforeEach(() => {
   now.mockImplementation(() => (clock += 1));
 });
 
-afterEach(() => {
+afterEach(async () => {
+  await Promise.all(caches.map((cache) => cache.settled()));
+  caches = [];
   db.close();
   rmSync(dir, { recursive: true, force: true });
 });
@@ -159,6 +163,7 @@ function cacheWith(options: Partial<StreamCacheOptions> & Pick<StreamCacheOption
     ...options,
   });
   cache.prepare();
+  caches.push(cache);
   return cache;
 }
 
@@ -222,6 +227,28 @@ describe('[M3.ytmusic/a] a stream the server proxies', () => {
     await reader.read();
     expect(host.asks).toHaveLength(2);
     await reader.cancel();
+  });
+
+  it('[M3.ytmusic/a] a chunk its reader left once all of it arrived is still kept, and settled waits for it', async () => {
+    const host = streamHost();
+    let write!: () => void;
+    const gate = new Promise<void>((go) => (write = go));
+    const written: number[] = [];
+    const writeChunk = async (_path: string, _chunk: Uint8Array, offset: number) => {
+      await gate;
+      written.push(offset);
+    };
+    const cache = cacheWith({ fetch: host.fetch, writeChunk });
+    const reader = (await cache.open(ID, 'bytes=0-')).body.getReader();
+    for (let got = 0; got < CHUNK - 1;) got += (await reader.read()).value!.byteLength;
+    await reader.cancel();
+    let settled = false;
+    const waiting = cache.settled().then(() => (settled = true));
+    await new Promise((go) => setTimeout(go, 10));
+    expect(settled).toBe(false);
+    write();
+    await waiting;
+    expect(written).toEqual([0]);
   });
 
   it('[M3.ytmusic/a] a format naming no size takes it from the answer to its first two bytes', async () => {

@@ -77,7 +77,7 @@ export async function assembleServer(
     /** What Search lists of the books the library lacks, in place of the configured one. */
     bookCatalogue?: BookCatalogue;
     /** Songs from outside the library, in place of the configured extractor, as a harness brings. */
-    music?: (log: MusicLog, db: Db) => { music: Music; stop: () => void };
+    music?: (log: MusicLog, db: Db) => { music: Music; stop: () => void | Promise<void> };
   },
 ): Promise<Server> {
   const { fetch } = deps;
@@ -216,7 +216,7 @@ export async function assembleServer(
       stopSessionSweep();
       stopIndexJob();
       stopLyricsJob();
-      streamed?.stop();
+      await streamed?.stop();
       db.close();
       app.log.info('Database closed');
     },

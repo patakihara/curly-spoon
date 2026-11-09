@@ -214,6 +214,11 @@ export class Music {
     this.cache.prepare();
   }
 
+  /** Settles once the stream cache fetches and writes no chunk. */
+  settled(): Promise<void> {
+    return this.cache.settled();
+  }
+
   /**
    * What a plan needs: how the file is typed, and what answered (`cache` for a track held whole,
    * which needs nothing upstream).
@@ -463,7 +468,7 @@ export interface MusicConfigDeps {
 export function ytMusic(
   config: AppConfig,
   deps: MusicConfigDeps,
-): { music: Music; stop: () => void } | null {
+): { music: Music; stop: () => Promise<void> } | null {
   const { extractorPath, canaryId, canaryQuery } = config.ytmusic;
   if (extractorPath === null) return null;
   const { db, fetch, log, now } = deps;
@@ -515,5 +520,12 @@ export function ytMusic(
     { name: 'extractor', everyMs: UPDATE_EVERY_MS, run: async () => void (await music.tick()) },
     log,
   );
-  return { music, stop };
+  return {
+    music,
+    // The job stops, then every chunk the cache still writes lands before the database closes.
+    stop: async () => {
+      stop();
+      await music.settled();
+    },
+  };
 }
