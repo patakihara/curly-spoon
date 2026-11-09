@@ -89,6 +89,8 @@ import {
   type SearchLoaded,
   searchHeard,
   searchRequestFailed,
+  searchOffers,
+  searchVerb,
 } from './search';
 import { setSetting, settingFailure, settingsData, settingsAwaited } from './settings';
 import { SignInScreen } from './sign-in';
@@ -124,7 +126,8 @@ import { answerFrom, type Answer, pageKey, SignedOut } from './store';
  * renames, turns round or deletes it, a book's, show's or episode's menu adding it to your lists
  * (`./menus`), the queue from `GET /api/queues/{active}`, Search from what is typed into it
  * (`../query`) and `GET /api/search/suggest` or `GET /api/search`, whose book rows ask through
- * `POST /api/requests` and look again while one moves, sign in from the address,
+ * `POST /api/requests` and whose song rows' menus keep through `POST /api/keep`, looking again
+ * while either moves, sign in from the address,
  * Requests from `GET /api/requests`, looking again after each verb and while anything moves, and
  * Settings' switch for everyone's library from `GET /api/settings`, setting it through
  * `PUT /api/settings`. A library home with nothing of yours draws its empty state, and it or
@@ -175,6 +178,11 @@ interface Screen<T, L = T> {
     ref: string,
     key: string,
   ): Promise<{ open?: string; replace?: boolean; reload?: boolean }>;
+  /**
+   * For a page whose menus are on its rows, not one of its own: whether the row `ref` names offers
+   * any verb. One that offers none takes no choice, and its menu's button draws disabled.
+   */
+  offers?(data: T, ref: string): boolean;
   /** For a page that says it is empty, which of its states what it loaded draws. */
   stateOf?(loaded: L): string;
   /** For a page with a `failed` state: it draws that when its first load failed. */
@@ -419,6 +427,8 @@ const screens: Screen<never>[] = [
     },
     load: (api, asks) => loadSearchPage(api, asks, searchEmpty),
     polls: ({ moving }) => moving,
+    verbs: searchVerb,
+    offers: searchOffers,
     requestFailed: searchRequestFailed,
     heard: searchHeard,
   } satisfies Screen<SearchData, SearchLoaded>,
@@ -561,10 +571,11 @@ function searchWith(search: URLSearchParams, values: Params): string {
 }
 
 /**
- * The verbs of `screen`'s menu (a library home's: its sorts), for the page to hand down: none on
- * the canvas, or while its menu holds none. A verb's page opens after it, replacing a list
- * deleted; a list changed loads again; a refusal for want of a sign-in goes to sign in, and any
- * other failure is logged, the shell binding no status to show it in.
+ * The verbs of `screen`'s menu (a library home's: its sorts; Search's: each song row's own), for
+ * the page to hand down: none on the canvas, or while the menu holds none. A verb's page opens
+ * after it, replacing a list deleted; a list changed, or a song kept, loads the page again as it
+ * is shown; a refusal for want of a sign-in goes to sign in, and any other failure is logged, the
+ * shell binding no status to show it in.
  */
 function useVerbs<T>(screen: Screen<T>, drawn: Drawn<T> | undefined): Choose | null {
   const { api, access, pages } = useDeps();
@@ -574,11 +585,14 @@ function useVerbs<T>(screen: Screen<T>, drawn: Drawn<T> | undefined): Choose | n
   const load = screen.load;
   const data = drawn?.data as { menu?: unknown[]; sort?: { options: unknown[] } } | undefined;
   const menu = data?.menu ?? data?.sort?.options ?? [];
-  const live = drawn !== undefined && menu.length > 0;
+  const offers = screen.offers;
+  const shown = drawn?.data;
+  const live = shown !== undefined && (offers !== undefined || menu.length > 0);
+  const asks = asksAt(screen, params);
   return useMemo(() => {
     if (verbs === undefined) return null;
     return (ref: string) =>
-      !live
+      !live || (offers !== undefined && (shown === undefined || !offers(shown, ref)))
         ? undefined
         : (key: string) =>
             void verbs(api, ref, key)
@@ -586,14 +600,15 @@ function useVerbs<T>(screen: Screen<T>, drawn: Drawn<T> | undefined): Choose | n
                 if (done.open !== undefined)
                   navigate(done.open, { replace: done.replace === true });
                 else if (done.reload === true && load !== undefined) {
-                  void pages.load(pageKey(screen.name, params), () => load(api, params));
+                  void pages.load(pageKey(screen.name, asks), () => load(api, asks));
                 }
               })
               .catch((error: unknown) => {
                 if (error instanceof SignedOut) access.refused();
                 else console.warn('the menu failed', key, error);
               });
-  }, [verbs, live, api, navigate, pages, load, access, screen.name, params]);
+    // `asks` follows from `params`.
+  }, [verbs, live, offers, shown, api, navigate, pages, load, access, screen.name, params]);
 }
 
 /**

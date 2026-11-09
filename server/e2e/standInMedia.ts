@@ -10,7 +10,8 @@
  * - a book titled `The Strange Case…`, as the recorded catalogue lists one, downloads at 38% for a
  *   few turns, waits one turn at its import, and arrives as the recorded item `arrives` names;
  * - any other book picks one release and downloads, at 38% for as long as the test wants;
- * - any album asks for a choice of two releases, then stays queued.
+ * - any album asks for a choice of two releases, then stays queued;
+ * - any song kept picks its one stream and stages it at 38% for as long as the test wants.
  */
 import type { MediaRef } from '@auralis/schema';
 import type {
@@ -92,5 +93,15 @@ export function standInMedia(arrives: MediaRef): MediumSteps[] {
     download: downloads(() => ({ kind: 'queued' })),
     import: NOT_IMPORTED,
   };
-  return [book, album];
+  const song: MediumSteps = {
+    medium: 'song',
+    search: async ({ target }) => ({
+      kind: 'picked',
+      release: release('stream', target.title, 3_445_462),
+      others: [],
+    }),
+    download: downloads(() => ({ kind: 'downloading', progress: 0.38 })),
+    import: NOT_IMPORTED,
+  };
+  return [book, album, song];
 }
